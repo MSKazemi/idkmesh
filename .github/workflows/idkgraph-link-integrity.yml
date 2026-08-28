@@ -1,0 +1,79 @@
+name: IDKGraph T2 Link Integrity
+
+on:
+  pull_request:
+    paths:
+      - "tools/idkgraph_markdown_index.py"
+      - "tools/idkgraph_link_check.py"
+      - "tests/test_idkgraph_markdown_index.py"
+      - "tests/test_idkgraph_link_check.py"
+      - ".github/workflows/idkgraph-link-integrity.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deterministic-link-integrity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.13"]
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Test canonical T1 identity and T2 link layer
+        run: |
+          python -m unittest tests.test_idkgraph_markdown_index tests.test_idkgraph_link_check -v
+
+      - name: Prove repository scan is byte deterministic
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT="$RUNNER_TEMP/idkgraph-t2-${{ matrix.python-version }}"
+          mkdir -p "$OUT"
+          python tools/idkgraph_link_check.py . --pretty --output "$OUT/first.json"
+          python tools/idkgraph_link_check.py . --pretty --output "$OUT/second.json"
+          cmp "$OUT/first.json" "$OUT/second.json"
+          python - "$OUT/first.json" >> "$GITHUB_STEP_SUMMARY" <<'PY'
+          import json
+          import sys
+          report = json.load(open(sys.argv[1], encoding="utf-8"))
+          summary = report["summary"]
+          print("## IDKGraph T2 repository observation")
+          print()
+          print(f"- identity contract: `{report['identity_contract']}`")
+          print(f"- documents scanned: {summary['documents_scanned']}")
+          print(f"- local Markdown links: {summary['local_markdown_links']}")
+          print(f"- resolved local Markdown links: {summary['resolved_local_markdown_links']}")
+          print(f"- deterministic errors observed: {summary['errors']}")
+          print(f"- warnings observed: {summary['warnings']}")
+          print("- repository-wide findings are observation evidence in T2; this workflow does not auto-repair or mutate files.")
+          PY
+
+      - name: Retain T2 observation artifact
+        if: matrix.python-version == '3.13'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: idkgraph-t2-link-integrity-${{ github.run_id }}
+          path: ${{ runner.temp }}/idkgraph-t2-3.13/first.json
+          retention-days: 14
+          if-no-files-found: error
+
+# Authority boundary:
+# - canonical document/heading identity comes only from T1;
+# - T2 anchors are navigation locators, never alternate graph identities;
+# - repository-wide findings are deterministic observation, not automatic repair authority;
+# - workflow permissions are read-only and checkout credentials are not persisted;
+# - no GitHub mutation, semantic inference, approval, push, or merge authority is granted.
