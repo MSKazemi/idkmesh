@@ -7,22 +7,21 @@
 
 IDKMesh has moved from an architecture notebook into an **executable contract-and-experiment project**.
 
-The most important architectural conclusion is now clearer:
+Its clearest differentiation is now:
 
-> IDKMesh should not become another generic agent protocol. It should be the verification-first coordination layer that turns heterogeneous human/agent/compute execution into bounded, comparable, independently verified candidate work.
+> **IDKMesh is a verification-first coordination layer for heterogeneous humans, agents, and compute—not another generic agent wire protocol.**
 
-Current external standards are sufficient to cover large parts of generic interoperability:
+Current open standards already cover much of generic execution interoperability:
 
-- A2A 1.0 for remote-agent discovery, task lifecycle, messages, and artifacts;
-- MCP 2026-07-28 for tool/context integration and optional Tasks-style asynchronous execution.
+- **A2A 1.0** — remote-agent discovery, task lifecycle, messages, parts, artifacts, extensions;
+- **MCP 2026-07-28** — tools/context plus optional Tasks-style asynchronous execution.
 
-IDKMesh should preserve the semantics those protocols do not guarantee:
+IDKMesh should remain authoritative for semantics those protocols do not guarantee:
 
-- WorkUnit capability/resource requirements;
-- security, permissions, and trust class;
-- verification policy and required evidence;
-- provenance;
-- worker/result independence;
+- capability/resource requirements;
+- security, permissions, trust and sandbox class;
+- independent verification policy and evidence requirements;
+- worker/verifier provenance;
 - diversity/error-correlation-aware coordination;
 - integration/merge policy.
 
@@ -40,33 +39,34 @@ external execution completed != IDKMesh accepted
 - **3 — validated:** exercised in realistic/reproducible workflows with evidence
 - **4 — scaled:** repeatedly demonstrated across the intended scale/trust environment
 
-This is a maturity indicator, not a quality score.
+The number is a maturity indicator, not a quality score.
 
 ## Current maturity matrix
 
-| Dimension | Maturity | Evidence | Highest-priority gap |
+| Dimension | Maturity | Current evidence | Highest-priority gap |
 | --- | ---: | --- | --- |
-| mission/differentiation | 3 | verification-first collective engineering thesis is coherent and public | external use-case/contributor validation |
-| open-source/community foundation | 3 | governance, community-health files, ACE experiment, starter tasks | recurring external contributors and distributed review ownership |
-| canonical WorkUnit | 3 | WorkUnit v0.2, fixtures, harness, CI, issue #3 complete | use through multiple real adapters |
-| worker ResultManifest | 2–3 | v0.1 contract + relationship checks | canonical runtime output from validated real worker runs |
-| independent VerificationResult | 2–3 | v0.1 contract and trust-boundary checks merged in PR #47 | real hidden/test/security verifier execution |
-| A2A/MCP interoperability | 2 | v0.2 field mapping + digest-protected semantic round-trip tests in this branch | official SDK conformance + real remote adapter |
-| local execution runtime | 2 | canonical node backend in PR #34 with policy/unit CI | controlled Docker acceptance issue #37 and merge |
-| multi-worker orchestration | 1–2 | product/issue design is clear | one coordinator path dispatching 2+ heterogeneous adapters |
-| experiment/research harness | 3 | deterministic Phase 0, randomness lab, R1 diversity/replication experiment | connect synthetic results to real repository-agent tasks |
-| security/isolation | 2–3 | explicit risk/trust/permissions, bounded Docker design, independent verification | protect `main`; real adversarial isolation tests; stronger sandbox tiers |
-| provenance | 2 | hashes/digests, source revisions, worker/verifier provenance | signatures/attestations and transparency evidence where justified |
-| zero-cost compute policy | 2–3 | zero-project-spend schemas/router/policy work | real local capability discovery (#52) |
-| distributed networking | 1 | architecture and references are strong | defer until trusted local loop is complete |
-| scalability | 2 | simulators/randomness/scheduling research is executable | real multi-node control-plane curves |
-| guarded self-evolution | 2 | ACE, deterministic evolution scoring, repository observatory work | protected integration boundary + outcome-based calibration |
-| product/developer UX | 1–2 | Verified Swarm Runner target is clear | one install/run path producing worker + independent verifier evidence |
-| integration/review capacity | 2 | governance/process exists | actual repository activity is already outrunning easy integration |
+| mission / differentiation | 3 | verification-first collective engineering thesis is coherent and public | external use-case validation |
+| community / open-source foundation | 3 | governance, health files, ACE/community experiments, starter work | recurring external contributors and distributed review ownership |
+| WorkUnit contract | 3 | WorkUnit v0.2 + fixtures + harness + CI | execute through multiple real adapters |
+| worker ResultManifest | 3 | v0.1 contract + provenance integrity | validated output from real worker runtime |
+| independent VerificationResult | 3 | v0.1 contract + exact provenance + executable safe local verifier (#72) | repository-patch/hidden-check validation and benchmark corpus |
+| A2A/MCP semantic interoperability | 2–3 | lossless v0.2 round-trip/tamper tests in PR #63 | official SDK conformance + real remote adapter |
+| local node execution | 2 | canonical node backend PR #34 + unit/contract CI | controlled Docker acceptance #37 and current-main refresh |
+| repository-patch verifier | 2 | PR #76, current-base CI green | controlled Docker acceptance + real bounded patch fixtures |
+| multi-worker orchestration | 1–2 | architecture/product contracts are clear | one coordinator path dispatching 2+ heterogeneous adapters |
+| experiment / research harness | 3 | Phase 0, R1, R2, randomness, verifier-correlation experiments | connect synthetic/safe fixtures to real repository-agent tasks |
+| security / isolation | 2–3 | explicit risk/trust/permissions, safe verifier, bounded Docker designs | protect `main`; adversarial sandbox tests; stronger risk tiers |
+| provenance | 3 | exact WorkUnit/ResultManifest/VerificationResult digests/source binding | signatures/attestations only where threat model needs them |
+| zero-project-spend compute | 3 | encoded budget policy + routing/capability work | realistic heterogeneous local worker runs |
+| distributed networking | 1 | design/references only | intentionally deferred until trusted local loop works |
+| scalability | 2–3 | scheduling/churn/correlation simulators now executable | real multi-node control-plane curves |
+| guarded self-evolution | 2 | ACE/homeostasis/evolution scoring exists | protected integration boundary + outcome calibration |
+| product / developer UX | 1–2 | Verified Swarm Runner target is clear | one command for WorkUnit -> 2 workers -> verification -> human decision |
+| integration / review capacity | 2 | governance/process exists | repository activity already creates stale branches and review contention |
 
 ## Interoperability architecture
 
-The preferred boundary is now:
+The preferred boundary is:
 
 ```text
                       +--> local node / sandbox
@@ -75,7 +75,7 @@ WorkUnit v0.2 --------+--> A2A remote agent
                       |
                       +--> MCP tool/task
                       |
-                      +--> future mini-SWE/OpenHands/human adapters
+                      +--> future coding/human adapters
                                 |
                                 v
                        ResultManifest v0.1
@@ -89,86 +89,102 @@ WorkUnit v0.2 --------+--> A2A remote agent
 
 ### A2A
 
-A2A is a strong remote-agent binding because it already has Agent Cards, task state, messages/parts, artifacts, and extensions.
+A2A is a strong remote-agent binding because it already models Agent Cards, capabilities/skills, tasks, messages/parts, artifacts, and extensions.
 
-IDKMesh-specific security/verification/evidence semantics remain in the canonical WorkUnit and a namespaced extension payload.
+IDKMesh-specific risk, permission, verification, and evidence semantics remain in the canonical WorkUnit and a namespaced extension payload.
 
 ### MCP
 
-MCP is a strong tool/context binding. The 2026-07-28 protocol extension model and `io.modelcontextprotocol/tasks` can support long-running tool operations where useful.
+MCP is a strong tool/context binding. The 2026-07-28 extension model and `io.modelcontextprotocol/tasks` can support long-running operations where useful.
 
-MCP Tasks must remain optional because local execution and some SDK paths should not depend on it.
+MCP Tasks should remain optional because local/direct adapters and some SDK paths should not depend on it.
 
 ### Lossless mapping rule
 
-Protocol-native fields are hints/transport conveniences. The full canonical WorkUnit plus digest travels through the binding so that risk, permissions, budgets, verification rules, or provenance cannot silently disappear.
+Use protocol-native fields where semantics match, but always carry the complete canonical WorkUnit plus a digest through the binding. A protocol lacking a direct equivalent for `security`, `verification_policy`, `budget`, or `evidence_requirements` is **not permission to discard those fields**.
 
-## Trust-boundary correction
+PR #63 implements this as executable semantic fixtures/tests. Official SDK/wire conformance remains the next interoperability evidence gate.
 
-The repository now has the right three-stage separation:
+## Trust-boundary status
 
-1. **WorkUnit v0.2** — what may be done, under what capability/security/verification contract.
+The repository now has the right separation:
+
+1. **WorkUnit v0.2** — what may be done and under which capability/security/verification contract.
 2. **ResultManifest v0.1** — worker self-report and candidate artifacts.
 3. **VerificationResult v0.1** — independent verifier evidence/recommendation.
+4. **Integration** — separate human/governance/policy authority.
 
-Neither ResultManifest nor VerificationResult is the final merge/integration authority.
+Neither worker completion nor verifier recommendation is automatically a merge authorization.
 
-This is more defensible than the earlier wording in IDKIP-0001 that called ResultManifest itself the Evidence Report.
+### Executable safe verifier now exists
+
+PR #72 added `experiments/local_verifier.py`, a zero-cost verifier that does **not execute candidate code**. It can independently reject a self-consistent but wrong candidate, which is important evidence that provenance integrity and correctness are distinct.
+
+That safe deterministic verifier should remain preferred whenever correctness can be evaluated without running candidate code.
+
+### Repository-patch verifier is the next risk tier
+
+PR #76 extends verification to bounded repository patches requiring:
+
+- immutable source reconstruction;
+- patch SHA-256 and clean application;
+- path/scope policy;
+- verifier-owned hidden build/test/lint/security commands in network-disabled Docker;
+- a private VerifierPlan not supplied to the worker.
+
+Its Phase 0 and verifier CI are green on the current synchronized base, but real Docker acceptance remains intentionally separate.
 
 ## Architecture strengths
 
 - Core contracts are model/vendor/forge neutral.
-- WorkUnit v0.2 makes resources, trust, sandboxing, and independent verification explicit.
-- Versioned historical schemas preserve reproducibility rather than rewriting history.
+- WorkUnit v0.2 makes resources, trust, sandboxing, budget and independent verification explicit.
+- Historical schema versions remain available for reproducibility.
 - External protocols can evolve independently of core WorkUnit semantics.
 - Worker and verifier roles are structurally separated.
-- Zero project-spend policy is encoded rather than left as prose.
-- Scientific experiments preserve negative-result and uncertainty framing.
+- Safe no-code-execution verification exists before higher-risk verifier tiers.
+- Exact cross-object provenance is executable, not aspirational.
+- Zero-project-spend policy is encoded rather than merely stated.
+- Research reports negative results and uncertainty rather than only successes.
 
 ## Architecture risks
 
 ### 1. Integration is already the scarce resource
 
-During this audit/development turn, `main` and the canonical-node branch advanced repeatedly while integration work was being prepared. Several attempted fast-forward updates were correctly rejected because concurrent work had changed the branch.
+During this development turn, `main` and active branches advanced repeatedly while integration work was being prepared. GitHub correctly rejected stale non-fast-forward updates.
 
-This is useful evidence, not merely inconvenience:
+This is direct evidence for a core thesis:
 
-> **Generation is already scaling faster than effortless integration.**
+> **Generation already scales faster than effortless coherent integration.**
 
-The project should instrument/reduce this cost rather than respond by generating more parallel artifacts.
+IDKMesh should measure stale-base frequency, merge contention, verification backlog and reviewer time rather than maximize concurrent artifact count.
 
 ### 2. `main` is still unprotected
 
-Public branch metadata currently reports `main` as unprotected. Issue #35 correctly treats this as a P0 gate before stronger autonomous repository writes.
+Public branch metadata reports `main` as unprotected. Issue #35 is therefore a P0 gate before stronger autonomous repository writes.
 
-No agent/community-growth/self-evolution system should gain bypass authority until GitHub branch/ruleset protections are actually enabled and independently checked.
+Repository-side fail-closed guards are useful, but a GitHub administrator still needs to enable and verify the actual ruleset/branch protection.
 
 ### 3. Docker is not the final hostile-workload boundary
 
-The local-node MVP has sensible least-privilege controls, but a writable repository mount plus ordinary Docker is not sufficient containment for arbitrary hostile public workloads.
+Ordinary Docker with least-privilege controls is appropriate only for controlled low-risk MVP work. Public hostile workloads should wait for measured risk-tiered isolation such as rootless containers, gVisor, microVMs, or WASI-style execution as appropriate.
 
-Use controlled low-risk public tasks first, then benchmark stronger risk-tiered isolation such as rootless containers, gVisor, microVMs/Firecracker, or WASI-style execution.
+### 4. Real orchestration still lags contracts
 
-### 4. Verification execution lags verification contracts
-
-The independent VerificationResult contract now exists, but issue #5 remains open for the actual hidden evaluator, unauthorized-change/dependency checks, and benchmark task set.
-
-That should take priority over adding another layer of orchestration theory.
+The project now has better contracts and verification than orchestration. The next product proof is not another protocol document—it is the same WorkUnit executed through two heterogeneous adapters and evaluated through the same independent verifier path.
 
 ## Community evaluation
 
-Community engineering is unusually mature relative to code maturity:
+Community engineering is advanced relative to the runnable product:
 
-- community-first project rule;
-- explicit contributor ladder;
-- issue/PR templates;
-- starter Growth Seeds;
-- ACE reproduction/capacity experiment;
-- conversation/decision preservation.
+- community-first rule;
+- contributor ladder and health files;
+- structured issues/PRs;
+- ACE/community experiments;
+- public conversation/decision preservation.
 
-However, ACE's own ledger is currently in **CONSOLIDATE** mode with a high review-load proxy and a very small capacity multiplier. That is a strong signal to prefer review, integration, reproducibility, and second-contribution conversion over spawning more issues or generated proposals.
+The current operational signal is to **consolidate**, not generate more issue volume. The repository itself is experiencing review/integration pressure.
 
-Recommended community KPI for the next stage:
+Prefer metrics such as:
 
 ```text
 verified useful descendants
@@ -176,72 +192,80 @@ verified useful descendants
 reviewer + maintainer time
 ```
 
-not raw issue/PR/star volume.
+and first-to-second contribution conversion over raw issues, PRs, stars, or generated comments.
 
-## Scientific/research evaluation
+## Scientific / research evaluation
 
-The project now has executable research rather than only cross-disciplinary analogies:
+The project now contains executable research across:
 
-- deterministic Phase 0 harness;
-- randomness-lab policies and repeated seeded trials;
-- R1 diversity-vs-replication experiment;
-- emergence/criticality/scheduling/evolution tracks.
+- deterministic Phase 0 contracts;
+- randomness and seed-controlled experiments;
+- diversity-vs-replication;
+- verifier correlation and independence-aware aggregation;
+- scheduling/churn;
+- real independently verified-result replay.
 
-The next research discipline should be **connection to real system artifacts**:
+The next scientific discipline is to connect these models to real system artifacts:
 
 - real WorkUnits;
 - real worker adapters;
-- real VerificationResults;
-- measured human review time;
-- correlated failure across actual agent families.
+- real repository patch VerificationResults;
+- human review minutes;
+- actual correlated failure across agent families.
 
-Avoid expanding the algorithm catalog faster than experiments can falsify it.
+Avoid expanding the algorithm catalog faster than experiments can rank or falsify mechanisms.
 
 ## Priority development gates
 
-### P0 — trusted local loop
+### P0 — trusted local product loop
 
-1. Complete/review PR #34 against current WorkUnit v0.2 and satisfy controlled Docker acceptance issue #37.
-2. Finish issue #5's actual verifier execution: hidden tests/checks, scope/dependency checks, evidence artifacts.
-3. Build the common worker-adapter interface and dispatch one WorkUnit through at least two heterogeneous adapters.
-4. Connect ResultManifest -> independent VerificationResult -> explicit human/policy decision.
-5. Provide one newcomer-runnable command for that full local path.
+1. Refresh/review PR #34 against current WorkUnit v0.2 and satisfy controlled Docker acceptance #37.
+2. Review PR #76 as the higher-risk repository-patch verifier extension; record a controlled Docker acceptance before calling it validated.
+3. Build the minimal common worker-adapter interface.
+4. Dispatch the same WorkUnit through at least two heterogeneous adapters.
+5. Feed both ResultManifests through the same independent verification layer.
+6. Expose one newcomer-runnable replayable command for the full local flow.
 
 ### P0 — repository safety
 
-6. Complete issue #35 by enabling actual GitHub protection/ruleset for `main` through repository administration.
-7. Keep autonomous write actuators fail-closed until that external guard is verified.
+7. Complete issue #35 by enabling actual GitHub `main` protection/ruleset administratively.
+8. Keep autonomous write actuators fail-closed until that external guard is independently observed as enabled.
 
 ### P1 — interoperability evidence
 
-8. Merge the semantic A2A/MCP binding tests from this branch after review/CI.
-9. Add official A2A 1.0 SDK conformance.
-10. Add MCP 2026-07-28 implementation conformance while keeping Tasks optional.
-11. Normalize a real remote-agent output into ResultManifest v0.1 and pass it through the same independent verifier as local workers.
+9. Review/merge PR #63 after CI and independent review.
+10. Add official A2A 1.0 SDK/generated-type conformance.
+11. Add MCP 2026-07-28 implementation conformance while keeping Tasks optional.
+12. Normalize a real remote-agent output into ResultManifest v0.1 and pass it through the same verifier as local workers.
 
-### P1 — flagship product evidence
+### P1 — flagship evidence
 
-12. Run the same bounded repository task with one strong baseline, replication, and heterogeneous workers.
-13. Record hidden/independent verification, human review minutes, compute, wall time, error correlation, and negative results.
+13. Run one strong baseline, replication, and heterogeneous-worker configurations on the same bounded repository tasks.
+14. Record independent verification, human review time, compute, wall time, error correlation and negative results.
+15. Build the first 5–10 real benchmark tasks before expanding toward the full #5 target.
 
 ### P2 — distributed mesh
 
-14. Only after the local trust loop works, move to 3–10 real nodes.
-15. Add signatures/attestations and stronger provenance where threat models justify them.
-16. Test churn, partitions, malicious/slow workers, verifier backpressure, and recovery.
+16. Only after the local trust loop works, move to 3–10 real nodes.
+17. Add signatures/attestations only when the threat model justifies them.
+18. Test churn, partitions, slow/malicious workers, verifier backpressure and recovery.
 
-## Current go/no-go rules
+## Current go / no-go
 
-**Go now:** contracts, verification execution, adapter interface, interoperability conformance, local acceptance, branch protection, contributor review capacity.
+**Go now:** adapter interface, current-node refresh, verifier acceptance, A2A/MCP conformance, branch protection, benchmark seeds, integration/review instrumentation.
 
-**Defer:** custom agent wire protocol, global scheduler, token economy, public hostile volunteer jobs, million-node claims, autonomous merging.
+**Defer:** custom generic agent protocol, global scheduler deployment, token economy, arbitrary hostile volunteer jobs, million-node claims, autonomous merging.
 
 ## Overall assessment
 
 IDKMesh is now technically interesting because its distinct layer is becoming executable:
 
 ```text
-bounded work + heterogeneous execution + independent evidence + guarded integration
+bounded work
++ heterogeneous execution
++ exact provenance
++ independent evidence
++ guarded integration
 ```
 
-The next success is not another architecture document. It is one fully reproducible local run in which two different workers produce candidates, an independent verifier produces VerificationResult evidence, and a human can inspect why a candidate should or should not be integrated.
+The next decisive product milestone is one reproducible local run where **two different workers attempt the same bounded WorkUnit, both produce canonical ResultManifests, independent verification evaluates both, and a human can inspect why one candidate should or should not be integrated**.
