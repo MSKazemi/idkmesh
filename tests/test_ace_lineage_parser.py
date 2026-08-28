@@ -3,6 +3,7 @@ import json
 import unittest
 from pathlib import Path
 
+HAS_JSONSCHEMA = importlib.util.find_spec("jsonschema") is not None
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "ace_lineage.py"
 SPEC = importlib.util.spec_from_file_location("ace_lineage", SCRIPT)
@@ -22,6 +23,7 @@ def block(record):
     return "<!-- ACE_LINEAGE\n" + json.dumps(record) + "\nACE_LINEAGE -->"
 
 
+@unittest.skipUnless(HAS_JSONSCHEMA, "ACE lineage parser tests require jsonschema")
 class AceLineageParserTests(unittest.TestCase):
     def test_extracts_valid_lineage_from_markdown(self):
         records = MODULE.extract_markdown("before\n" + block(VALID) + "\nafter")
