@@ -63,6 +63,7 @@ class PlannerTests(unittest.TestCase):
         boundary = result["runtime_materialization"]
         self.assertTrue(boundary["required_before_execution"])
         self.assertFalse(boundary["planner_output_is_executable_compute_offer"])
+        self.assertEqual(boundary["boundary_doc"], "docs/architecture/FREE_RESOURCE_MESH_COMPUTE_BRIDGE.md")
         self.assertEqual(boundary["discovery_contract"], "schemas/resource-offer-registry-v0.1.schema.json")
         self.assertEqual(boundary["runtime_contract"], "schemas/compute-offer-pool-v0.1.schema.json")
         self.assertEqual(boundary["runtime_router"], "experiments/free_compute_router.py")
