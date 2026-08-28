@@ -1,6 +1,15 @@
 {
-  "version": 1,
+  "version": 2,
   "updated_at": null,
+  "beliefs": {
+    "goal_clarity": {"alpha": 4.0, "beta": 4.0},
+    "product_quality": {"alpha": 4.0, "beta": 4.0},
+    "community_health": {"alpha": 4.0, "beta": 4.0},
+    "verification_strength": {"alpha": 4.0, "beta": 4.0},
+    "maintainability": {"alpha": 4.0, "beta": 4.0},
+    "exploration_capacity": {"alpha": 4.0, "beta": 4.0},
+    "risk_debt": {"alpha": 4.0, "beta": 4.0}
+  },
   "fitness": {
     "goal_clarity": 0.5,
     "product_quality": 0.5,
@@ -19,15 +28,24 @@
     "exploration_capacity": 0.8,
     "risk_debt": 1.2
   },
+  "activity_counts": {
+    "event_kinds": {},
+    "actors": {}
+  },
   "signals": {
     "events_seen": 0,
     "last_event": null,
     "last_actor": null,
     "last_score": 0.0,
-    "last_delta": 0.0
+    "last_delta": 0.0,
+    "event_entropy": 0.0,
+    "actor_entropy": 0.0,
+    "homeostatic_potential": null,
+    "checkpoint_source": "repository-seed"
   },
   "policy": {
     "minimum_meaningful_delta": 0.01,
+    "max_event_log_entries": 1000,
     "autonomous_merge": false,
     "constitutional_changes_require_review": true
   }

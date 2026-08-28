@@ -1,6 +1,8 @@
 name: IDKMesh Evolution Loop
 
 on:
+  push:
+    branches: [main]
   issues:
     types: [opened, closed]
   pull_request:
@@ -15,9 +17,10 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
-  group: evolution-observer
+  group: evolution-observer-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -25,10 +28,50 @@ jobs:
     # Avoid recursive/noisy bot events. This workflow observes; it does not mutate main.
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 7
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Find previous trusted-main checkpoint
+        id: previous
+        if: github.ref == 'refs/heads/main'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          run_id="$(gh api \
+            "repos/${GITHUB_REPOSITORY}/actions/workflows/evolution-loop.yml/runs?branch=main&status=success&per_page=20" \
+            --jq '.workflow_runs[0].id // empty' || true)"
+          echo "run_id=${run_id}" >> "$GITHUB_OUTPUT"
+
+      - name: Download previous trusted-main checkpoint
+        if: github.ref == 'refs/heads/main' && steps.previous.outputs.run_id != ''
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          pattern: evolution-checkpoint-*
+          path: /tmp/previous-evolution
+          merge-multiple: true
+          repository: ${{ github.repository }}
+          github-token: ${{ github.token }}
+          run-id: ${{ steps.previous.outputs.run_id }}
+
+      - name: Restore checkpoint or use repository seed
+        id: checkpoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          source="repository-seed"
+          if [[ "${GITHUB_REF}" == "refs/heads/main" && -f /tmp/previous-evolution/state/evolution-state.json ]]; then
+            cp /tmp/previous-evolution/state/evolution-state.json state/evolution-state.json
+            if [[ -f /tmp/previous-evolution/state/evolution-events.jsonl ]]; then
+              cp /tmp/previous-evolution/state/evolution-events.jsonl state/evolution-events.jsonl
+            fi
+            source="trusted-main-artifact:${{ steps.previous.outputs.run_id }}"
+          fi
+          echo "source=${source}" >> "$GITHUB_OUTPUT"
 
       - name: Normalize event kind
         id: event
@@ -39,45 +82,54 @@ jobs:
           PR_MERGED: ${{ github.event.pull_request.merged }}
         run: |
           set -euo pipefail
+          source="${EVENT_NAME}"
           if [[ "$EVENT_NAME" == "schedule" ]]; then
             kind="schedule.audit"
           elif [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
             kind="workflow_dispatch.manual"
+          elif [[ "$EVENT_NAME" == "push" ]]; then
+            kind="push.main"
           elif [[ "$EVENT_NAME" == "pull_request" && "$EVENT_ACTION" == "closed" && "$PR_MERGED" == "true" ]]; then
             kind="pull_request.merged"
           else
             kind="${EVENT_NAME}.${EVENT_ACTION:-unknown}"
           fi
           echo "kind=$kind" >> "$GITHUB_OUTPUT"
+          echo "source=$source" >> "$GITHUB_OUTPUT"
 
-      - name: Score observation
+      - name: Score Bayesian observation
         run: |
           python3 scripts/evolution_score.py \
             --kind '${{ steps.event.outputs.kind }}' \
             --actor '${{ github.actor }}' \
             --repository '${{ github.repository }}' \
             --ref '${{ github.ref }}' \
-            --run-id '${{ github.run_id }}'
+            --run-id '${{ github.run_id }}' \
+            --source '${{ steps.event.outputs.source }}' \
+            --checkpoint-source '${{ steps.checkpoint.outputs.source }}'
 
       - name: Validate generated state
         run: |
           python3 -m json.tool state/evolution-state.json >/dev/null
+          python3 -m json.tool state/evolution-math-policy.json >/dev/null
           python3 - <<'PY'
           import json
           from pathlib import Path
           for line in Path('state/evolution-events.jsonl').read_text().splitlines():
               json.loads(line)
-          print('evolution state and event log are valid')
+          print('evolution state, policy, and bounded event log are valid')
           PY
 
-      - name: Publish observation artifact
+      - name: Publish checkpoint/evidence artifact
         uses: actions/upload-artifact@v4
         with:
-          name: evolution-observation-${{ github.run_id }}
+          name: evolution-checkpoint-${{ github.run_id }}
           path: |
             EVOLUTION_REPORT.md
             state/evolution-state.json
             state/evolution-events.jsonl
+            state/evolution-math-policy.json
+          if-no-files-found: error
           retention-days: 30
 
       - name: Job summary

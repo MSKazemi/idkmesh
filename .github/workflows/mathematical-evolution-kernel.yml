@@ -1,0 +1,120 @@
+name: Mathematical Evolution Kernel
+
+on:
+  push:
+    paths:
+      - "scripts/evolution_math.py"
+      - "scripts/evolution_score.py"
+      - "state/evolution-state.json"
+      - "state/evolution-math-policy.json"
+      - "tests/test_evolution_math.py"
+      - "docs/architecture/MATHEMATICAL_EVOLUTION_KERNEL.md"
+      - ".github/workflows/mathematical-evolution-kernel.yml"
+      - ".github/workflows/evolution-loop.yml"
+  pull_request:
+    paths:
+      - "scripts/evolution_math.py"
+      - "scripts/evolution_score.py"
+      - "state/evolution-state.json"
+      - "state/evolution-math-policy.json"
+      - "tests/test_evolution_math.py"
+      - "docs/architecture/MATHEMATICAL_EVOLUTION_KERNEL.md"
+      - ".github/workflows/mathematical-evolution-kernel.yml"
+      - ".github/workflows/evolution-loop.yml"
+  workflow_dispatch:
+  schedule:
+    - cron: "43 4 * * 2"
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: mathematical-evolution-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  kernel:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.13"]
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Compile mathematical kernel and scorer
+        run: |
+          python -m py_compile scripts/evolution_math.py scripts/evolution_score.py
+
+      - name: Run mathematical invariant tests
+        run: |
+          python -m unittest -v tests.test_evolution_math
+
+      - name: Validate policy and seed state
+        run: |
+          python -m json.tool state/evolution-math-policy.json >/dev/null
+          python -m json.tool state/evolution-state.json >/dev/null
+
+      - name: Run deterministic kernel demonstration
+        run: |
+          python scripts/evolution_math.py --demo --output /tmp/evolution-math-demo.json >/dev/null
+          python -m json.tool /tmp/evolution-math-demo.json >/dev/null
+
+      - name: Smoke-test Bayesian evolution scorer
+        run: |
+          cp state/evolution-state.json /tmp/evolution-state.json
+          if [[ -f state/evolution-events.jsonl ]]; then
+            cp state/evolution-events.jsonl /tmp/evolution-events.jsonl
+          else
+            : > /tmp/evolution-events.jsonl
+          fi
+          python scripts/evolution_score.py \
+            --state /tmp/evolution-state.json \
+            --events /tmp/evolution-events.jsonl \
+            --report /tmp/EVOLUTION_REPORT.md \
+            --kind workflow_run.success \
+            --actor mathematical-kernel \
+            --repository "${GITHUB_REPOSITORY}" \
+            --ref "${GITHUB_REF}" \
+            --run-id "${GITHUB_RUN_ID}" \
+            --source "Mathematical Evolution Kernel" \
+            --checkpoint-source ci-smoke >/tmp/evolution-record.json
+          python -m json.tool /tmp/evolution-state.json >/dev/null
+          python -m json.tool /tmp/evolution-record.json >/dev/null
+
+      - name: Publish mathematical evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: mathematical-evolution-${{ github.run_id }}-py${{ matrix.python-version }}
+          path: |
+            /tmp/evolution-math-demo.json
+            /tmp/evolution-state.json
+            /tmp/evolution-events.jsonl
+            /tmp/evolution-record.json
+            /tmp/EVOLUTION_REPORT.md
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Publish job summary
+        shell: bash
+        run: |
+          {
+            echo "## Mathematical Evolution Kernel"
+            echo
+            echo "Python: \`${{ matrix.python-version }}\`"
+            echo
+            cat /tmp/EVOLUTION_REPORT.md
+            echo
+            echo "### Deterministic kernel demonstration"
+            echo '```json'
+            cat /tmp/evolution-math-demo.json
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
