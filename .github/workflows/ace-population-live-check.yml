@@ -1,0 +1,57 @@
+name: ACE live population experiment
+
+on:
+  pull_request:
+    paths:
+      - 'experiments/ace_population_sim.py'
+      - 'experiments/README.md'
+      - 'tests/test_ace_population_sim.py'
+      - '.github/workflows/ace-population-live-check.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'experiments/ace_population_sim.py'
+      - 'experiments/README.md'
+      - 'tests/test_ace_population_sim.py'
+      - '.github/workflows/ace-population-live-check.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  experiment:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      matrix:
+        python-version: ['3.11', '3.13']
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Compile experiment
+        run: python -m py_compile experiments/ace_population_sim.py tests/test_ace_population_sim.py
+      - name: Run live-capacity population tests
+        run: python -m unittest tests.test_ace_population_sim -v
+      - name: Run deterministic acceptance scenarios
+        run: |
+          python experiments/ace_population_sim.py --check --format json > /tmp/ace-population.json
+          python -m json.tool /tmp/ace-population.json >/dev/null
+      - name: Assert overload comparison preserves the verification bottleneck
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          data = json.loads(Path('/tmp/ace-population.json').read_text())
+          overload = next(
+              item for item in data['comparisons'] if item['scenario'] == 'overload'
+          )
+          assert overload['raw_activity_can_be_worse'] is True
+          assert overload['raw_activity_minus_governed'] > 0
+          assert overload['raw_final_review_load_minus_governed'] > 0
+          assert overload['raw_reviewed_prs_minus_governed'] == 0
+          assert overload['raw_verified_descendants_minus_governed'] == 0
+          print('ACE live-open-work overload comparison remains capacity-governed')
+          PY
