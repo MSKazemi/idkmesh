@@ -7,13 +7,18 @@ by ``task001_evaluator_calibration_v04`` from files that existed at the frozen
 source SHA. Separately, this wrapper verifies that the durable public cohort is
 still the same burned pre-outcome commitment.
 
-The final #170 calibration harness also contained one assertion coupled to the
-*wording* of its divergent verifier finding. Canonical #171 rejects the same
-decoy but uses a different finding sentence. This wrapper defers only that one
-prose-coupled assertion and replaces it after the run with stronger checks over
-#171's machine-readable ``semantic_removed_substrings`` observation and metrics.
-Candidate construction, pass/reject expectations, behavioral assertions, plan
-binding, and verifier semantics are not changed.
+The final #170 calibration harness contained two assertions coupled to its
+*divergent implementation surface*: one matched its finding prose and one
+required a private extension explicitly set to ``false``. Canonical #171 rejects
+the same decoy but records transition diagnostics/metrics under its own stable
+machine contract and makes no behavioral-correctness claim at all. This wrapper
+defers only those two implementation-coupled assertions and replaces them after
+the unchanged calibration run with stronger checks over #171's structured
+semantic evidence, version, transition mode, and absence of any positive
+behavioral-correctness claim.
+
+Candidate construction, pass/reject expectations, behavioral assertions, exact
+plan binding, and verifier semantics are not changed.
 """
 
 from __future__ import annotations
@@ -29,8 +34,12 @@ BURNED_DEFINITION_DIGEST = (
 )
 CONTROL_COHORT = calibration.ROOT / "benchmarks/phase-b2-first-five/cohort.json"
 REMOVED_REQUIREMENT = "(ROOT / args.cohort).resolve()"
+CANONICAL_TRANSITION_MODE = "added_and_removed_line_substring_all"
 PROSE_COUPLED_ASSERTION = (
     "decoy rejection lacks removed-transformation correctness evidence"
+)
+DIVERGENT_EXTENSION_ASSERTION = (
+    "metadata-only transformation verifier incorrectly claimed behavioral correctness"
 )
 DEFAULT_OUTPUT_ROOT = "results/verification/task001-v04-calibration"
 
@@ -76,30 +85,60 @@ def requested_output_root() -> Path:
     return calibration.ensure_output_root(raw)
 
 
-def verify_canonical_removed_transition_evidence(output_root: Path) -> None:
-    """Assert #171's structured decoy evidence, independent of prose wording."""
+def load_candidate_verification(output_root: Path, candidate_id: str) -> dict:
+    path = output_root / candidate_id / "verification-result.json"
+    calibration.require(path.is_file(), f"{candidate_id} VerificationResult is missing")
+    return calibration.load_json(path)
 
-    path = output_root / "inert-decoy" / "verification-result.json"
-    calibration.require(path.is_file(), "canonical decoy VerificationResult is missing")
-    value = calibration.load_json(path)
 
+def verify_canonical_non_behavioral_contract(value: dict, candidate_id: str) -> None:
+    """Require canonical transition semantics without inventing behavioral authority."""
+
+    extensions = value.get("extensions", {})
     calibration.require(
-        value.get("status") == "failed",
-        "canonical v0.4 did not fail the inert decoy",
+        extensions.get("org.idkmesh.local_verifier.behavioral_correctness_claim") is not True,
+        f"{candidate_id} canonical verifier asserted behavioral correctness",
     )
     calibration.require(
-        value.get("decision_support", {}).get("recommendation") == "reject_candidate",
-        "canonical v0.4 did not recommend rejecting the inert decoy",
+        extensions.get("org.idkmesh.local_verifier.semantic_match_mode")
+        == CANONICAL_TRANSITION_MODE,
+        f"{candidate_id} lost canonical v0.4 transition semantic mode",
     )
     calibration.require(
         value.get("verifier", {}).get("adapter_version") == "0.3.0",
-        "canonical decoy result is not verifier adapter 0.3.0",
+        f"{candidate_id} is not verifier adapter 0.3.0",
+    )
+
+
+def verify_canonical_removed_transition_evidence(output_root: Path) -> None:
+    """Assert #171's structured decoy evidence, independent of prose wording."""
+
+    straight = load_candidate_verification(output_root, "straightforward")
+    decoy = load_candidate_verification(output_root, "inert-decoy")
+    verify_canonical_non_behavioral_contract(straight, "straightforward")
+    verify_canonical_non_behavioral_contract(decoy, "inert-decoy")
+
+    calibration.require(
+        straight.get("status") == "passed",
+        "canonical v0.4 did not pass the straightforward calibration candidate",
+    )
+    calibration.require(
+        straight.get("decision_support", {}).get("recommendation") == "accept_candidate",
+        "canonical v0.4 did not support the straightforward calibration candidate",
+    )
+    calibration.require(
+        decoy.get("status") == "failed",
+        "canonical v0.4 did not fail the inert decoy",
+    )
+    calibration.require(
+        decoy.get("decision_support", {}).get("recommendation") == "reject_candidate",
+        "canonical v0.4 did not recommend rejecting the inert decoy",
     )
 
     independent = next(
         (
             check
-            for check in value.get("checks", [])
+            for check in decoy.get("checks", [])
             if check.get("id") == "independent-review"
         ),
         None,
@@ -127,17 +166,17 @@ def verify_canonical_removed_transition_evidence(output_root: Path) -> None:
         "canonical decoy diagnostics do not prove the unsafe substring remained unremoved",
     )
     calibration.require(
-        value.get("metrics", {}).get("required_removed_substring_count") == 1,
+        decoy.get("metrics", {}).get("required_removed_substring_count") == 1,
         "canonical decoy result has unexpected required removal count",
     )
     calibration.require(
-        value.get("metrics", {}).get("matched_removed_substring_count") == 0,
+        decoy.get("metrics", {}).get("matched_removed_substring_count") == 0,
         "canonical decoy result unexpectedly matched the required removal",
     )
     calibration.require(
         any(
             finding.get("category") == "correctness"
-            for finding in value.get("findings", [])
+            for finding in decoy.get("findings", [])
         ),
         "canonical decoy rejection lacks a correctness finding",
     )
@@ -150,10 +189,9 @@ def main() -> int:
     original_require = calibration.require
 
     def canonical_compat_require(condition: bool, message: str) -> None:
-        if message == PROSE_COUPLED_ASSERTION:
-            # #170 asserted its own verifier's finding *sentence*. Defer only
-            # that wording check; structured canonical evidence is required
-            # immediately after the unchanged calibration run completes.
+        if message in {PROSE_COUPLED_ASSERTION, DIVERGENT_EXTENSION_ASSERTION}:
+            # Defer only #170 implementation-shape assertions. The canonical
+            # structured checks below replace them after the unchanged run.
             return
         original_require(condition, message)
 
