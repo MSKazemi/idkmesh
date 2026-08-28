@@ -1,0 +1,57 @@
+name: ACE Activation Gate
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/ace_activation_gate.py'
+      - 'tests/test_ace_activation_gate.py'
+      - 'examples/community/ace-activation-gate-current.example.json'
+      - 'docs/community/ACE_ACTIVATION_GATE.md'
+      - '.github/workflows/ace-activation-gate.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/ace_activation_gate.py'
+      - 'tests/test_ace_activation_gate.py'
+      - 'examples/community/ace-activation-gate-current.example.json'
+      - 'docs/community/ACE_ACTIVATION_GATE.md'
+      - '.github/workflows/ace-activation-gate.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      matrix:
+        python-version: ['3.11', '3.13']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Compile gate
+        run: python -m py_compile scripts/ace_activation_gate.py tests/test_ace_activation_gate.py
+      - name: Run fail-closed unit tests
+        run: python -m unittest tests.test_ace_activation_gate -v
+      - name: Evaluate current repository fixture
+        run: |
+          python scripts/ace_activation_gate.py \
+            examples/community/ace-activation-gate-current.example.json \
+            --output /tmp/ace-activation.json
+          python -m json.tool /tmp/ace-activation.json >/dev/null
+      - name: Assert current fixture remains blocked
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          result = json.loads(Path('/tmp/ace-activation.json').read_text())
+          assert result['decision'] == 'BLOCK'
+          assert result['activation_gate_passed'] is False
+          assert result['required_controller_mode_if_blocked'] == 'SHADOW'
+          assert 'review_capacity' in result['blockers']
+          assert 'real_verified_descendant_evidence' in result['blockers']
+          print('ACE Phase B correctly remains blocked for the committed current-state snapshot')
+          PY
