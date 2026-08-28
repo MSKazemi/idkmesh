@@ -1,0 +1,62 @@
+{
+  "schema_version": "0.1",
+  "id": "phase0/invalid-self-evidence/reproduction-1",
+  "work_unit_id": "phase0/smoke-work-unit",
+  "work_unit_version": 2,
+  "result_manifest": {
+    "id": "phase0/smoke-result/attempt-1",
+    "digest": "sha256:c4e1e90596408c500e053e6d22b02f7ac3f86b63da88a24feb1ae900f7a17313",
+    "worker_id": "phase0-local-worker"
+  },
+  "validator_id": "reproduction",
+  "verifier": {
+    "id": "phase0-local-worker",
+    "type": "system",
+    "adapter": "deterministic-smoke",
+    "adapter_version": "0.1"
+  },
+  "independence": {
+    "relationship": "independent",
+    "basis": ["separate_process"],
+    "notes": "Intentionally invalid semantic fixture: verifier identity equals worker identity."
+  },
+  "started_at": "2026-08-28T13:31:00Z",
+  "finished_at": "2026-08-28T13:31:01Z",
+  "verdict": "supports_candidate",
+  "evaluated_artifacts": [
+    {
+      "id": "candidate-result",
+      "digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+    }
+  ],
+  "checks": [
+    {
+      "id": "self-check",
+      "type": "reproduction",
+      "required": true,
+      "status": "pass",
+      "detail": "This must not count as independent evidence.",
+      "evidence_artifact_ids": ["self-log"]
+    }
+  ],
+  "evidence_artifacts": [
+    {
+      "id": "self-log",
+      "type": "test_output",
+      "locator": "results/invalid-self-verification.txt",
+      "digest": "sha256:5555555555555555555555555555555555555555555555555555555555555555"
+    }
+  ],
+  "resources": {"wall_seconds": 1.0},
+  "summary": {
+    "statement": "Intentionally invalid self-verification fixture.",
+    "limitations": ["The worker and verifier are the same identity."]
+  },
+  "provenance": {
+    "work_unit_digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+    "source_revision": "fixture",
+    "verifier_config_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+    "environment": {"platform": "fixture"}
+  },
+  "acceptance_scope": "evidence_only"
+}
