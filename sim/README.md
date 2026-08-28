@@ -191,6 +191,31 @@ defaulting to `shared-shock` so every earlier experiment reproduces unchanged.
 See [`../experiments/E018-dependence-model-shape.md`](../experiments/E018-dependence-model-shape.md).
 
 
+## E019 — is E013's aggregation rule safe under the measured model?
+
+E013 found that group-balanced majority beats naive majority from correlation
+`0.25` upward. E019 re-runs that under the dependence model E017 measured.
+
+```bash
+python -m pytest -q tests/test_e019_group_independence.py
+```
+
+- **The crossover survives the shape change.** Under item-difficulty the
+  crossover is still at `rho = 0.25`, so unlike E015's ceiling (see E018),
+  E013's conclusion does not depend on the shared-shock shape.
+- **The crossover disappears when the declared groups are not independent.**
+  E017 measured verifiers sharing no declared attribute still sharing 53% of
+  their errors. Modelling that — one task difficulty for the whole panel —
+  group balancing **never wins at any correlation**, and both rules converge to
+  a single verifier's error at `rho = 1`.
+
+So group balancing is not a safe default: it beats naive majority only when the
+declared groups carry genuinely independent evidence, which is a property to be
+**measured**, not assumed.
+
+See [`../experiments/E019-group-independence-under-item-difficulty.md`](../experiments/E019-group-independence-under-item-difficulty.md).
+
+
 ## Multi-seed emergence sweeps
 
 ```bash
@@ -213,12 +238,13 @@ python -m pytest -q \
   tests/test_e015_quorum_frontier.py \
   tests/test_e016_analyze.py \
   tests/test_e017_item_difficulty.py \
-  tests/test_e018_dependence_models.py
+  tests/test_e018_dependence_models.py \
+  tests/test_e019_group_independence.py
 ```
 
 This is the same list `.github/workflows/emergence-sim.yml` runs; keep the two in step.
 
-The tests cover deterministic replay, budget invariants, niche preservation, perfect verification compatibility, correlated-error mechanics, sweep configuration, the E013 regime where independence-aware aggregation can help or hurt, the E015 effective-panel-size metrics, the E016 discrimination screen, the E017 item-difficulty model, and the E018 model comparison.
+The tests cover deterministic replay, budget invariants, niche preservation, perfect verification compatibility, correlated-error mechanics, sweep configuration, the E013 regime where independence-aware aggregation can help or hurt, the E015 effective-panel-size metrics, the E016 discrimination screen, the E017 item-difficulty model, the E018 model comparison, and the E019 group-independence result.
 
 ## Interpretation
 

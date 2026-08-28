@@ -69,22 +69,59 @@ def parse_correlations(raw: str) -> Tuple[float, ...]:
     return values
 
 
+def beta_parameters(accuracy: float, correlation: float):
+    """Beta(alpha, beta) over task difficulty matching a mean error and an
+    intra-class correlation. ``None`` at the degenerate ends."""
+    mu = 1.0 - accuracy
+    if correlation <= 0.0 or correlation >= 1.0 or mu <= 0.0 or mu >= 1.0:
+        return None
+    scale = (1.0 - correlation) / correlation
+    return mu * scale, (1.0 - mu) * scale
+
+
 def sample_group_votes(
     truth: bool,
     group_size: int,
     accuracy: float,
     correlation: float,
     rng: random.Random,
+    dependence: str = "shared-shock",
+    difficulty: float | None = None,
 ) -> List[bool]:
     """Sample one independence group's votes.
 
-    Correlation is a shared-correctness mixture. With probability ``correlation``
-    all members share one correctness draw. Otherwise each member has an
-    independent correctness draw. Different groups are always sampled separately.
+    ``dependence`` selects the within-group model:
+
+    ``"shared-shock"``
+        With probability ``correlation`` all members share one correctness draw,
+        otherwise each draws independently. The original E013 model, and the
+        default so E013 reproduces exactly.
+    ``"item-difficulty"``
+        The group's task has a difficulty and each member errs independently at
+        that rate. E017 measured this shape on a real panel; it spreads
+        probability over PARTIAL group failures instead of collapsing the group
+        to a single vote.
+
+    ``difficulty`` lets the caller supply one difficulty shared across groups.
+    That models the case E017 actually measured, where verifiers sharing no
+    declared attribute still shared 53% of their errors -- so "independent"
+    groups are not independent.
     """
 
     if accuracy >= 1.0:
         correctness = [True] * group_size
+    elif dependence == "item-difficulty":
+        if difficulty is None:
+            params = beta_parameters(accuracy, correlation)
+            if params is None:
+                if correlation >= 1.0:
+                    shared = rng.random() < accuracy
+                    correctness = [shared] * group_size
+                else:
+                    correctness = [rng.random() < accuracy for _ in range(group_size)]
+                return [truth if c else not truth for c in correctness]
+            difficulty = rng.betavariate(*params)
+        correctness = [rng.random() >= difficulty for _ in range(group_size)]
     elif rng.random() < correlation:
         shared_correct = rng.random() < accuracy
         correctness = [shared_correct] * group_size
@@ -99,9 +136,33 @@ def sample_panel(
     accuracy: float,
     correlation: float,
     rng: random.Random,
+    dependence: str = "shared-shock",
+    cross_group: bool = False,
 ) -> List[List[bool]]:
+    """Sample every group's votes.
+
+    With ``cross_group`` the panel draws ONE task difficulty and every group errs
+    at that rate, so the declared groups no longer carry independent evidence.
+    E017 found real panels look like this, which is the regime where group
+    balancing has nothing left to balance.
+    """
+    difficulty = None
+    if cross_group and dependence == "item-difficulty" and accuracy < 1.0:
+        params = beta_parameters(accuracy, correlation)
+        if params is not None:
+            difficulty = rng.betavariate(*params)
+        elif correlation >= 1.0:
+            # The limit of Beta(alpha, beta) as alpha, beta -> 0: difficulty is
+            # 1 or 0 for the whole panel at once. Falling back to per-group
+            # sampling here would silently restore the independence that
+            # cross_group exists to remove.
+            difficulty = 1.0 if rng.random() < (1.0 - accuracy) else 0.0
+        else:
+            # correlation 0: difficulty is a point mass at the mean error rate.
+            difficulty = 1.0 - accuracy
     return [
-        sample_group_votes(truth, size, accuracy, correlation, rng)
+        sample_group_votes(truth, size, accuracy, correlation, rng,
+                           dependence=dependence, difficulty=difficulty)
         for size in group_sizes
     ]
 
