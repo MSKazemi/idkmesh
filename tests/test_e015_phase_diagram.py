@@ -133,3 +133,62 @@ def test_best_quorum_picks_the_higher_scoring_option():
 
 def test_best_quorum_returns_none_for_absent_configuration():
     assert e015.best_quorum([], 0.75, 0.0, 11) is None
+
+
+def _panel_error(n, acc, rho):
+    """Closed form for the shared-shock mixture: the shared branch fires with
+    probability `rho` and the panel then inherits one verifier's error."""
+    return rho * (1 - acc) + (1 - rho) * e015.balanced_error_independent(n, acc, 0.5)
+
+
+def test_heuristic_effective_n_matches_closed_form():
+    assert e015.heuristic_effective_n(5, 0.0) == 5.0
+    assert e015.heuristic_effective_n(5, 1.0) == 1.0
+    assert abs(e015.heuristic_effective_n(21, 0.125) - 6.0) < 1e-12
+
+
+def test_heuristic_is_exact_at_both_correlation_endpoints():
+    # Only the interior of the correlation axis can falsify the heuristic.
+    for n in (3, 5, 11):
+        err = _panel_error(n, 0.75, 0.0)
+        assert abs(e015.effective_n_balanced(err, err, 0.75) - n) < 0.05
+        err = _panel_error(n, 0.75, 1.0)
+        assert abs(e015.effective_n_balanced(err, err, 0.75) - 1.0) < 0.05
+
+
+def test_effective_n_ceiling_is_unbounded_only_without_correlation():
+    assert e015.effective_n_ceiling(0.75, 0.0) == float("inf")
+    assert 1.0 < e015.effective_n_ceiling(0.75, 0.5) < 199.0
+    # useless verifiers have no defined effective size
+    assert e015.effective_n_ceiling(0.5, 0.5) != e015.effective_n_ceiling(0.5, 0.5)
+
+
+def test_ceiling_crosses_the_heuristic_asymptote_as_accuracy_rises():
+    """The sign of the heuristic's error is not fixed: at rho=0.125 it is
+    conservative for weak verifiers and optimistic for strong ones."""
+    rho = 0.125
+    assert e015.effective_n_ceiling(0.65, rho) > 1.0 / rho   # conservative
+    assert e015.effective_n_ceiling(0.90, rho) < 1.0 / rho   # optimistic
+
+
+def test_ceiling_falls_below_the_heuristic_asymptote_for_accurate_verifiers():
+    # The falsification E015 records: the heuristic rises to 1/rho, but the real
+    # ceiling depends on verifier accuracy and sits below it when verifiers are good.
+    rho = 0.125
+    ceiling = e015.effective_n_ceiling(0.90, rho)
+    assert abs(ceiling - 4.59) < 0.05
+    assert ceiling < 1.0 / rho
+
+
+def test_ceiling_binds_as_the_panel_grows():
+    acc, rho = 0.90, 0.125
+    ceiling = e015.effective_n_ceiling(acc, rho)
+    for n in (11, 15, 21, 51):
+        err = _panel_error(n, acc, rho)
+        assert e015.effective_n_balanced(err, err, acc) <= ceiling + 0.05
+
+
+def test_heuristic_is_conservative_well_below_the_ceiling():
+    acc, rho, n = 0.75, 0.5, 11
+    err = _panel_error(n, acc, rho)
+    assert e015.effective_n_balanced(err, err, acc) > e015.heuristic_effective_n(n, rho)

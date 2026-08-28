@@ -3,3 +3,6 @@ __pycache__/
 .venv/
 results/
 .claude/
+
+# E015 worker output written to the repo root during sweeps
+/e015-*.jsonl

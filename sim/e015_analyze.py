@@ -96,6 +96,31 @@ def best_quorum(cells, acc: float, corr: float, verifiers: int,
     return best
 
 
+def heuristic_effective_n(n: int, correlation: float) -> float:
+    """The classic equal-correlation heuristic `N / (1 + (N-1) rho)`.
+
+    Recorded in `MATHEMATICAL_FOUNDATIONS.md` section 9. Provided here so it can
+    be compared against the effective panel size actually measured by E015.
+    """
+    return n / (1.0 + (n - 1) * correlation)
+
+
+def effective_n_ceiling(acc: float, correlation: float, nmax: int = 201) -> float:
+    """Largest effective panel size any panel size can reach at `acc`/`correlation`.
+
+    Under the shared-shock mixture the shared branch fires with probability
+    `rho` and then the whole panel inherits one verifier's error, so balanced
+    panel error floors at `rho * (1 - acc)` however many verifiers are added.
+    Effective size floors with it. The heuristic has no such term: it rises to
+    `1 / rho` regardless of verifier accuracy.
+    """
+    if acc <= 0.5:
+        return float("nan")
+    if correlation <= 0.0:
+        return float("inf")
+    return effective_n(correlation * (1.0 - acc), acc, 0.5, nmax=nmax)
+
+
 def effective_n(measured_err: float, acc: float, quorum: float,
                 nmax: int = 201) -> float:
     """Smallest independent panel size reproducing `measured_err`.

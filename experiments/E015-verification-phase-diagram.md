@@ -350,3 +350,107 @@ documented above; they should be read as bands, not exact crossings.
 
 These crossings compare only the two quorum levels present in this sweep (`0.5` and `0.7`).
 They locate the crossover between those two, not a global optimum over all quorums.
+
+## Testing the `N_eff` heuristic
+
+`MATHEMATICAL_FOUNDATIONS.md` section 9 records the standard equal-correlation heuristic
+
+`N_eff ~= N / (1 + (N-1) rho)`
+
+as an estimate of how much independent evidence a correlated panel supplies. E015 can test it
+rather than assume it, because the shared-shock mixture makes the pairwise error correlation
+*exactly* `rho`:
+
+- marginal error rate is `1 - p` in both branches;
+- `Cov(E_i, E_j) = rho (1-p) + (1-rho)(1-p)^2 - (1-p)^2 = rho p (1-p)`;
+- `Var(E_i) = p (1-p)`, so `Corr(E_i, E_j) = rho`.
+
+The heuristic is therefore fed precisely the parameter it asks for. Any disagreement is a
+property of the heuristic, not a parameter mismatch.
+
+### Result: exact at the endpoints, wrong in between, and not conservatively wrong
+
+Comparing measured `n_eff_balanced` against the heuristic over the 280 simple-majority cells
+with `N >= 3` and `rho > 0`:
+
+| statistic | measured / heuristic |
+| --- | ---: |
+| minimum | 0.77 |
+| median | 1.43 |
+| maximum | 3.94 |
+| cells where heuristic understates (`> 1.05x`) | 238 / 280 |
+| cells where heuristic overstates (`< 0.95x`) | 4 / 280 |
+
+At `p = 0.75`:
+
+| N | rho | measured `n_eff` | heuristic | ratio |
+| ---: | ---: | ---: | ---: | ---: |
+| 5 | 0.250 | 3.59 | 2.50 | 1.44 |
+| 5 | 0.500 | 2.54 | 1.67 | 1.53 |
+| 11 | 0.250 | 5.92 | 3.14 | 1.88 |
+| 11 | 0.500 | 3.52 | 1.83 | 1.92 |
+| 21 | 0.250 | 7.17 | 3.50 | 2.05 |
+| 21 | 0.500 | 4.03 | 1.91 | 2.11 |
+
+### The failure mode: a ceiling the heuristic does not have
+
+The four overstating cells are not noise. They share a structure: high accuracy, low
+correlation, large panel. Under the mixture, balanced panel error is
+
+`E(N) = rho (1 - p) + (1 - rho) E_indep(N, p)`
+
+so as `N -> infinity` it floors at `rho (1 - p)` — the shared branch cannot be outvoted, only
+diluted. Effective size therefore floors too, at the `n` solving `E_indep(n, p) = rho (1 - p)`.
+The heuristic has no accuracy term and rises to `1 / rho` instead.
+
+The simulation matches that closed form (`p = 0.90`, `rho = 0.125`, 100 seeds):
+
+| N | measured balanced error | predicted |
+| ---: | ---: | ---: |
+| 3 | 0.03716 | 0.03700 |
+| 5 | 0.02015 | 0.01999 |
+| 7 | 0.01501 | 0.01489 |
+| 9 | 0.01333 | 0.01328 |
+| 11 | 0.01249 | 0.01276 |
+| 15 | 0.01251 | 0.01253 |
+| 21 | 0.01243 | 0.01250 |
+
+and the measured `n_eff` saturates at 4.60 for `N = 11, 15, 21`, against an analytic ceiling of
+4.59 and a heuristic asymptote of 8.00. An independent 9-verifier panel at `p = 0.90` has
+balanced error `0.000891`; the real panel delivers `0.0125`, **14x worse**.
+
+### Where the heuristic is unsafe
+
+Ceiling by accuracy and correlation; `*` marks cells where the ceiling sits *below* the
+heuristic asymptote `1/rho`, i.e. where the heuristic is optimistic:
+
+| rho | `1/rho` | p=0.55 | p=0.65 | p=0.75 | p=0.85 | p=0.90 | p=0.95 |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 0.125 | 8.00 | >=199 | 30.48 | 11.61 | 6.08 `*` | 4.59 `*` | 3.33 `*` |
+| 0.250 | 4.00 | >=199 | 19.00 | 7.74 | 4.36 | 3.31 `*` | 2.75 `*` |
+| 0.500 | 2.00 | 56.28 | 8.77 | 4.19 | 2.68 | 2.39 | 2.17 |
+| 0.750 | 1.33 | 16.99 | 3.83 | 2.33 | 1.84 | 1.69 | 1.58 |
+
+(`>=199` is the analyzer's `nmax = 201` search cap, not a converged value.)
+
+The unsafe corner is **accurate verifiers with modest shared dependence** — precisely the
+regime IDKMesh is trying to build. The heuristic is conservative where verifiers are weak,
+which is where its conservatism costs the least.
+
+### Consequence for IDKMesh
+
+1. Do not size a verifier panel with `N / (1 + (N-1) rho)`. It is an intuition, not a budget.
+2. Compute the ceiling `E_indep(n, p) = rho (1 - p)` first. If the ceiling is below the target
+   confidence, **no panel size reaches it** and more reviewers are wasted spend; the only
+   remaining moves are raising `p` or lowering `rho`.
+3. This sharpens E012's warning. E012 showed correlation destroys panel benefit; E015 shows the
+   standard correction for it is itself optimistic in the regime that matters.
+
+### Limitations
+
+- All of this is inside the shared-shock mixture. A different dependence structure with the
+  same pairwise `rho` would give a different ceiling; the heuristic's failure is demonstrated
+  against this model, not against real reviewer panels.
+- The ratio table uses the QD strategy's rates at quorum `0.5`; other quorums are analyzed in
+  the sections above.
+- `n_eff` above ~199 is censored by the analyzer's search cap.
