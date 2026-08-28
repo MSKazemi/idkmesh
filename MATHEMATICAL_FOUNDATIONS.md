@@ -231,11 +231,35 @@ If error indicators are `E_i`, define correlation matrix
 
 `Sigma_ij = Corr(E_i, E_j)`.
 
-For approximately equal pairwise correlation `rho`, a useful heuristic effective ensemble size is
+For approximately equal pairwise correlation `rho`, a widely used heuristic effective ensemble size is
 
 `N_eff ~= N / (1 + (N-1) rho)`.
 
 Thus 20 nearly identical agents may contribute far less than 20 independent units of evidence.
+
+### The heuristic is not a safe verification budget
+
+E015 measured effective panel size directly against this heuristic under the shared-shock
+mixture, where pairwise error correlation is *exactly* `rho` — so the heuristic is fed the
+parameter it asks for. It is exact at `rho = 0` and `rho = 1`, but wrong in between, and the
+**sign of its error is not fixed**:
+
+- for small panels and weak verifiers it is *conservative* (median 1.43x understatement across
+  280 measured cells), so it under-buys independence;
+- as `N` grows it converges to `1 / rho`, while the true effective size converges to a lower,
+  **accuracy-dependent** ceiling: the `n` solving `E_indep(n, p) = rho (1 - p)`.
+
+The second regime is the dangerous one. Adding verifiers cannot beat the shared-shock branch,
+so panel error floors at `rho (1 - p)` however large the panel. At `p = 0.90`, `rho = 0.125`
+the heuristic promises 8 effective verifiers where the ceiling is 4.59, and the panel error it
+implies is **14x lower than the model actually delivers**.
+
+The heuristic is therefore optimistic exactly where IDKMesh operates: accurate verifiers with
+modest shared dependence. Treat `N / (1 + (N-1) rho)` as an order-of-magnitude intuition, never
+as the basis for a verification budget; compute the ceiling instead
+(`effective_n_ceiling` in `sim/e015_analyze.py`).
+
+See [`experiments/E015-verification-phase-diagram.md`](experiments/E015-verification-phase-diagram.md).
 
 A central research objective is therefore to estimate error correlation across:
 
