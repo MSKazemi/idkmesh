@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="IDKMesh is an open-source verification-first coordination fabric for humans, AI agents, and heterogeneous compute working on uncertain goals.">
+  <meta name="theme-color" content="#0b1020">
+  <title>IDKMesh — Verified swarm engineering</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b1020;
+      --panel: #121a2f;
+      --text: #edf2ff;
+      --muted: #a9b4ce;
+      --line: #26314f;
+      --accent: #8bd3ff;
+      --accent-2: #b9ffcf;
+      --max: 1080px;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    a { color: var(--accent); }
+    a:hover, a:focus-visible { color: var(--accent-2); }
+    .wrap { width: min(calc(100% - 2rem), var(--max)); margin: 0 auto; }
+    header { padding: 5.5rem 0 3rem; border-bottom: 1px solid var(--line); }
+    .eyebrow { color: var(--accent-2); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-size: .8rem; }
+    h1 { font-size: clamp(2.5rem, 8vw, 5.8rem); line-height: .98; margin: .5rem 0 1.25rem; max-width: 11ch; }
+    .lead { font-size: clamp(1.1rem, 2vw, 1.35rem); color: var(--muted); max-width: 720px; }
+    .actions { display: flex; flex-wrap: wrap; gap: .8rem; margin-top: 1.8rem; }
+    .button { display: inline-block; border: 1px solid var(--line); border-radius: .7rem; padding: .7rem 1rem; text-decoration: none; font-weight: 700; background: var(--panel); }
+    .button.primary { background: var(--text); color: var(--bg); border-color: var(--text); }
+    main { padding: 3rem 0 5rem; }
+    section { margin: 0 0 3.25rem; }
+    h2 { font-size: clamp(1.7rem, 4vw, 2.4rem); margin-bottom: .65rem; }
+    .muted { color: var(--muted); }
+    .grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+    .card { border: 1px solid var(--line); background: var(--panel); padding: 1.15rem; border-radius: .9rem; }
+    .card h3 { margin-top: 0; }
+    .card p:last-child { margin-bottom: 0; }
+    code { background: #0a0f1c; padding: .15rem .35rem; border-radius: .3rem; }
+    .flow { border-left: 3px solid var(--accent); padding-left: 1rem; font-size: 1.05rem; }
+    .status { display: inline-block; border: 1px solid var(--line); border-radius: 999px; padding: .25rem .65rem; color: var(--accent-2); font-size: .9rem; }
+    footer { border-top: 1px solid var(--line); color: var(--muted); padding: 2rem 0 3rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <div class="eyebrow">Open-source research & engineering</div>
+      <h1>IDKMesh</h1>
+      <p class="lead"><strong>Verified swarm engineering:</strong> humans, AI agents, and heterogeneous compute collaborate through bounded tasks, independent verification, and reproducible evidence.</p>
+      <div class="actions">
+        <a class="button primary" href="https://github.com/MSKazemi/idkmesh">Explore the repository</a>
+        <a class="button" href="#start">Contribute in 15 minutes</a>
+        <a class="button" href="https://github.com/MSKazemi/idkmesh/issues">See live work</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section>
+      <span class="status">Research preview — not production software</span>
+      <h2>What is IDKMesh?</h2>
+      <p>IDKMesh asks whether many humans and AI agents can turn uncertain goals into trustworthy software and research without pretending that raw output is knowledge.</p>
+      <p class="flow"><strong>Goal → bounded Work Unit → isolated attempts → independent verification → evidence → explicit integration decision.</strong></p>
+      <p class="muted">The project deliberately separates generation from acceptance. A successful worker, popular proposal, or large swarm does not automatically become canonical truth.</p>
+    </section>
+
+    <section>
+      <h2>Why now?</h2>
+      <div class="grid">
+        <article class="card"><h3>Agents can generate quickly</h3><p>Generation capacity is growing faster than trustworthy review capacity. IDKMesh treats verification debt and evidence quality as first-class constraints.</p></article>
+        <article class="card"><h3>Different agents fail together</h3><p>More votes are not automatically more independent evidence. The project measures verifier reliability, dependence, and failure correlation.</p></article>
+        <article class="card"><h3>Open source needs coordination</h3><p>The repository itself is an experiment in bounded work, public evidence, reproducible decisions, and community growth without activity-count Goodharting.</p></article>
+      </div>
+    </section>
+
+    <section id="start">
+      <h2>Do something useful in 15 minutes</h2>
+      <div class="grid">
+        <article class="card">
+          <h3>New to the project</h3>
+          <p>Audit whether the newcomer path is understandable. Confusion is valid evidence.</p>
+          <p><a href="https://github.com/MSKazemi/idkmesh/issues/24">Open newcomer audit #24 →</a></p>
+        </article>
+        <article class="card">
+          <h3>Independent reviewer</h3>
+          <p>Review a frozen 15-document IDKGraph warning cohort and record real reviewer minutes.</p>
+          <p><a href="https://github.com/MSKazemi/idkmesh/issues/167">Review cohort #167 →</a></p>
+        </article>
+        <article class="card">
+          <h3>Runtime / security expert</h3>
+          <p>Inspect the exact evidence for the canonical local worker replacement. Automation cannot self-approve it.</p>
+          <p><a href="https://github.com/MSKazemi/idkmesh/issues/138">Independent worker review #138 →</a></p>
+        </article>
+      </div>
+    </section>
+
+    <section>
+      <h2>What evidence exists already?</h2>
+      <div class="grid">
+        <article class="card"><h3>Verified Swarm Runner</h3><p>Real local worker attempts, independent verification, mixed success/failure isolation, non-selecting evidence reports, and exact replay have been demonstrated experimentally.</p><p><a href="https://github.com/MSKazemi/idkmesh/issues/16">Track v0.1 evidence →</a></p></article>
+        <article class="card"><h3>Verifier research</h3><p>Current synthetic experiments test when quorum rules, reliability, and correlated errors help or hurt. Negative results are retained.</p><p><a href="https://github.com/MSKazemi/idkmesh/issues/79">Verifier-learning research →</a></p></article>
+        <article class="card"><h3>Repository self-observation</h3><p>IDKGraph detects deterministic repository-health signals, samples warning cohorts reproducibly, and keeps automatic repair authority disabled.</p><p><a href="https://github.com/MSKazemi/idkmesh/issues/152">IDKGraph warning triage →</a></p></article>
+      </div>
+    </section>
+
+    <section>
+      <h2>The operating principle</h2>
+      <p class="flow"><strong>Optimize verified useful work per unit of scarce human attention and compute—not commits, agent count, stars, or activity volume.</strong></p>
+      <p class="muted">IDKMesh is intentionally unfinished. The repository is the public laboratory, and well-supported disagreement is a contribution.</p>
+      <div class="actions">
+        <a class="button" href="https://github.com/MSKazemi/idkmesh/blob/main/README.md">Read the full README</a>
+        <a class="button" href="https://github.com/MSKazemi/idkmesh/blob/main/CONTRIBUTING.md">Contribution guide</a>
+        <a class="button" href="https://github.com/MSKazemi/idkmesh/blob/main/docs/README.md">Documentation map</a>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap">IDKMesh is public, open-source, and evidence-first. Repository: <a href="https://github.com/MSKazemi/idkmesh">github.com/MSKazemi/idkmesh</a>.</div>
+  </footer>
+</body>
+</html>
