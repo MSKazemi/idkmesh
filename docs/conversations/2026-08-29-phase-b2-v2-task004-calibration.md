@@ -37,3 +37,12 @@ This work calibrates an evaluator. It does not publish the production repair,
 freeze the scaffold, generate a scored result, choose a candidate, or authorize
 repository writes or integration. The exact successful CI receipt must be
 registered separately before Task 004 is marked calibrated.
+
+## Outcome
+
+PR #233 passed at exact head `44590d08274dcf0ebdf9f1680c18875a977e2fdc`
+and merged as `621e648d6eb9503489a7cbddd53f95bfaf9941e7`. Calibration
+run `33220488843`, job `99013300808`, and artifact `9704970824` proved the
+straightforward 33/33 rejection matrix and rejected the behaviorally vulnerable
+decoy. The separate receipt records those digests while leaving Task 001 as the
+only pending calibration and keeping the scaffold unfrozen.
