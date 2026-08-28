@@ -5,18 +5,20 @@ on:
     paths:
       - "node/**"
       - "schemas/node-execution-binding-v0.1.schema.json"
-      - "schemas/work-unit-v0.1.schema.json"
+      - "schemas/work-unit-v0.2.schema.json"
       - "schemas/result-manifest-v0.1.schema.json"
       - "experiments/**"
+      - "examples/**"
       - ".github/workflows/idkmesh-node-ci.yml"
   push:
     branches: [main]
     paths:
       - "node/**"
       - "schemas/node-execution-binding-v0.1.schema.json"
-      - "schemas/work-unit-v0.1.schema.json"
+      - "schemas/work-unit-v0.2.schema.json"
       - "schemas/result-manifest-v0.1.schema.json"
       - "experiments/**"
+      - "examples/**"
       - ".github/workflows/idkmesh-node-ci.yml"
   workflow_dispatch:
 
@@ -36,11 +38,11 @@ jobs:
           python-version: "3.12"
       - name: Install node package
         run: python -m pip install -e node
-      - name: Validate Phase 0 shared contracts
+      - name: Validate current shared contracts
         run: |
           python -m pip install -r requirements-phase0.txt
           python experiments/harness.py validate
-      - name: Validate canonical node fixture
+      - name: Validate WorkUnit v0.2 canonical node fixture
         run: idkmesh-node validate node/examples/work-unit.canonical-smoke.json
       - name: Run node unit tests
         run: python -m unittest discover -s node/tests -v
