@@ -159,7 +159,7 @@ def frozen_source_scaffold_cohort(source: Path) -> dict[str, Any]:
             "source SHA. It exists solely to prove whether --cohort can escape the repository root."
         ),
         "stage": "scaffold",
-        "minimum_final_tasks": 1,
+        "minimum_final_tasks": 5,
         "required_families": ["documentation_contract"],
         "taxonomy_frozen_before_outcomes": True,
         "authority": {
