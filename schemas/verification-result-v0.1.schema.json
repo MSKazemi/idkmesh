@@ -1,0 +1,180 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idkmesh.org/schemas/verification-result-v0.1.schema.json",
+  "title": "IDKMesh Independent Verification Result v0.1",
+  "description": "An independent verifier's evidence and recommendation for one worker ResultManifest. It is decision support, not the final integration/merge decision.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "id",
+    "result_manifest_id",
+    "work_unit_id",
+    "work_unit_version",
+    "attempt",
+    "verifier",
+    "independence",
+    "status",
+    "started_at",
+    "finished_at",
+    "checks",
+    "evidence",
+    "findings",
+    "metrics",
+    "resources",
+    "provenance",
+    "decision_support"
+  ],
+  "properties": {
+    "schema_version": {"const": "0.1"},
+    "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._/-]{2,127}$"},
+    "result_manifest_id": {"type": "string", "minLength": 1},
+    "work_unit_id": {"type": "string", "minLength": 1},
+    "work_unit_version": {"type": "integer", "minimum": 1},
+    "attempt": {"type": "integer", "minimum": 1},
+    "verifier": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "adapter"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "type": {"enum": ["human", "agent", "system", "hybrid"]},
+        "adapter": {"type": "string", "minLength": 1},
+        "adapter_version": {"type": "string"},
+        "model": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name"],
+          "properties": {
+            "provider": {"type": "string"},
+            "name": {"type": "string", "minLength": 1},
+            "version": {"type": "string"}
+          }
+        }
+      }
+    },
+    "independence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["independent_from_worker", "worker_id_observed", "shared_model_family", "shared_runtime"],
+      "properties": {
+        "independent_from_worker": {"type": "boolean"},
+        "worker_id_observed": {"type": "string", "minLength": 1},
+        "shared_model_family": {"type": "boolean"},
+        "shared_runtime": {"type": "boolean"},
+        "correlation_notes": {"type": "string"}
+      }
+    },
+    "status": {"enum": ["passed", "failed", "inconclusive", "error", "timeout", "cancelled"]},
+    "started_at": {"type": "string", "format": "date-time"},
+    "finished_at": {"type": "string", "format": "date-time"},
+    "checks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "type", "required", "status", "summary", "evidence_ids"],
+        "properties": {
+          "id": {"type": "string", "minLength": 1},
+          "type": {"enum": ["test", "review", "schema", "lint", "security", "formal", "reproduction", "policy", "other"]},
+          "required": {"type": "boolean"},
+          "status": {"enum": ["passed", "failed", "skipped", "inconclusive", "error"]},
+          "summary": {"type": "string"},
+          "evidence_ids": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+          "diagnostics": {"type": "string"}
+        }
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "type", "locator", "digest"],
+        "properties": {
+          "id": {"type": "string", "minLength": 1},
+          "type": {"enum": ["test_output", "review", "benchmark", "trace", "attestation", "artifact_hash", "static_analysis", "security_report", "other"]},
+          "locator": {"type": "string", "minLength": 1},
+          "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+          "media_type": {"type": "string"},
+          "description": {"type": "string"}
+        }
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["severity", "category", "summary"],
+        "properties": {
+          "severity": {"enum": ["info", "low", "medium", "high", "critical"]},
+          "category": {"enum": ["correctness", "regression", "security", "performance", "maintainability", "scope", "provenance", "policy", "other"]},
+          "summary": {"type": "string", "minLength": 1},
+          "path": {"type": "string"},
+          "line": {"type": "integer", "minimum": 1}
+        }
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "additionalProperties": {"type": ["number", "integer", "null"]}
+    },
+    "resources": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["wall_seconds"],
+      "properties": {
+        "wall_seconds": {"type": "number", "minimum": 0},
+        "cpu_seconds": {"type": "number", "minimum": 0},
+        "max_rss_mb": {"type": "number", "minimum": 0},
+        "compute_units": {"type": "number", "minimum": 0},
+        "human_minutes": {"type": "number", "minimum": 0},
+        "tokens": {"type": "integer", "minimum": 0}
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["result_manifest_digest", "work_unit_digest", "source_revision", "environment"],
+      "properties": {
+        "result_manifest_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+        "work_unit_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+        "source_revision": {"type": "string", "minLength": 1},
+        "verifier_config_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+        "environment": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "platform": {"type": "string"},
+            "python": {"type": "string"},
+            "container_image": {"type": "string"},
+            "tool_versions": {"type": "object", "additionalProperties": {"type": "string"}}
+          }
+        }
+      }
+    },
+    "decision_support": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["recommendation", "confidence", "rationale"],
+      "properties": {
+        "recommendation": {"enum": ["accept_candidate", "reject_candidate", "escalate", "insufficient_evidence"]},
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        "rationale": {"type": "string"}
+      }
+    },
+    "attestation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["signer_id", "algorithm", "signature"],
+      "properties": {
+        "signer_id": {"type": "string", "minLength": 1},
+        "algorithm": {"type": "string", "minLength": 1},
+        "signature": {"type": "string", "minLength": 1}
+      }
+    },
+    "extensions": {"type": "object", "additionalProperties": true}
+  }
+}
