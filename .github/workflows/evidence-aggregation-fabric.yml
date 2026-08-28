@@ -1,0 +1,153 @@
+name: Evidence Aggregation Fabric
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/evidence_aggregation_fabric.py"
+      - "tests/test_evidence_aggregation_fabric.py"
+      - "scripts/evolution_math.py"
+      - "tests/test_evolution_math.py"
+      - "scripts/sequential_evidence.py"
+      - "tests/test_sequential_evidence.py"
+      - "scripts/anytime_drift_guard.py"
+      - "tests/test_anytime_drift_guard.py"
+      - "scripts/adversarial_evidence_guard.py"
+      - "tests/test_adversarial_evidence_guard.py"
+      - "docs/architecture/EVIDENCE_AGGREGATION_FABRIC.md"
+      - "docs/conversations/2026-08-28-evidence-aggregation-fabric-convergence.md"
+      - ".github/workflows/evidence-aggregation-fabric.yml"
+  pull_request:
+    paths:
+      - "scripts/evidence_aggregation_fabric.py"
+      - "tests/test_evidence_aggregation_fabric.py"
+      - "scripts/evolution_math.py"
+      - "tests/test_evolution_math.py"
+      - "scripts/sequential_evidence.py"
+      - "tests/test_sequential_evidence.py"
+      - "scripts/anytime_drift_guard.py"
+      - "tests/test_anytime_drift_guard.py"
+      - "scripts/adversarial_evidence_guard.py"
+      - "tests/test_adversarial_evidence_guard.py"
+      - "docs/architecture/EVIDENCE_AGGREGATION_FABRIC.md"
+      - "docs/conversations/2026-08-28-evidence-aggregation-fabric-convergence.md"
+      - ".github/workflows/evidence-aggregation-fabric.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: evidence-aggregation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  evidence-lattice:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+
+      - name: Verify lattice and upstream mathematical channels on Python 3.11
+        run: |
+          python --version
+          python -m py_compile scripts/evidence_aggregation_fabric.py tests/test_evidence_aggregation_fabric.py
+          python -m unittest -v \
+            tests.test_evidence_aggregation_fabric \
+            tests.test_evolution_math \
+            tests.test_sequential_evidence \
+            tests.test_anytime_drift_guard \
+            tests.test_adversarial_evidence_guard
+          python scripts/evidence_aggregation_fabric.py --demo --output /tmp/evidence-fabric-demo-py3.11.json >/dev/null
+          python -m json.tool /tmp/evidence-fabric-demo-py3.11.json >/dev/null
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+
+      - name: Verify lattice and upstream mathematical channels on Python 3.13
+        run: |
+          python --version
+          python -m py_compile scripts/evidence_aggregation_fabric.py tests/test_evidence_aggregation_fabric.py
+          python -m unittest -v \
+            tests.test_evidence_aggregation_fabric \
+            tests.test_evolution_math \
+            tests.test_sequential_evidence \
+            tests.test_anytime_drift_guard \
+            tests.test_adversarial_evidence_guard
+          python scripts/evidence_aggregation_fabric.py --demo --output /tmp/evidence-fabric-demo-py3.13.json >/dev/null
+          python -m json.tool /tmp/evidence-fabric-demo-py3.13.json >/dev/null
+
+      - name: Verify no scalar collapse, cross-interpreter determinism, and authority bounds
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          for path in (
+              Path('/tmp/evidence-fabric-demo-py3.11.json'),
+              Path('/tmp/evidence-fabric-demo-py3.13.json'),
+          ):
+              payload = json.loads(path.read_text())
+              invariants = payload['invariants']
+              assert invariants['all_clear_can_only_nominate'] is True
+              assert invariants['no_composite_confidence'] is True
+              assert invariants['adversarial_channel_blocks'] is True
+              assert invariants['drift_channel_blocks'] is True
+              assert invariants['hard_guard_non_compensation'] is True
+              assert invariants['integration_authority'] is False
+              clear = payload['all_channels_clear']
+              assert clear['composite_confidence'] is None
+              assert clear['scalarized_score'] is None
+              assert clear['double_counting_claim'] is False
+              assert clear['integration_authority'] is False
+          PY
+
+          cmp -s /tmp/evidence-fabric-demo-py3.11.json /tmp/evidence-fabric-demo-py3.13.json
+          hash_311="$(sha256sum /tmp/evidence-fabric-demo-py3.11.json | cut -d' ' -f1)"
+          hash_313="$(sha256sum /tmp/evidence-fabric-demo-py3.13.json | cut -d' ' -f1)"
+          test "$hash_311" = "$hash_313"
+          printf '%s  evidence-fabric-demo.json\n' "$hash_311" > /tmp/evidence-fabric-demo.sha256
+
+      - name: Publish evidence fabric artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: evidence-aggregation-${{ github.run_id }}
+          path: |
+            /tmp/evidence-fabric-demo-py3.11.json
+            /tmp/evidence-fabric-demo-py3.13.json
+            /tmp/evidence-fabric-demo.sha256
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Publish job summary
+        shell: bash
+        run: |
+          {
+            echo "## Evidence Aggregation Fabric"
+            echo
+            echo "Python 3.11 and 3.13 both passed the composer plus correlation/sequential/drift/adversarial upstream suites."
+            echo
+            echo "Actual composer JSON payloads were compared byte-for-byte across interpreters."
+            echo
+            echo "Content digest: \`$(cut -d' ' -f1 /tmp/evidence-fabric-demo.sha256)\`"
+            echo
+            echo "The fabric keeps uncertainty channels separate: composite confidence and scalarized score are intentionally null."
+            echo
+            echo "Strongest authority remains \`experiment_candidate\`; integration authority is false."
+            echo
+            echo '```json'
+            cat /tmp/evidence-fabric-demo-py3.13.json
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
