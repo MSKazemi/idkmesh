@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Minimal IDKMesh Phase 0 experiment harness.
 
-CI uses only the `validate` subcommand. The `smoke` subcommand executes only
-the built-in deterministic_smoke runner and never executes commands from a
-manifest.
+The `validate` command checks schemas and fixtures only. The `smoke` command
+executes only the built-in deterministic_smoke runner and never executes
+commands supplied by a manifest.
 """
 
 from __future__ import annotations
@@ -25,6 +25,7 @@ SCHEMA_DIR = ROOT / "schemas"
 WORK_UNIT_SCHEMA = SCHEMA_DIR / "work-unit-v0.1.schema.json"
 MANIFEST_SCHEMA = SCHEMA_DIR / "experiment-manifest-v0.1.schema.json"
 RESULT_SCHEMA = SCHEMA_DIR / "experiment-result-v0.1.schema.json"
+WORKER_RESULT_SCHEMA = SCHEMA_DIR / "result-manifest-v0.1.schema.json"
 
 
 class HarnessError(RuntimeError):
@@ -47,9 +48,13 @@ def validator_for(schema_path: Path) -> Draft202012Validator:
     return Draft202012Validator(schema, format_checker=FormatChecker())
 
 
-def validate_instance(instance: Any, schema_path: Path, label: str) -> None:
+def validation_errors(instance: Any, schema_path: Path) -> list[Any]:
     validator = validator_for(schema_path)
-    errors = sorted(validator.iter_errors(instance), key=lambda error: list(error.absolute_path))
+    return sorted(validator.iter_errors(instance), key=lambda error: list(error.absolute_path))
+
+
+def validate_instance(instance: Any, schema_path: Path, label: str) -> None:
+    errors = validation_errors(instance, schema_path)
     if not errors:
         return
     lines = [f"{label} failed {len(errors)} schema check(s):"]
@@ -57,6 +62,11 @@ def validate_instance(instance: Any, schema_path: Path, label: str) -> None:
         location = ".".join(str(part) for part in error.absolute_path) or "<root>"
         lines.append(f"  - {location}: {error.message}")
     raise HarnessError("\n".join(lines))
+
+
+def assert_invalid_instance(instance: Any, schema_path: Path, label: str) -> None:
+    if not validation_errors(instance, schema_path):
+        raise HarnessError(f"{label} was expected to be invalid but passed schema validation")
 
 
 def resolve_repo_path(raw: str) -> Path:
@@ -68,15 +78,16 @@ def resolve_repo_path(raw: str) -> Path:
     return candidate
 
 
-def validate_manifest_and_work_units(manifest_path: Path) -> dict[str, Any]:
+def validate_manifest_and_work_units(
+    manifest_path: Path,
+) -> tuple[dict[str, Any], dict[str, dict[str, Any]]]:
     manifest = load_json(manifest_path)
     validate_instance(manifest, MANIFEST_SCHEMA, str(manifest_path))
 
-    seen_ids: set[str] = set()
+    work_units: dict[str, dict[str, Any]] = {}
     for ref in manifest["work_units"]:
-        if ref["id"] in seen_ids:
+        if ref["id"] in work_units:
             raise HarnessError(f"duplicate Work Unit id in manifest: {ref['id']}")
-        seen_ids.add(ref["id"])
 
         work_unit_path = resolve_repo_path(ref["path"])
         work_unit = load_json(work_unit_path)
@@ -86,15 +97,64 @@ def validate_manifest_and_work_units(manifest_path: Path) -> dict[str, Any]:
                 f"Work Unit id mismatch: manifest has {ref['id']!r}, "
                 f"document has {work_unit['id']!r}"
             )
-    return manifest
+        work_units[ref["id"]] = work_unit
+    return manifest, work_units
+
+
+def validate_worker_result_contract(
+    worker_result_path: Path,
+    work_units: dict[str, dict[str, Any]],
+) -> dict[str, Any]:
+    worker_result = load_json(worker_result_path)
+    validate_instance(worker_result, WORKER_RESULT_SCHEMA, str(worker_result_path))
+
+    work_unit_id = worker_result["work_unit_id"]
+    if work_unit_id not in work_units:
+        raise HarnessError(
+            f"worker ResultManifest references Work Unit {work_unit_id!r}, "
+            "which is not present in the experiment manifest"
+        )
+    expected_version = work_units[work_unit_id]["version"]
+    if worker_result["work_unit_version"] != expected_version:
+        raise HarnessError(
+            f"worker ResultManifest version mismatch for {work_unit_id!r}: "
+            f"result has {worker_result['work_unit_version']}, "
+            f"Work Unit has {expected_version}"
+        )
+
+    artifact_ids = {artifact["id"] for artifact in worker_result["produced_artifacts"]}
+    requested_ids = set(worker_result["verification_request"]["evidence_artifact_ids"])
+    missing = sorted(requested_ids - artifact_ids)
+    if missing:
+        raise HarnessError(
+            "worker ResultManifest requests verification of unknown artifact id(s): "
+            + ", ".join(missing)
+        )
+    return worker_result
 
 
 def cmd_validate(args: argparse.Namespace) -> int:
-    for schema_path in (WORK_UNIT_SCHEMA, MANIFEST_SCHEMA, RESULT_SCHEMA):
+    for schema_path in (
+        WORK_UNIT_SCHEMA,
+        MANIFEST_SCHEMA,
+        RESULT_SCHEMA,
+        WORKER_RESULT_SCHEMA,
+    ):
         validator_for(schema_path)
 
     manifest_path = resolve_repo_path(args.manifest)
-    manifest = validate_manifest_and_work_units(manifest_path)
+    manifest, work_units = validate_manifest_and_work_units(manifest_path)
+
+    worker_result_path = resolve_repo_path(args.worker_result)
+    validate_worker_result_contract(worker_result_path, work_units)
+
+    invalid_worker_result_path = resolve_repo_path(args.invalid_worker_result)
+    invalid_worker_result = load_json(invalid_worker_result_path)
+    assert_invalid_instance(
+        invalid_worker_result,
+        WORKER_RESULT_SCHEMA,
+        str(invalid_worker_result_path),
+    )
 
     if args.result:
         result_path = resolve_repo_path(args.result)
@@ -102,8 +162,9 @@ def cmd_validate(args: argparse.Namespace) -> int:
         validate_instance(result, RESULT_SCHEMA, str(result_path))
 
     print(
-        f"OK: schemas valid; manifest {manifest['id']} and "
-        f"{len(manifest['work_units'])} Work Unit(s) validated"
+        f"OK: schemas valid; manifest {manifest['id']}, "
+        f"{len(manifest['work_units'])} Work Unit(s), and worker ResultManifest validated; "
+        "negative self-acceptance fixture rejected as expected"
     )
     return 0
 
@@ -129,7 +190,7 @@ def utc_now() -> str:
 
 def cmd_smoke(args: argparse.Namespace) -> int:
     manifest_path = resolve_repo_path(args.manifest)
-    manifest = validate_manifest_and_work_units(manifest_path)
+    manifest, _ = validate_manifest_and_work_units(manifest_path)
 
     unsupported = [
         config["id"]
@@ -229,7 +290,8 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     validate_parser = subparsers.add_parser(
-        "validate", help="Validate schemas, a manifest, and referenced Work Units."
+        "validate",
+        help="Validate schemas, a manifest, referenced Work Units, and worker ResultManifest fixtures.",
     )
     validate_parser.add_argument(
         "--manifest",
@@ -237,8 +299,18 @@ def build_parser() -> argparse.ArgumentParser:
         help="Repository-relative manifest path.",
     )
     validate_parser.add_argument(
+        "--worker-result",
+        default="examples/results/phase0-smoke.result-manifest.json",
+        help="Repository-relative valid worker ResultManifest fixture.",
+    )
+    validate_parser.add_argument(
+        "--invalid-worker-result",
+        default="examples/results/invalid-self-acceptance.result-manifest.json",
+        help="Repository-relative fixture that must be rejected by the worker ResultManifest schema.",
+    )
+    validate_parser.add_argument(
         "--result",
-        help="Optional repository-relative result JSON file to validate.",
+        help="Optional repository-relative experiment result JSON file to validate.",
     )
     validate_parser.set_defaults(func=cmd_validate)
 
