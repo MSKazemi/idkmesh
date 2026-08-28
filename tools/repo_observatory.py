@@ -19,6 +19,9 @@ from typing import Iterable
 
 VERSION = "0.1"
 LINK_RE = re.compile(r"(?<!!)\[[^\]]*\]\(([^)]+)\)")
+VIRTUAL_REPO_LINK_RE = re.compile(
+    r"^(?:\.\./)+(?:issues|pull|discussions|actions|releases|compare|commit)(?:/|$)"
+)
 
 
 @dataclass(frozen=True)
@@ -45,9 +48,19 @@ def iter_files(root: Path, excluded_dirs: set[str]) -> Iterable[Path]:
         yield path
 
 
+def is_virtual_repo_link(raw: str) -> bool:
+    """Return True for GitHub repository routes that are not filesystem paths."""
+    target = raw.strip().split("#", 1)[0].split("?", 1)[0]
+    return bool(VIRTUAL_REPO_LINK_RE.match(target))
+
+
 def normalize_link_target(source: Path, raw: str, root: Path) -> Path | None:
     target = raw.strip().split("#", 1)[0].split("?", 1)[0]
-    if not target or target.startswith(("http://", "https://", "mailto:", "tel:", "data:")):
+    if (
+        not target
+        or target.startswith(("http://", "https://", "mailto:", "tel:", "data:"))
+        or is_virtual_repo_link(raw)
+    ):
         return None
     target = target.replace("%20", " ")
     if target.startswith("/"):
@@ -158,10 +171,15 @@ def analyze(root: Path, config: dict) -> dict:
                 inbound[rel] += 1
 
     orphan_exempt_prefixes = tuple(config.get("orphan_exempt_prefixes", []))
+    orphan_exempt_paths = set(config.get("orphan_exempt_paths", []))
     entrypoints = set(config.get("entrypoint_documents", []))
     orphans: list[str] = []
     for rel in sorted(markdown_rel):
-        if rel in entrypoints or rel.startswith(orphan_exempt_prefixes):
+        if (
+            rel in entrypoints
+            or rel in orphan_exempt_paths
+            or rel.startswith(orphan_exempt_prefixes)
+        ):
             continue
         if inbound[rel] == 0:
             orphans.append(rel)
@@ -170,32 +188,40 @@ def analyze(root: Path, config: dict) -> dict:
     for path in root_excess:
         destination = bucket_destination(path, config)
         if destination:
-            proposals.append({
-                "rule": "MoveRootDocument",
-                "path": path,
-                "destination": destination,
-                "risk": "low-medium",
-                "reason": "Non-entrypoint Markdown at repository root increases navigation pressure.",
-            })
+            proposals.append(
+                {
+                    "rule": "MoveRootDocument",
+                    "path": path,
+                    "destination": destination,
+                    "risk": "low-medium",
+                    "reason": (
+                        "Non-entrypoint Markdown at repository root increases navigation pressure."
+                    ),
+                }
+            )
     for path, size in oversized:
-        proposals.append({
-            "rule": "ReviewOversizedDocument",
-            "path": path,
-            "destination": None,
-            "risk": "medium",
-            "reason": (
-                f"Document size {size} exceeds configured threshold {max_doc_bytes}; "
-                "split only if coherent subgraphs exist."
-            ),
-        })
+        proposals.append(
+            {
+                "rule": "ReviewOversizedDocument",
+                "path": path,
+                "destination": None,
+                "risk": "medium",
+                "reason": (
+                    f"Document size {size} exceeds configured threshold {max_doc_bytes}; "
+                    "split only if coherent subgraphs exist."
+                ),
+            }
+        )
     for directory, count in crowded_dirs:
-        proposals.append({
-            "rule": "ReviewCrowdedDirectory",
-            "path": directory,
-            "destination": None,
-            "risk": "medium",
-            "reason": f"Directory contains {count} files, above threshold {max_dir_files}.",
-        })
+        proposals.append(
+            {
+                "rule": "ReviewCrowdedDirectory",
+                "path": directory,
+                "destination": None,
+                "risk": "medium",
+                "reason": f"Directory contains {count} files, above threshold {max_dir_files}.",
+            }
+        )
 
     thresholds = config.get("thresholds", {})
     root_limit = max(1, int(thresholds.get("root_markdown_soft_limit", 12)))
