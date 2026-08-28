@@ -4,6 +4,7 @@ import argparse
 import json
 from pathlib import Path
 
+from .experiments import run_trials
 from .model import Worker
 from .policies import POLICIES, make_policy
 from .simulator import SimulationConfig, run_simulation
@@ -29,6 +30,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--policy", choices=POLICIES, default="thompson")
     parser.add_argument("--rounds", type=int, default=1000)
+    parser.add_argument(
+        "--trials",
+        type=int,
+        default=1,
+        help="number of independent seeded trials; seeds are seed, seed+1, ...",
+    )
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--error-correlation", type=float, default=0.0)
     parser.add_argument(
@@ -43,15 +50,29 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main() -> int:
     args = build_parser().parse_args()
-    result = run_simulation(
-        workers=args.workers,
-        policy=make_policy(args.policy),
-        config=SimulationConfig(
+    if args.trials < 1:
+        raise SystemExit("--trials must be >= 1")
+
+    if args.trials == 1:
+        result = run_simulation(
+            workers=args.workers,
+            policy=make_policy(args.policy),
+            config=SimulationConfig(
+                rounds=args.rounds,
+                seed=args.seed,
+                error_correlation=args.error_correlation,
+            ),
+        )
+    else:
+        result = run_trials(
+            workers=args.workers,
+            policy_factory=lambda: make_policy(args.policy),
             rounds=args.rounds,
-            seed=args.seed,
+            trials=args.trials,
+            base_seed=args.seed,
             error_correlation=args.error_correlation,
-        ),
-    )
+        )
+
     rendered = json.dumps(result, indent=2, sort_keys=True)
     if args.output:
         args.output.parent.mkdir(parents=True, exist_ok=True)
