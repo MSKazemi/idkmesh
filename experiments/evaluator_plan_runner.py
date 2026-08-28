@@ -4,7 +4,7 @@
 This is a guard/control layer, not a second verifier implementation. It binds
 verifier-owned deterministic policy to an exact WorkUnit and source revision,
 checks exact required-validator coverage, then delegates candidate evaluation to
-experiments/local_verifier.py.
+the versioned verifier adapters under ``experiments/``.
 """
 
 from __future__ import annotations
@@ -19,14 +19,16 @@ from pathlib import Path
 from typing import Any
 
 import local_verifier
+import substring_patch_verifier
 from provenance_integrity import canonical_digest, validate_integrity
 
 ROOT = Path(__file__).resolve().parents[1]
 EVALUATOR_PLAN_SCHEMAS = {
     "0.1": ROOT / "schemas" / "evaluator-plan-v0.1.schema.json",
     "0.2": ROOT / "schemas" / "evaluator-plan-v0.2.schema.json",
+    "0.3": ROOT / "schemas" / "evaluator-plan-v0.3.schema.json",
 }
-RUNNER_VERSION = "0.2"
+RUNNER_VERSION = "0.3"
 JSON_VALIDATOR_IDS = {
     "artifact-digest",
     "candidate-scope",
@@ -75,6 +77,8 @@ def backend_name(plan: dict[str, Any]) -> str:
         return "json_exact"
     if plan["schema_version"] == "0.2" and plan.get("backend", {}).get("type") == "unified_diff":
         return "unified_diff"
+    if plan["schema_version"] == "0.3" and plan.get("backend", {}).get("type") == "unified_diff":
+        return "unified_diff_substring"
     raise EvaluatorPlanError("EvaluatorPlan does not select a supported verifier backend")
 
 
@@ -82,7 +86,7 @@ def supported_validator_ids(plan: dict[str, Any]) -> set[str]:
     backend = backend_name(plan)
     if backend == "json_exact":
         return set(JSON_VALIDATOR_IDS)
-    if backend == "unified_diff":
+    if backend in {"unified_diff", "unified_diff_substring"}:
         return set(PATCH_VALIDATOR_IDS)
     raise EvaluatorPlanError(f"unsupported evaluator backend: {backend}")
 
@@ -103,6 +107,13 @@ def operational_policy(plan: dict[str, Any]) -> dict[str, Any]:
     if backend == "unified_diff":
         return {
             "schema_version": "0.2",
+            "id": plan["id"],
+            "candidate_artifact_id": plan["candidate_artifact_id"],
+            "backend": copy.deepcopy(plan["backend"]),
+        }
+    if backend == "unified_diff_substring":
+        return {
+            "schema_version": "0.3",
             "id": plan["id"],
             "candidate_artifact_id": plan["candidate_artifact_id"],
             "backend": copy.deepcopy(plan["backend"]),
@@ -215,6 +226,14 @@ def verify_with_plan(
         )
     elif backend == "unified_diff":
         result = local_verifier.verify_patch_candidate(
+            work_unit=work_unit,
+            worker_result=worker_result,
+            policy=policy,
+            candidate_root=candidate_root,
+            policy_path=plan_path,
+        )
+    elif backend == "unified_diff_substring":
+        result = substring_patch_verifier.verify_patch_candidate(
             work_unit=work_unit,
             worker_result=worker_result,
             policy=policy,
@@ -519,6 +538,91 @@ def cmd_patch_self_test(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_semantic_version_self_test(args: argparse.Namespace) -> int:
+    """Prove v0.2 exact-line and v0.3 substring semantics differ by version only."""
+
+    work_unit_path = local_verifier.resolve_repo_path(args.work_unit)
+    candidate_root = local_verifier.resolve_repo_path(args.candidate_root)
+    worker_path = candidate_root / "result-manifest.json"
+    legacy_plan_path = local_verifier.resolve_repo_path(args.legacy_evaluator_plan)
+    substring_plan_path = local_verifier.resolve_repo_path(args.substring_evaluator_plan)
+
+    work_unit = local_verifier.load_json(work_unit_path)
+    worker = local_verifier.load_json(worker_path)
+    legacy_plan = load_plan(legacy_plan_path)
+    substring_plan = load_plan(substring_plan_path)
+
+    if legacy_plan["schema_version"] != "0.2":
+        raise EvaluatorPlanError("legacy semantic contrast plan is not EvaluatorPlan v0.2")
+    if substring_plan["schema_version"] != "0.3":
+        raise EvaluatorPlanError("substring semantic contrast plan is not EvaluatorPlan v0.3")
+
+    legacy = verify_with_plan(
+        work_unit=work_unit,
+        worker_result=worker,
+        plan=legacy_plan,
+        candidate_root=candidate_root,
+        plan_path=legacy_plan_path,
+    )
+    substring = verify_with_plan(
+        work_unit=work_unit,
+        worker_result=worker,
+        plan=substring_plan,
+        candidate_root=candidate_root,
+        plan_path=substring_plan_path,
+    )
+
+    if legacy["status"] != "failed" or legacy["decision_support"]["recommendation"] != "reject_candidate":
+        raise EvaluatorPlanError(
+            "EvaluatorPlan v0.2 fragment contrast must fail under unchanged exact added-line semantics"
+        )
+    if not any(finding["category"] == "correctness" for finding in legacy["findings"]):
+        raise EvaluatorPlanError("legacy exact-line contrast failure lacks correctness evidence")
+    if legacy["verifier"]["adapter_version"] != "0.1.1":
+        raise EvaluatorPlanError("legacy v0.2 plan did not preserve patch verifier v0.1.1")
+
+    if substring["status"] != "passed" or substring["decision_support"]["recommendation"] != "accept_candidate":
+        raise EvaluatorPlanError(
+            "EvaluatorPlan v0.3 fragment contrast must pass under explicit added-line substring semantics"
+        )
+    if substring["verifier"]["adapter_version"] != "0.2.0":
+        raise EvaluatorPlanError("v0.3 plan did not select patch verifier v0.2.0")
+    if substring.get("extensions", {}).get(
+        "org.idkmesh.local_verifier.semantic_match_mode"
+    ) != "added_line_substring_all":
+        raise EvaluatorPlanError("v0.3 VerificationResult omitted explicit semantic match mode")
+    if not any(
+        evidence["id"] == "added-substring-semantic-observation"
+        for evidence in substring["evidence"]
+    ):
+        raise EvaluatorPlanError("v0.3 VerificationResult omitted substring semantic evidence")
+
+    def evidence_digest(result: dict[str, Any], evidence_id: str) -> str:
+        matches = [
+            evidence["digest"] for evidence in result["evidence"] if evidence["id"] == evidence_id
+        ]
+        if len(matches) != 1:
+            raise EvaluatorPlanError(f"expected one {evidence_id} evidence item")
+        return matches[0]
+
+    legacy_patch_digest = evidence_digest(legacy, "candidate-patch-hash")
+    substring_patch_digest = evidence_digest(substring, "candidate-patch-hash")
+    if legacy_patch_digest != substring_patch_digest:
+        raise EvaluatorPlanError("semantic contrast did not evaluate the same candidate patch bytes")
+
+    if legacy["provenance"]["verifier_config_digest"] != canonical_digest(legacy_plan):
+        raise EvaluatorPlanError("legacy VerificationResult did not bind exact v0.2 plan digest")
+    if substring["provenance"]["verifier_config_digest"] != canonical_digest(substring_plan):
+        raise EvaluatorPlanError("substring VerificationResult did not bind exact v0.3 plan digest")
+
+    print(
+        "OK: the same patch and fragment fail under EvaluatorPlan v0.2 / verifier v0.1.1 "
+        "exact-line semantics and pass under EvaluatorPlan v0.3 / verifier v0.2.0 explicit "
+        "single-added-line substring semantics; both results retain exact plan provenance"
+    )
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
@@ -547,6 +651,22 @@ def build_parser() -> argparse.ArgumentParser:
     patch_test.add_argument("--wrong-candidate-root", default="examples/verifier/patch/wrong-semantic")
     patch_test.add_argument("--forbidden-candidate-root", default="examples/verifier/patch/forbidden")
     patch_test.set_defaults(func=cmd_patch_self_test)
+
+    semantic_test = sub.add_parser(
+        "semantic-version-self-test",
+        help="Prove v0.2 exact-line behavior remains unchanged while v0.3 adds explicit substring semantics.",
+    )
+    semantic_test.add_argument("--work-unit", default="examples/work-units/patch-verifier-smoke.work-unit.json")
+    semantic_test.add_argument("--candidate-root", default="examples/verifier/patch/good")
+    semantic_test.add_argument(
+        "--legacy-evaluator-plan",
+        default="verification/fixtures/patch-fragment-exact-evaluator-plan-v0.2.json",
+    )
+    semantic_test.add_argument(
+        "--substring-evaluator-plan",
+        default="verification/fixtures/patch-fragment-substring-evaluator-plan-v0.3.json",
+    )
+    semantic_test.set_defaults(func=cmd_semantic_version_self_test)
     return parser
 
 
