@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "components": {
+    "observer": {
+      "status": "pending",
+      "source": "pr:40"
+    },
+    "lineage": {
+      "status": "pending",
+      "source": "pr:48"
+    },
+    "security": {
+      "status": "pending",
+      "source": "pr:62"
+    },
+    "controller": {
+      "status": "pending",
+      "source": "pr:68"
+    },
+    "integration_protection": {
+      "status": "pending",
+      "source": "pr:51"
+    }
+  },
+  "descendant_evidence": {
+    "verified_count": 0,
+    "independently_verified": false,
+    "source": "bootstrap-cohort-1"
+  },
+  "review_capacity": {
+    "capacity": 0.0,
+    "minimum_capacity": 0.6,
+    "readable": true,
+    "single_writer": true,
+    "snapshot_age_hours": 0.1,
+    "max_snapshot_age_hours": 24.0,
+    "source": "issue:23@2026-08-28T14:55:17Z"
+  },
+  "safety": {
+    "public_write_budget": 1,
+    "autonomous_merge_enabled": false,
+    "governance_mutation_enabled": false,
+    "untrusted_code_execution_enabled": false,
+    "secrets_access_enabled": false,
+    "mass_notification_enabled": false
+  }
+}
