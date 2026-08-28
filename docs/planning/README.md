@@ -13,7 +13,7 @@ This directory translates the long-range vision into current execution choices.
 
 ## Relationship to other project artifacts
 
-- [`../../GOALS.md`](../../GOALS.md) defines the durable goal hierarchy and North Star.
+- [`../foundations/GOALS.md`](../foundations/GOALS.md) defines the durable goal hierarchy and North Star.
 - [`../../ROADMAP.md`](../../ROADMAP.md) defines the staged scale/research progression.
 - GitHub Issues define claimable work and acceptance criteria.
 - IDKGraph schemas/modeling define the intended machine-readable semantic layer.
