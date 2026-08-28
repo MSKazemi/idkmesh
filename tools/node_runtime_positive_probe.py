@@ -2,8 +2,8 @@
 """Diagnostic-only positive runtime probe for the frozen node acceptance job.
 
 This intentionally exits zero after printing the frozen candidate's worker
-result so evaluator failures can be distinguished from worker-policy failures.
-It has no acceptance or repository-write authority.
+result and captured task logs so evaluator failures can be distinguished from
+worker/runtime failures. It has no acceptance or repository-write authority.
 """
 
 from __future__ import annotations
@@ -16,6 +16,10 @@ import sys
 import tempfile
 
 FROZEN = "d638a2f78e4a89353b98e91052233e365f56f90a"
+
+
+def read_if_exists(path: Path) -> str | None:
+    return path.read_text(encoding="utf-8", errors="replace") if path.exists() else None
 
 
 def main() -> int:
@@ -56,8 +60,11 @@ def main() -> int:
         result_path = output / "result-manifest.json"
         payload = {
             "returncode": proc.returncode,
-            "stdout": proc.stdout,
-            "stderr": proc.stderr,
+            "cli_stdout": proc.stdout,
+            "cli_stderr": proc.stderr,
+            "task_stdout": read_if_exists(output / "stdout.txt"),
+            "task_stderr": read_if_exists(output / "stderr.txt"),
+            "changes_patch": read_if_exists(output / "changes.patch"),
             "result_manifest": json.loads(result_path.read_text()) if result_path.exists() else None,
         }
         print("IDKMESH_POSITIVE_PROBE_BEGIN")
