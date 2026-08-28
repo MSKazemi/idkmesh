@@ -1,0 +1,117 @@
+name: idkgraph-observatory
+
+on:
+  pull_request:
+    paths:
+      - "tools/idkgraph_observatory.py"
+      - "tools/idkgraph_markdown_index.py"
+      - "tools/idkgraph_link_check.py"
+      - "tools/idkgraph_repository_mapping.py"
+      - "tools/idkgraph_workunit_cycles.py"
+      - "tests/test_idkgraph_observatory.py"
+      - "tests/fixtures/idkgraph_observatory/**"
+      - "schemas/idkgraph.schema.json"
+      - "docs/specifications/IDKGRAPH_OBSERVATORY_V0_1.md"
+      - ".github/workflows/idkgraph-observatory.yml"
+  push:
+    branches: [main]
+    paths:
+      - "tools/idkgraph_observatory.py"
+      - "tools/idkgraph_markdown_index.py"
+      - "tools/idkgraph_link_check.py"
+      - "tools/idkgraph_repository_mapping.py"
+      - "tools/idkgraph_workunit_cycles.py"
+      - "tests/test_idkgraph_observatory.py"
+      - "tests/fixtures/idkgraph_observatory/**"
+      - "schemas/idkgraph.schema.json"
+      - "docs/specifications/IDKGRAPH_OBSERVATORY_V0_1.md"
+      - ".github/workflows/idkgraph-observatory.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install Phase 0 schema validator
+        run: python -m pip install --disable-pip-version-check -r requirements-phase0.txt
+      - name: Run focused observatory tests
+        run: python -m unittest tests.test_idkgraph_observatory -v
+      - name: Clean fixture must have zero deterministic errors
+        run: |
+          rm -rf /tmp/idkgraph-valid
+          python tools/idkgraph_observatory.py \
+            tests/fixtures/idkgraph_observatory/valid \
+            --source-revision fixture:valid \
+            --output-dir /tmp/idkgraph-valid \
+            --fail-on-errors \
+            --pretty
+          python -m json.tool /tmp/idkgraph-valid/idkgraph.json > /dev/null
+          python -m json.tool /tmp/idkgraph-valid/observatory.json > /dev/null
+      - name: Broken fixture must fail closed after writing evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/idkgraph-broken
+          if python tools/idkgraph_observatory.py \
+            tests/fixtures/idkgraph_observatory/broken \
+            --source-revision fixture:broken \
+            --output-dir /tmp/idkgraph-broken \
+            --fail-on-errors \
+            --pretty; then
+            echo "broken fixture unexpectedly passed" >&2
+            exit 1
+          fi
+          python -m json.tool /tmp/idkgraph-broken/observatory.json > /dev/null
+          python - <<'PY'
+          import json
+          report = json.load(open('/tmp/idkgraph-broken/observatory.json', encoding='utf-8'))
+          categories = {item['category'] for item in report['findings'] if item['severity'] == 'error'}
+          expected = {'missing_markdown_file', 'missing_markdown_anchor'}
+          if categories != expected:
+              raise SystemExit(f'unexpected broken-fixture categories: {sorted(categories)}')
+          print('OK: two independent deterministic defect classes retained')
+          PY
+      - name: Replay full repository twice byte-for-byte
+        run: |
+          rm -rf /tmp/idkgraph-run-a /tmp/idkgraph-run-b
+          python tools/idkgraph_observatory.py . --output-dir /tmp/idkgraph-run-a --pretty
+          python tools/idkgraph_observatory.py . --output-dir /tmp/idkgraph-run-b --pretty
+          cmp /tmp/idkgraph-run-a/idkgraph.json /tmp/idkgraph-run-b/idkgraph.json
+          cmp /tmp/idkgraph-run-a/observatory.json /tmp/idkgraph-run-b/observatory.json
+          cmp /tmp/idkgraph-run-a/repository-health.md /tmp/idkgraph-run-b/repository-health.md
+      - name: Validate integrated graph against current schema
+        run: |
+          python - <<'PY'
+          import json
+          from jsonschema import Draft202012Validator
+          schema = json.load(open('schemas/idkgraph.schema.json', encoding='utf-8'))
+          graph = json.load(open('/tmp/idkgraph-run-a/idkgraph.json', encoding='utf-8'))
+          summary = json.load(open('/tmp/idkgraph-run-a/observatory.json', encoding='utf-8'))
+          errors = sorted(Draft202012Validator(schema).iter_errors(graph), key=lambda error: list(error.absolute_path))
+          if errors:
+              for error in errors[:20]:
+                  print('/'.join(map(str, error.absolute_path)), error.message)
+              raise SystemExit(f'{len(errors)} schema validation error(s)')
+          print(
+              'OK: '
+              f"{summary['graph']['nodes']} nodes, "
+              f"{summary['graph']['hyperedges']} hyperedges, "
+              f"{summary['finding_counts']['by_severity'].get('error', 0)} deterministic error(s), "
+              f"{summary['finding_counts']['by_severity'].get('warning', 0)} warning(s)"
+          )
+          PY
+
+# T5 composes deterministic observation only. It has no repository/GitHub write,
+# repair, semantic inference, approval, push, merge, or integration authority.
