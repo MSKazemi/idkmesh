@@ -213,3 +213,35 @@ Blockchain becomes a decision point only when multiple independent operators nee
 **Rationale:** This sequence tests the central hypotheses at the smallest useful scale while preserving a path to the long-term vision.
 
 **Consequence:** The immediate engineering backlog begins with Work Unit, Result Manifest, and Goal Graph schemas, a discrete-event simulator, a metrics harness, and baseline scheduling/aggregation algorithms rather than a large production network.
+
+## 2026-08-28 — Prefer a constitution over a complete specification
+
+**Decision:** IDKMesh may begin without a precise final product specification, but it must operate inside explicit slow-changing constitutional constraints and minimum viability criteria.
+
+**Rationale:** Natural self-organizing and evolutionary systems demonstrate that global complexity can emerge without a central blueprint, but not without rules, constraints, feedback, resource limits, and selection. Randomness provides variation; it does not provide correctness.
+
+**Consequence:** Define hard or slow-changing rules for sandboxing, provenance, reproducibility, independent verification, resource budgets, rollback, critical invariants, and safe self-modification. Allow product goals, architectures, and strategies to remain mutable inside that envelope.
+
+## 2026-08-28 — Co-evolve goals and solutions
+
+**Decision:** Treat the Goal Graph itself as an adaptive system. Solutions may modify confidence in existing goals, reveal new goals, invalidate assumptions, or create new product directions.
+
+**Rationale:** With genuinely vague objectives, a fixed objective function can encode the wrong problem. IDKMesh should learn what is worth optimizing while also learning how to optimize it.
+
+**Consequence:** Model goal state as evidence-conditioned and versioned rather than as one immutable scalar fitness function. Preserve historical goals and the evidence that caused transitions.
+
+## 2026-08-28 — Preserve niches with Quality-Diversity mechanisms
+
+**Decision:** During high uncertainty, preserve multiple viable, high-quality behavioral/design niches instead of selecting one global winner prematurely.
+
+**Rationale:** Novelty Search and Quality-Diversity research show why divergent exploration can outperform aggressive convergence when objectives are deceptive or incomplete. Natural evolution also diversifies across ecological niches rather than converging toward one organism.
+
+**Consequence:** Experiment with MAP-Elites/Quality-Diversity archives, Pareto selection, novelty metrics, local competition, and diversity quotas for architectures, agents, workflows, and goal interpretations.
+
+## 2026-08-28 — Randomness generates proposals, never acceptance
+
+**Decision:** Stochasticity is an exploration mechanism only. Random or mutated artifacts must pass viability, independent verification, and evidence gates before integration or propagation.
+
+**Rationale:** Randomness can escape local optima and generate novelty, but unfiltered randomness creates noise and failure rather than useful emergence.
+
+**Consequence:** Every generative loop must be paired with negative feedback, verification, resource caps, correlation penalties, rollback, and measurable stopping/selection conditions.
