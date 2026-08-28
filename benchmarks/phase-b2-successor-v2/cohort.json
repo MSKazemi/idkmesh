@@ -8,16 +8,46 @@
   "description": "Pre-freeze scaffold for five new tasks after the burned v1 pilot. The five-task taxonomy is fixed before outcomes, but evaluator plans remain provisional until issue #180 calibration gates pass. This scaffold is not benchmark outcome evidence and intentionally has no definition_digest.",
   "extensions": {
     "org.idkmesh.phase_b2_v2": {
+      "calibration_completed": {
+        "benchmark/phase-b2-v2/005-local-offer-output-boundary": {
+          "artifact_id": 9695929904,
+          "artifact_zip_sha256": "8eafd4d36c3dde0e4b0b36a1495494963c538bf00ea23d817c8e4af42f1ed8dc",
+          "calibration_candidates_are_benchmark_outcomes": false,
+          "evaluator_plan_digest": "sha256:1965941c5c2844dc302049bcf461815df885571107e73d430ca3f68cac0adc16",
+          "evidence_kind": "post-definition-straightforward-and-inert-decoy-calibration",
+          "inert_decoy": {
+            "behavior": "vulnerable_boundary_preserved",
+            "matched_added_substrings": 1,
+            "matched_removed_substrings": 0,
+            "recommendation": "reject_candidate",
+            "result_manifest_digest": "sha256:98187bc14314750923921073215888941f3de8b8e8148323226092af1eceecf2",
+            "verification_result_digest": "sha256:9673efe6fe8939fc918744a20e7b6ebaf8b734da16088ae3d7d84c09570eebbe",
+            "verification_status": "failed"
+          },
+          "job_id": 98934602908,
+          "run_id": 33196420808,
+          "source_revision": "a69aa0ae1ae4862e507511cbd9ad854237d0ad32",
+          "status": "passed",
+          "straightforward": {
+            "behavior": "safe_boundary_matrix_passed",
+            "matched_added_substrings": 1,
+            "matched_removed_substrings": 1,
+            "recommendation": "accept_candidate",
+            "result_manifest_digest": "sha256:149ca6e665da367f54614298eeac765ac055739b9aa7660bb24d44fb26bc0ee7",
+            "verification_result_digest": "sha256:61f02f7069d708513c0ea4da7a8a54b614315486613175299044a0bb3b7b7988",
+            "verification_status": "passed"
+          }
+        }
+      },
       "calibration_pending_task_ids": [
         "benchmark/phase-b2-v2/001-cohort-symlink-reference",
         "benchmark/phase-b2-v2/002-router-nonfinite-numbers",
         "benchmark/phase-b2-v2/003-branch-unobserved-head",
-        "benchmark/phase-b2-v2/004-rwvb-nonfinite-domain",
-        "benchmark/phase-b2-v2/005-local-offer-output-boundary"
+        "benchmark/phase-b2-v2/004-rwvb-nonfinite-domain"
       ],
       "calibration_required_for_every_task": true,
       "freeze_ready": false,
-      "note": "Do not add definition_digest or set stage=frozen until all five evaluator calibration/behavior gates are green. Task taxonomy is fixed before outcomes; provisional evaluator semantics may still be revised by calibration while stage=scaffold.",
+      "note": "Do not add definition_digest or set stage=frozen until all five evaluator calibration/behavior gates are green. Task taxonomy is fixed before outcomes; calibration records are post-definition evidence only and task evidence fields remain pending until scored runs begin after freeze.",
       "source_revision": "a69aa0ae1ae4862e507511cbd9ad854237d0ad32",
       "tracker_issue": 180
     }
