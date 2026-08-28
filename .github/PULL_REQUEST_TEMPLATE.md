@@ -10,6 +10,13 @@ What problem, question, or hypothesis does it address?
 
 How did you check the change? Include tests, reproduction steps, references, experiment results, or reasoning appropriate to the contribution.
 
+## Related work / ACE lineage (optional)
+
+Link the issue(s) this work addresses. If this pull request is a candidate response to an ACE Growth Seed, include a line such as `ACE-Seed: #24` so the public cohort observer can associate the candidate with its seed.
+
+- Related/Closes:
+- ACE-Seed:
+
 ## Community Impact
 
 For non-trivial changes, describe the effect on newcomers, contributors, reviewers, maintainers, documentation, accessibility, governance, or participation prerequisites.

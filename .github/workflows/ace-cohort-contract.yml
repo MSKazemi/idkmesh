@@ -1,0 +1,35 @@
+name: ACE cohort observer contract
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/ace-cohort-observer.yml'
+      - 'tests/test_ace_cohort_observer_contract.py'
+      - '.github/workflows/ace-cohort-contract.yml'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/ace-cohort-observer.yml'
+      - 'tests/test_ace_cohort_observer_contract.py'
+      - '.github/workflows/ace-cohort-contract.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Enforce cohort-observer invariants
+        run: python -m unittest tests.test_ace_cohort_observer_contract -v
+
+# This workflow is read-only. It validates the privileged metadata observer's
+# static trust boundary and never executes pull-request-controlled code.
