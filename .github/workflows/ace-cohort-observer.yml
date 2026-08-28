@@ -33,6 +33,11 @@ jobs:
             const repoOwner = owner.toLowerCase();
             const statusTitle = '[ACE] Bootstrap Cohort Observatory';
             const verifiedLabel = 'ace:verified-descendant';
+            const isExternalHuman = user => Boolean(
+              user?.login &&
+              user.login.toLowerCase() !== repoOwner &&
+              user.type !== 'Bot'
+            );
 
             // SECURITY: this workflow is metadata-only. In particular, the
             // pull_request_target trigger never checks out, imports, evaluates,
@@ -69,7 +74,6 @@ jobs:
             let claimedSeeds = 0;
             let seedsWithCandidatePR = 0;
             let seedsWithMergedCandidate = 0;
-            let verifiedDescendants = 0;
 
             for (const seed of cohortSeeds.sort((a, b) => a.number - b.number)) {
               const comments = await github.paginate(github.rest.issues.listComments, {
@@ -79,18 +83,14 @@ jobs:
                 per_page: 100
               });
 
-              const externalComments = comments.filter(comment =>
-                comment.user?.login && comment.user.login.toLowerCase() !== repoOwner
-              );
+              const externalComments = comments.filter(comment => isExternalHuman(comment.user));
               for (const comment of externalComments) participants.add(comment.user.login);
 
               const claimComments = externalComments.filter(comment =>
                 /(^|\s)\/claim(?:\s|$)/i.test(comment.body || '')
               );
 
-              const externalAssignees = (seed.assignees || []).filter(user =>
-                user.login && user.login.toLowerCase() !== repoOwner
-              );
+              const externalAssignees = (seed.assignees || []).filter(user => isExternalHuman(user));
               for (const user of externalAssignees) participants.add(user.login);
 
               const timeline = await github.paginate(github.rest.issues.listEventsForTimeline, {
@@ -114,11 +114,10 @@ jobs:
                   repo,
                   pull_number: prNumber
                 });
+                if (!isExternalHuman(pr.user)) continue;
                 prs.push(pr);
                 allCandidatePRs.set(pr.number, pr);
-                if (pr.user?.login && pr.user.login.toLowerCase() !== repoOwner) {
-                  participants.add(pr.user.login);
-                }
+                participants.add(pr.user.login);
               }
 
               const merged = prs.filter(pr => Boolean(pr.merged_at));
@@ -130,7 +129,6 @@ jobs:
               if (claimed) claimedSeeds += 1;
               if (prs.length > 0) seedsWithCandidatePR += 1;
               if (merged.length > 0) seedsWithMergedCandidate += 1;
-              verifiedDescendants += verified.length;
 
               rows.push({
                 number: seed.number,
@@ -236,11 +234,11 @@ jobs:
               '',
               '## Evidence rules',
               '',
-              '- A seed is **claimed** by an external assignee, an external `/claim` comment, or a cross-referenced PR.',
+              '- Bootstrap community metrics exclude repository-owner activity and GitHub bot accounts.',
+              '- A seed is **claimed** by an external human assignee, an external human `/claim` comment, or an external-human-authored cross-referenced PR.',
               '- A cross-referenced PR is **candidate work**, not verified evidence.',
-              `- A merged candidate becomes a **verified descendant** only after the PR receives the \`${verifiedLabel}\` label.` ,
+              `- A merged candidate becomes a **verified descendant** only after the PR receives the \`${verifiedLabel}\` label.`,
               '- The observer never creates Cohort 2. `EVALUATE_COHORT_2` is only a recommendation for human/community review.',
-              '- Repository-owner comments and assignments do not count as external participation.',
               '',
               '<!-- ACE_COHORT_STATE',
               JSON.stringify(snapshot, null, 2),
