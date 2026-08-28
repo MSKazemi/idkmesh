@@ -108,6 +108,20 @@ Examples: governance restructuring, security/trust model changes, stable protoco
 
 Process: RFC + explicit decision record + broader review + evidence/experiment where feasible.
 
+## Protected integration boundary
+
+The canonical `main` branch is an integration boundary, not merely a convenient Git branch.
+
+IDKMesh should enforce the following invariant:
+
+> **No autonomous actor may propose, approve, and merge the same protected change by itself.**
+
+Repository rulesets/branch protection and stable required checks should enforce this boundary before autonomous write authority is increased. Agent prompts, workflow comments, or project instructions are not substitutes for GitHub policy enforcement.
+
+During the bootstrap phase, protection must avoid creating an impossible approval deadlock while only one maintainer exists. The minimum target is PR-based integration, stable required CI where available, blocked force-push/deletion, and explicit independent evidence/review for higher-risk changes. Approval requirements should strengthen as trusted reviewers emerge.
+
+Detailed operational policy and setup guidance are in [`docs/admin/MAIN_PROTECTION.md`](docs/admin/MAIN_PROTECTION.md). Tracking issue: #35.
+
 ## Resolving disagreements
 
 Preferred order:
