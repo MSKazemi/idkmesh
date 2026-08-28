@@ -37,6 +37,15 @@ jobs:
             // SECURITY: pull_request_target has write-capable permissions. This workflow
             // intentionally NEVER checks out, imports, executes, or evaluates PR code.
             // It consumes GitHub event metadata only.
+            //
+            // The reproductive actuator also fails closed while main is unprotected.
+            // Repository instructions are not an enforcement boundary; GitHub branch
+            // protection/rulesets must exist before ACE may autonomously spawn work.
+            const { data: mainBranch } = await github.rest.repos.getBranch({
+              owner, repo, branch: 'main'
+            });
+            const mainProtected = Boolean(mainBranch.protected);
+            const actuationAllowed = mainProtected;
 
             // ACE bootstraps only the labels it owns. Standard GitHub labels such as
             // good first issue / help wanted are left under normal repository control.
@@ -134,7 +143,7 @@ jobs:
             state.updated_at = now.toISOString();
 
             let mode = 'DORMANT';
-            if (state.review_load > K) mode = 'CONSOLIDATE';
+            if (!mainProtected || state.review_load > K) mode = 'CONSOLIDATE';
             else if (state.credit >= 8) mode = 'GROW';
             else if (state.credit >= 2) mode = 'EXPLORE';
 
@@ -143,12 +152,17 @@ jobs:
               .slice(0, 12)
               .map(([k, v]) => `| ${k} | ${v} |`);
 
+            const protectionLine = mainProtected
+              ? '**Main protection:** enabled; bounded ACE actuation is eligible.  '
+              : '**Main protection:** DISABLED; ACE reproductive actuation is fail-closed.  ';
+
             const body = [
               '# ACE Community Growth Ledger',
               '',
               'This issue is maintained by the experimental [Autocatalytic Community Evolution](../blob/main/COMMUNITY_GROWTH_ENGINE.md) workflow.',
               '',
               `**Mode:** ${mode}  `,
+              protectionLine,
               `**Reproductive credit:** ${state.credit.toFixed(3)}  `,
               `**Review-load proxy:** ${state.review_load.toFixed(2)}  `,
               `**Capacity multiplier:** ${capacity.toFixed(3)}  `,
@@ -158,6 +172,10 @@ jobs:
               '',
               'The objective is not maximum activity. ACE aims to increase **verified useful descendants per unit of scarce human attention** while reducing reproduction pressure when review capacity becomes constrained.',
               '',
+              ...(mainProtected ? [] : [
+                '> Safety gate: `main` is currently unprotected. ACE may continue its public evidence ledger, but it will not autonomously spawn Growth Seeds until GitHub branch protection/rulesets are enabled.',
+                ''
+              ]),
               '| Event type | Observed count |',
               '| --- | ---: |',
               ...(sortedRows.length ? sortedRows : ['| none yet | 0 |']),
@@ -176,8 +194,9 @@ jobs:
               ledger = created.data;
             }
 
-            // Conservative v0 actuator: only an explicitly labelled merged PR can reproduce.
-            if (event === 'pull_request_target' && action === 'closed' && context.payload.pull_request?.merged) {
+            // Conservative v0 actuator: only an explicitly labelled merged PR can reproduce,
+            // and only while the protected integration boundary is actually enabled.
+            if (actuationAllowed && event === 'pull_request_target' && action === 'closed' && context.payload.pull_request?.merged) {
               const pr = context.payload.pull_request;
               const labels = (pr.labels || []).map(l => l.name);
               if (labels.includes('growth:spawn')) {
