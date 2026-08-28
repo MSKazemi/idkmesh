@@ -43,7 +43,9 @@ This contract makes the boundary executable.
 
 ## The two-key temporal gate
 
-A concrete offer is admitted only when **two independently maintained authorization records are fresh**.
+A concrete offer is admitted only when **two independently maintained authorization records are current**.
+
+Future-dated evidence is not “extra fresh.” It fails closed because it cannot yet have been observed or reviewed at the evaluator's `today` date.
 
 ### Key A — external resource evidence
 
@@ -52,18 +54,20 @@ The Free Resource Mesh registry must say that the resource class:
 - exists and is not excluded;
 - remains zero-project-cost;
 - is a direct compute class (`compute` or `volunteer_compute`);
-- has fresh source evidence;
+- has fresh, non-future source evidence;
+- still exposes the broad resource capabilities the local binding says are required;
 - has no repository-write authority;
 - has no merge authority.
 
 ### Key B — local project authorization
 
-`config/resource-compute-bindings.json` must contain a fresh, enabled binding that explicitly states:
+`config/resource-compute-bindings.json` must contain a fresh, non-future, enabled binding that explicitly states:
 
 - which Free Resource Mesh resource class is being authorized;
 - which concrete provider identifier it may admit;
 - which cost classes are permitted;
-- which capability names are permitted;
+- which **resource/discovery capability names** must still be present in Key A;
+- which **concrete runtime capability names** are permitted after materialization;
 - whether current terms have been reviewed as eligible;
 - the authorization scope;
 - review date and expiration window.
@@ -98,11 +102,12 @@ AND cost_class(o) in allowed_cost_classes(b)
 AND optional_offer_prefix_match(b, o)
 AND enabled(b)
 AND terms_eligible(b)
-AND fresh(binding_review(b))
+AND fresh_non_future(binding_review(b))
 AND r exists
 AND kind(r) in {compute, volunteer_compute}
 AND status(r) in {available, conditional}
-AND fresh(external_evidence(r))
+AND fresh_non_future(external_evidence(r))
+AND required_resource_capabilities(b) subset_of capabilities(r)
 AND project_cost(r) = 0
 AND project_cost(o) = 0
 AND available(o)
@@ -111,25 +116,56 @@ AND merge_authority(r) = false
 AND capabilities(o) subset_of allowed_capabilities(b)
 ```
 
+The top-level registry observation date must also not be in the future.
+
 If no binding matches, the offer is rejected.
 
 If more than one binding matches, the offer is rejected as ambiguous.
 
 This is deliberate fail-closed behavior.
 
-## Capability non-escalation
+## Capability materialization: two vocabularies, two gates
 
-A concrete runtime may discover more features than the project has authorized.
+The Resource Mesh and the concrete Compute Offer Pool intentionally describe capabilities at different abstraction levels.
 
-For example, suppose a future runner unexpectedly exposes `cuda` or a privileged deployment tool. The bridge must not silently promote that capability into the scheduler.
-
-Therefore:
+Example Resource Mesh capability evidence may say:
 
 ```text
-capabilities(concrete_offer) ⊆ allowed_capabilities(binding)
+git
+python
+ephemeral_vm
+docker
 ```
 
-A capability expansion requires an explicit reviewed binding change.
+while a concrete runtime offer may expose scheduler-facing capabilities such as:
+
+```text
+json-schema-validation
+deterministic-local-execution
+linux
+python
+```
+
+These sets are **not expected to be string-equal**. Treating them as one vocabulary would either create false rejections or encourage invented equivalences.
+
+The checked-in binding therefore carries two independent controls:
+
+```text
+required_resource_capabilities
+    = broad capabilities that must remain present in external/discovery evidence
+
+allowed_capabilities
+    = concrete runtime capabilities the project is willing to admit
+```
+
+Admission requires both gates. The binding is the reviewed materialization relationship between them; the bridge does not infer new capabilities merely because names look similar.
+
+This means two different forms of drift fail closed:
+
+1. **external evidence contraction** — a resource stops claiming a broad capability required by the binding;
+2. **runtime capability expansion** — a concrete offer exposes a capability not explicitly allowed by the binding.
+
+A change to either side requires reviewed evidence or binding changes.
 
 ## Current binding
 
@@ -139,11 +175,22 @@ v0 authorizes exactly one resource-class → concrete-provider path:
 Free Resource Mesh:
   github-actions-public-standard
 
+required Resource Mesh capability evidence:
+  git
+  python
+  ephemeral_vm
+
 binding:
   github-public-ci-v0
 
 concrete provider:
   github-actions
+
+allowed concrete runtime capabilities:
+  json-schema-validation
+  deterministic-local-execution
+  linux
+  python
 
 allowed cost class:
   public_project_ci
@@ -153,7 +200,7 @@ scope:
   and bounded repository experiments for this public project
 ```
 
-The existing example offer `github-public-ci` can therefore survive admission when all freshness and policy checks pass.
+The existing example offer `github-public-ci` can therefore survive admission when all freshness, evidence, and policy checks pass.
 
 The following existing example offers do **not** survive this bridge by default:
 
@@ -247,13 +294,14 @@ Changes should be reviewed for:
 
 - provider terms/eligibility;
 - monetary implications;
-- capability expansion;
+- external resource-evidence requirements;
+- concrete capability expansion;
 - security boundary changes;
 - privacy/external-processing implications;
 - donor consent semantics;
 - relationship to branch protection and repository governance.
 
-A binding should expire rather than remain trusted indefinitely.
+A binding should expire rather than remain trusted indefinitely, and evidence from the future must never satisfy freshness.
 
 ## Success criterion
 
