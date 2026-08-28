@@ -14,7 +14,6 @@ from typing import Any
 
 from .model import (
     VerificationContext,
-    VerifierError,
     canonical_digest,
     file_digest,
     validate_verification_result,
@@ -89,8 +88,20 @@ def changed_paths(workspace: Path) -> list[str]:
     return [line for line in result.stdout.decode("utf-8", errors="replace").splitlines() if line]
 
 
+def _pattern_matches(path: str, pattern: str) -> bool:
+    normalized = pattern.rstrip("/")
+    if not normalized:
+        return False
+    if pattern.endswith("/"):
+        return path == normalized or path.startswith(normalized + "/")
+    if pattern.endswith("/**"):
+        prefix = pattern[:-3].rstrip("/")
+        return path == prefix or path.startswith(prefix + "/")
+    return fnmatch.fnmatch(path, pattern) or path == normalized
+
+
 def _matches(path: str, patterns: list[str]) -> bool:
-    return any(fnmatch.fnmatch(path, pattern) or path == pattern.rstrip("/") for pattern in patterns)
+    return any(_pattern_matches(path, pattern) for pattern in patterns)
 
 
 def scope_violations(context: VerificationContext, paths: list[str]) -> list[str]:
@@ -303,9 +314,10 @@ def run_verification(
 
     elapsed = max(0.0, time.monotonic() - timer)
     worker_env = context.worker_result["provenance"].get("environment", {})
+    result_digest = canonical_digest(context.worker_result).split(":", 1)[1]
     verification_result: dict[str, Any] = {
         "schema_version": "0.1",
-        "id": f"verification/{context.worker_result['id']}",
+        "id": f"verification/{result_digest[:32]}",
         "result_manifest_id": context.worker_result["id"],
         "work_unit_id": context.worker_result["work_unit_id"],
         "work_unit_version": context.worker_result["work_unit_version"],
