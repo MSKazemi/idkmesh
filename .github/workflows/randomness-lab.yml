@@ -49,3 +49,7 @@ jobs:
           python -m json.tool /tmp/r2.json > /dev/null
           python -m randomness_lab.r2 --trace /tmp/r2-trace.json --policies power-two,capability-power-two,global-least-loaded --availability-lag 2 --load-lag 2 --drain-ticks 40 --output /tmp/r2-replay.json
           python -m json.tool /tmp/r2-replay.json > /dev/null
+      - name: Smoke-test R2 scale/regime sweep
+        run: |
+          python -m randomness_lab.r2_scale --worker-counts 1,10,20 --seeds 7 --regimes fresh,stale --ticks 5 --arrival-divisor 10 --max-arrivals 2 --max-work 3 --drain-ticks 20 --oracle-max-workers 10 --output /tmp/r2-scale.json
+          python -m json.tool /tmp/r2-scale.json > /dev/null
