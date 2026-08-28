@@ -1,0 +1,59 @@
+name: idkgraph-link-diagnostics
+
+on:
+  push:
+    paths:
+      - "tools/idkgraph_markdown_index.py"
+      - "tools/idkgraph_link_check.py"
+      - "tests/test_idkgraph_link_check.py"
+      - "tests/fixtures/idkgraph_links/**"
+      - ".github/workflows/idkgraph-link-diagnostics.yml"
+  pull_request:
+    paths:
+      - "tools/idkgraph_markdown_index.py"
+      - "tools/idkgraph_link_check.py"
+      - "tests/test_idkgraph_link_check.py"
+      - "tests/fixtures/idkgraph_links/**"
+      - ".github/workflows/idkgraph-link-diagnostics.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Run focused unit tests
+        run: python -m unittest discover -s tests -p 'test_idkgraph_link_check.py' -v
+      - name: Verify valid fixture stays clean
+        run: |
+          python tools/idkgraph_link_check.py tests/fixtures/idkgraph_links/valid --fail-on-error --output /tmp/valid-links.json
+          python -m json.tool /tmp/valid-links.json > /dev/null
+      - name: Verify broken fixture fails closed
+        shell: bash
+        run: |
+          set -euo pipefail
+          if python tools/idkgraph_link_check.py tests/fixtures/idkgraph_links/broken --fail-on-error --output /tmp/broken-links.json; then
+            echo "broken fixture unexpectedly passed" >&2
+            exit 1
+          fi
+          python -m json.tool /tmp/broken-links.json > /dev/null
+      - name: Scan current repository for deterministic link errors
+        shell: bash
+        run: |
+          set +e
+          python tools/idkgraph_link_check.py . \
+            --exclude tests/fixtures/idkgraph_links/broken \
+            --fail-on-error \
+            --output /tmp/repository-links.json
+          status=$?
+          set -e
+          python -m json.tool /tmp/repository-links.json
+          exit "$status"
