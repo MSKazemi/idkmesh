@@ -1,0 +1,143 @@
+{
+  "schema_version": "0.2",
+  "id": "orchestration/two-attempt-smoke",
+  "version": 1,
+  "kind": "testing",
+  "objective": "Dispatch one bounded deterministic task to exactly two isolated fixture attempts and preserve independent verifier outcomes without automatic integration.",
+  "context": {
+    "summary": "Phase A0 fixture for issue #4. It proves orchestration, failure isolation, canonical ResultManifest generation, independent verification, and replay before the real local-node adapter is accepted.",
+    "references": [
+      "experiments/local_orchestrator.py",
+      "experiments/local_verifier.py",
+      "verification/fixtures/verifier-smoke-policy.json"
+    ],
+    "max_context_bytes": 16384
+  },
+  "inputs": [],
+  "outputs": [
+    {
+      "id": "candidate-result",
+      "type": "test_result",
+      "description": "An isolated JSON candidate independently evaluated by the canonical local verifier.",
+      "media_type": "application/json"
+    }
+  ],
+  "dependencies": [],
+  "requirements": {
+    "capabilities": [
+      "json-output",
+      "deterministic-local-execution"
+    ],
+    "resources": {
+      "cpu_cores_min": 0.1,
+      "memory_mb_min": 32,
+      "disk_mb_min": 1,
+      "gpu": "none",
+      "accelerator_capabilities": []
+    }
+  },
+  "constraints": {
+    "allowed_paths": [
+      "candidate.json"
+    ],
+    "forbidden_paths": [
+      "verification/",
+      "experiments/local_verifier.py",
+      "experiments/local_orchestrator.py"
+    ],
+    "policies": [
+      "Each attempt receives an isolated candidate root",
+      "Candidate workers cannot modify verifier code or verifier-owned policy",
+      "Worker success is never final acceptance",
+      "No majority vote converts worker claims into truth",
+      "No network access",
+      "No project-paid compute",
+      "No automatic integration or merge authority"
+    ]
+  },
+  "uncertainty": [
+    {
+      "statement": "Fixture workers exercise the orchestration boundary but are not evidence that the real local-node worker is safe or accepted.",
+      "confidence": 1.0,
+      "resolution_strategy": "Introduce the canonical local-node adapter only after PR #34 is synchronized and controlled-Docker acceptance #37 is satisfied."
+    }
+  ],
+  "security": {
+    "risk_class": "low",
+    "data_classification": "public",
+    "minimum_worker_trust": "untrusted",
+    "sandbox_required": false,
+    "notes": "Phase A0 writes only deterministic JSON fixtures inside bounded run workspaces and never executes candidate-supplied code."
+  },
+  "permissions": {
+    "network": "none",
+    "network_allowlist": [],
+    "filesystem_write": [
+      "candidate.json"
+    ],
+    "secrets": [],
+    "process_execution": false
+  },
+  "verification_policy": {
+    "strategy": "all_required",
+    "independent_from_worker": true,
+    "minimum_independent_verifiers": 1,
+    "acceptance_rule": "Each successful worker candidate must independently pass artifact digest, candidate scope, and verifier-owned acceptance checks."
+  },
+  "validators": [
+    {
+      "id": "artifact-digest",
+      "type": "reproduction",
+      "required": true,
+      "description": "Observed candidate bytes must match the worker ResultManifest artifact digest."
+    },
+    {
+      "id": "candidate-scope",
+      "type": "review",
+      "required": true,
+      "description": "The isolated candidate directory may contain only verifier-policy-approved files."
+    },
+    {
+      "id": "independent-acceptance",
+      "type": "test",
+      "required": true,
+      "description": "Verifier-owned deterministic expectations must pass independently of worker self-report."
+    }
+  ],
+  "evidence_requirements": [
+    {
+      "type": "artifact_hash",
+      "required": true,
+      "description": "Record the observed SHA-256 of each successful candidate artifact."
+    },
+    {
+      "type": "test_output",
+      "required": true,
+      "description": "Retain independent acceptance evidence and diagnostics per successful attempt."
+    }
+  ],
+  "budget": {
+    "wall_seconds": 10,
+    "compute_units": 0.02,
+    "human_minutes": 0,
+    "tokens": 0,
+    "project_spend_usd_max": 0,
+    "paid_fallback_allowed": false
+  },
+  "provenance": {
+    "created_by": "IDKMesh Phase A0 local orchestrator",
+    "creator_type": "hybrid",
+    "source": "Issue #4",
+    "source_revision": "orchestrator-fixture-v1",
+    "parent_work_unit_ids": []
+  },
+  "failure_semantics": {
+    "retryable": false,
+    "max_attempts": 2,
+    "on_failure": "escalate"
+  },
+  "extensions": {
+    "org.idkmesh.orchestrator.fixture": true,
+    "org.idkmesh.orchestrator.expected_attempts": 2
+  }
+}
