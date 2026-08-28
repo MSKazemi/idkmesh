@@ -1,0 +1,67 @@
+name: idkgraph-repository-mapping
+
+on:
+  pull_request:
+    paths:
+      - "tools/idkgraph_repository_mapping.py"
+      - "tests/test_idkgraph_repository_mapping.py"
+      - "tests/fixtures/idkgraph_repository_mapping/**"
+      - "examples/idkgraph.repository-mapping.example.json"
+      - "docs/specifications/IDKGRAPH_REPOSITORY_MAPPING_V0_1.md"
+      - "schemas/idkgraph.schema.json"
+      - "tools/idkgraph_markdown_index.py"
+      - ".github/workflows/idkgraph-repository-mapping.yml"
+  push:
+    branches: [main]
+    paths:
+      - "tools/idkgraph_repository_mapping.py"
+      - "tests/test_idkgraph_repository_mapping.py"
+      - "tests/fixtures/idkgraph_repository_mapping/**"
+      - "examples/idkgraph.repository-mapping.example.json"
+      - "docs/specifications/IDKGRAPH_REPOSITORY_MAPPING_V0_1.md"
+      - "schemas/idkgraph.schema.json"
+      - "tools/idkgraph_markdown_index.py"
+      - ".github/workflows/idkgraph-repository-mapping.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install Phase 0 schema validator
+        run: python -m pip install --disable-pip-version-check -r requirements-phase0.txt
+      - name: Run focused mapper tests
+        run: python -m unittest tests.test_idkgraph_repository_mapping -v
+      - name: Generate full repository graph twice
+        run: |
+          python tools/idkgraph_repository_mapping.py . --output /tmp/repository-graph-a.json
+          python tools/idkgraph_repository_mapping.py . --output /tmp/repository-graph-b.json
+          cmp /tmp/repository-graph-a.json /tmp/repository-graph-b.json
+          python -m json.tool /tmp/repository-graph-a.json > /dev/null
+      - name: Validate full generated graph against current schema
+        run: |
+          python - <<'PY'
+          import json
+          from jsonschema import Draft202012Validator
+          schema = json.load(open('schemas/idkgraph.schema.json', encoding='utf-8'))
+          graph = json.load(open('/tmp/repository-graph-a.json', encoding='utf-8'))
+          errors = sorted(Draft202012Validator(schema).iter_errors(graph), key=lambda error: list(error.absolute_path))
+          if errors:
+              for error in errors[:20]:
+                  print('/'.join(map(str, error.absolute_path)), error.message)
+              raise SystemExit(f'{len(errors)} schema validation error(s)')
+          print(f"OK: {len(graph['nodes'])} nodes, {len(graph['hyperedges'])} deterministic relations")
+          PY
+
+# T3 is a read-only derivation layer. It does not write back to repository files,
+# modify IDKGraph sources, call GitHub APIs, infer semantic relations, or integrate changes.
