@@ -39,7 +39,7 @@ The exact compatibility runs before merge were:
 - single real-node -> verifier: run `33187645308`, success, artifact `9692375594`, digest `sha256:42af1a108a2bb73d1c36fa7ad4319e01442e968e45338818dacbec3c1575c967`;
 - real two-attempt evidence: run `33187645373`, success, artifact `9692376706`, digest `sha256:e68d6d4f9a8cdc2b2200d43f44ba5f9aa2c263c5dddff31838a8e69597994233`.
 
-## New inconsistency discovered after #125
+## Resource-contract ambiguity discovered after #125
 
 PR #125 introduced the useful Free Resource Mesh v0:
 
@@ -54,41 +54,51 @@ The repository already had a separate zero-cost runtime layer:
 - `experiments/free_compute_router.py`;
 - `experiments/local_compute_offer.py`.
 
-These contracts are not actually duplicates, but their relationship was not explicit enough. The registry describes discovery/control-plane evidence about possible resources. The compute-offer pool describes concrete runtime/data-plane capacity. Without an explicit boundary, a future contributor could reasonably treat planner `selected` entries as executable offers and evolve a second scheduler/runtime protocol.
+These contracts are complementary rather than duplicates:
 
-## Fix implemented
+- the resource registry is discovery/control-plane evidence about possible resources;
+- the compute-offer pool is concrete runtime/data-plane capacity.
 
-This branch makes the boundary machine-readable and testable rather than adding a third schema.
+The original planner JSON did not make that distinction machine-readable. A future integration could therefore treat a planner `selected` entry as an executable compute offer and accidentally evolve a second execution router.
 
-`scripts/free_resource_planner.py` now emits:
+## Concurrent convergence changed the implementation
+
+While this fix was being tested, `main` independently gained:
+
+`docs/architecture/FREE_RESOURCE_MESH_COMPUTE_BRIDGE.md`
+
+That document explicitly establishes the canonical separation and states that a registry entry is not automatically a compute offer.
+
+This was semantic overlap with an architecture note initially drafted on this branch. Rather than merge two normative documents that say essentially the same thing, the duplicate branch document was deleted.
+
+This is a useful self-evolution rule:
+
+```text
+independent work discovers same boundary
+ -> prefer the already-canonical artifact
+ -> remove duplicate architecture
+ -> retain only missing executable enforcement
+```
+
+## Missing executable enforcement kept by PR #128
+
+The remaining useful delta is machine-readable and regression-tested.
+
+`scripts/free_resource_planner.py` emits:
 
 ```text
 runtime_materialization.required_before_execution = true
 runtime_materialization.planner_output_is_executable_compute_offer = false
+runtime_materialization.boundary_doc = docs/architecture/FREE_RESOURCE_MESH_COMPUTE_BRIDGE.md
 runtime_materialization.discovery_contract = schemas/resource-offer-registry-v0.1.schema.json
 runtime_materialization.runtime_contract = schemas/compute-offer-pool-v0.1.schema.json
 runtime_materialization.runtime_router = experiments/free_compute_router.py
 runtime_materialization.repository_compute_policy = config/compute-policy.json
 ```
 
-A regression test in `tests/test_free_resource_planner.py` locks those invariants.
+`tests/test_free_resource_planner.py` locks all of those values.
 
-The new normative architecture note:
-
-`docs/architecture/RESOURCE_DISCOVERY_RUNTIME_BOUNDARY.md`
-
-defines the materialization function:
-
-```text
-M(registry_offer, live_probe, operator_consent, repository_policy)
-    -> ComputeOffer | null
-```
-
-Discovery eligibility is necessary but not sufficient for execution eligibility. Concrete runtime capacity, current availability, operator caps/consent, zero-project-cost policy, and the canonical runtime contract are required before the existing `free_compute_router.py` can select anything.
-
-## Why this is preferable to adding another protocol
-
-The intended architecture is now:
+The intended pipeline remains:
 
 ```text
 resource catalog / freshness / policy evidence
@@ -102,17 +112,35 @@ resource catalog / freshness / policy evidence
  -> explicit integration decision
 ```
 
-This lets IDKMesh add many providers and free/volunteer resource types without adding one scheduler, Work Unit, or execution schema per provider.
+The key safety statement is:
+
+```text
+discovery eligibility != execution eligibility
+```
+
+A provider must supply live capacity/availability evidence and any required operator consent/caps before it can materialize into the existing runtime offer contract.
+
+## Exact-head verification
+
+Before the concurrent bridge landed, the initial machine-readable boundary passed the `Free Resource Mesh Plan` workflow at exact head `011160fc8327b06ae8519f817afa7ce996242fdc`, including:
+
+- Python compilation;
+- policy unit tests;
+- current registry validation;
+- sample public-task planning;
+- JSON-plan validation.
+
+After converging on the canonical bridge document and synchronizing current `main`, the same policy workflow should be treated as the required final merge evidence for the reduced patch.
 
 ## Remaining external governance gap
 
-During the audit, public GitHub branch metadata continued to report `main` as unprotected with required status enforcement off.
+Public GitHub branch metadata continued during this audit to report `main` as unprotected with required status enforcement off.
 
 Repository workflows can detect and document that state, but they cannot substitute for an actual GitHub ruleset/branch-protection configuration. The canonical worker PR #91 also retains its deliberate genuinely separate human/reviewer inspection gate; this audit did not manufacture independence by self-approving that worker.
 
-## Next product experiment after this boundary
+## Next product experiment after resource-contract convergence
 
-The real same-worker two-attempt path and EvaluatorPlan-v0.2 orchestration are already integrated. After resource-contract convergence, the most informative next product experiment is not another orchestration layer. It is one deliberately simple heterogeneous second real adapter/worker plus a small frozen real-task set, measuring:
+The real same-worker two-attempt path and EvaluatorPlan-v0.2 orchestration are already integrated. The most informative next product experiment is not another orchestration layer. It is one deliberately simple heterogeneous second real adapter/worker plus a small frozen real-task set, measuring:
 
 - success by adapter;
 - verifier disagreement;
