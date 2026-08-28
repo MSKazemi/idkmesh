@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """Unified read-only IDKGraph P0 observatory.
 
-T5 composes the canonical deterministic boundaries that landed before it:
+The observatory composes the canonical deterministic boundaries:
 
 - T1 Markdown identity (consumed transitively by T2/T3);
 - T2 local Markdown link integrity;
 - T3 repository -> typed IDKGraph mapping;
-- T4 executable WorkUnit dependency-cycle checking.
+- T4 executable WorkUnit dependency-cycle checking;
+- residual P0 health conditions that remain deterministic but warning-only.
 
 One run emits three deterministic artifacts:
 
@@ -33,6 +34,10 @@ REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 if str(REPOSITORY_ROOT) not in sys.path:
     sys.path.insert(0, str(REPOSITORY_ROOT))
 
+from tools.idkgraph_health_checks import (
+    SCHEMA_VERSION as HEALTH_SCHEMA_VERSION,
+    check_residual_health,
+)
 from tools.idkgraph_link_check import check_links
 from tools.idkgraph_repository_mapping import (
     SCHEMA_VERSION as T3_SCHEMA_VERSION,
@@ -100,6 +105,7 @@ def _graph_indexes(graph: dict[str, Any]) -> tuple[dict[str, str], dict[str, str
 def _normalize_findings(
     link_report: dict[str, Any],
     cycle_report: dict[str, Any],
+    health_report: dict[str, Any],
     graph: dict[str, Any],
 ) -> list[dict[str, Any]]:
     path_to_id, id_to_path = _graph_indexes(graph)
@@ -122,6 +128,10 @@ def _normalize_findings(
                 },
             }
         )
+
+    for finding in health_report.get("findings", []):
+        if isinstance(finding, dict):
+            findings.append(dict(finding))
 
     if cycle_report.get("cycle_detected"):
         witness = cycle_report.get("cycle_witness") or []
@@ -176,11 +186,12 @@ def build_observatory(
     source_revision: str | None = None,
     revision_method: str | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
-    """Compose T2/T3/T4 evidence for one fixed repository tree."""
+    """Compose deterministic P0 evidence for one fixed repository tree."""
     root = root.resolve()
     graph = build_repository_graph(root)
     link_report = check_links(root)
     cycle_report = check_graph(graph)
+    health_report = check_residual_health(root, graph, link_report)
 
     if source_revision is None:
         source_revision = detect_git_revision(root)
@@ -189,7 +200,7 @@ def build_observatory(
         revision_method = "explicit"
 
     graph_payload = serialize_graph(graph)
-    findings = _normalize_findings(link_report, cycle_report, graph)
+    findings = _normalize_findings(link_report, cycle_report, health_report, graph)
     severity_counts, category_counts = _finding_counts(findings)
 
     research_hypotheses: list[dict[str, Any]] = []
@@ -204,6 +215,7 @@ def build_observatory(
             "t2_navigation": link_report.get("schema_version"),
             "t3_repository_mapping": T3_SCHEMA_VERSION,
             "t4_executable_cycles": T4_SCHEMA_VERSION,
+            "p0_residual_health": HEALTH_SCHEMA_VERSION,
         },
         "artifacts": {
             "graph": GRAPH_FILENAME,
@@ -218,6 +230,7 @@ def build_observatory(
             "sha256": _sha256_text(graph_payload),
         },
         "navigation": link_report.get("summary", {}),
+        "residual_health": health_report.get("summary", {}),
         "execution": {
             "work_units": len(cycle_report["projection"]["work_unit_ids"]),
             "dependency_edges": cycle_report["projection"]["edge_count"],
@@ -257,6 +270,7 @@ def render_health_report(observatory: dict[str, Any]) -> str:
     """Render deterministic human-readable evidence from ``observatory``."""
     graph = observatory["graph"]
     navigation = observatory["navigation"]
+    residual = observatory.get("residual_health", {})
     execution = observatory["execution"]
     counts = observatory["finding_counts"]["by_severity"]
     findings = observatory["findings"]
@@ -285,6 +299,8 @@ def render_health_report(observatory: dict[str, Any]) -> str:
         f"| Markdown documents scanned | {navigation.get('documents_scanned', 0)} |",
         f"| Local Markdown links | {navigation.get('local_markdown_links', 0)} |",
         f"| Resolved local Markdown links | {navigation.get('resolved_local_markdown_links', 0)} |",
+        f"| Orphan document candidates | {residual.get('orphan_document_candidates', 0)} |",
+        f"| Accepted decisions without document link | {residual.get('accepted_decisions_without_document_link', 0)} |",
         f"| Executable WorkUnits | {execution['work_units']} |",
         f"| Executable dependency edges | {execution['dependency_edges']} |",
         f"| Executable cycle detected | {'yes' if execution['cycle_detected'] else 'no'} |",
@@ -331,7 +347,7 @@ def render_health_report(observatory: dict[str, Any]) -> str:
             "",
             "## Research hypotheses",
             "",
-            "None are emitted automatically by the deterministic P0 observatory. Semantic contradiction, duplication, importance, and health-value judgments require a separately reviewed evidence/inference layer.",
+            "None are emitted automatically by the deterministic P0 observatory. Semantic contradiction, duplication, intentional orphan status, importance, and health-value judgments require a separately reviewed evidence/inference layer.",
             "",
             "## Replay",
             "",
