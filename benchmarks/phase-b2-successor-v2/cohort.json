@@ -9,6 +9,37 @@
   "extensions": {
     "org.idkmesh.phase_b2_v2": {
       "calibration_completed": {
+        "benchmark/phase-b2-v2/001-cohort-symlink-reference": {
+          "artifact_id": 9705160930,
+          "artifact_zip_sha256": "875c5fe2e444d15c91b1cd53b3ec5f06cf35f3a7986935d03ea4373d0b394c81",
+          "calibration_candidates_are_benchmark_outcomes": false,
+          "evaluator_plan_digest": "sha256:b6e3b0bc2627b3600a7a91ec5bd647d800d612228acb7c721795dc2ab0c5ab5e",
+          "evidence_kind": "post-definition-corrected-ordering-proxy-straightforward-and-inert-decoy-calibration",
+          "inert_decoy": {
+            "behavior": "vulnerable_direct_symlink_accepted",
+            "matched_added_substrings": 0,
+            "matched_removed_substrings": 1,
+            "recommendation": "reject_candidate",
+            "result_manifest_digest": "sha256:65c1802dfae66b24eb7fba29cd8b63b3555ad710f45880b8387ddea3ff1af6ac",
+            "verification_result_digest": "sha256:948da8a76b71739d942eeaee5648defbe2d0b5681b5fdc72f8f356ad8ac92137",
+            "verification_status": "failed"
+          },
+          "job_id": 99014922387,
+          "provisional_proxy_goodhartable": true,
+          "run_id": 33221041390,
+          "source_revision": "a69aa0ae1ae4862e507511cbd9ad854237d0ad32",
+          "status": "passed",
+          "straightforward": {
+            "behavior": "safe_direct_symlink_rejection_passed",
+            "matched_added_substrings": 3,
+            "matched_removed_substrings": 1,
+            "normal_boundary_behavior_preserved": true,
+            "recommendation": "accept_candidate",
+            "result_manifest_digest": "sha256:2bcf82bb7893ab1f49ba6e1ac757b236ac581fcc1e5e0a298226556f30bb3285",
+            "verification_result_digest": "sha256:76d466dce4490528e43645990a5ae5606036ff2cbb54a0bdfbff3b504d9f0783",
+            "verification_status": "passed"
+          }
+        },
         "benchmark/phase-b2-v2/002-router-nonfinite-numbers": {
           "artifact_id": 9698681251,
           "artifact_zip_sha256": "89b4af66402c4481a48603b4151db3d9942d4da450716002304d566a719d5d92",
@@ -128,11 +159,9 @@
           }
         }
       },
-      "calibration_pending_task_ids": [
-        "benchmark/phase-b2-v2/001-cohort-symlink-reference"
-      ],
+      "calibration_pending_task_ids": [],
       "calibration_required_for_every_task": true,
-      "freeze_ready": false,
+      "freeze_ready": true,
       "note": "Do not add definition_digest or set stage=frozen until all five evaluator calibration/behavior gates are green. Task taxonomy is fixed before outcomes; calibration records are post-definition evidence only and task evidence fields remain pending until scored runs begin after freeze.",
       "source_revision": "a69aa0ae1ae4862e507511cbd9ad854237d0ad32",
       "tracker_issue": 180
