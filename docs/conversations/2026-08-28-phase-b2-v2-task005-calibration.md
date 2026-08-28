@@ -109,7 +109,7 @@ Each case resets the source checkout and reapplies the candidate transform so on
 
 ## Exact calibration result
 
-Draft PR #189 exact head `dfa6de570ab280dede627c1aecea489f789ece3b` completed the dedicated calibration workflow successfully:
+Draft PR #189 exact calibration head `dfa6de570ab280dede627c1aecea489f789ece3b` completed the dedicated calibration workflow successfully:
 
 - workflow run `33196420808` — success;
 - calibration job `98934602908` — success;
@@ -140,10 +140,16 @@ The scaffold index was then advanced from five calibration-pending tasks to four
 
 The scaffold workflow was generalized at the same time so `calibration_pending` and `calibration_completed` form a disjoint partition of all five task IDs; `freeze_ready` may become true only when the pending set reaches zero.
 
+## Reproducibility check before maintainer review
+
+On later branch head `6aa10393499f4cc01e5da19aecbb04c7bdaef95a`, the dedicated Task 005 calibration was rerun successfully as workflow `33196555558` / job `98935061102`. The frozen source identity, scaffold revalidation, straightforward+decoy calibration, and authority assertions all passed again.
+
+A separate scaffold CI failure observed on that head came from an older pull-request workflow snapshot that still asserted all five task IDs must remain calibration-pending. The current branch workflow already uses the generalized pending/completed partition described above. This documentation-only update intentionally triggers a fresh pull-request synchronize event so GitHub validates the current workflow definition without altering the task, EvaluatorPlan, calibration record, or benchmark outcome state.
+
 ## Authority boundary
 
 Calibration objects are not scored benchmark outcomes.
 
 The workflow has `contents: read`, no persisted checkout credentials, no secrets, no project-paid compute, no canonical write/push/approval/merge authority, and no automatic candidate selection.
 
-Task 005 has now retired **one of five** #180 calibration gates. Four provisional evaluator calibrations remain before any successor freeze or definition digest is legitimate.
+Task 005 has now retired **one of five** #180 calibration gates. Four provisional evaluator calibrations remain before any future scaffold freeze or definition digest is legitimate. The separate frozen #182 cohort remains the only active scored Phase B2 lineage.
