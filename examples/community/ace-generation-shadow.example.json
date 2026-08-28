@@ -1,0 +1,82 @@
+{
+  "version": 1,
+  "review_load": 3.0,
+  "capacity": {
+    "K": 8.0,
+    "tau": 2.0
+  },
+  "policy": {
+    "eta": 0.8,
+    "mu": 0.08,
+    "lambda_latency": 0.002,
+    "lambda_noise": 0.15,
+    "activation_gate_passed": false,
+    "actuation_enabled": false,
+    "public_write_budget": 1
+  },
+  "weights": {
+    "reproduce": 0.1428571429,
+    "challenge": 0.1428571429,
+    "extend": 0.1428571429,
+    "explain": 0.1428571429,
+    "review": 0.1428571429,
+    "onboard": 0.1428571429,
+    "consolidate": 0.1428571426
+  },
+  "parents": [
+    {
+      "id": "MSKazemi/idkmesh#pr:39",
+      "verified": true,
+      "matured": true
+    },
+    {
+      "id": "MSKazemi/idkmesh#pr:58",
+      "verified": true,
+      "matured": true
+    }
+  ],
+  "lineage_receipts": [
+    {
+      "identity": "lineage:pr39-reproduction",
+      "parent": "MSKazemi/idkmesh#pr:39",
+      "seed": "MSKazemi/idkmesh#issue:29",
+      "descendant": "MSKazemi/idkmesh#pr:58",
+      "descendant_type": "reproduce",
+      "status": "verified",
+      "recorded_at": "2026-08-28T14:30:00Z",
+      "verified": true,
+      "reviewer_minutes": 8,
+      "verifier": "github:independent-reviewer"
+    },
+    {
+      "identity": "lineage:pr58-challenge",
+      "parent": "MSKazemi/idkmesh#pr:58",
+      "seed": "MSKazemi/idkmesh#issue:49",
+      "descendant": "MSKazemi/idkmesh#pr:68",
+      "descendant_type": "challenge",
+      "status": "candidate",
+      "recorded_at": "2026-08-28T14:35:00Z",
+      "verified": false,
+      "reviewer_minutes": 2,
+      "verifier": null
+    }
+  ],
+  "strategy_outcomes": [
+    {
+      "lineage_identity": "lineage:pr39-reproduction",
+      "strategy": "reproduce",
+      "value": 1.0,
+      "maintainer_minutes": 2,
+      "added_review_latency_hours": 0.5,
+      "unproductive_public_writes": 0
+    },
+    {
+      "lineage_identity": "lineage:pr58-challenge",
+      "strategy": "challenge",
+      "value": 0.0,
+      "maintainer_minutes": 1,
+      "added_review_latency_hours": 0.25,
+      "unproductive_public_writes": 0
+    }
+  ]
+}

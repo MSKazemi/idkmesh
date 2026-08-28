@@ -1,0 +1,59 @@
+name: ACE Generation Shadow
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/ace_generation_controller.py'
+      - 'tests/test_ace_generation_controller.py'
+      - 'examples/community/ace-generation-shadow.example.json'
+      - 'docs/community/ACE_ACTIVITY_METABOLISM.md'
+      - '.github/workflows/ace-generation-shadow.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/ace_generation_controller.py'
+      - 'tests/test_ace_generation_controller.py'
+      - 'examples/community/ace-generation-shadow.example.json'
+      - 'docs/community/ACE_ACTIVITY_METABOLISM.md'
+      - '.github/workflows/ace-generation-shadow.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  shadow-controller:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Run controller invariants
+        run: python -m unittest tests.test_ace_generation_controller -v
+
+      - name: Evaluate deterministic shadow fixture
+        run: |
+          python scripts/ace_generation_controller.py \
+            examples/community/ace-generation-shadow.example.json \
+            --output /tmp/ace-generation-result.json
+          python -m json.tool /tmp/ace-generation-result.json >/dev/null
+          cat /tmp/ace-generation-result.json >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Enforce shadow-mode fixture
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          result = json.loads(Path('/tmp/ace-generation-result.json').read_text())
+          assert result['actuation_enabled'] is False
+          assert result['public_action'] is None
+          assert result['public_write_budget'] <= 1
+          assert abs(sum(result['next_weights'].values()) - 1.0) < 1e-8
+          print('ACE shadow-mode invariants hold')
+          PY
