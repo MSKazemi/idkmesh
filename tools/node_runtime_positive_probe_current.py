@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import node_runtime_positive_probe as probe
 
-probe.FROZEN = "cbd40c43497ae4feb3a4a5e410dc78766b6cb19c"
+probe.FROZEN = "520ad2c9aa5825476de4957da4702d6823f4edb3"
 
 if __name__ == "__main__":
     raise SystemExit(probe.main())
