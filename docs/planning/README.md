@@ -9,6 +9,7 @@ This directory translates the long-range vision into current execution choices.
 - [`REPOSITORY_IMPROVEMENT_LOOP.md`](REPOSITORY_IMPROVEMENT_LOOP.md) — operating contract for evidence-bearing iterations, convergence before expansion, and review-capacity-aware task selection.
 - [`PR_TRIAGE_2026-08-28.md`](PR_TRIAGE_2026-08-28.md) — evidence-oriented PR triage principles and canonical integration queue discipline.
 - [`BRANCH_CONVERGENCE_POLICY.md`](BRANCH_CONVERGENCE_POLICY.md) — branch lifecycle, cleanup, exact-SHA evidence, stale-work extraction, and safe merge-boundary rules.
+- [`BRANCH_MERGE_EXECUTION_PLAN.md`](BRANCH_MERGE_EXECUTION_PLAN.md) — transactional branch-to-main algorithm: classification lanes, dependency DAG, conjunctive merge gates, exact-head integration, recomputation after every merge, and retirement waves.
 
 ## Relationship to other project artifacts
 
