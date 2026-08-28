@@ -171,13 +171,10 @@ sampling artifacts at 100 seeds, not evidence of superadditivity.
 
 ## Limitations
 
-1. **`n_eff` is only comparable within a fixed quorum.** It is calibrated on the
-   false-accept rate alone. Raising the quorum suppresses false accepts by trading them for
-   false rejects, so the `q = 0.7` cells yield `n_eff` values far above the panel size
-   (up to ~199 at `n = 11`). Those are an artifact of a one-sided metric, **not** evidence
-   that a stricter quorum manufactures reviewers. The `q = 0.7` raw data is published, but
-   every `n_eff` figure quoted above is at `q = 0.5`, where false accepts and false rejects
-   are symmetric. A two-sided cost-weighted metric is needed before quorums can be compared.
+1. **`n_eff` is only comparable within a fixed quorum.** *(Resolved -- see
+   "Quorum-comparable metric" below.)* It is calibrated on the false-accept rate alone.
+   Every `n_eff` figure quoted above is at `q = 0.5`, where the two error types are
+   symmetric. Use `n_eff_balanced` to compare quorums.
 2. Correlation is the shared-shock mixture inherited from E012. It is a controlled
    mechanism, not a model fitted to real reviewer behaviour, and real correlation is
    unlikely to be uniform across a panel.
@@ -215,3 +212,84 @@ same grid is roughly 15 core-hours and runs on one workstation overnight, or in 
 
 Per-core throughput differs between the cloud machines and a laptop by roughly 3.5x, so the
 wall-clock figures above are not portable; the seed counts and cell counts are.
+
+---
+
+# Quorum-comparable metric (`n_eff_balanced`)
+
+## The defect in `n_eff`
+
+`n_eff` inverts the false-accept tail only. Raising the acceptance quorum suppresses false
+accepts by trading them for false rejects, so a one-sided metric reads a strict quorum as
+an enormous panel. Measured, at `p = 0.75`, `n = 11`, independent errors:
+
+| `q` | false accept | false reject | `n_eff` (one-sided) |
+|---:|---:|---:|---:|
+| 0.5 | 0.0343 | 0.0343 | 11.06 |
+| 0.7 | 0.0013 | 0.2866 | **199.00** |
+
+An 11-member panel is not worth 199 reviewers. The false-accept rate fell 26x while the
+false-reject rate rose 8x, and the one-sided metric saw only the first half.
+
+## The fix
+
+`n_eff_balanced` matches the panel's **balanced error** -- the mean of the two error
+types -- against a fixed reference family: *independent simple-majority panels*. Because
+the reference does not move with the measured panel's quorum, the values are comparable
+across quorums. At `q = 0.5` the two metrics coincide exactly, so every result above is
+preserved.
+
+| `rho` | `n_eff` (one-sided, `q=0.7`) | `n_eff_balanced` (`q=0.7`) |
+|---:|---:|---:|
+| 0.0 | 199.00 | **3.47** |
+| 0.25 | 166.87 | 2.72 |
+| 0.5 | 86.57 | 2.13 |
+| 0.75 | 46.38 | 1.56 |
+| 1.0 | 1.00 | 1.00 |
+
+## Result — a strict quorum destroys evidence
+
+`n_eff_balanced` at `p = 0.75`:
+
+| panel `n` | `rho` | `q = 0.5` | `q = 0.7` |
+|---:|---:|---:|---:|
+| 5 | 0.0 | 4.98 | 2.25 |
+| 11 | 0.0 | 11.06 | 3.47 |
+| 21 | 0.0 | 21.09 | 4.08 |
+| 11 | 0.5 | 3.55 | 2.13 |
+| 21 | 0.5 | 4.01 | 2.30 |
+
+Raising the quorum from 0.5 to 0.7 costs a 21-member independent panel roughly **80% of
+its evidence** (21.09 -> 4.08). A strict quorum is not free caution; it converts one error
+type into a larger quantity of the other.
+
+## Result — a fractional quorum does not mean what it says
+
+`n_eff_balanced` at `q = 0.7` is **not monotone in panel size**: `n = 9` scores 2.06 while
+`n = 11` scores 3.47. This is not noise. The acceptance threshold is
+`need = floor(q*n) + 1`, so a nominal 70% quorum imposes:
+
+| `n` | votes required | effective fraction |
+|---:|---:|---:|
+| 3 | 3 | 100.0% |
+| 5 | 4 | 80.0% |
+| 7 | 5 | 71.4% |
+| 9 | 7 | 77.8% |
+| 11 | 8 | 72.7% |
+| 15 | 11 | 73.3% |
+| 21 | 15 | 71.4% |
+
+A "70% quorum" is unanimity at `n = 3` and 77.8% at `n = 9`. **Adding one reviewer can
+make a panel materially worse** by pushing the rounded threshold up.
+
+Operationally: specify quorums as *vote counts*, not fractions, or pin the panel size --
+otherwise the review policy silently changes strictness as panels grow and shrink.
+
+## Remaining limitations
+
+- The balanced error weights false accepts and false rejects equally. Where the two carry
+  different costs (accepting a bad patch is usually worse than rejecting a good one), a
+  cost-weighted variant is the right generalisation; `effective_n_balanced` takes the two
+  rates separately so the weighting is a one-line change.
+- The reference family is fixed to simple-majority independent panels. This is a choice,
+  not a derivation; it is stated so results remain interpretable.
