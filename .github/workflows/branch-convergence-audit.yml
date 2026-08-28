@@ -7,8 +7,11 @@ on:
   pull_request:
     paths:
       - 'tools/branch_convergence_audit.py'
+      - 'tools/branch_merge_planner.py'
       - 'tests/test_branch_convergence_audit.py'
+      - 'tests/test_branch_merge_planner.py'
       - 'docs/planning/BRANCH_CONVERGENCE_POLICY.md'
+      - 'docs/planning/BRANCH_MERGE_EXECUTION_PLAN.md'
       - '.github/workflows/branch-convergence-audit.yml'
 
 permissions:
@@ -16,7 +19,7 @@ permissions:
   pull-requests: read
 
 concurrency:
-  group: branch-convergence-audit
+  group: branch-convergence-audit-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -34,8 +37,12 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Run deterministic branch-state tests
-        run: python -m unittest tests.test_branch_convergence_audit -v
+      - name: Run deterministic branch planning tests
+        run: |
+          set -euo pipefail
+          python -m unittest tests.test_branch_convergence_audit -v
+          python -m unittest tests.test_branch_merge_planner -v
+          python tools/branch_merge_planner.py self-test
 
       - name: Audit live branch convergence state
         env:
@@ -49,17 +56,32 @@ jobs:
             --output-json "$RUNNER_TEMP/idkmesh-branch-audit/branch-convergence.json" \
             --output-md "$RUNNER_TEMP/idkmesh-branch-audit/branch-convergence.md"
 
-      - name: Publish audit summary
+      - name: Build deterministic branch-to-main execution plan
+        run: |
+          set -euo pipefail
+          python tools/branch_merge_planner.py plan \
+            --input-json "$RUNNER_TEMP/idkmesh-branch-audit/branch-convergence.json" \
+            --output-json "$RUNNER_TEMP/idkmesh-branch-audit/branch-merge-plan.json" \
+            --output-md "$RUNNER_TEMP/idkmesh-branch-audit/branch-merge-plan.md"
+
+      - name: Publish audit and merge-plan summary
         if: always()
         run: |
-          REPORT="$RUNNER_TEMP/idkmesh-branch-audit/branch-convergence.md"
-          if test -f "$REPORT"; then
-            cat "$REPORT" >> "$GITHUB_STEP_SUMMARY"
+          AUDIT="$RUNNER_TEMP/idkmesh-branch-audit/branch-convergence.md"
+          PLAN="$RUNNER_TEMP/idkmesh-branch-audit/branch-merge-plan.md"
+          if test -f "$AUDIT"; then
+            cat "$AUDIT" >> "$GITHUB_STEP_SUMMARY"
           else
             echo 'Branch convergence report was not produced.' >> "$GITHUB_STEP_SUMMARY"
           fi
+          echo '' >> "$GITHUB_STEP_SUMMARY"
+          if test -f "$PLAN"; then
+            cat "$PLAN" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'Branch merge plan was not produced.' >> "$GITHUB_STEP_SUMMARY"
+          fi
 
-      - name: Upload audit evidence
+      - name: Upload audit and plan evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -72,6 +94,7 @@ jobs:
 # - read-only repository and PR permissions;
 # - no push, merge, approval, branch deletion, label, issue, or settings mutation;
 # - no execution of issue/PR natural-language content;
-# - branch state is decision support only;
+# - branch state and merge-plan lanes are decision support only;
+# - the planner always emits merge_authorized=false and direct branch merge=false;
 # - current main protection/independent-review requirements remain external gates;
 # - no paid-provider fallback or project-funded compute path is introduced.
