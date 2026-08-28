@@ -19,15 +19,26 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
 
-from evolution_math import (
-    clamp01,
-    dag_unlock_values,
-    jensen_shannon_divergence,
-    multiplicative_weights,
-    normalized_entropy,
-    rank_pareto,
-    select_ucb,
-)
+try:  # Package import under unittest / module execution.
+    from .evolution_math import (
+        clamp01,
+        dag_unlock_values,
+        jensen_shannon_divergence,
+        multiplicative_weights,
+        normalized_entropy,
+        rank_pareto,
+        select_ucb,
+    )
+except ImportError:  # Direct CLI execution: python scripts/repository_portfolio.py
+    from evolution_math import (
+        clamp01,
+        dag_unlock_values,
+        jensen_shannon_divergence,
+        multiplicative_weights,
+        normalized_entropy,
+        rank_pareto,
+        select_ucb,
+    )
 
 BLOCKED_BY_RE = re.compile(r"\b(?:blocked\s+by|depends\s+on|requires)\s+#(\d+)\b", re.IGNORECASE)
 BLOCKS_RE = re.compile(r"\bblocks\s+#(\d+)\b", re.IGNORECASE)
@@ -402,14 +413,6 @@ def build_portfolio(
             "multiplicative weights respond to configured health need, not measured causal reward",
         ],
     }
-
-
-def _fmt(value: Any) -> str:
-    if value is None:
-        return "∞"
-    if isinstance(value, float):
-        return f"{value:.3f}"
-    return str(value)
 
 
 def render_markdown(portfolio: Mapping[str, Any]) -> str:
