@@ -9,6 +9,7 @@ on:
       - "verification/**"
       - "experiments/**"
       - "tests/test_verification_backpressure_benchmark.py"
+      - "tests/test_patch_evaluator_transition_v04.py"
       - "requirements-phase0.txt"
       - ".github/workflows/phase0-schema-check.yml"
   push:
@@ -20,6 +21,7 @@ on:
       - "verification/**"
       - "experiments/**"
       - "tests/test_verification_backpressure_benchmark.py"
+      - "tests/test_patch_evaluator_transition_v04.py"
       - "requirements-phase0.txt"
       - ".github/workflows/phase0-schema-check.yml"
 
@@ -47,10 +49,14 @@ jobs:
             --bad-candidate-root examples/verifier/bad/candidate-root
       - name: Preserve EvaluatorPlan v0.2 patch semantics
         run: python experiments/evaluator_plan_runner.py patch-self-test
-      - name: Prove EvaluatorPlan semantic version boundary
+      - name: Prove EvaluatorPlan semantic version boundaries
         run: |
-          python -m py_compile experiments/evaluator_plan_runner.py experiments/substring_patch_verifier.py
+          python -m py_compile \
+            experiments/evaluator_plan_runner.py \
+            experiments/substring_patch_verifier.py \
+            experiments/transition_patch_verifier.py
           python experiments/evaluator_plan_runner.py semantic-version-self-test
+          python -m unittest tests.test_patch_evaluator_transition_v04 -v
       - name: Run deterministic two-attempt orchestration kernel
         run: python experiments/two_attempt_orchestrator.py self-test
       - name: Verify risk-weighted verification backpressure
@@ -78,13 +84,14 @@ jobs:
 # and cross-object lineage checks only. local_verifier.py and the versioned
 # EvaluatorPlan patch adapters parse isolated fixture metadata/diffs and apply
 # verifier-owned deterministic policy without executing candidate code. v0.2
-# exact-line semantics and v0.3 substring semantics are tested side-by-side so a
-# historical verifier meaning cannot silently change. two_attempt_orchestrator.py
-# coordinates replayable fixture ResultManifests and verifier calls only; it has no
-# worker-execution, canonical-write, push, or merge authority. The verification
-# backpressure utilities perform deterministic scheduling, queue, and synthetic
-# evidence arithmetic only; the temporal benchmark does not execute candidates or
-# grant integration authority. local_compute_offer.py performs local resource
-# discovery only, and free_compute_router.py performs selection only. Repository
-# policy must fail closed rather than granting new execution or project-paid compute
-# authority.
+# exact-line semantics, v0.3 added-substring semantics, and v0.4 added+removed
+# transition semantics are tested side-by-side so historical verifier meanings
+# cannot silently change and the known inert-added-text decoy remains rejected by
+# the newest contract. two_attempt_orchestrator.py coordinates replayable fixture
+# ResultManifests and verifier calls only; it has no worker-execution,
+# canonical-write, push, or merge authority. The verification backpressure
+# utilities perform deterministic scheduling, queue, and synthetic evidence
+# arithmetic only; the temporal benchmark does not execute candidates or grant
+# integration authority. local_compute_offer.py performs local resource discovery
+# only, and free_compute_router.py performs selection only. Repository policy must
+# fail closed rather than granting new execution or project-paid compute authority.

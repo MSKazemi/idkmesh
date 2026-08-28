@@ -1,0 +1,40 @@
+{
+  "backend": {
+    "max_candidate_bytes": 200000,
+    "max_log_bytes": 262144,
+    "require_nonempty_patch": true,
+    "required_added_substrings": ["safe_call("],
+    "required_log_types": ["stdout", "stderr"],
+    "required_removed_substrings": ["unsafe_call("],
+    "type": "unified_diff",
+    "verify_log_digests": true
+  },
+  "binding": {
+    "source_revision": "patch-verifier-fixture-v1",
+    "work_unit_digest": "sha256:3f8b78df3f43329fe72223018ab42300fcb19523a82769e47ba31098861c24fd",
+    "work_unit_id": "verification/patch-smoke",
+    "work_unit_version": 1
+  },
+  "candidate_artifact_id": "candidate-patch",
+  "execution_mode": "metadata_only",
+  "extensions": {
+    "org.idkmesh.patch_evaluator": {
+      "purpose": "calibrate added-and-removed transition semantics against a legitimate replacement and a Goodhart decoy"
+    }
+  },
+  "id": "verification/patch-transition-plan",
+  "policy": {
+    "require_output_outside_candidate_root": true,
+    "require_plan_outside_candidate_root": true,
+    "require_verifier_distinct_from_worker": true
+  },
+  "required_validator_ids": ["result-manifest-schema", "independent-review"],
+  "schema_version": "0.4",
+  "verifier": {
+    "adapter": "deterministic-patch-verifier",
+    "adapter_version": "0.3.0",
+    "id": "idkmesh-local-verifier",
+    "type": "system"
+  },
+  "visibility": "public"
+}
