@@ -2,33 +2,48 @@ name: IDKMesh Evolution Loop
 
 on:
   issues:
-    types: [opened, closed]
+    types: [opened, closed, reopened, labeled, unlabeled]
   pull_request:
-    types: [opened, closed]
+    types: [opened, closed, reopened, synchronize, ready_for_review, converted_to_draft]
   pull_request_review:
-    types: [submitted]
+    types: [submitted, dismissed]
   issue_comment:
     types: [created]
+  push:
+    branches: [main]
   workflow_dispatch:
   schedule:
-    - cron: '17 5 * * 1'
+    - cron: '17 5 * * *'
 
 permissions:
   contents: read
+  issues: read
+  pull-requests: read
+  actions: read
 
 concurrency:
   group: evolution-observer
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   observe:
-    # Avoid recursive/noisy bot events. This workflow observes; it does not mutate main.
+    # Run only trusted default-branch observer code. PR text/code is evidence input,
+    # never executable authority for this metadata observer.
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 8
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Check out trusted default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
 
       - name: Normalize event kind
         id: event
@@ -43,6 +58,8 @@ jobs:
             kind="schedule.audit"
           elif [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
             kind="workflow_dispatch.manual"
+          elif [[ "$EVENT_NAME" == "push" ]]; then
+            kind="push.main"
           elif [[ "$EVENT_NAME" == "pull_request" && "$EVENT_ACTION" == "closed" && "$PR_MERGED" == "true" ]]; then
             kind="pull_request.merged"
           else
@@ -50,35 +67,66 @@ jobs:
           fi
           echo "kind=$kind" >> "$GITHUB_OUTPUT"
 
-      - name: Score observation
+      - name: Verify observer implementation
         run: |
-          python3 scripts/evolution_score.py \
-            --kind '${{ steps.event.outputs.kind }}' \
-            --actor '${{ github.actor }}' \
+          python -m py_compile scripts/evolution_snapshot.py scripts/evolution_score.py tests/test_evolution_observer.py
+          python -m unittest tests.test_evolution_observer -v
+
+      - name: Collect bounded live repository evidence
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python scripts/evolution_snapshot.py \
             --repository '${{ github.repository }}' \
-            --ref '${{ github.ref }}' \
-            --run-id '${{ github.run_id }}'
+            --event-kind '${{ steps.event.outputs.kind }}' \
+            --run-id '${{ github.run_id }}' \
+            --output results/evolution/repository-snapshot.json
 
-      - name: Validate generated state
+      - name: Evaluate multi-algorithm evolution policy
         run: |
-          python3 -m json.tool state/evolution-state.json >/dev/null
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
-          for line in Path('state/evolution-events.jsonl').read_text().splitlines():
-              json.loads(line)
-          print('evolution state and event log are valid')
-          PY
+          python scripts/evolution_score.py \
+            --snapshot results/evolution/repository-snapshot.json \
+            --policy config/evolution-policy-v1.json \
+            --output results/evolution/evolution-decision.json \
+            --report results/evolution/EVOLUTION_REPORT.md
 
-      - name: Publish observation artifact
-        uses: actions/upload-artifact@v4
+      - name: Validate generated evidence
+        run: |
+          python -m json.tool results/evolution/repository-snapshot.json >/dev/null
+          python -m json.tool results/evolution/evolution-decision.json >/dev/null
+
+      - name: Publish evolution observation artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: evolution-observation-${{ github.run_id }}
-          path: |
-            EVOLUTION_REPORT.md
-            state/evolution-state.json
-            state/evolution-events.jsonl
+          path: results/evolution/
           retention-days: 30
+          if-no-files-found: error
 
       - name: Job summary
-        run: cat EVOLUTION_REPORT.md >> "$GITHUB_STEP_SUMMARY"
+        run: cat results/evolution/EVOLUTION_REPORT.md >> "$GITHUB_STEP_SUMMARY"
+
+  verify-pr-head:
+    # PR-head verification receives no repository token/secrets in the test process.
+    # It verifies only deterministic observer code and policy changes.
+    if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out proposed PR code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+
+      - name: Test deterministic observer policy
+        run: |
+          python -m py_compile scripts/evolution_snapshot.py scripts/evolution_score.py tests/test_evolution_observer.py
+          python -m unittest tests.test_evolution_observer -v
