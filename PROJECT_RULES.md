@@ -54,6 +54,26 @@ Conversation records should normally be stored under `docs/conversations/`, whil
 
 The goal is that a contributor should be able to understand the evolution of IDKMesh from the public repository without depending on access to the original ChatGPT conversation.
 
+## Rule 3 — Zero project spend for compute
+
+**IDKMesh currently cannot pay for computing resources, hosted model usage, GPU rental, cloud instances, or other execution capacity. Project-funded compute spend is therefore a hard constraint of `$0`.**
+
+The repository-level policy is stored in [`config/compute-policy.json`](config/compute-policy.json). Work Units may tighten that policy but must not relax it. In particular:
+
+- the automatic compute path must never silently fall back to a paid provider;
+- when no eligible zero-project-cost resource exists, the correct behavior is to queue, replan, reduce the task, ask for donated capacity, or fail closed;
+- local hardware, volunteer hardware, public-project CI, grants, and genuine free tiers may be used only within their applicable terms and limits;
+- donated compute is not economically “free”: electricity, hardware wear, bandwidth, thermal load, and attention are borne by the donor, so donation must be opt-in, transparent, resource-capped, and easy to pause or stop;
+- no contributor should be pressured to donate compute in order to participate or gain standing in the community;
+- paid-provider adapters may be studied for interoperability, but they are disabled by project policy and are not part of the active execution path while this rule is in force;
+- free quotas must be treated as opportunistic capacity, not as architectural guarantees.
+
+The executable prototype enforcing this rule is [`experiments/free_compute_router.py`](experiments/free_compute_router.py). Its safety invariant is:
+
+> **No eligible zero-project-cost offer → no execution selection. Never convert resource scarcity into an unapproved bill.**
+
+Any future proposal to permit project spending must be an explicit governance/maintainer decision that changes this rule and the repository policy; a Work Unit, agent, scheduler, issue, or contributor cannot enable spending by itself.
+
 ## Structured preservation, not transcript dumping
 
 Preservation does not mean turning the repository into an undifferentiated transcript archive.
