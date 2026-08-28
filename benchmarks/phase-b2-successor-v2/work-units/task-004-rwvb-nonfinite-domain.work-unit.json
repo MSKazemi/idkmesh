@@ -1,0 +1,23 @@
+{
+  "budget": {"compute_units": 1, "human_minutes": 20, "paid_fallback_allowed": false, "project_spend_usd_max": 0, "tokens": 20000, "wall_seconds": 900},
+  "constraints": {"allowed_paths": ["experiments/verification_backpressure.py"], "forbidden_paths": [".github/**", "schemas/**", "benchmarks/**", "verification/**"], "policies": ["candidate-only", "independent-verification-required", "zero-project-spend", "benchmark-definition-immutable"]},
+  "context": {"max_context_bytes": 200000, "references": ["schemas/work-unit-v0.2.schema.json", "schemas/result-manifest-v0.1.schema.json", "schemas/evaluator-plan-v0.4.schema.json", "docs/specifications/BENCHMARK_COHORT_V0_1.md", "docs/specifications/EVALUATOR_PLAN_V0_4_TRANSITION_SEMANTICS.md"], "summary": "RWVB range/domain checks rely primarily on inequalities; several NaN/Infinity values can evade those guards and poison debt, priority, or fan-out arithmetic."},
+  "dependencies": [],
+  "evidence_requirements": [{"required": true, "type": "artifact_hash"}, {"required": true, "type": "review"}],
+  "extensions": {"org.idkmesh.benchmark": {"cohort": "phase-b2-successor-v2", "task_family": "benchmark", "tracker_issue": 180}},
+  "failure_semantics": {"max_attempts": 1, "on_failure": "stop", "retryable": false},
+  "id": "benchmark/phase-b2-v2/004-rwvb-nonfinite-domain",
+  "inputs": [{"id": "source-repository", "locator": "https://github.com/MSKazemi/idkmesh", "type": "git_ref"}],
+  "kind": "coding",
+  "objective": "Require every floating-point Candidate and ControllerConfig input used by RWVB to be finite before applying existing range/domain checks, while preserving all current finite scheduling and fan-out behavior.",
+  "outputs": [{"description": "Unverified candidate patch against the successor-v2 source snapshot.", "id": "candidate-patch", "media_type": "text/x-diff", "type": "patch"}],
+  "permissions": {"filesystem_write": ["experiments/verification_backpressure.py"], "network": "none", "network_allowlist": [], "process_execution": true, "secrets": []},
+  "provenance": {"created_by": "idkmesh-project", "creator_type": "system", "source": "Phase B2 successor-v2 scaffold definition", "source_revision": "a69aa0ae1ae4862e507511cbd9ad854237d0ad32"},
+  "requirements": {"capabilities": ["git", "python"], "resources": {"accelerator_capabilities": [], "cpu_cores_min": 0.5, "disk_mb_min": 32, "gpu": "none", "memory_mb_min": 128}},
+  "schema_version": "0.2",
+  "security": {"data_classification": "public", "minimum_worker_trust": "untrusted", "notes": "Public repository task. Worker must not modify evaluator/control artifacts. Candidate correctness is determined independently; worker self-report is not acceptance.", "risk_class": "medium", "sandbox_required": true},
+  "uncertainty": [{"confidence": 0.99, "resolution_strategy": "Require issue #180 calibration gate and task-specific behavioral regression where safe.", "statement": "EvaluatorPlan v0.4 transition checks are a static proxy and must be calibrated against a straightforward transition plus a near-miss before cohort freeze."}],
+  "validators": [{"description": "Worker output must validate as ResultManifest v0.1.", "id": "result-manifest-schema", "required": true, "type": "schema"}, {"description": "Independent evaluator must verify artifact/log integrity, patch scope, calibrated transition evidence, and any separately required behavioral evidence.", "id": "independent-review", "required": true, "type": "review"}],
+  "verification_policy": {"acceptance_rule": "Both required validators must pass; worker self-report and static transition support are not merge authority. Successor-v2 freeze additionally requires pre-outcome evaluator calibration.", "independent_from_worker": true, "minimum_independent_verifiers": 1, "strategy": "all_required"},
+  "version": 1
+}
