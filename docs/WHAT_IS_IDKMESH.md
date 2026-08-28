@@ -2,9 +2,11 @@
 
 ## Short answer
 
-**IDKMesh is a general framework and experimental platform for distributed human + AI collaboration on complex projects.**
+**IDKMesh is an open research program building a verification-first coordination framework for distributed human + AI work. Its first reference application is a Git-native Verified Swarm Runner, and this repository is the first self-hosting experiment.**
 
-It is not intended to be only one application.
+It is intended to become reusable infrastructure, not only one application. That generality is a design target, not a capability already proven at scale.
+
+The framework, research program, community, reference implementation, and self-hosting experiment are different layers of one system. [`../ITERATION_MODEL.md`](../ITERATION_MODEL.md) defines their shared terms and the end-to-end evolution algorithm.
 
 The first major use case is collaborative software engineering, because software gives us unusually strong verification tools: tests, compilers, static analysis, reproducible builds, benchmarks, code review, and version control. But the underlying framework should be general enough to support other research and engineering projects later.
 
@@ -92,13 +94,13 @@ Their work can compose through explicit interfaces.
 
 ## Project identity
 
-IDKMesh is best understood simultaneously as:
+IDKMesh is best understood as a layered combination:
 
-1. **an open-source framework** — reusable software/protocols for distributed collaboration;
+1. **an emerging open-source framework** — reusable software/protocols for distributed collaboration;
 2. **a research program** — experiments about collective intelligence, distributed work, verification, incentives, and governance;
 3. **a community** — humans and AI agents from different disciplines working in public;
 4. **a reference implementation** — software that demonstrates the protocols;
-5. **a meta-project** — a system that should eventually help improve itself;
+5. **a self-hosting meta-project** — a system testing whether it can help improve itself;
 6. **a substrate for other projects** — future projects should be able to use IDKMesh without becoming IDKMesh itself.
 
 ## What IDKMesh is not

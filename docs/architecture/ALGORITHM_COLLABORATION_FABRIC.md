@@ -1,7 +1,7 @@
 # Algorithm Collaboration Fabric
 
-**Status:** architecture proposal v0.1  
-**Date:** 2026-08-28  
+**Status:** architecture proposal v0.1
+**Date:** 2026-08-28
 **Authority:** design and decision-support only; no merge, approval, spending, or autonomous-governance authority
 
 ## Purpose
@@ -781,4 +781,4 @@ That is how IDKMesh can become more intelligent without making one algorithm the
 - `docs/research/METRIC_UNCERTAINTY_V0_1.md`
 - `docs/research/PHASE_0_SPEC.md`
 - `docs/planning/BRANCH_CONVERGENCE_POLICY.md`
-- `docs/planning/BRANCH_MERGE_EXECUTION_PLAN.md` (proposal in PR #205 at the time of this document)
+- `docs/planning/BRANCH_MERGE_EXECUTION_PLAN.md` (canonical execution plan integrated by PR #211)

@@ -1,11 +1,11 @@
 # ACE Activity Metabolism
 
-**Status:** proposed canonical synthesis / shadow-mode controller design  
+**Status:** canonical community-loop specialization / shadow-mode controller design
 **Date:** 2026-08-28
 
 IDKMesh already has the ingredients for a nature-inspired self-improving repository: project fitness, community reproduction, carrying capacity, stigmergy, replicator dynamics, exploration temperature, structural entropy, verification backpressure, and lineage evidence. The missing layer is a single rule that composes them.
 
-This document defines that composition as **ACE Activity Metabolism**.
+This document defines that community-specific composition as **ACE Activity Metabolism**. [`../../ITERATION_MODEL.md`](../../ITERATION_MODEL.md) defines the whole-system lifecycle and shared vocabulary.
 
 The core idea is biological rather than promotional:
 

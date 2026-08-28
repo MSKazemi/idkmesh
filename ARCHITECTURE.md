@@ -2,6 +2,8 @@
 
 This document is intentionally provisional. IDKMesh is still exploring its product and research boundaries.
 
+See [`ITERATION_MODEL.md`](ITERATION_MODEL.md) for the canonical definitions of event, action, iteration, improvement, learning, and the integrated control loop.
+
 ## Core abstraction
 
 Represent the project as interacting graphs rather than a single queue of tasks.

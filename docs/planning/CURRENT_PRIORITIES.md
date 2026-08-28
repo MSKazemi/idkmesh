@@ -2,6 +2,8 @@
 
 **Snapshot date:** 2026-08-28
 
+**Status:** Historical point-in-time plan. The numbered PR states below have since changed; do not use this file as a live execution queue. Recompute current priorities from live GitHub state and the repository observatory. The dependency-order and evidence-first principles remain useful.
+
 This file records the highest-leverage next actions after inspecting the current repository, open issues, open pull requests, CI state, and project roadmap.
 
 The repository has reached an important transition point: the conceptual surface is already rich, Phase 0 contracts exist, community-growth experiments exist, and multiple implementation branches are open. The main risk now is continuing to add parallel theory and automation faster than the project converts them into protected, executable, independently verified evidence.
