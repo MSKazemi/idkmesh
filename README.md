@@ -13,6 +13,28 @@ The project starts from a question rather than a fixed product specification:
 
 > Can a large community of humans and AI agents, using distributed commodity compute, collectively discover goals, design systems, write and verify code, and produce enterprise-grade open-source software at a scale that a single developer or model cannot?
 
+## What is IDKMesh?
+
+IDKMesh should be understood primarily as a **general framework/platform, research program, and community for distributed collaboration**, not as one fixed application.
+
+The intended structure is:
+
+```text
+IDKMesh Core
+   |
+   +-- domain/project protocols
+          |
+          +-- software-engineering projects
+          +-- scientific/research projects
+          +-- other future collaborative domains
+```
+
+The core provides reusable primitives for evolving goals, bounded Work Units, scheduling, isolated execution, verification, provenance, reputation, governance, and metrics. Domain-specific layers add their own validators, policies, roles, and evidence rules. Independent projects can then run on top of the framework.
+
+The first reference implementation is intentionally narrower: **distributed software engineering**, with IDKMesh eventually using IDKMesh to improve itself.
+
+See [`docs/WHAT_IS_IDKMESH.md`](docs/WHAT_IS_IDKMESH.md) and [`GOALS.md`](GOALS.md).
+
 ## Status
 
 **Exploration / research / architecture phase.**
@@ -24,14 +46,26 @@ IDKMesh is deliberately not pretending that its final architecture is known. The
 1. Scale participation from one human + one laptop to very large communities and compute pools.
 2. Coordinate many humans and many AI agents even when the target is initially ambiguous.
 3. Preserve software quality as the number of contributors and agents grows.
-4. Make contribution accessible to people with different skills, hardware, languages, and levels of experience.
+4. Make contribution accessible to people with different skills, hardware, languages, disciplines, and levels of experience.
 5. Use mathematical, economic, distributed-systems, and statistical mechanisms to allocate work and reach decisions.
 6. Keep the project open, auditable, reproducible, and useful to humanity.
 7. Build mechanisms for verification, trust, reputation, safety, governance, and conflict resolution rather than relying on a single central authority.
+8. Allow other projects to reuse the coordination framework without becoming coupled to one AI model, Git forge, or application domain.
+
+## Multidisciplinary collaboration
+
+IDKMesh is deliberately open to contribution from software engineering, AI/ML, distributed systems, security, mathematics, operations research, economics, governance, open-source community building, UX/design, scientific methodology, domain experts, and compute contributors.
+
+Different perspectives do **not** need to reach total conceptual agreement before useful work begins. They should collaborate through shared boundary artifacts such as Work Units, Goal Graph nodes, RFCs, APIs/contracts, benchmarks, threat models, experiment manifests, evidence, and architecture decisions.
+
+See [`docs/CONTRIBUTOR_PERSPECTIVES.md`](docs/CONTRIBUTOR_PERSPECTIVES.md).
 
 ## Repository map
 
 - [`VISION.md`](VISION.md) — what the project is trying to discover and why.
+- [`GOALS.md`](GOALS.md) — concrete hierarchy of goals and success criteria.
+- [`docs/WHAT_IS_IDKMESH.md`](docs/WHAT_IS_IDKMESH.md) — framework/core/domain-project model.
+- [`docs/CONTRIBUTOR_PERSPECTIVES.md`](docs/CONTRIBUTOR_PERSPECTIVES.md) — multidisciplinary contribution model.
 - [`ARCHITECTURE.md`](ARCHITECTURE.md) — initial system model and architectural directions.
 - [`docs/architecture/SCALABILITY_AND_AGILITY.md`](docs/architecture/SCALABILITY_AND_AGILITY.md) — the proposed scale-from-1-to-millions fractal-cell architecture and agility rules.
 - [`MATHEMATICAL_FOUNDATIONS.md`](MATHEMATICAL_FOUNDATIONS.md) — candidate mathematical formulations and algorithms.
@@ -91,7 +125,7 @@ See [`docs/architecture/SCALABILITY_AND_AGILITY.md`](docs/architecture/SCALABILI
 
 ## Recommended starting point
 
-Read [`ROADMAP.md`](ROADMAP.md), [`docs/research/TOP_20_QUESTIONS.md`](docs/research/TOP_20_QUESTIONS.md), and [`docs/architecture/SCALABILITY_AND_AGILITY.md`](docs/architecture/SCALABILITY_AND_AGILITY.md), then begin with the **experimental kernel**, not the million-node system.
+Read [`GOALS.md`](GOALS.md), [`ROADMAP.md`](ROADMAP.md), [`docs/WHAT_IS_IDKMESH.md`](docs/WHAT_IS_IDKMESH.md), [`docs/research/TOP_20_QUESTIONS.md`](docs/research/TOP_20_QUESTIONS.md), and [`docs/architecture/SCALABILITY_AND_AGILITY.md`](docs/architecture/SCALABILITY_AND_AGILITY.md), then begin with the **experimental kernel**, not the million-node system.
 
 The first engineering artifacts are machine-readable Work Unit/Task Contract, Result/Artifact Manifest, and Goal Graph schemas plus a simulator and common metrics harness.
 
@@ -120,6 +154,6 @@ Apache License 2.0. See [`LICENSE`](LICENSE).
 
 ## Contributing
 
-The project is intentionally early. That means architecture critiques, literature references, mathematical models, simulations, prototypes, benchmarks, governance proposals, documentation, and negative results are all valuable contributions.
+The project is intentionally early. That means architecture critiques, literature references, mathematical models, simulations, prototypes, benchmarks, governance proposals, documentation, UX work, domain expertise, compute contributions, and negative results are all valuable contributions.
 
-Start with [`CONTRIBUTING.md`](CONTRIBUTING.md), [`ROADMAP.md`](ROADMAP.md), [`docs/research/TOP_20_QUESTIONS.md`](docs/research/TOP_20_QUESTIONS.md), and [`RESEARCH_QUESTIONS.md`](RESEARCH_QUESTIONS.md).
+Start with [`CONTRIBUTING.md`](CONTRIBUTING.md), [`docs/CONTRIBUTOR_PERSPECTIVES.md`](docs/CONTRIBUTOR_PERSPECTIVES.md), [`ROADMAP.md`](ROADMAP.md), [`docs/research/TOP_20_QUESTIONS.md`](docs/research/TOP_20_QUESTIONS.md), and [`RESEARCH_QUESTIONS.md`](RESEARCH_QUESTIONS.md).
