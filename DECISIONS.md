@@ -96,3 +96,68 @@
 **Rationale:** A volunteer software-development compute network creates both remote-code-execution risk on participant machines and fraudulent/incorrect result risk for the network.
 
 **Consequence:** Sandboxing, least privilege, reproducible environments, provenance, content-addressed artifacts, independent verification, redundant execution for sensitive claims, and supply-chain controls are foundational requirements.
+
+## 2026-08-28 — Use a three-network abstraction
+
+**Decision:** Model IDKMesh initially as three interacting networks:
+
+1. **Intelligence network** — humans and AI agents that propose, criticize, test, and select ideas.
+2. **Work/knowledge network** — goals, questions, hypotheses, tasks, code, evidence, tests, dependencies, decisions, and provenance.
+3. **Compute network** — heterogeneous laptops, GPUs, servers, and other resources that execute work.
+
+**Rationale:** Reasoning/coordination, knowledge/dependency structure, and physical execution have different mathematical constraints and should not be conflated into one protocol.
+
+## 2026-08-28 — Treat collective intelligence as diversity-aware, not count-based
+
+**Decision:** Raw agent count is not a quality metric.
+
+**Rationale:** Majority or ensemble gains depend on competence and sufficiently independent errors. Large populations of similar agents can have strongly correlated failure modes.
+
+**Consequence:** IDKMesh should explicitly measure correctness, calibration, novelty, redundancy, error correlation, specialization, and independent verification.
+
+A working research relationship is:
+
+`collective value = f(competence, diversity, independence, verification, specialization, coordination)`.
+
+## 2026-08-28 — Use multi-objective optimization rather than one master score
+
+**Decision:** Model system design as a multi-objective optimization problem and study Pareto trade-offs.
+
+**Candidate objectives:** correctness, usefulness, diversity, robustness, security, latency, compute/energy cost, bandwidth, privacy, fairness, and contributor satisfaction.
+
+**Rationale:** Collapsing all values into one permanent scalar objective too early creates brittle optimization and Goodhart risks.
+
+## 2026-08-28 — P0 mathematical foundations
+
+**Decision:** Prioritize the following mathematical families for early research and prototypes:
+
+1. graph/DAG algorithms and spectral graph theory;
+2. multi-objective and combinatorial optimization;
+3. Bayesian inference, calibration, robust statistics, and information theory;
+4. multi-armed bandits and Monte Carlo tree search;
+5. matching, network flow, queueing, and work stealing;
+6. redundant execution and Byzantine-resistant validation;
+7. gossip, CRDTs, and appropriately scoped consensus;
+8. game theory, proper scoring, contribution valuation, and evolutionary mechanism selection.
+
+**Later research:** distributed/federated learning, coding theory, secure aggregation, formal verification, and deeper statistical-physics or quantum-inspired techniques when concrete experiments justify them.
+
+## 2026-08-28 — Physics analogies are hypotheses, not evidence
+
+**Decision:** Ideas from simulated annealing, free-energy models, spin systems, percolation, synchronization, particle/gas models, or quantum-inspired algorithms may generate useful hypotheses but must not be described as engineering advantages without empirical evidence.
+
+**Rationale:** Attractive cross-disciplinary analogies can inspire algorithms, but they can also mislead if treated as proof.
+
+## 2026-08-28 — Incremental scaling discipline
+
+**Decision:** Study scalability progressively, approximately across scales such as:
+
+`1 -> 10 -> 100 -> 10,000 -> 1,000,000` participants/nodes.
+
+**Rationale:** Large-scale claims should be supported by simulation, benchmarks, and progressively larger deployments rather than extrapolated casually from small prototypes.
+
+## 2026-08-28 — Research mechanisms must be falsifiable
+
+**Decision:** Major algorithms, aggregation rules, scheduling methods, and governance mechanisms should be connected to explicit hypotheses, baselines, metrics, and experiments.
+
+**Rationale:** IDKMesh is both a software project and an open scientific experiment. Negative results and rejected mechanisms are valuable project output.
