@@ -2,7 +2,7 @@
 
 IDKMesh sits at the intersection of collective intelligence, multi-agent AI, distributed systems, open-source collaboration, economics, verification, and human-computer interaction. The following questions are intentionally more fundamental than individual implementation choices. A good answer to any one of them could produce reusable theory, benchmarks, algorithms, or design principles for the broader field.
 
-These questions complement the larger catalog in [`RESEARCH_QUESTIONS.md`](RESEARCH_QUESTIONS.md).
+These questions complement the larger catalog in [`RESEARCH_QUESTIONS.md`](../../RESEARCH_QUESTIONS.md).
 
 ## 1. What is the scaling law of collective intelligence?
 

@@ -21,7 +21,7 @@ Repository: `https://github.com/MSKazemi/idkmesh`
 9. Can the coordination system improve itself without losing control of its objectives?
 10. What experiment would convince a skeptical researcher that this field matters?
 
-The full formulation was added to [`FIELD_DEFINING_QUESTIONS.md`](../../FIELD_DEFINING_QUESTIONS.md).
+The full formulation was added to [`FIELD_DEFINING_QUESTIONS.md`](../foundations/FIELD_DEFINING_QUESTIONS.md).
 
 ## Unifying objective proposed
 

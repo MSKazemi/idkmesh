@@ -276,7 +276,7 @@ From there, scale only when measurement demonstrates what should be scaled.
 
 ## Related documents
 
-- [`FIELD_DEFINING_QUESTIONS.md`](../../FIELD_DEFINING_QUESTIONS.md)
+- [`../foundations/FIELD_DEFINING_QUESTIONS.md`](../foundations/FIELD_DEFINING_QUESTIONS.md)
 - [`RESEARCH_QUESTIONS.md`](../../RESEARCH_QUESTIONS.md)
 - [`MATHEMATICAL_FOUNDATIONS.md`](../../MATHEMATICAL_FOUNDATIONS.md)
 - [`ARCHITECTURE.md`](../../ARCHITECTURE.md)

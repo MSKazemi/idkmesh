@@ -23,7 +23,7 @@
     }
   ],
   "goal_entrypoints": [
-    "GOALS.md",
+    "docs/foundations/GOALS.md",
     "ROADMAP.md",
     "docs/WHAT_IS_IDKMESH.md"
   ],

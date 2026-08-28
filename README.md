@@ -138,7 +138,7 @@ The core may eventually provide reusable primitives for:
 
 Different projects can add their own validators, policies, roles, and evidence rules.
 
-For a deeper explanation, read [`docs/WHAT_IS_IDKMESH.md`](docs/WHAT_IS_IDKMESH.md) and [`GOALS.md`](GOALS.md).
+For a deeper explanation, read [`docs/WHAT_IS_IDKMESH.md`](docs/WHAT_IS_IDKMESH.md) and [`GOALS.md`](docs/foundations/GOALS.md).
 
 ## Flagship research question: many small coders vs one big coder
 
@@ -282,7 +282,8 @@ Read [`GOVERNANCE.md`](GOVERNANCE.md), [`MAINTAINERS.md`](MAINTAINERS.md), and [
 
 - [`EVOLUTION.md`](EVOLUTION.md) — what we build next and how the project should evolve.
 - [`IDKIPS.md`](IDKIPS.md) — improvement-proposal process for major competing ideas.
-- [`GOALS.md`](GOALS.md) — goal hierarchy and success criteria.
+- [`docs/foundations/`](docs/foundations/README.md) — vision, goals, and field-defining questions.
+- [`GOALS.md`](docs/foundations/GOALS.md) — goal hierarchy and success criteria.
 - [`docs/WHAT_IS_IDKMESH.md`](docs/WHAT_IS_IDKMESH.md) — framework/core/domain model.
 - [`ROADMAP.md`](ROADMAP.md) — staged research and implementation path.
 - [`RESEARCH_QUESTIONS.md`](RESEARCH_QUESTIONS.md) — open questions.
