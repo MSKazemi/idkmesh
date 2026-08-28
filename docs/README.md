@@ -6,6 +6,11 @@ This page is a **curated navigation layer, not an exhaustive catalog**. IDKMesh 
 
 For the project front door, start with [`../README.md`](../README.md), [`../CONTRIBUTING.md`](../CONTRIBUTING.md), and [`../COMMUNITY.md`](../COMMUNITY.md).
 
+## Protocol and implementation specifications
+
+- [Specifications index](specifications/README.md) — versioned work, evidence,
+  evaluator, repository-graph, and project-configuration contracts.
+
 ## Active subsystem documents from IDKGraph P1 cohort 1
 
 The first deterministic orphan-warning cohort in issue #152 identified these active documents as genuine navigation gaps. They are linked here because they are current protocol, research, architecture, or security surfaces rather than archival records.
