@@ -66,10 +66,34 @@ class WorkUnitModelTests(unittest.TestCase):
         with self.assertRaisesRegex(WorkUnitError, "schema validation"):
             parse_work_unit(data)
 
+    def test_source_revision_must_match_provenance(self) -> None:
+        data = fixture()
+        data["provenance"]["source_revision"] = "0" * 40
+        with self.assertRaisesRegex(WorkUnitError, "must match provenance.source_revision"):
+            parse_work_unit(data)
+
+    def test_source_revision_provenance_is_required(self) -> None:
+        data = fixture()
+        del data["provenance"]["source_revision"]
+        with self.assertRaisesRegex(WorkUnitError, "requires provenance.source_revision"):
+            parse_work_unit(data)
+
     def test_node_timeout_cannot_exceed_work_unit_budget(self) -> None:
         data = fixture()
         data["budget"]["wall_seconds"] = 5
         with self.assertRaisesRegex(WorkUnitError, "budget.wall_seconds"):
+            parse_work_unit(data)
+
+    def test_project_spend_must_be_zero(self) -> None:
+        data = fixture()
+        data["budget"]["project_spend_usd_max"] = 0.01
+        with self.assertRaisesRegex(WorkUnitError, "project_spend_usd_max=0"):
+            parse_work_unit(data)
+
+    def test_paid_fallback_is_rejected(self) -> None:
+        data = fixture()
+        data["budget"]["paid_fallback_allowed"] = True
+        with self.assertRaisesRegex(WorkUnitError, "paid_fallback_allowed=false"):
             parse_work_unit(data)
 
     def test_path_traversal_policy_is_rejected(self) -> None:
