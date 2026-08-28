@@ -2,6 +2,23 @@
 
 Experiments are small, reproducible programs used to challenge IDKMesh hypotheses before those hypotheses become architecture or automation.
 
+## E020 coordination-criticality experiment
+
+`criticality_susceptibility.py` compares matched constant-load, `+5%` pulse,
+and sustained-stress runs in a generator/worker/verifier queue. It reports
+finite-difference response with uncertainty and compares a superlinear-response
+signal with ordinary utilization and absolute-backlog thresholds.
+
+```bash
+python experiments/criticality_susceptibility.py --self-test
+python experiments/criticality_susceptibility.py --benchmark --summary-only
+```
+
+The 40-seed result is intentionally qualified: susceptibility warned earlier
+but produced false alerts, while the utilization threshold detected the measured
+onset without false alerts in the tested grid. See
+[`E020-coordination-criticality.md`](E020-coordination-criticality.md).
+
 ## ACE live-open-work population experiment
 
 `ace_population_sim.py` is the replacement experiment for Growth Seed #27.
