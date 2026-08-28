@@ -121,6 +121,28 @@ The implementation additionally records whether at least one honest support/reje
 
 Because `f` is a threat-model parameter rather than observed truth, the module emits a sensitivity curve over fault budgets. The certified interval width is required to be non-decreasing as `f` increases.
 
+## Concurrent human-review work
+
+While this branch was being assembled, `main` advanced again through PR #203 to:
+
+```text
+bc5b15541963d1ed2f9ce812f1d7f291628d0c2d
+```
+
+That PR adds deterministic validation and descriptive scoring for an **individual human review session** plus provenance/independence disclosures. Its protocol explicitly preserves disagreement and does not interpret agreement as correctness.
+
+This is complementary to the adversarial envelope:
+
+```text
+review-session validator:
+  is one submitted review structurally/provenance-valid and what descriptive metrics does it contain?
+
+adversarial evidence envelope:
+  after several accepted scalar/binary reports exist, what honest-report mean range is guaranteed if <= f reports are arbitrary?
+```
+
+The new human-review files do not overlap this branch's five files and do not implement a multi-review fault-budget aggregator.
+
 ## Explicit non-goals
 
 The implementation intentionally emits false claims for:
