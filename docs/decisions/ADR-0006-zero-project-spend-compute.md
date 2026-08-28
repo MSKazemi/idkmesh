@@ -103,6 +103,10 @@ This decision lowers the barrier to maintaining IDKMesh because contributors do 
 
 The project must avoid framing donated compute as truly free. Contributors who cannot or do not want to donate hardware remain equally valid community participants.
 
+## Implementation references
+
+- `docs/architecture/RESOURCE_COMPUTE_ADMISSION.md`
+
 ## Revisit conditions
 
 This ADR may be revisited only through an explicit project governance/maintainer decision if sustainable funding or sponsorship later exists. Any change must update both human-readable project rules and the machine-readable policy before paid execution can become eligible.
