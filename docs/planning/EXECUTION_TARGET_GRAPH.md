@@ -1,9 +1,9 @@
 # IDKMesh Execution Target Graph
 
 **Snapshot:** 2026-08-28  
-**Purpose:** keep IDKMesh focused on the shortest evidence-producing path from its broad goals to a working, independently verified local product.
+**Purpose:** keep IDKMesh focused on the shortest evidence-producing path from broad goals to a working, independently verified local product.
 
-This is a current execution view. It does not replace `GOALS.md`, `ROADMAP.md`, GitHub Issues, ADRs, or future machine-generated IDKGraph views.
+This is the current execution view. It does not replace `GOALS.md`, `ROADMAP.md`, GitHub Issues, ADRs, or future machine-generated IDKGraph views.
 
 ## North Star
 
@@ -13,13 +13,14 @@ The immediate product path is:
 
 ```text
 bounded goal/task
-  -> canonical Work Unit
+  -> canonical WorkUnit
   -> isolated real worker attempts
   -> canonical ResultManifests
   -> bound EvaluatorPlan
   -> independent verifier-owned checks
   -> canonical VerificationResults
-  -> Evidence Report / human integration decision
+  -> non-selecting Evidence Report
+  -> explicit human integration decision
   -> replayable experiment record
 ```
 
@@ -31,14 +32,14 @@ Raw activity, issue count, agent count, stars, model confidence, or worker self-
 2. One autonomous actor must not propose, approve, and merge the same protected change.
 3. Worker success is not acceptance.
 4. Verifier recommendation is decision support, not merge authority.
-5. Evaluator control must be bound to the exact Work Unit/revision and remain outside candidate control.
-6. Generated verifier/evaluator evidence must not gain authority to overwrite canonical tracked state.
+5. Evaluator control must be bound to the exact WorkUnit/revision and remain outside candidate control.
+6. Generated verifier/evaluator/report evidence must not gain authority to overwrite canonical tracked state.
 7. Generation must not outrun verification/reviewer capacity.
 8. Project-paid compute remains disabled under the current zero-project-spend policy.
 9. Scale is earned by evidence: local -> small mesh -> larger mesh.
 10. Community growth is measured by verified useful descendants, not raw activity.
 11. Repository restructuring is bounded, reversible, and evidence-backed.
-12. Integrate before reinventing: one canonical Work Unit, evaluator, verifier, and orchestrator path unless a competing experiment is explicitly justified.
+12. Integrate before reinventing: one canonical WorkUnit, evaluator, verifier, orchestrator, and report path unless a competing experiment is explicitly justified.
 
 ---
 
@@ -47,23 +48,25 @@ Raw activity, issue count, agent count, stars, model confidence, or worker self-
 ```text
 T0 GitHub integration protection (#35)
 
-T1 real bounded worker (#34 + #37) -------------------------+
-                                                             |
-T2a deterministic verifier [DONE: PR #72]                   |
-T2b EvaluatorPlan / sovereignty [DONE: PR #81]              |
-T2c verifier output authority [GREEN: PR #90]               |
-T2d real repository patch verification (#5) ----------------+
-                                                             |
-T3a two-attempt orchestration [DONE: PR #78]                |
-T3b canonical node adapter after T1 ------------------------+
-                                                             |
-                                                             v
-T4 Evidence Report + replayable Verified Swarm Runner (#16)
-                                                             |
-                                                             v
+T1 PR #91 + #37 canonical real worker ----------------------+
+                                                              |
+T2a PR #72 deterministic verifier [DONE]                    |
+T2b PR #81 EvaluatorPlan sovereignty [DONE]                 |
+T2c PR #103 output authority [GREEN / REVIEW]               |
+T2d PR #105 unified-diff evaluator [GREEN / REVIEW] --------+
+                                                              |
+T3a PR #78 two-attempt orchestration [DONE]                 |
+T3b real-node adapter after T1/T2d -------------------------+
+                                                              |
+T4 PR #88 Evidence Report/replay [GREEN / REVIEW] ----------+
+                                                              |
+                                                              v
+Verified Swarm Runner v0.1 real replayable run (#16)
+                                                              |
+                                                              v
 T5 real-task diversity/verification experiment (#2/#30)
-                                                             |
-                                                             v
+                                                              |
+                                                              v
 T6 evidence-driven scaling / federation decisions
 ```
 
@@ -75,61 +78,70 @@ T0 is the safety gate for stronger autonomous integration. It does not block iso
 
 | Target | Status | Evidence now | Next gate |
 | --- | --- | --- | --- |
-| **T0 Protected integration** | **BLOCKED / ADMIN** | GitHub currently reports `main` as unprotected; #35 defines the target | Configure branch/ruleset protection and verify it through GitHub metadata |
-| **T1 Canonical real worker** | **IN PROGRESS** | PR #34 implements canonical local node path and has prior green CI | Synchronize with current `main`; controlled Docker acceptance #37; independent sandbox/path review |
-| **T2a Deterministic verifier** | **DONE FOUNDATION** | PR #72 merged `experiments/local_verifier.py` | Extend, do not replace |
-| **T2b Evaluator sovereignty** | **DONE FOUNDATION** | PR #81 merged `EvaluatorPlan v0.1`, exact Work Unit/revision and validator binding | Reuse EvaluatorPlan for patch/hidden-test backends |
-| **T2c Output authority** | **GREEN / REVIEW** | PR #90 restricts both verifier entrypoints to ignored root `results/`; Phase 0 + EvaluatorPlan CI pass | Independent review/integration |
-| **T2d Real patch verification** | **NEXT PRODUCT WORK** | #5 now specifies node `changes.patch` verification | Implement digest + unified-diff scope + verifier-owned semantic negative tests through canonical EvaluatorPlan path |
-| **T3a Two-attempt orchestration** | **DONE FOUNDATION** | PR #78 merged deterministic replayable fixture kernel | Reuse adapter boundary; do not create second orchestrator |
-| **T3b Real node adapter** | **BLOCKED BY T1/T2d** | Orchestrator adapter boundary exists | Connect #34 node after Docker acceptance and patch verifier |
-| **T4 v0.1 local product** | **PARTIALLY UNBLOCKED** | contracts + verifier + EvaluatorPlan + fixture orchestration exist | real worker + real patch verifier + Evidence Report/replay CLI |
-| **T5 Real-task experiment** | **WAITING ON T4** | synthetic/replay research infrastructure exists | run comparable real candidates through canonical product loop |
-| **T6 Larger-scale mesh** | **EVIDENCE-EARNED** | scheduling/evolution/compute research exists | promote only mechanisms supported by real T5 evidence |
+| **T0 Protected integration** | **BLOCKED / ADMIN** | GitHub still reports `main` unprotected; #35 defines the desired boundary | Configure/verify GitHub ruleset or branch protection |
+| **T1 Canonical real worker** | **GREEN STATIC / RUNTIME GATED** | PR #91 frozen at `d638a2f78e4a89353b98e91052233e365f56f90a`; Node CI + Phase 0 green | Controlled Docker acceptance #37 + independent sandbox/path review |
+| **T2a Deterministic verifier** | **DONE FOUNDATION** | PR #72 merged canonical `experiments/local_verifier.py` | Extend canonical backends only |
+| **T2b Evaluator sovereignty** | **DONE FOUNDATION** | PR #81 merged EvaluatorPlan exact WorkUnit/revision/validator binding | Reuse for real evaluators |
+| **T2c Output authority** | **GREEN / REVIEW** | clean PR #103 is mergeable; Phase 0 + EvaluatorPlan + Evolution checks green | Independent review/integration |
+| **T2d Patch-bundle evaluator** | **GREEN / REVIEW** | clean PR #105 is mergeable on #103; EvaluatorPlan + Phase 0 + Evolution checks green | Integrate after #103, then replay a real #91/#37 bundle |
+| **T3a Two-attempt orchestration** | **DONE FOUNDATION** | PR #78 merged deterministic replayable two-attempt kernel | Reuse adapter boundary |
+| **T3b Real node adapter** | **BLOCKED BY T1/T2d** | canonical adapter boundary already exists | Connect PR #91 node after #37 and real patch evaluator |
+| **T4 Evidence Report/replay** | **GREEN / REVIEW** | PR #88 provides non-selecting fixture report/replay; Run Evidence + Phase 0 green | Integrate and exercise over real node attempts |
+| **T5 Real-task experiment** | **WAITING ON T4 REAL RUN** | synthetic/replay research infrastructure exists | Run comparable real candidates through canonical loop |
+| **T6 Larger-scale mesh** | **EVIDENCE-EARNED** | scheduling/evolution/compute research exists | Promote only mechanisms supported by T5 evidence |
 
 ---
 
 # What is already settled
 
-## Canonical contracts
+## Canonical evidence contracts
 
-The project should not create competing formats for:
+Do not create competing canonical formats for:
 
-- Work Unit / ResultManifest;
-- VerificationResult;
+- WorkUnit / ResultManifest;
 - EvaluatorPlan;
-- the two-attempt orchestration run model.
+- VerificationResult;
+- two-attempt run records;
+- the non-selecting Evidence Report.
 
-Competing experiments are welcome only when they test an explicit hypothesis and preserve interoperability with canonical evidence contracts.
+Competing experiments are welcome only when they test an explicit hypothesis and preserve interoperability with the canonical evidence chain.
 
 ## Verification architecture
 
-PR #72 established verifier-owned deterministic evaluation. PR #81 strengthened it with Evaluator Sovereignty:
+The canonical trust relationship is:
 
 ```text
-WorkUnit             public authority / requirements
-ResultManifest       untrusted worker claim
-EvaluatorPlan        verifier-owned, exact bound control plane
+WorkUnit             authoritative bounded task/requirements
+ResultManifest       untrusted worker claim + artifacts
+EvaluatorPlan        verifier-owned exact bound control plane
 VerificationResult   independent evidence / recommendation
+Evidence Report      non-selecting synthesis
+Human decision       integration authority
 ```
 
-Any future hidden-test, static-analysis, patch, or sandbox backend should extend this control chain rather than bypass it.
+PR #105 extends this chain with a metadata-only unified-diff backend rather than introducing another verifier package.
 
 ## Orchestration architecture
 
-PR #78 proved the control-plane semantics needed before real workers:
+PR #78 already proves the control-plane invariants needed before real workers:
 
-- two distinct attempt histories;
-- worker-success candidate independently accepted;
+- distinct attempt histories;
+- worker-success candidate independently supported;
 - worker-success candidate independently rejected;
 - peer worker failure isolation;
 - ResultManifest evidence preserved through verifier failure;
 - deterministic semantic replay;
 - no majority-vote-as-truth;
 - no automatic selection/merge;
-- run output constrained to ignored `results/`.
+- generated run output restricted to ignored `results/`.
 
-Issue #4 remains open because real node integration is still missing.
+Issue #4 remains open because the real node adapter and 3–5 worker extension are still missing.
+
+## Reporting architecture
+
+PR #88 already provides a non-selecting Evidence Report/replay layer for fixture runs. Its job is to preserve evidence and disagreement, not choose a winner.
+
+The real product exit gate is to exercise that same report over real node attempts and leave the human decision explicitly external.
 
 ---
 
@@ -137,112 +149,138 @@ Issue #4 remains open because real node integration is still missing.
 
 ## 1. Protect `main` — #35
 
-Current GitHub metadata still reports `protected=false`.
+GitHub metadata still reports the integration boundary as unprotected.
 
-This is the highest governance/safety gap because repository instructions are not an enforcement boundary.
-
-Done means GitHub itself reports intentional:
+Done means GitHub itself enforces intentional:
 
 - PR-based integration requirements;
 - force-push/deletion behavior;
 - required stable checks;
-- risk-appropriate review requirements;
-- no autonomous bypass of the integration boundary.
+- risk-appropriate independent review;
+- no autonomous bypass of protected integration.
 
-This is repository-admin/settings work; another Markdown file cannot substitute for it.
+This is repository-admin/settings work. Another Markdown file or agent rule cannot substitute for it.
 
-## 2. Independently review/integrate PR #90
+## 2. Independently review/integrate clean safety PR #103
 
-PR #90 has green Phase 0 and EvaluatorPlan CI.
+PR #103 is the canonical replacement for closed #90.
 
-It closes an authority mismatch:
+It makes executable authority match the verifier/evaluator role:
 
 ```text
-before: evaluator output = any repository-relative path outside candidate
-now:    evaluator output = ignored root results/ only
+before: --output could target arbitrary repository-relative state
+now:    generated verification evidence must live under ignored root results/
 ```
 
-Do not self-approve merely because CI is green.
+All relevant CI is green. Green CI is necessary but not self-approval.
 
-## 3. Synchronize PR #34 and execute #37
+## 3. Independently review/integrate patch evaluator PR #105
 
-T1 is now the primary physical/runtime bottleneck.
+PR #105 is stacked cleanly on #103 and replaces closed #102.
 
-Required order:
+It adds:
 
-1. synchronize PR #34 with current `main` without overwriting concurrent work;
-2. rerun current node + contract CI;
-3. run controlled Docker acceptance #37 against the exact synchronized SHA;
-4. attach positive runtime evidence;
-5. attach negative path-policy evidence;
-6. obtain independent sandbox/path-policy review;
-7. integrate only after those gates.
+- EvaluatorPlan v0.2 `unified_diff` backend;
+- exact WorkUnit/revision/validator binding;
+- independent patch SHA-256;
+- independent declared-log SHA-256;
+- safe old/new unified-diff path extraction;
+- WorkUnit allowed/forbidden/write-scope enforcement;
+- verifier-owned semantic added-line expectation;
+- good / wrong-semantic / forbidden-path / forged-digest / binding-drift tests;
+- no patch application or candidate-code execution.
 
-Do not claim #37 from a non-Docker/static-only environment.
+All three relevant workflows are green. After #103 integration, retarget/rebase #105 to `main` if needed before merge.
 
-## 4. Build #5 Phase B1: real patch-bundle evaluator
+## 4. Execute the frozen controlled-Docker gate — #37 / PR #91
 
-First bounded target: the canonical node smoke candidate.
+This is the principal physical/runtime bottleneck.
 
-The evaluator should inspect the candidate bundle without executing candidate code and independently prove at least:
+Use exact SHA:
 
-- exact Work Unit / ResultManifest / EvaluatorPlan binding;
-- candidate patch and declared log SHA-256 values;
-- safe unified-diff target path extraction;
-- `allowed_paths` / `forbidden_paths` enforcement;
-- expected harmless README smoke property;
-- rejection of a scope-valid but semantically wrong patch;
-- rejection of forbidden-path and forged-digest candidates;
-- fail-closed behavior when required validators are unsupported.
+`d638a2f78e4a89353b98e91052233e365f56f90a`
 
-Reuse the useful mechanisms explored in closed PR #61, but extend the canonical verifier/EvaluatorPlan path rather than reviving `verifier/deterministic.py`.
+Required evidence:
 
-## 5. Connect the real node adapter to PR #78 orchestration
+1. controlled Docker positive run;
+2. ResultManifest + `changes.patch` + stdout/stderr bundle;
+3. negative A–E path/runtime/provenance cases required by #37;
+4. independent review of sandbox, path authority, pinned image, cleanup, and provenance.
 
-Only after T1 and T2d are stable.
+Do not claim this gate from static CI or an environment without the required controlled Docker host.
 
-The merged orchestrator core should not need node-specific branches beyond an adapter that returns the same candidate/result boundary.
+## 5. Replay the real #37 bundle through the canonical evaluator — #5
+
+Once the positive bundle exists:
+
+```text
+#37 bundle
+ -> bind EvaluatorPlan v0.2 to exact WorkUnit/revision
+ -> PR #105 unified-diff evaluator
+ -> VerificationResult v0.1
+```
+
+Independently confirm:
+
+- patch/log digests;
+- patch path authority;
+- verifier-owned harmless README smoke semantics;
+- exact WorkUnit required validator IDs;
+- evaluator/verifier provenance.
+
+Fixture success does not complete this target; one real #91 bundle must replay cleanly.
+
+## 6. Connect PR #91 behind the landed PR #78 adapter boundary — #4
+
+After T1 and T2d:
+
+- run exactly two isolated real attempts from one WorkUnit/revision;
+- preserve worker errors, verifier errors, support, and rejection independently;
+- keep orchestrator core worker-implementation-neutral;
+- retain replayable run metadata.
+
+## 7. Exercise PR #88 over the real two-attempt run — #16
+
+The report must preserve:
+
+- ResultManifest identity/digest;
+- EvaluatorPlan identity/digest/backend;
+- VerificationResult identity/digest/status;
+- worker/verifier errors and disagreement;
+- resource signals;
+- `human_decision.status = pending` until external human/governance action;
+- no automatic selected attempt.
+
+That creates the first complete real v0.1 evidence loop.
 
 ---
 
 # NEXT queue
 
-## Minimal Evidence Report / replay UX — #16
+## Add one trivial heterogeneous second real adapter — #16
 
-For each attempt show:
-
-- worker status;
-- ResultManifest identity/digest;
-- EvaluatorPlan identity/digest/backend;
-- verifier status/recommendation;
-- required check outcomes/findings;
-- artifact/evidence locators;
-- resource signals;
-- errors/disagreement;
-- explicit human integration state: `pending | accept | reject | refine`.
-
-No majority-vote shortcut and no auto-merge.
+Only after the canonical node path is stable. Prove that a second real adapter can plug into the same coordinator boundary without model/vendor branches in coordinator core.
 
 ## First real benchmark cohort — #5
 
-After one node patch bundle replays cleanly, build 5–10 tasks before expanding toward 20–50.
+After one real node bundle and one real two-attempt run replay cleanly, build **5–10 tasks** before expanding toward 20–50.
 
 Every benchmark item needs:
 
-- fixed source snapshot;
-- bounded Work Unit;
+- immutable source revision;
+- bounded WorkUnit;
 - bound EvaluatorPlan;
-- candidate ResultManifest/bundle;
-- verifier-owned acceptance evidence;
+- ResultManifest/candidate bundle;
+- independent VerificationResult;
 - replay instructions;
 - meaningful negative/seeded-failure evidence;
 - resource/reviewer-attention accounting.
 
 ## Real-task R1 — #2/#30
 
-Only after T4 can generate comparable real candidate/evidence sets.
+Only after T4 produces comparable real candidate/evidence sets.
 
-Test under fixed budgets:
+Compare under fixed budgets:
 
 1. one baseline worker;
 2. homogeneous replication;
@@ -260,7 +298,7 @@ Synthetic scheduling/evolution studies inform hypotheses; they do not prove the 
 
 ## Community reproduction — #9/#10
 
-Growth Seed #28 has completed its five-task IDKGraph decomposition. Do not interpret completion of one seed as permission to flood the tracker.
+Growth Seed #28 is complete. Do not turn one successful seed into issue-volume growth.
 
 Continue prioritizing:
 
@@ -268,18 +306,18 @@ Continue prioritizing:
 - ACE threat model;
 - real newcomer-path evidence;
 - verified descendants per reviewer/maintainer minute;
-- cohort expansion only when review capacity supports it.
+- cohort expansion only when reviewer capacity supports it.
 
 ## Repository homeostasis / IDKGraph — #20/#36/#38
 
-- refresh/revalidate stale Repository Homeostasis work against current `main`;
+- refresh/revalidate Repository Homeostasis work against current `main`;
 - keep structural changes proposal-first;
 - rerun structural baseline;
 - perform bounded Migration 001 before broader cleanup;
 - preserve zero broken links;
-- measure migration/review cost vs structural benefit.
+- measure structural benefit against migration/review cost.
 
-This track should reduce product/community navigation cost, not consume unlimited product attention.
+This track should reduce navigation/coordination cost, not consume the product critical path.
 
 ## Scheduling / evolutionary research
 
@@ -295,17 +333,17 @@ Choose the next repository task in this order:
 
 ```text
 1. repair a safety/authority/verification invariant;
-2. remove a blocker on T1–T4;
+2. remove a blocker on the real T1–T4 evidence path;
 3. converge duplicate implementations into one canonical path;
 4. produce real replayable evidence for T5;
 5. reduce reviewer/community friction with measured benefit;
-6. reduce structural pressure with measured benefit;
+6. reduce repository structural pressure with measured benefit;
 7. only then promote new scaling/autonomy mechanisms.
 ```
 
 Demote work that:
 
-- creates a second canonical protocol/verifier/evaluator/orchestrator;
+- creates a second canonical protocol/verifier/evaluator/orchestrator/report path;
 - adds autonomy before GitHub protection and verification gates;
 - increases generation without verification/reviewer capacity;
 - duplicates an active branch or landed implementation;
@@ -319,6 +357,6 @@ Demote work that:
 
 A target is complete only when its **observable acceptance evidence** exists.
 
-A merged design document, worker self-test, high model confidence, or many commits is not by itself evidence that the target is satisfied.
+A merged design document, worker self-test, green fixture, high model confidence, or many commits is not by itself evidence that a real target is satisfied.
 
-Future IDKGraph tooling should derive more of this view automatically from Issues, PRs, contracts, EvaluatorPlans, VerificationResults, CI, and repository state while preserving a human-readable explanation of *why* each task is prioritized.
+Future IDKGraph tooling should derive more of this view automatically from Issues, PRs, WorkUnits, ResultManifests, EvaluatorPlans, VerificationResults, Evidence Reports, CI, and repository state while preserving a human-readable explanation of *why* each task is prioritized.
