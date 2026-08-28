@@ -44,6 +44,9 @@ class IDKGraphObservatoryTests(unittest.TestCase):
 
         self.assertEqual(observatory["finding_counts"]["by_severity"].get("error", 0), 0)
         self.assertEqual(observatory["finding_counts"]["by_severity"].get("warning", 0), 0)
+        self.assertEqual(observatory["expected_negative_fixtures"]["finding_count"], 0)
+        self.assertEqual(observatory["residual_health"]["orphan_document_candidates"], 0)
+        self.assertEqual(observatory["residual_health"]["accepted_decisions_without_document_link"], 0)
         self.assertEqual(observatory["research_hypotheses"], [])
         self.assertEqual(observatory["execution"]["work_units"], 1)
         self.assertFalse(observatory["execution"]["cycle_detected"])
@@ -66,10 +69,41 @@ class IDKGraphObservatoryTests(unittest.TestCase):
             {"missing_markdown_file", "missing_markdown_anchor"},
         )
         self.assertEqual(len(errors), 2)
+        self.assertEqual(observatory["expected_negative_fixtures"]["finding_count"], 0)
         for finding in errors:
             self.assertEqual(finding["source_path"], "README.md")
             self.assertTrue(finding["source_id"])
             self.assertEqual(finding["evidence"]["producer"], "T2")
+
+    def test_repository_root_scan_accounts_for_seeded_negative_fixture_separately(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            broken = root / "tests" / "fixtures" / "idkgraph_observatory" / "broken"
+            broken.mkdir(parents=True)
+            (broken / "README.md").write_text(
+                "# Seeded negative\n\n[missing](missing.md)\n[anchor](target.md#not-present)\n",
+                encoding="utf-8",
+            )
+            (broken / "target.md").write_text("# Existing target\n", encoding="utf-8")
+
+            _, observatory = build_observatory(
+                root,
+                source_revision="fixture:repository-root",
+                revision_method="fixture",
+            )
+
+            self.assertEqual(observatory["finding_counts"]["by_severity"].get("error", 0), 0)
+            expected = observatory["expected_negative_fixtures"]
+            self.assertEqual(expected["finding_count"], 2)
+            self.assertEqual(expected["by_severity"], {"error": 2})
+            self.assertEqual(
+                set(expected["by_category"]),
+                {"missing_markdown_file", "missing_markdown_anchor"},
+            )
+            self.assertEqual(
+                {item["source_path"] for item in expected["findings"]},
+                {"tests/fixtures/idkgraph_observatory/broken/README.md"},
+            )
 
     def test_fixed_snapshot_replay_is_byte_identical_for_all_outputs(self) -> None:
         with tempfile.TemporaryDirectory() as first_tmp, tempfile.TemporaryDirectory() as second_tmp:
@@ -106,9 +140,12 @@ class IDKGraphObservatoryTests(unittest.TestCase):
 
         self.assertIn("## Deterministic errors", report)
         self.assertIn("## Deterministic warnings", report)
+        self.assertIn("## Expected negative fixture evidence", report)
         self.assertIn("## Research hypotheses", report)
         self.assertIn("missing_markdown_file", report)
         self.assertIn("missing_markdown_anchor", report)
+        self.assertIn("Orphan document candidates", report)
+        self.assertIn("Accepted decisions without document link", report)
         self.assertIn("None are emitted automatically", report)
 
     def test_contract_versions_and_authority_are_explicit(self) -> None:
@@ -122,6 +159,7 @@ class IDKGraphObservatoryTests(unittest.TestCase):
         self.assertTrue(observatory["contracts"]["t2_navigation"])
         self.assertTrue(observatory["contracts"]["t3_repository_mapping"])
         self.assertTrue(observatory["contracts"]["t4_executable_cycles"])
+        self.assertTrue(observatory["contracts"]["p0_residual_health"])
         self.assertEqual(
             observatory["authority"],
             {
