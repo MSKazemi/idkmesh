@@ -1,0 +1,246 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idkmesh.org/schemas/benchmark-cohort-v0.1.schema.json",
+  "title": "IDKMesh Benchmark Cohort Index v0.1",
+  "description": "A thin, non-executing index that freezes task taxonomy and binds existing WorkUnit, EvaluatorPlan, ResultManifest, and VerificationResult evidence without replacing those canonical contracts.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "id",
+    "title",
+    "stage",
+    "minimum_final_tasks",
+    "required_families",
+    "taxonomy_frozen_before_outcomes",
+    "authority",
+    "tasks"
+  ],
+  "properties": {
+    "schema_version": {"const": "0.1"},
+    "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._/-]{2,127}$"},
+    "title": {"type": "string", "minLength": 1},
+    "description": {"type": "string"},
+    "stage": {"enum": ["scaffold", "collecting", "frozen", "burned"]},
+    "minimum_final_tasks": {"type": "integer", "minimum": 5, "maximum": 1000},
+    "required_families": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "bug_fix",
+          "test_failure",
+          "bounded_feature",
+          "refactor",
+          "documentation_contract",
+          "other"
+        ]
+      }
+    },
+    "taxonomy_frozen_before_outcomes": {"const": true},
+    "definition_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["canonical_state_write", "git_push", "merge", "automatic_candidate_selection"],
+      "properties": {
+        "canonical_state_write": {"const": false},
+        "git_push": {"const": false},
+        "merge": {"const": false},
+        "automatic_candidate_selection": {"const": false}
+      }
+    },
+    "tasks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/task"}
+    },
+    "extensions": {"type": "object", "additionalProperties": true}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"stage": {"enum": ["frozen", "burned"]}}, "required": ["stage"]},
+      "then": {"required": ["definition_digest"]}
+    }
+  ],
+  "$defs": {
+    "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "path": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"
+    },
+    "object_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "digest", "id"],
+      "properties": {
+        "path": {"$ref": "#/$defs/path"},
+        "digest": {"$ref": "#/$defs/digest"},
+        "id": {"type": "string", "minLength": 1}
+      }
+    },
+    "task": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "family",
+        "difficulty",
+        "split",
+        "source",
+        "work_unit",
+        "evaluator",
+        "declared_structural_signatures",
+        "negative_case",
+        "accounting",
+        "evidence"
+      ],
+      "properties": {
+        "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._/-]{2,127}$"},
+        "family": {
+          "enum": [
+            "bug_fix",
+            "test_failure",
+            "bounded_feature",
+            "refactor",
+            "documentation_contract",
+            "other"
+          ]
+        },
+        "difficulty": {"enum": ["trivial", "small", "medium", "large"]},
+        "split": {"enum": ["pilot", "train", "development", "held_out"]},
+        "source": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["repository", "revision"],
+          "properties": {
+            "repository": {"type": "string", "format": "uri", "minLength": 1},
+            "revision": {"type": "string", "minLength": 1}
+          }
+        },
+        "work_unit": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["path", "digest", "id", "version"],
+          "properties": {
+            "path": {"$ref": "#/$defs/path"},
+            "digest": {"$ref": "#/$defs/digest"},
+            "id": {"type": "string", "minLength": 1},
+            "version": {"type": "integer", "minimum": 1}
+          }
+        },
+        "evaluator": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["visibility", "plan_id", "plan_digest", "backend"],
+          "properties": {
+            "visibility": {"enum": ["public", "hidden"]},
+            "plan_id": {"type": "string", "minLength": 1},
+            "plan_digest": {"$ref": "#/$defs/digest"},
+            "backend": {"type": "string", "minLength": 1},
+            "plan_path": {"$ref": "#/$defs/path"}
+          },
+          "allOf": [
+            {
+              "if": {"properties": {"visibility": {"const": "public"}}, "required": ["visibility"]},
+              "then": {"required": ["plan_path"]},
+              "else": {"not": {"required": ["plan_path"]}}
+            }
+          ]
+        },
+        "declared_structural_signatures": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1, "maxLength": 256}
+        },
+        "negative_case": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["description", "expected_category", "evidence_status"],
+          "properties": {
+            "description": {"type": "string", "minLength": 1},
+            "expected_category": {
+              "enum": [
+                "correctness",
+                "scope",
+                "provenance",
+                "security",
+                "regression",
+                "worker_error",
+                "verifier_error",
+                "other"
+              ]
+            },
+            "evidence_status": {"enum": ["pending", "verified"]},
+            "evidence_type": {"enum": ["verification_result", "run_record", "other"]},
+            "evidence_path": {"$ref": "#/$defs/path"},
+            "evidence_digest": {"$ref": "#/$defs/digest"}
+          },
+          "allOf": [
+            {
+              "if": {"properties": {"evidence_status": {"const": "verified"}}, "required": ["evidence_status"]},
+              "then": {"required": ["evidence_type", "evidence_path", "evidence_digest"]}
+            }
+          ]
+        },
+        "accounting": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["required_metrics"],
+          "properties": {
+            "required_metrics": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {"enum": ["wall_seconds", "compute_units", "human_minutes", "tokens"]}
+            }
+          }
+        },
+        "evidence": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "attempts"],
+          "properties": {
+            "status": {"enum": ["pending", "verified", "excluded"]},
+            "exclusion_reason": {"type": "string", "minLength": 1},
+            "attempts": {
+              "type": "array",
+              "items": {"$ref": "#/$defs/attempt"}
+            }
+          },
+          "allOf": [
+            {
+              "if": {"properties": {"status": {"const": "verified"}}, "required": ["status"]},
+              "then": {"properties": {"attempts": {"minItems": 1}}}
+            },
+            {
+              "if": {"properties": {"status": {"const": "excluded"}}, "required": ["status"]},
+              "then": {"required": ["exclusion_reason"]}
+            }
+          ]
+        }
+      }
+    },
+    "attempt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "attempt_id",
+        "structural_signature",
+        "result_manifest",
+        "verification_result",
+        "outcome"
+      ],
+      "properties": {
+        "attempt_id": {"type": "string", "minLength": 1},
+        "structural_signature": {"type": "string", "minLength": 1, "maxLength": 256},
+        "result_manifest": {"$ref": "#/$defs/object_ref"},
+        "verification_result": {"$ref": "#/$defs/object_ref"},
+        "outcome": {"enum": ["support", "reject", "escalate", "insufficient_evidence"]}
+      }
+    }
+  }
+}
