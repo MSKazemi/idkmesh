@@ -1,1 +1,259 @@
-{"schema_version":"0.1","id":"benchmark/phase-b2-first-five","title":"IDKMesh Phase B2 first-five repository benchmark","description":"First frozen five-task engineering bootstrap cohort across bug fix, test failure, bounded feature, refactor, and documentation-contract work. Definitions are frozen before candidate outcomes; evidence is initially pending.","stage":"frozen","minimum_final_tasks":5,"required_families":["bug_fix","test_failure","bounded_feature","refactor","documentation_contract"],"taxonomy_frozen_before_outcomes":true,"authority":{"canonical_state_write":false,"git_push":false,"merge":false,"automatic_candidate_selection":false},"tasks":[{"id":"benchmark/phase-b2/001-cohort-path-boundary","family":"bug_fix","difficulty":"small","split":"pilot","source":{"repository":"https://github.com/MSKazemi/idkmesh","revision":"9c53bb4069a5db1c0688dbbe7a8f028540cbf7c2"},"work_unit":{"path":"benchmarks/phase-b2-first-five/work-units/task-001-cohort-path-boundary.work-unit.json","digest":"sha256:5da7b3450b9d3e3750399912120d62169fc81217f0c05ad5488ecf53d11c5a3d","id":"benchmark/phase-b2/001-cohort-path-boundary","version":1},"evaluator":{"visibility":"public","plan_id":"benchmark/phase-b2/001-cohort-path-boundary/evaluator","plan_digest":"sha256:50ce4d4079169b7a30986b5624a6831c113572b77081194216764a8caa098d11","backend":"unified_diff","plan_path":"benchmarks/phase-b2-first-five/evaluators/task-001-cohort-path-boundary.evaluator-plan.json"},"declared_structural_signatures":["single-worker-baseline-v1","two-independent-attempts-v1","role-specialized-two-attempts-v1"],"negative_case":{"description":"An absolute or traversal --cohort path must not be accepted as a repository benchmark definition.","expected_category":"security","evidence_status":"pending"},"accounting":{"required_metrics":["wall_seconds","human_minutes"]},"evidence":{"status":"pending","attempts":[]}},{"id":"benchmark/phase-b2/002-frozen-definition-digest-test","family":"test_failure","difficulty":"small","split":"pilot","source":{"repository":"https://github.com/MSKazemi/idkmesh","revision":"9c53bb4069a5db1c0688dbbe7a8f028540cbf7c2"},"work_unit":{"path":"benchmarks/phase-b2-first-five/work-units/task-002-frozen-definition-digest-test.work-unit.json","digest":"sha256:1cfe014af545f227ddefce9e3e1094becc2b2f4d4527b0f9a857cbc8f8f8463d","id":"benchmark/phase-b2/002-frozen-definition-digest-test","version":1},"evaluator":{"visibility":"public","plan_id":"benchmark/phase-b2/002-frozen-definition-digest-test/evaluator","plan_digest":"sha256:584a3dc8824bca026c112dd7b2a74d40350a1d04951d23180140669d28d0b804","backend":"unified_diff","plan_path":"benchmarks/phase-b2-first-five/evaluators/task-002-frozen-definition-digest-test.evaluator-plan.json"},"declared_structural_signatures":["single-worker-baseline-v1","two-independent-attempts-v1","role-specialized-two-attempts-v1"],"negative_case":{"description":"A frozen cohort with definition_digest omitted must fail validation instead of being treated as frozen evidence.","expected_category":"regression","evidence_status":"pending"},"accounting":{"required_metrics":["wall_seconds","human_minutes"]},"evidence":{"status":"pending","attempts":[]}},{"id":"benchmark/phase-b2/003-definition-json-command","family":"bounded_feature","difficulty":"small","split":"pilot","source":{"repository":"https://github.com/MSKazemi/idkmesh","revision":"9c53bb4069a5db1c0688dbbe7a8f028540cbf7c2"},"work_unit":{"path":"benchmarks/phase-b2-first-five/work-units/task-003-definition-json-command.work-unit.json","digest":"sha256:a51bbfd143470f1893e40bd800e0e79c04d1dd93adbbe57f72e74ade5f2ad545","id":"benchmark/phase-b2/003-definition-json-command","version":1},"evaluator":{"visibility":"public","plan_id":"benchmark/phase-b2/003-definition-json-command/evaluator","plan_digest":"sha256:3bf3c23b548134b9f52f0e41b3487dd9e76fd2942f4a17423e4e6196b716c37f","backend":"unified_diff","plan_path":"benchmarks/phase-b2-first-five/evaluators/task-003-definition-json-command.evaluator-plan.json"},"declared_structural_signatures":["single-worker-baseline-v1","two-independent-attempts-v1","role-specialized-two-attempts-v1"],"negative_case":{"description":"The new command must not include outcome/evidence fields that are deliberately excluded from the pre-outcome commitment.","expected_category":"correctness","evidence_status":"pending"},"accounting":{"required_metrics":["wall_seconds","human_minutes"]},"evidence":{"status":"pending","attempts":[]}},{"id":"benchmark/phase-b2/004-safe-cohort-loader-refactor","family":"refactor","difficulty":"small","split":"pilot","source":{"repository":"https://github.com/MSKazemi/idkmesh","revision":"9c53bb4069a5db1c0688dbbe7a8f028540cbf7c2"},"work_unit":{"path":"benchmarks/phase-b2-first-five/work-units/task-004-safe-cohort-loader-refactor.work-unit.json","digest":"sha256:adb4ad893aa58ad18376c49fd0a6c0328db808bfe5946136a5631c63d933f2d4","id":"benchmark/phase-b2/004-safe-cohort-loader-refactor","version":1},"evaluator":{"visibility":"public","plan_id":"benchmark/phase-b2/004-safe-cohort-loader-refactor/evaluator","plan_digest":"sha256:3d9f70e2153ba84eac0619cce0ed713c6e91cf654bba76492e5673b809a28b87","backend":"unified_diff","plan_path":"benchmarks/phase-b2-first-five/evaluators/task-004-safe-cohort-loader-refactor.evaluator-plan.json"},"declared_structural_signatures":["single-worker-baseline-v1","two-independent-attempts-v1","role-specialized-two-attempts-v1"],"negative_case":{"description":"After refactoring, validate and definition-digest must not diverge in repository-boundary behavior.","expected_category":"regression","evidence_status":"pending"},"accounting":{"required_metrics":["wall_seconds","human_minutes"]},"evidence":{"status":"pending","attempts":[]}},{"id":"benchmark/phase-b2/005-first-five-freeze-checklist","family":"documentation_contract","difficulty":"trivial","split":"pilot","source":{"repository":"https://github.com/MSKazemi/idkmesh","revision":"9c53bb4069a5db1c0688dbbe7a8f028540cbf7c2"},"work_unit":{"path":"benchmarks/phase-b2-first-five/work-units/task-005-first-five-freeze-checklist.work-unit.json","digest":"sha256:8dc195e5221d04af69e259e93b40db471f4df6f9761a0c4b10efd692db5c7527","id":"benchmark/phase-b2/005-first-five-freeze-checklist","version":1},"evaluator":{"visibility":"public","plan_id":"benchmark/phase-b2/005-first-five-freeze-checklist/evaluator","plan_digest":"sha256:2eb174d8ca319329a0a7c620f4550c5e56061aed607d09df673bad2c845583fa","backend":"unified_diff","plan_path":"benchmarks/phase-b2-first-five/evaluators/task-005-first-five-freeze-checklist.evaluator-plan.json"},"declared_structural_signatures":["single-worker-baseline-v1","two-independent-attempts-v1","role-specialized-two-attempts-v1"],"negative_case":{"description":"The checklist must not describe verifier support or benchmark inclusion as automatic merge/integration authority.","expected_category":"correctness","evidence_status":"pending"},"accounting":{"required_metrics":["wall_seconds","human_minutes"]},"evidence":{"status":"pending","attempts":[]}}],"extensions":{"org.idkmesh.phase_b2":{"tracker_issue":5,"source_branch":"benchmark/phase-b2-first-five","note":"Five tasks are an engineering bootstrap cohort, not a statistical-power claim."}},"definition_digest":"sha256:4fdec8a2768e32dc223b218ed70aec3a67aefcd87c64b72c5675c9921a4eab5c"}
+{
+  "schema_version": "0.1",
+  "id": "benchmark/phase-b2-first-five",
+  "title": "IDKMesh Phase B2 first-five repository benchmark",
+  "description": "Burned five-task engineering bootstrap cohort. The pre-outcome task definition remains immutable, but the frozen evaluator plans were found to encode semantic fragments while verifier v0.1.1 requires exact added-line matches, so these tasks are retained as diagnostic/exclusion evidence rather than benchmark outcomes.",
+  "stage": "burned",
+  "minimum_final_tasks": 5,
+  "required_families": [
+    "bug_fix",
+    "test_failure",
+    "bounded_feature",
+    "refactor",
+    "documentation_contract"
+  ],
+  "taxonomy_frozen_before_outcomes": true,
+  "authority": {
+    "canonical_state_write": false,
+    "git_push": false,
+    "merge": false,
+    "automatic_candidate_selection": false
+  },
+  "tasks": [
+    {
+      "id": "benchmark/phase-b2/001-cohort-path-boundary",
+      "family": "bug_fix",
+      "difficulty": "small",
+      "split": "pilot",
+      "source": {
+        "repository": "https://github.com/MSKazemi/idkmesh",
+        "revision": "9c53bb4069a5db1c0688dbbe7a8f028540cbf7c2"
+      },
+      "work_unit": {
+        "path": "benchmarks/phase-b2-first-five/work-units/task-001-cohort-path-boundary.work-unit.json",
+        "digest": "sha256:5da7b3450b9d3e3750399912120d62169fc81217f0c05ad5488ecf53d11c5a3d",
+        "id": "benchmark/phase-b2/001-cohort-path-boundary",
+        "version": 1
+      },
+      "evaluator": {
+        "visibility": "public",
+        "plan_id": "benchmark/phase-b2/001-cohort-path-boundary/evaluator",
+        "plan_digest": "sha256:50ce4d4079169b7a30986b5624a6831c113572b77081194216764a8caa098d11",
+        "backend": "unified_diff",
+        "plan_path": "benchmarks/phase-b2-first-five/evaluators/task-001-cohort-path-boundary.evaluator-plan.json"
+      },
+      "declared_structural_signatures": [
+        "single-worker-baseline-v1",
+        "two-independent-attempts-v1",
+        "role-specialized-two-attempts-v1"
+      ],
+      "negative_case": {
+        "description": "An absolute or traversal --cohort path must not be accepted as a repository benchmark definition.",
+        "expected_category": "security",
+        "evidence_status": "pending"
+      },
+      "accounting": {
+        "required_metrics": [
+          "wall_seconds",
+          "human_minutes"
+        ]
+      },
+      "evidence": {
+        "status": "excluded",
+        "attempts": [],
+        "exclusion_reason": "Real solution PR #153 exposed that the frozen evaluator stores a semantic fragment but verifier v0.1.1 checks exact added-line equality; treating the resulting rejection as candidate correctness would be invalid."
+      }
+    },
+    {
+      "id": "benchmark/phase-b2/002-frozen-definition-digest-test",
+      "family": "test_failure",
+      "difficulty": "small",
+      "split": "pilot",
+      "source": {
+        "repository": "https://github.com/MSKazemi/idkmesh",
+        "revision": "9c53bb4069a5db1c0688dbbe7a8f028540cbf7c2"
+      },
+      "work_unit": {
+        "path": "benchmarks/phase-b2-first-five/work-units/task-002-frozen-definition-digest-test.work-unit.json",
+        "digest": "sha256:1cfe014af545f227ddefce9e3e1094becc2b2f4d4527b0f9a857cbc8f8f8463d",
+        "id": "benchmark/phase-b2/002-frozen-definition-digest-test",
+        "version": 1
+      },
+      "evaluator": {
+        "visibility": "public",
+        "plan_id": "benchmark/phase-b2/002-frozen-definition-digest-test/evaluator",
+        "plan_digest": "sha256:584a3dc8824bca026c112dd7b2a74d40350a1d04951d23180140669d28d0b804",
+        "backend": "unified_diff",
+        "plan_path": "benchmarks/phase-b2-first-five/evaluators/task-002-frozen-definition-digest-test.evaluator-plan.json"
+      },
+      "declared_structural_signatures": [
+        "single-worker-baseline-v1",
+        "two-independent-attempts-v1",
+        "role-specialized-two-attempts-v1"
+      ],
+      "negative_case": {
+        "description": "A frozen cohort with definition_digest omitted must fail validation instead of being treated as frozen evidence.",
+        "expected_category": "regression",
+        "evidence_status": "pending"
+      },
+      "accounting": {
+        "required_metrics": [
+          "wall_seconds",
+          "human_minutes"
+        ]
+      },
+      "evidence": {
+        "status": "excluded",
+        "attempts": [],
+        "exclusion_reason": "Frozen evaluator semantic expectation is a short fragment under verifier v0.1.1 exact added-line semantics; excluded before candidate execution rather than changing the evaluator after freeze."
+      }
+    },
+    {
+      "id": "benchmark/phase-b2/003-definition-json-command",
+      "family": "bounded_feature",
+      "difficulty": "small",
+      "split": "pilot",
+      "source": {
+        "repository": "https://github.com/MSKazemi/idkmesh",
+        "revision": "9c53bb4069a5db1c0688dbbe7a8f028540cbf7c2"
+      },
+      "work_unit": {
+        "path": "benchmarks/phase-b2-first-five/work-units/task-003-definition-json-command.work-unit.json",
+        "digest": "sha256:a51bbfd143470f1893e40bd800e0e79c04d1dd93adbbe57f72e74ade5f2ad545",
+        "id": "benchmark/phase-b2/003-definition-json-command",
+        "version": 1
+      },
+      "evaluator": {
+        "visibility": "public",
+        "plan_id": "benchmark/phase-b2/003-definition-json-command/evaluator",
+        "plan_digest": "sha256:3bf3c23b548134b9f52f0e41b3487dd9e76fd2942f4a17423e4e6196b716c37f",
+        "backend": "unified_diff",
+        "plan_path": "benchmarks/phase-b2-first-five/evaluators/task-003-definition-json-command.evaluator-plan.json"
+      },
+      "declared_structural_signatures": [
+        "single-worker-baseline-v1",
+        "two-independent-attempts-v1",
+        "role-specialized-two-attempts-v1"
+      ],
+      "negative_case": {
+        "description": "The new command must not include outcome/evidence fields that are deliberately excluded from the pre-outcome commitment.",
+        "expected_category": "correctness",
+        "evidence_status": "pending"
+      },
+      "accounting": {
+        "required_metrics": [
+          "wall_seconds",
+          "human_minutes"
+        ]
+      },
+      "evidence": {
+        "status": "excluded",
+        "attempts": [],
+        "exclusion_reason": "Frozen evaluator semantic expectations are short fragments under verifier v0.1.1 exact added-line semantics; excluded before candidate execution rather than changing the evaluator after freeze."
+      }
+    },
+    {
+      "id": "benchmark/phase-b2/004-safe-cohort-loader-refactor",
+      "family": "refactor",
+      "difficulty": "small",
+      "split": "pilot",
+      "source": {
+        "repository": "https://github.com/MSKazemi/idkmesh",
+        "revision": "9c53bb4069a5db1c0688dbbe7a8f028540cbf7c2"
+      },
+      "work_unit": {
+        "path": "benchmarks/phase-b2-first-five/work-units/task-004-safe-cohort-loader-refactor.work-unit.json",
+        "digest": "sha256:adb4ad893aa58ad18376c49fd0a6c0328db808bfe5946136a5631c63d933f2d4",
+        "id": "benchmark/phase-b2/004-safe-cohort-loader-refactor",
+        "version": 1
+      },
+      "evaluator": {
+        "visibility": "public",
+        "plan_id": "benchmark/phase-b2/004-safe-cohort-loader-refactor/evaluator",
+        "plan_digest": "sha256:3d9f70e2153ba84eac0619cce0ed713c6e91cf654bba76492e5673b809a28b87",
+        "backend": "unified_diff",
+        "plan_path": "benchmarks/phase-b2-first-five/evaluators/task-004-safe-cohort-loader-refactor.evaluator-plan.json"
+      },
+      "declared_structural_signatures": [
+        "single-worker-baseline-v1",
+        "two-independent-attempts-v1",
+        "role-specialized-two-attempts-v1"
+      ],
+      "negative_case": {
+        "description": "After refactoring, validate and definition-digest must not diverge in repository-boundary behavior.",
+        "expected_category": "regression",
+        "evidence_status": "pending"
+      },
+      "accounting": {
+        "required_metrics": [
+          "wall_seconds",
+          "human_minutes"
+        ]
+      },
+      "evidence": {
+        "status": "excluded",
+        "attempts": [],
+        "exclusion_reason": "Frozen evaluator semantic expectation is a short fragment under verifier v0.1.1 exact added-line semantics; excluded before candidate execution rather than changing the evaluator after freeze."
+      }
+    },
+    {
+      "id": "benchmark/phase-b2/005-first-five-freeze-checklist",
+      "family": "documentation_contract",
+      "difficulty": "trivial",
+      "split": "pilot",
+      "source": {
+        "repository": "https://github.com/MSKazemi/idkmesh",
+        "revision": "9c53bb4069a5db1c0688dbbe7a8f028540cbf7c2"
+      },
+      "work_unit": {
+        "path": "benchmarks/phase-b2-first-five/work-units/task-005-first-five-freeze-checklist.work-unit.json",
+        "digest": "sha256:8dc195e5221d04af69e259e93b40db471f4df6f9761a0c4b10efd692db5c7527",
+        "id": "benchmark/phase-b2/005-first-five-freeze-checklist",
+        "version": 1
+      },
+      "evaluator": {
+        "visibility": "public",
+        "plan_id": "benchmark/phase-b2/005-first-five-freeze-checklist/evaluator",
+        "plan_digest": "sha256:2eb174d8ca319329a0a7c620f4550c5e56061aed607d09df673bad2c845583fa",
+        "backend": "unified_diff",
+        "plan_path": "benchmarks/phase-b2-first-five/evaluators/task-005-first-five-freeze-checklist.evaluator-plan.json"
+      },
+      "declared_structural_signatures": [
+        "single-worker-baseline-v1",
+        "two-independent-attempts-v1",
+        "role-specialized-two-attempts-v1"
+      ],
+      "negative_case": {
+        "description": "The checklist must not describe verifier support or benchmark inclusion as automatic merge/integration authority.",
+        "expected_category": "correctness",
+        "evidence_status": "pending"
+      },
+      "accounting": {
+        "required_metrics": [
+          "wall_seconds",
+          "human_minutes"
+        ]
+      },
+      "evidence": {
+        "status": "excluded",
+        "attempts": [],
+        "exclusion_reason": "Frozen evaluator includes at least one short semantic fragment under verifier v0.1.1 exact added-line semantics; excluded before candidate execution rather than changing the evaluator after freeze."
+      }
+    }
+  ],
+  "extensions": {
+    "org.idkmesh.phase_b2": {
+      "tracker_issue": 5,
+      "source_branch": "benchmark/phase-b2-first-five",
+      "note": "Burned diagnostic cohort; five tasks were an engineering bootstrap, not a statistical-power claim.",
+      "burn": {
+        "reason": "Frozen evaluator plans encoded semantic fragments while deterministic patch verifier v0.1.1 requires exact full added-line matches.",
+        "observed_task": "benchmark/phase-b2/001-cohort-path-boundary",
+        "observed_solution_pr": 153,
+        "observed_solution_merge_commit": "c04ae627a7ff6b0bd700aae36afdb60f3cb8af97",
+        "successor_issue": 157
+      }
+    }
+  },
+  "definition_digest": "sha256:4fdec8a2768e32dc223b218ed70aec3a67aefcd87c64b72c5675c9921a4eab5c"
+}
