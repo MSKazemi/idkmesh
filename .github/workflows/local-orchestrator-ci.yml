@@ -1,0 +1,83 @@
+name: Local Orchestrator CI
+
+on:
+  pull_request:
+    paths:
+      - "experiments/local_orchestrator.py"
+      - "experiments/local_verifier.py"
+      - "experiments/provenance_integrity.py"
+      - "examples/work-units/orchestrator-smoke.work-unit.json"
+      - "verification/fixtures/verifier-smoke-policy.json"
+      - "schemas/**"
+      - "tests/test_local_orchestrator.py"
+      - ".github/workflows/local-orchestrator-ci.yml"
+  push:
+    branches: [main]
+    paths:
+      - "experiments/local_orchestrator.py"
+      - "experiments/local_verifier.py"
+      - "experiments/provenance_integrity.py"
+      - "examples/work-units/orchestrator-smoke.work-unit.json"
+      - "verification/fixtures/verifier-smoke-policy.json"
+      - "schemas/**"
+      - "tests/test_local_orchestrator.py"
+      - ".github/workflows/local-orchestrator-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  phase-a0-two-attempt-kernel:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Phase 0 dependency
+        run: python -m pip install -r requirements-phase0.txt
+
+      - name: Validate canonical contracts
+        run: python experiments/harness.py validate
+
+      - name: Recheck canonical local verifier
+        run: python experiments/local_verifier.py self-test
+
+      - name: Run orchestrator unit tests
+        run: python -m unittest tests.test_local_orchestrator -v
+
+      - name: Run deterministic orchestration self-test
+        run: python experiments/local_orchestrator.py self-test
+
+      - name: Run good-bad demonstration
+        run: |
+          rm -rf results/orchestrator/ci-good-bad
+          python experiments/local_orchestrator.py run \
+            --run-id ci-good-bad \
+            --scenario good-bad
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          path = Path("results/orchestrator/ci-good-bad/orchestration-report.json")
+          report = json.loads(path.read_text(encoding="utf-8"))
+          outcomes = [
+              (item["worker_status"], item["verification_status"], item["recommendation"])
+              for item in report["attempts"]
+          ]
+          expected = [
+              ("succeeded", "passed", "accept_candidate"),
+              ("succeeded", "failed", "reject_candidate"),
+          ]
+          if outcomes != expected:
+              raise SystemExit(f"unexpected outcomes: {outcomes!r}")
+          if report["integration"]["automatic_integration"] is not False:
+              raise SystemExit("orchestrator unexpectedly enabled automatic integration")
+          print("OK: good-bad evidence report preserves independent disagreement")
+          PY
