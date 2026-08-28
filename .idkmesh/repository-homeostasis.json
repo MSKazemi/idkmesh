@@ -28,8 +28,12 @@
     "ROADMAP.md"
   ],
   "orphan_exempt_prefixes": [
+    ".github/",
     "docs/conversations/",
     "docs/audits/"
+  ],
+  "orphan_exempt_paths": [
+    "idkips/0000-template.md"
   ],
   "thresholds": {
     "root_markdown_soft_limit": 8,
