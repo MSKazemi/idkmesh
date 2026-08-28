@@ -1,0 +1,142 @@
+name: Phase B2 v3 Benchmark Freeze
+
+on:
+  pull_request:
+    paths:
+      - "benchmarks/phase-b2-first-five-v3/**"
+      - ".github/workflows/phase-b2-v3-benchmark-freeze.yml"
+      - "docs/conversations/2026-08-28-phase-b2-v3-calibrated-freeze.md"
+  push:
+    branches: [main]
+    paths:
+      - "benchmarks/phase-b2-first-five-v3/**"
+      - ".github/workflows/phase-b2-v3-benchmark-freeze.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  FROZEN_SOURCE: a69aa0ae1ae4862e507511cbd9ad854237d0ad32
+  COHORT_PATH: benchmarks/phase-b2-first-five-v3/cohort.json
+  DEFINITION_DIGEST: sha256:fe4488053c794d696d3168664674a73f9d16b196a8ac8127ffd36734087000dd
+
+jobs:
+  validate-freeze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out evaluator-owned benchmark definition
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          path: control
+          persist-credentials: false
+
+      - name: Check out exact pre-definition source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ env.FROZEN_SOURCE }}
+          path: source
+          persist-credentials: false
+
+      - name: Verify source identity and cleanliness
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C source rev-parse HEAD)" = "$FROZEN_SOURCE"
+          test -z "$(git -C source status --porcelain)"
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Phase 0 schema dependency
+        working-directory: control
+        run: python -m pip install -r requirements-phase0.txt
+
+      - name: Re-run canonical benchmark contract self-test
+        working-directory: control
+        run: python tools/benchmark_cohort.py self-test
+
+      - name: Validate v3 cross-object freeze
+        working-directory: control
+        run: python tools/benchmark_cohort.py validate --cohort "$COHORT_PATH"
+
+      - name: Verify exact pre-outcome definition digest
+        working-directory: control
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual="$(python tools/benchmark_cohort.py definition-digest --cohort "$COHORT_PATH")"
+          test "$actual" = "$DEFINITION_DIGEST"
+          echo "definition_digest=$actual"
+
+      - name: Verify v0.4 transition preconditions against frozen source
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          CONTROL = Path('control')
+          SOURCE = Path('source')
+          frozen = os.environ['FROZEN_SOURCE']
+          expected_digest = os.environ['DEFINITION_DIGEST']
+          cohort = json.loads((CONTROL / os.environ['COHORT_PATH']).read_text())
+
+          assert cohort['stage'] == 'frozen'
+          assert cohort['definition_digest'] == expected_digest
+          assert len(cohort['tasks']) == 5
+          assert {task['family'] for task in cohort['tasks']} == {
+              'bug_fix', 'test_failure', 'bounded_feature', 'refactor', 'documentation_contract'
+          }
+          assert all(task['evidence'] == {'status': 'pending', 'attempts': []} for task in cohort['tasks'])
+          assert all(task['negative_case']['evidence_status'] == 'pending' for task in cohort['tasks'])
+
+          def canonical_digest(value):
+              payload = json.dumps(value, sort_keys=True, separators=(',', ':'), ensure_ascii=False).encode()
+              return 'sha256:' + hashlib.sha256(payload).hexdigest()
+
+          for task in cohort['tasks']:
+              assert task['source']['revision'] == frozen
+              work_path = CONTROL / task['work_unit']['path']
+              plan_path = CONTROL / task['evaluator']['plan_path']
+              work = json.loads(work_path.read_text())
+              plan = json.loads(plan_path.read_text())
+
+              assert canonical_digest(work) == task['work_unit']['digest']
+              assert canonical_digest(plan) == task['evaluator']['plan_digest']
+              assert work['provenance']['source_revision'] == frozen
+              assert plan['binding']['source_revision'] == frozen
+              assert plan['binding']['work_unit_digest'] == task['work_unit']['digest']
+              assert plan['schema_version'] == '0.4'
+              assert plan['verifier']['adapter'] == 'deterministic-patch-verifier'
+              assert plan['verifier']['adapter_version'] == '0.3.0'
+              assert plan['backend']['type'] == 'unified_diff'
+
+              allowed = work['constraints']['allowed_paths']
+              writable = work['permissions']['filesystem_write']
+              assert len(allowed) == 1 and allowed == writable
+              target = SOURCE / allowed[0]
+              assert target.is_file() and not target.is_symlink(), f'missing frozen target: {target}'
+              text = target.read_text(encoding='utf-8')
+              for required in plan['backend']['required_removed_substrings']:
+                  assert required in text, (
+                      f"{task['id']}: required removed substring absent from frozen source: {required!r}"
+                  )
+
+          print('Phase B2 v3 pre-outcome source/evaluator preconditions passed')
+          PY
+
+# Scientific / authority boundary:
+# - this workflow validates definitions only; it generates no candidate outcome;
+# - the worker source checkout is exact SHA a69aa0ae... and predates this cohort definition;
+# - EvaluatorPlan v0.4 transition predicates are checked against their frozen starting state;
+# - public evaluator plans stay outside the worker source snapshot;
+# - the burned v1 cohort and its observed Task 001 remain unchanged calibration evidence;
+# - checkout credentials are not persisted; permissions are contents:read;
+# - no secrets, project-paid compute, canonical write, push, approval, merge, or automatic selection authority exists.
