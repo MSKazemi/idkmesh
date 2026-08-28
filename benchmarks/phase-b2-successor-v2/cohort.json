@@ -103,7 +103,7 @@
       "negative_case": {"description": "A repository-relative symlink to a valid in-repository cohort JSON file must be rejected before it can be treated as a canonical benchmark definition.", "evidence_status": "pending", "expected_category": "security"},
       "source": {"repository": "https://github.com/MSKazemi/idkmesh", "revision": "a69aa0ae1ae4862e507511cbd9ad854237d0ad32"},
       "split": "pilot",
-      "work_unit": {"digest": "sha256:2e0b49e98e6626131c2bd43505e54c94d9bb9830dad29b6397a943e19f4f3cc75", "id": "benchmark/phase-b2-v2/001-cohort-symlink-reference", "path": "benchmarks/phase-b2-successor-v2/work-units/task-001-cohort-symlink-reference.work-unit.json", "version": 1}
+      "work_unit": {"digest": "sha256:2e0b49e98e6626131c2b08916753b3b7f6ea7c25519cc9610f7212474d8712b3", "id": "benchmark/phase-b2-v2/001-cohort-symlink-reference", "path": "benchmarks/phase-b2-successor-v2/work-units/task-001-cohort-symlink-reference.work-unit.json", "version": 1}
     },
     {
       "accounting": {"required_metrics": ["wall_seconds", "human_minutes"]},
