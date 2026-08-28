@@ -1,0 +1,13 @@
+{
+  "backend": {"max_candidate_bytes": 1000000, "max_log_bytes": 262144, "require_nonempty_patch": true, "required_added_substrings": ["results/"], "required_log_types": ["stdout", "stderr"], "required_removed_substrings": ["output = Path(args.output)"], "type": "unified_diff", "verify_log_digests": true},
+  "binding": {"source_revision": "a69aa0ae1ae4862e507511cbd9ad854237d0ad32", "work_unit_digest": "sha256:063dd0504fac4b9eb474f4d16e68ffc3680edd5ab6570f3473b1634cc8edd7f8", "work_unit_id": "benchmark/phase-b2-v2/005-local-offer-output-boundary", "work_unit_version": 1},
+  "candidate_artifact_id": "candidate-patch",
+  "execution_mode": "metadata_only",
+  "extensions": {"org.idkmesh.phase_b2_v2": {"evidence_strength": "static transition proxy; freeze requires decoy calibration and behavioral evidence where practical", "negative_behavior": "--output README.md, an absolute path, or traversal outside results/ must fail before any canonical repository file can be created or modified.", "status": "provisional-until-calibrated", "tracker_issue": 180}},
+  "id": "benchmark/phase-b2-v2/005-local-offer-output-boundary/evaluator",
+  "policy": {"require_output_outside_candidate_root": true, "require_plan_outside_candidate_root": true, "require_verifier_distinct_from_worker": true},
+  "required_validator_ids": ["result-manifest-schema", "independent-review"],
+  "schema_version": "0.4",
+  "verifier": {"adapter": "deterministic-patch-verifier", "adapter_version": "0.3.0", "id": "idkmesh-local-verifier", "type": "system"},
+  "visibility": "public"
+}

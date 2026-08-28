@@ -1,0 +1,13 @@
+{
+  "backend": {"max_candidate_bytes": 1000000, "max_log_bytes": 262144, "require_nonempty_patch": true, "required_added_substrings": ["isfinite"], "required_log_types": ["stdout", "stderr"], "required_removed_substrings": ["return json.loads(path.read_text(encoding=\"utf-8\"))"], "type": "unified_diff", "verify_log_digests": true},
+  "binding": {"source_revision": "a69aa0ae1ae4862e507511cbd9ad854237d0ad32", "work_unit_digest": "sha256:1c3398ec000719eee21396b6214bc56bb410a4aa449cb7b4f9206811daf7a27d", "work_unit_id": "benchmark/phase-b2-v2/002-router-nonfinite-numbers", "work_unit_version": 1},
+  "candidate_artifact_id": "candidate-patch",
+  "execution_mode": "metadata_only",
+  "extensions": {"org.idkmesh.phase_b2_v2": {"evidence_strength": "static transition proxy; freeze requires decoy calibration and behavioral evidence where practical", "negative_behavior": "An otherwise eligible zero-spend offer containing NaN project cost or success probability must not become selected and must not produce non-standard JSON output.", "status": "provisional-until-calibrated", "tracker_issue": 180}},
+  "id": "benchmark/phase-b2-v2/002-router-nonfinite-numbers/evaluator",
+  "policy": {"require_output_outside_candidate_root": true, "require_plan_outside_candidate_root": true, "require_verifier_distinct_from_worker": true},
+  "required_validator_ids": ["result-manifest-schema", "independent-review"],
+  "schema_version": "0.4",
+  "verifier": {"adapter": "deterministic-patch-verifier", "adapter_version": "0.3.0", "id": "idkmesh-local-verifier", "type": "system"},
+  "visibility": "public"
+}
