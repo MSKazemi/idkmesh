@@ -1,0 +1,8 @@
+{
+  "schema_version": "0.2",
+  "id": "fixture/observatory-valid",
+  "version": 1,
+  "kind": "research",
+  "objective": "Provide one deterministic WorkUnit for the clean observatory fixture.",
+  "inputs": []
+}
