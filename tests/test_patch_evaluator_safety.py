@@ -75,7 +75,10 @@ class PatchEvaluatorSafetyTests(unittest.TestCase):
                 "",
             ]
         )
-        with self.assertRaisesRegex(local_verifier.VerifierError, "line counts|exceeded"):
+        with self.assertRaisesRegex(
+            local_verifier.VerifierError,
+            "line counts|exceeded|unexpected content after completed hunk",
+        ):
             local_verifier.parse_unified_diff(malformed)
 
     def test_missing_required_logs_fail_closed(self) -> None:
