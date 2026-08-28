@@ -1,0 +1,149 @@
+graph_id: idkmesh-main
+version: "0.1"
+generated_at: "2026-08-28T15:10:00+02:00"
+
+nodes:
+  - id: GOAL-COMMUNITY-001
+    type: goal
+    title: Grow a self-sustaining multidisciplinary contributor community
+    state: active
+    tags: [community, growth]
+    attributes:
+      target_metric: community_reproduction_number
+
+  - id: QUESTION-GROWTH-001
+    type: question
+    title: Can repository-native growth achieve Rc greater than 1 without maintainer-operated social media?
+    state: open
+    tags: [community, experiment]
+
+  - id: EXP-GROWTH-001
+    type: experiment
+    title: Estimate contributor reproduction and cross-discipline branching matrix
+    state: proposed
+    risk: low
+    attributes:
+      metrics:
+        - retained_contributors
+        - community_reproduction_number
+        - cross_discipline_fraction
+        - maintainer_leverage
+
+  - id: WU-GROWTH-001
+    type: work_unit
+    title: Define repository event data needed for community-growth measurements
+    state: specified
+    risk: low
+    attributes:
+      requires_all: []
+      requires_any: []
+      acceptance_tests:
+        - Event definitions distinguish visits, first contribution, verification, retention, and referral.
+        - No private contributor data is required.
+      expected_impact: 0.7
+      expected_information_gain: 0.8
+
+  - id: DOC-GROWTH-001
+    type: document
+    title: Community Growth Dynamics
+    state: canonical
+    attributes:
+      path: docs/community/COMMUNITY_GROWTH_DYNAMICS.md
+
+  - id: GOAL-SELF-EVOLVE-001
+    type: goal
+    title: Make repository structure improve through guarded evidence-backed evolution
+    state: active
+    tags: [self-evolution, repository]
+
+  - id: WU-OBSERVATORY-001
+    type: work_unit
+    title: Build repository graph observatory
+    state: proposed
+    risk: medium
+    attributes:
+      acceptance_tests:
+        - Export internal documentation link graph.
+        - Report broken internal links.
+        - Report intentionally and unintentionally orphaned documents separately.
+        - Emit stable IDs for graph objects.
+        - Produce machine-readable output and a human-readable report.
+      expected_impact: 0.9
+      expected_information_gain: 0.9
+
+  - id: EVIDENCE-OBSERVATORY-001
+    type: evidence
+    title: Repository observatory validation result
+    state: pending
+
+  - id: DECISION-IDKGRAPH-001
+    type: decision
+    title: Use typed temporal directed hypergraph as canonical semantic project model
+    state: proposed
+    confidence: 0.75
+
+  - id: DOC-IDKGRAPH-001
+    type: document
+    title: IDKGraph Task and Evolution Model
+    state: canonical
+    attributes:
+      path: docs/architecture/IDKGRAPH_TASK_AND_EVOLUTION_MODEL.md
+
+  - id: AGENT-OBSERVER-001
+    type: agent
+    title: Repository Observer Agent
+    state: conceptual
+    attributes:
+      allowed_actions:
+        - observe
+        - propose_issue
+      forbidden_actions:
+        - approve_own_change
+        - merge_protected_change
+
+hyperedges:
+  - id: EDGE-001
+    relation: decomposes_into
+    sources: [GOAL-COMMUNITY-001]
+    targets: [QUESTION-GROWTH-001, EXP-GROWTH-001]
+
+  - id: EDGE-002
+    relation: decomposes_into
+    sources: [EXP-GROWTH-001]
+    targets: [WU-GROWTH-001]
+
+  - id: EDGE-003
+    relation: documents
+    sources: [DOC-GROWTH-001]
+    targets: [GOAL-COMMUNITY-001, QUESTION-GROWTH-001, EXP-GROWTH-001]
+
+  - id: EDGE-004
+    relation: decomposes_into
+    sources: [GOAL-SELF-EVOLVE-001]
+    targets: [WU-OBSERVATORY-001]
+
+  - id: EDGE-005
+    relation: verifies
+    sources: [EVIDENCE-OBSERVATORY-001]
+    targets: [WU-OBSERVATORY-001]
+
+  - id: EDGE-006
+    relation: documents
+    sources: [DOC-IDKGRAPH-001]
+    targets: [DECISION-IDKGRAPH-001, WU-OBSERVATORY-001]
+
+  - id: EDGE-007
+    relation: assigned_to
+    sources: [WU-OBSERVATORY-001]
+    targets: [AGENT-OBSERVER-001]
+    attributes:
+      assignment_type: proposal_only
+
+events:
+  - id: EVENT-001
+    type: NodeCreated
+    timestamp: "2026-08-28T15:10:00+02:00"
+    affected_ids: [DECISION-IDKGRAPH-001]
+    actor_id: AGENT-OBSERVER-001
+    attributes:
+      note: Example event only; not a claim that the agent has executed this action.
