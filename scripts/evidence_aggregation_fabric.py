@@ -38,6 +38,16 @@ def _finite(value: Any, name: str) -> float:
     return number
 
 
+def _required_bool(payload: Mapping[str, Any], key: str, channel: str) -> bool:
+    """Return a required typed Boolean without truthiness coercion."""
+    if key not in payload:
+        raise ValueError(f"{channel}.{key} is required")
+    value = payload[key]
+    if not isinstance(value, bool):
+        raise ValueError(f"{channel}.{key} must be boolean")
+    return value
+
+
 def make_signal(
     *,
     signal_id: str,
@@ -195,9 +205,11 @@ def compose_evidence_lattice(
     source_revision = str(next(iter(indexed.values()))["source_revision"])
     blockers: list[dict[str, Any]] = []
 
-    hard_guard_ok = bool(indexed["hard_guard"]["payload"].get("passed", False))
-    provenance_ok = bool(indexed["provenance"]["payload"].get("valid", False))
-    discrimination_ok = bool(indexed["discrimination"]["payload"].get("passed", False))
+    hard_guard_ok = _required_bool(indexed["hard_guard"]["payload"], "passed", "hard_guard")
+    provenance_ok = _required_bool(indexed["provenance"]["payload"], "valid", "provenance")
+    discrimination_ok = _required_bool(
+        indexed["discrimination"]["payload"], "passed", "discrimination"
+    )
 
     correlation_payload = indexed["correlation"]["payload"]
     effective_votes = _finite(correlation_payload.get("effective_votes", 0.0), "effective_votes")
@@ -229,7 +241,7 @@ def compose_evidence_lattice(
         raise ValueError("unknown sequential decision")
 
     drift_payload = indexed["drift"]["payload"]
-    drift_detected = bool(drift_payload.get("detected_change", False))
+    drift_detected = _required_bool(drift_payload, "detected_change", "drift")
 
     if not hard_guard_ok:
         blockers.append(
