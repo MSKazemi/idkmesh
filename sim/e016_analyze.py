@@ -18,20 +18,28 @@ from __future__ import annotations
 
 import argparse
 import collections
+import gzip
 import itertools
 import json
 import math
 from math import comb
 
 
+def _open(path: str):
+    """Open a .jsonl or .jsonl.gz path as text."""
+    if path.endswith(".gz"):
+        return gzip.open(path, "rt")
+    return open(path)
+
+
 def load(votes_path: str, tasks_path: str):
     truth = {}
-    for line in open(tasks_path):
+    for line in _open(tasks_path):
         t = json.loads(line)
         truth[t["task_id"]] = t["viable"]
     votes = collections.defaultdict(dict)   # agent -> task -> verdict
     meta = {}
-    for line in open(votes_path):
+    for line in _open(votes_path):
         v = json.loads(line)
         votes[v["agent_id"]][v["task_id"]] = v["verdict"]
         meta[v["agent_id"]] = (v["model"], v["template"])
@@ -92,6 +100,29 @@ def effective_n(measured_err, acc, nmax=201):
     return float("nan")
 
 
+def youden_j(truth, verdicts, tasks):
+    """Discrimination: sensitivity + specificity - 1, with a normal-approx SE.
+
+    Accuracy alone cannot tell a real verifier from one that ignores the code
+    and returns a constant verdict: on a corpus that is 36% viable, "always
+    reject" scores 0.639. Youden's J is immune to that, because it is zero for
+    ANY task-independent rule regardless of which way it is biased.
+
+    Returns (J, standard_error), or (nan, nan) if one truth class has no
+    parseable votes.
+    """
+    tp = sum(1 for t in tasks if truth[t] and verdicts.get(t) is True)
+    fn = sum(1 for t in tasks if truth[t] and verdicts.get(t) is False)
+    tn = sum(1 for t in tasks if not truth[t] and verdicts.get(t) is False)
+    fp = sum(1 for t in tasks if not truth[t] and verdicts.get(t) is True)
+    if tp + fn == 0 or tn + fp == 0:
+        return float("nan"), float("nan")
+    sens = tp / (tp + fn)
+    spec = tn / (tn + fp)
+    se = math.sqrt(sens * (1 - sens) / (tp + fn) + spec * (1 - spec) / (tn + fp))
+    return sens + spec - 1, se
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -101,8 +132,20 @@ def main() -> int:
 
     truth, votes, meta = load(args.votes, args.tasks)
     agents = sorted(votes)
-    tasks = sorted(truth)
-    print(f"agents: {len(agents)}   tasks: {len(tasks)}")
+    # Only score tasks every agent actually answered. A task present in the
+    # corpus but absent from a panel's votes is missing data, not a wrong
+    # answer, and silently treating it as an error would inflate error rates.
+    voted = [set(v) for v in votes.values()]
+    common = set(truth).intersection(*voted) if voted else set()
+    tasks = sorted(common)
+    print(f"agents: {len(agents)}   corpus tasks: {len(truth)}   "
+          f"scored (answered by every agent): {len(tasks)}")
+    if len(tasks) < len(truth):
+        print(f"  NOTE: {len(truth)-len(tasks)} corpus tasks excluded as not "
+              f"answered by all agents")
+    if not tasks:
+        print("no commonly-answered tasks; nothing to analyse")
+        return 1
 
     total = sum(len(v) for v in votes.values())
     unparse = sum(1 for a in agents for t in tasks if votes[a].get(t) is None)
@@ -115,13 +158,44 @@ def main() -> int:
     print("1. PER-AGENT ACCURACY")
     print("=" * 74)
     accs = {}
+    js = {}
     for a in agents:
         acc = 1 - sum(err[a]) / len(tasks)
         accs[a] = acc
         m, tp = meta[a]
-        print(f"  {a:10s} {m:14s} {tp:12s} accuracy={acc:.3f}")
+        j, se = youden_j(truth, votes[a], tasks)
+        js[a] = (j, se)
+        n_yes = sum(1 for t in tasks if votes[a].get(t) is True)
+        n_no = sum(1 for t in tasks if votes[a].get(t) is False)
+        shape = ("CONSTANT" if n_yes == 0 or n_no == 0
+                 else "near-const" if max(n_yes, n_no) / max(1, n_yes + n_no) >= 0.95
+                 else "")
+        print(f"  {a:10s} {m:14s} {tp:12s} accuracy={acc:.3f}  "
+              f"J={j:+.3f}  {shape}")
     mean_acc = sum(accs.values()) / len(accs)
     print(f"  mean accuracy p = {mean_acc:.4f}")
+
+    # Discrimination screen. Bonferroni-corrected across the panel, one-sided.
+    z = 2.85 if len(agents) >= 20 else 2.58
+    discriminating = [a for a in agents
+                      if js[a][0] == js[a][0]        # not NaN
+                      and js[a][0] - z * js[a][1] > 0]
+    mean_j = sum(j for j, _ in js.values() if j == j) / max(1, len(agents))
+    print(f"  mean Youden J = {mean_j:+.4f}   "
+          f"agents discriminating above chance (Bonferroni): "
+          f"{len(discriminating)}/{len(agents)}")
+
+    if not discriminating:
+        print("\n" + "!" * 74)
+        print("DISCRIMINATION SCREEN FAILED - CORRELATION RESULTS BELOW ARE NOT")
+        print("EVIDENCE ABOUT VERIFIER INDEPENDENCE.")
+        print("!" * 74)
+        print("No agent's verdicts depend on the task beyond chance. Error")
+        print("vectors are therefore constant or noise, and a correlation")
+        print("between two noise vectors is near zero BY CONSTRUCTION -- it says")
+        print("nothing about whether real verifiers share errors. Any rho printed")
+        print("below measures the instrument, not the panel. Fix the verifiers")
+        print("(larger models, or a task they can actually do) before reading it.")
 
     print("\n" + "=" * 74)
     print("2. PAIRWISE ERROR CORRELATION, DECOMPOSED BY SHARED ATTRIBUTE")

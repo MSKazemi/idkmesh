@@ -129,6 +129,36 @@ implementation:
 Reference implementation: `effective_n_ceiling` in `sim/e015_analyze.py`.
 Full result: [`../../experiments/E015-verification-phase-diagram.md`](../../experiments/E015-verification-phase-diagram.md).
 
+## Follow-up — E016 tried to measure `rho` on real verifiers and could not
+
+E015's critique of the `N_eff` heuristic, and every correlation result before
+it, rests on a synthetic shared-shock mixture in which `rho` is set by hand.
+E016 attempted to measure it directly: 20 open-weight verifiers (4 model
+families x 5 prompt templates) on 72 candidate solutions whose ground truth is
+decided by executing hidden tests.
+
+The panel produced no usable measurement. None of the 20 agents discriminated
+above chance (mean Youden `J = +0.049`, 0/20 significant after Bonferroni), six
+returned one constant verdict for all 72 tasks, and the majority vote
+(accuracy `0.514`) lost to a rule that rejects everything unread (`0.639`).
+
+Two things follow for this ADR:
+
+1. **The independence assumption is still untested against reality.** This ADR
+   reasons about verifiers that share errors; E016 does not tell us how much
+   real ones do. That gap is unchanged.
+2. **Verifier competence is a precondition for the independence question, and
+   it is not free.** Panel diversity along the axes this ADR hypothesises —
+   model family and prompt — moved the accept rate from 0.14 to 0.80 while
+   carrying no task-level signal at all. Diversity of *opinion* is not evidence;
+   a panel can be maximally diverse and jointly uninformative.
+
+Practical consequence: any aggregation rule this ADR eventually specifies must
+be gated on a per-verifier discrimination check, not on accuracy. On an
+imbalanced corpus a constant verifier can post the panel's best accuracy score.
+
+See [`../../experiments/E016-live-verifier-correlation.md`](../../experiments/E016-live-verifier-correlation.md).
+
 ## Implementation references
 
 - `docs/architecture/MATHEMATICAL_EVOLUTION_KERNEL.md`

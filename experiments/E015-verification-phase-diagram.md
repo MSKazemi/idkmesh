@@ -169,6 +169,14 @@ the same model family are both accurate and correlated.
 The `rho=0` values slightly above 100% (100.8%, 103.8%) are interpolation and
 sampling artifacts at 100 seeds, not evidence of superadditivity.
 
+> **Follow-up (E016).** The correlation `rho` used throughout this experiment is
+> a parameter of a synthetic mixture, not a measured quantity. E016 attempted to
+> measure it on 20 live open-weight verifiers and failed: none discriminated
+> above chance, so no correlation could be estimated. The limitation stated here
+> is therefore still open, and the near-zero `rho` values in E016's output must
+> not be read as evidence that real verifiers are independent. See
+> [`E016-live-verifier-correlation.md`](E016-live-verifier-correlation.md).
+
 ## Limitations
 
 1. **`n_eff` is only comparable within a fixed quorum.** *(Resolved -- see
