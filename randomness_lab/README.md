@@ -2,7 +2,7 @@
 
 `randomness_lab` is a dependency-free experimental harness for testing stochastic coordination policies before IDKMesh embeds them in production orchestration.
 
-It implements the first slice of issue #29 and supports the research direction in `docs/research/RANDOMNESS_ROADMAP.md`.
+It implements the first slices of issue #29 and supports the research direction in `docs/research/RANDOMNESS_ROADMAP.md`.
 
 ## Design rule
 
@@ -17,6 +17,21 @@ From the repository root:
 ```bash
 python -m randomness_lab --policy thompson --rounds 1000 --seed 42
 ```
+
+Run repeated trials and retain the raw distribution plus an uncertainty summary:
+
+```bash
+python -m randomness_lab \
+  --policy thompson \
+  --workers 0.55,0.65,0.80 \
+  --error-correlation 0.25 \
+  --rounds 1000 \
+  --trials 30 \
+  --seed 42 \
+  --output results/thompson-30-trials.json
+```
+
+Trial seeds are deterministic: `seed`, `seed + 1`, ..., so an experiment can be reproduced exactly. For multiple trials the output includes every raw trial, mean/min/max verified-success rate, sample standard deviation, and a clearly labeled descriptive normal-approximation 95% interval across trial means.
 
 Add a simple correlated-error environment:
 
@@ -54,6 +69,8 @@ Each run records:
 - realized mean pairwise error correlation;
 - randomness-source provenance.
 
+Repeated experiments additionally retain all raw runs plus across-trial summary statistics. Raw metrics remain authoritative; uncertainty summaries are aids for comparison rather than replacements for the underlying distribution.
+
 The current worker model is deliberately synthetic. `error_correlation` uses a transparent mixture: on some rounds all workers share one random draw; on the remaining rounds their draws are independent. This gives experiments an explicit positive-correlation knob without pretending to model every real agent failure mode.
 
 ## Tests
@@ -62,7 +79,7 @@ The current worker model is deliberately synthetic. `error_correlation` uses a t
 python -m unittest discover -s tests -v
 ```
 
-The tests check seeded reproducibility, policy interchangeability, the correlation control, Thompson-sampling adaptation, and the power-of-d helper.
+The tests check seeded reproducibility, repeated-trial reproducibility and uncertainty output, policy interchangeability, the correlation control, Thompson-sampling adaptation, and the power-of-d helper.
 
 ## Adding a policy
 
@@ -76,11 +93,11 @@ The tests check seeded reproducibility, policy interchangeability, the correlati
 
 This foundation is intentionally small. The next steps are:
 
-1. repeated-trial experiment runner with confidence intervals/distributions;
-2. explicit swarm/ensemble selection for issue #30;
-3. load/queue environment for issue #31;
-4. evolutionary policy genome for issue #32;
-5. machine-readable experiment manifests and benchmark families;
+1. explicit swarm/ensemble selection for issue #30;
+2. load/queue environment for issue #31;
+3. evolutionary policy genome for issue #32;
+4. machine-readable experiment manifests and benchmark families;
+5. richer uncertainty methods when experimental design warrants them;
 6. CI artifacts for experiment results where useful.
 
 Raw metrics should remain available even if later experiments add composite objectives.
