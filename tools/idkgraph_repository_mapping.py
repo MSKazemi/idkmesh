@@ -32,7 +32,11 @@ REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 if str(REPOSITORY_ROOT) not in sys.path:
     sys.path.insert(0, str(REPOSITORY_ROOT))
 
-from tools.idkgraph_markdown_index import document_id, parse_markdown
+from tools.idkgraph_markdown_index import (
+    document_id,
+    parse_markdown,
+    tracked_relative_paths,
+)
 
 SCHEMA_VERSION = "idkgraph-repository-mapping-v0.1"
 ADR_NAME = re.compile(r"^(ADR-\d{4})-[A-Za-z0-9._-]+\.md$")
@@ -185,11 +189,14 @@ def _work_unit_input_paths(path: Path) -> list[str]:
 
 def build_repository_graph(root: Path) -> dict[str, Any]:
     root = root.resolve()
+    tracked = tracked_relative_paths(root)
     files = sorted(
         (
             path
             for path in root.rglob("*")
-            if path.is_file() and ".git" not in path.relative_to(root).parts
+            if path.is_file()
+            and ".git" not in path.relative_to(root).parts
+            and (tracked is None or path.relative_to(root).as_posix() in tracked)
         ),
         key=lambda path: path.relative_to(root).as_posix(),
     )
