@@ -34,7 +34,11 @@ jobs:
         run: python experiments/harness.py validate
       - name: Run safe built-in smoke fixture
         run: python experiments/harness.py smoke --output results/phase0-smoke.jsonl
+      - name: Test randomness lab
+        run: python -m unittest discover -s experiments/tests -v
 
 # Security note: the harness smoke command executes only its built-in
 # deterministic_smoke runner. It refuses manifest runner types such as
 # `command` or `external`, so contributor-supplied commands are never run here.
+# The randomness-lab tests use only the Python standard library and seeded
+# synthetic data; they perform no network access and execute no manifest code.
