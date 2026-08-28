@@ -10,6 +10,12 @@ inference:
   explicit accepted ``Status:`` value but has no T3 ``implements`` edge from a
   mapped ``document`` node.
 
+A document with no inbound Markdown link is not necessarily abandoned: it may be
+owned by a workflow, script, or schema that references it by repository-relative
+path. Those are reported separately, as a notice rather than an orphan warning,
+because the condition is a navigation gap for human readers only -- the document
+is demonstrably still referenced and maintained.
+
 Both are warnings. Absence of a link cannot prove that a document is
 unintentionally orphaned, and an accepted decision may intentionally affect
 only non-document artifacts. The observatory therefore surfaces deterministic
@@ -22,9 +28,60 @@ import re
 from pathlib import Path
 from typing import Any
 
+try:  # pragma: no cover - import shape depends on invocation
+    from .idkgraph_markdown_index import tracked_relative_paths
+except ImportError:  # pragma: no cover
+    from idkgraph_markdown_index import tracked_relative_paths
+
 SCHEMA_VERSION = "idkgraph-health-checks-v0.1"
 ACCEPTED_STATUS = re.compile(r"^accepted\b", re.IGNORECASE)
 INDEX_FILENAMES = {"README.md", "index.md"}
+
+# Repository-relative Markdown paths as they appear inside non-Markdown artifacts.
+DOCUMENT_REFERENCE = re.compile(r"docs/[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)*\.md")
+
+# Artifact types that can legitimately own a document: workflows, scripts,
+# schemas, and configuration. Deliberately an allowlist rather than "every file
+# that is not Markdown", so that large result/data files are not rescanned and
+# the scan cost stays bounded and predictable.
+ARTIFACT_SUFFIXES = {
+    ".cfg",
+    ".ini",
+    ".json",
+    ".py",
+    ".sh",
+    ".toml",
+    ".txt",
+    ".yaml",
+    ".yml",
+}
+
+
+def _artifact_document_references(root: Path) -> dict[str, list[str]]:
+    """Map document path -> sorted non-Markdown artifacts that reference it.
+
+    Deterministic: the scan set is repository-tracked files with an allowlisted
+    suffix, and every result list is sorted. Unreadable or non-UTF-8 files are
+    skipped rather than guessed at.
+    """
+    tracked = tracked_relative_paths(root)
+    references: dict[str, set[str]] = {}
+    for path in sorted(root.rglob("*")):
+        relative = path.relative_to(root)
+        if ".git" in relative.parts or not path.is_file():
+            continue
+        if path.suffix.lower() not in ARTIFACT_SUFFIXES:
+            continue
+        relative_posix = relative.as_posix()
+        if tracked is not None and relative_posix not in tracked:
+            continue
+        try:
+            text = path.read_text(encoding="utf-8")
+        except (OSError, UnicodeError):
+            continue
+        for target in DOCUMENT_REFERENCE.findall(text):
+            references.setdefault(target, set()).add(relative_posix)
+    return {target: sorted(sources) for target, sources in sorted(references.items())}
 
 
 def _explicit_status(path: Path) -> str | None:
@@ -84,6 +141,8 @@ def check_residual_health(
         ):
             inbound_local_markdown.add(target_path)
 
+    artifact_references = _artifact_document_references(root)
+
     findings: list[dict[str, Any]] = []
 
     # A deterministic candidate set, not a claim about intentionality:
@@ -98,6 +157,30 @@ def check_residual_health(
         if Path(path).name in INDEX_FILENAMES:
             continue
         if path in inbound_local_markdown:
+            continue
+        owners = artifact_references.get(path)
+        if owners:
+            findings.append(
+                {
+                    "severity": "notice",
+                    "category": "document_referenced_only_by_non_markdown_artifact",
+                    "source_path": path,
+                    "source_id": node["id"],
+                    "line": 0,
+                    "message": (
+                        "No inbound Markdown link was observed, but the document is referenced by "
+                        f"{len(owners)} non-Markdown repository artifact(s): {', '.join(owners)}. "
+                        "The document is still referenced, so this is a navigation gap for human "
+                        "readers rather than an orphan candidate."
+                    ),
+                    "evidence": {
+                        "producer": "P0-health",
+                        "producer_schema": SCHEMA_VERSION,
+                        "rule": "typed_docs_document_referenced_only_by_non_markdown_artifact",
+                        "referencing_artifacts": owners,
+                    },
+                }
+            )
             continue
         findings.append(
             {
@@ -173,6 +256,10 @@ def check_residual_health(
             ),
             "accepted_decisions_without_document_link": sum(
                 item["category"] == "accepted_decision_without_document_link" for item in findings
+            ),
+            "documents_referenced_only_by_non_markdown_artifacts": sum(
+                item["category"] == "document_referenced_only_by_non_markdown_artifact"
+                for item in findings
             ),
         },
         "findings": findings,
