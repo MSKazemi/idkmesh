@@ -28,6 +28,11 @@ The first deterministic orphan-warning cohort in issue #152 identified these act
 
 - [ACE GitHub Workflow Threat Model](security/ACE_THREAT_MODEL.md) — trust boundaries and fail-closed requirements for ACE's privileged GitHub workflow.
 
+## Branch lifecycle and integration
+
+- [Branch Convergence and Merge Discipline](planning/BRANCH_CONVERGENCE_POLICY.md) — deterministic branch states, clean-current-main extraction, evidence preservation, and PR merge discipline.
+- [Branch Steward Agent](planning/BRANCH_STEWARD_AGENT.md) — shadow-mode agent architecture for prioritizing branch convergence and proposing keep/hold/PR/extract/retire actions without direct branch-merge authority.
+
 ## Archive and evidence collections
 
 Some IDKMesh records are intentionally preserved as **project memory or evidence**, not as primary navigation destinations.
