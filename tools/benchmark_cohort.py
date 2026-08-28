@@ -25,7 +25,10 @@ ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_DIR = ROOT / "schemas"
 COHORT_SCHEMA = SCHEMA_DIR / "benchmark-cohort-v0.1.schema.json"
 WORK_UNIT_SCHEMA = SCHEMA_DIR / "work-unit-v0.2.schema.json"
-EVALUATOR_PLAN_SCHEMA = SCHEMA_DIR / "evaluator-plan-v0.2.schema.json"
+EVALUATOR_PLAN_SCHEMAS = {
+    "0.2": SCHEMA_DIR / "evaluator-plan-v0.2.schema.json",
+    "0.3": SCHEMA_DIR / "evaluator-plan-v0.3.schema.json",
+}
 RESULT_MANIFEST_SCHEMA = SCHEMA_DIR / "result-manifest-v0.1.schema.json"
 VERIFICATION_RESULT_SCHEMA = SCHEMA_DIR / "verification-result-v0.1.schema.json"
 FULL_GIT_SHA = re.compile(r"^[0-9a-f]{40}$")
@@ -172,6 +175,14 @@ def _required_validator_ids(work_unit: dict[str, Any]) -> set[str]:
     }
 
 
+def evaluator_plan_schema_path(plan: dict[str, Any], *, label: str) -> Path:
+    version = plan.get("schema_version")
+    require(isinstance(version, str), f"{label}: missing evaluator schema_version")
+    schema = EVALUATOR_PLAN_SCHEMAS.get(version)
+    require(schema is not None, f"{label}: unsupported EvaluatorPlan schema_version {version!r}")
+    return schema
+
+
 def _load_and_match_object_ref(ref: dict[str, Any], *, schema: Path, label: str) -> dict[str, Any]:
     path = resolve_repo_file(ref["path"], label=label)
     value = load_json(path)
@@ -187,9 +198,10 @@ def _validate_public_plan(task: dict[str, Any], work_unit: dict[str, Any]) -> di
         require("plan_path" not in evaluator, f"{task['id']}: hidden evaluator must not expose plan_path")
         return None
 
-    plan_path = resolve_repo_file(evaluator["plan_path"], label=f"{task['id']} EvaluatorPlan")
+    label = f"{task['id']} EvaluatorPlan"
+    plan_path = resolve_repo_file(evaluator["plan_path"], label=label)
     plan = load_json(plan_path)
-    validate_schema(plan, EVALUATOR_PLAN_SCHEMA, f"{task['id']} EvaluatorPlan")
+    validate_schema(plan, evaluator_plan_schema_path(plan, label=label), label)
     require(plan["id"] == evaluator["plan_id"], f"{task['id']}: EvaluatorPlan id drift")
     require(canonical_digest(plan) == evaluator["plan_digest"], f"{task['id']}: EvaluatorPlan digest drift")
     require(plan["backend"]["type"] == evaluator["backend"], f"{task['id']}: evaluator backend drift")
@@ -365,9 +377,11 @@ def validate_cohort(cohort: dict[str, Any], *, require_evidence: bool = False) -
     }
 
 
-def _fixture_cohort() -> dict[str, Any]:
+def _fixture_cohort(
+    *,
+    plan_path: str = "verification/fixtures/patch-smoke-evaluator-plan-v0.2.json",
+) -> dict[str, Any]:
     work_path = "examples/work-units/patch-verifier-smoke.work-unit.json"
-    plan_path = "verification/fixtures/patch-smoke-evaluator-plan-v0.2.json"
     work = load_json(ROOT / work_path)
     plan = load_json(ROOT / plan_path)
     return {
@@ -442,6 +456,19 @@ def cmd_self_test(_: argparse.Namespace) -> int:
     summary = validate_cohort(baseline)
     require(summary["pending_tasks"] == 1, "self-test scaffold was not classified as pending")
 
+    v03_baseline = _fixture_cohort(
+        plan_path="verification/fixtures/patch-fragment-substring-evaluator-plan-v0.3.json"
+    )
+    v03_summary = validate_cohort(v03_baseline)
+    require(v03_summary["pending_tasks"] == 1, "self-test v0.3 evaluator scaffold was not classified as pending")
+
+    try:
+        evaluator_plan_schema_path({"schema_version": "9.9"}, label="self-test evaluator")
+    except CohortError:
+        pass
+    else:
+        raise CohortError("self-test expected unsupported EvaluatorPlan schema version to fail closed")
+
     for unsafe_path in ("../cohort.json", "/tmp/cohort.json"):
         try:
             resolve_repo_file(unsafe_path, label="self-test unsafe cohort")
@@ -497,7 +524,7 @@ def cmd_self_test(_: argparse.Namespace) -> int:
         raise CohortError("self-test expected non-immutable collecting source revision to fail closed")
 
     print(
-        "OK: benchmark cohort schema, cross-object WorkUnit/EvaluatorPlan binding, "
+        "OK: benchmark cohort schema, v0.2/v0.3 EvaluatorPlan routing, cross-object binding, "
         "pre-outcome definition commitment, repository path boundaries, and fail-closed drift checks passed"
     )
     return 0
