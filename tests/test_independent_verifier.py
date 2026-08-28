@@ -6,9 +6,17 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from experiments import harness
-from experiments.independent_verifier import sha256_file, verify_candidate
-from experiments.provenance_integrity import validate_integrity
+try:
+    from experiments import harness
+    from experiments.independent_verifier import sha256_file, verify_candidate
+    from experiments.provenance_integrity import validate_integrity
+except ModuleNotFoundError as exc:
+    if exc.name == "jsonschema":
+        raise unittest.SkipTest(
+            "Phase 0 verifier tests require requirements-phase0.txt; "
+            "non-Phase-0 workflows may skip this module."
+        ) from exc
+    raise
 
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST_PATH = ROOT / "examples/experiments/phase0-smoke.manifest.json"
