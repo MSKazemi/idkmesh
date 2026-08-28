@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "updated_at": null,
+  "strategy_weights": {
+    "community": 0.1666666667,
+    "exploration": 0.1666666667,
+    "maintenance": 0.1666666667,
+    "product": 0.1666666667,
+    "safety": 0.1666666667,
+    "verification": 0.1666666665
+  },
+  "arms": {
+    "community": {"pulls": 0, "last_opportunity": 0.5},
+    "exploration": {"pulls": 0, "last_opportunity": 0.5},
+    "maintenance": {"pulls": 0, "last_opportunity": 0.5},
+    "product": {"pulls": 0, "last_opportunity": 0.5},
+    "safety": {"pulls": 0, "last_opportunity": 0.5},
+    "verification": {"pulls": 0, "last_opportunity": 0.5}
+  },
+  "last_selected_arm": null,
+  "last_strategy_entropy": null,
+  "last_strategy_jsd": null,
+  "checkpoint_source": "repository-seed"
+}

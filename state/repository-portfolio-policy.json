@@ -1,0 +1,83 @@
+{
+  "version": 1,
+  "default_strategy": "product",
+  "top_issue_candidates": 12,
+  "top_review_candidates": 8,
+  "feature_scales": {
+    "comment_count": 8.0,
+    "body_characters": 3500.0,
+    "age_days": 120.0
+  },
+  "label_signals": {
+    "priority_high": ["p0", "priority: p0", "critical", "highest priority", "urgent"],
+    "priority_medium": ["p1", "priority: p1", "high priority", "important"],
+    "risk": ["security", "risk", "critical", "bug", "regression", "unsafe"],
+    "large_cost": ["epic", "large", "architecture", "breaking", "migration"],
+    "verification": ["verification", "verifier", "test", "evidence", "audit", "reproducibility"]
+  },
+  "strategy_arms": {
+    "community": {
+      "keywords": ["community", "contributor", "newcomer", "onboarding", "documentation", "docs", "first contact", "growth"],
+      "health_dimensions": {
+        "community_health": 1.0,
+        "goal_clarity": 0.35
+      }
+    },
+    "exploration": {
+      "keywords": ["research", "experiment", "random", "novel", "hypothesis", "mathematical", "algorithm", "emergence"],
+      "health_dimensions": {
+        "exploration_capacity": 1.0,
+        "goal_clarity": 0.25
+      }
+    },
+    "maintenance": {
+      "keywords": ["refactor", "cleanup", "maintain", "consistency", "duplicate", "architecture", "debt", "simplify"],
+      "health_dimensions": {
+        "maintainability": 1.0,
+        "goal_clarity": 0.30
+      }
+    },
+    "product": {
+      "keywords": ["worker", "runtime", "compute", "adapter", "work unit", "product", "node", "orchestrator", "execution"],
+      "health_dimensions": {
+        "product_quality": 1.0,
+        "exploration_capacity": 0.20
+      }
+    },
+    "safety": {
+      "keywords": ["security", "permission", "branch protection", "ruleset", "risk", "unsafe", "authority", "secret", "privacy"],
+      "health_dimensions": {
+        "risk_debt": 1.0,
+        "verification_strength": 0.40
+      }
+    },
+    "verification": {
+      "keywords": ["verification", "verifier", "evidence", "test", "replay", "reproducibility", "audit", "witness"],
+      "health_dimensions": {
+        "verification_strength": 1.0,
+        "product_quality": 0.35
+      }
+    }
+  },
+  "multiplicative_weights": {
+    "eta": 0.25,
+    "exploration_floor": 0.08
+  },
+  "ucb": {
+    "exploration": 1.4142135623730951
+  },
+  "graph": {
+    "unlock_decay": 0.55
+  },
+  "pareto": {
+    "directions": {
+      "impact": 1,
+      "information_gain": 1,
+      "unlock": 1,
+      "diversity": 1,
+      "risk": -1,
+      "cost": -1,
+      "review_burden": -1
+    }
+  }
+}
