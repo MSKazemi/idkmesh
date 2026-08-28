@@ -58,10 +58,13 @@ The worker checks the v0.2 scheduling/trust/budget contract before execution:
 - only public data is accepted;
 - the current profile satisfies only `minimum_worker_trust = untrusted`;
 - independent verification must be required and at least one independent verifier must be requested;
+- `budget.wall_seconds` must be positive and is treated as a whole-attempt deadline;
 - `budget.project_spend_usd_max` must be `0`;
 - `budget.paid_fallback_allowed` must be `false`.
 
-The last two checks mirror the repository-wide `config/compute-policy.json`: IDKMesh itself cannot pay for compute. Local-owned, donated, public-project CI, grants, and explicit free-tier resources can be modeled separately, but a Work Unit routed to this backend cannot silently authorize paid fallback.
+The monetary checks mirror the repository-wide `config/compute-policy.json`: IDKMesh itself cannot pay for compute. Local-owned, donated, public-project CI, grants, and explicit free-tier resources can be modeled separately, but a Work Unit routed to this backend cannot silently authorize paid fallback.
+
+The whole-attempt deadline covers local image resolution, source preparation, and task-container execution. Post-run capture records a policy failure if total measured attempt time still exceeds the Work Unit wall budget.
 
 These restrictions are deliberately conservative. Stronger isolation/identity profiles can widen the accepted risk/trust classes later without changing the core Work Unit.
 
@@ -72,26 +75,50 @@ Node v0.1 requires and enforces:
 - immutable full Git commit revision with matching canonical provenance;
 - public HTTPS GitHub source;
 - small container-image allowlist;
+- the allowlisted image must already be present on the controlled host;
+- the image tag is resolved to an immutable local Docker image ID before execution, and the container runs by that ID;
 - `permissions.network = none`;
 - no Work Unit secrets;
 - Docker `--network none`;
 - read-only container root filesystem;
 - all Linux capabilities dropped;
 - `no-new-privileges`;
-- CPU, memory, PID, and wall-time limits;
+- CPU, memory, PID, and whole-attempt wall-time limits;
 - no host home directory, credentials, or Docker socket mounted into the task;
+- trusted Git metadata stored outside the task-writable workspace and mounted read-only for task-side Git reads;
+- host Git result capture isolated from inherited/global/system Git configuration;
 - repository path policy checked against both `constraints.allowed_paths` and `permissions.filesystem_write`;
 - `constraints.forbidden_paths` rejection;
 - zero project spend / no paid fallback;
 - result output remains an **unverified candidate** requiring independent verification.
 
-The writable repository workspace is temporary. Path policy in this version is checked after execution; therefore Docker is still only an MVP isolation boundary, not sufficient containment for arbitrary hostile Internet workloads.
+The writable repository work tree is temporary. Path policy in this version is checked after execution; therefore Docker is still only an MVP isolation boundary, not sufficient containment for arbitrary hostile Internet workloads.
+
+### Git-metadata integrity rule
+
+The task must not control the Git metadata later used to measure its output. Node v0.1 therefore keeps the real Git directory outside `/workspace`, mounts it read-only at `/git-meta`, uses an isolated host Git configuration, and detects tampering with the task-visible `.git` pointer.
+
+This prevents a task from committing/repointing its own changes and then using candidate-controlled Git state to make host-side `git diff` or path-policy evidence disappear.
 
 ### Untracked-artifact rule
 
 Node v0.1 packages a bounded tracked-file Git patch. It does **not** yet package arbitrary untracked files. Therefore any untracked file produced by the task is treated as a policy failure and the worker ResultManifest is marked failed.
 
+Ignored files are still observed as task outputs; `.gitignore` does not make an untracked artifact disappear from evidence.
+
 This is deliberately fail-closed. A future protocol may add explicit typed/size-bounded untracked artifact packaging, but the current worker must never report success while silently omitting candidate output.
+
+### Candidate-patch size rule
+
+`changes.patch` is the canonical candidate artifact for node v0.1. If the tracked diff exceeds `output_limits.max_patch_bytes`, the file is truncated only as diagnostic evidence and the attempt **fails**. A truncated candidate artifact can never accompany `status: succeeded`.
+
+Stdout/stderr may be deliberately truncated to their declared log bound; those truncation flags remain visible in metrics.
+
+### Container-image evidence rule
+
+The Work Unit's allowlisted tag is a routing/configuration selector, not sufficient runtime provenance by itself. Before execution, the worker resolves the preloaded tag with Docker and obtains an immutable local image ID (`sha256:...`). Docker is then invoked with that image ID, and the ID is recorded under `extensions.org.idkmesh.node.v0_1.container_image_id`.
+
+A controlled acceptance report should retain both the configured tag and resolved image ID. A later contract version may move immutable image identity directly into the execution binding.
 
 ## Install and test
 
@@ -110,11 +137,15 @@ idkmesh-node validate node/examples/work-unit.canonical-smoke.json
 
 ## Execute one Work Unit
 
-On an explicitly controlled machine with Git and Docker:
+On an explicitly controlled machine with Git and Docker, preload the allowlisted image first:
 
 ```bash
+docker pull python:3.12-alpine
+docker image inspect --format '{{.Id}}' python:3.12-alpine
 idkmesh-node run node/examples/work-unit.canonical-smoke.json --output ./node-result
 ```
+
+The node does not perform an implicit image pull during task execution. This keeps image acquisition outside the Work Unit's task authority and lets the acceptance record bind the run to the exact local image ID.
 
 The output directory must be empty. It receives:
 
@@ -123,7 +154,7 @@ The output directory must be empty. It receives:
 - `stdout.txt`;
 - `stderr.txt`.
 
-The ResultManifest contains artifact digests, immutable source revision, Work Unit digest, worker configuration digest, resource measurements, changed paths, untracked-path accounting, policy violations, and a request for the Work Unit's required independent validators.
+The ResultManifest contains artifact digests, immutable source revision, Work Unit digest, worker configuration digest, resource measurements, changed paths, untracked-path accounting, policy violations, the resolved container image ID, and a request for the Work Unit's required independent validators.
 
 ## Trust rule
 
@@ -163,6 +194,6 @@ WorkUnit v0.2
  -> human integration decision
 ```
 
-That run should use an immutable IDKMesh source commit, stay at zero project spend, preserve evaluator sovereignty, and demonstrate that a generated candidate cannot certify itself.
+That run should use an immutable IDKMesh source commit, record the exact Docker image ID, stay at zero project spend, preserve evaluator sovereignty, and demonstrate that a generated candidate cannot certify itself.
 
 Only after that evidence should the project connect `idkmesh-node` as a concrete adapter behind the multi-attempt orchestration kernel or widen the worker's risk/trust envelope.
