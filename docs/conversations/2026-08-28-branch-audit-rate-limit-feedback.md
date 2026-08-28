@@ -29,32 +29,32 @@ full scan performed = false
 merge authorized = false
 ```
 
-The next full branch resnapshot is produced by:
+The next full branch resnapshot is produced only by:
 
 - a push to `main`;
 - the scheduled audit;
-- manual dispatch;
-- or a proposed auditor/planner PR test when API budget is sufficient.
+- manual dispatch.
+
+A `pull_request` that changes the auditor/planner runs deterministic proposed-code tests only. It deliberately does not spend the live branch-observation API budget.
 
 ## API-budget gate
 
-Before an expensive full scan, the workflow observes the GitHub core rate budget. A full scan requires at least 500 remaining core requests.
+Before an expensive canonical full scan, the workflow observes the GitHub core rate budget. The final preflight reserve is **1500 remaining core requests**.
 
-If the budget is lower or cannot be observed:
+The earlier 500-request prototype was empirically insufficient: PR #222 run `33206118365` passed the preflight but still encountered installation rate exhaustion at the first branch-list request because the shared budget could change between observations.
 
-- deterministic local planner tests still run;
-- live branch classification is skipped;
-- no branch merge plan is produced;
-- the run records a blocked rate-limit state;
-- `merge_authorized` remains false.
+Therefore the final design uses two fail-closed layers:
 
-This is deliberately fail-closed. Partial branch data is not converted into a plan.
+1. **Preflight:** if the observed remaining budget is below 1500, or the budget cannot be observed, skip the live classification and emit no branch merge plan.
+2. **Mid-scan:** if GitHub still returns a rate-limit error during classification, capture `scan-blocked.json`, set `full_scan_complete=false` and `merge_authorized=false`, emit no plan, and complete the observer as a blocked state rather than treating partial data as authority.
+
+Non-rate-limit auditor errors still fail normally.
 
 ## Why cancellation alone was insufficient
 
 `cancel-in-progress` stops stale jobs but cannot refund API requests already consumed before cancellation. With more than one hundred branches, several overlapping scans can spend hundreds of requests even if only one eventually survives.
 
-The corrected controller therefore reduces **observation metabolism**, not only concurrency.
+The corrected controller therefore reduces **observation metabolism**, not only concurrency. Cheap PR invalidations also use a separate concurrency class so they cannot cancel an already-running canonical full scan.
 
 ## Controller lesson
 
@@ -70,4 +70,4 @@ This is the same homeostatic principle used elsewhere in IDKMesh: capacity press
 
 ## Authority boundary
 
-The correction does not add merge, approval, push, deletion, settings, or compute authority. Branch plans remain decision support only, and all exact-head integration decisions must still be revalidated independently.
+The correction does not add merge, approval, push, deletion, settings, spending, or compute authority. A lifecycle invalidation makes prior branch conclusions *less* authoritative. A blocked full scan produces no plan. All exact-head integration decisions must still be revalidated independently.
