@@ -1,33 +1,40 @@
 # ACE GitHub Workflow Threat Model
 
-**Status:** Security review for ACE v0 metadata-only operation.  
+**Status:** Security review for ACE v0 metadata-only / bounded-actuation operation  
 **Scope:** `.github/workflows/ace-community-growth.yml`  
-**Related:** #10, #23, #26, #35, `COMMUNITY_GROWTH_ENGINE.md`, `SECURITY.md`.
+**Related:** #10, #23, #26, #35, #51, `COMMUNITY_GROWTH_ENGINE.md`, `SECURITY.md`.
 
 ## Executive assessment
 
-ACE v0 uses `pull_request_target` with `issues: write` so it can update a public growth ledger and, in one explicitly authorized case, create a bounded follow-up issue from a merged PR.
+ACE uses `pull_request_target` with `issues: write` so it can maintain a public growth ledger and, in one explicitly authorized case, create a bounded follow-up Growth Seed from a merged PR.
 
-That event is security-sensitive because `pull_request_target` runs in the context of the base repository and can receive a write-capable token even when the PR came from a fork.
+That event is security-sensitive because `pull_request_target` executes base-repository workflow code with a base-repository token even for a fork-originated pull request.
 
-The most important current invariant is therefore:
+The primary invariant remains:
 
-> **The ACE privileged workflow must never check out, import, execute, evaluate, or `eval` contributor-controlled PR code or commands.**
+> **The privileged ACE workflow must never check out, import, execute, evaluate, build, install, or otherwise run contributor-controlled PR code.**
 
-The reviewed workflow satisfies that invariant. It consumes GitHub event metadata only.
+A second independent review identified that code-execution safety is not enough. ACE also needs fail-closed **authorization** and **controller-memory** boundaries:
 
-This review also found several metadata-integrity and abuse risks. The accompanying hardening patch:
+> **A generic `main.protected = true` bit is not proof that the intended integration policy is configured.**
 
-- pins `actions/github-script` to the current `v7` commit SHA (`f28e40c7f34bde8b3046d885e986cb6290c5673b` at review time);
-- prevents arbitrary issue authors from self-applying `growth-seed` through an `ACE_SEED` body marker;
-- identifies the growth ledger through a workflow-owned `ace:ledger` label rather than title alone;
-- makes malformed/missing ledger state fail closed instead of silently resetting to zero;
-- paginates issue scans instead of inspecting only the first 100 results;
-- prevents an arbitrary unlabelled issue from poisoning the generated-seed deduplication marker;
-- removes untrusted PR-title interpolation from automatically generated issue bodies;
-- checks the actual GitHub protection state of `main` and disables reproductive actuation while that external integration boundary is absent.
+> **A ledger-shaped issue or syntactically valid JSON is not automatically trustworthy controller state.**
 
-**Verdict:** with these guards, ACE v0 is **safe enough for its current metadata-only experimental scope**, assuming repository token permissions remain bounded and the no-PR-code-execution invariant is preserved. It is **not** a sufficient security basis for autonomous merges, code execution, secrets access, governance changes, or higher-impact self-evolution.
+The hardened v0 therefore requires:
+
+- no PR-head execution under `pull_request_target`;
+- least-privilege token permissions;
+- immutable pin for the privileged third-party action;
+- trusted-author gating for marker-driven metadata changes;
+- unique workflow-labelled ledger identity;
+- trusted/unambiguous legacy-ledger migration;
+- semantic validation of ledger state, not JSON parsing alone;
+- fully paginated issue scans;
+- labelled provenance for generated-seed dedupe markers;
+- no untrusted PR-title interpolation into generated issues;
+- `main` reported protected **and** a separate explicit repository variable `ACE_AUTONOMOUS_ACTUATION_ENABLED=true` before reproductive actuation is eligible.
+
+**Verdict:** with these guards, ACE v0 is suitable for its current public metadata ledger and explicitly opt-in bounded issue-generation experiment. It is not a sufficient security basis for autonomous merge, code execution, secrets access, governance mutation, financial authority, or high-impact self-evolution.
 
 ---
 
@@ -37,38 +44,38 @@ ACE must protect more than source code.
 
 ### Repository authority
 
-- `GITHUB_TOKEN` granted to the workflow;
+- write-capable `GITHUB_TOKEN` scope;
 - issue/label creation and modification authority;
-- any future PR, branch, ruleset, or merge authority.
+- any future PR, branch, ruleset, deployment, or merge authority.
 
-### Canonical state
+### Canonical controller state
 
-- the ACE Community Growth Ledger;
+- ACE Community Growth Ledger identity;
+- `ACE_STATE` credit/review-load/count memory;
 - Growth Seed identity and lineage;
-- review-load and reproductive-credit measurements;
-- future policy weights and fitness evidence.
+- future policy weights/versions.
 
 ### Community integrity
 
 - issue tracker signal quality;
-- contributor attention and notification budget;
-- newcomer trust in project-generated issues;
-- reviewer/maintainer capacity.
+- contributor/reviewer attention;
+- newcomer trust in project-generated work;
+- notification and moderation burden.
 
 ### Operational capacity
 
-- GitHub Actions minutes/quota;
-- API rate limits;
-- workflow queue capacity.
+- Actions minutes/queue capacity;
+- GitHub API limits;
+- maintainer recovery capacity.
 
-### Future high-value assets
+### Future high-value assets kept outside v0
 
-- credentials/secrets if ever added;
-- autonomous policy-selection authority;
-- repository write/merge authority;
-- volunteer compute or agent execution capabilities.
-
-The current design should avoid introducing these future assets into ACE v0.
+- credentials/secrets;
+- code/branch write authority;
+- autonomous merge/deploy;
+- volunteer-compute authority;
+- financial/reward allocation;
+- AI tool execution with privileged APIs.
 
 ---
 
@@ -77,93 +84,109 @@ The current design should avoid introducing these future assets into ACE v0.
 ```text
 external contributor / fork
         |
-        | untrusted issue/PR title, body, labels visible in payload,
-        | branch names, comments, metadata
+        | untrusted title/body/branch/code/metadata
         v
 GitHub event payload
         |
-        | pull_request_target enters privileged base-repo workflow context
+        | pull_request_target enters base-repo workflow context
         v
-ACE workflow code from canonical/default branch
+canonical ACE workflow code
         |
-        | bounded GitHub token
+        | typed checks + bounded token
         v
 GitHub Issues API
         |
-        +--> ACE ledger
+        +--> labelled ACE ledger
         +--> ACE-owned labels
-        +--> at most one authorized follow-up Growth Seed
+        +--> at most one explicitly authorized follow-up seed
 ```
 
 ### Boundary A — untrusted text to privileged workflow
 
-Issue bodies, PR titles, branch names, comments, and other contributor-controlled strings are **data**. They must never become shell commands, JavaScript source, workflow expressions that alter control flow unsafely, prompts with privileged tool authority, or trusted authorization claims.
+Issue/PR titles, bodies, comments, branch names, and marker strings are data. They must never become executable source, shell commands, privileged workflow expressions, or authorization merely because they contain an expected phrase.
 
 ### Boundary B — PR head to base-repository token
 
-`pull_request_target` must not check out PR-head code. A checkout, import, package install, build, test, or script execution from the PR branch would cross a critical boundary.
+Fork/PR code must never be executed by this privileged workflow. If PR code needs testing, use a separate unprivileged `pull_request` path and an explicit verified-artifact boundary.
 
-### Boundary C — labels to authorization
+### Boundary C — metadata to authorization
 
-Labels such as `growth:spawn`, `growth-seed`, and `ace:ledger` are capabilities/signals. Untrusted text that merely *names* or imitates a label must not gain equivalent authority.
+Labels/markers are capability-like signals. A text string that resembles `ACE_SEED`, `growth:spawn`, `ace:ledger`, or verification language is not equivalent to repository-controlled authorization.
 
-### Boundary D — public state to controller input
+### Boundary D — public issue state to controller memory
 
-The ledger is controller state. Malformed state must not be silently repaired to a favorable/default value because that would allow state loss to masquerade as a valid observation.
+The ledger is controller memory. Identity must be unique and state must be semantically valid. Ambiguity/corruption requires human repair; it must not silently become a new default policy state.
 
-### Boundary E — repository files to protected integration
+### Boundary E — repository protection signal to autonomous actuation
 
-Repository instructions, docs, labels, and workflow comments are not an enforcement boundary. Stronger ACE actuation must fail closed while GitHub reports `main` as unprotected. Branch protection/rulesets are external state and must be checked as such.
+`branch.protected` is a coarse platform signal. It does not prove that PR requirements, stable checks, review requirements, deletion/force-push restrictions, and bypass policy match IDKMesh's intended safety contract.
 
----
-
-## 3. Attack surfaces
-
-1. `pull_request_target` event payloads from fork-originated PRs.
-2. Issue-open events and issue body markers.
-3. PR labels present when a PR is merged.
-4. PR titles or other strings copied into generated Markdown.
-5. Growth Ledger discovery and JSON state parsing.
-6. Issue-list scans used for deduplication.
-7. GitHub Actions third-party dependencies.
-8. Workflow/API event storms.
-9. Future AI processing of issue/PR text.
-10. Future expansion of token permissions or autonomous actuators.
-11. Missing or weakened GitHub branch protection/rulesets.
+ACE therefore requires a second explicit post-verification repository opt-in before reproductive actuation.
 
 ---
 
-## 4. Threats and mitigations
+## 3. Current explicit permissions
 
-| ID | Threat | Severity | Likelihood in v0 | Current / patched mitigation |
-| --- | --- | --- | --- | --- |
-| T1 | Execute malicious fork/PR code under `pull_request_target` | Critical | Low while invariant holds | No checkout, import, build, tests, shell execution, or evaluation of PR code. Preserve as a hard invariant. |
-| T2 | Untrusted issue author inserts `<!-- ACE_SEED` and gains `growth-seed` label | Medium | High before patch | Marker-driven labeling requires trusted `author_association` (`OWNER`, `MEMBER`, or `COLLABORATOR`). |
-| T3 | Fake issue with ledger title is selected as canonical state | Medium | Medium | Workflow-owned `ace:ledger` label becomes canonical identity. Legacy migration selects the oldest title + state-marker match and labels it. |
-| T4 | Malformed ledger JSON silently resets credit/load/counts | Medium | Low/Medium | Parse/missing-state failures throw and stop the run; state is not overwritten. |
-| T5 | Attacker plants `spawned-from:pr-N` text to block a legitimate seed | Medium | Medium before patch | Deduplication counts the marker only on issues already carrying `growth-seed`; scans are fully paginated. |
-| T6 | PR title injects mentions/Markdown into generated Growth Seed | Low/Medium | Medium | Generated seed no longer copies the PR title; only numeric PR reference is emitted. |
-| T7 | More than 100 issues causes duplicate ledger/seed because scans stop at first page | Medium | Increases with growth | Use `github.paginate` for open/all issue scans. |
-| T8 | Dependency/supply-chain compromise of moving `actions/github-script@v7` tag | High | Low | Pin to observed full commit SHA. Review/update deliberately when upgrading. |
-| T9 | Event storms consume workflow/API quota or create state churn | Medium | Medium | Concurrency serializes state writes; future ACE should batch/generate by epochs rather than react publicly to every event. |
-| T10 | Misapplied `growth:spawn` label authorizes unwanted issue creation | Medium/High | Low for external users | Only a merged PR with the label can actuate; future stronger actuation should record label/approval provenance explicitly. |
-| T11 | Recursive issue creation creates uncontrolled workflow cascades | Medium | Low | Dedupe marker and one-seed-per-parent logic; do not rely on token recursion behavior alone. |
-| T12 | Prompt/content injection when AI is later added | High | Not present in v0 | Treat all natural-language GitHub content as untrusted. AI output remains proposal/evidence until separately authorized and verified. |
-| T13 | Token permission expansion creates accidental repository authority | Critical | Future risk | Keep explicit least privilege. No `contents: write` or merge authority in v0. |
-| T14 | Popularity/activity signals are gamed into correctness or governance authority | High epistemic risk | Medium | Stars/forks/comments/PR volume are signals only; verified evidence and capacity gates stay separate. |
-| T15 | ACE reproductive actuator runs while `main` lacks external protection | High governance/integration risk | Current until admin config changes | Read actual branch metadata; force `CONSOLIDATE` and disable the actuator while `mainProtected == false`. |
+```yaml
+contents: read
+issues: write
+pull-requests: read
+```
+
+Current behavior needs `issues: write` for the ledger, ACE-owned labels, and the bounded follow-up issue. It does not need source writes, merge permission, secrets, package writes, deployment authority, or Actions administration.
+
+Future design should split stronger autonomy into:
+
+```text
+read-only observer
+ -> policy evaluator
+ -> narrowly scoped typed actuator
+```
+
+The actuator should receive verified typed decisions rather than arbitrary event text.
+
+---
+
+## 4. Threat register
+
+| ID | Threat | Severity | Hardened mitigation |
+| --- | --- | --- | --- |
+| T1 | Execute malicious fork/PR code under `pull_request_target` | Critical | No checkout/import/build/test/install/shell/eval of PR code; regression contract asserts no checkout and no workflow `run:` step. |
+| T2 | Untrusted issue author inserts `ACE_SEED` marker and self-enters cohort | Medium | Marker-driven labelling requires trusted `author_association` (`OWNER`, `MEMBER`, `COLLABORATOR`). |
+| T3 | Fake issue becomes canonical ledger by matching title/body | Medium/High | Canonical identity is `ace:ledger`; legacy adoption requires trusted author association. |
+| T4 | Multiple ledger-like records make controller state ambiguous | High | More than one labelled ledger or more than one trusted legacy candidate fails closed for human repair. |
+| T5 | Malformed JSON silently resets controller memory | High | Missing/parse-invalid state throws; no fallback overwrite. |
+| T6 | Syntactically valid but semantically poisoned `ACE_STATE` | High | Require supported version, canonical timestamp, non-future timestamp, finite non-negative numeric state, safe non-negative integer counters, valid count keys/object shape. |
+| T7 | Attacker plants `spawned-from:pr-N` to suppress legitimate descendant | Medium | Marker only dedupes when carried by a `growth-seed`-labelled issue; scans are paginated. |
+| T8 | PR title injects mentions/Markdown into generated issue | Low/Medium | Generated seed uses numeric PR reference, not PR title. |
+| T9 | First-100 scan misses ledger/dedupe record | Medium | `github.paginate` for relevant scans. |
+| T10 | Moving third-party action tag changes privileged code | High | `actions/github-script` pinned to reviewed full SHA. |
+| T11 | Event storm consumes Actions/API/reviewer capacity | Medium | Serialized state writes; public-action budget remains bounded; future design should batch/generate by epochs. |
+| T12 | Misapplied `growth:spawn` label authorizes unwanted follow-up issue | Medium/High | Requires merged PR + repository label + both global actuation gates; stronger future actuator should record approval provenance explicitly. |
+| T13 | Recursive token-created events create unbounded issue cascade | Medium | Idempotent per-parent marker + labelled dedupe + bounded actuator; do not rely solely on platform recursion suppression. |
+| T14 | Prompt/content injection if AI is later added | High | Natural language remains `untrusted_text`; typed policy/evidence must authorize privileged actions. |
+| T15 | Token permission expansion accidentally grants canonical mutation | Critical | Explicit least privilege; no `contents: write` or merge authority; regression contract. |
+| T16 | Popularity/activity signals become correctness/governance authority | High epistemic | Activity is signal only; verified descendants, security and capacity remain separate. |
+| T17 | Any weak/partial branch rule flips `protected=true` and silently enables autonomy | High | `actuationAllowed = mainProtected && explicitActuationOptIn`; opt-in is set only after concrete admin verification. |
+| T18 | Protection is weakened later while opt-in remains configured | High | Either gate failing disables actuation; ledger reports gate status. Admin runbook requires opt-in removal during repair/incident response. |
 
 ---
 
 ## 5. Fork-originated PR analysis
 
-`pull_request_target` is intentionally used because the workflow needs a base-repository context and issue-write capability while observing PR lifecycle events.
+A malicious fork may control:
 
-A malicious fork can control or influence metadata such as PR title/body, source branch name, commit contents, and linked text. It cannot safely be allowed to control executable input inside this workflow.
+- PR title/body;
+- source branch name;
+- commits and files;
+- linked Markdown/text;
+- any semantic meaning it tries to attach to those strings.
+
+It must not control executable input in the privileged workflow.
 
 ### Required invariant
 
-Under `pull_request_target`, never add any of the following without a separate security redesign:
+Under `pull_request_target`, do not add any of the following without a separate security redesign:
 
 ```text
 actions/checkout of PR head
@@ -176,132 +199,229 @@ AI tool execution where PR text can choose privileged tools
 secret exposure to PR-controlled execution
 ```
 
-If ACE ever needs to test PR code, use an unprivileged `pull_request` workflow with read-only/no-secret context and pass only verified artifacts across an explicit trust boundary.
+If PR code must be evaluated, do it in an unprivileged workflow and promote only independently verified artifacts across an explicit trust boundary.
 
 ---
 
-## 6. Workflow permissions
+## 6. Ledger identity and migration
 
-Current explicit permissions are:
+### Canonical identity
 
-```yaml
-contents: read
-issues: write
-pull-requests: read
+A title is not identity. Any issue author can choose a title.
+
+The canonical open ledger is the unique open issue carrying `ace:ledger`.
+
+If multiple open issues carry that label, the workflow stops rather than selecting whichever appears first.
+
+### Legacy migration
+
+During migration, when no labelled ledger exists, the workflow may adopt exactly one issue that:
+
+- has the canonical legacy title;
+- has an `ACE_STATE` marker;
+- was created by a trusted repository-associated author.
+
+Zero candidates creates a fresh workflow-labelled ledger. Multiple trusted candidates fail closed for human reconciliation.
+
+This prevents an external user from pre-creating a convincing ledger-shaped issue and having it promoted to controller memory.
+
+---
+
+## 7. Ledger semantic validation
+
+JSON syntax is only the first check.
+
+A retained `ACE_STATE` must satisfy:
+
+- `version == 1`;
+- `updated_at` is the canonical ISO representation produced by the workflow;
+- timestamp is not implausibly in the future;
+- `credit` is finite and non-negative;
+- `review_load` is finite and non-negative;
+- `total_events` is a non-negative safe integer;
+- `counts` is a plain object;
+- count keys match the bounded event-key character/length rule;
+- count values are non-negative safe integers.
+
+Missing/invalid state stops the workflow and preserves the public evidence for repair. The workflow does not merge malformed state into defaults.
+
+### Why this matters
+
+Values such as a stringified infinity, negative counters, arrays where maps are expected, unsupported versions, or future timestamps can corrupt controller dynamics without being invalid JSON.
+
+Controller memory deserves the same fail-closed discipline as executable configuration.
+
+---
+
+## 8. Two-gate actuation authorization
+
+ACE reproductive actuation is eligible only when:
+
+```text
+mainProtected == true
+AND
+ACE_AUTONOMOUS_ACTUATION_ENABLED == "true"
 ```
 
-For current behavior, `issues: write` is required to manage the ledger, labels, and bounded seed issue; `pull-requests: read` is sufficient for PR metadata; `contents: read` does not grant source writes.
+### Why `protected=true` is not enough
 
-No `contents: write`, actions administration, deployments, packages, secrets, or merge permission is granted.
+GitHub may report a branch protected when **some** protection/ruleset applies. The boolean alone does not prove that the IDKMesh-required combination is present:
 
-Future design should separate a read-only observer, a policy evaluator, and a narrowly scoped actuator. The actuator should receive typed verified decisions—not arbitrary event text.
+- PR-based integration;
+- stable required checks;
+- blocked force-push/deletion;
+- appropriate independent review;
+- narrow/auditable bypass policy.
 
----
+The repository variable is therefore a deliberate second administrative decision after those behaviors are tested.
 
-## 7. Ledger integrity
+### Fail-closed states
 
-The ledger is not just documentation; it is controller memory.
+ACE enters `CONSOLIDATE` and cannot spawn a Growth Seed if either gate is disabled.
 
-### Identity
+The ledger continues for observability but reports that autonomous actuation is disabled.
 
-A title alone is not a secure identity because any issue author can choose the same title. v0 therefore uses a workflow-owned `ace:ledger` label as the canonical locator.
-
-### Parsing
-
-Malformed state fails closed. The workflow must not silently replace malformed state with defaults because state loss would become a new policy input without review.
-
-### Future validation
-
-Before ACE policy weights become consequential, validate state version, finite/ranged numerics, non-negative counts, plausible timestamps, explicit policy provenance, and replayable transitions where practical.
+The opt-in must be removed/set non-`true` during protection repair or incident response. Protection failure independently disables the actuator even if the variable was accidentally left present.
 
 ---
 
-## 8. Denial-of-service and spam
+## 9. Bounded seed actuator
 
-The current workflow edits one ledger rather than commenting on every event. Remaining risks include queued Actions runs, API limits, permissive future Growth Seed generation, and Sybil distortion of low-trust activity proxies.
+Even with both global gates enabled, reproduction still requires:
 
-The recommended next-generation architecture remains:
+```text
+pull_request_target closed event
+AND PR actually merged
+AND growth:spawn label present
+AND no labelled Growth Seed already carries spawned-from:pr-N
+```
+
+The generated issue:
+
+- contains only trusted numeric PR identity, not the PR title;
+- offers bounded reproduce/challenge/extend/explain paths;
+- requires evidence rather than opinion;
+- receives `growth-seed` and `help wanted` labels;
+- does not merge code, execute code, alter governance, or grant compute/financial authority.
+
+Before any higher-impact actuator is added, label/approval provenance should itself become typed evidence rather than inferred from current metadata.
+
+---
+
+## 10. Denial-of-service / Goodhart risks
+
+ACE deliberately updates one ledger rather than publicly replying to every event, but event storms can still consume:
+
+- workflow queue capacity;
+- Actions minutes;
+- API budget;
+- controller churn;
+- reviewer attention.
+
+Raw stars, forks, comments, issues and PRs are not success objectives. They are low-trust activity signals.
+
+Recommended future shape:
 
 ```text
 many events
- -> append/collect quiet evidence
+ -> quiet evidence collection
  -> scheduled/generational evaluation
- -> capacity gate
- -> deduplicate
+ -> verification/capacity gate
+ -> dedupe
  -> strict public-action budget
 ```
 
-Recommended actuator ceiling before real community evidence exists: **at most one deduplicated low-risk Growth Seed per eligible verified parent**, and no automatic cohort expansion while review capacity is constrained.
+Before real community evidence exists, the actuator ceiling remains at most one deduplicated low-risk Growth Seed per explicitly eligible verified parent.
 
 ---
 
-## 9. Recursive-trigger analysis
+## 11. Prompt/content injection boundary
 
-GitHub generally prevents repository-token-created events from recursively starting new workflow runs in many cases, but recursion safety must not depend on that behavior alone.
+ACE v0 does not call a language model, so prompt injection is not currently an execution path.
 
-ACE uses a global concurrency group, deterministic `spawned-from:pr-N` marker, full-history deduplication on labeled Growth Seeds, an explicit `growth:spawn` gate, and—after this convergence patch—an external branch-protection gate.
+If AI is introduced later:
 
-Future actuators must remain idempotent even if platform event-delivery behavior changes or an event is retried.
+- issue/PR/comment text is `untrusted_text`;
+- model output cannot directly select arbitrary privileged APIs;
+- privileged tool calls use typed allowlists and policy checks;
+- generation and authorization remain separate;
+- high-impact actions require deterministic guards and independent evidence/review;
+- strings such as `ignore previous instructions`, `ACE_SEED`, or fake verification prose grant no authority.
 
----
-
-## 10. Prompt/content injection boundary
-
-ACE v0 does not call a language model. If AI is introduced later, issue/PR/comment text must be marked untrusted; model output must not directly select privileged APIs from arbitrary text; tool calls need typed allowlists and policy checks; generation and authorization remain separate; high-impact actions require deterministic guards and independent review.
-
-A useful rule is:
+Useful rule:
 
 > **Text may propose; typed policy and verified evidence authorize.**
 
 ---
 
-## 11. Guards required before stronger autonomous actuation
+## 12. Guards required before stronger autonomy
 
 Before ACE can do more than maintain metadata and create one explicitly authorized low-risk seed issue, require at least:
 
-1. `main` protected according to #35;
-2. verified parent -> seed -> descendant lineage (#25);
-3. independent verification evidence separated from activity;
-4. explicit risk classification for each actuator;
-5. typed allowlist of writable fields/actions;
-6. deterministic idempotency key;
-7. capacity/review-load gate;
-8. provenance for authorization;
-9. no self-approval or self-merge;
-10. rollback/recovery path;
-11. audit log;
-12. prompt-injection boundary if models consume GitHub text;
-13. immutable action dependencies;
-14. negative/adversarial tests;
-15. external Phase-B activation gate such as PR #89 or its accepted successor.
+1. #35 GitHub protection configured and behaviorally verified;
+2. explicit actuation opt-in enabled only after that verification;
+3. verified parent -> seed -> descendant lineage;
+4. independent verification evidence separated from activity;
+5. explicit risk class per actuator;
+6. typed writable-field/action allowlist;
+7. deterministic idempotency key;
+8. capacity/review-load gate;
+9. provenance for the authorizing actor/policy;
+10. no self-approval/self-merge;
+11. rollback/recovery path;
+12. audit log of proposed/rejected/executed/reverted actions;
+13. prompt-injection boundary if a model consumes GitHub text;
+14. immutable action dependencies;
+15. adversarial/negative tests;
+16. controller-state schema/version migration discipline.
 
-Autonomous merge is explicitly outside the current safe envelope.
+Autonomous merge remains explicitly outside the current safe envelope.
 
 ---
 
-## 12. Current v0 verdict
+## 13. Verification checklist for future edits
+
+A reviewer changing the privileged workflow should confirm:
+
+- no PR-head checkout or executable PR-controlled input;
+- no new shell `run:` in the privileged job;
+- third-party privileged action remains pinned;
+- token permissions do not expand accidentally;
+- marker text is not authorization;
+- canonical ledger identity is unique;
+- legacy migration cannot adopt untrusted/ambiguous state;
+- semantic state validation remains fail closed;
+- relevant scans stay paginated;
+- untrusted titles/text are not copied into privileged generated control data;
+- dedupe requires labelled provenance;
+- both protection and explicit opt-in are required for actuation;
+- the regression safety contract is updated to encode any new invariant.
+
+---
+
+## 14. Current v0 verdict
 
 ### Safe enough for
 
 - counting low-trust activity signals;
-- updating one public experimental ledger;
+- updating one public, semantically validated experimental ledger;
 - maintaining ACE-owned labels;
-- applying `growth-seed` only from trusted issue authors;
-- creating one bounded follow-up issue from an explicitly labelled merged PR **only when `main` is protected**;
+- trusted-author marker labelling;
+- one deduplicated follow-up Growth Seed from an explicitly labelled merged PR **only after both global actuation gates are enabled**;
 - public simulation/measurement experiments.
 
 ### Not safe enough for
 
-- checking out or running fork/PR code under a write token;
+- executing fork/PR code under a write token;
 - secrets access;
 - executing AI-generated commands;
-- automatically accepting verification claims from GitHub text;
-- changing governance/security policy;
-- pushing to protected code branches;
+- treating GitHub text as verification/authorization;
+- changing governance/security policy autonomously;
+- pushing protected code branches;
 - autonomous merge/deploy;
 - broad recursive issue/PR generation;
-- assigning financial or volunteer-compute authority.
+- financial or volunteer-compute authority.
 
-The current recommendation is:
+Current recommendation:
 
-> **Keep ACE at metadata-only / bounded low-risk actuation, merge hardening only after review, and require external repository protections plus evidence-linked verification before increasing autonomy.**
+> **Keep ACE metadata-first and fail-closed, independently review PR #51, configure/test real GitHub protection, and enable the separate actuation opt-in only after those controls are demonstrated.**

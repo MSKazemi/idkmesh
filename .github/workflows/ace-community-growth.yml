@@ -27,6 +27,8 @@ jobs:
     steps:
       - name: Update ACE Growth Ledger
         uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        env:
+          ACE_AUTONOMOUS_ACTUATION_ENABLED: ${{ vars.ACE_AUTONOMOUS_ACTUATION_ENABLED }}
         with:
           script: |
             const owner = context.repo.owner;
@@ -36,19 +38,23 @@ jobs:
             const trustedIssueAuthors = new Set(['OWNER', 'MEMBER', 'COLLABORATOR']);
 
             // SECURITY: pull_request_target has write-capable permissions. This workflow
-            // intentionally NEVER checks out, imports, executes, evaluates, or builds
-            // pull-request-controlled code. It consumes GitHub metadata only.
+            // intentionally NEVER checks out, imports, executes, evaluates, builds, or
+            // installs PR-controlled code. It consumes GitHub metadata only.
             //
-            // Repository prompts/instructions are not an enforcement boundary. The
-            // reproductive actuator fails closed unless GitHub itself reports main as
-            // protected by branch protection/rulesets.
+            // A generic `protected: true` branch bit is necessary but not sufficient to
+            // prove that the intended IDKMesh integration rules are configured. ACE
+            // reproductive actuation therefore requires BOTH GitHub protection and a
+            // separate explicit repository-level opt-in made after the admin verification
+            // procedure in docs/admin/MAIN_PROTECTION.md.
             const { data: mainBranch } = await github.rest.repos.getBranch({
               owner, repo, branch: 'main'
             });
             const mainProtected = Boolean(mainBranch.protected);
-            const actuationAllowed = mainProtected;
+            const explicitActuationOptIn =
+              process.env.ACE_AUTONOMOUS_ACTUATION_ENABLED === 'true';
+            const actuationAllowed = mainProtected && explicitActuationOptIn;
 
-            // ACE bootstraps only the labels it owns. Standard GitHub labels such as
+            // ACE bootstraps only labels it owns. Standard GitHub labels such as
             // good first issue / help wanted remain under normal repository control.
             const managedLabels = [
               { name: 'growth:spawn', color: '0E8A16', description: 'Allow a verified merged PR to create one bounded ACE Growth Seed' },
@@ -88,8 +94,8 @@ jobs:
               type = 'fork:created'; q = 0.10; d = 0.90; r = 0.10; loadDelta = 0;
             }
 
-            // A marker in an untrusted issue body is data, not authorization. Only
-            // repository-trusted authors may cause marker-driven growth-seed labeling.
+            // Marker text is data, not authorization. Only repository-trusted issue
+            // authors may cause the workflow to apply the growth-seed label.
             if (event === 'issues' && action === 'opened') {
               const issue = context.payload.issue;
               const association = issue?.author_association || 'NONE';
@@ -110,19 +116,36 @@ jobs:
               owner, repo, state: 'open', per_page: 100
             });
 
-            // Identify the ledger by a workflow-owned label. During migration, adopt
-            // the oldest legacy ledger carrying both canonical title and ACE_STATE.
-            let ledger = issues.find(
-              i => !i.pull_request && (i.labels || []).some(label => label.name === 'ace:ledger')
+            // Canonical ledger identity must be unambiguous. Multiple workflow-labelled
+            // ledgers are controller-state corruption and require human repair.
+            const labelledLedgers = issues.filter(
+              i => !i.pull_request &&
+                (i.labels || []).some(label => label.name === 'ace:ledger')
             );
+            if (labelledLedgers.length > 1) {
+              throw new Error(
+                'Multiple open ACE ledgers carry ace:ledger; refusing ambiguous controller state.'
+              );
+            }
+            let ledger = labelledLedgers[0];
+
+            // Migration may adopt exactly one legacy ledger, but never one created by an
+            // untrusted external issue author. A look-alike title/state marker is data,
+            // not authority to become controller memory.
             if (!ledger) {
               const legacyLedgers = issues
                 .filter(
                   i => !i.pull_request &&
                     i.title === ledgerTitle &&
-                    (i.body || '').includes('<!-- ACE_STATE')
+                    (i.body || '').includes('<!-- ACE_STATE') &&
+                    trustedIssueAuthors.has(i.author_association || 'NONE')
                 )
                 .sort((a, b) => a.number - b.number);
+              if (legacyLedgers.length > 1) {
+                throw new Error(
+                  'Multiple trusted legacy ACE ledgers found; refusing ambiguous migration.'
+                );
+              }
               ledger = legacyLedgers[0];
               if (ledger) {
                 await github.rest.issues.addLabels({
@@ -140,6 +163,56 @@ jobs:
               total_events: 0
             };
 
+            const isPlainObject = value =>
+              value !== null && typeof value === 'object' && !Array.isArray(value);
+
+            const validateAceState = candidate => {
+              if (!isPlainObject(candidate)) {
+                throw new Error('ACE_STATE must be a JSON object.');
+              }
+              if (candidate.version !== 1) {
+                throw new Error(`Unsupported ACE_STATE version: ${candidate.version}`);
+              }
+              if (typeof candidate.updated_at !== 'string') {
+                throw new Error('ACE_STATE updated_at must be an ISO timestamp string.');
+              }
+              const updatedAt = new Date(candidate.updated_at);
+              if (
+                Number.isNaN(updatedAt.getTime()) ||
+                updatedAt.toISOString() !== candidate.updated_at
+              ) {
+                throw new Error('ACE_STATE updated_at must be a canonical ISO timestamp.');
+              }
+              if (updatedAt.getTime() > now.getTime() + 300000) {
+                throw new Error('ACE_STATE updated_at is implausibly far in the future.');
+              }
+              for (const [field, value] of [
+                ['credit', candidate.credit],
+                ['review_load', candidate.review_load]
+              ]) {
+                if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
+                  throw new Error(`ACE_STATE ${field} must be a finite non-negative number.`);
+                }
+              }
+              if (!Number.isSafeInteger(candidate.total_events) || candidate.total_events < 0) {
+                throw new Error('ACE_STATE total_events must be a non-negative safe integer.');
+              }
+              if (!isPlainObject(candidate.counts)) {
+                throw new Error('ACE_STATE counts must be an object.');
+              }
+              for (const [key, value] of Object.entries(candidate.counts)) {
+                if (!/^[a-z0-9:_-]{1,64}$/.test(key)) {
+                  throw new Error(`ACE_STATE contains invalid count key: ${key}`);
+                }
+                if (!Number.isSafeInteger(value) || value < 0) {
+                  throw new Error(
+                    `ACE_STATE count ${key} must be a non-negative safe integer.`
+                  );
+                }
+              }
+              return candidate;
+            };
+
             let state = defaultState;
             if (ledger) {
               const match = (ledger.body || '').match(/<!-- ACE_STATE\n([\s\S]*?)\nACE_STATE -->/);
@@ -147,20 +220,22 @@ jobs:
                 throw new Error('ACE ledger is missing its ACE_STATE block; refusing to overwrite state.');
               }
               try {
-                state = { ...defaultState, ...JSON.parse(match[1]) };
+                state = validateAceState(JSON.parse(match[1]));
               } catch (error) {
-                throw new Error(`ACE ledger state is malformed; refusing to reset it: ${error.message}`);
+                throw new Error(
+                  `ACE ledger state is invalid; refusing to reset or overwrite it: ${error.message}`
+                );
               }
             }
 
-            const previous = new Date(state.updated_at || now.toISOString());
+            const previous = new Date(state.updated_at);
             const days = Math.max(0, (now - previous) / 86400000);
             const lambda = 0.035;
-            state.credit = Number(state.credit || 0) * Math.exp(-lambda * days);
+            state.credit = state.credit * Math.exp(-lambda * days);
 
-            const count = Number(state.counts[type] || 0);
+            const count = state.counts[type] || 0;
             const novelty = 1 / Math.sqrt(1 + count);
-            state.review_load = Math.max(0, Number(state.review_load || 0) + loadDelta);
+            state.review_load = Math.max(0, state.review_load + loadDelta);
 
             const K = 8;
             const tau = 2;
@@ -170,11 +245,11 @@ jobs:
 
             state.credit += deltaCredit;
             state.counts[type] = count + 1;
-            state.total_events = Number(state.total_events || 0) + 1;
+            state.total_events += 1;
             state.updated_at = now.toISOString();
 
             let mode = 'DORMANT';
-            if (!mainProtected || state.review_load > K) mode = 'CONSOLIDATE';
+            if (!actuationAllowed || state.review_load > K) mode = 'CONSOLIDATE';
             else if (state.credit >= 8) mode = 'GROW';
             else if (state.credit >= 2) mode = 'EXPLORE';
 
@@ -183,9 +258,11 @@ jobs:
               .slice(0, 12)
               .map(([k, v]) => `| ${k} | ${v} |`);
 
-            const protectionLine = mainProtected
-              ? '**Main protection:** enabled; bounded ACE actuation is eligible.  '
-              : '**Main protection:** DISABLED; ACE reproductive actuation is fail-closed.  ';
+            const protectionLine = !mainProtected
+              ? '**Main protection:** DISABLED; ACE reproductive actuation is fail-closed.  '
+              : explicitActuationOptIn
+                ? '**Main protection:** enabled; explicit ACE actuation opt-in is enabled.  '
+                : '**Main protection:** enabled; explicit ACE actuation opt-in is DISABLED.  ';
 
             const body = [
               '# ACE Community Growth Ledger',
@@ -203,8 +280,8 @@ jobs:
               '',
               'The objective is not maximum activity. ACE aims to increase **verified useful descendants per unit of scarce human attention** while reducing reproduction pressure when review capacity becomes constrained.',
               '',
-              ...(mainProtected ? [] : [
-                '> Safety gate: `main` is currently unprotected. ACE may continue its public evidence ledger, but it will not autonomously spawn Growth Seeds until GitHub branch protection/rulesets are enabled.',
+              ...(actuationAllowed ? [] : [
+                '> Safety gate: autonomous ACE reproduction is disabled. Both the protected integration boundary and the explicit repository actuation opt-in must be enabled before ACE may spawn Growth Seeds.',
                 ''
               ]),
               '| Event type | Observed count |',
@@ -228,8 +305,7 @@ jobs:
             }
 
             // Conservative v0 actuator: only an explicitly labelled merged PR can
-            // reproduce, and only while the external protected-integration boundary
-            // is actually enabled.
+            // reproduce, and only while both safety gates are enabled.
             if (actuationAllowed && event === 'pull_request_target' && action === 'closed' && context.payload.pull_request?.merged) {
               const pr = context.payload.pull_request;
               const labels = (pr.labels || []).map(l => l.name);
