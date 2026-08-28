@@ -4,7 +4,7 @@ import math
 from statistics import mean, stdev
 from typing import Callable, Sequence
 
-from .model import Worker
+from .model import OutcomeEnvironment, Worker
 from .policies import Policy
 from .simulator import SimulationConfig, run_simulation
 
@@ -28,12 +28,13 @@ def run_trials(
     trials: int,
     base_seed: int = 42,
     error_correlation: float = 0.0,
+    environment_factory: Callable[[], OutcomeEnvironment] | None = None,
 ) -> dict[str, object]:
     """Run repeated seeded simulations and retain raw results plus summaries.
 
-    Each trial receives seed ``base_seed + trial_index`` and a fresh policy
-    instance. The full raw simulation output is retained to avoid hiding
-    distributions behind one composite score.
+    Each trial receives seed ``base_seed + trial_index`` and fresh policy and
+    environment instances. The full raw simulation output is retained to avoid
+    hiding distributions behind one composite score.
     """
 
     if trials < 1:
@@ -46,7 +47,15 @@ def run_trials(
             seed=base_seed + trial_index,
             error_correlation=error_correlation,
         )
-        results.append(run_simulation(workers, policy_factory(), config))
+        environment = environment_factory() if environment_factory else None
+        results.append(
+            run_simulation(
+                workers,
+                policy_factory(),
+                config,
+                environment=environment,
+            )
+        )
 
     success_rates = [float(result["metrics"]["verified_success_rate"]) for result in results]
     correlations = [
@@ -61,6 +70,7 @@ def run_trials(
         "schema_version": 1,
         "experiment": "repeated-worker-selection",
         "policy": results[0]["policy"],
+        "environment": results[0]["environment"],
         "trial_count": trials,
         "rounds_per_trial": rounds,
         "base_seed": base_seed,
