@@ -1,0 +1,13 @@
+{
+  "backend": {"max_candidate_bytes": 1000000, "max_log_bytes": 262144, "require_nonempty_patch": true, "required_added_substrings": ["is_symlink()"], "required_log_types": ["stdout", "stderr"], "required_removed_substrings": ["path = (ROOT / Path(*posix.parts)).resolve()"], "type": "unified_diff", "verify_log_digests": true},
+  "binding": {"source_revision": "a69aa0ae1ae4862e507511cbd9ad854237d0ad32", "work_unit_digest": "sha256:2e0b49e98e6626131c2b08916753b3b7f6ea7c25519cc9610f7212474d8712b3", "work_unit_id": "benchmark/phase-b2-v2/001-cohort-symlink-reference", "work_unit_version": 1},
+  "candidate_artifact_id": "candidate-patch",
+  "execution_mode": "metadata_only",
+  "extensions": {"org.idkmesh.phase_b2_v2": {"evidence_strength": "static transition proxy; freeze requires decoy calibration and behavioral evidence where practical", "negative_behavior": "A repository-relative symlink to a valid in-repository cohort JSON file must be rejected before it can be treated as a canonical benchmark definition.", "status": "provisional-until-calibrated", "tracker_issue": 180}},
+  "id": "benchmark/phase-b2-v2/001-cohort-symlink-reference/evaluator",
+  "policy": {"require_output_outside_candidate_root": true, "require_plan_outside_candidate_root": true, "require_verifier_distinct_from_worker": true},
+  "required_validator_ids": ["result-manifest-schema", "independent-review"],
+  "schema_version": "0.4",
+  "verifier": {"adapter": "deterministic-patch-verifier", "adapter_version": "0.3.0", "id": "idkmesh-local-verifier", "type": "system"},
+  "visibility": "public"
+}
