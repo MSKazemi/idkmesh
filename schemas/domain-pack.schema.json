@@ -1,0 +1,127 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idkmesh.org/schemas/domain-pack.schema.json",
+  "title": "IDKMesh DomainPack v0.1",
+  "description": "Declares domain-specific Work Unit kinds, verification policies, roles, risk defaults, adapters, and metrics without changing IDKMesh Core.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "id", "version", "name", "core_compatibility", "work_unit_kinds", "verification_policies", "worker_roles", "risk_classes", "adapters", "metrics", "compatibility"],
+  "properties": {
+    "schema_version": {"const": "0.1"},
+    "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._/-]{2,127}$"},
+    "version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+    "name": {"type": "string", "minLength": 1},
+    "description": {"type": "string"},
+    "core_compatibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["core_api_version", "work_unit_schema_version"],
+      "properties": {
+        "core_api_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+$"},
+        "work_unit_schema_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+$"}
+      }
+    },
+    "work_unit_kinds": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind", "default_risk_class", "required_verification_policy", "required_capabilities", "required_evidence"],
+        "properties": {
+          "kind": {"enum": ["coding", "testing", "review", "benchmarking", "documentation", "research", "integration", "governance", "other"]},
+          "default_risk_class": {"enum": ["low", "medium", "high", "critical"]},
+          "required_verification_policy": {"type": "string", "minLength": 1},
+          "required_capabilities": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+          "required_evidence": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"enum": ["test_output", "review", "benchmark", "citation", "trace", "attestation", "artifact_hash", "other"]}}
+        }
+      }
+    },
+    "verification_policies": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "strategy", "independent_from_worker", "minimum_independent_verifiers", "human_integration_required"],
+        "properties": {
+          "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._/-]{2,127}$"},
+          "strategy": {"enum": ["all_required", "quorum", "threshold", "custom"]},
+          "independent_from_worker": {"type": "boolean"},
+          "minimum_independent_verifiers": {"type": "integer", "minimum": 0},
+          "human_integration_required": {"type": "boolean"},
+          "description": {"type": "string"}
+        }
+      }
+    },
+    "worker_roles": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "required_capabilities"],
+        "properties": {
+          "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._/-]{2,127}$"},
+          "description": {"type": "string"},
+          "required_capabilities": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true}
+        }
+      }
+    },
+    "risk_classes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "sandbox_required", "human_review_required"],
+        "properties": {
+          "id": {"enum": ["low", "medium", "high", "critical"]},
+          "sandbox_required": {"type": "boolean"},
+          "human_review_required": {"type": "boolean"},
+          "description": {"type": "string"}
+        }
+      }
+    },
+    "adapters": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["definitions", "required", "optional"],
+      "properties": {
+        "definitions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "interface", "discovery", "trust_boundary"],
+            "properties": {
+              "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._/-]{2,127}$"},
+              "interface": {"type": "string", "pattern": "^idkmesh\\.adapter\\.[a-z0-9._/-]+/v[0-9]+\\.[0-9]+$"},
+              "discovery": {"enum": ["builtin", "registry", "project-manifest", "external"]},
+              "trust_boundary": {"type": "string", "minLength": 1}
+            }
+          }
+        },
+        "required": {"type": "array", "items": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._/-]{2,127}$"}, "uniqueItems": true},
+        "optional": {"type": "array", "items": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._/-]{2,127}$"}, "uniqueItems": true}
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["default"],
+      "properties": {
+        "default": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}, "uniqueItems": true}
+      }
+    },
+    "compatibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["backward_compatible_with", "breaking_change_policy"],
+      "properties": {
+        "backward_compatible_with": {"type": "array", "items": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"}, "uniqueItems": true},
+        "breaking_change_policy": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}
