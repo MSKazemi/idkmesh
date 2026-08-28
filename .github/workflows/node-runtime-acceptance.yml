@@ -1,0 +1,81 @@
+name: Controlled Node Runtime Acceptance
+
+on:
+  pull_request:
+    paths:
+      - "tools/node_runtime_acceptance.py"
+      - ".github/workflows/node-runtime-acceptance.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  frozen-runtime-acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out evaluator-owned acceptance harness
+        uses: actions/checkout@v4
+        with:
+          path: harness
+          persist-credentials: false
+
+      - name: Check out frozen PR 91 node candidate
+        uses: actions/checkout@v4
+        with:
+          ref: d638a2f78e4a89353b98e91052233e365f56f90a
+          path: candidate
+          persist-credentials: false
+
+      - name: Verify frozen candidate identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C candidate rev-parse HEAD)" = "d638a2f78e4a89353b98e91052233e365f56f90a"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install evaluator dependency only
+        run: python -m pip install "jsonschema>=4.23,<5"
+
+      - name: Preload allowlisted runtime image
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker pull python:3.12-alpine
+          docker image inspect python:3.12-alpine
+
+      - name: Run independent positive and negative acceptance cases
+        shell: bash
+        run: |
+          set -euo pipefail
+          python harness/tools/node_runtime_acceptance.py \
+            --candidate candidate \
+            --evidence "$RUNNER_TEMP/idkmesh-node-runtime-evidence.json"
+
+      - name: Publish sanitized evidence to job summary
+        if: always()
+        shell: bash
+        run: |
+          if test -f "$RUNNER_TEMP/idkmesh-node-runtime-evidence.json"; then
+            echo '## Frozen node runtime acceptance evidence' >> "$GITHUB_STEP_SUMMARY"
+            echo '' >> "$GITHUB_STEP_SUMMARY"
+            echo '```json' >> "$GITHUB_STEP_SUMMARY"
+            cat "$RUNNER_TEMP/idkmesh-node-runtime-evidence.json" >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'Acceptance evidence file was not produced.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+# Security boundary:
+# - evaluator workflow is separate from the frozen worker candidate tree;
+# - candidate is checked out only by exact SHA;
+# - checkout credentials are not persisted;
+# - workflow has contents:read and no repository secrets are passed to candidate code;
+# - candidate subprocesses receive a sanitized environment from the harness;
+# - task containers still run under the node's network-none/read-only/cap-drop policy;
+# - this workflow produces evidence only and has no merge/approval/write authority.
