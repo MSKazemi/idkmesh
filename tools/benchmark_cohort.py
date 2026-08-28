@@ -28,6 +28,7 @@ WORK_UNIT_SCHEMA = SCHEMA_DIR / "work-unit-v0.2.schema.json"
 EVALUATOR_PLAN_SCHEMAS = {
     "0.2": SCHEMA_DIR / "evaluator-plan-v0.2.schema.json",
     "0.3": SCHEMA_DIR / "evaluator-plan-v0.3.schema.json",
+    "0.4": SCHEMA_DIR / "evaluator-plan-v0.4.schema.json",
 }
 RESULT_MANIFEST_SCHEMA = SCHEMA_DIR / "result-manifest-v0.1.schema.json"
 VERIFICATION_RESULT_SCHEMA = SCHEMA_DIR / "verification-result-v0.1.schema.json"
@@ -462,6 +463,12 @@ def cmd_self_test(_: argparse.Namespace) -> int:
     v03_summary = validate_cohort(v03_baseline)
     require(v03_summary["pending_tasks"] == 1, "self-test v0.3 evaluator scaffold was not classified as pending")
 
+    v04_baseline = _fixture_cohort(
+        plan_path="verification/fixtures/patch-transition-evaluator-plan-v0.4.json"
+    )
+    v04_summary = validate_cohort(v04_baseline)
+    require(v04_summary["pending_tasks"] == 1, "self-test v0.4 evaluator scaffold was not classified as pending")
+
     try:
         evaluator_plan_schema_path({"schema_version": "9.9"}, label="self-test evaluator")
     except CohortError:
@@ -524,7 +531,7 @@ def cmd_self_test(_: argparse.Namespace) -> int:
         raise CohortError("self-test expected non-immutable collecting source revision to fail closed")
 
     print(
-        "OK: benchmark cohort schema, v0.2/v0.3 EvaluatorPlan routing, cross-object binding, "
+        "OK: benchmark cohort schema, v0.2/v0.3/v0.4 EvaluatorPlan routing, cross-object binding, "
         "pre-outcome definition commitment, repository path boundaries, and fail-closed drift checks passed"
     )
     return 0
