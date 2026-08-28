@@ -35,11 +35,17 @@ Branch:
 
 `feat/randomness-lab-v0`
 
+Pull request:
+
+`#41 — Add seeded randomness-lab simulator`
+
 Added:
 
 - `experiments/randomness_lab.py`
 - `experiments/tests/test_randomness_lab.py`
 - `experiments/RANDOMNESS_LAB.md`
+
+The existing `.github/workflows/phase0-schema-check.yml` is also extended on the branch to run the randomness-lab unit tests with the same read-only repository permission.
 
 The simulator is intentionally standard-library-only and small.
 
@@ -98,6 +104,8 @@ The output distinguishes:
 
 Fixed seeds produce deterministic workloads and policy behavior. Repeated trials produce per-policy summary statistics with 95% normal-approximation intervals.
 
+The interval presentation is clipped to each metric's physical range: probabilities/diversity to `[0,1]`, cost/latency/attention to nonnegative values, and correlation to `[-1,1]`. This prevents an approximation artifact such as reporting negative human-attention minutes.
+
 Machine-readable outputs are JSONL trial records plus a JSON summary envelope.
 
 ## Local verification performed before repository publication
@@ -113,7 +121,17 @@ A four-test `unittest` suite passed, checking:
 3. a perfect verifier never accepts bad work;
 4. repeated generation of an identical seeded workload is identical.
 
+The tests were rerun after the bounded-interval refinement and remained green.
+
 No real AI models, external network calls, or production workloads were executed.
+
+## Repository-level verification
+
+After PR #41 was opened, the existing Phase 0 schema workflow completed successfully on the initial PR head, including schema/fixture validation and the safe built-in smoke fixture.
+
+The branch then extended that workflow with a `python -m unittest discover -s experiments/tests -v` step so future PR CI directly exercises the randomness-lab tests. The workflow retains `contents: read`, and the added tests use only seeded synthetic data with no network access or manifest-command execution.
+
+At the time this record was updated, the newest head had been pushed but a workflow run for that exact newest commit was not yet visible through the GitHub API. No passing CI claim is made for that newest head until GitHub reports it.
 
 ## Scientific limitations retained explicitly
 
@@ -130,9 +148,15 @@ Important limitations include:
 
 These limitations are documented so future results cannot silently drift from simulation evidence into real-world claims.
 
+## Community preservation
+
+The assistant deliberately did not complete issues #24–#28. Those tasks are part of the controlled ACE newcomer cohort and remain public contribution surfaces.
+
+Issue #29 was updated with a link to PR #41 instead.
+
 ## Next evidence steps
 
-The branch should be reviewed and integrated through a PR. Once accepted, it can support:
+PR #41 should receive independent review before integration. It can then support:
 
 - #30 stochastic diversity vs replication;
 - #31 power-of-two scheduling under churn;
