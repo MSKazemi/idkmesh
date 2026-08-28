@@ -154,7 +154,7 @@
       "accounting": {"required_metrics": ["wall_seconds", "human_minutes"]},
       "declared_structural_signatures": ["single-worker-baseline-v2", "two-independent-attempts-v2", "role-specialized-two-attempts-v2"],
       "difficulty": "small",
-      "evaluator": {"backend": "unified_diff", "plan_digest": "sha256:8711a0c53d33cd89c865f06790ab4ddb2886a3147b114b02897127a277c8af4a", "plan_id": "benchmark/phase-b2-v2/001-cohort-symlink-reference/evaluator", "plan_path": "benchmarks/phase-b2-successor-v2/evaluators/task-001-cohort-symlink-reference.evaluator-plan.json", "visibility": "public"},
+      "evaluator": {"backend": "unified_diff", "plan_digest": "sha256:b6e3b0bc2627b3600a7a91ec5bd647d800d612228acb7c721795dc2ab0c5ab5e", "plan_id": "benchmark/phase-b2-v2/001-cohort-symlink-reference/evaluator", "plan_path": "benchmarks/phase-b2-successor-v2/evaluators/task-001-cohort-symlink-reference.evaluator-plan.json", "visibility": "public"},
       "evidence": {"attempts": [], "status": "pending"},
       "family": "bug_fix",
       "id": "benchmark/phase-b2-v2/001-cohort-symlink-reference",
