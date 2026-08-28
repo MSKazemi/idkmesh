@@ -59,51 +59,73 @@ def fixtures() -> tuple[dict, dict, dict]:
     result["provenance"]["source_revision"] = SOURCE_REVISION
     result["verification_request"]["evidence_artifact_ids"] = ["candidate-result"]
 
+    checks = [
+        {"id": "schema", "type": "schema", "required": True, "mode": "result_schema"},
+        {
+            "id": "reproduction",
+            "type": "reproduction",
+            "required": True,
+            "mode": "container_command",
+            "command": ["python", "-c", "print('hidden check')"],
+            "timeout_seconds": 30,
+        },
+        {
+            "id": "artifact-integrity",
+            "type": "policy",
+            "required": True,
+            "mode": "artifact_integrity",
+        },
+        {
+            "id": "scope-policy",
+            "type": "policy",
+            "required": True,
+            "mode": "scope_policy",
+        },
+    ]
+    required_validator_ids = sorted(
+        {v["id"] for v in work_unit["validators"] if v["required"]}
+        | set(result["verification_request"]["expected_validator_ids"])
+    )
     plan = {
-        "schema_version": "0.1",
-        "id": "verifier/unit-test-plan",
+        "schema_version": "0.2",
+        "id": "evaluator/unit-test-plan",
+        "binding": {
+            "work_unit_id": work_unit["id"],
+            "work_unit_version": work_unit["version"],
+            "work_unit_digest": canonical_digest(work_unit),
+            "source_revision": SOURCE_REVISION,
+        },
+        "visibility": "hidden",
+        "execution_mode": "repository_patch",
         "verifier": {
             "id": "independent-verifier",
+            "type": "system",
             "adapter": "docker-hidden-checks",
-            "adapter_version": "0.1",
+            "adapter_version": "0.2",
         },
+        "required_validator_ids": required_validator_ids,
         "source_input_id": "source-repository",
         "candidate_artifact_id": "candidate-result",
         "container_image": "python:3.12-alpine",
-        "checks": [
-            {"id": "schema", "type": "schema", "required": True, "mode": "result_schema"},
-            {
-                "id": "reproduction",
-                "type": "reproduction",
-                "required": True,
-                "mode": "container_command",
-                "command": ["python", "-c", "print('hidden check')"],
-                "timeout_seconds": 30,
-            },
-            {
-                "id": "artifact-integrity",
-                "type": "policy",
-                "required": True,
-                "mode": "artifact_integrity",
-            },
-            {
-                "id": "scope-policy",
-                "type": "policy",
-                "required": True,
-                "mode": "scope_policy",
-            },
-        ],
+        "checks": checks,
+        "policy": {
+            "require_plan_outside_candidate_root": True,
+            "require_output_outside_candidate_root": True,
+            "require_verifier_distinct_from_worker": True,
+            "fresh_workspace_per_container_check": True,
+        },
     }
     return work_unit, result, plan
 
 
 class VerifierModelTests(unittest.TestCase):
-    def test_valid_context_binds_worker_to_exact_work_unit(self) -> None:
+    def test_valid_context_binds_worker_and_evaluator_to_exact_work_unit(self) -> None:
         work_unit, result, plan = fixtures()
         context = parse_context(work_unit, result, plan)
         self.assertEqual(context.source_revision, SOURCE_REVISION)
         self.assertEqual(context.verifier_id, "independent-verifier")
         self.assertEqual(context.candidate_artifact["id"], "candidate-result")
+        self.assertEqual(context.plan["execution_mode"], "repository_patch")
 
     def test_self_verification_is_rejected(self) -> None:
         work_unit, result, plan = fixtures()
@@ -117,16 +139,36 @@ class VerifierModelTests(unittest.TestCase):
         with self.assertRaisesRegex(VerifierError, "exact WorkUnit"):
             parse_context(work_unit, result, plan)
 
+    def test_evaluator_plan_binding_drift_is_rejected(self) -> None:
+        work_unit, result, plan = fixtures()
+        plan["binding"]["source_revision"] = "f" * 40
+        with self.assertRaisesRegex(VerifierError, "source_revision"):
+            parse_context(work_unit, result, plan)
+
+    def test_required_validator_set_must_match_exactly(self) -> None:
+        work_unit, result, plan = fixtures()
+        plan["required_validator_ids"].append("not-requested")
+        with self.assertRaisesRegex(VerifierError, "exactly cover"):
+            parse_context(work_unit, result, plan)
+
     def test_missing_required_validator_check_is_rejected(self) -> None:
         work_unit, result, plan = fixtures()
         plan["checks"] = [check for check in plan["checks"] if check["id"] != "reproduction"]
-        with self.assertRaisesRegex(VerifierError, "missing required/requested"):
+        with self.assertRaisesRegex(VerifierError, "missing required"):
+            parse_context(work_unit, result, plan)
+
+    def test_duplicate_check_ids_are_rejected(self) -> None:
+        work_unit, result, plan = fixtures()
+        duplicate = copy.deepcopy(plan["checks"][0])
+        plan["checks"].append(duplicate)
+        with self.assertRaisesRegex(VerifierError, "check ids must be unique"):
             parse_context(work_unit, result, plan)
 
     def test_non_sandboxed_work_is_rejected(self) -> None:
         work_unit, result, plan = fixtures()
         work_unit["security"]["sandbox_required"] = False
         result["provenance"]["work_unit_digest"] = canonical_digest(work_unit)
+        plan["binding"]["work_unit_digest"] = canonical_digest(work_unit)
         with self.assertRaisesRegex(VerifierError, "sandbox_required"):
             parse_context(work_unit, result, plan)
 
@@ -134,6 +176,7 @@ class VerifierModelTests(unittest.TestCase):
         work_unit, result, plan = fixtures()
         work_unit["security"]["risk_class"] = "high"
         result["provenance"]["work_unit_digest"] = canonical_digest(work_unit)
+        plan["binding"]["work_unit_digest"] = canonical_digest(work_unit)
         with self.assertRaisesRegex(VerifierError, "low-risk public"):
             parse_context(work_unit, result, plan)
 
@@ -141,7 +184,7 @@ class VerifierModelTests(unittest.TestCase):
         work_unit, result, plan = fixtures()
         bad = copy.deepcopy(plan)
         del bad["checks"][1]["command"]
-        with self.assertRaisesRegex(VerifierError, "VerifierPlan failed schema validation"):
+        with self.assertRaisesRegex(VerifierError, "EvaluatorPlan failed schema validation"):
             parse_context(work_unit, result, bad)
 
 
