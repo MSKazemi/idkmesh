@@ -1,0 +1,181 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idkmesh.org/schemas/run-evidence-report-v0.1.schema.json",
+  "title": "IDKMesh Run Evidence Report v0.1",
+  "description": "A non-selecting run-level aggregation of canonical worker ResultManifest and independent VerificationResult evidence. It is human/governance decision support and cannot authorize integration.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "kind",
+    "run_id",
+    "source_run_kind",
+    "source_run_digest",
+    "source_config_digest",
+    "orchestrator_version",
+    "work_unit",
+    "verifier_policy_digest",
+    "attempts",
+    "summary",
+    "warnings",
+    "human_decision",
+    "authority"
+  ],
+  "properties": {
+    "schema_version": {"const": "0.1"},
+    "kind": {"const": "idkmesh-run-evidence-report"},
+    "run_id": {"type": "string", "minLength": 1},
+    "source_run_kind": {"const": "idkmesh-two-attempt-run"},
+    "source_run_digest": {"$ref": "#/$defs/digest"},
+    "source_config_digest": {"$ref": "#/$defs/digest"},
+    "orchestrator_version": {"type": "string", "minLength": 1},
+    "work_unit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version", "digest"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "version": {"type": "integer", "minimum": 1},
+        "digest": {"$ref": "#/$defs/digest"}
+      }
+    },
+    "verifier_policy_digest": {"$ref": "#/$defs/digest"},
+    "attempts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/attempt"}
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "attempt_count",
+        "supported",
+        "rejected",
+        "inconclusive",
+        "control_errors",
+        "verification_disagreement",
+        "control_failure_present"
+      ],
+      "properties": {
+        "attempt_count": {"type": "integer", "minimum": 1},
+        "supported": {"type": "integer", "minimum": 0},
+        "rejected": {"type": "integer", "minimum": 0},
+        "inconclusive": {"type": "integer", "minimum": 0},
+        "control_errors": {"type": "integer", "minimum": 0},
+        "verification_disagreement": {"type": "boolean"},
+        "control_failure_present": {"type": "boolean"}
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "human_decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "selected_attempt_id", "integration_authority"],
+      "properties": {
+        "status": {"const": "pending"},
+        "selected_attempt_id": {"type": "null"},
+        "integration_authority": {"const": "external_human_or_governance"}
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "canonical_state_write",
+        "git_push",
+        "merge",
+        "automatic_candidate_selection"
+      ],
+      "properties": {
+        "canonical_state_write": {"const": false},
+        "git_push": {"const": false},
+        "merge": {"const": false},
+        "automatic_candidate_selection": {"const": false}
+      }
+    }
+  },
+  "$defs": {
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "worker": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["id", "status", "result_manifest_id", "result_manifest_digest"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "status": {"type": "string", "minLength": 1},
+        "result_manifest_id": {"type": "string", "minLength": 1},
+        "result_manifest_digest": {"$ref": "#/$defs/digest"}
+      }
+    },
+    "check": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "status", "required"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "status": {"type": "string", "minLength": 1},
+        "required": {"type": "boolean"}
+      }
+    },
+    "verifier": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["id", "status", "recommendation", "verification_semantic_digest", "checks"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "status": {"type": "string", "minLength": 1},
+        "recommendation": {
+          "enum": ["accept_candidate", "reject_candidate", "escalate", "insufficient_evidence"]
+        },
+        "verification_semantic_digest": {"$ref": "#/$defs/digest"},
+        "checks": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/check"}
+        }
+      }
+    },
+    "attempt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "attempt_id",
+        "order",
+        "worker_adapter",
+        "state",
+        "evidence_state",
+        "worker",
+        "verifier",
+        "error"
+      ],
+      "properties": {
+        "attempt_id": {"type": "string", "minLength": 1},
+        "order": {"type": "integer", "minimum": 1},
+        "worker_adapter": {"type": "string", "minLength": 1},
+        "state": {
+          "enum": ["verified", "worker_error", "result_manifest_error", "verification_error"]
+        },
+        "evidence_state": {
+          "enum": [
+            "supported",
+            "rejected",
+            "inconclusive",
+            "worker_error",
+            "result_manifest_error",
+            "verification_error"
+          ]
+        },
+        "worker": {"$ref": "#/$defs/worker"},
+        "verifier": {"$ref": "#/$defs/verifier"},
+        "error": {"type": ["string", "null"]}
+      }
+    }
+  }
+}
