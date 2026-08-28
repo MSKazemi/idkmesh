@@ -6,6 +6,11 @@
       "resource_id": "github-actions-public-standard",
       "provider": "github-actions",
       "allowed_cost_classes": ["public_project_ci"],
+      "required_resource_capabilities": [
+        "git",
+        "python",
+        "ephemeral_vm"
+      ],
       "allowed_capabilities": [
         "json-schema-validation",
         "deterministic-local-execution",
