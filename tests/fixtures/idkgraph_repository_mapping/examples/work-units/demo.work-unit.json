@@ -1,0 +1,10 @@
+{
+  "schema_version": "0.2",
+  "id": "demo/work",
+  "version": 1,
+  "kind": "research",
+  "objective": "Demonstrate deterministic repository-to-IDKGraph mapping.",
+  "inputs": [
+    {"id": "fixture-input", "type": "json", "locator": "examples/input.json"}
+  ]
+}
