@@ -111,3 +111,7 @@ Rejected. Verification evidence and integration authority remain separate.
 ## Follow-up
 
 After the controlled Docker gate in issue #37 is satisfied, extend EvaluatorPlan with a sandboxed execution backend where verifier-owned hidden tests are mounted read-only and candidate code runs with explicit network, filesystem, resource, and time limits.
+
+## Implementation references
+
+- `docs/research/EVALUATOR_PLAN_BINDING.md`
