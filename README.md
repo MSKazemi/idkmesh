@@ -2,149 +2,261 @@
 
 > **I don't know. You don't know. Together, the mesh can discover, build, and know.**
 
-**IDKMesh** is an open-source exploration of a decentralized collective-intelligence and distributed-computing platform where humans, AI agents, and heterogeneous compute nodes can collaborate on useful software and research — from one laptop to potentially millions of participating machines.
+**IDKMesh** is an open-source research and engineering community exploring how very large numbers of humans, AI agents, and heterogeneous computers can collaborate on useful software and research — from one laptop to potentially millions of participating machines.
 
-The name intentionally preserves uncertainty:
+The final system is **not fully known yet**. That uncertainty is intentional.
 
-- **IDK** — *I Don't Know*: the final system is not assumed to be fully defined in advance.
-- **Mesh** — a decentralized network of people, agents, knowledge, tasks, and compute.
+The central question is:
 
-The project starts from a question rather than a fixed product specification:
+> **Can a large open community of humans and AI agents collectively discover goals, decompose work, build, verify, and maintain enterprise-quality systems better than isolated developers or agents can?**
 
-> Can a large community of humans and AI agents, using distributed commodity compute, collectively discover goals, design systems, write and verify code, and produce enterprise-grade open-source software at a scale that a single developer or model cannot?
+## Community first
 
-## What is IDKMesh?
+**The community is part of the product.**
 
-IDKMesh should be understood primarily as a **general framework/platform, research program, and community for distributed collaboration**, not as one fixed application.
+IDKMesh cannot first build a giant collaboration system and add contributors later. Every substantial addition should consider whether it makes the project easier to discover, understand, join, contribute to, review, maintain, and eventually lead.
 
-The intended structure is:
+You do **not** need to understand the whole architecture before helping.
+
+Start here:
+
+1. Read this README.
+2. Read [`CONTRIBUTING.md`](CONTRIBUTING.md).
+3. Pick a contribution path in [`COMMUNITY.md`](COMMUNITY.md).
+4. Open a question, research idea, community improvement, bug report, or small pull request.
+
+If something is confusing, **that itself is useful project feedback**.
+
+## IDKMesh in 60 seconds
+
+- **IDK** means *I Don't Know*: incomplete knowledge and competing interpretations are first-class states.
+- **Mesh** means a network of people, AI agents, knowledge, tasks, evidence, and compute.
+- The first reference domain is **distributed software engineering**.
+- Workers should receive bounded **Work Units**, not unlimited access to an entire project.
+- Proposals are not trusted just because they came from a strong model, many models, or an expert human.
+- Verification, testing, review, provenance, reproducibility, and security scale with generation.
+- The project investigates whether many smaller agents can become powerful through diversity, specialization, coordination, competition, and independent verification.
+- The repository is also a public research notebook: important decisions, findings, failed ideas, and project conversations should remain discoverable.
+
+## Status
+
+**Exploration / research / architecture / early-community phase.**
+
+This is a good time to contribute because fundamental questions are still open. Architecture critiques, research, experiments, documentation, security analysis, governance work, UX, community building, benchmarks, and negative results are all valuable.
+
+## Ways to contribute today
+
+You can help even if you are not a core software engineer.
+
+| You are interested in... | Useful contributions |
+| --- | --- |
+| Coding | prototypes, simulators, tests, tooling, schedulers, validators |
+| AI agents | agent orchestration, decomposition, evaluation, model diversity |
+| Distributed systems | scheduling, work stealing, CRDTs, consensus, fault tolerance |
+| Security | sandboxing, provenance, supply chain, adversarial workers, Sybil resistance |
+| Research | literature, falsifiable hypotheses, experiment design, reproductions |
+| Mathematics | graphs, optimization, Bayesian methods, game theory, information theory |
+| Documentation | newcomer explanations, tutorials, diagrams, examples, translations |
+| Community | onboarding, governance, issue design, contributor growth, accessibility |
+| Design / UX | developer experience, workflow design, observability, visual explanations |
+| Domain expertise | real-world goals, constraints, tests, evaluation criteria |
+| Compute | future volunteer-compute testing; today, help design safe worker protocols |
+
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the workflow and [`COMMUNITY.md`](COMMUNITY.md) for the contributor ladder.
+
+## What are we trying to build?
+
+IDKMesh is primarily a **general coordination framework, research program, and community**, not one fixed application.
+
+A possible long-term structure is:
 
 ```text
 IDKMesh Core
    |
    +-- domain/project protocols
           |
-          +-- software-engineering projects
-          +-- scientific/research projects
-          +-- other future collaborative domains
+          +-- distributed software engineering
+          +-- scientific/research collaboration
+          +-- future collaborative domains
 ```
 
-The core provides reusable primitives for evolving goals, bounded Work Units, scheduling, isolated execution, verification, provenance, reputation, governance, and metrics. Domain-specific layers add their own validators, policies, roles, and evidence rules. Independent projects can then run on top of the framework.
+The core may eventually provide reusable primitives for:
 
-The first reference implementation is intentionally narrower: **distributed software engineering**, with IDKMesh eventually using IDKMesh to improve itself.
+- evolving goals and uncertainty;
+- bounded Work Units;
+- dependency/task graphs;
+- capability-aware scheduling;
+- isolated execution;
+- independent verification;
+- evidence and provenance;
+- reputation and contribution history;
+- governance and dispute resolution;
+- metrics and observability.
 
-See [`docs/WHAT_IS_IDKMESH.md`](docs/WHAT_IS_IDKMESH.md) and [`GOALS.md`](GOALS.md).
+Different projects can add their own validators, policies, roles, and evidence rules.
 
-## Status
+For a deeper explanation, read [`docs/WHAT_IS_IDKMESH.md`](docs/WHAT_IS_IDKMESH.md) and [`GOALS.md`](GOALS.md).
 
-**Exploration / research / architecture phase.**
+## Flagship research question: many small coders vs one big coder
 
-IDKMesh is deliberately not pretending that its final architecture is known. The repository is both a software project and a public research notebook for discovering what the project should become.
+One motivating experiment is deliberately simple:
 
-## Core ambitions
+```text
+1 strong coding model
+        vs
+1 small model
+        vs
+5 small independent models
+        vs
+10 small independent models
+        vs
+planner + implementers + tester + reviewer
+        vs
+parallel task-DAG teams
+```
 
-1. Scale participation from one human + one laptop to very large communities and compute pools.
-2. Coordinate many humans and many AI agents even when the target is initially ambiguous.
-3. Preserve software quality as the number of contributors and agents grows.
-4. Make contribution accessible to people with different skills, hardware, languages, disciplines, and levels of experience.
-5. Use mathematical, economic, distributed-systems, and statistical mechanisms to allocate work and reach decisions.
-6. Keep the project open, auditable, reproducible, and useful to humanity.
-7. Build mechanisms for verification, trust, reputation, safety, governance, and conflict resolution rather than relying on a single central authority.
-8. Allow other projects to reuse the coordination framework without becoming coupled to one AI model, Git forge, or application domain.
+The interesting question is **not** whether 100 weak agents magically equal one frontier model. They do not provide a quality guarantee.
 
-## Multidisciplinary collaboration
+The real question is when this combination helps:
 
-IDKMesh is deliberately open to contribution from software engineering, AI/ML, distributed systems, security, mathematics, operations research, economics, governance, open-source community building, UX/design, scientific methodology, domain experts, and compute contributors.
+```text
+diversity
++ decomposition
++ isolated attempts
++ specialization
++ independent tests
++ criticism
++ selection
++ integration
++ project memory
+--------------------------------
+= stronger collective engineering?
+```
 
-Different perspectives do **not** need to reach total conceptual agreement before useful work begins. They should collaborate through shared boundary artifacts such as Work Units, Goal Graph nodes, RFCs, APIs/contracts, benchmarks, threat models, experiment manifests, evidence, and architecture decisions.
+We want reproducible evidence about where this works and where it fails.
 
-See [`docs/CONTRIBUTOR_PERSPECTIVES.md`](docs/CONTRIBUTOR_PERSPECTIVES.md).
+Important metrics include hidden-test success, regressions, security, human reviewer time, wall-clock time, compute cost, merge conflicts, error correlation, maintainability, and **verified useful work per unit of human attention and compute**.
 
-## Repository map
+See [`RESEARCH_QUESTIONS.md`](RESEARCH_QUESTIONS.md) and the project issues.
 
-- [`VISION.md`](VISION.md) — what the project is trying to discover and why.
-- [`GOALS.md`](GOALS.md) — concrete hierarchy of goals and success criteria.
-- [`docs/WHAT_IS_IDKMESH.md`](docs/WHAT_IS_IDKMESH.md) — framework/core/domain-project model.
-- [`docs/CONTRIBUTOR_PERSPECTIVES.md`](docs/CONTRIBUTOR_PERSPECTIVES.md) — multidisciplinary contribution model.
-- [`ARCHITECTURE.md`](ARCHITECTURE.md) — initial system model and architectural directions.
-- [`docs/architecture/SCALABILITY_AND_AGILITY.md`](docs/architecture/SCALABILITY_AND_AGILITY.md) — the proposed scale-from-1-to-millions fractal-cell architecture and agility rules.
-- [`MATHEMATICAL_FOUNDATIONS.md`](MATHEMATICAL_FOUNDATIONS.md) — candidate mathematical formulations and algorithms.
-- [`SCIENTIFIC_FOUNDATIONS.md`](SCIENTIFIC_FOUNDATIONS.md) — physics, complex-systems, thermodynamic, and quantum-inspired ideas mapped to testable IDKMesh experiments.
-- [`BLOCKCHAIN_STRATEGY.md`](BLOCKCHAIN_STRATEGY.md) — where blockchain/shared ledgers can help, where they cannot, and the staged trust/provenance strategy.
-- [`RESEARCH_QUESTIONS.md`](RESEARCH_QUESTIONS.md) — open technical, scientific, social, and governance questions.
-- [`docs/research/TOP_20_QUESTIONS.md`](docs/research/TOP_20_QUESTIONS.md) — the twenty highest-priority questions currently shaping the project.
-- [`DECISIONS.md`](DECISIONS.md) — durable decision log.
-- [`docs/decisions/`](docs/decisions/) — architecture decision records, including the proposed Fractal Autonomous Cells design.
-- [`ROADMAP.md`](ROADMAP.md) — staged research and implementation roadmap from the experimental kernel through Internet-scale research.
-- [`GOVERNANCE.md`](GOVERNANCE.md) — initial governance model.
-- [`CONTRIBUTING.md`](CONTRIBUTING.md) — how to participate.
-- [`PROJECT_RULES.md`](PROJECT_RULES.md) — repository and project-record rules.
-- [`docs/conversations/`](docs/conversations/) — project conversation archive and summaries.
-- [`docs/findings/`](docs/findings/) — research findings and landscape notes.
+## Architecture at a glance
 
-## First principles
+A candidate flow is:
 
-IDKMesh should be designed around several separations:
+```text
+Goal / unresolved question
+          |
+          v
+Goal Graph / specification
+          |
+          v
+Task + dependency graph
+          |
+          v
+Scheduler / matching
+          |
+     +----+--------------------+
+     |            |            |
+     v            v            v
+   Human       AI agent    compute/test worker
+     |            |            |
+     +------------+------------+
+                  |
+                  v
+          Candidate artifacts
+                  |
+                  v
+       Verification / criticism
+   tests | review | fuzz | security
+                  |
+                  v
+        Selection / integration
+                  |
+                  v
+      Canonical project + evidence
+                  |
+                  v
+        Metrics / reputation / memory
+```
 
-**Proposal is not proof.** AI-generated code, human-generated code, and design proposals should all be treated as hypotheses until tested or verified.
+The current scalability hypothesis is **Fractal Autonomous Cells**:
 
-**Popularity is not correctness.** Voting and reputation can help coordinate work but cannot replace tests, formal constraints, security review, or empirical evidence.
+`node -> cell -> region/fabric -> federation`
 
-**Decentralization is not absence of structure.** A large mesh requires protocols, interfaces, incentives, quality gates, and explicit governance.
+Most coordination should remain local, with higher levels exchanging summaries, overflow work, discovery, attestations, and protocol metadata rather than centralizing every task globally.
 
-**More agents do not automatically mean better results.** The system must measure marginal value, redundancy, diversity, correlated failure, and verification cost.
+This is a hypothesis to test, not settled truth. See [`docs/architecture/SCALABILITY_AND_AGILITY.md`](docs/architecture/SCALABILITY_AND_AGILITY.md).
 
-**Uncertainty is a first-class state.** Requirements, beliefs, confidence, conflicting hypotheses, and unresolved questions should be represented explicitly rather than hidden.
+## Project principles
 
-**Scientific analogies are hypotheses, not evidence.** Ideas from physics, economics, biology, or quantum information must be mapped to variables, baselines, metrics, and falsifiable experiments before becoming architecture.
+**Community first.** Contributor experience and leadership scalability are engineering concerns.
 
-**Cryptographic provenance comes before blockchain.** Use hashes, signatures, attestations, and transparency logs first; add blockchain only when a real multi-party trust or settlement problem justifies it.
+**Proposal is not proof.** Human- or AI-generated output must be verified appropriately.
 
-## Candidate system layers
+**Popularity is not correctness.** Votes, stars, reputation, or majority model agreement cannot replace evidence.
 
-A long-term IDKMesh system may include:
+**More agents are not automatically better.** Diversity and independent error matter more than raw count.
 
-1. **Identity & capability layer** — participants, agents, hardware, skills, permissions, reputation.
-2. **Knowledge layer** — goals, assumptions, evidence, decisions, artifacts, provenance.
-3. **Task graph** — decomposition of uncertain goals into proposals, experiments, implementations, tests, reviews, and integration tasks.
-4. **Matching & scheduling** — assignment of tasks to humans, agents, and compute based on capability, cost, trust, diversity, and expected information gain.
-5. **Execution mesh** — local laptops, workstations, clusters, cloud, edge, and volunteer compute.
-6. **Verification layer** — testing, review, adversarial evaluation, reproducibility, formal checks, consensus where appropriate.
-7. **Governance & incentive layer** — reputation, contribution accounting, dispute resolution, policy evolution, anti-Sybil mechanisms.
-8. **Integration layer** — version control, continuous integration, release engineering, observability, rollback, security and supply-chain controls.
+**Uncertainty is first-class.** Competing goals, hypotheses, confidence, and unresolved questions should remain explicit.
 
-## Current scalability hypothesis
+**Decentralization still needs structure.** Interfaces, ownership, quality gates, security, and governance become more important at scale.
 
-IDKMesh should not become one giant cluster, scheduler, database, or multi-agent conversation. The current default hypothesis is a **Fractal Autonomous Cells** architecture:
+**Scientific analogies are hypotheses, not evidence.** Physics/economics/biology-inspired mechanisms must be converted into falsifiable experiments.
 
-`node -> cell -> fabric/region -> global federation`
+**Cryptographic provenance comes before blockchain.** Add expensive trust infrastructure only when a demonstrated problem requires it.
 
-Most scheduling, execution, verification, state, and observability stay local to a cell. Higher layers exchange only summaries, overflow work, discovery information, attestations, and protocol metadata. This hypothesis is explicitly falsifiable and must be tested against centralized and sharded alternatives before being accepted permanently.
+**Generation must not outrun verification.** AI-generated volume is not progress if humans and validators cannot maintain it.
 
-See [`docs/architecture/SCALABILITY_AND_AGILITY.md`](docs/architecture/SCALABILITY_AND_AGILITY.md) and [`docs/decisions/ADR-0002-fractal-autonomous-cells.md`](docs/decisions/ADR-0002-fractal-autonomous-cells.md).
+## How community and governance work
 
-## Recommended starting point
+IDKMesh currently uses lightweight bootstrap governance.
 
-Read [`GOALS.md`](GOALS.md), [`ROADMAP.md`](ROADMAP.md), [`docs/WHAT_IS_IDKMESH.md`](docs/WHAT_IS_IDKMESH.md), [`docs/research/TOP_20_QUESTIONS.md`](docs/research/TOP_20_QUESTIONS.md), and [`docs/architecture/SCALABILITY_AND_AGILITY.md`](docs/architecture/SCALABILITY_AND_AGILITY.md), then begin with the **experimental kernel**, not the million-node system.
+- `@MSKazemi` is the initial bootstrap maintainer.
+- Useful contribution is broader than code.
+- The intended path is **Participant -> Contributor -> Reviewer -> Maintainer / Community Steward**.
+- Leadership should become more distributed as sustained contributors emerge.
+- Major changes should be public, document alternatives, and include **Community Impact**.
+- Important disagreement can be resolved by competing experiments when possible.
 
-The first engineering artifacts are machine-readable Work Unit/Task Contract, Result/Artifact Manifest, and Goal Graph schemas plus a simulator and common metrics harness.
+Read [`GOVERNANCE.md`](GOVERNANCE.md), [`MAINTAINERS.md`](MAINTAINERS.md), and [`docs/community/COMMUNITY_GROWTH_STRATEGY.md`](docs/community/COMMUNITY_GROWTH_STRATEGY.md).
 
-The first headline scientific experiments should include:
+## Repository guide
 
-1. comparing a single-agent coding baseline with same-agent replication and a structured, diverse, independently verified agent swarm under comparable resource budgets; and
-2. comparing one global scheduler, sharded scheduling, and autonomous-cell federation from 10 to 100,000 simulated workers while measuring per-task coordination cost.
+### Start here
 
-## Why `IDKMesh`?
+- [`CONTRIBUTING.md`](CONTRIBUTING.md) — make a successful contribution.
+- [`COMMUNITY.md`](COMMUNITY.md) — participation, community values, contributor ladder.
+- [`SUPPORT.md`](SUPPORT.md) — how to ask for help.
+- [`GOVERNANCE.md`](GOVERNANCE.md) — roles and decisions.
+- [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) — community behavior.
+- [`SECURITY.md`](SECURITY.md) — vulnerability reporting.
 
-The project began with the phrase **"I don't know"** because its creator did not want to prematurely constrain the idea. The public name **IDKMesh** keeps that philosophy while making the distributed nature of the project discoverable and memorable.
+### Understand the project
 
-Tagline:
+- [`GOALS.md`](GOALS.md) — goal hierarchy and success criteria.
+- [`docs/WHAT_IS_IDKMESH.md`](docs/WHAT_IS_IDKMESH.md) — framework/core/domain model.
+- [`ROADMAP.md`](ROADMAP.md) — staged research and implementation path.
+- [`RESEARCH_QUESTIONS.md`](RESEARCH_QUESTIONS.md) — open questions.
+- [`docs/research/TOP_20_QUESTIONS.md`](docs/research/TOP_20_QUESTIONS.md) — current priorities.
 
-> **From uncertainty to collective intelligence.**
+### Go deeper
+
+- [`ARCHITECTURE.md`](ARCHITECTURE.md) — system model.
+- [`docs/architecture/SCALABILITY_AND_AGILITY.md`](docs/architecture/SCALABILITY_AND_AGILITY.md) — scaling hypothesis.
+- [`MATHEMATICAL_FOUNDATIONS.md`](MATHEMATICAL_FOUNDATIONS.md) — algorithms and formulations.
+- [`SCIENTIFIC_FOUNDATIONS.md`](SCIENTIFIC_FOUNDATIONS.md) — scientific inspirations mapped to experiments.
+- [`BLOCKCHAIN_STRATEGY.md`](BLOCKCHAIN_STRATEGY.md) — staged trust/provenance strategy.
+- [`docs/decisions/`](docs/decisions/) — architecture/major decision records.
+- [`docs/findings/`](docs/findings/) — research findings.
+- [`docs/conversations/`](docs/conversations/) — structured project conversation records.
 
 ## Public project record
 
-IDKMesh treats its reasoning history as part of the open-source artifact. Project-related findings, decisions, research notes, and relevant conversation outputs should be committed to this repository so contributors can understand not only *what* was built, but *why*.
+Project reasoning is part of the open-source artifact.
+
+Useful IDKMesh conversations should be distilled into the repository as decisions, findings, research questions, issues, architecture, roadmap changes, community/process changes, or structured conversation records.
+
+The goal is **not** to dump chats. The goal is to make the evolution of the project understandable to someone who was not present.
 
 See [`PROJECT_RULES.md`](PROJECT_RULES.md).
 
@@ -152,8 +264,10 @@ See [`PROJECT_RULES.md`](PROJECT_RULES.md).
 
 Apache License 2.0. See [`LICENSE`](LICENSE).
 
-## Contributing
+## The invitation
 
-The project is intentionally early. That means architecture critiques, literature references, mathematical models, simulations, prototypes, benchmarks, governance proposals, documentation, UX work, domain expertise, compute contributions, and negative results are all valuable contributions.
+IDKMesh starts from a simple admission: **we do not yet know the best way to build a system like this.**
 
-Start with [`CONTRIBUTING.md`](CONTRIBUTING.md), [`docs/CONTRIBUTOR_PERSPECTIVES.md`](docs/CONTRIBUTOR_PERSPECTIVES.md), [`ROADMAP.md`](ROADMAP.md), [`docs/research/TOP_20_QUESTIONS.md`](docs/research/TOP_20_QUESTIONS.md), and [`RESEARCH_QUESTIONS.md`](RESEARCH_QUESTIONS.md).
+If you can improve the question, challenge an assumption, reproduce an experiment, write a test, explain the project more clearly, help a newcomer, design a protocol, find a security problem, or build a small verified component, you can contribute.
+
+> **From uncertainty to collective intelligence.**

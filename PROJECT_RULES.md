@@ -6,16 +6,38 @@ The canonical public repository for this project is:
 
 `https://github.com/MSKazemi/idkmesh`
 
-## Mandatory chat-to-repository rule
+## Rule 1 — Community first
 
-For every ChatGPT conversation in the IDKMesh project, the public GitHub repository is the durable project record.
+**Building a large, healthy, open community is a core project objective and a design constraint for everything added to IDKMesh.**
 
-**Default rule: every substantive user message and every substantive assistant output related to IDKMesh must be preserved in the repository in the same turn whenever repository access is available.**
+Every substantial technical, research, governance, documentation, tooling, or roadmap change should consider whether it makes the project easier or harder for people to:
+
+- discover;
+- understand progressively;
+- join without private context;
+- find useful work;
+- make a first contribution;
+- receive review and feedback;
+- reproduce evidence;
+- become a reviewer or maintainer;
+- maintain the project over time.
+
+For non-trivial proposals and pull requests, include a **Community Impact** section when practical.
+
+Community work — onboarding, documentation, review, moderation, accessibility, contributor growth, governance, and communication — is first-class project work, not an activity to postpone until after the technology is built.
+
+See [`COMMUNITY.md`](COMMUNITY.md), [`CONTRIBUTING.md`](CONTRIBUTING.md), [`GOVERNANCE.md`](GOVERNANCE.md), and [`docs/community/COMMUNITY_GROWTH_STRATEGY.md`](docs/community/COMMUNITY_GROWTH_STRATEGY.md).
+
+## Rule 2 — Mandatory chat-to-repository preservation
+
+For every substantive ChatGPT conversation in the IDKMesh project, the public GitHub repository is the durable project record whenever repository access is available.
+
+**Default rule: every substantive user message and every substantive assistant output related to IDKMesh must be preserved in the repository in the same turn when practical and safe.**
 
 This includes:
 
-- user questions, ideas, requirements, and corrections;
-- assistant answers and recommendations;
+- user questions, ideas, requirements, corrections, and project rules;
+- assistant answers, recommendations, and proposed interpretations;
 - findings and research notes;
 - architectural ideas;
 - mathematical formulations;
@@ -25,12 +47,41 @@ This includes:
 - governance and community-design proposals;
 - benchmarks and experiment results;
 - code and documentation produced for the project;
-- links and reference maps used to support the project;
-- follow-up rules such as this repository-preservation requirement.
+- links/reference maps used to support project decisions;
+- follow-up constraints and repository rules.
 
-Conversation records should normally be stored under `docs/conversations/`, while durable findings, decisions, specifications, and implementation artifacts should also be promoted into their appropriate canonical files/directories.
+Conversation records should normally be stored under `docs/conversations/`, while durable findings, decisions, specifications, architecture, roadmap changes, community/process rules, and implementation artifacts should also be promoted into their appropriate canonical files/directories.
 
 The goal is that a contributor should be able to understand the evolution of IDKMesh from the public repository without depending on access to the original ChatGPT conversation.
+
+## Structured preservation, not transcript dumping
+
+Preservation does not mean turning the repository into an undifferentiated transcript archive.
+
+Prefer promoting useful output into durable project artifacts:
+
+- **decision** -> `DECISIONS.md` and/or `docs/decisions/ADR-*.md`;
+- **research question** -> `RESEARCH_QUESTIONS.md` or a research issue;
+- **finding** -> `docs/findings/`;
+- **architecture** -> architecture docs / ADR;
+- **plan** -> `ROADMAP.md` or issue/milestone;
+- **community/process change** -> community/governance docs;
+- **important chat context** -> `docs/conversations/` structured record.
+
+Preserve visible chat content verbatim when practical and useful. When verbatim reproduction would create unnecessary duplication, expose restricted material, or violate redistribution constraints, preserve a faithful structured record instead.
+
+Conversation archives are not a substitute for maintaining the project itself. If a chat changes architecture, roadmap, governance, research direction, schemas, implementation, or decisions, update those canonical artifacts in addition to archiving the conversation.
+
+## Progressive disclosure rule
+
+Repository organization should make the project understandable in layers:
+
+1. **Visitor:** README — what, why, status, how to join.
+2. **Contributor:** CONTRIBUTING, COMMUNITY, starter issues, runnable examples.
+3. **Subsystem contributor:** architecture, APIs/protocols, tests, experiments, ADRs.
+4. **Researcher/maintainer:** deep mathematical/scientific foundations, governance evolution, threat models, extensive research notes.
+
+Do not require Level 4 understanding before someone can make a useful Level 2 contribution.
 
 ## What should not be committed
 
@@ -49,28 +100,25 @@ When a conversation contains both useful project information and material that s
 
 Conversation records should distinguish where possible between:
 
-1. **Questions / ideas from the project owner**
+1. **Questions / ideas / requirements from the project owner**
 2. **Assistant output / proposed interpretation**
 3. **Research findings**
 4. **Decisions**
 5. **Open questions**
 6. **Action items / implementation artifacts**
-
-Preserve visible chat content verbatim when practical and useful. When verbatim reproduction would create unnecessary duplication, expose restricted material, or violate redistribution constraints, preserve a faithful structured record instead.
-
-## Promotion rule
-
-Conversation archives are not a substitute for maintaining the project itself. If a chat changes the architecture, roadmap, governance, research direction, schemas, implementation, or decisions, update the relevant canonical project files in addition to archiving the conversation.
+7. **Community impact / contributor implications**
 
 ## Decision discipline
 
-Major decisions should also be added to `DECISIONS.md`, including:
+Major decisions should also be added to `DECISIONS.md` and/or an ADR, including:
 
 - date;
 - decision;
 - rationale;
 - alternatives considered;
-- consequences or unresolved risks.
+- consequences or unresolved risks;
+- community impact when relevant;
+- evidence or conditions that could cause the decision to be revisited.
 
 ## Research discipline
 
@@ -82,4 +130,26 @@ Claims should distinguish:
 - speculative inspiration;
 - implementation decision.
 
-IDKMesh should not convert attractive analogies from physics, economics, biology, or mathematics into engineering claims without testing them.
+IDKMesh should not convert attractive analogies from physics, economics, biology, mathematics, social systems, or distributed systems into engineering claims without testing them.
+
+## Agent/AI contribution discipline
+
+AI-assisted work is welcome, but generation volume must not overwhelm verification and maintenance capacity.
+
+For materially AI-generated artifacts, preserve provenance when practical and independently verify important claims, code, tests, or security-sensitive changes.
+
+Raw agent count, raw output volume, commit count, stars, or engagement are not substitutes for verified useful work.
+
+## Open-source discipline
+
+As the repository evolves:
+
+- keep community-health files current;
+- keep contribution paths clear;
+- prefer public asynchronous decisions;
+- make leadership paths visible and attainable;
+- value non-code contributions;
+- keep issues small and verifiable when possible;
+- avoid undocumented private project context;
+- grow reviewers/maintainers before contribution volume becomes a bottleneck;
+- revise governance to reflect the community that actually exists rather than importing unnecessary bureaucracy.
