@@ -1,0 +1,19 @@
+{
+  "schema_version": "0.1",
+  "source": "GitHub Actions exact-head evidence promotion",
+  "pull_request": 187,
+  "attempt_head": "bcd3ad77cbd4d20339b4236ab2e5d785a63629db",
+  "workflow_run_id": 33196056433,
+  "workflow_job_id": 98933357141,
+  "artifact_id": 9695777042,
+  "artifact_name": "phase-b2-successor-task001-attempt001",
+  "artifact_zip_sha256": "sha256:ac1c6e1da03af22399ab3769f1cb343cc871904e903581e55697debc5590e6dd",
+  "artifact_retention_days": 14,
+  "promoted_after_merge_commit": "509c7592341557230cfb2256895075347b00c045",
+  "cohort_definition_digest": "sha256:3182d8710e1239c19cb95daddd0677241c0cd9123614786fd919b036922dbdd9",
+  "candidate_patch_digest": "sha256:d20c895d09e2f9521d8c1451cae29f9f859479f2f3401d81ba8b839ec87769eb",
+  "result_manifest_digest": "sha256:44ae21059a9a36f56a4dce4d5641079e3ecb734c80d38e4d940501232eb10592",
+  "verification_result_digest": "sha256:1f850bb3675ce43a61ceddb38ab9b72d565e87047e65374ccdb7a51413ccc7ab",
+  "seeded_negative_verification_result_digest": "sha256:4956d0c335d42c25adb29e81add2c97cd832d6f4ad7de24c426b1ce017577ebe",
+  "note": "The promoted files are exact bytes from the successful workflow artifact; verifier support is decision evidence and does not grant merge or integration authority."
+}

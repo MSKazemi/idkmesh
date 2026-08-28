@@ -1,0 +1,37 @@
+diff --git a/tools/benchmark_cohort.py b/tools/benchmark_cohort.py
+index 8ab25f6..436a434 100644
+--- a/tools/benchmark_cohort.py
++++ b/tools/benchmark_cohort.py
+@@ -283,16 +283,24 @@ def _validate_negative_case(task: dict[str, Any]) -> None:
+     value = load_json(path)
+     require(canonical_digest(value) == negative["evidence_digest"], f"{task['id']}: negative-evidence digest drift")
+ 
+-    if negative["evidence_type"] == "verification_result":
+-        validate_schema(value, VERIFICATION_RESULT_SCHEMA, f"{task['id']} negative VerificationResult")
++    if negative["expected_category"] in VERIFICATION_FINDING_CATEGORIES:
+         require(
+-            value["decision_support"]["recommendation"] != "accept_candidate",
+-            f"{task['id']}: negative VerificationResult unexpectedly recommends acceptance",
++            negative["evidence_type"] == "verification_result",
++            f"{task['id']}: canonical negative category requires VerificationResult evidence",
+         )
+-        expected = negative["expected_category"]
+-        if expected in VERIFICATION_FINDING_CATEGORIES:
+-            categories = {finding["category"] for finding in value["findings"]}
+-            require(expected in categories, f"{task['id']}: negative evidence lacks expected {expected} finding")
++
++    if negative["evidence_type"] != "verification_result":
++        return
++
++    validate_schema(value, VERIFICATION_RESULT_SCHEMA, f"{task['id']} negative VerificationResult")
++    require(
++        value["decision_support"]["recommendation"] != "accept_candidate",
++        f"{task['id']}: negative VerificationResult unexpectedly recommends acceptance",
++    )
++    expected = negative["expected_category"]
++    if expected in VERIFICATION_FINDING_CATEGORIES:
++        categories = {finding["category"] for finding in value["findings"]}
++        require(expected in categories, f"{task['id']}: negative evidence lacks expected {expected} finding")
+ 
+ 
+ def validate_cohort(cohort: dict[str, Any], *, require_evidence: bool = False) -> dict[str, Any]:
