@@ -196,6 +196,32 @@ class EvidenceAggregationFabricTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             compose_evidence_lattice(signals)
 
+    def test_control_booleans_reject_truthy_strings_and_numbers(self):
+        cases = [
+            ("hard_guard", {"passed": "false"}),
+            ("provenance", {"valid": 1}),
+            ("discrimination", {"passed": "true"}),
+            ("drift", {"detected_change": "false"}),
+        ]
+        for signal_type, payload in cases:
+            with self.subTest(signal_type=signal_type, payload=payload):
+                signals = clear_signals()
+                for item in signals:
+                    if item["signal_type"] == signal_type:
+                        item["payload"] = payload
+                with self.assertRaises(ValueError):
+                    compose_evidence_lattice(signals)
+
+    def test_control_booleans_are_required_not_defaulted(self):
+        for signal_type in ("hard_guard", "provenance", "discrimination", "drift"):
+            with self.subTest(signal_type=signal_type):
+                signals = clear_signals()
+                for item in signals:
+                    if item["signal_type"] == signal_type:
+                        item["payload"] = {}
+                with self.assertRaises(ValueError):
+                    compose_evidence_lattice(signals)
+
 
 if __name__ == "__main__":
     unittest.main()
