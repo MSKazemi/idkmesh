@@ -11,11 +11,15 @@ from .runner import VerificationRuntimeError, run_verification
 def parser() -> argparse.ArgumentParser:
     root = argparse.ArgumentParser(
         prog="idkmesh-verify",
-        description="Independently verify one worker ResultManifest candidate against a trusted verifier plan.",
+        description="Independently verify one worker ResultManifest patch candidate under a verifier-owned EvaluatorPlan.",
     )
     root.add_argument("--work-unit", required=True)
     root.add_argument("--result-manifest", required=True)
-    root.add_argument("--plan", required=True, help="Trusted verifier-side plan; do not provide this file to the worker.")
+    root.add_argument(
+        "--plan",
+        required=True,
+        help="Trusted EvaluatorPlan v0.2; keep hidden evaluator material outside the worker/candidate root.",
+    )
     root.add_argument("--artifact-root", required=True, help="Root directory containing candidate artifacts referenced by ResultManifest locators.")
     root.add_argument("--output", required=True, help="New directory for VerificationResult and evidence files.")
     return root
@@ -39,6 +43,7 @@ def main(argv: list[str] | None = None) -> int:
                     "verification_result": f"{args.output}/verification-result.json",
                     "status": result["status"],
                     "recommendation": result["decision_support"]["recommendation"],
+                    "evaluator_plan": plan["id"],
                     "final_authority": "human_or_governance_policy",
                 },
                 indent=2,
