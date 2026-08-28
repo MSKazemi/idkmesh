@@ -19,6 +19,7 @@ The first deterministic orphan-warning cohort in issue #152 identified these act
 - [R1 — Swarm Diversity vs Replication](research/R1_SWARM_DIVERSITY_EXPERIMENT.md) — synthetic mechanism test for when structural diversity helps or hurts relative to replication.
 - [R2 Scale and Regime Sweep](research/R2_SCALE_REGIME_SWEEP.md) — scale/churn/staleness sweep for randomized local scheduling.
 - [Verification Backpressure Temporal Benchmark](research/VERIFICATION_BACKPRESSURE_BENCHMARK.md) — multi-window benchmark for verification-debt scheduling and generation backpressure.
+- [Task 004 Non-Finite RWVB Calibration](research/PHASE_B2_V2_TASK004_NONFINITE_RWVB_CALIBRATION.md) — pre-freeze evaluator and behavioral calibration for finite controller inputs.
 
 ### Evolution architecture
 

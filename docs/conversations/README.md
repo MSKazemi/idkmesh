@@ -7,9 +7,13 @@ canonical files designated by [`../../PROJECT_RULES.md`](../../PROJECT_RULES.md)
 (decisions, specifications, architecture, findings); this directory keeps the trail
 that produced them.
 
-113 records across 1 date, newest first.
+114 records across 2 dates, newest first.
 
 ## Index
+
+### 2026-08-29
+
+- [Successor-v2 Task 004 non-finite RWVB calibration](2026-08-29-phase-b2-v2-task004-calibration.md)
 
 ### 2026-08-28
 
@@ -126,4 +130,3 @@ that produced them.
 - [ACE Activation Gate Convergence](2026-08-28-ace-activation-gate-convergence.md)
 - [2026-08-28 — continue: calibrate non-finite free-compute routing](2026-08-28-phase-b2-v2-task002-calibration.md)
 - [2026-08-28 — continue: calibrate branch unobserved-head evidence](2026-08-28-phase-b2-v2-task003-calibration.md)
-

@@ -163,7 +163,7 @@
       "accounting": {"required_metrics": ["wall_seconds", "human_minutes"]},
       "declared_structural_signatures": ["single-worker-baseline-v2", "two-independent-attempts-v2", "role-specialized-two-attempts-v2"],
       "difficulty": "small",
-      "evaluator": {"backend": "unified_diff", "plan_digest": "sha256:bcc64b4353033bfe265a32a2aab2cdc1076bad34a310926843b7bde93e8c192c", "plan_id": "benchmark/phase-b2-v2/004-rwvb-nonfinite-domain/evaluator", "plan_path": "benchmarks/phase-b2-successor-v2/evaluators/task-004-rwvb-nonfinite-domain.evaluator-plan.json", "visibility": "public"},
+      "evaluator": {"backend": "unified_diff", "plan_digest": "sha256:e42cbd25ee956fe6d5fe4f0f9ca01d805f28dab3aa9c0601869c16cddd420834", "plan_id": "benchmark/phase-b2-v2/004-rwvb-nonfinite-domain/evaluator", "plan_path": "benchmarks/phase-b2-successor-v2/evaluators/task-004-rwvb-nonfinite-domain.evaluator-plan.json", "visibility": "public"},
       "evidence": {"attempts": [], "status": "pending"},
       "family": "refactor",
       "id": "benchmark/phase-b2-v2/004-rwvb-nonfinite-domain",

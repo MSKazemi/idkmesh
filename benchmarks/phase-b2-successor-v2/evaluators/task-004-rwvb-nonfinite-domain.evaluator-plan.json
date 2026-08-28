@@ -1,9 +1,9 @@
 {
-  "backend": {"max_candidate_bytes": 1000000, "max_log_bytes": 262144, "require_nonempty_patch": true, "required_added_substrings": ["math.isfinite"], "required_log_types": ["stdout", "stderr"], "required_removed_substrings": ["if self.impact < 0.0:"], "type": "unified_diff", "verify_log_digests": true},
+  "backend": {"max_candidate_bytes": 1000000, "max_log_bytes": 262144, "require_nonempty_patch": true, "required_added_substrings": ["if not math.isfinite(value):", "\"Candidate\",", "\"ControllerConfig\","], "required_log_types": ["stdout", "stderr"], "required_removed_substrings": ["if self.impact < 0.0:"], "type": "unified_diff", "verify_log_digests": true},
   "binding": {"source_revision": "a69aa0ae1ae4862e507511cbd9ad854237d0ad32", "work_unit_digest": "sha256:9f4d5dd07e7af04a2d603edc7eb1cd2a424ae389a0edc7496b9ae83bcf11f4e4", "work_unit_id": "benchmark/phase-b2-v2/004-rwvb-nonfinite-domain", "work_unit_version": 1},
   "candidate_artifact_id": "candidate-patch",
   "execution_mode": "metadata_only",
-  "extensions": {"org.idkmesh.phase_b2_v2": {"evidence_strength": "static transition proxy; freeze requires decoy calibration and behavioral evidence where practical", "negative_behavior": "NaN, +Infinity, and -Infinity supplied to Candidate or ControllerConfig numeric fields must fail validation deterministically instead of producing non-finite controller outputs.", "status": "provisional-until-calibrated", "tracker_issue": 180}},
+  "extensions": {"org.idkmesh.phase_b2_v2": {"evidence_strength": "calibrated static transition proxy plus separate evaluator-owned finite-domain behavioral evidence", "negative_behavior": "NaN, +Infinity, and -Infinity supplied to Candidate or ControllerConfig numeric fields must fail validation deterministically instead of producing non-finite controller outputs.", "status": "provisional-until-calibrated", "tracker_issue": 180}},
   "id": "benchmark/phase-b2-v2/004-rwvb-nonfinite-domain/evaluator",
   "policy": {"require_output_outside_candidate_root": true, "require_plan_outside_candidate_root": true, "require_verifier_distinct_from_worker": true},
   "required_validator_ids": ["result-manifest-schema", "independent-review"],
