@@ -1,0 +1,274 @@
+name: ACE Cohort Observer
+
+on:
+  issues:
+    types: [opened, closed, reopened, assigned, unassigned, labeled, unlabeled]
+  issue_comment:
+    types: [created, edited, deleted]
+  pull_request_target:
+    types: [opened, closed, reopened, edited, labeled, unlabeled]
+  schedule:
+    - cron: '17 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+
+concurrency:
+  group: ace-cohort-observer
+  cancel-in-progress: false
+
+jobs:
+  observe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build ACE cohort snapshot
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const repoOwner = owner.toLowerCase();
+            const statusTitle = '[ACE] Bootstrap Cohort Observatory';
+            const verifiedLabel = 'ace:verified-descendant';
+
+            // SECURITY: this workflow is metadata-only. In particular, the
+            // pull_request_target trigger never checks out, imports, evaluates,
+            // or executes pull-request-controlled repository content.
+
+            try {
+              await github.rest.issues.getLabel({ owner, repo, name: verifiedLabel });
+            } catch (error) {
+              if (error.status !== 404) throw error;
+              await github.rest.issues.createLabel({
+                owner,
+                repo,
+                name: verifiedLabel,
+                color: '1D76DB',
+                description: 'Merged ACE descendant explicitly accepted as verified evidence'
+              });
+            }
+
+            const seeds = await github.paginate(github.rest.issues.listForRepo, {
+              owner,
+              repo,
+              state: 'all',
+              labels: 'growth-seed',
+              per_page: 100
+            });
+
+            const cohortSeeds = seeds.filter(issue =>
+              !issue.pull_request && (issue.body || '').includes('cohort=bootstrap-1')
+            );
+
+            const participants = new Set();
+            const allCandidatePRs = new Map();
+            const rows = [];
+            let claimedSeeds = 0;
+            let seedsWithCandidatePR = 0;
+            let seedsWithMergedCandidate = 0;
+            let verifiedDescendants = 0;
+
+            for (const seed of cohortSeeds.sort((a, b) => a.number - b.number)) {
+              const comments = await github.paginate(github.rest.issues.listComments, {
+                owner,
+                repo,
+                issue_number: seed.number,
+                per_page: 100
+              });
+
+              const externalComments = comments.filter(comment =>
+                comment.user?.login && comment.user.login.toLowerCase() !== repoOwner
+              );
+              for (const comment of externalComments) participants.add(comment.user.login);
+
+              const claimComments = externalComments.filter(comment =>
+                /(^|\s)\/claim(?:\s|$)/i.test(comment.body || '')
+              );
+
+              const externalAssignees = (seed.assignees || []).filter(user =>
+                user.login && user.login.toLowerCase() !== repoOwner
+              );
+              for (const user of externalAssignees) participants.add(user.login);
+
+              const timeline = await github.paginate(github.rest.issues.listEventsForTimeline, {
+                owner,
+                repo,
+                issue_number: seed.number,
+                per_page: 100
+              });
+
+              const prNumbers = new Set();
+              for (const event of timeline) {
+                if (event.event === 'cross-referenced' && event.source?.issue?.pull_request) {
+                  prNumbers.add(event.source.issue.number);
+                }
+              }
+
+              const prs = [];
+              for (const prNumber of prNumbers) {
+                const { data: pr } = await github.rest.pulls.get({
+                  owner,
+                  repo,
+                  pull_number: prNumber
+                });
+                prs.push(pr);
+                allCandidatePRs.set(pr.number, pr);
+                if (pr.user?.login && pr.user.login.toLowerCase() !== repoOwner) {
+                  participants.add(pr.user.login);
+                }
+              }
+
+              const merged = prs.filter(pr => Boolean(pr.merged_at));
+              const verified = merged.filter(pr =>
+                (pr.labels || []).some(label => label.name === verifiedLabel)
+              );
+
+              const claimed = externalAssignees.length > 0 || claimComments.length > 0 || prs.length > 0;
+              if (claimed) claimedSeeds += 1;
+              if (prs.length > 0) seedsWithCandidatePR += 1;
+              if (merged.length > 0) seedsWithMergedCandidate += 1;
+              verifiedDescendants += verified.length;
+
+              rows.push({
+                number: seed.number,
+                state: seed.state,
+                claimed,
+                externalInterest: externalComments.length,
+                candidatePRs: prs.map(pr => pr.number),
+                mergedPRs: merged.map(pr => pr.number),
+                verifiedPRs: verified.map(pr => pr.number)
+              });
+            }
+
+            const candidatePRs = [...allCandidatePRs.values()];
+            const openCandidatePRs = candidatePRs.filter(pr => pr.state === 'open');
+            const mergedCandidatePRs = candidatePRs.filter(pr => Boolean(pr.merged_at));
+            const verifiedPRNumbers = new Set();
+            for (const row of rows) {
+              for (const number of row.verifiedPRs) verifiedPRNumbers.add(number);
+            }
+
+            // Read the existing ACE ledger only as a capacity signal. The
+            // observer never edits the ledger, avoiding competing writers.
+            let reviewLoad = null;
+            let capacity = null;
+            try {
+              const { data: ledger } = await github.rest.issues.get({
+                owner,
+                repo,
+                issue_number: 23
+              });
+              const match = (ledger.body || '').match(/<!-- ACE_STATE\n([\s\S]*?)\nACE_STATE -->/);
+              if (match) {
+                const state = JSON.parse(match[1]);
+                reviewLoad = Number(state.review_load || 0);
+                const K = 8;
+                const tau = 2;
+                capacity = 1 / (1 + Math.exp((reviewLoad - K) / tau));
+              }
+            } catch (_) {
+              // Missing/unparseable ledger should not turn observation into failure.
+            }
+
+            const seedReproductionRatio = cohortSeeds.length
+              ? verifiedPRNumbers.size / cohortSeeds.length
+              : 0;
+
+            const capacityHealthy = capacity === null || capacity >= 0.60;
+            const recommendation = (
+              verifiedPRNumbers.size >= 2 &&
+              claimedSeeds >= 2 &&
+              openCandidatePRs.length <= 3 &&
+              capacityHealthy
+            ) ? 'EVALUATE_COHORT_2' : 'HOLD_COHORT_1';
+
+            const snapshot = {
+              version: 1,
+              updated_at: new Date().toISOString(),
+              cohort: 'bootstrap-1',
+              seeds_total: cohortSeeds.length,
+              seeds_claimed: claimedSeeds,
+              seeds_with_candidate_pr: seedsWithCandidatePR,
+              seeds_with_merged_candidate: seedsWithMergedCandidate,
+              verified_descendant_prs: [...verifiedPRNumbers].sort((a, b) => a - b),
+              candidate_prs_total: candidatePRs.length,
+              candidate_prs_open: openCandidatePRs.length,
+              merged_candidate_prs: mergedCandidatePRs.length,
+              distinct_external_participants: participants.size,
+              seed_reproduction_ratio: seedReproductionRatio,
+              ace_review_load: reviewLoad,
+              ace_capacity: capacity,
+              recommendation
+            };
+
+            const tableRows = rows.map(row => {
+              const fmt = values => values.length ? values.map(n => `#${n}`).join(', ') : '—';
+              return `| #${row.number} | ${row.state} | ${row.claimed ? 'yes' : 'no'} | ${row.externalInterest} | ${fmt(row.candidatePRs)} | ${fmt(row.verifiedPRs)} |`;
+            });
+
+            const body = [
+              '# ACE Bootstrap Cohort Observatory',
+              '',
+              'This issue is maintained by `.github/workflows/ace-cohort-observer.yml`.',
+              '',
+              'It observes the deliberate Bootstrap Cohort 1 Growth Seeds and separates **interest**, **claim**, **candidate work**, and **verified descendants**. It does not treat raw activity as success.',
+              '',
+              `**Recommendation:** \`${recommendation}\`  `,
+              `**Seeds:** ${cohortSeeds.length}  `,
+              `**Claimed seeds:** ${claimedSeeds}  `,
+              `**Seeds with candidate PRs:** ${seedsWithCandidatePR}  `,
+              `**Verified descendant PRs:** ${verifiedPRNumbers.size}  `,
+              `**Distinct external participants:** ${participants.size}  `,
+              `**Seed reproduction ratio:** ${seedReproductionRatio.toFixed(3)}  `,
+              `**ACE capacity:** ${capacity === null ? 'unknown' : capacity.toFixed(3)}  `,
+              `**Updated:** ${snapshot.updated_at}`,
+              '',
+              '> The seed reproduction ratio is an experimental cohort metric (`verified descendants / Growth Seeds`), not yet the full `R_community`. The full reproduction number requires explicit parent→descendant lineage evidence.',
+              '',
+              '## Cohort state',
+              '',
+              '| Seed | State | Claimed | External comments | Candidate PRs | Verified PRs |',
+              '| --- | --- | --- | ---: | --- | --- |',
+              ...tableRows,
+              '',
+              '## Evidence rules',
+              '',
+              '- A seed is **claimed** by an external assignee, an external `/claim` comment, or a cross-referenced PR.',
+              '- A cross-referenced PR is **candidate work**, not verified evidence.',
+              `- A merged candidate becomes a **verified descendant** only after the PR receives the \`${verifiedLabel}\` label.` ,
+              '- The observer never creates Cohort 2. `EVALUATE_COHORT_2` is only a recommendation for human/community review.',
+              '- Repository-owner comments and assignments do not count as external participation.',
+              '',
+              '<!-- ACE_COHORT_STATE',
+              JSON.stringify(snapshot, null, 2),
+              'ACE_COHORT_STATE -->'
+            ].join('\n');
+
+            const openIssues = await github.paginate(github.rest.issues.listForRepo, {
+              owner,
+              repo,
+              state: 'open',
+              per_page: 100
+            });
+            const statusIssue = openIssues.find(issue =>
+              !issue.pull_request && issue.title === statusTitle
+            );
+
+            if (statusIssue) {
+              await github.rest.issues.update({
+                owner,
+                repo,
+                issue_number: statusIssue.number,
+                body
+              });
+            } else {
+              await github.rest.issues.create({
+                owner,
+                repo,
+                title: statusTitle,
+                body
+              });
+            }
