@@ -25,14 +25,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Build ACE cohort snapshot
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
         with:
           script: |
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             const repoOwner = owner.toLowerCase();
             const statusTitle = '[ACE] Bootstrap Cohort Observatory';
+            const statusLabel = 'ace:cohort-observer';
             const verifiedLabel = 'ace:verified-descendant';
+            const trustedSeedAuthors = new Set(['OWNER', 'MEMBER', 'COLLABORATOR']);
             const isExternalHuman = user => Boolean(
               user?.login &&
               user.login.toLowerCase() !== repoOwner &&
@@ -41,19 +43,27 @@ jobs:
 
             // SECURITY: this workflow is metadata-only. In particular, the
             // pull_request_target trigger never checks out, imports, evaluates,
-            // or executes pull-request-controlled repository content.
+            // builds, installs, or executes pull-request-controlled content.
 
-            try {
-              await github.rest.issues.getLabel({ owner, repo, name: verifiedLabel });
-            } catch (error) {
-              if (error.status !== 404) throw error;
-              await github.rest.issues.createLabel({
-                owner,
-                repo,
+            const managedLabels = [
+              {
                 name: verifiedLabel,
                 color: '1D76DB',
-                description: 'Merged ACE descendant explicitly accepted as verified evidence'
-              });
+                description: 'Merged ACE descendant explicitly accepted as bootstrap verification evidence'
+              },
+              {
+                name: statusLabel,
+                color: '0E8A16',
+                description: 'Workflow-owned ACE Bootstrap Cohort observatory issue'
+              }
+            ];
+            for (const label of managedLabels) {
+              try {
+                await github.rest.issues.getLabel({ owner, repo, name: label.name });
+              } catch (error) {
+                if (error.status !== 404) throw error;
+                await github.rest.issues.createLabel({ owner, repo, ...label });
+              }
             }
 
             const seeds = await github.paginate(github.rest.issues.listForRepo, {
@@ -64,8 +74,13 @@ jobs:
               per_page: 100
             });
 
+            // A body marker plus a label is not sufficient provenance. Cohort 1 was
+            // deliberately created by trusted repository actors, so require trusted
+            // author association as an independent admission condition.
             const cohortSeeds = seeds.filter(issue =>
-              !issue.pull_request && (issue.body || '').includes('cohort=bootstrap-1')
+              !issue.pull_request &&
+              (issue.body || '').includes('cohort=bootstrap-1') &&
+              trustedSeedAuthors.has(issue.author_association || 'NONE')
             );
 
             const participants = new Set();
@@ -149,16 +164,20 @@ jobs:
               for (const number of row.verifiedPRs) verifiedPRNumbers.add(number);
             }
 
-            // Read the existing ACE ledger only as a capacity signal. The
-            // observer never edits the ledger, avoiding competing writers.
+            // Read the ACE ledger only as a capacity signal and never edit it.
+            // Prefer workflow-owned ledger identity; fall back to legacy #23 while
+            // the consolidated ACE safety change is still under review.
             let reviewLoad = null;
             let capacity = null;
             try {
-              const { data: ledger } = await github.rest.issues.get({
-                owner,
-                repo,
-                issue_number: 23
+              const labelledLedgers = await github.paginate(github.rest.issues.listForRepo, {
+                owner, repo, state: 'open', labels: 'ace:ledger', per_page: 100
               });
+              let ledger = labelledLedgers.find(issue => !issue.pull_request);
+              if (!ledger) {
+                const legacy = await github.rest.issues.get({ owner, repo, issue_number: 23 });
+                ledger = legacy.data;
+              }
               const match = (ledger.body || '').match(/<!-- ACE_STATE\n([\s\S]*?)\nACE_STATE -->/);
               if (match) {
                 const state = JSON.parse(match[1]);
@@ -168,7 +187,8 @@ jobs:
                 capacity = 1 / (1 + Math.exp((reviewLoad - K) / tau));
               }
             } catch (_) {
-              // Missing/unparseable ledger should not turn observation into failure.
+              // Capacity is advisory here. Missing/unparseable ledger evidence yields
+              // unknown capacity rather than fabricated zero/default state.
             }
 
             const seedReproductionRatio = cohortSeeds.length
@@ -187,7 +207,10 @@ jobs:
               version: 1,
               updated_at: new Date().toISOString(),
               cohort: 'bootstrap-1',
+              metric_scope: 'bootstrap_growth_seed_exposure',
+              full_r_community_ready: false,
               seeds_total: cohortSeeds.length,
+              trusted_seed_numbers: cohortSeeds.map(seed => seed.number).sort((a, b) => a - b),
               seeds_claimed: claimedSeeds,
               seeds_with_candidate_pr: seedsWithCandidatePR,
               seeds_with_merged_candidate: seedsWithMergedCandidate,
@@ -212,19 +235,19 @@ jobs:
               '',
               'This issue is maintained by `.github/workflows/ace-cohort-observer.yml`.',
               '',
-              'It observes the deliberate Bootstrap Cohort 1 Growth Seeds and separates **interest**, **claim**, **candidate work**, and **verified descendants**. It does not treat raw activity as success.',
+              'It observes trusted Bootstrap Cohort 1 Growth Seeds and separates **interest**, **claim**, **candidate work**, **merge**, and a bootstrap **verified-descendant label**. Raw activity is not success.',
               '',
               `**Recommendation:** \`${recommendation}\`  `,
-              `**Seeds:** ${cohortSeeds.length}  `,
+              `**Trusted seeds:** ${cohortSeeds.length}  `,
               `**Claimed seeds:** ${claimedSeeds}  `,
               `**Seeds with candidate PRs:** ${seedsWithCandidatePR}  `,
-              `**Verified descendant PRs:** ${verifiedPRNumbers.size}  `,
+              `**Bootstrap verified descendant PRs:** ${verifiedPRNumbers.size}  `,
               `**Distinct external participants:** ${participants.size}  `,
               `**Seed reproduction ratio:** ${seedReproductionRatio.toFixed(3)}  `,
               `**ACE capacity:** ${capacity === null ? 'unknown' : capacity.toFixed(3)}  `,
               `**Updated:** ${snapshot.updated_at}`,
               '',
-              '> The seed reproduction ratio is an experimental cohort metric (`verified descendants / Growth Seeds`), not yet the full `R_community`. The full reproduction number requires explicit parent→descendant lineage evidence.',
+              '> `SeedReproductionRatio = bootstrap verified descendant PRs / trusted Growth Seeds` is a cohort-exposure metric, **not** the full `R_community`. PR #48 defines the causal ACE lineage contract. A future generation snapshot must combine an independent matured-parent inventory with validated lineage receipts; this observer alone must not claim the full reproduction number.',
               '',
               '## Cohort state',
               '',
@@ -234,10 +257,12 @@ jobs:
               '',
               '## Evidence rules',
               '',
+              '- Cohort admission requires `growth-seed`, the explicit `cohort=bootstrap-1` marker, and trusted repository author association.',
               '- Bootstrap community metrics exclude repository-owner activity and GitHub bot accounts.',
               '- A seed is **claimed** by an external human assignee, an external human `/claim` comment, or an external-human-authored cross-referenced PR.',
               '- A cross-referenced PR is **candidate work**, not verified evidence.',
-              `- A merged candidate becomes a **verified descendant** only after the PR receives the \`${verifiedLabel}\` label.`,
+              `- A merged candidate receives bootstrap verified-descendant status only after a trusted repository actor applies the \`${verifiedLabel}\` label.`,
+              '- That label is an acceptance signal eligible to support an ACE lineage receipt; it is not by itself cross-generation causal proof and does not grant merge authority.',
               '- The observer never creates Cohort 2. `EVALUATE_COHORT_2` is only a recommendation for human/community review.',
               '',
               '<!-- ACE_COHORT_STATE',
@@ -251,9 +276,28 @@ jobs:
               state: 'open',
               per_page: 100
             });
-            const statusIssue = openIssues.find(issue =>
-              !issue.pull_request && issue.title === statusTitle
+            let statusIssue = openIssues.find(issue =>
+              !issue.pull_request &&
+              (issue.labels || []).some(label => label.name === statusLabel)
             );
+
+            // Migrate the oldest legitimate legacy observatory only when it already
+            // contains the machine state marker. A matching title alone is not identity.
+            if (!statusIssue) {
+              const legacy = openIssues
+                .filter(issue =>
+                  !issue.pull_request &&
+                  issue.title === statusTitle &&
+                  (issue.body || '').includes('<!-- ACE_COHORT_STATE')
+                )
+                .sort((a, b) => a.number - b.number)[0];
+              if (legacy) {
+                await github.rest.issues.addLabels({
+                  owner, repo, issue_number: legacy.number, labels: [statusLabel]
+                });
+                statusIssue = legacy;
+              }
+            }
 
             if (statusIssue) {
               await github.rest.issues.update({
@@ -267,6 +311,7 @@ jobs:
                 owner,
                 repo,
                 title: statusTitle,
-                body
+                body,
+                labels: [statusLabel]
               });
             }
