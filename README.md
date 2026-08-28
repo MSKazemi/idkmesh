@@ -34,16 +34,17 @@ ACE (Autocatalytic Community Evolution) is testing whether useful repository act
 Current open starter paths:
 
 - [#24 — audit the 15-minute newcomer path](../../issues/24) — documentation/community; this is the best path if you are new to IDKMesh;
-- [#27 — build a tiny ACE population simulator](../../issues/27) — coding/modeling; a bounded technical task with explicit equations and acceptance criteria.
+- [#167 — independently review IDKGraph orphan cohort 1](../../issues/167) — evidence/review; a bounded `good first issue` that records real reviewer attention rather than inventing it.
 
 High-value expert contribution:
 
-- [PR #91 — independently inspect the canonical real-node runtime evidence](../../pull/91) — security/runtime/evidence review. The automated and same-owner evidence is deliberately **not** treated as independent human approval.
+- [#138 — independently inspect PR #159 canonical-node evidence](../../issues/138) — security/runtime/evidence review. The automated and same-owner evidence is deliberately **not** treated as independent human approval.
 
 Completed Bootstrap Cohort examples remain public provenance, but are no longer available starter tasks:
 
 - #25 — ACE parent -> descendant evidence links;
 - #26 — ACE workflow threat model;
+- #27 — ACE population simulation;
 - #28 — research-track microtask decomposition.
 
 Check the live [ACE Bootstrap Cohort Observatory](../../issues/109) for the current evidence state. At the time of this update it reports no verified external ACE descendant yet. **That is evidence, not embarrassment.** We deliberately will **not** flood the tracker with Cohort 2 merely because review capacity is healthy.
