@@ -24,6 +24,39 @@ def majority_error_independent(n: int, acc: float, quorum: float) -> float:
     return p_wrong
 
 
+def balanced_error_independent(n: int, acc: float, quorum: float) -> float:
+    """Mean of the two error types for an independent panel.
+
+    `majority_error_independent` is the false-reject tail. The false-accept tail
+    is its mirror: a non-viable item is accepted when at least `need` verifiers
+    are *wrong*, which happens with per-verifier probability `1 - acc`.
+
+    At `quorum = 0.5` the two coincide. Above it they diverge sharply, which is
+    exactly why a one-sided metric cannot compare quorums.
+    """
+    need = math.floor(quorum * n) + 1
+    false_reject = majority_error_independent(n, acc, quorum)
+    false_accept = sum(
+        comb(n, k) * ((1 - acc) ** k) * (acc ** (n - k))
+        for k in range(need, n + 1)
+    )
+    return (false_accept + false_reject) / 2.0
+
+
+def effective_n_balanced(measured_false_accept: float, measured_false_reject: float,
+                         acc: float, nmax: int = 201) -> float:
+    """Quorum-comparable effective panel size.
+
+    Matches the panel's *balanced* error against a fixed reference family:
+    independent simple-majority panels (`quorum = 0.5`), where the two error
+    types are symmetric. Because the reference does not move with the measured
+    panel's quorum, values are comparable across quorums -- unlike `effective_n`,
+    which a high quorum inflates by trading false accepts for false rejects.
+    """
+    balanced = (measured_false_accept + measured_false_reject) / 2.0
+    return effective_n(balanced, acc, 0.5, nmax=nmax)
+
+
 def effective_n(measured_err: float, acc: float, quorum: float,
                 nmax: int = 201) -> float:
     """Smallest independent panel size reproducing `measured_err`.
@@ -82,9 +115,16 @@ def main():
             "false_reject": round(sum(fr) / len(fr), 6) if fr else None,
             "disagreement": round(sum(dis) / len(dis), 6) if dis else None,
         }
+        fr_m = sum(fr) / len(fr) if fr else None
         rec["n_eff"] = round(effective_n(fa_m, r["accuracy"], r["quorum"]), 3)
         rec["n_eff_ratio"] = (round(rec["n_eff"] / r["verifiers"], 4)
                               if r["verifiers"] else None)
+        if fr_m is not None:
+            rec["n_eff_balanced"] = round(
+                effective_n_balanced(fa_m, fr_m, r["accuracy"]), 3)
+            rec["n_eff_balanced_ratio"] = (
+                round(rec["n_eff_balanced"] / r["verifiers"], 4)
+                if r["verifiers"] else None)
         out.append(rec)
 
     out.sort(key=lambda d: (d["verifiers"], d["accuracy"],
@@ -109,6 +149,27 @@ def main():
             d = cells.get(c)
             row.append(f"{d['n_eff']:<7.2f}" if d else "  --   ")
         print(f"{v:>8} | " + " | ".join(row))
+    # quorum comparison -- only the balanced metric is valid across quorums
+    quorums = sorted({d["quorum"] for d in out})
+    if len(quorums) > 1:
+        print("\n## n_eff_balanced across quorums (accuracy=0.75)\n")
+        header = " | ".join(f"q={q:<4}" for q in quorums)
+        print(f"{'panel n':>8} | {'rho':>5} | {header}")
+        print("-" * (18 + 9 * len(quorums)))
+        for v in sorted({d["verifiers"] for d in out}):
+            for c in (0.0, 0.5, 1.0):
+                cells = {d["quorum"]: d for d in out
+                         if d["verifiers"] == v
+                         and abs(d["accuracy"] - 0.75) < 1e-9
+                         and abs(d["correlation"] - c) < 1e-9}
+                if not cells:
+                    continue
+                row = " | ".join(
+                    f"{cells[q]['n_eff_balanced']:<6.2f}" if q in cells
+                    and cells[q].get("n_eff_balanced") is not None else "  --  "
+                    for q in quorums)
+                print(f"{v:>8} | {c:>5} | {row}")
+
     print(f"\nwrote e015-phase-diagram.jsonl ({len(out)} cells)")
 
 
