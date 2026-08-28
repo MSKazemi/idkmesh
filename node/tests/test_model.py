@@ -11,7 +11,6 @@ ROOT = Path(__file__).resolve().parents[2]
 EXAMPLE = ROOT / "node" / "examples" / "work-unit.canonical-smoke.json"
 
 
-
 def fixture() -> dict:
     return json.loads(EXAMPLE.read_text(encoding="utf-8"))
 
@@ -20,9 +19,10 @@ class WorkUnitModelTests(unittest.TestCase):
     def test_canonical_fixture_is_valid(self) -> None:
         work = parse_work_unit(fixture())
         self.assertEqual(work.id, "node/canonical-smoke")
-        self.assertEqual(work.version, 1)
-        self.assertEqual(work.source.revision, "bb18ce0ea633f69fa36e2b2f59f90ad66b286064")
+        self.assertEqual(work.version, 2)
+        self.assertEqual(work.source.revision, "b1397a9be91da6570e8ae370de4fa9f4bc44df5c")
         self.assertEqual(work.required_validator_ids, ("result-manifest-schema", "independent-review"))
+        self.assertEqual(work.minimum_independent_verifiers, 1)
 
     def test_old_private_work_unit_shape_is_rejected(self) -> None:
         old_shape = {
@@ -60,10 +60,10 @@ class WorkUnitModelTests(unittest.TestCase):
         with self.assertRaisesRegex(WorkUnitError, "type 'git_ref'"):
             parse_work_unit(data)
 
-    def test_git_ref_requires_full_immutable_sha(self) -> None:
+    def test_source_revision_requires_full_immutable_sha(self) -> None:
         data = fixture()
-        data["inputs"][0]["digest"] = "git-sha1:main"
-        with self.assertRaisesRegex(WorkUnitError, "40-character"):
+        data["extensions"]["org.idkmesh.node.execution"]["source_revision"] = "main"
+        with self.assertRaisesRegex(WorkUnitError, "schema validation"):
             parse_work_unit(data)
 
     def test_node_timeout_cannot_exceed_work_unit_budget(self) -> None:
@@ -82,6 +82,42 @@ class WorkUnitModelTests(unittest.TestCase):
         data = copy.deepcopy(fixture())
         data["extensions"]["org.idkmesh.node.execution"]["container"]["image"] = "ubuntu:latest"
         with self.assertRaisesRegex(WorkUnitError, "container.image"):
+            parse_work_unit(data)
+
+    def test_nonpublic_data_is_rejected_by_mvp_profile(self) -> None:
+        data = fixture()
+        data["security"]["data_classification"] = "confidential"
+        with self.assertRaisesRegex(WorkUnitError, "data_classification"):
+            parse_work_unit(data)
+
+    def test_high_risk_work_is_rejected_by_mvp_profile(self) -> None:
+        data = fixture()
+        data["security"]["risk_class"] = "high"
+        with self.assertRaisesRegex(WorkUnitError, "risk_class"):
+            parse_work_unit(data)
+
+    def test_independent_verification_is_required(self) -> None:
+        data = fixture()
+        data["verification_policy"]["independent_from_worker"] = False
+        with self.assertRaisesRegex(WorkUnitError, "independent_from_worker"):
+            parse_work_unit(data)
+
+    def test_missing_required_capability_is_rejected(self) -> None:
+        data = fixture()
+        data["requirements"]["capabilities"].append("special-capability")
+        with self.assertRaisesRegex(WorkUnitError, "missing required capability"):
+            parse_work_unit(data)
+
+    def test_insufficient_memory_is_rejected(self) -> None:
+        data = fixture()
+        data["requirements"]["resources"]["memory_mb_min"] = 1024
+        with self.assertRaisesRegex(WorkUnitError, "memory_mb_min"):
+            parse_work_unit(data)
+
+    def test_gpu_required_is_rejected(self) -> None:
+        data = fixture()
+        data["requirements"]["resources"]["gpu"] = "required"
+        with self.assertRaisesRegex(WorkUnitError, "does not provide a GPU"):
             parse_work_unit(data)
 
 
