@@ -98,6 +98,36 @@ The published artifact holds 630 cells at 100 seeds. Headline results:
 
 See [`../experiments/E015-verification-phase-diagram.md`](../experiments/E015-verification-phase-diagram.md).
 
+## E016 — live verifier correlation (negative result)
+
+`e016_corpus.py` builds 72 candidate solutions whose ground truth is decided by
+executing hidden tests, `e016_agent.py` runs one open-weight verifier against
+them, and `e016_analyze.py` measures pairwise error correlation.
+
+```bash
+python sim/e016_corpus.py --out benchmarks/e016-verification-corpus/tasks.jsonl
+python sim/e016_analyze.py experiments/results/E016-live-verifier-votes.jsonl.gz
+```
+
+The published run put 20 verifiers (4 models x 5 prompts) on 20 Azure VMs.
+**It failed, and the failure is the result:** 0 of 20 agents discriminated above
+chance (mean Youden `J = +0.049`), 6 emitted a single constant verdict for all
+72 tasks, and the 20-agent majority vote (accuracy `0.514`) was beaten by a
+constant "reject everything" rule (`0.639`).
+
+Accuracy alone could not have caught this — on a 36%-viable corpus, answering
+`NO` to everything scores `0.639` and looks like the panel's best verifier. So
+`e016_analyze.py` now runs a Bonferroni-corrected discrimination screen
+(`youden_j`) before the correlation section and prints a blocking warning when
+no agent passes it. **The near-zero `rho` from that run measures the instrument,
+not the panel, and must not be quoted as evidence of verifier independence.**
+
+The E012/E013/E015 limitation — `rho` is never measured on real verifiers —
+therefore remains open.
+
+See [`../experiments/E016-live-verifier-correlation.md`](../experiments/E016-live-verifier-correlation.md).
+
+
 ## Multi-seed emergence sweeps
 
 ```bash
@@ -116,12 +146,14 @@ python -m pytest -q \
   tests/test_emergence_sweep.py \
   tests/test_verifier_correlation_sweep.py \
   tests/test_verification_aggregation_sim.py \
-  tests/test_e015_phase_diagram.py
+  tests/test_e015_phase_diagram.py \
+  tests/test_e015_quorum_frontier.py \
+  tests/test_e016_analyze.py
 ```
 
 This is the same list `.github/workflows/emergence-sim.yml` runs; keep the two in step.
 
-The tests cover deterministic replay, budget invariants, niche preservation, perfect verification compatibility, correlated-error mechanics, sweep configuration, the E013 regime where independence-aware aggregation can help or hurt, and the E015 effective-panel-size metrics.
+The tests cover deterministic replay, budget invariants, niche preservation, perfect verification compatibility, correlated-error mechanics, sweep configuration, the E013 regime where independence-aware aggregation can help or hurt, the E015 effective-panel-size metrics, and the E016 discrimination screen.
 
 ## Interpretation
 
