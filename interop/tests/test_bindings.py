@@ -10,6 +10,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
 from interop.bindings import (  # noqa: E402
+    A2A_PROTOCOL_VERSION,
     A2A_WORK_CONTRACT_EXTENSION,
     MCP_TASKS_EXTENSION,
     MCP_WORK_CONTRACT_EXTENSION,
@@ -33,15 +34,35 @@ class BindingTests(unittest.TestCase):
             )
         )
 
-    def test_a2a_round_trip_is_lossless(self) -> None:
+    def test_a2a_round_trip_is_lossless_and_models_service_parameters(self) -> None:
         envelope = to_a2a_send_message(self.work_unit)
-        self.assertEqual(envelope["protocolVersion"], "1.0.0")
+        self.assertEqual(A2A_PROTOCOL_VERSION, "1.0")
+        self.assertEqual(envelope["protocolVersion"], "1.0")
+        self.assertEqual(envelope["serviceParameters"]["A2A-Version"], "1.0")
+        self.assertIn(
+            A2A_WORK_CONTRACT_EXTENSION,
+            envelope["serviceParameters"]["A2A-Extensions"].split(","),
+        )
         self.assertIn(A2A_WORK_CONTRACT_EXTENSION, envelope["extensions"])
         self.assertEqual(
             envelope["request"]["message"]["role"],
             "ROLE_USER",
         )
         self.assertEqual(from_a2a_send_message(envelope), self.work_unit)
+
+    def test_a2a_wrong_protocol_version_fails_closed(self) -> None:
+        envelope = to_a2a_send_message(self.work_unit)
+        wrong = copy.deepcopy(envelope)
+        wrong["serviceParameters"]["A2A-Version"] = "1.0.0"
+        with self.assertRaisesRegex(BindingError, "A2A-Version"):
+            from_a2a_send_message(wrong)
+
+    def test_a2a_missing_extension_service_parameter_fails_closed(self) -> None:
+        envelope = to_a2a_send_message(self.work_unit)
+        missing = copy.deepcopy(envelope)
+        missing["serviceParameters"]["A2A-Extensions"] = ""
+        with self.assertRaisesRegex(BindingError, "activate"):
+            from_a2a_send_message(missing)
 
     def test_mcp_round_trip_is_lossless_and_advertises_tasks(self) -> None:
         envelope = to_mcp_tool_call(self.work_unit)
