@@ -16,15 +16,21 @@ The reference implementation is `tools/idkgraph_repository_mapping.py` and the t
 
 ## Deterministic node mapping
 
+Classification has explicit precedence so one source file maps to at most one P0 node:
+
+1. Markdown classification (ADR convention first, otherwise ordinary T1 document);
+2. canonical Work Unit JSON classification;
+3. generic schema/example artifact classification.
+
 | Repository source | IDKGraph node type | Identity rule | Title rule | Why deterministic |
 | --- | --- | --- | --- | --- |
 | Markdown file not matching the ADR convention | `document` | canonical T1 `document_id(repository_relative_path)` | first T1 heading, otherwise filename stem | path and parsed heading are explicit repository bytes |
 | `docs/decisions/ADR-NNNN-*.md` | `decision` | `decision:ADR-NNNN` | first T1 heading | directory + filename convention explicitly identifies an ADR |
 | `*.work-unit.json` containing a non-empty JSON `id` | `work_unit` | `work_unit:<source id>` | explicit `objective`, otherwise source `id` | source object exposes a stable identifier |
-| file under `schemas/` | `artifact` | `artifact:<repository path>` | repository path | path category is explicit |
-| non-WorkUnit file under `examples/` | `artifact` | `artifact:<repository path>` | repository path | path category is explicit |
+| non-Markdown, non-WorkUnit file under `schemas/` | `artifact` | `artifact:<repository path>` | repository path | path category is explicit |
+| non-Markdown, non-WorkUnit file under `examples/` | `artifact` | `artifact:<repository path>` | repository path | path category is explicit |
 
-A source file maps to at most one P0 node. In particular, an ADR is a `decision` node rather than both a `document` and a `decision`; a Work Unit example is a `work_unit` rather than a second generic artifact node. The source file remains traceable in `attributes.repository_path` and `provenance.source`.
+A source file maps to at most one P0 node. In particular, an ADR is a `decision` node rather than both a `document` and a `decision`; a Work Unit example is a `work_unit` rather than a second generic artifact node; and Markdown remains a T1-backed `document` even when it is stored below `examples/` or `schemas/`. The source file remains traceable in `attributes.repository_path` and `provenance.source`.
 
 ## Deterministic relation mapping
 
