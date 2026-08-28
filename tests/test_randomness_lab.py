@@ -7,6 +7,17 @@ from randomness_lab.policies import POLICIES, make_policy, power_of_d_least_load
 from randomness_lab.simulator import SimulationConfig, run_simulation
 
 
+class AlwaysSuccessEnvironment:
+    name = "always-success-test"
+
+    def sample(self, workers, rng):
+        del rng
+        return {worker.name: True for worker in workers}
+
+    def describe(self):
+        return {"name": self.name, "purpose": "test fixture"}
+
+
 class RandomnessLabTests(unittest.TestCase):
     def setUp(self) -> None:
         self.workers = [
@@ -36,6 +47,16 @@ class RandomnessLabTests(unittest.TestCase):
         self.assertEqual(first["trial_count"], 5)
         self.assertEqual(len(first["trials"]), 5)
         self.assertIsNotNone(first["summary"]["normal_approx_95_ci_verified_success_rate"])
+
+    def test_custom_environment_is_swappable(self) -> None:
+        result = run_simulation(
+            self.workers,
+            make_policy("greedy"),
+            SimulationConfig(rounds=20, seed=5),
+            environment=AlwaysSuccessEnvironment(),
+        )
+        self.assertEqual(result["environment"]["name"], "always-success-test")
+        self.assertEqual(result["metrics"]["verified_success_rate"], 1.0)
 
     def test_all_registered_policies_run(self) -> None:
         for name in POLICIES:
