@@ -94,6 +94,18 @@ def resolve_repo_path(raw: str) -> Path:
     return path
 
 
+def resolve_output_path(raw: str) -> Path:
+    """Keep verifier-generated evidence inside the ignored results/ subtree."""
+
+    path = resolve_repo_path(raw)
+    relative = path.relative_to(ROOT)
+    if not relative.parts or relative.parts[0] != "results":
+        raise VerifierError(
+            "verifier output must be under results/; canonical repository files are not writable"
+        )
+    return path
+
+
 def validate_policy(policy: dict[str, Any]) -> None:
     required = {
         "schema_version",
@@ -468,7 +480,7 @@ def cmd_verify(args: argparse.Namespace) -> int:
     result_manifest_path = resolve_repo_path(args.result_manifest)
     candidate_root = resolve_repo_path(args.candidate_root)
     policy_path = resolve_repo_path(args.policy)
-    output_path = resolve_repo_path(args.output)
+    output_path = resolve_output_path(args.output)
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     result = run_fixture(
@@ -488,6 +500,16 @@ def cmd_verify(args: argparse.Namespace) -> int:
 def cmd_self_test(args: argparse.Namespace) -> int:
     work_unit_path = resolve_repo_path(args.work_unit)
     policy_path = resolve_repo_path(args.policy)
+
+    try:
+        resolve_output_path("README.md")
+    except VerifierError:
+        pass
+    else:
+        raise VerifierError("canonical repository path was accepted as verifier output")
+    allowed_output = resolve_output_path("results/verification/self-test.json")
+    if allowed_output.relative_to(ROOT).parts[0] != "results":
+        raise VerifierError("results/ output path guard rejected its own invariant")
 
     good = run_fixture(
         work_unit_path=work_unit_path,
@@ -526,7 +548,7 @@ def cmd_self_test(args: argparse.Namespace) -> int:
     print(
         "OK: executable verifier accepts known-good candidate, rejects self-consistent incorrect "
         "candidate via verifier-owned check, emits schema-valid provenance-bound VerificationResult, "
-        "and reproduces semantic outcomes"
+        "reproduces semantic outcomes, and restricts generated evidence to results/"
     )
     return 0
 
@@ -540,7 +562,11 @@ def build_parser() -> argparse.ArgumentParser:
     verify_parser.add_argument("--result-manifest", required=True)
     verify_parser.add_argument("--candidate-root", required=True)
     verify_parser.add_argument("--policy", required=True)
-    verify_parser.add_argument("--output", required=True)
+    verify_parser.add_argument(
+        "--output",
+        required=True,
+        help="Repository-relative generated evidence path under results/.",
+    )
     verify_parser.set_defaults(func=cmd_verify)
 
     self_test = subparsers.add_parser("self-test", help="Run known-good and deliberately bad fixtures.")
