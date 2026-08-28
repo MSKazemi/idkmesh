@@ -1,0 +1,152 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idkmesh.org/schemas/result-manifest-v0.1.schema.json",
+  "title": "IDKMesh Worker Result Manifest v0.1",
+  "description": "A worker self-report describing one attempt at a Work Unit. This object records candidate outputs and provenance; it is not an acceptance or independent-verification verdict.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "id",
+    "work_unit_id",
+    "work_unit_version",
+    "attempt",
+    "worker",
+    "status",
+    "started_at",
+    "finished_at",
+    "produced_artifacts",
+    "logs",
+    "metrics",
+    "resources",
+    "self_report",
+    "provenance",
+    "verification_request"
+  ],
+  "properties": {
+    "schema_version": {"const": "0.1"},
+    "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._/-]{2,127}$"},
+    "work_unit_id": {"type": "string", "minLength": 1},
+    "work_unit_version": {"type": "integer", "minimum": 1},
+    "attempt": {"type": "integer", "minimum": 1},
+    "worker": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "adapter"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "type": {"enum": ["human", "agent", "system", "hybrid"]},
+        "adapter": {"type": "string", "minLength": 1},
+        "adapter_version": {"type": "string"},
+        "model": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name"],
+          "properties": {
+            "provider": {"type": "string"},
+            "name": {"type": "string", "minLength": 1},
+            "version": {"type": "string"}
+          }
+        }
+      }
+    },
+    "status": {"enum": ["succeeded", "failed", "error", "timeout", "cancelled"]},
+    "started_at": {"type": "string", "format": "date-time"},
+    "finished_at": {"type": "string", "format": "date-time"},
+    "produced_artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "type", "locator", "digest"],
+        "properties": {
+          "id": {"type": "string", "minLength": 1},
+          "type": {"enum": ["patch", "file", "report", "test_result", "dataset", "decision", "review", "log", "other"]},
+          "locator": {"type": "string", "minLength": 1},
+          "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+          "media_type": {"type": "string"},
+          "description": {"type": "string"}
+        }
+      }
+    },
+    "logs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["type", "locator"],
+        "properties": {
+          "type": {"enum": ["stdout", "stderr", "trace", "tool_calls", "other"]},
+          "locator": {"type": "string", "minLength": 1},
+          "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+        }
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "additionalProperties": {"type": ["number", "integer", "null"]}
+    },
+    "resources": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["wall_seconds"],
+      "properties": {
+        "wall_seconds": {"type": "number", "minimum": 0},
+        "cpu_seconds": {"type": "number", "minimum": 0},
+        "max_rss_mb": {"type": "number", "minimum": 0},
+        "compute_units": {"type": "number", "minimum": 0},
+        "human_minutes": {"type": "number", "minimum": 0},
+        "tokens": {"type": "integer", "minimum": 0}
+      }
+    },
+    "self_report": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["summary", "claims"],
+      "properties": {
+        "summary": {"type": "string"},
+        "claims": {"type": "array", "items": {"type": "string"}},
+        "confidence": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["value", "meaning"],
+          "properties": {
+            "value": {"type": "number", "minimum": 0, "maximum": 1},
+            "meaning": {"enum": ["probability_of_success", "subjective", "uncalibrated"]}
+          }
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["work_unit_digest", "source_revision", "environment"],
+      "properties": {
+        "work_unit_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+        "source_revision": {"type": "string", "minLength": 1},
+        "worker_config_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+        "environment": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "platform": {"type": "string"},
+            "python": {"type": "string"},
+            "container_image": {"type": "string"},
+            "tool_versions": {"type": "object", "additionalProperties": {"type": "string"}}
+          }
+        }
+      }
+    },
+    "verification_request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["expected_validator_ids", "evidence_artifact_ids"],
+      "properties": {
+        "expected_validator_ids": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+        "evidence_artifact_ids": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+        "notes": {"type": "string"}
+      }
+    },
+    "extensions": {"type": "object", "additionalProperties": true}
+  }
+}
