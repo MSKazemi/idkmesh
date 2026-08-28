@@ -245,3 +245,33 @@ Blockchain becomes a decision point only when multiple independent operators nee
 **Rationale:** Randomness can escape local optima and generate novelty, but unfiltered randomness creates noise and failure rather than useful emergence.
 
 **Consequence:** Every generative loop must be paired with negative feedback, verification, resource caps, correlation penalties, rollback, and measurable stopping/selection conditions.
+
+## 2026-08-28 — Evaluator sovereignty: bind verifier control to exact work
+
+**Decision:** A worker must not control the evaluator used to judge its own candidate. Verifier control must be represented by a separate, content-addressed `EvaluatorPlan` bound to the exact WorkUnit and source revision.
+
+**Rationale:** Keeping verifier policy outside the candidate workspace is necessary but insufficient. A stale, substituted, or incomplete evaluator can still judge the wrong work, omit a required validator, or make a replay unable to prove which evaluator configuration produced the result.
+
+Let:
+
+`H_W = SHA256(canonical_json(WorkUnit))`
+
+`H_E = SHA256(canonical_json(EvaluatorPlan))`
+
+`V_W = RequiredValidatorIDs(WorkUnit)`
+
+`V_E = EvaluatorPlan.required_validator_ids`
+
+The pre-verification invariant is:
+
+`EvaluatorPlan.work_unit_digest = H_W`
+
+`EvaluatorPlan.source_revision = ResultManifest.source_revision`
+
+`V_E = V_W`
+
+`EvaluatorPlan.verifier.id != ResultManifest.worker.id`
+
+and evaluator control/output remain outside the candidate workspace. The resulting `VerificationResult` records `H_E` as verifier-configuration provenance.
+
+**Consequence:** Evaluator drift and validator-coverage loss fail closed before positive decision support. The current implementation wraps the existing metadata-only local verifier; it does not execute candidate code, satisfy Docker gate #37, or grant merge authority. See `docs/decisions/ADR-0009-evaluator-sovereignty.md` and `docs/research/EVALUATOR_PLAN_BINDING.md`.

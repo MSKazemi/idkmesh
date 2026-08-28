@@ -1,0 +1,127 @@
+{
+  "schema_version": "0.2",
+  "id": "verification/local-smoke",
+  "version": 1,
+  "kind": "testing",
+  "objective": "Verify an isolated candidate artifact using verifier-owned deterministic checks and produce independent decision support.",
+  "context": {
+    "summary": "Executable verifier MVP fixture for issue #5. The worker may produce candidate.json but may not control verifier code or verifier policy.",
+    "references": [
+      "schemas/verification-result-v0.1.schema.json",
+      "verification/fixtures/verifier-smoke-policy.json"
+    ],
+    "max_context_bytes": 16384
+  },
+  "inputs": [],
+  "outputs": [
+    {
+      "id": "candidate-result",
+      "type": "test_result",
+      "description": "An isolated JSON candidate evaluated by an independent local verifier.",
+      "media_type": "application/json"
+    }
+  ],
+  "dependencies": [],
+  "requirements": {
+    "capabilities": ["json-output", "deterministic-local-execution"],
+    "resources": {
+      "cpu_cores_min": 0.1,
+      "memory_mb_min": 32,
+      "disk_mb_min": 1,
+      "gpu": "none",
+      "accelerator_capabilities": []
+    }
+  },
+  "constraints": {
+    "allowed_paths": ["candidate.json"],
+    "forbidden_paths": ["verification/", "experiments/local_verifier.py"],
+    "policies": [
+      "Candidate cannot modify verifier code or verifier-owned policy",
+      "No network access",
+      "No project-paid compute",
+      "Verification success is decision support, not merge authority"
+    ]
+  },
+  "uncertainty": [
+    {
+      "statement": "This deterministic JSON fixture is intentionally smaller than the repository-level verifier required for the full issue #5 benchmark cohort.",
+      "confidence": 1.0,
+      "resolution_strategy": "Use the same verifier contract on bounded repository candidates after the canonical node Docker acceptance gate is satisfied."
+    }
+  ],
+  "security": {
+    "risk_class": "low",
+    "data_classification": "public",
+    "minimum_worker_trust": "untrusted",
+    "sandbox_required": false,
+    "notes": "The verifier parses isolated fixture JSON only and does not execute candidate-supplied code."
+  },
+  "permissions": {
+    "network": "none",
+    "network_allowlist": [],
+    "filesystem_write": ["candidate.json"],
+    "secrets": [],
+    "process_execution": false
+  },
+  "verification_policy": {
+    "strategy": "all_required",
+    "independent_from_worker": true,
+    "minimum_independent_verifiers": 1,
+    "acceptance_rule": "Artifact digest, candidate scope, and verifier-owned acceptance checks must all pass."
+  },
+  "validators": [
+    {
+      "id": "artifact-digest",
+      "type": "reproduction",
+      "required": true,
+      "description": "Observed candidate bytes must match the worker ResultManifest artifact digest."
+    },
+    {
+      "id": "candidate-scope",
+      "type": "review",
+      "required": true,
+      "description": "The isolated candidate directory may contain only verifier-policy-approved files."
+    },
+    {
+      "id": "independent-acceptance",
+      "type": "test",
+      "required": true,
+      "description": "Verifier-owned deterministic expectations must pass independently of worker self-report."
+    }
+  ],
+  "evidence_requirements": [
+    {
+      "type": "artifact_hash",
+      "required": true,
+      "description": "Record the observed SHA-256 of the candidate artifact."
+    },
+    {
+      "type": "test_output",
+      "required": true,
+      "description": "Record verifier-owned acceptance-check evidence and diagnostics."
+    }
+  ],
+  "budget": {
+    "wall_seconds": 5,
+    "compute_units": 0.01,
+    "human_minutes": 0,
+    "tokens": 0,
+    "project_spend_usd_max": 0,
+    "paid_fallback_allowed": false
+  },
+  "provenance": {
+    "created_by": "IDKMesh executable verifier MVP",
+    "creator_type": "hybrid",
+    "source": "Issue #5",
+    "source_revision": "fixture-verifier-smoke-v1",
+    "parent_work_unit_ids": []
+  },
+  "failure_semantics": {
+    "retryable": false,
+    "max_attempts": 1,
+    "on_failure": "escalate"
+  },
+  "extensions": {
+    "org.idkmesh.verifier.fixture": true
+  }
+}
