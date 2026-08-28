@@ -305,13 +305,25 @@ def run_policy(
     }
 
 
-def ci95(values: Sequence[float]) -> dict[str, float]:
+def ci95(
+    values: Sequence[float],
+    lower_bound: float | None = None,
+    upper_bound: float | None = None,
+) -> dict[str, float]:
     mean = statistics.fmean(values) if values else 0.0
     if len(values) < 2:
-        return {"mean": mean, "lower": mean, "upper": mean, "stdev": 0.0}
-    stdev = statistics.stdev(values)
-    margin = 1.96 * stdev / math.sqrt(len(values))
-    return {"mean": mean, "lower": mean - margin, "upper": mean + margin, "stdev": stdev}
+        lower = upper = mean
+        stdev = 0.0
+    else:
+        stdev = statistics.stdev(values)
+        margin = 1.96 * stdev / math.sqrt(len(values))
+        lower = mean - margin
+        upper = mean + margin
+    if lower_bound is not None:
+        lower = max(lower_bound, lower)
+    if upper_bound is not None:
+        upper = min(upper_bound, upper)
+    return {"mean": mean, "lower": lower, "upper": upper, "stdev": stdev}
 
 
 def aggregate(records: Sequence[dict[str, object]]) -> dict[str, object]:
@@ -323,16 +335,24 @@ def aggregate(records: Sequence[dict[str, object]]) -> dict[str, object]:
     for policy, items in sorted(by_policy.items()):
         summary[policy] = {
             "trials": len(items),
-            "verified_success_rate": ci95([float(item["verified_success_rate"]) for item in items]),
-            "escaped_failure_rate": ci95([float(item["escaped_failure_rate"]) for item in items]),
-            "total_compute_cost": ci95([float(item["total_compute_cost"]) for item in items]),
-            "mean_latency": ci95([float(item["mean_latency"]) for item in items]),
-            "human_attention_proxy_minutes": ci95(
-                [float(item["human_attention_proxy_minutes"]) for item in items]
+            "verified_success_rate": ci95(
+                [float(item["verified_success_rate"]) for item in items], 0.0, 1.0
             ),
-            "selection_diversity": ci95([float(item["selection_diversity"]) for item in items]),
+            "escaped_failure_rate": ci95(
+                [float(item["escaped_failure_rate"]) for item in items], 0.0, 1.0
+            ),
+            "total_compute_cost": ci95(
+                [float(item["total_compute_cost"]) for item in items], 0.0
+            ),
+            "mean_latency": ci95([float(item["mean_latency"]) for item in items], 0.0),
+            "human_attention_proxy_minutes": ci95(
+                [float(item["human_attention_proxy_minutes"]) for item in items], 0.0
+            ),
+            "selection_diversity": ci95(
+                [float(item["selection_diversity"]) for item in items], 0.0, 1.0
+            ),
             "pairwise_error_correlation": ci95(
-                [float(item["pairwise_error_correlation"]) for item in items]
+                [float(item["pairwise_error_correlation"]) for item in items], -1.0, 1.0
             ),
         }
     return summary
