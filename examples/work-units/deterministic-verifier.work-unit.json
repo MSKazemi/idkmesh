@@ -98,7 +98,7 @@
     },
     {
       "id": "path-policy",
-      "type": "policy",
+      "type": "review",
       "required": true,
       "description": "Parse patch paths and reject changes outside allowed_paths or matching forbidden_paths."
     }
