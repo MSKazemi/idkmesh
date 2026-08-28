@@ -10,8 +10,10 @@ candidates, NOT executable runtime compute offers. A provider-specific adapter
 or live capability probe must materialize an eligible resource into
 ``schemas/compute-offer-pool-v0.1.schema.json`` before
 ``experiments/free_compute_router.py`` can select it under
-``config/compute-policy.json``. The planner must never become a second execution
-router or infer concrete CPU/RAM/GPU capacity from catalog metadata.
+``config/compute-policy.json``. The canonical layer boundary is documented in
+``docs/architecture/FREE_RESOURCE_MESH_COMPUTE_BRIDGE.md``. The planner must
+never become a second execution router or infer concrete CPU/RAM/GPU capacity
+from catalog metadata.
 """
 from __future__ import annotations
 
@@ -28,6 +30,7 @@ DISCOVERY_CONTRACT = "schemas/resource-offer-registry-v0.1.schema.json"
 RUNTIME_CONTRACT = "schemas/compute-offer-pool-v0.1.schema.json"
 RUNTIME_ROUTER = "experiments/free_compute_router.py"
 REPOSITORY_COMPUTE_POLICY = "config/compute-policy.json"
+BOUNDARY_DOC = "docs/architecture/FREE_RESOURCE_MESH_COMPUTE_BRIDGE.md"
 
 
 def _require(cond: bool, msg: str) -> None:
@@ -172,6 +175,7 @@ def plan(registry: dict[str, Any], task: dict[str, Any], limit: int, today: dt.d
         "runtime_materialization": {
             "required_before_execution": True,
             "planner_output_is_executable_compute_offer": False,
+            "boundary_doc": BOUNDARY_DOC,
             "discovery_contract": DISCOVERY_CONTRACT,
             "runtime_contract": RUNTIME_CONTRACT,
             "runtime_router": RUNTIME_ROUTER,
