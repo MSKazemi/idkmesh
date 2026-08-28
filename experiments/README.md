@@ -1,0 +1,144 @@
+# IDKMesh experiments
+
+Experiments are small, reproducible programs used to challenge IDKMesh hypotheses before those hypotheses become architecture or automation.
+
+## ACE live-open-work population experiment
+
+`ace_population_sim.py` is the replacement experiment for Growth Seed #27.
+
+The earlier PR #44 was intentionally closed unmerged because it modeled review pressure as a cumulative historical queue. After #104 established the recoverable `live-open-work-v1` capacity model, #27 remained open specifically so the experiment could be rebuilt against the canonical state definition.
+
+This program is **illustrative, not empirical community evidence**. It has no GitHub API access, no actuation authority, no merge authority, and no third-party dependencies.
+
+### Canonical load model
+
+The simulated current-state pressure is:
+
+```text
+L_t =
+    1.00 * ready_PRs
+  + 0.25 * draft_PRs
+  + 0.50 * open_Growth_Seeds
+  + 0.10 * min(other_open_human_issues, 20)
+```
+
+and:
+
+```text
+Capacity(L) = 1 / (1 + exp((L - K) / tau))
+```
+
+Historical event counts are deliberately absent. If open work closes, `L` falls and capacity can recover.
+
+### Reproduction rule
+
+Only verified useful output earns reproductive credit:
+
+```text
+Credit(t+1)
+  = decay * Credit(t)
+  + verified_descendants * novelty * gate
+```
+
+where:
+
+```text
+governed: gate = Capacity(L)
+raw:      gate = 1
+```
+
+Credit may open new Growth Seeds. The `raw` comparator therefore represents reproduction that ignores carrying capacity; it is not a recommended production policy.
+
+### Run it
+
+```bash
+python experiments/ace_population_sim.py --check
+```
+
+Machine-readable output:
+
+```bash
+python experiments/ace_population_sim.py --check --format json
+python experiments/ace_population_sim.py --format csv
+```
+
+Run one scenario:
+
+```bash
+python experiments/ace_population_sim.py \
+  --scenario overload \
+  --policy both \
+  --seed 20260828
+```
+
+Parameters such as `K`, `tau`, review slots, spawn rate, activation probability, verification probability, and the background issue count can be overridden from the CLI.
+
+### Default regimes
+
+1. **under-reproduction** — follow-up ACE work dies out;
+2. **healthy-reproduction** — verified work repeatedly creates descendant opportunity while live pressure remains bounded;
+3. **overload** — reproduction can create open work faster than the fixed review bottleneck can process it.
+
+For fixed seed `20260828`, the default overload comparison is:
+
+```text
+governed:
+  public activity       = 323
+  reviewed PRs          = 160
+  verified descendants  = 144
+  final live load       = 7.75
+
+raw:
+  public activity       = 491
+  reviewed PRs          = 160
+  verified descendants  = 144
+  final live load       = 91.75
+```
+
+So the raw policy creates **168 additional public activity events** and **84 additional units of final live pressure** while producing exactly the same reviewed and verified throughput in this deterministic toy regime.
+
+That demonstrates a mechanism, not an empirical law:
+
+```text
+more activity != more useful throughput
+```
+
+when verification/review is already the bottleneck.
+
+### What `R_community` means here
+
+The simulator controls its own parent inventory. Each seed may create at most one candidate PR; when that candidate reaches terminal review, the seed is treated as an eligible matured parent. A successful review is a verified descendant.
+
+Therefore the toy quantity is:
+
+```text
+R_community = verified descendants / eligible matured parents
+```
+
+This is intentionally simpler than real repository lineage. Production ACE must use the canonical #48 lineage protocol plus an independent eligible-parent inventory and must preserve right-censoring/verification semantics.
+
+### Acceptance contract
+
+`--check` and `tests/test_ace_population_sim.py` require that:
+
+- the exact live-open-work weights remain canonical;
+- the ordinary-issue term stays capped at 20;
+- reducing current open work recovers capacity;
+- historical event volume cannot affect `L` at fixed current state;
+- the under-reproduction scenario exhausts active ACE work;
+- the healthy scenario reproduces while staying bounded;
+- in the default overload regime, raw reproduction creates more activity and pressure without increasing reviewed or verified throughput;
+- the governed overload case returns to final `L <= K`.
+
+### Safety / interpretation
+
+The coefficients, `K=8`, `tau=2`, scenario probabilities, and spawn rates are bootstrap hypotheses chosen to expose qualitative regimes. They must not be cited as measured properties of open-source communities.
+
+This experiment does not change the Phase-B gate. Even perfect simulated capacity cannot replace:
+
+- real independently verified descendant evidence;
+- actual GitHub branch/ruleset protection;
+- explicit authority opt-in;
+- independent integration controls.
+
+See `docs/community/ACE_CAPACITY_MODEL.md`, `COMMUNITY_GROWTH_ENGINE.md`, merged #48, merged #68, merged #104, and merged #112.
