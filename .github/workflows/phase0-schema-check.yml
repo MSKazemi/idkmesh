@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "schemas/**"
+      - "config/**"
       - "examples/**"
       - "experiments/**"
       - "requirements-phase0.txt"
@@ -12,6 +13,7 @@ on:
     branches: [main]
     paths:
       - "schemas/**"
+      - "config/**"
       - "examples/**"
       - "experiments/**"
       - "requirements-phase0.txt"
@@ -32,9 +34,14 @@ jobs:
         run: python -m pip install -r requirements-phase0.txt
       - name: Validate schemas and fixtures
         run: python experiments/harness.py validate
+      - name: Verify zero-cost compute routing
+        run: python experiments/free_compute_router.py self-test
+      - name: Show example free compute selection
+        run: python experiments/free_compute_router.py select
       - name: Run safe built-in smoke fixture
         run: python experiments/harness.py smoke --output results/phase0-smoke.jsonl
 
-# Security note: the harness smoke command executes only its built-in
-# deterministic_smoke runner. It refuses manifest runner types such as
-# `command` or `external`, so contributor-supplied commands are never run here.
+# Security note: neither Phase 0 utility executes provider-supplied commands.
+# The harness smoke command executes only its built-in deterministic_smoke
+# runner, while free_compute_router.py performs selection only. The router's
+# repository policy must fail closed rather than selecting project-paid compute.
