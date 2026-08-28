@@ -1,0 +1,172 @@
+{
+  "schema_version": "0.1",
+  "mode": "shadow",
+  "project_spend_usd_max": 0,
+  "full_suite_baseline_required": true,
+  "budgets": {
+    "optional_seconds": 180,
+    "exploration_slots": 1,
+    "queue_cost_seconds": 5
+  },
+  "risk_rules": [
+    {
+      "id": "ci-control-plane",
+      "risk_class": "R3",
+      "patterns": [
+        ".github/workflows/**",
+        "config/ci-policy-v0.1.json",
+        "schemas/ci-plan-v0.1.schema.json",
+        "schemas/ci-receipt-v0.1.schema.json",
+        "tools/ci_shadow_planner.py",
+        "tests/test_ci_shadow_planner.py"
+      ]
+    },
+    {
+      "id": "security-governance",
+      "risk_class": "R3",
+      "patterns": [
+        "SECURITY.md",
+        "GOVERNANCE.md",
+        "CONSTITUTION.md",
+        "docs/security/**"
+      ]
+    },
+    {
+      "id": "runtime-code",
+      "risk_class": "R2",
+      "patterns": ["**/*.py", "requirements*.txt"]
+    },
+    {
+      "id": "contracts-and-policy",
+      "risk_class": "R2",
+      "patterns": ["schemas/**", "config/**", "examples/**"]
+    },
+    {
+      "id": "documentation",
+      "risk_class": "R0",
+      "patterns": ["**/*.md"]
+    },
+    {
+      "id": "fallback",
+      "risk_class": "R1",
+      "patterns": ["**"]
+    }
+  ],
+  "checks": [
+    {
+      "id": "repository-integrity",
+      "description": "Compile the planner, validate policy shape, and enforce a whitespace-clean diff.",
+      "patterns": ["**"],
+      "always_run": true,
+      "hard_gate": true,
+      "dependencies": [],
+      "estimated_seconds": 15,
+      "failure_probability_prior": 0.05,
+      "impact": 1.0,
+      "information_gain": 0.4
+    },
+    {
+      "id": "ci-control-plane",
+      "description": "Validate planner policy, schemas, workflow permissions, and planner regression tests.",
+      "patterns": [
+        ".github/workflows/**",
+        "config/ci-policy-v0.1.json",
+        "schemas/ci-*.schema.json",
+        "tools/ci_shadow_planner.py",
+        "tests/test_ci_shadow_planner.py"
+      ],
+      "always_run": false,
+      "hard_gate": true,
+      "dependencies": ["repository-integrity"],
+      "estimated_seconds": 30,
+      "failure_probability_prior": 0.2,
+      "impact": 1.0,
+      "information_gain": 0.9
+    },
+    {
+      "id": "schema-contracts",
+      "description": "Validate changed schemas, policies, manifests, and their negative fixtures.",
+      "patterns": ["schemas/**", "config/**", "examples/**", "requirements*.txt"],
+      "always_run": false,
+      "hard_gate": true,
+      "dependencies": ["repository-integrity"],
+      "estimated_seconds": 75,
+      "failure_probability_prior": 0.16,
+      "impact": 0.95,
+      "information_gain": 0.85
+    },
+    {
+      "id": "core-unit",
+      "description": "Run the deterministic Python unit-test foundation for changed runtime code.",
+      "patterns": ["**/*.py", "requirements*.txt"],
+      "always_run": false,
+      "hard_gate": true,
+      "dependencies": ["repository-integrity"],
+      "estimated_seconds": 45,
+      "failure_probability_prior": 0.18,
+      "impact": 1.0,
+      "information_gain": 0.9
+    },
+    {
+      "id": "interop",
+      "description": "Run interoperability bindings and contract checks.",
+      "patterns": ["interop/**", "docs/interoperability/**"],
+      "always_run": false,
+      "hard_gate": true,
+      "dependencies": ["repository-integrity"],
+      "estimated_seconds": 30,
+      "failure_probability_prior": 0.12,
+      "impact": 0.9,
+      "information_gain": 0.8
+    },
+    {
+      "id": "documentation-integrity",
+      "description": "Check Markdown identity and repository-local link integrity.",
+      "patterns": ["**/*.md"],
+      "always_run": false,
+      "hard_gate": true,
+      "dependencies": ["repository-integrity"],
+      "estimated_seconds": 25,
+      "failure_probability_prior": 0.1,
+      "impact": 0.55,
+      "information_gain": 0.8
+    },
+    {
+      "id": "research-simulations",
+      "description": "Run stochastic/research simulations with fixed seeds when their surfaces change.",
+      "patterns": ["randomness_lab/**", "sim/**", "experiments/**", "docs/research/**"],
+      "always_run": false,
+      "hard_gate": false,
+      "dependencies": ["core-unit"],
+      "estimated_seconds": 120,
+      "failure_probability_prior": 0.14,
+      "impact": 0.7,
+      "information_gain": 0.9
+    },
+    {
+      "id": "cross-version-core",
+      "description": "Repeat affected core checks on the compatibility interpreter boundary.",
+      "patterns": ["**/*.py", "requirements*.txt"],
+      "always_run": false,
+      "hard_gate": false,
+      "dependencies": ["core-unit"],
+      "estimated_seconds": 90,
+      "failure_probability_prior": 0.08,
+      "impact": 0.8,
+      "information_gain": 0.65
+    },
+    {
+      "id": "full-regression",
+      "description": "Run the complete repository regression suite.",
+      "patterns": ["**"],
+      "always_run": false,
+      "hard_gate": false,
+      "mandatory_at_or_above_risk": "R3",
+      "dependencies": ["repository-integrity"],
+      "estimated_seconds": 300,
+      "failure_probability_prior": 0.06,
+      "impact": 1.0,
+      "information_gain": 0.75
+    }
+  ]
+}
