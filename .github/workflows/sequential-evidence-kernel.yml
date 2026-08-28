@@ -1,0 +1,94 @@
+name: Sequential Evidence Kernel
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/sequential_evidence.py"
+      - "tests/test_sequential_evidence.py"
+      - "docs/architecture/SEQUENTIAL_EVIDENCE_KERNEL.md"
+      - "docs/conversations/2026-08-28-sequential-evidence-continuation.md"
+      - ".github/workflows/sequential-evidence-kernel.yml"
+  pull_request:
+    paths:
+      - "scripts/sequential_evidence.py"
+      - "tests/test_sequential_evidence.py"
+      - "docs/architecture/SEQUENTIAL_EVIDENCE_KERNEL.md"
+      - "docs/conversations/2026-08-28-sequential-evidence-continuation.md"
+      - ".github/workflows/sequential-evidence-kernel.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sequential-evidence-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  evidence-kernel:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.13"]
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Compile sequential evidence kernel
+        run: python -m py_compile scripts/sequential_evidence.py tests/test_sequential_evidence.py
+
+      - name: Run sequential evidence invariants
+        run: python -m unittest -v tests.test_sequential_evidence
+
+      - name: Generate deterministic evidence demonstration
+        run: |
+          python scripts/sequential_evidence.py --demo --output /tmp/sequential-evidence-demo.json >/dev/null
+          python -m json.tool /tmp/sequential-evidence-demo.json >/dev/null
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          payload = json.loads(Path('/tmp/sequential-evidence-demo.json').read_text())
+          invariants = payload['invariants']
+          assert invariants['optional_stopping_aware'] is True
+          assert invariants['clipped_ips_cannot_nominate'] is True
+          assert invariants['hard_guard_non_compensation'] is True
+          assert invariants['integration_authority'] is False
+          assert payload['paired']['decision'] == 'experiment_candidate'
+          assert payload['paired_with_hard_guard_failure']['decision'] == 'guarded'
+          assert payload['off_policy_with_clipping']['decision'] == 'observe_clipped'
+          PY
+
+      - name: Publish sequential evidence artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: sequential-evidence-${{ github.run_id }}-py${{ matrix.python-version }}
+          path: /tmp/sequential-evidence-demo.json
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Publish job summary
+        shell: bash
+        run: |
+          {
+            echo "## Sequential Evidence Kernel"
+            echo
+            echo "Python: \`${{ matrix.python-version }}\`"
+            echo
+            echo "Anytime-valid observation is not integration authority."
+            echo
+            echo '```json'
+            cat /tmp/sequential-evidence-demo.json
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
