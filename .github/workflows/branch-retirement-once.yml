@@ -17,6 +17,7 @@ jobs:
       - name: Retire four fresh canonical candidates
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
@@ -33,12 +34,13 @@ jobs:
               "feature/active-compute-pulse": "7ca19432ae4c812aba98376240fd0a8560659ca2",
           }
           repo = os.environ["GITHUB_REPOSITORY"]
-          token = os.environ["GITHUB_TOKEN"]
 
           def heads():
               proc = subprocess.run(
                   ["git", "ls-remote", "--heads", f"https://github.com/{repo}.git"],
-                  check=True, text=True, stdout=subprocess.PIPE,
+                  check=True,
+                  text=True,
+                  stdout=subprocess.PIPE,
               )
               out = {}
               for line in proc.stdout.splitlines():
@@ -48,26 +50,36 @@ jobs:
               return out
 
           before = heads()
-          eligible = [b for b, sha in candidates.items() if before.get(b) == sha]
+          eligible = [branch for branch, sha in candidates.items() if before.get(branch) == sha]
           skipped = [
-              {"branch": b, "expected_sha": sha, "observed_sha": before.get(b)}
-              for b, sha in candidates.items() if before.get(b) != sha
+              {"branch": branch, "expected_sha": sha, "observed_sha": before.get(branch)}
+              for branch, sha in candidates.items()
+              if before.get(branch) != sha
           ]
-          push_url = f"https://x-access-token:{token}@github.com/{repo}.git"
+
           failed = []
           for branch in eligible:
               proc = subprocess.run(
-                  ["git", "push", push_url, "--delete", branch],
-                  text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                  [
+                      "gh",
+                      "api",
+                      "--method",
+                      "DELETE",
+                      f"repos/{repo}/git/refs/heads/{branch}",
+                  ],
+                  text=True,
+                  stdout=subprocess.PIPE,
+                  stderr=subprocess.PIPE,
+                  env=os.environ.copy(),
               )
               if proc.returncode != 0:
                   failed.append({"branch": branch, "stderr": proc.stderr[-500:]})
 
           after = heads()
-          deleted = [b for b in eligible if b not in after]
-          mismatch = [b for b in eligible if b in after]
+          deleted = [branch for branch in eligible if branch not in after]
+          mismatch = [branch for branch in eligible if branch in after]
           record = {
-              "schema_version": "0.1",
+              "schema_version": "0.2",
               "source_branch_steward_run": 33209884971,
               "source_main_sha": "48f2144b0721fac61f57bc245b5c413621fb8044",
               "manifest_candidates": len(candidates),
@@ -78,16 +90,24 @@ jobs:
               "skipped": skipped,
               "failed": failed,
               "verification_mismatch": mismatch,
+              "authority": {
+                  "delete_only": True,
+                  "merge": False,
+                  "force_update": False,
+                  "exact_head_guard": True
+              }
           }
           path = Path(os.environ["RUNNER_TEMP"]) / "branch-retirement-result.json"
           path.write_text(json.dumps(record, indent=2, sort_keys=True) + "\n", encoding="utf-8")
           with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as out:
               out.write("## Fresh canonical branch retirement\n\n")
               out.write(f"- candidates: {len(candidates)}\n")
+              out.write(f"- eligible: {len(eligible)}\n")
               out.write(f"- deleted + verified: {len(deleted)}\n")
               out.write(f"- skipped: {len(skipped)}\n")
               out.write(f"- failures: {len(failed)}\n")
               out.write(f"- remaining branches: {len(after)}\n")
+          print(json.dumps(record, sort_keys=True))
           if failed or mismatch:
               raise SystemExit("branch retirement verification failed")
           PY
@@ -101,5 +121,5 @@ jobs:
           retention-days: 30
           if-no-files-found: error
 
-# This file is a one-shot, user-authorized cleanup surface built from the fresh
-# Branch Steward run 33209884971. It performs deletion only; no merge/force update.
+# One-shot cleanup surface built from the fresh Branch Steward run 33209884971.
+# Exact-head verified deletion only. No merge, force-update, or rebase authority.
