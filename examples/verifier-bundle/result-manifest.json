@@ -18,7 +18,7 @@
       "id": "candidate-patch",
       "type": "patch",
       "locator": "examples/verifier-bundle/candidate.patch",
-      "digest": "sha256:3b2266db16579a288d6906b5418e9695b155936ea62a956b84d9d63c87db1526",
+      "digest": "sha256:c5618872782508818f97df04e87e9fa6cec7c6d88e5f4bb905915bd36fd8eb19",
       "media_type": "text/x-diff",
       "description": "Harmless bounded patch fixture for deterministic verification."
     }
