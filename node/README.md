@@ -64,7 +64,7 @@ The worker checks the v0.2 scheduling/trust/budget contract before execution:
 
 The monetary checks mirror the repository-wide `config/compute-policy.json`: IDKMesh itself cannot pay for compute. Local-owned, donated, public-project CI, grants, and explicit free-tier resources can be modeled separately, but a Work Unit routed to this backend cannot silently authorize paid fallback.
 
-The whole-attempt deadline covers local image resolution, source preparation, and task-container execution. Post-run capture records a policy failure if total measured attempt time still exceeds the Work Unit wall budget.
+The whole-attempt deadline covers immutable image resolution, source preparation, container execution, and bounded host-side Git evidence capture. A small bounded tail of the Work Unit wall budget is reserved for evidence capture so a task cannot consume every remaining second and prevent the node from recording why it stopped. Total measured budget overrun is itself a policy failure. Mandatory `docker rm -f` after a timeout is a tightly bounded containment cleanup, not additional task execution authority.
 
 These restrictions are deliberately conservative. Stronger isolation/identity profiles can widen the accepted risk/trust classes later without changing the core Work Unit.
 
@@ -76,7 +76,8 @@ Node v0.1 requires and enforces:
 - public HTTPS GitHub source;
 - small container-image allowlist;
 - the allowlisted image must already be present on the controlled host;
-- the image tag is resolved to an immutable local Docker image ID before execution, and the container runs by that ID;
+- the configured image tag must resolve to both an immutable local Docker image ID and a matching immutable repository digest;
+- Docker runs the exact resolved local image ID, not the mutable tag;
 - `permissions.network = none`;
 - no Work Unit secrets;
 - Docker `--network none`;
@@ -98,7 +99,7 @@ The writable repository work tree is temporary. Path policy in this version is c
 
 The task must not control the Git metadata later used to measure its output. Node v0.1 therefore keeps the real Git directory outside `/workspace`, mounts it read-only at `/git-meta`, uses an isolated host Git configuration, and detects tampering with the task-visible `.git` pointer.
 
-This prevents a task from committing/repointing its own changes and then using candidate-controlled Git state to make host-side `git diff` or path-policy evidence disappear.
+Host Git commands address the external Git directory and work tree explicitly, so a candidate cannot commit/repoint its own changes and then use candidate-controlled Git state to make host-side `git diff` or path-policy evidence disappear.
 
 ### Untracked-artifact rule
 
@@ -116,9 +117,21 @@ Stdout/stderr may be deliberately truncated to their declared log bound; those t
 
 ### Container-image evidence rule
 
-The Work Unit's allowlisted tag is a routing/configuration selector, not sufficient runtime provenance by itself. Before execution, the worker resolves the preloaded tag with Docker and obtains an immutable local image ID (`sha256:...`). Docker is then invoked with that image ID, and the ID is recorded under `extensions.org.idkmesh.node.v0_1.container_image_id`.
+The Work Unit's allowlisted tag is a routing/configuration selector, not sufficient runtime provenance by itself. Before execution, the worker inspects the preloaded tag and requires two immutable identities:
 
-A controlled acceptance report should retain both the configured tag and resolved image ID. A later contract version may move immutable image identity directly into the execution binding.
+1. local Docker image ID (`sha256:...`);
+2. matching repository digest for the configured image repository (for example `python@sha256:...`).
+
+A locally retagged/unresolved image with no matching repository digest fails closed. Docker is invoked with the immutable image ID rather than the tag.
+
+The ResultManifest retains:
+
+- configured tag under `configured_container_image`;
+- immutable local ID under `resolved_container_image_id`;
+- immutable repository digest under `resolved_container_repo_digest`;
+- the repository digest as `provenance.environment.container_image`.
+
+This binds acceptance evidence to the actual image used without yet changing the Work Unit execution-binding schema. A later contract version may require the immutable repository digest directly in the binding.
 
 ## Install and test
 
@@ -141,11 +154,11 @@ On an explicitly controlled machine with Git and Docker, preload the allowlisted
 
 ```bash
 docker pull python:3.12-alpine
-docker image inspect --format '{{.Id}}' python:3.12-alpine
+docker image inspect python:3.12-alpine
 idkmesh-node run node/examples/work-unit.canonical-smoke.json --output ./node-result
 ```
 
-The node does not perform an implicit image pull during task execution. This keeps image acquisition outside the Work Unit's task authority and lets the acceptance record bind the run to the exact local image ID.
+Record the image `Id` and the matching `python@sha256:...` `RepoDigests` value before execution. The node does not perform an implicit image pull during task execution.
 
 The output directory must be empty. It receives:
 
@@ -154,7 +167,7 @@ The output directory must be empty. It receives:
 - `stdout.txt`;
 - `stderr.txt`.
 
-The ResultManifest contains artifact digests, immutable source revision, Work Unit digest, worker configuration digest, resource measurements, changed paths, untracked-path accounting, policy violations, the resolved container image ID, and a request for the Work Unit's required independent validators.
+The ResultManifest contains artifact digests, immutable source revision, Work Unit digest, worker configuration digest, resource measurements, changed/untracked path accounting, policy violations, configured/resolved container identities, and a request for the Work Unit's required independent validators.
 
 ## Trust rule
 
@@ -182,7 +195,7 @@ This worker therefore fills the missing **real execution backend** between canon
 
 ## Next engineering milestone
 
-The next milestone is one controlled end-to-end acceptance run:
+The next milestone is the controlled end-to-end acceptance in issue #37:
 
 ```text
 WorkUnit v0.2
@@ -194,6 +207,6 @@ WorkUnit v0.2
  -> human integration decision
 ```
 
-That run should use an immutable IDKMesh source commit, record the exact Docker image ID, stay at zero project spend, preserve evaluator sovereignty, and demonstrate that a generated candidate cannot certify itself.
+That run must bind the exact PR head, immutable IDKMesh source commit, exact Docker image ID and repository digest, remain at zero project spend, preserve evaluator sovereignty, and demonstrate that generated candidate output cannot certify itself or hide omitted evidence.
 
 Only after that evidence should the project connect `idkmesh-node` as a concrete adapter behind the multi-attempt orchestration kernel or widen the worker's risk/trust envelope.
