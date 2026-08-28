@@ -97,6 +97,11 @@ A useful approximation already tracked in `MATHEMATICAL_FOUNDATIONS.md` is effec
 
 For `N=5` and `rho=1`, `N_eff=1`.
 
+**Update:** E015 later measured effective panel size directly and found this approximation is
+optimistic for accurate verifiers — effective size has an accuracy-dependent ceiling that the
+formula lacks. Use it as intuition, not as a panel-sizing rule. See
+[`E015-verification-phase-diagram.md`](E015-verification-phase-diagram.md).
+
 ## What this does NOT show
 
 - It does not prove the exact error rates of real AI or human verifier panels.
