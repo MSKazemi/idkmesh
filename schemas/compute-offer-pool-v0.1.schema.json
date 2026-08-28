@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idkmesh.org/schemas/compute-offer-pool-v0.1.schema.json",
+  "title": "IDKMesh Compute Offer Pool v0.1",
+  "description": "Provider-neutral execution offers used by the free-first compute router. Monetary cost is cost charged to the IDKMesh project, not hidden donor electricity or hardware cost.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "offers"],
+  "properties": {
+    "schema_version": {"const": "0.1"},
+    "offers": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/offer"}
+    }
+  },
+  "$defs": {
+    "offer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "provider",
+        "cost_class",
+        "project_cost_usd",
+        "available",
+        "trust",
+        "capabilities",
+        "resources",
+        "expected_wait_seconds",
+        "success_probability",
+        "independence_group"
+      ],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "provider": {"type": "string", "minLength": 1},
+        "cost_class": {
+          "enum": ["local_owned", "donated", "public_project_ci", "grant", "free_tier", "paid"]
+        },
+        "project_cost_usd": {"type": "number", "minimum": 0},
+        "available": {"type": "boolean"},
+        "trust": {"enum": ["untrusted", "identified", "trusted", "attested"]},
+        "capabilities": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1},
+          "uniqueItems": true
+        },
+        "resources": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["cpu_cores", "memory_mb", "disk_mb", "gpu"],
+          "properties": {
+            "cpu_cores": {"type": "number", "minimum": 0},
+            "memory_mb": {"type": "integer", "minimum": 0},
+            "disk_mb": {"type": "integer", "minimum": 0},
+            "gpu": {"type": "boolean"},
+            "accelerator_capabilities": {
+              "type": "array",
+              "items": {"type": "string", "minLength": 1},
+              "uniqueItems": true
+            }
+          }
+        },
+        "expected_wait_seconds": {"type": "number", "minimum": 0},
+        "success_probability": {"type": "number", "minimum": 0, "maximum": 1},
+        "independence_group": {"type": "string", "minLength": 1},
+        "notes": {"type": "string"}
+      }
+    }
+  }
+}
