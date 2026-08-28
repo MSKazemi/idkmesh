@@ -15,8 +15,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from jsonschema import Draft202012Validator, FormatChecker
-
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_PATH = ROOT / "schemas" / "ace-lineage-v0.1.schema.json"
 BLOCK_RE = re.compile(r"<!--\s*ACE_LINEAGE\s*\n(?P<payload>.*?)\n\s*ACE_LINEAGE\s*-->", re.DOTALL)
@@ -29,7 +27,15 @@ class LineageError(RuntimeError):
     pass
 
 
-def load_validator() -> Draft202012Validator:
+def load_validator():
+    try:
+        from jsonschema import Draft202012Validator, FormatChecker
+    except ModuleNotFoundError as exc:
+        raise LineageError(
+            "ACE lineage validation requires the Phase 0 dependency: "
+            "python -m pip install -r requirements-phase0.txt"
+        ) from exc
+
     schema = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
     Draft202012Validator.check_schema(schema)
     return Draft202012Validator(schema, format_checker=FormatChecker())
@@ -66,7 +72,7 @@ def _require_rfc3339(value: Any, label: str) -> None:
         raise LineageError(f"{label} is not a valid calendar timestamp") from exc
 
 
-def validate_record(record: dict[str, Any], validator: Draft202012Validator) -> None:
+def validate_record(record: dict[str, Any], validator) -> None:
     errors = sorted(validator.iter_errors(record), key=lambda error: list(error.absolute_path))
     if errors:
         lines = ["ACE lineage record failed schema validation:"]
