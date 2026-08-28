@@ -40,3 +40,12 @@ jobs:
         run: |
           python -m randomness_lab.r1_sweep --tasks 15 --trials 2 --worker-correlations 0,1 --verifier-correlations 0.5 --quality-penalties 0,0.5 --swarm-sizes 2 --seed 42 --output /tmp/r1-sweep.json
           python -m json.tool /tmp/r1-sweep.json > /dev/null
+      - name: Smoke-test R1 real-result replay command surface
+        run: python -m randomness_lab.r1_replay --help > /dev/null
+      - name: Smoke-test R2 replayable scheduling benchmark
+        run: |
+          python -m randomness_lab.r2 --workers 20 --ticks 15 --arrivals 2 --churn-fraction 0.2 --availability-lag 2 --load-lag 2 --drain-ticks 40 --trace-output /tmp/r2-trace.json --output /tmp/r2.json
+          python -m json.tool /tmp/r2-trace.json > /dev/null
+          python -m json.tool /tmp/r2.json > /dev/null
+          python -m randomness_lab.r2 --trace /tmp/r2-trace.json --policies power-two,capability-power-two,global-least-loaded --availability-lag 2 --load-lag 2 --drain-ticks 40 --output /tmp/r2-replay.json
+          python -m json.tool /tmp/r2-replay.json > /dev/null
