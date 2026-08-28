@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "capacity": {
+    "K": 8.0,
+    "tau": 2.0,
+    "ready_pr_weight": 1.0,
+    "draft_pr_weight": 0.25,
+    "growth_seed_weight": 0.5,
+    "other_issue_weight": 0.1,
+    "other_issue_cap": 20
+  },
+  "targets": {
+    "minimum_capacity": 0.6,
+    "max_ready_prs": 5,
+    "minimum_starter_tasks": 2,
+    "minimum_external_participants": 1,
+    "minimum_workflow_pin_ratio": 0.95,
+    "maximum_branch_count_soft": 40
+  },
+  "replicator": {
+    "eta": 0.8,
+    "mu": 0.08,
+    "priors": {
+      "protect": 0.142857,
+      "verify": 0.142857,
+      "consolidate": 0.142857,
+      "integrate": 0.142857,
+      "onboard": 0.142857,
+      "explore": 0.142857,
+      "maintain": 0.142858
+    }
+  },
+  "control_energy_weights": {
+    "protection_deficit": 2.0,
+    "capacity_deficit": 1.4,
+    "review_deficit": 1.2,
+    "starter_deficit": 0.8,
+    "external_witness_deficit": 1.2,
+    "workflow_pin_deficit": 0.8,
+    "branch_pressure": 0.4
+  }
+}

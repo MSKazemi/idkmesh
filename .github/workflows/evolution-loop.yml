@@ -1,77 +1,53 @@
 name: IDKMesh Evolution Loop
 
 on:
+  issues:
+    types: [opened, closed, reopened, labeled, unlabeled]
+  # Trusted metadata observation. pull_request_target runs the workflow definition
+  # from the default branch; this job never checks out or executes PR-head code.
+  pull_request_target:
+    types: [opened, closed, reopened, synchronize, ready_for_review, converted_to_draft]
+  # PR-head event is used only by the token-minimal deterministic test job below.
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review, converted_to_draft]
+  pull_request_review:
+    types: [submitted, dismissed]
   push:
     branches: [main]
-  issues:
-    types: [opened, closed]
-  pull_request:
-    types: [opened, closed]
-  pull_request_review:
-    types: [submitted]
-  issue_comment:
-    types: [created]
   workflow_dispatch:
   schedule:
-    - cron: '17 5 * * 1'
+    - cron: '17 5 * * *'
 
-permissions:
-  contents: read
-  actions: read
-
-concurrency:
-  group: evolution-observer-${{ github.ref }}
-  cancel-in-progress: false
+# No workflow-wide token authority. Each job receives only its explicit minimum.
+permissions: {}
 
 jobs:
   observe:
-    # Avoid recursive/noisy bot events. This workflow observes; it does not mutate main.
-    if: github.actor != 'github-actions[bot]'
+    # Never run the live observer from a pull_request-controlled workflow definition.
+    # On PR activity the observer arrives through pull_request_target, whose YAML and
+    # checked-out implementation both come from the trusted default branch.
+    if: github.event_name != 'pull_request' && github.actor != 'github-actions[bot]'
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: read
+    concurrency:
+      group: evolution-observer
+      cancel-in-progress: true
     runs-on: ubuntu-latest
-    timeout-minutes: 7
+    timeout-minutes: 8
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Find previous trusted-main checkpoint
-        id: previous
-        if: github.ref == 'refs/heads/main'
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          run_id="$(gh api \
-            "repos/${GITHUB_REPOSITORY}/actions/workflows/evolution-loop.yml/runs?branch=main&status=success&per_page=20" \
-            --jq '.workflow_runs[0].id // empty' || true)"
-          echo "run_id=${run_id}" >> "$GITHUB_OUTPUT"
-
-      - name: Download previous trusted-main checkpoint
-        if: github.ref == 'refs/heads/main' && steps.previous.outputs.run_id != ''
-        continue-on-error: true
-        uses: actions/download-artifact@v4
+      - name: Check out trusted default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          pattern: evolution-checkpoint-*
-          path: /tmp/previous-evolution
-          merge-multiple: true
-          repository: ${{ github.repository }}
-          github-token: ${{ github.token }}
-          run-id: ${{ steps.previous.outputs.run_id }}
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+          fetch-depth: 1
 
-      - name: Restore checkpoint or use repository seed
-        id: checkpoint
-        shell: bash
-        run: |
-          set -euo pipefail
-          source="repository-seed"
-          if [[ "${GITHUB_REF}" == "refs/heads/main" && -f /tmp/previous-evolution/state/evolution-state.json ]]; then
-            cp /tmp/previous-evolution/state/evolution-state.json state/evolution-state.json
-            if [[ -f /tmp/previous-evolution/state/evolution-events.jsonl ]]; then
-              cp /tmp/previous-evolution/state/evolution-events.jsonl state/evolution-events.jsonl
-            fi
-            source="trusted-main-artifact:${{ steps.previous.outputs.run_id }}"
-          fi
-          echo "source=${source}" >> "$GITHUB_OUTPUT"
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
 
       - name: Normalize event kind
         id: event
@@ -82,55 +58,84 @@ jobs:
           PR_MERGED: ${{ github.event.pull_request.merged }}
         run: |
           set -euo pipefail
-          source="${EVENT_NAME}"
           if [[ "$EVENT_NAME" == "schedule" ]]; then
             kind="schedule.audit"
           elif [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
             kind="workflow_dispatch.manual"
           elif [[ "$EVENT_NAME" == "push" ]]; then
             kind="push.main"
-          elif [[ "$EVENT_NAME" == "pull_request" && "$EVENT_ACTION" == "closed" && "$PR_MERGED" == "true" ]]; then
+          elif [[ "$EVENT_NAME" == "pull_request_target" && "$EVENT_ACTION" == "closed" && "$PR_MERGED" == "true" ]]; then
             kind="pull_request.merged"
+          elif [[ "$EVENT_NAME" == "pull_request_target" ]]; then
+            kind="pull_request.${EVENT_ACTION:-unknown}"
           else
             kind="${EVENT_NAME}.${EVENT_ACTION:-unknown}"
           fi
           echo "kind=$kind" >> "$GITHUB_OUTPUT"
-          echo "source=$source" >> "$GITHUB_OUTPUT"
 
-      - name: Score Bayesian observation
+      - name: Verify observer implementation
         run: |
-          python3 scripts/evolution_score.py \
-            --kind '${{ steps.event.outputs.kind }}' \
-            --actor '${{ github.actor }}' \
+          python -m py_compile scripts/evolution_snapshot.py scripts/repository_evolution_score.py tests/test_evolution_observer.py
+          python -m unittest tests.test_evolution_observer -v
+
+      - name: Collect bounded live repository evidence
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python scripts/evolution_snapshot.py \
             --repository '${{ github.repository }}' \
-            --ref '${{ github.ref }}' \
+            --event-kind '${{ steps.event.outputs.kind }}' \
             --run-id '${{ github.run_id }}' \
-            --source '${{ steps.event.outputs.source }}' \
-            --checkpoint-source '${{ steps.checkpoint.outputs.source }}'
+            --output results/evolution/repository-snapshot.json
 
-      - name: Validate generated state
+      - name: Evaluate multi-algorithm evolution policy
         run: |
-          python3 -m json.tool state/evolution-state.json >/dev/null
-          python3 -m json.tool state/evolution-math-policy.json >/dev/null
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
-          for line in Path('state/evolution-events.jsonl').read_text().splitlines():
-              json.loads(line)
-          print('evolution state, policy, and bounded event log are valid')
-          PY
+          python scripts/repository_evolution_score.py \
+            --snapshot results/evolution/repository-snapshot.json \
+            --policy config/evolution-policy-v1.json \
+            --output results/evolution/evolution-decision.json \
+            --report results/evolution/EVOLUTION_REPORT.md
 
-      - name: Publish checkpoint/evidence artifact
-        uses: actions/upload-artifact@v4
+      - name: Validate generated evidence
+        run: |
+          python -m json.tool results/evolution/repository-snapshot.json >/dev/null
+          python -m json.tool results/evolution/evolution-decision.json >/dev/null
+
+      - name: Publish evolution observation artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: evolution-checkpoint-${{ github.run_id }}
-          path: |
-            EVOLUTION_REPORT.md
-            state/evolution-state.json
-            state/evolution-events.jsonl
-            state/evolution-math-policy.json
-          if-no-files-found: error
+          name: evolution-observation-${{ github.run_id }}
+          path: results/evolution/
           retention-days: 30
+          if-no-files-found: error
 
       - name: Job summary
-        run: cat EVOLUTION_REPORT.md >> "$GITHUB_STEP_SUMMARY"
+        run: cat results/evolution/EVOLUTION_REPORT.md >> "$GITHUB_STEP_SUMMARY"
+
+  verify-pr-head:
+    # Proposed code receives only public-repository contents read authority and no
+    # explicitly exported repository token/secrets. It cannot invoke the live API.
+    if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+    concurrency:
+      group: evolution-pr-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out proposed PR code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+
+      - name: Test deterministic observer policy
+        run: |
+          python -m py_compile scripts/evolution_snapshot.py scripts/repository_evolution_score.py tests/test_evolution_observer.py
+          python -m unittest tests.test_evolution_observer -v
