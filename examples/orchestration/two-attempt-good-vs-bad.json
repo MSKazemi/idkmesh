@@ -1,0 +1,20 @@
+{
+  "schema_version": "0.1",
+  "run_id": "orchestration/two-attempt-good-vs-bad",
+  "work_unit": "examples/work-units/local-verifier-smoke.work-unit.json",
+  "verifier_policy": "verification/fixtures/verifier-smoke-policy.json",
+  "attempts": [
+    {
+      "attempt_id": "attempt-001",
+      "worker_adapter": "fixture-result",
+      "result_manifest": "examples/verifier/good/result-manifest.json",
+      "candidate_root": "examples/verifier/good/candidate-root"
+    },
+    {
+      "attempt_id": "attempt-002",
+      "worker_adapter": "fixture-result",
+      "result_manifest": "examples/verifier/bad/result-manifest.json",
+      "candidate_root": "examples/verifier/bad/candidate-root"
+    }
+  ]
+}
