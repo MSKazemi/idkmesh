@@ -1,7 +1,7 @@
 import copy
 import json
 from pathlib import Path
-import tempfile
+import re
 import unittest
 
 from tools.ci_shadow_evaluator import (
@@ -227,6 +227,27 @@ class CIShadowEvaluatorTests(unittest.TestCase):
         Draft202012Validator(observation_schema).validate(observation)
         Draft202012Validator(evaluation_schema).validate(result)
         self.assertEqual(result["observation_digest"], sha256_digest(observation))
+
+    def test_workflow_is_read_only_and_uses_trusted_code(self):
+        workflow = (ROOT / ".github/workflows/ci-shadow-outcome.yml").read_text(encoding="utf-8")
+        self.assertIn('workflows: ["PR Gate"]', workflow)
+        self.assertIn("actions: read", workflow)
+        self.assertIn("checks: read", workflow)
+        self.assertNotIn("contents: write", workflow)
+        self.assertNotIn("pull-requests: write", workflow)
+        self.assertIn("ref: ${{ github.sha }}", workflow)
+        self.assertNotIn("ref: ${{ github.event.workflow_run.head_sha }}", workflow)
+        action_refs = re.findall(r"uses:\s+[^@\s]+@([^\s]+)", workflow)
+        self.assertTrue(action_refs)
+        self.assertTrue(all(re.fullmatch(r"[a-f0-9]{40}", ref) for ref in action_refs))
+
+    def test_workflow_binds_artifact_and_api_queries_to_exact_head(self):
+        workflow = (ROOT / ".github/workflows/ci-shadow-outcome.yml").read_text(encoding="utf-8")
+        self.assertIn("github.event.workflow_run.head_sha", workflow)
+        self.assertIn("head_sha=$HEAD_SHA", workflow)
+        self.assertIn("commits/$HEAD_SHA/check-runs", workflow)
+        self.assertIn("receipt['plan_digest'] == sha256_digest(plan)", workflow)
+        self.assertIn("evaluation['promotion']['eligible'] is False", workflow)
 
 
 if __name__ == "__main__":

@@ -25,6 +25,7 @@ The first deterministic orphan-warning cohort in issue #152 identified these act
 - [Integrated Iteration Model](../ITERATION_MODEL.md) — canonical system identity, action contract, improvement rule, learning semantics, and end-to-end evolution algorithm.
 - [Evolution Artifact Minimization](architecture/EVOLUTION_ARTIFACT_MINIMIZATION.md) — retain the minimum evidence needed to reproduce and review repository-evolution decisions.
 - [CI Shadow Planner v0.1](architecture/CI_SHADOW_PLANNER.md) — exact-revision, dependency-closed CI planning in advisory shadow mode.
+- [CI Shadow Outcome Evaluator v0.1](architecture/CI_SHADOW_OUTCOME_EVALUATOR.md) — joins exact-head plans to observed checks without gaining execution or merge authority.
 
 ### Security
 

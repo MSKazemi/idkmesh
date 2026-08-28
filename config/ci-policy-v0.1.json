@@ -15,10 +15,15 @@
       "patterns": [
         ".github/workflows/**",
         "config/ci-policy-v0.1.json",
+        "config/ci-observation-policy-v0.1.json",
         "schemas/ci-plan-v0.1.schema.json",
         "schemas/ci-receipt-v0.1.schema.json",
+        "schemas/ci-observation-v0.1.schema.json",
+        "schemas/ci-evaluation-v0.1.schema.json",
         "tools/ci_shadow_planner.py",
-        "tests/test_ci_shadow_planner.py"
+        "tools/ci_shadow_evaluator.py",
+        "tests/test_ci_shadow_planner.py",
+        "tests/test_ci_shadow_evaluator.py"
       ]
     },
     {
@@ -71,9 +76,12 @@
       "patterns": [
         ".github/workflows/**",
         "config/ci-policy-v0.1.json",
+        "config/ci-observation-policy-v0.1.json",
         "schemas/ci-*.schema.json",
         "tools/ci_shadow_planner.py",
-        "tests/test_ci_shadow_planner.py"
+        "tools/ci_shadow_evaluator.py",
+        "tests/test_ci_shadow_planner.py",
+        "tests/test_ci_shadow_evaluator.py"
       ],
       "always_run": false,
       "hard_gate": true,
