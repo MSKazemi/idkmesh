@@ -1,0 +1,71 @@
+name: GitHub Reflex Observatory
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '23 */6 * * *'
+  issues:
+    types: [opened, edited, reopened, closed, labeled, unlabeled, assigned, unassigned]
+  issue_comment:
+    types: [created, edited, deleted]
+  pull_request_target:
+    types: [opened, edited, synchronize, reopened, closed, labeled, unlabeled, ready_for_review]
+  pull_request_review:
+    types: [submitted, edited, dismissed]
+  pull_request_review_comment:
+    types: [created, edited, deleted]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  issues: read
+  pull-requests: read
+  actions: read
+  security-events: read
+
+concurrency:
+  group: github-reflex-observatory
+  cancel-in-progress: true
+
+jobs:
+  observe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout canonical default branch only
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+
+      - name: Verify deterministic policy tests
+        run: python tools/test_github_observatory.py
+
+      - name: Collect read-only GitHub observation
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python tools/github_observatory.py \
+            --repo "${GITHUB_REPOSITORY}" \
+            --out-dir artifacts/github-observatory \
+            --max-items 300
+
+      - name: Publish report to workflow summary
+        run: cat artifacts/github-observatory/github-observatory.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload observation artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: github-reflex-observation-${{ github.run_id }}
+          path: artifacts/github-observatory
+          retention-days: 14
+          if-no-files-found: error
+
+# SECURITY NOTES
+# - This workflow is read-only.
+# - pull_request_target is used only as an event source. The workflow always checks
+#   out the repository default branch and never executes PR-head code.
+# - Issue/PR/comment/review bodies are untrusted data collected for analysis; the
+#   collector never evaluates or executes them.
+# - P0 produces artifacts/recommendations only. It cannot label, close, push, merge,
+#   change rulesets, or alter repository settings.

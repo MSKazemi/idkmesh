@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/MSKazemi/idkmesh/schemas/github-observation-v0.1.schema.json",
+  "title": "IDKMesh GitHub Observation v0.1",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schema_version",
+    "generated_at",
+    "repository",
+    "collaboration",
+    "automation",
+    "security",
+    "metrics",
+    "evolution_candidates",
+    "collection"
+  ],
+  "properties": {
+    "schema_version": {"const": "github-observation-v0.1"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "repository": {
+      "type": "object",
+      "required": ["full_name", "default_branch", "protection"],
+      "properties": {
+        "full_name": {"type": "string"},
+        "default_branch": {"type": "string"},
+        "protection": {
+          "type": "object",
+          "required": ["default_branch_protected", "ruleset_count", "autonomy_ceiling"],
+          "properties": {
+            "default_branch_protected": {"type": "boolean"},
+            "ruleset_count": {"type": "integer", "minimum": 0},
+            "autonomy_ceiling": {"type": "integer", "minimum": 0, "maximum": 5}
+          }
+        }
+      }
+    },
+    "collaboration": {
+      "type": "object",
+      "required": ["items", "issue_comments", "pull_request_reviews", "pull_request_review_comments"],
+      "properties": {
+        "items": {"type": "array", "items": {"type": "object"}},
+        "issue_comments": {"type": "array", "items": {"$ref": "#/$defs/untrustedTextEvent"}},
+        "pull_request_reviews": {"type": "array", "items": {"$ref": "#/$defs/untrustedTextEvent"}},
+        "pull_request_review_comments": {"type": "array", "items": {"$ref": "#/$defs/untrustedTextEvent"}}
+      }
+    },
+    "automation": {"type": "object"},
+    "security": {"type": "object"},
+    "metrics": {"type": "object"},
+    "evolution_candidates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "rule", "title", "risk", "actuator", "score"],
+        "properties": {
+          "id": {"type": "string"},
+          "rule": {"type": "string"},
+          "title": {"type": "string"},
+          "risk": {"enum": ["low", "medium", "high", "constitutional"]},
+          "actuator": {"type": "string"},
+          "score": {"type": "number", "minimum": 0}
+        }
+      }
+    },
+    "collection": {
+      "type": "object",
+      "required": ["text_is_untrusted"],
+      "properties": {
+        "text_is_untrusted": {"const": true}
+      }
+    }
+  },
+  "$defs": {
+    "untrustedTextEvent": {
+      "type": "object",
+      "required": ["kind", "parent_number", "body_sha256", "untrusted_text"],
+      "properties": {
+        "kind": {"type": "string"},
+        "parent_number": {"type": "integer", "minimum": 1},
+        "body_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "untrusted_text": {"const": true}
+      }
+    }
+  }
+}
