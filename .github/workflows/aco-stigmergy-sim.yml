@@ -40,7 +40,15 @@ jobs:
         run: |
           python sim/aco_stigmergy_sim.py --strategy all --seed 7 --workers 12 --epochs 8 > /tmp/aco.json
           python -m json.tool /tmp/aco.json > /dev/null
-      - name: Smoke-test repeated-seed sweep
+      - name: Run reference 40-seed sweep
         run: |
-          python sim/run_aco_sweep.py --seed-start 1 --seeds 3 --workers 12 --epochs 8 > /tmp/aco-sweep.json
+          python sim/run_aco_sweep.py --seed-start 1 --seeds 40 --workers 24 --epochs 50 > /tmp/aco-sweep.json
           python -m json.tool /tmp/aco-sweep.json > /dev/null
+          python - <<'PY'
+          import json
+          data = json.load(open('/tmp/aco-sweep.json', encoding='utf-8'))
+          print('E014_REFERENCE_SUMMARY')
+          for strategy in ('random', 'greedy', 'capability', 'aco'):
+              row = data['summary'][strategy]
+              print(strategy, json.dumps(row, sort_keys=True))
+          PY
