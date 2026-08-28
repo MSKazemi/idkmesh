@@ -7,12 +7,17 @@ on:
       - "sim/run_aco_sweep.py"
       - "sim/run_aco_parameter_sweep.py"
       - "sim/homeostatic_stigmergy_sim.py"
+      - "sim/replay_task_routing.py"
       - "tests/test_aco_stigmergy_sim.py"
       - "tests/test_aco_parameter_sweep.py"
       - "tests/test_homeostatic_stigmergy_sim.py"
+      - "tests/test_replay_task_routing.py"
+      - "schemas/routing-replay-v0.schema.json"
+      - "examples/routing-replay.example.json"
       - "experiments/E014-aco-stigmergic-task-routing.md"
       - "experiments/results/E014-*"
       - "docs/algorithms/ACO_STIGMERGIC_TASK_ROUTING.md"
+      - "docs/algorithms/HOMEOSTATIC_STIGMERGY_ROUTING.md"
       - ".github/workflows/aco-stigmergy-sim.yml"
   pull_request:
     paths:
@@ -20,12 +25,17 @@ on:
       - "sim/run_aco_sweep.py"
       - "sim/run_aco_parameter_sweep.py"
       - "sim/homeostatic_stigmergy_sim.py"
+      - "sim/replay_task_routing.py"
       - "tests/test_aco_stigmergy_sim.py"
       - "tests/test_aco_parameter_sweep.py"
       - "tests/test_homeostatic_stigmergy_sim.py"
+      - "tests/test_replay_task_routing.py"
+      - "schemas/routing-replay-v0.schema.json"
+      - "examples/routing-replay.example.json"
       - "experiments/E014-aco-stigmergic-task-routing.md"
       - "experiments/results/E014-*"
       - "docs/algorithms/ACO_STIGMERGIC_TASK_ROUTING.md"
+      - "docs/algorithms/HOMEOSTATIC_STIGMERGY_ROUTING.md"
       - ".github/workflows/aco-stigmergy-sim.yml"
 
 permissions:
@@ -42,10 +52,21 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Install test dependency
-        run: python -m pip install --disable-pip-version-check pytest
-      - name: Run ACO routing tests
-        run: python -m pytest -q tests/test_aco_stigmergy_sim.py tests/test_aco_parameter_sweep.py tests/test_homeostatic_stigmergy_sim.py
+      - name: Install test dependencies
+        run: python -m pip install --disable-pip-version-check pytest jsonschema
+      - name: Run routing research tests
+        run: python -m pytest -q tests/test_aco_stigmergy_sim.py tests/test_aco_parameter_sweep.py tests/test_homeostatic_stigmergy_sim.py tests/test_replay_task_routing.py
+      - name: Validate replay schema/example
+        run: |
+          python -m json.tool schemas/routing-replay-v0.schema.json > /dev/null
+          python -m json.tool examples/routing-replay.example.json > /dev/null
+          python - <<'PY'
+          import json
+          from jsonschema import Draft202012Validator
+          schema = json.load(open('schemas/routing-replay-v0.schema.json', encoding='utf-8'))
+          example = json.load(open('examples/routing-replay.example.json', encoding='utf-8'))
+          Draft202012Validator(schema).validate(example)
+          PY
       - name: Smoke-test single simulation
         run: |
           python sim/aco_stigmergy_sim.py --strategy all --seed 7 --workers 12 --epochs 8 > /tmp/aco.json
@@ -59,8 +80,7 @@ jobs:
           data = json.load(open('/tmp/aco-sweep.json', encoding='utf-8'))
           print('E014_REFERENCE_SUMMARY')
           for strategy in ('random', 'greedy', 'capability', 'aco'):
-              row = data['summary'][strategy]
-              print(strategy, json.dumps(row, sort_keys=True))
+              print(strategy, json.dumps(data['summary'][strategy], sort_keys=True))
           PY
       - name: Run ACO parameter/Pareto sweep
         run: |
@@ -85,4 +105,15 @@ jobs:
           print('E014_HOMEOSTATIC_HYBRID')
           for strategy, row in data['summary'].items():
               print(strategy, json.dumps(row, sort_keys=True))
+          PY
+      - name: Smoke-test read-only replay
+        run: |
+          python sim/replay_task_routing.py examples/routing-replay.example.json --output /tmp/routing-replay.json
+          python -m json.tool /tmp/routing-replay.json > /dev/null
+          python - <<'PY'
+          import json
+          data = json.load(open('/tmp/routing-replay.json', encoding='utf-8'))
+          print('E014_REPLAY_EXAMPLE')
+          print('decisions', data['decisions'])
+          print('heldout', json.dumps(data['mean_heldout_verified_utility_of_top_recommendation'], sort_keys=True))
           PY
