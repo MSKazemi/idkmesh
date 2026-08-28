@@ -19,13 +19,13 @@ jobs:
     timeout-minutes: 25
     steps:
       - name: Check out evaluator-owned acceptance harness
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           path: harness
           persist-credentials: false
 
       - name: Check out corrected frozen PR 91 node candidate
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: cbd40c43497ae4feb3a4a5e410dc78766b6cb19c
           path: candidate
@@ -38,7 +38,7 @@ jobs:
           test "$(git -C candidate rev-parse HEAD)" = "cbd40c43497ae4feb3a4a5e410dc78766b6cb19c"
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: "3.12"
 
@@ -81,6 +81,7 @@ jobs:
 # Security boundary:
 # - evaluator workflow is separate from the frozen worker candidate tree;
 # - candidate is checked out only by exact SHA;
+# - checkout/setup actions are pinned to reviewed immutable commit SHAs;
 # - checkout credentials are not persisted;
 # - workflow has contents:read and no repository secrets are passed to candidate code;
 # - candidate subprocesses receive a sanitized environment from the harness/probe;
