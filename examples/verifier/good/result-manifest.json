@@ -1,0 +1,63 @@
+{
+  "schema_version": "0.1",
+  "id": "verification/local-smoke-result/good",
+  "work_unit_id": "verification/local-smoke",
+  "work_unit_version": 1,
+  "attempt": 1,
+  "worker": {
+    "id": "fixture-good-worker",
+    "type": "system",
+    "adapter": "fixture-candidate",
+    "adapter_version": "0.1"
+  },
+  "status": "succeeded",
+  "started_at": "2026-08-28T14:40:00Z",
+  "finished_at": "2026-08-28T14:40:01Z",
+  "produced_artifacts": [
+    {
+      "id": "candidate-result",
+      "type": "test_result",
+      "locator": "candidate.json",
+      "digest": "sha256:6bebd00531fca5d346ceea7ef5c1a7f645fd16100d6f0cce55b0e950d95235db",
+      "media_type": "application/json",
+      "description": "Known-good candidate for the executable verifier smoke path."
+    }
+  ],
+  "logs": [],
+  "metrics": {
+    "candidate_bytes": 67
+  },
+  "resources": {
+    "wall_seconds": 1.0,
+    "compute_units": 0.0,
+    "human_minutes": 0.0,
+    "tokens": 0
+  },
+  "self_report": {
+    "summary": "Worker reports that it produced the candidate artifact.",
+    "claims": ["The candidate is ready for independent verification."],
+    "confidence": {
+      "value": 1.0,
+      "meaning": "uncalibrated"
+    }
+  },
+  "provenance": {
+    "work_unit_digest": "sha256:2fe402867536782e405643eb6fbff50173befc05ed501b3f9e316bc33456d5ca",
+    "source_revision": "fixture-verifier-smoke-v1",
+    "worker_config_digest": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
+    "environment": {
+      "platform": "fixture",
+      "tool_versions": {
+        "fixture-candidate": "0.1"
+      }
+    }
+  },
+  "verification_request": {
+    "expected_validator_ids": ["artifact-digest", "candidate-scope", "independent-acceptance"],
+    "evidence_artifact_ids": ["candidate-result"],
+    "notes": "The worker does not control verifier policy and does not claim acceptance."
+  },
+  "extensions": {
+    "org.idkmesh.verifier.fixture": "good"
+  }
+}
