@@ -74,24 +74,24 @@ jobs:
             const event = context.eventName;
             const action = context.payload.action || 'event';
             let type = `${event}:${action}`;
-            let q = 0.05, d = 0.05, r = 0.05, loadDelta = 0;
+            let q = 0.05, d = 0.05, r = 0.05;
 
             if (event === 'push') {
-              type = 'push:main'; q = 0.25; d = 0.10; r = 0; loadDelta = 0.05;
+              type = 'push:main'; q = 0.25; d = 0.10; r = 0;
             } else if (event === 'issues' && action === 'opened') {
-              q = 0.10; d = 0.60; r = 0.20; loadDelta = 0.30;
+              q = 0.10; d = 0.60; r = 0.20;
             } else if (event === 'issues' && action === 'closed') {
-              q = 0.80; d = 0.10; r = 0.20; loadDelta = -0.20;
+              q = 0.80; d = 0.10; r = 0.20;
             } else if (event === 'pull_request_target' && action === 'opened') {
-              type = 'pull_request:opened'; q = 0.20; d = 0.70; r = 0.40; loadDelta = 1.00;
+              type = 'pull_request:opened'; q = 0.20; d = 0.70; r = 0.40;
             } else if (event === 'pull_request_target' && action === 'closed' && context.payload.pull_request?.merged) {
-              type = 'pull_request:merged'; q = 2.50; d = 0.40; r = 1.00; loadDelta = -0.70;
+              type = 'pull_request:merged'; q = 2.50; d = 0.40; r = 1.00;
             } else if (event === 'pull_request_target' && action === 'closed') {
-              type = 'pull_request:closed'; q = 0.10; d = 0.05; r = 0.10; loadDelta = -0.50;
+              type = 'pull_request:closed'; q = 0.10; d = 0.05; r = 0.10;
             } else if (event === 'watch') {
-              type = 'watch:star'; q = 0; d = 0.35; r = 0; loadDelta = 0;
+              type = 'watch:star'; q = 0; d = 0.35; r = 0;
             } else if (event === 'fork') {
-              type = 'fork:created'; q = 0.10; d = 0.90; r = 0.10; loadDelta = 0;
+              type = 'fork:created'; q = 0.10; d = 0.90; r = 0.10;
             }
 
             // Marker text is data, not authorization. Only repository-trusted issue
@@ -113,6 +113,9 @@ jobs:
             }
 
             const issues = await github.paginate(github.rest.issues.listForRepo, {
+              owner, repo, state: 'open', per_page: 100
+            });
+            const openPullRequests = await github.paginate(github.rest.pulls.list, {
               owner, repo, state: 'open', per_page: 100
             });
 
@@ -159,6 +162,7 @@ jobs:
               updated_at: now.toISOString(),
               credit: 0,
               review_load: 0,
+              review_load_components: null,
               counts: {},
               total_events: 0
             };
@@ -235,7 +239,42 @@ jobs:
 
             const count = state.counts[type] || 0;
             const novelty = 1 / Math.sqrt(1 + count);
-            state.review_load = Math.max(0, state.review_load + loadDelta);
+
+            // Carrying capacity represents current recoverable review pressure, not a
+            // historical activity accumulator. Completed work can therefore release
+            // pressure instead of leaving permanent residual load in controller state.
+            const labelsOf = item => new Set((item.labels || []).map(label => label.name));
+            const readyPullRequests = openPullRequests.filter(pr => !pr.draft);
+            const draftPullRequests = openPullRequests.filter(pr => Boolean(pr.draft));
+            const openGrowthSeeds = issues.filter(item =>
+              !item.pull_request && labelsOf(item).has('growth-seed')
+            );
+            const otherOpenIssues = issues.filter(item => {
+              if (item.pull_request || item.number === ledger?.number) return false;
+              const labels = labelsOf(item);
+              if (labels.has('growth-seed')) return false;
+              if (labels.has('ace:ledger') || labels.has('ace:cohort-observer')) return false;
+              return true;
+            });
+
+            // live-open-work-v1 is an explicit bootstrap heuristic, not an empirical law.
+            // Review-ready PRs dominate pressure; drafts reserve discounted future review
+            // capacity; Growth Seeds carry coordination cost; ordinary issues are capped.
+            const liveReviewLoad =
+              1.00 * readyPullRequests.length +
+              0.25 * draftPullRequests.length +
+              0.50 * openGrowthSeeds.length +
+              0.10 * Math.min(otherOpenIssues.length, 20);
+
+            state.review_load = liveReviewLoad;
+            state.review_load_components = {
+              model: 'live-open-work-v1',
+              ready_pull_requests: readyPullRequests.length,
+              draft_pull_requests: draftPullRequests.length,
+              open_growth_seeds: openGrowthSeeds.length,
+              other_open_issues: otherOpenIssues.length,
+              other_open_issues_capped_at: 20
+            };
 
             const K = 8;
             const tau = 2;
@@ -273,6 +312,8 @@ jobs:
               protectionLine,
               `**Reproductive credit:** ${state.credit.toFixed(3)}  `,
               `**Review-load proxy:** ${state.review_load.toFixed(2)}  `,
+              `**Review-load model:** \`${state.review_load_components.model}\`  `,
+              `**Open-work components:** ${readyPullRequests.length} ready PRs + ${draftPullRequests.length} draft PRs + ${openGrowthSeeds.length} Growth Seeds + ${otherOpenIssues.length} other issues  `,
               `**Capacity multiplier:** ${capacity.toFixed(3)}  `,
               `**Last event:** \`${type}\`  `,
               `**Last credit increment:** ${deltaCredit.toFixed(3)}  `,
@@ -288,7 +329,7 @@ jobs:
               '| --- | ---: |',
               ...(sortedRows.length ? sortedRows : ['| none yet | 0 |']),
               '',
-              '> These weights and thresholds are hypotheses. They should be changed only from measured community evidence. Stars, forks, commits, comments, issues, and PR counts are signals—not success objectives.',
+              '> Event counts are historical observations, not current review load. `live-open-work-v1`, its weights, `K=8`, and `tau=2` are explicit bootstrap hypotheses that must be calibrated from real review latency/attention evidence.',
               '',
               '<!-- ACE_STATE',
               JSON.stringify(state, null, 2),
