@@ -1,19 +1,22 @@
 {
-  "schema_version": "0.1",
+  "schema_version": "0.2",
   "id": "node/canonical-smoke",
-  "version": 1,
+  "version": 2,
   "kind": "testing",
   "objective": "Produce a harmless tracked-file candidate patch inside the bounded local node sandbox.",
   "context": {
-    "summary": "Integration fixture for canonical Work Unit -> node -> ResultManifest.",
-    "references": ["schemas/work-unit-v0.1.schema.json", "schemas/result-manifest-v0.1.schema.json"]
+    "summary": "Integration fixture for canonical Work Unit v0.2 -> node binding -> worker ResultManifest v0.1.",
+    "references": [
+      "schemas/work-unit-v0.2.schema.json",
+      "schemas/node-execution-binding-v0.1.schema.json",
+      "schemas/result-manifest-v0.1.schema.json"
+    ]
   },
   "inputs": [
     {
       "id": "source-repository",
       "type": "git_ref",
-      "locator": "https://github.com/MSKazemi/idkmesh",
-      "digest": "git-sha1:bb18ce0ea633f69fa36e2b2f59f90ad66b286064"
+      "locator": "https://github.com/MSKazemi/idkmesh"
     }
   ],
   "outputs": [
@@ -25,17 +28,41 @@
     }
   ],
   "dependencies": [],
+  "requirements": {
+    "capabilities": ["git", "container-execution", "python"],
+    "resources": {
+      "cpu_cores_min": 0.5,
+      "memory_mb_min": 128,
+      "disk_mb_min": 1,
+      "gpu": "none",
+      "accelerator_capabilities": []
+    }
+  },
   "constraints": {
     "allowed_paths": ["README.md"],
     "forbidden_paths": [".github/**", "SECURITY.md"],
     "policies": ["candidate-only", "independent-verification-required"]
   },
   "uncertainty": [],
+  "security": {
+    "risk_class": "low",
+    "data_classification": "public",
+    "minimum_worker_trust": "untrusted",
+    "sandbox_required": true,
+    "notes": "Controlled Docker smoke task only; not an arbitrary hostile Internet workload."
+  },
   "permissions": {
     "network": "none",
+    "network_allowlist": [],
     "filesystem_write": ["README.md"],
     "secrets": [],
     "process_execution": true
+  },
+  "verification_policy": {
+    "strategy": "all_required",
+    "independent_from_worker": true,
+    "minimum_independent_verifiers": 1,
+    "acceptance_rule": "All required validators must pass; successful worker execution remains an unverified candidate."
   },
   "validators": [
     {
@@ -57,12 +84,15 @@
   ],
   "budget": {
     "wall_seconds": 60,
-    "compute_units": 1
+    "compute_units": 1,
+    "human_minutes": 2,
+    "tokens": 0
   },
   "provenance": {
     "created_by": "idkmesh-project",
     "creator_type": "system",
-    "source": "canonical node integration work"
+    "source": "canonical node integration work",
+    "source_revision": "b1397a9be91da6570e8ae370de4fa9f4bc44df5c"
   },
   "failure_semantics": {
     "retryable": false,
@@ -73,6 +103,8 @@
     "org.idkmesh.node.execution": {
       "schema_version": "0.1",
       "source_input_id": "source-repository",
+      "source_revision": "b1397a9be91da6570e8ae370de4fa9f4bc44df5c",
+      "capabilities": ["git", "container-execution", "python"],
       "container": {
         "image": "python:3.12-alpine",
         "command": [
