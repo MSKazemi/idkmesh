@@ -25,7 +25,7 @@ jobs:
           fetch-depth: 1
           persist-credentials: false
 
-      - name: Retire exact-head verified branches
+      - name: Retire remaining canonical exact-head candidates
         env:
           GITHUB_TOKEN: ${{ github.token }}
         shell: bash
@@ -38,7 +38,49 @@ jobs:
           import urllib.request
           from pathlib import Path
 
-          candidates = json.loads(r'''[{"branch":"community-first-foundation","expected_sha":"46ce176d244eb10740f66ae5506c6b8372ea9335","state":"integrated-via-pr"},{"branch":"evolution-2026-08-28","expected_sha":"fd5bd9087d48552074f7d35dd237e3f05e4951d9","state":"integrated-via-pr"},{"branch":"fix/issue-3-workunit-contract","expected_sha":"8ade58277947c495522037e37327d8df8c348308","state":"integrated-via-pr"},{"branch":"feature/github-reflex-observatory","expected_sha":"d63e36810b355f0d1e204c7979e09336528185a0","state":"orphan-no-unique-commits"},{"branch":"feat/randomness-lab-foundation","expected_sha":"ff614d10a41156ea493392bc073ccfdf09c656fa","state":"integrated-via-pr"},{"branch":"feat/verification-result-backpressure","expected_sha":"abd6d7c2414ead6ca2fd16d0c5705442a881f745","state":"integrated-via-pr"},{"branch":"feat/r1-swarm-diversity","expected_sha":"db71e87d73d4821da903a74b6a96839e8af24f14","state":"integrated-via-pr"},{"branch":"feat/r1-help-hurt-sweep","expected_sha":"22047159a1d88c3e2dcd45ee8f374a3e7bf8618c","state":"integrated-via-pr"},{"branch":"fix/verification-provenance-binding","expected_sha":"a5be1b0904c44e4dda53606f08c3da164350893e","state":"integrated-via-pr"},{"branch":"research/correlated-verifiers","expected_sha":"4c62d1980bca5dbfabf50535985d869198a766d8","state":"integrated-via-pr"},{"branch":"feat/independence-aware-verification","expected_sha":"05fa3f682f55d4f9b79ef4e299e491357dcb1a4a","state":"integrated-via-pr"},{"branch":"research/independence-aware-aggregation","expected_sha":"9b87345bd13c22671f06d64d8e0db7c4f7dc32ba","state":"integrated-via-pr"},{"branch":"fix/replayable-e2e-evidence-current-main","expected_sha":"838add59ab9d92bfbfdd8e088ce61cfded03305e","state":"integrated-via-pr"},{"branch":"integration/active-compute-current-main-20260828","expected_sha":"8399bf944a7a81b8a692d1cc77bbda5a072701cf","state":"integrated-via-pr"},{"branch":"feature/free-resource-mesh","expected_sha":"84223d2c02226b8aaa57eaaac74bce08b9d31ce6","state":"integrated-via-pr"},{"branch":"fix/resource-registry-runtime-boundary","expected_sha":"6281c94379ba5efe428f74064b28ecbef82bdddf","state":"integrated-via-pr"},{"branch":"integration/resource-compute-admission-v0","expected_sha":"6d2c057ef1ac4a001be3aceed5a5e92221d2de45","state":"integrated-via-pr"},{"branch":"feature/resource-admission-v0","expected_sha":"637db0871927bab4b6eadd9f8023aaa0267b901c","state":"integrated-via-pr"},{"branch":"feat/interop-work-contract-v0.2","expected_sha":"1c7929b108be047ec600f95e7b5a87e55aac61c8","state":"integrated-via-pr"},{"branch":"interop/work-contract-v0.2","expected_sha":"3b32a576f78c837253f12391967d436b9aea23ea","state":"integrated-via-pr"},{"branch":"integration/agent-interop-convergence-20260828","expected_sha":"71ae1977751856ebb793fce0c675106aa603a4ff","state":"integrated-via-pr"},{"branch":"feature/interop-runtime-support","expected_sha":"7013aca7624023e751903567701870f9e3d3e59e","state":"integrated-via-pr"},{"branch":"interop-runtime-integration","expected_sha":"b1721790636a02cb271ee1dfb2e16f1fb34df139","state":"integrated-via-pr"},{"branch":"feat/a2a-v1-parameter-binding","expected_sha":"126b49450f788f2d9eb36947cd36814f1a604afc","state":"integrated-via-pr"},{"branch":"fix/a2a-v1-service-parameters","expected_sha":"376cb8dcf8099affea6d8e95c5e52c1cc79bfeee","state":"integrated-via-pr"},{"branch":"feature/interop-runtime-roundtrip","expected_sha":"b37b65abf7fa1dd452c21ed79dd998d111cdbacb","state":"integrated-via-pr"},{"branch":"integration/orchestrator-evaluator-plan-v0.2","expected_sha":"1bca67db23f48549a3fec2dd6cbe3e7b1a5ab1f3","state":"integrated-via-pr"},{"branch":"feat/evaluator-plan-v0.2","expected_sha":"42b550122c39947b45296d6dd5e17cadc3c3a801","state":"integrated-via-pr"},{"branch":"feature/local-verifier-evaluator-plan-v0.2","expected_sha":"530c4a13b56d505303598d08945781cac2361d14","state":"integrated-via-pr"},{"branch":"feature/evaluator-plan-path-boundary","expected_sha":"5a511a5f86ab4ecb502114e53dc32d21a7d188df","state":"integrated-via-pr"},{"branch":"feature/patch-evaluator-evidence-completeness","expected_sha":"a548763031463558ff059beb8033b3120602b2b5","state":"integrated-via-pr"},{"branch":"security/patch-evaluator-evidence-completeness","expected_sha":"c01f768f5e6efaaac9688a8c2243ce27e1b20d4d","state":"integrated-via-pr"},{"branch":"feature/evaluator-plan-v0.3","expected_sha":"453d951f006962636158904224e1b0c3aa3a949f","state":"integrated-via-pr"},{"branch":"verification/evaluator-plan-v03-substring-semantics","expected_sha":"cf867a04ef424c13a479499c280589fea2c064e1","state":"integrated-via-pr"},{"branch":"fix/evaluator-semantic-matching-v0.3","expected_sha":"2e49ff93eacda9c8128ece2cbf13f6986ce624ef","state":"integrated-via-pr"},{"branch":"fix/phase-b2-v03-calibration","expected_sha":"0f645a24a8f2c7ee9a582eae2a6df67bc4c44373","state":"integrated-via-pr"},{"branch":"calibration/task001-v04-canonical","expected_sha":"2fc8b6391f06e12c769dd2b9db6a375f35f43c0f","state":"integrated-via-pr"},{"branch":"fix/task001-canonical-v04-calibration","expected_sha":"85be313f0758b4178cd5aa5d0e439a287f22ed89","state":"integrated-via-pr"},{"branch":"fix/evaluator-transformation-calibration-v0.4","expected_sha":"ab2e0899976625240f3d0f5ae8c865560ab15dfc","state":"integrated-via-pr"},{"branch":"integration/benchmark-evaluator-v0.4-routing","expected_sha":"76ba11f93f9a980f2445fdcdddb9546acc1c96d7","state":"integrated-via-pr"},{"branch":"fix/benchmark-cohort-evaluator-version-routing","expected_sha":"9f7a4d45ef4a5ae1dae8aa0499d4aaeaa9003c08","state":"integrated-via-pr"},{"branch":"benchmark/phase-b2-first-five","expected_sha":"b6322a509ab8ee7727b8c0761afd41cde5a30497","state":"integrated-via-pr"},{"branch":"benchmark/burn-phase-b2-first-five-v1","expected_sha":"adede3b91c0776a4d4cd1e8b9bbaa694bb7e2cfe","state":"integrated-via-pr"},{"branch":"feature/benchmark-cohort-contract","expected_sha":"8b6932449df5f789baffcc0f92fb7244234c7c2b","state":"integrated-via-pr"},{"branch":"benchmark/phase-b2-task001-evidence","expected_sha":"7e177fe21f12c78a00e340c59b89f1c3330d3062","state":"integrated-via-pr"},{"branch":"benchmark/task-001-path-boundary-evidence","expected_sha":"af77440ba31aa9b53035818db02b09b9286401c7","state":"integrated-via-pr"},{"branch":"fix/phase-b2-task-001-cohort-path-boundary","expected_sha":"fb4faa87ccbbd10327be7f1f8c85173a796df1c4","state":"integrated-via-pr"},{"branch":"benchmark/phase-b2-successor-five","expected_sha":"1fcc6647f99b50041b3b6c044e643bd6497faeff","state":"orphan-no-unique-commits"},{"branch":"benchmark/phase-b2-successor-v2-scaffold","expected_sha":"5bb42560c58fb90a534635ff9dee8e11ccc983c0","state":"orphan-no-unique-commits"},{"branch":"benchmark/phase-b2-successor-v2-scaffold-current","expected_sha":"391b2905ff55885def2a4930281d148682d012a6","state":"integrated-via-pr"},{"branch":"benchmark/phase-b2-successor-v2-scaffold-fix","expected_sha":"1986b8cace7ab3ccfa4f8df1902f9805bc962a42","state":"integrated-via-pr"},{"branch":"benchmark/phase-b2-v2-definition-integrity","expected_sha":"2af7968cf885a104ae2243b87cae4ed532055f9e","state":"integrated-via-pr"},{"branch":"benchmark/phase-b2-v3-calibrated-freeze","expected_sha":"5472e621631055547ce6019b1ac9c4e83c71c226","state":"orphan-no-unique-commits"},{"branch":"calibration/phase-b2-v2-task002-nonfinite","expected_sha":"a74a57a88aefe0797263205474d37dcbae3a7d0f","state":"integrated-via-pr"},{"branch":"calibration/phase-b2-v2-task002-record","expected_sha":"1634c0d42d69992de8c76faae8cac241fc40be81","state":"integrated-via-pr"},{"branch":"calibration/phase-b2-v2-task003-unobserved-head","expected_sha":"fdbb829180738d6000873c3321d6b02ea8456e2e","state":"integrated-via-pr"},{"branch":"calibration/phase-b2-v2-task003-record","expected_sha":"d6f1a83d47748d9a0aecbb89132c2523553d5ae0","state":"integrated-via-pr"},{"branch":"calibration/phase-b2-v2-task005-output-boundary","expected_sha":"b71d84959abec5d446d5c41e2ccd4fc0164fd536","state":"integrated-via-pr"},{"branch":"feature/phase-b2-v2-task005-calibration-record","expected_sha":"ce1f90a89b8b87609c36652acdab9380f5d5a827","state":"integrated-via-pr"},{"branch":"feature/idkgraph-p1-independent-review","expected_sha":"466c5baedb2cc124ef0c7aa21999cda483355ea0","state":"integrated-via-pr"},{"branch":"feature/idkgraph-p1-review-session-validator","expected_sha":"b6646b541fa742da5f8a668f85454a2901586ab4","state":"integrated-via-pr"},{"branch":"idkgraph/p1-adr-linkage-triage","expected_sha":"c9b5b9589ac20c00f5dba6f212c47e4b0ebe8af1","state":"integrated-via-pr"},{"branch":"idkgraph/p1-orphan-sample","expected_sha":"7696665a1b7ec0f73c34ab6ad3f0af56307136d4","state":"integrated-via-pr"},{"branch":"idkgraph/p1-warning-sample","expected_sha":"9a24f28f29816da082240df3b7d597a7c7d051ed","state":"integrated-via-pr"},{"branch":"idkgraph/p1-orphan-cohort-1","expected_sha":"da6df72e320e778c053c1000b94e7df97dfd8033","state":"integrated-via-pr"},{"branch":"idkgraph/p0-residual-health-checks","expected_sha":"c6c4c03ae78f03f74764ccf570570675d2e01068","state":"integrated-via-pr"},{"branch":"idkgraph/t1-stable-markdown-identity","expected_sha":"99bc3d14a3d2fca9902f9a6c352e9655fda84d7e","state":"integrated-via-pr"},{"branch":"idkgraph/t2-link-integrity","expected_sha":"36e24ffa541f90326ee1d7c5ffc8726c5eb1d355","state":"integrated-via-pr"},{"branch":"idkgraph/t2-internal-link-diagnostics","expected_sha":"787f08009c6e18eade93f0de990ab794f8c0e168","state":"integrated-via-pr"},{"branch":"idkgraph/t3-deterministic-type-mapping","expected_sha":"9ad8c2813d5329a93719ceb26576c785c277a7e7","state":"integrated-via-pr"},{"branch":"idkgraph/t3-integrity-hardening","expected_sha":"d3f581ef7af8746109e7ba5164de6b88137523bc","state":"integrated-via-pr"},{"branch":"idkgraph/t4-workunit-cycle-check","expected_sha":"32477d8bf9a626007f740f5e186e5040b76294b4","state":"integrated-via-pr"},{"branch":"idkgraph/t5-observatory-integration","expected_sha":"e22e1178c20517358aee6f2b5d7d45ee9fb1b489","state":"integrated-via-pr"},{"branch":"hardening/evolution-artifact-minimization-post148","expected_sha":"5a9f6e2e8249574267982cbeae4e974ca6783370","state":"integrated-via-pr"},{"branch":"maintenance/branch-convergence-audit-v0","expected_sha":"c09d46c6709e9b373feb9b935965124bafbeef7a","state":"integrated-via-pr"},{"branch":"maintenance/branch-merge-plan-v0","expected_sha":"f344042430f63e2741f287826b21d90d95ad3628","state":"integrated-via-pr"},{"branch":"maintenance/branch-plan-pr-lifecycle-trigger","expected_sha":"7700c6d4d1bf1a467bb5fb475c2f16854439f739","state":"integrated-via-pr"},{"branch":"maintenance/branch-merge-plan-current-main","expected_sha":"a6c34a72e895f00540108764e3d33d76389dd453","state":"integrated-via-pr"},{"branch":"maintenance/branch-plan-post-merge-trigger","expected_sha":"950c53cae54c1a6bb9035a4e86c78038bb19f0ea","state":"integrated-via-pr"},{"branch":"planning/branch-steward-agent","expected_sha":"fa16847f9acec344013092d2e45efdeb3fc9a6e6","state":"integrated-via-pr"},{"branch":"planning/execution-target-graph-v0","expected_sha":"b40bf9ba54c80a7978b37c7e44bdb10ded2797d1","state":"integrated-via-pr"},{"branch":"planning/execution-target-graph-v1","expected_sha":"625b7379d88a58b8b9ac36fe31d4b2ca2f35bef2","state":"integrated-via-pr"},{"branch":"planning/current-execution-graph-v2","expected_sha":"8df21e4688da1dbee72e64513097c243ac5286ee","state":"integrated-via-pr"},{"branch":"planning/refresh-current-priorities-post-evidence","expected_sha":"c093a7d535ce2df0aeefd1884269b8119408d13c","state":"integrated-via-pr"},{"branch":"feature/project-domain-contracts-v0","expected_sha":"d3c5cbb73d6a1b3cbeec654e5d2f17eb55dcf65a","state":"integrated-via-pr"},{"branch":"architecture/algorithm-collaboration-fabric-v0","expected_sha":"124582180ac2411572d4f1e8fec297f82aa7901b","state":"integrated-via-pr"},{"branch":"codex/adversarial-evidence-envelope","expected_sha":"c94b1f4a7574c1a6811a64de18fbe2127a4aa29e","state":"integrated-via-pr"},{"branch":"codex/sequential-evidence-kernel","expected_sha":"18e7bbe79ca8e857b4adcb20ba4fe4fc1e593b3b","state":"integrated-via-pr"},{"branch":"codex/sequential-evidence-reproducibility","expected_sha":"64c08f9f8b4aa5fa473627445e6b46564abb0544","state":"integrated-via-pr"},{"branch":"codex/anytime-drift-guard","expected_sha":"cccb6e7ba7f06b7f43b3d41784787b2b8115957a","state":"integrated-via-pr"},{"branch":"codex/evidence-aggregation-fabric","expected_sha":"2ebf27acd7b73cb8cf92fb6a533757c220d16dfc","state":"integrated-via-pr"},{"branch":"fix/evidence-fabric-strict-booleans","expected_sha":"ca1cdde63f6b7e57f84f49035821874e9d35625a","state":"integrated-via-pr"},{"branch":"codex/trust-domain-fault-budget","expected_sha":"c635d90d66a99092cc17b50edf0e766747b02ce7","state":"integrated-via-pr"},{"branch":"growth/fast-discovery-20260828","expected_sha":"bbf49f72d815959a00409b07d15dd699c5aedb78","state":"integrated-via-pr"},{"branch":"growth/pages-front-door-v0","expected_sha":"38af1a0c69c5ee751337a853c55eb5c18b9d66d9","state":"integrated-via-pr"},{"branch":"growth/readme-live-front-door","expected_sha":"8d5f404d2272e80c527f29a260bf73458b6fadc7","state":"integrated-via-pr"},{"branch":"growth-seed/28-idkgraph-microtasks","expected_sha":"0bcfb045be3ffd49864d463e63b0564b5127d5ea","state":"integrated-via-pr"},{"branch":"biology-aco-stigmergy-v0","expected_sha":"6112b2dc9500b42a5233f9e7b366699de9a1a75e","state":"integrated-via-pr"},{"branch":"clarify/repository-improvement-loop","expected_sha":"1de4a0423fefd67d59b02d8b7dab4a823824ed52","state":"integrated-via-pr"},{"branch":"project-memory-and-criticality","expected_sha":"22909ff08768a78e0b95eab074426c25d69232f7","state":"integrated-via-pr"},{"branch":"repo-homeostasis-v0","expected_sha":"6fa5bb091a2bf1f2c9a3d9b8d7aedc910c10511b","state":"integrated-via-pr"},{"branch":"security/ace-workflow-threat-model","expected_sha":"5331f2a5dceb82f8056a513fdddbe7e4418dabde","state":"integrated-via-pr"} ]''')
+          candidates = [
+            {"branch":"acceptance/real-mixed-outcome-current-main","expected_sha":"70c20a6d195925195d63d676df89631c120bb83e"},
+            {"branch":"acceptance/real-two-attempt-520ad2c","expected_sha":"2fb282dd37639ed5e290bac91f44e9f2486130dd"},
+            {"branch":"ace-activation-gate-v0","expected_sha":"5792aced517ed6c9103dca9462c63c6cb21ec34f"},
+            {"branch":"ace-activity-metabolism","expected_sha":"71b32fa604dd1cbc300af20afed62da98f75af69"},
+            {"branch":"ace-cohort-observer-refresh","expected_sha":"2ba12b3634be8be4b06ba5330e29f5b8c660fed8"},
+            {"branch":"ace-lineage-refresh","expected_sha":"7eba2b820a79f2c270aec9a164aff2147c68110f"},
+            {"branch":"ace-lineage-simulation-v0","expected_sha":"7749a4a019e1ed3a91227e68715a0f06905791f5"},
+            {"branch":"ace-live-capacity-v0","expected_sha":"540e173f4a0565351acf362398e4f0443deca4ee"},
+            {"branch":"audit/first-contact-mode","expected_sha":"814095aba5c9d45a96d3bd0e60c2573c1524d564"},
+            {"branch":"ci/cover-e015-in-emergence-workflow","expected_sha":"89285532e723169b8f26211659485126b675144d"},
+            {"branch":"cleanup/remove-task001-one-shot-harness","expected_sha":"08fc52dc0fbf5d59553d5e6be0d37c3511b7f48a"},
+            {"branch":"evolution/repository-observatory-current-main","expected_sha":"9b52421e6158b3cb1800042824b551e81ddaa8c2"},
+            {"branch":"experiment/ace-live-open-work-population-v1","expected_sha":"7a6c65209e4fd32cdf5fb20b30e3e93e52202ea8"},
+            {"branch":"experiment/e015-cost-weighted-quorum","expected_sha":"cdb394e0ff232d20afab7aa7829bc769f0156b19"},
+            {"branch":"experiment/phase-b2-successor-task001-attempt1","expected_sha":"bcd3ad77cbd4d20339b4236ab2e5d785a63629db"},
+            {"branch":"experiment/r2-reference-scale","expected_sha":"7fd95c99920b4141723795ad14a160bbe185d6ee"},
+            {"branch":"experiment/r3-reference-seed42","expected_sha":"2b04e49ad3e0c15f74555b2211b0675877633b69"},
+            {"branch":"experiment/task001-v04-real-calibration","expected_sha":"c4e4810c618a0ab840e22727724937a6dcb40513"},
+            {"branch":"experiment/verification-backpressure-benchmark","expected_sha":"3c209a1a572200ed893ff7d9a1a951aa115465bb"},
+            {"branch":"feat/evaluator-plan-binding","expected_sha":"346c9b909744003bc9ca2a0e88d5e21c9a468b42"},
+            {"branch":"feat/mathematical-evolution-kernel","expected_sha":"0d28a0ffb1e80ea8e88469883bcc4f5092fad6ed"},
+            {"branch":"feat/r1-real-result-replay","expected_sha":"a0c3acb262f182998ff0f96d31c953cc99437985"},
+            {"branch":"feat/r2-scale-sweep","expected_sha":"10a8506364b21fdd63dd14077e3c4150e821cdda"},
+            {"branch":"feat/r2-scheduling-churn","expected_sha":"1ac96574440e7d663542d20c37d0ecd28355b46a"},
+            {"branch":"feat/r3-evolutionary-orchestration","expected_sha":"1c66ce12c135b4099e0e1ba4bcb4f526393f25a9"},
+            {"branch":"feat/r4-stigmergic-routing","expected_sha":"fd082c3bf7074ff497ebd0da22d3c9635f6f0dfb"},
+            {"branch":"feat/repository-math-portfolio","expected_sha":"6da6e5bcb0a7d237a7b509034f651ecde5d53b2a"},
+            {"branch":"feature/benchmark-cohort-contract-v1","expected_sha":"3400594292f1250fe89f2c45399a21de8c24fc9f"},
+            {"branch":"feature/evaluator-plan-patch-backend-v2","expected_sha":"29e742cfce8c37522257690e715bc8f2cf3801fc"},
+            {"branch":"feature/evaluator-plan-v0.3-semantic-contract","expected_sha":"a5e41dfc470e001d33dee18a6b795f1b91843d22"},
+            {"branch":"feature/evaluator-plan-v0.4-transition-semantics","expected_sha":"f21313754528e3e739c9850ff7a77db401c3b202"},
+            {"branch":"feature/free-resource-mesh-v0","expected_sha":"9a9a7cec9a3d3161731589e9cfb8005b88d64cd9"},
+            {"branch":"feature/local-verifier-mvp","expected_sha":"ee074abf275cb063651f629c337815dafa325bb8"},
+            {"branch":"feature/pr91-controlled-docker-harness","expected_sha":"eda602f82f522c5b59a3db638472387d09795212"},
+            {"branch":"feature/run-evidence-replay-v0","expected_sha":"9c5f10c9b373b6a410437fadedd3d39d7d96b8f2"},
+            {"branch":"feature/two-attempt-orchestrator","expected_sha":"27ced7d026ea921ad79ef831acbed6b4675d6164"},
+            {"branch":"fix/adversarial-evidence-nonfinite-inputs","expected_sha":"d03697be18a3c913ef5b295299e824b2c8203204"},
+            {"branch":"fix/local-verifier-output-boundary-v2","expected_sha":"9bb0f22d505924be00d7825e37892e268c3fc412"},
+            {"branch":"fix/replayable-e2e-evidence-unified","expected_sha":"ae1f2676ec19d68460aa8e44be873b88dbce3939"},
+            {"branch":"integration/real-two-attempt-evidence-v0","expected_sha":"90ecf15c5162099ee8896cfcf06d33e75714f4c2"}
+          ]
+
           repo = os.environ["GITHUB_REPOSITORY"]
           token = os.environ["GITHUB_TOKEN"]
           self_workflow = Path(".github/workflows/branch-retirement-once.yml")
@@ -53,121 +95,89 @@ jobs:
               },
           )
           with urllib.request.urlopen(req, timeout=30) as response:
-              open_pulls = json.load(response)
-          open_heads = {item["head"]["ref"] for item in open_pulls}
+              open_heads = {item["head"]["ref"] for item in json.load(response)}
 
-          ls = subprocess.run(
-              ["git", "ls-remote", "--heads", f"https://github.com/{repo}.git"],
-              check=True,
-              text=True,
-              stdout=subprocess.PIPE,
-          )
-          current = {}
-          for line in ls.stdout.splitlines():
-              sha, ref = line.split("\t", 1)
-              prefix = "refs/heads/"
-              if ref.startswith(prefix):
-                  current[ref[len(prefix):]] = sha
+          def branch_heads():
+              proc = subprocess.run(
+                  ["git", "ls-remote", "--heads", f"https://github.com/{repo}.git"],
+                  check=True, text=True, stdout=subprocess.PIPE,
+              )
+              heads = {}
+              for line in proc.stdout.splitlines():
+                  sha, ref = line.split("\t", 1)
+                  if ref.startswith("refs/heads/"):
+                      heads[ref[len("refs/heads/"):]] = sha
+              return heads
 
-          workflow_text = []
+          current = branch_heads()
+          workflows = []
           for path in sorted(Path(".github/workflows").glob("*")):
-              if not path.is_file() or path == self_workflow:
-                  continue
-              try:
-                  workflow_text.append((str(path), path.read_text(encoding="utf-8")))
-              except UnicodeDecodeError:
-                  pass
+              if path.is_file() and path != self_workflow:
+                  try:
+                      workflows.append((str(path), path.read_text(encoding="utf-8")))
+                  except UnicodeDecodeError:
+                      pass
 
-          eligible = []
-          skipped = []
+          eligible, skipped = [], []
           for item in candidates:
               branch = item["branch"]
-              expected = item["expected_sha"]
               observed = current.get(branch)
-              if branch == "main":
-                  skipped.append({**item, "reason": "default_branch"})
-                  continue
               if branch in open_heads:
-                  skipped.append({**item, "reason": "open_pull_request"})
-                  continue
-              if observed is None:
-                  skipped.append({**item, "reason": "already_absent"})
-                  continue
-              if observed != expected:
-                  skipped.append({**item, "reason": "head_moved", "observed_sha": observed})
-                  continue
-              refs = [path for path, text in workflow_text if branch in text]
-              if refs:
-                  skipped.append({**item, "reason": "referenced_by_workflow", "workflow_paths": refs})
-                  continue
-              eligible.append(item)
+                  skipped.append({**item, "reason":"open_pull_request"})
+              elif observed is None:
+                  skipped.append({**item, "reason":"already_absent"})
+              elif observed != item["expected_sha"]:
+                  skipped.append({**item, "reason":"head_moved", "observed_sha":observed})
+              else:
+                  refs = [path for path, text in workflows if branch in text]
+                  if refs:
+                      skipped.append({**item, "reason":"referenced_by_workflow", "workflow_paths":refs})
+                  else:
+                      eligible.append(item)
 
           push_url = f"https://x-access-token:{token}@github.com/{repo}.git"
-          deleted = []
-          failed = []
+          deleted, failed = [], []
           for item in eligible:
-              branch = item["branch"]
               proc = subprocess.run(
-                  ["git", "push", push_url, "--delete", branch],
-                  text=True,
-                  stdout=subprocess.PIPE,
-                  stderr=subprocess.PIPE,
+                  ["git", "push", push_url, "--delete", item["branch"]],
+                  text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
               )
               if proc.returncode == 0:
                   deleted.append(item)
               else:
-                  failed.append({**item, "reason": "delete_failed", "stderr": proc.stderr[-600:]})
+                  failed.append({**item, "reason":"delete_failed", "stderr":proc.stderr[-600:]})
 
-          final_ls = subprocess.run(
-              ["git", "ls-remote", "--heads", f"https://github.com/{repo}.git"],
-              check=True,
-              text=True,
-              stdout=subprocess.PIPE,
-          )
-          remaining = set()
-          for line in final_ls.stdout.splitlines():
-              _sha, ref = line.split("\t", 1)
-              if ref.startswith("refs/heads/"):
-                  remaining.add(ref[len("refs/heads/"):])
-
-          verified_deleted = [item for item in deleted if item["branch"] not in remaining]
-          verification_mismatch = [item for item in deleted if item["branch"] in remaining]
+          remaining = branch_heads()
+          verified = [item for item in deleted if item["branch"] not in remaining]
+          mismatch = [item for item in deleted if item["branch"] in remaining]
           record = {
-              "schema_version": "0.1",
-              "repository": repo,
-              "source_retirement_manifest_generated_at": "2026-08-28T19:50:13.720035Z",
-              "source_retirement_candidates": len(candidates),
-              "open_pr_heads": sorted(open_heads),
-              "eligible_exact_head_candidates": len(eligible),
-              "deleted_and_verified_absent": len(verified_deleted),
-              "skipped": skipped,
-              "failed": failed,
-              "verification_mismatch": verification_mismatch,
-              "deleted": verified_deleted,
-              "authority": {
-                  "operation": "user_requested_branch_retirement",
-                  "merge_branches": False,
-                  "delete_only_exact_head_candidates": True,
-                  "force_update": False,
-              },
+              "schema_version":"0.2",
+              "repository":repo,
+              "canonical_remaining_retirement_manifest":True,
+              "source_audit_generated_at":"2026-08-28T19:50:13.720035Z",
+              "manifest_candidates":len(candidates),
+              "eligible":len(eligible),
+              "deleted_and_verified_absent":len(verified),
+              "remaining_repository_branches":len(remaining),
+              "open_pr_heads":sorted(open_heads),
+              "deleted":verified,
+              "skipped":skipped,
+              "failed":failed,
+              "verification_mismatch":mismatch,
           }
           result_path.write_text(json.dumps(record, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-
-          summary = Path(os.environ["GITHUB_STEP_SUMMARY"])
-          with summary.open("a", encoding="utf-8") as handle:
-              handle.write("## One-time branch retirement\n\n")
-              handle.write(f"- manifest candidates: {len(candidates)}\n")
-              handle.write(f"- exact-head eligible: {len(eligible)}\n")
-              handle.write(f"- deleted + verified absent: {len(verified_deleted)}\n")
-              handle.write(f"- skipped: {len(skipped)}\n")
-              handle.write(f"- deletion failures: {len(failed)}\n")
-              handle.write(f"- post-delete verification mismatches: {len(verification_mismatch)}\n")
-              handle.write(f"- remaining repository branches: {len(remaining)}\n")
-              handle.write("\nNo stale branch was merged into `main`; retirement candidates were deletion-only.\n")
-
-          print(json.dumps({"manifest": len(candidates), "eligible": len(eligible), "deleted": len(verified_deleted), "skipped": len(skipped), "failed": len(failed), "verification_mismatch": len(verification_mismatch), "remaining_branches": len(remaining)}, sort_keys=True))
-          if failed or verification_mismatch:
-              raise SystemExit("one or more eligible branch deletions did not verify cleanly")
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as out:
+              out.write("## Corrected canonical retirement batch\n\n")
+              out.write(f"- candidates: {len(candidates)}\n")
+              out.write(f"- eligible: {len(eligible)}\n")
+              out.write(f"- deleted + verified: {len(verified)}\n")
+              out.write(f"- skipped: {len(skipped)}\n")
+              out.write(f"- failures: {len(failed)}\n")
+              out.write(f"- remaining repository branches: {len(remaining)}\n")
+              out.write("\nEvidence-preservation and extract-or-retire branches are excluded.\n")
+          print(json.dumps({"eligible":len(eligible),"deleted":len(verified),"skipped":len(skipped),"failed":len(failed),"remaining_branches":len(remaining)},sort_keys=True))
+          if failed or mismatch:
+              raise SystemExit("canonical retirement batch did not verify cleanly")
           PY
 
       - name: Upload retirement evidence
@@ -179,9 +189,8 @@ jobs:
           retention-days: 30
           if-no-files-found: error
 
-# One-shot maintenance surface.
-# - It is triggered only when this workflow file itself changes on main.
-# - It contains a frozen retirement manifest from the last complete Branch Steward audit.
-# - Exact branch SHA, open-PR status, and workflow references are revalidated live.
-# - It never merges, force-updates, or rebases a branch.
-# - Any changed branch is skipped rather than guessed about.
+# Corrected one-shot maintenance batch.
+# These 40 refs are the still-present, unchanged subset of the canonical Branch
+# Steward retirement queue after the first pass. Evidence-preservation and
+# extract-or-retire branches are not present. Exact-head/open-PR/workflow guards
+# remain fail closed; no merge, rebase, or force-update operation exists here.
