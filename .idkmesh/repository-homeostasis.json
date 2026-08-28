@@ -1,0 +1,71 @@
+{
+  "excluded_directories": [
+    ".git",
+    ".venv",
+    "node_modules",
+    "__pycache__",
+    "artifacts",
+    "results"
+  ],
+  "allowed_root_files": [
+    "README.md",
+    "LICENSE",
+    "CONTRIBUTING.md",
+    "COMMUNITY.md",
+    "CODE_OF_CONDUCT.md",
+    "SECURITY.md",
+    "SUPPORT.md",
+    "GOVERNANCE.md",
+    "MAINTAINERS.md",
+    "ROADMAP.md",
+    "PROJECT_RULES.md",
+    "IDKIPS.md"
+  ],
+  "entrypoint_documents": [
+    "README.md",
+    "CONTRIBUTING.md",
+    "COMMUNITY.md",
+    "ROADMAP.md"
+  ],
+  "orphan_exempt_prefixes": [
+    "docs/conversations/",
+    "docs/audits/"
+  ],
+  "thresholds": {
+    "root_markdown_soft_limit": 8,
+    "max_document_bytes": 20000,
+    "max_files_per_directory": 30,
+    "broken_link_pressure_at": 5,
+    "oversized_pressure_at": 5,
+    "crowded_directory_pressure_at": 4
+  },
+  "evolution_epoch": {
+    "baseline_ref": "274e564c8554f5336cca02f0f28e7a8f712a6f6a",
+    "commit_interval": 25,
+    "changed_file_interval": 15,
+    "pressure_high": 60,
+    "pressure_low": 35
+  },
+  "destination_rules": [
+    {
+      "filename_contains": ["ARCHITECTURE", "EVOLUTION"],
+      "destination": "docs/architecture/"
+    },
+    {
+      "filename_contains": ["VISION", "GOALS", "FOUNDATIONS", "QUESTIONS"],
+      "destination": "docs/foundations/"
+    },
+    {
+      "filename_contains": ["BLOCKCHAIN", "RANDOMNESS"],
+      "destination": "docs/research/"
+    },
+    {
+      "filename_contains": ["COMMUNITY_GROWTH"],
+      "destination": "docs/community/"
+    },
+    {
+      "filename_contains": ["DECISIONS"],
+      "destination": "docs/decisions/"
+    }
+  ]
+}
