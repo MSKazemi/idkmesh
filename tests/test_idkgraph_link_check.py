@@ -18,6 +18,7 @@ class LinkDiagnosticsTests(unittest.TestCase):
         self.assertEqual(report["warning_count"], 0)
         self.assertEqual(report["external_links_skipped"], 1)
         self.assertEqual(report["links_checked"], 6)
+        self.assertEqual(report["excluded_paths"], [])
         self.assertEqual(report["findings"], [])
 
     def test_broken_fixture_distinguishes_failure_categories(self) -> None:
@@ -66,6 +67,30 @@ class LinkDiagnosticsTests(unittest.TestCase):
             self.assertEqual(report["error_count"], 0)
             self.assertEqual(report["warning_count"], 0)
             self.assertEqual(report["links_checked"], 1)
+
+    def test_github_ui_navigation_is_warning_not_filesystem_error(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "README.md").write_text(
+                "[issue](../../issues/24)\n[pull](../../pull/91)\n",
+                encoding="utf-8",
+            )
+
+            report = check_repository(root)
+            self.assertEqual(report["error_count"], 0)
+            self.assertEqual(report["warning_count"], 2)
+            self.assertEqual(
+                {item["category"] for item in report["findings"]},
+                {"github_navigation_link"},
+            )
+
+    def test_negative_fixture_can_be_explicitly_excluded_from_health_scan(self) -> None:
+        report = check_repository(FIXTURES, excluded_paths=["broken"])
+
+        self.assertEqual(report["excluded_paths"], ["broken"])
+        self.assertEqual(report["documents_scanned"], 3)
+        self.assertEqual(report["error_count"], 0)
+        self.assertEqual(report["warning_count"], 0)
 
 
 if __name__ == "__main__":
