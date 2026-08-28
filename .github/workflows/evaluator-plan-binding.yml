@@ -1,0 +1,52 @@
+name: Evaluator plan binding
+
+on:
+  pull_request:
+    paths:
+      - "schemas/evaluator-plan-v0.1.schema.json"
+      - "verification/fixtures/verifier-smoke-evaluator-plan.json"
+      - "experiments/evaluator_plan_runner.py"
+      - "experiments/local_verifier.py"
+      - "experiments/provenance_integrity.py"
+      - "examples/work-units/local-verifier-smoke.work-unit.json"
+      - "examples/verifier/**"
+      - "requirements-phase0.txt"
+      - ".github/workflows/evaluator-plan-binding.yml"
+  push:
+    branches: [main]
+    paths:
+      - "schemas/evaluator-plan-v0.1.schema.json"
+      - "verification/fixtures/verifier-smoke-evaluator-plan.json"
+      - "experiments/evaluator_plan_runner.py"
+      - "experiments/local_verifier.py"
+      - "experiments/provenance_integrity.py"
+      - "examples/work-units/local-verifier-smoke.work-unit.json"
+      - "examples/verifier/**"
+      - "requirements-phase0.txt"
+      - ".github/workflows/evaluator-plan-binding.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Phase 0 dependency
+        run: python -m pip install -r requirements-phase0.txt
+      - name: Confirm base local verifier fixtures
+        run: |
+          python experiments/local_verifier.py self-test \
+            --good-candidate-root examples/verifier/good/candidate-root \
+            --bad-candidate-root examples/verifier/bad/candidate-root
+      - name: Verify evaluator sovereignty and binding
+        run: python experiments/evaluator_plan_runner.py self-test
+
+# Security note: this workflow remains metadata-only. It parses/hashes fixture
+# data and delegates to the existing deterministic JSON verifier. It does not
+# execute candidate-controlled code, use secrets/network services, grant merge
+# authority, or authorize project-paid compute.
