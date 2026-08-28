@@ -101,6 +101,14 @@ only when it passes the capacity and duplication gates. Record community impact
 and evidence. Stop after one bounded outcome.
 ```
 
+## Actual activation in this conversation
+
+The implementation was published as **PR #64 — Add ONE continuous GitHub + ChatGPT evolution controller**.
+
+A recurring ChatGPT task named **IDKMesh ONE Worker** was also enabled at an hourly cadence (the maximum cadence supported by the scheduled-task path in this environment). Its prompt follows the bounded-worker instruction above: inspect the connected GitHub repository, prefer an existing `one:agent-task`, produce at most one inspectable outcome, avoid duplicate work, and never self-approve/self-merge.
+
+The repository-side ONE workflow becomes active only after the PR is reviewed and merged. The ChatGPT worker can meanwhile inspect the repository and existing priority surfaces, but it should not pretend that an unmerged workflow already exists on `main`.
+
 ## Research questions created by the design
 
 1. Does one-task-at-a-time automation produce more verified useful descendants per reviewer minute than a larger autonomous issue fan-out?
