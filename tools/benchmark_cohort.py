@@ -422,14 +422,16 @@ def _fixture_cohort() -> dict[str, Any]:
 
 
 def cmd_validate(args: argparse.Namespace) -> int:
-    cohort = load_json((ROOT / args.cohort).resolve())
+    cohort_path = resolve_repo_file(args.cohort, label="BenchmarkCohort")
+    cohort = load_json(cohort_path)
     summary = validate_cohort(cohort, require_evidence=args.require_evidence)
     print(json.dumps(summary, indent=2, sort_keys=True))
     return 0
 
 
 def cmd_definition_digest(args: argparse.Namespace) -> int:
-    cohort = load_json((ROOT / args.cohort).resolve())
+    cohort_path = resolve_repo_file(args.cohort, label="BenchmarkCohort")
+    cohort = load_json(cohort_path)
     validate_schema(cohort, COHORT_SCHEMA, "BenchmarkCohort")
     print(definition_digest(cohort))
     return 0
@@ -439,6 +441,14 @@ def cmd_self_test(_: argparse.Namespace) -> int:
     baseline = _fixture_cohort()
     summary = validate_cohort(baseline)
     require(summary["pending_tasks"] == 1, "self-test scaffold was not classified as pending")
+
+    for unsafe_path in ("../cohort.json", "/tmp/cohort.json"):
+        try:
+            resolve_repo_file(unsafe_path, label="self-test unsafe cohort")
+        except CohortError:
+            pass
+        else:
+            raise CohortError(f"self-test expected unsafe cohort path to fail closed: {unsafe_path}")
 
     original_digest = definition_digest(baseline)
     outcome_only = copy.deepcopy(baseline)
@@ -488,7 +498,7 @@ def cmd_self_test(_: argparse.Namespace) -> int:
 
     print(
         "OK: benchmark cohort schema, cross-object WorkUnit/EvaluatorPlan binding, "
-        "pre-outcome definition commitment, and fail-closed drift checks passed"
+        "pre-outcome definition commitment, repository path boundaries, and fail-closed drift checks passed"
     )
     return 0
 
