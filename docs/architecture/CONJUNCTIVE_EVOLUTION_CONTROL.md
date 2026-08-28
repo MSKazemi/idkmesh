@@ -1,66 +1,66 @@
 # Conjunctive Evolution Control
 
-**Status:** executable v0.1 architecture  
+**Status:** proposed executable convergence in PR #146  
 **Date:** 2026-08-28  
-**Authority:** observation, evidence, attention allocation, and bounded recommendation only
+**Authority:** observation, evidence, attention allocation, hard-current guarding, and bounded recommendation only
 
-## Why three mathematical layers
+## Canonical composition
 
-IDKMesh now has three complementary control surfaces. They must not be collapsed into one mystical score.
+IDKMesh now has complementary mathematical control surfaces that should not be collapsed into one score or allowed to compete as parallel controllers:
 
 ```text
-persistent Bayesian history
+#137 persistent Bayesian history
         +
-recomputed hard live governor
+#146 hard recomputed current-state governor
         +
-live Pareto/UCB portfolio
+#143 live Pareto/UCB attention portfolio
         |
         v
 bounded recommendation surface
         |
         v
-independent verification + GitHub governance
+independent verification + external GitHub governance
 ```
 
-Each layer answers a different question:
-
-1. **Bayesian evolution kernel:** what does accumulated uncertain historical evidence suggest about repository health?
-2. **Live governor:** are hard current constraints healthy right now?
-3. **Mathematical portfolio:** where is current attention/experimentation most informative under multiple objectives?
+PR #144's stateless `repository_evolution_score.py` remains useful as an **offline comparison/falsification baseline** for current-state recommendations. It is not treated as an additional autonomous controller.
 
 No layer grants approval or merge authority.
 
 ---
 
-## 1. Persistent Bayesian history
+## 1. Persistent Bayesian history — #137
 
-Canonical files:
+Canonical core:
 
 - `scripts/evolution_math.py`
 - `scripts/evolution_score.py`
 - `state/evolution-state.json`
 - `state/evolution-math-policy.json`
 
-The historical state uses Beta beliefs and retained trusted-main artifacts. Soft event evidence changes posterior beliefs and uncertainty, but is not interpreted as causal proof.
+This layer answers: **what has accumulated over trusted historical observations, and how uncertain are we?**
 
-This layer is intentionally persistent across GitHub Actions runs.
+It includes Bayesian soft evidence, correlation-aware verification aggregation, Pareto/NSGA primitives, UCB, multiplicative weights, graph unlock, entropy/JSD, and homeostatic-potential mathematics.
+
+Trusted-main checkpoint artifacts preserve state across runs. Soft event evidence is not causal proof.
 
 ---
 
-## 2. Recomputed current-state governor
+## 2. Hard recomputed current-state governor — #146
 
-Canonical files:
+Canonical proposed files:
 
 - `scripts/evolution_snapshot.py`
 - `scripts/evolution_live_governor.py`
 - `state/evolution-live-policy.json`
 - `tests/test_evolution_live_governor.py`
 
-The governor is recomputed from fresh public GitHub evidence. It intentionally stores no issue/PR/comment bodies. Natural-language repository content is untrusted input; the retained snapshot contains bounded structural signals only.
+This layer answers: **are the hard current repository conditions healthy now?**
 
-### Carrying-capacity model
+Its evidence is recomputed rather than accumulated so pressure can recover when open work disappears.
 
-For current open work:
+### Live carrying capacity
+
+Reuse ACE `live-open-work-v1`:
 
 ```text
 L =
@@ -68,43 +68,35 @@ L =
   + 0.25 * draft_PRs
   + 0.50 * open_Growth_Seeds
   + 0.10 * min(other_open_issues, 20)
+
+Capacity(L) = 1 / (1 + exp((L-K)/tau))
 ```
 
-and
+Bootstrap values remain `K=8`, `tau=2` until real review-latency/backlog evidence supports recalibration.
+
+Required property:
 
 ```text
-Capacity(L) = 1 / (1 + exp((L-K)/tau)).
+open work decreases -> L decreases -> capacity recovers
 ```
 
-The initial reviewed policy uses `K=8`, `tau=2`; these remain calibration hypotheses.
+### Hard current signals
 
-### Hard live signals
+The bounded snapshot/governor measures:
 
-The snapshot/governor measures:
-
-- default-branch protection;
-- review-ready/draft PR pressure;
+- actual default-branch protection;
+- review-ready vs draft PR pressure;
 - independent-review coverage;
-- newcomer starter-task supply;
-- distinct external public participant/witness presence;
+- starter-task supply;
+- distinct non-owner/non-bot public witness/participant presence;
 - workflow immutable-SHA pin ratio;
-- branch-count pressure;
-- bounded open-work diversity;
-- project-memory preservation surfaces.
+- branch-count coordination pressure;
+- open-work Shannon diversity;
+- project-memory archive/rule surfaces.
 
-### Homeostatic potential
-
-The live governor reuses the canonical quadratic potential:
-
-```text
-V = sum_j q_j * ((x_j - target_j) / scale_j)^2.
-```
-
-This is a current-state diagnostic, not a merge rule.
+It reuses the canonical `normalized_entropy()` and `homeostatic_potential()` primitives from `evolution_math.py` rather than creating a second mathematics package.
 
 ### Modes
-
-The current-state governor can emit:
 
 ```text
 GUARD
@@ -115,34 +107,17 @@ INTEGRATE
 EXPLORE
 ```
 
-The ordering is conjunctive. Examples:
-
-- unprotected default branch -> `GUARD`;
-- exhausted review capacity -> `CONSOLIDATE`;
-- ready work without independent review -> `VERIFY`.
-
-### Non-compensation theorem for v0 governance
-
-For a configured hard guard `g`, historical fitness cannot compensate for its failure:
-
-```text
-hard_guard(g) = false
-    => stronger autonomous authority is forbidden
-```
-
-regardless of Bayesian posterior means, Pareto rank, UCB focus, stars, forks, reactions, comments, or commit count.
-
-In particular:
+The mode is conjunctive, not compensatory. In particular:
 
 ```text
 main_protected = false => GUARD
 ```
 
-Issue #35 remains the external administrative gate.
+Historical Bayesian fitness, Pareto rank, UCB opportunity, popularity, or activity cannot override this condition.
 
 ---
 
-## 3. Live Pareto/UCB repository portfolio
+## 3. Live Pareto/UCB attention portfolio — #143
 
 Canonical files:
 
@@ -151,133 +126,162 @@ Canonical files:
 - `state/repository-portfolio-state.json`
 - `.github/workflows/repository-math-portfolio.yml`
 
-This layer maps current open issues/PRs into transparent multi-objective proxies and computes Pareto fronts, crowding, explicit graph unlock, entropy/JSD, multiplicative attention, and UCB exploration.
+This layer answers: **where is present reviewer/research attention likely to be most informative under multiple objectives?**
 
-It allocates **attention**, not integration rights.
+It uses dependency graph structure, Pareto fronts/crowding, entropy/JSD, multiplicative attention weights, Bayesian health deficits, and UCB exploration.
 
-The portfolio may recommend looking at an item while the hard governor simultaneously says `GUARD`. That is not a contradiction: useful work can continue while authority remains bounded.
+It allocates attention only. A target can be interesting to inspect while the hard governor remains `GUARD`.
+
+### Historical-health input repair
+
+The portfolio should consume the trusted persistent Bayesian checkpoint from the Evolution Loop. PR #146 restores the `evolution-checkpoint-*` contract so portfolio health does not silently fall back to the repository seed after #144's stateless artifact naming changed.
 
 ---
 
-## 4. GitHub trust boundary
+## 4. Stateless #144 observer as comparison baseline
 
-Live API observation and proposed-code verification are deliberately separated.
+PR #144's `scripts/repository_evolution_score.py` is retained on `main` as a valuable independent/stateless comparison surface.
+
+Use it to ask:
+
+- does a stateless snapshot produce the same high-level recommendation as the persistent+hard-governor system?;
+- where do they disagree?;
+- does disagreement expose bad priors, stale historical state, or weak live proxies?
+
+It should not be wired as a second actuator/controller. Divergence is evidence for falsification and calibration.
+
+---
+
+## 5. GitHub Actions trust boundary
 
 ### Trusted live observation
 
-For pull-request metadata, live observers use `pull_request_target` and:
+For pull-request metadata, live observers use `pull_request_target` so the workflow definition comes from the trusted default branch. They explicitly check out the default branch and **never execute PR-head code** with live-observer token scopes.
 
-- execute the workflow definition from the default branch;
-- explicitly check out the default branch;
-- never check out PR-head code;
-- use only read permissions required by the observer;
-- disable persisted checkout credentials;
-- pin third-party/first-party Actions by immutable SHA.
+The evolution live job uses only the read permissions required for metadata plus trusted artifact restoration:
+
+```text
+contents: read
+issues: read
+pull-requests: read
+actions: read
+```
+
+The portfolio live observer has the same read-only shape.
 
 ### Proposed-code verification
 
-Ordinary `pull_request` runs:
+Ordinary `pull_request` jobs:
 
-- check out PR-head code;
-- receive only `contents: read`;
-- compile and run deterministic unit/invariant tests;
-- receive no explicit live API token environment;
-- do not restore trusted checkpoints or execute live observers.
+- check out proposed PR code;
+- have `contents: read` only;
+- disable persisted checkout credentials;
+- run deterministic compile/unit/invariant tests;
+- do not restore trusted checkpoints;
+- do not run live GitHub metadata observers;
+- receive no repository secrets explicitly.
 
-This prevents a proposed workflow/script from converting read-observer token authority into arbitrary PR-head behavior.
+This prevents a proposed workflow/script from converting observer token authority into arbitrary PR-head behavior.
 
----
+### Persistent-state concurrency
 
-## 5. Persistent-state concurrency
+Trusted artifact-backed observers use latest-state concurrency with `cancel-in-progress: true`, preventing multiple runs from restoring one checkpoint and publishing competing successors.
 
-Artifact-backed state is vulnerable to forked histories if two runs restore the same checkpoint and publish competing successors.
-
-Trusted live observers therefore use a single repository-level concurrency group with `cancel-in-progress: true`.
-
-Interpretation:
-
-- the state is a **latest-state observer**, not an immutable accounting ledger of every GitHub event;
-- rapid event bursts converge to the newest observation;
-- cancelled intermediate observations are not treated as missing correctness evidence;
-- downstream decisions must rely on current repository evidence and replayable retained checkpoints, not raw event counts.
-
-This is preferable to concurrent state forks under the current artifact-only persistence model.
+This state is therefore a **latest-state observer**, not an immutable event-accounting ledger.
 
 ---
 
-## 6. Supply-chain posture
+## 6. Evidence minimization and untrusted text
 
-Core mathematical workflows pin the reviewed action versions by immutable commit:
+The hard-governor snapshot retains no issue/PR/comment bodies. Natural-language GitHub content is untrusted input; it keeps bounded structural metadata such as labels, age, deduplicated same-repository `#N` references, and reviewer/participant counts.
+
+The Pareto portfolio still needs issue/PR text ephemerally for deterministic classification/reference extraction, but PR #146 changes the retained artifact boundary:
 
 ```text
-actions/checkout      3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-actions/setup-python  5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
-actions/upload-artifact 043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-actions/download-artifact 3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+raw body snapshot -> /tmp only -> portfolio calculation -> discarded with runner
 ```
 
-The live governor scans all repository workflows and reports the total immutable-SHA pin ratio. It does not claim the entire repository is fully pinned merely because the mathematical workflows are.
+The uploaded portfolio checkpoint contains derived state/output/policy/Markdown only. It **must not contain `repository-snapshot.json` with raw bodies**.
 
 ---
 
-## 7. Anti-Goodhart boundary
+## 7. Supply-chain posture
 
-Hard-governor fitness explicitly excludes:
+Core mathematical workflows pin reviewed external actions to immutable commits:
+
+```text
+actions/checkout          3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+actions/setup-python      5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+actions/upload-artifact   043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+actions/download-artifact 3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
+```
+
+The live governor separately scans the entire workflow directory and reports repository-wide pin coverage. Hardening this control plane is not a claim that every repository workflow is already fully pinned.
+
+---
+
+## 8. Anti-Goodhart boundary
+
+Hard-governor fitness excludes:
 
 - stars;
 - forks;
 - reactions;
-- raw comment volume;
-- raw commit volume.
+- raw comments;
+- raw commits.
 
-These may be useful community observations elsewhere, but they cannot prove correctness or safety.
-
-Likewise:
+And more generally:
 
 ```text
 Bayesian posterior != causality
-Pareto front       != correctness
-UCB focus          != approval
-activity volume    != improvement
-popularity         != trust
+Pareto front        != correctness
+UCB focus           != approval
+activity volume     != improvement
+popularity          != trust
 ```
+
+These signals can be informative in bounded contexts, but cannot create authority.
 
 ---
 
-## 8. What the system may do automatically
+## 9. Automatic authority permitted today
 
-Allowed under current v0 architecture:
+Allowed:
 
 - read public repository metadata;
+- restore trusted observer checkpoints;
 - compute/recompute evidence;
-- retain bounded replayable artifacts;
-- restore prior trusted-main observer checkpoints;
-- rank/recommend attention targets;
-- report hard blockers;
-- run deterministic tests and simulations;
-- publish GitHub job summaries.
+- retain minimized replayable artifacts;
+- rank attention targets;
+- report blockers and recommendations;
+- run deterministic tests/simulations;
+- publish job summaries.
 
 Not granted:
 
 - merge;
 - approve;
-- label/assign/close issues or PRs;
-- mutate branches;
-- create constitutional changes;
-- spend money;
-- treat self-generated evidence as independent review.
+- branch mutation;
+- issue/PR label, assignment, closure, or creation by the controller;
+- repository-settings/ruleset changes;
+- constitutional/governance mutation;
+- secrets access;
+- spending money;
+- treating self-generated evidence as independent review.
+
+Issue #35 remains the external branch-protection gate. Issue #138 remains a public surface for the separate human review required by PR #91.
 
 ---
 
-## 9. Scientific next step
+## 10. Falsification and next mathematical step
 
-The next mathematical improvement should be **calibration**, not another hand-authored objective.
+The next major improvement should be **calibration from delayed outcomes**, not another hand-authored controller.
 
-Retained historical artifacts should be joined to delayed outcomes such as:
+Join retained observations to later outcomes such as:
 
 - regressions/reverts;
 - verifier disagreement;
-- review latency and burden;
+- review latency and human burden;
 - benchmark movement;
 - issue reopen rate;
 - newcomer completion;
@@ -285,6 +289,8 @@ Retained historical artifacts should be joined to delayed outcomes such as:
 - security findings;
 - time-to-verified-useful-work.
 
-Candidate predictive models can then be compared using held-out calibration metrics such as Brier score, log loss, calibration error, and ranking regret.
+Compare predictive variants with held-out metrics such as Brier score, log loss, calibration error, and ranking regret.
 
-Only after this dataset exists should UCB evolve toward contextual bandits or Thompson sampling based on measured outcomes rather than current proxy opportunity.
+Treat the current model as wrong or incomplete if carrying capacity fails to predict review burden, live potential improves while coordination worsens, stateless/persistent recommendations diverge without useful explanation, or portfolio attention repeatedly fails to create verified value.
+
+Negative results are first-class evidence.
