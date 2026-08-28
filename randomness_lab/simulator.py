@@ -6,7 +6,7 @@ import random
 from statistics import mean
 from typing import Sequence
 
-from .model import Worker, sample_worker_outcomes
+from .model import CorrelatedBernoulliEnvironment, OutcomeEnvironment, Worker
 from .policies import History, Policy
 
 
@@ -55,6 +55,8 @@ def run_simulation(
     workers: Sequence[Worker],
     policy: Policy,
     config: SimulationConfig,
+    *,
+    environment: OutcomeEnvironment | None = None,
 ) -> dict[str, object]:
     """Run one reproducible worker-selection experiment.
 
@@ -62,6 +64,10 @@ def run_simulation(
     measure the environment's realized pairwise error correlation. Only the
     selected worker is charged compute/latency and contributes to the observed
     verified success metric.
+
+    A custom ``OutcomeEnvironment`` can be supplied for alternative synthetic
+    failure models. If omitted, the config's ``error_correlation`` selects the
+    built-in correlated-Bernoulli mixture environment.
     """
 
     if not workers:
@@ -69,6 +75,9 @@ def run_simulation(
     if len({worker.name for worker in workers}) != len(workers):
         raise ValueError("worker names must be unique")
 
+    active_environment = environment or CorrelatedBernoulliEnvironment(
+        config.error_correlation
+    )
     rng = random.Random(config.seed)
     history = History()
     selected_counts = {worker.name: 0 for worker in workers}
@@ -78,7 +87,9 @@ def run_simulation(
     total_latency = 0.0
 
     for _ in range(config.rounds):
-        outcomes = sample_worker_outcomes(workers, rng, config.error_correlation)
+        outcomes = active_environment.sample(workers, rng)
+        if set(outcomes) != set(latent_outcomes):
+            raise ValueError("environment must return exactly one outcome for every worker")
         for worker in workers:
             latent_outcomes[worker.name].append(int(outcomes[worker.name]))
 
@@ -97,6 +108,7 @@ def run_simulation(
     return {
         "schema_version": 1,
         "policy": policy.name,
+        "environment": active_environment.describe(),
         "config": asdict(config),
         "workers": [asdict(worker) for worker in workers],
         "metrics": {
