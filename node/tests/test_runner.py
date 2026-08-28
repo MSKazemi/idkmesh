@@ -60,6 +60,12 @@ class RunnerPolicyTests(unittest.TestCase):
         self.assertNotIn("--privileged", command)
         self.assertEqual(command[-4:-2], [image_id, "python"])
 
+    def test_canonical_smoke_decoded_python_command_compiles(self) -> None:
+        command = list(work_unit().execution.command)
+        self.assertGreaterEqual(len(command), 3)
+        self.assertEqual(command[:2], ["python", "-c"])
+        compile(command[2], "<canonical-node-smoke>", "exec")
+
     def test_image_inspect_binds_id_and_matching_repository_digest(self) -> None:
         image_id = "sha256:" + "b" * 64
         repo_digest = "python@sha256:" + "c" * 64
