@@ -30,7 +30,7 @@ jobs:
         run: |
           python tools/benchmark_cohort.py validate \
             --cohort benchmarks/phase-b2-successor-v2/cohort.json
-      - name: Prove schema-valid scaffold is not frozen
+      - name: Prove schema-valid scaffold remains outcome-empty and pre-freeze
         run: |
           python - <<'PY'
           import json
@@ -39,18 +39,38 @@ jobs:
           cohort = json.loads(path.read_text(encoding="utf-8"))
           assert cohort["stage"] == "scaffold"
           # Benchmark Cohort v0.1 requires the task taxonomy to be committed
-          # before outcomes. That does not imply evaluator calibration/freeze.
+          # before outcomes. Calibration may progress without freezing outcomes.
           assert cohort["taxonomy_frozen_before_outcomes"] is True
           assert "definition_digest" not in cohort
           assert len(cohort["tasks"]) == 5
           assert all(task["source"]["revision"] == "a69aa0ae1ae4862e507511cbd9ad854237d0ad32" for task in cohort["tasks"])
-          assert all(task["evidence"]["status"] == "pending" for task in cohort["tasks"])
+          assert all(task["evidence"] == {"status": "pending", "attempts": []} for task in cohort["tasks"])
           assert all(task["negative_case"]["evidence_status"] == "pending" for task in cohort["tasks"])
+
+          task_ids = {task["id"] for task in cohort["tasks"]}
           gate = cohort["extensions"]["org.idkmesh.phase_b2_v2"]
           assert gate["calibration_required_for_every_task"] is True
-          assert gate["freeze_ready"] is False
-          assert set(gate["calibration_pending_task_ids"]) == {task["id"] for task in cohort["tasks"]}
-          print("OK: successor v2 is schema-valid, outcome-empty, calibration-pending, and unfrozen")
+          pending = set(gate.get("calibration_pending_task_ids", []))
+          completed = set(gate.get("calibration_completed", {}))
+          assert pending.isdisjoint(completed)
+          assert pending | completed == task_ids
+          assert gate["freeze_ready"] is (len(pending) == 0)
+
+          for task_id, record in gate.get("calibration_completed", {}).items():
+              assert task_id in task_ids
+              assert record["status"] == "passed"
+              assert record["calibration_candidates_are_benchmark_outcomes"] is False
+              assert record["source_revision"] == "a69aa0ae1ae4862e507511cbd9ad854237d0ad32"
+              assert record["evaluator_plan_digest"].startswith("sha256:")
+              assert record["straightforward"]["verification_status"] == "passed"
+              assert record["straightforward"]["recommendation"] == "accept_candidate"
+              assert record["inert_decoy"]["verification_status"] == "failed"
+              assert record["inert_decoy"]["recommendation"] == "reject_candidate"
+
+          print(
+              f"OK: successor v2 scaffold remains outcome-empty; "
+              f"calibrated={len(completed)} pending={len(pending)} freeze_ready={gate['freeze_ready']}"
+          )
           PY
       - name: Show pre-outcome digest preview without freezing
         run: |
@@ -58,9 +78,10 @@ jobs:
             --cohort benchmarks/phase-b2-successor-v2/cohort.json
 
 # Safety / scientific boundary:
-# - this workflow validates definitions only; it does not generate scored candidates;
+# - this workflow validates definitions/calibration state only; it does not generate scored candidates;
 # - the five-task taxonomy is fixed before outcomes as required by Benchmark Cohort v0.1;
-# - all five evaluator plans are provisional until issue #180 calibration gates pass;
+# - calibration candidates are post-definition evidence and remain outside task outcome fields;
+# - the scaffold stays unfrozen until every task calibration is complete; only then may freeze_ready become true;
 # - printing a digest preview is not a freeze: the scaffold intentionally stores no definition_digest;
 # - the source snapshot is fixed to the pre-definition commit a69aa0ae...;
 # - no worker/verifier gets canonical-write, push, approval, merge, spending, or automatic-selection authority.
