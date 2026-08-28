@@ -7,6 +7,7 @@ on:
       - "config/**"
       - "examples/**"
       - "experiments/**"
+      - "tests/test_independent_verifier.py"
       - "requirements-phase0.txt"
       - ".github/workflows/phase0-schema-check.yml"
   push:
@@ -16,6 +17,7 @@ on:
       - "config/**"
       - "examples/**"
       - "experiments/**"
+      - "tests/test_independent_verifier.py"
       - "requirements-phase0.txt"
       - ".github/workflows/phase0-schema-check.yml"
 
@@ -36,6 +38,8 @@ jobs:
         run: python experiments/harness.py validate
       - name: Verify cross-object provenance integrity
         run: python experiments/provenance_integrity.py --self-test
+      - name: Verify executable independent verifier
+        run: python -m unittest discover -s tests -p 'test_independent_verifier.py' -v
       - name: Verify risk-weighted verification backpressure
         run: python experiments/verification_backpressure.py --self-test
       - name: Verify zero-cost compute routing
@@ -54,8 +58,10 @@ jobs:
 # Security note: Phase 0 CI does not execute provider- or contributor-supplied
 # task commands. The harness validates contracts and executes only its built-in
 # deterministic_smoke runner. provenance_integrity.py performs canonical hashing
-# and cross-object lineage checks only. The verification backpressure utility
-# performs scheduling/control arithmetic only. local_compute_offer.py performs
-# local resource discovery only, and free_compute_router.py performs selection
-# only. Repository policy must fail closed rather than granting new execution or
-# project-paid compute authority.
+# and cross-object lineage checks only. independent_verifier.py verifies only the
+# built-in deterministic smoke artifact through digest, schema, and reproduction
+# checks; it does not execute candidate-supplied commands. The verification
+# backpressure utility performs scheduling/control arithmetic only.
+# local_compute_offer.py performs local resource discovery only, and
+# free_compute_router.py performs selection only. Repository policy must fail
+# closed rather than granting new execution or project-paid compute authority.
