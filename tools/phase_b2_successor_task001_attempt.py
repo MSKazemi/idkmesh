@@ -42,7 +42,6 @@ TASK_ID = "benchmark/phase-b2-successor/001-negative-evidence-type-boundary"
 TARGET_REL = "tools/benchmark_cohort.py"
 WORK_UNIT_PATH = ROOT / "benchmarks/phase-b2-successor-five/work-units/task-001-negative-evidence-type-boundary.work-unit.json"
 PLAN_PATH = ROOT / "benchmarks/phase-b2-successor-five/evaluators/task-001-negative-evidence-type-boundary.evaluator-plan.json"
-OPAQUE_EVIDENCE_REL = "examples/results/phase0-smoke.result-manifest.json"
 OPAQUE_FIXTURE_REL = "results/phase-b2-successor-task001-opaque-negative.json"
 TOOL_VERSION = "0.1"
 
@@ -309,7 +308,7 @@ def build_negative_verification(
     evidence_digest = canonical_digest(observation)
     verification = {
         "schema_version": "0.1",
-        "id": f"{result['id']}/opaque-security-evidence-negative",
+        "id": "phase-b2-successor/task001/attempt-001/opaque-security-negative",
         "result_manifest_id": result["id"],
         "work_unit_id": work_unit["id"],
         "work_unit_version": work_unit["version"],
