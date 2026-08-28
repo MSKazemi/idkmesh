@@ -47,6 +47,21 @@ def _require_digest(value: Any, field: str) -> str:
     return value
 
 
+def _require_distinct_paths(*, sources: list[Path], outputs: list[Path]) -> None:
+    """Protect source/config evidence from accidental presentation-layer overwrite."""
+
+    normalized_sources = [path.resolve() for path in sources]
+    normalized_outputs = [path.resolve() for path in outputs]
+    if len(set(normalized_outputs)) != len(normalized_outputs):
+        raise EvidenceReportError("evidence/report output paths must be distinct")
+    overlap = sorted(set(normalized_sources) & set(normalized_outputs), key=str)
+    if overlap:
+        raise EvidenceReportError(
+            "evidence/report output path would overwrite source evidence/config: "
+            + ", ".join(str(path) for path in overlap)
+        )
+
+
 def validate_run_record(record: dict[str, Any]) -> None:
     """Fail closed on inconsistent orchestration evidence before rendering it."""
 
@@ -440,8 +455,10 @@ def cmd_generate(args: argparse.Namespace) -> int:
     run_output = resolve_output_path(args.run_output)
     report_json = resolve_output_path(args.report_json)
     report_markdown = resolve_output_path(args.report_markdown)
-    if len({run_output, report_json, report_markdown}) != 3:
-        raise EvidenceReportError("run/report output paths must be distinct")
+    _require_distinct_paths(
+        sources=[config_path],
+        outputs=[run_output, report_json, report_markdown],
+    )
 
     record = run_config(config_path)
     report = build_report(record)
@@ -458,8 +475,10 @@ def cmd_report(args: argparse.Namespace) -> int:
     run_record_path = resolve_repo_path(args.run_record)
     report_json = resolve_output_path(args.report_json)
     report_markdown = resolve_output_path(args.report_markdown)
-    if report_json == report_markdown:
-        raise EvidenceReportError("JSON and Markdown report outputs must be distinct")
+    _require_distinct_paths(
+        sources=[run_record_path],
+        outputs=[report_json, report_markdown],
+    )
     record = load_json(run_record_path)
     report = build_report(record)
     _write_json(report_json, report)
@@ -527,10 +546,19 @@ def cmd_self_test(_: argparse.Namespace) -> int:
             "report accepted ResultManifest/VerificationResult digest binding drift"
         )
 
+    fake_source = Path("/tmp/idkmesh-evidence-source.json")
+    fake_output = Path("/tmp/idkmesh-evidence-source.json")
+    try:
+        _require_distinct_paths(sources=[fake_source], outputs=[fake_output])
+    except EvidenceReportError:
+        pass
+    else:
+        raise EvidenceReportError("evidence renderer allowed output to overwrite its source record")
+
     print(
         "OK: run evidence report preserves support/reject/error/disagreement, binds verifier evidence "
-        "to exact WorkUnit/ResultManifest digests, leaves human integration pending, and replay detects "
-        "saved-run drift without gaining selection/write/merge authority"
+        "to exact WorkUnit/ResultManifest digests, protects source evidence from output overwrite, leaves "
+        "human integration pending, and replay detects saved-run drift without gaining selection/write/merge authority"
     )
     return 0
 
