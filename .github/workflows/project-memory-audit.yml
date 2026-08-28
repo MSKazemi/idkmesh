@@ -1,0 +1,31 @@
+name: Project Memory Audit
+
+on:
+  pull_request:
+    paths:
+      - 'docs/conversations/**'
+      - 'docs/project-memory/**'
+      - 'tools/project_memory_audit.py'
+      - '.github/workflows/project-memory-audit.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'docs/conversations/**'
+      - 'docs/project-memory/**'
+      - 'tools/project_memory_audit.py'
+      - '.github/workflows/project-memory-audit.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Audit conversation manifest
+        run: python tools/project_memory_audit.py
