@@ -6,10 +6,12 @@ This page is a **curated navigation layer, not an exhaustive catalog**. IDKMesh 
 
 For the project front door, start with [`../README.md`](../README.md), [`../CONTRIBUTING.md`](../CONTRIBUTING.md), and [`../COMMUNITY.md`](../COMMUNITY.md).
 
-## Protocol and implementation specifications
+## Documentation indexes
 
 - [Specifications index](specifications/README.md) — versioned work, evidence,
   evaluator, repository-graph, and project-configuration contracts.
+- [Research index](research/README.md) — research programs, experiments,
+  verification studies, and benchmark-calibration evidence.
 
 ## Active subsystem documents from IDKGraph P1 cohort 1
 
