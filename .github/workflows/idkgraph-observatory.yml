@@ -14,6 +14,7 @@ on:
       - "tests/fixtures/idkgraph_observatory/**"
       - "schemas/idkgraph.schema.json"
       - "docs/specifications/IDKGRAPH_OBSERVATORY_V0_1.md"
+      - "docs/specifications/IDKGRAPH_P0_RESIDUAL_HEALTH_CHECKS.md"
       - ".github/workflows/idkgraph-observatory.yml"
   push:
     branches: [main]
@@ -29,6 +30,7 @@ on:
       - "tests/fixtures/idkgraph_observatory/**"
       - "schemas/idkgraph.schema.json"
       - "docs/specifications/IDKGRAPH_OBSERVATORY_V0_1.md"
+      - "docs/specifications/IDKGRAPH_P0_RESIDUAL_HEALTH_CHECKS.md"
       - ".github/workflows/idkgraph-observatory.yml"
 
 permissions:
@@ -117,6 +119,15 @@ jobs:
               f"{summary['residual_health']['orphan_document_candidates']} orphan candidate(s), "
               f"{summary['residual_health']['accepted_decisions_without_document_link']} accepted-decision linkage warning(s)"
           )
+          for finding in summary['findings']:
+              if finding['severity'] == 'error':
+                  print(
+                      'ERROR:',
+                      finding['category'],
+                      finding.get('source_path'),
+                      f"line={finding.get('line', 0)}",
+                      finding.get('message', ''),
+                  )
           PY
 
 # The observatory composes deterministic observation only. It has no repository/GitHub
