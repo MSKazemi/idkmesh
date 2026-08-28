@@ -92,3 +92,44 @@ def test_balanced_effective_n_still_recovers_independent_majority_panels():
     for n in (3, 5, 7, 9, 11):
         err = e015.majority_error_independent(n, 0.75, 0.5)
         assert abs(e015.effective_n_balanced(err, err, 0.75) - n) < 0.05
+
+
+def test_unit_cost_weighting_reproduces_the_balanced_metric():
+    # w = 1 must be exactly the balanced case, so the weighted metric is a
+    # strict generalisation and cannot silently shift published figures.
+    for fa, fr in ((0.10, 0.10), (0.02, 0.30), (0.25, 0.25)):
+        assert abs(
+            e015.effective_n_weighted(fa, fr, 0.75, 1.0)
+            - e015.effective_n_balanced(fa, fr, 0.75)
+        ) < 1e-9
+
+
+def test_weighting_false_accepts_penalises_the_permissive_panel():
+    # Two panels with the same balanced error but mirrored error profiles.
+    # Raising the cost of a false accept must favour the conservative one.
+    permissive_fa, permissive_fr = 0.30, 0.02
+    conservative_fa, conservative_fr = 0.02, 0.30
+    equal_p = e015.effective_n_weighted(permissive_fa, permissive_fr, 0.75, 1.0)
+    equal_c = e015.effective_n_weighted(conservative_fa, conservative_fr, 0.75, 1.0)
+    assert abs(equal_p - equal_c) < 1e-9      # identical at equal cost
+
+    costly_p = e015.effective_n_weighted(permissive_fa, permissive_fr, 0.75, 10.0)
+    costly_c = e015.effective_n_weighted(conservative_fa, conservative_fr, 0.75, 10.0)
+    assert costly_c > costly_p
+
+
+def test_best_quorum_picks_the_higher_scoring_option():
+    cells = [
+        {"verifiers": 11, "accuracy": 0.75, "correlation": 0.0, "quorum": 0.5,
+         "false_accept": 0.0343, "false_reject": 0.0343},
+        {"verifiers": 11, "accuracy": 0.75, "correlation": 0.0, "quorum": 0.7,
+         "false_accept": 0.0013, "false_reject": 0.2866},
+    ]
+    q, score = e015.best_quorum(cells, 0.75, 0.0, 11, false_accept_cost=1.0)
+    assert q == 0.5                     # equal cost prefers simple majority
+    q_strict, _ = e015.best_quorum(cells, 0.75, 0.0, 11, false_accept_cost=50.0)
+    assert q_strict == 0.7              # a very costly false accept flips it
+
+
+def test_best_quorum_returns_none_for_absent_configuration():
+    assert e015.best_quorum([], 0.75, 0.0, 11) is None

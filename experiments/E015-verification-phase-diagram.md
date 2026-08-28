@@ -293,3 +293,60 @@ otherwise the review policy silently changes strictness as panels grow and shrin
   rates separately so the weighting is a one-line change.
 - The reference family is fixed to simple-majority independent panels. This is a choice,
   not a derivation; it is stated so results remain interpretable.
+
+---
+
+# Cost-weighted quorum selection
+
+## Why equal weighting is the wrong default
+
+`n_eff_balanced` weights both error types equally. For IDKMesh they are not equal:
+merging an unsafe patch costs more than asking a contributor to resubmit. The generalised
+metric is
+
+```
+weighted_error = (w * false_accept + false_reject) / (1 + w)
+```
+
+where `w` is how many false rejects one false accept is worth. `w = 1` reproduces
+`n_eff_balanced` exactly, so no previously published figure moves.
+
+## Result — quorum and panel size are substitutes
+
+For each panel configuration we solve for the **cost ratio at which quorum 0.7 overtakes
+quorum 0.5**. Below the listed `w`, simple majority wins; above it, the strict quorum does.
+
+At `p = 0.75`:
+
+| panel `n` | `rho=0` | `rho=0.25` | `rho=0.5` | `rho=0.75` |
+|---:|---:|---:|---:|---:|
+| 3 | 3 | 3 | 3 | 3 |
+| 5 | 3 | 3 | 3 | 3 |
+| 7 | 3 | 3 | 3 | 3 |
+| 9 | 7 | 7 | 7 | 7 |
+| 11 | 8 | 7 | 8 | 7 |
+| 15 | 17 | 17 | 18 | 15 |
+| 21 | 39 | 33 | 24 | 19 |
+
+Two readings, both operational:
+
+**1. Large panels make strict quorums redundant.** A 3-to-7 member panel justifies a strict
+quorum as soon as a false accept costs about **3x** a false reject — an easy bar to clear
+for merge decisions. A 21-member panel needs the false accept to cost **39x**. Numbers and
+strictness buy the same thing; buying both is waste.
+
+**2. Correlation makes strictness worth buying sooner.** At `n = 21` the threshold falls
+from **39** at `rho = 0` to **19** at `rho = 0.75`. Once reviewers are correlated, extra
+reviewers stop suppressing false accepts (the ceiling from the phase diagram above), so the
+quorum becomes the only remaining lever.
+
+Combined with the saturation result, this gives a concrete policy shape: **estimate `rho`
+first; if it is high, stop adding reviewers and raise the quorum instead.**
+
+The threshold values cluster (3/3/3, then 7/7/7) because of the `floor(q*n) + 1` rounding
+documented above; they should be read as bands, not exact crossings.
+
+## Limitation
+
+These crossings compare only the two quorum levels present in this sweep (`0.5` and `0.7`).
+They locate the crossover between those two, not a global optimum over all quorums.
