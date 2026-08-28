@@ -38,6 +38,22 @@ jobs:
             // intentionally NEVER checks out, imports, executes, or evaluates PR code.
             // It consumes GitHub event metadata only.
 
+            // ACE bootstraps only the labels it owns. Standard GitHub labels such as
+            // good first issue / help wanted are left under normal repository control.
+            const managedLabels = [
+              { name: 'growth:spawn', color: '0E8A16', description: 'Allow a verified merged PR to create one bounded ACE Growth Seed' },
+              { name: 'growth-seed', color: '5319E7', description: 'Bounded contribution opportunity participating in an ACE growth experiment' }
+            ];
+
+            for (const label of managedLabels) {
+              try {
+                await github.rest.issues.getLabel({ owner, repo, name: label.name });
+              } catch (error) {
+                if (error.status !== 404) throw error;
+                await github.rest.issues.createLabel({ owner, repo, ...label });
+              }
+            }
+
             const event = context.eventName;
             const action = context.payload.action || 'event';
             let type = `${event}:${action}`;
@@ -59,6 +75,20 @@ jobs:
               type = 'watch:star'; q = 0; d = 0.35; r = 0; loadDelta = 0;
             } else if (event === 'fork') {
               type = 'fork:created'; q = 0.10; d = 0.90; r = 0.10; loadDelta = 0;
+            }
+
+            // If a future manually created issue declares itself an ACE seed, tag it.
+            // This reacts only to the issue-open event and does not create another issue.
+            if (event === 'issues' && action === 'opened') {
+              const issue = context.payload.issue;
+              if ((issue?.body || '').includes('<!-- ACE_SEED')) {
+                const currentLabels = (issue.labels || []).map(label => label.name);
+                if (!currentLabels.includes('growth-seed')) {
+                  await github.rest.issues.addLabels({
+                    owner, repo, issue_number: issue.number, labels: ['growth-seed']
+                  });
+                }
+              }
             }
 
             const { data: issues } = await github.rest.issues.listForRepo({
@@ -183,14 +213,17 @@ jobs:
                     '',
                     '### Community impact',
                     '',
-                    'Keep the task bounded enough that a new contributor can understand what success means without private maintainer guidance.'
+                    'Keep the task bounded enough that a new contributor can understand what success means without private maintainer guidance.',
+                    '',
+                    '<!-- ACE_SEED type=reproduce cohort=automatic -->'
                   ].join('\n');
 
                   await github.rest.issues.create({
                     owner,
                     repo,
                     title: `[Growth Seed] Reproduce or extend PR #${pr.number}`,
-                    body: seedBody
+                    body: seedBody,
+                    labels: ['growth-seed', 'help wanted']
                   });
                 }
               }
