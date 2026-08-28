@@ -3,9 +3,11 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from fnmatch import fnmatchcase
 import hashlib
+import json
 import os
 from pathlib import Path
 import platform
+import re
 import shutil
 import subprocess
 import tempfile
@@ -18,6 +20,10 @@ from .model import WorkUnit, canonical_digest, validate_result_manifest
 
 class RunnerError(RuntimeError):
     """Raised when the local node cannot prepare or execute a Work Unit."""
+
+
+IMAGE_ID_RE = re.compile(r"^sha256:[0-9a-f]{64}$")
+REPO_DIGEST_RE = re.compile(r"^[^@]+@sha256:[0-9a-f]{64}$")
 
 
 def _utc_now() -> str:
@@ -91,6 +97,26 @@ def _container_git_pointer(workspace: Path) -> Path:
     return pointer
 
 
+def _run_git_command(
+    command: list[str],
+    *,
+    env: dict[str, str],
+    deadline: float,
+    phase: str,
+) -> subprocess.CompletedProcess[bytes]:
+    try:
+        return subprocess.run(
+            command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+            env=env,
+            timeout=_remaining_seconds(deadline, phase),
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise RunnerError(f"Work Unit wall budget exhausted during {phase}") from exc
+
+
 def clone_revision(
     work: WorkUnit,
     workspace: Path,
@@ -106,80 +132,129 @@ def clone_revision(
     env = _git_environment(git_home)
 
     commands = [
-        [
-            "git",
-            "init",
-            "--quiet",
-            f"--template={empty_template}",
-            f"--separate-git-dir={git_dir}",
-            str(workspace),
-        ],
-        _git_repo_command(workspace, git_dir, ["config", "core.worktree", "/workspace"]),
-        _git_repo_command(workspace, git_dir, ["remote", "add", "origin", work.source.repo_url]),
-        _git_repo_command(
-            workspace,
-            git_dir,
-            ["fetch", "--quiet", "--depth", "1", "origin", work.source.revision],
+        (
+            [
+                "git",
+                "init",
+                "--quiet",
+                f"--template={empty_template}",
+                f"--separate-git-dir={git_dir}",
+                str(workspace),
+            ],
+            "git initialization",
         ),
-        _git_repo_command(
-            workspace,
-            git_dir,
-            ["checkout", "--quiet", "--detach", "FETCH_HEAD"],
+        (
+            _git_repo_command(workspace, git_dir, ["config", "core.worktree", "/workspace"]),
+            "git work-tree configuration",
+        ),
+        (
+            _git_repo_command(workspace, git_dir, ["remote", "add", "origin", work.source.repo_url]),
+            "git remote configuration",
+        ),
+        (
+            _git_repo_command(
+                workspace,
+                git_dir,
+                ["fetch", "--quiet", "--depth", "1", "origin", work.source.revision],
+            ),
+            "git source fetch",
+        ),
+        (
+            _git_repo_command(
+                workspace,
+                git_dir,
+                ["checkout", "--quiet", "--detach", "FETCH_HEAD"],
+            ),
+            "git source checkout",
         ),
     ]
-    for command in commands:
-        try:
-            proc = subprocess.run(
-                command,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                timeout=_remaining_seconds(deadline, "source preparation"),
-                check=False,
-                env=env,
-            )
-        except subprocess.TimeoutExpired as exc:
-            raise RunnerError("source preparation exceeded Work Unit wall budget") from exc
+    for command, phase in commands:
+        proc = _run_git_command(command, env=env, deadline=deadline, phase=phase)
         if proc.returncode != 0:
             detail = proc.stderr.decode("utf-8", errors="replace").strip()
-            raise RunnerError(detail or "git preparation failed")
+            raise RunnerError(detail or f"{phase} failed")
 
     # The container may read Git metadata, but the metadata itself is mounted
     # read-only outside /workspace. Host result capture never trusts this pointer.
     _container_git_pointer(workspace)
 
 
-def resolve_container_image_id(image: str, *, deadline: float) -> str:
-    """Resolve a preloaded allowed image to the exact immutable local image ID.
+def _image_repository(reference: str) -> str:
+    """Return repository portion for the small v0.1 allowlisted tag surface."""
 
-    Node v0.1 refuses an implicit pull during task execution. A controlled host
-    preloads the allowlisted image first; the worker then executes by immutable
-    image ID and records that ID in its ResultManifest extension.
-    """
+    without_digest = reference.split("@", 1)[0]
+    last_slash = without_digest.rfind("/")
+    last_colon = without_digest.rfind(":")
+    if last_colon > last_slash:
+        return without_digest[:last_colon]
+    return without_digest
+
+
+def parse_image_inspect(payload: bytes, configured_reference: str) -> tuple[str, str]:
+    """Return immutable local image ID and matching repository digest."""
 
     try:
+        documents = json.loads(payload.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise RunnerError("docker image inspect returned invalid JSON") from exc
+    if not isinstance(documents, list) or len(documents) != 1 or not isinstance(documents[0], dict):
+        raise RunnerError("docker image inspect must return exactly one image object")
+
+    document = documents[0]
+    image_id = document.get("Id")
+    repo_digests = document.get("RepoDigests") or []
+    if not isinstance(image_id, str) or not IMAGE_ID_RE.fullmatch(image_id.lower()):
+        raise RunnerError("docker image inspect did not return an immutable sha256 image ID")
+    image_id = image_id.lower()
+    if not isinstance(repo_digests, list):
+        raise RunnerError("docker image inspect RepoDigests must be an array")
+
+    repository = _image_repository(configured_reference)
+    matching = sorted(
+        digest.lower()
+        for digest in repo_digests
+        if isinstance(digest, str)
+        and REPO_DIGEST_RE.fullmatch(digest.lower())
+        and digest.split("@", 1)[0] == repository
+    )
+    if not matching:
+        raise RunnerError(
+            "allowlisted container tag has no matching immutable repository digest; "
+            "pre-pull the expected registry image instead of using a locally retagged/unresolved image"
+        )
+    return image_id, matching[0]
+
+
+def resolve_container_image(work: WorkUnit, *, deadline: float) -> tuple[str, str]:
+    """Resolve a pre-pulled allowlisted tag to immutable evidence and execution identity.
+
+    The node never relies on an implicit pull during task execution. A controlled
+    host must prepare the image first; the worker records and runs the exact local
+    sha256 image ID it inspected.
+    """
+
+    phase = "container image resolution"
+    try:
         proc = subprocess.run(
-            ["docker", "image", "inspect", "--format={{.Id}}", image],
+            ["docker", "image", "inspect", work.execution.image],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            timeout=_remaining_seconds(deadline, "container image resolution"),
             check=False,
+            timeout=_remaining_seconds(deadline, phase),
         )
     except subprocess.TimeoutExpired as exc:
-        raise RunnerError("container image resolution exceeded Work Unit wall budget") from exc
+        raise RunnerError(f"Work Unit wall budget exhausted during {phase}") from exc
+
     if proc.returncode != 0:
         detail = proc.stderr.decode("utf-8", errors="replace").strip()
         raise RunnerError(
-            "allowed container image must be preloaded on the controlled host"
-            + (f": {detail}" if detail else "")
+            detail
+            or (
+                f"container image {work.execution.image!r} is not available locally; "
+                "pre-pull it on the controlled host before execution"
+            )
         )
-    image_id = proc.stdout.decode("utf-8", errors="strict").strip().lower()
-    if not image_id.startswith("sha256:") or len(image_id) != 71:
-        raise RunnerError(f"Docker returned an invalid immutable image ID for {image!r}")
-    try:
-        int(image_id[7:], 16)
-    except ValueError as exc:
-        raise RunnerError(f"Docker returned a non-hex image ID for {image!r}") from exc
-    return image_id
+    return parse_image_inspect(proc.stdout, work.execution.image)
 
 
 def docker_command(
@@ -228,17 +303,24 @@ def docker_command(
     return command
 
 
-def _git_bytes(workspace: Path, git_dir: Path, git_home: Path, args: list[str]) -> bytes:
-    proc = subprocess.run(
+def _git_bytes(
+    workspace: Path,
+    git_dir: Path,
+    git_home: Path,
+    args: list[str],
+    *,
+    deadline: float,
+    phase: str,
+) -> bytes:
+    proc = _run_git_command(
         _git_repo_command(workspace, git_dir, args),
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        check=False,
         env=_git_environment(git_home),
+        deadline=deadline,
+        phase=phase,
     )
     if proc.returncode != 0:
         detail = proc.stderr.decode("utf-8", errors="replace").strip()
-        raise RunnerError(detail or "git result capture failed")
+        raise RunnerError(detail or f"{phase} failed")
     return proc.stdout
 
 
@@ -252,25 +334,48 @@ def _decode_nul_paths(raw: bytes) -> list[str]:
     )
 
 
-def untracked_paths(workspace: Path, git_dir: Path, git_home: Path) -> list[str]:
+def untracked_paths(
+    workspace: Path,
+    git_dir: Path,
+    git_home: Path,
+    *,
+    deadline: float,
+) -> list[str]:
     # Do not use --exclude-standard here. Ignored files are still task outputs and
     # must not disappear from evidence simply because the source repository's
     # .gitignore happens to match them.
     return _decode_nul_paths(
-        _git_bytes(workspace, git_dir, git_home, ["ls-files", "--others", "-z"])
+        _git_bytes(
+            workspace,
+            git_dir,
+            git_home,
+            ["ls-files", "--others", "-z"],
+            deadline=deadline,
+            phase="untracked output capture",
+        )
     )
 
 
-def changed_paths(workspace: Path, git_dir: Path, git_home: Path) -> list[str]:
+def changed_paths(
+    workspace: Path,
+    git_dir: Path,
+    git_home: Path,
+    *,
+    deadline: float,
+) -> list[str]:
     tracked = _decode_nul_paths(
         _git_bytes(
             workspace,
             git_dir,
             git_home,
             ["diff", "--no-ext-diff", "--name-only", "-z", "HEAD", "--", "."],
+            deadline=deadline,
+            phase="tracked path capture",
         )
     )
-    return sorted(set(tracked + untracked_paths(workspace, git_dir, git_home)))
+    return sorted(
+        set(tracked + untracked_paths(workspace, git_dir, git_home, deadline=deadline))
+    )
 
 
 def _matches(path: str, patterns: tuple[str, ...]) -> bool:
@@ -330,7 +435,12 @@ def run_work_unit(work: WorkUnit, output_dir: str | Path) -> dict:
 
     started_at = _utc_now()
     started = time.monotonic()
-    deadline = started + work.wall_seconds
+    overall_deadline = started + work.wall_seconds
+    # Reserve a small bounded tail for evidence capture so a task consuming its
+    # execution budget cannot prevent the node from recording why it stopped.
+    capture_reserve = min(5.0, work.wall_seconds * 0.10)
+    execution_deadline = overall_deadline - capture_reserve
+
     container_name = f"idkmesh-{work.id.replace('/', '-')[:28]}-{uuid.uuid4().hex[:8]}"
     exit_code: int | None = None
     timed_out = False
@@ -343,7 +453,8 @@ def run_work_unit(work: WorkUnit, output_dir: str | Path) -> dict:
     metadata_violations: list[str] = []
     output_violations: list[str] = []
     runtime_violations: list[str] = []
-    image_id = ""
+
+    image_id, image_repo_digest = resolve_container_image(work, deadline=execution_deadline)
 
     with tempfile.TemporaryDirectory(prefix="idkmesh-node-") as temp_dir:
         temp_root = Path(temp_dir)
@@ -351,8 +462,13 @@ def run_work_unit(work: WorkUnit, output_dir: str | Path) -> dict:
         workspace.mkdir()
         git_dir = temp_root / "git-meta"
         git_home = temp_root / "git-home"
-        image_id = resolve_container_image_id(work.execution.image, deadline=deadline)
-        clone_revision(work, workspace, git_dir, git_home, deadline=deadline)
+        clone_revision(
+            work,
+            workspace,
+            git_dir,
+            git_home,
+            deadline=execution_deadline,
+        )
 
         command = docker_command(
             work,
@@ -361,15 +477,16 @@ def run_work_unit(work: WorkUnit, output_dir: str | Path) -> dict:
             git_dir,
             image_ref=image_id,
         )
+        docker_timeout = min(
+            float(work.execution.timeout_seconds),
+            _remaining_seconds(execution_deadline, "task container execution"),
+        )
         try:
             proc = subprocess.run(
                 command,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
-                timeout=min(
-                    float(work.execution.timeout_seconds),
-                    _remaining_seconds(deadline, "container execution"),
-                ),
+                timeout=docker_timeout,
                 check=False,
             )
             exit_code = proc.returncode
@@ -379,16 +496,33 @@ def run_work_unit(work: WorkUnit, output_dir: str | Path) -> dict:
             timed_out = True
             stdout = exc.stdout or b""
             stderr = exc.stderr or b""
-            subprocess.run(
-                ["docker", "rm", "-f", container_name],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                check=False,
-            )
+            # Mandatory containment cleanup is best-effort and tightly bounded.
+            # It may outlive the task's execution slice, but it does not grant the
+            # task additional execution time.
+            try:
+                subprocess.run(
+                    ["docker", "rm", "-f", container_name],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    timeout=5,
+                    check=False,
+                )
+            except subprocess.TimeoutExpired:
+                pass
 
         metadata_violations = protected_metadata_violations(workspace)
-        untracked = untracked_paths(workspace, git_dir, git_home)
-        paths = changed_paths(workspace, git_dir, git_home)
+        untracked = untracked_paths(
+            workspace,
+            git_dir,
+            git_home,
+            deadline=overall_deadline,
+        )
+        paths = changed_paths(
+            workspace,
+            git_dir,
+            git_home,
+            deadline=overall_deadline,
+        )
         path_violations = path_policy_violations(work, paths)
         artifact_violations = unpackaged_artifact_violations(untracked)
         patch_raw = _git_bytes(
@@ -396,6 +530,8 @@ def run_work_unit(work: WorkUnit, output_dir: str | Path) -> dict:
             git_dir,
             git_home,
             ["diff", "--binary", "--no-ext-diff", "HEAD", "--", "."],
+            deadline=overall_deadline,
+            phase="candidate patch capture",
         )
 
     patch, patch_truncated = _truncate(patch_raw, work.output.max_patch_bytes)
@@ -458,7 +594,7 @@ def run_work_unit(work: WorkUnit, output_dir: str | Path) -> dict:
                 "media_type": "text/x-diff",
                 "description": (
                     "Unverified tracked-file candidate patch produced by the local node. "
-                    "If patch_truncated=1 the worker fails closed and this file is diagnostic evidence only."
+                    "If patch_truncated=1 this file is diagnostic evidence only."
                 ),
             }
         ],
@@ -481,8 +617,7 @@ def run_work_unit(work: WorkUnit, output_dir: str | Path) -> dict:
             "claims": [
                 "The task container was launched with Docker network mode none.",
                 "Host Git metadata was kept outside the task-writable workspace.",
-                "The exact local container image ID was resolved before execution and used as the Docker run image reference.",
-                "The Work Unit wall budget constrained image resolution, source preparation, and task execution.",
+                "The task ran by immutable local container image ID.",
                 "The candidate must be independently verified before acceptance.",
             ],
         },
@@ -493,7 +628,7 @@ def run_work_unit(work: WorkUnit, output_dir: str | Path) -> dict:
             "environment": {
                 "platform": platform.platform(),
                 "python": platform.python_version(),
-                "container_image": work.execution.image,
+                "container_image": image_repo_digest,
                 "tool_versions": {"idkmesh-node": __version__},
             },
         },
@@ -504,6 +639,10 @@ def run_work_unit(work: WorkUnit, output_dir: str | Path) -> dict:
         },
         "extensions": {
             "org.idkmesh.node.v0_1": {
+                "configured_container_image": work.execution.image,
+                "resolved_container_image_id": image_id,
+                "resolved_container_repo_digest": image_repo_digest,
+                "whole_attempt_budget_seconds": work.wall_seconds,
                 "changed_paths": paths,
                 "untracked_paths": untracked,
                 "path_policy_violations": path_violations,
@@ -513,14 +652,11 @@ def run_work_unit(work: WorkUnit, output_dir: str | Path) -> dict:
                 "runtime_policy_violations": runtime_violations,
                 "policy_violations": violations,
                 "timed_out": timed_out,
-                "container_image_id": image_id,
             }
         },
     }
     validate_result_manifest(result)
 
     result_path = output / "result-manifest.json"
-    import json
-
     result_path.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return result
