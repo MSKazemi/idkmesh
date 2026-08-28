@@ -13,7 +13,9 @@ import hashlib
 import json
 from typing import Any
 
-A2A_PROTOCOL_VERSION = "1.0.0"
+# A2A protocol negotiation uses Major.Minor. Specification patch releases (for
+# example 1.0.0) do not belong in requests, responses, or Agent Cards.
+A2A_PROTOCOL_VERSION = "1.0"
 MCP_PROTOCOL_VERSION = "2026-07-28"
 A2A_WORK_CONTRACT_EXTENSION = "https://idkmesh.org/extensions/work-contract/v0.1"
 MCP_WORK_CONTRACT_EXTENSION = "org.idkmesh/work-contract"
@@ -64,12 +66,49 @@ def _contract_payload(work_unit: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _a2a_service_parameters() -> dict[str, str]:
+    """Return transport-neutral A2A service parameters for this request.
+
+    HTTP adapters map these keys to the `A2A-Version` and `A2A-Extensions`
+    headers (or equivalent request parameters). Keeping them explicit here makes
+    protocol negotiation and extension activation testable without implementing
+    a network transport in this module.
+    """
+
+    return {
+        "A2A-Version": A2A_PROTOCOL_VERSION,
+        "A2A-Extensions": A2A_WORK_CONTRACT_EXTENSION,
+    }
+
+
+def _require_a2a_service_parameters(envelope: dict[str, Any]) -> None:
+    service_parameters = envelope.get("serviceParameters")
+    if not isinstance(service_parameters, dict):
+        raise BindingError("A2A binding envelope is missing service parameters")
+    if service_parameters.get("A2A-Version") != A2A_PROTOCOL_VERSION:
+        raise BindingError(
+            "unsupported A2A-Version; expected " + A2A_PROTOCOL_VERSION
+        )
+
+    extension_value = service_parameters.get("A2A-Extensions")
+    if not isinstance(extension_value, str):
+        raise BindingError("A2A binding envelope is missing A2A-Extensions")
+    activated_extensions = {
+        value.strip() for value in extension_value.split(",") if value.strip()
+    }
+    if A2A_WORK_CONTRACT_EXTENSION not in activated_extensions:
+        raise BindingError(
+            "A2A request did not activate the IDKMesh Work Contract extension"
+        )
+
+
 def to_a2a_send_message(work_unit: dict[str, Any]) -> dict[str, Any]:
     """Create an A2A 1.0 SendMessage request payload.
 
     Native A2A fields expose the human-readable objective and lifecycle hints. The
     canonical contract is also carried as JSON data under the IDKMesh extension so
-    a remote adapter can reconstruct it exactly.
+    a remote adapter can reconstruct it exactly. `serviceParameters` models the
+    A2A-Version/A2A-Extensions negotiation that a transport adapter must send.
     """
 
     payload = _contract_payload(work_unit)
@@ -78,6 +117,7 @@ def to_a2a_send_message(work_unit: dict[str, Any]) -> dict[str, Any]:
     return {
         "protocol": "a2a",
         "protocolVersion": A2A_PROTOCOL_VERSION,
+        "serviceParameters": _a2a_service_parameters(),
         "extensions": [A2A_WORK_CONTRACT_EXTENSION],
         "request": {
             "message": {
@@ -121,8 +161,13 @@ def from_a2a_send_message(envelope: dict[str, Any]) -> dict[str, Any]:
 
     if envelope.get("protocol") != "a2a":
         raise BindingError("not an A2A binding envelope")
+    if envelope.get("protocolVersion") != A2A_PROTOCOL_VERSION:
+        raise BindingError(
+            "unsupported A2A protocolVersion; expected " + A2A_PROTOCOL_VERSION
+        )
+    _require_a2a_service_parameters(envelope)
     if A2A_WORK_CONTRACT_EXTENSION not in message.get("extensions", []):
-        raise BindingError("A2A message did not activate the IDKMesh Work Contract extension")
+        raise BindingError("A2A message did not carry the IDKMesh Work Contract extension")
 
     for part in parts:
         if not isinstance(part, dict) or "data" not in part:

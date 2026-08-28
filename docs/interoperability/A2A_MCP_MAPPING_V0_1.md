@@ -42,11 +42,15 @@ Therefore the binding rule is:
 
 `interop.bindings.to_a2a_send_message()` emits an A2A 1.0-oriented `SendMessage` payload with:
 
+- negotiated A2A protocol version `1.0` (Major.Minor; specification patch versions such as `1.0.0` are not request protocol versions);
+- explicit transport-neutral service parameters for `A2A-Version: 1.0` and `A2A-Extensions: https://idkmesh.org/extensions/work-contract/v0.1`;
 - `ROLE_USER`;
 - a text part containing the Work Unit objective;
 - a JSON data part containing the complete canonical Work Unit and its canonical digest;
 - the IDKMesh extension URI `https://idkmesh.org/extensions/work-contract/v0.1`;
 - accepted output modes appropriate for structured result data, text, and patches.
+
+The binding module remains transport-neutral. An HTTP adapter must map the service parameters to the standard `A2A-Version` / `A2A-Extensions` headers (or the equivalent request parameters allowed by the A2A specification). The decoder fails closed if the expected version or extension activation is absent or mismatched.
 
 The full Work Unit is preserved because A2A Task completion describes **agent execution**, not IDKMesh acceptance.
 
@@ -104,9 +108,11 @@ Only a separate verifier/evidence policy may advance the candidate toward integr
 
 Both ecosystems are evolving. Bindings therefore pin explicit protocol revisions and remain outside the canonical Work Unit schema. This lets transport/protocol adapters change without renaming IDKMesh's core work semantics.
 
+For A2A specifically, keep **specification release** and **negotiated protocol version** distinct: protocol negotiation uses `Major.Minor`, while patch releases do not change protocol compatibility and should not be sent as request protocol versions.
+
 ## Next implementation tests
 
-1. Validate the binding module against real A2A 1.0 SDK types.
+1. Validate the binding module against real A2A 1.0 SDK types and the A2A TCK.
 2. Validate the MCP envelope against a 2026-07-28 SDK that supports custom extensions; Tasks runtime support is still uneven across SDKs.
 3. Build a local adapter and one A2A or MCP mock adapter behind the same coordinator interface.
 4. Convert external artifacts into canonical worker ResultManifest v0.1.
