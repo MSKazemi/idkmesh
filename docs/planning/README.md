@@ -6,6 +6,7 @@ This directory translates the long-range vision into current execution choices.
 
 - [`CURRENT_PRIORITIES.md`](CURRENT_PRIORITIES.md) — current narrative priority assessment and sequencing rationale.
 - [`EXECUTION_TARGET_GRAPH.md`](EXECUTION_TARGET_GRAPH.md) — dependency-oriented goal -> target -> task -> evidence view for the current product critical path and parallel capacity-gated tracks.
+- [`REPOSITORY_IMPROVEMENT_LOOP.md`](REPOSITORY_IMPROVEMENT_LOOP.md) — operating contract for evidence-bearing iterations, convergence before expansion, and review-capacity-aware task selection.
 
 ## Relationship to other project artifacts
 
