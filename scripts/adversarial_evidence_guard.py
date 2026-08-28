@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 from pathlib import Path
 from typing import Any, Sequence
 
@@ -56,12 +57,16 @@ def _validate_reports(
 ) -> list[float]:
     lo = float(lower)
     hi = float(upper)
+    if not math.isfinite(lo) or not math.isfinite(hi):
+        raise ValueError("lower and upper must be finite")
     if not hi > lo:
         raise ValueError("upper must be greater than lower")
     if not reports:
         raise ValueError("at least one report is required")
     values = [float(value) for value in reports]
     for index, value in enumerate(values, start=1):
+        if not math.isfinite(value):
+            raise ValueError(f"report {index} must be finite")
         if value < lo - EPS or value > hi + EPS:
             raise ValueError(f"report {index}={value} is outside [{lo},{hi}]")
     return values
@@ -158,6 +163,8 @@ def threshold_certificate(
     hi = float(upper)
     t = float(threshold)
     m = float(margin)
+    if not all(math.isfinite(value) for value in (lo, hi, t, m)):
+        raise ValueError("threshold, margin, lower, and upper must be finite")
     if not lo <= t <= hi:
         raise ValueError("threshold must lie inside [lower,upper]")
     if m < 0.0:
