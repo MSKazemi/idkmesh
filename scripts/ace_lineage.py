@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -19,6 +20,9 @@ from jsonschema import Draft202012Validator, FormatChecker
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_PATH = ROOT / "schemas" / "ace-lineage-v0.1.schema.json"
 BLOCK_RE = re.compile(r"<!--\s*ACE_LINEAGE\s*\n(?P<payload>.*?)\n\s*ACE_LINEAGE\s*-->", re.DOTALL)
+RFC3339_RE = re.compile(
+    r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$"
+)
 
 
 class LineageError(RuntimeError):
@@ -53,15 +57,31 @@ def lineage_identity(record: dict[str, Any]) -> str:
     )
 
 
+def _require_rfc3339(value: Any, label: str) -> None:
+    if not isinstance(value, str) or not RFC3339_RE.fullmatch(value):
+        raise LineageError(f"{label} must be an RFC3339 timestamp with timezone")
+    try:
+        datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise LineageError(f"{label} is not a valid calendar timestamp") from exc
+
+
 def validate_record(record: dict[str, Any], validator: Draft202012Validator) -> None:
     errors = sorted(validator.iter_errors(record), key=lambda error: list(error.absolute_path))
-    if not errors:
-        return
-    lines = ["ACE lineage record failed schema validation:"]
-    for error in errors:
-        location = ".".join(str(part) for part in error.absolute_path) or "<root>"
-        lines.append(f"- {location}: {error.message}")
-    raise LineageError("\n".join(lines))
+    if errors:
+        lines = ["ACE lineage record failed schema validation:"]
+        for error in errors:
+            location = ".".join(str(part) for part in error.absolute_path) or "<root>"
+            lines.append(f"- {location}: {error.message}")
+        raise LineageError("\n".join(lines))
+
+    # Draft 2020-12 treats `format` primarily as annotation unless a validator
+    # configuration explicitly enables assertion semantics. Make the protocol's
+    # timestamp boundary deterministic instead of relying on library defaults.
+    _require_rfc3339(record["recorded_at"], "recorded_at")
+    verification = record.get("verification")
+    if verification is not None:
+        _require_rfc3339(verification["verified_at"], "verification.verified_at")
 
 
 def extract_markdown(text: str) -> list[dict[str, Any]]:
