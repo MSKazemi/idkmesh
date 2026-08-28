@@ -93,6 +93,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add results/experiments/r2/reference-scale-seed42.json results/experiments/r2/reference-scale-seed42.md
+          git add -f results/experiments/r2/reference-scale-seed42.json results/experiments/r2/reference-scale-seed42.md
           git commit -m "results: add R2 reference scale sweep seed 42"
           git push origin HEAD:experiment/r2-reference-scale
