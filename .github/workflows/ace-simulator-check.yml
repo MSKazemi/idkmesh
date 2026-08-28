@@ -1,0 +1,31 @@
+name: ACE simulator check
+
+on:
+  pull_request:
+    paths:
+      - "experiments/ace_population_sim.py"
+      - ".github/workflows/ace-simulator-check.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "experiments/ace_population_sim.py"
+      - ".github/workflows/ace-simulator-check.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  acceptance:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run deterministic ACE acceptance checks
+        run: python experiments/ace_population_sim.py --check --format json
