@@ -1,0 +1,7 @@
+diff --git a/SECURITY.md b/SECURITY.md
+index 1111111..2222222 100644
+--- a/SECURITY.md
++++ b/SECURITY.md
+@@ -1 +1,2 @@
+ # Security
++<!-- patch-evaluator expected -->

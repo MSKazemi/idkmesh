@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Run the existing IDKMesh local verifier through a bound EvaluatorPlan.
+"""Run canonical IDKMesh verifier backends through a bound EvaluatorPlan.
 
 This is a guard/control layer, not a second verifier implementation. It binds
 verifier-owned deterministic policy to an exact WorkUnit and source revision,
-then delegates candidate evaluation to experiments/local_verifier.py.
+checks exact required-validator coverage, then delegates candidate evaluation to
+experiments/local_verifier.py.
 """
 
 from __future__ import annotations
@@ -21,12 +22,19 @@ import local_verifier
 from provenance_integrity import canonical_digest, validate_integrity
 
 ROOT = Path(__file__).resolve().parents[1]
-EVALUATOR_PLAN_SCHEMA = ROOT / "schemas" / "evaluator-plan-v0.1.schema.json"
-RUNNER_VERSION = "0.1"
-SUPPORTED_LOCAL_VALIDATOR_IDS = {
+EVALUATOR_PLAN_SCHEMAS = {
+    "0.1": ROOT / "schemas" / "evaluator-plan-v0.1.schema.json",
+    "0.2": ROOT / "schemas" / "evaluator-plan-v0.2.schema.json",
+}
+RUNNER_VERSION = "0.2"
+JSON_VALIDATOR_IDS = {
     "artifact-digest",
     "candidate-scope",
     "independent-acceptance",
+}
+PATCH_VALIDATOR_IDS = {
+    "result-manifest-schema",
+    "independent-review",
 }
 
 
@@ -46,7 +54,11 @@ def ensure_outside(candidate: Path, boundary: Path, label: str) -> None:
 
 def load_plan(path: Path) -> dict[str, Any]:
     plan = local_verifier.load_json(path)
-    local_verifier.validate_schema(plan, EVALUATOR_PLAN_SCHEMA, "EvaluatorPlan")
+    version = plan.get("schema_version")
+    schema = EVALUATOR_PLAN_SCHEMAS.get(str(version))
+    if schema is None:
+        raise EvaluatorPlanError(f"unsupported EvaluatorPlan schema_version: {version!r}")
+    local_verifier.validate_schema(plan, schema, f"EvaluatorPlan v{version}")
     return plan
 
 
@@ -58,16 +70,44 @@ def required_work_unit_validators(work_unit: dict[str, Any]) -> set[str]:
     }
 
 
+def backend_name(plan: dict[str, Any]) -> str:
+    if plan["schema_version"] == "0.1":
+        return "json_exact"
+    if plan["schema_version"] == "0.2" and plan.get("backend", {}).get("type") == "unified_diff":
+        return "unified_diff"
+    raise EvaluatorPlanError("EvaluatorPlan does not select a supported verifier backend")
+
+
+def supported_validator_ids(plan: dict[str, Any]) -> set[str]:
+    backend = backend_name(plan)
+    if backend == "json_exact":
+        return set(JSON_VALIDATOR_IDS)
+    if backend == "unified_diff":
+        return set(PATCH_VALIDATOR_IDS)
+    raise EvaluatorPlanError(f"unsupported evaluator backend: {backend}")
+
+
 def operational_policy(plan: dict[str, Any]) -> dict[str, Any]:
-    """Translate the bound plan into the existing local_verifier v0.1 policy."""
-    return {
-        "schema_version": "0.1",
-        "id": plan["id"],
-        "candidate_artifact_id": plan["candidate_artifact_id"],
-        "allowed_files": plan["allowed_files"],
-        "max_candidate_bytes": plan["max_candidate_bytes"],
-        "required_json": plan["required_json"],
-    }
+    """Translate a bound EvaluatorPlan into the canonical verifier backend policy."""
+
+    backend = backend_name(plan)
+    if backend == "json_exact":
+        return {
+            "schema_version": "0.1",
+            "id": plan["id"],
+            "candidate_artifact_id": plan["candidate_artifact_id"],
+            "allowed_files": plan["allowed_files"],
+            "max_candidate_bytes": plan["max_candidate_bytes"],
+            "required_json": plan["required_json"],
+        }
+    if backend == "unified_diff":
+        return {
+            "schema_version": "0.2",
+            "id": plan["id"],
+            "candidate_artifact_id": plan["candidate_artifact_id"],
+            "backend": copy.deepcopy(plan["backend"]),
+        }
+    raise EvaluatorPlanError(f"unsupported evaluator backend: {backend}")
 
 
 def validate_plan_binding(
@@ -78,15 +118,17 @@ def validate_plan_binding(
     plan_path: Path,
     candidate_root: Path,
 ) -> None:
-    local_verifier.validate_schema(
-        work_unit, local_verifier.WORK_UNIT_SCHEMA, "Work Unit"
-    )
+    local_verifier.validate_schema(work_unit, local_verifier.WORK_UNIT_SCHEMA, "Work Unit")
     local_verifier.validate_schema(
         worker_result,
         local_verifier.RESULT_MANIFEST_SCHEMA,
         "ResultManifest",
     )
-    local_verifier.validate_schema(plan, EVALUATOR_PLAN_SCHEMA, "EvaluatorPlan")
+    version = str(plan.get("schema_version"))
+    schema = EVALUATOR_PLAN_SCHEMAS.get(version)
+    if schema is None:
+        raise EvaluatorPlanError(f"unsupported EvaluatorPlan schema_version: {version!r}")
+    local_verifier.validate_schema(plan, schema, f"EvaluatorPlan v{version}")
 
     binding = plan["binding"]
     if binding["work_unit_id"] != work_unit["id"]:
@@ -120,10 +162,14 @@ def validate_plan_binding(
             "EvaluatorPlan validator coverage must exactly match required WorkUnit validators; "
             f"missing={missing}, extra={extra}"
         )
-    if plan_ids != SUPPORTED_LOCAL_VALIDATOR_IDS:
+
+    supported = supported_validator_ids(plan)
+    if plan_ids != supported:
+        missing = sorted(plan_ids - supported)
+        extra = sorted(supported - plan_ids)
         raise EvaluatorPlanError(
-            "EvaluatorPlan asks this v0.1 runner to cover unsupported validator ids: "
-            + ", ".join(sorted(plan_ids ^ SUPPORTED_LOCAL_VALIDATOR_IDS))
+            "selected evaluator backend does not exactly implement the bound required validators; "
+            f"unsupported_required={missing}, backend_extra={extra}"
         )
 
     requested_ids = set(worker_result["verification_request"]["expected_validator_ids"])
@@ -157,17 +203,38 @@ def verify_with_plan(
         candidate_root=candidate_root,
     )
 
-    result = local_verifier.verify_candidate(
-        work_unit=work_unit,
-        worker_result=worker_result,
-        policy=operational_policy(plan),
-        candidate_root=candidate_root,
-        policy_path=plan_path,
-    )
+    policy = operational_policy(plan)
+    backend = backend_name(plan)
+    if backend == "json_exact":
+        result = local_verifier.verify_candidate(
+            work_unit=work_unit,
+            worker_result=worker_result,
+            policy=policy,
+            candidate_root=candidate_root,
+            policy_path=plan_path,
+        )
+    elif backend == "unified_diff":
+        result = local_verifier.verify_patch_candidate(
+            work_unit=work_unit,
+            worker_result=worker_result,
+            policy=policy,
+            candidate_root=candidate_root,
+            policy_path=plan_path,
+        )
+    else:
+        raise EvaluatorPlanError(f"unsupported evaluator backend: {backend}")
 
     if result["verifier"] != plan["verifier"]:
         raise EvaluatorPlanError(
             "underlying verifier identity/version differs from the bound EvaluatorPlan"
+        )
+
+    result_check_ids = {
+        check["id"] for check in result["checks"] if check.get("required") is True
+    }
+    if result_check_ids != set(plan["required_validator_ids"]):
+        raise EvaluatorPlanError(
+            "VerificationResult required checks differ from EvaluatorPlan required_validator_ids"
         )
 
     plan_digest = canonical_digest(plan)
@@ -175,9 +242,8 @@ def verify_with_plan(
     result.setdefault("extensions", {})["org.idkmesh.evaluator_plan.id"] = plan["id"]
     result["extensions"]["org.idkmesh.evaluator_plan.digest"] = plan_digest
     result["extensions"]["org.idkmesh.evaluator_plan.visibility"] = plan["visibility"]
-    result["extensions"]["org.idkmesh.evaluator_plan.execution_mode"] = plan[
-        "execution_mode"
-    ]
+    result["extensions"]["org.idkmesh.evaluator_plan.execution_mode"] = plan["execution_mode"]
+    result["extensions"]["org.idkmesh.evaluator_plan.backend"] = backend
     result["extensions"]["org.idkmesh.evaluator_plan.runner_version"] = RUNNER_VERSION
 
     local_verifier.validate_schema(
@@ -231,14 +297,11 @@ def cmd_verify(args: argparse.Namespace) -> int:
         plan_path=plan_path,
     )
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(
-        json.dumps(result, indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
-    )
+    output_path.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print(
         f"{result['status']}: wrote {output_path}; "
         f"recommendation={result['decision_support']['recommendation']} "
-        f"evaluator_plan={plan['id']}"
+        f"evaluator_plan={plan['id']} backend={backend_name(plan)}"
     )
     return 0 if result["status"] == "passed" else 1
 
@@ -285,9 +348,7 @@ def cmd_self_test(args: argparse.Namespace) -> int:
     if bad["status"] != "failed":
         raise EvaluatorPlanError("known-bad bound evaluator fixture did not fail")
     if good["provenance"]["verifier_config_digest"] != canonical_digest(plan):
-        raise EvaluatorPlanError(
-            "VerificationResult did not preserve the full EvaluatorPlan digest"
-        )
+        raise EvaluatorPlanError("VerificationResult did not preserve the full EvaluatorPlan digest")
 
     wrong_digest = copy.deepcopy(plan)
     wrong_digest["binding"]["work_unit_digest"] = "sha256:" + "0" * 64
@@ -316,9 +377,7 @@ def cmd_self_test(args: argparse.Namespace) -> int:
     )
 
     missing_validator = copy.deepcopy(plan)
-    missing_validator["required_validator_ids"] = missing_validator[
-        "required_validator_ids"
-    ][:-1]
+    missing_validator["required_validator_ids"] = missing_validator["required_validator_ids"][:-1]
     expect_plan_error(
         "incomplete validator coverage",
         lambda: verify_with_plan(
@@ -348,10 +407,7 @@ def cmd_self_test(args: argparse.Namespace) -> int:
         temp_candidate = temp_root / "candidate"
         shutil.copytree(good_candidate_root, temp_candidate)
         candidate_owned_plan = temp_candidate / "evaluator-plan.json"
-        candidate_owned_plan.write_text(
-            json.dumps(plan, indent=2, sort_keys=True) + "\n",
-            encoding="utf-8",
-        )
+        candidate_owned_plan.write_text(json.dumps(plan, indent=2, sort_keys=True) + "\n", encoding="utf-8")
         expect_plan_error(
             "candidate-owned evaluator plan",
             lambda: verify_with_plan(
@@ -372,10 +428,93 @@ def cmd_self_test(args: argparse.Namespace) -> int:
         )
 
     print(
-        "OK: bound EvaluatorPlan accepts/rejects the existing verifier fixtures and fails closed "
-        "on WorkUnit digest drift, source-revision drift, validator-coverage loss, identity collision, "
-        "candidate-owned evaluator control, candidate-local verification output, and canonical "
-        "repository output targets"
+        "OK: bound EvaluatorPlan v0.1 accepts/rejects JSON fixtures and fails closed on "
+        "WorkUnit digest drift, source-revision drift, validator-coverage loss, identity collision, "
+        "candidate-owned evaluator control, candidate-local output, and canonical output targets"
+    )
+    return 0
+
+
+def cmd_patch_self_test(args: argparse.Namespace) -> int:
+    work_unit_path = local_verifier.resolve_repo_path(args.work_unit)
+    plan_path = local_verifier.resolve_repo_path(args.evaluator_plan)
+    work_unit = local_verifier.load_json(work_unit_path)
+    plan = load_plan(plan_path)
+
+    good_root = local_verifier.resolve_repo_path(args.good_candidate_root)
+    wrong_root = local_verifier.resolve_repo_path(args.wrong_candidate_root)
+    forbidden_root = local_verifier.resolve_repo_path(args.forbidden_candidate_root)
+    good_worker = local_verifier.load_json(good_root / "result-manifest.json")
+    wrong_worker = local_verifier.load_json(wrong_root / "result-manifest.json")
+    forbidden_worker = local_verifier.load_json(forbidden_root / "result-manifest.json")
+
+    good = verify_with_plan(
+        work_unit=work_unit,
+        worker_result=good_worker,
+        plan=plan,
+        candidate_root=good_root,
+        plan_path=plan_path,
+    )
+    wrong = verify_with_plan(
+        work_unit=work_unit,
+        worker_result=wrong_worker,
+        plan=plan,
+        candidate_root=wrong_root,
+        plan_path=plan_path,
+    )
+    forbidden = verify_with_plan(
+        work_unit=work_unit,
+        worker_result=forbidden_worker,
+        plan=plan,
+        candidate_root=forbidden_root,
+        plan_path=plan_path,
+    )
+
+    if good["status"] != "passed" or good["decision_support"]["recommendation"] != "accept_candidate":
+        raise EvaluatorPlanError("known-good patch fixture was not supported")
+    expected_checks = {"result-manifest-schema", "independent-review"}
+    if {check["id"] for check in good["checks"] if check["required"]} != expected_checks:
+        raise EvaluatorPlanError("patch VerificationResult does not preserve WorkUnit validator ids")
+    if wrong["status"] != "failed" or wrong["decision_support"]["recommendation"] != "reject_candidate":
+        raise EvaluatorPlanError("scope-valid semantically wrong patch was not rejected")
+    if any(finding["category"] == "scope" for finding in wrong["findings"]):
+        raise EvaluatorPlanError("wrong-semantic fixture should fail semantics without a scope violation")
+    if forbidden["status"] != "failed" or not any(
+        finding["category"] == "scope" for finding in forbidden["findings"]
+    ):
+        raise EvaluatorPlanError("forbidden-path patch was not independently rejected for scope")
+
+    forged = copy.deepcopy(good_worker)
+    forged["produced_artifacts"][0]["digest"] = "sha256:" + "0" * 64
+    forged_result = verify_with_plan(
+        work_unit=work_unit,
+        worker_result=forged,
+        plan=plan,
+        candidate_root=good_root,
+        plan_path=plan_path,
+    )
+    if forged_result["status"] != "failed" or not any(
+        finding["category"] == "provenance" for finding in forged_result["findings"]
+    ):
+        raise EvaluatorPlanError("forged patch digest was not independently rejected")
+
+    wrong_binding = copy.deepcopy(plan)
+    wrong_binding["binding"]["work_unit_digest"] = "sha256:" + "0" * 64
+    expect_plan_error(
+        "patch EvaluatorPlan binding drift",
+        lambda: verify_with_plan(
+            work_unit=work_unit,
+            worker_result=good_worker,
+            plan=wrong_binding,
+            candidate_root=good_root,
+            plan_path=plan_path,
+        ),
+    )
+
+    print(
+        "OK: EvaluatorPlan v0.2 patch backend independently supports a good patch, rejects a "
+        "scope-valid semantic failure, rejects forbidden-path and forged-digest candidates, "
+        "preserves exact WorkUnit validator ids, and fails closed on binding drift"
     )
     return 0
 
@@ -384,48 +523,30 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
 
-    verify = sub.add_parser(
-        "verify", help="Run the local verifier through a bound EvaluatorPlan."
-    )
+    verify = sub.add_parser("verify", help="Run a canonical verifier backend through a bound EvaluatorPlan.")
     verify.add_argument("--work-unit", required=True)
     verify.add_argument("--result-manifest", required=True)
     verify.add_argument("--candidate-root", required=True)
     verify.add_argument("--evaluator-plan", required=True)
-    verify.add_argument(
-        "--output",
-        required=True,
-        help="Repository-relative generated evidence path under results/.",
-    )
+    verify.add_argument("--output", required=True, help="Repository-relative generated evidence path under results/.")
     verify.set_defaults(func=cmd_verify)
 
-    self_test = sub.add_parser(
-        "self-test", help="Run deterministic evaluator-binding safety tests."
-    )
-    self_test.add_argument(
-        "--work-unit",
-        default="examples/work-units/local-verifier-smoke.work-unit.json",
-    )
-    self_test.add_argument(
-        "--evaluator-plan",
-        default="verification/fixtures/verifier-smoke-evaluator-plan.json",
-    )
-    self_test.add_argument(
-        "--good-result-manifest",
-        default="examples/verifier/good/result-manifest.json",
-    )
-    self_test.add_argument(
-        "--good-candidate-root",
-        default="examples/verifier/good/candidate-root",
-    )
-    self_test.add_argument(
-        "--bad-result-manifest",
-        default="examples/verifier/bad/result-manifest.json",
-    )
-    self_test.add_argument(
-        "--bad-candidate-root",
-        default="examples/verifier/bad/candidate-root",
-    )
+    self_test = sub.add_parser("self-test", help="Run deterministic EvaluatorPlan v0.1 JSON binding safety tests.")
+    self_test.add_argument("--work-unit", default="examples/work-units/local-verifier-smoke.work-unit.json")
+    self_test.add_argument("--evaluator-plan", default="verification/fixtures/verifier-smoke-evaluator-plan.json")
+    self_test.add_argument("--good-result-manifest", default="examples/verifier/good/result-manifest.json")
+    self_test.add_argument("--good-candidate-root", default="examples/verifier/good/candidate-root")
+    self_test.add_argument("--bad-result-manifest", default="examples/verifier/bad/result-manifest.json")
+    self_test.add_argument("--bad-candidate-root", default="examples/verifier/bad/candidate-root")
     self_test.set_defaults(func=cmd_self_test)
+
+    patch_test = sub.add_parser("patch-self-test", help="Run EvaluatorPlan v0.2 unified-diff backend safety tests.")
+    patch_test.add_argument("--work-unit", default="examples/work-units/patch-verifier-smoke.work-unit.json")
+    patch_test.add_argument("--evaluator-plan", default="verification/fixtures/patch-smoke-evaluator-plan-v0.2.json")
+    patch_test.add_argument("--good-candidate-root", default="examples/verifier/patch/good")
+    patch_test.add_argument("--wrong-candidate-root", default="examples/verifier/patch/wrong-semantic")
+    patch_test.add_argument("--forbidden-candidate-root", default="examples/verifier/patch/forbidden")
+    patch_test.set_defaults(func=cmd_patch_self_test)
     return parser
 
 
