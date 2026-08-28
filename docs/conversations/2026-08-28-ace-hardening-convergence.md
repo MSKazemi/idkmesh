@@ -39,12 +39,13 @@ The converged workflow combines:
 - keep the evidence ledger operational so observation continues without increasing authority;
 - document the bootstrap ruleset/branch-protection target and single-maintainer constraints.
 
-## New regression test
+## Regression contract
 
 `tests/test_ace_workflow_hardening.py` statically checks the privileged workflow for the most important invariants:
 
 - pinned action dependency;
 - no `actions/checkout`;
+- **no YAML shell `run:` step in the privileged `pull_request_target` workflow**;
 - no `contents: write`;
 - trusted marker authorization;
 - workflow-owned ledger identity;
@@ -52,6 +53,8 @@ The converged workflow combines:
 - no `pr.title` interpolation;
 - branch-protection actuation gate;
 - labeled dedupe requirement.
+
+The explicit no-shell-execution check was ported from the later #51 contract work into this convergence branch so PR #98 remains the single canonical safety review surface.
 
 The path-scoped workflow `.github/workflows/ace-workflow-hardening-check.yml` runs these checks with Python 3.11 and 3.13 and has `contents: read` only.
 
@@ -85,12 +88,27 @@ AND forbidden capabilities disabled
 
 At the time of this convergence, public branch metadata still reported `main` as unprotected and the ACE Growth Ledger reported near-zero capacity. Therefore the correct operating posture remained `SHADOW / CONSOLIDATE`.
 
-## Intended PR cleanup
+## Empirical community state checked during continuation
 
-After the converged PR passes CI and is reviewable:
+The live ACE Growth Ledger later showed:
 
-- close PR #51 as superseded by the convergence PR;
-- close PR #62 as superseded by the convergence PR;
-- preserve their issue references and rationale in the new PR body and this conversation record.
+```text
+mode = CONSOLIDATE
+review_load ~= 45.55
+K = 8 (current controller hypothesis)
+capacity ~= 0
+```
+
+with 173 observed raw events. This is a direct example of the anti-Goodhart rule: high repository activity is not evidence that the project should create another community generation.
+
+Bootstrap Growth Seeds #24–#28 were inspected. Their visible activity remained predominantly repository-owner driven; no inspected comment on #25/#26 represented an external contributor. Therefore Cohort 2 should remain gated on real external/verified descendant evidence rather than raw PR/commit velocity.
+
+## PR cleanup
+
+PR #62 was closed unmerged after its threat model and metadata hardening were preserved in this convergence path.
+
+PR #51 temporarily accumulated an additional equivalent safety contract during concurrent work. Its only missing invariant relative to PR #98—the explicit ban on a shell `run:` step in the privileged workflow—was ported into `tests/test_ace_workflow_hardening.py` here.
+
+Therefore PR #98 should remain the canonical safety integration surface and PR #51 can be closed as superseded without losing a safety property.
 
 This reduces the open ACE review surface while retaining the stronger combined safety contract.
