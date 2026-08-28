@@ -1,0 +1,39 @@
+{
+  "schema_version": "0.1",
+  "id": "verification/local-smoke-plan",
+  "binding": {
+    "work_unit_id": "verification/local-smoke",
+    "work_unit_version": 1,
+    "work_unit_digest": "sha256:2fe402867536782e405643eb6fbff50173befc05ed501b3f9e316bc33456d5ca",
+    "source_revision": "fixture-verifier-smoke-v1"
+  },
+  "visibility": "public",
+  "execution_mode": "metadata_only",
+  "verifier": {
+    "id": "idkmesh-local-verifier",
+    "type": "system",
+    "adapter": "deterministic-json-verifier",
+    "adapter_version": "0.1"
+  },
+  "required_validator_ids": [
+    "artifact-digest",
+    "candidate-scope",
+    "independent-acceptance"
+  ],
+  "candidate_artifact_id": "candidate-result",
+  "allowed_files": ["candidate.json"],
+  "max_candidate_bytes": 4096,
+  "required_json": {
+    "schema_version": "0.1",
+    "answer": 42,
+    "status": "ready"
+  },
+  "policy": {
+    "require_plan_outside_candidate_root": true,
+    "require_output_outside_candidate_root": true,
+    "require_verifier_distinct_from_worker": true
+  },
+  "extensions": {
+    "org.idkmesh.evaluator.fixture": true
+  }
+}
