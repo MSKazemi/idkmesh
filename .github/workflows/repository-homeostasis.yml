@@ -1,0 +1,118 @@
+name: Repository Homeostasis
+
+on:
+  pull_request:
+    paths:
+      - "**/*.md"
+      - "schemas/**"
+      - "examples/**"
+      - "experiments/**"
+      - "tools/repo_observatory.py"
+      - ".idkmesh/repository-homeostasis.json"
+      - ".github/workflows/repository-homeostasis.yml"
+  push:
+    branches: [main]
+    paths:
+      - "**/*.md"
+      - "schemas/**"
+      - "examples/**"
+      - "experiments/**"
+      - "tools/repo_observatory.py"
+      - ".idkmesh/repository-homeostasis.json"
+      - ".github/workflows/repository-homeostasis.yml"
+  schedule:
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+
+jobs:
+  observe:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      restructure_due: ${{ steps.decision.outputs.restructure_due }}
+      pressure: ${{ steps.decision.outputs.pressure }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Measure repository structure
+        run: python tools/repo_observatory.py
+
+      - id: decision
+        name: Export homeostasis decision
+        shell: bash
+        run: |
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          from pathlib import Path
+          report = json.loads(Path("artifacts/repository-homeostasis.json").read_text())
+          print("restructure_due=" + str(report["epoch"]["restructure_due"]).lower())
+          print("pressure=" + str(report["metrics"]["structural_pressure"]))
+          PY
+
+      - name: Add report to workflow summary
+        run: cat artifacts/repository-homeostasis.md >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: repository-homeostasis
+          path: |
+            artifacts/repository-homeostasis.json
+            artifacts/repository-homeostasis.md
+
+  ledger:
+    needs: observe
+    if: github.event_name != 'pull_request' && needs.observe.outputs.restructure_due == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: repository-homeostasis
+          path: artifacts
+
+      - name: Create or update structural-pressure ledger
+        uses: actions/github-script@v7
+        env:
+          RHE_PRESSURE: ${{ needs.observe.outputs.pressure }}
+        with:
+          script: |
+            const fs = require('fs');
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const title = '[RHE] Repository Structure Ledger';
+            let report = fs.readFileSync('artifacts/repository-homeostasis.md', 'utf8');
+            if (report.length > 58000) report = report.slice(0, 58000) + '\n\n[report truncated]';
+            const body = [
+              '# Repository Homeostasis Ledger',
+              '',
+              'This issue is maintained by the proposal-only Repository Homeostasis Engine.',
+              '',
+              `Current structural pressure: **${process.env.RHE_PRESSURE}/100**`,
+              '',
+              'RHE may recommend restructuring, but it does not move/delete files or merge structural changes.',
+              '',
+              report,
+            ].join('\n');
+
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner, repo, state: 'open', per_page: 100
+            });
+            const existing = issues.find(i => !i.pull_request && i.title === title);
+            if (existing) {
+              await github.rest.issues.update({ owner, repo, issue_number: existing.number, body });
+            } else {
+              await github.rest.issues.create({ owner, repo, title, body });
+            }
+
+# Safety: PR code runs only in the read-only `observe` job. The write-capable
+# `ledger` job never checks out or executes repository code and is disabled for
+# pull_request events.
