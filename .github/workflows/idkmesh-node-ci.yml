@@ -1,0 +1,32 @@
+name: IDKMesh Node CI
+
+on:
+  pull_request:
+    paths:
+      - "node/**"
+      - ".github/workflows/idkmesh-node-ci.yml"
+  push:
+    branches: [main]
+    paths:
+      - "node/**"
+      - ".github/workflows/idkmesh-node-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Run unit tests
+        env:
+          PYTHONPATH: node/src
+        run: python -m unittest discover -s node/tests -v

@@ -1,0 +1,25 @@
+{
+  "version": "0.1",
+  "id": "validate-idkmesh-docs",
+  "source": {
+    "repo_url": "https://github.com/MSKazemi/idkmesh",
+    "revision": "REPLACE_WITH_FULL_40_CHARACTER_COMMIT_SHA"
+  },
+  "execution": {
+    "image": "python:3.12-alpine",
+    "command": [
+      "python",
+      "-c",
+      "from pathlib import Path; p=Path('IDKMESH_NODE_PROBE.txt'); p.write_text('candidate artifact from sandbox\\n')"
+    ],
+    "network": "none",
+    "timeout_seconds": 60,
+    "cpus": 1.0,
+    "memory_mb": 256,
+    "pids_limit": 64
+  },
+  "output": {
+    "max_patch_bytes": 1000000,
+    "max_log_bytes": 262144
+  }
+}
