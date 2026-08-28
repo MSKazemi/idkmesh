@@ -148,6 +148,12 @@ def _enforce_v0_2_policy(data: dict[str, Any], binding: dict[str, Any]) -> None:
     if verification["minimum_independent_verifiers"] < 1:
         raise WorkUnitError("node v0.1 requires at least one independent verifier")
 
+    budget = data["budget"]
+    if float(budget["project_spend_usd_max"]) != 0.0:
+        raise WorkUnitError("node v0.1 requires budget.project_spend_usd_max=0")
+    if budget["paid_fallback_allowed"] is not False:
+        raise WorkUnitError("node v0.1 requires budget.paid_fallback_allowed=false")
+
     requirements = data["requirements"]
     provided_capabilities = set(binding["capabilities"])
     missing_capabilities = sorted(set(requirements["capabilities"]) - provided_capabilities)
@@ -201,6 +207,11 @@ def parse_work_unit(
     revision = binding["source_revision"]
     if not SHA_RE.fullmatch(revision):
         raise WorkUnitError("node v0.1 source_revision must be a full 40-character Git commit identifier")
+    provenance_revision = data["provenance"].get("source_revision")
+    if not provenance_revision:
+        raise WorkUnitError("node v0.1 requires provenance.source_revision for source traceability")
+    if provenance_revision.lower() != revision.lower():
+        raise WorkUnitError("node binding source_revision must match provenance.source_revision")
 
     container = binding["container"]
     image = container["image"]
