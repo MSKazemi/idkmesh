@@ -34,10 +34,18 @@ def _validate_delta(delta: float) -> float:
 
 
 def reciprocal_square_tail(start: int) -> float:
-    """Return sum_{t=start..infinity} 1/t^2 using the Basel identity."""
+    """Return sum_{t=start..infinity} 1/t^2 using deterministic accumulation.
+
+    Python 3.12 changed the implementation of built-in ``sum`` for floats. An
+    explicit left-to-right accumulator keeps this evidence normalizer identical
+    across the supported Python 3.11/3.13 interpreters while still using the
+    Basel identity for the infinite tail.
+    """
     if start < 1:
         raise ValueError("start must be positive")
-    prefix = sum(1.0 / (t * t) for t in range(1, start))
+    prefix = 0.0
+    for t in range(1, start):
+        prefix += 1.0 / (t * t)
     tail = (math.pi * math.pi / 6.0) - prefix
     if tail <= 0.0:
         raise ValueError("reciprocal-square tail lost numerical precision")
@@ -137,9 +145,11 @@ def anytime_change_scan(
     first_alarm: dict[str, Any] | None = None
     strongest: dict[str, Any] | None = None
     tested_splits = 0
+    normalizer = reciprocal_square_tail(2 * min_window)
 
     if n >= 2 * min_window:
         for t in range(2 * min_window, n + 1):
+            split_count = t - 2 * min_window + 1
             for k in range(min_window, t - min_window + 1):
                 tested_splits += 1
                 n_before = k
@@ -147,7 +157,7 @@ def anytime_change_scan(
                 mean_before = prefix[k] / n_before
                 mean_after = (prefix[t] - prefix[k]) / n_after
                 gap = mean_after - mean_before
-                pair_delta = split_error_budget(d, t, k, min_window)
+                pair_delta = d / (normalizer * t * t * split_count)
                 threshold = two_window_hoeffding_threshold(
                     n_before,
                     n_after,
