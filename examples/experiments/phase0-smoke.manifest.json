@@ -1,0 +1,68 @@
+{
+  "schema_version": "0.1",
+  "id": "phase0/smoke",
+  "title": "Phase 0 deterministic harness smoke test",
+  "description": "Validates Work Unit loading, manifest validation, deterministic execution, result normalization, and provenance. This is infrastructure validation, not a scientific benchmark.",
+  "research_tracks": ["#13", "#14", "#15", "#19"],
+  "hypotheses": [
+    {
+      "id": "h1",
+      "statement": "The same configuration and seed produce the same deterministic smoke_score.",
+      "falsification": "Two runs with identical experiment id, configuration id, and seed emit different smoke_score values."
+    },
+    {
+      "id": "h2",
+      "statement": "Every emitted result conforms to experiment-result-v0.1.schema.json.",
+      "falsification": "Any emitted result fails schema validation."
+    }
+  ],
+  "work_units": [
+    {
+      "id": "phase0/smoke-work-unit",
+      "path": "examples/work-units/phase0-smoke.work-unit.json"
+    }
+  ],
+  "configurations": [
+    {
+      "id": "single-local",
+      "description": "One deterministic local smoke worker.",
+      "agent_count": 1,
+      "topology": "single",
+      "verification_policy": "schema+reproduction",
+      "runner": {"type": "deterministic_smoke"},
+      "parameters": {"fixture": true}
+    },
+    {
+      "id": "independent-three",
+      "description": "Metadata fixture representing three independent workers; the smoke runner still performs no external agent calls.",
+      "agent_count": 3,
+      "topology": "independent",
+      "verification_policy": "schema+reproduction",
+      "runner": {"type": "deterministic_smoke"},
+      "parameters": {"fixture": true}
+    }
+  ],
+  "metrics": [
+    {"name": "smoke_score", "direction": "report_only", "unit": "normalized", "description": "Deterministic infrastructure checksum-like score; not a quality metric."},
+    {"name": "work_unit_count", "direction": "report_only", "unit": "count"},
+    {"name": "agent_count", "direction": "report_only", "unit": "count"}
+  ],
+  "repetitions": 1,
+  "seeds": [7, 42],
+  "stopping_rules": [
+    {"type": "max_runs", "value": 4, "description": "2 configurations x 2 seeds x 1 repetition."}
+  ],
+  "environment": {
+    "python": ">=3.10",
+    "platform": "any",
+    "notes": "Requires the jsonschema Python package for validation."
+  },
+  "budget": {
+    "max_wall_seconds": 30,
+    "max_compute_units": 0.1,
+    "max_human_minutes": 2
+  },
+  "extensions": {
+    "org.idkmesh.phase0.fixture": true
+  }
+}
