@@ -1,0 +1,41 @@
+{
+  "experiment": "E014-aco-stigmergic-parameter-sweep",
+  "status": "synthetic-parameter-sensitivity",
+  "source": {
+    "github_actions_run_id": 33182525700,
+    "job_id": 98887077754,
+    "commit": "007666c71930a2a82a0c55b92e52bb35411d67df",
+    "python": "3.11.16"
+  },
+  "parameters": {
+    "seeds": 12,
+    "workers": 24,
+    "epochs": 50,
+    "configurations_tested": 24,
+    "alpha": [0.3, 0.7, 1.1],
+    "beta": [1.5, 2.5],
+    "rho": [0.05, 0.15],
+    "exploration": [0.03, 0.10]
+  },
+  "warning": "Synthetic illustrative simulation; not empirical evidence about real contributors.",
+  "pareto_count": 11,
+  "pareto_configurations": [
+    {"parameters": {"alpha": 1.1, "beta": 2.5, "exploration": 0.03, "rho": 0.15}, "mean": {"verified_utility_per_cost": 0.607136562, "duplicate_rate": 0.18333325, "task_coverage": 8.0, "max_selection_share": 0.210763667}},
+    {"parameters": {"alpha": 1.1, "beta": 2.5, "exploration": 0.10, "rho": 0.15}, "mean": {"verified_utility_per_cost": 0.594046732, "duplicate_rate": 0.175902917, "task_coverage": 8.0, "max_selection_share": 0.207708417}},
+    {"parameters": {"alpha": 0.7, "beta": 2.5, "exploration": 0.03, "rho": 0.15}, "mean": {"verified_utility_per_cost": 0.586581871, "duplicate_rate": 0.15958325, "task_coverage": 8.0, "max_selection_share": 0.202222417}},
+    {"parameters": {"alpha": 1.1, "beta": 2.5, "exploration": 0.03, "rho": 0.05}, "mean": {"verified_utility_per_cost": 0.573195253, "duplicate_rate": 0.147430667, "task_coverage": 8.0, "max_selection_share": 0.19465275}},
+    {"parameters": {"alpha": 0.7, "beta": 2.5, "exploration": 0.03, "rho": 0.05}, "mean": {"verified_utility_per_cost": 0.564156771, "duplicate_rate": 0.141666667, "task_coverage": 8.0, "max_selection_share": 0.19291675}},
+    {"parameters": {"alpha": 0.3, "beta": 2.5, "exploration": 0.03, "rho": 0.15}, "mean": {"verified_utility_per_cost": 0.564145527, "duplicate_rate": 0.13895825, "task_coverage": 8.0, "max_selection_share": 0.191597333}},
+    {"parameters": {"alpha": 0.3, "beta": 2.5, "exploration": 0.10, "rho": 0.15}, "mean": {"verified_utility_per_cost": 0.557688318, "duplicate_rate": 0.13847225, "task_coverage": 8.0, "max_selection_share": 0.189583417}},
+    {"parameters": {"alpha": 0.3, "beta": 2.5, "exploration": 0.03, "rho": 0.05}, "mean": {"verified_utility_per_cost": 0.556624488, "duplicate_rate": 0.128194417, "task_coverage": 8.0, "max_selection_share": 0.188333333}},
+    {"parameters": {"alpha": 0.3, "beta": 2.5, "exploration": 0.10, "rho": 0.05}, "mean": {"verified_utility_per_cost": 0.544652772, "duplicate_rate": 0.133055583, "task_coverage": 8.0, "max_selection_share": 0.184236083}},
+    {"parameters": {"alpha": 0.3, "beta": 1.5, "exploration": 0.03, "rho": 0.15}, "mean": {"verified_utility_per_cost": 0.532859111, "duplicate_rate": 0.14152775, "task_coverage": 8.0, "max_selection_share": 0.183472167}},
+    {"parameters": {"alpha": 0.3, "beta": 1.5, "exploration": 0.03, "rho": 0.05}, "mean": {"verified_utility_per_cost": 0.525506849, "duplicate_rate": 0.140069333, "task_coverage": 8.0, "max_selection_share": 0.177639}}
+  ],
+  "interpretation": {
+    "result": "stable_tradeoff_frontier",
+    "best_efficiency_configuration": {"alpha": 1.1, "beta": 2.5, "exploration": 0.03, "rho": 0.15},
+    "best_efficiency_mean": 0.607136562,
+    "decision": "Continue synthetic Level 1. Do not deploy. Next compare an adaptive capacity-governed hybrid against capability-only and current ACO configurations."
+  }
+}
