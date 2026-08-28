@@ -1,9 +1,12 @@
 import copy
+import importlib.util
 import json
 import unittest
 from pathlib import Path
 
-from jsonschema import Draft202012Validator, FormatChecker
+HAS_JSONSCHEMA = importlib.util.find_spec("jsonschema") is not None
+if HAS_JSONSCHEMA:
+    from jsonschema import Draft202012Validator, FormatChecker
 
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_PATH = ROOT / "schemas" / "ace-lineage-v0.1.schema.json"
@@ -11,6 +14,7 @@ VALID_FIXTURE = ROOT / "examples" / "community" / "ace-lineage-valid.example.jso
 INVALID_FIXTURE = ROOT / "examples" / "community" / "ace-lineage-invalid-missing-verification.example.json"
 
 
+@unittest.skipUnless(HAS_JSONSCHEMA, "ACE lineage schema tests require jsonschema")
 class AceLineageSchemaTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
