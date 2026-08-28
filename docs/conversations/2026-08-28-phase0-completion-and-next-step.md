@@ -62,6 +62,21 @@ GitHub Actions run `33178414803` completed successfully with these changes.
 
 Issue #3 remains open deliberately until a real worker/orchestrator/validator path exercises the contract. The project should learn from actual integration friction before declaring the schema final.
 
+## Repository-health repair discovered during this turn
+
+A concurrent community-growth change had introduced `.github/workflows/ace-community-growth.yml`, but every push produced an immediate failed Actions run with zero jobs. Inspection showed that JavaScript multiline template-literal continuation lines had escaped the YAML `script: |` indentation, making the workflow invalid before a job could start.
+
+The workflow was repaired by:
+
+- replacing unsafe multiline template-literal layout with arrays joined by `\n`;
+- keeping every JavaScript line safely inside the YAML block scalar;
+- pinning `actions/github-script` to the stable `v7` action;
+- preserving the security rule that `pull_request_target` never checks out or executes pull-request code.
+
+Commit `d221ece47ff502d2c78b130015847d7bc8493e3c` triggered ACE Actions run `33178589799`, which completed successfully. The job `update-growth-ledger` and all three job steps passed.
+
+This matters because a self-growing repository should not trade community automation for permanently red CI or unsafe execution semantics.
+
 ## Next execution focus
 
 The project should now move from infrastructure smoke testing to the smallest real local verified-swarm loop:
