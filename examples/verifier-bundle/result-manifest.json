@@ -1,0 +1,74 @@
+{
+  "schema_version": "0.1",
+  "id": "verification/candidate/attempt-1",
+  "work_unit_id": "verification/deterministic-bundle",
+  "work_unit_version": 1,
+  "attempt": 1,
+  "worker": {
+    "id": "fixture-worker",
+    "type": "system",
+    "adapter": "fixture-patch-writer",
+    "adapter_version": "0.1"
+  },
+  "status": "succeeded",
+  "started_at": "2026-08-28T14:00:00Z",
+  "finished_at": "2026-08-28T14:00:01Z",
+  "produced_artifacts": [
+    {
+      "id": "candidate-patch",
+      "type": "patch",
+      "locator": "examples/verifier-bundle/candidate.patch",
+      "digest": "sha256:3b2266db16579a288d6906b5418e9695b155936ea62a956b84d9d63c87db1526",
+      "media_type": "text/x-diff",
+      "description": "Harmless bounded patch fixture for deterministic verification."
+    }
+  ],
+  "logs": [],
+  "metrics": {
+    "candidate_count": 1
+  },
+  "resources": {
+    "wall_seconds": 1.0,
+    "compute_units": 0.0,
+    "human_minutes": 0.0,
+    "tokens": 0
+  },
+  "self_report": {
+    "summary": "Worker produced a bounded candidate patch and requests independent verification.",
+    "claims": [
+      "The patch modifies README.md only.",
+      "The declared patch digest is correct."
+    ],
+    "confidence": {
+      "value": 1.0,
+      "meaning": "uncalibrated"
+    }
+  },
+  "provenance": {
+    "work_unit_digest": "sha256:af453a7518fdef5d1f25e95618477e1a8ccbb5217bd2f0d577f2146a49e7a620",
+    "source_revision": "fixture-revision",
+    "worker_config_digest": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+    "environment": {
+      "platform": "fixture",
+      "python": ">=3.10",
+      "tool_versions": {
+        "fixture-patch-writer": "0.1"
+      }
+    }
+  },
+  "verification_request": {
+    "expected_validator_ids": [
+      "result-manifest-schema",
+      "work-unit-digest",
+      "artifact-digests",
+      "path-policy"
+    ],
+    "evidence_artifact_ids": [
+      "candidate-patch"
+    ],
+    "notes": "The worker requests deterministic independent verification and does not claim acceptance."
+  },
+  "extensions": {
+    "org.idkmesh.verifier.fixture": true
+  }
+}
