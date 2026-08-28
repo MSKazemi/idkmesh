@@ -567,7 +567,7 @@ These are the recommended next concrete artifacts, in order:
 ```text
 idkmesh/
   README.md
-  VISION.md
+  docs/foundations/VISION.md
   ARCHITECTURE.md
   MATHEMATICAL_FOUNDATIONS.md
   SCIENTIFIC_FOUNDATIONS.md
