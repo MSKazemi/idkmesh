@@ -4,6 +4,8 @@
 
 This file records the highest-leverage next actions after inspecting the current repository, open issues, open pull requests, CI state, and project roadmap.
 
+For the repeatable method used to decide whether a repository change is actually an improvement, see [`REPOSITORY_IMPROVEMENT_LOOP.md`](REPOSITORY_IMPROVEMENT_LOOP.md).
+
 The repository has reached an important transition point: the conceptual surface is already rich, Phase 0 contracts exist, community-growth experiments exist, and multiple implementation branches are open. The main risk now is continuing to add parallel theory and automation faster than the project converts them into protected, executable, independently verified evidence.
 
 ## Priority rule
