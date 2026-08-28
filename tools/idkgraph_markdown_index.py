@@ -17,6 +17,7 @@ import argparse
 import hashlib
 import json
 import re
+import subprocess
 import sys
 import unicodedata
 from collections import defaultdict
@@ -133,12 +134,42 @@ def parse_markdown(path: Path, root: Path) -> dict[str, Any]:
     }
 
 
+def tracked_relative_paths(root: Path) -> set[str] | None:
+    """Repository-tracked paths under ``root``, or ``None`` outside a git work tree.
+
+    IDKGraph identity must not depend on machine-local untracked files. Two clones of
+    the same commit have to yield the same T1 documents, so discovery is restricted to
+    what the repository actually tracks. Untracked build/cache/tooling output such as
+    ``.pytest_cache/`` would otherwise appear or vanish depending on whether the test
+    suite had been run, silently changing node counts and repository-health metrics.
+
+    Returning ``None`` (root is not a git work tree, or git is unavailable) means the
+    caller keeps its previous filesystem-walk behavior, which is correct for temporary
+    fixture directories where nothing is ignored.
+    """
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(root), "ls-files", "-z"],
+            capture_output=True,
+            check=False,
+        )
+    except OSError:
+        return None
+    if result.returncode != 0:
+        return None
+    decoded = result.stdout.decode("utf-8", errors="surrogateescape")
+    return {entry for entry in decoded.split("\0") if entry}
+
+
 def discover_markdown(root: Path) -> list[Path]:
     root = root.resolve()
+    tracked = tracked_relative_paths(root)
     paths = [
         path
         for path in root.rglob("*.md")
-        if ".git" not in path.relative_to(root).parts and path.is_file()
+        if ".git" not in path.relative_to(root).parts
+        and path.is_file()
+        and (tracked is None or path.relative_to(root).as_posix() in tracked)
     ]
     return sorted(paths, key=lambda path: path.relative_to(root).as_posix())
 
