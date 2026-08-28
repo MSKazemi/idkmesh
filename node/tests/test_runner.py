@@ -12,11 +12,13 @@ from idkmesh_node.model import parse_work_unit
 from idkmesh_node.runner import (
     _git_environment,
     _git_repo_command,
+    _remaining_seconds,
     docker_command,
     output_policy_violations,
+    parse_image_inspect,
     path_policy_violations,
     protected_metadata_violations,
-    resolve_container_image_id,
+    resolve_container_image,
     unpackaged_artifact_violations,
     untracked_paths,
 )
@@ -53,27 +55,44 @@ class RunnerPolicyTests(unittest.TestCase):
         self.assertNotIn("--privileged", command)
         self.assertEqual(command[-4:-2], [image_id, "python"])
 
-    @patch("idkmesh_node.runner.subprocess.run")
-    def test_container_tag_is_resolved_to_immutable_local_image_id(self, run_mock) -> None:
+    def test_image_inspect_binds_id_and_matching_repository_digest(self) -> None:
         image_id = "sha256:" + "b" * 64
+        repo_digest = "python@sha256:" + "c" * 64
+        payload = json.dumps(
+            [{"Id": image_id, "RepoDigests": [repo_digest]}]
+        ).encode()
+
+        observed_id, observed_digest = parse_image_inspect(
+            payload,
+            "python:3.12-alpine",
+        )
+        self.assertEqual(observed_id, image_id)
+        self.assertEqual(observed_digest, repo_digest)
+
+    def test_locally_retagged_image_without_repo_digest_fails_closed(self) -> None:
+        image_id = "sha256:" + "b" * 64
+        payload = json.dumps([{"Id": image_id, "RepoDigests": []}]).encode()
+        with self.assertRaisesRegex(RuntimeError, "no matching immutable repository digest"):
+            parse_image_inspect(payload, "python:3.12-alpine")
+
+    @patch("idkmesh_node.runner.subprocess.run")
+    def test_container_tag_is_resolved_before_execution(self, run_mock) -> None:
+        image_id = "sha256:" + "d" * 64
+        repo_digest = "python@sha256:" + "e" * 64
         run_mock.return_value = subprocess.CompletedProcess(
-            args=[], returncode=0, stdout=(image_id + "\n").encode(), stderr=b""
+            args=[],
+            returncode=0,
+            stdout=json.dumps(
+                [{"Id": image_id, "RepoDigests": [repo_digest]}]
+            ).encode(),
+            stderr=b"",
         )
 
-        observed = resolve_container_image_id(
-            "python:3.12-alpine",
-            deadline=10**12,
-        )
-        self.assertEqual(observed, image_id)
+        observed = resolve_container_image(work_unit(), deadline=10**12)
+        self.assertEqual(observed, (image_id, repo_digest))
         self.assertEqual(
             run_mock.call_args.args[0],
-            [
-                "docker",
-                "image",
-                "inspect",
-                "--format={{.Id}}",
-                "python:3.12-alpine",
-            ],
+            ["docker", "image", "inspect", "python:3.12-alpine"],
         )
 
     @patch("idkmesh_node.runner.subprocess.run")
@@ -81,11 +100,14 @@ class RunnerPolicyTests(unittest.TestCase):
         run_mock.return_value = subprocess.CompletedProcess(
             args=[], returncode=1, stdout=b"", stderr=b"No such image"
         )
-        with self.assertRaisesRegex(RuntimeError, "must be preloaded"):
-            resolve_container_image_id(
-                "python:3.12-alpine",
-                deadline=10**12,
-            )
+        with self.assertRaisesRegex(RuntimeError, "No such image|not available locally"):
+            resolve_container_image(work_unit(), deadline=10**12)
+
+    def test_wall_budget_helper_fails_after_deadline(self) -> None:
+        with patch("idkmesh_node.runner.time.monotonic", return_value=10.0):
+            self.assertEqual(_remaining_seconds(12.5, "test phase"), 2.5)
+            with self.assertRaisesRegex(RuntimeError, "wall budget exhausted"):
+                _remaining_seconds(9.0, "test phase")
 
     def test_git_environment_drops_inherited_git_configuration(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -158,7 +180,12 @@ class RunnerPolicyTests(unittest.TestCase):
             (workspace / ".gitignore").write_text("ignored-output.txt\n", encoding="utf-8")
             (workspace / "ignored-output.txt").write_text("must remain observable\n", encoding="utf-8")
 
-            observed = untracked_paths(workspace, git_dir, git_home)
+            observed = untracked_paths(
+                workspace,
+                git_dir,
+                git_home,
+                deadline=10**12,
+            )
             self.assertIn("ignored-output.txt", observed)
 
     def test_protected_git_pointer_tampering_is_detected(self) -> None:
