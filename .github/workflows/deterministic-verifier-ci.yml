@@ -1,0 +1,59 @@
+name: Deterministic Verifier CI
+
+on:
+  pull_request:
+    paths:
+      - "verifier/**"
+      - "examples/verifier-bundle/**"
+      - "examples/work-units/deterministic-verifier.work-unit.json"
+      - "schemas/work-unit-v0.2.schema.json"
+      - "schemas/result-manifest-v0.1.schema.json"
+      - "schemas/verification-result-v0.1.schema.json"
+      - "requirements-phase0.txt"
+      - ".github/workflows/deterministic-verifier-ci.yml"
+  push:
+    branches: [main]
+    paths:
+      - "verifier/**"
+      - "examples/verifier-bundle/**"
+      - "examples/work-units/deterministic-verifier.work-unit.json"
+      - "schemas/work-unit-v0.2.schema.json"
+      - "schemas/result-manifest-v0.1.schema.json"
+      - "schemas/verification-result-v0.1.schema.json"
+      - "requirements-phase0.txt"
+      - ".github/workflows/deterministic-verifier-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deterministic-verification:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Phase 0 validation dependency
+        run: python -m pip install -r requirements-phase0.txt
+      - name: Validate shared contracts
+        run: python experiments/harness.py validate
+      - name: Run verifier unit tests
+        run: python -m unittest discover -s verifier/tests -v
+      - name: Run positive verifier fixture
+        run: |
+          python -m verifier.deterministic \
+            --work-unit examples/work-units/deterministic-verifier.work-unit.json \
+            --result-manifest examples/verifier-bundle/result-manifest.json \
+            --artifact-root . \
+            --output /tmp/idkmesh-verification.json
+      - name: Confirm decision-support result
+        run: >-
+          python -c "import json; p=json.load(open('/tmp/idkmesh-verification.json')); assert p['status']=='passed'; assert p['decision_support']['recommendation']=='accept_candidate'; assert all(c['status']=='passed' for c in p['checks'] if c['required'])"
+
+# The verifier is intentionally static/read-only: no candidate code, Docker,
+# model, external service, or paid compute is executed by this workflow.
