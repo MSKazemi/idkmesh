@@ -1,0 +1,57 @@
+name: IDKGraph P0 observatory
+
+on:
+  pull_request:
+    paths:
+      - "tools/idkgraph_observatory.py"
+      - "tests/test_idkgraph_observatory.py"
+      - "schemas/idkgraph.schema.json"
+      - "docs/architecture/IDKGRAPH_P0_DETERMINISTIC_MAPPING.md"
+      - ".github/workflows/idkgraph-p0-observatory.yml"
+  push:
+    branches: [main]
+    paths:
+      - "tools/idkgraph_observatory.py"
+      - "tests/test_idkgraph_observatory.py"
+      - "schemas/idkgraph.schema.json"
+      - "docs/architecture/IDKGRAPH_P0_DETERMINISTIC_MAPPING.md"
+      - ".github/workflows/idkgraph-p0-observatory.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deterministic-observatory:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install schema validator
+        run: python -m pip install -r requirements-phase0.txt
+      - name: Run deterministic observatory tests
+        run: python -m unittest tests.test_idkgraph_observatory -v
+      - name: Scan repository and validate emitted IDKGraph
+        run: |
+          python tools/idkgraph_observatory.py \
+            --root . \
+            --graph-out results/idkgraph/graph.json \
+            --report-out results/idkgraph/report.md \
+            --schema schemas/idkgraph.schema.json
+      - name: Show repository health report
+        run: cat results/idkgraph/report.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: idkgraph-p0-observation
+          path: |
+            results/idkgraph/graph.json
+            results/idkgraph/report.md
+          if-no-files-found: error
+
+# P0 is observation-only. Repository-health errors are emitted in the report but
+# do not yet fail CI globally because the current repository may contain legacy
+# defects and deliberately unresolved research structure. Parser/unit/schema
+# failures do fail this job. Promotion of selected health defects to required
+# checks should happen only after a measured baseline and an explicit policy.
