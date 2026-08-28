@@ -1,0 +1,16 @@
+{
+  "graph_id": "fixture:t4-knowledge-cycle",
+  "version": "0.1",
+  "nodes": [
+    {"id": "wu:a", "type": "work_unit", "title": "A"},
+    {"id": "wu:b", "type": "work_unit", "title": "B"},
+    {"id": "hyp:a", "type": "hypothesis", "title": "Hypothesis A"},
+    {"id": "hyp:b", "type": "hypothesis", "title": "Hypothesis B"}
+  ],
+  "hyperedges": [
+    {"id": "edge:wu-a-b", "relation": "depends_on", "sources": ["wu:a"], "targets": ["wu:b"]},
+    {"id": "edge:hyp-a-b", "relation": "supports", "sources": ["hyp:a"], "targets": ["hyp:b"]},
+    {"id": "edge:hyp-b-a", "relation": "contradicts", "sources": ["hyp:b"], "targets": ["hyp:a"]},
+    {"id": "edge:mixed", "relation": "depends_on", "sources": ["wu:b"], "targets": ["hyp:a"]}
+  ]
+}
