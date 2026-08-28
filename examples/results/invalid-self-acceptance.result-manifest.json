@@ -1,0 +1,33 @@
+{
+  "schema_version": "0.1",
+  "id": "phase0/invalid-self-acceptance",
+  "work_unit_id": "phase0/smoke-work-unit",
+  "work_unit_version": 1,
+  "attempt": 1,
+  "worker": {
+    "id": "bad-worker",
+    "type": "agent",
+    "adapter": "fixture"
+  },
+  "status": "succeeded",
+  "started_at": "2026-08-28T13:30:00Z",
+  "finished_at": "2026-08-28T13:30:01Z",
+  "produced_artifacts": [],
+  "logs": [],
+  "metrics": {},
+  "resources": {"wall_seconds": 1.0},
+  "self_report": {
+    "summary": "This fixture is intentionally invalid.",
+    "claims": ["I accepted my own output."]
+  },
+  "provenance": {
+    "work_unit_digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+    "source_revision": "fixture",
+    "environment": {}
+  },
+  "verification_request": {
+    "expected_validator_ids": [],
+    "evidence_artifact_ids": []
+  },
+  "accepted": true
+}
