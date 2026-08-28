@@ -2,7 +2,7 @@
 
 Phase 0 turns the first IDKMesh research program into machine-readable contracts that contributors can validate before the project attempts real multi-agent experiments.
 
-Tracking issue: #19. Research tracks: #13, #14, #15.
+Initial implementation tracking issue: #19. WorkUnit completion issue: #3. Research tracks: #13, #14, #15.
 
 ## Why this exists
 
@@ -20,38 +20,81 @@ Experiment Manifest JSON
 Phase 0 Harness
       |
       v
-Experiment Result JSON/JSONL
+Worker ResultManifest + Experiment Result JSON/JSONL
       |
       v
-analysis / comparison / future scheduler
+independent verification / analysis / future scheduler
 ```
 
-## 1. Work Unit v0.1
+## 1. Work Unit v0.2
 
 A Work Unit is a bounded piece of work that can be assigned to a human or agent with explicit authority and explicit verification.
 
+The original Phase 0 implementation created v0.1. Issue #3 exposed additional requirements that are necessary before the orchestrator/validator work should depend on the contract. Because those additions are breaking, v0.1 remains available and the current contract advances to v0.2.
+
 Its required dimensions are:
 
-- identity and version;
+- identity and document version;
 - work kind and objective;
 - inputs and expected outputs;
 - dependency edges;
+- vendor-neutral capability requirements;
+- minimum resource requirements;
 - scope/policy constraints;
 - uncertainty;
-- permissions;
-- validators;
+- security risk and data classification;
+- minimum worker trust and sandbox requirement;
+- bounded execution permissions;
+- independent-verification policy;
+- concrete validators;
 - evidence requirements;
-- resource budget;
+- resource/time budget;
 - provenance;
 - failure semantics.
 
-A Work Unit is not merely a prompt. It is intended to become the contract between decomposition, scheduling, execution, verification, and integration.
+The required work kinds include:
 
-Schema: `schemas/work-unit-v0.1.schema.json`
+- coding;
+- testing;
+- review;
+- benchmarking;
+- documentation.
 
-Fixture: `examples/work-units/phase0-smoke.work-unit.json`
+Additional kinds currently include research, integration, governance, and `other`.
 
-## 2. Experiment Manifest v0.1
+A Work Unit is not merely a prompt. It is intended to become the vendor-neutral contract between decomposition, scheduling, execution, verification, and integration. Model/provider details are not scheduling fields in the WorkUnit core.
+
+Current schema: `schemas/work-unit-v0.2.schema.json`
+
+Historical schema: `schemas/work-unit-v0.1.schema.json`
+
+Valid fixture: `examples/work-units/phase0-smoke.work-unit.json`
+
+Negative fixture: `examples/work-units/invalid-missing-security.work-unit.json`
+
+## 2. Worker ResultManifest v0.1
+
+A worker ResultManifest is a self-report for one attempt at a Work Unit. It records:
+
+- WorkUnit identity/version;
+- worker and adapter/model provenance;
+- attempt status and timestamps;
+- produced artifact locators and SHA-256 digests;
+- logs and metrics;
+- resource use;
+- worker claims and confidence;
+- source/environment provenance;
+- the requested independent validators/evidence artifacts.
+
+It deliberately does **not** contain an independent acceptance verdict. Worker completion and system acceptance are different states.
+
+Schema: `schemas/result-manifest-v0.1.schema.json`
+
+Valid fixture: `examples/results/phase0-smoke.result-manifest.json`
+
+Negative fixture: `examples/results/invalid-self-acceptance.result-manifest.json`
+
+## 3. Experiment Manifest v0.1
 
 The manifest preregisters enough of an experiment to make later comparisons meaningful:
 
@@ -74,7 +117,7 @@ Schema: `schemas/experiment-manifest-v0.1.schema.json`
 
 Fixture: `examples/experiments/phase0-smoke.manifest.json`
 
-## 3. Experiment Result v0.1
+## 4. Experiment Result v0.1
 
 Every run emits a normalized record containing:
 
@@ -92,7 +135,7 @@ Schema: `schemas/experiment-result-v0.1.schema.json`
 
 The long-term goal is for results from very different orchestration strategies to remain comparable on common dimensions such as verified useful work, human attention, cost, latency, escaped defects, and communication.
 
-## 4. Minimal harness
+## 5. Minimal harness
 
 `experiments/harness.py` provides two commands.
 
@@ -103,7 +146,18 @@ python -m pip install -r requirements-phase0.txt
 python experiments/harness.py validate
 ```
 
-This checks all three schema documents, validates the manifest, validates every referenced Work Unit, checks duplicate/mismatched Work Unit identifiers, and prevents repository-relative paths from escaping the repository root.
+This:
+
+- validates all active schema documents;
+- checks that WorkUnit v0.2 retains the required work kinds;
+- checks that the WorkUnit contract retains explicit dependency, capability/resource, security, permissions, verification, evidence, and provenance fields;
+- validates the manifest and every referenced Work Unit;
+- checks duplicate/mismatched Work Unit identifiers;
+- checks a ResultManifest against the referenced WorkUnit document version;
+- checks that requested evidence artifact IDs were actually produced;
+- requires the missing-security WorkUnit negative fixture to fail;
+- requires the worker-self-acceptance ResultManifest negative fixture to fail;
+- prevents repository-relative paths from escaping the repository root.
 
 ### Smoke
 
@@ -146,14 +200,16 @@ A field should graduate into the common schema only after multiple experiments s
 
 ## Versioning
 
-The first contracts are `0.1`. During the experimental period:
+The contracts are pre-1.0 and experimental, but historical reproducibility still matters:
 
 - additive experimentation should prefer namespaced extensions;
 - semantic changes or new required fields require a new schema version;
 - old schema files stay available so old results remain reproducible;
-- migrations should eventually be explicit tools rather than silent reinterpretation.
+- migrations should be explicit tools rather than silent reinterpretation.
 
-## Relationship to the first three research tracks
+This is why the stricter issue #3 contract is `work-unit-v0.2.schema.json` rather than an in-place rewrite of v0.1.
+
+## Relationship to research and implementation tracks
 
 ### #13 Collective-intelligence scaling
 
@@ -161,32 +217,42 @@ The manifest gives every configuration explicit agent count, topology, seeds, me
 
 ### #14 Verification scaling
 
-Work Units carry validators/evidence requirements, while results carry verification policy/check outcomes and costs. Future versions can add verifier diversity, queue pressure, risk scores, and escaped-defect measurements through extensions before standardization.
+WorkUnits carry explicit verification policy, validators, and evidence requirements, while results carry verification outcomes and costs. Future versions can add verifier diversity, queue pressure, risk scores, and escaped-defect measurements through extensions before standardization.
 
 ### #15 Work Unit theory
 
-The v0.1 schema is itself a falsifiable hypothesis: these fields may or may not be the right contract. Experiments should measure which fields reduce context, rework, coupling, integration failures, and verification cost.
+The v0.2 schema is still a falsifiable hypothesis. Experiments should measure which fields reduce context, rework, coupling, integration failures, and verification cost.
 
-## Phase 0 definition of done
+### #17 interoperability
 
-Phase 0 is complete when:
+The WorkUnit stays model/vendor neutral so its semantics can be mapped to external agent/task protocols without forcing the coordinator to branch by provider.
 
-1. all three schemas exist and are versioned;
-2. at least one Work Unit and manifest fixture validate;
-3. a contributor can run the validator locally with one Python dependency;
-4. the deterministic smoke path emits schema-valid result records;
-5. CI validates the stack without executing manifest-supplied commands;
-6. changes are documented and discoverable from issue #19.
+### #4 and #5
+
+The single-machine orchestrator and independent validator can now build against a contract that explicitly states worker requirements, authority, risk, verification policy, and expected evidence.
+
+## Phase 0 / issue #3 definition of done
+
+The executable schema foundation is ready for the next implementation layer when:
+
+1. active schemas are versioned and pass Draft 2020-12 validation;
+2. a valid WorkUnit/manifest/ResultManifest path validates;
+3. negative WorkUnit and ResultManifest fixtures are rejected;
+4. coding/testing/review/benchmarking/documentation kinds are represented by the WorkUnit contract;
+5. capability/resource, security/trust, execution permission, dependency, verification, evidence, and provenance semantics are explicit;
+6. a contributor can run validation locally with one Python dependency;
+7. deterministic smoke execution emits schema-valid result records;
+8. CI validates the stack without executing manifest-supplied commands.
 
 ## Next step: Phase 1
 
 Do not build a giant distributed runtime next.
 
-The next useful experiment is a small real benchmark runner with approximately 5-20 software tasks and a common adapter interface for:
+The next useful implementation is the local multi-worker orchestrator in #4 together with the independent validator/benchmark in #5. Start with a small real software-task set and a common adapter interface for:
 
-- single worker baseline;
+- single-worker baseline;
 - several independent workers;
 - planner/implementer/tester/reviewer configuration;
 - independent verification.
 
-Phase 1 should reuse these contracts and report where the v0.1 schemas fail in practice. Those failures are research results, not merely schema bugs.
+Phase 1 should reuse these contracts and report where WorkUnit v0.2 fails in practice. Those failures are research results, not merely schema bugs.

@@ -1,8 +1,8 @@
 {
-  "schema_version": "0.1",
+  "schema_version": "0.2",
   "id": "phase0/smoke-work-unit",
-  "version": 1,
-  "kind": "testing",
+  "version": 2,
+  "kind": "benchmarking",
   "objective": "Exercise the Phase 0 harness deterministically and emit a schema-valid experiment result without calling external services.",
   "context": {
     "summary": "This fixture tests the IDKMesh contracts and harness mechanics only; its smoke_score is not research evidence.",
@@ -25,24 +25,47 @@
     }
   ],
   "dependencies": [],
+  "requirements": {
+    "capabilities": ["json-schema-validation", "deterministic-local-execution"],
+    "resources": {
+      "cpu_cores_min": 0.1,
+      "memory_mb_min": 64,
+      "disk_mb_min": 1,
+      "gpu": "none",
+      "accelerator_capabilities": []
+    }
+  },
   "constraints": {
-    "allowed_paths": ["experiments/", "examples/", "schemas/"],
+    "allowed_paths": ["experiments/", "examples/", "schemas/", "results/"],
     "forbidden_paths": [".github/workflows/"],
-    "policies": ["No network access", "Do not interpret smoke_score as scientific performance"]
+    "policies": ["No network access", "No project-paid compute", "Do not interpret smoke_score as scientific performance"]
   },
   "uncertainty": [
     {
-      "statement": "The v0.1 Work Unit fields may be more explicit than later experiments need.",
+      "statement": "The v0.2 Work Unit fields remain an experimental hypothesis and may be simplified after real runner evidence.",
       "confidence": 0.7,
-      "resolution_strategy": "Collect friction reports from contributors before v0.2."
+      "resolution_strategy": "Collect friction and interoperability evidence from issues #15 and #17 before the next breaking revision."
     }
   ],
+  "security": {
+    "risk_class": "low",
+    "data_classification": "public",
+    "minimum_worker_trust": "untrusted",
+    "sandbox_required": false,
+    "notes": "The built-in smoke runner executes no manifest-supplied commands or external tools."
+  },
   "permissions": {
     "network": "none",
     "network_allowlist": [],
     "filesystem_write": ["results/"],
     "secrets": [],
     "process_execution": false
+  },
+  "verification_policy": {
+    "strategy": "all_required",
+    "independent_from_worker": true,
+    "minimum_independent_verifiers": 1,
+    "acceptance_rule": "All required schema and reproduction validators must pass; worker self-report is never acceptance evidence."
   },
   "validators": [
     {
@@ -74,12 +97,14 @@
     "wall_seconds": 10,
     "compute_units": 0.01,
     "human_minutes": 1,
-    "tokens": 0
+    "tokens": 0,
+    "project_spend_usd_max": 0,
+    "paid_fallback_allowed": false
   },
   "provenance": {
     "created_by": "IDKMesh Phase 0",
     "creator_type": "hybrid",
-    "source": "Issue #19",
+    "source": "Issues #3 and #19",
     "parent_work_unit_ids": []
   },
   "failure_semantics": {
