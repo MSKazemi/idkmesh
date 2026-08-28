@@ -3,9 +3,9 @@
     "max_candidate_bytes": 200000,
     "max_log_bytes": 262144,
     "require_nonempty_patch": true,
-    "required_added_text": [
-      "    frozen_without_digest = copy.deepcopy(baseline)",
-      "        raise CohortError(\"self-test expected frozen cohort without definition_digest to fail closed\")"
+    "required_added_substrings": [
+      "frozen_without_digest = copy.deepcopy(baseline)",
+      "expected frozen cohort without definition_digest to fail closed"
     ],
     "required_log_types": [
       "stdout",
@@ -25,11 +25,11 @@
   "extensions": {
     "org.idkmesh.benchmark": {
       "cohort": "phase-b2-first-five-v2",
-      "semantic_scope": "bootstrap public structural evaluator with exact complete-line predicates",
+      "semantic_scope": "bootstrap public structural evaluator with explicit v0.3 validated-added-line substring predicates",
       "task_id": "benchmark/phase-b2/002-frozen-definition-digest-test"
     }
   },
-  "id": "benchmark/phase-b2/002-frozen-definition-digest-test/evaluator-v2",
+  "id": "benchmark/phase-b2/002-frozen-definition-digest-test/evaluator-v3",
   "policy": {
     "require_output_outside_candidate_root": true,
     "require_plan_outside_candidate_root": true,
@@ -39,10 +39,10 @@
     "result-manifest-schema",
     "independent-review"
   ],
-  "schema_version": "0.2",
+  "schema_version": "0.3",
   "verifier": {
     "adapter": "deterministic-patch-verifier",
-    "adapter_version": "0.1.1",
+    "adapter_version": "0.2.0",
     "id": "idkmesh-local-verifier",
     "type": "system"
   },
