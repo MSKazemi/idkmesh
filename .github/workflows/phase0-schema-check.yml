@@ -1,0 +1,40 @@
+name: Phase 0 schema check
+
+on:
+  pull_request:
+    paths:
+      - "schemas/**"
+      - "examples/**"
+      - "experiments/**"
+      - "requirements-phase0.txt"
+      - ".github/workflows/phase0-schema-check.yml"
+  push:
+    branches: [main]
+    paths:
+      - "schemas/**"
+      - "examples/**"
+      - "experiments/**"
+      - "requirements-phase0.txt"
+      - ".github/workflows/phase0-schema-check.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Phase 0 dependency
+        run: python -m pip install -r requirements-phase0.txt
+      - name: Validate schemas and fixtures
+        run: python experiments/harness.py validate
+      - name: Run safe built-in smoke fixture
+        run: python experiments/harness.py smoke --output results/phase0-smoke.jsonl
+
+# Security note: the harness smoke command executes only its built-in
+# deterministic_smoke runner. It refuses manifest runner types such as
+# `command` or `external`, so contributor-supplied commands are never run here.
