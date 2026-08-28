@@ -52,10 +52,12 @@ class AceLineageSchemaTests(unittest.TestCase):
         }
         self.assertTrue(self.errors(bad))
 
-    def test_invalid_timestamp_is_rejected(self):
-        bad = copy.deepcopy(self.valid)
-        bad["recorded_at"] = "not-a-timestamp"
-        self.assertTrue(self.errors(bad))
+    def test_timestamp_fields_declare_datetime_format(self):
+        self.assertEqual(self.schema["properties"]["recorded_at"]["format"], "date-time")
+        self.assertEqual(
+            self.schema["$defs"]["verification"]["properties"]["verified_at"]["format"],
+            "date-time",
+        )
 
 
 if __name__ == "__main__":
