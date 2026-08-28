@@ -29,15 +29,26 @@ If something is confusing, **that itself is useful project feedback**.
 
 ### Want one bounded task right now?
 
-ACE (Autocatalytic Community Evolution) is testing whether useful repository activity can create the next useful contribution opportunity while keeping review load bounded. The first controlled starter cohort is intentionally small:
+ACE (Autocatalytic Community Evolution) is testing whether useful repository activity can create the next useful contribution opportunity while keeping review load bounded. The Bootstrap Cohort is intentionally small, and the public front door should show **open work, not historical work**.
 
-- [#24 — audit the 15-minute newcomer path](../../issues/24) — documentation/community;
-- [#25 — define ACE parent -> descendant evidence links](../../issues/25) — measurement/data model;
-- [#26 — threat-model the ACE workflow](../../issues/26) — security;
-- [#27 — build a tiny ACE population simulator](../../issues/27) — coding/modeling;
-- [#28 — decompose one research track into five microtasks](../../issues/28) — research/coordination.
+Current open starter paths:
 
-All are tagged `good first issue` and `help wanted`. We deliberately will **not** flood the tracker with more starter issues until this cohort produces evidence or demonstrates spare review capacity. See [`COMMUNITY_GROWTH_ENGINE.md`](COMMUNITY_GROWTH_ENGINE.md) and [`docs/community/ACE_BOOTSTRAP_EXPERIMENT.md`](docs/community/ACE_BOOTSTRAP_EXPERIMENT.md).
+- [#24 — audit the 15-minute newcomer path](../../issues/24) — documentation/community; this is the best path if you are new to IDKMesh;
+- [#27 — build a tiny ACE population simulator](../../issues/27) — coding/modeling; a bounded technical task with explicit equations and acceptance criteria.
+
+High-value expert contribution:
+
+- [PR #91 — independently inspect the canonical real-node runtime evidence](../../pull/91) — security/runtime/evidence review. The automated and same-owner evidence is deliberately **not** treated as independent human approval.
+
+Completed Bootstrap Cohort examples remain public provenance, but are no longer available starter tasks:
+
+- #25 — ACE parent -> descendant evidence links;
+- #26 — ACE workflow threat model;
+- #28 — research-track microtask decomposition.
+
+Check the live [ACE Bootstrap Cohort Observatory](../../issues/109) for the current evidence state. At the time of this update it reports no verified external ACE descendant yet. **That is evidence, not embarrassment.** We deliberately will **not** flood the tracker with Cohort 2 merely because review capacity is healthy.
+
+See [`COMMUNITY_GROWTH_ENGINE.md`](COMMUNITY_GROWTH_ENGINE.md), [`docs/community/ACE_BOOTSTRAP_EXPERIMENT.md`](docs/community/ACE_BOOTSTRAP_EXPERIMENT.md), and the [whole-system First Contact audit](docs/audits/2026-08-28-whole-system-first-contact-audit.md).
 
 ## IDKMesh in 60 seconds
 
@@ -260,7 +271,7 @@ Read [`GOVERNANCE.md`](GOVERNANCE.md), [`MAINTAINERS.md`](MAINTAINERS.md), and [
 - [`CONTRIBUTING.md`](CONTRIBUTING.md) — make a successful contribution.
 - [`COMMUNITY.md`](COMMUNITY.md) — participation, community values, contributor ladder.
 - [`COMMUNITY_GROWTH_ENGINE.md`](COMMUNITY_GROWTH_ENGINE.md) — ACE self-growing community algorithm and safeguards.
-- [`docs/community/ACE_BOOTSTRAP_EXPERIMENT.md`](docs/community/ACE_BOOTSTRAP_EXPERIMENT.md) — current five-seed community-reproduction experiment.
+- [`docs/community/ACE_BOOTSTRAP_EXPERIMENT.md`](docs/community/ACE_BOOTSTRAP_EXPERIMENT.md) — Bootstrap Cohort protocol, evidence rules, and expansion gate.
 - [`SUPPORT.md`](SUPPORT.md) — how to ask for help.
 - [`GOVERNANCE.md`](GOVERNANCE.md) — roles and decisions.
 - [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) — community behavior.
