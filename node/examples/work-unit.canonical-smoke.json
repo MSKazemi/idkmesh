@@ -9,7 +9,8 @@
     "references": [
       "schemas/work-unit-v0.2.schema.json",
       "schemas/node-execution-binding-v0.1.schema.json",
-      "schemas/result-manifest-v0.1.schema.json"
+      "schemas/result-manifest-v0.1.schema.json",
+      "config/compute-policy.json"
     ]
   },
   "inputs": [
@@ -41,7 +42,7 @@
   "constraints": {
     "allowed_paths": ["README.md"],
     "forbidden_paths": [".github/**", "SECURITY.md"],
-    "policies": ["candidate-only", "independent-verification-required"]
+    "policies": ["candidate-only", "independent-verification-required", "zero-project-spend"]
   },
   "uncertainty": [],
   "security": {
@@ -86,7 +87,9 @@
     "wall_seconds": 60,
     "compute_units": 1,
     "human_minutes": 2,
-    "tokens": 0
+    "tokens": 0,
+    "project_spend_usd_max": 0,
+    "paid_fallback_allowed": false
   },
   "provenance": {
     "created_by": "idkmesh-project",
