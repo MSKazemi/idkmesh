@@ -174,7 +174,7 @@ python sim/e018_dependence_models.py
 ```
 
 - item-difficulty predicts **more** error in 438/441 cells (median 1.27x, max
-  2.71x) — every panel-error number in E012/E013/E015 is optimistic;
+  2.71x), with three high-accuracy/low-correlation exceptions;
 - **E015's `N_eff` warning generalises.** The heuristic overstates independence
   in 4% of cells under shared-shock but **100%** under item-difficulty, so the
   hedge "for accurate verifiers" can be dropped: never size a panel with

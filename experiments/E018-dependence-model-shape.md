@@ -45,9 +45,11 @@ item-difficulty predicts MORE error than shared-shock in 438/441 cells (99%)
 error ratio (item/shock): median 1.27x, max 2.71x
 ```
 
-The direction matches E017's measurement. **Every panel-error number in
-E012/E013/E015 is optimistic**, typically by about a quarter and by as much as
-2.7x.
+The direction matches E017's measurement in nearly all cells: **438 of 441
+shared-shock panel-error estimates are optimistic**, typically by about a
+quarter and by as much as 2.7x. The three exceptions are the largest panels
+(`n=11,15,21`) at `accuracy=0.95, rho=0.125`, where item-difficulty predicts
+slightly less error; this boundary case prevents an unconditional claim.
 
 ## 2. E015's `N_eff` warning generalises — from 4% of the grid to all of it
 
