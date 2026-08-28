@@ -1,0 +1,65 @@
+{
+  "experiment": "E014-verification-backpressure-temporal-benchmark",
+  "issue": 14,
+  "status": "synthetic-reference-result",
+  "benchmark_version": "verification-backpressure-temporal-v0.1",
+  "candidate_generator_version": "seeded-risk-stream-v0.1",
+  "benchmark_source_commit": "c01209e8bcfe1e3151fa22993b6c9c9a01a40738",
+  "seeds": 20,
+  "seed_range": [0, 19],
+  "steps_per_run": 100,
+  "initial_fanouts": [2, 4, 8, 12],
+  "verification_capacity_per_window": 8.0,
+  "policies": [
+    "fifo",
+    "highest-risk-first",
+    "cheapest-first",
+    "rwvb-fixed",
+    "rwvb-adaptive"
+  ],
+  "fairness": "For a fixed seed and fixed initial fanout, FIFO, highest-risk-first, cheapest-first, and rwvb-fixed receive the exact same deterministic candidate stream. rwvb-adaptive receives a deterministic prefix because backpressure intentionally changes how many candidates are generated.",
+  "safety": "Seeded defects and verifier outcomes are synthetic experiment variables. Verification never grants merge, acceptance, or integration authority.",
+  "interpretation": "This reference sweep demonstrates controller behavior, not RWVB optimality. At overloaded fixed fanout, adaptive RWVB reduces generation until the verification queue becomes small; at underloaded fanout it expands generation. Other schedulers can outperform RWVB on individual metrics, so later experiments must preserve Pareto trade-offs and real-task evidence.",
+  "metric_units": {
+    "generated_candidates": "count per 100-window run",
+    "verified_candidates": "count per 100-window run",
+    "pending_candidates": "count at final window",
+    "final_verification_debt": "experimental risk-weighted control units",
+    "pending_defect_exposure": "synthetic risk-impact units",
+    "mean_wait_steps": "verification windows",
+    "final_fanout": "candidates generated per window"
+  },
+  "mean_results": [
+    {"initial_fanout": 2, "policy": "fifo", "generated_candidates": 200.0, "verified_candidates": 200.0, "pending_candidates": 0.0, "final_verification_debt": 0.0, "pending_defect_exposure": 0.0, "mean_wait_steps": 0.0, "final_fanout": 2.0},
+    {"initial_fanout": 2, "policy": "highest-risk-first", "generated_candidates": 200.0, "verified_candidates": 200.0, "pending_candidates": 0.0, "final_verification_debt": 0.0, "pending_defect_exposure": 0.0, "mean_wait_steps": 0.0, "final_fanout": 2.0},
+    {"initial_fanout": 2, "policy": "cheapest-first", "generated_candidates": 200.0, "verified_candidates": 200.0, "pending_candidates": 0.0, "final_verification_debt": 0.0, "pending_defect_exposure": 0.0, "mean_wait_steps": 0.0, "final_fanout": 2.0},
+    {"initial_fanout": 2, "policy": "rwvb-fixed", "generated_candidates": 200.0, "verified_candidates": 200.0, "pending_candidates": 0.0, "final_verification_debt": 0.0, "pending_defect_exposure": 0.0, "mean_wait_steps": 0.0, "final_fanout": 2.0},
+    {"initial_fanout": 2, "policy": "rwvb-adaptive", "generated_candidates": 501.35, "verified_candidates": 485.25, "pending_candidates": 16.1, "final_verification_debt": 7.781344, "pending_defect_exposure": null, "mean_wait_steps": null, "final_fanout": 5.1},
+
+    {"initial_fanout": 4, "policy": "fifo", "generated_candidates": 400.0, "verified_candidates": 399.65, "pending_candidates": 0.35, "final_verification_debt": 0.490645, "pending_defect_exposure": 0.145183, "mean_wait_steps": 0.101593, "final_fanout": 4.0},
+    {"initial_fanout": 4, "policy": "highest-risk-first", "generated_candidates": 400.0, "verified_candidates": 399.55, "pending_candidates": 0.45, "final_verification_debt": 0.456629, "pending_defect_exposure": 0.06775, "mean_wait_steps": 0.125897, "final_fanout": 4.0},
+    {"initial_fanout": 4, "policy": "cheapest-first", "generated_candidates": 400.0, "verified_candidates": 399.3, "pending_candidates": 0.7, "final_verification_debt": 1.253136, "pending_defect_exposure": 0.216123, "mean_wait_steps": 0.279843, "final_fanout": 4.0},
+    {"initial_fanout": 4, "policy": "rwvb-fixed", "generated_candidates": 400.0, "verified_candidates": 399.55, "pending_candidates": 0.45, "final_verification_debt": 0.348759, "pending_defect_exposure": 0.056643, "mean_wait_steps": 0.151927, "final_fanout": 4.0},
+    {"initial_fanout": 4, "policy": "rwvb-adaptive", "generated_candidates": 503.05, "verified_candidates": 487.75, "pending_candidates": 15.3, "final_verification_debt": 7.723423, "pending_defect_exposure": 1.267411, "mean_wait_steps": 2.4795, "final_fanout": 4.5},
+
+    {"initial_fanout": 8, "policy": "fifo", "generated_candidates": 800.0, "verified_candidates": 503.25, "pending_candidates": 296.75, "final_verification_debt": 366.360813, "pending_defect_exposure": 96.468604, "mean_wait_steps": 18.581028, "final_fanout": 8.0},
+    {"initial_fanout": 8, "policy": "highest-risk-first", "generated_candidates": 800.0, "verified_candidates": 539.65, "pending_candidates": 260.35, "final_verification_debt": 143.659762, "pending_defect_exposure": 21.082481, "mean_wait_steps": 1.488611, "final_fanout": 8.0},
+    {"initial_fanout": 8, "policy": "cheapest-first", "generated_candidates": 800.0, "verified_candidates": 605.8, "pending_candidates": 194.2, "final_verification_debt": 416.632817, "pending_defect_exposure": 61.384388, "mean_wait_steps": 2.276518, "final_fanout": 8.0},
+    {"initial_fanout": 8, "policy": "rwvb-fixed", "generated_candidates": 800.0, "verified_candidates": 508.0, "pending_candidates": 292.0, "final_verification_debt": 361.773852, "pending_defect_exposure": 92.446109, "mean_wait_steps": 15.134791, "final_fanout": 8.0},
+    {"initial_fanout": 8, "policy": "rwvb-adaptive", "generated_candidates": 506.2, "verified_candidates": 490.3, "pending_candidates": 15.9, "final_verification_debt": 7.991368, "pending_defect_exposure": 1.064665, "mean_wait_steps": 2.494304, "final_fanout": 4.8},
+
+    {"initial_fanout": 12, "policy": "fifo", "generated_candidates": 1200.0, "verified_candidates": 503.75, "pending_candidates": 696.25, "final_verification_debt": 869.836455, "pending_defect_exposure": 228.610622, "mean_wait_steps": 29.034064, "final_fanout": 12.0},
+    {"initial_fanout": 12, "policy": "highest-risk-first", "generated_candidates": 1200.0, "verified_candidates": 537.1, "pending_candidates": 662.9, "final_verification_debt": 475.015195, "pending_defect_exposure": 90.685401, "mean_wait_steps": 1.528874, "final_fanout": 12.0},
+    {"initial_fanout": 12, "policy": "cheapest-first", "generated_candidates": 1200.0, "verified_candidates": 733.7, "pending_candidates": 466.3, "final_verification_debt": 906.750743, "pending_defect_exposure": 151.676136, "mean_wait_steps": 1.182724, "final_fanout": 12.0},
+    {"initial_fanout": 12, "policy": "rwvb-fixed", "generated_candidates": 1200.0, "verified_candidates": 506.0, "pending_candidates": 694.0, "final_verification_debt": 866.376146, "pending_defect_exposure": 226.322056, "mean_wait_steps": 25.042766, "final_fanout": 12.0},
+    {"initial_fanout": 12, "policy": "rwvb-adaptive", "generated_candidates": 506.35, "verified_candidates": 490.55, "pending_candidates": 15.8, "final_verification_debt": 8.152629, "pending_defect_exposure": 1.110819, "mean_wait_steps": 2.489336, "final_fanout": 4.6}
+  ],
+  "reproduce_full_output": "python experiments/verification_backpressure_benchmark.py --benchmark --seeds 20 --steps 100 --fanouts 2,4,8,12 --capacity 8 --output /tmp/e014-full.json",
+  "limitations": [
+    "Candidate risk, uncertainty, impact, cost, evidence diversity, defects, and verifier detection are synthetic.",
+    "The experiment does not estimate real false-positive or false-negative rates for coding agents or human reviewers.",
+    "The compact checked-in summary omits per-run records; the benchmark command emits them deterministically.",
+    "A stable synthetic queue is not evidence that the same controller parameters are safe or optimal for production workloads.",
+    "Later work must compare against measured real verifier costs, defect classes, correlation, and human-attention data."
+  ]
+}
