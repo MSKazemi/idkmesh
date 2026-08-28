@@ -1,0 +1,14 @@
+{
+  "schema_version": "0.1",
+  "project_spend_usd_max": 0,
+  "paid_providers_enabled": false,
+  "allowed_cost_classes": [
+    "local_owned",
+    "donated",
+    "public_project_ci",
+    "grant",
+    "free_tier"
+  ],
+  "donor_costs_must_be_opt_in": true,
+  "notes": "Hard project constraint as of 2026-08-28: IDKMesh cannot pay for compute. Work Units may be stricter but may not relax this policy. Donated hardware/electricity must remain voluntary, visible, capped, and easy to stop."
+}
