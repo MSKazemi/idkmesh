@@ -24,6 +24,13 @@ from pathlib import Path
 from typing import Any, Iterable
 from urllib.parse import unquote, urlsplit
 
+# Direct execution (``python tools/idkgraph_link_check.py``) places ``tools/``
+# rather than the repository root on sys.path. Add the root explicitly so the
+# same canonical T1 module is used by both CLI and import-based callers.
+REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
+if str(REPOSITORY_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPOSITORY_ROOT))
+
 from tools.idkgraph_markdown_index import discover_markdown, parse_markdown
 
 SCHEMA_VERSION = "idkgraph-link-diagnostics-v0.1"
