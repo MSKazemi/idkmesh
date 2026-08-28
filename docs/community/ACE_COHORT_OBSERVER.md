@@ -2,140 +2,150 @@
 
 **Status:** Experimental, metadata-only observability.
 
-This document specifies the first automatic observer for the ACE Bootstrap Cohort.
+This observer exists because IDKMesh must distinguish **activity**, **cohort exposure**, **candidate work**, and **causal verified-descendant evidence**.
 
-The observer exists because the project must distinguish **activity** from **community reproduction evidence**. Stars, comments, issue closures, and even merged pull requests are not automatically proof that a Growth Seed produced a useful descendant.
+Its role in the ACE stack is intentionally narrow:
 
-For this first community-growth cohort, reproduction metrics intentionally exclude the bootstrap repository owner and GitHub bot accounts. Their activity may still be operationally useful, but it must not make a community-growth experiment appear successful by itself.
+```text
+ACE Cohort Observer (#40)
+  -> trusted Bootstrap Cohort inventory
+  -> external-interest / claim / candidate funnel
+  -> bootstrap exposure denominator + review-capacity context
+
+ACE Lineage Protocol (#48 / #25)
+  -> parent -> seed -> descendant causal receipt
+  -> verification evidence
+
+ACE generational controller (#68 / #57)
+  -> consumes validated evidence
+  -> learns bounded community strategy in shadow mode
+```
+
+The observer must not duplicate the lineage parser or claim the full community reproduction number from labels alone.
 
 ## State funnel
 
-For each issue labelled `growth-seed` in Bootstrap Cohort 1, the observer tracks:
+For each trusted issue labelled `growth-seed` in Bootstrap Cohort 1, the observer tracks:
 
 ```text
-visible seed
+trusted visible seed
   -> external interest
   -> claim
   -> candidate PR
   -> merged candidate
-  -> explicitly verified descendant
+  -> bootstrap verified-descendant signal
 ```
+
+Cohort admission requires all of:
+
+- `growth-seed` label;
+- explicit `cohort=bootstrap-1` marker;
+- trusted repository author association (`OWNER`, `MEMBER`, or `COLLABORATOR`).
+
+This prevents untrusted marker text from manufacturing cohort membership even before the broader ACE workflow-hardening PR is integrated.
 
 ### External interest
 
-A non-owner, non-bot contributor comment or contribution signal associated with the seed.
-
-Interest is useful diagnostic evidence, but it is not a claim or descendant.
+A non-owner, non-bot contributor comment or contribution signal associated with the seed. Interest is diagnostic evidence, not a descendant.
 
 ### Claim
 
-A seed is considered claimed when at least one of these occurs from an external non-bot contributor:
-
-- the contributor is assigned;
-- the contributor comments `/claim`;
-- the contributor authors a pull request that GitHub cross-references from the seed.
-
-The `/claim` convention is intentionally lightweight. It does not grant repository permissions or exclusive ownership.
+A seed is considered claimed when an external non-bot contributor is assigned, comments `/claim`, or authors a PR that GitHub cross-references from the seed. `/claim` grants no repository permission or exclusive ownership.
 
 ### Candidate PR
 
-A pull request authored by an external non-bot contributor that GitHub cross-references from the Growth Seed.
+An external-human-authored PR cross-referenced from the Growth Seed. A candidate is not automatically useful or verified.
 
-A candidate PR is not automatically a descendant because it may be incomplete, incorrect, abandoned, or only loosely related.
+### Bootstrap verified-descendant signal
 
-### Verified descendant
+A candidate PR enters the observer's bootstrap verified set only when it is merged and carries `ace:verified-descendant`.
 
-A candidate pull request counts as verified ACE evidence only when:
+This label is an explicit trusted acceptance signal. It is **not** equivalent to the full ACE lineage record. After the lineage protocol is accepted, a real causal claim should be represented by a validated `ACE_LINEAGE` receipt with verification evidence. The label can support that receipt; it cannot replace it.
 
-1. it is merged; and
-2. it has the label `ace:verified-descendant`.
+## Metric scope
 
-The label is an explicit evidence gate. It should only be applied after the applicable review/tests/reproduction evidence support treating the contribution as a useful descendant of the seed.
-
-## Cohort metric
-
-Until ACE has a full parent→descendant lineage schema, the observer reports a deliberately narrower quantity:
+The observer reports:
 
 ```text
-SeedReproductionRatio = verified external descendant PRs / Growth Seeds
+SeedReproductionRatio
+  = bootstrap verified descendant PRs
+    / trusted Bootstrap Cohort Growth Seeds
 ```
 
-This is **not** the full `R_community`.
+This is a **bootstrap exposure metric**, not the full `R_community`.
 
-The eventual community reproduction number remains:
+The full quantity remains conceptually:
 
 ```text
-R_community(W) = verified descendant contributions / verified parent contributions
+R_community(W, t)
+  = verified causal descendants
+    / eligible matured verified parents
 ```
 
-That requires explicit lineage across generations, which is the subject of Growth Seed #25.
+Computing it requires two independent inputs:
+
+1. a denominator inventory that keeps zero-descendant eligible parents visible and handles right-censoring;
+2. validated causal lineage receipts from the ACE lineage contract.
+
+The cohort observer contributes useful denominator/exposure evidence for the bootstrap experiment, but its Growth Seeds are not automatically identical to all future verified parents. It therefore sets `full_r_community_ready: false` in its snapshot and must not overclaim causal reproduction.
 
 ## Capacity-aware expansion recommendation
 
-The observer may report one of two advisory states:
+The observer may report `HOLD_COHORT_1` or `EVALUATE_COHORT_2`.
 
-- `HOLD_COHORT_1`
-- `EVALUATE_COHORT_2`
+`EVALUATE_COHORT_2` currently requires at least two bootstrap verified descendant PRs, at least two claimed seeds, no more than three open external candidate PRs, and ACE capacity >= 0.60 when capacity evidence is available.
 
-`EVALUATE_COHORT_2` currently requires all of:
+These are bootstrap hypotheses. The observer **never creates Cohort 2**. Expansion remains a human/community decision until the evidence and security gates justify a higher authority tier.
 
-- at least 2 verified external descendant PRs;
-- at least 2 claimed seeds;
-- no more than 3 open external candidate PRs;
-- ACE capacity at or above 0.60, when the Growth Ledger capacity can be read.
+## Public status identity
 
-This threshold is a bootstrap hypothesis, not a permanent policy.
+The workflow maintains one observatory issue using workflow-owned label:
 
-The observer **never creates Cohort 2**. Expansion remains a human/community decision until evidence supports a higher autonomy level.
+`ace:cohort-observer`
 
-## Public status surface
+The title `[ACE] Bootstrap Cohort Observatory` is for humans, not authority. During migration, an old title-matching issue is adopted only when it already contains an `ACE_COHORT_STATE` block.
 
-The workflow maintains one issue titled:
+The machine snapshot includes:
 
-`[ACE] Bootstrap Cohort Observatory`
-
-Its body contains:
-
-- a human-readable cohort table;
-- aggregate counts;
-- current capacity signal from ACE Growth Ledger #23 where available;
-- the advisory expansion state;
-- a machine-readable `ACE_COHORT_STATE` block.
-
-Keeping one status issue avoids producing a comment for every event.
+- `metric_scope: bootstrap_growth_seed_exposure`;
+- `full_r_community_ready: false`;
+- trusted seed numbers;
+- claim/candidate/merge counts;
+- bootstrap verified descendant PR numbers;
+- participant count;
+- seed reproduction ratio;
+- capacity/review-load evidence when available;
+- advisory recommendation.
 
 ## Security boundary
 
-The workflow listens to issue/comment metadata and `pull_request_target` metadata.
+This workflow uses `pull_request_target` metadata with issue-write capability, so the critical boundary is explicit:
 
-It must never:
+> **Never check out, import, build, install, evaluate, or execute PR-controlled code in this privileged workflow.**
 
-- check out pull-request code;
-- execute pull-request code;
-- import code or configuration from the pull-request branch;
-- expose repository secrets to candidate code;
-- auto-merge a contribution;
-- apply `ace:verified-descendant` automatically from raw activity;
-- create the next cohort automatically.
+Additional guards:
 
-This keeps observation and evidence accounting separate from execution and acceptance.
+- `actions/github-script` is pinned to immutable reviewed commit `f28e40c7f34bde8b3046d885e986cb6290c5673b`;
+- bootstrap seed membership requires trusted author association;
+- observatory identity is label-owned rather than title-owned;
+- ACE ledger state is read only as advisory capacity evidence;
+- no auto-merge;
+- no automatic application of verification from raw activity;
+- no automatic Cohort-2 creation.
 
 ## Anti-Goodhart rule
-
-The observer should make gaming inconvenient rather than rewarding volume.
-
-It therefore distinguishes:
 
 ```text
 comment != claim
 claim != candidate
 candidate != merge
-merge != verified descendant
+merge != verified causal descendant
+bootstrap verified label != complete lineage proof
 verified descendant != durable retained contributor
 owner/bot activity != external community reproduction
 ```
 
-Future versions should add reviewer-time accounting, contributor return/retention, descendant durability, and explicit parent lineage rather than simply adding more event counters.
+Future versions should add reviewer-time accounting, contributor return/retention, matured parent inventories, and validated lineage integration rather than simply adding event counters.
 
 ## Related
 
@@ -144,4 +154,5 @@ Future versions should add reviewer-time accounting, contributor return/retentio
 - `.github/workflows/ace-community-growth.yml`
 - `.github/workflows/ace-cohort-observer.yml`
 - issue #23 — ACE Growth Ledger
-- issue #25 — parent→descendant lineage evidence
+- issue #25 / PR #48 — ACE lineage evidence
+- issue #57 / PR #68 — generational controller
