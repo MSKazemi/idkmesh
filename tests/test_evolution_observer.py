@@ -88,6 +88,33 @@ class EvolutionObserverTests(unittest.TestCase):
         refs = evolution_snapshot.references_from_text("See #12 #12 and #13, then #12")
         self.assertEqual(refs, [12, 13])
 
+    def test_reference_extraction_is_bounded_and_structural_only(self):
+        text = "ignore words and URLs " + " ".join(f"#{number}" for number in range(1, 80))
+        refs = evolution_snapshot.references_from_text(text)
+        self.assertEqual(refs, list(range(1, 33)))
+        self.assertEqual(len(refs), 32)
+
+    def test_independent_review_excludes_author_and_bots(self):
+        item = {
+            "number": 77,
+            "draft": False,
+            "labels": [],
+            "body": "Refs #35 #91",
+            "created_at": "2026-08-28T10:00:00Z",
+            "user": {"login": "author", "type": "User"},
+        }
+        reviews = [
+            {"state": "APPROVED", "user": {"login": "author", "type": "User"}},
+            {"state": "APPROVED", "user": {"login": "ci-bot[bot]", "type": "Bot"}},
+            {"state": "COMMENTED", "user": {"login": "reviewer-one", "type": "User"}},
+            {"state": "APPROVED", "user": {"login": "reviewer-two", "type": "User"}},
+        ]
+        now = evolution_snapshot.datetime(2026, 8, 28, 16, tzinfo=evolution_snapshot.timezone.utc)
+        normalized = evolution_snapshot._normalize_pr(item, now, reviews)
+        self.assertEqual(normalized["references"], [35, 91])
+        self.assertEqual(normalized["independent_review_count"], 2)
+        self.assertEqual(normalized["independent_approval_count"], 1)
+
     def test_workflow_pin_scan_detects_floating_and_pinned_actions(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
