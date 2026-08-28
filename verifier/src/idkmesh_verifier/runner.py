@@ -153,6 +153,17 @@ def docker_check_command(context: VerificationContext, workspace: Path, command:
     return result
 
 
+def fresh_check_workspace(base_workspace: Path, root: Path, check_id: str) -> Path:
+    """Copy the patched candidate so one hidden check cannot contaminate another."""
+
+    safe_name = "".join(c if c.isalnum() or c in "._-" else "-" for c in check_id)
+    destination = root / f"check-{safe_name}"
+    if destination.exists():
+        raise VerificationRuntimeError(f"duplicate/unsafe hidden-check workspace: {check_id}")
+    shutil.copytree(base_workspace, destination, symlinks=True)
+    return destination
+
+
 def _write_evidence(output: Path, evidence_id: str, content: str) -> dict[str, Any]:
     evidence_dir = output / "evidence"
     evidence_dir.mkdir(parents=True, exist_ok=True)
@@ -205,7 +216,8 @@ def run_verification(
     check_status: dict[str, str] = {}
 
     with tempfile.TemporaryDirectory(prefix="idkmesh-verifier-") as temp_dir:
-        workspace = Path(temp_dir) / "workspace"
+        temp_root = Path(temp_dir)
+        workspace = temp_root / "workspace"
         workspace.mkdir()
         clone_revision(context, workspace)
 
@@ -223,14 +235,16 @@ def run_verification(
 
         paths = changed_paths(workspace) if not patch_apply_error else []
         violations = scope_violations(context, paths) if not patch_apply_error else []
+        check_workspace_root = temp_root / "check-workspaces"
+        check_workspace_root.mkdir()
 
         for spec in context.checks:
             evidence_id = f"{spec.id}-evidence"
             if spec.mode == "result_schema":
-                content = "Worker ResultManifest schema and exact WorkUnit lineage validated before verifier execution.\n"
+                content = "Worker ResultManifest schema and exact WorkUnit/EvaluatorPlan lineage validated before verifier execution.\n"
                 item = _write_evidence(output, evidence_id, content)
                 evidence.append(item)
-                checks.append(_check_record(spec, "passed", "Worker ResultManifest contract is valid and bound to the exact WorkUnit.", evidence_id))
+                checks.append(_check_record(spec, "passed", "Worker ResultManifest and EvaluatorPlan are bound to the exact WorkUnit.", evidence_id))
                 check_status[spec.id] = "passed"
                 continue
 
@@ -270,7 +284,17 @@ def run_verification(
                     checks.append(_check_record(spec, "skipped", "Hidden/container check skipped because patch could not be trusted/applied.", evidence_id))
                     check_status[spec.id] = "skipped"
                     continue
-                command = docker_check_command(context, workspace, spec.command)
+
+                # Hidden commands execute on independent disposable copies of the
+                # patched candidate. A command may create build/test artifacts in
+                # its own copy but can never modify the evidence subject observed
+                # by another check or the base scope/integrity measurement.
+                check_workspace = fresh_check_workspace(
+                    workspace,
+                    check_workspace_root,
+                    spec.id,
+                )
+                command = docker_check_command(context, check_workspace, spec.command)
                 try:
                     result = subprocess.run(
                         command,
@@ -292,13 +316,13 @@ def run_verification(
                     diagnostics = "container verification command timed out"
                 item = _write_evidence(output, evidence_id, content)
                 evidence.append(item)
-                checks.append(_check_record(spec, status, spec.description or "Independent container check executed.", evidence_id, diagnostics))
+                checks.append(_check_record(spec, status, spec.description or "Independent container check executed in a fresh evaluator workspace.", evidence_id, diagnostics))
                 check_status[spec.id] = status
                 if status != "passed":
                     findings.append({"severity": "high" if spec.required else "medium", "category": "correctness", "summary": f"verification check {spec.id} did not pass"})
                 continue
 
-            raise VerificationRuntimeError(f"unsupported verifier check mode: {spec.mode}")
+            raise VerificationRuntimeError(f"unsupported evaluator check mode: {spec.mode}")
 
     required_failures = [spec.id for spec in context.checks if spec.required and check_status.get(spec.id) != "passed"]
     if required_failures:
@@ -314,6 +338,7 @@ def run_verification(
 
     elapsed = max(0.0, time.monotonic() - timer)
     worker_env = context.worker_result["provenance"].get("environment", {})
+    worker_image = worker_env.get("container_image")
     result_digest = canonical_digest(context.worker_result).split(":", 1)[1]
     verification_result: dict[str, Any] = {
         "schema_version": "0.1",
@@ -332,8 +357,11 @@ def run_verification(
             "independent_from_worker": True,
             "worker_id_observed": context.worker_result["worker"]["id"],
             "shared_model_family": False,
-            "shared_runtime": bool(worker_env.get("container_image")),
-            "correlation_notes": "Independent verifier configuration is not supplied to the worker. Docker runtime technology may still be shared.",
+            "shared_runtime": bool(worker_image and worker_image == context.container_image),
+            "correlation_notes": (
+                "EvaluatorPlan is verifier-owned and hidden from the worker. "
+                "shared_runtime is true only when the worker reports the same configured container image."
+            ),
         },
         "status": overall_status,
         "started_at": started_at,
@@ -362,7 +390,7 @@ def run_verification(
                 "platform": platform.platform(),
                 "python": platform.python_version(),
                 "container_image": context.container_image,
-                "tool_versions": {"idkmesh-independent-verifier": "0.1"},
+                "tool_versions": {"idkmesh-independent-verifier": "0.2"},
             },
         },
         "decision_support": {
@@ -374,6 +402,9 @@ def run_verification(
             "org.idkmesh.verifier": {
                 "candidate_artifact_id": context.candidate_artifact["id"],
                 "changed_paths": paths,
+                "evaluator_plan_schema_version": context.plan["schema_version"],
+                "evaluator_plan_id": context.plan["id"],
+                "fresh_workspace_per_container_check": True,
             }
         },
     }
