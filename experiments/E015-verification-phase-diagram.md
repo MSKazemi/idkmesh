@@ -187,6 +187,15 @@ sampling artifacts at 100 seeds, not evidence of superadditivity.
 > high-correlation regime instead, and bites harder there. See
 > [`E018-dependence-model-shape.md`](E018-dependence-model-shape.md).
 
+> **Follow-up (E020).** The quorum sweep here (`q = 0.5, 0.7`) is extended to the
+> full frontier under the measured shape in
+> [`E020-quorum-frontier-under-measured-shape.md`](E020-quorum-frontier-under-measured-shape.md).
+> The cost-asymmetric quorum conclusion holds and is **undersized**: under
+> shared-shock the optimal quorum stays pinned near majority (12-14 of 25 across
+> every correlation, base rate and cost ratio tested), while under item-difficulty
+> it spans the entire range (1-25). The mild quorum effect seen here is a property
+> of the model, which structurally cannot produce a large one.
+
 ## Limitations
 
 1. **`n_eff` is only comparable within a fixed quorum.** *(Resolved -- see

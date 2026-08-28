@@ -281,3 +281,26 @@ The model should become progressively less toy-like by adding:
 - real bounded software tasks and hidden tests.
 
 The repository should keep negative results as carefully as positive ones.
+
+## E020 — the quorum frontier under the measured shape (model-selection result)
+
+`sim/e020_quorum_frontier.py` reuses E017's 1800 real verdicts and the E016 corpus
+base rate to ask which acceptance quorum a panel should use, under each candidate
+dependence model.
+
+```bash
+python3 sim/e020_quorum_frontier.py
+```
+
+Deterministic: closed-form distributions over a fixed artifact, no sampling.
+
+- Fitted to the real panel, the **shared-shock model says no quorum beats majority
+  (1.00x)**; the measured gain is **3.75x**.
+- The optimal quorum spans **12-14 of 25** under shared-shock but **1-25** under
+  item-difficulty, across the same sweep of correlation, base rate and cost ratio.
+  Shape moves the optimum by up to 12 verifiers; `rho` moves it by 1.
+- Neither two-parameter model predicts the unanimity floor: shared-shock is 2.13x
+  too high, the beta-binomial 1.77x too low. The real floor `lambda = 0.0556` is the
+  4 defects every verifier misses — a panel blind spot, not a correlated shock.
+
+See [`experiments/E020-quorum-frontier-under-measured-shape.md`](../experiments/E020-quorum-frontier-under-measured-shape.md).

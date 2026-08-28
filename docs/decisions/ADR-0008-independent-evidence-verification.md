@@ -186,6 +186,39 @@ oracles that pass the discrimination screen. Three consequences for this ADR:
 
 See [`../../experiments/E017-item-difficulty-and-quorum.md`](../../experiments/E017-item-difficulty-and-quorum.md).
 
+## Follow-up — E020 found the shape decides the aggregation rule, and both models miss the floor
+
+E017 established that the shared-shock mixture has the wrong shape. E020 asks what
+that costs operationally, using E017's 1800 real verdicts together with the E016
+corpus base rate (46 of 72 candidates defective).
+
+**1. The shared-shock model gets the highest-leverage decision backwards.** Fitted to
+the real panel and asked how much a better acceptance quorum could buy, it answers
+1.00x — no quorum beats majority, because its floor `rho*mu = 0.1186` is already
+reached below majority. The measured answer is **3.75x** (0.2083 at majority, 0.0556
+at the best quorum). Choosing the rule well is the largest available error reduction
+on this panel, and it is free; the model in use through E012, E013 and E015 says it
+is worthless.
+
+**2. The optimum's location is set by the shape, not by `rho`.** At `n = 25`, sweeping
+correlation, base rate and cost asymmetry, the shared-shock optimum spans 12-14 of 25
+— always near majority. The item-difficulty optimum spans 1-25, the entire range.
+Changing `rho` from 0.25 to 0.80 moves the optimum by one verifier; changing the shape
+at fixed `rho` moves it by up to twelve. Eliciting `rho` is therefore not the useful
+calibration step for panel design.
+
+**3. Neither two-parameter model predicts the floor, and they err in opposite
+directions.** At unanimity: real 0.0556, shared-shock 0.1186 (2.13x too high),
+beta-binomial 0.0313 (1.77x too low). The shared-shock floor is `rho*mu`, a property
+of correlation. The beta-binomial has no floor, decaying as `n^-0.576`. The real floor
+is `lambda = 0.0556` — the 4 defects **every** verifier in the panel misses. That is a
+shared blind spot, escapable only by adding a different *kind* of verifier, not by
+decorrelating or by adding more of the same.
+
+Consequence for this ADR: `lambda` joins `rho` as a quantity to measure, and it bounds
+what any aggregation rule can deliver. See
+[`E020-quorum-frontier-under-measured-shape.md`](../../experiments/E020-quorum-frontier-under-measured-shape.md).
+
 ## Implementation references
 
 - `docs/architecture/MATHEMATICAL_EVOLUTION_KERNEL.md`
