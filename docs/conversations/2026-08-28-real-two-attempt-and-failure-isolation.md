@@ -60,6 +60,54 @@ The test keeps the **same WorkUnit** for both attempts.
 
 This avoids inventing a new failure protocol before evidence shows one is needed.
 
+## Real failure-isolation result
+
+PR #124 (`E2E: test real peer failure isolation`) ran the experiment successfully.
+
+Workflow evidence:
+
+- workflow run: `33187647090`;
+- job: `98904699777`;
+- exact accepted node candidate: `520ad2c9aa5825476de4957da4702d6823f4edb3`;
+- immutable source revision: `b1397a9be91da6570e8ae370de4fa9f4bc44df5c`;
+- WorkUnit digest: `sha256:40993e892a5b83962364686809f7ec6e94ef379e10aaea9492a0526ed7695e2e`;
+- EvaluatorPlan digest: `sha256:0c066392ee33397c1cec125b42ff0b812955f9ef51b01fd42922490ed8c3b244`.
+
+Successful peer:
+
+- ResultManifest id: `node/canonical-smoke/attempt-1-f9795d8d80`;
+- ResultManifest digest: `sha256:9437c840359c980a8a9d7531d4fcb21433e14bede25a3d3be3a9aec29c16c9a6`;
+- candidate patch digest: `sha256:8383a0dd5217e9472e5f55eb658248620e539394cb96012dc61c24a3cc33f6cf`;
+- coordinator state: `verified`;
+- independent recommendation: `accept_candidate`.
+
+Failed peer:
+
+- real node exit code: `2`;
+- ResultManifest created: `false`;
+- observed failure digest: `sha256:8d2e47786207ab9f22539b06dbd98d52a42909936b48e38dd1a26372dd376d4b`;
+- failure stderr digest: `sha256:65d3764925cb0fd7df5a1d7db365004f0cdb199b21c74ffa687f263fc960228c`;
+- coordinator state: `worker_error`;
+- report evidence state: `worker_error`.
+
+Run/report/replay:
+
+- mixed run digest: `sha256:84a0e47cd9e3f7a51fbf13d5ec26b10a68c6c0532c539725d9690b740a73b234`;
+- replayed run digest: same exact digest;
+- replay match: `true`;
+- report digest: `sha256:500af0cbd743a319dd1a5b06e3e35417bed156f5a263f14d01a466a02d4ba8bf`;
+- attempts: `2`;
+- supported: `1`;
+- rejected: `0`;
+- control errors: `1`;
+- control failure present: `true`;
+- verification disagreement: `false`;
+- selected attempt: `null`;
+- human decision: `pending`;
+- integration authority: `external_human_or_governance`.
+
+The evidence explicitly records that the real worker failure was observed **before** replay-config construction. The successful peer still reached independent verification. The failed peer did not acquire an invented ResultManifest or VerificationResult. The report preserved the failure rather than dropping it, and replay reproduced the exact mixed run.
+
 ## Authority boundary
 
 - PR #91 remains draft pending separate human/reviewer inspection;
@@ -71,9 +119,11 @@ This avoids inventing a new failure protocol before evidence shows one is needed
 
 ## Tracker convergence
 
-Issues #4, #5, and #16 were updated so the project now distinguishes:
+Issues #4, #5, and #16 distinguish:
 
 - experimentally proven real precollected-bundle orchestration/report/replay;
-- remaining real failure isolation;
+- experimentally proven real peer-failure isolation;
 - later direct node adapter after human review;
 - benchmark cohort only after the current stacked changes are reviewed/integrated.
+
+The next v0.1 implementation gate is therefore not another failure experiment. It is the separate human review of PR #91, followed by a minimal direct node adapter behind the already-proven worker-adapter boundary if the reviewed candidate remains unchanged.
