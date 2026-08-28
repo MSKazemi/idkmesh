@@ -7,12 +7,13 @@ canonical files designated by [`../../PROJECT_RULES.md`](../../PROJECT_RULES.md)
 (decisions, specifications, architecture, findings); this directory keeps the trail
 that produced them.
 
-115 records across 2 dates, newest first.
+116 records across 2 dates, newest first.
 
 ## Index
 
 ### 2026-08-29
 
+- [Issue #49 coordination-criticality experiment](2026-08-29-issue-49-criticality-experiment.md)
 - [Successor-v2 Task 001 symlink calibration](2026-08-29-phase-b2-v2-task001-symlink-calibration.md)
 - [Successor-v2 Task 004 non-finite RWVB calibration](2026-08-29-phase-b2-v2-task004-calibration.md)
 
