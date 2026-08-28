@@ -168,9 +168,10 @@ Use a GitHub issue for discussion/task tracking and a pull request for changes, 
 
 An IDKIP should link to relevant issues, PRs, experiments, and results.
 
-## First proposal
+## Current proposals
 
 - [`IDKIP-0001: Interoperability-first Work Contract`](idkips/0001-interoperability-first-work-contract.md)
+- [`IDKIP-0002: IDK-MOSAIC — A Living Collective-Intelligence Control Loop`](idkips/0002-idk-mosaic-living-collective-intelligence.md)
 
 ## Inspirations
 
