@@ -76,11 +76,11 @@ reachable, maintained, and executed against — and still warns.
 This is a precision limit of the detector, not debt in the repository. It is retained
 deliberately, per #152's acceptance criteria, and **not** corrected.
 
-Recommended rule refinement, for review rather than immediate implementation: treat a
+Rule refinement, proposed here and implemented separately in the follow-up PR: treat a
 document referenced from a non-Markdown repository artifact (workflow, script, schema) as
-non-orphaned, and report that as a distinct lower-severity category. Implementing this
-changes detector semantics and should carry its own deterministic fixture reproducing
-candidate 14, so it is proposed here rather than bundled into this correction.
+non-orphaned, and report it as a distinct lower-severity `notice` category. It changes
+detector semantics, so it carries its own deterministic fixture reproducing candidate 14
+rather than being bundled into this correction. See "Rule refinement outcome" below.
 
 ## Phase 3 — one bounded correction
 
@@ -128,7 +128,39 @@ the retained false positive above was deliberately not "fixed" at all.
 - [x] At least one false-positive/intentional-warning case retained — candidate 14
 - [x] Before/after observatory output and reviewer-effort evidence recorded
 - [x] Final report distinguishes detector precision from repository quality
-- [ ] Rule refinement backed by a deterministic fixture — **proposed, not implemented**
+- [x] Rule refinement backed by a deterministic fixture — implemented, see below
+
+## Rule refinement outcome
+
+The refinement was implemented after this triage: documents with no inbound Markdown link
+that *are* referenced by a non-Markdown artifact now report as
+`document_referenced_only_by_non_markdown_artifact` at severity `notice`, carrying the
+referencing artifacts as evidence, instead of as `orphan_document_candidate`.
+
+Scan scope is repository-tracked files with an allowlisted suffix (`.yml`, `.yaml`, `.json`,
+`.py`, `.sh`, `.toml`, `.cfg`, `.ini`, `.txt`) — an allowlist rather than "everything that is
+not Markdown", so large result and data files are not rescanned and the cost stays bounded.
+
+Measured effect at `3d2f663`:
+
+| Category | Before | After |
+|---|---:|---:|
+| `orphan_document_candidate` | 65 | **44** |
+| `document_referenced_only_by_non_markdown_artifact` | — | **21** |
+
+**21 of 65 remaining warnings were never orphans.** They are architecture and calibration
+documents owned by the workflows that execute them — `ADVERSARIAL_EVIDENCE_ENVELOPE.md`,
+`ANYTIME_DRIFT_GUARD.md`, `FREE_RESOURCE_MESH.md`, `ACE_ACTIVATION_GATE.md` and others.
+
+This is the cleanest available measurement of the precision-versus-quality distinction: a
+32% reduction in the orphan population achieved with **no repository content change at all**,
+purely by making the detector stop conflating "not linked from a document" with
+"not referenced by anything".
+
+Backed by three tests against a deterministic fixture reproducing candidate 14 — the
+workflow-owned document becomes a notice, a document referenced by nothing stays an orphan
+candidate, and a document that also has an inbound Markdown link produces no finding. The
+first two were confirmed to fail with the refinement disabled.
 
 ## Remaining, deliberately not done here
 
