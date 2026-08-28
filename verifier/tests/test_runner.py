@@ -14,6 +14,7 @@ sys.path.insert(0, str(ROOT / "verifier" / "tests"))
 from idkmesh_verifier.model import file_digest, parse_context  # noqa: E402
 from idkmesh_verifier.runner import (  # noqa: E402
     docker_check_command,
+    fresh_check_workspace,
     resolve_artifact,
     run_verification,
     scope_violations,
@@ -51,6 +52,28 @@ class VerifierRunnerTests(unittest.TestCase):
         self.assertIn("--cap-drop ALL", joined)
         self.assertIn("no-new-privileges", command)
         self.assertNotIn("/var/run/docker.sock", joined)
+
+    def test_each_hidden_check_gets_fresh_candidate_copy(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            base = root / "base"
+            copies = root / "copies"
+            base.mkdir()
+            copies.mkdir()
+            (base / "candidate.txt").write_text("original\n", encoding="utf-8")
+
+            first = fresh_check_workspace(base, copies, "check-a")
+            (first / "candidate.txt").write_text("mutated-by-check-a\n", encoding="utf-8")
+            second = fresh_check_workspace(base, copies, "check-b")
+
+            self.assertEqual(
+                (second / "candidate.txt").read_text(encoding="utf-8"),
+                "original\n",
+            )
+            self.assertEqual(
+                (base / "candidate.txt").read_text(encoding="utf-8"),
+                "original\n",
+            )
 
     @patch("idkmesh_verifier.runner.platform.platform", return_value="test-platform")
     @patch("idkmesh_verifier.runner.require_tools")
@@ -92,6 +115,13 @@ class VerifierRunnerTests(unittest.TestCase):
         self.assertTrue(verification["independence"]["independent_from_worker"])
         self.assertNotEqual(verification["verifier"]["id"], result["worker"]["id"])
         self.assertEqual(verification["provenance"]["source_revision"], result["provenance"]["source_revision"])
+        self.assertEqual(
+            verification["extensions"]["org.idkmesh.verifier"]["evaluator_plan_schema_version"],
+            "0.2",
+        )
+        self.assertTrue(
+            verification["extensions"]["org.idkmesh.verifier"]["fresh_workspace_per_container_check"]
+        )
 
     @patch("idkmesh_verifier.runner.platform.platform", return_value="test-platform")
     @patch("idkmesh_verifier.runner.require_tools")
