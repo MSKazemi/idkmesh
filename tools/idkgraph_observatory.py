@@ -28,7 +28,7 @@ import json
 from pathlib import Path
 import subprocess
 import sys
-from typing import Any
+from typing import Any, Iterable
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 if str(REPOSITORY_ROOT) not in sys.path:
@@ -54,6 +54,15 @@ REPORT_FILENAME = "repository-health.md"
 GRAPH_FILENAME = "idkgraph.json"
 SUMMARY_FILENAME = "observatory.json"
 SEVERITY_ORDER = {"error": 0, "warning": 1}
+
+# These paths contain intentionally failing acceptance fixtures. When the
+# repository root itself is scanned, their seeded failures are retained as
+# expected-fixture evidence instead of being counted as repository-health
+# defects. Scanning the fixture directory directly does not match this prefix,
+# so the negative acceptance test still fails closed normally.
+EXPECTED_NEGATIVE_FIXTURE_PREFIXES = (
+    "tests/fixtures/idkgraph_observatory/broken/",
+)
 
 
 def detect_git_revision(root: Path) -> str | None:
@@ -102,8 +111,59 @@ def _graph_indexes(graph: dict[str, Any]) -> tuple[dict[str, str], dict[str, str
     return path_to_id, id_to_path
 
 
+def _matches_expected_negative_fixture(
+    source_path: object,
+    prefixes: Iterable[str] = EXPECTED_NEGATIVE_FIXTURE_PREFIXES,
+) -> bool:
+    return isinstance(source_path, str) and any(source_path.startswith(prefix) for prefix in prefixes)
+
+
+def _partition_expected_negative_fixture_findings(
+    link_report: dict[str, Any],
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    active: list[dict[str, Any]] = []
+    expected: list[dict[str, Any]] = []
+
+    for raw in link_report.get("findings", []):
+        if not isinstance(raw, dict):
+            continue
+        if _matches_expected_negative_fixture(raw.get("source_path")):
+            expected.append(
+                {
+                    "severity": raw.get("severity", "warning"),
+                    "category": raw.get("category", "unknown_navigation_finding"),
+                    "source_path": raw.get("source_path"),
+                    "line": raw.get("line", 0),
+                    "message": raw.get("message", ""),
+                    "raw_target": raw.get("raw_target"),
+                }
+            )
+        else:
+            active.append(raw)
+
+    expected.sort(
+        key=lambda item: (
+            SEVERITY_ORDER.get(str(item["severity"]), 99),
+            str(item["category"]),
+            str(item.get("source_path") or ""),
+            int(item.get("line") or 0),
+            str(item.get("raw_target") or ""),
+        )
+    )
+    by_severity = Counter(str(item["severity"]) for item in expected)
+    by_category = Counter(str(item["category"]) for item in expected)
+    return active, {
+        "prefixes": list(EXPECTED_NEGATIVE_FIXTURE_PREFIXES),
+        "finding_count": len(expected),
+        "by_severity": dict(sorted(by_severity.items())),
+        "by_category": dict(sorted(by_category.items())),
+        "findings": expected,
+    }
+
+
 def _normalize_findings(
     link_report: dict[str, Any],
+    link_findings: list[dict[str, Any]],
     cycle_report: dict[str, Any],
     health_report: dict[str, Any],
     graph: dict[str, Any],
@@ -111,7 +171,7 @@ def _normalize_findings(
     path_to_id, id_to_path = _graph_indexes(graph)
     findings: list[dict[str, Any]] = []
 
-    for finding in link_report.get("findings", []):
+    for finding in link_findings:
         source_path = finding.get("source_path")
         findings.append(
             {
@@ -192,6 +252,9 @@ def build_observatory(
     link_report = check_links(root)
     cycle_report = check_graph(graph)
     health_report = check_residual_health(root, graph, link_report)
+    active_link_findings, expected_negative_fixtures = _partition_expected_negative_fixture_findings(
+        link_report
+    )
 
     if source_revision is None:
         source_revision = detect_git_revision(root)
@@ -200,7 +263,13 @@ def build_observatory(
         revision_method = "explicit"
 
     graph_payload = serialize_graph(graph)
-    findings = _normalize_findings(link_report, cycle_report, health_report, graph)
+    findings = _normalize_findings(
+        link_report,
+        active_link_findings,
+        cycle_report,
+        health_report,
+        graph,
+    )
     severity_counts, category_counts = _finding_counts(findings)
 
     research_hypotheses: list[dict[str, Any]] = []
@@ -230,6 +299,7 @@ def build_observatory(
             "sha256": _sha256_text(graph_payload),
         },
         "navigation": link_report.get("summary", {}),
+        "expected_negative_fixtures": expected_negative_fixtures,
         "residual_health": health_report.get("summary", {}),
         "execution": {
             "work_units": len(cycle_report["projection"]["work_unit_ids"]),
@@ -270,6 +340,7 @@ def render_health_report(observatory: dict[str, Any]) -> str:
     """Render deterministic human-readable evidence from ``observatory``."""
     graph = observatory["graph"]
     navigation = observatory["navigation"]
+    expected = observatory.get("expected_negative_fixtures", {})
     residual = observatory.get("residual_health", {})
     execution = observatory["execution"]
     counts = observatory["finding_counts"]["by_severity"]
@@ -299,6 +370,7 @@ def render_health_report(observatory: dict[str, Any]) -> str:
         f"| Markdown documents scanned | {navigation.get('documents_scanned', 0)} |",
         f"| Local Markdown links | {navigation.get('local_markdown_links', 0)} |",
         f"| Resolved local Markdown links | {navigation.get('resolved_local_markdown_links', 0)} |",
+        f"| Expected negative fixture findings | {expected.get('finding_count', 0)} |",
         f"| Orphan document candidates | {residual.get('orphan_document_candidates', 0)} |",
         f"| Accepted decisions without document link | {residual.get('accepted_decisions_without_document_link', 0)} |",
         f"| Executable WorkUnits | {execution['work_units']} |",
@@ -341,6 +413,18 @@ def render_health_report(observatory: dict[str, Any]) -> str:
             )
     else:
         lines.append("No deterministic P0 warnings were observed.")
+
+    lines.extend(["", "## Expected negative fixture evidence", ""])
+    expected_findings = expected.get("findings", [])
+    if expected_findings:
+        lines.extend(["| Category | Source | Line | Severity | Message |", "| --- | --- | ---: | --- | --- |"])
+        for item in expected_findings:
+            lines.append(
+                f"| `{_md(item['category'])}` | `{_md(item.get('source_path') or '-')}` | "
+                f"{item.get('line') or 0} | `{_md(item.get('severity') or '-')}` | {_md(item.get('message') or '')} |"
+            )
+    else:
+        lines.append("No expected negative-fixture findings were observed in this scan root.")
 
     lines.extend(
         [
