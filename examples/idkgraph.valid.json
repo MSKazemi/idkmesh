@@ -1,0 +1,16 @@
+{
+  "graph_id": "idkgraph-example-valid",
+  "version": "0.1",
+  "nodes": [
+    {"id": "G-1", "type": "goal", "title": "Ship a verified local swarm"},
+    {"id": "WU-1", "type": "work_unit", "title": "Produce candidate"},
+    {"id": "WU-2", "type": "work_unit", "title": "Verify candidate"},
+    {"id": "E-1", "type": "evidence", "title": "Verification result"}
+  ],
+  "hyperedges": [
+    {"id": "H-1", "relation": "depends_on", "sources": ["WU-1"], "targets": ["WU-2"]},
+    {"id": "H-2", "relation": "produces", "sources": ["WU-2"], "targets": ["E-1"]},
+    {"id": "H-3", "relation": "implements", "sources": ["WU-2"], "targets": ["G-1"]}
+  ],
+  "events": []
+}
