@@ -10,9 +10,9 @@ from __future__ import annotations
 
 import node_runtime_acceptance as acceptance
 
-acceptance.FROZEN_CANDIDATE_SHA = "cbd40c43497ae4feb3a4a5e410dc78766b6cb19c"
-acceptance.NODE_CI_RUN = 33185704607
-acceptance.PHASE0_CI_RUN = 33185704688
+acceptance.FROZEN_CANDIDATE_SHA = "520ad2c9aa5825476de4957da4702d6823f4edb3"
+acceptance.NODE_CI_RUN = 33185901079
+acceptance.PHASE0_CI_RUN = 33185901058
 
 if __name__ == "__main__":
     raise SystemExit(acceptance.main())
