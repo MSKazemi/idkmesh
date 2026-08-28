@@ -1,0 +1,123 @@
+name: Adversarial Evidence Envelope
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/adversarial_evidence_guard.py"
+      - "tests/test_adversarial_evidence_guard.py"
+      - "docs/architecture/ADVERSARIAL_EVIDENCE_ENVELOPE.md"
+      - "docs/conversations/2026-08-28-adversarial-evidence-continuation.md"
+      - ".github/workflows/adversarial-evidence-envelope.yml"
+  pull_request:
+    paths:
+      - "scripts/adversarial_evidence_guard.py"
+      - "tests/test_adversarial_evidence_guard.py"
+      - "docs/architecture/ADVERSARIAL_EVIDENCE_ENVELOPE.md"
+      - "docs/conversations/2026-08-28-adversarial-evidence-continuation.md"
+      - ".github/workflows/adversarial-evidence-envelope.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: adversarial-evidence-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  adversarial-envelope:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+
+      - name: Verify on Python 3.11
+        run: |
+          python --version
+          python -m py_compile scripts/adversarial_evidence_guard.py tests/test_adversarial_evidence_guard.py
+          python -m unittest -v tests.test_adversarial_evidence_guard
+          python scripts/adversarial_evidence_guard.py --demo --output /tmp/adversarial-evidence-demo-py3.11.json >/dev/null
+          python -m json.tool /tmp/adversarial-evidence-demo-py3.11.json >/dev/null
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+
+      - name: Verify on Python 3.13
+        run: |
+          python --version
+          python -m py_compile scripts/adversarial_evidence_guard.py tests/test_adversarial_evidence_guard.py
+          python -m unittest -v tests.test_adversarial_evidence_guard
+          python scripts/adversarial_evidence_guard.py --demo --output /tmp/adversarial-evidence-demo-py3.13.json >/dev/null
+          python -m json.tool /tmp/adversarial-evidence-demo-py3.13.json >/dev/null
+
+      - name: Verify cross-interpreter determinism and authority invariants
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          for path in (
+              Path('/tmp/adversarial-evidence-demo-py3.11.json'),
+              Path('/tmp/adversarial-evidence-demo-py3.13.json'),
+          ):
+              payload = json.loads(path.read_text())
+              invariants = payload['invariants']
+              assert invariants['fault_budget_can_block_naive_support'] is True
+              assert invariants['robust_support_can_be_certified'] is True
+              assert invariants['binary_honest_majority_can_be_certified'] is True
+              assert invariants['hard_guard_non_compensation'] is True
+              assert invariants['fault_uncertainty_is_monotone'] is True
+              assert invariants['truth_claim'] is False
+              assert invariants['sybil_resistance_claim'] is False
+              assert invariants['byzantine_consensus_claim'] is False
+              assert invariants['integration_authority'] is False
+          PY
+
+          cmp -s /tmp/adversarial-evidence-demo-py3.11.json /tmp/adversarial-evidence-demo-py3.13.json
+          hash_311="$(sha256sum /tmp/adversarial-evidence-demo-py3.11.json | cut -d' ' -f1)"
+          hash_313="$(sha256sum /tmp/adversarial-evidence-demo-py3.13.json | cut -d' ' -f1)"
+          test "$hash_311" = "$hash_313"
+          printf '%s  adversarial-evidence-demo.json\n' "$hash_311" > /tmp/adversarial-evidence-demo.sha256
+
+      - name: Publish adversarial evidence artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: adversarial-evidence-${{ github.run_id }}
+          path: |
+            /tmp/adversarial-evidence-demo-py3.11.json
+            /tmp/adversarial-evidence-demo-py3.13.json
+            /tmp/adversarial-evidence-demo.sha256
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Publish job summary
+        shell: bash
+        run: |
+          {
+            echo "## Adversarial Evidence Envelope"
+            echo
+            echo "Python 3.11 and 3.13 both passed sharpness + fault-budget invariants."
+            echo
+            echo "Actual JSON payloads were compared byte-for-byte across interpreters."
+            echo
+            echo "Content digest: \`$(cut -d' ' -f1 /tmp/adversarial-evidence-demo.sha256)\`"
+            echo
+            echo "The certificate bounds honest-report means under a count fault model; it is not truth, Sybil resistance, Byzantine consensus, or integration authority."
+            echo
+            echo '```json'
+            cat /tmp/adversarial-evidence-demo-py3.13.json
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
