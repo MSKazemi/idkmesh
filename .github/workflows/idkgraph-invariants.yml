@@ -1,0 +1,35 @@
+name: IDKGraph Invariants
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/idkgraph_check.py'
+      - 'schemas/idkgraph.schema.json'
+      - 'examples/idkgraph*.json'
+      - '.github/workflows/idkgraph-invariants.yml'
+  pull_request:
+    paths:
+      - 'scripts/idkgraph_check.py'
+      - 'schemas/idkgraph.schema.json'
+      - 'examples/idkgraph*.json'
+      - '.github/workflows/idkgraph-invariants.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  invariants:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
+      - name: Valid graph passes
+        run: python scripts/idkgraph_check.py examples/idkgraph.valid.json --json
+      - name: Cyclic executable graph fails closed
+        shell: bash
+        run: |
+          if python scripts/idkgraph_check.py examples/idkgraph.invalid-cycle.json --json; then
+            echo 'Expected invalid cycle fixture to fail' >&2
+            exit 1
+          fi
