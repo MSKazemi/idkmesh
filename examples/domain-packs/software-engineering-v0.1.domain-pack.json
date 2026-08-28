@@ -1,0 +1,193 @@
+{
+  "schema_version": "0.1",
+  "id": "domain.software-engineering",
+  "version": "0.1.0",
+  "name": "Software Engineering",
+  "description": "Domain rules for bounded repository engineering, testing, review, benchmarking, research, documentation, and protected integration.",
+  "core_compatibility": {
+    "core_api_version": "0.1",
+    "work_unit_schema_version": "0.2"
+  },
+  "work_unit_kinds": [
+    {
+      "kind": "coding",
+      "default_risk_class": "medium",
+      "required_verification_policy": "software.code-change",
+      "required_capabilities": ["repository-edit"],
+      "required_evidence": ["test_output", "artifact_hash"]
+    },
+    {
+      "kind": "testing",
+      "default_risk_class": "low",
+      "required_verification_policy": "software.test-change",
+      "required_capabilities": ["test-execution"],
+      "required_evidence": ["test_output"]
+    },
+    {
+      "kind": "review",
+      "default_risk_class": "medium",
+      "required_verification_policy": "software.independent-review",
+      "required_capabilities": ["repository-read"],
+      "required_evidence": ["review"]
+    },
+    {
+      "kind": "benchmarking",
+      "default_risk_class": "low",
+      "required_verification_policy": "software.benchmark",
+      "required_capabilities": ["deterministic-execution"],
+      "required_evidence": ["benchmark", "artifact_hash"]
+    },
+    {
+      "kind": "documentation",
+      "default_risk_class": "low",
+      "required_verification_policy": "software.docs-change",
+      "required_capabilities": ["repository-edit"],
+      "required_evidence": ["review"]
+    },
+    {
+      "kind": "research",
+      "default_risk_class": "low",
+      "required_verification_policy": "software.research-evidence",
+      "required_capabilities": ["repository-read"],
+      "required_evidence": ["citation", "artifact_hash"]
+    },
+    {
+      "kind": "integration",
+      "default_risk_class": "high",
+      "required_verification_policy": "software.integration",
+      "required_capabilities": ["repository-read"],
+      "required_evidence": ["review", "test_output", "attestation"]
+    }
+  ],
+  "verification_policies": [
+    {
+      "id": "software.code-change",
+      "strategy": "all_required",
+      "independent_from_worker": true,
+      "minimum_independent_verifiers": 1,
+      "human_integration_required": true,
+      "description": "Code changes require deterministic checks plus a verifier independent from the producing worker; integration remains human/governance controlled."
+    },
+    {
+      "id": "software.test-change",
+      "strategy": "all_required",
+      "independent_from_worker": true,
+      "minimum_independent_verifiers": 1,
+      "human_integration_required": true
+    },
+    {
+      "id": "software.independent-review",
+      "strategy": "all_required",
+      "independent_from_worker": true,
+      "minimum_independent_verifiers": 1,
+      "human_integration_required": true
+    },
+    {
+      "id": "software.benchmark",
+      "strategy": "all_required",
+      "independent_from_worker": true,
+      "minimum_independent_verifiers": 1,
+      "human_integration_required": false
+    },
+    {
+      "id": "software.docs-change",
+      "strategy": "all_required",
+      "independent_from_worker": false,
+      "minimum_independent_verifiers": 0,
+      "human_integration_required": true
+    },
+    {
+      "id": "software.research-evidence",
+      "strategy": "all_required",
+      "independent_from_worker": false,
+      "minimum_independent_verifiers": 0,
+      "human_integration_required": true
+    },
+    {
+      "id": "software.integration",
+      "strategy": "all_required",
+      "independent_from_worker": true,
+      "minimum_independent_verifiers": 1,
+      "human_integration_required": true
+    }
+  ],
+  "worker_roles": [
+    {
+      "id": "software.builder",
+      "description": "Produces bounded candidate repository changes.",
+      "required_capabilities": ["repository-edit"]
+    },
+    {
+      "id": "software.tester",
+      "description": "Runs bounded deterministic tests and reproductions.",
+      "required_capabilities": ["test-execution"]
+    },
+    {
+      "id": "software.reviewer",
+      "description": "Inspects candidate evidence independently from the producer.",
+      "required_capabilities": ["repository-read"]
+    },
+    {
+      "id": "software.benchmarker",
+      "description": "Runs replayable benchmark workloads.",
+      "required_capabilities": ["deterministic-execution"]
+    }
+  ],
+  "risk_classes": [
+    {
+      "id": "low",
+      "sandbox_required": true,
+      "human_review_required": false,
+      "description": "Low-impact isolated work with deterministic evidence."
+    },
+    {
+      "id": "medium",
+      "sandbox_required": true,
+      "human_review_required": true,
+      "description": "Repository behavior changes requiring human integration review."
+    },
+    {
+      "id": "high",
+      "sandbox_required": true,
+      "human_review_required": true,
+      "description": "Security, workflow, protocol, evaluator, integration, or governance-sensitive change."
+    },
+    {
+      "id": "critical",
+      "sandbox_required": true,
+      "human_review_required": true,
+      "description": "Authority-bearing or high-consequence change requiring explicit governance."
+    }
+  ],
+  "adapters": {
+    "definitions": [
+      {
+        "id": "software.repository",
+        "interface": "idkmesh.adapter.repository/v0.1",
+        "discovery": "project-manifest",
+        "trust_boundary": "Resolves project-declared repository roots; the manifest does not grant write authority."
+      },
+      {
+        "id": "software.sandbox-worker",
+        "interface": "idkmesh.adapter.worker/v0.1",
+        "discovery": "registry",
+        "trust_boundary": "Worker execution remains disposable/capability-bounded and cannot self-accept output."
+      },
+      {
+        "id": "software.metadata-verifier",
+        "interface": "idkmesh.adapter.verifier/v0.1",
+        "discovery": "registry",
+        "trust_boundary": "Verifier consumes candidate metadata/evidence under verifier-owned policy and has no merge authority."
+      }
+    ],
+    "required": ["software.repository", "software.metadata-verifier"],
+    "optional": ["software.sandbox-worker"]
+  },
+  "metrics": {
+    "default": ["verified_useful_output", "verification_latency", "human_minutes", "replay_success"]
+  },
+  "compatibility": {
+    "backward_compatible_with": ["0.1.0"],
+    "breaking_change_policy": "Breaking semantics require a new DomainPack major version or schema version and explicit ProjectManifest re-binding; silent downgrade is forbidden."
+  }
+}
