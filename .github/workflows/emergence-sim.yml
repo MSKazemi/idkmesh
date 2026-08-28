@@ -1,0 +1,82 @@
+name: emergence-sim
+
+on:
+  push:
+    paths:
+      - "sim/**"
+      - "tests/test_emergence_sim.py"
+      - "tests/test_emergence_sweep.py"
+      - "tests/test_verifier_correlation_sweep.py"
+      - "tests/test_verification_aggregation_sim.py"
+      - "experiments/E011-emergence-vague-goals.md"
+      - "experiments/E012-correlated-verification.md"
+      - "experiments/E013-independence-aware-aggregation.md"
+      - "experiments/results/E011-*.json"
+      - "experiments/results/E012-*.json"
+      - "experiments/results/E013-*.json"
+      - "schemas/work-unit.schema.json"
+      - "schemas/result-manifest.schema.json"
+      - "schemas/goal-graph.schema.json"
+      - "schemas/experiment-result.schema.json"
+      - "CONSTITUTION.md"
+      - "docs/protocols/CONSTITUTIONAL_EVOLUTIONARY_MESH.md"
+      - ".github/workflows/emergence-sim.yml"
+  pull_request:
+    paths:
+      - "sim/**"
+      - "tests/test_emergence_sim.py"
+      - "tests/test_emergence_sweep.py"
+      - "tests/test_verifier_correlation_sweep.py"
+      - "tests/test_verification_aggregation_sim.py"
+      - "experiments/E011-emergence-vague-goals.md"
+      - "experiments/E012-correlated-verification.md"
+      - "experiments/E013-independence-aware-aggregation.md"
+      - "experiments/results/E011-*.json"
+      - "experiments/results/E012-*.json"
+      - "experiments/results/E013-*.json"
+      - "schemas/work-unit.schema.json"
+      - "schemas/result-manifest.schema.json"
+      - "schemas/goal-graph.schema.json"
+      - "schemas/experiment-result.schema.json"
+      - "CONSTITUTION.md"
+      - "docs/protocols/CONSTITUTIONAL_EVOLUTIONARY_MESH.md"
+      - ".github/workflows/emergence-sim.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install test dependency
+        run: python -m pip install --disable-pip-version-check pytest
+      - name: Run emergence tests
+        run: python -m pytest -q tests/test_emergence_sim.py tests/test_emergence_sweep.py tests/test_verifier_correlation_sweep.py tests/test_verification_aggregation_sim.py
+      - name: Smoke-test simulator JSON
+        run: |
+          python sim/emergence_sim.py --strategy all --seed 7 --agents 40 --generations 30 --change-at 15 > /tmp/emergence.json
+          python -m json.tool /tmp/emergence.json > /dev/null
+      - name: Smoke-test imperfect correlated verification
+        run: |
+          python sim/emergence_sim.py --strategy all --seed 7 --agents 30 --generations 20 --change-at 10 --verifiers 5 --verifier-accuracy 0.75 --verifier-correlation 0.8 > /tmp/correlated.json
+          python -m json.tool /tmp/correlated.json > /dev/null
+      - name: Smoke-test multi-seed sweep
+        run: |
+          python sim/run_emergence_sweep.py --seeds 3 --agents 20 --generations 20 --change-at 10 > /tmp/sweep.json
+          python -m json.tool /tmp/sweep.json > /dev/null
+      - name: Smoke-test verifier correlation sweep
+        run: |
+          python sim/run_verifier_correlation_sweep.py --correlations 0,1 --seeds 2 --agents 10 --generations 12 --change-at 6 > /tmp/correlation-sweep.json
+          python -m json.tool /tmp/correlation-sweep.json > /dev/null
+      - name: Smoke-test independence-aware aggregation
+        run: |
+          python sim/verification_aggregation_sim.py --correlations 0,1 --seeds 3 --trials 200 > /tmp/aggregation.json
+          python -m json.tool /tmp/aggregation.json > /dev/null

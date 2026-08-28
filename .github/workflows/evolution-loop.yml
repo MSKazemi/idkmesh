@@ -1,0 +1,84 @@
+name: IDKMesh Evolution Loop
+
+on:
+  issues:
+    types: [opened, closed]
+  pull_request:
+    types: [opened, closed]
+  pull_request_review:
+    types: [submitted]
+  issue_comment:
+    types: [created]
+  workflow_dispatch:
+  schedule:
+    - cron: '17 5 * * 1'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: evolution-observer
+  cancel-in-progress: false
+
+jobs:
+  observe:
+    # Avoid recursive/noisy bot events. This workflow observes; it does not mutate main.
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Normalize event kind
+        id: event
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_ACTION: ${{ github.event.action }}
+          PR_MERGED: ${{ github.event.pull_request.merged }}
+        run: |
+          set -euo pipefail
+          if [[ "$EVENT_NAME" == "schedule" ]]; then
+            kind="schedule.audit"
+          elif [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            kind="workflow_dispatch.manual"
+          elif [[ "$EVENT_NAME" == "pull_request" && "$EVENT_ACTION" == "closed" && "$PR_MERGED" == "true" ]]; then
+            kind="pull_request.merged"
+          else
+            kind="${EVENT_NAME}.${EVENT_ACTION:-unknown}"
+          fi
+          echo "kind=$kind" >> "$GITHUB_OUTPUT"
+
+      - name: Score observation
+        run: |
+          python3 scripts/evolution_score.py \
+            --kind '${{ steps.event.outputs.kind }}' \
+            --actor '${{ github.actor }}' \
+            --repository '${{ github.repository }}' \
+            --ref '${{ github.ref }}' \
+            --run-id '${{ github.run_id }}'
+
+      - name: Validate generated state
+        run: |
+          python3 -m json.tool state/evolution-state.json >/dev/null
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          for line in Path('state/evolution-events.jsonl').read_text().splitlines():
+              json.loads(line)
+          print('evolution state and event log are valid')
+          PY
+
+      - name: Publish observation artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: evolution-observation-${{ github.run_id }}
+          path: |
+            EVOLUTION_REPORT.md
+            state/evolution-state.json
+            state/evolution-events.jsonl
+          retention-days: 30
+
+      - name: Job summary
+        run: cat EVOLUTION_REPORT.md >> "$GITHUB_STEP_SUMMARY"

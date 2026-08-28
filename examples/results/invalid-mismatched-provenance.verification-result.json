@@ -1,0 +1,81 @@
+{
+  "schema_version": "0.1",
+  "id": "phase0/invalid-provenance-verification/attempt-1",
+  "result_manifest_id": "phase0/smoke-result/attempt-1",
+  "work_unit_id": "phase0/smoke-work-unit",
+  "work_unit_version": 2,
+  "attempt": 1,
+  "verifier": {
+    "id": "phase0-independent-verifier",
+    "type": "system",
+    "adapter": "phase0-schema-verifier",
+    "adapter_version": "0.1"
+  },
+  "independence": {
+    "independent_from_worker": true,
+    "worker_id_observed": "phase0-local-worker",
+    "shared_model_family": false,
+    "shared_runtime": true,
+    "correlation_notes": "Intentionally invalid semantic fixture: declared ResultManifest digest does not match the exact worker result."
+  },
+  "status": "passed",
+  "started_at": "2026-08-28T13:30:02Z",
+  "finished_at": "2026-08-28T13:30:03Z",
+  "checks": [
+    {
+      "id": "schema",
+      "type": "schema",
+      "required": true,
+      "status": "passed",
+      "summary": "Shape-valid check used by a negative provenance fixture.",
+      "evidence_ids": ["schema-output"]
+    },
+    {
+      "id": "reproduction",
+      "type": "reproduction",
+      "required": true,
+      "status": "passed",
+      "summary": "Shape-valid check used by a negative provenance fixture.",
+      "evidence_ids": ["reproduction-output"]
+    }
+  ],
+  "evidence": [
+    {
+      "id": "schema-output",
+      "type": "test_output",
+      "locator": "results/verification/schema.txt",
+      "digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333"
+    },
+    {
+      "id": "reproduction-output",
+      "type": "test_output",
+      "locator": "results/verification/reproduction.txt",
+      "digest": "sha256:4444444444444444444444444444444444444444444444444444444444444444"
+    }
+  ],
+  "findings": [],
+  "metrics": {
+    "required_checks_passed": 2,
+    "required_checks_failed": 0
+  },
+  "resources": {
+    "wall_seconds": 1.0,
+    "compute_units": 0.0,
+    "human_minutes": 0.0,
+    "tokens": 0
+  },
+  "provenance": {
+    "result_manifest_digest": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+    "work_unit_digest": "sha256:0baf0c586505f20a9c0ad3d4c2d16a968db09825d3bea2899a4add127413b0b2",
+    "source_revision": "fixture",
+    "verifier_config_digest": "sha256:6666666666666666666666666666666666666666666666666666666666666666",
+    "environment": {
+      "platform": "fixture"
+    }
+  },
+  "decision_support": {
+    "recommendation": "accept_candidate",
+    "confidence": 1.0,
+    "rationale": "This fixture must be rejected because provenance does not bind to the exact ResultManifest."
+  }
+}

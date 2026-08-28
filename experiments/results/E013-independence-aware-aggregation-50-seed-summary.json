@@ -1,0 +1,104 @@
+{
+  "experiment": "independence-aware-verifier-aggregation-v0",
+  "configuration": {
+    "seed_start": 0,
+    "seeds": 50,
+    "trials_per_seed": 2000,
+    "group_sizes": [7, 1, 1, 1, 1],
+    "nominal_verifiers": 11,
+    "independence_groups": 5,
+    "individual_accuracy": 0.75,
+    "quorum": 0.5,
+    "correlations": [0.0, 0.25, 0.5, 0.75, 1.0]
+  },
+  "first_observed_crossover_correlation": 0.25,
+  "levels": [
+    {
+      "correlation": 0.0,
+      "aggregate": {
+        "naive_majority": {
+          "false_accept_rate": {"n": 50, "mean": 0.03414, "stdev": 0.005862, "ci95_low": 0.032515, "ci95_high": 0.035765, "min": 0.023, "max": 0.047},
+          "false_reject_rate": {"n": 50, "mean": 0.03328, "stdev": 0.004936, "ci95_low": 0.031912, "ci95_high": 0.034648, "min": 0.017, "max": 0.044},
+          "error_rate": {"n": 50, "mean": 0.03371, "stdev": 0.003905, "ci95_low": 0.032628, "ci95_high": 0.034792, "min": 0.0255, "max": 0.0425}
+        },
+        "group_balanced": {
+          "false_accept_rate": {"n": 50, "mean": 0.0657, "stdev": 0.00799, "ci95_low": 0.063485, "ci95_high": 0.067915, "min": 0.05, "max": 0.086},
+          "false_reject_rate": {"n": 50, "mean": 0.06428, "stdev": 0.007088, "ci95_low": 0.062315, "ci95_high": 0.066245, "min": 0.05, "max": 0.078},
+          "error_rate": {"n": 50, "mean": 0.06499, "stdev": 0.004849, "ci95_low": 0.063646, "ci95_high": 0.066334, "min": 0.057, "max": 0.0795}
+        }
+      },
+      "pairwise": {"group_balanced_wins": 0, "naive_majority_wins": 50, "ties": 0, "trials": 50, "group_balanced_win_rate": 0.0}
+    },
+    {
+      "correlation": 0.25,
+      "aggregate": {
+        "naive_majority": {
+          "false_accept_rate": {"n": 50, "mean": 0.08772, "stdev": 0.008278, "ci95_low": 0.085425, "ci95_high": 0.090015, "min": 0.074, "max": 0.108},
+          "false_reject_rate": {"n": 50, "mean": 0.09036, "stdev": 0.008053, "ci95_low": 0.088128, "ci95_high": 0.092592, "min": 0.075, "max": 0.113},
+          "error_rate": {"n": 50, "mean": 0.08904, "stdev": 0.005912, "ci95_low": 0.087401, "ci95_high": 0.090679, "min": 0.0765, "max": 0.101}
+        },
+        "group_balanced": {
+          "false_accept_rate": {"n": 50, "mean": 0.07478, "stdev": 0.008162, "ci95_low": 0.072518, "ci95_high": 0.077042, "min": 0.056, "max": 0.097},
+          "false_reject_rate": {"n": 50, "mean": 0.07558, "stdev": 0.008288, "ci95_low": 0.073283, "ci95_high": 0.077877, "min": 0.06, "max": 0.097},
+          "error_rate": {"n": 50, "mean": 0.07518, "stdev": 0.005455, "ci95_low": 0.073668, "ci95_high": 0.076692, "min": 0.0625, "max": 0.087}
+        }
+      },
+      "pairwise": {"group_balanced_wins": 50, "naive_majority_wins": 0, "ties": 0, "trials": 50, "group_balanced_win_rate": 1.0}
+    },
+    {
+      "correlation": 0.5,
+      "aggregate": {
+        "naive_majority": {
+          "false_accept_rate": {"n": 50, "mean": 0.143, "stdev": 0.011825, "ci95_low": 0.139722, "ci95_high": 0.146278, "min": 0.122, "max": 0.169},
+          "false_reject_rate": {"n": 50, "mean": 0.14288, "stdev": 0.010483, "ci95_low": 0.139974, "ci95_high": 0.145786, "min": 0.111, "max": 0.165},
+          "error_rate": {"n": 50, "mean": 0.14294, "stdev": 0.008384, "ci95_low": 0.140616, "ci95_high": 0.145264, "min": 0.1235, "max": 0.157}
+        },
+        "group_balanced": {
+          "false_accept_rate": {"n": 50, "mean": 0.08348, "stdev": 0.008876, "ci95_low": 0.08102, "ci95_high": 0.08594, "min": 0.064, "max": 0.107},
+          "false_reject_rate": {"n": 50, "mean": 0.08438, "stdev": 0.007412, "ci95_low": 0.082326, "ci95_high": 0.086434, "min": 0.067, "max": 0.105},
+          "error_rate": {"n": 50, "mean": 0.08393, "stdev": 0.005948, "ci95_low": 0.082281, "ci95_high": 0.085579, "min": 0.0715, "max": 0.098}
+        }
+      },
+      "pairwise": {"group_balanced_wins": 50, "naive_majority_wins": 0, "ties": 0, "trials": 50, "group_balanced_win_rate": 1.0}
+    },
+    {
+      "correlation": 0.75,
+      "aggregate": {
+        "naive_majority": {
+          "false_accept_rate": {"n": 50, "mean": 0.1976, "stdev": 0.01302, "ci95_low": 0.193991, "ci95_high": 0.201209, "min": 0.171, "max": 0.225},
+          "false_reject_rate": {"n": 50, "mean": 0.19564, "stdev": 0.012483, "ci95_low": 0.19218, "ci95_high": 0.1991, "min": 0.171, "max": 0.221},
+          "error_rate": {"n": 50, "mean": 0.19662, "stdev": 0.009065, "ci95_low": 0.194107, "ci95_high": 0.199133, "min": 0.174, "max": 0.216}
+        },
+        "group_balanced": {
+          "false_accept_rate": {"n": 50, "mean": 0.09362, "stdev": 0.009945, "ci95_low": 0.090864, "ci95_high": 0.096376, "min": 0.077, "max": 0.12},
+          "false_reject_rate": {"n": 50, "mean": 0.09504, "stdev": 0.008654, "ci95_low": 0.092641, "ci95_high": 0.097439, "min": 0.076, "max": 0.116},
+          "error_rate": {"n": 50, "mean": 0.09433, "stdev": 0.006284, "ci95_low": 0.092588, "ci95_high": 0.096072, "min": 0.082, "max": 0.111}
+        }
+      },
+      "pairwise": {"group_balanced_wins": 50, "naive_majority_wins": 0, "ties": 0, "trials": 50, "group_balanced_win_rate": 1.0}
+    },
+    {
+      "correlation": 1.0,
+      "aggregate": {
+        "naive_majority": {
+          "false_accept_rate": {"n": 50, "mean": 0.24512, "stdev": 0.014625, "ci95_low": 0.241066, "ci95_high": 0.249174, "min": 0.218, "max": 0.279},
+          "false_reject_rate": {"n": 50, "mean": 0.24592, "stdev": 0.01322, "ci95_low": 0.242256, "ci95_high": 0.249584, "min": 0.224, "max": 0.273},
+          "error_rate": {"n": 50, "mean": 0.24552, "stdev": 0.008912, "ci95_low": 0.24305, "ci95_high": 0.24799, "min": 0.2275, "max": 0.267}
+        },
+        "group_balanced": {
+          "false_accept_rate": {"n": 50, "mean": 0.10212, "stdev": 0.009538, "ci95_low": 0.099476, "ci95_high": 0.104764, "min": 0.086, "max": 0.121},
+          "false_reject_rate": {"n": 50, "mean": 0.10328, "stdev": 0.008788, "ci95_low": 0.100844, "ci95_high": 0.105716, "min": 0.086, "max": 0.124},
+          "error_rate": {"n": 50, "mean": 0.1027, "stdev": 0.005764, "ci95_low": 0.101102, "ci95_high": 0.104298, "min": 0.093, "max": 0.119}
+        }
+      },
+      "pairwise": {"group_balanced_wins": 50, "naive_majority_wins": 0, "ties": 0, "trials": 50, "group_balanced_win_rate": 1.0}
+    }
+  ],
+  "limitations": [
+    "Independence-group labels are assumed known rather than inferred from evidence.",
+    "All verifiers share the same marginal accuracy in this first model.",
+    "Within-group dependence uses a simple shared-correctness mixture.",
+    "The experiment classifies synthetic binary claims, not real software changes.",
+    "Group-balanced voting is a transparent baseline, not a proposed final trust algorithm."
+  ]
+}
