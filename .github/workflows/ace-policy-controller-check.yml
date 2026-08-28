@@ -1,0 +1,57 @@
+name: ACE policy controller check
+
+on:
+  pull_request:
+    paths:
+      - "experiments/ace_policy_controller.py"
+      - "tests/test_ace_policy_controller.py"
+      - "docs/community/ACE_POLICY_CONTROLLER_PHASE_A.md"
+      - ".github/workflows/ace-policy-controller-check.yml"
+  push:
+    branches: [main]
+    paths:
+      - "experiments/ace_policy_controller.py"
+      - "tests/test_ace_policy_controller.py"
+      - "docs/community/ACE_POLICY_CONTROLLER_PHASE_A.md"
+      - ".github/workflows/ace-policy-controller-check.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Compile controller
+        run: python -m py_compile experiments/ace_policy_controller.py tests/test_ace_policy_controller.py
+      - name: Run deterministic unit tests
+        run: python -m unittest discover -s tests -p 'test_ace_policy_controller.py' -v
+      - name: Smoke-test deterministic fixtures
+        run: |
+          python experiments/ace_policy_controller.py --fixtures > /tmp/ace-policy.json
+          python -m json.tool /tmp/ace-policy.json > /dev/null
+      - name: Assert fixture safety regimes
+        run: |
+          python - <<'PY'
+          import json
+          with open('/tmp/ace-policy.json', encoding='utf-8') as handle:
+              data = json.load(handle)
+          assert data['under-reproduction']['verified_descendants'] == 0
+          assert data['under-reproduction']['public_actions'] == []
+          assert data['healthy-reproduction']['mode'] == 'GROW'
+          assert len(data['healthy-reproduction']['public_actions']) <= 1
+          assert data['overload']['mode'] == 'CONSOLIDATE'
+          assert data['overload']['public_actions'] == []
+          assert data['overload']['next_weights']['consolidate'] > data['overload']['previous_weights']['consolidate']
+          PY
+
+# Phase A is a pure offline policy model. This workflow has read-only contents
+# permission and no GitHub mutation step, repository secret, or network-dependent
+# controller behavior.
