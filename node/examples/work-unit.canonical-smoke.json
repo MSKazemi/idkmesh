@@ -113,7 +113,7 @@
         "command": [
           "python",
           "-c",
-          "from pathlib import Path; p=Path('README.md'); p.write_text(p.read_text() + '\n<!-- idkmesh-node candidate smoke -->\n')"
+          "from pathlib import Path; p=Path('README.md'); p.write_text(p.read_text() + chr(10) + '<!-- idkmesh-node candidate smoke -->' + chr(10))"
         ]
       },
       "limits": {
