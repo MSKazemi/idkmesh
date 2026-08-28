@@ -1,0 +1,22 @@
+{
+  "attempt": 1,
+  "extensions": {"org.idkmesh.patch_fixture": {"kind": "forbidden"}},
+  "finished_at": "2026-08-28T15:00:01Z",
+  "id": "verification/patch-smoke/forbidden-attempt-1",
+  "logs": [
+    {"digest": "sha256:615ae2cf629d666c76776c73159a291fb431cb71b44a61bedfb60a08da46bbf8", "locator": "stdout.txt", "type": "stdout"},
+    {"digest": "sha256:998113782533259e61f5ee3ba673430f83c943cda57a7c9a8ae86ef60d8d644f", "locator": "stderr.txt", "type": "stderr"}
+  ],
+  "metrics": {"changed_file_count": 1, "exit_code": 0, "policy_violation_count": 0},
+  "produced_artifacts": [{"description": "Unverified fixture patch.", "digest": "sha256:07e3990ff2ed93d3008fa3f9a6b819b14d3c4e3818e88ba31a9ea199e6466a60", "id": "candidate-patch", "locator": "changes.patch", "media_type": "text/x-diff", "type": "patch"}],
+  "provenance": {"environment": {"platform": "fixture", "python": "3.12", "tool_versions": {"fixture-patch-worker": "0.1"}}, "source_revision": "patch-verifier-fixture-v1", "work_unit_digest": "sha256:3f8b78df3f43329fe72223018ab42300fcb19523a82769e47ba31098861c24fd", "worker_config_digest": "sha256:b948faa097d71855f1eb23b6f602606a95b09949a045b97eff8c91d6bec88e19"},
+  "resources": {"wall_seconds": 0.01},
+  "schema_version": "0.1",
+  "self_report": {"claims": ["Candidate is unverified."], "summary": "Fixture worker reports success; independent verification is required."},
+  "started_at": "2026-08-28T15:00:00Z",
+  "status": "succeeded",
+  "verification_request": {"evidence_artifact_ids": ["candidate-patch"], "expected_validator_ids": ["result-manifest-schema", "independent-review"], "notes": "Worker self-report is not acceptance."},
+  "work_unit_id": "verification/patch-smoke",
+  "work_unit_version": 1,
+  "worker": {"adapter": "fixture-patch-worker", "adapter_version": "0.1", "id": "fixture/patch-worker", "type": "system"}
+}
