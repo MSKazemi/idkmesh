@@ -20,6 +20,7 @@ from typing import Any
 
 import local_verifier
 import substring_patch_verifier
+import transformation_patch_verifier
 from provenance_integrity import canonical_digest, validate_integrity
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -27,8 +28,9 @@ EVALUATOR_PLAN_SCHEMAS = {
     "0.1": ROOT / "schemas" / "evaluator-plan-v0.1.schema.json",
     "0.2": ROOT / "schemas" / "evaluator-plan-v0.2.schema.json",
     "0.3": ROOT / "schemas" / "evaluator-plan-v0.3.schema.json",
+    "0.4": ROOT / "schemas" / "evaluator-plan-v0.4.schema.json",
 }
-RUNNER_VERSION = "0.3"
+RUNNER_VERSION = "0.4"
 JSON_VALIDATOR_IDS = {
     "artifact-digest",
     "candidate-scope",
@@ -79,6 +81,8 @@ def backend_name(plan: dict[str, Any]) -> str:
         return "unified_diff"
     if plan["schema_version"] == "0.3" and plan.get("backend", {}).get("type") == "unified_diff":
         return "unified_diff_substring"
+    if plan["schema_version"] == "0.4" and plan.get("backend", {}).get("type") == "unified_diff":
+        return "unified_diff_transform"
     raise EvaluatorPlanError("EvaluatorPlan does not select a supported verifier backend")
 
 
@@ -86,7 +90,7 @@ def supported_validator_ids(plan: dict[str, Any]) -> set[str]:
     backend = backend_name(plan)
     if backend == "json_exact":
         return set(JSON_VALIDATOR_IDS)
-    if backend in {"unified_diff", "unified_diff_substring"}:
+    if backend in {"unified_diff", "unified_diff_substring", "unified_diff_transform"}:
         return set(PATCH_VALIDATOR_IDS)
     raise EvaluatorPlanError(f"unsupported evaluator backend: {backend}")
 
@@ -114,6 +118,13 @@ def operational_policy(plan: dict[str, Any]) -> dict[str, Any]:
     if backend == "unified_diff_substring":
         return {
             "schema_version": "0.3",
+            "id": plan["id"],
+            "candidate_artifact_id": plan["candidate_artifact_id"],
+            "backend": copy.deepcopy(plan["backend"]),
+        }
+    if backend == "unified_diff_transform":
+        return {
+            "schema_version": "0.4",
             "id": plan["id"],
             "candidate_artifact_id": plan["candidate_artifact_id"],
             "backend": copy.deepcopy(plan["backend"]),
@@ -234,6 +245,14 @@ def verify_with_plan(
         )
     elif backend == "unified_diff_substring":
         result = substring_patch_verifier.verify_patch_candidate(
+            work_unit=work_unit,
+            worker_result=worker_result,
+            policy=policy,
+            candidate_root=candidate_root,
+            policy_path=plan_path,
+        )
+    elif backend == "unified_diff_transform":
+        result = transformation_patch_verifier.verify_patch_candidate(
             work_unit=work_unit,
             worker_result=worker_result,
             policy=policy,
