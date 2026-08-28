@@ -1,0 +1,64 @@
+name: ACE simulation check
+
+on:
+  pull_request:
+    paths:
+      - "experiments/ace_population_sim.py"
+      - "schemas/ace-lineage-v0.1.schema.json"
+      - "docs/community/ACE_LINEAGE_PROTOCOL.md"
+      - ".github/workflows/ace-simulation-check.yml"
+  push:
+    branches: [main]
+    paths:
+      - "experiments/ace_population_sim.py"
+      - "schemas/ace-lineage-v0.1.schema.json"
+      - "docs/community/ACE_LINEAGE_PROTOCOL.md"
+      - ".github/workflows/ace-simulation-check.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Check Python syntax
+        run: python -m py_compile experiments/ace_population_sim.py
+      - name: Check lineage schema JSON syntax
+        run: python -m json.tool schemas/ace-lineage-v0.1.schema.json > /dev/null
+      - name: Smoke-test deterministic ACE simulation
+        run: |
+          python experiments/ace_population_sim.py --steps 24 --seed 3 --json > /tmp/ace-sim.json
+          python -m json.tool /tmp/ace-sim.json > /dev/null
+      - name: Check qualitative regimes
+        run: |
+          python - <<'PY'
+          import runpy
+
+          model = runpy.run_path("experiments/ace_population_sim.py", run_name="ace_sim")
+          scenarios = model["SCENARIOS"]
+          run = model["run_scenario"]
+
+          under = run(scenarios["under-reproduction"], steps=24, seed=3)["summary"]
+          healthy = run(scenarios["healthy-reproduction"], steps=24, seed=3)["summary"]
+          overload = run(scenarios["overload"], steps=24, seed=3)["summary"]
+
+          assert under["r_community"] < 1.0
+          assert healthy["r_community"] > 1.0
+          assert overload["peak_review_load"] > healthy["peak_review_load"]
+          assert (
+              overload["verified_value_per_total_burden"]
+              < healthy["verified_value_per_total_burden"]
+          )
+          PY
+
+# This workflow executes only repository-controlled deterministic arithmetic.
+# It does not call the network, use repository secrets, or execute contributor-
+# supplied commands beyond the checked-in simulation itself.
