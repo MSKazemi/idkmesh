@@ -302,7 +302,7 @@ Read [`GOVERNANCE.md`](GOVERNANCE.md), [`MAINTAINERS.md`](MAINTAINERS.md), and [
 - [`BLOCKCHAIN_STRATEGY.md`](BLOCKCHAIN_STRATEGY.md) — staged trust/provenance strategy.
 - [`docs/decisions/`](docs/decisions/) — architecture/major decision records.
 - [`docs/findings/`](docs/findings/) — research findings.
-- [`docs/conversations/`](docs/conversations/) — structured project conversation records.
+- [`docs/conversations/`](docs/conversations/README.md) — structured project conversation records.
 
 ## Public project record
 
