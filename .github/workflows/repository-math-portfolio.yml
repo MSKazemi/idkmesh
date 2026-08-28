@@ -2,6 +2,7 @@ name: Repository Mathematical Portfolio
 
 on:
   push:
+    branches: [main]
     paths:
       - "scripts/repository_portfolio.py"
       - "scripts/evolution_math.py"
@@ -11,6 +12,19 @@ on:
       - "tests/test_repository_portfolio.py"
       - "docs/architecture/REPOSITORY_MATHEMATICAL_PORTFOLIO.md"
       - ".github/workflows/repository-math-portfolio.yml"
+  # Trusted PR metadata observation uses default-branch workflow/code only.
+  pull_request_target:
+    types: [opened, reopened, synchronize, ready_for_review, labeled, unlabeled]
+    paths:
+      - "scripts/repository_portfolio.py"
+      - "scripts/evolution_math.py"
+      - "state/repository-portfolio-policy.json"
+      - "state/repository-portfolio-state.json"
+      - "state/evolution-math-policy.json"
+      - "tests/test_repository_portfolio.py"
+      - "docs/architecture/REPOSITORY_MATHEMATICAL_PORTFOLIO.md"
+      - ".github/workflows/repository-math-portfolio.yml"
+  # PR-head code is compiled/tested only, with contents-read permission.
   pull_request:
     types: [opened, reopened, synchronize, ready_for_review, labeled, unlabeled]
     paths:
@@ -28,26 +42,31 @@ on:
   schedule:
     - cron: "29 6 * * 1,4"
 
-permissions:
-  contents: read
-  issues: read
-  pull-requests: read
-  actions: read
-
-concurrency:
-  group: repository-math-portfolio-${{ github.ref }}
-  cancel-in-progress: false
+permissions: {}
 
 jobs:
   portfolio:
+    if: github.event_name != 'pull_request'
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: read
+      actions: read
+    concurrency:
+      group: repository-math-portfolio-observer
+      cancel-in-progress: true
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 9
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
+      - name: Check out trusted default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+          fetch-depth: 1
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.11"
 
@@ -60,21 +79,21 @@ jobs:
 
       - name: Find previous trusted-main portfolio checkpoint
         id: previous_portfolio
-        if: github.ref == 'refs/heads/main'
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
           set -euo pipefail
           run_id="$(gh api \
-            "repos/${GITHUB_REPOSITORY}/actions/workflows/repository-math-portfolio.yml/runs?branch=main&status=success&per_page=20" \
+            "repos/${GITHUB_REPOSITORY}/actions/workflows/repository-math-portfolio.yml/runs?branch=${DEFAULT_BRANCH}&status=success&per_page=20" \
             --jq '.workflow_runs[0].id // empty' || true)"
           echo "run_id=${run_id}" >> "$GITHUB_OUTPUT"
 
       - name: Download previous trusted-main portfolio checkpoint
-        if: github.ref == 'refs/heads/main' && steps.previous_portfolio.outputs.run_id != ''
+        if: steps.previous_portfolio.outputs.run_id != ''
         continue-on-error: true
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           pattern: repository-portfolio-checkpoint-*
           path: /tmp/previous-portfolio
@@ -90,7 +109,7 @@ jobs:
           set -euo pipefail
           cp state/repository-portfolio-state.json /tmp/repository-portfolio-state.json
           source="repository-seed"
-          if [[ "${GITHUB_REF}" == "refs/heads/main" && -f /tmp/previous-portfolio/repository-portfolio-state.json ]]; then
+          if [[ -f /tmp/previous-portfolio/repository-portfolio-state.json ]]; then
             cp /tmp/previous-portfolio/repository-portfolio-state.json /tmp/repository-portfolio-state.json
             source="trusted-main-portfolio-artifact:${{ steps.previous_portfolio.outputs.run_id }}"
           fi
@@ -98,21 +117,21 @@ jobs:
 
       - name: Find latest trusted evolution checkpoint
         id: evolution
-        if: github.ref == 'refs/heads/main'
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
           set -euo pipefail
           run_id="$(gh api \
-            "repos/${GITHUB_REPOSITORY}/actions/workflows/evolution-loop.yml/runs?branch=main&status=success&per_page=20" \
+            "repos/${GITHUB_REPOSITORY}/actions/workflows/evolution-loop.yml/runs?branch=${DEFAULT_BRANCH}&status=success&per_page=20" \
             --jq '.workflow_runs[0].id // empty' || true)"
           echo "run_id=${run_id}" >> "$GITHUB_OUTPUT"
 
       - name: Download latest trusted evolution checkpoint
-        if: github.ref == 'refs/heads/main' && steps.evolution.outputs.run_id != ''
+        if: steps.evolution.outputs.run_id != ''
         continue-on-error: true
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           pattern: evolution-checkpoint-*
           path: /tmp/evolution
@@ -128,7 +147,7 @@ jobs:
           set -euo pipefail
           cp state/evolution-state.json /tmp/evolution-state.json
           source="repository-seed"
-          if [[ "${GITHUB_REF}" == "refs/heads/main" && -f /tmp/evolution/state/evolution-state.json ]]; then
+          if [[ -f /tmp/evolution/state/evolution-state.json ]]; then
             cp /tmp/evolution/state/evolution-state.json /tmp/evolution-state.json
             source="trusted-main-evolution-artifact:${{ steps.evolution.outputs.run_id }}"
           fi
@@ -156,28 +175,15 @@ jobs:
               repository: $repository,
               generated_at: $generated_at,
               issues: ($issues[0] | map({
-                number,
-                title,
-                body: (.body // ""),
-                labels: [.labels[].name],
-                comments_count: (.comments | length),
-                created_at: .createdAt,
-                updated_at: .updatedAt,
-                url,
-                author: (.author.login // "unknown")
+                number, title, body: (.body // ""), labels: [.labels[].name],
+                comments_count: (.comments | length), created_at: .createdAt,
+                updated_at: .updatedAt, url, author: (.author.login // "unknown")
               })),
               pull_requests: ($prs[0] | map({
-                number,
-                title,
-                body: (.body // ""),
-                labels: [.labels[].name],
-                comments_count: (.comments | length),
-                created_at: .createdAt,
-                updated_at: .updatedAt,
-                url,
-                author: (.author.login // "unknown"),
-                is_draft: .isDraft,
-                review_decision: (.reviewDecision // "")
+                number, title, body: (.body // ""), labels: [.labels[].name],
+                comments_count: (.comments | length), created_at: .createdAt,
+                updated_at: .updatedAt, url, author: (.author.login // "unknown"),
+                is_draft: .isDraft, review_decision: (.reviewDecision // "")
               }))
             }' > /tmp/repository-snapshot.json
           python -m json.tool /tmp/repository-snapshot.json >/dev/null
@@ -207,7 +213,7 @@ jobs:
           cp state/repository-portfolio-policy.json /tmp/repository-portfolio-checkpoint/repository-portfolio-policy.json
 
       - name: Publish replayable portfolio evidence
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: repository-portfolio-checkpoint-${{ github.run_id }}
           path: /tmp/repository-portfolio-checkpoint/
@@ -216,3 +222,31 @@ jobs:
 
       - name: Publish job summary
         run: cat /tmp/REPOSITORY_PORTFOLIO.md >> "$GITHUB_STEP_SUMMARY"
+
+  verify-pr-head:
+    if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+    concurrency:
+      group: repository-math-portfolio-pr-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Check out proposed PR code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+
+      - name: Test deterministic portfolio code without live API authority
+        run: |
+          python -m py_compile scripts/evolution_math.py scripts/repository_portfolio.py
+          python -m unittest -v tests.test_repository_portfolio
+          python -m json.tool state/repository-portfolio-policy.json >/dev/null
+          python -m json.tool state/repository-portfolio-state.json >/dev/null
