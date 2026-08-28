@@ -1,6 +1,8 @@
-# `idkmesh-verify` v0.1
+# `idkmesh-verify` repository-patch verifier v0.1
 
-`idkmesh-verify` is the first executable **independent verification** backend for the local IDKMesh trust loop.
+`idkmesh-verify` extends the already-merged zero-cost deterministic verifier MVP in `experiments/local_verifier.py` from isolated JSON candidates to **bounded repository patch candidates** that may require independent hidden regression/lint/security commands.
+
+The existing safe baseline (#72) remains important because it proves independent evidence without executing candidate code. This package implements the next Phase A extension described by that baseline: pinned source reconstruction, patch integrity/application, repository scope enforcement, and optional verifier-owned commands in a separate sandbox.
 
 It consumes:
 
@@ -15,6 +17,22 @@ It emits:
 - independent evidence files for each check.
 
 It never merges, pushes, or declares itself the final integration authority.
+
+## Relationship to the safe deterministic verifier
+
+Use the lowest-risk verifier that can answer the correctness question.
+
+```text
+isolated data/JSON candidate
+    -> experiments/local_verifier.py
+       (no candidate code execution)
+
+bounded repository patch requiring build/test/lint/security checks
+    -> verifier/ idkmesh-verify
+       (fresh immutable checkout + verifier-owned sandbox commands)
+```
+
+The patch verifier should not replace the safer deterministic path for tasks that do not need code execution.
 
 ## Why the verifier plan is separate
 
@@ -51,7 +69,7 @@ WorkUnit v0.2
 
 ## MVP safety profile
 
-Verifier v0.1 intentionally accepts only:
+Patch verifier v0.1 intentionally accepts only:
 
 - low-risk WorkUnits;
 - public data;
@@ -172,7 +190,8 @@ v0.1 does **not** yet provide:
 - multi-verifier quorum aggregation;
 - strong microVM sandboxing;
 - benchmark task corpus;
-- policy-specific security scanners;
 - final merge/integration authority.
 
-Those should be added only after this low-risk local path is exercised and measured.
+It also deliberately executes verifier-owned commands only for bounded low-risk public patch candidates. The safer deterministic `experiments/local_verifier.py` path should remain preferred whenever candidate-code execution is unnecessary.
+
+This extension should be described as realistically validated only after a controlled Docker acceptance run is recorded.
