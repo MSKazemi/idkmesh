@@ -161,8 +161,13 @@ def verify_scaffold_control_plane() -> None:
     require(cohort.get("stage") == "scaffold", "successor scaffold is no longer mutable")
     require("definition_digest" not in cohort, "scaffold unexpectedly has definition_digest")
     extension = cohort.get("extensions", {}).get("org.idkmesh.phase_b2_v2", {})
-    require(extension.get("freeze_ready") is False, "scaffold unexpectedly reports freeze_ready")
-    require(TASK_ID in extension.get("calibration_pending_task_ids", []), "Task 004 is not pending")
+    pending = set(extension.get("calibration_pending_task_ids", []))
+    completed = set(extension.get("calibration_completed", {}))
+    require(
+        extension.get("freeze_ready") is (len(pending) == 0),
+        "scaffold freeze_ready disagrees with pending calibration state",
+    )
+    require(TASK_ID in pending | completed, "Task 004 is absent from calibration state")
     task = next((item for item in cohort.get("tasks", []) if item.get("id") == TASK_ID), None)
     require(isinstance(task, dict), "Task 004 missing from scaffold")
     require(task.get("source", {}).get("revision") == SOURCE_SHA, "Task 004 source drift")

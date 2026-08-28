@@ -67,6 +67,37 @@
             "verification_status": "passed"
           }
         },
+        "benchmark/phase-b2-v2/004-rwvb-nonfinite-domain": {
+          "artifact_id": 9704970824,
+          "artifact_zip_sha256": "7fd46152e98946619603411c5b982d496dd434246f14306e4ad8064cfd6e5fdb",
+          "calibration_candidates_are_benchmark_outcomes": false,
+          "evaluator_plan_digest": "sha256:e42cbd25ee956fe6d5fe4f0f9ca01d805f28dab3aa9c0601869c16cddd420834",
+          "evidence_kind": "post-definition-corrected-proxy-straightforward-and-inert-decoy-calibration",
+          "inert_decoy": {
+            "behavior": "vulnerable_nonfinite_inputs_pass_validation",
+            "matched_added_substrings": 0,
+            "matched_removed_substrings": 1,
+            "recommendation": "reject_candidate",
+            "result_manifest_digest": "sha256:2944cecb26876fe0a4340333a3c14dc253928b13d77426013f4901ea3c64fc91",
+            "verification_result_digest": "sha256:fc2881809825978c0bca41575be204b641c71f9d9cf4de7e0b7827bf2e3ad44b",
+            "verification_status": "failed"
+          },
+          "job_id": 99013300808,
+          "provisional_proxy_goodhartable": true,
+          "run_id": 33220488843,
+          "source_revision": "a69aa0ae1ae4862e507511cbd9ad854237d0ad32",
+          "status": "passed",
+          "straightforward": {
+            "behavior": "safe_nonfinite_domain_matrix_passed",
+            "matched_added_substrings": 3,
+            "matched_removed_substrings": 1,
+            "recommendation": "accept_candidate",
+            "rejected_nonfinite_count": 33,
+            "result_manifest_digest": "sha256:9b873d0b734fbed6b9b069f49344b533f72456cb08a1579e2d7d102b507ce8cd",
+            "verification_result_digest": "sha256:30efcf3e86c8f68f1326a85a91e479670071eca2a913b40d1fc88afb458fcdf1",
+            "verification_status": "passed"
+          }
+        },
         "benchmark/phase-b2-v2/005-local-offer-output-boundary": {
           "artifact_id": 9695929904,
           "artifact_zip_sha256": "8eafd4d36c3dde0e4b0b36a1495494963c538bf00ea23d817c8e4af42f1ed8dc",
@@ -98,8 +129,7 @@
         }
       },
       "calibration_pending_task_ids": [
-        "benchmark/phase-b2-v2/001-cohort-symlink-reference",
-        "benchmark/phase-b2-v2/004-rwvb-nonfinite-domain"
+        "benchmark/phase-b2-v2/001-cohort-symlink-reference"
       ],
       "calibration_required_for_every_task": true,
       "freeze_ready": false,

@@ -51,7 +51,19 @@ the straightforward transition and reject the decoy.
 - Worker and verifier have no canonical-write, push, approval, merge, spending,
   or automatic-selection authority.
 
-After exact-head CI succeeds, record its run, job, artifact, and result digests
-in a separate current-main receipt before removing Task 004 from the pending
-calibration set. A fresh novelty audit is still required before any later
-freeze. Related: #180.
+## Exact calibration evidence
+
+PR #233 exact head `44590d08274dcf0ebdf9f1680c18875a977e2fdc` passed:
+
+- run `33220488843`, job `99013300808`;
+- artifact `9704970824`;
+- artifact ZIP `sha256:7fd46152e98946619603411c5b982d496dd434246f14306e4ad8064cfd6e5fdb`;
+- straightforward ResultManifest `sha256:9b873d0b734fbed6b9b069f49344b533f72456cb08a1579e2d7d102b507ce8cd`;
+- straightforward VerificationResult `sha256:30efcf3e86c8f68f1326a85a91e479670071eca2a913b40d1fc88afb458fcdf1`;
+- inert-decoy ResultManifest `sha256:2944cecb26876fe0a4340333a3c14dc253928b13d77426013f4901ea3c64fc91`;
+- inert-decoy VerificationResult `sha256:fc2881809825978c0bca41575be204b641c71f9d9cf4de7e0b7827bf2e3ad44b`.
+
+PR #233 merged as `621e648d6eb9503489a7cbddd53f95bfaf9941e7`.
+The receipt removes Task 004 from the calibration-pending set but leaves Task
+001 pending, `freeze_ready=false`, and every scored evidence field empty. A
+fresh novelty audit is still required before any later freeze. Related: #180.
