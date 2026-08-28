@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idkmesh.org/schemas/experiment-result.schema.json",
+  "title": "IDKMesh Experiment Result",
+  "description": "Common envelope for reproducible IDKMesh experiment outputs.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "experiment_id",
+    "hypothesis",
+    "implementation_ref",
+    "configuration",
+    "results",
+    "limitations"
+  ],
+  "properties": {
+    "schema_version": { "type": "string", "const": "0.1.0" },
+    "experiment_id": { "type": "string", "minLength": 1 },
+    "hypothesis": { "type": "string", "minLength": 1 },
+    "implementation_ref": { "type": "string", "minLength": 1 },
+    "repository_commit": { "type": "string" },
+    "created_at": { "type": "string", "format": "date-time" },
+    "environment": {
+      "type": "object",
+      "properties": {
+        "python": { "type": "string" },
+        "os": { "type": "string" },
+        "architecture": { "type": "string" },
+        "hardware": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "configuration": {
+      "type": "object",
+      "required": ["seed"],
+      "properties": {
+        "seed": { "type": "integer" },
+        "agents": { "type": "integer", "minimum": 1 },
+        "generations": { "type": "integer", "minimum": 1 },
+        "change_at": { "type": "integer", "minimum": 0 },
+        "bins": { "type": "integer", "minimum": 1 }
+      },
+      "additionalProperties": true
+    },
+    "baselines": {
+      "type": "array",
+      "items": { "type": "string" },
+      "uniqueItems": true
+    },
+    "metrics": {
+      "type": "array",
+      "items": { "type": "string" },
+      "uniqueItems": true
+    },
+    "results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["strategy"],
+        "properties": {
+          "strategy": { "type": "string" },
+          "pre_change_best": { "type": "number" },
+          "post_change_immediate": { "type": "number" },
+          "post_change_mean": { "type": "number" },
+          "final_best": { "type": "number" },
+          "recovery_generations": { "type": ["integer", "null"], "minimum": 0 },
+          "viable_evaluations": { "type": "integer", "minimum": 0 },
+          "archive_size": { "type": "integer", "minimum": 0 },
+          "trace": { "type": "array", "items": { "type": "number" } }
+        },
+        "additionalProperties": true
+      }
+    },
+    "limitations": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1
+    },
+    "notes": { "type": "array", "items": { "type": "string" } }
+  },
+  "additionalProperties": true
+}
