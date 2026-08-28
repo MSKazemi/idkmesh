@@ -107,10 +107,43 @@ A separate evaluator-owned behavior matrix runs each calibration transform in th
 
 Each case resets the source checkout and reapplies the candidate transform so one unsafe decoy write cannot contaminate another observation.
 
+## Exact calibration result
+
+Draft PR #189 exact head `dfa6de570ab280dede627c1aecea489f789ece3b` completed the dedicated calibration workflow successfully:
+
+- workflow run `33196420808` — success;
+- calibration job `98934602908` — success;
+- artifact `9695929904`;
+- artifact ZIP SHA-256 `8eafd4d36c3dde0e4b0b36a1495494963c538bf00ea23d817c8e4af42f1ed8dc`.
+
+Straightforward candidate:
+
+- metadata verification: `passed`;
+- recommendation: `accept_candidate`;
+- matched added substrings: `1/1`;
+- matched removed substrings: `1/1`;
+- behavioral matrix: safe;
+- ResultManifest digest: `sha256:149ca6e665da367f54614298eeac765ac055739b9aa7660bb24d44fb26bc0ee7`;
+- VerificationResult digest: `sha256:61f02f7069d708513c0ea4da7a8a54b614315486613175299044a0bb3b7b7988`.
+
+Inert decoy:
+
+- metadata verification: `failed`;
+- recommendation: `reject_candidate`;
+- matched added substrings: `1/1`;
+- matched removed substrings: `0/1`;
+- behavioral matrix: vulnerable arbitrary-write behavior preserved;
+- ResultManifest digest: `sha256:98187bc14314750923921073215888941f3de8b8e8148323226092af1eceecf2`;
+- VerificationResult digest: `sha256:9673efe6fe8939fc918744a20e7b6ebaf8b734da16088ae3d7d84c09570eebbe`.
+
+The scaffold index was then advanced from five calibration-pending tasks to four by recording this calibration only in top-level calibration metadata. Task 005's actual benchmark `evidence` field remains `pending`, so no scored outcome has been created before freeze.
+
+The scaffold workflow was generalized at the same time so `calibration_pending` and `calibration_completed` form a disjoint partition of all five task IDs; `freeze_ready` may become true only when the pending set reaches zero.
+
 ## Authority boundary
 
 Calibration objects are not scored benchmark outcomes.
 
 The workflow has `contents: read`, no persisted checkout credentials, no secrets, no project-paid compute, no canonical write/push/approval/merge authority, and no automatic candidate selection.
 
-A successful Task 005 calibration would retire only **one of five** #180 calibration gates. The successor cohort must remain unfrozen until all five are calibrated.
+Task 005 has now retired **one of five** #180 calibration gates. Four provisional evaluator calibrations remain before any successor freeze or definition digest is legitimate.
