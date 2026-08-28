@@ -1,0 +1,327 @@
+#!/usr/bin/env python3
+"""Risk-Weighted Verification Backpressure (RWVB) reference algorithm.
+
+RWVB is an experimental IDKMesh controller inspired by queueing/network
+backpressure. It does not prove candidate correctness. It allocates scarce
+verification capacity and adjusts generation fan-out so unverified risk does
+not grow without bound.
+
+The model is intentionally dependency-free and deterministic. Run:
+
+    python experiments/verification_backpressure.py --self-test
+    python experiments/verification_backpressure.py --demo
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import math
+from dataclasses import asdict, dataclass
+
+
+EPSILON = 1e-9
+
+
+@dataclass(frozen=True)
+class Candidate:
+    id: str
+    risk: float
+    uncertainty: float
+    impact: float
+    estimated_verification_cost: float
+    evidence_diversity: float = 0.0
+    age_steps: int = 0
+
+    def validate(self) -> None:
+        for name in ("risk", "uncertainty", "evidence_diversity"):
+            value = getattr(self, name)
+            if not 0.0 <= value <= 1.0:
+                raise ValueError(f"{name} must be in [0, 1], got {value}")
+        if self.impact < 0.0:
+            raise ValueError("impact must be >= 0")
+        if self.estimated_verification_cost <= 0.0:
+            raise ValueError("estimated_verification_cost must be > 0")
+        if self.age_steps < 0:
+            raise ValueError("age_steps must be >= 0")
+
+
+@dataclass(frozen=True)
+class ControllerConfig:
+    diversity_weight: float = 0.75
+    uncertainty_floor: float = 0.25
+    age_half_life: float = 10.0
+    max_wait_steps: int = 30
+    low_watermark: float = 0.60
+    high_watermark: float = 1.20
+    response_rate: float = 0.60
+    min_fanout: int = 1
+    max_fanout: int = 32
+
+    def validate(self) -> None:
+        if self.diversity_weight < 0.0:
+            raise ValueError("diversity_weight must be >= 0")
+        if not 0.0 < self.uncertainty_floor <= 1.0:
+            raise ValueError("uncertainty_floor must be in (0, 1]")
+        if self.age_half_life <= 0.0:
+            raise ValueError("age_half_life must be > 0")
+        if self.max_wait_steps < 1:
+            raise ValueError("max_wait_steps must be >= 1")
+        if not 0.0 <= self.low_watermark < self.high_watermark:
+            raise ValueError("watermarks must satisfy 0 <= low < high")
+        if self.response_rate <= 0.0:
+            raise ValueError("response_rate must be > 0")
+        if not 1 <= self.min_fanout <= self.max_fanout:
+            raise ValueError("fanout bounds are invalid")
+
+
+def verification_debt(candidate: Candidate, config: ControllerConfig) -> float:
+    """Return risk-weighted unverified work carried by one candidate.
+
+    Debt grows with risk, uncertainty, impact, verification cost, and evidence
+    diversity deficit. This is a control signal, not a probability or utility.
+    """
+
+    candidate.validate()
+    config.validate()
+    uncertainty = max(candidate.uncertainty, config.uncertainty_floor)
+    diversity_deficit = 1.0 - candidate.evidence_diversity
+    diversity_factor = 1.0 + config.diversity_weight * diversity_deficit
+    return (
+        candidate.risk
+        * uncertainty
+        * (1.0 + candidate.impact)
+        * candidate.estimated_verification_cost
+        * diversity_factor
+    )
+
+
+def total_verification_debt(
+    candidates: list[Candidate], config: ControllerConfig
+) -> float:
+    return sum(verification_debt(candidate, config) for candidate in candidates)
+
+
+def priority_score(candidate: Candidate, config: ControllerConfig) -> float:
+    """Return verification value-per-cost pressure for one candidate.
+
+    High risk, uncertainty, impact, evidence-correlation deficit, and age all
+    raise priority. Estimated verification cost lowers priority so limited
+    capacity can clear more risk per unit effort.
+    """
+
+    candidate.validate()
+    config.validate()
+    uncertainty = max(candidate.uncertainty, config.uncertainty_floor)
+    diversity_deficit = 1.0 - candidate.evidence_diversity
+    diversity_factor = 1.0 + config.diversity_weight * diversity_deficit
+    age_factor = 1.0 + min(candidate.age_steps / config.age_half_life, 3.0)
+    numerator = (
+        candidate.risk
+        * uncertainty
+        * (1.0 + candidate.impact)
+        * diversity_factor
+        * age_factor
+    )
+    return numerator / max(candidate.estimated_verification_cost, EPSILON)
+
+
+def schedule_verification(
+    candidates: list[Candidate],
+    capacity: float,
+    config: ControllerConfig,
+) -> list[Candidate]:
+    """Select candidates for the next verification window.
+
+    A starvation guard considers candidates at or beyond max_wait_steps first.
+    Remaining capacity is filled greedily by risk-weighted pressure. The
+    function never exceeds the supplied verification-cost capacity.
+    """
+
+    if capacity < 0.0:
+        raise ValueError("capacity must be >= 0")
+    config.validate()
+    for candidate in candidates:
+        candidate.validate()
+
+    overdue = sorted(
+        (c for c in candidates if c.age_steps >= config.max_wait_steps),
+        key=lambda c: (-c.age_steps, -priority_score(c, config), c.id),
+    )
+    regular = sorted(
+        (c for c in candidates if c.age_steps < config.max_wait_steps),
+        key=lambda c: (-priority_score(c, config), -c.age_steps, c.id),
+    )
+
+    selected: list[Candidate] = []
+    used = 0.0
+    for candidate in overdue + regular:
+        cost = candidate.estimated_verification_cost
+        if used + cost <= capacity + EPSILON:
+            selected.append(candidate)
+            used += cost
+    return selected
+
+
+def next_generation_fanout(
+    current_fanout: int,
+    debt: float,
+    verification_capacity_per_window: float,
+    config: ControllerConfig,
+) -> int:
+    """Adjust candidate-generation fan-out from verification queue pressure.
+
+    When weighted debt exceeds the high watermark, generation contracts
+    multiplicatively. When debt is safely below the low watermark, generation
+    can expand. Between the watermarks the controller holds steady.
+    """
+
+    config.validate()
+    if not config.min_fanout <= current_fanout <= config.max_fanout:
+        raise ValueError("current_fanout is outside configured bounds")
+    if debt < 0.0:
+        raise ValueError("debt must be >= 0")
+    if verification_capacity_per_window <= 0.0:
+        raise ValueError("verification_capacity_per_window must be > 0")
+
+    load = debt / verification_capacity_per_window
+    if load > config.high_watermark:
+        factor = math.exp(-config.response_rate * (load - config.high_watermark))
+        proposed = math.floor(current_fanout * factor)
+    elif load < config.low_watermark:
+        factor = math.exp(config.response_rate * (config.low_watermark - load))
+        proposed = math.ceil(current_fanout * factor)
+    else:
+        proposed = current_fanout
+
+    return max(config.min_fanout, min(config.max_fanout, proposed))
+
+
+def demo_payload() -> dict[str, object]:
+    config = ControllerConfig()
+    candidates = [
+        Candidate(
+            id="security-sensitive-patch",
+            risk=0.95,
+            uncertainty=0.70,
+            impact=1.5,
+            estimated_verification_cost=3.0,
+            evidence_diversity=0.20,
+            age_steps=2,
+        ),
+        Candidate(
+            id="routine-doc-fix",
+            risk=0.10,
+            uncertainty=0.20,
+            impact=0.10,
+            estimated_verification_cost=1.0,
+            evidence_diversity=0.80,
+            age_steps=4,
+        ),
+        Candidate(
+            id="old-medium-risk-change",
+            risk=0.45,
+            uncertainty=0.55,
+            impact=0.80,
+            estimated_verification_cost=2.0,
+            evidence_diversity=0.50,
+            age_steps=35,
+        ),
+    ]
+    capacity = 4.0
+    debt = total_verification_debt(candidates, config)
+    selected = schedule_verification(candidates, capacity, config)
+    next_fanout = next_generation_fanout(
+        current_fanout=8,
+        debt=debt,
+        verification_capacity_per_window=capacity,
+        config=config,
+    )
+    return {
+        "algorithm": "risk-weighted-verification-backpressure-v0",
+        "config": asdict(config),
+        "verification_capacity": capacity,
+        "total_verification_debt": round(debt, 6),
+        "queue": [
+            {
+                **asdict(candidate),
+                "debt": round(verification_debt(candidate, config), 6),
+                "priority": round(priority_score(candidate, config), 6),
+            }
+            for candidate in candidates
+        ],
+        "selected_for_verification": [candidate.id for candidate in selected],
+        "current_generation_fanout": 8,
+        "next_generation_fanout": next_fanout,
+    }
+
+
+def self_test() -> None:
+    config = ControllerConfig()
+
+    high = Candidate("high", 0.9, 0.8, 1.0, 1.0, 0.2, 1)
+    low = Candidate("low", 0.2, 0.8, 1.0, 1.0, 0.2, 1)
+    assert priority_score(high, config) > priority_score(low, config)
+    assert verification_debt(high, config) > verification_debt(low, config)
+
+    diverse = Candidate("diverse", 0.7, 0.7, 1.0, 1.0, 0.9, 1)
+    correlated = Candidate("correlated", 0.7, 0.7, 1.0, 1.0, 0.1, 1)
+    assert priority_score(correlated, config) > priority_score(diverse, config)
+
+    overdue = Candidate("overdue", 0.2, 0.3, 0.1, 1.0, 0.8, 40)
+    urgent = Candidate("urgent", 0.95, 0.9, 2.0, 1.0, 0.1, 1)
+    selected = schedule_verification([urgent, overdue], capacity=1.0, config=config)
+    assert [candidate.id for candidate in selected] == ["overdue"]
+
+    queue = [
+        Candidate("a", 0.9, 0.9, 1.0, 2.0, 0.2, 1),
+        Candidate("b", 0.8, 0.8, 1.0, 2.0, 0.3, 1),
+    ]
+    selected = schedule_verification(queue, capacity=2.0, config=config)
+    assert sum(c.estimated_verification_cost for c in selected) <= 2.0 + EPSILON
+
+    reduced = next_generation_fanout(
+        current_fanout=8,
+        debt=20.0,
+        verification_capacity_per_window=4.0,
+        config=config,
+    )
+    assert reduced < 8
+
+    expanded = next_generation_fanout(
+        current_fanout=4,
+        debt=0.1,
+        verification_capacity_per_window=4.0,
+        config=config,
+    )
+    assert expanded > 4
+
+    held = next_generation_fanout(
+        current_fanout=6,
+        debt=4.0,
+        verification_capacity_per_window=4.0,
+        config=config,
+    )
+    assert held == 6
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description=__doc__)
+    mode = parser.add_mutually_exclusive_group(required=True)
+    mode.add_argument("--self-test", action="store_true", help="Run deterministic assertions.")
+    mode.add_argument("--demo", action="store_true", help="Print one deterministic JSON demo.")
+    return parser
+
+
+def main() -> int:
+    args = build_parser().parse_args()
+    if args.self_test:
+        self_test()
+        print("OK: Risk-Weighted Verification Backpressure self-test passed")
+        return 0
+    print(json.dumps(demo_payload(), sort_keys=True, indent=2))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

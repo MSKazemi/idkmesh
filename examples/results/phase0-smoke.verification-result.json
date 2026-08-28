@@ -1,0 +1,92 @@
+{
+  "schema_version": "0.1",
+  "id": "phase0/smoke-verification/attempt-1",
+  "result_manifest_id": "phase0/smoke-result/attempt-1",
+  "work_unit_id": "phase0/smoke-work-unit",
+  "work_unit_version": 2,
+  "attempt": 1,
+  "verifier": {
+    "id": "phase0-independent-verifier",
+    "type": "system",
+    "adapter": "phase0-schema-verifier",
+    "adapter_version": "0.1"
+  },
+  "independence": {
+    "independent_from_worker": true,
+    "worker_id_observed": "phase0-local-worker",
+    "shared_model_family": false,
+    "shared_runtime": true,
+    "correlation_notes": "The verifier runs in the same CI job for the smoke fixture but is a separate logical actor and does not rely on worker self-reported acceptance."
+  },
+  "status": "passed",
+  "started_at": "2026-08-28T13:30:02Z",
+  "finished_at": "2026-08-28T13:30:03Z",
+  "checks": [
+    {
+      "id": "schema",
+      "type": "schema",
+      "required": true,
+      "status": "passed",
+      "summary": "The candidate result validates against the expected result contract.",
+      "evidence_ids": ["schema-output"]
+    },
+    {
+      "id": "reproduction",
+      "type": "reproduction",
+      "required": true,
+      "status": "passed",
+      "summary": "The built-in deterministic smoke score reproduces for the same inputs.",
+      "evidence_ids": ["reproduction-output"]
+    }
+  ],
+  "evidence": [
+    {
+      "id": "schema-output",
+      "type": "test_output",
+      "locator": "results/verification/schema.txt",
+      "digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+      "media_type": "text/plain",
+      "description": "Fixture evidence for schema validation."
+    },
+    {
+      "id": "reproduction-output",
+      "type": "test_output",
+      "locator": "results/verification/reproduction.txt",
+      "digest": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+      "media_type": "text/plain",
+      "description": "Fixture evidence for deterministic reproduction."
+    }
+  ],
+  "findings": [],
+  "metrics": {
+    "required_checks_passed": 2,
+    "required_checks_failed": 0
+  },
+  "resources": {
+    "wall_seconds": 1.0,
+    "compute_units": 0.0,
+    "human_minutes": 0.0,
+    "tokens": 0
+  },
+  "provenance": {
+    "result_manifest_digest": "sha256:5555555555555555555555555555555555555555555555555555555555555555",
+    "work_unit_digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+    "source_revision": "fixture",
+    "verifier_config_digest": "sha256:6666666666666666666666666666666666666666666666666666666666666666",
+    "environment": {
+      "platform": "fixture",
+      "python": ">=3.10",
+      "tool_versions": {
+        "idkmesh-phase0-harness": "0.2"
+      }
+    }
+  },
+  "decision_support": {
+    "recommendation": "accept_candidate",
+    "confidence": 1.0,
+    "rationale": "All required smoke validators passed. This recommendation is still not an automated merge or integration decision."
+  },
+  "extensions": {
+    "org.idkmesh.phase0.fixture": true
+  }
+}

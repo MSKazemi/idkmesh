@@ -1,0 +1,74 @@
+{
+  "schema_version": "0.1",
+  "id": "invalid/non-independent-verification",
+  "result_manifest_id": "phase0/smoke-result/attempt-1",
+  "work_unit_id": "phase0/smoke-work-unit",
+  "work_unit_version": 2,
+  "attempt": 1,
+  "verifier": {
+    "id": "phase0-local-worker",
+    "type": "system",
+    "adapter": "deterministic-smoke",
+    "adapter_version": "0.1"
+  },
+  "independence": {
+    "independent_from_worker": false,
+    "worker_id_observed": "phase0-local-worker",
+    "shared_model_family": true,
+    "shared_runtime": true,
+    "correlation_notes": "This fixture deliberately violates the WorkUnit requirement for independent verification."
+  },
+  "status": "passed",
+  "started_at": "2026-08-28T13:30:02Z",
+  "finished_at": "2026-08-28T13:30:03Z",
+  "checks": [
+    {
+      "id": "schema",
+      "type": "schema",
+      "required": true,
+      "status": "passed",
+      "summary": "Invalid fixture.",
+      "evidence_ids": ["schema-output"]
+    },
+    {
+      "id": "reproduction",
+      "type": "reproduction",
+      "required": true,
+      "status": "passed",
+      "summary": "Invalid fixture.",
+      "evidence_ids": ["reproduction-output"]
+    }
+  ],
+  "evidence": [
+    {
+      "id": "schema-output",
+      "type": "test_output",
+      "locator": "results/invalid/schema.txt",
+      "digest": "sha256:7777777777777777777777777777777777777777777777777777777777777777"
+    },
+    {
+      "id": "reproduction-output",
+      "type": "test_output",
+      "locator": "results/invalid/reproduction.txt",
+      "digest": "sha256:8888888888888888888888888888888888888888888888888888888888888888"
+    }
+  ],
+  "findings": [],
+  "metrics": {},
+  "resources": {
+    "wall_seconds": 1.0
+  },
+  "provenance": {
+    "result_manifest_digest": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+    "work_unit_digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+    "source_revision": "fixture",
+    "environment": {
+      "platform": "fixture"
+    }
+  },
+  "decision_support": {
+    "recommendation": "accept_candidate",
+    "confidence": 1.0,
+    "rationale": "Deliberately invalid because the verifier is the worker."
+  }
+}

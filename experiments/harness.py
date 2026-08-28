@@ -19,13 +19,14 @@ from typing import Any
 
 from jsonschema import Draft202012Validator, FormatChecker
 
-HARNESS_VERSION = "0.2"
+HARNESS_VERSION = "0.3"
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_DIR = ROOT / "schemas"
 WORK_UNIT_SCHEMA = SCHEMA_DIR / "work-unit-v0.2.schema.json"
 MANIFEST_SCHEMA = SCHEMA_DIR / "experiment-manifest-v0.1.schema.json"
 RESULT_SCHEMA = SCHEMA_DIR / "experiment-result-v0.1.schema.json"
 WORKER_RESULT_SCHEMA = SCHEMA_DIR / "result-manifest-v0.1.schema.json"
+VERIFICATION_RESULT_SCHEMA = SCHEMA_DIR / "verification-result-v0.1.schema.json"
 
 REQUIRED_WORK_UNIT_KINDS = {
     "coding",
@@ -169,12 +170,128 @@ def validate_worker_result_contract(
     return worker_result
 
 
+def validate_verification_result_contract(
+    verification_result_path: Path,
+    worker_result: dict[str, Any],
+    work_units: dict[str, dict[str, Any]],
+) -> dict[str, Any]:
+    verification_result = load_json(verification_result_path)
+    validate_instance(
+        verification_result,
+        VERIFICATION_RESULT_SCHEMA,
+        str(verification_result_path),
+    )
+
+    if verification_result["result_manifest_id"] != worker_result["id"]:
+        raise HarnessError(
+            "VerificationResult references a different ResultManifest: "
+            f"{verification_result['result_manifest_id']!r} != {worker_result['id']!r}"
+        )
+
+    for field in ("work_unit_id", "work_unit_version", "attempt"):
+        if verification_result[field] != worker_result[field]:
+            raise HarnessError(
+                f"VerificationResult {field} mismatch: "
+                f"{verification_result[field]!r} != {worker_result[field]!r}"
+            )
+
+    work_unit_id = verification_result["work_unit_id"]
+    if work_unit_id not in work_units:
+        raise HarnessError(
+            f"VerificationResult references unknown Work Unit {work_unit_id!r}"
+        )
+    work_unit = work_units[work_unit_id]
+
+    evidence_ids = {evidence["id"] for evidence in verification_result["evidence"]}
+    for check in verification_result["checks"]:
+        missing_evidence = sorted(set(check["evidence_ids"]) - evidence_ids)
+        if missing_evidence:
+            raise HarnessError(
+                f"Verification check {check['id']!r} references unknown evidence id(s): "
+                + ", ".join(missing_evidence)
+            )
+
+    check_by_id = {check["id"]: check for check in verification_result["checks"]}
+    required_validator_ids = {
+        validator["id"] for validator in work_unit["validators"] if validator["required"]
+    }
+    missing_required = sorted(required_validator_ids - set(check_by_id))
+    if missing_required:
+        raise HarnessError(
+            "VerificationResult is missing required WorkUnit validator check(s): "
+            + ", ".join(missing_required)
+        )
+
+    requested_validator_ids = set(
+        worker_result["verification_request"]["expected_validator_ids"]
+    )
+    missing_requested = sorted(requested_validator_ids - set(check_by_id))
+    if missing_requested:
+        raise HarnessError(
+            "VerificationResult is missing validator check(s) requested by worker result: "
+            + ", ".join(missing_requested)
+        )
+
+    policy = work_unit["verification_policy"]
+    independence = verification_result["independence"]
+    worker_id = worker_result["worker"]["id"]
+    verifier_id = verification_result["verifier"]["id"]
+    if independence["worker_id_observed"] != worker_id:
+        raise HarnessError(
+            "VerificationResult independence.worker_id_observed does not match worker id"
+        )
+    if policy["independent_from_worker"]:
+        if not independence["independent_from_worker"]:
+            raise HarnessError("WorkUnit requires an independent verifier")
+        if verifier_id == worker_id:
+            raise HarnessError("Verifier id must differ from worker id for independent verification")
+
+    required_failures = [
+        check["id"]
+        for check in verification_result["checks"]
+        if check["id"] in required_validator_ids and check["status"] != "passed"
+    ]
+    if verification_result["status"] == "passed" and required_failures:
+        raise HarnessError(
+            "VerificationResult cannot be passed while required checks are not passed: "
+            + ", ".join(sorted(required_failures))
+        )
+
+    recommendation = verification_result["decision_support"]["recommendation"]
+    if recommendation == "accept_candidate":
+        if verification_result["status"] != "passed":
+            raise HarnessError(
+                "accept_candidate recommendation requires verification status=passed"
+            )
+        if required_failures:
+            raise HarnessError(
+                "accept_candidate recommendation requires all required checks to pass"
+            )
+
+    return verification_result
+
+
+def assert_invalid_verification_contract(
+    path: Path,
+    worker_result: dict[str, Any],
+    work_units: dict[str, dict[str, Any]],
+) -> None:
+    try:
+        validate_verification_result_contract(path, worker_result, work_units)
+    except HarnessError:
+        return
+    raise HarnessError(
+        f"{path} was expected to violate the cross-object verification contract but passed"
+    )
+
+
 def cmd_validate(args: argparse.Namespace) -> int:
     for schema_path in (
         WORK_UNIT_SCHEMA,
         MANIFEST_SCHEMA,
         RESULT_SCHEMA,
         WORKER_RESULT_SCHEMA,
+        VERIFICATION_RESULT_SCHEMA,
     ):
         validator_for(schema_path)
 
@@ -192,7 +309,7 @@ def cmd_validate(args: argparse.Namespace) -> int:
     )
 
     worker_result_path = resolve_repo_path(args.worker_result)
-    validate_worker_result_contract(worker_result_path, work_units)
+    worker_result = validate_worker_result_contract(worker_result_path, work_units)
 
     invalid_worker_result_path = resolve_repo_path(args.invalid_worker_result)
     invalid_worker_result = load_json(invalid_worker_result_path)
@@ -202,6 +319,22 @@ def cmd_validate(args: argparse.Namespace) -> int:
         str(invalid_worker_result_path),
     )
 
+    verification_result_path = resolve_repo_path(args.verification_result)
+    validate_verification_result_contract(
+        verification_result_path,
+        worker_result,
+        work_units,
+    )
+
+    invalid_verification_result_path = resolve_repo_path(
+        args.invalid_verification_result
+    )
+    assert_invalid_verification_contract(
+        invalid_verification_result_path,
+        worker_result,
+        work_units,
+    )
+
     if args.result:
         result_path = resolve_repo_path(args.result)
         result = load_json(result_path)
@@ -209,8 +342,9 @@ def cmd_validate(args: argparse.Namespace) -> int:
 
     print(
         f"OK: schemas valid; WorkUnit v0.2 contract coverage enforced; manifest {manifest['id']}, "
-        f"{len(manifest['work_units'])} Work Unit(s), and worker ResultManifest validated; "
-        "negative WorkUnit/security and worker self-acceptance fixtures rejected as expected"
+        f"{len(manifest['work_units'])} Work Unit(s), worker ResultManifest, and independent "
+        "VerificationResult validated; negative security/self-acceptance/non-independent fixtures "
+        "rejected as expected"
     )
     return 0
 
@@ -337,7 +471,10 @@ def build_parser() -> argparse.ArgumentParser:
 
     validate_parser = subparsers.add_parser(
         "validate",
-        help="Validate schemas, WorkUnit contract coverage, fixtures, and worker ResultManifest contracts.",
+        help=(
+            "Validate schemas, WorkUnit contract coverage, worker ResultManifest, "
+            "and independent VerificationResult contracts."
+        ),
     )
     validate_parser.add_argument(
         "--manifest",
@@ -358,6 +495,16 @@ def build_parser() -> argparse.ArgumentParser:
         "--invalid-worker-result",
         default="examples/results/invalid-self-acceptance.result-manifest.json",
         help="Repository-relative fixture that must be rejected by the worker ResultManifest schema.",
+    )
+    validate_parser.add_argument(
+        "--verification-result",
+        default="examples/results/phase0-smoke.verification-result.json",
+        help="Repository-relative valid independent VerificationResult fixture.",
+    )
+    validate_parser.add_argument(
+        "--invalid-verification-result",
+        default="examples/results/invalid-non-independent.verification-result.json",
+        help="Repository-relative schema-valid fixture that must fail the cross-object independence contract.",
     )
     validate_parser.add_argument(
         "--result",
