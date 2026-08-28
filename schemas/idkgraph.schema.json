@@ -1,0 +1,148 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/MSKazemi/idkmesh/schemas/idkgraph.schema.json",
+  "title": "IDKGraph",
+  "description": "Initial machine-readable schema for IDKMesh typed temporal task/evidence/provenance graphs.",
+  "type": "object",
+  "required": ["graph_id", "version", "nodes", "hyperedges"],
+  "properties": {
+    "graph_id": {"type": "string", "minLength": 1},
+    "version": {"type": "string", "minLength": 1},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "nodes": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/node"}
+    },
+    "hyperedges": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/hyperedge"}
+    },
+    "events": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/event"},
+      "default": []
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "nodeType": {
+      "enum": [
+        "goal",
+        "question",
+        "hypothesis",
+        "constraint",
+        "work_unit",
+        "artifact",
+        "evidence",
+        "decision",
+        "metric",
+        "contributor",
+        "agent",
+        "compute_resource",
+        "document",
+        "concept",
+        "policy",
+        "experiment"
+      ]
+    },
+    "relationType": {
+      "enum": [
+        "decomposes_into",
+        "depends_on",
+        "requires",
+        "produces",
+        "blocks",
+        "supports",
+        "contradicts",
+        "verifies",
+        "invalidates",
+        "derived_from",
+        "supersedes",
+        "implements",
+        "documents",
+        "defines",
+        "mentions",
+        "duplicates",
+        "assigned_to",
+        "reviewed_by",
+        "generated_by",
+        "uses_compute",
+        "measured_by",
+        "governed_by",
+        "bridges"
+      ]
+    },
+    "provenance": {
+      "type": "object",
+      "properties": {
+        "actor_id": {"type": "string"},
+        "activity_id": {"type": "string"},
+        "source": {"type": "string"},
+        "commit": {"type": "string"},
+        "created_at": {"type": "string", "format": "date-time"},
+        "model": {"type": "string"},
+        "tool": {"type": "string"}
+      },
+      "additionalProperties": true
+    },
+    "node": {
+      "type": "object",
+      "required": ["id", "type", "title"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "type": {"$ref": "#/$defs/nodeType"},
+        "title": {"type": "string", "minLength": 1},
+        "state": {"type": "string"},
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        "risk": {"enum": ["low", "medium", "high", "critical"]},
+        "tags": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+        "attributes": {"type": "object", "additionalProperties": true},
+        "provenance": {"$ref": "#/$defs/provenance"}
+      },
+      "additionalProperties": false
+    },
+    "hyperedge": {
+      "type": "object",
+      "required": ["id", "relation", "sources", "targets"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "relation": {"$ref": "#/$defs/relationType"},
+        "sources": {"type": "array", "items": {"type": "string"}, "minItems": 1, "uniqueItems": true},
+        "targets": {"type": "array", "items": {"type": "string"}, "minItems": 1, "uniqueItems": true},
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        "attributes": {"type": "object", "additionalProperties": true},
+        "provenance": {"$ref": "#/$defs/provenance"}
+      },
+      "additionalProperties": false
+    },
+    "event": {
+      "type": "object",
+      "required": ["id", "type", "timestamp", "affected_ids"],
+      "properties": {
+        "id": {"type": "string"},
+        "type": {
+          "enum": [
+            "NodeCreated",
+            "NodeUpdated",
+            "EdgeAdded",
+            "EdgeRemoved",
+            "ClaimUpdated",
+            "EvidenceAttached",
+            "TaskSplit",
+            "TaskMerged",
+            "DocumentMoved",
+            "DecisionSuperseded",
+            "VerificationPassed",
+            "VerificationFailed",
+            "PolicyChanged"
+          ]
+        },
+        "timestamp": {"type": "string", "format": "date-time"},
+        "affected_ids": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+        "actor_id": {"type": "string"},
+        "attributes": {"type": "object", "additionalProperties": true}
+      },
+      "additionalProperties": false
+    }
+  }
+}
