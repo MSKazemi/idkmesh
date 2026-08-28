@@ -56,6 +56,7 @@ class WorkUnit:
     source: SourceSpec
     execution: ExecutionSpec
     output: OutputSpec
+    wall_seconds: float
     allowed_paths: tuple[str, ...]
     forbidden_paths: tuple[str, ...]
     write_paths: tuple[str, ...]
@@ -153,6 +154,9 @@ def _enforce_v0_2_policy(data: dict[str, Any], binding: dict[str, Any]) -> None:
         raise WorkUnitError("node v0.1 requires budget.project_spend_usd_max=0")
     if budget["paid_fallback_allowed"] is not False:
         raise WorkUnitError("node v0.1 requires budget.paid_fallback_allowed=false")
+    wall_seconds = budget.get("wall_seconds")
+    if wall_seconds is None or float(wall_seconds) <= 0:
+        raise WorkUnitError("node v0.1 requires a positive budget.wall_seconds whole-attempt limit")
 
     requirements = data["requirements"]
     provided_capabilities = set(binding["capabilities"])
@@ -219,8 +223,8 @@ def parse_work_unit(
         raise WorkUnitError(f"container.image must be one of: {', '.join(sorted(allowed_images))}")
 
     limits = binding["limits"]
-    wall_budget = data["budget"].get("wall_seconds")
-    if wall_budget is not None and limits["timeout_seconds"] > wall_budget:
+    wall_budget = float(data["budget"]["wall_seconds"])
+    if limits["timeout_seconds"] > wall_budget:
         raise WorkUnitError("node timeout_seconds may not exceed Work Unit budget.wall_seconds")
 
     required_validator_ids = tuple(
@@ -246,6 +250,7 @@ def parse_work_unit(
             max_patch_bytes=binding["output_limits"]["max_patch_bytes"],
             max_log_bytes=binding["output_limits"]["max_log_bytes"],
         ),
+        wall_seconds=wall_budget,
         allowed_paths=allowed_paths,
         forbidden_paths=forbidden_paths,
         write_paths=write_paths,
