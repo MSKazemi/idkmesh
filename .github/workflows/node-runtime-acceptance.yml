@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "tools/node_runtime_acceptance.py"
+      - "tools/node_runtime_positive_probe.py"
       - ".github/workflows/node-runtime-acceptance.yml"
   workflow_dispatch:
 
@@ -49,6 +50,10 @@ jobs:
           docker pull python:3.12-alpine
           docker image inspect python:3.12-alpine
 
+      - name: Probe positive runtime diagnostics
+        shell: bash
+        run: python harness/tools/node_runtime_positive_probe.py candidate
+
       - name: Run independent positive and negative acceptance cases
         shell: bash
         run: |
@@ -76,6 +81,6 @@ jobs:
 # - candidate is checked out only by exact SHA;
 # - checkout credentials are not persisted;
 # - workflow has contents:read and no repository secrets are passed to candidate code;
-# - candidate subprocesses receive a sanitized environment from the harness;
+# - candidate subprocesses receive a sanitized environment from the harness/probe;
 # - task containers still run under the node's network-none/read-only/cap-drop policy;
 # - this workflow produces evidence only and has no merge/approval/write authority.
