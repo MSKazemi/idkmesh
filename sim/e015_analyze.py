@@ -6,7 +6,7 @@ verifiers whose majority vote would produce the measured false-accept rate.
 An n-member panel with correlated errors is worth n_eff independent members.
 """
 from __future__ import annotations
-import json, math, sys
+import gzip, json, math, sys
 from collections import defaultdict
 from pathlib import Path
 from math import comb
@@ -52,7 +52,8 @@ def effective_n(measured_err: float, acc: float, quorum: float,
 def main():
     rows = []
     for p in sys.argv[1:]:
-        with open(p) as fh:
+        opener = gzip.open if p.endswith(".gz") else open
+        with opener(p, "rt") as fh:
             for line in fh:
                 line = line.strip()
                 if line:
