@@ -454,3 +454,127 @@ which is where its conservatism costs the least.
 - The ratio table uses the QD strategy's rates at quorum `0.5`; other quorums are analyzed in
   the sections above.
 - `n_eff` above ~199 is censored by the analyzer's search cap.
+
+## Full grid: where the optimal quorum actually is
+
+The first sweep varied quorum at two levels (`0.5`, `0.7`), so it could only report a
+*crossover* between them. That was recorded as an open limitation. This section closes it with
+a second, larger sweep.
+
+```text
+verifiers   = 1, 3, 5, 7, 9, 11, 15, 21
+accuracy    = 0.55 .. 0.95 step 0.05
+correlation = 0.0 .. 1.0 step 0.125
+quorum      = 0.5, 0.6, 0.7, 0.8
+seeds       = 150
+cells       = 8 x 9 x 9 x 4 = 2592
+```
+
+Artifact: `experiments/results/E015-verification-phase-diagram-full-raw.jsonl.gz` (2592 cells,
+no duplicates, every cell 150 seeds and all three strategies).
+
+### Quorum is not the free parameter it looks like
+
+Quorum acts only through the acceptance threshold
+
+`need = floor(quorum * n) + 1`
+
+so distinct nominal quorums are frequently the *same decision rule*:
+
+| n | q=0.5 | q=0.6 | q=0.7 | q=0.8 | distinct rules |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| 1 | 1 | 1 | 1 | 1 | 1 |
+| 3 | 2 | 2 | 3 | 3 | 2 |
+| 5 | 3 | 4 | 4 | 5 | 3 |
+| 7 | 4 | 5 | 5 | 6 | 3 |
+| 9 | 5 | 6 | 7 | 8 | 4 |
+| 21 | 11 | 13 | 15 | 17 | 4 |
+
+Only `n >= 9` resolves all four quorums into four different rules. Everything below is
+therefore keyed on the realised threshold `need/n` and restricted to the **324 cells with four
+distinct rules** (`n = 9, 11, 15, 21`). Reporting nominal quorum instead would claim resolution
+the grid does not have.
+
+### Result 1 — the optimum is usually interior
+
+`interior` = the best rule is strictly between the loosest and strictest available, i.e. a
+two-level sweep at the endpoints would have missed it.
+
+| false-accept cost | mean optimal `need/n` | interior optimum |
+| ---: | ---: | ---: |
+| 1 | 0.540 | 1 / 324 (0.3%) |
+| 2 | 0.568 | 71 / 324 (21.9%) |
+| 5 | 0.620 | 145 / 324 (44.8%) |
+| 10 | 0.656 | 178 / 324 (54.9%) |
+| 25 | 0.686 | 186 / 324 (57.4%) |
+| 50 | 0.709 | 169 / 324 (52.2%) |
+| 100 | 0.729 | 147 / 324 (45.4%) |
+
+Two things follow.
+
+1. **At balanced cost, simple majority is right** — the optimum is the loosest rule in 99.7% of
+   cells. E015's earlier finding survives.
+2. **Once false accepts are more expensive than false rejects, the optimum moves off both
+   endpoints in roughly half the cells.** A two-level sweep does not merely lose precision
+   there; it reports the wrong rule. The crossover reported earlier was real, but it was a
+   crossover, not an optimum, exactly as flagged.
+
+Mean optimal threshold rises monotonically with false-accept cost (`0.540 -> 0.729`), which is
+the expected direction and a sanity check on the measurement.
+
+### Result 2 — stricter quorums are for *weak* verifiers, not strong ones
+
+Optimal `need/n` at false-accept cost 10, `n = 21`:
+
+| rho \ p | 0.55 | 0.60 | 0.65 | 0.70 | 0.75 | 0.80 | 0.85 | 0.90 | 0.95 |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 0.000 | 0.81 | 0.62 | 0.62 | 0.62 | 0.62 | 0.52 | 0.52 | 0.52 | 0.52 |
+| 0.250 | 0.81 | 0.62 | 0.62 | 0.62 | 0.62 | 0.52 | 0.62 | 0.62 | 0.52 |
+| 0.500 | 0.81 | 0.62 | 0.62 | 0.62 | 0.62 | 0.62 | 0.52 | 0.71 | 0.52 |
+| 0.750 | 0.81 | 0.62 | 0.62 | 0.62 | 0.62 | 0.62 | 0.71 | 0.71 | 0.52 |
+| 1.000 | 0.52 | 0.52 | 0.52 | 0.52 | 0.52 | 0.52 | 0.52 | 0.52 | 0.52 |
+
+- The strongest dependence is on **accuracy**, not correlation. Barely-better-than-chance
+  verifiers (`p = 0.55`) want a strict threshold (`0.81`); accurate verifiers want simple
+  majority. The intuition that "unreliable reviewers mean we should demand consensus" is the
+  one this table supports; "correlated reviewers mean we should demand consensus" is not.
+- The `rho = 1.0` row is uniformly `0.52` because a fully correlated panel votes as one
+  verifier: every threshold produces identical behaviour, and ties resolve to the loosest rule.
+  This is a degenerate row, not evidence that simple majority is good at `rho = 1`.
+- Correlation does shift the optimum at high accuracy (the `0.71` entries at `p = 0.85..0.90`),
+  but weakly and non-monotonically at this seed count.
+
+### Result 3 — the heuristic falsification replicates
+
+Re-running the `N_eff` comparison of the previous section on the full grid (504 simple-majority
+cells with `n >= 3`, `rho > 0`, versus 280 before):
+
+| statistic | 630-cell grid | full 2592-cell grid |
+| --- | ---: | ---: |
+| min ratio | 0.77 | 0.56 |
+| median ratio | 1.43 | 1.37 |
+| max ratio | 3.94 | 4.32 |
+| optimistic cells | 4 / 280 | 14 / 504 |
+
+The conclusion is unchanged and the optimistic tail is worse, because the full grid reaches
+`p = 0.95`, where the accuracy-dependent ceiling bites hardest.
+
+### Limitations
+
+- Only `n >= 9` supports a four-rule comparison, so Results 1 and 2 speak to larger panels;
+  small panels genuinely cannot express four distinct quorums.
+- The grid samples four quorum levels. An optimum "interior" to these four is not proven to be
+  the global optimum over all thresholds `1..n` — it establishes that the endpoints are wrong,
+  not that `0.6`/`0.7` are exactly right.
+- Ties resolve to the loosest rule; at `rho = 1` this makes the whole row degenerate.
+- False-accept cost is exogenous here. IDKMesh has no calibrated value for it, and Result 1
+  shows the answer depends on it strongly.
+- All cells use the QD strategy's rates, 150 seeds, and the shared-shock mixture.
+
+### Compute provenance
+
+Four `Standard_F32s_v2` VMs (Xeon 8272CL, 32 vCPU each, 128 vCPU total) across
+`eastus2` and `uksouth`, index-strided into four shards of 648 cells, 150 seeds per cell,
+~56 minutes wall clock. All four ran byte-identical `sim/e015_worker.py` and
+`sim/emergence_sim.py` to the committed sources (md5 verified before harvest). The VMs were
+destroyed after the data was verified locally.
