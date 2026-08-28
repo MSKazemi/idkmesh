@@ -150,6 +150,28 @@ Use `examples/idkgraph-p1-review-session.example.json` as the structural templat
 
 The review record must not contain secrets, private contact information, or sensitive personal data.
 
+## Deterministic validation and descriptive scoring
+
+After completing the JSON template, a reviewer or maintainer can validate the evidence locally without asking an automated system to reinterpret any document:
+
+```bash
+python tools/idkgraph_review_session.py path/to/completed-review.json \
+  --output /tmp/idkgraph-review-metrics.json
+```
+
+The validator fails closed when the frozen cohort identity, rank/path order, reviewer disclosure, active-review minutes, finite confidence values, labels, or evidence notes are incomplete or inconsistent. The checked-in example is intentionally a template and therefore does **not** pass as completed evidence until its placeholders and timing fields are replaced by a real reviewer.
+
+For a valid completed session, the tool reports only descriptive quantities derived from reviewer-entered data:
+
+- exact-label agreement with the frozen PR #166 reference labels;
+- the action / no-immediate-action / unresolved confusion matrix;
+- reviewer label counts;
+- active minutes per candidate;
+- recommended-change count and minutes per recommended change when nonzero;
+- an explicit disagreement list.
+
+The tool has no document-classification model and no repair authority. It must never fill missing human judgments, infer reviewer minutes, transform disagreement into agreement, or treat agreement as correctness.
+
 ## Relationship to prior evidence
 
 The original AI-assisted classification remains at:

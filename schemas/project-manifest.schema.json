@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idkmesh.org/schemas/project-manifest.schema.json",
+  "title": "IDKMesh ProjectManifest v0.1",
+  "description": "Declares one project that runs on IDKMesh Core through explicit DomainPack, verification, governance, storage, and adapter boundaries.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "id", "version", "name", "core_compatibility", "roots", "goal_entrypoints", "domain_packs", "allowed_work_unit_kinds", "verification", "risk_policy", "integration_policy", "governance", "metrics", "worker_constraints", "storage", "enabled_adapters"],
+  "properties": {
+    "schema_version": {"const": "0.1"},
+    "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._/-]{2,127}$"},
+    "version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+    "name": {"type": "string", "minLength": 1},
+    "description": {"type": "string"},
+    "core_compatibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["core_api_version", "work_unit_schema_version"],
+      "properties": {
+        "core_api_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+$"},
+        "work_unit_schema_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+$"}
+      }
+    },
+    "roots": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "kind", "uri", "writable"],
+        "properties": {
+          "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{1,63}$"},
+          "kind": {"enum": ["repository", "artifact", "dataset", "knowledge", "other"]},
+          "uri": {"type": "string", "minLength": 1},
+          "writable": {"type": "boolean"}
+        }
+      }
+    },
+    "goal_entrypoints": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+    "domain_packs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "version", "path"],
+        "properties": {
+          "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._/-]{2,127}$"},
+          "version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+          "path": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "allowed_work_unit_kinds": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"enum": ["coding", "testing", "review", "benchmarking", "documentation", "research", "integration", "governance", "other"]}
+    },
+    "verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["default_policy_ref", "minimum_independent_verifiers", "human_integration_required"],
+      "properties": {
+        "default_policy_ref": {"type": "string", "minLength": 1},
+        "minimum_independent_verifiers": {"type": "integer", "minimum": 0},
+        "human_integration_required": {"type": "boolean"}
+      }
+    },
+    "risk_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allowed_risk_classes", "maximum_autonomous_risk"],
+      "properties": {
+        "allowed_risk_classes": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"enum": ["low", "medium", "high", "critical"]}},
+        "maximum_autonomous_risk": {"enum": ["none", "low", "medium", "high", "critical"]}
+      }
+    },
+    "integration_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "target_branch", "automatic_merge_allowed", "human_decision_required"],
+      "properties": {
+        "mode": {"enum": ["proposal_only", "protected_pr", "manual", "custom"]},
+        "target_branch": {"type": "string", "minLength": 1},
+        "automatic_merge_allowed": {"type": "boolean"},
+        "human_decision_required": {"type": "boolean"}
+      }
+    },
+    "governance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["owners", "reviewers", "decision_refs"],
+      "properties": {
+        "owners": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+        "reviewers": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+        "decision_refs": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true}
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["primary", "secondary"],
+      "properties": {
+        "primary": {"type": "string", "minLength": 1},
+        "secondary": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true}
+      }
+    },
+    "worker_constraints": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["required_capabilities", "forbidden_capabilities"],
+      "properties": {
+        "required_capabilities": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+        "forbidden_capabilities": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true}
+      }
+    },
+    "storage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifact_root", "result_root", "provenance_root"],
+      "properties": {
+        "artifact_root": {"type": "string", "minLength": 1},
+        "result_root": {"type": "string", "minLength": 1},
+        "provenance_root": {"type": "string", "minLength": 1}
+      }
+    },
+    "enabled_adapters": {"type": "array", "items": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._/-]{2,127}$"}, "uniqueItems": true},
+    "metadata": {"type": "object", "additionalProperties": true}
+  }
+}
