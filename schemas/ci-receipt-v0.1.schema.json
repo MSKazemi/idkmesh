@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idkmesh.org/schemas/ci-receipt-v0.1.schema.json",
+  "title": "IDKMesh CI Planning Receipt v0.1",
+  "description": "An exact-revision receipt proving that a shadow CI plan was emitted. It is not an execution result or integration verdict.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "kind",
+    "planner_version",
+    "receipt_id",
+    "stage",
+    "outcome",
+    "plan_id",
+    "plan_digest",
+    "base_sha",
+    "head_sha",
+    "executed_checks",
+    "actual_cost",
+    "authority"
+  ],
+  "properties": {
+    "schema_version": {"const": "0.1"},
+    "kind": {"const": "idkmesh-ci-receipt"},
+    "planner_version": {"const": "0.1"},
+    "receipt_id": {"type": "string", "pattern": "^ci-receipt-[a-f0-9]{12}-[a-f0-9]{12}$"},
+    "stage": {"const": "planning"},
+    "outcome": {"const": "shadow_plan_emitted"},
+    "plan_id": {"type": "string", "pattern": "^ci-plan-[a-f0-9]{12}-[a-f0-9]{12}$"},
+    "plan_digest": {"$ref": "#/$defs/digest"},
+    "base_sha": {"$ref": "#/$defs/sha"},
+    "head_sha": {"$ref": "#/$defs/sha"},
+    "executed_checks": {"type": "array", "maxItems": 0},
+    "actual_cost": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "project_spend_usd",
+        "check_execution_seconds",
+        "planner_execution_seconds",
+        "planner_resource_use_measured",
+        "external_resource_cost_zero_claim"
+      ],
+      "properties": {
+        "project_spend_usd": {"const": 0},
+        "check_execution_seconds": {"const": 0},
+        "planner_execution_seconds": {"type": "null"},
+        "planner_resource_use_measured": {"const": false},
+        "external_resource_cost_zero_claim": {"const": false}
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["evidence_only", "execute", "skip_required_checks", "approve", "merge", "repository_write"],
+      "properties": {
+        "evidence_only": {"const": true},
+        "execute": {"const": false},
+        "skip_required_checks": {"const": false},
+        "approve": {"const": false},
+        "merge": {"const": false},
+        "repository_write": {"const": false}
+      }
+    }
+  },
+  "$defs": {
+    "sha": {"type": "string", "pattern": "^[a-f0-9]{40}$"},
+    "digest": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$"}
+  }
+}

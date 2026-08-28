@@ -1,0 +1,111 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idkmesh.org/schemas/ci-plan-v0.1.schema.json",
+  "title": "IDKMesh CI Plan v0.1",
+  "description": "A deterministic shadow-mode recommendation for exact-revision CI coverage. It cannot skip required checks or authorize integration.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "kind",
+    "planner_version",
+    "mode",
+    "plan_id",
+    "repository",
+    "base_sha",
+    "head_sha",
+    "policy_digest",
+    "changed_files",
+    "risk",
+    "budget",
+    "checks",
+    "summary",
+    "authority"
+  ],
+  "properties": {
+    "schema_version": {"const": "0.1"},
+    "kind": {"const": "idkmesh-ci-plan"},
+    "planner_version": {"const": "0.1"},
+    "mode": {"const": "shadow"},
+    "plan_id": {"type": "string", "pattern": "^ci-plan-[a-f0-9]{12}-[a-f0-9]{12}$"},
+    "repository": {"type": "string", "minLength": 1},
+    "base_sha": {"$ref": "#/$defs/sha"},
+    "head_sha": {"$ref": "#/$defs/sha"},
+    "policy_digest": {"$ref": "#/$defs/digest"},
+    "changed_files": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "risk": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["class", "matched_rules", "unmatched_files"],
+      "properties": {
+        "class": {"enum": ["R0", "R1", "R2", "R3"]},
+        "matched_rules": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+        "unmatched_files": {"type": "array", "uniqueItems": true, "items": {"type": "string"}}
+      }
+    },
+    "budget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["optional_seconds", "selected_optional_seconds", "project_spend_usd_max"],
+      "properties": {
+        "optional_seconds": {"type": "integer", "minimum": 0},
+        "selected_optional_seconds": {"type": "integer", "minimum": 0},
+        "project_spend_usd_max": {"const": 0}
+      }
+    },
+    "checks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/check"}
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mandatory", "selected_optional", "exploration", "not_selected", "full_suite_baseline_required"],
+      "properties": {
+        "mandatory": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+        "selected_optional": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+        "exploration": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+        "not_selected": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+        "full_suite_baseline_required": {"const": true}
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["advisory_only", "execute", "skip_required_checks", "approve", "merge", "repository_write"],
+      "properties": {
+        "advisory_only": {"const": true},
+        "execute": {"const": false},
+        "skip_required_checks": {"const": false},
+        "approve": {"const": false},
+        "merge": {"const": false},
+        "repository_write": {"const": false}
+      }
+    }
+  },
+  "$defs": {
+    "sha": {"type": "string", "pattern": "^[a-f0-9]{40}$"},
+    "digest": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$"},
+    "check": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "lane", "selected", "exploration", "reasons", "matched_files", "dependencies", "estimated_seconds", "score"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "lane": {"enum": ["mandatory", "optional", "not-impacted"]},
+        "selected": {"type": "boolean"},
+        "exploration": {"type": "boolean"},
+        "reasons": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+        "matched_files": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+        "dependencies": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+        "estimated_seconds": {"type": "integer", "minimum": 0},
+        "score": {"type": ["number", "null"], "minimum": 0}
+      }
+    }
+  }
+}

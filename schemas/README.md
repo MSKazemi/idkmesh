@@ -11,6 +11,8 @@ This directory contains the machine-readable contracts used by the executable re
 - `verification-result-v0.1.schema.json` — **independent verifier result** for one ResultManifest: checks, evidence, findings, resource cost, independence/correlation metadata, provenance, and a recommendation. It is deliberately decision support rather than an automated merge/integration verdict.
 - `experiment-manifest-v0.1.schema.json` — preregistered experiment design: hypotheses, configurations, metrics, seeds, budgets, and stopping rules.
 - `experiment-result-v0.1.schema.json` — one normalized **experiment-run result** with metrics, costs, verification outcomes, artifacts, and provenance.
+- `ci-plan-v0.1.schema.json` — exact-revision shadow CI recommendation with risk, mandatory dependency closure, optional-budget decisions, and no execution/skip/merge authority.
+- `ci-receipt-v0.1.schema.json` — planning-only receipt proving that a shadow plan was emitted; it contains no executed checks or integration verdict.
 
 All current schemas use JSON Schema Draft 2020-12.
 

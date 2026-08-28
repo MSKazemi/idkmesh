@@ -23,6 +23,7 @@ The first deterministic orphan-warning cohort in issue #152 identified these act
 ### Evolution architecture
 
 - [Evolution Artifact Minimization](architecture/EVOLUTION_ARTIFACT_MINIMIZATION.md) — retain the minimum evidence needed to reproduce and review repository-evolution decisions.
+- [CI Shadow Planner v0.1](architecture/CI_SHADOW_PLANNER.md) — exact-revision, dependency-closed CI planning in advisory shadow mode.
 
 ### Security
 
