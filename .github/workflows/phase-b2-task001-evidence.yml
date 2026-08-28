@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "tools/phase_b2_task001_evidence.py"
+      - "tools/phase_b2_task001_evaluator_probe.py"
       - "benchmarks/phase-b2-first-five/**"
       - "tools/benchmark_cohort.py"
       - ".github/workflows/phase-b2-task001-evidence.yml"
@@ -52,13 +53,44 @@ jobs:
           python tools/benchmark_cohort.py validate \
             --cohort benchmarks/phase-b2-first-five/cohort.json
 
-      - name: Generate, independently verify, and attach Task 001 evidence prospectively
+      - name: Run straightforward Task 001 candidate and preserve observed rejection
         shell: bash
         run: |
           set -euo pipefail
+          set +e
           python evaluator/tools/phase_b2_task001_evidence.py \
             --source source \
             --output-root results/benchmarks/phase-b2-first-five/task-001/single-worker-baseline-v1
+          rc=$?
+          set -e
+
+          # The first exact-head run established rc=2 because the frozen evaluator
+          # rejected the straightforward correct patch. Any other outcome is drift
+          # and must fail closed rather than silently changing benchmark semantics.
+          if test "$rc" -ne 2; then
+            echo "Expected the frozen evaluator rejection (exit 2), observed exit $rc" >&2
+            exit 1
+          fi
+
+          test -f evaluator/results/benchmarks/phase-b2-first-five/task-001/single-worker-baseline-v1/attempt-001/result-manifest.json
+          test -f evaluator/results/benchmarks/phase-b2-first-five/task-001/single-worker-baseline-v1/negative-evidence.json
+
+      - name: Reset frozen source before adversarial evaluator calibration
+        shell: bash
+        run: |
+          set -euo pipefail
+          git -C source reset --hard 9c53bb4069a5db1c0688dbbe7a8f028540cbf7c2
+          git -C source clean -fdx
+          test "$(git -C source rev-parse HEAD)" = "9c53bb4069a5db1c0688dbbe7a8f028540cbf7c2"
+          test -z "$(git -C source status --porcelain)"
+
+      - name: Calibrate frozen evaluator with false-negative and false-positive probes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python evaluator/tools/phase_b2_task001_evaluator_probe.py \
+            --source source \
+            --evidence-root evaluator/results/benchmarks/phase-b2-first-five/task-001/single-worker-baseline-v1
 
       - name: Publish non-selecting evidence summary
         if: always()
@@ -81,11 +113,12 @@ jobs:
           retention-days: 14
 
 # Scientific and authority boundaries:
-# - the task definition/source/evaluator commitments are frozen before this outcome;
-# - the worker modifies only an isolated checkout of the exact frozen source revision;
+# - the task definition/source/evaluator commitments remain frozen after the observed outcome;
+# - the straightforward worker changes only an isolated checkout of the exact frozen source revision;
 # - the independent EvaluatorPlan and VerificationResult remain outside the worker bundle;
-# - the metadata-only evaluator does not execute candidate code;
-# - the separate negative regression check executes only controlled frozen repository code;
-# - attaching evidence is tested prospectively without rewriting the frozen definition digest;
+# - the metadata-only evaluator never executes candidate code;
+# - controlled regression/probe execution uses only the frozen public repository source;
+# - an evaluator false negative/false positive is retained as evidence, not repaired post hoc;
+# - prospective Task 001 exclusion must preserve the frozen definition digest;
 # - workflow permissions are read-only; checkout credentials are not persisted; no secrets are used;
 # - no canonical write, push, approval, merge, or automatic candidate-selection authority exists.
