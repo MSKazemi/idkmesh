@@ -4,19 +4,39 @@ on:
   pull_request:
     paths:
       - 'scripts/free_resource_planner.py'
+      - 'scripts/resource_compute_admission.py'
       - 'tests/test_free_resource_planner.py'
+      - 'tests/test_resource_compute_admission.py'
       - 'schemas/resource-offer-registry-v0.1.schema.json'
+      - 'schemas/resource-compute-bindings-v0.1.schema.json'
+      - 'config/resource-compute-bindings.json'
       - 'examples/resources/**'
+      - 'examples/compute-offers/**'
+      - 'examples/work-units/phase0-smoke.work-unit.json'
+      - 'config/compute-policy.json'
+      - 'experiments/free_compute_router.py'
       - 'docs/architecture/FREE_RESOURCE_MESH.md'
+      - 'docs/architecture/FREE_RESOURCE_MESH_COMPUTE_BRIDGE.md'
+      - 'docs/architecture/RESOURCE_COMPUTE_ADMISSION.md'
       - '.github/workflows/free-resource-plan.yml'
   push:
     branches: [main]
     paths:
       - 'scripts/free_resource_planner.py'
+      - 'scripts/resource_compute_admission.py'
       - 'tests/test_free_resource_planner.py'
+      - 'tests/test_resource_compute_admission.py'
       - 'schemas/resource-offer-registry-v0.1.schema.json'
+      - 'schemas/resource-compute-bindings-v0.1.schema.json'
+      - 'config/resource-compute-bindings.json'
       - 'examples/resources/**'
+      - 'examples/compute-offers/**'
+      - 'examples/work-units/phase0-smoke.work-unit.json'
+      - 'config/compute-policy.json'
+      - 'experiments/free_compute_router.py'
       - 'docs/architecture/FREE_RESOURCE_MESH.md'
+      - 'docs/architecture/FREE_RESOURCE_MESH_COMPUTE_BRIDGE.md'
+      - 'docs/architecture/RESOURCE_COMPUTE_ADMISSION.md'
       - '.github/workflows/free-resource-plan.yml'
   workflow_dispatch:
 
@@ -26,7 +46,7 @@ permissions:
 jobs:
   plan:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 7
     steps:
       - name: Check out repository
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
@@ -38,14 +58,36 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Compile planner
-        run: python -m py_compile scripts/free_resource_planner.py tests/test_free_resource_planner.py
+      - name: Install schema validator
+        run: python -m pip install -r requirements-phase0.txt
+
+      - name: Compile planning and admission code
+        run: |
+          python -m py_compile \
+            scripts/free_resource_planner.py \
+            scripts/resource_compute_admission.py \
+            tests/test_free_resource_planner.py \
+            tests/test_resource_compute_admission.py
 
       - name: Run policy tests
-        run: python -m unittest tests.test_free_resource_planner -v
+        run: |
+          python -m unittest tests.test_free_resource_planner -v
+          python -m unittest tests.test_resource_compute_admission -v
 
-      - name: Validate current registry
-        run: python scripts/free_resource_planner.py validate examples/resources/free-resource-registry-v0.1.json
+      - name: Validate current registry and binding schema
+        run: |
+          python scripts/free_resource_planner.py validate examples/resources/free-resource-registry-v0.1.json
+          python - <<'PY'
+          import json
+          from jsonschema import Draft202012Validator
+
+          schema = json.load(open('schemas/resource-compute-bindings-v0.1.schema.json', encoding='utf-8'))
+          value = json.load(open('config/resource-compute-bindings.json', encoding='utf-8'))
+          errors = sorted(Draft202012Validator(schema).iter_errors(value), key=lambda e: list(e.absolute_path))
+          if errors:
+              raise SystemExit('; '.join(error.message for error in errors))
+          print('OK: resource-compute bindings validate')
+          PY
 
       - name: Plan sample public analysis task
         run: |
@@ -57,14 +99,66 @@ jobs:
             | tee /tmp/free-resource-plan.json
           python -m json.tool /tmp/free-resource-plan.json >/dev/null
 
-      - name: Publish non-authoritative plan summary
+      - name: Admit concrete compute offers through the Resource Mesh
+        run: |
+          python scripts/resource_compute_admission.py \
+            --registry examples/resources/free-resource-registry-v0.1.json \
+            --bindings config/resource-compute-bindings.json \
+            --pool examples/compute-offers/free-pool.example.json \
+            --today 2026-08-28 \
+            --output /tmp/admitted-compute-offers.json \
+            --report /tmp/resource-compute-admission.json
+          python -m json.tool /tmp/admitted-compute-offers.json >/dev/null
+          python -m json.tool /tmp/resource-compute-admission.json >/dev/null
+          python - <<'PY'
+          import json
+          pool = json.load(open('/tmp/admitted-compute-offers.json', encoding='utf-8'))
+          report = json.load(open('/tmp/resource-compute-admission.json', encoding='utf-8'))
+          ids = [offer['id'] for offer in pool['offers']]
+          if ids != ['github-public-ci']:
+              raise SystemExit(f'expected only github-public-ci, got {ids}')
+          if report['admitted'][0]['resource_id'] != 'github-actions-public-standard':
+              raise SystemExit('resource-to-compute provenance binding missing')
+          print('OK: only the explicitly bound zero-cost GitHub CI offer survived admission')
+          PY
+
+      - name: Route Phase 0 Work Unit through admitted zero-cost pool
+        run: |
+          python experiments/free_compute_router.py select \
+            --work-unit examples/work-units/phase0-smoke.work-unit.json \
+            --offers /tmp/admitted-compute-offers.json \
+            --policy config/compute-policy.json \
+            | tee /tmp/free-compute-selection.json
+          python - <<'PY'
+          import json
+          result = json.load(open('/tmp/free-compute-selection.json', encoding='utf-8'))
+          selected = result.get('selected') or {}
+          if selected.get('offer_id') != 'github-public-ci':
+              raise SystemExit(f'unexpected selected offer: {selected}')
+          if selected.get('project_cost_usd') != 0:
+              raise SystemExit('selected offer violated zero-project-spend invariant')
+          print('OK: existing free compute router selected the admitted GitHub public CI offer')
+          PY
+
+      - name: Publish non-authoritative plan and admission summary
         run: |
           echo '## Free Resource Mesh sample plan' >> "$GITHUB_STEP_SUMMARY"
           echo '' >> "$GITHUB_STEP_SUMMARY"
-          echo 'This is planning evidence only. It dispatches no external agent and grants no repository write or merge authority.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Planning and admission evidence only. No external agent is dispatched and no repository write, approval, selection-of-code, or merge authority is granted.' >> "$GITHUB_STEP_SUMMARY"
           echo '' >> "$GITHUB_STEP_SUMMARY"
+          echo '### Resource plan' >> "$GITHUB_STEP_SUMMARY"
           echo '```json' >> "$GITHUB_STEP_SUMMARY"
           cat /tmp/free-resource-plan.json >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          echo '' >> "$GITHUB_STEP_SUMMARY"
+          echo '### Resource → compute admission' >> "$GITHUB_STEP_SUMMARY"
+          echo '```json' >> "$GITHUB_STEP_SUMMARY"
+          cat /tmp/resource-compute-admission.json >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          echo '' >> "$GITHUB_STEP_SUMMARY"
+          echo '### Existing compute-router selection' >> "$GITHUB_STEP_SUMMARY"
+          echo '```json' >> "$GITHUB_STEP_SUMMARY"
+          cat /tmp/free-compute-selection.json >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
 
 # Security boundary:
@@ -73,5 +167,6 @@ jobs:
 # - checkout credentials are not persisted;
 # - no external agent dispatch;
 # - no issue/PR/branch mutation;
-# - no merge/approval authority;
-# - external free-tier claims are treated as expiring registry evidence.
+# - no code-selection, merge, or approval authority;
+# - external free-tier claims and local authorization bindings both expire;
+# - bridge is subtractive: it can remove offers, never invent capacity.
