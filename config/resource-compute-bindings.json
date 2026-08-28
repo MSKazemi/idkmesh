@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "bindings": [
+    {
+      "id": "github-public-ci-v0",
+      "resource_id": "github-actions-public-standard",
+      "provider": "github-actions",
+      "allowed_cost_classes": ["public_project_ci"],
+      "allowed_capabilities": [
+        "json-schema-validation",
+        "deterministic-local-execution",
+        "linux",
+        "python"
+      ],
+      "offer_id_prefix": "github-",
+      "enabled": true,
+      "terms_eligible": true,
+      "authorization_scope": "Legitimate CI, verification, reproducibility, testing, and bounded repository experiments for this public project only; not generic unrelated compute.",
+      "reviewed_at": "2026-08-28",
+      "max_age_days": 30
+    }
+  ]
+}
