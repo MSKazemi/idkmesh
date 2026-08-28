@@ -6,6 +6,8 @@ This document specifies the first automatic observer for the ACE Bootstrap Cohor
 
 The observer exists because the project must distinguish **activity** from **community reproduction evidence**. Stars, comments, issue closures, and even merged pull requests are not automatically proof that a Growth Seed produced a useful descendant.
 
+For this first community-growth cohort, reproduction metrics intentionally exclude the bootstrap repository owner and GitHub bot accounts. Their activity may still be operationally useful, but it must not make a community-growth experiment appear successful by itself.
+
 ## State funnel
 
 For each issue labelled `growth-seed` in Bootstrap Cohort 1, the observer tracks:
@@ -21,23 +23,23 @@ visible seed
 
 ### External interest
 
-A non-repository-owner comment or contribution signal associated with the seed.
+A non-owner, non-bot contributor comment or contribution signal associated with the seed.
 
 Interest is useful diagnostic evidence, but it is not a claim or descendant.
 
 ### Claim
 
-A seed is considered claimed when at least one of these occurs:
+A seed is considered claimed when at least one of these occurs from an external non-bot contributor:
 
-- a non-owner contributor is assigned;
-- a non-owner contributor comments `/claim`;
-- a pull request cross-references the seed.
+- the contributor is assigned;
+- the contributor comments `/claim`;
+- the contributor authors a pull request that GitHub cross-references from the seed.
 
 The `/claim` convention is intentionally lightweight. It does not grant repository permissions or exclusive ownership.
 
 ### Candidate PR
 
-A pull request that GitHub cross-references from the Growth Seed.
+A pull request authored by an external non-bot contributor that GitHub cross-references from the Growth Seed.
 
 A candidate PR is not automatically a descendant because it may be incomplete, incorrect, abandoned, or only loosely related.
 
@@ -55,7 +57,7 @@ The label is an explicit evidence gate. It should only be applied after the appl
 Until ACE has a full parent→descendant lineage schema, the observer reports a deliberately narrower quantity:
 
 ```text
-SeedReproductionRatio = verified descendant PRs / Growth Seeds
+SeedReproductionRatio = verified external descendant PRs / Growth Seeds
 ```
 
 This is **not** the full `R_community`.
@@ -77,9 +79,9 @@ The observer may report one of two advisory states:
 
 `EVALUATE_COHORT_2` currently requires all of:
 
-- at least 2 verified descendant PRs;
+- at least 2 verified external descendant PRs;
 - at least 2 claimed seeds;
-- no more than 3 open candidate PRs;
+- no more than 3 open external candidate PRs;
 - ACE capacity at or above 0.60, when the Growth Ledger capacity can be read.
 
 This threshold is a bootstrap hypothesis, not a permanent policy.
@@ -130,6 +132,7 @@ claim != candidate
 candidate != merge
 merge != verified descendant
 verified descendant != durable retained contributor
+owner/bot activity != external community reproduction
 ```
 
 Future versions should add reviewer-time accounting, contributor return/retention, descendant durability, and explicit parent lineage rather than simply adding more event counters.
