@@ -1,4 +1,5 @@
 import itertools
+import math
 import unittest
 
 from scripts.adversarial_evidence_guard import (
@@ -135,11 +136,25 @@ class AdversarialEvidenceGuardTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             adversarial_mean_envelope([0.2, 1.2], 0)
 
+    def test_nonfinite_reports_and_bounds_fail_closed(self):
+        for value in (math.nan, math.inf, -math.inf):
+            with self.subTest(report=value):
+                with self.assertRaises(ValueError):
+                    adversarial_mean_envelope([0.2, value], 0)
+        for lower, upper in ((-math.inf, 1.0), (0.0, math.inf), (math.nan, 1.0)):
+            with self.subTest(lower=lower, upper=upper):
+                with self.assertRaises(ValueError):
+                    adversarial_mean_envelope([0.2, 0.8], 0, lower=lower, upper=upper)
+
     def test_invalid_threshold_margin_fails_closed(self):
         with self.assertRaises(ValueError):
             threshold_certificate([0.5, 0.6], 0, threshold=0.95, margin=0.1)
         with self.assertRaises(ValueError):
             threshold_certificate([0.5, 0.6], 0, margin=-0.1)
+        with self.assertRaises(ValueError):
+            threshold_certificate([0.5, 0.6], 0, margin=math.nan)
+        with self.assertRaises(ValueError):
+            threshold_certificate([0.5, 0.6], 0, threshold=math.nan)
 
 
 if __name__ == "__main__":
