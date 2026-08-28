@@ -133,6 +133,10 @@ class EvolutionObserverTests(unittest.TestCase):
             self.assertAlmostEqual(result["pin_ratio"], 0.5)
             self.assertEqual(result["floating"][0]["ref"], "v7")
 
+    def test_workflow_avoids_per_comment_observation_amplification(self):
+        workflow = (ROOT / ".github" / "workflows" / "evolution-loop.yml").read_text(encoding="utf-8")
+        self.assertNotIn("\n  issue_comment:\n", workflow)
+
     def test_ready_pr_review_coverage_is_measured_independently(self):
         s = snapshot(protected=True, ready=2, issues=1, reviewed=1)
         result = evolution_score.evaluate(s, POLICY)
