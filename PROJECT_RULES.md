@@ -28,10 +28,16 @@ Community work — onboarding, documentation, review, moderation, accessibility,
 
 See [`COMMUNITY.md`](COMMUNITY.md), [`CONTRIBUTING.md`](CONTRIBUTING.md), [`GOVERNANCE.md`](GOVERNANCE.md), and [`docs/community/COMMUNITY_GROWTH_STRATEGY.md`](docs/community/COMMUNITY_GROWTH_STRATEGY.md).
 
-## Rule 2 — Preserve useful project conversations in GitHub
+## Rule 2 — Mandatory chat-to-repository preservation
 
-For ChatGPT conversations related to IDKMesh, useful project outputs should be reflected in this repository. This includes, when relevant:
+For every substantive ChatGPT conversation in the IDKMesh project, the public GitHub repository is the durable project record whenever repository access is available.
 
+**Default rule: every substantive user message and every substantive assistant output related to IDKMesh must be preserved in the repository in the same turn when practical and safe.**
+
+This includes:
+
+- user questions, ideas, requirements, corrections, and project rules;
+- assistant answers, recommendations, and proposed interpretations;
 - findings and research notes;
 - architectural ideas;
 - mathematical formulations;
@@ -41,15 +47,18 @@ For ChatGPT conversations related to IDKMesh, useful project outputs should be r
 - governance and community-design proposals;
 - benchmarks and experiment results;
 - code and documentation produced for the project;
-- concise conversation records sufficient to preserve project context.
+- links/reference maps used to support project decisions;
+- follow-up constraints and repository rules.
 
-The goal is to make the evolution of the project understandable to future contributors.
+Conversation records should normally be stored under `docs/conversations/`, while durable findings, decisions, specifications, architecture, roadmap changes, community/process rules, and implementation artifacts should also be promoted into their appropriate canonical files/directories.
+
+The goal is that a contributor should be able to understand the evolution of IDKMesh from the public repository without depending on access to the original ChatGPT conversation.
 
 ## Structured preservation, not transcript dumping
 
-A conversation does not need to be copied word-for-word.
+Preservation does not mean turning the repository into an undifferentiated transcript archive.
 
-Prefer transforming useful output into durable project artifacts:
+Prefer promoting useful output into durable project artifacts:
 
 - **decision** -> `DECISIONS.md` and/or `docs/decisions/ADR-*.md`;
 - **research question** -> `RESEARCH_QUESTIONS.md` or a research issue;
@@ -57,9 +66,11 @@ Prefer transforming useful output into durable project artifacts:
 - **architecture** -> architecture docs / ADR;
 - **plan** -> `ROADMAP.md` or issue/milestone;
 - **community/process change** -> community/governance docs;
-- **important context** -> `docs/conversations/` summary.
+- **important chat context** -> `docs/conversations/` structured record.
 
-Conversation records should help a new contributor understand why the project evolved, not force them to reconstruct the project from chat transcripts.
+Preserve visible chat content verbatim when practical and useful. When verbatim reproduction would create unnecessary duplication, expose restricted material, or violate redistribution constraints, preserve a faithful structured record instead.
+
+Conversation archives are not a substitute for maintaining the project itself. If a chat changes architecture, roadmap, governance, research direction, schemas, implementation, or decisions, update those canonical artifacts in addition to archiving the conversation.
 
 ## Progressive disclosure rule
 
@@ -83,20 +94,19 @@ The public repository must not contain:
 - third-party confidential material;
 - copyrighted content that cannot legally be redistributed.
 
-When a conversation contains both useful project information and material that should not be public, preserve a safe project summary rather than the sensitive material.
+When a conversation contains both useful project information and material that should not be public, preserve the public-safe portion and a faithful project summary of the remainder rather than exposing restricted material.
 
 ## Conversation preservation format
 
 Conversation records should distinguish where possible between:
 
-1. **Questions / ideas from the project owner**
-2. **Research findings**
-3. **Decisions**
-4. **Open questions**
-5. **Action items / implementation artifacts**
-6. **Community impact / contributor implications**
-
-A faithful structured summary is preferred when exact reproduction would add noise or expose information that should not be public.
+1. **Questions / ideas / requirements from the project owner**
+2. **Assistant output / proposed interpretation**
+3. **Research findings**
+4. **Decisions**
+5. **Open questions**
+6. **Action items / implementation artifacts**
+7. **Community impact / contributor implications**
 
 ## Decision discipline
 
