@@ -75,6 +75,29 @@ Therefore IDKMesh should **not** blindly discount reviewers by metadata group. I
 
 See [`../experiments/E013-independence-aware-aggregation.md`](../experiments/E013-independence-aware-aggregation.md).
 
+## E015 — verification phase diagram
+
+`e015_worker.py` sweeps panel size, verifier accuracy, error correlation, and quorum together,
+so the interaction between them can be read off one grid instead of one axis at a time.
+`e015_analyze.py` turns measured false-accept/false-reject rates into an **effective panel
+size**: the number of independent verifiers that would produce the same error.
+
+```bash
+python sim/e015_worker.py --seeds 100 --shard 0 --shards 1 --procs 8 --out e015.jsonl
+python sim/e015_analyze.py experiments/results/E015-verification-phase-diagram-raw.jsonl.gz
+```
+
+The published artifact holds 630 cells at 100 seeds. Headline results:
+
+- 21 correlated verifiers can be worth about 3 independent ones;
+- quorum choice is cost-asymmetric — a strict quorum trades false accepts for false rejects,
+  and `best_quorum` selects between them under an explicit false-accept cost;
+- the standard `N_eff ~= N / (1 + (N-1) rho)` heuristic is **optimistic** for accurate
+  verifiers, because real effective size has an accuracy-dependent ceiling that the heuristic
+  lacks.
+
+See [`../experiments/E015-verification-phase-diagram.md`](../experiments/E015-verification-phase-diagram.md).
+
 ## Multi-seed emergence sweeps
 
 ```bash
@@ -92,10 +115,13 @@ python -m pytest -q \
   tests/test_emergence_sim.py \
   tests/test_emergence_sweep.py \
   tests/test_verifier_correlation_sweep.py \
-  tests/test_verification_aggregation_sim.py
+  tests/test_verification_aggregation_sim.py \
+  tests/test_e015_phase_diagram.py
 ```
 
-The tests cover deterministic replay, budget invariants, niche preservation, perfect verification compatibility, correlated-error mechanics, sweep configuration, and the E013 regime where independence-aware aggregation can help or hurt.
+This is the same list `.github/workflows/emergence-sim.yml` runs; keep the two in step.
+
+The tests cover deterministic replay, budget invariants, niche preservation, perfect verification compatibility, correlated-error mechanics, sweep configuration, the E013 regime where independence-aware aggregation can help or hurt, and the E015 effective-panel-size metrics.
 
 ## Interpretation
 
