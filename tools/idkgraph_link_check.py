@@ -16,10 +16,9 @@ GitHub-style anchors are navigation locators, not IDKGraph identities.
 from __future__ import annotations
 
 import argparse
-from collections import Counter
 from dataclasses import asdict, dataclass
 import json
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 import re
 import sys
 from typing import Any, Iterable
@@ -124,14 +123,31 @@ def github_anchor_base(text: str) -> str:
 
 
 def heading_anchor_index(document: dict[str, Any]) -> dict[str, str]:
-    counts: Counter[str] = Counter()
+    """Map navigation anchors to canonical T1 heading identities.
+
+    Suffix allocation is global within one rendered document, not merely per
+    base slug. This avoids collisions such as ``Repeat``, ``Repeat-1``,
+    ``Repeat`` becoming ``repeat``, ``repeat-1``, ``repeat-1``. The final
+    heading instead receives ``repeat-2`` while its canonical T1 identity is
+    unchanged.
+    """
+
+    occupied: set[str] = set()
     result: dict[str, str] = {}
-    headings = sorted(document["headings"], key=lambda item: (item["line"], item["heading_id"]))
+    headings = sorted(
+        document["headings"],
+        key=lambda item: (item["line"], item["heading_id"]),
+    )
     for heading in headings:
         base = github_anchor_base(heading["text"])
-        occurrence = counts[base]
-        counts[base] += 1
-        anchor = base if occurrence == 0 else f"{base}-{occurrence}"
+        if not base:
+            continue
+        anchor = base
+        suffix = 0
+        while anchor in occupied:
+            suffix += 1
+            anchor = f"{base}-{suffix}"
+        occupied.add(anchor)
         result[anchor] = heading["heading_id"]
     return result
 
@@ -192,7 +208,6 @@ def check_links(root: Path) -> dict[str, Any]:
     for document in documents:
         source_path = document["path"]
         source_file = root / source_path
-        source_parent = PurePosixPath(source_path).parent
 
         for line, raw_target in _iter_inline_links(source_file):
             total_links += 1
