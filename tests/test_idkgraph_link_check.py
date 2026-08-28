@@ -22,21 +22,22 @@ class IDKGraphLinkCheckTests(unittest.TestCase):
             self.write(
                 root,
                 "docs/a.md",
-                """# Alpha\n\n"
-                "[Cross doc](b.md#café)\n"
-                "[Same doc duplicate](#repeat-1)\n"
-                "[Setext target](b.md#setext-title)\n"
-                "[Issue route](../../issues/24)\n"
-                "[External](https://example.com/x)\n"
-                "`[Inline code is not a link](missing.md)`\n\n"
-                "## Repeat\n"
-                "## Repeat\n"
-                """,
+                (
+                    "# Alpha\n\n"
+                    "[Cross doc](b.md#café)\n"
+                    "[Same doc duplicate](#repeat-1)\n"
+                    "[Setext target](b.md#setext-title)\n"
+                    "[Issue route](../../issues/24)\n"
+                    "[External](https://example.com/x)\n"
+                    "`[Inline code is not a link](missing.md)`\n\n"
+                    "## Repeat\n"
+                    "## Repeat\n"
+                ),
             )
             self.write(
                 root,
                 "docs/b.md",
-                """# Café\n\nSetext Title\n------------\n""",
+                "# Café\n\nSetext Title\n------------\n",
             )
 
             report = check_links(root)
@@ -49,7 +50,9 @@ class IDKGraphLinkCheckTests(unittest.TestCase):
 
             t1 = build_index(root)
             docs = {item["path"]: item for item in t1["documents"]}
-            b_headings = {item["text"]: item["heading_id"] for item in docs["docs/b.md"]["headings"]}
+            b_headings = {
+                item["text"]: item["heading_id"] for item in docs["docs/b.md"]["headings"]
+            }
             a_repeat_ids = [
                 item["heading_id"]
                 for item in docs["docs/a.md"]["headings"]
@@ -57,7 +60,10 @@ class IDKGraphLinkCheckTests(unittest.TestCase):
             ]
 
             resolved = {item["raw_target"]: item for item in report["resolved_links"]}
-            self.assertEqual(resolved["b.md#café"]["target_heading_id"], b_headings["Café"])
+            self.assertEqual(
+                resolved["b.md#café"]["target_heading_id"],
+                b_headings["Café"],
+            )
             self.assertEqual(
                 resolved["b.md#setext-title"]["target_heading_id"],
                 b_headings["Setext Title"],
@@ -78,12 +84,13 @@ class IDKGraphLinkCheckTests(unittest.TestCase):
             self.write(
                 root,
                 "docs/a.md",
-                """# A\n\n"
-                "[Missing](missing.md)\n"
-                "[Bad anchor](b.md#does-not-exist)\n"
-                "[Escape](../../escape.md)\n"
-                "[Ambiguous absolute](/README.md)\n"
-                """,
+                (
+                    "# A\n\n"
+                    "[Missing](missing.md)\n"
+                    "[Bad anchor](b.md#does-not-exist)\n"
+                    "[Escape](../../escape.md)\n"
+                    "[Ambiguous absolute](/README.md)\n"
+                ),
             )
             self.write(root, "docs/b.md", "# B\n")
             self.write(root, "README.md", "# Root\n")
@@ -114,12 +121,13 @@ class IDKGraphLinkCheckTests(unittest.TestCase):
             self.write(
                 root,
                 "README.md",
-                """# Code\n\n"
-                "```markdown\n"
-                "[Fake](missing.md)\n"
-                "```\n\n"
-                "`[Also fake](missing.md)`\n"
-                """,
+                (
+                    "# Code\n\n"
+                    "```markdown\n"
+                    "[Fake](missing.md)\n"
+                    "```\n\n"
+                    "`[Also fake](missing.md)`\n"
+                ),
             )
 
             report = check_links(root)
