@@ -44,6 +44,25 @@ If something is confusing, **that itself is useful project feedback**.
 
 This is a good time to contribute because fundamental questions are still open. Architecture critiques, research, experiments, documentation, security analysis, governance work, UX, community building, benchmarks, and negative results are all valuable.
 
+## What are we building first?
+
+The first reference product is a **Git-native Verified Swarm Runner**.
+
+A user gives IDKMesh a bounded repository task. Several replaceable human/AI worker adapters attempt the task in isolated Git worktrees/branches. A separate verifier evaluates the candidates and produces an evidence-backed report for human review.
+
+```text
+bounded Git task
+      -> Work Contract
+      -> isolated worker attempts
+      -> independent verification
+      -> Evidence Report
+      -> human accept / reject / refine
+```
+
+The first release does **not** need decentralized networking and does **not** auto-merge into `main`.
+
+This small product lets us test the central thesis before scaling it. Read [`EVOLUTION.md`](EVOLUTION.md) for the current evolution path and [`IDKIPS.md`](IDKIPS.md) for how major competing ideas are proposed and tested.
+
 ## Ways to contribute today
 
 You can help even if you are not a core software engineer.
@@ -207,6 +226,8 @@ This is a hypothesis to test, not settled truth. See [`docs/architecture/SCALABI
 
 **Generation must not outrun verification.** AI-generated volume is not progress if humans and validators cannot maintain it.
 
+**Integrate before reinventing.** Reuse open agent, tool, sandbox, provenance, and networking standards when they solve commodity problems; spend IDKMesh complexity on coordination, verification, evidence, and collective intelligence.
+
 ## How community and governance work
 
 IDKMesh currently uses lightweight bootstrap governance.
@@ -233,6 +254,8 @@ Read [`GOVERNANCE.md`](GOVERNANCE.md), [`MAINTAINERS.md`](MAINTAINERS.md), and [
 
 ### Understand the project
 
+- [`EVOLUTION.md`](EVOLUTION.md) — what we build next and how the project should evolve.
+- [`IDKIPS.md`](IDKIPS.md) — improvement-proposal process for major competing ideas.
 - [`GOALS.md`](GOALS.md) — goal hierarchy and success criteria.
 - [`docs/WHAT_IS_IDKMESH.md`](docs/WHAT_IS_IDKMESH.md) — framework/core/domain model.
 - [`ROADMAP.md`](ROADMAP.md) — staged research and implementation path.
