@@ -52,6 +52,7 @@ class VerifierRunnerTests(unittest.TestCase):
         self.assertIn("no-new-privileges", command)
         self.assertNotIn("/var/run/docker.sock", joined)
 
+    @patch("idkmesh_verifier.runner.platform.platform", return_value="test-platform")
     @patch("idkmesh_verifier.runner.require_tools")
     @patch("idkmesh_verifier.runner.clone_revision")
     @patch("idkmesh_verifier.runner.apply_patch")
@@ -64,6 +65,7 @@ class VerifierRunnerTests(unittest.TestCase):
         apply_patch_mock,
         clone_revision_mock,
         require_tools_mock,
+        platform_mock,
     ) -> None:
         subprocess_mock.return_value = subprocess.CompletedProcess(
             args=["docker", "run"], returncode=0, stdout=b"hidden pass\n", stderr=b""
@@ -91,6 +93,7 @@ class VerifierRunnerTests(unittest.TestCase):
         self.assertNotEqual(verification["verifier"]["id"], result["worker"]["id"])
         self.assertEqual(verification["provenance"]["source_revision"], result["provenance"]["source_revision"])
 
+    @patch("idkmesh_verifier.runner.platform.platform", return_value="test-platform")
     @patch("idkmesh_verifier.runner.require_tools")
     @patch("idkmesh_verifier.runner.clone_revision")
     @patch("idkmesh_verifier.runner.apply_patch")
@@ -103,6 +106,7 @@ class VerifierRunnerTests(unittest.TestCase):
         apply_patch_mock,
         clone_revision_mock,
         require_tools_mock,
+        platform_mock,
     ) -> None:
         subprocess_mock.return_value = subprocess.CompletedProcess(
             args=["docker", "run"], returncode=0, stdout=b"ok\n", stderr=b""
