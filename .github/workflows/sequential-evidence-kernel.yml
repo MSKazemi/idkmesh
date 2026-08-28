@@ -8,6 +8,7 @@ on:
       - "tests/test_sequential_evidence.py"
       - "docs/architecture/SEQUENTIAL_EVIDENCE_KERNEL.md"
       - "docs/conversations/2026-08-28-sequential-evidence-continuation.md"
+      - "docs/conversations/2026-08-28-sequential-evidence-reproducibility.md"
       - ".github/workflows/sequential-evidence-kernel.yml"
   pull_request:
     paths:
@@ -15,6 +16,7 @@ on:
       - "tests/test_sequential_evidence.py"
       - "docs/architecture/SEQUENTIAL_EVIDENCE_KERNEL.md"
       - "docs/conversations/2026-08-28-sequential-evidence-continuation.md"
+      - "docs/conversations/2026-08-28-sequential-evidence-reproducibility.md"
       - ".github/workflows/sequential-evidence-kernel.yml"
   workflow_dispatch:
 
@@ -28,11 +30,7 @@ concurrency:
 jobs:
   evidence-kernel:
     runs-on: ubuntu-latest
-    timeout-minutes: 6
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.11", "3.13"]
+    timeout-minutes: 8
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -40,41 +38,68 @@ jobs:
           persist-credentials: false
           fetch-depth: 1
 
-      - name: Set up Python
+      - name: Set up Python 3.11
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: "3.11"
 
-      - name: Compile sequential evidence kernel
-        run: python -m py_compile scripts/sequential_evidence.py tests/test_sequential_evidence.py
-
-      - name: Run sequential evidence invariants
-        run: python -m unittest -v tests.test_sequential_evidence
-
-      - name: Generate deterministic evidence demonstration
+      - name: Verify on Python 3.11
         run: |
-          python scripts/sequential_evidence.py --demo --output /tmp/sequential-evidence-demo.json >/dev/null
-          python -m json.tool /tmp/sequential-evidence-demo.json >/dev/null
+          python --version
+          python -m py_compile scripts/sequential_evidence.py tests/test_sequential_evidence.py
+          python -m unittest -v tests.test_sequential_evidence
+          python scripts/sequential_evidence.py --demo --output /tmp/sequential-evidence-demo-py3.11.json >/dev/null
+          python -m json.tool /tmp/sequential-evidence-demo-py3.11.json >/dev/null
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+
+      - name: Verify on Python 3.13
+        run: |
+          python --version
+          python -m py_compile scripts/sequential_evidence.py tests/test_sequential_evidence.py
+          python -m unittest -v tests.test_sequential_evidence
+          python scripts/sequential_evidence.py --demo --output /tmp/sequential-evidence-demo-py3.13.json >/dev/null
+          python -m json.tool /tmp/sequential-evidence-demo-py3.13.json >/dev/null
+
+      - name: Verify semantic invariants and cross-interpreter determinism
+        shell: bash
+        run: |
           python - <<'PY'
           import json
           from pathlib import Path
 
-          payload = json.loads(Path('/tmp/sequential-evidence-demo.json').read_text())
-          invariants = payload['invariants']
-          assert invariants['optional_stopping_aware'] is True
-          assert invariants['clipped_ips_cannot_nominate'] is True
-          assert invariants['hard_guard_non_compensation'] is True
-          assert invariants['integration_authority'] is False
-          assert payload['paired']['decision'] == 'experiment_candidate'
-          assert payload['paired_with_hard_guard_failure']['decision'] == 'guarded'
-          assert payload['off_policy_with_clipping']['decision'] == 'observe_clipped'
+          for path in (
+              Path('/tmp/sequential-evidence-demo-py3.11.json'),
+              Path('/tmp/sequential-evidence-demo-py3.13.json'),
+          ):
+              payload = json.loads(path.read_text())
+              invariants = payload['invariants']
+              assert invariants['optional_stopping_aware'] is True
+              assert invariants['clipped_ips_cannot_nominate'] is True
+              assert invariants['hard_guard_non_compensation'] is True
+              assert invariants['integration_authority'] is False
+              assert payload['paired']['decision'] == 'experiment_candidate'
+              assert payload['paired_with_hard_guard_failure']['decision'] == 'guarded'
+              assert payload['off_policy_with_clipping']['decision'] == 'observe_clipped'
           PY
+
+          cmp -s /tmp/sequential-evidence-demo-py3.11.json /tmp/sequential-evidence-demo-py3.13.json
+          hash_311="$(sha256sum /tmp/sequential-evidence-demo-py3.11.json | cut -d' ' -f1)"
+          hash_313="$(sha256sum /tmp/sequential-evidence-demo-py3.13.json | cut -d' ' -f1)"
+          test "$hash_311" = "$hash_313"
+          printf '%s  sequential-evidence-demo.json\n' "$hash_311" > /tmp/sequential-evidence-demo.sha256
 
       - name: Publish sequential evidence artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: sequential-evidence-${{ github.run_id }}-py${{ matrix.python-version }}
-          path: /tmp/sequential-evidence-demo.json
+          name: sequential-evidence-${{ github.run_id }}
+          path: |
+            /tmp/sequential-evidence-demo-py3.11.json
+            /tmp/sequential-evidence-demo-py3.13.json
+            /tmp/sequential-evidence-demo.sha256
           if-no-files-found: error
           retention-days: 30
 
@@ -84,11 +109,15 @@ jobs:
           {
             echo "## Sequential Evidence Kernel"
             echo
-            echo "Python: \`${{ matrix.python-version }}\`"
+            echo "Python 3.11 and 3.13 both passed compile + invariant tests."
+            echo
+            echo "Actual JSON payloads were compared byte-for-byte across interpreters."
+            echo
+            echo "Content digest: \`$(cut -d' ' -f1 /tmp/sequential-evidence-demo.sha256)\`"
             echo
             echo "Anytime-valid observation is not integration authority."
             echo
             echo '```json'
-            cat /tmp/sequential-evidence-demo.json
+            cat /tmp/sequential-evidence-demo-py3.13.json
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
