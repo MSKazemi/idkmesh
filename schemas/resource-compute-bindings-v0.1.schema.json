@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idkmesh.org/schemas/resource-compute-bindings-v0.1.schema.json",
+  "title": "IDKMesh Resource to Compute Binding v0.1",
+  "description": "Checked-in, expiring authorization that allows already-concrete zero-project-cost compute offers to survive Free Resource Mesh admission. Discovery/resource capabilities and concrete runtime capabilities use separate vocabularies and are gated separately. This schema grants no dispatch, correctness, repository-write, or merge authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "bindings"],
+  "properties": {
+    "version": {"const": 1},
+    "bindings": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/binding"}
+    }
+  },
+  "$defs": {
+    "binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "resource_id",
+        "provider",
+        "allowed_cost_classes",
+        "required_resource_capabilities",
+        "allowed_capabilities",
+        "enabled",
+        "terms_eligible",
+        "authorization_scope",
+        "reviewed_at",
+        "max_age_days"
+      ],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "resource_id": {"type": "string", "minLength": 1},
+        "provider": {"type": "string", "minLength": 1},
+        "allowed_cost_classes": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": ["local_owned", "donated", "public_project_ci", "grant", "free_tier"]
+          }
+        },
+        "required_resource_capabilities": {
+          "description": "Broad capability evidence that must still be present on the bound Free Resource Mesh resource. These names belong to the discovery/resource vocabulary, not the concrete runtime-offer vocabulary.",
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "allowed_capabilities": {
+          "description": "Concrete runtime capability names that the binding permits an already-materialized Compute Offer to expose.",
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "offer_id_prefix": {"type": "string", "minLength": 1},
+        "enabled": {"type": "boolean"},
+        "terms_eligible": {"type": "boolean"},
+        "authorization_scope": {"type": "string", "minLength": 1},
+        "reviewed_at": {"type": "string", "format": "date"},
+        "max_age_days": {"type": "integer", "minimum": 1, "maximum": 365}
+      }
+    }
+  }
+}
