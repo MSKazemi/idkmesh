@@ -1,0 +1,86 @@
+name: Real Mixed-Outcome Orchestration E2E
+
+on:
+  pull_request:
+    paths:
+      - "tools/real_mixed_outcome_e2e.py"
+      - ".github/workflows/real-mixed-outcome-e2e.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  real-mixed-outcome-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out evaluator/orchestrator stack
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          path: evaluator
+          persist-credentials: false
+
+      - name: Check out exact accepted node candidate
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: 520ad2c9aa5825476de4957da4702d6823f4edb3
+          path: candidate
+          persist-credentials: false
+
+      - name: Verify producer identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C candidate rev-parse HEAD)" = "520ad2c9aa5825476de4957da4702d6823f4edb3"
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12"
+
+      - name: Install verifier dependency only
+        run: python -m pip install "jsonschema>=4.23,<5"
+
+      - name: Preload allowlisted runtime image
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker pull python:3.12-alpine
+          docker image inspect python:3.12-alpine
+
+      - name: Run real success plus real pre-ResultManifest failure
+        shell: bash
+        run: |
+          set -euo pipefail
+          python evaluator/tools/real_mixed_outcome_e2e.py \
+            --candidate candidate \
+            --output-root results/orchestration/real-mixed-outcome-520ad2c
+
+      - name: Publish mixed-outcome evidence
+        if: always()
+        shell: bash
+        run: |
+          ROOT="evaluator/results/orchestration/real-mixed-outcome-520ad2c"
+          if test -f "$ROOT/e2e-evidence.json"; then
+            echo '## Real mixed-outcome orchestration evidence' >> "$GITHUB_STEP_SUMMARY"
+            echo '' >> "$GITHUB_STEP_SUMMARY"
+            echo '```json' >> "$GITHUB_STEP_SUMMARY"
+            cat "$ROOT/e2e-evidence.json" >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'Mixed-outcome evidence was not produced.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+          if test -f "$ROOT/evidence-report.md"; then
+            echo '' >> "$GITHUB_STEP_SUMMARY"
+            cat "$ROOT/evidence-report.md" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+# Evidence boundary:
+# - both real node invocations use the exact same immutable WorkUnit and accepted node SHA;
+# - the second failure is observed before the replay config exists;
+# - `fixture-failure` is used only to replay that already-observed pre-ResultManifest failure;
+# - the successful peer is consumed through the canonical result-bundle + EvaluatorPlan path;
+# - verifier executes no candidate code;
+# - report remains non-selecting and human decision remains external;
+# - credentials are not persisted, permissions are read-only, and no repository secrets are passed to candidate code.
