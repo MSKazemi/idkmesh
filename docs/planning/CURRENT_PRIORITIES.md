@@ -1,274 +1,348 @@
 # IDKMesh Current Priorities
 
-**Snapshot date:** 2026-08-28
+**Snapshot date:** 2026-08-28  
+**Snapshot main:** `af77440ba31aa9b53035818db02b09b9286401c7`
 
-This file records the highest-leverage next actions after inspecting the current repository, open issues, open pull requests, CI state, and project roadmap.
+This file records the highest-leverage next actions after inspecting current `main`, the live open-PR queue, issue state, ACE observatory state, recent runtime/evaluator evidence, and repository protection metadata.
 
-The repository has reached an important transition point: the conceptual surface is already rich, Phase 0 contracts exist, community-growth experiments exist, and multiple implementation branches are open. The main risk now is continuing to add parallel theory and automation faster than the project converts them into protected, executable, independently verified evidence.
+IDKMesh has crossed a major boundary: the repository is no longer mainly missing internal mechanisms. It now has executable WorkUnit/ResultManifest contracts, an accepted-runtime worker candidate, independent evaluator control, real single- and two-attempt evidence, mixed success/failure replay, a non-selecting Evidence Report, deterministic IDKGraph repository observability, ACE lineage/capacity machinery, and a read-only mathematical evolution observatory.
+
+The scarce resources are now:
+
+1. externally enforced integration safety;
+2. genuinely independent human/external witness evidence;
+3. real held-out task data;
+4. reviewer/community attention.
+
+The repository should therefore **consolidate and collect reality-facing evidence before adding more autonomous machinery**.
+
+---
 
 ## Priority rule
 
 Rank work by:
 
 ```text
-Priority ~= (unblocked verified value + community leverage + safety leverage)
-            / (dependency cost + reviewer attention + coordination risk)
+Priority(a) ~=
+  ExpectedVerifiedDelta(a)
+  * DependencyUnlock(a)
+  * InformationGain(a)
+  * CommunityMultiplier(a)
+  -------------------------------------------------
+  1 + ReviewCost(a) + CoordinationNoise(a) + SafetyRisk(a)
 ```
 
-The immediate objective is **not more documents or more issue count**. It is to create a protected path from a bounded Work Unit to an executable candidate, independent verification, reproducible evidence, and a contribution surface outsiders can extend.
+Hard non-compensation rule:
+
+```text
+internal evidence cannot compensate for
+zero integration protection,
+zero independent witness,
+or zero real-task evidence.
+```
+
+Prefer finishing, verifying, integrating, measuring, or simplifying existing work over creating new theory, controllers, queues, or protocols.
 
 ---
 
-# P0 — Protect the integration boundary
+# P0 — Protect the real integration boundary
 
 **Issue:** #35
 
-Current `main` is not protected. The repository already contains write-capable GitHub automation and is developing self-evolution/community-growth controllers. Repository policy must become a real safety boundary before stronger automation is allowed.
+Public GitHub branch metadata still reports `main` as **unprotected**, with required-status enforcement off.
 
-Minimum target:
+Repository-side safety work has already landed. The remaining blocker is external GitHub repository configuration.
 
-- require pull-request based integration for code/structural changes;
-- block force-pushes and accidental branch deletion;
-- require stable CI checks before merge;
-- preserve an explicit maintainer emergency-recovery path;
-- keep the rule that one autonomous actor cannot propose, approve, and merge the same protected change;
-- document which low-risk deterministic automation may eventually bypass normal review, if any.
+Required admin outcome:
 
-This is the highest safety priority because instructions inside agents are not an enforcement boundary.
+- require pull-request-based integration for protected structural/code/governance changes;
+- block ordinary force-push and deletion;
+- require stable relevant checks;
+- preserve a narrow auditable recovery path;
+- avoid broad automation bypass;
+- preserve the invariant that no autonomous actor proposes, approves, and merges the same protected change by itself.
 
-**Current limitation:** configuring GitHub branch protection/rulesets requires repository settings/admin capability not exposed by the current repository-content workflow. Until it is configured, do not increase autonomous write/merge authority.
+Until this is externally enforced:
 
----
+- keep stronger autonomous actuation disabled;
+- do not treat workflow instructions as a protection boundary;
+- keep ACE/evolution machinery fail-closed or advisory where protection is required.
 
-# P0 — Integrate the canonical local node
-
-**PR:** #34  
-**Acceptance:** #37  
-**Parent issues:** #11, #16
-
-PR #34 is the most important implementation branch because it turns the canonical Phase 0 Work Unit/ResultManifest contracts into a bounded local executable worker.
-
-Current state observed:
-
-- Phase 0 schema CI passes on the PR head;
-- node CI passes on the PR head;
-- the branch has diverged substantially from `main` and must be synchronized;
-- GitHub currently reports the PR as non-mergeable;
-- a real controlled Docker execution is still an explicit acceptance gate (#37).
-
-Required sequence:
-
-1. synchronize/rebase/merge current `main` into the PR branch and resolve any conflict deliberately;
-2. rerun all schema + node CI on the updated head;
-3. perform #37 on an explicitly controlled Docker host;
-4. attach the requested sanitized runtime evidence;
-5. perform independent review of sandbox/path-policy assumptions;
-6. merge only after the above gates pass.
-
-This is higher priority than adding more worker adapters. First establish one canonical executable path.
+This remains the highest safety dependency because repository code cannot configure or substitute for the missing GitHub ruleset.
 
 ---
 
-# P0 — Remove the duplicate node path
+# P0 — Obtain independent human review of the canonical worker
 
-**PR:** #21  
-**Replacement:** #34
+**PR:** #91  
+**Runtime acceptance:** #37  
+**Product:** #16
 
-PR #21 predates the canonical Phase 0 contracts and contains a competing Work Unit/result shape. PR #34 explicitly supersedes its core node-runtime path.
+PR #91 is currently the **only open pull request** and is intentionally draft.
 
-After #34 is integrated:
+Exact accepted-runtime worker head:
 
-- close #21 as superseded for the node runtime;
-- preserve any still-useful advisory Gemini-agent work as a small separate PR tied to #12 rather than merging the old private protocol;
-- make it difficult for contributors to accidentally implement against two incompatible Work Unit contracts.
+`520ad2c9aa5825476de4957da4702d6823f4edb3`
 
-Reducing protocol ambiguity has higher value than preserving old implementation volume.
+Already evidenced:
 
----
+- exact-head Node CI and Phase 0 schema checks;
+- controlled Docker positive path;
+- negative A–E2 fail-closed matrix;
+- immutable image/source/provenance evidence;
+- real node -> independent verifier proof;
+- real two-attempt success/success evidence;
+- real success/failure peer-isolation evidence;
+- non-selecting report/replay;
+- worker acceptance authority remains false.
 
-# P1 — Finish deterministic repository observability before self-rewriting
+The remaining blocker is deliberately social/governance, not another automated test:
 
-**PR:** #36  
-**Issue:** #20
+> a genuinely separate human/reviewer must inspect the exact-head evidence before the worker is treated as integrated canonical implementation.
 
-PR #36 introduces the proposal-first Repository Homeostasis Engine. It is currently draft, mergeable, and its Repository Homeostasis workflow has passed on the current PR head.
+Do not manufacture independence by having another project automation approve the same work.
 
-Recommended sequence:
-
-1. establish the protected `main` boundary (#35);
-2. review the workflow trust boundaries and write-capable ledger job;
-3. ensure observations are deterministic/reproducible;
-4. merge the proposal-only observatory;
-5. use measured repository-health evidence before performing any structural migration;
-6. keep file moves/deletions/semantic merges proposal-only until the project has strong independent verification.
-
-The observatory should become a foundation for IDKGraph, not an autonomous cleanup bot.
+If the #91 head changes, re-freeze and rerun the evidence that is bound to that exact SHA.
 
 ---
 
-# P1 — Complete the first end-to-end Verified Swarm Runner loop
+# P0 — Finish the v0.1 adapter boundary after #91 review
 
-**Milestone:** #16  
-**Core work:** #4 and #5
+**Core issues:** #4, #16
 
-Once #34 provides a canonical bounded worker, the next product milestone should be:
+The two-attempt control plane has already demonstrated:
 
 ```text
-bounded Work Unit
- -> 2+ isolated candidate workers
- -> candidate ResultManifests
- -> independent verifier
- -> Evidence Report
- -> human accept/reject/refine
+real worker success + real worker success
+ -> independent verification
+ -> non-selecting Evidence Report
+ -> exact replay
 ```
 
-The next implementation order should be:
+and:
 
-1. independent validator + benchmark substrate (#5);
-2. single-machine multi-worker coordinator/orchestrator (#4);
-3. minimal Evidence Report and replayable run manifest;
-4. one trivial heterogeneous second adapter;
-5. only then broader external adapters/protocol integrations.
+```text
+real worker success + real worker failure
+ -> surviving peer still independently verified
+ -> explicit worker_error retained
+ -> non-selecting mixed-outcome report
+ -> exact replay
+```
 
-The central thesis cannot be tested until generation and verification are both executable.
+The next product step is therefore narrow:
+
+1. after #91's separate review, place `idkmesh-node` behind the existing worker-adapter boundary;
+2. keep coordinator core independent of node internals;
+3. confirm the direct-adapter semantic result remains replayable;
+4. add **one deliberately trivial heterogeneous real adapter** without changing coordinator internals;
+5. only after that boundary is stable consider widening fan-out toward 3–5 attempts.
+
+Do not add another WorkUnit, EvaluatorPlan, verifier, coordinator, or report protocol.
 
 ---
 
-# P1 — Turn ACE from activity accounting into descendant evidence
+# P1 — Execute the first five frozen benchmark tasks
 
-**Parent:** #10  
-**Critical seed:** #25  
-**Security seed:** #26  
-**Community milestone:** #9
+**Issue:** #5  
+**Research corpus:** #70  
+**Diversity question:** #30 / #2
 
-ACE already has a public Growth Ledger and five bootstrap Growth Seeds. Do **not** create a second large cohort merely to increase visible activity.
+The first five Phase B2 benchmark task definitions have now been frozen pre-outcome on `main` (merged work from #134), covering multiple task families rather than repeatedly exercising one smoke task.
 
-The next community-engine priorities are:
+The next credibility step is **execution, not more benchmark design**.
 
-1. define deterministic parent -> seed -> descendant -> verified-descendant evidence links (#25);
-2. threat-model the existing ACE GitHub workflow before stronger write capability (#26);
-3. run real newcomer-path tests (#24);
-4. measure whether Cohort 1 produces useful descendants and how much review attention they consume;
-5. only then decide whether ACE should spawn another generation.
+For each frozen task, retain:
 
-The growth engine should optimize:
+- immutable source revision;
+- canonical WorkUnit;
+- evaluator-owned EvaluatorPlan/control;
+- worker ResultManifest and candidate bundle;
+- independent VerificationResult;
+- negative/failed attempts, not only successes;
+- non-selecting run/report/replay evidence where multi-attempt execution is used;
+- task family/difficulty metadata;
+- compute/wall-time/human-attention fields when they are actually known.
+
+Gate tasks 6–10 on the first five replaying cleanly and on available verification/reviewer capacity.
+
+The first five are a product/benchmark milestone; they are **not yet enough** to answer the broader diversity research question universally.
+
+---
+
+# P1 — Run the first real diversity experiment without changing the analysis after outcomes
+
+**Issue:** #70  
+**Research question:** #30 / #2
+
+The existing R1 machinery already distinguishes synthetic mechanism evidence from real coding evidence and can replay independently verified ResultManifest/VerificationResult records.
+
+Current real two-attempt smoke evidence shows reliable orchestration but not useful diversity: the two normal attempts produced the same patch bytes/digest. That is a replication/control-plane result, not evidence that diversity helps.
+
+The first real decision gate should therefore remain prospectively fixed:
 
 ```text
-verified useful descendants
----------------------------
+N = 2 replication baseline
+vs
+N = 2 prospectively distinct structural signatures
+```
+
+under equal attempt budgets on frozen held-out WorkUnits.
+
+Primary outcome:
+
+- run the already-merged `r1_replay` rules unchanged;
+- classify success delta as `helps`, `hurts`, or `uncertain`;
+- measure pairwise failure correlation rather than assuming independence;
+- retain exclusions, inconclusive verification, failed candidates, and negative findings;
+- report per-signature marginal quality so "diversity" is not confused with simply choosing a stronger worker.
+
+A useful first real research target remains at least ~20 eligible work units, grown from the first five only after the evidence pipeline is stable.
+
+Do not justify 3–5 worker diversity fan-out merely because two-worker execution is technically reliable.
+
+---
+
+# P1 — Keep ACE in First-Contact / HOLD mode until a real external descendant exists
+
+**Live observatory:** #109  
+**Cohort seeds:** #24–#28  
+**Lineage:** #48
+
+Latest live ACE Bootstrap Cohort state at this snapshot:
+
+- trusted seeds: 5;
+- claimed seeds: 0;
+- seeds with candidate PRs: 0;
+- verified descendant PRs: 0;
+- distinct external participants: 0;
+- seed reproduction ratio: `0.000`;
+- ACE capacity: approximately `0.915`;
+- recommendation: `HOLD_COHORT_1`.
+
+This is important: review capacity has recovered, but **capacity is not reproduction evidence**.
+
+Do not create Cohort 2 merely because capacity is high.
+
+The next useful ACE/community outcomes are reality-facing:
+
+1. make open contribution/review surfaces truthful and discoverable;
+2. obtain one real external claim/candidate/review/descendant path;
+3. record causal parent -> seed -> descendant evidence under the existing lineage contract;
+4. measure reviewer attention consumed by that descendant;
+5. only then reconsider another generation.
+
+Optimize:
+
+```text
+verified useful external descendants
+------------------------------------
 reviewer + maintainer attention
 ```
 
-not issue count, comment count, commits, or stars.
+not activity counts, stars, comments, issue count, or synthetic self-interaction.
 
 ---
 
-# P1 — Publish one reproducible flagship experiment
+# P1 — Use the observatories; do not immediately add another self-rewrite layer
 
-**Issues:** #2, #13, #14, #29/#30
+**IDKGraph P0:** #20 — completed  
+**Evolution observatory:** merged #143/#144/#148 lineage
 
-IDKMesh currently contains many strong hypotheses. The next credibility jump comes from one public, reproducible result.
+Deterministic IDKGraph repository extraction/health/replay is now integrated, including stable identity mapping, link integrity, WorkUnit cycle checks, typed repository mapping, health reporting, and replayable outputs.
 
-The first flagship experiment should answer a bounded version of:
+The mathematical evolution layer is also now live in read-only/advisory form with portfolio scoring, Bayesian history, Pareto/diversity treatment, dependency unlock, and fail-closed hard-gate behavior.
 
-> Under a fixed budget, when does diversity + independent verification outperform simple worker replication?
+The correct next use is to **consume those observations to guide bounded decisions**, not add another controller.
 
-Minimum arms:
+Rules:
 
-- one capable baseline worker;
-- replicated homogeneous workers;
-- structurally diverse workers;
-- diverse workers + independent verification.
-
-Measure at least:
-
-- verified success;
-- hidden/independent test success;
-- regressions/security failures;
-- compute;
-- latency;
-- human review attention;
-- pairwise error correlation.
-
-The randomness-lab (#29) is useful insofar as it helps produce this evidence; it should not become a disconnected simulator framework before the real local worker/verifier path exists.
+- observatory output is decision support, not correctness proof;
+- health metrics must not silently become merge authority;
+- Bayesian/Pareto scores cannot override hard safety or witness gates;
+- retain only the minimum durable evolution artifacts needed for replay/provenance;
+- prefer fixing a measured defect over increasing observatory sophistication.
 
 ---
 
-# P2 — Interoperability, ProjectManifest/DomainPack, and larger-scale simulation
+# P2 — Scale only after the current boundaries produce evidence
 
-Important, but do not let these block the first verified local loop:
+Defer until the P0/P1 gates above move:
 
-- #17 A2A/MCP semantic mapping;
-- #6 ProjectManifest/DomainPack interfaces;
-- #31 large randomized scheduling simulations;
-- #32 evolutionary orchestration;
-- #1 10–20 laptop experiment.
+- 3–5 worker fan-out beyond the stable two-adapter boundary;
+- larger held-out corpora beyond the first validated cohort;
+- volunteer/distributed compute expansion;
+- broader external protocol adapters;
+- advanced scheduler/evolutionary worker selection;
+- stronger autonomous repository mutation.
 
-These become much more valuable after the local runner + verifier + evidence schema are exercised by real tasks.
+These become more useful after real benchmark, witness, and protection evidence exists.
 
 ---
 
 # What not to do now
 
-Until the P0/P1 gates above move forward, avoid spending the main project attention on:
+Avoid spending primary project attention on:
 
-- additional grand-architecture documents without executable implications;
-- new autonomous write/merge agents;
+- another autonomous controller or agent queue;
+- another ledger/capacity model;
+- another WorkUnit/result/evaluator/orchestrator protocol;
+- more grand architecture without an executable decision implication;
+- Cohort 2 without external descendant evidence;
+- claims that many agents/diversity outperform replication before the real corpus exists;
+- automatic merge/self-approval;
 - blockchain/token mechanisms;
-- a global scheduler;
-- million-node implementation claims;
-- many additional Growth Seeds without review capacity/evidence;
-- additional competing Work Unit/result protocols;
-- evolutionary policy promotion directly into production;
-- social-growth metrics optimized independently of verified contribution.
+- million-node/global-scheduler claims;
+- treating observatory scores, CI green status, or worker success as independent acceptance.
 
 ---
 
 # Recommended execution order
 
 ```text
-1. Protect main (#35)
+1. Protect main in GitHub settings (#35)                 [external/admin]
         |
-2. Synchronize + validate PR #34
+2. Separate human review of exact #91 evidence          [external witness]
         |
-3. Run Docker acceptance (#37)
+3. Direct idkmesh-node adapter behind existing boundary
         |
-4. Merge canonical local node
+4. One trivial heterogeneous real adapter
         |
-5. Retire/split obsolete PR #21
+5. Execute + replay the first five frozen benchmark tasks
         |
-6. Merge proposal-only repository observatory (#36) after safety review
+6. Grow a held-out real corpus for #70/#30
         |
-7. Build independent validator (#5)
+7. Measure diversity vs replication under fixed budgets
         |
-8. Build multi-worker local orchestrator (#4)
-        |
-9. Produce first complete Evidence Report / replayable swarm run (#16)
-        |
-10. Run flagship diversity + verification experiment (#2/#30)
-        |
-11. Use its evidence to update scheduler/randomness/community policies
+8. Feed measured evidence into scheduling/evolution policy
 ```
 
-In parallel, community contributors can work on #24–#28, but Cohort 2 should remain gated on actual descendant evidence and review capacity.
+In parallel, keep ACE in `HOLD_COHORT_1` and prioritize one genuine external contribution lineage over additional generated activity.
 
 ---
 
 # Current project bottleneck
 
-The repository is no longer bottlenecked by lack of ideas.
+The repository is no longer bottlenecked by lack of ideas, schemas, algorithms, or internal automation.
 
-It is bottlenecked by the conversion:
+The bottleneck is the membrane between the internally coherent mesh and independent reality:
 
 ```text
-idea
- -> canonical contract
- -> protected integration
- -> executable implementation
- -> independent verification
- -> reproducible evidence
- -> outsider contribution
- -> measured descendant value
+unprotected integration boundary
+          +
+canonical worker awaiting separate human review
+          +
+insufficient held-out real-task corpus
+          +
+zero external ACE descendants
+          =
+current limiting state
 ```
 
-The next iteration should therefore maximize **evidence produced per unit of new complexity**.
+The next strong iteration should increase **external trust or real measured evidence per unit reviewer attention**, not repository complexity.
+
+See also:
+
+- `docs/planning/REPOSITORY_IMPROVEMENT_LOOP.md`
+- `ITERATION_MODEL.md`
+- `EVOLUTION.md`
+- `ROADMAP.md`
