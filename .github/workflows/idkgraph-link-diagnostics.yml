@@ -46,6 +46,11 @@ jobs:
           fi
           python -m json.tool /tmp/broken-links.json > /dev/null
       - name: Scan current repository for deterministic link errors
+        shell: bash
         run: |
+          set +e
           python tools/idkgraph_link_check.py . --fail-on-error --output /tmp/repository-links.json
-          python -m json.tool /tmp/repository-links.json > /dev/null
+          status=$?
+          set -e
+          python -m json.tool /tmp/repository-links.json
+          exit "$status"
