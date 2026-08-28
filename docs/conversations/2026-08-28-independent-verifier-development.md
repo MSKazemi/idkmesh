@@ -1,4 +1,4 @@
-# Conversation continuation — independent verifier development
+# Conversation continuation — independent repository-patch verifier development
 
 **Date:** 2026-08-28
 
@@ -6,25 +6,30 @@ This record preserves the implementation work that followed the interoperability
 
 ## Why this development was selected
 
-The project-owner requested both evaluation and continued development.
+The project owner requested both evaluation and continued development.
 
-After the interoperability layer was implemented, the repository's most important product gap was no longer the shape of verification evidence: `VerificationResult v0.1` had already landed through PR #47 and exact WorkUnit/ResultManifest/VerificationResult provenance binding was hardened through PR #60.
+After the interoperability layer was implemented, the repository's trust contracts were already strong:
 
-The remaining gap in issue #5 was **actual independent verifier execution**.
+- `WorkUnit v0.2` defined work/security/verification requirements;
+- `ResultManifest v0.1` defined the worker self-report/candidate boundary;
+- `VerificationResult v0.1` defined independent verifier evidence/decision support;
+- PR #60 hardened exact provenance binding between those objects.
 
-Therefore development moved to a new branch:
+During this development turn, `main` also merged PR #72: **Build zero-cost executable independent verifier MVP**. That implementation safely verifies isolated deterministic JSON candidates without executing candidate code and explicitly lists repository patch reconstruction/hidden checks as the next Phase A extension.
 
-`verifier/independent-v0.1`
+Therefore branch `verifier/independent-v0.1` was **reframed from “first verifier” to the repository-patch/hidden-check extension of the safer #72 verifier baseline**.
+
+The safer `experiments/local_verifier.py` path should remain preferred whenever correctness can be evaluated without executing candidate code.
 
 ## Trust model
 
-The implementation preserves the three-object protocol:
+The patch-verifier extension preserves the same protocol:
 
 ```text
 WorkUnit v0.2
     -> worker
-    -> ResultManifest v0.1 + candidate artifact
-    -> independent verifier
+    -> ResultManifest v0.1 + candidate patch
+    -> independent patch verifier
     -> VerificationResult v0.1 + evidence
     -> human/governance/policy integration decision
 ```
@@ -48,7 +53,7 @@ The WorkUnit declares required validator IDs and evidence requirements. The veri
 
 The verifier refuses a plan that omits WorkUnit-required or worker-requested validators.
 
-## Implemented runtime
+## Implemented extension
 
 Added:
 
@@ -62,7 +67,7 @@ Added:
 
 ### Input validation
 
-The verifier checks:
+The patch verifier checks:
 
 - WorkUnit v0.2 schema;
 - ResultManifest v0.1 schema;
@@ -92,6 +97,10 @@ For one candidate patch the verifier:
 7. executes configured hidden commands in a separate network-disabled Docker verifier sandbox;
 8. writes an evidence file per check;
 9. emits a schema-valid `VerificationResult v0.1` with exact WorkUnit, ResultManifest, source, and verifier-config digests.
+
+Directory/glob scope matching was hardened so repository prefixes such as `docs/` and recursive patterns such as `docs/**` behave as expected.
+
+Generated VerificationResult IDs are derived from a bounded prefix of the ResultManifest canonical digest rather than naively prepending text to a potentially maximum-length worker ID.
 
 ## Sandbox policy
 
@@ -134,8 +143,38 @@ Unit tests cover:
 
 `.github/workflows/independent-verifier-check.yml` runs the existing Phase 0 contract/provenance checks and verifier unit tests without executing candidate code or Docker commands in GitHub-hosted CI.
 
+### CI defect found and repaired
+
+The first PR #76 verifier CI run failed in two unit tests. The implementation itself reached VerificationResult construction correctly; the test's broad mock of `subprocess.run` also affected Python's `platform.platform()` implementation and returned bytes where the platform module expected strings.
+
+The test was corrected by mocking verifier platform metadata explicitly rather than weakening production checks.
+
+The next CI run passed:
+
+- Independent verifier check: **success**;
+- Phase 0 schema check: **success**;
+- Evolution Loop: **success**.
+
+This was treated as useful verification evidence rather than bypassing the failed gate.
+
+## Relationship to PR #72
+
+PR #72 remains the safer zero-code-execution baseline.
+
+This branch adds only the next higher-risk capability tier:
+
+```text
+JSON/data-only candidate
+  -> experiments/local_verifier.py
+
+bounded repository patch requiring independent build/test/lint/security command
+  -> verifier/ idkmesh-verify
+```
+
+The patch verifier should not replace the deterministic verifier for simpler workloads.
+
 ## Remaining validation gate
 
-Like the local worker backend, this verifier requires a separately recorded controlled Docker acceptance run before being described as maturity level 3 / realistically validated.
+This patch-verifier extension requires a separately recorded controlled Docker acceptance run before being described as maturity level 3 / realistically validated.
 
 Issue #5 still also requires a real benchmark corpus and richer unauthorized dependency/security checks beyond the initial patch scope policy.
