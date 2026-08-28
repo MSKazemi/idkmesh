@@ -63,12 +63,27 @@ class VerificationConfig:
     at 0, verifier correctness is independent; at 1, all verifiers are correct
     or incorrect together. ``quorum`` is the fraction of positive votes that
     must be exceeded for the panel to accept a candidate.
+
+    ``dependence`` selects HOW the verifiers depend on each other:
+
+    ``"shared-shock"``
+        The original mixture. Default, so every earlier experiment reproduces.
+    ``"item-difficulty"``
+        Each work unit draws its own difficulty ``d ~ Beta(alpha, beta)`` and
+        every verifier then errs independently with probability ``d``. Takes the
+        same two parameters, so the models are directly comparable -- they agree
+        exactly at ``correlation`` 0 and 1 and differ only in between.
+
+    E017 measured real verifiers and found the shared-shock shape wrong: it
+    assigns near-zero probability to a panel failing *partially*, which is how
+    most real panel failures look. See experiments/E017-item-difficulty-and-quorum.md.
     """
 
     verifiers: int = 1
     accuracy: float = 1.0
     correlation: float = 0.0
     quorum: float = 0.5
+    dependence: str = "shared-shock"
 
     def as_dict(self) -> Dict[str, object]:
         return {
@@ -76,6 +91,7 @@ class VerificationConfig:
             "accuracy": self.accuracy,
             "correlation": self.correlation,
             "quorum": self.quorum,
+            "dependence": self.dependence,
         }
 
 
@@ -123,6 +139,21 @@ def viable(c: Candidate) -> bool:
     )
 
 
+def beta_parameters(accuracy: float, correlation: float):
+    """Map (accuracy, correlation) onto Beta(alpha, beta) over task difficulty.
+
+    The mean error rate is ``1 - accuracy`` and the intra-class correlation --
+    which is exactly the pairwise error correlation between two verifiers on the
+    same task -- is ``correlation``. Returns ``None`` at the degenerate ends,
+    where the caller should sample directly instead.
+    """
+    mu = 1.0 - accuracy
+    if correlation <= 0.0 or correlation >= 1.0 or mu <= 0.0 or mu >= 1.0:
+        return None
+    scale = (1.0 - correlation) / correlation
+    return mu * scale, (1.0 - mu) * scale
+
+
 def verify_candidate(c: Candidate, rng: random.Random, config: VerificationConfig, stats: VerificationStats) -> bool:
     """Return the verifier panel's decision and record error statistics.
 
@@ -140,7 +171,21 @@ def verify_candidate(c: Candidate, rng: random.Random, config: VerificationConfi
     if config.accuracy >= 1.0:
         votes = [truth] * config.verifiers
     else:
-        if rng.random() < config.correlation:
+        if config.dependence == "item-difficulty":
+            params = beta_parameters(config.accuracy, config.correlation)
+            if params is None:
+                # Degenerate ends: identical to the shared-shock model there.
+                if config.correlation >= 1.0:
+                    shared_correct = rng.random() < config.accuracy
+                    correctness = [shared_correct] * config.verifiers
+                else:
+                    correctness = [rng.random() < config.accuracy
+                                   for _ in range(config.verifiers)]
+            else:
+                difficulty = rng.betavariate(*params)
+                correctness = [rng.random() >= difficulty
+                               for _ in range(config.verifiers)]
+        elif rng.random() < config.correlation:
             shared_correct = rng.random() < config.accuracy
             correctness = [shared_correct] * config.verifiers
         else:
@@ -281,11 +326,12 @@ def _summary(strategy: str, trace: List[float], stats: VerificationStats, archiv
     return result
 
 
-def run(strategy: str, seed: int, agents: int, generations: int, change_at: int, bins: int, verifiers: int = 1, verifier_accuracy: float = 1.0, verifier_correlation: float = 0.0, verification_quorum: float = 0.5) -> Dict[str, object]:
+def run(strategy: str, seed: int, agents: int, generations: int, change_at: int, bins: int, verifiers: int = 1, verifier_accuracy: float = 1.0, verifier_correlation: float = 0.0, verification_quorum: float = 0.5, verifier_dependence: str = "shared-shock") -> Dict[str, object]:
     verification = VerificationConfig(
         verifiers=verifiers,
         accuracy=verifier_accuracy,
         correlation=verifier_correlation,
+        dependence=verifier_dependence,
         quorum=verification_quorum,
     )
     runners = {
@@ -333,6 +379,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--verifiers", type=int, default=1)
     parser.add_argument("--verifier-accuracy", type=float, default=1.0)
     parser.add_argument("--verifier-correlation", type=float, default=0.0)
+    parser.add_argument("--verifier-dependence", choices=("shared-shock", "item-difficulty"),
+                        default="shared-shock",
+                        help="how verifiers depend on each other; E017 found "
+                             "item-difficulty matches real panels better")
     parser.add_argument("--verification-quorum", type=float, default=0.5)
     parser.add_argument("--pretty", action="store_true")
     args = parser.parse_args()
@@ -368,6 +418,7 @@ def main() -> None:
         verifier_accuracy=args.verifier_accuracy,
         verifier_correlation=args.verifier_correlation,
         verification_quorum=args.verification_quorum,
+        verifier_dependence=args.verifier_dependence,
     )
     print(json.dumps(result, indent=2 if args.pretty else None, sort_keys=True))
 
