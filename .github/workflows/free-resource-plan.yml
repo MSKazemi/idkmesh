@@ -1,0 +1,77 @@
+name: Free Resource Mesh Plan
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/free_resource_planner.py'
+      - 'tests/test_free_resource_planner.py'
+      - 'schemas/resource-offer-registry-v0.1.schema.json'
+      - 'examples/resources/**'
+      - 'docs/architecture/FREE_RESOURCE_MESH.md'
+      - '.github/workflows/free-resource-plan.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/free_resource_planner.py'
+      - 'tests/test_free_resource_planner.py'
+      - 'schemas/resource-offer-registry-v0.1.schema.json'
+      - 'examples/resources/**'
+      - 'docs/architecture/FREE_RESOURCE_MESH.md'
+      - '.github/workflows/free-resource-plan.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+
+      - name: Compile planner
+        run: python -m py_compile scripts/free_resource_planner.py tests/test_free_resource_planner.py
+
+      - name: Run policy tests
+        run: python -m unittest tests.test_free_resource_planner -v
+
+      - name: Validate current registry
+        run: python scripts/free_resource_planner.py validate examples/resources/free-resource-registry-v0.1.json
+
+      - name: Plan sample public analysis task
+        run: |
+          python scripts/free_resource_planner.py plan \
+            examples/resources/free-resource-registry-v0.1.json \
+            examples/resources/task-public-code-analysis-v0.1.json \
+            --limit 6 \
+            --today 2026-08-28 \
+            | tee /tmp/free-resource-plan.json
+          python -m json.tool /tmp/free-resource-plan.json >/dev/null
+
+      - name: Publish non-authoritative plan summary
+        run: |
+          echo '## Free Resource Mesh sample plan' >> "$GITHUB_STEP_SUMMARY"
+          echo '' >> "$GITHUB_STEP_SUMMARY"
+          echo 'This is planning evidence only. It dispatches no external agent and grants no repository write or merge authority.' >> "$GITHUB_STEP_SUMMARY"
+          echo '' >> "$GITHUB_STEP_SUMMARY"
+          echo '```json' >> "$GITHUB_STEP_SUMMARY"
+          cat /tmp/free-resource-plan.json >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+# Security boundary:
+# - no repository secrets;
+# - contents: read only;
+# - checkout credentials are not persisted;
+# - no external agent dispatch;
+# - no issue/PR/branch mutation;
+# - no merge/approval authority;
+# - external free-tier claims are treated as expiring registry evidence.
