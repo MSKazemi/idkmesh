@@ -1,7 +1,14 @@
 import copy
 import unittest
 
-from experiments import project_contracts as MODULE
+try:
+    from experiments import project_contracts as MODULE
+except ModuleNotFoundError as exc:
+    if exc.name == "jsonschema":
+        raise unittest.SkipTest(
+            "ProjectManifest/DomainPack contract tests require the Phase 0 jsonschema dependency"
+        ) from exc
+    raise
 
 
 class ProjectDomainContractTests(unittest.TestCase):
