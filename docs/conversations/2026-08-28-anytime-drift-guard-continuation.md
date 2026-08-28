@@ -60,6 +60,10 @@ A drift alarm returns `observe_drift`, preserves all evidence, and blocks experi
 
 When several metrics are scanned, total `delta` is divided across metrics before each metric spends its share over time/splits. This prevents the repository from creating an unbounded multiple-testing surface by adding more health signals.
 
+## Current-main convergence
+
+While the drift branch was being assembled, `main` advanced and added `docs/research/METRIC_UNCERTAINTY_V0_1.md` plus `scripts/metric_uncertainty.py`. That work is complementary: it explicitly limits its Beta-Binomial helper to suitable yes/no observations and says dynamical/queueing metrics require different models. The drift guard therefore remains a separate temporal observation model rather than modifying or overloading the Beta-Binomial contract.
+
 ## GitHub authority boundary
 
 The implementation is isolated in a new dependency-free math module, tests, architecture documentation, and one path-scoped workflow. The workflow is designed with:
@@ -72,6 +76,22 @@ permissions:
 It uses immutable Action SHAs, runs Python 3.11 and 3.13 in one job, compares actual JSON demo bytes across interpreters, records an explicit SHA-256, and publishes evidence only.
 
 It does not modify the live Evolution Loop, repository settings, branch protection, issue/PR metadata, or merge authority.
+
+## CI falsification and correction
+
+The first exact-merge-ref run for PR #212 produced a useful failure. Both Python 3.11 and Python 3.13 passed all 26 drift + sequential-evidence tests, but the cross-interpreter byte comparison failed before artifact publication.
+
+The cause was not a theorem/test disagreement. Python 3.12 changed floating-point behavior in the built-in `sum()` implementation. The first drift implementation computed the reciprocal-square prefix in `Z_m` with:
+
+```text
+sum(1 / t^2 for t in range(...))
+```
+
+so Python 3.11 and 3.13 could produce slightly different floating normalizers and serialized thresholds even though every semantic invariant passed.
+
+The correction is algorithmic rather than cosmetic: `reciprocal_square_tail()` now uses an explicit left-to-right IEEE-754 accumulator. The scan also computes that normalizer once and reuses it, improving both reproducibility and runtime. CI continues to require byte-for-byte equality; the disagreement was not rounded away or ignored.
+
+This is an example of the repository's evidence discipline changing implementation details in response to observed execution rather than weakening acceptance criteria after a failure.
 
 ## Scientific boundary
 
