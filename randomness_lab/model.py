@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import random
-from typing import Iterable
+from typing import Iterable, Protocol, Sequence
 
 
 @dataclass(frozen=True)
@@ -23,29 +23,59 @@ class Worker:
             raise ValueError("latency must be non-negative")
 
 
+class OutcomeEnvironment(Protocol):
+    """Minimal interface for a synthetic verified-outcome environment."""
+
+    name: str
+
+    def sample(
+        self,
+        workers: Sequence[Worker],
+        rng: random.Random,
+    ) -> dict[str, bool]: ...
+
+    def describe(self) -> dict[str, object]: ...
+
+
+@dataclass(frozen=True)
+class CorrelatedBernoulliEnvironment:
+    """Simple Bernoulli worker model with a transparent shared-draw mixture."""
+
+    error_correlation: float = 0.0
+    name: str = "correlated-bernoulli"
+
+    def __post_init__(self) -> None:
+        if not 0.0 <= self.error_correlation <= 1.0:
+            raise ValueError("error_correlation must be in [0, 1]")
+
+    def sample(
+        self,
+        workers: Sequence[Worker],
+        rng: random.Random,
+    ) -> dict[str, bool]:
+        use_shared_draw = rng.random() < self.error_correlation
+        shared_draw = rng.random() if use_shared_draw else None
+
+        outcomes: dict[str, bool] = {}
+        for worker in workers:
+            draw = shared_draw if shared_draw is not None else rng.random()
+            outcomes[worker.name] = bool(draw < worker.success_probability)
+        return outcomes
+
+    def describe(self) -> dict[str, object]:
+        return {
+            "name": self.name,
+            "error_correlation": self.error_correlation,
+            "model": "shared-draw mixture plus independent Bernoulli draws",
+        }
+
+
 def sample_worker_outcomes(
     workers: Iterable[Worker],
     rng: random.Random,
     error_correlation: float,
 ) -> dict[str, bool]:
-    """Sample one latent verified outcome for every worker.
+    """Backward-compatible helper using ``CorrelatedBernoulliEnvironment``."""
 
-    ``error_correlation`` is implemented as a transparent mixture model. With
-    probability ``error_correlation`` all workers are evaluated against the
-    same random draw; otherwise each worker gets an independent draw. This is
-    not intended as a universal model of correlated failures. It is a simple,
-    reproducible control knob for experiments that compare diversity policies.
-    """
-
-    if not 0.0 <= error_correlation <= 1.0:
-        raise ValueError("error_correlation must be in [0, 1]")
-
-    workers = list(workers)
-    use_shared_draw = rng.random() < error_correlation
-    shared_draw = rng.random() if use_shared_draw else None
-
-    outcomes: dict[str, bool] = {}
-    for worker in workers:
-        draw = shared_draw if shared_draw is not None else rng.random()
-        outcomes[worker.name] = bool(draw < worker.success_probability)
-    return outcomes
+    worker_list = list(workers)
+    return CorrelatedBernoulliEnvironment(error_correlation).sample(worker_list, rng)
