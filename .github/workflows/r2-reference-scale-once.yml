@@ -1,0 +1,98 @@
+name: R2 Reference Scale One Shot
+
+on:
+  push:
+    branches:
+      - experiment/r2-reference-scale
+    paths:
+      - ".github/workflows/r2-reference-scale-once.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  reference-scale:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run full reference scale ladder
+        run: |
+          mkdir -p results/experiments/r2
+          python -m randomness_lab.r2_scale \
+            --worker-counts 1,10,100,1000,10000,100000 \
+            --seeds 42 \
+            --regimes fresh,moderate,stale \
+            --ticks 30 \
+            --arrival-divisor 1000 \
+            --max-arrivals 100 \
+            --max-work 8 \
+            --drain-ticks 250 \
+            --oracle-max-workers 10000 \
+            --output results/experiments/r2/reference-scale-seed42.json
+      - name: Build readable summary
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          source = Path("results/experiments/r2/reference-scale-seed42.json")
+          data = json.loads(source.read_text(encoding="utf-8"))
+          lines = [
+              "# R2 Reference Scale Sweep — Seed 42",
+              "",
+              "Generated from the committed `randomness_lab.r2_scale` implementation.",
+              "",
+              "This is a **single-seed reference run**, not a final statistical conclusion. Raw machine-readable data is in `reference-scale-seed42.json`.",
+              "",
+              "The global oracle is intentionally skipped above 10,000 workers because it scans the full capability pool per routing attempt.",
+              "",
+              "| Regime | Workers | Policy | Completion | p95 response | Metadata probes/attempt | Failed assignments | Loses badly vs oracle? |",
+              "| --- | ---: | --- | ---: | ---: | ---: | ---: | --- |",
+          ]
+          for cell in data["cells"]:
+              regime = cell["regime"]["name"]
+              workers = cell["worker_count"]
+              raw = cell["raw_runs"][0]
+              for policy, result in raw["policies"].items():
+                  if result["status"] != "ok":
+                      lines.append(f"| {regime} | {workers} | {policy} | skipped | — | — | — | — |")
+                      continue
+                  metrics = result["metrics"]
+                  comparison = raw["oracle_comparisons"].get(policy, {})
+                  loses = comparison.get("loses_badly")
+                  loses_text = "yes" if loses is True else "no" if loses is False else "—"
+                  p95 = metrics.get("p95_response_ticks")
+                  p95_text = f"{p95:.3f}" if isinstance(p95, (int, float)) else "—"
+                  lines.append(
+                      f"| {regime} | {workers} | {policy} | "
+                      f"{metrics['completion_rate']:.3f} | {p95_text} | "
+                      f"{metrics['mean_metadata_probes_per_routing_attempt']:.3f} | "
+                      f"{metrics['failed_assignments']} | {loses_text} |"
+                  )
+
+          lines.extend([
+              "",
+              "## Interpretation guardrails",
+              "",
+              "- `loses badly` is a diagnostic rule, not a significance test.",
+              "- The 100,000-worker cells are protocol/scalability probes with capped arrival rates, not full-capacity saturation experiments.",
+              "- `fresh`, `moderate`, and `stale` change several stressors together; use factor-isolated experiments for causal claims.",
+              "- A single seed is useful for a reproducible reference but insufficient for strong generalization.",
+              "",
+              "See `docs/research/R2_SCHEDULING_CHURN_EXPERIMENT.md` and `docs/research/R2_SCALE_REGIME_SWEEP.md`.",
+          ])
+          Path("results/experiments/r2/reference-scale-seed42.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+          PY
+      - name: Validate result JSON
+        run: python -m json.tool results/experiments/r2/reference-scale-seed42.json > /dev/null
+      - name: Commit generated evidence to experiment branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add results/experiments/r2/reference-scale-seed42.json results/experiments/r2/reference-scale-seed42.md
+          git commit -m "results: add R2 reference scale sweep seed 42"
+          git push origin HEAD:experiment/r2-reference-scale
