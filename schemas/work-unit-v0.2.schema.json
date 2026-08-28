@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://idkmesh.org/schemas/work-unit-v0.2.schema.json",
   "title": "IDKMesh Work Unit v0.2",
-  "description": "A bounded, portable unit of work with explicit capabilities, authority, risk, verification, evidence, and provenance requirements.",
+  "description": "A bounded, portable unit of work with explicit capabilities, authority, risk, verification, evidence, provenance, and project-spend requirements.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -206,12 +206,16 @@
     },
     "budget": {
       "type": "object",
+      "description": "Resource limits. project_spend_usd_max is the maximum amount IDKMesh itself may pay for this Work Unit; donor electricity/hardware is tracked separately and must be voluntary and transparent.",
       "additionalProperties": false,
+      "required": ["project_spend_usd_max", "paid_fallback_allowed"],
       "properties": {
         "wall_seconds": {"type": "number", "minimum": 0},
         "compute_units": {"type": "number", "minimum": 0},
         "human_minutes": {"type": "number", "minimum": 0},
-        "tokens": {"type": "integer", "minimum": 0}
+        "tokens": {"type": "integer", "minimum": 0},
+        "project_spend_usd_max": {"type": "number", "minimum": 0},
+        "paid_fallback_allowed": {"type": "boolean"}
       }
     },
     "provenance": {
