@@ -9,6 +9,35 @@
   "extensions": {
     "org.idkmesh.phase_b2_v2": {
       "calibration_completed": {
+        "benchmark/phase-b2-v2/002-router-nonfinite-numbers": {
+          "artifact_id": 9698681251,
+          "artifact_zip_sha256": "89b4af66402c4481a48603b4151db3d9942d4da450716002304d566a719d5d92",
+          "calibration_candidates_are_benchmark_outcomes": false,
+          "evaluator_plan_digest": "sha256:21d6ef9b1386adc2aeac8cb2c1d409b2ff32ff07686378d260b8a56399226a43",
+          "evidence_kind": "post-definition-straightforward-and-inert-decoy-calibration",
+          "inert_decoy": {
+            "behavior": "vulnerable_nonfinite_values_reach_routing",
+            "matched_added_substrings": 1,
+            "matched_removed_substrings": 0,
+            "recommendation": "reject_candidate",
+            "result_manifest_digest": "sha256:c84c308cdc8503d819d6eb4522c2a47d81f2219edbe358c5a0fe48f1655d989b",
+            "verification_result_digest": "sha256:49c9af54233776502382800d36b23dd122b671f6e376ded644ccebeacdf2e1fc",
+            "verification_status": "failed"
+          },
+          "job_id": 98958413889,
+          "run_id": 33203450690,
+          "source_revision": "a69aa0ae1ae4862e507511cbd9ad854237d0ad32",
+          "status": "passed",
+          "straightforward": {
+            "behavior": "safe_nonfinite_matrix_passed",
+            "matched_added_substrings": 1,
+            "matched_removed_substrings": 1,
+            "recommendation": "accept_candidate",
+            "result_manifest_digest": "sha256:9e2f20ceeb0367fae602b0795b6960f16071074798fa894c259e8dd856e7464c",
+            "verification_result_digest": "sha256:7f041b83cac9800ee9f05091d89a114e9a8cca6de16c8f090d9acae7aaadb6a5",
+            "verification_status": "passed"
+          }
+        },
         "benchmark/phase-b2-v2/003-branch-unobserved-head": {
           "artifact_id": 9697855139,
           "artifact_zip_sha256": "9212f58c076324cb9aa6659c1c5cd54f9c61746d1de51647bc3f5576cf972136",
@@ -70,7 +99,6 @@
       },
       "calibration_pending_task_ids": [
         "benchmark/phase-b2-v2/001-cohort-symlink-reference",
-        "benchmark/phase-b2-v2/002-router-nonfinite-numbers",
         "benchmark/phase-b2-v2/004-rwvb-nonfinite-domain"
       ],
       "calibration_required_for_every_task": true,
