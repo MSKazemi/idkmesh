@@ -34,14 +34,28 @@ jobs:
         run: python -m pip install -r requirements-phase0.txt
       - name: Validate schemas and fixtures
         run: python experiments/harness.py validate
+      - name: Verify cross-object provenance integrity
+        run: python experiments/provenance_integrity.py --self-test
+      - name: Verify risk-weighted verification backpressure
+        run: python experiments/verification_backpressure.py --self-test
       - name: Verify zero-cost compute routing
         run: python experiments/free_compute_router.py self-test
-      - name: Show example free compute selection
+      - name: Verify capped local capability discovery
+        run: python experiments/local_compute_offer.py self-test
+      - name: Route a real discovered local offer
+        run: |
+          python experiments/local_compute_offer.py discover --output results/local-offer.json
+          python experiments/free_compute_router.py select --offers results/local-offer.json
+      - name: Show mixed-pool free compute selection
         run: python experiments/free_compute_router.py select
       - name: Run safe built-in smoke fixture
         run: python experiments/harness.py smoke --output results/phase0-smoke.jsonl
 
-# Security note: neither Phase 0 utility executes provider-supplied commands.
-# The harness smoke command executes only its built-in deterministic_smoke
-# runner, while free_compute_router.py performs selection only. The router's
-# repository policy must fail closed rather than selecting project-paid compute.
+# Security note: Phase 0 CI does not execute provider- or contributor-supplied
+# task commands. The harness validates contracts and executes only its built-in
+# deterministic_smoke runner. provenance_integrity.py performs canonical hashing
+# and cross-object lineage checks only. The verification backpressure utility
+# performs scheduling/control arithmetic only. local_compute_offer.py performs
+# local resource discovery only, and free_compute_router.py performs selection
+# only. Repository policy must fail closed rather than granting new execution or
+# project-paid compute authority.

@@ -4,6 +4,12 @@ import unittest
 from randomness_lab.experiments import run_trials
 from randomness_lab.model import Worker
 from randomness_lab.policies import POLICIES, make_policy, power_of_d_least_loaded
+from randomness_lab.r1 import (
+    R1ExperimentConfig,
+    build_r1_conditions,
+    run_r1_condition,
+    run_r1_experiment,
+)
 from randomness_lab.simulator import SimulationConfig, run_simulation
 
 
@@ -100,6 +106,66 @@ class RandomnessLabTests(unittest.TestCase):
     def test_power_of_d_can_reduce_to_global_minimum(self) -> None:
         index = power_of_d_least_loaded([10.0, 3.0, 7.0], random.Random(1), d=3)
         self.assertEqual(index, 1)
+
+    def test_r1_experiment_covers_required_conditions_and_raw_trials(self) -> None:
+        config = R1ExperimentConfig(
+            tasks_per_trial=40,
+            trials=3,
+            swarm_size=3,
+            base_seed=12,
+            retain_task_records=False,
+        )
+        result = run_r1_experiment(config)
+        required = {
+            "single_deterministic",
+            "identical_replication",
+            "seed_only",
+            "structural_diversity",
+            "bandit_selected",
+            "diverse_random_verifiers",
+        }
+        self.assertEqual(set(result["conditions"]), required)
+        self.assertEqual(len(result["conditions"]["seed_only"]["raw_trials"]), 3)
+        interval = result["conditions"]["seed_only"]["summary"][
+            "verified_success_rate"
+        ]["normal_approx_95_ci"]
+        self.assertEqual(len(interval), 2)
+
+        seed_diversity = result["conditions"]["seed_only"]["summary"][
+            "mean_structural_diversity"
+        ]["mean"]
+        structural_diversity = result["conditions"]["structural_diversity"]["summary"][
+            "mean_structural_diversity"
+        ]["mean"]
+        self.assertGreater(structural_diversity, seed_diversity)
+        self.assertIn("lower_success_than_replication", result["comparisons"]["seed_only"])
+
+    def test_r1_is_seed_reproducible(self) -> None:
+        config = R1ExperimentConfig(
+            tasks_per_trial=20,
+            trials=2,
+            swarm_size=2,
+            base_seed=77,
+            retain_task_records=False,
+        )
+        self.assertEqual(run_r1_experiment(config), run_r1_experiment(config))
+
+    def test_r1_identical_replication_has_identical_base_outcomes(self) -> None:
+        config = R1ExperimentConfig(
+            tasks_per_trial=10,
+            trials=2,
+            swarm_size=3,
+            base_seed=5,
+        )
+        identical = next(
+            condition
+            for condition in build_r1_conditions(config)
+            if condition.name == "identical_replication"
+        )
+        result = run_r1_condition(identical, tasks=20, seed=5, retain_task_records=True)
+        for task in result["task_records"]:
+            base_outcomes = {candidate["base_success"] for candidate in task["candidates"]}
+            self.assertEqual(len(base_outcomes), 1)
 
 
 if __name__ == "__main__":
