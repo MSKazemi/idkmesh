@@ -6,6 +6,7 @@ This directory contains the machine-readable contracts used by the executable re
 
 - `work-unit-v0.2.schema.json` — current bounded unit of independently executable/verifiable work. It adds vendor-neutral capability/resource requirements, explicit security/trust classification, an independent-verification policy, and the `benchmarking` work kind required by issue #3.
 - `result-manifest-v0.1.schema.json` — **worker self-report** for one Work Unit attempt: produced candidate artifacts, logs, resource use, self-reported claims/confidence, provenance, and a request for independent verification. It is deliberately not an acceptance verdict.
+- `verification-result-v0.1.schema.json` — **independent verifier result** for one ResultManifest: checks, evidence, findings, resource cost, independence/correlation metadata, provenance, and a recommendation. It is deliberately decision support rather than an automated merge/integration verdict.
 - `experiment-manifest-v0.1.schema.json` — preregistered experiment design: hypotheses, configurations, metrics, seeds, budgets, and stopping rules.
 - `experiment-result-v0.1.schema.json` — one normalized **experiment-run result** with metrics, costs, verification outcomes, artifacts, and provenance.
 
@@ -28,7 +29,7 @@ The current WorkUnit contract explicitly separates several concerns that were im
 
 The coordinator contract remains model/provider neutral. Model and adapter details belong in worker/result provenance, not in WorkUnit scheduling semantics.
 
-## Critical separation: candidate vs acceptance
+## Critical separation: candidate, verification, integration
 
 IDKMesh keeps these concepts separate:
 
@@ -37,15 +38,28 @@ Work Unit
    -> worker attempt
    -> ResultManifest (candidate + worker self-report)
    -> independent verifier(s)
-   -> verification evidence
-   -> experiment/integration decision
+   -> VerificationResult (checks + evidence + recommendation)
+   -> experiment/integration/human decision
 ```
 
 A worker may report that it completed successfully and may report confidence, but those fields are evidence about the worker's own state, not proof that the artifact is correct. The `ResultManifest` therefore does not contain an `accepted` field or an independent-verifier verdict.
 
-`examples/results/invalid-self-acceptance.result-manifest.json` intentionally tries to add `accepted: true`. CI requires that this fixture be rejected.
+Likewise, a `VerificationResult` may recommend `accept_candidate`, but that recommendation does not authorize a merge or mutate canonical state. Integration policy remains a separate layer.
 
-`examples/work-units/invalid-missing-security.work-unit.json` intentionally omits the required security/trust classification. CI requires that this fixture be rejected.
+The harness validates cross-object invariants in addition to JSON structure:
+
+- VerificationResult must reference the exact ResultManifest/WorkUnit attempt;
+- evidence IDs referenced by checks must exist;
+- required WorkUnit validator IDs must appear as verification checks;
+- validator IDs requested by the ResultManifest must appear;
+- when a WorkUnit requires independence, verifier identity must differ from worker identity;
+- an `accept_candidate` recommendation requires verification status `passed` and all required checks passed.
+
+Negative fixtures:
+
+- `examples/results/invalid-self-acceptance.result-manifest.json` adds worker-side `accepted: true` and must fail schema validation;
+- `examples/results/invalid-non-independent.verification-result.json` is schema-valid but deliberately violates the WorkUnit's independence rule and must fail cross-object contract validation;
+- `examples/work-units/invalid-missing-security.work-unit.json` omits required security/trust classification and must fail schema validation.
 
 ## Versioning rule
 
@@ -59,18 +73,20 @@ Additive research-specific data should normally go in the `extensions` object, u
 
 - WorkUnit v0.1 remains available for historical Phase 0 artifacts.
 - The current harness validates new WorkUnits against v0.2.
-- ResultManifest v0.1 remains compatible with the v0.2 smoke fixture because it references the WorkUnit by stable `id` plus document `version`; the fixture now references WorkUnit version `2`.
-- A future ResultManifest revision should only be created when its own semantics require a breaking change.
+- ResultManifest v0.1 remains compatible with the v0.2 smoke fixture because it references the WorkUnit by stable `id` plus document `version`; the fixture references WorkUnit version `2`.
+- VerificationResult v0.1 binds to a ResultManifest plus the same WorkUnit id/version/attempt and adds independent evidence without redefining worker output semantics.
+- Future ResultManifest or VerificationResult revisions should only be created when their own semantics require a breaking change.
 
 ## Design principles
 
 1. **Bounded authority** — a Work Unit states scope and permissions.
 2. **Proposal is not proof** — worker output and independent verification are separate protocol objects/stages.
-3. **Uncertainty is data** — assumptions, confidence, and unresolved statements can travel with the work without becoming truth by assertion.
-4. **Cost is part of quality** — compute, time, tokens, communication, and human attention must be measurable.
-5. **Provenance from day one** — experiments and outputs should be traceable.
-6. **Reproducibility before sophistication** — early contracts should remain understandable and replayable.
-7. **Vendor-neutral core** — WorkUnit semantics describe needed capabilities, not a specific model/provider/tool.
-8. **Safe CI** — repository CI validates manifests and fixtures but does not execute commands supplied by experiment manifests.
+3. **Verification is not integration authority** — verifier recommendations remain evidence for a later policy/human decision.
+4. **Uncertainty is data** — assumptions, confidence, and unresolved statements can travel with the work without becoming truth by assertion.
+5. **Cost is part of quality** — compute, time, tokens, communication, and human attention must be measurable.
+6. **Provenance from day one** — experiments and outputs should be traceable.
+7. **Reproducibility before sophistication** — early contracts should remain understandable and replayable.
+8. **Vendor-neutral core** — WorkUnit semantics describe needed capabilities, not a specific model/provider/tool.
+9. **Safe CI** — repository CI validates manifests and fixtures but does not execute commands supplied by experiment manifests.
 
-See `docs/research/PHASE_0_SPEC.md`, issue #3, issue #15, issue #17, and the completed Phase 0 issue #19.
+See `docs/research/PHASE_0_SPEC.md`, `docs/research/VERIFICATION_DEBT_AND_BACKPRESSURE.md`, issues #3, #5, #14, #15, #17, and the completed Phase 0 issue #19.
