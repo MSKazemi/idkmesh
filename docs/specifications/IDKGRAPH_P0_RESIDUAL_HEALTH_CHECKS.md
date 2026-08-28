@@ -80,6 +80,29 @@ Actual counts depend on the scanned repository snapshot. Individual warnings are
 
 The human-readable `repository-health.md` includes both aggregate counts in its deterministic summary.
 
+## Expected negative acceptance fixtures
+
+A repository-wide observatory scan also traverses its own committed acceptance fixtures. That is useful for graph/replay coverage, but a deliberately broken fixture must not be confused with a real repository-health defect.
+
+The observatory therefore has one explicit, versioned expected-negative prefix:
+
+```text
+tests/fixtures/idkgraph_observatory/broken/
+```
+
+When the **repository root** is scanned, T2 findings whose `source_path` begins with that exact prefix are moved out of the active error/warning set into an `expected_negative_fixtures` evidence block. The block retains:
+
+- the configured prefix;
+- finding count;
+- counts by original severity and category;
+- source path, line, message, and raw target for every seeded finding.
+
+This is accounting, not deletion. The expected evidence remains visible in `observatory.json` and `repository-health.md`.
+
+Crucially, when the broken fixture directory is scanned **directly**, its source paths are simply `README.md` and `target.md`, so the prefix does not match and the fixture still fails closed. The acceptance test therefore continues to prove that missing-file and missing-anchor defects are detected.
+
+No arbitrary test directory, `tests/` subtree, or user-supplied path is silently ignored.
+
 ## Reproducibility
 
 The rules consume only:
@@ -88,7 +111,9 @@ The rules consume only:
 - T2 resolved local-link evidence;
 - T3 mapped nodes and explicit `implements` edges.
 
-No timestamps, network calls, GitHub API state, embeddings, model calls, or human-maintained reputation values enter the calculation. A fixed repository snapshot therefore yields the same residual-health findings.
+Expected-negative accounting also uses only the explicit repository-relative fixture prefix above and the deterministic T2 findings produced from the same bytes.
+
+No timestamps, network calls, GitHub API state, embeddings, model calls, or human-maintained reputation values enter the calculation. A fixed repository snapshot therefore yields the same residual-health findings and the same expected-fixture evidence.
 
 ## Non-goals
 
@@ -97,6 +122,7 @@ No timestamps, network calls, GitHub API state, embeddings, model calls, or huma
 - no automatic ADR implementation inference;
 - no conversion of warnings into merge authority;
 - no document deletion/archive action;
-- no LLM/NLP classification.
+- no LLM/NLP classification;
+- no blanket suppression of test fixtures or repository subtrees.
 
 These rules complete the deterministic detection surface requested by issue #20 while preserving the project's uncertainty-first principle.
