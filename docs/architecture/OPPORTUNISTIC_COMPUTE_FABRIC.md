@@ -1,655 +1,595 @@
 # Opportunistic Compute Fabric for IDKMesh
 
 **Status:** Working architecture proposal  
-**Date:** 2026-08-28
+**Date:** 2026-08-28  
+**Active financial constraint:** **project compute spend = $0**
 
 ## Executive idea
 
-IDKMesh should not choose one cloud, one GPU marketplace, or one volunteer-computing system as its compute layer.
+IDKMesh should not become a cloud provider and should not depend on one compute vendor. It should expose a provider-neutral **Opportunistic Compute Fabric** around bounded Work Units.
 
-It should build a **provider-neutral Opportunistic Compute Fabric** around the existing bounded Work Unit abstraction.
+The active design is now **zero-project-spend and fail-closed**.
+
+```text
+Work Unit
+   -> hard repository policy
+   -> capability/security matching
+   -> zero-project-cost offers only
+   -> deterministic selection
+   -> execution by a separately trusted adapter
+   -> evidence + independent verification
+```
+
+The repository-level policy is machine-readable in:
+
+- `config/compute-policy.json`
+- `schemas/compute-policy-v0.1.schema.json`
+- `schemas/compute-offer-pool-v0.1.schema.json`
+
+The governing decision is `docs/decisions/ADR-0006-zero-project-spend-compute.md`.
+
+Current invariant:
+
+> **No eligible zero-project-cost offer -> no execution selection. Never turn resource scarcity into an unapproved bill.**
+
+A Work Unit may request a stricter budget but cannot relax the repository policy.
+
+---
+
+## Active routing order
 
 The desired user experience is eventually close to:
 
 ```text
-idkmesh run work-unit.yaml --provider auto --budget 0.50
+idkmesh run work-unit.json --provider auto
 ```
 
-The scheduler should then find the cheapest/safest suitable execution path in an ordered pool such as:
+With the current `$0` policy, `auto` means something like:
 
 ```text
-local idle resource
-    -> project CI resource when policy permits
-    -> donated volunteer node
-    -> zero-install browser worker
-    -> institutional/campus idle capacity
-    -> free/grant-backed compute
-    -> interruptible/spot marketplace
-    -> normal paid cloud fallback
+1. suitable local owned resource
+2. legitimate public-project CI resource
+3. explicit volunteer/donated node
+4. zero-install browser worker where appropriate
+5. donated institutional/campus/lab capacity
+6. grant-backed capacity with no project invoice
+7. genuine free-tier capacity within its terms/quota
+8. queue / split / replan / wait / fail closed
 ```
 
-The important design decision is that **Work Units describe work; provider adapters describe where it runs**.
+There is deliberately **no paid fallback** in the active path.
 
-This avoids coupling the project to any one vendor and directly supports the IDKMesh goal of scaling from one laptop to a large heterogeneous mesh.
+If a 24 GB GPU is required and none is available for zero project spend, the correct result is `no_eligible_offer`, not a cloud invoice.
 
 ---
 
-## What compute can IDKMesh use?
+## What “free” means
 
-### 1. The contributor's own laptop/workstation
+The project must distinguish three different concepts:
 
-**Best first resource.**
+### Zero project monetary spend
 
-Use ordinary CPU/GPU/RAM through the local `idkmesh-node`, initially inside Docker/Podman and later stronger disposable sandboxes where needed.
+The IDKMesh project is not billed. This is the hard current requirement.
+
+### Donated resources
+
+A contributor or organization may voluntarily bear electricity, hardware wear, bandwidth, thermal load, machine time, or operational effort. Those costs are real and should be measured where practical.
+
+Donation must be:
+
+- explicit opt-in;
+- visible before execution;
+- resource-capped;
+- easy to pause/stop;
+- revocable;
+- never required for community status.
+
+### External subsidy / grant / free quota
+
+A provider, sponsor, university, research program, or free tier may cover a limited amount. This capacity is opportunistic rather than guaranteed and must remain within the provider's current terms.
+
+The scheduler should therefore optimize **verified useful work per scarce donated/free resource**, not pretend capacity has no cost.
+
+---
+
+## Active compute sources
+
+### 1. Contributor laptop/workstation
+
+This is the first and most important backend.
+
+A local `idkmesh-node` can eventually expose explicitly capped CPU/GPU/RAM/disk/time capacity and local-model capability.
 
 Good for:
 
-- local coding agents;
 - tests and compilation;
-- simulations;
+- deterministic experiments;
 - benchmark shards;
 - local-model inference;
 - independent verification;
-- reproductions.
+- reproductions;
+- bounded coding/review agents inside a sandbox.
 
-Advantages:
+The first implementation should discover capabilities before executing anything. See issue #52.
 
-- zero project cloud bill;
-- no external scheduler dependency;
-- ideal for one-machine experiments;
-- exposes the exact worker protocol needed later for the distributed system.
+### 2. GitHub-hosted Actions for legitimate repository work
 
-The project should make resource donation explicit and capped: CPU %, GPU use, memory, disk, network, time window, battery/AC-only policy, and pause/stop controls.
+Public-project CI can be useful for:
 
-### 2. GitHub-hosted Actions runners
-
-GitHub currently documents standard GitHub-hosted runners as free for public repositories, including Linux, Windows, macOS, x64, and Arm variants.
-
-Use them for work directly related to production, testing, deployment, publication, and verification of IDKMesh software:
-
-- CI test matrices;
+- schema validation;
+- test matrices;
 - builds;
 - linters;
 - CodeQL/security checks;
 - reproducibility checks;
 - project benchmarks;
-- packaging/releases;
-- bounded project experiments that are legitimately part of developing/testing IDKMesh.
+- packaging/releases.
 
-**Important limitation:** do not treat free GitHub Actions as a generic public supercomputer. GitHub's current terms prohibit GitHub-hosted runner activity unrelated to production, testing, deployment, or publication of the software project and prohibit disproportionate server load. The compute broker therefore needs a policy flag such as `eligible_for_project_ci: true` before considering the GitHub Actions adapter.
+GitHub Actions must not be treated as a generic public supercomputer. A future provider adapter needs an explicit terms/policy eligibility gate before considering the `public_project_ci` cost class.
 
-Sources:
+### 3. Volunteer `idkmesh-node` capacity
 
-- https://docs.github.com/en/actions/reference/runners/github-hosted-runners
-- https://docs.github.com/en/billing/concepts/product-billing/github-actions
-- https://docs.github.com/en/site-policy/github-terms/github-terms-for-additional-products-and-features
+This is the main community-native scaling path.
 
-### 3. IDKMesh volunteer nodes
+A participant should eventually be able to:
 
-This should become the main community-native compute source.
+```text
+install node
+choose limits
+choose allowed capabilities
+opt in
+pause whenever desired
+```
 
-A contributor installs `idkmesh-node`, chooses resource limits, and the node **pulls** approved bounded Work Units while idle. The node returns patches, reports, results, hashes, logs, and attestations rather than receiving repository merge authority.
+The node should **pull** bounded approved Work Units rather than expose an arbitrary remote shell.
 
-Good for:
+Useful roles include:
 
-- asynchronous CPU jobs;
-- local GPU inference;
-- fuzzing;
-- test shards;
-- Monte Carlo/simulation tasks;
-- compilation across diverse hardware/OS combinations;
-- independent replications;
-- coding/review agents with local models.
+- compute;
+- verifier;
+- researcher;
+- coder;
+- observer.
 
-This architecture is already described in `AGENT_NETWORK_AND_VOLUNTEER_NODES.md`; the Compute Fabric turns it into one provider among many.
+Architecture and security details are in `AGENT_NETWORK_AND_VOLUNTEER_NODES.md`; implementation tracking begins with issue #11.
 
-### 4. Browser + WebAssembly/WebGPU workers
+### 4. Browser / WebAssembly / WebGPU workers
 
-A web page can become a **zero-install compute node**.
+A zero-install browser worker can lower participation friction for narrowly bounded, checkpointable, sandbox-friendly jobs.
 
-A visitor explicitly opts in, the page obtains a bounded Work Unit, runs code in WebAssembly and optionally general-purpose GPU computation through WebGPU, and uploads a result bundle.
+Potential tasks:
 
-Good for highly sandboxable, restartable work such as:
-
-- hashing/search;
 - deterministic verification;
 - small simulations;
-- benchmark shards;
 - numerical kernels;
-- model inference that fits browser constraints;
-- replication tasks.
+- benchmark shards;
+- lightweight local inference when supported.
 
-Advantages:
+Rules:
 
-- almost no contributor installation friction;
-- excellent community-growth surface;
-- browser sandbox gives a useful baseline isolation layer.
+- explicit opt-in;
+- visible CPU/GPU use;
+- battery/thermal safeguards;
+- no hidden computation;
+- short/checkpointable jobs;
+- treat browser availability as opportunistic.
 
-Limitations:
+### 5. BOINC-style volunteer pools
 
-- WebGPU is not yet universally available across all major browser/device combinations;
-- browser tabs are ephemeral;
-- thermal/battery use must be opt-in and visible;
-- jobs must checkpoint or be naturally short;
-- HTTPS is required for WebGPU.
+BOINC remains an important reference architecture for large numbers of weakly coupled volunteer jobs.
 
-Sources:
+IDKMesh should learn from its:
 
-- https://developer.mozilla.org/en-US/docs/Web/API/WebGPU_API
-- https://developer.mozilla.org/en-US/docs/Web/API/GPU
+- resource discovery;
+- checkpointing;
+- heterogeneous scheduling;
+- redundancy;
+- contribution accounting;
+- donor UX.
 
-### 5. BOINC / BOINC Central
+Where eligible no-charge research capacity exists, IDKMesh can explore it as an adapter rather than immediately recreating a mature volunteer-compute stack.
 
-BOINC is the mature reference architecture for volunteer high-throughput computing. It automatically downloads jobs, selects work appropriate to a machine, executes it, uploads outputs, and tracks contribution credit.
+### 6. University/lab/company donated clusters
 
-BOINC Central now states that it can supply CPUs and GPUs from thousands of volunteered home computers, including applications packaged with Docker, and that eligible researchers can apply for no-charge computing.
+Existing infrastructure should be integrated, not replaced.
 
-IDKMesh can use BOINC in two ways:
+Potential adapters include:
 
-1. **Learn from it** for resource discovery, credits, redundancy, heterogeneity, checkpointing, and volunteer UX.
-2. For scientific IDKMesh experiments that fit BOINC Central's eligibility/policy, explore submitting containerized experiment batches rather than building a full volunteer pool immediately.
+- HTCondor;
+- Slurm;
+- Kubernetes Jobs;
+- Ray;
+- organization-managed isolated runners.
 
-Good for:
+A university or sponsor can donate capacity without transferring repository authority to workers.
 
-- huge numbers of independent deterministic jobs;
-- simulation sweeps;
-- parameter searches;
-- replication;
-- CPU/GPU experiments where individual tasks are weakly coupled.
+### 7. Grants and genuine free tiers
 
-Less suitable for interactive coding agents or tightly coupled distributed training.
+Grant-backed or free-tier CPU/GPU/model capacity can be useful, but it has to satisfy all of these conditions:
 
-Sources:
+- project invoice remains `$0`;
+- current service terms permit the workload;
+- quota is available;
+- no hidden conversion to paid billing;
+- credentials are scoped;
+- expiration/quota exhaustion produces `unavailable`, not paid fallback.
 
-- https://boinc.berkeley.edu/central/
-- https://boinc.berkeley.edu/central/about.php
-- https://boinc.berkeley.edu/central/scientist.php
-
-### 6. Campus/lab/company idle machines with HTCondor
-
-HTCondor is a strong adapter target for institutions that already have many desktops, lab machines, servers, or clusters.
-
-Its model is close to IDKMesh Work Units: independent asynchronous jobs are submitted to an access point, matched to suitable execution points, sandboxed with input/output files, and can be rescheduled if a machine disappears.
-
-Good for:
-
-- universities;
-- research labs;
-- companies willing to donate internal idle capacity;
-- large benchmark/experiment sweeps;
-- opportunistic execution across machines that are not dedicated to IDKMesh.
-
-Sources:
-
-- https://htcondor.readthedocs.io/en/main/users-manual/quick-start-guide.html
-- https://htcondor.readthedocs.io/en/main/overview/htcondors-power.html
-
-### 7. Existing clusters through Ray / Kubernetes / Slurm
-
-Many contributors or partner organizations will already own clusters. IDKMesh should not ask them to replace their scheduler.
-
-Instead provide adapters:
-
-- `ray` for Python/AI tasks and elastic clusters;
-- `kubernetes-job` for containerized batch work;
-- `slurm` for HPC centers;
-- `htcondor` for high-throughput opportunistic pools.
-
-Ray is particularly useful as an internal execution backend because it abstracts CPU/GPU/memory resources and can scale applications from a laptop to a cluster.
-
-Source:
-
-- https://docs.ray.io/en/latest/ray-core/scheduling/resources.html
-
-### 8. Hugging Face ZeroGPU
-
-Hugging Face currently provides shared ZeroGPU infrastructure for Spaces. Its documentation states that free personal accounts in good standing can host a limited number of ZeroGPU Spaces, with dynamically allocated shared GPUs.
-
-This can be useful for:
-
-- public IDKMesh demos;
-- small GPU-backed research tools;
-- interactive inference experiments;
-- showcasing a contributor-facing verifier/agent demo.
-
-It is **not** the general batch compute fabric: it currently has framework/interface constraints and quotas. Treat it as a specialized adapter/demo surface.
-
-Source:
-
-- https://huggingface.co/docs/hub/spaces-zerogpu
-
-### 9. Cloudflare Workers / Workers AI as a lightweight control plane
-
-Cloudflare Workers is better suited to the **broker/gateway/control plane** than heavy computation.
-
-Current free limits include a large daily request allowance but very small per-request CPU budgets, which makes it attractive for:
-
-- signed Work Unit distribution;
-- capability registration;
-- lightweight scheduling/routing;
-- result metadata ingestion;
-- webhooks;
-- browser-worker coordination.
-
-Workers AI also currently provides a daily free inference allocation, useful for cheap classification/triage/routing experiments, but it should remain an optional model adapter rather than a core dependency.
-
-Sources:
-
-- https://developers.cloudflare.com/workers/platform/limits/
-- https://developers.cloudflare.com/workers-ai/platform/pricing/
-
-### 10. Distributed GPU clouds such as SaladCloud
-
-SaladCloud runs containerized workloads on a distributed network of privately owned devices, primarily gaming PCs, and maintains requested replica counts across available nodes.
-
-That is conceptually close to the future IDKMesh compute market, but it is already operated as a managed service. An adapter could let IDKMesh burst GPU/container jobs without building all capacity itself.
-
-Good for:
-
-- horizontally scalable GPU inference;
-- resilient container workloads;
-- bursty heterogeneous GPU jobs.
-
-Source:
-
-- https://docs.salad.com/
-
-### 11. GPU marketplaces such as Vast.ai
-
-Vast.ai exposes a real-time marketplace where hosts list GPUs, users search offers, and instances run Docker images. It supports API/CLI automation and cheaper interruptible capacity.
-
-This is a strong paid fallback for checkpointable IDKMesh Work Units.
-
-Good for:
-
-- GPU-heavy experiments;
-- local-model evaluation at scale;
-- inference benchmarks;
-- reproducible containerized jobs;
-- temporary verification replicas.
-
-The scheduler should prefer interruptible offers for tasks that support checkpoints/retries and reliability-filtered on-demand offers for important deadlines.
-
-Sources:
-
-- https://docs.vast.ai/guides/get-started
-- https://docs.vast.ai/api-reference/introduction
-- https://docs.vast.ai/guides/instances/pricing
-
-### 12. Decentralized compute markets such as Akash and Golem
-
-Akash provides a decentralized marketplace for containerized CPU/GPU resources; providers bid to host deployments. Golem allows requestors to consume resources shared by provider machines, with providers compensated using the network's token.
-
-These systems are interesting later because they already solve parts of open compute discovery and economic coordination.
-
-However, they introduce cryptocurrency/payment and operational complexity. IDKMesh's current project goals explicitly say not to introduce a token economy in the first implementation, so these should be **optional future provider adapters**, not protocol foundations.
-
-Sources:
-
-- https://akash.network/
-- https://akash.network/docs/getting-started/what-is-akash/
-- https://docs.golem.network/
-- https://docs.golem.network/docs/golem/overview
-
-### 13. Traditional cloud spot/preemptible capacity
-
-AWS, Azure, GCP and other conventional clouds remain valuable as a final fallback because they offer predictable APIs, regions, storage, security controls, GPUs and large capacity.
-
-Use spot/preemptible instances for restartable Work Units and on-demand instances only when latency/reliability matters enough to justify the cost.
-
-The Compute Fabric should treat traditional clouds exactly like any other provider: discover offer -> evaluate policy/cost -> launch -> checkpoint -> collect result -> terminate.
-
-### 14. Community-donated servers and organization runners
-
-A company, university, maintainer, or sponsor may donate a permanently available server/GPU.
-
-This should join the mesh as a **project-managed trusted node**, not as an unrestricted personal GitHub self-hosted runner exposed to arbitrary public PR code.
-
-GitHub's security documentation warns that persistent self-hosted runners can be compromised by untrusted public-repository workflows. IDKMesh should therefore execute public Work Units in disposable isolation and keep long-lived host credentials outside worker sandboxes.
-
-Source:
-
-- https://docs.github.com/en/actions/reference/security/secure-use
+This class should have lower availability confidence than owned/donated capacity unless evidence shows otherwise.
 
 ---
 
-## One interface for all of them
+## Provider-neutral offers
 
-The central architecture should be a small `ComputeProvider` contract.
+Providers should describe capacity rather than exposing provider-specific scheduling logic to IDKMesh Core.
+
+Current experimental offer shape is defined in `schemas/compute-offer-pool-v0.1.schema.json`.
 
 Conceptually:
 
 ```text
-interface ComputeProvider:
-    discover(requirements, policy) -> offers
-    launch(work_unit, offer) -> execution_id
-    status(execution_id) -> state
-    checkpoint(execution_id) -> checkpoint_ref
-    cancel(execution_id)
-    collect(execution_id) -> result_bundle
+offer:
+  provider
+  cost_class
+  project_cost_usd
+  available
+  trust
+  capabilities
+  cpu / memory / disk / gpu
+  expected_wait
+  observed success probability
+  independence_group
 ```
 
-Candidate adapters:
+Examples are in `examples/compute-offers/free-pool.example.json`.
 
-```text
-local
-container
-volunteer-node
-browser-webgpu
-github-actions
-boinc
-htcondor
-ray
-kubernetes
-slurm
-huggingface-zerogpu
-saladcloud
-vast
-akash
-golem
-aws-spot
-azure-spot
-gcp-spot
-```
-
-IDKMesh Core should not know provider-specific details beyond this interface.
+The example deliberately includes an attractive paid GPU offer. Under current repository policy it must be rejected. This is a negative safety fixture, not an active provider recommendation.
 
 ---
 
-## Portable Work Unit envelope
+## Financial authority is outside the Work Unit
 
-To make compute portable, every execution-capable Work Unit should include enough information to run without provider-specific logic.
+The Work Unit v0.2 budget now includes:
 
-Example:
-
-```yaml
-id: wu-01J...
-input_revision: 3b5c...
-type: compute
-image: ghcr.io/mskazemi/idkmesh-worker@sha256:...
-command: ["python", "experiment.py", "--shard", "17"]
-inputs:
-  - sha256:...
-requirements:
-  cpu: 4
-  memory_mb: 8192
-  gpu:
-    count: 0
-  disk_mb: 20000
-  architecture: [amd64, arm64]
-resource_budget:
-  wall_seconds: 1800
-  network: restricted
-  max_cost_usd: 0.10
-checkpoint:
-  enabled: true
-  interval_seconds: 120
-verification:
-  replicas: 2
-  independence: different_provider_if_possible
-output:
-  manifest: result.json
-  max_bytes: 100000000
-security:
-  work_unit_signature: ...
-  allowed_domains: []
+```text
+project_spend_usd_max
+paid_fallback_allowed
 ```
 
-The exact schema should evolve, but the architecture needs immutable inputs, explicit resource requirements, bounded permissions, a maximum cost, and a normalized output/result manifest.
+But those fields cannot grant financial authority.
+
+Effective budget is conceptually:
+
+```text
+effective_project_spend_limit =
+    min(repository_policy.project_spend_usd_max,
+        work_unit.budget.project_spend_usd_max)
+```
+
+Therefore, with repository policy equal to `$0`:
+
+```text
+Work Unit asks for $0      -> effective limit $0
+Work Unit asks for $5      -> effective limit $0
+Work Unit asks for $1000   -> effective limit $0
+```
+
+Likewise, `paid_fallback_allowed=true` in a Work Unit cannot override `paid_providers_enabled=false` at repository level.
+
+This is an authority boundary, not a scheduler preference.
 
 ---
 
-## The effortless routing policy
+## Selection-only prototype
 
-The scheduler should implement **free-first opportunistic routing** rather than forcing the user to choose a provider.
+`experiments/free_compute_router.py` currently performs **selection only**. It does not launch provider workloads.
 
-Example policy:
+It validates:
+
+- Work Unit schema;
+- repository compute policy;
+- compute offer pool;
+- availability;
+- allowed cost class;
+- project monetary cost;
+- capability match;
+- CPU/RAM/disk/GPU requirements;
+- accelerator requirements;
+- minimum trust.
+
+Among eligible offers, the prototype chooses deterministically using predicted success and wait time.
+
+CI runs a negative scenario:
 
 ```text
-1. Is a suitable local node idle?                 -> use it
-2. Is this legitimately eligible for project CI?  -> GitHub runner
-3. Is a suitable volunteer node available?        -> use it
-4. Is a browser/BOINC/institutional pool suitable? -> use it
-5. Is grant/free shared capacity available?        -> use it
-6. Is cheap interruptible market capacity enough?  -> rent it
-7. Otherwise                                       -> paid reliable cloud
+synthetic Work Unit:
+  requires CUDA GPU
+  asks to allow $100
+  sets paid_fallback_allowed = true
+
+available offers:
+  free grant GPU = unavailable
+  paid GPU = available and excellent
+
+repository policy:
+  max spend = $0
+  paid providers = disabled
+
+expected result:
+  no_eligible_offer
 ```
 
-Users can override with policy:
-
-```text
---provider local
---provider volunteer
---provider auto
---max-cost 0
---max-cost 2.00
---deadline 10m
---require-gpu 24GB
---region eu
---no-third-party-data
-```
+This proves that a task cannot buy its way around project policy.
 
 ---
 
-## Scheduling formula
+## Scheduling mathematics under a hard `$0` constraint
 
-For every feasible offer `p`, estimate a utility score rather than simply choosing the cheapest machine.
+Cost should be handled in two stages.
 
-One first formulation:
+### Stage 1 — hard feasibility filter
+
+An offer `p` is feasible only if:
+
+```text
+available(p) = true
+capabilities(p) satisfy WorkUnit
+resources(p) satisfy WorkUnit
+trust(p) satisfies WorkUnit
+cost_class(p) allowed by repository policy
+project_cost_usd(p) <= effective_project_spend_limit
+provider-specific terms/policy eligibility = true
+```
+
+With current policy:
+
+```text
+project_cost_usd(p) = 0
+```
+
+is mandatory.
+
+### Stage 2 — utility ranking among free-to-project offers
+
+Only after the hard filter, estimate:
 
 ```text
 score(p) =
-    + w_q * P(success | task, provider, hardware)
-    + w_v * expected_verification_value
+    + w_q * P(verified_success | task, provider, hardware)
+    + w_v * verification_value
     + w_i * independence_value
-    + w_l * locality_score
-    - w_c * expected_cost
-    - w_t * expected_latency
-    - w_r * security_and_trust_risk
-    - w_e * expected_energy_or_carbon_cost
+    + w_l * locality_value
+    - w_t * expected_wait_and_runtime
+    - w_r * security/trust risk
+    - w_d * donor_resource_burden
+    - w_e * estimated energy/resource use
 ```
 
-subject to hard constraints:
+This prevents a high-quality paid offer from winning because monetary permission is never expressed as a soft negative weight.
+
+Later, a contextual bandit can learn which **eligible zero-project-cost** configurations perform best for each task class.
+
+---
+
+## Scarcity strategy: compute less intelligently
+
+A `$0` budget makes decomposition and scheduling quality more important.
+
+When capacity is scarce, IDKMesh should try these transformations before giving up:
 
 ```text
-capability_match = true
-cost <= WorkUnit.max_cost
-security_policy_satisfied = true
-deadline_feasible = true
+large task
+  -> split into smaller Work Units
+  -> remove unnecessary replicas
+  -> reserve replicas for high-risk claims
+  -> lower model/hardware requirements where valid
+  -> schedule during donor idle windows
+  -> reuse cached artifacts
+  -> deduplicate equivalent work
+  -> checkpoint and resume
+  -> send deterministic verification to CPU nodes
+  -> send only accelerator-essential work to donated GPUs
 ```
 
-The probability terms should be learned from actual execution history rather than permanently hand-coded.
+The optimization target becomes:
 
-A contextual multi-armed bandit is a natural later scheduler: explore new providers/hardware occasionally, exploit configurations with high verified-success-per-cost most of the time.
-
----
-
-## Compute is also a verification resource
-
-Extra compute should not only create more candidate outputs.
-
-A key IDKMesh rule should be:
-
-> When generation capacity grows, reserve a fraction of new capacity for independent verification.
-
-Examples:
-
-- one GPU generates candidate patches; another hardware/model stack reviews them;
-- a deterministic job runs on two unrelated volunteer nodes;
-- suspicious or high-value results are replicated on a trusted project-managed node;
-- benchmark results are rerun on a different provider to detect environment-specific artifacts.
-
-This turns heterogeneous compute into **independence**, not just throughput.
+> **Maximum verified useful work per unit of human attention and donated/free compute.**
 
 ---
 
-## Security architecture
+## Compute is also verification capacity
 
-The mesh must protect both the project and compute donors.
+New capacity should not all go to generation.
+
+Reserve part of heterogeneous capacity for independent checking:
+
+- one worker generates; another verifies;
+- deterministic claims run on unrelated nodes;
+- important results replicate across independence groups;
+- high-risk candidate work gets stronger trusted verification;
+- cheap CPU verifiers screen candidates before scarce GPU/model resources are used again.
+
+Heterogeneity is therefore useful as a source of **independence**, not only throughput.
+
+---
+
+## Security boundary
 
 ### Protect compute donors
 
-- node pulls signed/approved Work Units; no arbitrary remote shell;
-- disposable sandbox/VM/container for each job;
-- host home directories and credentials are never mounted;
+- pull approved bounded Work Units; no arbitrary remote shell;
+- disposable sandbox/VM/container per job;
+- no host home directory or personal credentials mounted by default;
 - network default-off or allowlisted;
 - strict CPU/RAM/GPU/disk/time limits;
-- visible resource use and emergency stop;
-- no hidden cryptocurrency mining;
-- task provenance and public project identity;
-- automatic cleanup.
+- resource preview and emergency stop;
+- automatic cleanup;
+- no hidden mining or unrelated workloads;
+- auditable task/project provenance.
 
 ### Protect IDKMesh
 
-- volunteer/market workers are untrusted;
+- volunteer workers are untrusted by default;
 - workers never receive merge authority;
-- no long-lived repository secret inside an untrusted job;
-- content-addressed immutable inputs;
-- signed result manifests;
-- deterministic validation where possible;
+- immutable/content-addressed inputs where possible;
+- no long-lived project secrets inside untrusted jobs;
+- signed/hashed result manifests;
+- independent verification;
 - redundant execution for important claims;
-- reputation based on verified history;
-- trusted infrastructure reruns critical verification.
+- evidence-based task-specific reputation;
+- trusted reruns for critical checks.
+
+Ordinary contributor machines should not be exposed as unrestricted persistent self-hosted runners for arbitrary public-repository code.
 
 ---
 
-## What *not* to use as a foundation
+## Paid providers: inactive interoperability surface only
 
-### GitHub Models
+Commercial cloud, GPU marketplaces, spot/preemptible instances, paid hosted models, Akash/Golem payment paths, and similar systems are **not active execution sources under the current project rule**.
 
-GitHub Models should not appear in the compute roadmap. GitHub currently states it was fully retired on **2026-07-30**.
+They may remain in research notes or provider schemas because:
 
-Source:
+- provider neutrality should not depend on today's funding state;
+- future sponsored deployments may have different repository-local policies;
+- interoperability experiments can use mock offers without spending money.
 
-- https://docs.github.com/en/github-models
+But the active `config/compute-policy.json` excludes `paid`, and the core path must not require billing credentials.
 
-### Free notebook services as unattended workers
-
-Interactive notebook services can be useful to contributors, but they should not be the foundation of autonomous background execution because sessions, quotas, acceptable-use policies, and hardware availability are interactive/variable.
-
-### Tightly synchronized volunteer supercomputer assumptions
-
-Home laptops across the Internet are excellent for high-throughput asynchronous work, but poor substitutes for low-latency tightly coupled HPC/GPU fabrics. IDKMesh should decompose work into independent or weakly coupled Work Units whenever possible.
+If sustainable funding exists in the future, enabling paid capacity requires an explicit governance/maintainer decision that revises `PROJECT_RULES.md`, ADR-0006, and the machine-readable policy first.
 
 ---
 
-## Recommended implementation sequence
+## Implementation sequence under `$0`
 
-### Phase 0 — local provider
+### Phase 0 — selection contract
 
-Implement the compute-provider interface against the existing local worker/sandbox.
+**Implemented:**
 
-Deliver:
+- repository compute policy schema/config;
+- Work Unit project-spend fields;
+- provider-neutral offer schema;
+- mixed free/paid negative fixture;
+- selection-only zero-cost router;
+- CI fail-closed invariant.
+
+### Phase 1 — local capability discovery
+
+**Next:** issue #52.
+
+Discover safe local CPU/RAM/disk/basic GPU/capability metadata, apply user caps, emit a zero-project-cost offer, and feed it into the selector. No remote execution yet.
+
+### Phase 2 — local sandbox executor
+
+Build the smallest offline `idkmesh-node` path from issue #11:
 
 ```text
-idkmesh run work.yaml --provider local
+local Work Unit
+ -> policy + selection
+ -> disposable local sandbox
+ -> bounded execution
+ -> normalized ResultManifest
+ -> independent verification
 ```
 
-### Phase 1 — provider-neutral result bundle
+### Phase 3 — volunteer-node pull protocol
 
-Standardize:
+Only after local safety works, allow an explicitly opted-in node to request eligible signed/approved public Work Units.
 
-- immutable input reference;
-- execution manifest;
-- resource usage;
-- stdout/stderr/log hashes;
-- output hashes;
-- environment/tool versions;
-- verification status.
+### Phase 4 — free/donated backend adapters
 
-### Phase 2 — GitHub CI adapter
+Add adapters only when real contributors/partners exist, prioritizing:
 
-Use GitHub Actions only for eligible IDKMesh development/testing work. Prove provider dispatch and normalized results without a new server fleet.
+- legitimate public-project CI;
+- donated organization machines;
+- browser worker for a narrow deterministic task;
+- HTCondor/Slurm/Kubernetes/Ray when an institution offers capacity;
+- no-charge research/grant pools.
 
-### Phase 3 — volunteer node
+### Phase 5 — learned free-capacity router
 
-Implement pull-based `idkmesh-node` registration and task pickup with explicit resource controls and disposable sandboxes.
+Collect:
 
-### Phase 4 — browser worker
+```text
+(task features,
+ provider/cost class,
+ hardware/capabilities,
+ wait/runtime,
+ donor resource use,
+ verified success,
+ failure reason,
+ independence group)
+```
 
-Create an opt-in WebAssembly/WebGPU worker for a narrow deterministic benchmark or verification task. Measure participation friction and failure rates.
-
-### Phase 5 — one institutional backend
-
-Add either HTCondor or Slurm/Kubernetes depending on first partner demand.
-
-### Phase 6 — one cheap paid GPU adapter
-
-Add Vast.ai or SaladCloud as a cost-capped burst backend. Require automatic teardown and checkpoint/retry support.
-
-### Phase 7 — learned auto-router
-
-Start collecting `(task features, provider, hardware, cost, latency, verified success)` and learn routing policies.
-
-### Phase 8 — BOINC/decentralized adapters only when justified
-
-Use BOINC, Akash, Golem, or other networks when a real experiment/community use case justifies their additional operational/economic complexity.
+Then learn routing rules that maximize verified useful output under the hard `$0` monetary ceiling.
 
 ---
 
-## First concrete experiment
+## First experiment
 
-Run the same 100 small deterministic or repository-verification Work Units through multiple backends:
+Run the same small deterministic/repository-verification Work Units across every zero-project-cost backend that is actually available:
 
 ```text
-local Docker
-GitHub Actions
-2-5 volunteer nodes
-one cheap interruptible GPU/CPU marketplace where relevant
+local machine
+public-project CI when legitimately eligible
+2-5 volunteer machines when volunteers exist
+institutional/grant/free-tier capacity only when genuinely available
 ```
 
 Measure:
 
-- successful Work Units / submitted Work Units;
-- verified useful work / dollar;
-- verified useful work / contributor attention minute;
-- queue delay and runtime;
-- failure/retry rate;
+- verified success rate;
+- queue delay;
+- runtime;
+- retries/failures;
+- contributor setup friction;
+- donor CPU/RAM/GPU/time use;
 - environment-induced disagreement;
-- energy/resource use where measurable;
-- setup friction for a new compute donor;
-- security incidents/policy violations.
-
-The experiment should answer whether provider abstraction is actually buying portability rather than only adding complexity.
+- verification value from independent nodes;
+- human attention minutes;
+- project monetary spend, which must remain `$0`.
 
 ---
 
 ## Community growth mechanism
 
-Compute donation can itself become a contribution path:
+Compute contribution can be one contribution path among many:
 
 ```text
-install node
- -> contribute first verified Work Unit
- -> public contribution receipt
- -> capability/reliability history
- -> unlock more interesting task classes
- -> help verify other contributors
- -> become compute steward / adapter maintainer
+install / inspect node
+ -> choose limits
+ -> donate first bounded Work Unit
+ -> receive public verified contribution record
+ -> build task-specific reliability history
+ -> verify other work
+ -> maintain a provider adapter or become a compute steward
 ```
 
-Recognition should emphasize **verified useful work**, uptime/reliability, replications, bugs caught, and compute made available—not raw electricity consumed or number of jobs executed.
-
-The node should expose simple modes such as:
+Possible understandable resource profiles:
 
 ```text
-Eco:       CPU only, AC power, max 20%
-Standard:  CPU 50%, optional GPU while idle
-Research:  explicit scheduled experiments
-Verifier:  only independent validation jobs
-Local-AI:  allow local model inference
+Eco:       low CPU, AC power only
+Standard:  capped CPU while idle
+Verifier:  independent validation jobs only
+Local-AI:  explicitly allow local-model inference
+Research:  explicitly scheduled experiments
 ```
 
-This makes resource contribution understandable to non-specialists.
+Compute donation must never outrank code, review, documentation, research, design, moderation, or other useful contribution forms.
 
 ---
 
 ## Architectural decision
 
-The current recommendation is:
+IDKMesh should be a **zero-spend compute liquidity router** under the current project constraints, not a new cloud provider and not a billing broker.
 
-> **Build IDKMesh as a compute liquidity router, not as a new cloud provider.**
+Its distinctive value is:
 
-IDKMesh should make all safe available capacity—local, donated, institutional, free, grant-backed, market-priced, or cloud—look like offers behind one Work Unit protocol.
+- bounded Work Units;
+- resource/capability matching;
+- hard policy enforcement;
+- verification and independence;
+- provenance;
+- safe volunteer participation;
+- efficient use of scarce donated/free capacity;
+- community-scale collective intelligence.
 
-The project's distinctive value should remain coordination, verification, provenance, matching, community, and collective intelligence. Commodity infrastructure should be integrated rather than reinvented whenever practical.
+Commodity execution infrastructure should be integrated when it is actually available at zero project cost and permitted by policy, rather than reinvented.
