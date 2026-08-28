@@ -75,7 +75,7 @@ jobs:
 
       - name: Verify observer implementation
         run: |
-          python -m py_compile scripts/evolution_snapshot.py scripts/evolution_score.py tests/test_evolution_observer.py
+          python -m py_compile scripts/evolution_snapshot.py scripts/repository_evolution_score.py tests/test_evolution_observer.py
           python -m unittest tests.test_evolution_observer -v
 
       - name: Collect bounded live repository evidence
@@ -90,7 +90,7 @@ jobs:
 
       - name: Evaluate multi-algorithm evolution policy
         run: |
-          python scripts/evolution_score.py \
+          python scripts/repository_evolution_score.py \
             --snapshot results/evolution/repository-snapshot.json \
             --policy config/evolution-policy-v1.json \
             --output results/evolution/evolution-decision.json \
@@ -137,5 +137,5 @@ jobs:
 
       - name: Test deterministic observer policy
         run: |
-          python -m py_compile scripts/evolution_snapshot.py scripts/evolution_score.py tests/test_evolution_observer.py
+          python -m py_compile scripts/evolution_snapshot.py scripts/repository_evolution_score.py tests/test_evolution_observer.py
           python -m unittest tests.test_evolution_observer -v
