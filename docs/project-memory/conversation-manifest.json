@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "description": "Machine-auditable index of substantive IDKMesh conversation records present on this branch. This cannot detect an external conversation that was never committed; it guarantees path-level completeness of the repository archive.",
+  "records": [
+    "docs/conversations/2026-08-28-autocatalytic-community-evolution.md",
+    "docs/conversations/2026-08-28-canonical-node-integration-collaboration.md",
+    "docs/conversations/2026-08-28-collective-intelligence-architecture.md",
+    "docs/conversations/2026-08-28-community-first-repository-rule.md",
+    "docs/conversations/2026-08-28-complete-next-steps-and-evolution.md",
+    "docs/conversations/2026-08-28-computing-resources-and-effortless-routing.md",
+    "docs/conversations/2026-08-28-distributed-vibe-coding.md",
+    "docs/conversations/2026-08-28-field-defining-questions-and-first-research-program.md",
+    "docs/conversations/2026-08-28-framework-and-multidisciplinary-collaboration.md",
+    "docs/conversations/2026-08-28-free-agents-and-volunteer-node.md",
+    "docs/conversations/2026-08-28-github-constrained-self-improving-community.md",
+    "docs/conversations/2026-08-28-goals-and-next-steps.md",
+    "docs/conversations/2026-08-28-mathematical-algorithms-and-project-definition.md",
+    "docs/conversations/2026-08-28-phase0-completion-and-next-step.md",
+    "docs/conversations/2026-08-28-phase0-executable-foundation.md",
+    "docs/conversations/2026-08-28-project-foundation.md",
+    "docs/conversations/2026-08-28-project-origin.md",
+    "docs/conversations/2026-08-28-references-crypto-and-mandatory-github-archive.md",
+    "docs/conversations/2026-08-28-repository-driven-community-and-agents.md",
+    "docs/conversations/2026-08-28-repository-improvement-memory-and-criticality.md",
+    "docs/conversations/2026-08-28-repository-review-and-issue-3-implementation.md",
+    "docs/conversations/2026-08-28-science-physics-blockchain-roadmap.md",
+    "docs/conversations/2026-08-28-task-graph-growth-and-self-evolution.md",
+    "docs/conversations/2026-08-28-top-20-scalability-agility.md"
+  ]
+}
