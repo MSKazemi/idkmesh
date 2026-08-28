@@ -1,0 +1,50 @@
+name: IDKMesh Node CI
+
+on:
+  pull_request:
+    paths:
+      - "node/**"
+      - "schemas/node-execution-binding-v0.1.schema.json"
+      - "schemas/work-unit-v0.1.schema.json"
+      - "schemas/result-manifest-v0.1.schema.json"
+      - "experiments/**"
+      - ".github/workflows/idkmesh-node-ci.yml"
+  push:
+    branches: [main]
+    paths:
+      - "node/**"
+      - "schemas/node-execution-binding-v0.1.schema.json"
+      - "schemas/work-unit-v0.1.schema.json"
+      - "schemas/result-manifest-v0.1.schema.json"
+      - "experiments/**"
+      - ".github/workflows/idkmesh-node-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contract-and-unit-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install node package
+        run: python -m pip install -e node
+      - name: Validate Phase 0 shared contracts
+        run: |
+          python -m pip install -r requirements-phase0.txt
+          python experiments/harness.py validate
+      - name: Validate canonical node fixture
+        run: idkmesh-node validate node/examples/work-unit.canonical-smoke.json
+      - name: Run node unit tests
+        run: python -m unittest discover -s node/tests -v
+
+# Docker execution is intentionally not performed in GitHub-hosted CI.
+# Unit tests inspect the generated sandbox policy; a real acceptance run should
+# happen on an explicitly controlled machine with Docker available.
