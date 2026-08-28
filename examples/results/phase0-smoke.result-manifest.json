@@ -1,0 +1,68 @@
+{
+  "schema_version": "0.1",
+  "id": "phase0/smoke-result/attempt-1",
+  "work_unit_id": "phase0/smoke-work-unit",
+  "work_unit_version": 1,
+  "attempt": 1,
+  "worker": {
+    "id": "phase0-local-worker",
+    "type": "system",
+    "adapter": "deterministic-smoke",
+    "adapter_version": "0.1"
+  },
+  "status": "succeeded",
+  "started_at": "2026-08-28T13:30:00Z",
+  "finished_at": "2026-08-28T13:30:01Z",
+  "produced_artifacts": [
+    {
+      "id": "candidate-result",
+      "type": "test_result",
+      "locator": "results/phase0-smoke.jsonl",
+      "digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      "media_type": "application/x-ndjson",
+      "description": "Fixture locator/digest used only to validate the worker ResultManifest contract."
+    }
+  ],
+  "logs": [],
+  "metrics": {
+    "candidate_count": 1,
+    "worker_errors": 0
+  },
+  "resources": {
+    "wall_seconds": 1.0,
+    "compute_units": 0.0,
+    "human_minutes": 0.0,
+    "tokens": 0
+  },
+  "self_report": {
+    "summary": "The deterministic fixture completed and produced the expected candidate result locator.",
+    "claims": [
+      "The worker process completed without an internal error.",
+      "The produced artifact is ready to be checked by the independent validator."
+    ],
+    "confidence": {
+      "value": 1.0,
+      "meaning": "uncalibrated"
+    }
+  },
+  "provenance": {
+    "work_unit_digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+    "source_revision": "fixture",
+    "worker_config_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+    "environment": {
+      "platform": "fixture",
+      "python": ">=3.10",
+      "tool_versions": {
+        "idkmesh-phase0-harness": "0.1"
+      }
+    }
+  },
+  "verification_request": {
+    "expected_validator_ids": ["schema", "reproduction"],
+    "evidence_artifact_ids": ["candidate-result"],
+    "notes": "A worker requests verification; it does not claim that acceptance has occurred."
+  },
+  "extensions": {
+    "org.idkmesh.phase0.fixture": true
+  }
+}
