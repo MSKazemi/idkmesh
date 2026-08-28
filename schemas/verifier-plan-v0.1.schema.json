@@ -5,7 +5,7 @@
   "description": "Trusted verifier-side configuration. It is intentionally separate from WorkUnit so hidden checks do not need to be disclosed to the worker.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "id", "verifier", "source_input_id", "container_image", "checks"],
+  "required": ["schema_version", "id", "verifier", "source_input_id", "candidate_artifact_id", "container_image", "checks"],
   "properties": {
     "schema_version": {"const": "0.1"},
     "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._/-]{2,127}$"},
@@ -20,6 +20,7 @@
       }
     },
     "source_input_id": {"type": "string", "minLength": 1},
+    "candidate_artifact_id": {"type": "string", "minLength": 1},
     "container_image": {"type": "string", "minLength": 1, "maxLength": 256},
     "checks": {
       "type": "array",
