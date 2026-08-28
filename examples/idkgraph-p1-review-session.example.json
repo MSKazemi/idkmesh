@@ -1,0 +1,158 @@
+{
+  "schema_version": "0.1",
+  "experiment": "idkgraph-p1-orphan-cohort-1-independent-review",
+  "cohort": {
+    "seed": "idkgraph-p1-orphans-v1",
+    "frozen_source_revision": "d0bafb7fe64a5d15db82e721a281e0dee2d3cc30",
+    "candidate_count": 15
+  },
+  "reviewer": {
+    "public_id": "REPLACE_WITH_GITHUB_LOGIN_OR_PUBLIC_PSEUDONYM",
+    "independence_statement": "I did not generate the original PR #166 cohort labels.",
+    "anchoring_state": "blind_to_original_labels"
+  },
+  "timing": {
+    "started_at": null,
+    "completed_at": null,
+    "active_review_minutes": null,
+    "interruption_minutes": null
+  },
+  "reviews": [
+    {
+      "rank": 1,
+      "path": "docs/conversations/2026-08-28-target-execution-convergence-followup.md",
+      "label": "uncertain",
+      "confidence": 0.5,
+      "recommend_change": false,
+      "proposed_change_type": "none",
+      "evidence_note": "REPLACE"
+    },
+    {
+      "rank": 2,
+      "path": "docs/community/ACE_LINEAGE_PROTOCOL.md",
+      "label": "uncertain",
+      "confidence": 0.5,
+      "recommend_change": false,
+      "proposed_change_type": "none",
+      "evidence_note": "REPLACE"
+    },
+    {
+      "rank": 3,
+      "path": "docs/research/R2_SCALE_REGIME_SWEEP.md",
+      "label": "uncertain",
+      "confidence": 0.5,
+      "recommend_change": false,
+      "proposed_change_type": "none",
+      "evidence_note": "REPLACE"
+    },
+    {
+      "rank": 4,
+      "path": "docs/findings/2026-08-28-agent-ecosystem-and-idkmesh-evolution.md",
+      "label": "uncertain",
+      "confidence": 0.5,
+      "recommend_change": false,
+      "proposed_change_type": "none",
+      "evidence_note": "REPLACE"
+    },
+    {
+      "rank": 5,
+      "path": "docs/conversations/2026-08-28-free-resource-mesh-integration-outcome.md",
+      "label": "uncertain",
+      "confidence": 0.5,
+      "recommend_change": false,
+      "proposed_change_type": "none",
+      "evidence_note": "REPLACE"
+    },
+    {
+      "rank": 6,
+      "path": "docs/conversations/2026-08-28-framework-and-multidisciplinary-collaboration.md",
+      "label": "uncertain",
+      "confidence": 0.5,
+      "recommend_change": false,
+      "proposed_change_type": "none",
+      "evidence_note": "REPLACE"
+    },
+    {
+      "rank": 7,
+      "path": "docs/conversations/2026-08-28-continue-ace-consolidation-and-live-capacity.md",
+      "label": "uncertain",
+      "confidence": 0.5,
+      "recommend_change": false,
+      "proposed_change_type": "none",
+      "evidence_note": "REPLACE"
+    },
+    {
+      "rank": 8,
+      "path": "docs/architecture/EVOLUTION_ARTIFACT_MINIMIZATION.md",
+      "label": "uncertain",
+      "confidence": 0.5,
+      "recommend_change": false,
+      "proposed_change_type": "none",
+      "evidence_note": "REPLACE"
+    },
+    {
+      "rank": 9,
+      "path": "docs/findings/science-blockchain-sources-2026-08-28.md",
+      "label": "uncertain",
+      "confidence": 0.5,
+      "recommend_change": false,
+      "proposed_change_type": "none",
+      "evidence_note": "REPLACE"
+    },
+    {
+      "rank": 10,
+      "path": "docs/research/VERIFICATION_BACKPRESSURE_BENCHMARK.md",
+      "label": "uncertain",
+      "confidence": 0.5,
+      "recommend_change": false,
+      "proposed_change_type": "none",
+      "evidence_note": "REPLACE"
+    },
+    {
+      "rank": 11,
+      "path": "docs/conversations/2026-08-28-run-evidence-and-replay-continuation.md",
+      "label": "uncertain",
+      "confidence": 0.5,
+      "recommend_change": false,
+      "proposed_change_type": "none",
+      "evidence_note": "REPLACE"
+    },
+    {
+      "rank": 12,
+      "path": "docs/research/R1_SWARM_DIVERSITY_EXPERIMENT.md",
+      "label": "uncertain",
+      "confidence": 0.5,
+      "recommend_change": false,
+      "proposed_change_type": "none",
+      "evidence_note": "REPLACE"
+    },
+    {
+      "rank": 13,
+      "path": "docs/security/ACE_THREAT_MODEL.md",
+      "label": "uncertain",
+      "confidence": 0.5,
+      "recommend_change": false,
+      "proposed_change_type": "none",
+      "evidence_note": "REPLACE"
+    },
+    {
+      "rank": 14,
+      "path": "docs/conversations/2026-08-28-repository-audit-resource-contract-boundary.md",
+      "label": "uncertain",
+      "confidence": 0.5,
+      "recommend_change": false,
+      "proposed_change_type": "none",
+      "evidence_note": "REPLACE"
+    },
+    {
+      "rank": 15,
+      "path": "docs/conversations/2026-08-28-verification-orchestration-collaboration.md",
+      "label": "uncertain",
+      "confidence": 0.5,
+      "recommend_change": false,
+      "proposed_change_type": "none",
+      "evidence_note": "REPLACE"
+    }
+  ],
+  "notes": "Do not include secrets or private personal data. Allowed labels: navigation_gap, intentional_memory, reference_evidence, uncertain, other."
+}
