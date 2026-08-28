@@ -1,0 +1,34 @@
+name: PR91 acceptance harness check
+
+on:
+  pull_request:
+    paths:
+      - "scripts/pr91_acceptance.py"
+      - "docs/acceptance/PR91_CONTROLLED_DOCKER_GATE.md"
+      - ".github/workflows/pr91-acceptance-harness-check.yml"
+  push:
+    branches: [main]
+    paths:
+      - "scripts/pr91_acceptance.py"
+      - "docs/acceptance/PR91_CONTROLLED_DOCKER_GATE.md"
+      - ".github/workflows/pr91-acceptance-harness-check.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  self-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Compile harness
+        run: python -m py_compile scripts/pr91_acceptance.py
+      - name: Run Docker-free deterministic self-test
+        run: python scripts/pr91_acceptance.py self-test
+
+# This workflow intentionally does not install or run Docker and therefore is
+# not issue #37 runtime evidence. It validates only the helper's fail-closed
+# parsing, hashing, exact-binding, and synthetic bundle checks.
