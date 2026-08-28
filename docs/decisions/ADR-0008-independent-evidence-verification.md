@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-08-28
-- **Related experiments:** E012, E013
+- **Related experiments:** E012, E013, E015
 - **Related issues:** #22, #30, #71
 
 ## Context
@@ -34,7 +34,7 @@ IDKMesh verification should treat **estimated independent information** as the r
 
 ## Mathematical direction
 
-For a nominal group of size `N` with average pairwise error correlation `rho`, a useful heuristic is:
+For a nominal group of size `N` with average pairwise error correlation `rho`, a widely used heuristic is:
 
 `N_eff ~= N / (1 + (N - 1) rho)`
 
@@ -45,6 +45,8 @@ For verifier `i` with estimated correctness probability `p_i`, reliability evide
 `w_i = log(p_i / (1 - p_i))`
 
 A future correlation-aware rule may discount `w_i` by estimated redundancy. The exact formula is **not** decided by this ADR; it must be chosen through falsifiable experiments.
+
+E015 has since run that test on the `N_eff` heuristic above. See the follow-up section below: the heuristic survives as design intuition but **fails as a verification budget**, so it must not be promoted into the aggregation rule unmodified.
 
 ## Consequences
 
@@ -91,6 +93,41 @@ E014 should estimate verifier reliability and dependence from a calibration hist
 4. Bayesian/log-odds reliability weighting.
 
 The key question is no longer whether correlation matters. It is whether IDKMesh can **learn enough about correlation and reliability to improve verification without creating a new source of false confidence**.
+
+## Follow-up — E015 tested the `N_eff` heuristic
+
+This ADR deferred the exact formula to falsifiable experiment. E015 supplied one for the
+`N_eff ~= N / (1 + (N-1) rho)` term, measuring effective panel size directly across a
+630-cell grid. The shared-shock mixture makes pairwise error correlation *exactly* `rho`, so
+the heuristic is fed the parameter it asks for.
+
+Outcome: it is exact at `rho = 0` and `rho = 1`, wrong in between, and **the sign of its
+error is not fixed**.
+
+- Usually conservative — median 1.43x understatement over 280 cells — which is harmless.
+- But as `N` grows it converges to `1 / rho`, while true effective size converges to a lower
+  **accuracy-dependent ceiling**: the `n` solving `E_indep(n, p) = rho (1 - p)`. The shared
+  branch can be diluted but never outvoted, so panel error floors at `rho (1 - p)` no matter
+  how many verifiers are added.
+- At `p = 0.90`, `rho = 0.125` the heuristic promises 8 effective verifiers against a ceiling
+  of 4.59, implying a panel error **14x lower** than the model delivers.
+
+The optimistic corner is accurate verifiers with modest shared dependence, i.e. the regime
+this ADR is trying to build toward. This does not change the decision — principle 1 (count
+independent evidence, not votes) is reinforced, not weakened — but it constrains the
+implementation:
+
+1. `N / (1 + (N-1) rho)` stays as **design intuition only**. It must not be used to size a
+   panel or to set an acceptance threshold.
+2. A risk-sensitive policy (principle 6) should first compute the ceiling. If the ceiling is
+   below the confidence a Work Unit requires, **no panel size reaches it**; additional
+   reviewers are wasted spend and the only remaining moves are raising verifier accuracy or
+   reducing shared dependence.
+3. This strengthens principle 5: the redundancy discount is itself a fallible model, and the
+   first one this project wrote down was wrong in the unsafe direction.
+
+Reference implementation: `effective_n_ceiling` in `sim/e015_analyze.py`.
+Full result: [`../../experiments/E015-verification-phase-diagram.md`](../../experiments/E015-verification-phase-diagram.md).
 
 ## Implementation references
 
