@@ -1,0 +1,66 @@
+name: Run evidence and replay check
+
+on:
+  pull_request:
+    paths:
+      - "experiments/run_evidence_report.py"
+      - "experiments/two_attempt_orchestrator.py"
+      - "schemas/run-evidence-report-v0.1.schema.json"
+      - "schemas/result-manifest-v0.1.schema.json"
+      - "schemas/verification-result-v0.1.schema.json"
+      - "docs/specifications/RUN_EVIDENCE_REPORT_V0_1.md"
+      - ".github/workflows/run-evidence-report-check.yml"
+  push:
+    branches: [main]
+    paths:
+      - "experiments/run_evidence_report.py"
+      - "experiments/two_attempt_orchestrator.py"
+      - "schemas/run-evidence-report-v0.1.schema.json"
+      - "schemas/result-manifest-v0.1.schema.json"
+      - "schemas/verification-result-v0.1.schema.json"
+      - ".github/workflows/run-evidence-report-check.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  evidence-replay:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.13"]
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Check schema JSON syntax
+        run: python -m json.tool schemas/run-evidence-report-v0.1.schema.json > /dev/null
+
+      - name: Run evidence/replay self-test
+        run: python experiments/run_evidence_report.py self-test
+
+      - name: Generate product-facing evidence artifacts
+        run: |
+          python experiments/run_evidence_report.py generate \
+            --config examples/orchestration/two-attempt-good-vs-bad.json \
+            --run-output results/orchestration/ci.run.json \
+            --report-json results/orchestration/ci.evidence.json \
+            --report-markdown results/orchestration/ci.evidence.md
+          python -m json.tool results/orchestration/ci.evidence.json > /dev/null
+          grep -F "Human integration decision:** **pending" results/orchestration/ci.evidence.md
+
+      - name: Verify deterministic replay
+        run: |
+          python experiments/run_evidence_report.py replay-check \
+            --config examples/orchestration/two-attempt-good-vs-bad.json \
+            --run-record results/orchestration/ci.run.json
+
+# This workflow executes only repository-controlled deterministic fixture logic.
+# It does not execute candidate code, use secrets, select a candidate, push, merge,
+# or modify canonical repository state. Generated artifacts stay in the ephemeral
+# GitHub Actions workspace under results/.
