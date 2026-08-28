@@ -4,10 +4,12 @@ on:
   pull_request:
     paths:
       - "tools/idkgraph_observatory.py"
+      - "tools/idkgraph_health_checks.py"
       - "tools/idkgraph_markdown_index.py"
       - "tools/idkgraph_link_check.py"
       - "tools/idkgraph_repository_mapping.py"
       - "tools/idkgraph_workunit_cycles.py"
+      - "tests/test_idkgraph_health_checks.py"
       - "tests/test_idkgraph_observatory.py"
       - "tests/fixtures/idkgraph_observatory/**"
       - "schemas/idkgraph.schema.json"
@@ -17,10 +19,12 @@ on:
     branches: [main]
     paths:
       - "tools/idkgraph_observatory.py"
+      - "tools/idkgraph_health_checks.py"
       - "tools/idkgraph_markdown_index.py"
       - "tools/idkgraph_link_check.py"
       - "tools/idkgraph_repository_mapping.py"
       - "tools/idkgraph_workunit_cycles.py"
+      - "tests/test_idkgraph_health_checks.py"
       - "tests/test_idkgraph_observatory.py"
       - "tests/fixtures/idkgraph_observatory/**"
       - "schemas/idkgraph.schema.json"
@@ -46,8 +50,8 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install Phase 0 schema validator
         run: python -m pip install --disable-pip-version-check -r requirements-phase0.txt
-      - name: Run focused observatory tests
-        run: python -m unittest tests.test_idkgraph_observatory -v
+      - name: Run focused observatory and residual-health tests
+        run: python -m unittest tests.test_idkgraph_health_checks tests.test_idkgraph_observatory -v
       - name: Clean fixture must have zero deterministic errors
         run: |
           rm -rf /tmp/idkgraph-valid
@@ -91,7 +95,7 @@ jobs:
           cmp /tmp/idkgraph-run-a/idkgraph.json /tmp/idkgraph-run-b/idkgraph.json
           cmp /tmp/idkgraph-run-a/observatory.json /tmp/idkgraph-run-b/observatory.json
           cmp /tmp/idkgraph-run-a/repository-health.md /tmp/idkgraph-run-b/repository-health.md
-      - name: Validate integrated graph against current schema
+      - name: Validate integrated graph and report residual health counts
         run: |
           python - <<'PY'
           import json
@@ -109,9 +113,11 @@ jobs:
               f"{summary['graph']['nodes']} nodes, "
               f"{summary['graph']['hyperedges']} hyperedges, "
               f"{summary['finding_counts']['by_severity'].get('error', 0)} deterministic error(s), "
-              f"{summary['finding_counts']['by_severity'].get('warning', 0)} warning(s)"
+              f"{summary['finding_counts']['by_severity'].get('warning', 0)} warning(s), "
+              f"{summary['residual_health']['orphan_document_candidates']} orphan candidate(s), "
+              f"{summary['residual_health']['accepted_decisions_without_document_link']} accepted-decision linkage warning(s)"
           )
           PY
 
-# T5 composes deterministic observation only. It has no repository/GitHub write,
-# repair, semantic inference, approval, push, merge, or integration authority.
+# The observatory composes deterministic observation only. It has no repository/GitHub
+# write, repair, semantic inference, approval, push, merge, or integration authority.
