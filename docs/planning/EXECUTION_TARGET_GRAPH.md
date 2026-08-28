@@ -3,6 +3,8 @@
 **Snapshot:** 2026-08-28  
 **Mode:** convergence before expansion
 
+**Freshness note:** This is a point-in-time graph, and some numbered PR states below are historical. Revalidate every node against live GitHub and current main before acting; do not treat stale status prose as an integration instruction.
+
 This is the live execution view for the shortest evidence-producing path from IDKMesh's broad goals to a working, independently verified local product. It does not replace `GOALS.md`, `ROADMAP.md`, Issues, ADRs, or future machine-generated IDKGraph views.
 
 ## North Star
