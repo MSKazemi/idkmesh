@@ -1,0 +1,46 @@
+name: aco-stigmergy-sim
+
+on:
+  push:
+    paths:
+      - "sim/aco_stigmergy_sim.py"
+      - "sim/run_aco_sweep.py"
+      - "tests/test_aco_stigmergy_sim.py"
+      - "experiments/E014-aco-stigmergic-task-routing.md"
+      - "docs/algorithms/ACO_STIGMERGIC_TASK_ROUTING.md"
+      - ".github/workflows/aco-stigmergy-sim.yml"
+  pull_request:
+    paths:
+      - "sim/aco_stigmergy_sim.py"
+      - "sim/run_aco_sweep.py"
+      - "tests/test_aco_stigmergy_sim.py"
+      - "experiments/E014-aco-stigmergic-task-routing.md"
+      - "docs/algorithms/ACO_STIGMERGIC_TASK_ROUTING.md"
+      - ".github/workflows/aco-stigmergy-sim.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install test dependency
+        run: python -m pip install --disable-pip-version-check pytest
+      - name: Run ACO routing tests
+        run: python -m pytest -q tests/test_aco_stigmergy_sim.py
+      - name: Smoke-test single simulation
+        run: |
+          python sim/aco_stigmergy_sim.py --strategy all --seed 7 --workers 12 --epochs 8 > /tmp/aco.json
+          python -m json.tool /tmp/aco.json > /dev/null
+      - name: Smoke-test repeated-seed sweep
+        run: |
+          python sim/run_aco_sweep.py --seed-start 1 --seeds 3 --workers 12 --epochs 8 > /tmp/aco-sweep.json
+          python -m json.tool /tmp/aco-sweep.json > /dev/null
