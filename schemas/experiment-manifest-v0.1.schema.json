@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idkmesh.org/schemas/experiment-manifest-v0.1.schema.json",
+  "title": "IDKMesh Experiment Manifest v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "id", "title", "research_tracks", "hypotheses", "work_units", "configurations", "metrics", "repetitions", "seeds", "stopping_rules", "environment", "budget"],
+  "properties": {
+    "schema_version": {"const": "0.1"},
+    "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._/-]{2,127}$"},
+    "title": {"type": "string", "minLength": 1},
+    "description": {"type": "string"},
+    "research_tracks": {"type": "array", "items": {"type": "string"}, "minItems": 1, "uniqueItems": true},
+    "hypotheses": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "statement", "falsification"],
+        "properties": {
+          "id": {"type": "string"},
+          "statement": {"type": "string", "minLength": 1},
+          "falsification": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "work_units": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "path"],
+        "properties": {"id": {"type": "string"}, "path": {"type": "string"}}
+      }
+    },
+    "configurations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "description", "agent_count", "topology", "verification_policy", "runner"],
+        "properties": {
+          "id": {"type": "string", "minLength": 1},
+          "description": {"type": "string"},
+          "agent_count": {"type": "integer", "minimum": 0},
+          "topology": {"enum": ["single", "independent", "all_to_all", "hierarchical", "dag", "custom"]},
+          "verification_policy": {"type": "string", "minLength": 1},
+          "runner": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["type"],
+            "properties": {
+              "type": {"enum": ["deterministic_smoke", "command", "external"]},
+              "command": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+              "external_ref": {"type": "string"}
+            }
+          },
+          "parameters": {"type": "object", "additionalProperties": true}
+        }
+      }
+    },
+    "metrics": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "direction", "unit"],
+        "properties": {
+          "name": {"type": "string", "minLength": 1},
+          "direction": {"enum": ["maximize", "minimize", "report_only"]},
+          "unit": {"type": "string"},
+          "description": {"type": "string"}
+        }
+      }
+    },
+    "repetitions": {"type": "integer", "minimum": 1},
+    "seeds": {"type": "array", "items": {"type": "integer", "minimum": 0}, "minItems": 1, "uniqueItems": true},
+    "stopping_rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["type", "value"],
+        "properties": {
+          "type": {"enum": ["max_runs", "max_wall_seconds", "max_compute_units", "statistical", "manual"]},
+          "value": {},
+          "description": {"type": "string"}
+        }
+      }
+    },
+    "environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["python", "platform"],
+      "properties": {
+        "python": {"type": "string"},
+        "platform": {"type": "string"},
+        "container_image": {"type": "string"},
+        "notes": {"type": "string"}
+      }
+    },
+    "budget": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "max_wall_seconds": {"type": "number", "minimum": 0},
+        "max_compute_units": {"type": "number", "minimum": 0},
+        "max_human_minutes": {"type": "number", "minimum": 0}
+      }
+    },
+    "extensions": {"type": "object", "additionalProperties": true}
+  }
+}
