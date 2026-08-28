@@ -9,8 +9,10 @@ on:
       - "tools/idkgraph_link_check.py"
       - "tools/idkgraph_repository_mapping.py"
       - "tools/idkgraph_workunit_cycles.py"
+      - "tools/idkgraph_warning_sample.py"
       - "tests/test_idkgraph_health_checks.py"
       - "tests/test_idkgraph_observatory.py"
+      - "tests/test_idkgraph_warning_sample.py"
       - "tests/fixtures/idkgraph_observatory/**"
       - "schemas/idkgraph.schema.json"
       - "docs/decisions/ADR-*.md"
@@ -26,8 +28,10 @@ on:
       - "tools/idkgraph_link_check.py"
       - "tools/idkgraph_repository_mapping.py"
       - "tools/idkgraph_workunit_cycles.py"
+      - "tools/idkgraph_warning_sample.py"
       - "tests/test_idkgraph_health_checks.py"
       - "tests/test_idkgraph_observatory.py"
+      - "tests/test_idkgraph_warning_sample.py"
       - "tests/fixtures/idkgraph_observatory/**"
       - "schemas/idkgraph.schema.json"
       - "docs/decisions/ADR-*.md"
@@ -55,7 +59,7 @@ jobs:
       - name: Install Phase 0 schema validator
         run: python -m pip install --disable-pip-version-check -r requirements-phase0.txt
       - name: Run focused observatory and residual-health tests
-        run: python -m unittest tests.test_idkgraph_health_checks tests.test_idkgraph_observatory -v
+        run: python -m unittest tests.test_idkgraph_health_checks tests.test_idkgraph_observatory tests.test_idkgraph_warning_sample -v
       - name: Clean fixture must have zero deterministic errors
         run: |
           rm -rf /tmp/idkgraph-valid
@@ -135,6 +139,18 @@ jobs:
                   )
               raise SystemExit(f'{len(hard_errors)} unexpected deterministic repository-health error(s)')
           PY
+      - name: Emit deterministic orphan-review cohort
+        run: |
+          rm -f /tmp/idkgraph-orphan-sample.json
+          python tools/idkgraph_warning_sample.py . \
+            --category orphan_document_candidate \
+            --sample-size 15 \
+            --seed idkgraph-p1-orphans-v1 \
+            --output /tmp/idkgraph-orphan-sample.json \
+            --pretty
+          python -m json.tool /tmp/idkgraph-orphan-sample.json > /dev/null
+          cat /tmp/idkgraph-orphan-sample.json
 
-# The observatory composes deterministic observation only. It has no repository/GitHub
-# write, repair, semantic inference, approval, push, merge, or integration authority.
+# The observatory and sampler compose deterministic observation only. They have no
+# repository/GitHub write, repair, semantic inference, approval, push, merge, or
+# integration authority.
