@@ -37,6 +37,51 @@ A separate behavioral matrix must also prove that:
 - exact reviewed current head -> integrated-via-pr / cleanup eligible;
 - moved current head -> post-merge-branch-moved / not cleanup eligible.
 
+## Observed calibration result
+
+The first exact calibration head passed in GitHub Actions:
+
+- run `33201309072`;
+- job `98951164080`;
+- artifact `9697855139`;
+- artifact ZIP digest `sha256:9212f58c076324cb9aa6659c1c5cd54f9c61746d1de51647bc3f5576cf972136`.
+
+Straightforward candidate:
+
+- metadata verification: `passed`;
+- recommendation: `accept_candidate`;
+- required added transition: `1/1`;
+- required removed transition: `1/1`;
+- behavioral matrix: `safe_unobserved_head_matrix_passed=true`;
+- ResultManifest digest: `sha256:b5c2ce3beba36f4a6d8ed45497f1384063a542dbedf0153718f38f165c7ea5d3`;
+- VerificationResult digest: `sha256:1ec0fa91f62a3bc86c2562919b2790eae057dbb749994037d72b857f89c3a078`.
+
+Inert lexical decoy:
+
+- metadata verification: `failed`;
+- recommendation: `reject_candidate`;
+- required added transition: `1/1`;
+- required removed transition: `0/1`;
+- behavioral matrix confirms the vulnerable missing-head behavior remains;
+- ResultManifest digest: `sha256:1fbd1a3bb430bb7e2ba90f9869ef175a67a6dfbf1779a0fcb0026d14c7215a77`;
+- VerificationResult digest: `sha256:7bb19325c1ed6c10f3a6b54e1f972145aff600e077aacc619a5e3c7a240df796`.
+
+The workflow also confirmed that calibration candidates are not benchmark
+outcomes, the canonical verifier remains metadata-only, and no candidate has
+canonical-write, push, merge, or automatic-selection authority.
+
+## Evidence registration separation
+
+A temporary same-PR scaffold-state update was deliberately removed. PR #198 is
+kept as calibration machinery/evidence only, and the scaffold file is restored
+byte-for-byte from `main`. If #198 lands unchanged, calibration registration
+should be a separate small current-main PR that adds the run/artifact receipt,
+removes only Task 003 from `calibration_pending_task_ids`, keeps
+`freeze_ready=false`, and leaves actual Task 003 benchmark evidence pending.
+
+This avoids coupling evidence generation to evidence registration and prevents a
+fast-moving `main` from being overwritten by a stale scaffold snapshot.
+
 ## Scientific boundary
 
 This is calibration evidence, not a benchmark outcome and not a production
@@ -50,4 +95,4 @@ credentials, and no push/approval/merge/automatic-selection authority. Candidate
 code execution occurs only in a disposable evaluator-owned calibration checkout;
 the canonical v0.4 verifier remains metadata-only.
 
-Related: #127, #180, PR #186, PR #189.
+Related: #127, #180, PR #186, PR #189, PR #198.
