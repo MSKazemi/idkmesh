@@ -53,7 +53,7 @@ SCHEMA_VERSION = "idkgraph-observatory-v0.1"
 REPORT_FILENAME = "repository-health.md"
 GRAPH_FILENAME = "idkgraph.json"
 SUMMARY_FILENAME = "observatory.json"
-SEVERITY_ORDER = {"error": 0, "warning": 1}
+SEVERITY_ORDER = {"error": 0, "warning": 1, "notice": 2}
 
 # These paths contain intentionally failing acceptance fixtures. When the
 # repository root itself is scanned, their seeded failures are retained as
@@ -413,6 +413,18 @@ def render_health_report(observatory: dict[str, Any]) -> str:
             )
     else:
         lines.append("No deterministic P0 warnings were observed.")
+
+    lines.extend(["", "## Deterministic notices", ""])
+    notices = [item for item in findings if item["severity"] == "notice"]
+    if notices:
+        lines.extend(["| Category | Source | Line | ID | Message |", "| --- | --- | ---: | --- | --- |"])
+        for item in notices:
+            lines.append(
+                f"| `{_md(item['category'])}` | `{_md(item.get('source_path') or '-')}` | "
+                f"{item.get('line') or 0} | `{_md(item.get('source_id') or '-')}` | {_md(item['message'])} |"
+            )
+    else:
+        lines.append("No deterministic P0 notices were observed.")
 
     lines.extend(["", "## Expected negative fixture evidence", ""])
     expected_findings = expected.get("findings", [])

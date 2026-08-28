@@ -38,6 +38,85 @@ class ResidualHealthChecksTests(unittest.TestCase):
             "# ADR-0003: Proposed\n\nStatus: Proposed\n",
         )
 
+    def _artifact_fixture(self, root: Path) -> None:
+        """Reproduces the motivating case from the #152 cohort triage.
+
+        A calibration document carrying no inbound Markdown link, owned by the CI
+        workflow that runs it. Before the refinement this was indistinguishable
+        from an abandoned document.
+        """
+        self._write(root, "docs/README.md", "# Docs Index\n")
+        self._write(root, "docs/research/CALIBRATION.md", "# Calibration\n")
+        self._write(root, "docs/research/ABANDONED.md", "# Abandoned\n")
+        self._write(
+            root,
+            ".github/workflows/calibration.yml",
+            'name: Calibration\non:\n  push:\n    paths:\n'
+            '      - "docs/research/CALIBRATION.md"\n',
+        )
+
+    def test_workflow_owned_document_is_a_notice_not_an_orphan(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self._artifact_fixture(root)
+            result = check_residual_health(
+                root, build_repository_graph(root), check_links(root)
+            )
+            by_category = {
+                item["category"]: item
+                for item in result["findings"]
+                if item["source_path"] == "docs/research/CALIBRATION.md"
+            }
+
+            self.assertIn("document_referenced_only_by_non_markdown_artifact", by_category)
+            self.assertNotIn("orphan_document_candidate", by_category)
+
+            finding = by_category["document_referenced_only_by_non_markdown_artifact"]
+            self.assertEqual(finding["severity"], "notice")
+            self.assertEqual(
+                finding["evidence"]["referencing_artifacts"],
+                [".github/workflows/calibration.yml"],
+            )
+
+    def test_document_referenced_by_nothing_remains_an_orphan_candidate(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self._artifact_fixture(root)
+            result = check_residual_health(
+                root, build_repository_graph(root), check_links(root)
+            )
+            orphans = {
+                item["source_path"]
+                for item in result["findings"]
+                if item["category"] == "orphan_document_candidate"
+            }
+
+            self.assertIn("docs/research/ABANDONED.md", orphans)
+            self.assertNotIn("docs/research/CALIBRATION.md", orphans)
+
+    def test_document_with_an_inbound_markdown_link_produces_no_finding(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self._artifact_fixture(root)
+            # Same document, now also reachable by a human reader.
+            self._write(
+                root,
+                "docs/README.md",
+                "# Docs Index\n\n- [Calibration](research/CALIBRATION.md)\n",
+            )
+            result = check_residual_health(
+                root, build_repository_graph(root), check_links(root)
+            )
+
+            self.assertEqual(
+                [
+                    item
+                    for item in result["findings"]
+                    if item["source_path"] == "docs/research/CALIBRATION.md"
+                ],
+                [],
+            )
+
     def test_only_unreferenced_non_index_document_is_orphan_candidate(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
