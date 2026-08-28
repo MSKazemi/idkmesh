@@ -1,0 +1,84 @@
+{
+  "schema_version": "0.1",
+  "id": "project.idkmesh-research-replication",
+  "version": "0.1.0",
+  "name": "IDKMesh research replication",
+  "description": "Reference project that uses the same Core and software-engineering DomainPack for replayable research and benchmark evidence without repository-write authority.",
+  "core_compatibility": {
+    "core_api_version": "0.1",
+    "work_unit_schema_version": "0.2"
+  },
+  "roots": [
+    {
+      "id": "repository",
+      "kind": "repository",
+      "uri": ".",
+      "writable": false
+    },
+    {
+      "id": "research-results",
+      "kind": "artifact",
+      "uri": "results/research/",
+      "writable": true
+    }
+  ],
+  "goal_entrypoints": [
+    "RESEARCH_QUESTIONS.md",
+    "docs/research/R1_SWARM_DIVERSITY_EXPERIMENT.md",
+    "docs/research/R2_SCALE_REGIME_SWEEP.md"
+  ],
+  "domain_packs": [
+    {
+      "id": "domain.software-engineering",
+      "version": "0.1.0",
+      "path": "examples/domain-packs/software-engineering-v0.1.domain-pack.json"
+    }
+  ],
+  "allowed_work_unit_kinds": [
+    "benchmarking",
+    "research",
+    "documentation",
+    "review"
+  ],
+  "verification": {
+    "default_policy_ref": "software.benchmark",
+    "minimum_independent_verifiers": 1,
+    "human_integration_required": true
+  },
+  "risk_policy": {
+    "allowed_risk_classes": ["low", "medium"],
+    "maximum_autonomous_risk": "none"
+  },
+  "integration_policy": {
+    "mode": "proposal_only",
+    "target_branch": "main",
+    "automatic_merge_allowed": false,
+    "human_decision_required": true
+  },
+  "governance": {
+    "owners": ["role:research-maintainer"],
+    "reviewers": ["role:independent-reviewer"],
+    "decision_refs": ["RESEARCH_QUESTIONS.md", "DECISIONS.md"]
+  },
+  "metrics": {
+    "primary": "replay_success",
+    "secondary": ["verification_latency", "human_minutes", "artifact_reproducibility"]
+  },
+  "worker_constraints": {
+    "required_capabilities": ["deterministic-execution", "repository-read"],
+    "forbidden_capabilities": ["repository-write-authority", "repository-merge-authority"]
+  },
+  "storage": {
+    "artifact_root": "results/research/artifacts/",
+    "result_root": "results/research/",
+    "provenance_root": "results/research/provenance/"
+  },
+  "enabled_adapters": [
+    "software.repository",
+    "software.metadata-verifier"
+  ],
+  "metadata": {
+    "reference_project": true,
+    "authority_note": "This project is evidence-producing and proposal-only; research execution cannot mutate canonical repository state."
+  }
+}
