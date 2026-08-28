@@ -5,38 +5,44 @@
 
 ## Owner direction
 
-Continue strengthening the mathematical and algorithmic foundation and implement it through GitHub-native mechanisms while retaining the public reasoning trail.
+Continue strengthening the mathematical and algorithmic foundation through GitHub-native mechanisms; when an important action cannot be completed directly, expose it as a public issue; and preserve useful chat-derived reasoning, decisions, and results in the repository rather than leaving them only in private conversation context.
 
 ## What happened concurrently
 
-This pass first merged:
+This pass first established:
 
 - #137 — persistent Bayesian Mathematical Evolution Kernel;
-- #143 — live Repository Mathematical Portfolio with Pareto/NSGA, graph unlock, entropy/JSD, multiplicative attention, and UCB.
+- #143 — live Repository Mathematical Portfolio with Pareto/NSGA, graph unlock, entropy/JSD, multiplicative attention, and UCB;
+- #144 — stateless/recomputed Repository Evolution Observatory with a trusted PR event boundary, carrying capacity, graph/reference signals, Shannon diversity, control-energy deficits, replicator-mutator response, hard `GUARD`, Anti-Goodhart exclusions, and immutable Action pins.
 
-The first canonical portfolio run consumed a trusted Bayesian checkpoint and surfaced parallel evolution-observer PRs as high review-attention candidates.
+The first canonical portfolio run consumed a trusted Bayesian checkpoint and surfaced parallel evolution-observer PRs as high review-attention candidates. That created a real self-convergence test: improve the existing layers instead of preserving competing controllers because they were opened first.
 
-While a convergence branch was being prepared, PR #144 merged a useful Repository Evolution Observatory onto `main`. It added a stronger trusted PR event boundary, carrying capacity, graph/reference signals, Shannon diversity, control-energy deficits, replicator-mutator strategy response, hard `GUARD`, Anti-Goodhart exclusions, and immutable Action pins.
+A stale intermediate convergence PR (#146) was closed rather than forced across the semantic collision created by #144.
 
-That concurrent merge also replaced the artifact-backed Bayesian update in `evolution-loop.yml` with a purely recomputed observation. The mathematical pieces were therefore individually useful but no longer composed.
+## Current-main composition in PR #148
 
-A stale convergence PR (#146) was intentionally abandoned rather than forced across that semantic collision.
-
-## Clean convergence from current main
-
-The new current-main branch keeps the merged observatory intact and adds only the missing composition:
+The reduced convergence keeps #144 intact and restores/composes only what is missing:
 
 ```text
-persistent Bayesian history
- + current Repository Evolution Observatory
- + live Pareto/UCB Repository Mathematical Portfolio
- -> conjunctive bounded recommendation
+persistent Bayesian history (#137)
+ + current Repository Evolution Observatory (#144)
+ + live Pareto/UCB Repository Mathematical Portfolio (#143)
+ -> conjunctive bounded recommendation (#148)
  -> independent verification / GitHub governance
 ```
 
-### New conjunctive controller
+The layers answer different questions:
 
-`scripts/conjunctive_evolution_control.py` uses conservative Bayesian confidence bounds together with live observatory blockers/capacity.
+- Bayesian history: what uncertain evidence accumulated over trusted iterations?
+- live observatory: what are the current recoverable constraints and blockers?
+- portfolio: where is attention/experimentation most informative under multiple objectives?
+- conjunctive controller: are historical confidence and current hard guards jointly healthy enough to consider a stronger **non-integrating** experiment?
+
+None grants merge or approval authority.
+
+## New conjunctive controller
+
+`scripts/conjunctive_evolution_control.py` combines conservative Bayesian confidence bounds with live observatory blockers/capacity.
 
 A stronger bounded non-integrating experiment is a candidate only when:
 
@@ -48,31 +54,133 @@ A stronger bounded non-integrating experiment is a candidate only when:
 
 No integration, approval, merge, branch mutation, spending, or constitutional authority is created.
 
-Regression tests prove that perfect historical Bayesian confidence cannot override `main_unprotected -> GUARD`, and that weak history can block escalation even when the live state is clean.
+Hard non-compensation rule:
 
-### Bayesian persistence restored beside the observatory
+```text
+live hard blocker => stronger experiment candidate = false
+```
 
-The trusted evolution workflow now searches recent successful default-branch runs for the newest actual `evolution-checkpoint-*` artifact, restores its Bayesian state/ledger, updates history, then recomputes the current observatory and conjunctive decision.
+Therefore perfect historical Bayesian confidence cannot override `main_unprotected -> GUARD`.
 
-All three evidence layers are retained in the next checkpoint artifact.
+## Bayesian persistence restored beside the live observatory
+
+After #144, the Evolution Loop published stateless `evolution-observation-*` artifacts while #143's portfolio expected persistent `evolution-checkpoint-*` history containing `state/evolution-state.json`.
+
+That mismatch could make portfolio Bayesian-health silently fall back to the repository seed.
+
+PR #148 restores the trusted Bayesian checkpoint contract **without removing #144's live observatory**. The trusted workflow now:
+
+1. searches recent successful default-branch runs;
+2. selects the newest run that actually retains an unexpired `evolution-checkpoint-*` artifact;
+3. restores the Bayesian state/ledger when available;
+4. updates persistent history;
+5. recomputes the current live observatory from fresh bounded metadata;
+6. evaluates the conjunctive controller;
+7. retains historical, live, and conjunctive evidence in the next checkpoint.
 
 The lookup is constrained to successful default-branch runs so PR-generated artifacts cannot become trusted history.
 
-### Portfolio trust boundary hardened
+## GitHub Actions trust boundary
 
-The Repository Mathematical Portfolio now mirrors the observatory trust pattern:
+The Repository Mathematical Portfolio is hardened to mirror the live observatory pattern.
 
-- live PR observation through `pull_request_target` and trusted default-branch code;
-- ordinary PR-head code receives only `contents: read` and deterministic tests;
-- live checkpoints/API observation do not run from PR-head code;
-- artifact state uses a single observer concurrency lineage.
+### Trusted live observation
 
-### Standalone kernel supply chain
+- `pull_request_target` for PR metadata;
+- workflow definition comes from the default branch;
+- explicit default-branch checkout;
+- no PR-head code execution with live observer token scopes;
+- job-local read permissions only;
+- persisted checkout credentials disabled;
+- immutable Action pins.
 
-The standalone Mathematical Evolution Kernel now uses immutable Action SHAs and no longer needs `actions: read`.
+### Ordinary `pull_request`
 
-## Remaining truth
+- PR-head code receives only `contents: read`;
+- compile/unit/invariant tests only;
+- no trusted checkpoint restore;
+- no live GitHub API observation;
+- no repository secrets explicitly exported.
 
-GitHub still reports `main` as unprotected. Therefore the current live observatory must remain in `GUARD`, and the conjunctive controller must return false for stronger experiment escalation until the external branch/ruleset control in issue #35 is actually configured.
+Artifact-backed trusted observers use one latest-state concurrency lineage with `cancel-in-progress: true` so event storms do not create forked successor checkpoint histories.
 
-The repository can improve mathematics, verification, simulation, documentation, and bounded experiments in the meantime; it cannot truthfully treat internal scoring as a substitute for the missing external governance boundary.
+## Supply-chain hardening
+
+Core mathematical workflows use reviewed immutable commit SHAs for checkout, Python setup, artifact upload, and artifact download. The live observatory separately measures repository-wide workflow pin coverage, so local hardening is not misrepresented as proof that every workflow is already pinned.
+
+## Artifact privacy / evidence minimization finding
+
+During review of #148, the Repository Mathematical Portfolio was found to copy its transient `/tmp/repository-snapshot.json` into the retained checkpoint. That snapshot contains issue/PR bodies needed only ephemerally for deterministic classification/reference extraction.
+
+Retaining the raw bodies added no value to replayable portfolio evidence.
+
+The workflow was patched directly on #148:
+
+```text
+raw issue/PR text
+ -> ephemeral /tmp snapshot
+ -> deterministic portfolio calculation
+ -> NOT copied into uploaded checkpoint
+```
+
+The retained portfolio artifact now contains only derived portfolio state/output, policy, and Markdown. A shell assertion requires `repository-snapshot.json` to be absent from the checkpoint directory before upload.
+
+The separate #144 live-observatory snapshot already retains no issue/PR/comment bodies.
+
+## Anti-Goodhart rule
+
+```text
+stars           != correctness
+forks           != correctness
+raw comments    != correctness
+raw commits     != improvement
+Bayesian score  != causality
+Pareto rank     != approval
+UCB focus       != trust
+replicator mass != integration authority
+```
+
+Historical belief and current mathematical opportunity may guide attention, but current hard guards and independent verification remain binding.
+
+## Chat-to-repository propagation
+
+`PROJECT_RULES.md` remains the canonical mandatory preservation rule.
+
+For substantive turns, the project should continue to use two layers:
+
+```text
+docs/conversations/ structured public record
++
+promotion into code/docs/issues when the discussion changes the project
+```
+
+A repository observer can confirm that archive/rule surfaces exist, but it cannot detect a conversation that was never committed. The behavioral rule remains necessary.
+
+This turn itself is represented by this record plus the implementation/docs/issues it changed.
+
+## External actions surfaced as public work
+
+### #35 — protect `main`
+
+GitHub still reports `main` unprotected. The live observatory must truthfully remain in `GUARD`, and the conjunctive controller must refuse stronger experiment escalation until that external branch/ruleset boundary is actually configured.
+
+### #138 — separate human review for PR #91
+
+Automation cannot manufacture the genuinely separate human witness required for the canonical node. The blocker is public and claimable rather than being silently bypassed.
+
+## Remaining path for PR #148
+
+- require fresh exact-head PR-head CI after the artifact-minimization correction;
+- confirm the PR is mergeable against current `main` and contains only the intended convergence files;
+- inspect actual workflow permissions/pins/trusted-default-branch behavior;
+- open a bounded independent-review task for #148 once exact-head CI is green;
+- close older #142 unmerged as superseded when #148 is demonstrably clean/reviewable;
+- do not self-merge the repository-wide control-plane change.
+
+## Scientific next step
+
+After controller convergence, the next strong mathematical improvement should be calibration from delayed outcomes rather than another hand-authored controller.
+
+Join retained observations to outcomes such as regressions/reverts, verifier disagreement, review latency/burden, benchmark movement, issue reopen rate, newcomer completion, contributor retention, security findings, and time-to-verified-useful-work. Compare predictive variants on held-out Brier score, log loss, calibration error, ranking regret, and uncertainty coverage.
+
+Negative results remain first-class evidence.
