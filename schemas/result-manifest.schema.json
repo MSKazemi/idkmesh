@@ -1,0 +1,147 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idkmesh.org/schemas/result-manifest.schema.json",
+  "title": "IDKMesh Result Manifest",
+  "description": "A provenance-carrying result produced for a Work Unit and suitable for independent verification.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "work_unit_id",
+    "status",
+    "worker",
+    "environment",
+    "artifacts",
+    "evidence",
+    "confidence"
+  ],
+  "properties": {
+    "schema_version": { "type": "string", "const": "0.1.0" },
+    "work_unit_id": { "type": "string", "minLength": 1 },
+    "attempt_id": { "type": "string", "minLength": 1 },
+    "status": {
+      "type": "string",
+      "enum": ["completed", "failed", "partial", "cancelled", "timed_out", "rejected"]
+    },
+    "worker": {
+      "type": "object",
+      "required": ["id"],
+      "properties": {
+        "id": { "type": "string" },
+        "implementation": { "type": "string" },
+        "agent_role": { "type": "string" },
+        "model_family": { "type": "string" },
+        "model_version": { "type": "string" },
+        "key_id": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "environment": {
+      "type": "object",
+      "properties": {
+        "os": { "type": "string" },
+        "architecture": { "type": "string" },
+        "cpu": { "type": "string" },
+        "gpu": { "type": "string" },
+        "memory_mb": { "type": "integer", "minimum": 0 },
+        "container_image": { "type": "string" },
+        "container_digest": { "type": "string" },
+        "repository_commit": { "type": "string" },
+        "tool_versions": { "type": "object", "additionalProperties": { "type": "string" } }
+      },
+      "additionalProperties": true
+    },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "kind", "sha256"],
+        "properties": {
+          "name": { "type": "string" },
+          "kind": { "type": "string" },
+          "uri": { "type": "string" },
+          "sha256": { "type": "string", "pattern": "^[a-fA-F0-9]{64}$" },
+          "size_bytes": { "type": "integer", "minimum": 0 },
+          "media_type": { "type": "string" }
+        },
+        "additionalProperties": true
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["kind", "outcome"],
+        "properties": {
+          "kind": { "type": "string" },
+          "outcome": { "type": "string", "enum": ["pass", "fail", "inconclusive", "informational"] },
+          "summary": { "type": "string" },
+          "artifact_sha256": { "type": "string", "pattern": "^[a-fA-F0-9]{64}$" },
+          "metric": { "type": "number" },
+          "unit": { "type": "string" }
+        },
+        "additionalProperties": true
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "additionalProperties": {
+        "oneOf": [
+          { "type": "number" },
+          { "type": "integer" },
+          { "type": "string" },
+          { "type": "boolean" },
+          { "type": "null" }
+        ]
+      },
+      "default": {}
+    },
+    "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+    "started_at": { "type": "string", "format": "date-time" },
+    "finished_at": { "type": "string", "format": "date-time" },
+    "duration_seconds": { "type": "number", "minimum": 0 },
+    "logs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "uri": { "type": "string" },
+          "sha256": { "type": "string", "pattern": "^[a-fA-F0-9]{64}$" },
+          "stream": { "type": "string", "enum": ["stdout", "stderr", "event", "other"] }
+        },
+        "additionalProperties": true
+      },
+      "default": []
+    },
+    "verifier_results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["verifier_id", "decision"],
+        "properties": {
+          "verifier_id": { "type": "string" },
+          "decision": { "type": "string", "enum": ["accept", "reject", "inconclusive", "escalate"] },
+          "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+          "model_family": { "type": "string" },
+          "method": { "type": "string" },
+          "evidence_refs": { "type": "array", "items": { "type": "string" } },
+          "signature": { "type": "string" }
+        },
+        "additionalProperties": true
+      },
+      "default": []
+    },
+    "reproducibility": {
+      "type": "object",
+      "properties": {
+        "status": { "type": "string", "enum": ["not_checked", "reproduced", "failed_to_reproduce", "partially_reproduced"] },
+        "independent_attempts": { "type": "integer", "minimum": 0 },
+        "successful_attempts": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": true,
+      "default": { "status": "not_checked", "independent_attempts": 0, "successful_attempts": 0 }
+    },
+    "signature": { "type": "string" },
+    "signed_payload_sha256": { "type": "string", "pattern": "^[a-fA-F0-9]{64}$" }
+  },
+  "additionalProperties": true
+}
