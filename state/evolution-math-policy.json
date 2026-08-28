@@ -1,0 +1,116 @@
+{
+  "version": 1,
+  "bayesian": {
+    "fresh_alpha": 4.0,
+    "fresh_beta": 4.0,
+    "event_strength": 1.0,
+    "confidence_z": 1.96
+  },
+  "event_evidence": {
+    "issues.opened": {
+      "community_health": 0.10,
+      "exploration_capacity": 0.35
+    },
+    "issues.closed": {
+      "goal_clarity": 0.20,
+      "maintainability": 0.20
+    },
+    "pull_request.opened": {
+      "community_health": 0.10,
+      "product_quality": 0.10,
+      "exploration_capacity": 0.10
+    },
+    "pull_request.closed": {
+      "maintainability": 0.05
+    },
+    "pull_request.merged": {
+      "product_quality": 0.40,
+      "community_health": 0.15,
+      "verification_strength": 0.25,
+      "maintainability": 0.15,
+      "risk_debt": 0.08
+    },
+    "pull_request_review.submitted": {
+      "verification_strength": 0.35,
+      "community_health": 0.15,
+      "risk_debt": -0.08
+    },
+    "issue_comment.created": {
+      "community_health": 0.08
+    },
+    "workflow_run.success": {
+      "verification_strength": 0.40,
+      "product_quality": 0.10,
+      "risk_debt": -0.15
+    },
+    "workflow_run.failure": {
+      "verification_strength": -0.20,
+      "product_quality": -0.10,
+      "risk_debt": 0.50
+    },
+    "push.main": {
+      "maintainability": 0.05
+    },
+    "schedule.audit": {
+      "maintainability": 0.10
+    },
+    "workflow_dispatch.manual": {
+      "exploration_capacity": 0.10
+    }
+  },
+  "homeostasis": {
+    "targets": {
+      "goal_clarity": 0.75,
+      "product_quality": 0.80,
+      "community_health": 0.72,
+      "verification_strength": 0.85,
+      "maintainability": 0.78,
+      "exploration_capacity": 0.65,
+      "risk_debt": 0.20
+    },
+    "scales": {
+      "goal_clarity": 0.25,
+      "product_quality": 0.20,
+      "community_health": 0.25,
+      "verification_strength": 0.18,
+      "maintainability": 0.22,
+      "exploration_capacity": 0.25,
+      "risk_debt": 0.20
+    },
+    "weights": {
+      "goal_clarity": 1.0,
+      "product_quality": 1.2,
+      "community_health": 1.0,
+      "verification_strength": 1.4,
+      "maintainability": 1.0,
+      "exploration_capacity": 0.8,
+      "risk_debt": 1.5
+    },
+    "lyapunov_tolerance": 0.02
+  },
+  "bandit": {
+    "exploration": 1.4142135623730951
+  },
+  "multiplicative_weights": {
+    "eta": 0.20,
+    "exploration_floor": 0.05
+  },
+  "diversity": {
+    "minimum_normalized_entropy": 0.45,
+    "maximum_within_group_correlation_for_naive_counting": 0.10
+  },
+  "graph": {
+    "unlock_decay": 0.50
+  },
+  "pareto": {
+    "directions": {
+      "impact": 1,
+      "information_gain": 1,
+      "unlock": 1,
+      "diversity": 1,
+      "risk": -1,
+      "cost": -1,
+      "review_burden": -1
+    }
+  }
+}
