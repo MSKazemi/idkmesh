@@ -1,21 +1,19 @@
 #!/usr/bin/env python3
 """CI entrypoint for Task 001 v0.4 calibration with separated control/source roots.
 
-The burned source revision predates the later benchmark cohort index. Behavioral
-path-boundary calibration needs a valid cohort JSON *outside* the historical
-source checkout, but it must not pretend that the cohort file existed at that
-source revision.
+The exact burned source revision predates the later first-five cohort index. The
+behavioral path-boundary probe therefore must use a self-contained scaffold built
+only from files that existed at the frozen source SHA; otherwise an escaped path
+could return nonzero merely because later referenced benchmark files are absent.
 
-This wrapper therefore supplies the burned cohort definition from the
-**evaluator-owned control checkout** while the target program under test remains
-entirely from the exact frozen source checkout. It then delegates all candidate
-construction, metadata-only verification, behavioral checks, and authority
-assertions to ``task001_evaluator_calibration_v04`` unchanged.
+This wrapper performs a separate evaluator-control invariant: the current public
+first-five cohort must still be the same burned definition. It does **not** copy
+that later control object into the frozen source experiment and does not monkeypatch
+candidate construction, verifier semantics, or behavioral assertions.
 """
 
 from __future__ import annotations
 
-from pathlib import Path
 import sys
 
 import task001_evaluator_calibration_v04 as calibration
@@ -23,13 +21,11 @@ import task001_evaluator_calibration_v04 as calibration
 BURNED_DEFINITION_DIGEST = (
     "sha256:4fdec8a2768e32dc223b218ed70aec3a67aefcd87c64b72c5675c9921a4eab5c"
 )
-CONTROL_COHORT = (
-    calibration.ROOT / "benchmarks/phase-b2-first-five/cohort.json"
-)
+CONTROL_COHORT = calibration.ROOT / "benchmarks/phase-b2-first-five/cohort.json"
 
 
-def evaluator_owned_outside_cohort_path(source: Path) -> Path:
-    """Materialize a valid cohort fixture outside the immutable source checkout."""
+def verify_control_plane_burn() -> None:
+    """Fail closed if the durable burned cohort was rewritten or resurrected."""
 
     calibration.require(
         CONTROL_COHORT.is_file(),
@@ -37,24 +33,25 @@ def evaluator_owned_outside_cohort_path(source: Path) -> Path:
     )
     cohort = calibration.load_json(CONTROL_COHORT)
     calibration.require(
-        cohort.get("definition_digest") == BURNED_DEFINITION_DIGEST,
-        "evaluator-owned cohort fixture is not the burned Phase B2 definition",
+        cohort.get("id") == "benchmark/phase-b2-first-five",
+        "unexpected evaluator-owned cohort identity",
     )
     calibration.require(
-        cohort.get("id") == "benchmark/phase-b2-first-five",
-        "unexpected evaluator-owned cohort fixture identity",
+        cohort.get("stage") == "burned",
+        "Phase B2 first-five control cohort is no longer burned",
     )
-
-    outside = source.parent / "idkmesh-task001-outside-cohort.json"
-    outside.write_text(CONTROL_COHORT.read_text(encoding="utf-8"), encoding="utf-8")
-    return outside
+    calibration.require(
+        cohort.get("definition_digest") == BURNED_DEFINITION_DIGEST,
+        "burned Phase B2 definition digest drift",
+    )
+    calibration.require(
+        all(task.get("evidence", {}).get("status") == "excluded" for task in cohort.get("tasks", [])),
+        "burned Phase B2 cohort contains a non-excluded task outcome",
+    )
 
 
 def main() -> int:
-    # Deliberately patch only fixture provenance. Candidate transformations,
-    # verifier semantics, and behavioral assertions remain in the reviewed
-    # calibration module and are not weakened here.
-    calibration.outside_cohort_path = evaluator_owned_outside_cohort_path
+    verify_control_plane_burn()
     return calibration.main()
 
 
