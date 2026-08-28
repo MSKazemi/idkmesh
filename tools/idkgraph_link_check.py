@@ -1,17 +1,5 @@
 #!/usr/bin/env python3
-"""Deterministic repository-local Markdown link diagnostics for IDKGraph P0.
-
-Scope is intentionally conservative:
-- inline Markdown links of the form ``[label](target)``;
-- repository-relative targets only;
-- Markdown heading anchors derived from the T1 heading extractor;
-- external URLs are skipped without network access;
-- reference-style Markdown links are reported as unsupported warnings rather
-  than guessed.
-
-The checker distinguishes deterministic missing-file and missing-anchor errors.
-It does not judge whether a valid link is semantically useful.
-"""
+"""Deterministic repository-local Markdown link diagnostics for IDKGraph P0."""
 
 from __future__ import annotations
 
@@ -24,9 +12,6 @@ from pathlib import Path
 from typing import Any, Iterable
 from urllib.parse import unquote, urlsplit
 
-# Direct execution (``python tools/idkgraph_link_check.py``) places ``tools/``
-# rather than the repository root on sys.path. Add the root explicitly so the
-# same canonical T1 module is used by both CLI and import-based callers.
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 if str(REPOSITORY_ROOT) not in sys.path:
     sys.path.insert(0, str(REPOSITORY_ROOT))
@@ -34,39 +19,24 @@ if str(REPOSITORY_ROOT) not in sys.path:
 from tools.idkgraph_markdown_index import discover_markdown, parse_markdown
 
 SCHEMA_VERSION = "idkgraph-link-diagnostics-v0.1"
-
 INLINE_LINK = re.compile(r"(?<!!)\[[^\]\n]+\]\(([^)\n]+)\)")
 REFERENCE_LINK = re.compile(r"(?<!!)\[[^\]\n]+\]\[[^\]\n]*\]")
 FENCE = re.compile(r"^[ \t]{0,3}(`{3,}|~{3,})(.*)$")
 EXPLICIT_HTML_ID = re.compile(r"<[^>]+\bid=[\"']([^\"']+)[\"'][^>]*>", re.IGNORECASE)
-EXTERNAL_SCHEMES = {"http", "https", "mailto", "ftp", "ftps", "tel", "data", "javascript"}
+EXTERNAL_SCHEMES = {"http", "https", "mailto", "ftp", "ftps", "tel", "data"}
+GITHUB_NAVIGATION_ROOTS = {"actions", "commit", "commits", "compare", "discussions", "issues", "pull", "pulls", "releases"}
 
 
 def github_like_anchor_base(text: str) -> str:
-    """Return a deterministic GitHub-like heading slug.
-
-    This is a deliberately small approximation for ordinary repository
-    headings: Unicode is preserved, text is lowercased, punctuation other than
-    ``-``/``_`` is removed, and whitespace becomes ``-``. Complex rendered
-    Markdown inside headings is outside this P0 parser's promise.
-    """
     text = unicodedata.normalize("NFC", text).strip().lower()
     text = re.sub(r"<[^>]+>", "", text)
     text = re.sub(r"[^\w\-\s]", "", text, flags=re.UNICODE)
-    text = re.sub(r"\s+", "-", text)
-    return text
+    return re.sub(r"\s+", "-", text)
 
 
 def anchor_index(path: Path, root: Path) -> set[str]:
-    """Build deterministic heading/explicit-ID anchors for one Markdown file.
-
-    Suffix allocation is collision-aware across all generated slugs. For
-    example, headings ``Repeat``, ``Repeat-1``, ``Repeat`` become
-    ``repeat``, ``repeat-1``, ``repeat-2`` rather than producing a duplicate.
-    """
     parsed = parse_markdown(path, root)
     anchors: set[str] = set()
-
     for heading in parsed["headings"]:
         base = github_like_anchor_base(heading["text"])
         if not base:
@@ -77,11 +47,9 @@ def anchor_index(path: Path, root: Path) -> set[str]:
             suffix += 1
             anchor = f"{base}-{suffix}"
         anchors.add(anchor)
-
     text = path.read_text(encoding="utf-8")
     for match in EXPLICIT_HTML_ID.finditer(text):
         anchors.add(unicodedata.normalize("NFC", match.group(1)))
-
     return anchors
 
 
@@ -89,7 +57,6 @@ def _iter_non_fenced_lines(lines: list[str]) -> Iterable[tuple[int, str]]:
     in_fence = False
     fence_char = ""
     fence_len = 0
-
     for line_number, line in enumerate(lines, start=1):
         fence_match = FENCE.match(line)
         if fence_match:
@@ -114,24 +81,38 @@ def _extract_destination(raw_target: str) -> str | None:
         return None
     if value.startswith("<"):
         end = value.find(">")
-        if end < 0:
-            return None
-        return value[1:end]
-    # Markdown permits an optional title after whitespace. URL-escaped spaces
-    # remain part of the destination and are decoded later.
+        return None if end < 0 else value[1:end]
     return value.split(maxsplit=1)[0]
 
 
-def _finding(
-    *,
-    source: str,
-    line: int,
-    raw_target: str,
-    normalized_target_path: str | None,
-    target_anchor: str | None,
-    category: str,
-    severity: str,
-) -> dict[str, Any]:
+def _looks_like_github_navigation(decoded_path: str) -> bool:
+    parts = [part for part in decoded_path.replace("\\", "/").split("/") if part not in {"", "."}]
+    parent_count = 0
+    while parts and parts[0] == "..":
+        parent_count += 1
+        parts.pop(0)
+    return parent_count > 0 and bool(parts) and parts[0] in GITHUB_NAVIGATION_ROOTS
+
+
+def _resolve_exclusions(root: Path, excluded_paths: Iterable[str | Path]) -> tuple[list[Path], list[str]]:
+    resolved: list[tuple[str, Path]] = []
+    for raw in excluded_paths:
+        relative = Path(raw)
+        if relative.is_absolute():
+            raise ValueError(f"exclude path must be repository-relative: {raw}")
+        candidate = (root / relative).resolve()
+        try:
+            normalized = candidate.relative_to(root).as_posix()
+        except ValueError as exc:
+            raise ValueError(f"exclude path is outside repository root: {raw}") from exc
+        if not candidate.exists():
+            raise ValueError(f"exclude path does not exist: {raw}")
+        resolved.append((normalized, candidate))
+    resolved.sort(key=lambda item: item[0])
+    return [item[1] for item in resolved], [item[0] for item in resolved]
+
+
+def _finding(*, source: str, line: int, raw_target: str, normalized_target_path: str | None, target_anchor: str | None, category: str, severity: str) -> dict[str, Any]:
     return {
         "source_document": source,
         "line": line,
@@ -143,9 +124,13 @@ def _finding(
     }
 
 
-def check_repository(root: Path) -> dict[str, Any]:
+def check_repository(root: Path, excluded_paths: Iterable[str | Path] = ()) -> dict[str, Any]:
     root = root.resolve()
-    documents = discover_markdown(root)
+    exclusions, normalized_exclusions = _resolve_exclusions(root, excluded_paths)
+    documents = [
+        path for path in discover_markdown(root)
+        if not any(path == excluded or excluded in path.parents for excluded in exclusions)
+    ]
     anchor_cache: dict[Path, set[str]] = {}
     findings: list[dict[str, Any]] = []
     links_checked = 0
@@ -154,40 +139,16 @@ def check_repository(root: Path) -> dict[str, Any]:
     for source_path in documents:
         source_rel = source_path.relative_to(root).as_posix()
         lines = source_path.read_text(encoding="utf-8").splitlines()
-
         for line_number, line in _iter_non_fenced_lines(lines):
-            # Reference-style links are deliberately not resolved in P0 because
-            # their definitions and shortcut forms require a broader parser.
             for match in REFERENCE_LINK.finditer(line):
-                findings.append(
-                    _finding(
-                        source=source_rel,
-                        line=line_number,
-                        raw_target=match.group(0),
-                        normalized_target_path=None,
-                        target_anchor=None,
-                        category="unsupported_reference_link",
-                        severity="warning",
-                    )
-                )
+                findings.append(_finding(source=source_rel, line=line_number, raw_target=match.group(0), normalized_target_path=None, target_anchor=None, category="unsupported_reference_link", severity="warning"))
 
             for match in INLINE_LINK.finditer(line):
                 raw_target = match.group(1)
                 destination = _extract_destination(raw_target)
                 links_checked += 1
-
                 if destination is None:
-                    findings.append(
-                        _finding(
-                            source=source_rel,
-                            line=line_number,
-                            raw_target=raw_target,
-                            normalized_target_path=None,
-                            target_anchor=None,
-                            category="unsupported_inline_destination",
-                            severity="warning",
-                        )
-                    )
+                    findings.append(_finding(source=source_rel, line=line_number, raw_target=raw_target, normalized_target_path=None, target_anchor=None, category="unsupported_inline_destination", severity="warning"))
                     continue
 
                 parsed = urlsplit(destination)
@@ -196,119 +157,47 @@ def check_repository(root: Path) -> dict[str, Any]:
                     external_links_skipped += 1
                     continue
                 if scheme:
-                    findings.append(
-                        _finding(
-                            source=source_rel,
-                            line=line_number,
-                            raw_target=raw_target,
-                            normalized_target_path=None,
-                            target_anchor=unquote(parsed.fragment) or None,
-                            category="unsupported_uri_scheme",
-                            severity="warning",
-                        )
-                    )
+                    findings.append(_finding(source=source_rel, line=line_number, raw_target=raw_target, normalized_target_path=None, target_anchor=unquote(parsed.fragment) or None, category="unsupported_uri_scheme", severity="warning"))
                     continue
 
                 decoded_path = unquote(parsed.path)
                 target_anchor = unquote(parsed.fragment) or None
-
                 if decoded_path.startswith("/"):
-                    findings.append(
-                        _finding(
-                            source=source_rel,
-                            line=line_number,
-                            raw_target=raw_target,
-                            normalized_target_path=None,
-                            target_anchor=target_anchor,
-                            category="unsupported_root_absolute_link",
-                            severity="warning",
-                        )
-                    )
+                    findings.append(_finding(source=source_rel, line=line_number, raw_target=raw_target, normalized_target_path=None, target_anchor=target_anchor, category="unsupported_root_absolute_link", severity="warning"))
                     continue
 
-                if decoded_path:
-                    candidate = (source_path.parent / decoded_path).resolve()
-                else:
-                    candidate = source_path.resolve()
-
+                candidate = (source_path.parent / decoded_path).resolve() if decoded_path else source_path.resolve()
                 try:
                     relative_candidate = candidate.relative_to(root)
                 except ValueError:
-                    findings.append(
-                        _finding(
-                            source=source_rel,
-                            line=line_number,
-                            raw_target=raw_target,
-                            normalized_target_path=None,
-                            target_anchor=target_anchor,
-                            category="outside_repository",
-                            severity="error",
-                        )
-                    )
+                    if _looks_like_github_navigation(decoded_path):
+                        findings.append(_finding(source=source_rel, line=line_number, raw_target=raw_target, normalized_target_path=None, target_anchor=target_anchor, category="github_navigation_link", severity="warning"))
+                    else:
+                        findings.append(_finding(source=source_rel, line=line_number, raw_target=raw_target, normalized_target_path=None, target_anchor=target_anchor, category="outside_repository", severity="error"))
                     continue
 
                 normalized_path = relative_candidate.as_posix()
                 if not candidate.exists():
-                    findings.append(
-                        _finding(
-                            source=source_rel,
-                            line=line_number,
-                            raw_target=raw_target,
-                            normalized_target_path=normalized_path,
-                            target_anchor=target_anchor,
-                            category="missing_file",
-                            severity="error",
-                        )
-                    )
+                    findings.append(_finding(source=source_rel, line=line_number, raw_target=raw_target, normalized_target_path=normalized_path, target_anchor=target_anchor, category="missing_file", severity="error"))
                     continue
 
                 if target_anchor:
                     if not candidate.is_file() or candidate.suffix.lower() != ".md":
-                        findings.append(
-                            _finding(
-                                source=source_rel,
-                                line=line_number,
-                                raw_target=raw_target,
-                                normalized_target_path=normalized_path,
-                                target_anchor=target_anchor,
-                                category="unsupported_anchor_target",
-                                severity="warning",
-                            )
-                        )
+                        findings.append(_finding(source=source_rel, line=line_number, raw_target=raw_target, normalized_target_path=normalized_path, target_anchor=target_anchor, category="unsupported_anchor_target", severity="warning"))
                         continue
-
                     anchors = anchor_cache.setdefault(candidate, anchor_index(candidate, root))
                     if target_anchor not in anchors:
-                        findings.append(
-                            _finding(
-                                source=source_rel,
-                                line=line_number,
-                                raw_target=raw_target,
-                                normalized_target_path=normalized_path,
-                                target_anchor=target_anchor,
-                                category="missing_anchor",
-                                severity="error",
-                            )
-                        )
+                        findings.append(_finding(source=source_rel, line=line_number, raw_target=raw_target, normalized_target_path=normalized_path, target_anchor=target_anchor, category="missing_anchor", severity="error"))
 
-    findings.sort(
-        key=lambda item: (
-            item["source_document"],
-            item["line"],
-            item["raw_target"],
-            item["category"],
-        )
-    )
-    error_count = sum(item["severity"] == "error" for item in findings)
-    warning_count = sum(item["severity"] == "warning" for item in findings)
-
+    findings.sort(key=lambda item: (item["source_document"], item["line"], item["raw_target"], item["category"]))
     return {
         "schema_version": SCHEMA_VERSION,
         "documents_scanned": len(documents),
         "links_checked": links_checked,
         "external_links_skipped": external_links_skipped,
-        "error_count": error_count,
-        "warning_count": warning_count,
+        "excluded_paths": normalized_exclusions,
+        "error_count": sum(item["severity"] == "error" for item in findings),
+        "warning_count": sum(item["severity"] == "warning" for item in findings),
         "findings": findings,
     }
 
@@ -324,24 +213,23 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("root", nargs="?", default=".", help="Repository or fixture root.")
     parser.add_argument("--output", help="Write JSON report to this file instead of stdout.")
     parser.add_argument("--pretty", action="store_true", help="Pretty-print JSON output.")
-    parser.add_argument(
-        "--fail-on-error",
-        action="store_true",
-        help="Exit non-zero when deterministic broken-link errors are present.",
-    )
+    parser.add_argument("--exclude", action="append", default=[], metavar="PATH", help="Repository-relative file/directory to exclude from this scan; repeatable.")
+    parser.add_argument("--fail-on-error", action="store_true", help="Exit non-zero when deterministic broken-link errors are present.")
     args = parser.parse_args(argv)
 
     root = Path(args.root)
     if not root.is_dir():
         parser.error(f"root is not a directory: {root}")
+    try:
+        report = check_repository(root, excluded_paths=args.exclude)
+    except ValueError as exc:
+        parser.error(str(exc))
 
-    report = check_repository(root)
     payload = serialize_report(report, pretty=args.pretty)
     if args.output:
         Path(args.output).write_text(payload, encoding="utf-8")
     else:
         sys.stdout.write(payload)
-
     return 1 if args.fail_on_error and report["error_count"] else 0
 
 
