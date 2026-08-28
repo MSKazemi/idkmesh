@@ -11,7 +11,7 @@ SCRIPTS = ROOT / "scripts"
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
-import evolution_score  # noqa: E402
+import repository_evolution_score as evolution_score  # noqa: E402
 import evolution_snapshot  # noqa: E402
 
 POLICY = json.loads((ROOT / "config/evolution-policy-v1.json").read_text())
