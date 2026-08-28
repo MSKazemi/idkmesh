@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "free-mesh/public-code-analysis",
+  "task_class": "researcher",
+  "max_project_cost_usd": 0,
+  "data_sensitivity": "public",
+  "requires_repo_write": false,
+  "requires_llm": true,
+  "requires_docker": false,
+  "human_interactive_ok": true,
+  "repository_secret_ok": true,
+  "external_processing_ok": true,
+  "required_capabilities": ["llm"],
+  "preferred_capabilities": ["code_analysis", "git", "local_model", "independent_verification"]
+}

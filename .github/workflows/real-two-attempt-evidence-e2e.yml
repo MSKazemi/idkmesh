@@ -1,0 +1,105 @@
+name: Real Two-Attempt Evidence E2E
+
+on:
+  pull_request:
+    paths:
+      - "tools/real_two_attempt_evidence_e2e.py"
+      - ".github/workflows/real-two-attempt-evidence-e2e.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  real-two-attempt-evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out evaluator-owned current tree
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          path: evaluator
+          persist-credentials: false
+
+      - name: Check out exact accepted node candidate
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: 520ad2c9aa5825476de4957da4702d6823f4edb3
+          path: candidate
+          persist-credentials: false
+
+      - name: Verify producer identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C candidate rev-parse HEAD)" = "520ad2c9aa5825476de4957da4702d6823f4edb3"
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12"
+
+      - name: Install verifier dependency only
+        run: python -m pip install "jsonschema>=4.23,<5"
+
+      - name: Preload allowlisted runtime image
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker pull python:3.12-alpine
+          docker image inspect python:3.12-alpine
+
+      - name: Run two real attempts, independent verification, reporting, and fault isolation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python evaluator/tools/real_two_attempt_evidence_e2e.py \
+            --candidate candidate \
+            --output-root results/orchestration/real-two-attempt-evidence
+
+      - name: Publish run evidence to job summary
+        if: always()
+        shell: bash
+        run: |
+          ROOT="evaluator/results/orchestration/real-two-attempt-evidence"
+          EVIDENCE="$ROOT/e2e-evidence.json"
+          REPORT="$ROOT/evidence-report.md"
+          FAULT="$ROOT/fault-isolation-report.md"
+          if test -f "$EVIDENCE"; then
+            echo '## Real two-attempt E2E evidence' >> "$GITHUB_STEP_SUMMARY"
+            echo '' >> "$GITHUB_STEP_SUMMARY"
+            echo '```json' >> "$GITHUB_STEP_SUMMARY"
+            cat "$EVIDENCE" >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'Real two-attempt E2E evidence file was not produced.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+          if test -f "$REPORT"; then
+            echo '' >> "$GITHUB_STEP_SUMMARY"
+            echo '## Normal two-attempt evidence report' >> "$GITHUB_STEP_SUMMARY"
+            cat "$REPORT" >> "$GITHUB_STEP_SUMMARY"
+          fi
+          if test -f "$FAULT"; then
+            echo '' >> "$GITHUB_STEP_SUMMARY"
+            echo '## Fault-isolation evidence report' >> "$GITHUB_STEP_SUMMARY"
+            cat "$FAULT" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Persist replayable two-attempt evidence
+        if: success()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: real-two-attempt-evidence-${{ github.run_id }}
+          path: evaluator/results/orchestration/real-two-attempt-evidence/
+          if-no-files-found: error
+          retention-days: 30
+
+# Authority and trust boundary:
+# - the real worker is a separate exact-SHA checkout;
+# - evaluator checkout credentials are not persisted;
+# - no repository secrets are provided to candidate code;
+# - the candidate's own Docker policy remains network-off/read-only-root/cap-drop/no-new-privileges/resource-bounded;
+# - each completed candidate is independently evaluated by the current metadata-only EvaluatorPlan verifier;
+# - the run Evidence Report is non-selecting and keeps the human integration decision pending;
+# - this workflow has read-only repository permission and no push/approve/merge authority;
+# - persisted artifacts are review/replay evidence only and grant no candidate-selection or integration authority.
