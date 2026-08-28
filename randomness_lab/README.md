@@ -61,6 +61,7 @@ Each run records:
 
 - the exact configuration and seed;
 - worker definitions;
+- environment description;
 - verified success count/rate;
 - total and mean compute cost;
 - total and mean latency;
@@ -79,7 +80,7 @@ The current worker model is deliberately synthetic. `error_correlation` uses a t
 python -m unittest discover -s tests -v
 ```
 
-The tests check seeded reproducibility, repeated-trial reproducibility and uncertainty output, policy interchangeability, the correlation control, Thompson-sampling adaptation, and the power-of-d helper.
+The tests check seeded reproducibility, repeated-trial reproducibility and uncertainty output, policy interchangeability, environment interchangeability, the correlation control, Thompson-sampling adaptation, and the power-of-d helper.
 
 ## Adding a policy
 
@@ -88,6 +89,18 @@ The tests check seeded reproducibility, repeated-trial reproducibility and uncer
 3. Register it in `POLICIES` and `make_policy()`.
 4. Add a deterministic seeded test.
 5. Compare it with a simpler baseline. Bio-inspired or stochastic complexity is not accepted as evidence of superiority by itself.
+
+## Adding an environment
+
+Implement the `OutcomeEnvironment` protocol from `randomness_lab/model.py`. An environment needs:
+
+- a stable `name`;
+- `sample(workers, rng)`, returning exactly one boolean verified outcome for each worker name;
+- `describe()`, returning machine-readable provenance/parameters.
+
+Then inject the environment into `run_simulation(..., environment=...)`. Repeated experiments accept an `environment_factory` so each trial can receive a fresh environment instance.
+
+An environment must model **candidate outcomes**, not weaken verification. It should also expose its assumptions clearly enough that a result can be reproduced and challenged.
 
 ## Next slices
 
