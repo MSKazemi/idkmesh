@@ -11,7 +11,7 @@ That feedback loop worked immediately:
 
 1. run #11 (`33204420843`) observed two active-review candidates at `main@528690273...`;
 2. PR #203 merged seconds later;
-3. the resulting `main@bc5b1554...` push automatically launched run #12 (`33204576976`;
+3. the resulting `main@bc5b1554...` push automatically launched run #12 (`33204576976`);
 4. run #12 reduced the active-review lane from two candidates to one and moved the integrated branch into retirement state.
 
 This is direct evidence that eligibility must be treated as a state snapshot, not a durable permission.
