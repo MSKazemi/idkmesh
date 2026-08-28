@@ -19,13 +19,31 @@ from typing import Any
 
 from jsonschema import Draft202012Validator, FormatChecker
 
-HARNESS_VERSION = "0.1"
+HARNESS_VERSION = "0.2"
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_DIR = ROOT / "schemas"
-WORK_UNIT_SCHEMA = SCHEMA_DIR / "work-unit-v0.1.schema.json"
+WORK_UNIT_SCHEMA = SCHEMA_DIR / "work-unit-v0.2.schema.json"
 MANIFEST_SCHEMA = SCHEMA_DIR / "experiment-manifest-v0.1.schema.json"
 RESULT_SCHEMA = SCHEMA_DIR / "experiment-result-v0.1.schema.json"
 WORKER_RESULT_SCHEMA = SCHEMA_DIR / "result-manifest-v0.1.schema.json"
+
+REQUIRED_WORK_UNIT_KINDS = {
+    "coding",
+    "testing",
+    "review",
+    "benchmarking",
+    "documentation",
+}
+REQUIRED_WORK_UNIT_CONTRACT_FIELDS = {
+    "dependencies",
+    "requirements",
+    "security",
+    "permissions",
+    "verification_policy",
+    "validators",
+    "evidence_requirements",
+    "provenance",
+}
 
 
 class HarnessError(RuntimeError):
@@ -67,6 +85,24 @@ def validate_instance(instance: Any, schema_path: Path, label: str) -> None:
 def assert_invalid_instance(instance: Any, schema_path: Path, label: str) -> None:
     if not validation_errors(instance, schema_path):
         raise HarnessError(f"{label} was expected to be invalid but passed schema validation")
+
+
+def assert_work_unit_contract_coverage() -> None:
+    schema = load_json(WORK_UNIT_SCHEMA)
+    kinds = set(schema["properties"]["kind"]["enum"])
+    missing_kinds = sorted(REQUIRED_WORK_UNIT_KINDS - kinds)
+    if missing_kinds:
+        raise HarnessError(
+            "Work Unit schema is missing required work kind(s): " + ", ".join(missing_kinds)
+        )
+
+    required_fields = set(schema["required"])
+    missing_fields = sorted(REQUIRED_WORK_UNIT_CONTRACT_FIELDS - required_fields)
+    if missing_fields:
+        raise HarnessError(
+            "Work Unit schema is missing required contract field(s): "
+            + ", ".join(missing_fields)
+        )
 
 
 def resolve_repo_path(raw: str) -> Path:
@@ -142,8 +178,18 @@ def cmd_validate(args: argparse.Namespace) -> int:
     ):
         validator_for(schema_path)
 
+    assert_work_unit_contract_coverage()
+
     manifest_path = resolve_repo_path(args.manifest)
     manifest, work_units = validate_manifest_and_work_units(manifest_path)
+
+    invalid_work_unit_path = resolve_repo_path(args.invalid_work_unit)
+    invalid_work_unit = load_json(invalid_work_unit_path)
+    assert_invalid_instance(
+        invalid_work_unit,
+        WORK_UNIT_SCHEMA,
+        str(invalid_work_unit_path),
+    )
 
     worker_result_path = resolve_repo_path(args.worker_result)
     validate_worker_result_contract(worker_result_path, work_units)
@@ -162,9 +208,9 @@ def cmd_validate(args: argparse.Namespace) -> int:
         validate_instance(result, RESULT_SCHEMA, str(result_path))
 
     print(
-        f"OK: schemas valid; manifest {manifest['id']}, "
+        f"OK: schemas valid; WorkUnit v0.2 contract coverage enforced; manifest {manifest['id']}, "
         f"{len(manifest['work_units'])} Work Unit(s), and worker ResultManifest validated; "
-        "negative self-acceptance fixture rejected as expected"
+        "negative WorkUnit/security and worker self-acceptance fixtures rejected as expected"
     )
     return 0
 
@@ -291,12 +337,17 @@ def build_parser() -> argparse.ArgumentParser:
 
     validate_parser = subparsers.add_parser(
         "validate",
-        help="Validate schemas, a manifest, referenced Work Units, and worker ResultManifest fixtures.",
+        help="Validate schemas, WorkUnit contract coverage, fixtures, and worker ResultManifest contracts.",
     )
     validate_parser.add_argument(
         "--manifest",
         default="examples/experiments/phase0-smoke.manifest.json",
         help="Repository-relative manifest path.",
+    )
+    validate_parser.add_argument(
+        "--invalid-work-unit",
+        default="examples/work-units/invalid-missing-security.work-unit.json",
+        help="Repository-relative WorkUnit fixture that must be rejected.",
     )
     validate_parser.add_argument(
         "--worker-result",
