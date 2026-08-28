@@ -46,7 +46,7 @@
     }
   },
   "provenance": {
-    "work_unit_digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+    "work_unit_digest": "sha256:0baf0c586505f20a9c0ad3d4c2d16a968db09825d3bea2899a4add127413b0b2",
     "source_revision": "fixture",
     "worker_config_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
     "environment": {
