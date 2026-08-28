@@ -1,0 +1,191 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idkmesh.org/schemas/routing-replay-v0.schema.json",
+  "title": "IDKMesh Routing Replay Dataset v0",
+  "description": "Read-only historical/shadow dataset for comparing task-routing strategies without changing repository state. Routing inputs and retrospective outcomes are separated to reduce hindsight leakage.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "dataset_id",
+    "repository",
+    "annotation_policy",
+    "tasks",
+    "workers",
+    "snapshots",
+    "limitations"
+  ],
+  "properties": {
+    "schema_version": {"type": "string", "const": "0.1.0"},
+    "dataset_id": {"type": "string", "minLength": 1},
+    "repository": {
+      "type": "object",
+      "required": ["full_name"],
+      "properties": {
+        "full_name": {"type": "string", "minLength": 1},
+        "commit": {"type": "string"},
+        "source_url": {"type": "string", "format": "uri"},
+        "captured_at": {"type": "string", "format": "date-time"}
+      },
+      "additionalProperties": false
+    },
+    "annotation_policy": {
+      "type": "object",
+      "required": ["method", "hindsight_rule"],
+      "properties": {
+        "method": {"type": "string", "minLength": 1},
+        "hindsight_rule": {"type": "string", "minLength": 1},
+        "annotator": {"type": "string"},
+        "notes": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": false
+    },
+    "tasks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "source_ref",
+          "skill",
+          "impact",
+          "information_gain",
+          "review_cost",
+          "compute_cost",
+          "risk",
+          "accessibility"
+        ],
+        "properties": {
+          "id": {"type": "string", "minLength": 1},
+          "source_ref": {"type": "string", "minLength": 1},
+          "skill": {"type": "string", "minLength": 1},
+          "impact": {"type": "number", "minimum": 0, "maximum": 1},
+          "information_gain": {"type": "number", "minimum": 0, "maximum": 1},
+          "review_cost": {"type": "number", "minimum": 0},
+          "compute_cost": {"type": "number", "minimum": 0},
+          "risk": {"type": "number", "minimum": 0, "maximum": 1},
+          "accessibility": {"type": "number", "minimum": 0, "maximum": 1},
+          "feature_provenance": {
+            "type": "object",
+            "additionalProperties": {"type": "string"}
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "workers": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "group", "skills"],
+        "properties": {
+          "id": {"type": "string", "minLength": 1},
+          "group": {"type": "string", "minLength": 1},
+          "skills": {
+            "type": "object",
+            "minProperties": 1,
+            "additionalProperties": {"type": "number", "minimum": 0, "maximum": 1}
+          },
+          "profile_provenance": {"type": "string"}
+        },
+        "additionalProperties": false
+      }
+    },
+    "snapshots": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "observed_at",
+          "available_task_ids",
+          "available_worker_ids",
+          "active_attempts",
+          "evidence",
+          "retrospective_outcomes"
+        ],
+        "properties": {
+          "id": {"type": "string", "minLength": 1},
+          "observed_at": {"type": "string", "format": "date-time"},
+          "available_task_ids": {
+            "type": "array",
+            "items": {"type": "string"},
+            "uniqueItems": true
+          },
+          "available_worker_ids": {
+            "type": "array",
+            "items": {"type": "string"},
+            "uniqueItems": true
+          },
+          "active_attempts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["task_id", "worker_group"],
+              "properties": {
+                "task_id": {"type": "string"},
+                "worker_group": {"type": "string"}
+              },
+              "additionalProperties": false
+            }
+          },
+          "evidence": {
+            "description": "Evidence known by the replay time. Future outcomes must not appear here.",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "task_id",
+                "verified",
+                "quality",
+                "verification_strength",
+                "diversity",
+                "descendant_value",
+                "human_review_cost",
+                "compute_cost"
+              ],
+              "properties": {
+                "task_id": {"type": "string"},
+                "verified": {"type": "boolean"},
+                "quality": {"type": "number", "minimum": 0, "maximum": 1},
+                "verification_strength": {"type": "number", "minimum": 0, "maximum": 1},
+                "diversity": {"type": "number", "minimum": 0, "maximum": 1},
+                "descendant_value": {"type": "number", "minimum": 0, "maximum": 1},
+                "human_review_cost": {"type": "number", "minimum": 0},
+                "compute_cost": {"type": "number", "minimum": 0},
+                "penalty": {"type": "number", "minimum": 0, "default": 0},
+                "source_ref": {"type": "string"}
+              },
+              "additionalProperties": false
+            }
+          },
+          "observed_duplicate_rate": {"type": "number", "minimum": 0, "maximum": 1},
+          "observed_concentration": {"type": "number", "minimum": 0, "maximum": 1},
+          "retrospective_outcomes": {
+            "description": "Held-out outcomes that became known after the snapshot. Routing code must not use these to generate recommendations.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "verified_utility": {"type": "number", "minimum": 0},
+                "eventual_verified": {"type": "boolean"},
+                "source_ref": {"type": "string"}
+              },
+              "additionalProperties": false
+            }
+          },
+          "source_refs": {"type": "array", "items": {"type": "string"}}
+        },
+        "additionalProperties": false
+      }
+    },
+    "limitations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"type": "string"}
+    }
+  },
+  "additionalProperties": false
+}
