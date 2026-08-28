@@ -18,8 +18,8 @@ on:
       - synchronize
       - ready_for_review
       - converted_to_draft
-  # Proposed changes to the auditor/planner themselves still execute through the
-  # ordinary PR check so the proposed code earns its own deterministic tests.
+  # Proposed changes to the auditor/planner themselves earn deterministic tests.
+  # They do not spend the live API budget; a canonical full scan follows merge.
   pull_request:
     paths:
       - 'tools/branch_convergence_audit.py'
@@ -89,8 +89,21 @@ jobs:
           python -m unittest tests.test_branch_merge_planner -v
           python tools/branch_merge_planner.py self-test
 
+      - name: Record proposed-code test boundary
+        if: github.event_name == 'pull_request'
+        run: |
+          {
+            echo '## Branch Steward — PROPOSED CODE TEST'
+            echo ''
+            echo 'Deterministic auditor/planner tests ran on the proposed PR code.'
+            echo 'No live full-branch scan runs on pull_request events in order to protect the shared GitHub API budget.'
+            echo 'A canonical full scan follows a main push, schedule, or manual dispatch.'
+            echo 'merge authorized: false'
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Observe GitHub API budget
         id: rate
+        if: github.event_name != 'pull_request'
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
@@ -106,7 +119,7 @@ jobs:
           allowed = False
           record = {
               'schema_version': '0.1',
-              'minimum_remaining_for_full_scan': 500,
+              'minimum_remaining_for_full_scan': 1500,
               'allowed': False,
               'remaining': None,
               'limit': None,
@@ -143,19 +156,54 @@ jobs:
           PY
 
       - name: Audit live branch convergence state
-        if: steps.rate.outputs.allowed == 'true'
+        id: scan
+        if: github.event_name != 'pull_request' && steps.rate.outputs.allowed == 'true'
         env:
           GITHUB_TOKEN: ${{ github.token }}
+        shell: bash
         run: |
           set -euo pipefail
+          ERROR="$RUNNER_TEMP/idkmesh-branch-audit/audit-error.txt"
+          set +e
           python tools/branch_convergence_audit.py \
             --repo "$GITHUB_REPOSITORY" \
             --default-branch "${{ github.event.repository.default_branch || 'main' }}" \
             --output-json "$RUNNER_TEMP/idkmesh-branch-audit/branch-convergence.json" \
-            --output-md "$RUNNER_TEMP/idkmesh-branch-audit/branch-convergence.md"
+            --output-md "$RUNNER_TEMP/idkmesh-branch-audit/branch-convergence.md" \
+            2>"$ERROR"
+          STATUS=$?
+          set -e
+          if test "$STATUS" -eq 0; then
+            echo 'ready=true' >> "$GITHUB_OUTPUT"
+            rm -f "$ERROR"
+            exit 0
+          fi
+          if grep -qi 'rate limit exceeded' "$ERROR"; then
+            python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          root = Path(os.environ['RUNNER_TEMP']) / 'idkmesh-branch-audit'
+          error = (root / 'audit-error.txt').read_text(encoding='utf-8', errors='replace')[:1200]
+          record = {
+              'schema_version': '0.1',
+              'reason': 'github_api_rate_limit_exhausted_during_scan',
+              'full_scan_complete': False,
+              'merge_authorized': False,
+              'error_excerpt': error,
+          }
+          (root / 'scan-blocked.json').write_text(
+              json.dumps(record, indent=2, sort_keys=True) + '\n', encoding='utf-8'
+          )
+          PY
+            echo 'ready=false' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          cat "$ERROR" >&2
+          exit "$STATUS"
 
       - name: Build deterministic branch-to-main execution plan
-        if: steps.rate.outputs.allowed == 'true'
+        if: steps.scan.outputs.ready == 'true'
         run: |
           set -euo pipefail
           python tools/branch_merge_planner.py plan \
@@ -167,6 +215,7 @@ jobs:
         if: always()
         run: |
           RATE="$RUNNER_TEMP/idkmesh-branch-audit/rate-limit.json"
+          BLOCKED="$RUNNER_TEMP/idkmesh-branch-audit/scan-blocked.json"
           AUDIT="$RUNNER_TEMP/idkmesh-branch-audit/branch-convergence.md"
           PLAN="$RUNNER_TEMP/idkmesh-branch-audit/branch-merge-plan.md"
           if test -f "$RATE"; then
@@ -176,22 +225,29 @@ jobs:
             echo '```' >> "$GITHUB_STEP_SUMMARY"
             echo '' >> "$GITHUB_STEP_SUMMARY"
           fi
+          if test -f "$BLOCKED"; then
+            echo '### Mid-scan API block' >> "$GITHUB_STEP_SUMMARY"
+            echo '```json' >> "$GITHUB_STEP_SUMMARY"
+            cat "$BLOCKED" >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            echo '' >> "$GITHUB_STEP_SUMMARY"
+          fi
           if test -f "$AUDIT"; then
             cat "$AUDIT" >> "$GITHUB_STEP_SUMMARY"
-          else
+          elif test "${{ github.event_name }}" != 'pull_request'; then
             echo '## Branch Steward — FULL SCAN BLOCKED' >> "$GITHUB_STEP_SUMMARY"
             echo '' >> "$GITHUB_STEP_SUMMARY"
-            echo 'No branch convergence report was produced; no merge plan is current and merge authorization remains false.' >> "$GITHUB_STEP_SUMMARY"
+            echo 'No complete branch convergence report was produced; no merge plan is current and merge authorization remains false.' >> "$GITHUB_STEP_SUMMARY"
           fi
           echo '' >> "$GITHUB_STEP_SUMMARY"
           if test -f "$PLAN"; then
             cat "$PLAN" >> "$GITHUB_STEP_SUMMARY"
-          else
+          elif test "${{ github.event_name }}" != 'pull_request'; then
             echo 'Branch merge plan was not produced.' >> "$GITHUB_STEP_SUMMARY"
           fi
 
       - name: Upload audit and plan evidence
-        if: always()
+        if: always() && github.event_name != 'pull_request'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: branch-convergence-${{ github.run_id }}
@@ -203,8 +259,11 @@ jobs:
 # - read-only repository and PR permissions;
 # - pull_request_target is an API-cheap invalidation event and executes no repository code;
 # - a lifecycle invalidation means the prior full plan is stale, never more authoritative;
-# - full scans run only on main push, schedule, manual dispatch, or proposed auditor/planner PR tests;
+# - pull_request tests proposed code deterministically but do not run a live graph scan;
+# - full scans run only on main push, schedule, or manual dispatch;
 # - low/unknown API budget blocks the full scan and emits no merge plan;
+# - mid-scan rate exhaustion is converted to blocked/no-plan evidence, never partial authority;
+# - non-rate-limit auditor errors still fail the workflow;
 # - no push, merge, approval, branch deletion, label, issue, or settings mutation;
 # - no execution of issue/PR natural-language content;
 # - branch state and merge-plan lanes are decision support only;
