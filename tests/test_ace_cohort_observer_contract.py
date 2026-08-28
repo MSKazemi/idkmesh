@@ -31,7 +31,7 @@ class AceCohortObserverContractTests(unittest.TestCase):
     def test_snapshot_does_not_claim_full_reproduction_number(self):
         self.assertIn("metric_scope: 'bootstrap_growth_seed_exposure'", TEXT)
         self.assertIn("full_r_community_ready: false", TEXT)
-        self.assertIn("not yet the full", TEXT.lower())
+        self.assertIn("this observer alone must not claim the full reproduction number", TEXT.lower())
 
     def test_verification_label_is_observed_not_auto_applied(self):
         self.assertIn("const verifiedLabel = 'ace:verified-descendant';", TEXT)
