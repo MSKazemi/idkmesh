@@ -8,6 +8,7 @@ on:
       - "examples/**"
       - "verification/**"
       - "experiments/**"
+      - "tests/test_verification_backpressure_benchmark.py"
       - "requirements-phase0.txt"
       - ".github/workflows/phase0-schema-check.yml"
   push:
@@ -18,6 +19,7 @@ on:
       - "examples/**"
       - "verification/**"
       - "experiments/**"
+      - "tests/test_verification_backpressure_benchmark.py"
       - "requirements-phase0.txt"
       - ".github/workflows/phase0-schema-check.yml"
 
@@ -45,6 +47,10 @@ jobs:
             --bad-candidate-root examples/verifier/bad/candidate-root
       - name: Verify risk-weighted verification backpressure
         run: python experiments/verification_backpressure.py --self-test
+      - name: Verify temporal verification-backpressure benchmark
+        run: |
+          python experiments/verification_backpressure_benchmark.py --self-test
+          python -m unittest discover -s tests -p 'test_verification_backpressure_benchmark.py' -v
       - name: Verify zero-cost compute routing
         run: python experiments/free_compute_router.py self-test
       - name: Verify capped local capability discovery
@@ -63,7 +69,9 @@ jobs:
 # deterministic_smoke runner. provenance_integrity.py performs canonical hashing
 # and cross-object lineage checks only. local_verifier.py parses isolated fixture
 # JSON and applies verifier-owned deterministic policy without executing candidate
-# code. The verification backpressure utility performs scheduling/control arithmetic
-# only. local_compute_offer.py performs local resource discovery only, and
-# free_compute_router.py performs selection only. Repository policy must fail closed
-# rather than granting new execution or project-paid compute authority.
+# code. The verification backpressure utilities perform deterministic scheduling,
+# queue, and synthetic evidence arithmetic only; the temporal benchmark does not
+# execute candidates or grant integration authority. local_compute_offer.py performs
+# local resource discovery only, and free_compute_router.py performs selection only.
+# Repository policy must fail closed rather than granting new execution or
+# project-paid compute authority.
