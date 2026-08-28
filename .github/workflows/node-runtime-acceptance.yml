@@ -27,7 +27,7 @@ jobs:
       - name: Check out corrected frozen PR 91 node candidate
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          ref: cbd40c43497ae4feb3a4a5e410dc78766b6cb19c
+          ref: 520ad2c9aa5825476de4957da4702d6823f4edb3
           path: candidate
           persist-credentials: false
 
@@ -35,7 +35,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git -C candidate rev-parse HEAD)" = "cbd40c43497ae4feb3a4a5e410dc78766b6cb19c"
+          test "$(git -C candidate rev-parse HEAD)" = "520ad2c9aa5825476de4957da4702d6823f4edb3"
 
       - name: Set up Python
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
