@@ -3,7 +3,10 @@ import json
 import unittest
 from pathlib import Path
 
-from jsonschema import Draft202012Validator
+try:
+    from jsonschema import Draft202012Validator
+except ModuleNotFoundError:  # Generic repository suites may omit Phase 0 extras.
+    Draft202012Validator = None
 
 from tools.idkgraph_workunit_cycles import check_graph, load_graph, serialize_result
 
@@ -16,14 +19,24 @@ SCHEMA_PATH = REPO_ROOT / "schemas" / "idkgraph.schema.json"
 class WorkUnitCycleTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        schema = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
-        cls.validator = Draft202012Validator(schema)
+        if Draft202012Validator is None:
+            cls.validator = None
+        else:
+            schema = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
+            cls.validator = Draft202012Validator(schema)
 
     def _load(self, name: str) -> dict:
         graph = load_graph(FIXTURE_ROOT / name)
-        errors = sorted(self.validator.iter_errors(graph), key=lambda error: list(error.absolute_path))
-        self.assertEqual([error.message for error in errors], [], msg=f"schema errors in {name}")
+        if self.validator is not None:
+            errors = sorted(self.validator.iter_errors(graph), key=lambda error: list(error.absolute_path))
+            self.assertEqual([error.message for error in errors], [], msg=f"schema errors in {name}")
         return graph
+
+    @unittest.skipIf(Draft202012Validator is None, "IDKGraph fixture schema validation requires jsonschema")
+    def test_all_committed_fixtures_validate_against_current_schema(self) -> None:
+        for path in sorted(FIXTURE_ROOT.glob("*.json")):
+            with self.subTest(path=path.name):
+                self._load(path.name)
 
     def test_acyclic_workunit_projection_passes(self) -> None:
         result = check_graph(self._load("acyclic.json"))
