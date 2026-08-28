@@ -101,3 +101,8 @@ Costs/risks:
 Compare FIFO, highest-risk-first, cheapest-first, and RWVB under controlled workloads with seeded defects and increasing generation fan-out. Measure escaped defects, accepted throughput, total verification debt, queue latency, verifier cost, human attention, false rejection, and evidence correlation.
 
 Parameters remain experimental until evidence supports defaults.
+
+## Implementation references
+
+- `docs/research/VERIFICATION_DEBT_AND_BACKPRESSURE.md`
+- `docs/research/VERIFICATION_BACKPRESSURE_BENCHMARK.md`
