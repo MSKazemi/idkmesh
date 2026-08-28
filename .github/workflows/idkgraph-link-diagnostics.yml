@@ -49,7 +49,10 @@ jobs:
         shell: bash
         run: |
           set +e
-          python tools/idkgraph_link_check.py . --fail-on-error --output /tmp/repository-links.json
+          python tools/idkgraph_link_check.py . \
+            --exclude tests/fixtures/idkgraph_links/broken \
+            --fail-on-error \
+            --output /tmp/repository-links.json
           status=$?
           set -e
           python -m json.tool /tmp/repository-links.json
