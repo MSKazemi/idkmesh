@@ -18,11 +18,19 @@ class AceSafetyContractTests(unittest.TestCase):
             TEXT,
         )
 
-    def test_main_protection_fail_closed_gate_exists(self):
+    def test_main_protection_requires_separate_explicit_actuation_opt_in(self):
         self.assertIn("github.rest.repos.getBranch", TEXT)
         self.assertIn("const mainProtected = Boolean(mainBranch.protected);", TEXT)
-        self.assertIn("const actuationAllowed = mainProtected;", TEXT)
-        self.assertIn("if (!mainProtected || state.review_load > K) mode = 'CONSOLIDATE';", TEXT)
+        self.assertIn("ACE_AUTONOMOUS_ACTUATION_ENABLED", TEXT)
+        self.assertIn("const explicitActuationOptIn =", TEXT)
+        self.assertIn(
+            "const actuationAllowed = mainProtected && explicitActuationOptIn;",
+            TEXT,
+        )
+        self.assertIn(
+            "if (!actuationAllowed || state.review_load > K) mode = 'CONSOLIDATE';",
+            TEXT,
+        )
         self.assertIn("if (actuationAllowed && event === 'pull_request_target'", TEXT)
 
     def test_untrusted_seed_marker_is_not_authorization(self):
@@ -30,11 +38,31 @@ class AceSafetyContractTests(unittest.TestCase):
         self.assertIn("issue?.author_association", TEXT)
         self.assertIn("trustedIssueAuthors.has(association)", TEXT)
 
-    def test_ledger_identity_and_parse_fail_closed(self):
+    def test_ledger_identity_is_unique_and_legacy_adoption_requires_trust(self):
         self.assertIn("ace:ledger", TEXT)
+        self.assertIn("const labelledLedgers = issues.filter", TEXT)
+        self.assertIn("if (labelledLedgers.length > 1)", TEXT)
+        self.assertIn("refusing ambiguous controller state", TEXT)
+        self.assertRegex(
+            TEXT,
+            re.compile(
+                r"legacyLedgers.*?trustedIssueAuthors\.has\(i\.author_association \|\| 'NONE'\)",
+                re.DOTALL,
+            ),
+        )
+        self.assertIn("if (legacyLedgers.length > 1)", TEXT)
+        self.assertIn("refusing ambiguous migration", TEXT)
+
+    def test_ledger_state_parse_and_semantics_fail_closed(self):
+        self.assertIn("validateAceState", TEXT)
+        self.assertIn("Number.isFinite", TEXT)
+        self.assertIn("Number.isSafeInteger", TEXT)
+        self.assertIn("updatedAt.toISOString() !== candidate.updated_at", TEXT)
+        self.assertIn("refusing to reset or overwrite it", TEXT)
+        self.assertNotIn("...defaultState, ...JSON.parse", TEXT)
+
+    def test_issue_scans_are_paginated(self):
         self.assertIn("github.paginate", TEXT)
-        self.assertIn("refusing to overwrite state", TEXT)
-        self.assertIn("refusing to reset it", TEXT)
 
     def test_generated_seed_dedupe_requires_growth_seed_label(self):
         self.assertRegex(
