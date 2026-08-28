@@ -1,0 +1,77 @@
+name: Branch Convergence Audit
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 4 * * *'
+  pull_request:
+    paths:
+      - 'tools/branch_convergence_audit.py'
+      - 'tests/test_branch_convergence_audit.py'
+      - 'docs/planning/BRANCH_CONVERGENCE_POLICY.md'
+      - '.github/workflows/branch-convergence-audit.yml'
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: branch-convergence-audit
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+
+      - name: Run deterministic branch-state tests
+        run: python -m unittest tests.test_branch_convergence_audit -v
+
+      - name: Audit live branch convergence state
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/idkmesh-branch-audit"
+          python tools/branch_convergence_audit.py \
+            --repo "$GITHUB_REPOSITORY" \
+            --default-branch "${{ github.event.repository.default_branch || 'main' }}" \
+            --output-json "$RUNNER_TEMP/idkmesh-branch-audit/branch-convergence.json" \
+            --output-md "$RUNNER_TEMP/idkmesh-branch-audit/branch-convergence.md"
+
+      - name: Publish audit summary
+        if: always()
+        run: |
+          REPORT="$RUNNER_TEMP/idkmesh-branch-audit/branch-convergence.md"
+          if test -f "$REPORT"; then
+            cat "$REPORT" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'Branch convergence report was not produced.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload audit evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: branch-convergence-${{ github.run_id }}
+          path: ${{ runner.temp }}/idkmesh-branch-audit
+          retention-days: 14
+          if-no-files-found: warn
+
+# Authority boundary:
+# - read-only repository and PR permissions;
+# - no push, merge, approval, branch deletion, label, issue, or settings mutation;
+# - no execution of issue/PR natural-language content;
+# - branch state is decision support only;
+# - current main protection/independent-review requirements remain external gates;
+# - no paid-provider fallback or project-funded compute path is introduced.
