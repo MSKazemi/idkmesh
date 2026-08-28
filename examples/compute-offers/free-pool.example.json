@@ -1,0 +1,85 @@
+{
+  "schema_version": "0.1",
+  "offers": [
+    {
+      "id": "github-public-ci",
+      "provider": "github-actions",
+      "cost_class": "public_project_ci",
+      "project_cost_usd": 0,
+      "available": true,
+      "trust": "trusted",
+      "capabilities": ["json-schema-validation", "deterministic-local-execution", "linux", "python"],
+      "resources": {
+        "cpu_cores": 2,
+        "memory_mb": 7168,
+        "disk_mb": 14000,
+        "gpu": false,
+        "accelerator_capabilities": []
+      },
+      "expected_wait_seconds": 20,
+      "success_probability": 0.98,
+      "independence_group": "github-hosted",
+      "notes": "Use only for work legitimately eligible for this public repository's CI/testing/development workflows."
+    },
+    {
+      "id": "volunteer-node-eu-01",
+      "provider": "idkmesh-node",
+      "cost_class": "donated",
+      "project_cost_usd": 0,
+      "available": true,
+      "trust": "identified",
+      "capabilities": ["json-schema-validation", "deterministic-local-execution", "linux", "python"],
+      "resources": {
+        "cpu_cores": 8,
+        "memory_mb": 16384,
+        "disk_mb": 50000,
+        "gpu": false,
+        "accelerator_capabilities": []
+      },
+      "expected_wait_seconds": 5,
+      "success_probability": 0.95,
+      "independence_group": "volunteer-eu-01",
+      "notes": "Donated capacity. Donor resource use must be opt-in, visible, capped, and easy to stop."
+    },
+    {
+      "id": "grant-gpu-example",
+      "provider": "research-grant-pool",
+      "cost_class": "grant",
+      "project_cost_usd": 0,
+      "available": false,
+      "trust": "trusted",
+      "capabilities": ["linux", "python", "cuda"],
+      "resources": {
+        "cpu_cores": 8,
+        "memory_mb": 32768,
+        "disk_mb": 100000,
+        "gpu": true,
+        "accelerator_capabilities": ["cuda"]
+      },
+      "expected_wait_seconds": 120,
+      "success_probability": 0.97,
+      "independence_group": "grant-gpu-pool",
+      "notes": "Illustrative free-to-project capacity; marked unavailable so examples do not assume a grant actually exists."
+    },
+    {
+      "id": "paid-cloud-fast",
+      "provider": "generic-paid-cloud",
+      "cost_class": "paid",
+      "project_cost_usd": 0.04,
+      "available": true,
+      "trust": "attested",
+      "capabilities": ["json-schema-validation", "deterministic-local-execution", "linux", "python", "cuda"],
+      "resources": {
+        "cpu_cores": 16,
+        "memory_mb": 65536,
+        "disk_mb": 200000,
+        "gpu": true,
+        "accelerator_capabilities": ["cuda"]
+      },
+      "expected_wait_seconds": 0,
+      "success_probability": 0.999,
+      "independence_group": "paid-cloud",
+      "notes": "Intentionally present to prove the zero-cost router rejects a superior paid offer when project budget is zero."
+    }
+  ]
+}
