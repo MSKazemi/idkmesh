@@ -1,0 +1,148 @@
+name: R4 Reference One Shot
+
+on:
+  push:
+    branches:
+      - experiment/r4-reference
+    paths:
+      - ".github/workflows/r4-reference-once.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  reference:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run default R4 reference
+        run: |
+          mkdir -p results/experiments/r4
+          python -m randomness_lab.r4 \
+            --scenario default \
+            --steps 800 \
+            --shift-step 400 \
+            --task-seed 42 \
+            --outcome-seed 4242 \
+            --policy-seed 1337 \
+            --output results/experiments/r4/reference-default.json
+      - name: Run lock-in R4 reference
+        run: |
+          python -m randomness_lab.r4 \
+            --scenario lockin \
+            --steps 500 \
+            --shift-step 100 \
+            --task-seed 11 \
+            --outcome-seed 1111 \
+            --policy-seed 77 \
+            --output results/experiments/r4/reference-lockin.json
+      - name: Validate raw evidence
+        run: |
+          python -m json.tool results/experiments/r4/reference-default.json > /dev/null
+          python -m json.tool results/experiments/r4/reference-lockin.json > /dev/null
+      - name: Build readable summary
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          root = Path("results/experiments/r4")
+          default = json.loads((root / "reference-default.json").read_text(encoding="utf-8"))
+          lockin = json.loads((root / "reference-lockin.json").read_text(encoding="utf-8"))
+
+          def fmt(value, digits=4):
+              if value is None:
+                  return "—"
+              if isinstance(value, float):
+                  return f"{value:.{digits}f}"
+              return str(value)
+
+          lines = [
+              "# R4 Verified Stigmergic Routing — Frozen Reference",
+              "",
+              "These are synthetic mechanism experiments, not contributor-reputation or governance scores.",
+              "",
+              "Every selected worker emits an unverified activity event before verification. For stigmergic policies that event must produce exactly zero positive pheromone change; only verified outcomes may update the trace.",
+              "",
+              "## Default specialization / shift / newcomer scenario",
+              "",
+              f"Trace digest: `{default['trace_digest']}`",
+              "",
+              "| Policy | Success | Post-shift success | Mean regret | Recovery steps | Stale route fraction | Entropy | Newcomer share | Strong newcomer first assignment | Activity→pheromone increase |",
+              "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+          ]
+          for policy, result in default["policies"].items():
+              m = result["metrics"]
+              first = m["newcomer_first_assignment_step"].get("newcomer-strong")
+              lines.append(
+                  f"| {policy} | {fmt(m['verified_success_rate'])} | {fmt(m['post_shift_verified_success_rate'])} | "
+                  f"{fmt(m['mean_expected_regret'])} | {fmt(m['adaptation_recovery_steps'])} | "
+                  f"{fmt(m['stale_route_fraction_first_100_post_shift'])} | {fmt(m['assignment_entropy'])} | "
+                  f"{fmt(m['newcomer_assignment_share'])} | {fmt(first)} | {fmt(m['unverified_activity_pheromone_increase'])} |"
+              )
+
+          lines.extend([
+              "",
+              "## Deliberate early-incumbent lock-in trap",
+              "",
+              f"Trace digest: `{lockin['trace_digest']}`",
+              "",
+              "| Policy | Success | Post-shift success | Mean regret | Recovery steps | Longest failed same-worker lock-in | Late expert first assignment | Activity→pheromone increase |",
+              "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+          ])
+          for policy, result in lockin["policies"].items():
+              m = result["metrics"]
+              first = m["newcomer_first_assignment_step"].get("late-expert")
+              lines.append(
+                  f"| {policy} | {fmt(m['verified_success_rate'])} | {fmt(m['post_shift_verified_success_rate'])} | "
+                  f"{fmt(m['mean_expected_regret'])} | {fmt(m['adaptation_recovery_steps'])} | "
+                  f"{fmt(m['longest_failed_same_worker_lockin'])} | {fmt(first)} | "
+                  f"{fmt(m['unverified_activity_pheromone_increase'])} |"
+              )
+
+          lines.extend([
+              "",
+              "## Integrity and interpretation",
+              "",
+              "- Raw JSON retains full per-step routing events plus periodic pheromone snapshots.",
+              "- `unverified_activity_pheromone_increase` must be zero for every stigmergic policy.",
+              "- The lock-in scenario is deliberately adversarial to permanent reinforcement; a harmful result is expected and preserved rather than tuned away.",
+              "- Random, greedy, and Thompson are conventional baselines. A bio-inspired policy is useful only where evidence beats or complements simpler alternatives.",
+              "- Pheromone affects routing only. It does not grant authority, change verification, or make a result canonical.",
+              "- These two frozen scenarios do not establish an optimal evaporation or exploration rate; factor-isolated sweeps are follow-up work.",
+              "",
+              "See `docs/research/R4_STIGMERGIC_ROUTING.md` and issue #97.",
+          ])
+          (root / "reference-summary.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+          PY
+      - name: Verify stigmergy integrity in generated evidence
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          for path in (
+              Path("results/experiments/r4/reference-default.json"),
+              Path("results/experiments/r4/reference-lockin.json"),
+          ):
+              data = json.loads(path.read_text(encoding="utf-8"))
+              for name, result in data["policies"].items():
+                  if name.startswith("stigmergy-"):
+                      value = result["metrics"]["unverified_activity_pheromone_increase"]
+                      if value != 0.0:
+                          raise SystemExit(f"{path}: {name} activity changed pheromone: {value}")
+          PY
+      - name: Commit frozen evidence to experiment branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f \
+            results/experiments/r4/reference-default.json \
+            results/experiments/r4/reference-lockin.json \
+            results/experiments/r4/reference-summary.md
+          git commit -m "results: add frozen R4 stigmergy reference"
+          git push origin HEAD:experiment/r4-reference
