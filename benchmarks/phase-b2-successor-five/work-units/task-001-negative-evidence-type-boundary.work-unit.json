@@ -1,0 +1,135 @@
+{
+  "budget": {
+    "compute_units": 1,
+    "human_minutes": 20,
+    "paid_fallback_allowed": false,
+    "project_spend_usd_max": 0,
+    "tokens": 20000,
+    "wall_seconds": 900
+  },
+  "constraints": {
+    "allowed_paths": [
+      "tools/benchmark_cohort.py"
+    ],
+    "forbidden_paths": [
+      ".github/**",
+      "schemas/**",
+      "benchmarks/**",
+      "verification/**"
+    ],
+    "policies": [
+      "candidate-only",
+      "independent-verification-required",
+      "zero-project-spend",
+      "benchmark-definition-immutable"
+    ]
+  },
+  "context": {
+    "max_context_bytes": 200000,
+    "references": [
+      "schemas/benchmark-cohort-v0.1.schema.json",
+      "schemas/verification-result-v0.1.schema.json",
+      "docs/specifications/BENCHMARK_COHORT_V0_1.md"
+    ],
+    "summary": "Current _validate_negative_case dispatches semantic validation only from evidence_type == verification_result. Replace that evidence-type-only gate so canonical finding categories cannot be marked verified by opaque run_record/other JSON after only a digest check."
+  },
+  "dependencies": [],
+  "evidence_requirements": [
+    {
+      "required": true,
+      "type": "artifact_hash"
+    },
+    {
+      "required": true,
+      "type": "review"
+    }
+  ],
+  "extensions": {
+    "org.idkmesh.benchmark": {
+      "cohort": "phase-b2-successor-five",
+      "fresh_after_burn": true,
+      "task_family": "bug_fix"
+    }
+  },
+  "failure_semantics": {
+    "max_attempts": 1,
+    "on_failure": "stop",
+    "retryable": false
+  },
+  "id": "benchmark/phase-b2-successor/001-negative-evidence-type-boundary",
+  "inputs": [
+    {
+      "id": "source-repository",
+      "locator": "https://github.com/MSKazemi/idkmesh",
+      "type": "git_ref"
+    }
+  ],
+  "kind": "coding",
+  "objective": "Replace the evidence-type-only negative-evidence gate with category-aware validation: canonical finding categories (correctness, scope, provenance, security, regression) must require canonical VerificationResult evidence, while non-canonical control-failure evidence types remain allowed.",
+  "outputs": [
+    {
+      "description": "Unverified candidate patch generated against the frozen source revision.",
+      "id": "candidate-patch",
+      "media_type": "text/x-diff",
+      "type": "patch"
+    }
+  ],
+  "permissions": {
+    "filesystem_write": [
+      "tools/benchmark_cohort.py"
+    ],
+    "network": "none",
+    "network_allowlist": [],
+    "process_execution": true,
+    "secrets": []
+  },
+  "provenance": {
+    "created_by": "idkmesh-project",
+    "creator_type": "system",
+    "source": "Phase B2 successor first-five pre-outcome definition",
+    "source_revision": "a69aa0ae1ae4862e507511cbd9ad854237d0ad32"
+  },
+  "requirements": {
+    "capabilities": [
+      "git",
+      "python"
+    ],
+    "resources": {
+      "accelerator_capabilities": [],
+      "cpu_cores_min": 0.5,
+      "disk_mb_min": 32,
+      "gpu": "none",
+      "memory_mb_min": 128
+    }
+  },
+  "schema_version": "0.2",
+  "security": {
+    "data_classification": "public",
+    "minimum_worker_trust": "untrusted",
+    "notes": "Public repository benchmark task. Candidate cannot modify evaluator or benchmark-control artifacts.",
+    "risk_class": "low",
+    "sandbox_required": true
+  },
+  "uncertainty": [],
+  "validators": [
+    {
+      "description": "Worker output must validate as ResultManifest v0.1.",
+      "id": "result-manifest-schema",
+      "required": true,
+      "type": "schema"
+    },
+    {
+      "description": "Independent evaluator must verify artifact integrity, scope, transition semantics, and provenance.",
+      "id": "independent-review",
+      "required": true,
+      "type": "review"
+    }
+  ],
+  "verification_policy": {
+    "acceptance_rule": "Both required validators must pass; worker self-report and verifier support are decision evidence, not integration authority.",
+    "independent_from_worker": true,
+    "minimum_independent_verifiers": 1,
+    "strategy": "all_required"
+  },
+  "version": 1
+}

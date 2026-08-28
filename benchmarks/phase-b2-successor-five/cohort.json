@@ -1,0 +1,248 @@
+{
+  "authority": {
+    "automatic_candidate_selection": false,
+    "canonical_state_write": false,
+    "git_push": false,
+    "merge": false
+  },
+  "definition_digest": "sha256:3182d8710e1239c19cb95daddd0677241c0cd9123614786fd919b036922dbdd9",
+  "description": "Fresh successor frozen after the burned v1 evaluator defect was versioned and calibrated. Task 001 is fresh and outcome-unseen; tasks 2–5 reuse only outcome-unseen WorkUnits from the burned cohort with new pre-outcome evaluator commitments. All evidence is pending.",
+  "extensions": {
+    "org.idkmesh.phase_b2": {
+      "known_task001_reused": false,
+      "note": "All successor outcomes are pending at freeze. Reused tasks 2-5 reuse WorkUnits only, not burned evaluator commitments.",
+      "predecessor_burned_definition_digest": "sha256:4fdec8a2768e32dc223b218ed70aec3a67aefcd87c64b72c5675c9921a4eab5c",
+      "tracker_issue": 5
+    }
+  },
+  "id": "benchmark/phase-b2-successor-five",
+  "minimum_final_tasks": 5,
+  "required_families": [
+    "bug_fix",
+    "test_failure",
+    "bounded_feature",
+    "refactor",
+    "documentation_contract"
+  ],
+  "schema_version": "0.1",
+  "stage": "frozen",
+  "tasks": [
+    {
+      "accounting": {
+        "required_metrics": [
+          "wall_seconds",
+          "human_minutes"
+        ]
+      },
+      "declared_structural_signatures": [
+        "single-worker-baseline-v1",
+        "two-independent-attempts-v1",
+        "role-specialized-two-attempts-v1"
+      ],
+      "difficulty": "small",
+      "evaluator": {
+        "backend": "unified_diff",
+        "plan_digest": "sha256:1abee7b4886e8c4626af8714cfad72c04cac6e93a42920af8dddf598a2236ddc",
+        "plan_id": "benchmark/phase-b2-successor/001-negative-evidence-type-boundary/evaluator-v0.4",
+        "plan_path": "benchmarks/phase-b2-successor-five/evaluators/task-001-negative-evidence-type-boundary.evaluator-plan.json",
+        "visibility": "public"
+      },
+      "evidence": {
+        "attempts": [],
+        "status": "pending"
+      },
+      "family": "bug_fix",
+      "id": "benchmark/phase-b2-successor/001-negative-evidence-type-boundary",
+      "negative_case": {
+        "description": "A canonical security negative with evidence_status=verified and evidence_type=other must fail cohort validation even when the referenced JSON exists and its digest matches.",
+        "evidence_status": "pending",
+        "expected_category": "security"
+      },
+      "source": {
+        "repository": "https://github.com/MSKazemi/idkmesh",
+        "revision": "a69aa0ae1ae4862e507511cbd9ad854237d0ad32"
+      },
+      "split": "pilot",
+      "work_unit": {
+        "digest": "sha256:04258ad63d36368ae6780b351f5e3729fe5f7a12de66aee16d1bc475a8b69096",
+        "id": "benchmark/phase-b2-successor/001-negative-evidence-type-boundary",
+        "path": "benchmarks/phase-b2-successor-five/work-units/task-001-negative-evidence-type-boundary.work-unit.json",
+        "version": 1
+      }
+    },
+    {
+      "accounting": {
+        "required_metrics": [
+          "wall_seconds",
+          "human_minutes"
+        ]
+      },
+      "declared_structural_signatures": [
+        "single-worker-baseline-v1",
+        "two-independent-attempts-v1",
+        "role-specialized-two-attempts-v1"
+      ],
+      "difficulty": "small",
+      "evaluator": {
+        "backend": "unified_diff",
+        "plan_digest": "sha256:185b46d16cb45948fc03b05a40622a58d96de05a149a1528d166625f1b82a059",
+        "plan_id": "benchmark/phase-b2-successor/002-frozen-definition-digest-test/evaluator-v0.3",
+        "plan_path": "benchmarks/phase-b2-successor-five/evaluators/task-002-frozen-definition-digest-test.evaluator-plan.json",
+        "visibility": "public"
+      },
+      "evidence": {
+        "attempts": [],
+        "status": "pending"
+      },
+      "family": "test_failure",
+      "id": "benchmark/phase-b2/002-frozen-definition-digest-test",
+      "negative_case": {
+        "description": "A frozen cohort with definition_digest omitted must fail validation instead of being treated as frozen evidence.",
+        "evidence_status": "pending",
+        "expected_category": "regression"
+      },
+      "source": {
+        "repository": "https://github.com/MSKazemi/idkmesh",
+        "revision": "9c53bb4069a5db1c0688dbbe7a8f028540cbf7c2"
+      },
+      "split": "pilot",
+      "work_unit": {
+        "digest": "sha256:1cfe014af545f227ddefce9e3e1094becc2b2f4d4527b0f9a857cbc8f8f8463d",
+        "id": "benchmark/phase-b2/002-frozen-definition-digest-test",
+        "path": "benchmarks/phase-b2-first-five/work-units/task-002-frozen-definition-digest-test.work-unit.json",
+        "version": 1
+      }
+    },
+    {
+      "accounting": {
+        "required_metrics": [
+          "wall_seconds",
+          "human_minutes"
+        ]
+      },
+      "declared_structural_signatures": [
+        "single-worker-baseline-v1",
+        "two-independent-attempts-v1",
+        "role-specialized-two-attempts-v1"
+      ],
+      "difficulty": "small",
+      "evaluator": {
+        "backend": "unified_diff",
+        "plan_digest": "sha256:8466c3bddc442451582d52f7616dfb55351e5bef851891a72249f219b1e43d3d",
+        "plan_id": "benchmark/phase-b2-successor/003-definition-json-command/evaluator-v0.3",
+        "plan_path": "benchmarks/phase-b2-successor-five/evaluators/task-003-definition-json-command.evaluator-plan.json",
+        "visibility": "public"
+      },
+      "evidence": {
+        "attempts": [],
+        "status": "pending"
+      },
+      "family": "bounded_feature",
+      "id": "benchmark/phase-b2/003-definition-json-command",
+      "negative_case": {
+        "description": "The new command must not include outcome/evidence fields that are deliberately excluded from the pre-outcome commitment.",
+        "evidence_status": "pending",
+        "expected_category": "correctness"
+      },
+      "source": {
+        "repository": "https://github.com/MSKazemi/idkmesh",
+        "revision": "9c53bb4069a5db1c0688dbbe7a8f028540cbf7c2"
+      },
+      "split": "pilot",
+      "work_unit": {
+        "digest": "sha256:a51bbfd143470f1893e40bd800e0e79c04d1dd93adbbe57f72e74ade5f2ad545",
+        "id": "benchmark/phase-b2/003-definition-json-command",
+        "path": "benchmarks/phase-b2-first-five/work-units/task-003-definition-json-command.work-unit.json",
+        "version": 1
+      }
+    },
+    {
+      "accounting": {
+        "required_metrics": [
+          "wall_seconds",
+          "human_minutes"
+        ]
+      },
+      "declared_structural_signatures": [
+        "single-worker-baseline-v1",
+        "two-independent-attempts-v1",
+        "role-specialized-two-attempts-v1"
+      ],
+      "difficulty": "small",
+      "evaluator": {
+        "backend": "unified_diff",
+        "plan_digest": "sha256:00e20edc78efdf96206e7f532aaac2ed2389e35644f986da1d7354fed410ba17",
+        "plan_id": "benchmark/phase-b2-successor/004-safe-cohort-loader-refactor/evaluator-v0.4",
+        "plan_path": "benchmarks/phase-b2-successor-five/evaluators/task-004-safe-cohort-loader-refactor.evaluator-plan.json",
+        "visibility": "public"
+      },
+      "evidence": {
+        "attempts": [],
+        "status": "pending"
+      },
+      "family": "refactor",
+      "id": "benchmark/phase-b2/004-safe-cohort-loader-refactor",
+      "negative_case": {
+        "description": "After refactoring, validate and definition-digest must not diverge in repository-boundary behavior.",
+        "evidence_status": "pending",
+        "expected_category": "regression"
+      },
+      "source": {
+        "repository": "https://github.com/MSKazemi/idkmesh",
+        "revision": "9c53bb4069a5db1c0688dbbe7a8f028540cbf7c2"
+      },
+      "split": "pilot",
+      "work_unit": {
+        "digest": "sha256:adb4ad893aa58ad18376c49fd0a6c0328db808bfe5946136a5631c63d933f2d4",
+        "id": "benchmark/phase-b2/004-safe-cohort-loader-refactor",
+        "path": "benchmarks/phase-b2-first-five/work-units/task-004-safe-cohort-loader-refactor.work-unit.json",
+        "version": 1
+      }
+    },
+    {
+      "accounting": {
+        "required_metrics": [
+          "wall_seconds",
+          "human_minutes"
+        ]
+      },
+      "declared_structural_signatures": [
+        "single-worker-baseline-v1",
+        "two-independent-attempts-v1",
+        "role-specialized-two-attempts-v1"
+      ],
+      "difficulty": "trivial",
+      "evaluator": {
+        "backend": "unified_diff",
+        "plan_digest": "sha256:e27ac0fe418f068b853b2041f0bcb419573c7d5215a6b4d3b7942f4c3027bd6f",
+        "plan_id": "benchmark/phase-b2-successor/005-first-five-freeze-checklist/evaluator-v0.3",
+        "plan_path": "benchmarks/phase-b2-successor-five/evaluators/task-005-first-five-freeze-checklist.evaluator-plan.json",
+        "visibility": "public"
+      },
+      "evidence": {
+        "attempts": [],
+        "status": "pending"
+      },
+      "family": "documentation_contract",
+      "id": "benchmark/phase-b2/005-first-five-freeze-checklist",
+      "negative_case": {
+        "description": "The checklist must not describe verifier support or benchmark inclusion as automatic merge/integration authority.",
+        "evidence_status": "pending",
+        "expected_category": "correctness"
+      },
+      "source": {
+        "repository": "https://github.com/MSKazemi/idkmesh",
+        "revision": "9c53bb4069a5db1c0688dbbe7a8f028540cbf7c2"
+      },
+      "split": "pilot",
+      "work_unit": {
+        "digest": "sha256:8dc195e5221d04af69e259e93b40db471f4df6f9761a0c4b10efd692db5c7527",
+        "id": "benchmark/phase-b2/005-first-five-freeze-checklist",
+        "path": "benchmarks/phase-b2-first-five/work-units/task-005-first-five-freeze-checklist.work-unit.json",
+        "version": 1
+      }
+    }
+  ],
+  "taxonomy_frozen_before_outcomes": true,
+  "title": "IDKMesh Phase B2 successor five-task repository benchmark"
+}

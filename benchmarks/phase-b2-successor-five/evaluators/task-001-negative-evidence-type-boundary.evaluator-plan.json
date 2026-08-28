@@ -1,0 +1,54 @@
+{
+  "backend": {
+    "max_candidate_bytes": 200000,
+    "max_log_bytes": 262144,
+    "require_nonempty_patch": true,
+    "required_added_substrings": [
+      "negative[\"expected_category\"] in VERIFICATION_FINDING_CATEGORIES",
+      "negative[\"evidence_type\"] == \"verification_result\""
+    ],
+    "required_log_types": [
+      "stdout",
+      "stderr"
+    ],
+    "required_removed_substrings": [
+      "if negative[\"evidence_type\"] == \"verification_result\":"
+    ],
+    "type": "unified_diff",
+    "verify_log_digests": true
+  },
+  "binding": {
+    "source_revision": "a69aa0ae1ae4862e507511cbd9ad854237d0ad32",
+    "work_unit_digest": "sha256:04258ad63d36368ae6780b351f5e3729fe5f7a12de66aee16d1bc475a8b69096",
+    "work_unit_id": "benchmark/phase-b2-successor/001-negative-evidence-type-boundary",
+    "work_unit_version": 1
+  },
+  "candidate_artifact_id": "candidate-patch",
+  "execution_mode": "metadata_only",
+  "extensions": {
+    "org.idkmesh.benchmark": {
+      "behavioral_gate": "verified_seeded_negative_required_before_inclusion",
+      "cohort": "phase-b2-successor-five",
+      "evidence_strength": "structural_transition_only",
+      "task_id": "benchmark/phase-b2-successor/001-negative-evidence-type-boundary"
+    }
+  },
+  "id": "benchmark/phase-b2-successor/001-negative-evidence-type-boundary/evaluator-v0.4",
+  "policy": {
+    "require_output_outside_candidate_root": true,
+    "require_plan_outside_candidate_root": true,
+    "require_verifier_distinct_from_worker": true
+  },
+  "required_validator_ids": [
+    "result-manifest-schema",
+    "independent-review"
+  ],
+  "schema_version": "0.4",
+  "verifier": {
+    "adapter": "deterministic-patch-verifier",
+    "adapter_version": "0.3.0",
+    "id": "idkmesh-local-verifier",
+    "type": "system"
+  },
+  "visibility": "public"
+}
