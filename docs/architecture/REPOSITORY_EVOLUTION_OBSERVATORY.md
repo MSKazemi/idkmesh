@@ -5,21 +5,19 @@
 
 ## Purpose
 
-IDKMesh needs one repository-level feedback loop that can answer a practical question after GitHub activity:
+IDKMesh needs one repository-level feedback loop that can answer:
 
 > **Given the current observable state, what bounded intervention is most likely to improve verified useful work without outrunning review, safety, or community capacity?**
 
-This is an **observer and recommender**, not an autonomous integrator.
+The Observatory is an **observer and recommender**, not an autonomous integrator.
 
-It upgrades the existing `.github/workflows/evolution-loop.yml` instead of introducing a second self-evolution controller.
+It upgrades `.github/workflows/evolution-loop.yml`; it does not introduce a second write-capable self-evolution controller.
 
-## Why the old event-delta state is insufficient
+## Core rule
 
-The previous loop loaded `state/evolution-state.json`, applied a small prior delta for the triggering event, and wrote the result inside the ephemeral Actions runner. The next run checked out the repository baseline again, so those runner-local state changes were not durable repository memory.
+The previous loop accumulated soft event evidence in a checkpointed state. That model remains useful as a mathematical/evidence experiment, but cumulative event state can be mistaken for current repository condition.
 
-More importantly, cumulative event scoring can confuse **history** with **current condition**. IDKMesh already corrected the same structural problem in ACE carrying capacity: review pressure should recover when open work disappears.
-
-Evolution Observatory v1 therefore uses a different rule:
+Repository Observatory v1 therefore evaluates a fresh bounded snapshot:
 
 ```text
 current GitHub/repository snapshot
@@ -28,35 +26,45 @@ current GitHub/repository snapshot
  -> recommendation artifact
 ```
 
-Every run recomputes the state from observable evidence. Historical learning, when introduced, must use explicit outcome/lineage evidence rather than hidden runner-local memory.
+Every live observation recomputes current condition. Historical learning, when added, must be bound to explicit outcomes/lineage rather than hidden runner-local memory.
+
+## Compatibility boundary: two models, two scorer modules
+
+The repository deliberately keeps two different mathematical surfaces instead of overloading one CLI:
+
+- `scripts/evolution_score.py` remains the **legacy Bayesian event/checkpoint scorer** used by the Mathematical Evolution Kernel and its existing reproducibility evidence;
+- `scripts/repository_evolution_score.py` is the **stateless repository-snapshot scorer** used by Observatory v1;
+- `scripts/evolution_snapshot.py` collects the bounded live snapshot consumed by the repository scorer.
+
+This separation is intentional. A new repository-control model must not silently break the older mathematical evidence path, and the legacy event scorer must not be mistaken for current-state observation.
 
 ## Evidence collected
 
-The collector uses public/repository metadata only:
+The live collector uses bounded repository/public metadata:
 
 - whether the default branch is protected;
 - open issues and pull requests;
 - draft vs review-ready PR state;
-- presence of independent reviewers/approvers on open PRs;
-- bounded same-repository `#N` dependency references;
-- issue/PR labels;
-- distinct non-owner/non-bot public participants observed in the bounded snapshot;
+- independent reviewer/approver counts on open PRs;
+- bounded same-repository `#N` references;
+- labels;
+- distinct non-owner/non-bot public participants seen in the bounded observation windows;
 - recent merged-PR count;
 - branch count;
-- GitHub Actions dependency pinning in checked-in workflows;
-- presence/count of public conversation records and the chat-preservation project rule.
+- immutable-SHA pin coverage in checked-in GitHub Actions workflows;
+- public conversation-record count and presence of the chat-preservation project rule.
 
-Natural-language bodies are **not stored** in the observation artifact. They are treated as untrusted text. The collector extracts only bounded numeric same-repository references and labels as coordination signals.
+Natural-language bodies/comments are **not stored** in the artifact and are not executed or sent to an LLM. PR/issue body text is reduced only to deduplicated numeric same-repository references, capped at 32 per item.
 
-The project-memory signal is deliberately modest: it can observe archive structure/rules, but it **cannot prove that every ChatGPT turn was preserved**. That remains a behavioral/project-governance responsibility.
+The collector is also bounded by page/review caps. Truncation is retained as evidence rather than silently interpreted as completeness.
 
 ## Algorithm stack
 
-The observer combines several inspirations discussed in the project. These are engineering hypotheses, not claims that a software repository literally obeys biological or physical laws.
+These are inspectable engineering hypotheses, not claims that software repositories literally obey biological or physical laws.
 
 ### 1. Ecological carrying capacity
 
-Reuse the accepted ACE `live-open-work-v1` review-pressure model:
+Reuse the ACE `live-open-work-v1` pressure model:
 
 ```text
 L =
@@ -68,7 +76,7 @@ L =
 Capacity(L) = 1 / (1 + exp((L - K) / tau))
 ```
 
-Bootstrap values remain `K = 8`, `tau = 2` until empirical reviewer-latency data justifies calibration.
+Bootstrap values remain `K = 8`, `tau = 2` until real reviewer-latency/backlog data justifies calibration.
 
 Important property:
 
@@ -76,31 +84,29 @@ Important property:
 open work falls -> L falls -> capacity recovers
 ```
 
-### 2. Shannon diversity
+### 2. Shannon work-mix diversity
 
-Open work is mapped into coarse, inspectable categories such as verification, community, research, maintenance, governance, product, and other.
-
-Normalized Shannon entropy is used as a **work-mix diversity proxy**:
+Open work is mapped to coarse public categories. Normalized Shannon entropy is an inspectable diversity proxy:
 
 ```text
 H = -sum(p_i * ln(p_i)) / ln(k)
 ```
 
-This does not claim that higher diversity is always better. It is one signal for whether the current work surface has collapsed into one category.
+Higher entropy is not automatically better; it is only evidence about concentration of the work surface.
 
 ### 3. Bounded dependency graph
 
-For open issues/PRs, same-repository `#N` references create a coordination graph:
+Same-repository `#N` references between open items create a structural coordination graph:
 
 ```text
 open item -> referenced open item
 ```
 
-Incoming references are a capped **dependency-unlock proxy**, not correctness evidence. Repeated references from one source are deduplicated so simple repetition cannot multiply the signal.
+Incoming references are a capped **unlock/dependency proxy**, never correctness evidence. Repetition from one source is deduplicated.
 
 ### 4. Replicator-mutator response
 
-The observer maps current deficits/pressures onto a small strategy set:
+The current strategy set is:
 
 - `protect`
 - `verify`
@@ -110,42 +116,38 @@ The observer maps current deficits/pressures onto a small strategy set:
 - `explore`
 - `maintain`
 
-A one-step response uses:
+A one-step allocation response uses:
 
 ```text
 w_i* = w_i * exp(eta * (f_i - mean_fitness))
 w_i' = (1 - mu) * normalize(w_i*) + mu / n
 ```
 
-`mu > 0` preserves a non-zero exploration floor.
+`mu > 0` preserves a non-zero exploration floor. This is a current-state response, not historical learning.
 
-This is **not historical learning** yet. It is a deterministic allocation response to the current snapshot. Historical adaptation must later be driven by explicit verified outcomes.
-
-### 5. Feedback-control / energy proxy
+### 5. Feedback-control deficit proxy
 
 The observer computes deficits for:
 
 - branch protection;
 - review carrying capacity;
 - independent-review coverage;
-- newcomer task supply;
+- starter-task supply;
 - external witness/participant presence;
 - workflow SHA pinning;
 - branch-pressure coordination debt.
 
-It then reports a weighted squared proxy:
+It reports:
 
 ```text
 V_proxy = sum_j alpha_j * deficit_j^2
 ```
 
-Lower is directionally better under the configured targets.
-
-This is **not a Lyapunov stability proof**. It is an inspectable control-error aggregate that should be tested against real outcomes.
+Lower is directionally better under configured targets. **This is not a Lyapunov stability proof.**
 
 ### 6. Multi-objective bounded action priority
 
-Candidate recommendations reuse the repository improvement-loop shape:
+Candidate recommendations use an inspectable priority shape:
 
 ```text
 Priority(a) ~
@@ -156,20 +158,11 @@ Priority(a) ~
 
 Hard invariants outrank this scalar.
 
-The current action classes are recommendations such as:
-
-- protect `main` via the existing admin gate (#35);
-- obtain independent review for a PR;
-- inspect an already-reviewed PR for integration;
-- pin floating GitHub Actions dependencies;
-- improve the bounded starter-task surface;
-- converge stale branches through the existing branch audit (#127).
-
-The workflow does **not execute these actions**.
+Recommendations include protecting `main` through #35, obtaining independent review, inspecting reviewed work for integration, pinning floating workflow actions, improving starter-task supply, or converging stale branches. The workflow executes none of them.
 
 ## Modes
 
-The current deterministic controller can emit:
+The deterministic repository scorer can emit:
 
 ```text
 GUARD
@@ -183,17 +176,17 @@ EXPLORE
 Examples:
 
 - unprotected canonical branch -> `GUARD`;
-- low review capacity / large ready queue -> `CONSOLIDATE`;
+- low review capacity / oversized ready queue -> `CONSOLIDATE`;
 - ready PRs lacking independent review -> `VERIFY`;
-- healthy capacity but insufficient newcomer surface -> `ONBOARD`;
+- healthy capacity with insufficient newcomer/external-witness surface -> `ONBOARD`;
 - healthy reviewed queue -> `INTEGRATE`;
 - otherwise -> `EXPLORE`.
 
-No mode grants write/merge authority.
+No mode grants write or merge authority.
 
 ## Anti-Goodhart boundary
 
-The observer explicitly excludes these from fitness:
+These are explicitly excluded from fitness:
 
 - stars;
 - forks;
@@ -201,15 +194,17 @@ The observer explicitly excludes these from fitness:
 - raw comments;
 - raw commit count.
 
-They may be useful discovery/attention context elsewhere, but they do not prove correctness or verified improvement.
+They may be discovery/attention context elsewhere, but they do not establish correctness or verified improvement.
 
 ## Workflow security model
 
-### Trusted observer execution
+### Trusted live observation
 
-On issue/review/comment/push/scheduled events, the observation job runs from the trusted default-branch workflow. Pull-request metadata observation uses `pull_request_target` specifically so the workflow definition also comes from the trusted default branch. The live observer explicitly checks out the repository **default branch**, never PR-head code.
+Live observation is triggered by bounded issue lifecycle, PR metadata, review, `main` push, manual dispatch, and daily schedule events. **There is deliberately no per-comment trigger**: comments may contribute to the bounded 30-day external-participant observation when another observation runs, but comment spam cannot directly amplify API/Actions execution.
 
-Permissions are read-only and job-scoped:
+Pull-request metadata observation uses `pull_request_target` so the workflow definition comes from the trusted default branch. The live job explicitly checks out the **default branch**, never PR-head code.
+
+Job-scoped permissions are only:
 
 ```text
 contents: read
@@ -217,33 +212,40 @@ issues: read
 pull-requests: read
 ```
 
-The live collector receives the ephemeral GitHub token only in the bounded metadata-collection step. It has no secrets, contents-write, issue-write, PR-write, or Actions-write authority.
+Checkout credentials are not persisted. The live collector receives the ephemeral token only for bounded GitHub metadata reads. It has no secrets, contents-write, issue-write, PR-write, Actions-write, approval, branch-mutation, or merge authority.
 
-### PR-head policy verification
+### PR-head verification
 
-A separate ordinary `pull_request` execution runs only deterministic compile/unit tests against proposed code. Checkout credentials are not persisted and the test process receives no explicitly exported repository token or secrets. The live metadata observer is disabled in this PR-controlled execution context.
+A separate ordinary `pull_request` job runs deterministic compile/unit tests against proposed code with `contents: read` only. It does not invoke the live API collector.
 
-### Dependency pinning
+The observer tests explicitly require that:
 
-The workflow's own third-party actions are pinned to reviewed immutable SHAs. The observer also measures SHA-pinning across the rest of `.github/workflows/` and can recommend a repository-wide hardening task without silently changing every workflow in the same PR.
+- extracted structural references are deduplicated and capped;
+- the PR author and bots cannot count as independent reviewers;
+- popularity fields do not change the decision;
+- unprotected `main` forces `GUARD`;
+- strategy weights normalize and retain an exploration floor;
+- no `issue_comment` trigger exists.
 
-## Event storms / compute budget
+### Supply chain
 
-The trusted live-observer job uses one `evolution-observer` concurrency group with `cancel-in-progress: true`. PR-head checks use a separate per-PR concurrency group.
+The Observatory workflow's third-party actions are pinned to reviewed immutable SHAs. The live observer also measures pin coverage in the rest of `.github/workflows/` and may recommend hardening; it does not silently rewrite other workflows.
 
-For live observation this implements **latest-state** semantics:
+## Event storms and compute budget
+
+The trusted observer uses one concurrency group with `cancel-in-progress: true`:
 
 ```text
 many rapid events -> cancel stale observation -> compute newest snapshot
 ```
 
-A PR-head test can therefore never cancel the trusted live observer, or vice versa. This avoids spending GitHub-hosted public CI time preserving obsolete intermediate snapshots while keeping proposed-code verification independent.
+PR-head tests use a separate per-PR group, so proposed-code verification cannot cancel the trusted observer or vice versa.
 
-A daily scheduled observation provides a quiet baseline even when no event fires.
+A daily scheduled observation provides quiet drift detection.
 
 ## Output
 
-Each run emits a 30-day artifact containing:
+Each successful live run retains for 30 days:
 
 ```text
 results/evolution/repository-snapshot.json
@@ -251,55 +253,41 @@ results/evolution/evolution-decision.json
 results/evolution/EVOLUTION_REPORT.md
 ```
 
-The job summary surfaces the same human-readable report.
+The job summary publishes the human-readable report. These outputs are decision-support evidence, not canonical-state mutations.
 
-Artifacts are evidence snapshots, not canonical state mutations.
+## Hard external gates
 
-## Relationship to ACE and IDKGraph
+The Observatory must remain fail-closed around capabilities it cannot enforce itself:
 
-This observer should not become a parallel community controller.
+- if GitHub reports `main` unprotected, `GUARD` remains active and #35 stays the external admin gate;
+- automation cannot manufacture the independent human witness required for frozen runtime PR #91;
+- any future write actuator must satisfy branch/ruleset protection, independent-review requirements, the external ACE activation gate, rate limits, deduplication, and no-self-approval/no-self-merge rules.
 
-- ACE owns community reproduction/lineage/capacity policy.
-- The branch-convergence audit owns detailed branch lifecycle classification.
-- Verification/evaluator workflows own candidate correctness evidence.
-- The repository evolution observer consumes bounded signals and recommends the next repository-level intervention.
+## Relationship to ACE, IDKGraph, and verification
 
-The long-term direction remains issue #46:
+The Observatory is a consumer/recommender, not a replacement controller:
 
-```text
-RepositoryGraph
- U GitHubCollaborationGraph
- U EvidenceGraph
- -> one guarded evolution policy
-```
+- ACE owns community reproduction/lineage/capacity policy;
+- the branch-convergence audit owns branch lifecycle classification;
+- IDKGraph owns repository/document/relationship observability layers;
+- verification/evaluator workflows own candidate correctness evidence;
+- the repository observer combines bounded signals to recommend the next repository-level intervention.
 
-Any future Level-2 actuator must satisfy issue #35 and the external ACE activation gate first, remain rate-limited, deduplicate equivalent work, and never approve/merge itself.
+Long-term direction remains a guarded composition of repository, collaboration, and evidence graphs—not parallel competing sources of truth.
 
-## Falsification / calibration path
+## Falsification and calibration
 
-The model should be considered wrong or incomplete if, for example:
+Treat the model as wrong or incomplete if, for example:
 
 - lower `V_proxy` does not correlate with lower review/coordination burden;
-- the priority rule repeatedly recommends work that produces little verified value;
-- Shannon work-mix diversity predicts nothing useful;
-- dependency-reference centrality is easily gamed or does not predict unblock value;
-- the capacity parameters do not track real reviewer latency/backlog;
+- the priority rule repeatedly recommends low-value work;
+- work-mix entropy predicts nothing useful;
+- reference centrality is gamed or does not predict unblock value;
+- capacity parameters do not track reviewer latency/backlog;
 - strategy weights oscillate without measurable benefit.
 
-When enough outcome data exists, replace hand-authored pressures with calibrated estimates. Negative results should be retained.
+When enough outcome data exists, replace hand-authored pressures with calibrated estimates and retain negative results.
 
 ## Community impact
 
-A strong repository action should make the project easier to understand, not more mysterious.
-
-The observer therefore publishes:
-
-- inputs/proxies;
-- formulas;
-- blockers;
-- strategy weights;
-- bounded recommended actions;
-- authority limits;
-- scientific caveats.
-
-A contributor can challenge one metric, calibration, graph rule, test, or recommendation policy without needing private project context or access to a hidden autonomous agent.
+A strong repository action should make the project more inspectable, not more mysterious. The Observatory therefore publishes its inputs/proxies, formulas, blockers, strategy weights, recommendations, authority limits, and scientific caveats so contributors can challenge individual assumptions without access to a hidden autonomous agent.
