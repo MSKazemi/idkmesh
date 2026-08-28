@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idkmesh.org/schemas/resource-offer-registry-v0.1.schema.json",
+  "title": "IDKMesh Zero-Cost Resource Offer Registry v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "observed_at", "offers"],
+  "properties": {
+    "version": {"const": 1},
+    "observed_at": {"type": "string", "format": "date"},
+    "offers": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "status", "kind", "task_classes", "capabilities", "project_cost_usd", "human_interaction_required", "requires_repository_secret", "external_data_processor", "availability_weight", "human_setup_cost", "scarcity", "security_risk", "activation", "security", "source"],
+        "properties": {
+          "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{2,127}$"},
+          "status": {"enum": ["available", "conditional", "manual", "excluded"]},
+          "kind": {"type": "string", "minLength": 1},
+          "task_classes": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+          "capabilities": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+          "project_cost_usd": {"const": 0},
+          "human_interaction_required": {"type": "boolean"},
+          "requires_repository_secret": {"type": "boolean"},
+          "external_data_processor": {"type": "boolean"},
+          "availability_weight": {"type": "number", "minimum": 0, "maximum": 1},
+          "human_setup_cost": {"type": "number", "minimum": 0, "maximum": 1},
+          "scarcity": {"type": "number", "minimum": 0, "maximum": 1},
+          "security_risk": {"type": "number", "minimum": 0, "maximum": 1},
+          "activation": {"type": "string", "minLength": 1},
+          "security": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["repo_write_authority", "merge_authority"],
+            "properties": {
+              "repo_write_authority": {"const": false},
+              "merge_authority": {"const": false}
+            }
+          },
+          "source": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["url", "checked_at", "max_age_days"],
+            "properties": {
+              "url": {"type": "string", "format": "uri", "pattern": "^https://"},
+              "checked_at": {"type": "string", "format": "date"},
+              "max_age_days": {"type": "integer", "minimum": 1, "maximum": 365}
+            }
+          }
+        }
+      }
+    }
+  }
+}
