@@ -147,6 +147,10 @@ Revisit if experiments show that:
 - users gain no practical value from local multi-worker verification;
 - a different reference domain provides a much clearer falsifiable path to the core thesis.
 
+## Implementation references
+
+- `docs/planning/EXECUTION_TARGET_GRAPH.md`
+
 ## Related
 
 - `EVOLUTION.md`

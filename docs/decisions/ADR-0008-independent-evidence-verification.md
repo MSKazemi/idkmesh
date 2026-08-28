@@ -91,3 +91,7 @@ E014 should estimate verifier reliability and dependence from a calibration hist
 4. Bayesian/log-odds reliability weighting.
 
 The key question is no longer whether correlation matters. It is whether IDKMesh can **learn enough about correlation and reliability to improve verification without creating a new source of false confidence**.
+
+## Implementation references
+
+- `docs/architecture/MATHEMATICAL_EVOLUTION_KERNEL.md`
