@@ -162,6 +162,17 @@ This is E015's cost-asymmetric quorum result, confirmed on real verifiers, with
 a sharper practical form: **measure whether your verifiers' errors are one-sided
 before choosing how to aggregate them.**
 
+> **Follow-up (E020).** Section 6's quorum result is extended to the full
+> frontier, with the corpus base rate, in
+> [`E020-quorum-frontier-under-measured-shape.md`](E020-quorum-frontier-under-measured-shape.md).
+> Two things there qualify this experiment. The beta-binomial recommended here
+> **under-predicts the unanimity floor by 1.77x** (0.0313 against the measured
+> 0.0556): it has no floor at all, decaying as `n^-0.576`, whereas the real panel
+> stops at the 4 defects every verifier misses. And the shared-shock model does
+> not merely fit worse -- it reports that **no quorum beats majority** (1.00x
+> against the measured 3.75x), so it gets the highest-leverage decision on this
+> panel exactly backwards.
+
 ## Limitations
 
 - **The verifiers' diversity structure is constructed, not naturally occurring.**
