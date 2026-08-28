@@ -1,0 +1,102 @@
+{
+  "authority": {
+    "automatic_candidate_selection": false,
+    "canonical_state_write": false,
+    "git_push": false,
+    "merge": false
+  },
+  "description": "Mutable pre-freeze scaffold for five new tasks after the burned v1 pilot. Evaluator plans are provisional until issue #180 calibration gates pass. This scaffold is not benchmark outcome evidence and intentionally has no definition_digest.",
+  "extensions": {
+    "org.idkmesh.phase_b2_v2": {
+      "calibration_required_for_every_task": true,
+      "freeze_ready": false,
+      "note": "Do not add definition_digest or set stage=frozen until all five evaluator calibration/behavior gates are green.",
+      "source_revision": "a69aa0ae1ae4862e507511cbd9ad854237d0ad32",
+      "tracker_issue": 180
+    }
+  },
+  "id": "benchmark/phase-b2-successor-v2",
+  "minimum_final_tasks": 5,
+  "required_families": [
+    "bug_fix",
+    "test_failure",
+    "bounded_feature",
+    "benchmark",
+    "security"
+  ],
+  "schema_version": "0.1",
+  "stage": "scaffold",
+  "tasks": [
+    {
+      "accounting": {"required_metrics": ["wall_seconds", "human_minutes"]},
+      "declared_structural_signatures": ["single-worker-baseline-v2", "two-independent-attempts-v2", "role-specialized-two-attempts-v2"],
+      "difficulty": "small",
+      "evaluator": {"backend": "unified_diff", "plan_digest": "sha256:8711a0c53d33cd89c865f06790ab4ddb2886a3147b114b02897127a277c8af4a", "plan_id": "benchmark/phase-b2-v2/001-cohort-symlink-reference/evaluator", "plan_path": "benchmarks/phase-b2-successor-v2/evaluators/task-001-cohort-symlink-reference.evaluator-plan.json", "visibility": "public"},
+      "evidence": {"attempts": [], "status": "pending"},
+      "extensions": {"org.idkmesh.phase_b2_v2": {"calibration_status": "pending", "evaluator_status": "provisional"}},
+      "family": "bug_fix",
+      "id": "benchmark/phase-b2-v2/001-cohort-symlink-reference",
+      "negative_case": {"description": "A repository-relative symlink to a valid in-repository cohort JSON file must be rejected before it can be treated as a canonical benchmark definition.", "evidence_status": "pending", "expected_category": "security"},
+      "source": {"repository": "https://github.com/MSKazemi/idkmesh", "revision": "a69aa0ae1ae4862e507511cbd9ad854237d0ad32"},
+      "split": "pilot",
+      "work_unit": {"digest": "sha256:2e0b49e98e6626131c2b08916753b3b7f6ea7c25519cc9610f7212474d8712b3", "id": "benchmark/phase-b2-v2/001-cohort-symlink-reference", "path": "benchmarks/phase-b2-successor-v2/work-units/task-001-cohort-symlink-reference.work-unit.json", "version": 1}
+    },
+    {
+      "accounting": {"required_metrics": ["wall_seconds", "human_minutes"]},
+      "declared_structural_signatures": ["single-worker-baseline-v2", "two-independent-attempts-v2", "role-specialized-two-attempts-v2"],
+      "difficulty": "small",
+      "evaluator": {"backend": "unified_diff", "plan_digest": "sha256:21d6ef9b1386adc2aeac8cb2c1d409b2ff32ff07686378d260b8a56399226a43", "plan_id": "benchmark/phase-b2-v2/002-router-nonfinite-numbers/evaluator", "plan_path": "benchmarks/phase-b2-successor-v2/evaluators/task-002-router-nonfinite-numbers.evaluator-plan.json", "visibility": "public"},
+      "evidence": {"attempts": [], "status": "pending"},
+      "extensions": {"org.idkmesh.phase_b2_v2": {"calibration_status": "pending", "evaluator_status": "provisional"}},
+      "family": "test_failure",
+      "id": "benchmark/phase-b2-v2/002-router-nonfinite-numbers",
+      "negative_case": {"description": "An otherwise eligible zero-spend offer containing NaN project cost or success probability must not become selected and must not produce non-standard JSON output.", "evidence_status": "pending", "expected_category": "policy"},
+      "source": {"repository": "https://github.com/MSKazemi/idkmesh", "revision": "a69aa0ae1ae4862e507511cbd9ad854237d0ad32"},
+      "split": "pilot",
+      "work_unit": {"digest": "sha256:1c3398ec000719eee21396b6214bc56bb410a4aa449cb7b4f9206811daf7a27d", "id": "benchmark/phase-b2-v2/002-router-nonfinite-numbers", "path": "benchmarks/phase-b2-successor-v2/work-units/task-002-router-nonfinite-numbers.work-unit.json", "version": 1}
+    },
+    {
+      "accounting": {"required_metrics": ["wall_seconds", "human_minutes"]},
+      "declared_structural_signatures": ["single-worker-baseline-v2", "two-independent-attempts-v2", "role-specialized-two-attempts-v2"],
+      "difficulty": "small",
+      "evaluator": {"backend": "unified_diff", "plan_digest": "sha256:8e4dc161a2f1a4cb3009274c0e786047c77b15f5f9c59a2eb8a936a9b9cf8993", "plan_id": "benchmark/phase-b2-v2/003-branch-unobserved-head/evaluator", "plan_path": "benchmarks/phase-b2-successor-v2/evaluators/task-003-branch-unobserved-head.evaluator-plan.json", "visibility": "public"},
+      "evidence": {"attempts": [], "status": "pending"},
+      "extensions": {"org.idkmesh.phase_b2_v2": {"calibration_status": "pending", "evaluator_status": "provisional"}},
+      "family": "bounded_feature",
+      "id": "benchmark/phase-b2-v2/003-branch-unobserved-head",
+      "negative_case": {"description": "Merged PR history with an unobserved current head must never be classified cleanup-eligible or integrated-via-pr solely from historical PR evidence.", "evidence_status": "pending", "expected_category": "provenance"},
+      "source": {"repository": "https://github.com/MSKazemi/idkmesh", "revision": "a69aa0ae1ae4862e507511cbd9ad854237d0ad32"},
+      "split": "pilot",
+      "work_unit": {"digest": "sha256:a48ec044dea90201c2bd43505e54c94d9bb9830dad29b6397a943e19f4f3cc75", "id": "benchmark/phase-b2-v2/003-branch-unobserved-head", "path": "benchmarks/phase-b2-successor-v2/work-units/task-003-branch-unobserved-head.work-unit.json", "version": 1}
+    },
+    {
+      "accounting": {"required_metrics": ["wall_seconds", "human_minutes"]},
+      "declared_structural_signatures": ["single-worker-baseline-v2", "two-independent-attempts-v2", "role-specialized-two-attempts-v2"],
+      "difficulty": "small",
+      "evaluator": {"backend": "unified_diff", "plan_digest": "sha256:bcc64b4353033bfe265a32a2aab2cdc1076bad34a310926843b7bde93e8c192c", "plan_id": "benchmark/phase-b2-v2/004-rwvb-nonfinite-domain/evaluator", "plan_path": "benchmarks/phase-b2-successor-v2/evaluators/task-004-rwvb-nonfinite-domain.evaluator-plan.json", "visibility": "public"},
+      "evidence": {"attempts": [], "status": "pending"},
+      "extensions": {"org.idkmesh.phase_b2_v2": {"calibration_status": "pending", "evaluator_status": "provisional"}},
+      "family": "benchmark",
+      "id": "benchmark/phase-b2-v2/004-rwvb-nonfinite-domain",
+      "negative_case": {"description": "NaN, +Infinity, and -Infinity supplied to Candidate or ControllerConfig numeric fields must fail validation deterministically instead of producing non-finite controller outputs.", "evidence_status": "pending", "expected_category": "correctness"},
+      "source": {"repository": "https://github.com/MSKazemi/idkmesh", "revision": "a69aa0ae1ae4862e507511cbd9ad854237d0ad32"},
+      "split": "pilot",
+      "work_unit": {"digest": "sha256:9f4d5dd07e7af04a2d603edc7eb1cd2a424ae389a0edc7496b9ae83bcf11f4e4", "id": "benchmark/phase-b2-v2/004-rwvb-nonfinite-domain", "path": "benchmarks/phase-b2-successor-v2/work-units/task-004-rwvb-nonfinite-domain.work-unit.json", "version": 1}
+    },
+    {
+      "accounting": {"required_metrics": ["wall_seconds", "human_minutes"]},
+      "declared_structural_signatures": ["single-worker-baseline-v2", "two-independent-attempts-v2", "role-specialized-two-independent-attempts-v2"],
+      "difficulty": "trivial",
+      "evaluator": {"backend": "unified_diff", "plan_digest": "sha256:1965941c5c2844dc302049bcf461815df885571107e73d430ca3f68cac0adc16", "plan_id": "benchmark/phase-b2-v2/005-local-offer-output-boundary/evaluator", "plan_path": "benchmarks/phase-b2-successor-v2/evaluators/task-005-local-offer-output-boundary.evaluator-plan.json", "visibility": "public"},
+      "evidence": {"attempts": [], "status": "pending"},
+      "extensions": {"org.idkmesh.phase_b2_v2": {"calibration_status": "pending", "evaluator_status": "provisional"}},
+      "family": "security",
+      "id": "benchmark/phase-b2-v2/005-local-offer-output-boundary",
+      "negative_case": {"description": "--output README.md, an absolute path, or traversal outside results/ must fail before any canonical repository file can be created or modified.", "evidence_status": "pending", "expected_category": "security"},
+      "source": {"repository": "https://github.com/MSKazemi/idkmesh", "revision": "a69aa0ae1ae4862e507511cbd9ad854237d0ad32"},
+      "split": "pilot",
+      "work_unit": {"digest": "sha256:063dd0504fac4b9eb474f4d16e68ffc3680edd5ab6570f3473b1634cc8edd7f8", "id": "benchmark/phase-b2-v2/005-local-offer-output-boundary", "path": "benchmarks/phase-b2-successor-v2/work-units/task-005-local-offer-output-boundary.work-unit.json", "version": 1}
+    }
+  ],
+  "taxonomy_frozen_before_outcomes": false
+}
