@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idkmesh.org/schemas/identity-binding-v0.1.schema.json",
+  "title": "IDKMesh Identity Binding v0.1",
+  "description": "Optional protocol-neutral identity evidence for a worker/result. Identity evidence is provenance only and does not grant authorization, verification, or integration authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "protocol", "subject", "verified"],
+  "properties": {
+    "schema_version": {"const": "0.1"},
+    "protocol": {"type": "string", "minLength": 1},
+    "subject": {"type": "string", "minLength": 1},
+    "verified": {"type": "boolean"},
+    "evidence_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "evidence_locator": {"type": "string"},
+    "verification_method": {"type": "string"}
+  }
+}
