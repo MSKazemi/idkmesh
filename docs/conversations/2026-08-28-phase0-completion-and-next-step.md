@@ -28,13 +28,13 @@ The CI path validates all Phase 0 schemas and fixtures and runs only the built-i
 
 ## Tracker update
 
-Issue #19, `Phase 0: Implement Work Unit + experiment schemas and reproducible harness`, is treated as complete and its checklist/completion evidence was updated.
+Issue #19, `Phase 0: Implement Work Unit + experiment schemas and reproducible harness`, is complete and its checklist/completion evidence was updated.
 
 ## Important boundary
 
 Phase 0's `Experiment Result` is an experiment-run record. It should not silently become the final worker `ResultManifest` contract.
 
-Issue #3 remains relevant for defining the worker/coordinator/verifier contract, especially:
+The worker/coordinator/verifier boundary needs to describe:
 
 - produced candidate artifacts;
 - worker environment and tool provenance;
@@ -45,11 +45,28 @@ Issue #3 remains relevant for defining the worker/coordinator/verifier contract,
 
 This distinction preserves the IDKMesh principle that worker success is not acceptance.
 
+## Follow-up implemented in the same turn: Worker ResultManifest v0.1
+
+To prevent Phase 1 from being blocked on an ambiguous worker-output contract, the following artifacts were added:
+
+- `schemas/result-manifest-v0.1.schema.json`
+- `examples/results/phase0-smoke.result-manifest.json`
+- `examples/results/invalid-self-acceptance.result-manifest.json`
+- `docs/specifications/RESULT_MANIFEST_V0_1.md`
+
+`experiments/harness.py` was extended so validation now checks the valid worker ResultManifest, verifies that it refers to a Work Unit in the manifest with the correct version, verifies that requested evidence artifact ids actually exist, and requires the deliberately invalid self-acceptance fixture to fail.
+
+The invalid fixture adds a top-level `accepted: true`. Because the worker ResultManifest schema is strict and intentionally contains no acceptance field, CI rejects it. This turns the principle **worker success is not acceptance** into an executable invariant.
+
+GitHub Actions run `33178414803` completed successfully with these changes.
+
+Issue #3 remains open deliberately until a real worker/orchestrator/validator path exercises the contract. The project should learn from actual integration friction before declaring the schema final.
+
 ## Next execution focus
 
 The project should now move from infrastructure smoke testing to the smallest real local verified-swarm loop:
 
-1. finish the worker `ResultManifest` boundary in #3;
+1. exercise and refine the worker `ResultManifest` through #3;
 2. implement the single-machine multi-worker orchestrator in #4;
 3. implement the independent validator/benchmark layer in #5;
 4. integrate those pieces into the v0.1 Verified Swarm Runner in #16;
