@@ -28,10 +28,22 @@ class DeterministicVerifierTests(unittest.TestCase):
                 output_path=output,
                 verifier_id="test-independent-verifier",
             )
-            self.assertEqual(code, 0)
-            self.assertEqual(result["status"], "passed")
+            diagnostics = json.dumps(
+                {
+                    "status": result["status"],
+                    "checks": result["checks"],
+                    "metrics": result["metrics"],
+                    "findings": result["findings"],
+                },
+                indent=2,
+                sort_keys=True,
+            )
+            self.assertEqual(code, 0, diagnostics)
+            self.assertEqual(result["status"], "passed", diagnostics)
             self.assertEqual(
-                result["decision_support"]["recommendation"], "accept_candidate"
+                result["decision_support"]["recommendation"],
+                "accept_candidate",
+                diagnostics,
             )
             required = {check["id"]: check for check in result["checks"] if check["required"]}
             self.assertEqual(
@@ -43,7 +55,10 @@ class DeterministicVerifierTests(unittest.TestCase):
                     "path-policy",
                 },
             )
-            self.assertTrue(all(check["status"] == "passed" for check in required.values()))
+            self.assertTrue(
+                all(check["status"] == "passed" for check in required.values()),
+                diagnostics,
+            )
             self.assertTrue(output.is_file())
 
     def test_digest_mismatch_rejects_candidate(self) -> None:
