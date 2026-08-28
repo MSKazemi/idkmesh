@@ -1,0 +1,63 @@
+name: ACE Activation Gate
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/ace_activation_gate.py'
+      - 'tests/test_ace_activation_gate.py'
+      - 'examples/community/ace-activation-gate-current.example.json'
+      - 'docs/community/ACE_ACTIVATION_GATE.md'
+      - '.github/workflows/ace-activation-gate.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/ace_activation_gate.py'
+      - 'tests/test_ace_activation_gate.py'
+      - 'examples/community/ace-activation-gate-current.example.json'
+      - 'docs/community/ACE_ACTIVATION_GATE.md'
+      - '.github/workflows/ace-activation-gate.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      matrix:
+        python-version: ['3.11', '3.13']
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Compile gate
+        run: python -m py_compile scripts/ace_activation_gate.py tests/test_ace_activation_gate.py
+      - name: Run fail-closed unit tests
+        run: python -m unittest tests.test_ace_activation_gate -v
+      - name: Evaluate current repository fixture
+        run: |
+          python scripts/ace_activation_gate.py \
+            examples/community/ace-activation-gate-current.example.json \
+            --output /tmp/ace-activation.json
+          python -m json.tool /tmp/ace-activation.json >/dev/null
+      - name: Assert current fixture remains blocked for real remaining gates
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          result = json.loads(Path('/tmp/ace-activation.json').read_text())
+          blockers = set(result['blockers'])
+          assert result['decision'] == 'BLOCK'
+          assert result['activation_gate_passed'] is False
+          assert result['required_controller_mode_if_blocked'] == 'SHADOW'
+          assert 'component:integration_protection' in blockers
+          assert 'real_verified_descendant_evidence' in blockers
+          assert 'review_capacity' not in blockers
+          assert 'component:observer' not in blockers
+          assert 'component:lineage' not in blockers
+          assert 'component:security' not in blockers
+          assert 'component:controller' not in blockers
+          print('ACE Phase B correctly remains blocked by protection and real-descendant evidence, not capacity')
+          PY

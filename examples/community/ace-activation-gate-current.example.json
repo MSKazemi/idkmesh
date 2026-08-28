@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "components": {
+    "observer": {
+      "status": "accepted",
+      "source": "pr:106"
+    },
+    "lineage": {
+      "status": "accepted",
+      "source": "pr:48"
+    },
+    "security": {
+      "status": "accepted",
+      "source": "pr:98"
+    },
+    "controller": {
+      "status": "accepted",
+      "source": "pr:68"
+    },
+    "integration_protection": {
+      "status": "blocked",
+      "source": "branch:main@unprotected"
+    }
+  },
+  "descendant_evidence": {
+    "verified_count": 0,
+    "independently_verified": false,
+    "source": "issue:109@2026-08-28T15:37:12.220Z"
+  },
+  "review_capacity": {
+    "capacity": 0.8175744761936437,
+    "minimum_capacity": 0.6,
+    "readable": true,
+    "single_writer": true,
+    "snapshot_age_hours": 0.0,
+    "max_snapshot_age_hours": 24.0,
+    "source": "issue:109@2026-08-28T15:37:12.220Z"
+  },
+  "safety": {
+    "public_write_budget": 1,
+    "autonomous_merge_enabled": false,
+    "governance_mutation_enabled": false,
+    "untrusted_code_execution_enabled": false,
+    "secrets_access_enabled": false,
+    "mass_notification_enabled": false
+  }
+}
