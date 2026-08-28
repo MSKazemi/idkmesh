@@ -16,6 +16,7 @@ from idkmesh_node.runner import (
     output_policy_violations,
     path_policy_violations,
     protected_metadata_violations,
+    resolve_container_image_id,
     unpackaged_artifact_violations,
     untracked_paths,
 )
@@ -31,11 +32,13 @@ def work_unit():
 class RunnerPolicyTests(unittest.TestCase):
     def test_docker_command_preserves_safety_defaults(self) -> None:
         work = work_unit()
+        image_id = "sha256:" + "a" * 64
         command = docker_command(
             work,
             Path("/tmp/idkmesh-test-workspace"),
             "idkmesh-test",
             Path("/tmp/idkmesh-test-git-meta"),
+            image_ref=image_id,
         )
         joined = " ".join(command)
         self.assertIn("--network none", joined)
@@ -48,7 +51,41 @@ class RunnerPolicyTests(unittest.TestCase):
         self.assertIn("target=/git-meta,readonly", joined)
         self.assertNotIn("/var/run/docker.sock", joined)
         self.assertNotIn("--privileged", command)
-        self.assertEqual(command[-4:-2], ["python:3.12-alpine", "python"])
+        self.assertEqual(command[-4:-2], [image_id, "python"])
+
+    @patch("idkmesh_node.runner.subprocess.run")
+    def test_container_tag_is_resolved_to_immutable_local_image_id(self, run_mock) -> None:
+        image_id = "sha256:" + "b" * 64
+        run_mock.return_value = subprocess.CompletedProcess(
+            args=[], returncode=0, stdout=(image_id + "\n").encode(), stderr=b""
+        )
+
+        observed = resolve_container_image_id(
+            "python:3.12-alpine",
+            deadline=10**12,
+        )
+        self.assertEqual(observed, image_id)
+        self.assertEqual(
+            run_mock.call_args.args[0],
+            [
+                "docker",
+                "image",
+                "inspect",
+                "--format={{.Id}}",
+                "python:3.12-alpine",
+            ],
+        )
+
+    @patch("idkmesh_node.runner.subprocess.run")
+    def test_missing_preloaded_image_fails_closed(self, run_mock) -> None:
+        run_mock.return_value = subprocess.CompletedProcess(
+            args=[], returncode=1, stdout=b"", stderr=b"No such image"
+        )
+        with self.assertRaisesRegex(RuntimeError, "must be preloaded"):
+            resolve_container_image_id(
+                "python:3.12-alpine",
+                deadline=10**12,
+            )
 
     def test_git_environment_drops_inherited_git_configuration(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -169,6 +206,9 @@ class RunnerPolicyTests(unittest.TestCase):
         )
         self.assertEqual(len(violations), 1)
         self.assertIn("was truncated", violations[0])
+
+    def test_work_unit_carries_whole_attempt_wall_budget(self) -> None:
+        self.assertEqual(work_unit().wall_seconds, 60.0)
 
 
 if __name__ == "__main__":
