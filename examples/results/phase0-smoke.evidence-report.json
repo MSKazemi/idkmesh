@@ -1,0 +1,86 @@
+{
+  "schema_version": "0.1",
+  "id": "phase0/smoke-evidence/reproduction-1",
+  "work_unit_id": "phase0/smoke-work-unit",
+  "work_unit_version": 2,
+  "result_manifest": {
+    "id": "phase0/smoke-result/attempt-1",
+    "digest": "sha256:c4e1e90596408c500e053e6d22b02f7ac3f86b63da88a24feb1ae900f7a17313",
+    "worker_id": "phase0-local-worker"
+  },
+  "validator_id": "reproduction",
+  "verifier": {
+    "id": "phase0-independent-verifier",
+    "type": "system",
+    "adapter": "deterministic-reproduction",
+    "adapter_version": "0.1"
+  },
+  "independence": {
+    "relationship": "independent",
+    "basis": ["separate_process", "separate_adapter"],
+    "notes": "Fixture demonstrates a verifier identity distinct from the worker identity."
+  },
+  "started_at": "2026-08-28T13:31:00Z",
+  "finished_at": "2026-08-28T13:31:01Z",
+  "verdict": "supports_candidate",
+  "evaluated_artifacts": [
+    {
+      "id": "candidate-result",
+      "digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+    }
+  ],
+  "checks": [
+    {
+      "id": "result-schema",
+      "type": "schema",
+      "required": true,
+      "status": "pass",
+      "detail": "Worker ResultManifest satisfies the v0.1 schema.",
+      "evidence_artifact_ids": ["verification-log"]
+    },
+    {
+      "id": "deterministic-reproduction",
+      "type": "reproduction",
+      "required": true,
+      "status": "pass",
+      "detail": "The deterministic fixture was independently reproduced.",
+      "evidence_artifact_ids": ["verification-log"]
+    }
+  ],
+  "evidence_artifacts": [
+    {
+      "id": "verification-log",
+      "type": "test_output",
+      "locator": "results/phase0-verification.txt",
+      "digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+      "media_type": "text/plain",
+      "description": "Fixture evidence locator/digest used to validate the Evidence Report contract."
+    }
+  ],
+  "resources": {
+    "wall_seconds": 1.0,
+    "compute_units": 0.0,
+    "human_minutes": 0.0,
+    "tokens": 0
+  },
+  "summary": {
+    "statement": "Independent fixture checks support the worker candidate.",
+    "limitations": ["This Phase 0 fixture proves contract behavior, not real-world model correctness."]
+  },
+  "provenance": {
+    "work_unit_digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+    "source_revision": "fixture",
+    "verifier_config_digest": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+    "environment": {
+      "platform": "fixture",
+      "python": ">=3.10",
+      "tool_versions": {
+        "idkmesh-phase0-verifier": "0.1"
+      }
+    }
+  },
+  "acceptance_scope": "evidence_only",
+  "extensions": {
+    "org.idkmesh.phase0.fixture": true
+  }
+}
