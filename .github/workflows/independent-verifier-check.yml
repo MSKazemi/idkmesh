@@ -1,0 +1,50 @@
+name: Independent verifier check
+
+on:
+  pull_request:
+    paths:
+      - "verifier/**"
+      - "schemas/verifier-plan-v0.1.schema.json"
+      - "schemas/work-unit-v0.2.schema.json"
+      - "schemas/result-manifest-v0.1.schema.json"
+      - "schemas/verification-result-v0.1.schema.json"
+      - "experiments/provenance_integrity.py"
+      - ".github/workflows/independent-verifier-check.yml"
+  push:
+    branches: [main]
+    paths:
+      - "verifier/**"
+      - "schemas/verifier-plan-v0.1.schema.json"
+      - "schemas/work-unit-v0.2.schema.json"
+      - "schemas/result-manifest-v0.1.schema.json"
+      - "schemas/verification-result-v0.1.schema.json"
+      - "experiments/provenance_integrity.py"
+      - ".github/workflows/independent-verifier-check.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  verifier-contract-and-unit-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install verifier package
+        run: python -m pip install -e verifier
+      - name: Validate existing protocol contracts and provenance integrity
+        run: |
+          python -m pip install -r requirements-phase0.txt
+          python experiments/harness.py validate
+          python experiments/provenance_integrity.py --self-test
+      - name: Run independent verifier unit tests
+        env:
+          PYTHONPATH: verifier/src
+        run: python -m unittest discover -s verifier/tests -v
+
+# CI does not execute candidate code or Docker verifier commands. Container/Git
+# execution is mocked in unit tests. Real low-risk verifier acceptance runs require
+# an explicitly controlled Docker host and should be recorded separately.
