@@ -16,6 +16,7 @@ import json
 import os
 from pathlib import Path, PurePosixPath
 import platform
+import re
 import shlex
 import sys
 import time
@@ -32,7 +33,24 @@ WORK_UNIT_SCHEMA = SCHEMA_DIR / "work-unit-v0.2.schema.json"
 RESULT_MANIFEST_SCHEMA = SCHEMA_DIR / "result-manifest-v0.1.schema.json"
 VERIFICATION_RESULT_SCHEMA = SCHEMA_DIR / "verification-result-v0.1.schema.json"
 VERIFIER_VERSION = "0.1"
-PATCH_VERIFIER_VERSION = "0.1"
+PATCH_VERIFIER_VERSION = "0.1.1"
+HUNK_HEADER_RE = re.compile(
+    r"^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@(?: .*)?$"
+)
+PATCH_METADATA_PREFIXES = (
+    "index ",
+    "old mode ",
+    "new mode ",
+    "new file mode ",
+    "deleted file mode ",
+    "similarity index ",
+    "dissimilarity index ",
+    "rename from ",
+    "rename to ",
+    "copy from ",
+    "copy to ",
+)
+RESULT_LOG_TYPES = {"stdout", "stderr", "trace", "tool_calls", "other"}
 
 
 class VerifierError(RuntimeError):
@@ -156,6 +174,15 @@ def validate_patch_policy(policy: dict[str, Any]) -> None:
     for field in ("max_candidate_bytes", "max_log_bytes"):
         if not isinstance(backend.get(field), int) or backend[field] < 1:
             raise VerifierError(f"backend.{field} must be a positive integer")
+
+    required_logs = backend.get("required_log_types")
+    if not isinstance(required_logs, list) or not required_logs:
+        raise VerifierError("backend.required_log_types must be a non-empty list")
+    if len(set(required_logs)) != len(required_logs):
+        raise VerifierError("backend.required_log_types must be unique")
+    if any(value not in RESULT_LOG_TYPES for value in required_logs):
+        raise VerifierError("backend.required_log_types contains an unsupported ResultManifest log type")
+
     required_text = backend.get("required_added_text")
     if not isinstance(required_text, list) or not required_text:
         raise VerifierError("backend.required_added_text must be a non-empty list")
@@ -261,41 +288,186 @@ def _normalize_repo_path(raw: str) -> str | None:
     return normalized
 
 
-def parse_unified_diff_paths(patch_text: str) -> list[str]:
-    """Independently extract all old/new repository paths from a unified diff."""
+def _parse_path_token(payload: str, label: str) -> str | None:
+    try:
+        parsed = shlex.split(payload)
+    except ValueError as exc:
+        raise VerifierError(f"invalid {label}: {payload!r}") from exc
+    if len(parsed) != 1:
+        raise VerifierError(f"{label} must contain exactly one path token")
+    return _normalize_repo_path(parsed[0])
+
+
+def parse_unified_diff(patch_text: str) -> tuple[list[str], list[str]]:
+    """Parse the supported textual Git unified-diff subset and validate hunk counts.
+
+    The v0.1.1 metadata-only verifier deliberately rejects binary/mode-only or
+    structurally ambiguous patches. Semantic `+` lines count only while inside a
+    syntactically valid, count-balanced `@@` hunk.
+    """
 
     paths: set[str] = set()
-    for line in patch_text.splitlines():
-        tokens: list[str] = []
+    added_lines: list[str] = []
+    current_diff_paths: set[str] | None = None
+    file_header_paths: set[str] = set()
+    saw_old_header = False
+    saw_new_header = False
+    saw_hunk = False
+    hunk_old_remaining: int | None = None
+    hunk_new_remaining: int | None = None
+
+    def finish_hunk(line_number: int) -> None:
+        nonlocal hunk_old_remaining, hunk_new_remaining
+        if hunk_old_remaining is None:
+            return
+        if hunk_old_remaining != 0 or hunk_new_remaining != 0:
+            raise VerifierError(
+                "unified-diff hunk count mismatch before line "
+                f"{line_number}: old_remaining={hunk_old_remaining}, "
+                f"new_remaining={hunk_new_remaining}"
+            )
+        hunk_old_remaining = None
+        hunk_new_remaining = None
+
+    def finish_file(line_number: int) -> None:
+        nonlocal current_diff_paths
+        if current_diff_paths is None:
+            return
+        finish_hunk(line_number)
+        if not saw_old_header or not saw_new_header or not saw_hunk:
+            raise VerifierError(
+                f"unified-diff file section ending before line {line_number} lacks ---/+++/@@ structure"
+            )
+        if file_header_paths != current_diff_paths:
+            raise VerifierError(
+                "unified-diff diff --git paths disagree with ---/+++ paths: "
+                f"diff={sorted(current_diff_paths)}, headers={sorted(file_header_paths)}"
+            )
+        current_diff_paths = None
+
+    lines = patch_text.splitlines()
+    for line_number, line in enumerate(lines, start=1):
         if line.startswith("diff --git "):
+            finish_file(line_number)
             try:
                 parsed = shlex.split(line)
             except ValueError as exc:
-                raise VerifierError(f"invalid diff --git header: {line!r}") from exc
-            if len(parsed) < 4:
-                raise VerifierError(f"incomplete diff --git header: {line!r}")
-            tokens = parsed[2:4]
-        elif line.startswith("--- ") or line.startswith("+++ "):
-            payload = line[4:].strip()
-            try:
-                parsed = shlex.split(payload)
-            except ValueError as exc:
-                raise VerifierError(f"invalid unified-diff path header: {line!r}") from exc
-            if parsed:
-                tokens = [parsed[0]]
-        for token in tokens:
-            normalized = _normalize_repo_path(token)
-            if normalized is not None:
-                paths.add(normalized)
-    return sorted(paths)
+                raise VerifierError(f"invalid diff --git header at line {line_number}: {line!r}") from exc
+            if len(parsed) != 4:
+                raise VerifierError(
+                    f"diff --git header at line {line_number} must contain exactly two paths"
+                )
+            normalized = [_normalize_repo_path(token) for token in parsed[2:4]]
+            if any(value is None for value in normalized):
+                raise VerifierError("diff --git header may not use /dev/null")
+            current_diff_paths = {value for value in normalized if value is not None}
+            if not current_diff_paths:
+                raise VerifierError("diff --git header did not name a repository path")
+            paths.update(current_diff_paths)
+            file_header_paths = set()
+            saw_old_header = False
+            saw_new_header = False
+            saw_hunk = False
+            hunk_old_remaining = None
+            hunk_new_remaining = None
+            continue
+
+        if current_diff_paths is None:
+            if line.strip():
+                raise VerifierError(
+                    f"content outside diff --git section at line {line_number}: {line!r}"
+                )
+            continue
+
+        if hunk_old_remaining is not None:
+            if line.startswith("@@ "):
+                finish_hunk(line_number)
+            elif line == "\\ No newline at end of file":
+                continue
+            else:
+                if hunk_old_remaining == 0 and hunk_new_remaining == 0:
+                    raise VerifierError(
+                        f"unexpected content after completed hunk at line {line_number}: {line!r}"
+                    )
+                prefix = line[:1]
+                if prefix == " ":
+                    hunk_old_remaining -= 1
+                    hunk_new_remaining -= 1
+                elif prefix == "-":
+                    hunk_old_remaining -= 1
+                elif prefix == "+":
+                    hunk_new_remaining -= 1
+                    added_lines.append(line[1:])
+                else:
+                    raise VerifierError(
+                        f"invalid unified-diff hunk line at {line_number}: {line!r}"
+                    )
+                if hunk_old_remaining < 0 or hunk_new_remaining < 0:
+                    raise VerifierError(
+                        f"unified-diff hunk exceeded declared line counts at line {line_number}"
+                    )
+                continue
+
+        if line.startswith("@@ "):
+            if not saw_old_header or not saw_new_header:
+                raise VerifierError(f"hunk at line {line_number} appears before ---/+++ headers")
+            match = HUNK_HEADER_RE.fullmatch(line)
+            if match is None:
+                raise VerifierError(f"invalid unified-diff hunk header at line {line_number}: {line!r}")
+            old_count = int(match.group(2) if match.group(2) is not None else "1")
+            new_count = int(match.group(4) if match.group(4) is not None else "1")
+            hunk_old_remaining = old_count
+            hunk_new_remaining = new_count
+            saw_hunk = True
+            continue
+
+        if line.startswith("--- "):
+            if saw_old_header or saw_new_header:
+                raise VerifierError(f"duplicate/out-of-order --- header at line {line_number}")
+            old_path = _parse_path_token(line[4:].strip(), "--- path header")
+            if old_path is not None:
+                file_header_paths.add(old_path)
+                paths.add(old_path)
+            saw_old_header = True
+            continue
+
+        if line.startswith("+++ "):
+            if not saw_old_header or saw_new_header:
+                raise VerifierError(f"out-of-order +++ header at line {line_number}")
+            new_path = _parse_path_token(line[4:].strip(), "+++ path header")
+            if new_path is not None:
+                file_header_paths.add(new_path)
+                paths.add(new_path)
+            saw_new_header = True
+            continue
+
+        if saw_old_header or saw_new_header:
+            raise VerifierError(
+                f"unexpected content between file headers and hunk at line {line_number}: {line!r}"
+            )
+        if not line.startswith(PATCH_METADATA_PREFIXES):
+            raise VerifierError(
+                f"unsupported unified-diff metadata at line {line_number}: {line!r}"
+            )
+
+    finish_file(len(lines) + 1)
+    if not paths:
+        raise VerifierError("unified diff contains no repository paths")
+    return sorted(paths), added_lines
+
+
+def parse_unified_diff_paths(patch_text: str) -> list[str]:
+    """Backward-compatible path-only view of the strict unified-diff parser."""
+
+    paths, _ = parse_unified_diff(patch_text)
+    return paths
 
 
 def parse_added_lines(patch_text: str) -> list[str]:
-    return [
-        line[1:]
-        for line in patch_text.splitlines()
-        if line.startswith("+") and not line.startswith("+++")
-    ]
+    """Return only additions inside structurally valid unified-diff hunks."""
+
+    _, added = parse_unified_diff(patch_text)
+    return added
 
 
 def _matches_any(path: str, patterns: list[str]) -> bool:
@@ -434,11 +606,31 @@ def verify_candidate(
 
     findings: list[dict[str, Any]] = []
     if not digest_passed:
-        findings.append({"severity": "high", "category": "provenance", "summary": "Candidate artifact bytes do not match worker-declared digest.", "path": artifact["locator"]})
+        findings.append(
+            {
+                "severity": "high",
+                "category": "provenance",
+                "summary": "Candidate artifact bytes do not match worker-declared digest.",
+                "path": artifact["locator"],
+            }
+        )
     if not scope_passed:
-        findings.append({"severity": "high", "category": "scope", "summary": "Candidate file set violates verifier-owned scope policy."})
+        findings.append(
+            {
+                "severity": "high",
+                "category": "scope",
+                "summary": "Candidate file set violates verifier-owned scope policy.",
+            }
+        )
     if not acceptance_passed:
-        findings.append({"severity": "high", "category": "correctness", "summary": "Candidate failed verifier-owned deterministic acceptance expectations.", "path": artifact["locator"]})
+        findings.append(
+            {
+                "severity": "high",
+                "category": "correctness",
+                "summary": "Candidate failed verifier-owned deterministic acceptance expectations.",
+                "path": artifact["locator"],
+            }
+        )
 
     passed_count = sum(check["status"] == "passed" for check in checks)
     failed_count = sum(check["status"] == "failed" for check in checks)
@@ -451,18 +643,59 @@ def verify_candidate(
         "work_unit_id": worker_result["work_unit_id"],
         "work_unit_version": worker_result["work_unit_version"],
         "attempt": worker_result["attempt"],
-        "verifier": {"id": "idkmesh-local-verifier", "type": "system", "adapter": "deterministic-json-verifier", "adapter_version": VERIFIER_VERSION},
-        "independence": {"independent_from_worker": True, "worker_id_observed": worker_result["worker"]["id"], "shared_model_family": False, "shared_runtime": False, "correlation_notes": "Verifier policy is loaded outside the isolated candidate root and candidate code is never executed."},
+        "verifier": {
+            "id": "idkmesh-local-verifier",
+            "type": "system",
+            "adapter": "deterministic-json-verifier",
+            "adapter_version": VERIFIER_VERSION,
+        },
+        "independence": {
+            "independent_from_worker": True,
+            "worker_id_observed": worker_result["worker"]["id"],
+            "shared_model_family": False,
+            "shared_runtime": False,
+            "correlation_notes": "Verifier policy is loaded outside the isolated candidate root and candidate code is never executed.",
+        },
         "status": "passed" if all_required_passed else "failed",
         "started_at": started_at,
         "finished_at": utc_now(),
         "checks": checks,
         "evidence": evidence,
         "findings": findings,
-        "metrics": {"required_checks_passed": passed_count, "required_checks_failed": failed_count, "candidate_bytes": len(candidate_bytes)},
-        "resources": {"wall_seconds": elapsed, "compute_units": 0.0, "human_minutes": 0.0, "tokens": 0},
-        "provenance": {"result_manifest_digest": canonical_digest(worker_result), "work_unit_digest": expected_work_unit_digest, "source_revision": worker_result["provenance"]["source_revision"], "verifier_config_digest": canonical_digest(policy), "environment": {"platform": platform.platform(), "python": platform.python_version(), "tool_versions": {"idkmesh-local-verifier": VERIFIER_VERSION, "jsonschema": "installed"}}},
-        "decision_support": {"recommendation": "accept_candidate" if all_required_passed else "reject_candidate", "confidence": 1.0, "rationale": "All verifier-owned deterministic checks passed." if all_required_passed else "One or more required verifier-owned deterministic checks failed."},
+        "metrics": {
+            "required_checks_passed": passed_count,
+            "required_checks_failed": failed_count,
+            "candidate_bytes": len(candidate_bytes),
+        },
+        "resources": {
+            "wall_seconds": elapsed,
+            "compute_units": 0.0,
+            "human_minutes": 0.0,
+            "tokens": 0,
+        },
+        "provenance": {
+            "result_manifest_digest": canonical_digest(worker_result),
+            "work_unit_digest": expected_work_unit_digest,
+            "source_revision": worker_result["provenance"]["source_revision"],
+            "verifier_config_digest": canonical_digest(policy),
+            "environment": {
+                "platform": platform.platform(),
+                "python": platform.python_version(),
+                "tool_versions": {
+                    "idkmesh-local-verifier": VERIFIER_VERSION,
+                    "jsonschema": "installed",
+                },
+            },
+        },
+        "decision_support": {
+            "recommendation": "accept_candidate" if all_required_passed else "reject_candidate",
+            "confidence": 1.0,
+            "rationale": (
+                "All verifier-owned deterministic checks passed."
+                if all_required_passed
+                else "One or more required verifier-owned deterministic checks failed."
+            ),
+        },
         "extensions": {"org.idkmesh.local_verifier.policy_id": policy["id"]},
     }
     validate_schema(verification_result, VERIFICATION_RESULT_SCHEMA, "VerificationResult")
@@ -500,7 +733,7 @@ def verify_patch_candidate(
     expected_patch_ids = {"result-manifest-schema", "independent-review"}
     if required_ids != expected_patch_ids:
         raise VerifierError(
-            "deterministic patch verifier v0.1 requires exactly these required validators: "
+            "deterministic patch verifier v0.1.1 requires exactly these required validators: "
             + ", ".join(sorted(expected_patch_ids))
         )
 
@@ -523,8 +756,7 @@ def verify_patch_candidate(
     added: list[str] = []
     try:
         patch_text = patch_bytes.decode("utf-8")
-        changed_paths = parse_unified_diff_paths(patch_text)
-        added = parse_added_lines(patch_text)
+        changed_paths, added = parse_unified_diff(patch_text)
     except (UnicodeDecodeError, VerifierError) as exc:
         decode_error = str(exc)
 
@@ -549,17 +781,40 @@ def verify_patch_candidate(
     ]
     semantic_ok = nonempty_patch_ok and not missing_added_text
 
+    required_log_types = list(backend["required_log_types"])
+    log_type_counts = {log_type: 0 for log_type in required_log_types}
+    seen_log_locators: set[str] = set()
     log_observations: list[dict[str, Any]] = []
     log_integrity_ok = True
     for index, log in enumerate(worker_result.get("logs", []), start=1):
         locator = log["locator"]
-        log_path = _safe_candidate_path(candidate_root, locator)
+        log_type = log["type"]
+        declared_digest = log.get("digest")
+        if log_type in log_type_counts:
+            log_type_counts[log_type] += 1
         observation: dict[str, Any] = {
             "index": index,
-            "type": log["type"],
+            "type": log_type,
             "locator": locator,
-            "declared_digest": log["digest"],
+            "declared_digest": declared_digest,
         }
+
+        if locator in seen_log_locators:
+            observation["error"] = "duplicate log locator"
+            observation["matches"] = False
+            log_integrity_ok = False
+            log_observations.append(observation)
+            continue
+        seen_log_locators.add(locator)
+
+        if not declared_digest:
+            observation["error"] = "log digest is required by evaluator policy"
+            observation["matches"] = False
+            log_integrity_ok = False
+            log_observations.append(observation)
+            continue
+
+        log_path = _safe_candidate_path(candidate_root, locator)
         if not log_path.is_file() or log_path.is_symlink():
             observation["error"] = "log is missing or not a regular file"
             observation["matches"] = False
@@ -568,7 +823,7 @@ def verify_patch_candidate(
             data = log_path.read_bytes()
             observed = sha256_bytes(data)
             within_limit = len(data) <= backend["max_log_bytes"]
-            matches = observed == log["digest"] and within_limit
+            matches = observed == declared_digest and within_limit
             observation.update(
                 {
                     "observed_digest": observed,
@@ -580,6 +835,25 @@ def verify_patch_candidate(
             if not matches:
                 log_integrity_ok = False
         log_observations.append(observation)
+
+    log_coverage_violations: list[str] = []
+    for log_type in required_log_types:
+        count = log_type_counts[log_type]
+        if count == 0:
+            log_coverage_violations.append(f"required log type missing: {log_type}")
+        elif count > 1:
+            log_coverage_violations.append(
+                f"required log type must appear exactly once: {log_type} (observed {count})"
+            )
+    if log_coverage_violations:
+        log_integrity_ok = False
+
+    log_observation_payload = {
+        "required_log_types": required_log_types,
+        "observed_type_counts": log_type_counts,
+        "coverage_violations": log_coverage_violations,
+        "logs": log_observations,
+    }
 
     worker_status_ok = worker_result["status"] == "succeeded"
     independent_review_ok = all(
@@ -594,11 +868,6 @@ def verify_patch_candidate(
         ]
     )
 
-    result_manifest_observation = {
-        "result_manifest_id": worker_result["id"],
-        "digest": canonical_digest(worker_result),
-        "required_validator_ids": sorted(required_ids),
-    }
     patch_observation = {
         "artifact_locator": artifact["locator"],
         "declared_digest": artifact["digest"],
@@ -641,8 +910,8 @@ def verify_patch_candidate(
             evidence_id="log-integrity-observation",
             evidence_type="trace",
             locator="inline://log-integrity",
-            digest=sha256_json(log_observations),
-            description="Canonical digest of independently recomputed declared-log integrity observations.",
+            digest=sha256_json(log_observation_payload),
+            description="Canonical digest of evaluator-required log coverage and independently recomputed log integrity observations.",
         ),
         _evidence(
             evidence_id="patch-scope-observation",
@@ -656,7 +925,7 @@ def verify_patch_candidate(
             evidence_type="test_output",
             locator="inline://patch-semantic",
             digest=sha256_json(semantic_observation),
-            description="Canonical digest of verifier-owned required-added-text checks.",
+            description="Canonical digest of verifier-owned required-added-text checks from validated hunks only.",
         ),
         _evidence(
             evidence_id="worker-status-observation",
@@ -669,7 +938,7 @@ def verify_patch_candidate(
 
     diagnostics = {
         "artifact": patch_observation,
-        "logs": log_observations,
+        "logs": log_observation_payload,
         "scope": scope_observation,
         "semantic": semantic_observation,
         "worker_status": worker_result["status"],
@@ -689,7 +958,7 @@ def verify_patch_candidate(
             "required": True,
             "status": "passed" if independent_review_ok else "failed",
             "summary": (
-                "Independent metadata-only patch review passed artifact/log integrity, scope, and verifier-owned semantic checks."
+                "Independent metadata-only patch review passed artifact/log completeness and integrity, strict patch structure, scope, and verifier-owned semantic checks."
                 if independent_review_ok
                 else "Independent metadata-only patch review rejected the candidate bundle."
             ),
@@ -706,19 +975,59 @@ def verify_patch_candidate(
 
     findings: list[dict[str, Any]] = []
     if not patch_size_ok:
-        findings.append({"severity": "high", "category": "policy", "summary": "Candidate patch exceeds verifier-owned byte limit.", "path": artifact["locator"]})
+        findings.append(
+            {
+                "severity": "high",
+                "category": "policy",
+                "summary": "Candidate patch exceeds verifier-owned byte limit.",
+                "path": artifact["locator"],
+            }
+        )
     if not artifact_digest_ok:
-        findings.append({"severity": "high", "category": "provenance", "summary": "Candidate patch bytes do not match worker-declared digest.", "path": artifact["locator"]})
+        findings.append(
+            {
+                "severity": "high",
+                "category": "provenance",
+                "summary": "Candidate patch bytes do not match worker-declared digest.",
+                "path": artifact["locator"],
+            }
+        )
     if decode_error is not None or not nonempty_patch_ok:
-        findings.append({"severity": "high", "category": "correctness", "summary": "Candidate patch is empty, undecodable, or has no independently parseable repository paths.", "path": artifact["locator"]})
+        findings.append(
+            {
+                "severity": "high",
+                "category": "correctness",
+                "summary": "Candidate patch is empty, undecodable, or structurally invalid as a supported textual Git unified diff.",
+                "path": artifact["locator"],
+            }
+        )
     if not log_integrity_ok:
-        findings.append({"severity": "high", "category": "provenance", "summary": "One or more declared worker logs are missing, oversized, or do not match their declared digests."})
+        findings.append(
+            {
+                "severity": "high",
+                "category": "provenance",
+                "summary": "Evaluator-required worker logs are missing/duplicated, lack digests, are oversized, missing, or do not match declared digests.",
+            }
+        )
     for violation in scope_violations:
         findings.append({"severity": "high", "category": "scope", "summary": violation})
     if not semantic_ok:
-        findings.append({"severity": "high", "category": "correctness", "summary": "Candidate patch does not contain all verifier-owned required added text.", "path": artifact["locator"]})
+        findings.append(
+            {
+                "severity": "high",
+                "category": "correctness",
+                "summary": "Candidate patch does not contain all verifier-owned required added text inside validated hunks.",
+                "path": artifact["locator"],
+            }
+        )
     if not worker_status_ok:
-        findings.append({"severity": "medium", "category": "policy", "summary": f"Worker ResultManifest status is {worker_result['status']!r}, not 'succeeded'."})
+        findings.append(
+            {
+                "severity": "medium",
+                "category": "policy",
+                "summary": f"Worker ResultManifest status is {worker_result['status']!r}, not 'succeeded'.",
+            }
+        )
 
     passed_count = sum(check["status"] == "passed" for check in checks)
     failed_count = sum(check["status"] == "failed" for check in checks)
@@ -731,19 +1040,66 @@ def verify_patch_candidate(
         "work_unit_id": worker_result["work_unit_id"],
         "work_unit_version": worker_result["work_unit_version"],
         "attempt": worker_result["attempt"],
-        "verifier": {"id": "idkmesh-local-verifier", "type": "system", "adapter": "deterministic-patch-verifier", "adapter_version": PATCH_VERIFIER_VERSION},
-        "independence": {"independent_from_worker": True, "worker_id_observed": worker_result["worker"]["id"], "shared_model_family": False, "shared_runtime": False, "correlation_notes": "Evaluator policy is verifier-owned and outside the candidate root; candidate code is never executed. Patch paths, artifact/log digests, and semantic markers are independently recomputed."},
+        "verifier": {
+            "id": "idkmesh-local-verifier",
+            "type": "system",
+            "adapter": "deterministic-patch-verifier",
+            "adapter_version": PATCH_VERIFIER_VERSION,
+        },
+        "independence": {
+            "independent_from_worker": True,
+            "worker_id_observed": worker_result["worker"]["id"],
+            "shared_model_family": False,
+            "shared_runtime": False,
+            "correlation_notes": "Evaluator policy is verifier-owned and outside the candidate root; candidate code is never executed. Patch structure/paths, artifact/log digests, required log coverage, and semantic markers are independently recomputed.",
+        },
         "status": "passed" if all_required_passed else "failed",
         "started_at": started_at,
         "finished_at": utc_now(),
         "checks": checks,
         "evidence": evidence,
         "findings": findings,
-        "metrics": {"required_checks_passed": passed_count, "required_checks_failed": failed_count, "candidate_bytes": len(patch_bytes), "changed_path_count": len(changed_paths), "log_count": len(log_observations)},
-        "resources": {"wall_seconds": elapsed, "compute_units": 0.0, "human_minutes": 0.0, "tokens": 0},
-        "provenance": {"result_manifest_digest": canonical_digest(worker_result), "work_unit_digest": expected_work_unit_digest, "source_revision": worker_result["provenance"]["source_revision"], "verifier_config_digest": canonical_digest(policy), "environment": {"platform": platform.platform(), "python": platform.python_version(), "tool_versions": {"idkmesh-local-verifier": VERIFIER_VERSION, "deterministic-patch-verifier": PATCH_VERIFIER_VERSION, "jsonschema": "installed"}}},
-        "decision_support": {"recommendation": "accept_candidate" if all_required_passed else "reject_candidate", "confidence": 1.0, "rationale": "Both WorkUnit-required validators passed using independently observed metadata-only evidence." if all_required_passed else "At least one WorkUnit-required validator failed under independently observed metadata-only evidence."},
-        "extensions": {"org.idkmesh.local_verifier.policy_id": policy["id"], "org.idkmesh.local_verifier.backend": "unified_diff"},
+        "metrics": {
+            "required_checks_passed": passed_count,
+            "required_checks_failed": failed_count,
+            "candidate_bytes": len(patch_bytes),
+            "changed_path_count": len(changed_paths),
+            "log_count": len(log_observations),
+        },
+        "resources": {
+            "wall_seconds": elapsed,
+            "compute_units": 0.0,
+            "human_minutes": 0.0,
+            "tokens": 0,
+        },
+        "provenance": {
+            "result_manifest_digest": canonical_digest(worker_result),
+            "work_unit_digest": expected_work_unit_digest,
+            "source_revision": worker_result["provenance"]["source_revision"],
+            "verifier_config_digest": canonical_digest(policy),
+            "environment": {
+                "platform": platform.platform(),
+                "python": platform.python_version(),
+                "tool_versions": {
+                    "idkmesh-local-verifier": VERIFIER_VERSION,
+                    "deterministic-patch-verifier": PATCH_VERIFIER_VERSION,
+                    "jsonschema": "installed",
+                },
+            },
+        },
+        "decision_support": {
+            "recommendation": "accept_candidate" if all_required_passed else "reject_candidate",
+            "confidence": 1.0,
+            "rationale": (
+                "Both WorkUnit-required validators passed using independently observed metadata-only evidence."
+                if all_required_passed
+                else "At least one WorkUnit-required validator failed under independently observed metadata-only evidence."
+            ),
+        },
+        "extensions": {
+            "org.idkmesh.local_verifier.policy_id": policy["id"],
+            "org.idkmesh.local_verifier.backend": "unified_diff",
+        },
     }
     validate_schema(verification_result, VERIFICATION_RESULT_SCHEMA, "VerificationResult")
     validate_integrity(work_unit, worker_result, verification_result)
@@ -753,13 +1109,22 @@ def verify_patch_candidate(
 def semantic_signature(result: dict[str, Any]) -> dict[str, Any]:
     return {
         "status": result["status"],
-        "checks": [(check["id"], check["status"], tuple(check["evidence_ids"])) for check in result["checks"]],
+        "checks": [
+            (check["id"], check["status"], tuple(check["evidence_ids"]))
+            for check in result["checks"]
+        ],
         "evidence": [(item["id"], item["digest"]) for item in result["evidence"]],
         "recommendation": result["decision_support"]["recommendation"],
     }
 
 
-def run_fixture(*, work_unit_path: Path, result_manifest_path: Path, candidate_root: Path, policy_path: Path) -> dict[str, Any]:
+def run_fixture(
+    *,
+    work_unit_path: Path,
+    result_manifest_path: Path,
+    candidate_root: Path,
+    policy_path: Path,
+) -> dict[str, Any]:
     return verify_candidate(
         work_unit=load_json(work_unit_path),
         worker_result=load_json(result_manifest_path),
@@ -776,9 +1141,17 @@ def cmd_verify(args: argparse.Namespace) -> int:
     policy_path = resolve_repo_path(args.policy)
     output_path = resolve_output_path(args.output)
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    result = run_fixture(work_unit_path=work_unit_path, result_manifest_path=result_manifest_path, candidate_root=candidate_root, policy_path=policy_path)
+    result = run_fixture(
+        work_unit_path=work_unit_path,
+        result_manifest_path=result_manifest_path,
+        candidate_root=candidate_root,
+        policy_path=policy_path,
+    )
     output_path.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    print(f"{result['status']}: wrote {output_path}; recommendation={result['decision_support']['recommendation']}")
+    print(
+        f"{result['status']}: wrote {output_path}; "
+        f"recommendation={result['decision_support']['recommendation']}"
+    )
     return 0 if result["status"] == "passed" else 1
 
 
@@ -795,9 +1168,24 @@ def cmd_self_test(args: argparse.Namespace) -> int:
     if allowed_output.relative_to(ROOT).parts[0] != "results":
         raise VerifierError("results/ output path guard rejected its own invariant")
 
-    good = run_fixture(work_unit_path=work_unit_path, result_manifest_path=resolve_repo_path(args.good_result_manifest), candidate_root=resolve_repo_path(args.good_candidate_root), policy_path=policy_path)
-    good_again = run_fixture(work_unit_path=work_unit_path, result_manifest_path=resolve_repo_path(args.good_result_manifest), candidate_root=resolve_repo_path(args.good_candidate_root), policy_path=policy_path)
-    bad = run_fixture(work_unit_path=work_unit_path, result_manifest_path=resolve_repo_path(args.bad_result_manifest), candidate_root=resolve_repo_path(args.bad_candidate_root), policy_path=policy_path)
+    good = run_fixture(
+        work_unit_path=work_unit_path,
+        result_manifest_path=resolve_repo_path(args.good_result_manifest),
+        candidate_root=resolve_repo_path(args.good_candidate_root),
+        policy_path=policy_path,
+    )
+    good_again = run_fixture(
+        work_unit_path=work_unit_path,
+        result_manifest_path=resolve_repo_path(args.good_result_manifest),
+        candidate_root=resolve_repo_path(args.good_candidate_root),
+        policy_path=policy_path,
+    )
+    bad = run_fixture(
+        work_unit_path=work_unit_path,
+        result_manifest_path=resolve_repo_path(args.bad_result_manifest),
+        candidate_root=resolve_repo_path(args.bad_candidate_root),
+        policy_path=policy_path,
+    )
 
     if good["status"] != "passed" or good["decision_support"]["recommendation"] != "accept_candidate":
         raise VerifierError("known-good fixture was not accepted by verifier-owned checks")
@@ -814,7 +1202,11 @@ def cmd_self_test(args: argparse.Namespace) -> int:
     if bad_checks.get("independent-acceptance") != "failed":
         raise VerifierError("bad fixture must fail the verifier-owned acceptance check")
 
-    print("OK: executable verifier accepts known-good candidate, rejects self-consistent incorrect candidate via verifier-owned check, emits schema-valid provenance-bound VerificationResult, reproduces semantic outcomes, and restricts generated evidence to results/")
+    print(
+        "OK: executable verifier accepts known-good candidate, rejects self-consistent incorrect "
+        "candidate via verifier-owned check, emits schema-valid provenance-bound VerificationResult, "
+        "reproduces semantic outcomes, and restricts generated evidence to results/"
+    )
     return 0
 
 
@@ -827,16 +1219,41 @@ def build_parser() -> argparse.ArgumentParser:
     verify_parser.add_argument("--result-manifest", required=True)
     verify_parser.add_argument("--candidate-root", required=True)
     verify_parser.add_argument("--policy", required=True)
-    verify_parser.add_argument("--output", required=True, help="Repository-relative generated evidence path under results/.")
+    verify_parser.add_argument(
+        "--output",
+        required=True,
+        help="Repository-relative generated evidence path under results/.",
+    )
     verify_parser.set_defaults(func=cmd_verify)
 
-    self_test = subparsers.add_parser("self-test", help="Run known-good and deliberately bad JSON fixtures.")
-    self_test.add_argument("--work-unit", default="examples/work-units/local-verifier-smoke.work-unit.json")
-    self_test.add_argument("--policy", default="verification/fixtures/verifier-smoke-policy.json")
-    self_test.add_argument("--good-result-manifest", default="examples/verifier/good/result-manifest.json")
-    self_test.add_argument("--good-candidate-root", default="examples/verifier/good/candidate-root")
-    self_test.add_argument("--bad-result-manifest", default="examples/verifier/bad/result-manifest.json")
-    self_test.add_argument("--bad-candidate-root", default="examples/verifier/bad/candidate-root")
+    self_test = subparsers.add_parser(
+        "self-test",
+        help="Run known-good and deliberately bad JSON fixtures.",
+    )
+    self_test.add_argument(
+        "--work-unit",
+        default="examples/work-units/local-verifier-smoke.work-unit.json",
+    )
+    self_test.add_argument(
+        "--policy",
+        default="verification/fixtures/verifier-smoke-policy.json",
+    )
+    self_test.add_argument(
+        "--good-result-manifest",
+        default="examples/verifier/good/result-manifest.json",
+    )
+    self_test.add_argument(
+        "--good-candidate-root",
+        default="examples/verifier/good/candidate-root",
+    )
+    self_test.add_argument(
+        "--bad-result-manifest",
+        default="examples/verifier/bad/result-manifest.json",
+    )
+    self_test.add_argument(
+        "--bad-candidate-root",
+        default="examples/verifier/bad/candidate-root",
+    )
     self_test.set_defaults(func=cmd_self_test)
     return parser
 

@@ -13,6 +13,7 @@ on:
       - "examples/work-units/local-verifier-smoke.work-unit.json"
       - "examples/work-units/patch-verifier-smoke.work-unit.json"
       - "examples/verifier/**"
+      - "tests/test_patch_evaluator_safety.py"
       - "requirements-phase0.txt"
       - ".github/workflows/evaluator-plan-binding.yml"
   push:
@@ -28,6 +29,7 @@ on:
       - "examples/work-units/local-verifier-smoke.work-unit.json"
       - "examples/work-units/patch-verifier-smoke.work-unit.json"
       - "examples/verifier/**"
+      - "tests/test_patch_evaluator_safety.py"
       - "requirements-phase0.txt"
       - ".github/workflows/evaluator-plan-binding.yml"
 
@@ -53,10 +55,13 @@ jobs:
         run: python experiments/evaluator_plan_runner.py self-test
       - name: Verify bound unified-diff evaluator backend
         run: python experiments/evaluator_plan_runner.py patch-self-test
+      - name: Verify patch evidence completeness failures
+        run: python -m unittest tests.test_patch_evaluator_safety -v
 
 # Security note: this workflow remains metadata-only. It parses and hashes
 # verifier-owned fixture data, including unified-diff bytes, but never executes
 # candidate-controlled code. Evaluator plans and generated verification evidence
-# remain outside candidate control, generated output is restricted to ignored
-# results/, and no secrets/network services/merge authority/project-paid compute
-# are introduced.
+# remain outside candidate control; required logs must be complete and digested;
+# semantic added-text evidence must come from structurally valid balanced hunks;
+# generated output remains restricted to ignored results/; and no secrets/network
+# services/merge authority/project-paid compute are introduced.
