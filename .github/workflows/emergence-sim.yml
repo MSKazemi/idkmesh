@@ -98,6 +98,15 @@ jobs:
           seeds = {r["seeds"] for r in rows}
           assert seeds == {100}, f"unexpected seed counts: {seeds}"
           print(f"E015 artifact intact: {len(rows)} cells")
+
+          full = [json.loads(l) for l in gzip.open(
+              "experiments/results/E015-verification-phase-diagram-full-raw.jsonl.gz", "rt")]
+          assert len(full) == 2592, f"expected 2592 full-grid cells, got {len(full)}"
+          assert {r["seeds"] for r in full} == {150}
+          assert sorted({r["quorum"] for r in full}) == [0.5, 0.6, 0.7, 0.8]
+          keys = {(r["verifiers"], r["accuracy"], r["correlation"], r["quorum"]) for r in full}
+          assert len(keys) == 2592, f"duplicate cells: {len(full) - len(keys)}"
+          print(f"E015 full grid intact: {len(full)} cells")
           EOF
 
       - name: Smoke-test verifier correlation sweep
