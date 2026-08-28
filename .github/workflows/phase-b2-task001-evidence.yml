@@ -5,6 +5,7 @@ on:
     paths:
       - "tools/phase_b2_task001_evidence.py"
       - "tools/phase_b2_task001_evaluator_probe.py"
+      - "tools/phase_b2_task001_burn_evidence.py"
       - "benchmarks/phase-b2-first-five/**"
       - "tools/benchmark_cohort.py"
       - ".github/workflows/phase-b2-task001-evidence.yml"
@@ -84,11 +85,35 @@ jobs:
           test "$(git -C source rev-parse HEAD)" = "9c53bb4069a5db1c0688dbbe7a8f028540cbf7c2"
           test -z "$(git -C source status --porcelain)"
 
-      - name: Calibrate frozen evaluator with false-negative and false-positive probes
+      - name: Generate adversarial evaluator calibration evidence
         shell: bash
         run: |
           set -euo pipefail
+          set +e
           python evaluator/tools/phase_b2_task001_evaluator_probe.py \
+            --source source \
+            --evidence-root evaluator/results/benchmarks/phase-b2-first-five/task-001/single-worker-baseline-v1
+          probe_rc=$?
+          set -e
+
+          # The probe currently reaches its final prospective-exclusion assertion
+          # after generating both VerificationResults. Current main has already
+          # burned/excluded the entire first-five cohort, so that legacy assertion
+          # returns 2. The next step is authoritative: it must independently prove
+          # both calibration outcomes and align them with the existing burn record.
+          if test "$probe_rc" -ne 2; then
+            echo "Expected post-calibration burned-cohort assertion exit 2, observed $probe_rc" >&2
+            exit 1
+          fi
+
+          test -f evaluator/results/benchmarks/phase-b2-first-five/task-001/single-worker-baseline-v1/straightforward-verification-result.json
+          test -f evaluator/results/benchmarks/phase-b2-first-five/task-001/single-worker-baseline-v1/evaluator-decoy-verification-result.json
+
+      - name: Finalize calibration against current burned cohort
+        shell: bash
+        run: |
+          set -euo pipefail
+          python evaluator/tools/phase_b2_task001_burn_evidence.py \
             --source source \
             --evidence-root evaluator/results/benchmarks/phase-b2-first-five/task-001/single-worker-baseline-v1
 
@@ -119,6 +144,6 @@ jobs:
 # - the metadata-only evaluator never executes candidate code;
 # - controlled regression/probe execution uses only the frozen public repository source;
 # - an evaluator false negative/false positive is retained as evidence, not repaired post hoc;
-# - prospective Task 001 exclusion must preserve the frozen definition digest;
+# - current main's burned-cohort decision and original definition digest are treated as canonical context;
 # - workflow permissions are read-only; checkout credentials are not persisted; no secrets are used;
 # - no canonical write, push, approval, merge, or automatic candidate-selection authority exists.
