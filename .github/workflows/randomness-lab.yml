@@ -4,12 +4,12 @@ on:
   push:
     paths:
       - "randomness_lab/**"
-      - "tests/test_randomness_lab.py"
+      - "tests/**"
       - ".github/workflows/randomness-lab.yml"
   pull_request:
     paths:
       - "randomness_lab/**"
-      - "tests/test_randomness_lab.py"
+      - "tests/**"
       - ".github/workflows/randomness-lab.yml"
 
 permissions:
@@ -36,3 +36,7 @@ jobs:
         run: |
           python -m randomness_lab.r1 --tasks 20 --trials 2 --swarm-size 3 --seed 42 --no-task-records --output /tmp/r1.json
           python -m json.tool /tmp/r1.json > /dev/null
+      - name: Smoke-test R1 help-hurt sweep
+        run: |
+          python -m randomness_lab.r1_sweep --tasks 15 --trials 2 --worker-correlations 0,1 --verifier-correlations 0.5 --quality-penalties 0,0.5 --swarm-sizes 2 --seed 42 --output /tmp/r1-sweep.json
+          python -m json.tool /tmp/r1-sweep.json > /dev/null
