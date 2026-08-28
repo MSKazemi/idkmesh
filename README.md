@@ -266,6 +266,10 @@ Read [`GOVERNANCE.md`](GOVERNANCE.md), [`MAINTAINERS.md`](MAINTAINERS.md), and [
 
 - [`ARCHITECTURE.md`](ARCHITECTURE.md) — system model.
 - [`docs/architecture/SCALABILITY_AND_AGILITY.md`](docs/architecture/SCALABILITY_AND_AGILITY.md) — scaling hypothesis.
+- [`docs/architecture/IDKGRAPH_TASK_AND_EVOLUTION_MODEL.md`](docs/architecture/IDKGRAPH_TASK_AND_EVOLUTION_MODEL.md) — typed temporal hypergraph for goals, WorkUnits, evidence, provenance, documents, and executable projections.
+- [`docs/architecture/SELF_EVOLVING_REPOSITORY.md`](docs/architecture/SELF_EVOLVING_REPOSITORY.md) — guarded repository self-evolution, graph rewrites, control loops, invariants, and autonomy ladder.
+- [`docs/community/COMMUNITY_GROWTH_DYNAMICS.md`](docs/community/COMMUNITY_GROWTH_DYNAMICS.md) — branching, network, queueing, control, and information-theoretic models for contributor growth.
+- [`schemas/idkgraph.schema.json`](schemas/idkgraph.schema.json) and [`examples/idkgraph.example.yaml`](examples/idkgraph.example.yaml) — initial machine-readable graph schema and example.
 - [`MATHEMATICAL_FOUNDATIONS.md`](MATHEMATICAL_FOUNDATIONS.md) — algorithms and formulations.
 - [`SCIENTIFIC_FOUNDATIONS.md`](SCIENTIFIC_FOUNDATIONS.md) — scientific inspirations mapped to experiments.
 - [`BLOCKCHAIN_STRATEGY.md`](BLOCKCHAIN_STRATEGY.md) — staged trust/provenance strategy.
