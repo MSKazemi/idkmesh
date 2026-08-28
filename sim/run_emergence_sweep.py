@@ -28,6 +28,9 @@ SUMMARY_METRICS = (
     "final_best",
     "viable_evaluations",
     "archive_size",
+    "false_accept_rate",
+    "false_reject_rate",
+    "panel_disagreement_rate",
 )
 
 
@@ -47,7 +50,7 @@ def stats(values: List[float]) -> Dict[str, float]:
     }
 
 
-def sweep(seeds: int, seed_start: int, agents: int, generations: int, change_at: int, bins: int) -> Dict[str, object]:
+def sweep(seeds: int, seed_start: int, agents: int, generations: int, change_at: int, bins: int, verifiers: int = 1, verifier_accuracy: float = 1.0, verifier_correlation: float = 0.0, verification_quorum: float = 0.5) -> Dict[str, object]:
     rows = {name: {metric: [] for metric in SUMMARY_METRICS} for name in ("random", "scalar", "qd")}
     pairwise = {
         "qd_gt_scalar_post_change_mean": 0,
@@ -57,7 +60,18 @@ def sweep(seeds: int, seed_start: int, agents: int, generations: int, change_at:
     }
 
     for seed in range(seed_start, seed_start + seeds):
-        result = sim.run("all", seed=seed, agents=agents, generations=generations, change_at=change_at, bins=bins)
+        result = sim.run(
+            "all",
+            seed=seed,
+            agents=agents,
+            generations=generations,
+            change_at=change_at,
+            bins=bins,
+            verifiers=verifiers,
+            verifier_accuracy=verifier_accuracy,
+            verifier_correlation=verifier_correlation,
+            verification_quorum=verification_quorum,
+        )
         by_name = {r["strategy"]: r for r in result["results"]}
         for name, row in by_name.items():
             for metric in SUMMARY_METRICS:
@@ -68,16 +82,10 @@ def sweep(seeds: int, seed_start: int, agents: int, generations: int, change_at:
         pairwise["qd_gt_scalar_final_best"] += int(by_name["qd"]["final_best"] > by_name["scalar"]["final_best"])
         pairwise["qd_gt_random_final_best"] += int(by_name["qd"]["final_best"] > by_name["random"]["final_best"])
 
-    aggregate = {
-        name: {metric: stats(values) for metric, values in metrics.items()}
-        for name, metrics in rows.items()
-    }
-    wins = {
-        key: {"wins": value, "trials": seeds, "rate": round(value / seeds, 6)}
-        for key, value in pairwise.items()
-    }
+    aggregate = {name: {metric: stats(values) for metric, values in metrics.items()} for name, metrics in rows.items()}
+    wins = {key: {"wins": value, "trials": seeds, "rate": round(value / seeds, 6)} for key, value in pairwise.items()}
     return {
-        "experiment": "emergence-from-vague-goals-sweep-v0",
+        "experiment": "emergence-from-vague-goals-sweep-v1",
         "configuration": {
             "seed_start": seed_start,
             "seeds": seeds,
@@ -85,14 +93,19 @@ def sweep(seeds: int, seed_start: int, agents: int, generations: int, change_at:
             "generations": generations,
             "change_at": change_at,
             "bins": bins,
+            "verifiers": verifiers,
+            "verifier_accuracy": verifier_accuracy,
+            "verifier_correlation": verifier_correlation,
+            "verification_quorum": verification_quorum,
         },
         "aggregate": aggregate,
         "pairwise_wins": wins,
         "limitations": [
             "Confidence intervals are normal approximations over synthetic random seeds, not uncertainty over real-world tasks.",
             "Strategies do not yet use strictly matched total proposal/evaluation cost.",
-            "The QD strategy is explicitly designed around multiple plausible goals, while the scalar baseline is intentionally fixed to the initial goal."
-        ]
+            "The QD strategy is explicitly designed around multiple plausible goals, while the scalar baseline is intentionally fixed to the initial goal.",
+            "Verifier correlation uses a simple shared-shock mixture model; it is a controlled mechanism for experiments, not a claim about real reviewer dependence.",
+        ],
     }
 
 
@@ -104,6 +117,10 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--generations", type=int, default=80)
     p.add_argument("--change-at", type=int, default=40)
     p.add_argument("--bins", type=int, default=8)
+    p.add_argument("--verifiers", type=int, default=1)
+    p.add_argument("--verifier-accuracy", type=float, default=1.0)
+    p.add_argument("--verifier-correlation", type=float, default=0.0)
+    p.add_argument("--verification-quorum", type=float, default=0.5)
     p.add_argument("--pretty", action="store_true")
     args = p.parse_args()
     if args.seeds < 2:
@@ -114,12 +131,33 @@ def parse_args() -> argparse.Namespace:
         p.error("--generations must be >= 2")
     if not 1 <= args.change_at < args.generations:
         p.error("--change-at must satisfy 1 <= change-at < generations")
+    if args.bins < 2:
+        p.error("--bins must be >= 2")
+    if args.verifiers < 1:
+        p.error("--verifiers must be >= 1")
+    if not 0.5 <= args.verifier_accuracy <= 1.0:
+        p.error("--verifier-accuracy must be between 0.5 and 1.0")
+    if not 0.0 <= args.verifier_correlation <= 1.0:
+        p.error("--verifier-correlation must be between 0.0 and 1.0")
+    if not 0.0 <= args.verification_quorum < 1.0:
+        p.error("--verification-quorum must be in [0.0, 1.0)")
     return args
 
 
 def main() -> None:
     args = parse_args()
-    result = sweep(args.seeds, args.seed_start, args.agents, args.generations, args.change_at, args.bins)
+    result = sweep(
+        args.seeds,
+        args.seed_start,
+        args.agents,
+        args.generations,
+        args.change_at,
+        args.bins,
+        verifiers=args.verifiers,
+        verifier_accuracy=args.verifier_accuracy,
+        verifier_correlation=args.verifier_correlation,
+        verification_quorum=args.verification_quorum,
+    )
     print(json.dumps(result, indent=2 if args.pretty else None, sort_keys=True))
 
 

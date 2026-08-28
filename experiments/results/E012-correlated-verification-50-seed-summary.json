@@ -1,0 +1,67 @@
+{
+  "experiment": "correlated-verifier-sweep-v0",
+  "configuration": {
+    "seed_start": 0,
+    "seeds": 50,
+    "agents": 40,
+    "generations": 30,
+    "change_at": 15,
+    "bins": 6,
+    "verifiers": 5,
+    "verifier_accuracy": 0.75,
+    "verification_quorum": 0.5,
+    "correlations": [0.0, 0.25, 0.5, 0.75, 1.0]
+  },
+  "levels": [
+    {
+      "correlation": 0.0,
+      "strategy_means": {
+        "random": {"post_change_mean": 0.725158, "final_best": 0.716821, "false_accept_rate": 0.100858, "false_reject_rate": 0.105451, "panel_disagreement_rate": 0.76155},
+        "scalar": {"post_change_mean": 0.651028, "final_best": 0.649078, "false_accept_rate": 0.102586, "false_reject_rate": 0.105625, "panel_disagreement_rate": 0.762588},
+        "qd": {"post_change_mean": 0.863467, "final_best": 0.872666, "false_accept_rate": 0.108688, "false_reject_rate": 0.103848, "panel_disagreement_rate": 0.764742}
+      },
+      "pairwise_wins": {"qd_gt_scalar_post_change_mean": {"wins": 50, "trials": 50, "rate": 1.0}, "qd_gt_random_post_change_mean": {"wins": 50, "trials": 50, "rate": 1.0}, "qd_gt_scalar_final_best": {"wins": 50, "trials": 50, "rate": 1.0}, "qd_gt_random_final_best": {"wins": 50, "trials": 50, "rate": 1.0}}
+    },
+    {
+      "correlation": 0.25,
+      "strategy_means": {
+        "random": {"post_change_mean": 0.724837, "final_best": 0.72246, "false_accept_rate": 0.139765, "false_reject_rate": 0.136894, "panel_disagreement_rate": 0.573617},
+        "scalar": {"post_change_mean": 0.647943, "final_best": 0.646235, "false_accept_rate": 0.133745, "false_reject_rate": 0.142745, "panel_disagreement_rate": 0.571463},
+        "qd": {"post_change_mean": 0.862843, "final_best": 0.868448, "false_accept_rate": 0.143338, "false_reject_rate": 0.140311, "panel_disagreement_rate": 0.574629}
+      },
+      "pairwise_wins": {"qd_gt_scalar_post_change_mean": {"wins": 50, "trials": 50, "rate": 1.0}, "qd_gt_random_post_change_mean": {"wins": 50, "trials": 50, "rate": 1.0}, "qd_gt_scalar_final_best": {"wins": 50, "trials": 50, "rate": 1.0}, "qd_gt_random_final_best": {"wins": 50, "trials": 50, "rate": 1.0}}
+    },
+    {
+      "correlation": 0.5,
+      "strategy_means": {
+        "random": {"post_change_mean": 0.720503, "final_best": 0.715993, "false_accept_rate": 0.174719, "false_reject_rate": 0.180319, "panel_disagreement_rate": 0.381583},
+        "scalar": {"post_change_mean": 0.651234, "final_best": 0.650571, "false_accept_rate": 0.170183, "false_reject_rate": 0.178935, "panel_disagreement_rate": 0.380451},
+        "qd": {"post_change_mean": 0.860189, "final_best": 0.86787, "false_accept_rate": 0.174632, "false_reject_rate": 0.176936, "panel_disagreement_rate": 0.384194}
+      },
+      "pairwise_wins": {"qd_gt_scalar_post_change_mean": {"wins": 50, "trials": 50, "rate": 1.0}, "qd_gt_random_post_change_mean": {"wins": 50, "trials": 50, "rate": 1.0}, "qd_gt_scalar_final_best": {"wins": 50, "trials": 50, "rate": 1.0}, "qd_gt_random_final_best": {"wins": 50, "trials": 50, "rate": 1.0}}
+    },
+    {
+      "correlation": 0.75,
+      "strategy_means": {
+        "random": {"post_change_mean": 0.718822, "final_best": 0.718504, "false_accept_rate": 0.214987, "false_reject_rate": 0.213892, "panel_disagreement_rate": 0.189633},
+        "scalar": {"post_change_mean": 0.651244, "final_best": 0.650478, "false_accept_rate": 0.211105, "false_reject_rate": 0.214177, "panel_disagreement_rate": 0.191448},
+        "qd": {"post_change_mean": 0.859301, "final_best": 0.866847, "false_accept_rate": 0.220152, "false_reject_rate": 0.211872, "panel_disagreement_rate": 0.194468}
+      },
+      "pairwise_wins": {"qd_gt_scalar_post_change_mean": {"wins": 50, "trials": 50, "rate": 1.0}, "qd_gt_random_post_change_mean": {"wins": 50, "trials": 50, "rate": 1.0}, "qd_gt_scalar_final_best": {"wins": 50, "trials": 50, "rate": 1.0}, "qd_gt_random_final_best": {"wins": 50, "trials": 50, "rate": 1.0}}
+    },
+    {
+      "correlation": 1.0,
+      "strategy_means": {
+        "random": {"post_change_mean": 0.714768, "final_best": 0.712111, "false_accept_rate": 0.253408, "false_reject_rate": 0.250197, "panel_disagreement_rate": 0.0},
+        "scalar": {"post_change_mean": 0.648649, "final_best": 0.644708, "false_accept_rate": 0.262295, "false_reject_rate": 0.249531, "panel_disagreement_rate": 0.0},
+        "qd": {"post_change_mean": 0.862554, "final_best": 0.87038, "false_accept_rate": 0.254179, "false_reject_rate": 0.248811, "panel_disagreement_rate": 0.0}
+      },
+      "pairwise_wins": {"qd_gt_scalar_post_change_mean": {"wins": 50, "trials": 50, "rate": 1.0}, "qd_gt_random_post_change_mean": {"wins": 50, "trials": 50, "rate": 1.0}, "qd_gt_scalar_final_best": {"wins": 50, "trials": 50, "rate": 1.0}, "qd_gt_random_final_best": {"wins": 50, "trials": 50, "rate": 1.0}}
+    }
+  ],
+  "interpretation_limits": [
+    "Synthetic viability classification only; not a real code-review benchmark.",
+    "Correlation is implemented as a shared correctness shock mixture, not fitted to real verifier behavior.",
+    "Search strategies still do not have strictly matched total proposal/evaluation cost."
+  ]
+}
