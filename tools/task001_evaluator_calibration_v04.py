@@ -28,7 +28,6 @@ import platform
 import shutil
 import subprocess
 import sys
-import tempfile
 import time
 from typing import Any
 
@@ -130,11 +129,84 @@ def reset_source(source: Path) -> None:
     require(run(["git", "status", "--porcelain"], cwd=source).stdout == "", "source is not clean")
 
 
+def frozen_source_scaffold_cohort(source: Path) -> dict[str, Any]:
+    """Build a valid external cohort using only files present at the frozen SHA.
+
+    The behavioral boundary test must not depend on benchmark-control files that
+    were added after ``SOURCE_SHA``. Otherwise a vulnerable loader could escape
+    the repository root but still return nonzero only because later referenced
+    files are absent, which would confound the security observation.
+    """
+
+    work_rel = "examples/work-units/patch-verifier-smoke.work-unit.json"
+    plan_rel = "verification/fixtures/patch-smoke-evaluator-plan-v0.2.json"
+    work_path = source / work_rel
+    plan_path = source / plan_rel
+    require(work_path.is_file(), f"frozen source lacks calibration WorkUnit fixture: {work_rel}")
+    require(plan_path.is_file(), f"frozen source lacks calibration EvaluatorPlan fixture: {plan_rel}")
+    work = load_json(work_path)
+    plan = load_json(plan_path)
+    require(
+        work.get("provenance", {}).get("source_revision") == plan.get("binding", {}).get("source_revision"),
+        "frozen scaffold WorkUnit/EvaluatorPlan source revision mismatch",
+    )
+    return {
+        "schema_version": "0.1",
+        "id": "benchmark/task001-outside-boundary-probe",
+        "title": "Task 001 external-path boundary probe",
+        "description": (
+            "Self-contained scaffold built only from files present at the frozen "
+            "source SHA. It exists solely to prove whether --cohort can escape the repository root."
+        ),
+        "stage": "scaffold",
+        "minimum_final_tasks": 1,
+        "required_families": ["documentation_contract"],
+        "taxonomy_frozen_before_outcomes": True,
+        "authority": {
+            "canonical_state_write": False,
+            "git_push": False,
+            "merge": False,
+            "automatic_candidate_selection": False,
+        },
+        "tasks": [
+            {
+                "id": "benchmark/task001-outside-boundary-probe/task-001",
+                "family": "documentation_contract",
+                "difficulty": "trivial",
+                "split": "pilot",
+                "source": {
+                    "repository": "https://github.com/MSKazemi/idkmesh",
+                    "revision": work["provenance"]["source_revision"],
+                },
+                "work_unit": {
+                    "path": work_rel,
+                    "digest": canonical_digest(work),
+                    "id": work["id"],
+                    "version": work["version"],
+                },
+                "evaluator": {
+                    "visibility": "public",
+                    "plan_id": plan["id"],
+                    "plan_digest": canonical_digest(plan),
+                    "backend": plan["backend"]["type"],
+                    "plan_path": plan_rel,
+                },
+                "declared_structural_signatures": ["boundary-probe-v1"],
+                "negative_case": {
+                    "description": "Probe fixture only.",
+                    "expected_category": "correctness",
+                    "evidence_status": "pending",
+                },
+                "accounting": {"required_metrics": ["wall_seconds"]},
+                "evidence": {"status": "pending", "attempts": []},
+            }
+        ],
+    }
+
+
 def outside_cohort_path(source: Path) -> Path:
-    source_cohort = source / "benchmarks/phase-b2-first-five/cohort.json"
-    require(source_cohort.is_file(), "frozen source lacks cohort definition")
     outside = source.parent / "idkmesh-task001-outside-cohort.json"
-    outside.write_text(source_cohort.read_text(encoding="utf-8"), encoding="utf-8")
+    write_json(outside, frozen_source_scaffold_cohort(source))
     return outside
 
 
