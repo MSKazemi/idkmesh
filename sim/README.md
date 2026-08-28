@@ -163,6 +163,34 @@ statistic for its error**.
 See [`../experiments/E017-item-difficulty-and-quorum.md`](../experiments/E017-item-difficulty-and-quorum.md).
 
 
+## E018 — does E015 survive the corrected dependence model?
+
+E017 showed the shared-shock shape is wrong. `e018_dependence_models.py`
+recomputes E015's grid under both models in closed form. They take the same two
+parameters and agree exactly at correlation 0 and 1, so any difference is shape.
+
+```bash
+python sim/e018_dependence_models.py
+```
+
+- item-difficulty predicts **more** error in 438/441 cells (median 1.27x, max
+  2.71x) — every panel-error number in E012/E013/E015 is optimistic;
+- **E015's `N_eff` warning generalises.** The heuristic overstates independence
+  in 4% of cells under shared-shock but **100%** under item-difficulty, so the
+  hedge "for accurate verifiers" can be dropped: never size a panel with
+  `N/(1+(N-1)rho)`;
+- **E015's accuracy-dependent ceiling is a shared-shock artifact.** At `p=0.90,
+  rho=0.125` shared-shock pins at 4.59 forever while item-difficulty crosses it
+  near `n=21` and keeps rising to 5.40 by `n=151`. Saturation is real but lives
+  in the *high-correlation* regime instead — and bites harder there (about 1.6,
+  not 4.1). The two models saturate in opposite regimes.
+
+`emergence_sim.py` gained `--verifier-dependence {shared-shock,item-difficulty}`,
+defaulting to `shared-shock` so every earlier experiment reproduces unchanged.
+
+See [`../experiments/E018-dependence-model-shape.md`](../experiments/E018-dependence-model-shape.md).
+
+
 ## Multi-seed emergence sweeps
 
 ```bash
@@ -184,12 +212,13 @@ python -m pytest -q \
   tests/test_e015_phase_diagram.py \
   tests/test_e015_quorum_frontier.py \
   tests/test_e016_analyze.py \
-  tests/test_e017_item_difficulty.py
+  tests/test_e017_item_difficulty.py \
+  tests/test_e018_dependence_models.py
 ```
 
 This is the same list `.github/workflows/emergence-sim.yml` runs; keep the two in step.
 
-The tests cover deterministic replay, budget invariants, niche preservation, perfect verification compatibility, correlated-error mechanics, sweep configuration, the E013 regime where independence-aware aggregation can help or hurt, the E015 effective-panel-size metrics, the E016 discrimination screen, and the E017 item-difficulty model.
+The tests cover deterministic replay, budget invariants, niche preservation, perfect verification compatibility, correlated-error mechanics, sweep configuration, the E013 regime where independence-aware aggregation can help or hurt, the E015 effective-panel-size metrics, the E016 discrimination screen, the E017 item-difficulty model, and the E018 model comparison.
 
 ## Interpretation
 

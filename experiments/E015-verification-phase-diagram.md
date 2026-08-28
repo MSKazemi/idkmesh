@@ -177,6 +177,16 @@ sampling artifacts at 100 seeds, not evidence of superadditivity.
 > not be read as evidence that real verifiers are independent. See
 > [`E016-live-verifier-correlation.md`](E016-live-verifier-correlation.md).
 
+> **Follow-up (E018).** E017 measured a real panel and found the shared-shock
+> shape wrong. Recomputing this grid under an item-difficulty model changes two
+> things stated here. The `N_eff` warning **generalises**: the heuristic
+> overstates independence in 4% of cells under shared-shock but 100% under the
+> measured shape, so the qualifier "for accurate verifiers" can be dropped. The
+> **accuracy-dependent ceiling does not survive** — it is a property of the
+> shared-shock model. Under item-difficulty, saturation happens in the
+> high-correlation regime instead, and bites harder there. See
+> [`E018-dependence-model-shape.md`](E018-dependence-model-shape.md).
+
 ## Limitations
 
 1. **`n_eff` is only comparable within a fixed quorum.** *(Resolved -- see
