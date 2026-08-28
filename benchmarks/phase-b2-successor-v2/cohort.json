@@ -9,6 +9,37 @@
   "extensions": {
     "org.idkmesh.phase_b2_v2": {
       "calibration_completed": {
+        "benchmark/phase-b2-v2/001-cohort-symlink-reference": {
+          "artifact_id": 9705160930,
+          "artifact_zip_sha256": "875c5fe2e444d15c91b1cd53b3ec5f06cf35f3a7986935d03ea4373d0b394c81",
+          "calibration_candidates_are_benchmark_outcomes": false,
+          "evaluator_plan_digest": "sha256:b6e3b0bc2627b3600a7a91ec5bd647d800d612228acb7c721795dc2ab0c5ab5e",
+          "evidence_kind": "post-definition-corrected-ordering-proxy-straightforward-and-inert-decoy-calibration",
+          "inert_decoy": {
+            "behavior": "vulnerable_direct_symlink_accepted",
+            "matched_added_substrings": 0,
+            "matched_removed_substrings": 1,
+            "recommendation": "reject_candidate",
+            "result_manifest_digest": "sha256:65c1802dfae66b24eb7fba29cd8b63b3555ad710f45880b8387ddea3ff1af6ac",
+            "verification_result_digest": "sha256:948da8a76b71739d942eeaee5648defbe2d0b5681b5fdc72f8f356ad8ac92137",
+            "verification_status": "failed"
+          },
+          "job_id": 99014922387,
+          "provisional_proxy_goodhartable": true,
+          "run_id": 33221041390,
+          "source_revision": "a69aa0ae1ae4862e507511cbd9ad854237d0ad32",
+          "status": "passed",
+          "straightforward": {
+            "behavior": "safe_direct_symlink_rejection_passed",
+            "matched_added_substrings": 3,
+            "matched_removed_substrings": 1,
+            "normal_boundary_behavior_preserved": true,
+            "recommendation": "accept_candidate",
+            "result_manifest_digest": "sha256:2bcf82bb7893ab1f49ba6e1ac757b236ac581fcc1e5e0a298226556f30bb3285",
+            "verification_result_digest": "sha256:76d466dce4490528e43645990a5ae5606036ff2cbb54a0bdfbff3b504d9f0783",
+            "verification_status": "passed"
+          }
+        },
         "benchmark/phase-b2-v2/002-router-nonfinite-numbers": {
           "artifact_id": 9698681251,
           "artifact_zip_sha256": "89b4af66402c4481a48603b4151db3d9942d4da450716002304d566a719d5d92",
@@ -67,6 +98,37 @@
             "verification_status": "passed"
           }
         },
+        "benchmark/phase-b2-v2/004-rwvb-nonfinite-domain": {
+          "artifact_id": 9704970824,
+          "artifact_zip_sha256": "7fd46152e98946619603411c5b982d496dd434246f14306e4ad8064cfd6e5fdb",
+          "calibration_candidates_are_benchmark_outcomes": false,
+          "evaluator_plan_digest": "sha256:e42cbd25ee956fe6d5fe4f0f9ca01d805f28dab3aa9c0601869c16cddd420834",
+          "evidence_kind": "post-definition-corrected-proxy-straightforward-and-inert-decoy-calibration",
+          "inert_decoy": {
+            "behavior": "vulnerable_nonfinite_inputs_pass_validation",
+            "matched_added_substrings": 0,
+            "matched_removed_substrings": 1,
+            "recommendation": "reject_candidate",
+            "result_manifest_digest": "sha256:2944cecb26876fe0a4340333a3c14dc253928b13d77426013f4901ea3c64fc91",
+            "verification_result_digest": "sha256:fc2881809825978c0bca41575be204b641c71f9d9cf4de7e0b7827bf2e3ad44b",
+            "verification_status": "failed"
+          },
+          "job_id": 99013300808,
+          "provisional_proxy_goodhartable": true,
+          "run_id": 33220488843,
+          "source_revision": "a69aa0ae1ae4862e507511cbd9ad854237d0ad32",
+          "status": "passed",
+          "straightforward": {
+            "behavior": "safe_nonfinite_domain_matrix_passed",
+            "matched_added_substrings": 3,
+            "matched_removed_substrings": 1,
+            "recommendation": "accept_candidate",
+            "rejected_nonfinite_count": 33,
+            "result_manifest_digest": "sha256:9b873d0b734fbed6b9b069f49344b533f72456cb08a1579e2d7d102b507ce8cd",
+            "verification_result_digest": "sha256:30efcf3e86c8f68f1326a85a91e479670071eca2a913b40d1fc88afb458fcdf1",
+            "verification_status": "passed"
+          }
+        },
         "benchmark/phase-b2-v2/005-local-offer-output-boundary": {
           "artifact_id": 9695929904,
           "artifact_zip_sha256": "8eafd4d36c3dde0e4b0b36a1495494963c538bf00ea23d817c8e4af42f1ed8dc",
@@ -97,12 +159,9 @@
           }
         }
       },
-      "calibration_pending_task_ids": [
-        "benchmark/phase-b2-v2/001-cohort-symlink-reference",
-        "benchmark/phase-b2-v2/004-rwvb-nonfinite-domain"
-      ],
+      "calibration_pending_task_ids": [],
       "calibration_required_for_every_task": true,
-      "freeze_ready": false,
+      "freeze_ready": true,
       "note": "Do not add definition_digest or set stage=frozen until all five evaluator calibration/behavior gates are green. Task taxonomy is fixed before outcomes; calibration records are post-definition evidence only and task evidence fields remain pending until scored runs begin after freeze.",
       "source_revision": "a69aa0ae1ae4862e507511cbd9ad854237d0ad32",
       "tracker_issue": 180
@@ -124,7 +183,7 @@
       "accounting": {"required_metrics": ["wall_seconds", "human_minutes"]},
       "declared_structural_signatures": ["single-worker-baseline-v2", "two-independent-attempts-v2", "role-specialized-two-attempts-v2"],
       "difficulty": "small",
-      "evaluator": {"backend": "unified_diff", "plan_digest": "sha256:8711a0c53d33cd89c865f06790ab4ddb2886a3147b114b02897127a277c8af4a", "plan_id": "benchmark/phase-b2-v2/001-cohort-symlink-reference/evaluator", "plan_path": "benchmarks/phase-b2-successor-v2/evaluators/task-001-cohort-symlink-reference.evaluator-plan.json", "visibility": "public"},
+      "evaluator": {"backend": "unified_diff", "plan_digest": "sha256:b6e3b0bc2627b3600a7a91ec5bd647d800d612228acb7c721795dc2ab0c5ab5e", "plan_id": "benchmark/phase-b2-v2/001-cohort-symlink-reference/evaluator", "plan_path": "benchmarks/phase-b2-successor-v2/evaluators/task-001-cohort-symlink-reference.evaluator-plan.json", "visibility": "public"},
       "evidence": {"attempts": [], "status": "pending"},
       "family": "bug_fix",
       "id": "benchmark/phase-b2-v2/001-cohort-symlink-reference",

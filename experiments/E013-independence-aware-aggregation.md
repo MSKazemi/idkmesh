@@ -151,3 +151,11 @@ The evidence supports a conditional principle, not a fixed algorithm:
 > **Weight verification by estimated independent information, while preserving the raw evidence and uncertainty about the estimate.**
 
 Related issue: #71.
+> **Follow-up (E019).** These results use the shared-shock mixture. Re-running
+> them under the item-difficulty model E017 measured leaves the crossover at
+> `rho = 0.25` unchanged — this conclusion is robust to the model's shape. It is
+> **not** robust to the independence assumption: when the declared groups share
+> task difficulty, as E017 found real panels do, group balancing never beats
+> naive majority at any correlation. See
+> [`E019-group-independence-under-item-difficulty.md`](E019-group-independence-under-item-difficulty.md).
+

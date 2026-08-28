@@ -6,6 +6,13 @@ This page is a **curated navigation layer, not an exhaustive catalog**. IDKMesh 
 
 For the project front door, start with [`../README.md`](../README.md), [`../CONTRIBUTING.md`](../CONTRIBUTING.md), and [`../COMMUNITY.md`](../COMMUNITY.md).
 
+## Documentation indexes
+
+- [Specifications index](specifications/README.md) — versioned work, evidence,
+  evaluator, repository-graph, and project-configuration contracts.
+- [Research index](research/README.md) — research programs, experiments,
+  verification studies, and benchmark-calibration evidence.
+
 ## Active subsystem documents from IDKGraph P1 cohort 1
 
 The first deterministic orphan-warning cohort in issue #152 identified these active documents as genuine navigation gaps. They are linked here because they are current protocol, research, architecture, or security surfaces rather than archival records.
@@ -19,6 +26,7 @@ The first deterministic orphan-warning cohort in issue #152 identified these act
 - [R1 — Swarm Diversity vs Replication](research/R1_SWARM_DIVERSITY_EXPERIMENT.md) — synthetic mechanism test for when structural diversity helps or hurts relative to replication.
 - [R2 Scale and Regime Sweep](research/R2_SCALE_REGIME_SWEEP.md) — scale/churn/staleness sweep for randomized local scheduling.
 - [Verification Backpressure Temporal Benchmark](research/VERIFICATION_BACKPRESSURE_BENCHMARK.md) — multi-window benchmark for verification-debt scheduling and generation backpressure.
+- [Task 001 Symlink-Boundary Calibration](research/PHASE_B2_V2_TASK001_SYMLINK_CALIBRATION.md) — ordering-sensitive path-boundary calibration for the final successor-v2 task.
 - [Task 004 Non-Finite RWVB Calibration](research/PHASE_B2_V2_TASK004_NONFINITE_RWVB_CALIBRATION.md) — pre-freeze evaluator and behavioral calibration for finite controller inputs.
 
 ### Evolution architecture
