@@ -41,7 +41,7 @@
         "id": {"const": "idkmesh-local-verifier"},
         "type": {"const": "system"},
         "adapter": {"const": "deterministic-patch-verifier"},
-        "adapter_version": {"const": "0.1"}
+        "adapter_version": {"const": "0.1.1"}
       }
     },
     "required_validator_ids": {
@@ -58,6 +58,7 @@
         "type",
         "max_candidate_bytes",
         "max_log_bytes",
+        "required_log_types",
         "required_added_text",
         "require_nonempty_patch",
         "verify_log_digests"
@@ -66,6 +67,12 @@
         "type": {"const": "unified_diff"},
         "max_candidate_bytes": {"type": "integer", "minimum": 1},
         "max_log_bytes": {"type": "integer", "minimum": 1},
+        "required_log_types": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"enum": ["stdout", "stderr", "trace", "tool_calls", "other"]},
+          "uniqueItems": true
+        },
         "required_added_text": {
           "type": "array",
           "minItems": 1,
