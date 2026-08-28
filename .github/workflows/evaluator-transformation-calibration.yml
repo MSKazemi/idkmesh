@@ -107,7 +107,7 @@ jobs:
 # - v0.2 and v0.3 meanings remain unchanged; this is a new v0.4 contract;
 # - the v0.4 metadata-only verifier parses candidate artifacts and never executes candidate code;
 # - behavioral CLI execution is a separate explicit calibration channel over an isolated checkout of public frozen source;
-# - the benchmark cohort JSON fixture comes from the evaluator-owned control checkout because the exact historical source predates that later cohort index; the wrapper verifies the burned definition digest before copying it outside the source checkout;
+# - the CI wrapper separately verifies that the current evaluator-owned first-five cohort is still burned with the original definition digest; the outside-path behavioral probe itself is a self-contained scaffold built only from files present at the exact historical source SHA, so later control-plane files cannot confound boundary acceptance;
 # - the straightforward and decoy candidates are post-burn calibration objects, not scored benchmark outcomes;
 # - the burned cohort/WorkUnit/old EvaluatorPlans are never rewritten;
 # - workflow permissions are read-only, checkout credentials are not persisted, and no secrets are used;
