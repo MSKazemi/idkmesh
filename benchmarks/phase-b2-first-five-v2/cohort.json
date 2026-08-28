@@ -5,11 +5,11 @@
     "git_push": false,
     "merge": false
   },
-  "definition_digest": "sha256:0c694c65bb944debfd0877942384e7c1dfa1069e0aaa5e6f581d7afdb7f01712",
-  "description": "Replacement frozen five-task engineering bootstrap cohort. v1 is burned because task 001 outcome was observed and its exact-line evaluator commitment rejected the natural correct fix. v2 replaces that task and freezes corrected complete-line evaluator predicates before candidate outcomes for all included tasks.",
+  "definition_digest": "sha256:7ecb58c72a5819151c98c3916f810f22313e2fd0981cfa09ff6158a6e7103f8c",
+  "description": "Replacement pre-outcome five-task engineering bootstrap cohort. v1 is burned because task 001 outcome was observed and its frozen evaluator commitment exposed an exact-line/semantic-fragment mismatch. v2 is defined only after the #157 semantic-version boundary landed and uses EvaluatorPlan v0.3 explicit validated-added-line substring predicates.",
   "extensions": {
     "org.idkmesh.phase_b2": {
-      "note": "v1 retained as burned calibration evidence; v2 is frozen before outcomes for its included tasks.",
+      "note": "v1 remains burned calibration evidence; v2 is a new pre-outcome commitment using the merged v0.3/v0.2.0 semantic contract, with every evidence slot pending at this digest.",
       "supersedes_definition_digest": "sha256:4fdec8a2768e32dc223b218ed70aec3a67aefcd87c64b72c5675c9921a4eab5c",
       "tracker_issue": 5
     }
@@ -41,8 +41,8 @@
       "difficulty": "small",
       "evaluator": {
         "backend": "unified_diff",
-        "plan_digest": "sha256:2c276020f5e12a8ced056d159ee0e2140f45003e39913e06baa87f1e5392556e",
-        "plan_id": "benchmark/phase-b2-v2/001-negative-evidence-type-boundary/evaluator-v2",
+        "plan_digest": "sha256:eccb217864ddd6bf2a8184a641bc23ff04c23e82d3381a994be1af07729e5093",
+        "plan_id": "benchmark/phase-b2-v2/001-negative-evidence-type-boundary/evaluator-v3",
         "plan_path": "benchmarks/phase-b2-first-five-v2/evaluators/task-001-negative-evidence-type-boundary.evaluator-plan.json",
         "visibility": "public"
       },
@@ -84,8 +84,8 @@
       "difficulty": "small",
       "evaluator": {
         "backend": "unified_diff",
-        "plan_digest": "sha256:50ec03b6356241df4a053f455beeb237bdbc15ede49d1f91933eab2dff5ffd6f",
-        "plan_id": "benchmark/phase-b2/002-frozen-definition-digest-test/evaluator-v2",
+        "plan_digest": "sha256:f8f99c5db085e3e267e0e828d4af09f18d9dd27847705e609d640a4cea1f9377",
+        "plan_id": "benchmark/phase-b2/002-frozen-definition-digest-test/evaluator-v3",
         "plan_path": "benchmarks/phase-b2-first-five-v2/evaluators/task-002-frozen-definition-digest-test.evaluator-plan.json",
         "visibility": "public"
       },
@@ -127,8 +127,8 @@
       "difficulty": "small",
       "evaluator": {
         "backend": "unified_diff",
-        "plan_digest": "sha256:74eba92afd87916988e2b0fb7b86d06027b05b3691229f488dc0e87b279eb29b",
-        "plan_id": "benchmark/phase-b2/003-definition-json-command/evaluator-v2",
+        "plan_digest": "sha256:b12f462e1e426c3cc3b0cd219a42e8d76bb8d4d68e1bbc3f17218104ad49f834",
+        "plan_id": "benchmark/phase-b2/003-definition-json-command/evaluator-v3",
         "plan_path": "benchmarks/phase-b2-first-five-v2/evaluators/task-003-definition-json-command.evaluator-plan.json",
         "visibility": "public"
       },
@@ -170,8 +170,8 @@
       "difficulty": "small",
       "evaluator": {
         "backend": "unified_diff",
-        "plan_digest": "sha256:8db1f231eb3a75864f70a6dff24b8c98ce4d419c99f0acfa800895a664b39337",
-        "plan_id": "benchmark/phase-b2/004-safe-cohort-loader-refactor/evaluator-v2",
+        "plan_digest": "sha256:799878750e009b89fca3468f77cc16faa3dd00b3436ceb4cdc80691ecb7b3763",
+        "plan_id": "benchmark/phase-b2/004-safe-cohort-loader-refactor/evaluator-v3",
         "plan_path": "benchmarks/phase-b2-first-five-v2/evaluators/task-004-safe-cohort-loader-refactor.evaluator-plan.json",
         "visibility": "public"
       },
@@ -213,8 +213,8 @@
       "difficulty": "trivial",
       "evaluator": {
         "backend": "unified_diff",
-        "plan_digest": "sha256:11558e6e6a994c58029b3a877faf7c2debee9113148ae8ae33c867e08db5e74a",
-        "plan_id": "benchmark/phase-b2/005-first-five-freeze-checklist/evaluator-v2",
+        "plan_digest": "sha256:cae6f671863e16116875a201983c6c2968cfe6faf6345ed70ff2c49be6e57bdc",
+        "plan_id": "benchmark/phase-b2/005-first-five-freeze-checklist/evaluator-v3",
         "plan_path": "benchmarks/phase-b2-first-five-v2/evaluators/task-005-first-five-freeze-checklist.evaluator-plan.json",
         "visibility": "public"
       },
