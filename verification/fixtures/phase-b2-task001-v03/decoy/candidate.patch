@@ -1,0 +1,13 @@
+diff --git a/tools/benchmark_cohort.py b/tools/benchmark_cohort.py
+index aae8f56..62efee3 100644
+--- a/tools/benchmark_cohort.py
++++ b/tools/benchmark_cohort.py
+@@ -526,3 +526,8 @@ def main() -> int:
+ 
+ if __name__ == "__main__":
+     raise SystemExit(main())
++
++
++_TASK001_EVALUATOR_DECOY = """
++resolve_repo_file(args.cohort
++"""
