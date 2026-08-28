@@ -1,0 +1,76 @@
+{
+  "schema_version": "0.1.0",
+  "experiment_id": "E011-emergence-vague-goals",
+  "hypothesis": "A constraint-guided Quality-Diversity search that preserves multiple viable niches will adapt better to a changed/previously ambiguous goal than a prematurely fixed scalar objective, while using structured search rather than pure random exploration.",
+  "implementation_ref": "sim/emergence_sim.py",
+  "repository_commit": "04a2fd0275e4e4dc58acef0587a7711a72f467b3",
+  "environment": {
+    "python": "3.13.5",
+    "os": "Linux 6.18.35",
+    "architecture": "x86_64"
+  },
+  "configuration": {
+    "seed": 7,
+    "agents": 200,
+    "generations": 120,
+    "change_at": 60,
+    "bins": 8,
+    "budget": 3.2
+  },
+  "baselines": [
+    "fresh random exploration each generation",
+    "evolution against one fixed scalar interpretation of the initial goal",
+    "constraint-guided Quality-Diversity archive across plausible goals"
+  ],
+  "metrics": [
+    "pre_change_best",
+    "post_change_immediate",
+    "post_change_mean",
+    "final_best",
+    "viable_evaluations",
+    "archive_size"
+  ],
+  "results": [
+    {
+      "strategy": "random",
+      "pre_change_best": 0.696706,
+      "post_change_immediate": 0.793875,
+      "post_change_mean": 0.784783,
+      "final_best": 0.831538,
+      "recovery_generations": 0,
+      "viable_evaluations": 9474,
+      "archive_size": 0
+    },
+    {
+      "strategy": "scalar",
+      "pre_change_best": 0.821916,
+      "post_change_immediate": 0.660361,
+      "post_change_mean": 0.65789,
+      "final_best": 0.649452,
+      "recovery_generations": 0,
+      "viable_evaluations": 24080,
+      "archive_size": 0
+    },
+    {
+      "strategy": "qd",
+      "pre_change_best": 0.806625,
+      "post_change_immediate": 0.896204,
+      "post_change_mean": 0.897018,
+      "final_best": 0.898081,
+      "recovery_generations": 0,
+      "viable_evaluations": 21822,
+      "archive_size": 64
+    }
+  ],
+  "limitations": [
+    "This is a synthetic toy landscape, not a software-engineering benchmark.",
+    "Only one reference random seed is recorded here; no statistical significance claim is made.",
+    "The QD strategy is given a set of plausible goals, while the scalar baseline intentionally commits to the initial goal; this encodes the hypothesis rather than proving it.",
+    "There are not yet explicit verifier agents, correlated verifier errors, network churn, human-attention cost, or adversarial workers.",
+    "The recovery_generations metric is weak in this version because an archive can already contain a strong post-change candidate before the change occurs. Future versions should add regret and adaptation-area metrics."
+  ],
+  "notes": [
+    "Local validation of tests/test_emergence_sim.py passed 4 tests before this result was committed.",
+    "The reference run is reproducible with: python sim/emergence_sim.py --strategy all --seed 7 --agents 200 --generations 120 --change-at 60 --pretty"
+  ]
+}
