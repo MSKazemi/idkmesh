@@ -1,0 +1,67 @@
+{
+  "schema_version": "0.2",
+  "id": "invalid/missing-security",
+  "version": 1,
+  "kind": "coding",
+  "objective": "This fixture must fail because a WorkUnit cannot omit its security and trust classification.",
+  "inputs": [],
+  "outputs": [
+    {
+      "id": "patch",
+      "type": "patch",
+      "description": "Invalid fixture output."
+    }
+  ],
+  "dependencies": [],
+  "requirements": {
+    "capabilities": ["git-patch"],
+    "resources": {
+      "cpu_cores_min": 1,
+      "memory_mb_min": 256,
+      "gpu": "none"
+    }
+  },
+  "constraints": {
+    "allowed_paths": ["src/"],
+    "forbidden_paths": [".github/"],
+    "policies": []
+  },
+  "uncertainty": [],
+  "permissions": {
+    "network": "none",
+    "filesystem_write": ["src/"],
+    "secrets": [],
+    "process_execution": true
+  },
+  "verification_policy": {
+    "strategy": "all_required",
+    "independent_from_worker": true,
+    "minimum_independent_verifiers": 1
+  },
+  "validators": [
+    {
+      "id": "tests",
+      "type": "test",
+      "required": true
+    }
+  ],
+  "evidence_requirements": [
+    {
+      "type": "test_output",
+      "required": true
+    }
+  ],
+  "budget": {
+    "wall_seconds": 60
+  },
+  "provenance": {
+    "created_by": "IDKMesh schema tests",
+    "creator_type": "system",
+    "source": "Issue #3 negative fixture"
+  },
+  "failure_semantics": {
+    "retryable": false,
+    "max_attempts": 1,
+    "on_failure": "stop"
+  }
+}

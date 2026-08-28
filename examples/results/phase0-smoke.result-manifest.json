@@ -2,7 +2,7 @@
   "schema_version": "0.1",
   "id": "phase0/smoke-result/attempt-1",
   "work_unit_id": "phase0/smoke-work-unit",
-  "work_unit_version": 1,
+  "work_unit_version": 2,
   "attempt": 1,
   "worker": {
     "id": "phase0-local-worker",
