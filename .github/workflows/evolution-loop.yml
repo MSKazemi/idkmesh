@@ -12,8 +12,6 @@ on:
     types: [opened, reopened, synchronize, ready_for_review, converted_to_draft]
   pull_request_review:
     types: [submitted, dismissed]
-  issue_comment:
-    types: [created]
   push:
     branches: [main]
   workflow_dispatch:
