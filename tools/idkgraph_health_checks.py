@@ -24,6 +24,7 @@ from typing import Any
 
 SCHEMA_VERSION = "idkgraph-health-checks-v0.1"
 ACCEPTED_STATUS = re.compile(r"^accepted\b", re.IGNORECASE)
+INDEX_FILENAMES = {"README.md", "index.md"}
 
 
 def _explicit_status(path: Path) -> str | None:
@@ -88,13 +89,13 @@ def check_residual_health(
     # A deterministic candidate set, not a claim about intentionality:
     # - only typed documents;
     # - only below docs/;
-    # - directory README files are explicit local entrypoints and are exempt.
+    # - explicit directory index files are local entrypoints and are exempt.
     for path, node in sorted(path_to_node.items()):
         if node.get("type") != "document":
             continue
         if not path.startswith("docs/"):
             continue
-        if Path(path).name.casefold() == "readme.md":
+        if Path(path).name in INDEX_FILENAMES:
             continue
         if path in inbound_local_markdown:
             continue
