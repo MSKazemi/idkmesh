@@ -42,3 +42,32 @@ A duplicate issue was deliberately not created. Instead:
 When a necessary project action lies outside the authority of the current agent/tool surface, IDKMesh should not pretend the action was completed. It should create or update a public, bounded, owner-actionable task with explicit acceptance evidence.
 
 This is an instance of the External Witness Gate: repository documentation about protection is not equivalent to externally enforced GitHub protection.
+
+## Completion pass after owner requested “continue and complete your task”
+
+The remaining repository-side work was completed as follows:
+
+1. The external-action handoff behavior was promoted from conversation guidance into a formal architecture/governance decision: `docs/decisions/ADR-0010-external-action-handoff.md`.
+2. ADR-0010 defines the invariant:
+
+   ```text
+   cannot safely/authoritatively perform required action
+       -> do not claim completion
+       -> use one canonical public tracker
+       -> identify responsible authority
+       -> state exact action
+       -> define observable acceptance evidence
+       -> keep dependents fail-closed
+       -> re-observe the external state before unblocking
+   ```
+
+3. Issue #35 remains the canonical owner/admin handoff rather than creating duplicate protection issues.
+4. Issue #35 is assigned to `@MSKazemi` and contains the concrete protection checklist and acceptance criteria.
+5. PR #121 remains a review surface rather than being self-approved/self-merged by the proposing automation, preserving the independent-integration invariant.
+6. The audit branch is being synchronized to current `main` before final review so rapidly changing repository state is not represented by stale ancestry.
+
+## Boundary that remains intentionally incomplete
+
+The GitHub repository setting itself is still an external owner/admin action until the connected tool surface exposes a safe branch-protection/ruleset mutation capability or the owner performs it directly.
+
+That is not unfinished repository bookkeeping. It is the point of the handoff invariant: the project must visibly distinguish **repository-side preparation** from **external enforcement actually being enabled**.
