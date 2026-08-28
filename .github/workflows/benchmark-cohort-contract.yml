@@ -6,6 +6,7 @@ on:
       - "schemas/benchmark-cohort-v0.1.schema.json"
       - "tools/benchmark_cohort.py"
       - "docs/specifications/BENCHMARK_COHORT_V0_1.md"
+      - "benchmarks/phase-b2-first-five/**"
       - ".github/workflows/benchmark-cohort-contract.yml"
   push:
     branches: [main]
@@ -13,6 +14,7 @@ on:
       - "schemas/benchmark-cohort-v0.1.schema.json"
       - "tools/benchmark_cohort.py"
       - "docs/specifications/BENCHMARK_COHORT_V0_1.md"
+      - "benchmarks/phase-b2-first-five/**"
       - ".github/workflows/benchmark-cohort-contract.yml"
 
 permissions:
@@ -40,6 +42,9 @@ jobs:
 
       - name: Run deterministic contract self-test
         run: python tools/benchmark_cohort.py self-test
+
+      - name: Validate frozen Phase B2 first-five cohort
+        run: python tools/benchmark_cohort.py validate --cohort benchmarks/phase-b2-first-five/cohort.json
 
 # Contract-only safety boundary:
 # - no candidate code is executed;

@@ -1,0 +1,49 @@
+{
+  "backend": {
+    "max_candidate_bytes": 200000,
+    "max_log_bytes": 262144,
+    "require_nonempty_patch": true,
+    "required_added_text": [
+      "resolve_repo_file(args.cohort"
+    ],
+    "required_log_types": [
+      "stdout",
+      "stderr"
+    ],
+    "type": "unified_diff",
+    "verify_log_digests": true
+  },
+  "binding": {
+    "source_revision": "9c53bb4069a5db1c0688dbbe7a8f028540cbf7c2",
+    "work_unit_digest": "sha256:5da7b3450b9d3e3750399912120d62169fc81217f0c05ad5488ecf53d11c5a3d",
+    "work_unit_id": "benchmark/phase-b2/001-cohort-path-boundary",
+    "work_unit_version": 1
+  },
+  "candidate_artifact_id": "candidate-patch",
+  "execution_mode": "metadata_only",
+  "extensions": {
+    "org.idkmesh.benchmark": {
+      "cohort": "phase-b2-first-five",
+      "semantic_scope": "bootstrap public structural evaluator",
+      "task_id": "benchmark/phase-b2/001-cohort-path-boundary"
+    }
+  },
+  "id": "benchmark/phase-b2/001-cohort-path-boundary/evaluator",
+  "policy": {
+    "require_output_outside_candidate_root": true,
+    "require_plan_outside_candidate_root": true,
+    "require_verifier_distinct_from_worker": true
+  },
+  "required_validator_ids": [
+    "result-manifest-schema",
+    "independent-review"
+  ],
+  "schema_version": "0.2",
+  "verifier": {
+    "adapter": "deterministic-patch-verifier",
+    "adapter_version": "0.1.1",
+    "id": "idkmesh-local-verifier",
+    "type": "system"
+  },
+  "visibility": "public"
+}
