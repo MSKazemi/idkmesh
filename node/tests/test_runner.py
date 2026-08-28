@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 import subprocess
 import tempfile
+import time
 import unittest
 from unittest.mock import patch
 
@@ -29,6 +30,10 @@ EXAMPLE = ROOT / "node" / "examples" / "work-unit.canonical-smoke.json"
 
 def work_unit():
     return parse_work_unit(json.loads(EXAMPLE.read_text(encoding="utf-8")))
+
+
+def test_deadline() -> float:
+    return time.monotonic() + 60.0
 
 
 class RunnerPolicyTests(unittest.TestCase):
@@ -88,7 +93,7 @@ class RunnerPolicyTests(unittest.TestCase):
             stderr=b"",
         )
 
-        observed = resolve_container_image(work_unit(), deadline=10**12)
+        observed = resolve_container_image(work_unit(), deadline=test_deadline())
         self.assertEqual(observed, (image_id, repo_digest))
         self.assertEqual(
             run_mock.call_args.args[0],
@@ -101,7 +106,7 @@ class RunnerPolicyTests(unittest.TestCase):
             args=[], returncode=1, stdout=b"", stderr=b"No such image"
         )
         with self.assertRaisesRegex(RuntimeError, "No such image|not available locally"):
-            resolve_container_image(work_unit(), deadline=10**12)
+            resolve_container_image(work_unit(), deadline=test_deadline())
 
     def test_wall_budget_helper_fails_after_deadline(self) -> None:
         with patch("idkmesh_node.runner.time.monotonic", return_value=10.0):
@@ -184,7 +189,7 @@ class RunnerPolicyTests(unittest.TestCase):
                 workspace,
                 git_dir,
                 git_home,
-                deadline=10**12,
+                deadline=test_deadline(),
             )
             self.assertIn("ignored-output.txt", observed)
 
