@@ -1,0 +1,127 @@
+{
+  "graph_id": "repository:deterministic-p0-example",
+  "version": "0.1",
+  "nodes": [
+    {
+      "id": "artifact:examples/experiments/phase0-smoke.manifest.json",
+      "type": "artifact",
+      "title": "examples/experiments/phase0-smoke.manifest.json",
+      "attributes": {
+        "repository_path": "examples/experiments/phase0-smoke.manifest.json",
+        "source_kind": "repository_artifact",
+        "mapping_method": "deterministic_repository_structure"
+      },
+      "provenance": {"source": "examples/experiments/phase0-smoke.manifest.json", "tool": "idkgraph-repository-mapping-v0.1"}
+    },
+    {
+      "id": "artifact:examples/idkgraph.example.yaml",
+      "type": "artifact",
+      "title": "examples/idkgraph.example.yaml",
+      "attributes": {
+        "repository_path": "examples/idkgraph.example.yaml",
+        "source_kind": "repository_artifact",
+        "mapping_method": "deterministic_repository_structure"
+      },
+      "provenance": {"source": "examples/idkgraph.example.yaml", "tool": "idkgraph-repository-mapping-v0.1"}
+    },
+    {
+      "id": "artifact:schemas/idkgraph.schema.json",
+      "type": "artifact",
+      "title": "schemas/idkgraph.schema.json",
+      "attributes": {
+        "repository_path": "schemas/idkgraph.schema.json",
+        "source_kind": "repository_artifact",
+        "mapping_method": "deterministic_repository_structure"
+      },
+      "provenance": {"source": "schemas/idkgraph.schema.json", "tool": "idkgraph-repository-mapping-v0.1"}
+    },
+    {
+      "id": "decision:ADR-0005",
+      "type": "decision",
+      "title": "ADR-0005: IDKGraph and Guarded Self-Evolution",
+      "attributes": {
+        "repository_path": "docs/decisions/ADR-0005-idkgraph-and-guarded-self-evolution.md",
+        "source_kind": "architecture_decision_file",
+        "mapping_method": "deterministic_repository_structure",
+        "decision_key": "ADR-0005"
+      },
+      "provenance": {"source": "docs/decisions/ADR-0005-idkgraph-and-guarded-self-evolution.md", "tool": "idkgraph-repository-mapping-v0.1"}
+    },
+    {
+      "id": "doc:d16ca6a95c7999de1d6e3d5c",
+      "type": "document",
+      "title": "IDKGraph: Task, Evidence, Provenance, and Evolution Model",
+      "attributes": {
+        "repository_path": "docs/architecture/IDKGRAPH_TASK_AND_EVOLUTION_MODEL.md",
+        "source_kind": "markdown_document",
+        "mapping_method": "deterministic_repository_structure",
+        "t1_identity": true
+      },
+      "provenance": {"source": "docs/architecture/IDKGRAPH_TASK_AND_EVOLUTION_MODEL.md", "tool": "idkgraph-repository-mapping-v0.1"}
+    },
+    {
+      "id": "work_unit:phase0/smoke-work-unit",
+      "type": "work_unit",
+      "title": "Exercise the Phase 0 harness deterministically and emit a schema-valid experiment result without calling external services.",
+      "attributes": {
+        "repository_path": "examples/work-units/phase0-smoke.work-unit.json",
+        "source_kind": "canonical_work_unit",
+        "mapping_method": "deterministic_repository_structure",
+        "work_unit_source_id": "phase0/smoke-work-unit",
+        "schema_version": "0.2"
+      },
+      "provenance": {"source": "examples/work-units/phase0-smoke.work-unit.json", "tool": "idkgraph-repository-mapping-v0.1"}
+    }
+  ],
+  "hyperedges": [
+    {
+      "id": "edge:222ae4c09a824619e5959b2a",
+      "relation": "implements",
+      "sources": ["doc:d16ca6a95c7999de1d6e3d5c"],
+      "targets": ["decision:ADR-0005"],
+      "attributes": {
+        "mapping_rule": "adr_implementation_reference",
+        "declared_in": "docs/decisions/ADR-0005-idkgraph-and-guarded-self-evolution.md",
+        "declared_path": "docs/architecture/IDKGRAPH_TASK_AND_EVOLUTION_MODEL.md"
+      },
+      "provenance": {"source": "docs/decisions/ADR-0005-idkgraph-and-guarded-self-evolution.md", "tool": "idkgraph-repository-mapping-v0.1"}
+    },
+    {
+      "id": "edge:88b92322ea72fbece9f525ee",
+      "relation": "implements",
+      "sources": ["artifact:examples/idkgraph.example.yaml"],
+      "targets": ["decision:ADR-0005"],
+      "attributes": {
+        "mapping_rule": "adr_implementation_reference",
+        "declared_in": "docs/decisions/ADR-0005-idkgraph-and-guarded-self-evolution.md",
+        "declared_path": "examples/idkgraph.example.yaml"
+      },
+      "provenance": {"source": "docs/decisions/ADR-0005-idkgraph-and-guarded-self-evolution.md", "tool": "idkgraph-repository-mapping-v0.1"}
+    },
+    {
+      "id": "edge:98a42a0d7a22ab645b2c984a",
+      "relation": "implements",
+      "sources": ["artifact:schemas/idkgraph.schema.json"],
+      "targets": ["decision:ADR-0005"],
+      "attributes": {
+        "mapping_rule": "adr_implementation_reference",
+        "declared_in": "docs/decisions/ADR-0005-idkgraph-and-guarded-self-evolution.md",
+        "declared_path": "schemas/idkgraph.schema.json"
+      },
+      "provenance": {"source": "docs/decisions/ADR-0005-idkgraph-and-guarded-self-evolution.md", "tool": "idkgraph-repository-mapping-v0.1"}
+    },
+    {
+      "id": "edge:cd7257e34c0c51ea8adeabb0",
+      "relation": "requires",
+      "sources": ["work_unit:phase0/smoke-work-unit"],
+      "targets": ["artifact:examples/experiments/phase0-smoke.manifest.json"],
+      "attributes": {
+        "mapping_rule": "work_unit_input_locator",
+        "declared_in": "examples/work-units/phase0-smoke.work-unit.json",
+        "declared_path": "examples/experiments/phase0-smoke.manifest.json"
+      },
+      "provenance": {"source": "examples/work-units/phase0-smoke.work-unit.json", "tool": "idkgraph-repository-mapping-v0.1"}
+    }
+  ],
+  "events": []
+}
