@@ -6,8 +6,10 @@ on:
       - "sim/aco_stigmergy_sim.py"
       - "sim/run_aco_sweep.py"
       - "sim/run_aco_parameter_sweep.py"
+      - "sim/homeostatic_stigmergy_sim.py"
       - "tests/test_aco_stigmergy_sim.py"
       - "tests/test_aco_parameter_sweep.py"
+      - "tests/test_homeostatic_stigmergy_sim.py"
       - "experiments/E014-aco-stigmergic-task-routing.md"
       - "experiments/results/E014-*"
       - "docs/algorithms/ACO_STIGMERGIC_TASK_ROUTING.md"
@@ -17,8 +19,10 @@ on:
       - "sim/aco_stigmergy_sim.py"
       - "sim/run_aco_sweep.py"
       - "sim/run_aco_parameter_sweep.py"
+      - "sim/homeostatic_stigmergy_sim.py"
       - "tests/test_aco_stigmergy_sim.py"
       - "tests/test_aco_parameter_sweep.py"
+      - "tests/test_homeostatic_stigmergy_sim.py"
       - "experiments/E014-aco-stigmergic-task-routing.md"
       - "experiments/results/E014-*"
       - "docs/algorithms/ACO_STIGMERGIC_TASK_ROUTING.md"
@@ -41,7 +45,7 @@ jobs:
       - name: Install test dependency
         run: python -m pip install --disable-pip-version-check pytest
       - name: Run ACO routing tests
-        run: python -m pytest -q tests/test_aco_stigmergy_sim.py tests/test_aco_parameter_sweep.py
+        run: python -m pytest -q tests/test_aco_stigmergy_sim.py tests/test_aco_parameter_sweep.py tests/test_homeostatic_stigmergy_sim.py
       - name: Smoke-test single simulation
         run: |
           python sim/aco_stigmergy_sim.py --strategy all --seed 7 --workers 12 --epochs 8 > /tmp/aco.json
@@ -70,4 +74,15 @@ jobs:
           print('pareto_count', len(data['pareto_configurations']))
           for row in data['pareto_configurations'][:12]:
               print(json.dumps(row, sort_keys=True))
+          PY
+      - name: Run homeostatic hybrid comparison
+        run: |
+          python sim/homeostatic_stigmergy_sim.py --seed-start 1 --seeds 40 --workers 24 --epochs 50 > /tmp/homeostatic.json
+          python -m json.tool /tmp/homeostatic.json > /dev/null
+          python - <<'PY'
+          import json
+          data = json.load(open('/tmp/homeostatic.json', encoding='utf-8'))
+          print('E014_HOMEOSTATIC_HYBRID')
+          for strategy, row in data['summary'].items():
+              print(strategy, json.dumps(row, sort_keys=True))
           PY
