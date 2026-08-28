@@ -247,9 +247,7 @@ def collect(repository: str, token: str, root: Path, event_kind: str, run_id: st
             "github_api_version": "2022-11-28",
             "natural_language_input_trusted": False,
         },
-        "integration": {
-            "main_protected": bool(branch.get("protected")),
-        },
+        "integration": {"main_protected": bool(branch.get("protected"))},
         "open_issues": open_issues,
         "open_pull_requests": open_prs,
         "recent_merged_pull_requests_30d": recent_merged,
@@ -264,8 +262,8 @@ def collect(repository: str, token: str, root: Path, event_kind: str, run_id: st
             "branches_truncated": branches_truncated,
             "comments_truncated": comments_truncated,
             "external_participant_comment_window_days": 30,
-            "reviewed_prs_capped_at": 25,
-        },
+            "reviewed_prs_capped_at": 25
+        }
     }
     return snapshot
 
