@@ -7,6 +7,18 @@ on:
   push:
     branches:
       - main
+  # Canonical-state resnapshot on PR lifecycle changes. pull_request_target
+  # runs trusted default-branch code, never contributor-head code.
+  pull_request_target:
+    types:
+      - opened
+      - reopened
+      - closed
+      - synchronize
+      - ready_for_review
+      - converted_to_draft
+  # Proposed changes to the auditor/planner themselves still execute through the
+  # ordinary PR check so the proposed code earns its own deterministic tests.
   pull_request:
     paths:
       - 'tools/branch_convergence_audit.py'
@@ -22,7 +34,10 @@ permissions:
   pull-requests: read
 
 concurrency:
-  group: branch-convergence-audit-${{ github.event.pull_request.number || github.ref }}
+  # PR-code tests get a per-PR group. Canonical-state observations from pushes,
+  # schedules, manual runs, and pull_request_target events share one group so a
+  # newer repository/PR-state event cancels an older stale snapshot.
+  group: branch-convergence-audit-${{ github.event_name == 'pull_request' && github.event.number || 'canonical-state' }}
   cancel-in-progress: true
 
 jobs:
@@ -34,6 +49,10 @@ jobs:
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
+          # pull_request_target is a live canonical-state observer. Use the
+          # repository's current trusted default branch, never contributor-head
+          # code and never a potentially stale PR-recorded base SHA.
+          ref: ${{ github.event_name == 'pull_request_target' && github.event.repository.default_branch || github.sha }}
 
       - name: Set up Python
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
@@ -95,6 +114,7 @@ jobs:
 
 # Authority boundary:
 # - read-only repository and PR permissions;
+# - pull_request_target executes only current trusted default-branch code, never PR-head code;
 # - no push, merge, approval, branch deletion, label, issue, or settings mutation;
 # - no execution of issue/PR natural-language content;
 # - branch state and merge-plan lanes are decision support only;
