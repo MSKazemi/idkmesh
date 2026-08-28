@@ -1,0 +1,140 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idkmesh.org/schemas/ci-evaluation-v0.1.schema.json",
+  "title": "IDKMesh CI Shadow Evaluation v0.1",
+  "description": "An exact-revision comparison of a shadow CI plan with observed checks. It cannot promote selective CI or authorize integration.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "kind",
+    "evaluator_version",
+    "mode",
+    "head_sha",
+    "plan_id",
+    "plan_digest",
+    "observation_digest",
+    "policy_digest",
+    "status",
+    "selected_logical_checks",
+    "failed_checks",
+    "missed_mapped_failures",
+    "unattributed_failures",
+    "metrics",
+    "promotion",
+    "authority",
+    "evaluation_id"
+  ],
+  "properties": {
+    "schema_version": {"const": "0.1"},
+    "kind": {"const": "idkmesh-ci-evaluation"},
+    "evaluator_version": {"const": "0.1"},
+    "mode": {"const": "shadow"},
+    "head_sha": {"$ref": "#/$defs/sha"},
+    "plan_id": {"type": "string", "pattern": "^ci-plan-[a-f0-9]{12}-[a-f0-9]{12}$"},
+    "plan_digest": {"$ref": "#/$defs/digest"},
+    "observation_digest": {"$ref": "#/$defs/digest"},
+    "policy_digest": {"$ref": "#/$defs/digest"},
+    "status": {"enum": ["complete", "provisional"]},
+    "selected_logical_checks": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "failed_checks": {"type": "array", "items": {"$ref": "#/$defs/failure"}},
+    "missed_mapped_failures": {"type": "array", "items": {"$ref": "#/$defs/failure"}},
+    "unattributed_failures": {"type": "array", "items": {"$ref": "#/$defs/failure"}},
+    "metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "observed_check_count",
+        "observed_failure_count",
+        "mapped_failure_count",
+        "covered_mapped_failure_count",
+        "missed_mapped_failure_count",
+        "unattributed_failure_count",
+        "mapped_failure_recall",
+        "modeled_full_portfolio_seconds",
+        "modeled_selected_seconds",
+        "modeled_avoided_seconds",
+        "modeled_savings_ratio"
+      ],
+      "properties": {
+        "observed_check_count": {"type": "integer", "minimum": 0},
+        "observed_failure_count": {"type": "integer", "minimum": 0},
+        "mapped_failure_count": {"type": "integer", "minimum": 0},
+        "covered_mapped_failure_count": {"type": "integer", "minimum": 0},
+        "missed_mapped_failure_count": {"type": "integer", "minimum": 0},
+        "unattributed_failure_count": {"type": "integer", "minimum": 0},
+        "mapped_failure_recall": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+        "modeled_full_portfolio_seconds": {"type": "integer", "minimum": 0},
+        "modeled_selected_seconds": {"type": "integer", "minimum": 0},
+        "modeled_avoided_seconds": {"type": "integer", "minimum": 0},
+        "modeled_savings_ratio": {"type": "number", "minimum": 0, "maximum": 1}
+      }
+    },
+    "promotion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["eligible", "reasons"],
+      "properties": {
+        "eligible": {"const": false},
+        "reasons": {
+          "type": "array",
+          "minItems": 2,
+          "uniqueItems": true,
+          "contains": {"const": "shadow_mode"},
+          "items": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "authority": {"$ref": "#/$defs/authority"},
+    "evaluation_id": {"type": "string", "pattern": "^ci-evaluation-[a-f0-9]{20}$"}
+  },
+  "$defs": {
+    "sha": {"type": "string", "pattern": "^[a-f0-9]{40}$"},
+    "digest": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$"},
+    "failure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "check_run_id",
+        "workflow_name",
+        "name",
+        "conclusion",
+        "mapped_logical_check_ids",
+        "covered_by_selected"
+      ],
+      "properties": {
+        "check_run_id": {"type": "integer", "minimum": 0},
+        "workflow_name": {"type": ["string", "null"], "minLength": 1},
+        "name": {"type": "string", "minLength": 1},
+        "conclusion": {"type": "string", "minLength": 1},
+        "mapped_logical_check_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "covered_by_selected": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["evidence_only", "execute", "skip_required_checks", "approve", "merge", "repository_write"],
+      "properties": {
+        "evidence_only": {"const": true},
+        "execute": {"const": false},
+        "skip_required_checks": {"const": false},
+        "approve": {"const": false},
+        "merge": {"const": false},
+        "repository_write": {"const": false}
+      }
+    }
+  }
+}
