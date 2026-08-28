@@ -1,0 +1,64 @@
+{
+  "schema_version": "0.1",
+  "record_type": "phase_b2_benchmark_attempt_receipt",
+  "recorded_at": "2026-08-28",
+  "cohort": {
+    "id": "benchmark/phase-b2-successor-five",
+    "definition_digest": "sha256:3182d8710e1239c19cb95daddd0677241c0cd9123614786fd919b036922dbdd9",
+    "stage": "frozen"
+  },
+  "task": {
+    "id": "benchmark/phase-b2-successor/001-negative-evidence-type-boundary",
+    "structural_signature": "single-worker-baseline-v1",
+    "source_revision": "a69aa0ae1ae4862e507511cbd9ad854237d0ad32",
+    "work_unit_digest": "sha256:04258ad63d36368ae6780b351f5e3729fe5f7a12de66aee16d1bc475a8b69096",
+    "evaluator_plan_digest": "sha256:1abee7b4886e8c4626af8714cfad72c04cac6e93a42920af8dddf598a2236ddc"
+  },
+  "attempt": {
+    "number": 1,
+    "pull_request": 187,
+    "head_sha": "bcd3ad77cbd4d20339b4236ab2e5d785a63629db",
+    "workflow_run": 33196056433,
+    "workflow_job": 98933357141,
+    "result_manifest_digest": "sha256:44ae21059a9a36f56a4dce4d5641079e3ecb734c80d38e4d940501232eb10592",
+    "candidate_patch_digest": "sha256:d20c895d09e2f9521d8c1451cae29f9f859479f2f3401d81ba8b839ec87769eb",
+    "verification_result_digest": "sha256:1f850bb3675ce43a61ceddb38ab9b72d565e87047e65374ccdb7a51413ccc7ab",
+    "seeded_negative_verification_result_digest": "sha256:4956d0c335d42c25adb29e81add2c97cd832d6f4ad7de24c426b1ce017577ebe",
+    "candidate_verification_status": "passed",
+    "candidate_recommendation": "accept_candidate",
+    "baseline_seeded_negative_accepted": true,
+    "candidate_seeded_negative_rejected": true,
+    "seeded_negative_category": "security"
+  },
+  "artifact": {
+    "github_actions_artifact_id": 9695777042,
+    "name": "phase-b2-successor-task001-attempt001",
+    "archive_digest": "sha256:ac1c6e1da03af22399ab3769f1cb343cc871904e903581e55697debc5590e6dd",
+    "expires_at": "2026-09-11T17:44:25Z",
+    "file_count_observed_in_job": 8
+  },
+  "observations": {
+    "changed_paths": ["tools/benchmark_cohort.py"],
+    "metadata_verifier_adapter_version": "0.3.0",
+    "metadata_verifier_execution_mode": "metadata_only",
+    "candidate_code_executed_by_metadata_verifier": false,
+    "seeded_negative_verifier_independent_from_worker": true,
+    "candidate_patch_scope_passed": true,
+    "candidate_log_integrity_passed": true,
+    "candidate_added_transition_passed": true,
+    "candidate_removed_transition_passed": true
+  },
+  "authority": {
+    "automatic_candidate_selection": false,
+    "canonical_state_write": false,
+    "git_push": false,
+    "merge": false,
+    "human_integration_decision_required": true
+  },
+  "notes": [
+    "This receipt is durable evidence metadata and does not modify the frozen cohort definition or its definition digest.",
+    "The GitHub Actions artifact is temporary; this receipt preserves the exact hashes and run identities after artifact expiry.",
+    "The worker self-report and verifier recommendation are decision evidence, not repository integration authority.",
+    "The separate seeded-negative VerificationResult represents the deliberately invalid opaque security-evidence case, not the candidate acceptance verdict."
+  ]
+}
