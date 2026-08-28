@@ -33,11 +33,14 @@ IDKMesh is deliberately not pretending that its final architecture is known. The
 
 - [`VISION.md`](VISION.md) — what the project is trying to discover and why.
 - [`ARCHITECTURE.md`](ARCHITECTURE.md) — initial system model and architectural directions.
+- [`docs/architecture/SCALABILITY_AND_AGILITY.md`](docs/architecture/SCALABILITY_AND_AGILITY.md) — the proposed scale-from-1-to-millions fractal-cell architecture and agility rules.
 - [`MATHEMATICAL_FOUNDATIONS.md`](MATHEMATICAL_FOUNDATIONS.md) — candidate mathematical formulations and algorithms.
 - [`SCIENTIFIC_FOUNDATIONS.md`](SCIENTIFIC_FOUNDATIONS.md) — physics, complex-systems, thermodynamic, and quantum-inspired ideas mapped to testable IDKMesh experiments.
 - [`BLOCKCHAIN_STRATEGY.md`](BLOCKCHAIN_STRATEGY.md) — where blockchain/shared ledgers can help, where they cannot, and the staged trust/provenance strategy.
 - [`RESEARCH_QUESTIONS.md`](RESEARCH_QUESTIONS.md) — open technical, scientific, social, and governance questions.
+- [`docs/research/TOP_20_QUESTIONS.md`](docs/research/TOP_20_QUESTIONS.md) — the twenty highest-priority questions currently shaping the project.
 - [`DECISIONS.md`](DECISIONS.md) — durable decision log.
+- [`docs/decisions/`](docs/decisions/) — architecture decision records, including the proposed Fractal Autonomous Cells design.
 - [`ROADMAP.md`](ROADMAP.md) — staged research and implementation roadmap from the experimental kernel through Internet-scale research.
 - [`GOVERNANCE.md`](GOVERNANCE.md) — initial governance model.
 - [`CONTRIBUTING.md`](CONTRIBUTING.md) — how to participate.
@@ -76,11 +79,26 @@ A long-term IDKMesh system may include:
 7. **Governance & incentive layer** — reputation, contribution accounting, dispute resolution, policy evolution, anti-Sybil mechanisms.
 8. **Integration layer** — version control, continuous integration, release engineering, observability, rollback, security and supply-chain controls.
 
+## Current scalability hypothesis
+
+IDKMesh should not become one giant cluster, scheduler, database, or multi-agent conversation. The current default hypothesis is a **Fractal Autonomous Cells** architecture:
+
+`node -> cell -> fabric/region -> global federation`
+
+Most scheduling, execution, verification, state, and observability stay local to a cell. Higher layers exchange only summaries, overflow work, discovery information, attestations, and protocol metadata. This hypothesis is explicitly falsifiable and must be tested against centralized and sharded alternatives before being accepted permanently.
+
+See [`docs/architecture/SCALABILITY_AND_AGILITY.md`](docs/architecture/SCALABILITY_AND_AGILITY.md) and [`docs/decisions/ADR-0002-fractal-autonomous-cells.md`](docs/decisions/ADR-0002-fractal-autonomous-cells.md).
+
 ## Recommended starting point
 
-Read [`ROADMAP.md`](ROADMAP.md) and begin with the **experimental kernel**, not the million-node system. The first engineering artifacts are machine-readable Work Unit, Result Manifest, and Goal Graph schemas plus a simulator and common metrics harness.
+Read [`ROADMAP.md`](ROADMAP.md), [`docs/research/TOP_20_QUESTIONS.md`](docs/research/TOP_20_QUESTIONS.md), and [`docs/architecture/SCALABILITY_AND_AGILITY.md`](docs/architecture/SCALABILITY_AND_AGILITY.md), then begin with the **experimental kernel**, not the million-node system.
 
-The first headline scientific experiment then compares a single-agent coding baseline with same-agent replication and a structured, diverse, independently verified agent swarm under comparable resource budgets.
+The first engineering artifacts are machine-readable Work Unit/Task Contract, Result/Artifact Manifest, and Goal Graph schemas plus a simulator and common metrics harness.
+
+The first headline scientific experiments should include:
+
+1. comparing a single-agent coding baseline with same-agent replication and a structured, diverse, independently verified agent swarm under comparable resource budgets; and
+2. comparing one global scheduler, sharded scheduling, and autonomous-cell federation from 10 to 100,000 simulated workers while measuring per-task coordination cost.
 
 ## Why `IDKMesh`?
 
@@ -104,4 +122,4 @@ Apache License 2.0. See [`LICENSE`](LICENSE).
 
 The project is intentionally early. That means architecture critiques, literature references, mathematical models, simulations, prototypes, benchmarks, governance proposals, documentation, and negative results are all valuable contributions.
 
-Start with [`CONTRIBUTING.md`](CONTRIBUTING.md), [`ROADMAP.md`](ROADMAP.md), and [`RESEARCH_QUESTIONS.md`](RESEARCH_QUESTIONS.md).
+Start with [`CONTRIBUTING.md`](CONTRIBUTING.md), [`ROADMAP.md`](ROADMAP.md), [`docs/research/TOP_20_QUESTIONS.md`](docs/research/TOP_20_QUESTIONS.md), and [`RESEARCH_QUESTIONS.md`](RESEARCH_QUESTIONS.md).
