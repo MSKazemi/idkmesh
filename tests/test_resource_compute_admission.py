@@ -16,6 +16,14 @@ def registry():
                 "id": "github-actions-public-standard",
                 "status": "available",
                 "kind": "compute",
+                "capabilities": [
+                    "git",
+                    "python",
+                    "docker",
+                    "network",
+                    "independent_verification",
+                    "ephemeral_vm",
+                ],
                 "project_cost_usd": 0,
                 "security": {"repo_write_authority": False, "merge_authority": False},
                 "source": {"checked_at": "2026-08-28", "max_age_days": 30},
@@ -24,6 +32,7 @@ def registry():
                 "id": "gemini-api-free",
                 "status": "conditional",
                 "kind": "agent",
+                "capabilities": ["llm", "code_analysis", "text_generation", "network"],
                 "project_cost_usd": 0,
                 "security": {"repo_write_authority": False, "merge_authority": False},
                 "source": {"checked_at": "2026-08-28", "max_age_days": 14},
@@ -41,6 +50,7 @@ def bindings():
                 "resource_id": "github-actions-public-standard",
                 "provider": "github-actions",
                 "allowed_cost_classes": ["public_project_ci"],
+                "required_resource_capabilities": ["git", "python", "ephemeral_vm"],
                 "allowed_capabilities": [
                     "json-schema-validation",
                     "deterministic-local-execution",
@@ -111,12 +121,42 @@ class ResourceComputeAdmissionTests(unittest.TestCase):
         self.assertEqual(admitted["offers"], [])
         self.assertIn("resource evidence stale", " ".join(report["rejected"][0]["reasons"]))
 
+    def test_future_dated_registry_evidence_fails_closed(self):
+        value = registry()
+        value["offers"][0]["source"]["checked_at"] = "2026-08-29"
+        admitted, report = admit(value, bindings(), pool(), TODAY)
+        self.assertEqual(admitted["offers"], [])
+        self.assertIn("resource evidence future-dated", " ".join(report["rejected"][0]["reasons"]))
+
+    def test_future_dated_registry_observation_fails_closed(self):
+        value = registry()
+        value["observed_at"] = "2026-08-29"
+        with self.assertRaisesRegex(AdmissionError, "registry observed_at future-dated"):
+            admit(value, bindings(), pool(), TODAY)
+
     def test_stale_local_binding_review_fails_closed(self):
         value = bindings()
         value["bindings"][0]["reviewed_at"] = "2026-06-01"
         admitted, report = admit(registry(), value, pool(), TODAY)
         self.assertEqual(admitted["offers"], [])
         self.assertIn("binding review stale", " ".join(report["rejected"][0]["reasons"]))
+
+    def test_future_dated_binding_review_fails_closed(self):
+        value = bindings()
+        value["bindings"][0]["reviewed_at"] = "2026-08-29"
+        admitted, report = admit(registry(), value, pool(), TODAY)
+        self.assertEqual(admitted["offers"], [])
+        self.assertIn("binding review future-dated", " ".join(report["rejected"][0]["reasons"]))
+
+    def test_missing_required_resource_capability_fails_closed(self):
+        value = registry()
+        value["offers"][0]["capabilities"].remove("ephemeral_vm")
+        admitted, report = admit(value, bindings(), pool(), TODAY)
+        self.assertEqual(admitted["offers"], [])
+        self.assertIn(
+            "resource evidence missing required capabilities: ephemeral_vm",
+            report["rejected"][0]["reasons"],
+        )
 
     def test_capability_expansion_is_rejected(self):
         value = pool()
@@ -152,6 +192,12 @@ class ResourceComputeAdmissionTests(unittest.TestCase):
         value = bindings()
         value["bindings"][0]["terms_eligible"] = "yes"
         with self.assertRaises(AdmissionError):
+            validate_bindings(value)
+
+    def test_binding_requires_resource_capability_evidence(self):
+        value = bindings()
+        value["bindings"][0]["required_resource_capabilities"] = []
+        with self.assertRaisesRegex(AdmissionError, "required_resource_capabilities required"):
             validate_bindings(value)
 
 
