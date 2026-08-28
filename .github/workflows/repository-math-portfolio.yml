@@ -203,14 +203,15 @@ jobs:
           python -m json.tool /tmp/repository-portfolio.json >/dev/null
           python -m json.tool /tmp/repository-portfolio-state.json >/dev/null
 
-      - name: Assemble replayable checkpoint
+      - name: Assemble replayable checkpoint without raw bodies
         run: |
+          set -euo pipefail
           mkdir -p /tmp/repository-portfolio-checkpoint
           cp /tmp/repository-portfolio-state.json /tmp/repository-portfolio-checkpoint/repository-portfolio-state.json
           cp /tmp/repository-portfolio.json /tmp/repository-portfolio-checkpoint/repository-portfolio.json
-          cp /tmp/repository-snapshot.json /tmp/repository-portfolio-checkpoint/repository-snapshot.json
           cp /tmp/REPOSITORY_PORTFOLIO.md /tmp/repository-portfolio-checkpoint/REPOSITORY_PORTFOLIO.md
           cp state/repository-portfolio-policy.json /tmp/repository-portfolio-checkpoint/repository-portfolio-policy.json
+          test ! -e /tmp/repository-portfolio-checkpoint/repository-snapshot.json
 
       - name: Publish replayable portfolio evidence
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
