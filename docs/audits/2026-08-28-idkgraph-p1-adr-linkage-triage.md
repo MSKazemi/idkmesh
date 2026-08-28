@@ -60,6 +60,12 @@ current canonical document
 accepted ADR decision node
 ```
 
+## CI coverage finding
+
+Opening the triage PR exposed an adjacent deterministic-validation gap: `.github/workflows/idkgraph-observatory.yml` scans ADR contents but its path filter did not trigger when ADR files changed. The original PR therefore ran the general evolution loop but not the canonical observatory whose output was the acceptance evidence for this change.
+
+The same branch now adds `docs/decisions/ADR-*.md` to the observatory workflow's `pull_request` and `push` path filters. This is a trigger-boundary correction, not a detector change. It ensures that future accepted-decision relationship edits invoke the read-only observatory rather than silently bypassing the relevant CI surface.
+
 ## Expected deterministic effect
 
 Before this patch:
