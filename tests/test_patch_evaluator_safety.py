@@ -6,6 +6,13 @@ import sys
 import unittest
 from pathlib import Path
 
+try:
+    import jsonschema  # noqa: F401
+except ModuleNotFoundError as exc:
+    raise unittest.SkipTest(
+        "patch evaluator safety tests require the Phase 0 jsonschema dependency"
+    ) from exc
+
 ROOT = Path(__file__).resolve().parents[1]
 EXPERIMENTS = ROOT / "experiments"
 if str(EXPERIMENTS) not in sys.path:
