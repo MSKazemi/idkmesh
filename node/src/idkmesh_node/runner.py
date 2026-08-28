@@ -38,21 +38,104 @@ def require_tools() -> None:
         raise RunnerError(f"missing required tool(s): {', '.join(missing)}")
 
 
-def clone_revision(work: WorkUnit, workspace: Path) -> None:
+def _git_environment(config_home: Path) -> dict[str, str]:
+    """Return a Git environment isolated from host/user Git configuration.
+
+    Work Unit repositories are untrusted inputs. Host-level Git filters,
+    credential helpers, fsmonitor hooks, aliases, or template configuration must
+    never become an execution path outside the task container merely because a
+    repository contains matching attributes/config triggers.
+    """
+
+    config_home.mkdir(parents=True, exist_ok=True)
+    xdg_home = config_home / "xdg"
+    xdg_home.mkdir(parents=True, exist_ok=True)
+
+    env = {key: value for key, value in os.environ.items() if not key.startswith("GIT_")}
+    env.update(
+        {
+            "HOME": str(config_home),
+            "XDG_CONFIG_HOME": str(xdg_home),
+            "GIT_CONFIG_NOSYSTEM": "1",
+            "GIT_CONFIG_GLOBAL": os.devnull,
+            "GIT_TERMINAL_PROMPT": "0",
+            "GIT_OPTIONAL_LOCKS": "0",
+        }
+    )
+    return env
+
+
+def _git_repo_command(workspace: Path, git_dir: Path, args: list[str]) -> list[str]:
+    """Address trusted Git metadata explicitly instead of discovering workspace .git."""
+
+    return [
+        "git",
+        "--git-dir",
+        str(git_dir),
+        "--work-tree",
+        str(workspace),
+        *args,
+    ]
+
+
+def _container_git_pointer(workspace: Path) -> Path:
+    pointer = workspace / ".git"
+    pointer.write_text("gitdir: /git-meta\n", encoding="utf-8")
+    return pointer
+
+
+def clone_revision(work: WorkUnit, workspace: Path, git_dir: Path, git_home: Path) -> None:
+    """Materialize an immutable revision while keeping control metadata outside the task root."""
+
+    empty_template = git_home / "empty-template"
+    empty_template.mkdir(parents=True, exist_ok=True)
+    env = _git_environment(git_home)
+
     commands = [
-        ["git", "init", "--quiet", str(workspace)],
-        ["git", "-C", str(workspace), "remote", "add", "origin", work.source.repo_url],
-        ["git", "-C", str(workspace), "fetch", "--quiet", "--depth", "1", "origin", work.source.revision],
-        ["git", "-C", str(workspace), "checkout", "--quiet", "--detach", "FETCH_HEAD"],
+        [
+            "git",
+            "init",
+            "--quiet",
+            f"--template={empty_template}",
+            f"--separate-git-dir={git_dir}",
+            str(workspace),
+        ],
+        _git_repo_command(workspace, git_dir, ["config", "core.worktree", "/workspace"]),
+        _git_repo_command(workspace, git_dir, ["remote", "add", "origin", work.source.repo_url]),
+        _git_repo_command(
+            workspace,
+            git_dir,
+            ["fetch", "--quiet", "--depth", "1", "origin", work.source.revision],
+        ),
+        _git_repo_command(
+            workspace,
+            git_dir,
+            ["checkout", "--quiet", "--detach", "FETCH_HEAD"],
+        ),
     ]
     for command in commands:
-        proc = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
+        proc = subprocess.run(
+            command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+            env=env,
+        )
         if proc.returncode != 0:
             detail = proc.stderr.decode("utf-8", errors="replace").strip()
             raise RunnerError(detail or "git preparation failed")
 
+    # The container may read Git metadata, but the metadata itself is mounted
+    # read-only outside /workspace. Host result capture never trusts this pointer.
+    _container_git_pointer(workspace)
 
-def docker_command(work: WorkUnit, workspace: Path, container_name: str) -> list[str]:
+
+def docker_command(
+    work: WorkUnit,
+    workspace: Path,
+    container_name: str,
+    git_dir: Path | None = None,
+) -> list[str]:
     command = [
         "docker",
         "run",
@@ -76,21 +159,28 @@ def docker_command(work: WorkUnit, workspace: Path, container_name: str) -> list
         "/tmp:rw,noexec,nosuid,nodev,size=64m",
         "--mount",
         f"type=bind,source={workspace.resolve()},target=/workspace",
-        "--workdir",
-        "/workspace",
     ]
+    if git_dir is not None:
+        command.extend(
+            [
+                "--mount",
+                f"type=bind,source={git_dir.resolve()},target=/git-meta,readonly",
+            ]
+        )
+    command.extend(["--workdir", "/workspace"])
     if os.name == "posix" and hasattr(os, "getuid"):
         command.extend(["--user", f"{os.getuid()}:{os.getgid()}"])
     command.extend([work.execution.image, *work.execution.command])
     return command
 
 
-def _git_bytes(workspace: Path, args: list[str]) -> bytes:
+def _git_bytes(workspace: Path, git_dir: Path, git_home: Path, args: list[str]) -> bytes:
     proc = subprocess.run(
-        ["git", "-C", str(workspace), *args],
+        _git_repo_command(workspace, git_dir, args),
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         check=False,
+        env=_git_environment(git_home),
     )
     if proc.returncode != 0:
         detail = proc.stderr.decode("utf-8", errors="replace").strip()
@@ -108,17 +198,25 @@ def _decode_nul_paths(raw: bytes) -> list[str]:
     )
 
 
-def untracked_paths(workspace: Path) -> list[str]:
+def untracked_paths(workspace: Path, git_dir: Path, git_home: Path) -> list[str]:
+    # Do not use --exclude-standard here. Ignored files are still task outputs and
+    # must not disappear from evidence simply because the source repository's
+    # .gitignore happens to match them.
     return _decode_nul_paths(
-        _git_bytes(workspace, ["ls-files", "--others", "--exclude-standard", "-z"])
+        _git_bytes(workspace, git_dir, git_home, ["ls-files", "--others", "-z"])
     )
 
 
-def changed_paths(workspace: Path) -> list[str]:
+def changed_paths(workspace: Path, git_dir: Path, git_home: Path) -> list[str]:
     tracked = _decode_nul_paths(
-        _git_bytes(workspace, ["diff", "--name-only", "-z", "HEAD", "--", "."])
+        _git_bytes(
+            workspace,
+            git_dir,
+            git_home,
+            ["diff", "--no-ext-diff", "--name-only", "-z", "HEAD", "--", "."],
+        )
     )
-    return sorted(set(tracked + untracked_paths(workspace)))
+    return sorted(set(tracked + untracked_paths(workspace, git_dir, git_home)))
 
 
 def _matches(path: str, patterns: tuple[str, ...]) -> bool:
@@ -145,6 +243,30 @@ def unpackaged_artifact_violations(paths: list[str]) -> list[str]:
     ]
 
 
+def protected_metadata_violations(workspace: Path) -> list[str]:
+    """Detect attempts to tamper with the task-visible pointer to trusted Git metadata."""
+
+    pointer = workspace / ".git"
+    expected = "gitdir: /git-meta\n"
+    try:
+        if not pointer.is_file() or pointer.read_text(encoding="utf-8") != expected:
+            return ["task modified protected .git metadata pointer"]
+    except (OSError, UnicodeError):
+        return ["task modified protected .git metadata pointer"]
+    return []
+
+
+def output_policy_violations(*, patch_truncated: bool, max_patch_bytes: int) -> list[str]:
+    """A candidate patch is evidence; silently truncating it cannot be success."""
+
+    if not patch_truncated:
+        return []
+    return [
+        "candidate patch exceeded output_limits.max_patch_bytes "
+        f"({max_patch_bytes}) and was truncated"
+    ]
+
+
 def run_work_unit(work: WorkUnit, output_dir: str | Path) -> dict:
     require_tools()
     output = Path(output_dir)
@@ -161,14 +283,20 @@ def run_work_unit(work: WorkUnit, output_dir: str | Path) -> dict:
     stderr = b""
     paths: list[str] = []
     untracked: list[str] = []
-    violations: list[str] = []
+    path_violations: list[str] = []
+    artifact_violations: list[str] = []
+    metadata_violations: list[str] = []
+    output_violations: list[str] = []
 
     with tempfile.TemporaryDirectory(prefix="idkmesh-node-") as temp_dir:
-        workspace = Path(temp_dir) / "workspace"
+        temp_root = Path(temp_dir)
+        workspace = temp_root / "workspace"
         workspace.mkdir()
-        clone_revision(work, workspace)
+        git_dir = temp_root / "git-meta"
+        git_home = temp_root / "git-home"
+        clone_revision(work, workspace, git_dir, git_home)
 
-        command = docker_command(work, workspace, container_name)
+        command = docker_command(work, workspace, container_name, git_dir)
         try:
             proc = subprocess.run(
                 command,
@@ -191,15 +319,31 @@ def run_work_unit(work: WorkUnit, output_dir: str | Path) -> dict:
                 check=False,
             )
 
-        untracked = untracked_paths(workspace)
-        paths = changed_paths(workspace)
-        violations = path_policy_violations(work, paths)
-        violations.extend(unpackaged_artifact_violations(untracked))
-        patch_raw = _git_bytes(workspace, ["diff", "--binary", "--no-ext-diff", "HEAD", "--", "."])
+        metadata_violations = protected_metadata_violations(workspace)
+        untracked = untracked_paths(workspace, git_dir, git_home)
+        paths = changed_paths(workspace, git_dir, git_home)
+        path_violations = path_policy_violations(work, paths)
+        artifact_violations = unpackaged_artifact_violations(untracked)
+        patch_raw = _git_bytes(
+            workspace,
+            git_dir,
+            git_home,
+            ["diff", "--binary", "--no-ext-diff", "HEAD", "--", "."],
+        )
 
     patch, patch_truncated = _truncate(patch_raw, work.output.max_patch_bytes)
     stdout, stdout_truncated = _truncate(stdout, work.output.max_log_bytes)
     stderr, stderr_truncated = _truncate(stderr, work.output.max_log_bytes)
+    output_violations = output_policy_violations(
+        patch_truncated=patch_truncated,
+        max_patch_bytes=work.output.max_patch_bytes,
+    )
+    violations = (
+        path_violations
+        + artifact_violations
+        + metadata_violations
+        + output_violations
+    )
 
     patch_path = output / "changes.patch"
     stdout_path = output / "stdout.txt"
@@ -259,6 +403,7 @@ def run_work_unit(work: WorkUnit, output_dir: str | Path) -> dict:
             "summary": "Local sandbox execution completed; all outputs remain unverified candidates.",
             "claims": [
                 "The task container was launched with Docker network mode none.",
+                "Host Git metadata was kept outside the task-writable workspace.",
                 "The candidate must be independently verified before acceptance.",
             ],
         },
@@ -282,7 +427,11 @@ def run_work_unit(work: WorkUnit, output_dir: str | Path) -> dict:
             "org.idkmesh.node.v0_1": {
                 "changed_paths": paths,
                 "untracked_paths": untracked,
-                "path_policy_violations": violations,
+                "path_policy_violations": path_violations,
+                "unpackaged_artifact_violations": artifact_violations,
+                "protected_metadata_violations": metadata_violations,
+                "output_policy_violations": output_violations,
+                "policy_violations": violations,
                 "timed_out": timed_out,
             }
         },
