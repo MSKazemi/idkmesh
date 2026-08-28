@@ -1,0 +1,23 @@
+{
+  "budget": {"compute_units": 1, "human_minutes": 20, "paid_fallback_allowed": false, "project_spend_usd_max": 0, "tokens": 20000, "wall_seconds": 900},
+  "constraints": {"allowed_paths": ["tools/branch_convergence_audit.py"], "forbidden_paths": [".github/**", "schemas/**", "benchmarks/**", "verification/**"], "policies": ["candidate-only", "independent-verification-required", "zero-project-spend", "benchmark-definition-immutable"]},
+  "context": {"max_context_bytes": 200000, "references": ["schemas/work-unit-v0.2.schema.json", "schemas/result-manifest-v0.1.schema.json", "schemas/evaluator-plan-v0.4.schema.json", "docs/specifications/BENCHMARK_COHORT_V0_1.md", "docs/specifications/EVALUATOR_PLAN_V0_4_TRANSITION_SEMANTICS.md"], "summary": "classify_branch currently lets head_sha=None satisfy the merged-PR matching branch, even though cleanup policy is based on exact current-head identity."},
+  "dependencies": [],
+  "evidence_requirements": [{"required": true, "type": "artifact_hash"}, {"required": true, "type": "review"}],
+  "extensions": {"org.idkmesh.benchmark": {"cohort": "phase-b2-successor-v2", "task_family": "bounded_feature", "tracker_issue": 180}},
+  "failure_semantics": {"max_attempts": 1, "on_failure": "stop", "retryable": false},
+  "id": "benchmark/phase-b2-v2/003-branch-unobserved-head",
+  "inputs": [{"id": "source-repository", "locator": "https://github.com/MSKazemi/idkmesh", "type": "git_ref"}],
+  "kind": "coding",
+  "objective": "Add a fail-closed branch-audit state for merged-PR history when the current branch head SHA is unavailable, so cleanup eligibility requires an observed exact current head match.",
+  "outputs": [{"description": "Unverified candidate patch against the successor-v2 source snapshot.", "id": "candidate-patch", "media_type": "text/x-diff", "type": "patch"}],
+  "permissions": {"filesystem_write": ["tools/branch_convergence_audit.py"], "network": "none", "network_allowlist": [], "process_execution": true, "secrets": []},
+  "provenance": {"created_by": "idkmesh-project", "creator_type": "system", "source": "Phase B2 successor-v2 scaffold definition", "source_revision": "a69aa0ae1ae4862e507511cbd9ad854237d0ad32"},
+  "requirements": {"capabilities": ["git", "python"], "resources": {"accelerator_capabilities": [], "cpu_cores_min": 0.5, "disk_mb_min": 32, "gpu": "none", "memory_mb_min": 128}},
+  "schema_version": "0.2",
+  "security": {"data_classification": "public", "minimum_worker_trust": "untrusted", "notes": "Public repository task. Worker must not modify evaluator/control artifacts. Candidate correctness is determined independently; worker self-report is not acceptance.", "risk_class": "low", "sandbox_required": true},
+  "uncertainty": [{"confidence": 0.99, "resolution_strategy": "Require issue #180 calibration gate and task-specific behavioral regression where safe.", "statement": "EvaluatorPlan v0.4 transition checks are a static proxy and must be calibrated against a straightforward transition plus a near-miss before cohort freeze."}],
+  "validators": [{"description": "Worker output must validate as ResultManifest v0.1.", "id": "result-manifest-schema", "required": true, "type": "schema"}, {"description": "Independent evaluator must verify artifact/log integrity, patch scope, calibrated transition evidence, and any separately required behavioral evidence.", "id": "independent-review", "required": true, "type": "review"}],
+  "verification_policy": {"acceptance_rule": "Both required validators must pass; worker self-report and static transition support are not merge authority. Successor-v2 freeze additionally requires pre-outcome evaluator calibration.", "independent_from_worker": true, "minimum_independent_verifiers": 1, "strategy": "all_required"},
+  "version": 1
+}
