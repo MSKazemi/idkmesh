@@ -1,0 +1,50 @@
+{
+  "backend": {
+    "max_candidate_bytes": 200000,
+    "max_log_bytes": 262144,
+    "require_nonempty_patch": true,
+    "required_added_text": [
+      "def load_cohort_argument(raw: str) -> dict[str, Any]:",
+      "    return load_json(resolve_repo_file(raw, label=\"BenchmarkCohort\"))"
+    ],
+    "required_log_types": [
+      "stdout",
+      "stderr"
+    ],
+    "type": "unified_diff",
+    "verify_log_digests": true
+  },
+  "binding": {
+    "source_revision": "9c53bb4069a5db1c0688dbbe7a8f028540cbf7c2",
+    "work_unit_digest": "sha256:adb4ad893aa58ad18376c49fd0a6c0328db808bfe5946136a5631c63d933f2d4",
+    "work_unit_id": "benchmark/phase-b2/004-safe-cohort-loader-refactor",
+    "work_unit_version": 1
+  },
+  "candidate_artifact_id": "candidate-patch",
+  "execution_mode": "metadata_only",
+  "extensions": {
+    "org.idkmesh.benchmark": {
+      "cohort": "phase-b2-first-five-v2",
+      "semantic_scope": "bootstrap public structural evaluator with exact complete-line predicates",
+      "task_id": "benchmark/phase-b2/004-safe-cohort-loader-refactor"
+    }
+  },
+  "id": "benchmark/phase-b2/004-safe-cohort-loader-refactor/evaluator-v2",
+  "policy": {
+    "require_output_outside_candidate_root": true,
+    "require_plan_outside_candidate_root": true,
+    "require_verifier_distinct_from_worker": true
+  },
+  "required_validator_ids": [
+    "result-manifest-schema",
+    "independent-review"
+  ],
+  "schema_version": "0.2",
+  "verifier": {
+    "adapter": "deterministic-patch-verifier",
+    "adapter_version": "0.1.1",
+    "id": "idkmesh-local-verifier",
+    "type": "system"
+  },
+  "visibility": "public"
+}
