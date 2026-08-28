@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idkmesh.org/schemas/compute-policy-v0.1.schema.json",
+  "title": "IDKMesh Compute Policy v0.1",
+  "description": "Repository-level hard constraints applied before any Work Unit-specific budget. Work Units may tighten these constraints but may not relax them.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "project_spend_usd_max",
+    "paid_providers_enabled",
+    "allowed_cost_classes",
+    "donor_costs_must_be_opt_in"
+  ],
+  "properties": {
+    "schema_version": {"const": "0.1"},
+    "project_spend_usd_max": {"type": "number", "minimum": 0},
+    "paid_providers_enabled": {"type": "boolean"},
+    "allowed_cost_classes": {
+      "type": "array",
+      "items": {
+        "enum": ["local_owned", "donated", "public_project_ci", "grant", "free_tier", "paid"]
+      },
+      "uniqueItems": true
+    },
+    "donor_costs_must_be_opt_in": {"type": "boolean"},
+    "notes": {"type": "string"}
+  }
+}
