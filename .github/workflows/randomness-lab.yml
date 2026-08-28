@@ -1,0 +1,34 @@
+name: randomness-lab
+
+on:
+  push:
+    paths:
+      - "randomness_lab/**"
+      - "tests/test_randomness_lab.py"
+      - ".github/workflows/randomness-lab.yml"
+  pull_request:
+    paths:
+      - "randomness_lab/**"
+      - "tests/test_randomness_lab.py"
+      - ".github/workflows/randomness-lab.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Run randomness-lab tests
+        run: python -m unittest discover -s tests -v
+      - name: Smoke-test CLI and JSON output
+        run: |
+          python -m randomness_lab --policy thompson --rounds 100 --seed 42 --output /tmp/result.json
+          python -m json.tool /tmp/result.json > /dev/null
