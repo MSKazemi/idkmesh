@@ -39,88 +39,105 @@ This is an important collaboration rule for a fast self-evolving repository: **d
 
 ### 3. Identified the actual remaining issue #4 blocker
 
-Issue #4 now records that the deterministic control-plane baseline exists. The remaining critical path is the real bounded worker adapter:
+Issue #4 now records that the deterministic control-plane baseline exists. The remaining critical path is the real bounded worker adapter and its controlled runtime evidence.
 
-1. synchronize PR #34 with current `main`;
-2. keep Node + Phase 0 CI green on the exact synchronized head;
-3. satisfy controlled Docker acceptance #37 on that exact head;
-4. only then connect the canonical node as the first real orchestrator worker adapter.
+### 4. Synchronized the older PR #34 without force-pushing
 
-### 4. Synchronized PR #34 without force-pushing
-
-PR #34 was still on head:
+At one point PR #34 was still on head:
 
 `9ac6c09d4db06dc7c846d319e76624fbf1eaaa0f`
 
-The PR changes exactly 12 paths:
+Its 12 changed paths were all absent from then-current `main`, so a normal two-parent synchronization merge was constructed. Current `main` was retained intact and the exact tested node blobs were overlaid. No force push was used.
 
-- `.github/workflows/idkmesh-node-ci.yml`;
-- the `node/` implementation/tests/example files;
-- `schemas/node-execution-binding-v0.1.schema.json`.
-
-All 12 paths were confirmed absent from current `main`, so the node change remained cleanly additive.
-
-A normal two-parent synchronization merge was constructed with:
-
-- previous PR #34 head as one parent;
-- current `main` (`c401659883d79db2ad4b868386c81cc01ef7b015`) as the other parent;
-- current `main` tree retained intact;
-- the exact tested node blobs overlaid at their 12 paths.
-
-No force push was used.
-
-New PR #34 head:
+The temporary synchronized PR #34 head became:
 
 `10a1885505859abef266d66839c90c0041adcf8a`
 
-### 5. Verified synchronized node CI
-
-Both checks completed successfully on the exact new head:
+Both checks passed on that exact head:
 
 - **IDKMesh Node CI** — run `33182791204` — success;
 - **Phase 0 schema check** — run `33182791209` — success.
 
-Therefore stale-branch synchronization is no longer a blocker for the canonical worker.
+### 5. Concurrent convergence replaced PR #34 with PR #91
 
-### 6. Rebound Docker acceptance #37 to the exact new head
+Immediately afterward, concurrent repository work closed PR #34 without merging and opened a cleaner convergence PR:
 
-Issue #37 was updated by comments to state that acceptance evidence for the old `9ac6...` head is stale and that the controlled-host Docker target is now:
+- **PR #91:** `Converge canonical WorkUnit v0.2 node backend onto current main`
+- branch: `integration/canonical-node-current`
+- exact head: `d5a00e136fc581f8980c709d6e58c38db9016f3a`
 
-`10a1885505859abef266d66839c90c0041adcf8a`
+PR #91 starts directly from a current-main snapshot and adds only the missing worker surface plus its conversation record. It preserves the newer verifier, evaluator-sovereignty, orchestration, and R1/R2 work already on `main`.
 
-The successful CI run IDs were also recorded there.
+It also adds a meaningful safety improvement discovered during convergence: **fail closed on untracked artifacts**. Because a Git patch can omit untracked files, Node v0.1 now fails an attempt when untracked output exists until a typed/size-bounded packaging protocol exists. The result records `untracked_file_count`, `untracked_paths`, and policy violations, and a unit test covers the rule.
 
-The remaining canonical-worker gate is now the actual controlled Docker smoke/negative-path acceptance, not repository synchronization.
+PR #91 explicitly supersedes closed/unmerged PR #34, so #34 was not reopened.
+
+### 6. Verified PR #91 CI
+
+Both required checks completed successfully on exact PR #91 head `d5a00e136fc581f8980c709d6e58c38db9016f3a`:
+
+- **IDKMesh Node CI** — run `33182859655` — success;
+- **Phase 0 schema check** — run `33182859665` — success.
+
+At the latest comparison, newer `main` commits touched only unrelated R3/randomness-lab files, not the 13 PR #91 paths. Therefore the candidate can remain frozen for controlled runtime acceptance instead of chasing every unrelated `main` commit.
+
+### 7. Retargeted controlled Docker acceptance #37
+
+Issue #37 was rewritten to name PR #91 and exact head:
+
+`d5a00e136fc581f8980c709d6e58c38db9016f3a`
+
+The issue now contains:
+
+- the exact successful CI run IDs;
+- the positive Docker smoke procedure;
+- output/provenance/digest/sandbox inspection requirements;
+- a negative out-of-scope tracked-path test;
+- a new negative untracked-artifact fail-closed test;
+- an acceptance-head freeze rule so unrelated movement of `main` does not create an infinite resynchronization loop;
+- the rule that changing the candidate head/tree invalidates runtime evidence and requires re-evaluation.
+
+No Docker runtime acceptance was claimed in this chat because the available execution environment is not the explicitly controlled Docker host required by the issue.
 
 ## Current critical-path state
 
 ```text
-canonical contracts                 DONE
-independent local verifier          DONE
-2-attempt deterministic coordinator DONE (PR #78)
-canonical node branch sync          DONE for head 10a1885...
-node CI + Phase 0 CI                GREEN on same head
-controlled Docker acceptance #37    BLOCKING
-real node orchestrator adapter      NEXT AFTER #37
-3–5 bounded real attempts            LATER
+canonical contracts                  DONE
+independent local verifier           DONE
+2-attempt deterministic coordinator  DONE (PR #78)
+current canonical node convergence   PR #91, head d5a00e1...
+node CI + Phase 0 CI                 GREEN on exact PR #91 head
+controlled Docker acceptance #37     BLOCKING
+real node orchestrator adapter       NEXT AFTER #37
+real node -> verifier E2E evidence   NEXT AFTER #37
+3–5 bounded real attempts             LATER
 ```
 
 ## Safety / convergence decisions
 
 - No duplicate orchestrator was kept open after equivalent work landed.
-- No force push was used to synchronize PR #34.
+- No force push was used while reconciling the older node branch.
+- Closed/unmerged PR #34 was not reopened once the cleaner PR #91 appeared.
+- The safer PR #91 untracked-artifact rule is part of the new runtime gate.
 - No Docker acceptance was claimed without a controlled Docker host.
 - Acceptance evidence is bound to an exact commit SHA.
+- Movement of base `main` alone does not invalidate a frozen candidate; changing the candidate does.
 - Worker success remains candidate evidence, not acceptance.
 - No autonomous merge authority was added.
-- `main` was still reported unprotected during this execution window; repository-admin branch/ruleset protection remains a separate safety requirement.
+- `main` was still reported unprotected during this execution window; repository-admin ruleset/branch protection remains a separate safety requirement.
 
 ## Community impact
 
-This continuation reduced duplicate review burden and converted a stale long-lived PR into a precise community-action gate: a contributor with an appropriate controlled Docker host can now test one exact, CI-green commit and produce decisive runtime evidence for #37.
+This continuation reduced duplicate review burden and converted the real-worker milestone into a precise community-action gate: a contributor with an appropriate controlled Docker host can test one exact, CI-green PR #91 commit and produce decisive runtime evidence for #37.
 
-That is a more useful newcomer/community task than opening another competing worker or orchestrator implementation.
+The untracked-artifact negative test makes the task more valuable than a simple happy-path smoke run because it checks a concrete omission hazard found during convergence.
 
 ## Next action
 
-The highest-value next action is to obtain independent controlled-host Docker evidence for issue #37 against exact PR #34 head `10a1885505859abef266d66839c90c0041adcf8a`. After that evidence passes, connect the canonical node to the already-landed two-attempt orchestrator through the existing worker-adapter boundary.
+The highest-value next action is independent controlled-host Docker evidence for issue #37 against exact PR #91 head `d5a00e136fc581f8980c709d6e58c38db9016f3a`.
+
+After that evidence passes, connect `idkmesh-node` to the already-landed two-attempt coordinator through its worker-adapter boundary and run:
+
+```text
+real node -> ResultManifest -> independent verifier -> VerificationResult -> human decision
+```
