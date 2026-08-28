@@ -20,7 +20,6 @@ import json
 import re
 import sys
 import unicodedata
-from collections import defaultdict
 from pathlib import Path
 from typing import Any, Iterable
 from urllib.parse import unquote, urlsplit
@@ -52,18 +51,24 @@ def github_like_anchor_base(text: str) -> str:
 
 
 def anchor_index(path: Path, root: Path) -> set[str]:
-    """Build deterministic heading/explicit-ID anchors for one Markdown file."""
+    """Build deterministic heading/explicit-ID anchors for one Markdown file.
+
+    Suffix allocation is collision-aware across all generated slugs. For
+    example, headings ``Repeat``, ``Repeat-1``, ``Repeat`` become
+    ``repeat``, ``repeat-1``, ``repeat-2`` rather than producing a duplicate.
+    """
     parsed = parse_markdown(path, root)
-    counts: dict[str, int] = defaultdict(int)
     anchors: set[str] = set()
 
     for heading in parsed["headings"]:
         base = github_like_anchor_base(heading["text"])
         if not base:
             continue
-        duplicate_index = counts[base]
-        counts[base] += 1
-        anchor = base if duplicate_index == 0 else f"{base}-{duplicate_index}"
+        anchor = base
+        suffix = 0
+        while anchor in anchors:
+            suffix += 1
+            anchor = f"{base}-{suffix}"
         anchors.add(anchor)
 
     text = path.read_text(encoding="utf-8")
