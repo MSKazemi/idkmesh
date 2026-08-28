@@ -89,6 +89,50 @@ This document captures open questions that should drive experiments, prototypes,
 - Can simulated-annealing schedules improve collective architecture search?
 - Do spin-glass analogies yield practical methods for highly coupled software design constraints, or are they merely descriptive metaphors?
 - Can synchronization models identify harmful over-convergence among agents?
+- Can a free-energy-style objective meaningfully balance verified quality against useful diversity?
+- What observable should represent an IDKMesh "temperature," and can adaptive temperature schedules outperform fixed exploration rates?
+- Can graph spectral measures predict fragmentation or slow information propagation before application-level failures become obvious?
+- Are network-of-networks percolation models useful for cascading failures between intelligence, knowledge, and compute layers?
+
+## Classical physics, transport, and control
+
+- Can load balancing be improved by diffusion/backpressure models derived from conservation laws?
+- Which queue-pressure variables are sufficient for decentralized control without global state?
+- Can a Lyapunov-style stability measure predict or prevent runaway unverified-work backlog?
+- How should feedback control adjust generation fan-out, replication, verifier count, and admission rate under workload spikes?
+- Can epidemic/contagion models predict propagation of compromised artifacts or incorrect beliefs through the mesh?
+- Does partial/local synchronization improve integration efficiency without introducing global barriers?
+- How should practical energy per verified result be measured across CPU, GPU, and network communication?
+- Which information should be preserved versus discarded or compressed as the mesh scales?
+
+## Multiscale / renormalization questions
+
+- What state can be safely coarse-grained from worker to local group to compute island to regional/global levels?
+- Can hierarchical summaries preserve near-optimal scheduling decisions while dramatically reducing control traffic?
+- Which graph properties must be preserved by an IDKMesh coarse-graining transformation?
+- Does a multiscale architecture create hidden failure correlations or governance bottlenecks?
+- Can local policies differ between islands without making global integration unstable?
+
+## Quantum and quantum-inspired research
+
+- Which IDKMesh combinatorial subproblems naturally admit useful QUBO formulations?
+- Do QUBO formulations improve solver interoperability even when all solvers are classical?
+- Can quantum annealing beat strong classical baselines for any realistic IDKMesh scheduling/selection workload at a transparently reported resource budget?
+- Are tensor-network methods useful for compressing high-order agent/task correlations, or do simpler graphical/probabilistic models perform better?
+- Are any quantum-walk or amplitude-amplification ideas relevant enough to justify future quantum-hardware integration?
+- How can documentation prevent misleading metaphors such as calling classical alternatives "superposition" or ordinary dependencies "entanglement"?
+
+## Blockchain, ledgers, and provenance
+
+- Which provenance guarantees can be achieved with hashes, signatures, attestations, and Merkle transparency logs alone?
+- At what point does IDKMesh actually have multiple administrative domains with no acceptable trusted ledger operator?
+- What workload or threat model would justify a permissioned BFT ledger over a federated transparency-log design?
+- Does blockchain materially improve cross-organization artifact provenance compared with signed append-only logs?
+- If an open compute market exists, which settlement functions require smart contracts and which can use ordinary payment rails?
+- How should an off-chain verification oracle feed an economic settlement layer without becoming the central trusted bottleneck?
+- Can a blockchain-based contribution system avoid rewarding quantity, collusion, or Sybil identities?
+- Which data must never be placed on a public immutable ledger because of privacy, confidentiality, or deletion requirements?
+- Is a transferable token ever necessary, or are non-transferable reputation, compute credits, grants, and conventional payments sufficient?
 
 ## Distributed learning
 
@@ -115,5 +159,11 @@ This document captures open questions that should drive experiments, prototypes,
 8. Run a multi-armed-bandit experiment that dynamically reallocates compute among competing agent strategies.
 9. Evaluate proper scoring rules for agent confidence calibration.
 10. Prototype a contribution graph and compare simple reputation to Bayesian and approximate-Shapley approaches.
+11. Compare greedy, bandit, evolutionary, and simulated-annealing search on the same architecture/configuration problem.
+12. Run percolation and network-of-networks simulations under random churn, regional outages, and targeted attacks.
+13. Compare flat scheduling with hierarchical/coarse-grained compute-island scheduling as node count grows.
+14. Benchmark QUBO formulations with classical MILP/local-search/annealing solvers before considering quantum hardware.
+15. Compare a signed database, Merkle transparency log, BFT replicated service, and permissioned ledger for provenance under a shared threat model.
+16. Measure joules or watt-hours per independently verified useful result on a controlled multi-machine benchmark.
 
 Each experiment should specify a falsifiable hypothesis, baseline, metric, dataset/workload, and stopping rule before execution.
