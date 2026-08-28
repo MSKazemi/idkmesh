@@ -58,6 +58,17 @@ class PlannerTests(unittest.TestCase):
         rejected = {x["resource_id"]: x["reasons"] for x in result["rejected"]}
         self.assertTrue(any("stale" in r for r in rejected[registry["offers"][0]["id"]]))
 
+    def test_planner_output_requires_runtime_materialization(self):
+        result = planner.plan(self.registry, self.task, 20, dt.date(2026, 8, 28))
+        boundary = result["runtime_materialization"]
+        self.assertTrue(boundary["required_before_execution"])
+        self.assertFalse(boundary["planner_output_is_executable_compute_offer"])
+        self.assertEqual(boundary["boundary_doc"], "docs/architecture/FREE_RESOURCE_MESH_COMPUTE_BRIDGE.md")
+        self.assertEqual(boundary["discovery_contract"], "schemas/resource-offer-registry-v0.1.schema.json")
+        self.assertEqual(boundary["runtime_contract"], "schemas/compute-offer-pool-v0.1.schema.json")
+        self.assertEqual(boundary["runtime_router"], "experiments/free_compute_router.py")
+        self.assertEqual(boundary["repository_compute_policy"], "config/compute-policy.json")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -2,8 +2,18 @@
 """Deterministic zero-project-cost resource planner for IDKMesh.
 
 This tool DOES NOT dispatch work, call external services, mutate GitHub, or grant
-worker authority. It filters a versioned registry of resource offers against a
-bounded task request and emits an evidence-oriented candidate plan.
+worker authority. It filters a versioned discovery registry against a bounded
+task request and emits an evidence-oriented candidate plan.
+
+Important contract boundary: planner selections are discovery/control-plane
+candidates, NOT executable runtime compute offers. A provider-specific adapter
+or live capability probe must materialize an eligible resource into
+``schemas/compute-offer-pool-v0.1.schema.json`` before
+``experiments/free_compute_router.py`` can select it under
+``config/compute-policy.json``. The canonical layer boundary is documented in
+``docs/architecture/FREE_RESOURCE_MESH_COMPUTE_BRIDGE.md``. The planner must
+never become a second execution router or infer concrete CPU/RAM/GPU capacity
+from catalog metadata.
 """
 from __future__ import annotations
 
@@ -16,6 +26,11 @@ from typing import Any
 
 REGISTRY_VERSION = 1
 TASK_VERSION = 1
+DISCOVERY_CONTRACT = "schemas/resource-offer-registry-v0.1.schema.json"
+RUNTIME_CONTRACT = "schemas/compute-offer-pool-v0.1.schema.json"
+RUNTIME_ROUTER = "experiments/free_compute_router.py"
+REPOSITORY_COMPUTE_POLICY = "config/compute-policy.json"
+BOUNDARY_DOC = "docs/architecture/FREE_RESOURCE_MESH_COMPUTE_BRIDGE.md"
 
 
 def _require(cond: bool, msg: str) -> None:
@@ -156,6 +171,16 @@ def plan(registry: dict[str, Any], task: dict[str, Any], limit: int, today: dt.d
             "repo_write_authority": False,
             "merge_authority": False,
             "fresh_external_evidence_required": True,
+        },
+        "runtime_materialization": {
+            "required_before_execution": True,
+            "planner_output_is_executable_compute_offer": False,
+            "boundary_doc": BOUNDARY_DOC,
+            "discovery_contract": DISCOVERY_CONTRACT,
+            "runtime_contract": RUNTIME_CONTRACT,
+            "runtime_router": RUNTIME_ROUTER,
+            "repository_compute_policy": REPOSITORY_COMPUTE_POLICY,
+            "rule": "materialize live provider capacity before runtime routing; discovery metadata cannot grant execution capacity or financial authority",
         },
         "selected": candidates[:limit],
         "rejected": rejected,
