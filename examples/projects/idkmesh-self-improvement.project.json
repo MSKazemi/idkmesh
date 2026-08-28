@@ -1,0 +1,88 @@
+{
+  "schema_version": "0.1",
+  "id": "project.idkmesh-self-improvement",
+  "version": "0.1.0",
+  "name": "IDKMesh improving IDKMesh",
+  "description": "Reference project that uses IDKMesh Core and the software-engineering DomainPack to improve this repository while preserving independent verification and protected human integration.",
+  "core_compatibility": {
+    "core_api_version": "0.1",
+    "work_unit_schema_version": "0.2"
+  },
+  "roots": [
+    {
+      "id": "repository",
+      "kind": "repository",
+      "uri": ".",
+      "writable": true
+    },
+    {
+      "id": "results",
+      "kind": "artifact",
+      "uri": "results/",
+      "writable": true
+    }
+  ],
+  "goal_entrypoints": [
+    "GOALS.md",
+    "ROADMAP.md",
+    "docs/WHAT_IS_IDKMESH.md"
+  ],
+  "domain_packs": [
+    {
+      "id": "domain.software-engineering",
+      "version": "0.1.0",
+      "path": "examples/domain-packs/software-engineering-v0.1.domain-pack.json"
+    }
+  ],
+  "allowed_work_unit_kinds": [
+    "coding",
+    "testing",
+    "review",
+    "benchmarking",
+    "documentation",
+    "research",
+    "integration"
+  ],
+  "verification": {
+    "default_policy_ref": "software.code-change",
+    "minimum_independent_verifiers": 1,
+    "human_integration_required": true
+  },
+  "risk_policy": {
+    "allowed_risk_classes": ["low", "medium", "high"],
+    "maximum_autonomous_risk": "low"
+  },
+  "integration_policy": {
+    "mode": "protected_pr",
+    "target_branch": "main",
+    "automatic_merge_allowed": false,
+    "human_decision_required": true
+  },
+  "governance": {
+    "owners": ["role:maintainer"],
+    "reviewers": ["role:independent-reviewer"],
+    "decision_refs": ["DECISIONS.md", "GOVERNANCE.md", "CONSTITUTION.md"]
+  },
+  "metrics": {
+    "primary": "verified_useful_work_per_human_minute",
+    "secondary": ["verification_latency", "replay_success", "review_queue_pressure"]
+  },
+  "worker_constraints": {
+    "required_capabilities": ["repository-read"],
+    "forbidden_capabilities": ["repository-merge-authority", "governance-mutation-authority"]
+  },
+  "storage": {
+    "artifact_root": "results/artifacts/",
+    "result_root": "results/",
+    "provenance_root": "results/provenance/"
+  },
+  "enabled_adapters": [
+    "software.repository",
+    "software.metadata-verifier",
+    "software.sandbox-worker"
+  ],
+  "metadata": {
+    "reference_project": true,
+    "authority_note": "Project configuration may narrow execution and verification policy but does not grant merge, approval, or governance authority."
+  }
+}
