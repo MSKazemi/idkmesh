@@ -44,6 +44,8 @@ class IDKGraphObservatoryTests(unittest.TestCase):
 
         self.assertEqual(observatory["finding_counts"]["by_severity"].get("error", 0), 0)
         self.assertEqual(observatory["finding_counts"]["by_severity"].get("warning", 0), 0)
+        self.assertEqual(observatory["residual_health"]["orphan_document_candidates"], 0)
+        self.assertEqual(observatory["residual_health"]["accepted_decisions_without_document_link"], 0)
         self.assertEqual(observatory["research_hypotheses"], [])
         self.assertEqual(observatory["execution"]["work_units"], 1)
         self.assertFalse(observatory["execution"]["cycle_detected"])
@@ -109,6 +111,8 @@ class IDKGraphObservatoryTests(unittest.TestCase):
         self.assertIn("## Research hypotheses", report)
         self.assertIn("missing_markdown_file", report)
         self.assertIn("missing_markdown_anchor", report)
+        self.assertIn("Orphan document candidates", report)
+        self.assertIn("Accepted decisions without document link", report)
         self.assertIn("None are emitted automatically", report)
 
     def test_contract_versions_and_authority_are_explicit(self) -> None:
@@ -122,6 +126,7 @@ class IDKGraphObservatoryTests(unittest.TestCase):
         self.assertTrue(observatory["contracts"]["t2_navigation"])
         self.assertTrue(observatory["contracts"]["t3_repository_mapping"])
         self.assertTrue(observatory["contracts"]["t4_executable_cycles"])
+        self.assertTrue(observatory["contracts"]["p0_residual_health"])
         self.assertEqual(
             observatory["authority"],
             {
