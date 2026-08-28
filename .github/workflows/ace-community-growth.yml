@@ -26,7 +26,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Update ACE Growth Ledger
-        uses: actions/github-script@v8
+        uses: actions/github-script@v7
         with:
           script: |
             const owner = context.repo.owner;
@@ -108,35 +108,36 @@ jobs:
             else if (state.credit >= 8) mode = 'GROW';
             else if (state.credit >= 2) mode = 'EXPLORE';
 
-            const sorted = Object.entries(state.counts)
-              .sort((a,b) => b[1] - a[1])
+            const sortedRows = Object.entries(state.counts)
+              .sort((a, b) => b[1] - a[1])
               .slice(0, 12)
-              .map(([k,v]) => `| ${k} | ${v} |`)
-              .join('\n');
+              .map(([k, v]) => `| ${k} | ${v} |`);
 
-            const body = `# ACE Community Growth Ledger
-
-This issue is maintained by the experimental [Autocatalytic Community Evolution](../blob/main/COMMUNITY_GROWTH_ENGINE.md) workflow.
-
-**Mode:** ${mode}  
-**Reproductive credit:** ${state.credit.toFixed(3)}  
-**Review-load proxy:** ${state.review_load.toFixed(2)}  
-**Capacity multiplier:** ${capacity.toFixed(3)}  
-**Last event:** \`${type}\`  
-**Last credit increment:** ${deltaCredit.toFixed(3)}  
-**Updated:** ${state.updated_at}
-
-The objective is not maximum activity. ACE aims to increase **verified useful descendants per unit of scarce human attention** while reducing reproduction pressure when review capacity becomes constrained.
-
-| Event type | Observed count |
-| --- | ---: |
-${sorted || '| none yet | 0 |'}
-
-> These weights and thresholds are hypotheses. They should be changed only from measured community evidence. Stars, forks, commits, comments, issues, and PR counts are signals—not success objectives.
-
-<!-- ACE_STATE
-${JSON.stringify(state, null, 2)}
-ACE_STATE -->`;
+            const body = [
+              '# ACE Community Growth Ledger',
+              '',
+              'This issue is maintained by the experimental [Autocatalytic Community Evolution](../blob/main/COMMUNITY_GROWTH_ENGINE.md) workflow.',
+              '',
+              `**Mode:** ${mode}  `,
+              `**Reproductive credit:** ${state.credit.toFixed(3)}  `,
+              `**Review-load proxy:** ${state.review_load.toFixed(2)}  `,
+              `**Capacity multiplier:** ${capacity.toFixed(3)}  `,
+              `**Last event:** \`${type}\`  `,
+              `**Last credit increment:** ${deltaCredit.toFixed(3)}  `,
+              `**Updated:** ${state.updated_at}`,
+              '',
+              'The objective is not maximum activity. ACE aims to increase **verified useful descendants per unit of scarce human attention** while reducing reproduction pressure when review capacity becomes constrained.',
+              '',
+              '| Event type | Observed count |',
+              '| --- | ---: |',
+              ...(sortedRows.length ? sortedRows : ['| none yet | 0 |']),
+              '',
+              '> These weights and thresholds are hypotheses. They should be changed only from measured community evidence. Stars, forks, commits, comments, issues, and PR counts are signals—not success objectives.',
+              '',
+              '<!-- ACE_STATE',
+              JSON.stringify(state, null, 2),
+              'ACE_STATE -->'
+            ].join('\n');
 
             if (ledger) {
               await github.rest.issues.update({ owner, repo, issue_number: ledger.number, body });
@@ -154,33 +155,37 @@ ACE_STATE -->`;
                 const { data: existing } = await github.rest.issues.listForRepo({
                   owner, repo, state: 'all', per_page: 100
                 });
-                const alreadySpawned = existing.some(i => !i.pull_request && (i.body || '').includes(marker));
+                const alreadySpawned = existing.some(
+                  i => !i.pull_request && (i.body || '').includes(marker)
+                );
 
                 if (!alreadySpawned) {
-                  const seedBody = `## Growth Seed: reproduce, challenge, or extend PR #${pr.number}
+                  const seedBody = [
+                    `## Growth Seed: reproduce, challenge, or extend PR #${pr.number}`,
+                    '',
+                    'A useful contribution should make the next useful contribution easier. This seed was created by ACE because the merged PR was explicitly labelled `growth:spawn`.',
+                    '',
+                    'Choose one bounded path:',
+                    '',
+                    '- **Reproduce:** independently verify the result and document what you observe.',
+                    '- **Challenge:** try to falsify an assumption, test an edge case, or find a regression.',
+                    '- **Extend:** propose one small, independently reviewable next step.',
+                    '- **Explain:** turn the result into a newcomer-legible example or tutorial.',
+                    '',
+                    '### Acceptance principle',
+                    '',
+                    'Return evidence, not only an opinion: a test, reproduction log, benchmark, patch, documentation improvement, threat model, or other inspectable artifact.',
+                    '',
+                    '### Parent',
+                    '',
+                    `- PR: #${pr.number} — ${pr.title}`,
+                    `- ${marker}`,
+                    '',
+                    '### Community impact',
+                    '',
+                    'Keep the task bounded enough that a new contributor can understand what success means without private maintainer guidance.'
+                  ].join('\n');
 
-A useful contribution should make the next useful contribution easier. This seed was created by ACE because the merged PR was explicitly labelled \`growth:spawn\`.
-
-Choose one bounded path:
-
-- **Reproduce:** independently verify the result and document what you observe.
-- **Challenge:** try to falsify an assumption, test an edge case, or find a regression.
-- **Extend:** propose one small, independently reviewable next step.
-- **Explain:** turn the result into a newcomer-legible example or tutorial.
-
-### Acceptance principle
-
-Return evidence, not only an opinion: a test, reproduction log, benchmark, patch, documentation improvement, threat model, or other inspectable artifact.
-
-### Parent
-
-- PR: #${pr.number} — ${pr.title}
-- ${marker}
-
-### Community impact
-
-Keep the task bounded enough that a new contributor can understand what success means without private maintainer guidance.
-`;
                   await github.rest.issues.create({
                     owner,
                     repo,
