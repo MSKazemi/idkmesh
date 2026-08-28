@@ -1,0 +1,11 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Read the contributor guide
+    url: https://github.com/MSKazemi/idkmesh/blob/main/CONTRIBUTING.md
+    about: Start here if you want to contribute but are unsure which issue type to use.
+  - name: Community and participation guide
+    url: https://github.com/MSKazemi/idkmesh/blob/main/COMMUNITY.md
+    about: Learn how IDKMesh approaches onboarding, roles, leadership, and community-first development.
+  - name: Security reporting
+    url: https://github.com/MSKazemi/idkmesh/blob/main/SECURITY.md
+    about: Do not disclose potential security vulnerabilities in public issues.

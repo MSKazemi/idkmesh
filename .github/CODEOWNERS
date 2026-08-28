@@ -1,0 +1,4 @@
+# Bootstrap ownership. As reviewers and subprojects emerge, replace broad ownership
+# with scoped ownership so the project does not depend on one person.
+
+* @MSKazemi
