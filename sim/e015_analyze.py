@@ -57,6 +57,45 @@ def effective_n_balanced(measured_false_accept: float, measured_false_reject: fl
     return effective_n(balanced, acc, 0.5, nmax=nmax)
 
 
+def effective_n_weighted(measured_false_accept: float, measured_false_reject: float,
+                         acc: float, false_accept_cost: float = 1.0,
+                         nmax: int = 201) -> float:
+    """Cost-weighted effective panel size.
+
+    `false_accept_cost` is how many false rejects one false accept is worth. For
+    IDKMesh the asymmetry is real: merging an unsafe patch is more expensive than
+    asking a contributor to resubmit. `1.0` reproduces `effective_n_balanced`.
+
+    The weighted error is normalised so that the equal-cost case keeps the same
+    scale as the balanced metric, which keeps every published figure comparable.
+    """
+    w = false_accept_cost
+    weighted = (w * measured_false_accept + measured_false_reject) / (1.0 + w)
+    return effective_n(weighted, acc, 0.5, nmax=nmax)
+
+
+def best_quorum(cells, acc: float, corr: float, verifiers: int,
+                false_accept_cost: float = 1.0):
+    """Quorum maximising cost-weighted evidence for one panel configuration.
+
+    `cells` are analysed records carrying `false_accept` and `false_reject`.
+    Returns `(quorum, n_eff_weighted)` or None when the configuration is absent.
+    """
+    best = None
+    for c in cells:
+        if (c["verifiers"] != verifiers
+                or abs(c["accuracy"] - acc) > 1e-9
+                or abs(c["correlation"] - corr) > 1e-9):
+            continue
+        if c.get("false_reject") is None:
+            continue
+        score = effective_n_weighted(c["false_accept"], c["false_reject"],
+                                     acc, false_accept_cost)
+        if best is None or score > best[1]:
+            best = (c["quorum"], score)
+    return best
+
+
 def effective_n(measured_err: float, acc: float, quorum: float,
                 nmax: int = 201) -> float:
     """Smallest independent panel size reproducing `measured_err`.
