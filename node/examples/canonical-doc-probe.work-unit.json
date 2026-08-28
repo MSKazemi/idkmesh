@@ -1,0 +1,109 @@
+{
+  "schema_version": "0.1",
+  "id": "node/canonical-doc-probe",
+  "version": 1,
+  "kind": "documentation",
+  "objective": "Create one disposable documentation candidate inside the local IDKMesh sandbox to verify the canonical worker contract.",
+  "context": {
+    "summary": "This is a local runtime acceptance fixture. The produced patch is unverified and must not be merged automatically.",
+    "references": [
+      "schemas/work-unit-v0.1.schema.json",
+      "schemas/result-manifest-v0.1.schema.json",
+      "node/README.md"
+    ],
+    "max_context_bytes": 32768
+  },
+  "inputs": [
+    {
+      "id": "source",
+      "type": "git_ref",
+      "locator": "https://github.com/MSKazemi/idkmesh.git",
+      "digest": "git:274e564c8554f5336cca02f0f28e7a8f712a6f6a"
+    }
+  ],
+  "outputs": [
+    {
+      "id": "candidate-patch",
+      "type": "patch",
+      "description": "Unverified candidate patch captured from the local sandbox.",
+      "media_type": "text/x-diff"
+    }
+  ],
+  "dependencies": [],
+  "constraints": {
+    "allowed_paths": ["docs/"],
+    "forbidden_paths": [".github/", "schemas/", "SECURITY.md"],
+    "policies": [
+      "No network access",
+      "No secrets",
+      "Worker completion is not acceptance"
+    ]
+  },
+  "uncertainty": [],
+  "permissions": {
+    "network": "none",
+    "network_allowlist": [],
+    "filesystem_write": ["docs/"],
+    "secrets": [],
+    "process_execution": true
+  },
+  "validators": [
+    {
+      "id": "schema",
+      "type": "schema",
+      "required": true,
+      "description": "Validate the emitted worker ResultManifest v0.1."
+    },
+    {
+      "id": "review",
+      "type": "review",
+      "required": true,
+      "description": "A separate reviewer decides whether the candidate is useful."
+    }
+  ],
+  "evidence_requirements": [
+    {
+      "type": "artifact_hash",
+      "required": true,
+      "description": "Hash the captured candidate patch."
+    },
+    {
+      "type": "test_output",
+      "required": true,
+      "description": "Retain worker stdout/stderr and the schema-valid ResultManifest."
+    }
+  ],
+  "budget": {
+    "wall_seconds": 60,
+    "compute_units": 0.1,
+    "human_minutes": 2,
+    "tokens": 0
+  },
+  "provenance": {
+    "created_by": "IDKMesh interoperability/runtime integration",
+    "creator_type": "hybrid",
+    "source": "Issue #17 / PR runtime integration",
+    "parent_work_unit_ids": []
+  },
+  "failure_semantics": {
+    "retryable": false,
+    "max_attempts": 1,
+    "on_failure": "escalate"
+  },
+  "extensions": {
+    "org.idkmesh.execution.docker": {
+      "image": "python:3.12-alpine",
+      "command": [
+        "python",
+        "-c",
+        "from pathlib import Path; Path('docs/idkmesh-node-probe.md').write_text('# IDKMesh node probe\\n\\nCandidate generated inside the local sandbox.\\n')"
+      ],
+      "timeout_seconds": 30,
+      "cpus": 1.0,
+      "memory_mb": 256,
+      "pids_limit": 64,
+      "max_patch_bytes": 1000000,
+      "max_log_bytes": 262144
+    }
+  }
+}
