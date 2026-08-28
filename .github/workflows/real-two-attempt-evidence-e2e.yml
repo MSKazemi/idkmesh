@@ -1,0 +1,149 @@
+name: Real Two-Attempt Evidence E2E
+
+on:
+  pull_request:
+    paths:
+      - "tools/real_two_attempt_evidence.py"
+      - "tools/real_node_verifier_e2e.py"
+      - "experiments/run_evidence_report.py"
+      - "experiments/two_attempt_orchestrator.py"
+      - ".github/workflows/real-two-attempt-evidence-e2e.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  real-two-attempt-evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out evaluator-owned current tree
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          path: evaluator
+          persist-credentials: false
+
+      - name: Check out exact accepted node candidate
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: 520ad2c9aa5825476de4957da4702d6823f4edb3
+          path: candidate
+          persist-credentials: false
+
+      - name: Verify exact worker producer identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C candidate rev-parse HEAD)" = "520ad2c9aa5825476de4957da4702d6823f4edb3"
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12"
+
+      - name: Install verifier dependency only
+        run: python -m pip install "jsonschema>=4.23,<5"
+
+      - name: Preload accepted runtime image
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker pull python:3.12-alpine
+          docker image inspect python:3.12-alpine
+
+      - name: Generate and independently verify real attempt 1
+        shell: bash
+        run: |
+          set -euo pipefail
+          python evaluator/tools/real_node_verifier_e2e.py \
+            --candidate candidate \
+            --output-root results/orchestration/real-two-attempt/attempt-001
+
+      - name: Generate and independently verify real attempt 2
+        shell: bash
+        run: |
+          set -euo pipefail
+          python evaluator/tools/real_node_verifier_e2e.py \
+            --candidate candidate \
+            --output-root results/orchestration/real-two-attempt/attempt-002
+
+      - name: Compose canonical run record and non-selecting Evidence Report
+        working-directory: evaluator
+        shell: bash
+        run: |
+          set -euo pipefail
+          python tools/real_two_attempt_evidence.py compose \
+            --attempt-one results/orchestration/real-two-attempt/attempt-001 \
+            --attempt-two results/orchestration/real-two-attempt/attempt-002 \
+            --run-id real-node-two-attempt-520ad2c \
+            --run-output results/orchestration/real-two-attempt/run-record.json \
+            --report-json results/orchestration/real-two-attempt/evidence-report.json \
+            --report-markdown results/orchestration/real-two-attempt/evidence-report.md
+
+      - name: Replay Evidence Report from saved run metadata
+        working-directory: evaluator
+        shell: bash
+        run: |
+          set -euo pipefail
+          python tools/real_two_attempt_evidence.py replay-check \
+            --run-record results/orchestration/real-two-attempt/run-record.json \
+            --report-json results/orchestration/real-two-attempt/evidence-report.json
+
+      - name: Assert real multi-attempt evidence invariants
+        working-directory: evaluator
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          root = Path("results/orchestration/real-two-attempt")
+          run = json.loads((root / "run-record.json").read_text())
+          report = json.loads((root / "evidence-report.json").read_text())
+
+          assert run["kind"] == "idkmesh-two-attempt-run"
+          assert run["run_state"] == "completed"
+          assert run["summary"]["attempt_count"] == 2
+          assert run["summary"]["control_failures"] == 0
+          assert len(run["attempts"]) == 2
+          assert all(a["state"] == "verified" for a in run["attempts"])
+          assert all(a["verification"]["recommendation"] == "accept_candidate" for a in run["attempts"])
+          assert run["authority"] == {
+              "canonical_state_write": False,
+              "git_push": False,
+              "merge": False,
+              "automatic_candidate_selection": False,
+          }
+          assert report["summary"]["attempt_count"] == 2
+          assert report["summary"]["supported"] == 2
+          assert report["summary"]["control_errors"] == 0
+          assert report["human_decision"] == {
+              "status": "pending",
+              "selected_attempt_id": None,
+              "integration_authority": "external_human_or_governance",
+          }
+          print("OK: two real isolated worker attempts were independently verified, aggregated without selection, and replayed from saved run metadata")
+          PY
+
+      - name: Publish evidence summary
+        if: always()
+        working-directory: evaluator
+        shell: bash
+        run: |
+          set -euo pipefail
+          REPORT="results/orchestration/real-two-attempt/evidence-report.md"
+          if test -f "$REPORT"; then
+            cat "$REPORT" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Real two-attempt Evidence Report was not produced." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+# Authority and trust boundary:
+# - both worker executions use the exact runtime-accepted PR #91 SHA;
+# - worker and evaluator are separate checkouts with no persisted GitHub credentials;
+# - each candidate is independently verified through the current canonical metadata-only evaluator;
+# - the bridge only summarizes already-bound ResultManifest/VerificationResult evidence;
+# - the Evidence Report deliberately leaves human integration pending and selects no candidate;
+# - workflow permission is read-only and grants no push/approve/merge authority.
