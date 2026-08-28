@@ -40,3 +40,11 @@ jobs:
         run: |
           python -m randomness_lab.r1_sweep --tasks 15 --trials 2 --worker-correlations 0,1 --verifier-correlations 0.5 --quality-penalties 0,0.5 --swarm-sizes 2 --seed 42 --output /tmp/r1-sweep.json
           python -m json.tool /tmp/r1-sweep.json > /dev/null
+      - name: Smoke-test churn scheduling benchmark
+        run: |
+          python -m randomness_lab.scheduling --workers 20 --steps 20 --seed 42 --output /tmp/scheduling.json
+          python -m json.tool /tmp/scheduling.json > /dev/null
+
+# Security note: randomness-lab CI executes only repository-owned synthetic
+# simulators. It does not execute Work Unit/task commands, use secrets, or
+# require external network access for experiment execution.
