@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-"""Minimal IDKMesh Phase 0 experiment harness.
+"""Minimal IDKMesh Phase 0 experiment and contract harness.
 
-The `validate` command checks schemas and fixtures only. The `smoke` command
+The `validate` command checks schemas, Work Unit coverage, worker ResultManifest
+contracts, and independent Evidence Report contracts. The `smoke` command
 executes only the built-in deterministic_smoke runner and never executes
 commands supplied by a manifest.
 """
@@ -19,13 +20,14 @@ from typing import Any
 
 from jsonschema import Draft202012Validator, FormatChecker
 
-HARNESS_VERSION = "0.2"
+HARNESS_VERSION = "0.3"
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_DIR = ROOT / "schemas"
 WORK_UNIT_SCHEMA = SCHEMA_DIR / "work-unit-v0.2.schema.json"
 MANIFEST_SCHEMA = SCHEMA_DIR / "experiment-manifest-v0.1.schema.json"
 RESULT_SCHEMA = SCHEMA_DIR / "experiment-result-v0.1.schema.json"
 WORKER_RESULT_SCHEMA = SCHEMA_DIR / "result-manifest-v0.1.schema.json"
+EVIDENCE_REPORT_SCHEMA = SCHEMA_DIR / "evidence-report-v0.1.schema.json"
 
 REQUIRED_WORK_UNIT_KINDS = {
     "coding",
@@ -169,12 +171,105 @@ def validate_worker_result_contract(
     return worker_result
 
 
+def validate_evidence_report_contract(
+    evidence_report_path: Path,
+    worker_result: dict[str, Any],
+) -> dict[str, Any]:
+    report = load_json(evidence_report_path)
+    validate_instance(report, EVIDENCE_REPORT_SCHEMA, str(evidence_report_path))
+
+    if report["work_unit_id"] != worker_result["work_unit_id"]:
+        raise HarnessError("Evidence Report work_unit_id does not match the worker ResultManifest")
+    if report["work_unit_version"] != worker_result["work_unit_version"]:
+        raise HarnessError("Evidence Report work_unit_version does not match the worker ResultManifest")
+
+    result_ref = report["result_manifest"]
+    if result_ref["id"] != worker_result["id"]:
+        raise HarnessError("Evidence Report references a different ResultManifest id")
+    if result_ref["worker_id"] != worker_result["worker"]["id"]:
+        raise HarnessError("Evidence Report result_manifest.worker_id does not match the worker")
+    expected_result_digest = canonical_digest(worker_result)
+    if result_ref["digest"] != expected_result_digest:
+        raise HarnessError(
+            "Evidence Report ResultManifest digest mismatch: "
+            f"expected {expected_result_digest}, got {result_ref['digest']}"
+        )
+
+    expected_validators = set(worker_result["verification_request"]["expected_validator_ids"])
+    if report["validator_id"] not in expected_validators:
+        raise HarnessError(
+            f"Evidence Report validator_id {report['validator_id']!r} was not requested "
+            "by the worker ResultManifest"
+        )
+
+    worker_artifacts = {
+        artifact["id"]: artifact["digest"]
+        for artifact in worker_result["produced_artifacts"]
+    }
+    for artifact in report["evaluated_artifacts"]:
+        artifact_id = artifact["id"]
+        if artifact_id not in worker_artifacts:
+            raise HarnessError(
+                f"Evidence Report evaluates unknown worker artifact {artifact_id!r}"
+            )
+        if artifact["digest"] != worker_artifacts[artifact_id]:
+            raise HarnessError(
+                f"Evidence Report digest mismatch for worker artifact {artifact_id!r}"
+            )
+
+    evidence_artifact_ids = {artifact["id"] for artifact in report["evidence_artifacts"]}
+    for check in report["checks"]:
+        unknown = sorted(set(check.get("evidence_artifact_ids", [])) - evidence_artifact_ids)
+        if unknown:
+            raise HarnessError(
+                f"Evidence check {check['id']!r} references unknown evidence artifact(s): "
+                + ", ".join(unknown)
+            )
+
+    if report["independence"]["relationship"] == "independent":
+        if report["verifier"]["id"] == worker_result["worker"]["id"]:
+            raise HarnessError(
+                "Evidence Report claims independence but verifier.id equals worker.id"
+            )
+
+    if report["provenance"]["work_unit_digest"] != worker_result["provenance"]["work_unit_digest"]:
+        raise HarnessError("Evidence Report work_unit_digest does not match worker provenance")
+
+    if report["verdict"] == "supports_candidate":
+        failed_required = [
+            check["id"]
+            for check in report["checks"]
+            if check["required"] and check["status"] != "pass"
+        ]
+        if failed_required:
+            raise HarnessError(
+                "Evidence Report supports_candidate despite required check(s) not passing: "
+                + ", ".join(failed_required)
+            )
+
+    return report
+
+
+def assert_invalid_evidence_contract(
+    evidence_report_path: Path,
+    worker_result: dict[str, Any],
+) -> None:
+    try:
+        validate_evidence_report_contract(evidence_report_path, worker_result)
+    except HarnessError:
+        return
+    raise HarnessError(
+        f"{evidence_report_path} was expected to violate Evidence Report semantic rules"
+    )
+
+
 def cmd_validate(args: argparse.Namespace) -> int:
     for schema_path in (
         WORK_UNIT_SCHEMA,
         MANIFEST_SCHEMA,
         RESULT_SCHEMA,
         WORKER_RESULT_SCHEMA,
+        EVIDENCE_REPORT_SCHEMA,
     ):
         validator_for(schema_path)
 
@@ -192,7 +287,7 @@ def cmd_validate(args: argparse.Namespace) -> int:
     )
 
     worker_result_path = resolve_repo_path(args.worker_result)
-    validate_worker_result_contract(worker_result_path, work_units)
+    worker_result = validate_worker_result_contract(worker_result_path, work_units)
 
     invalid_worker_result_path = resolve_repo_path(args.invalid_worker_result)
     invalid_worker_result = load_json(invalid_worker_result_path)
@@ -202,6 +297,12 @@ def cmd_validate(args: argparse.Namespace) -> int:
         str(invalid_worker_result_path),
     )
 
+    evidence_report_path = resolve_repo_path(args.evidence_report)
+    validate_evidence_report_contract(evidence_report_path, worker_result)
+
+    invalid_evidence_report_path = resolve_repo_path(args.invalid_evidence_report)
+    assert_invalid_evidence_contract(invalid_evidence_report_path, worker_result)
+
     if args.result:
         result_path = resolve_repo_path(args.result)
         result = load_json(result_path)
@@ -209,8 +310,9 @@ def cmd_validate(args: argparse.Namespace) -> int:
 
     print(
         f"OK: schemas valid; WorkUnit v0.2 contract coverage enforced; manifest {manifest['id']}, "
-        f"{len(manifest['work_units'])} Work Unit(s), and worker ResultManifest validated; "
-        "negative WorkUnit/security and worker self-acceptance fixtures rejected as expected"
+        f"{len(manifest['work_units'])} Work Unit(s), worker ResultManifest, and independent "
+        "Evidence Report validated; negative WorkUnit/security, worker self-acceptance, and "
+        "verifier self-independence fixtures rejected as expected"
     )
     return 0
 
@@ -337,7 +439,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     validate_parser = subparsers.add_parser(
         "validate",
-        help="Validate schemas, WorkUnit contract coverage, fixtures, and worker ResultManifest contracts.",
+        help="Validate schemas, WorkUnit coverage, worker ResultManifest, and independent Evidence Report contracts.",
     )
     validate_parser.add_argument(
         "--manifest",
@@ -358,6 +460,16 @@ def build_parser() -> argparse.ArgumentParser:
         "--invalid-worker-result",
         default="examples/results/invalid-self-acceptance.result-manifest.json",
         help="Repository-relative fixture that must be rejected by the worker ResultManifest schema.",
+    )
+    validate_parser.add_argument(
+        "--evidence-report",
+        default="examples/results/phase0-smoke.evidence-report.json",
+        help="Repository-relative valid independent Evidence Report fixture.",
+    )
+    validate_parser.add_argument(
+        "--invalid-evidence-report",
+        default="examples/results/invalid-self-verification.evidence-report.json",
+        help="Repository-relative schema-valid Evidence Report that must fail semantic independence checks.",
     )
     validate_parser.add_argument(
         "--result",
