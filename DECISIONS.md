@@ -161,3 +161,55 @@ A working research relationship is:
 **Decision:** Major algorithms, aggregation rules, scheduling methods, and governance mechanisms should be connected to explicit hypotheses, baselines, metrics, and experiments.
 
 **Rationale:** IDKMesh is both a software project and an open scientific experiment. Negative results and rejected mechanisms are valuable project output.
+
+## 2026-08-28 — Use physics as a multiscale model library
+
+**Decision:** Treat statistical mechanics, diffusion, percolation, synchronization, transport, control theory, renormalization, and thermodynamics of information as a library of candidate models for specific IDKMesh behaviors rather than as one unified physical theory of the platform.
+
+**Rationale:** These fields address different real properties of a large heterogeneous mesh: exploration, propagation, connectivity, cadence, congestion, feedback stability, scale, and energy.
+
+**Consequence:** Each physical model must identify its IDKMesh variables, baseline, measurable prediction, and falsification experiment before affecting production architecture. See `SCIENTIFIC_FOUNDATIONS.md`.
+
+## 2026-08-28 — Prefer partial/local coordination over global synchronization
+
+**Decision:** Do not require global barriers or full synchronization across arbitrary volunteer workers.
+
+**Rationale:** Heterogeneous Internet-connected machines have different latency, availability, and natural operating cadence. Full synchronization converts slow or disconnected nodes into global bottlenecks.
+
+**Consequence:** Study asynchronous execution, local synchronization, compute islands, eventual consistency, and bounded integration checkpoints. Kuramoto-style synchronization models may be used as research tools, not as the runtime protocol.
+
+## 2026-08-28 — Quantum methods are optional backends, not the project foundation
+
+**Decision:** Ordinary IDKMesh laptops are classical computers and should not be described as a quantum computer. Quantum ideas enter through testable quantum-inspired formulations or optional future hardware integrations.
+
+**Rationale:** Classical distribution does not create superposition, entanglement, or quantum speedup.
+
+**Consequence:** QUBO formulations may be compared across classical heuristics and future quantum annealers. Tensor-network or other quantum-inspired techniques remain later research until a concrete bottleneck justifies them.
+
+## 2026-08-28 — Cryptographic provenance precedes blockchain
+
+**Decision:** Implement artifact hashing, signatures, signed attestations, and an append-only transparency log before considering blockchain as core infrastructure.
+
+**Rationale:** IDKMesh needs provenance and auditability early, but those properties do not inherently require cryptocurrency or general-purpose blockchain consensus. Transparency-log systems demonstrate a simpler verifiable approach for software-supply-chain metadata.
+
+**Consequence:** The initial provenance path is:
+
+`content hash -> signature -> attestation -> transparency log -> independent monitoring`.
+
+Blockchain becomes a decision point only when multiple independent operators need a shared ledger or economic settlement that simpler mechanisms cannot satisfy. See `BLOCKCHAIN_STRATEGY.md`.
+
+## 2026-08-28 — Blockchain is not a correctness oracle
+
+**Decision:** Never treat an on-chain record or smart contract as proof that an AI result, code contribution, test, or scientific claim is correct.
+
+**Rationale:** Ledgers can preserve signed claims and settlement history, but truth about external computation requires tests, independent reproduction, trusted measurement, or other verification mechanisms.
+
+**Consequence:** Verification remains a more fundamental subsystem than blockchain. Any future smart-contract reward mechanism must consume externally produced verification evidence.
+
+## 2026-08-28 — Earn scale through staged experiments
+
+**Decision:** Use `ROADMAP.md` as the current staged research direction: experimental kernel -> single-machine multi-agent tests -> 3–10-node local mesh -> 10–20-laptop verification swarm -> decentralized/churn tests -> adversarial security -> hierarchical 100+ node mesh -> optional distributed learning -> cross-organization federation -> optional economy -> Internet-scale research.
+
+**Rationale:** This sequence tests the central hypotheses at the smallest useful scale while preserving a path to the long-term vision.
+
+**Consequence:** The immediate engineering backlog begins with Work Unit, Result Manifest, and Goal Graph schemas, a discrete-event simulator, a metrics harness, and baseline scheduling/aggregation algorithms rather than a large production network.
