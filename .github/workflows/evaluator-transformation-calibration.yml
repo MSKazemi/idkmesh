@@ -8,8 +8,10 @@ on:
       - "experiments/substring_patch_verifier.py"
       - "experiments/transformation_patch_verifier.py"
       - "tools/task001_evaluator_calibration_v04.py"
+      - "tools/task001_evaluator_calibration_v04_ci.py"
       - "verification/fixtures/task001-transformation-calibration-evaluator-plan-v0.4.json"
       - "benchmarks/phase-b2-first-five/work-units/task-001-cohort-path-boundary.work-unit.json"
+      - "benchmarks/phase-b2-first-five/cohort.json"
       - ".github/workflows/evaluator-transformation-calibration.yml"
   push:
     branches: [main]
@@ -19,8 +21,10 @@ on:
       - "experiments/substring_patch_verifier.py"
       - "experiments/transformation_patch_verifier.py"
       - "tools/task001_evaluator_calibration_v04.py"
+      - "tools/task001_evaluator_calibration_v04_ci.py"
       - "verification/fixtures/task001-transformation-calibration-evaluator-plan-v0.4.json"
       - "benchmarks/phase-b2-first-five/work-units/task-001-cohort-path-boundary.work-unit.json"
+      - "benchmarks/phase-b2-first-five/cohort.json"
       - ".github/workflows/evaluator-transformation-calibration.yml"
 
 permissions:
@@ -66,12 +70,13 @@ jobs:
           python -m py_compile \
             experiments/evaluator_plan_runner.py \
             experiments/transformation_patch_verifier.py \
-            tools/task001_evaluator_calibration_v04.py
+            tools/task001_evaluator_calibration_v04.py \
+            tools/task001_evaluator_calibration_v04_ci.py
 
       - name: Calibrate straightforward fix against inert decoy
         working-directory: evaluator
         run: |
-          python tools/task001_evaluator_calibration_v04.py \
+          python tools/task001_evaluator_calibration_v04_ci.py \
             --source ../source \
             --output-root results/verification/task001-v04-calibration
 
@@ -102,6 +107,7 @@ jobs:
 # - v0.2 and v0.3 meanings remain unchanged; this is a new v0.4 contract;
 # - the v0.4 metadata-only verifier parses candidate artifacts and never executes candidate code;
 # - behavioral CLI execution is a separate explicit calibration channel over an isolated checkout of public frozen source;
+# - the benchmark cohort JSON fixture comes from the evaluator-owned control checkout because the exact historical source predates that later cohort index; the wrapper verifies the burned definition digest before copying it outside the source checkout;
 # - the straightforward and decoy candidates are post-burn calibration objects, not scored benchmark outcomes;
 # - the burned cohort/WorkUnit/old EvaluatorPlans are never rewritten;
 # - workflow permissions are read-only, checkout credentials are not persisted, and no secrets are used;
