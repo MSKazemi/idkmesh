@@ -34,9 +34,11 @@ IDKMesh is deliberately not pretending that its final architecture is known. The
 - [`VISION.md`](VISION.md) — what the project is trying to discover and why.
 - [`ARCHITECTURE.md`](ARCHITECTURE.md) — initial system model and architectural directions.
 - [`MATHEMATICAL_FOUNDATIONS.md`](MATHEMATICAL_FOUNDATIONS.md) — candidate mathematical formulations and algorithms.
+- [`SCIENTIFIC_FOUNDATIONS.md`](SCIENTIFIC_FOUNDATIONS.md) — physics, complex-systems, thermodynamic, and quantum-inspired ideas mapped to testable IDKMesh experiments.
+- [`BLOCKCHAIN_STRATEGY.md`](BLOCKCHAIN_STRATEGY.md) — where blockchain/shared ledgers can help, where they cannot, and the staged trust/provenance strategy.
 - [`RESEARCH_QUESTIONS.md`](RESEARCH_QUESTIONS.md) — open technical, scientific, social, and governance questions.
 - [`DECISIONS.md`](DECISIONS.md) — durable decision log.
-- [`ROADMAP.md`](ROADMAP.md) — staged research and implementation roadmap.
+- [`ROADMAP.md`](ROADMAP.md) — staged research and implementation roadmap from the experimental kernel through Internet-scale research.
 - [`GOVERNANCE.md`](GOVERNANCE.md) — initial governance model.
 - [`CONTRIBUTING.md`](CONTRIBUTING.md) — how to participate.
 - [`PROJECT_RULES.md`](PROJECT_RULES.md) — repository and project-record rules.
@@ -57,6 +59,10 @@ IDKMesh should be designed around several separations:
 
 **Uncertainty is a first-class state.** Requirements, beliefs, confidence, conflicting hypotheses, and unresolved questions should be represented explicitly rather than hidden.
 
+**Scientific analogies are hypotheses, not evidence.** Ideas from physics, economics, biology, or quantum information must be mapped to variables, baselines, metrics, and falsifiable experiments before becoming architecture.
+
+**Cryptographic provenance comes before blockchain.** Use hashes, signatures, attestations, and transparency logs first; add blockchain only when a real multi-party trust or settlement problem justifies it.
+
 ## Candidate system layers
 
 A long-term IDKMesh system may include:
@@ -69,6 +75,12 @@ A long-term IDKMesh system may include:
 6. **Verification layer** — testing, review, adversarial evaluation, reproducibility, formal checks, consensus where appropriate.
 7. **Governance & incentive layer** — reputation, contribution accounting, dispute resolution, policy evolution, anti-Sybil mechanisms.
 8. **Integration layer** — version control, continuous integration, release engineering, observability, rollback, security and supply-chain controls.
+
+## Recommended starting point
+
+Read [`ROADMAP.md`](ROADMAP.md) and begin with the **experimental kernel**, not the million-node system. The first engineering artifacts are machine-readable Work Unit, Result Manifest, and Goal Graph schemas plus a simulator and common metrics harness.
+
+The first headline scientific experiment then compares a single-agent coding baseline with same-agent replication and a structured, diverse, independently verified agent swarm under comparable resource budgets.
 
 ## Why `IDKMesh`?
 
@@ -92,4 +104,4 @@ Apache License 2.0. See [`LICENSE`](LICENSE).
 
 The project is intentionally early. That means architecture critiques, literature references, mathematical models, simulations, prototypes, benchmarks, governance proposals, documentation, and negative results are all valuable contributions.
 
-Start with [`CONTRIBUTING.md`](CONTRIBUTING.md) and [`RESEARCH_QUESTIONS.md`](RESEARCH_QUESTIONS.md).
+Start with [`CONTRIBUTING.md`](CONTRIBUTING.md), [`ROADMAP.md`](ROADMAP.md), and [`RESEARCH_QUESTIONS.md`](RESEARCH_QUESTIONS.md).
