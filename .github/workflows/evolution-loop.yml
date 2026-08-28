@@ -3,8 +3,13 @@ name: IDKMesh Evolution Loop
 on:
   issues:
     types: [opened, closed, reopened, labeled, unlabeled]
-  pull_request:
+  # Trusted metadata observation. pull_request_target runs the workflow definition
+  # from the default branch; this job never checks out or executes PR-head code.
+  pull_request_target:
     types: [opened, closed, reopened, synchronize, ready_for_review, converted_to_draft]
+  # PR-head event is used only by the token-minimal deterministic test job below.
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review, converted_to_draft]
   pull_request_review:
     types: [submitted, dismissed]
   issue_comment:
@@ -15,21 +20,23 @@ on:
   schedule:
     - cron: '17 5 * * *'
 
-permissions:
-  contents: read
-  issues: read
-  pull-requests: read
-  actions: read
-
-concurrency:
-  group: evolution-observer
-  cancel-in-progress: true
+# No workflow-wide token authority. Each job receives only its explicit minimum.
+permissions: {}
 
 jobs:
   observe:
-    # Run only trusted default-branch observer code. PR text/code is evidence input,
-    # never executable authority for this metadata observer.
-    if: github.actor != 'github-actions[bot]'
+    # Never run the live observer from a pull_request-controlled workflow definition.
+    # On PR activity the observer arrives through pull_request_target, whose YAML and
+    # checked-out implementation both come from the trusted default branch.
+    if: github.event_name != 'pull_request' && github.actor != 'github-actions[bot]'
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: read
+      actions: read
+    concurrency:
+      group: evolution-observer
+      cancel-in-progress: true
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
@@ -60,8 +67,10 @@ jobs:
             kind="workflow_dispatch.manual"
           elif [[ "$EVENT_NAME" == "push" ]]; then
             kind="push.main"
-          elif [[ "$EVENT_NAME" == "pull_request" && "$EVENT_ACTION" == "closed" && "$PR_MERGED" == "true" ]]; then
+          elif [[ "$EVENT_NAME" == "pull_request_target" && "$EVENT_ACTION" == "closed" && "$PR_MERGED" == "true" ]]; then
             kind="pull_request.merged"
+          elif [[ "$EVENT_NAME" == "pull_request_target" ]]; then
+            kind="pull_request.${EVENT_ACTION:-unknown}"
           else
             kind="${EVENT_NAME}.${EVENT_ACTION:-unknown}"
           fi
@@ -107,11 +116,14 @@ jobs:
         run: cat results/evolution/EVOLUTION_REPORT.md >> "$GITHUB_STEP_SUMMARY"
 
   verify-pr-head:
-    # PR-head verification receives no repository token/secrets in the test process.
-    # It verifies only deterministic observer code and policy changes.
+    # Proposed code receives only public-repository contents read authority and no
+    # explicitly exported repository token/secrets. It cannot invoke the live API.
     if: github.event_name == 'pull_request'
     permissions:
       contents: read
+    concurrency:
+      group: evolution-pr-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
