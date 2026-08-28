@@ -1,0 +1,59 @@
+{
+  "experiment": "E014-homeostatic-stigmergy-hybrid",
+  "status": "synthetic-reference-comparison",
+  "source": {
+    "github_actions_run_id": 33182701273,
+    "job_id": 98887690954,
+    "commit": "3c5ba3ee22dfa5b54496edfc0e95b5001b4fec73",
+    "python": "3.11.16"
+  },
+  "parameters": {
+    "seed_start": 1,
+    "seeds": 40,
+    "workers": 24,
+    "epochs": 50
+  },
+  "warning": "Synthetic illustrative simulation; not empirical evidence about real contributors.",
+  "summary": {
+    "aco": {
+      "verified_utility_per_cost": 0.558417772,
+      "duplicate_rate": 0.1550833,
+      "task_coverage": 8.0,
+      "max_selection_share": 0.194395775
+    },
+    "capability": {
+      "verified_utility_per_cost": 0.868955528,
+      "duplicate_rate": 0.42812495,
+      "task_coverage": 4.825,
+      "max_selection_share": 0.383333275
+    },
+    "homeostatic-hybrid": {
+      "verified_utility_per_cost": 0.675350636,
+      "duplicate_rate": 0.279604075,
+      "task_coverage": 7.85,
+      "max_selection_share": 0.25154165
+    }
+  },
+  "relative_to_fixed_aco_percent": {
+    "verified_utility_per_cost": 20.940032689360756,
+    "duplicate_rate": 80.29283294848639,
+    "task_coverage": -1.8750000000000044,
+    "max_selection_share": 29.39666512813872
+  },
+  "relative_to_capability_percent": {
+    "verified_utility_per_cost": -22.28018417071397,
+    "duplicate_rate": -34.69101135077505,
+    "task_coverage": 62.694300518134696,
+    "max_selection_share": -34.38042914484791
+  },
+  "interpretation": {
+    "result": "promising_intermediate_tradeoff",
+    "claim": "The homeostatic hybrid moves from fixed ACO toward capability efficiency while retaining substantially lower duplication and concentration and near-full task coverage.",
+    "limitations": [
+      "It does not dominate capability-only routing on immediate verified utility per cost.",
+      "It does not dominate fixed ACO on duplication or concentration.",
+      "The environment is synthetic and cannot establish causal benefit for real contributors or repositories."
+    ],
+    "decision": "Keep live routing disabled. Advance next to historical repository replay and hybrid sensitivity analysis before advisory shadow mode."
+  }
+}
