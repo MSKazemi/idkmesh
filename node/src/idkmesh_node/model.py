@@ -12,7 +12,7 @@ from jsonschema import Draft202012Validator, FormatChecker
 
 ROOT = Path(__file__).resolve().parents[3]
 SCHEMA_DIR = ROOT / "schemas"
-WORK_UNIT_SCHEMA = SCHEMA_DIR / "work-unit-v0.1.schema.json"
+WORK_UNIT_SCHEMA = SCHEMA_DIR / "work-unit-v0.2.schema.json"
 NODE_BINDING_SCHEMA = SCHEMA_DIR / "node-execution-binding-v0.1.schema.json"
 RESULT_MANIFEST_SCHEMA = SCHEMA_DIR / "result-manifest-v0.1.schema.json"
 NODE_EXTENSION_KEY = "org.idkmesh.node.execution"
@@ -38,6 +38,7 @@ class ExecutionSpec:
     cpus: float
     memory_mb: int
     pids_limit: int
+    capabilities: tuple[str, ...]
 
 
 @dataclass(frozen=True)
@@ -59,7 +60,7 @@ class WorkUnit:
     forbidden_paths: tuple[str, ...]
     write_paths: tuple[str, ...]
     required_validator_ids: tuple[str, ...]
-
+    minimum_independent_verifiers: int
 
 
 def canonical_digest(value: Any) -> str:
@@ -67,13 +68,11 @@ def canonical_digest(value: Any) -> str:
     return "sha256:" + hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
-
 def _load_schema(path: Path) -> dict[str, Any]:
     with path.open("r", encoding="utf-8") as handle:
         schema = json.load(handle)
     Draft202012Validator.check_schema(schema)
     return schema
-
 
 
 def _validate_schema(instance: Any, schema_path: Path, label: str) -> None:
@@ -90,10 +89,8 @@ def _validate_schema(instance: Any, schema_path: Path, label: str) -> None:
     raise WorkUnitError(f"{label} failed schema validation: " + "; ".join(details))
 
 
-
 def validate_result_manifest(instance: Any) -> None:
     _validate_schema(instance, RESULT_MANIFEST_SCHEMA, "ResultManifest")
-
 
 
 def _validate_repo_url(url: Any) -> str:
@@ -112,7 +109,6 @@ def _validate_repo_url(url: Any) -> str:
     return url
 
 
-
 def _validate_path_patterns(patterns: list[str], field: str) -> tuple[str, ...]:
     if not patterns:
         raise WorkUnitError(f"{field} must contain at least one repository-relative path or glob")
@@ -127,6 +123,47 @@ def _validate_path_patterns(patterns: list[str], field: str) -> tuple[str, ...]:
     return tuple(clean)
 
 
+def _enforce_v0_2_policy(data: dict[str, Any], binding: dict[str, Any]) -> None:
+    permissions = data["permissions"]
+    if permissions["network"] != "none":
+        raise WorkUnitError("node v0.1 requires permissions.network='none'")
+    if permissions.get("network_allowlist"):
+        raise WorkUnitError("node v0.1 rejects network_allowlist when network is disabled")
+    if permissions["secrets"]:
+        raise WorkUnitError("node v0.1 does not expose secrets to task containers")
+    if permissions["process_execution"] is not True:
+        raise WorkUnitError("node execution requires permissions.process_execution=true")
+
+    security = data["security"]
+    if security["data_classification"] != "public":
+        raise WorkUnitError("node v0.1 accepts only security.data_classification='public'")
+    if security["minimum_worker_trust"] != "untrusted":
+        raise WorkUnitError("node v0.1 currently satisfies only minimum_worker_trust='untrusted'")
+    if security["risk_class"] != "low":
+        raise WorkUnitError("node v0.1 Docker profile accepts only security.risk_class='low'")
+
+    verification = data["verification_policy"]
+    if verification["independent_from_worker"] is not True:
+        raise WorkUnitError("node v0.1 requires verification_policy.independent_from_worker=true")
+    if verification["minimum_independent_verifiers"] < 1:
+        raise WorkUnitError("node v0.1 requires at least one independent verifier")
+
+    requirements = data["requirements"]
+    provided_capabilities = set(binding["capabilities"])
+    missing_capabilities = sorted(set(requirements["capabilities"]) - provided_capabilities)
+    if missing_capabilities:
+        raise WorkUnitError(
+            "node execution binding is missing required capability/capabilities: "
+            + ", ".join(missing_capabilities)
+        )
+    resources = requirements["resources"]
+    if resources["gpu"] == "required":
+        raise WorkUnitError("node v0.1 Docker profile does not provide a GPU")
+    if float(binding["limits"]["cpus"]) < float(resources["cpu_cores_min"]):
+        raise WorkUnitError("node limits.cpus is below requirements.resources.cpu_cores_min")
+    if int(binding["limits"]["memory_mb"]) < int(resources["memory_mb_min"]):
+        raise WorkUnitError("node limits.memory_mb is below requirements.resources.memory_mb_min")
+
 
 def parse_work_unit(
     data: dict[str, Any],
@@ -140,17 +177,9 @@ def parse_work_unit(
     if binding is None:
         raise WorkUnitError(f"Work Unit must include extensions.{NODE_EXTENSION_KEY}")
     _validate_schema(binding, NODE_BINDING_SCHEMA, "node execution binding")
+    _enforce_v0_2_policy(data, binding)
 
     permissions = data["permissions"]
-    if permissions["network"] != "none":
-        raise WorkUnitError("node v0.1 requires permissions.network='none'")
-    if permissions.get("network_allowlist"):
-        raise WorkUnitError("node v0.1 rejects network_allowlist when network is disabled")
-    if permissions["secrets"]:
-        raise WorkUnitError("node v0.1 does not expose secrets to task containers")
-    if permissions["process_execution"] is not True:
-        raise WorkUnitError("node execution requires permissions.process_execution=true")
-
     allowed_paths = _validate_path_patterns(data["constraints"]["allowed_paths"], "constraints.allowed_paths")
     write_paths = _validate_path_patterns(permissions["filesystem_write"], "permissions.filesystem_write")
     forbidden_paths = tuple(data["constraints"]["forbidden_paths"])
@@ -169,12 +198,9 @@ def parse_work_unit(
     if source_input["type"] != "git_ref":
         raise WorkUnitError("node binding source_input_id must reference an input of type 'git_ref'")
     repo_url = _validate_repo_url(source_input["locator"])
-    digest = source_input.get("digest", "")
-    if not digest.startswith("git-sha1:"):
-        raise WorkUnitError("node v0.1 git_ref input digest must use git-sha1:<40-character-sha>")
-    revision = digest.removeprefix("git-sha1:")
+    revision = binding["source_revision"]
     if not SHA_RE.fullmatch(revision):
-        raise WorkUnitError("node v0.1 git_ref digest must contain a full 40-character Git SHA-1")
+        raise WorkUnitError("node v0.1 source_revision must be a full 40-character Git commit identifier")
 
     container = binding["container"]
     image = container["image"]
@@ -203,6 +229,7 @@ def parse_work_unit(
             cpus=float(limits["cpus"]),
             memory_mb=limits["memory_mb"],
             pids_limit=limits["pids_limit"],
+            capabilities=tuple(binding["capabilities"]),
         ),
         output=OutputSpec(
             max_patch_bytes=binding["output_limits"]["max_patch_bytes"],
@@ -212,8 +239,8 @@ def parse_work_unit(
         forbidden_paths=forbidden_paths,
         write_paths=write_paths,
         required_validator_ids=required_validator_ids,
+        minimum_independent_verifiers=data["verification_policy"]["minimum_independent_verifiers"],
     )
-
 
 
 def load_work_unit(path: str | Path) -> WorkUnit:
