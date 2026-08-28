@@ -89,6 +89,7 @@ def build_plan(work_unit: dict[str, Any]) -> dict[str, Any]:
         "backend": {
             "max_candidate_bytes": 1_000_000,
             "max_log_bytes": 262_144,
+            "required_log_types": ["stdout", "stderr"],
             "require_nonempty_patch": True,
             "required_added_text": [EXPECTED_ADDED_TEXT],
             "type": "unified_diff",
@@ -108,7 +109,7 @@ def build_plan(work_unit: dict[str, Any]) -> dict[str, Any]:
                 "purpose": "independent replay of a real canonical-node patch bundle",
             }
         },
-        "id": "verification/real-node-cbd40c4-plan",
+        "id": f"verification/real-node-{CANDIDATE_SHA[:7]}-plan",
         "policy": {
             "require_output_outside_candidate_root": True,
             "require_plan_outside_candidate_root": True,
@@ -118,7 +119,7 @@ def build_plan(work_unit: dict[str, Any]) -> dict[str, Any]:
         "schema_version": "0.2",
         "verifier": {
             "adapter": "deterministic-patch-verifier",
-            "adapter_version": "0.1",
+            "adapter_version": "0.1.1",
             "id": "idkmesh-local-verifier",
             "type": "system",
         },
