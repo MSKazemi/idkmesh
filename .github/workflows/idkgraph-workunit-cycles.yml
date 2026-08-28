@@ -1,0 +1,68 @@
+name: idkgraph-workunit-cycles
+
+on:
+  pull_request:
+    paths:
+      - "tools/idkgraph_workunit_cycles.py"
+      - "tests/test_idkgraph_workunit_cycles.py"
+      - "tests/fixtures/idkgraph_workunit_cycles/**"
+      - "schemas/idkgraph.schema.json"
+      - ".github/workflows/idkgraph-workunit-cycles.yml"
+  push:
+    branches: [main]
+    paths:
+      - "tools/idkgraph_workunit_cycles.py"
+      - "tests/test_idkgraph_workunit_cycles.py"
+      - "tests/fixtures/idkgraph_workunit_cycles/**"
+      - "schemas/idkgraph.schema.json"
+      - ".github/workflows/idkgraph-workunit-cycles.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install schema validator
+        run: python -m pip install --disable-pip-version-check -r requirements-phase0.txt
+      - name: Run focused cycle and schema tests
+        run: python -m unittest tests.test_idkgraph_workunit_cycles -v
+      - name: Prove acyclic CLI path succeeds
+        run: |
+          python tools/idkgraph_workunit_cycles.py \
+            tests/fixtures/idkgraph_workunit_cycles/acyclic.json \
+            --fail-on-cycle \
+            --output /tmp/acyclic.json
+          python -m json.tool /tmp/acyclic.json > /dev/null
+      - name: Prove cyclic CLI path fails closed with evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          if python tools/idkgraph_workunit_cycles.py \
+            tests/fixtures/idkgraph_workunit_cycles/long-cycle.json \
+            --fail-on-cycle \
+            --output /tmp/cycle.json; then
+            echo "cycle fixture unexpectedly passed" >&2
+            exit 1
+          fi
+          python -m json.tool /tmp/cycle.json > /dev/null
+          python - <<'PY'
+          import json
+          result = json.load(open('/tmp/cycle.json', encoding='utf-8'))
+          expected = ['wu:a', 'wu:b', 'wu:c', 'wu:a']
+          if result['cycle_witness'] != expected:
+              raise SystemExit(f"unexpected witness: {result['cycle_witness']}")
+          print('OK: stable executable cycle witness retained')
+          PY
+
+# T4 is observation/validation only. It has no scheduler, repository mutation,
+# GitHub write, repair, approval, push, or merge authority.

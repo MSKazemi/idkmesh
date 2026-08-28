@@ -1,0 +1,16 @@
+{
+  "graph_id": "fixture:t4-long-cycle",
+  "version": "0.1",
+  "nodes": [
+    {"id": "wu:c", "type": "work_unit", "title": "C"},
+    {"id": "wu:a", "type": "work_unit", "title": "A"},
+    {"id": "wu:b", "type": "work_unit", "title": "B"},
+    {"id": "wu:d", "type": "work_unit", "title": "D"}
+  ],
+  "hyperedges": [
+    {"id": "edge:c-a", "relation": "depends_on", "sources": ["wu:c"], "targets": ["wu:a"]},
+    {"id": "edge:a-b", "relation": "depends_on", "sources": ["wu:a"], "targets": ["wu:b"]},
+    {"id": "edge:d-c", "relation": "depends_on", "sources": ["wu:d"], "targets": ["wu:c"]},
+    {"id": "edge:b-c", "relation": "depends_on", "sources": ["wu:b"], "targets": ["wu:c"]}
+  ]
+}

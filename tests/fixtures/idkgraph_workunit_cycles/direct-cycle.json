@@ -1,0 +1,12 @@
+{
+  "graph_id": "fixture:t4-direct-cycle",
+  "version": "0.1",
+  "nodes": [
+    {"id": "wu:a", "type": "work_unit", "title": "A"},
+    {"id": "wu:b", "type": "work_unit", "title": "B"}
+  ],
+  "hyperedges": [
+    {"id": "edge:a-b", "relation": "depends_on", "sources": ["wu:a"], "targets": ["wu:b"]},
+    {"id": "edge:b-a", "relation": "depends_on", "sources": ["wu:b"], "targets": ["wu:a"]}
+  ]
+}

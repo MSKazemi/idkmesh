@@ -1,0 +1,13 @@
+{
+  "graph_id": "fixture:t4-acyclic",
+  "version": "0.1",
+  "nodes": [
+    {"id": "wu:a", "type": "work_unit", "title": "A"},
+    {"id": "wu:b", "type": "work_unit", "title": "B"},
+    {"id": "wu:c", "type": "work_unit", "title": "C"}
+  ],
+  "hyperedges": [
+    {"id": "edge:a-b", "relation": "depends_on", "sources": ["wu:a"], "targets": ["wu:b"]},
+    {"id": "edge:b-c", "relation": "depends_on", "sources": ["wu:b"], "targets": ["wu:c"]}
+  ]
+}
