@@ -1,0 +1,61 @@
+{
+  "experiment": "E014-aco-stigmergic-task-routing",
+  "status": "reference-synthetic-sweep",
+  "source": {
+    "github_actions_run_id": 33182352840,
+    "job_id": 98886492221,
+    "commit": "81e117ed861fce578d9b8993d8065b6450a845d5",
+    "python": "3.11.16"
+  },
+  "parameters": {
+    "seed_start": 1,
+    "seeds": 40,
+    "workers": 24,
+    "epochs": 50
+  },
+  "warning": "Synthetic illustrative simulation; not empirical evidence about real contributors.",
+  "summary": {
+    "random": {
+      "verified_utility_per_cost": {"mean": 0.399667191, "min": 0.364530667, "max": 0.430706327},
+      "duplicate_rate": {"mean": 0.226604225, "min": 0.198333, "max": 0.246667},
+      "task_coverage": {"mean": 8.0, "min": 8.0, "max": 8.0},
+      "max_selection_share": {"mean": 0.1390625, "min": 0.13, "max": 0.1525},
+      "neglected_high_value_tasks": {"mean": 0.0, "min": 0.0, "max": 0.0}
+    },
+    "greedy": {
+      "verified_utility_per_cost": {"mean": 1.132163354, "min": 1.009985099, "max": 1.234749851},
+      "duplicate_rate": {"mean": 0.833333, "min": 0.833333, "max": 0.833333},
+      "task_coverage": {"mean": 1.0, "min": 1.0, "max": 1.0},
+      "max_selection_share": {"mean": 1.0, "min": 1.0, "max": 1.0},
+      "neglected_high_value_tasks": {"mean": 1.0, "min": 1.0, "max": 1.0}
+    },
+    "capability": {
+      "verified_utility_per_cost": {"mean": 0.868955528, "min": 0.772232951, "max": 0.930305788},
+      "duplicate_rate": {"mean": 0.42812495, "min": 0.333333, "max": 0.541667},
+      "task_coverage": {"mean": 4.825, "min": 4.0, "max": 5.0},
+      "max_selection_share": {"mean": 0.383333275, "min": 0.333333, "max": 0.5},
+      "neglected_high_value_tasks": {"mean": 0.0, "min": 0.0, "max": 0.0}
+    },
+    "aco": {
+      "verified_utility_per_cost": {"mean": 0.558417772, "min": 0.52526903, "max": 0.588546873},
+      "duplicate_rate": {"mean": 0.1550833, "min": 0.139167, "max": 0.171667},
+      "task_coverage": {"mean": 8.0, "min": 8.0, "max": 8.0},
+      "max_selection_share": {"mean": 0.194395775, "min": 0.179167, "max": 0.215833},
+      "neglected_high_value_tasks": {"mean": 0.0, "min": 0.0, "max": 0.0}
+    }
+  },
+  "interpretation": {
+    "result": "mixed",
+    "aco_strengths": [
+      "lowest mean duplicate rate among tested strategies",
+      "full 8-of-8 task coverage",
+      "much lower concentration than greedy and capability-only routing",
+      "higher verified utility per cost than random routing"
+    ],
+    "aco_weaknesses": [
+      "lower verified utility per cost than capability-only routing",
+      "far lower verified utility per cost than the highly concentrated greedy baseline"
+    ],
+    "decision": "Do not promote ACO to live routing. Test hybrid and parameter-sensitivity variants, then historical replay, before advisory use."
+  }
+}
