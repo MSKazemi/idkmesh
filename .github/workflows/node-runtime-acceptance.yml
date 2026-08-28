@@ -4,7 +4,9 @@ on:
   pull_request:
     paths:
       - "tools/node_runtime_acceptance.py"
+      - "tools/node_runtime_acceptance_current.py"
       - "tools/node_runtime_positive_probe.py"
+      - "tools/node_runtime_positive_probe_current.py"
       - ".github/workflows/node-runtime-acceptance.yml"
   workflow_dispatch:
 
@@ -22,10 +24,10 @@ jobs:
           path: harness
           persist-credentials: false
 
-      - name: Check out frozen PR 91 node candidate
+      - name: Check out corrected frozen PR 91 node candidate
         uses: actions/checkout@v4
         with:
-          ref: d638a2f78e4a89353b98e91052233e365f56f90a
+          ref: cbd40c43497ae4feb3a4a5e410dc78766b6cb19c
           path: candidate
           persist-credentials: false
 
@@ -33,7 +35,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git -C candidate rev-parse HEAD)" = "d638a2f78e4a89353b98e91052233e365f56f90a"
+          test "$(git -C candidate rev-parse HEAD)" = "cbd40c43497ae4feb3a4a5e410dc78766b6cb19c"
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -52,13 +54,13 @@ jobs:
 
       - name: Probe positive runtime diagnostics
         shell: bash
-        run: python harness/tools/node_runtime_positive_probe.py candidate
+        run: python harness/tools/node_runtime_positive_probe_current.py candidate
 
       - name: Run independent positive and negative acceptance cases
         shell: bash
         run: |
           set -euo pipefail
-          python harness/tools/node_runtime_acceptance.py \
+          python harness/tools/node_runtime_acceptance_current.py \
             --candidate candidate \
             --evidence "$RUNNER_TEMP/idkmesh-node-runtime-evidence.json"
 
@@ -67,7 +69,7 @@ jobs:
         shell: bash
         run: |
           if test -f "$RUNNER_TEMP/idkmesh-node-runtime-evidence.json"; then
-            echo '## Frozen node runtime acceptance evidence' >> "$GITHUB_STEP_SUMMARY"
+            echo '## Corrected frozen node runtime acceptance evidence' >> "$GITHUB_STEP_SUMMARY"
             echo '' >> "$GITHUB_STEP_SUMMARY"
             echo '```json' >> "$GITHUB_STEP_SUMMARY"
             cat "$RUNNER_TEMP/idkmesh-node-runtime-evidence.json" >> "$GITHUB_STEP_SUMMARY"
