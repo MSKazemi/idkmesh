@@ -4,6 +4,7 @@
     "max_log_bytes": 262144,
     "require_nonempty_patch": true,
     "required_added_text": ["<!-- patch-evaluator expected -->"],
+    "required_log_types": ["stdout", "stderr"],
     "type": "unified_diff",
     "verify_log_digests": true
   },
@@ -20,6 +21,6 @@
   "policy": {"require_output_outside_candidate_root": true, "require_plan_outside_candidate_root": true, "require_verifier_distinct_from_worker": true},
   "required_validator_ids": ["result-manifest-schema", "independent-review"],
   "schema_version": "0.2",
-  "verifier": {"adapter": "deterministic-patch-verifier", "adapter_version": "0.1", "id": "idkmesh-local-verifier", "type": "system"},
+  "verifier": {"adapter": "deterministic-patch-verifier", "adapter_version": "0.1.1", "id": "idkmesh-local-verifier", "type": "system"},
   "visibility": "public"
 }
