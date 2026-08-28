@@ -33,7 +33,6 @@ jobs:
       contents: read
       issues: read
       pull-requests: read
-      actions: read
     concurrency:
       group: evolution-observer
       cancel-in-progress: true
