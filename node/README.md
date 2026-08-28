@@ -1,14 +1,14 @@
 # `idkmesh-node` canonical local worker
 
-`idkmesh-node` is the first bounded execution backend for IDKMesh. It executes **one canonical IDKMesh Work Unit** in a disposable local Docker container and emits a canonical **Worker ResultManifest v0.1** containing an unverified candidate artifact.
+`idkmesh-node` is the first bounded execution backend for IDKMesh. It executes **one canonical IDKMesh WorkUnit v0.2** in a disposable local Docker container and emits the canonical **worker ResultManifest v0.1** containing an unverified candidate artifact.
 
 It does not define its own Work Unit protocol, accept remote shell commands, act as a public self-hosted GitHub runner, or decide that its own output is correct.
 
 ## Contract boundary
 
-The shared Work Unit remains authoritative:
+The shared contracts remain authoritative:
 
-- `schemas/work-unit-v0.1.schema.json`
+- `schemas/work-unit-v0.2.schema.json`
 - `schemas/result-manifest-v0.1.schema.json`
 
 Execution-only details live in:
@@ -22,6 +22,8 @@ A Work Unit opts into this backend through the namespaced extension:
   "org.idkmesh.node.execution": {
     "schema_version": "0.1",
     "source_input_id": "source-repository",
+    "source_revision": "<full-40-character-git-commit>",
+    "capabilities": ["git", "container-execution", "python"],
     "container": {
       "image": "python:3.12-alpine",
       "command": ["python", "-c", "..."]
@@ -40,15 +42,29 @@ A Work Unit opts into this backend through the namespaced extension:
 }
 ```
 
-`source_input_id` must identify a canonical Work Unit input of type `git_ref`. For node v0.1, the input locator must be a public `https://github.com/owner/repo` URL and the input digest must be `git-sha1:<full-40-character-commit-sha>`.
+`source_input_id` must identify a canonical Work Unit input of type `git_ref`. For node v0.1, its locator must be a public `https://github.com/owner/repo` URL. The immutable Git commit is stored separately as `source_revision` in the execution binding; canonical artifact `digest` fields remain content SHA-256 values and are not overloaded as Git revision identifiers.
 
 See `node/examples/work-unit.canonical-smoke.json`.
+
+## WorkUnit v0.2 policy enforcement
+
+The worker now checks the v0.2 scheduling/trust contract before execution:
+
+- all `requirements.capabilities` must be provided by the execution binding;
+- configured CPU and memory must satisfy the Work Unit minimums;
+- GPU-required work is rejected by the current CPU-only profile;
+- only `security.risk_class = low` is accepted by this Docker MVP;
+- only public data is accepted;
+- the current profile satisfies only `minimum_worker_trust = untrusted`;
+- independent verification must be required and at least one independent verifier must be requested.
+
+These restrictions are deliberately conservative. Stronger isolation/identity profiles can widen the accepted risk/trust classes later without changing the core Work Unit.
 
 ## Safety envelope
 
 Node v0.1 requires and enforces:
 
-- immutable full Git commit SHA input;
+- immutable full Git commit revision;
 - public HTTPS GitHub source;
 - small container-image allowlist;
 - `permissions.network = none`;
@@ -90,7 +106,7 @@ idkmesh-node run node/examples/work-unit.canonical-smoke.json --output ./node-re
 
 The output directory must be empty. It receives:
 
-- `result-manifest.json` — canonical Worker ResultManifest v0.1;
+- `result-manifest.json` — canonical worker ResultManifest v0.1;
 - `changes.patch` — bounded tracked-file candidate patch;
 - `stdout.txt`;
 - `stderr.txt`.
@@ -114,4 +130,4 @@ The node intentionally has no merge/push authority.
 
 ## Next engineering step
 
-The next layer should be an independent Evidence Report / verifier contract and a local orchestration path that can execute a Work Unit, invoke a separate verifier, and retain both worker and verifier provenance without allowing the generator to certify itself.
+The next layer should be an independent verifier/evidence contract and a local orchestration path that can execute a Work Unit, invoke a separate verifier, and retain both worker and verifier provenance without allowing the generator to certify itself.
