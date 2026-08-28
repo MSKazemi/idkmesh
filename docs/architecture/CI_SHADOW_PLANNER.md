@@ -76,8 +76,8 @@ The first promotion gate should require no missed high-impact failure in the eva
 
 - path patterns are a bootstrap impact model, not yet a semantic dependency graph;
 - runtime, failure probability, impact, and information gain are hand-reviewed priors;
-- the planning receipt is not yet joined to check outcomes or delayed post-merge outcomes;
+- check outcomes are now joined by the [CI Shadow Outcome Evaluator](CI_SHADOW_OUTCOME_EVALUATOR.md), but a representative cohort and delayed post-merge outcomes do not yet exist;
 - GitHub Actions artifacts expire and are not sufficient long-term learning memory;
 - repository branch protection and the external merge decision remain separate unresolved gates.
 
-The next version should add a durable outcome joiner and learn calibrated optional-check usefulness in shadow mode. It must not learn authority or weaken hard gates.
+The next version should aggregate a durable evaluation cohort and learn calibrated optional-check usefulness in shadow mode. It must not learn authority or weaken hard gates.

@@ -1,0 +1,166 @@
+name: CI Shadow Outcome Evaluator
+
+on:
+  workflow_run:
+    workflows: ["PR Gate"]
+    types: [completed]
+
+permissions:
+  actions: read
+  checks: read
+  contents: read
+
+concurrency:
+  group: ci-shadow-outcome-${{ github.event.workflow_run.head_sha }}
+  cancel-in-progress: true
+
+jobs:
+  evaluate:
+    if: github.event.workflow_run.event == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Check out the trusted evaluator
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+
+      - name: Install schema validator
+        run: python -m pip install --disable-pip-version-check -r requirements-phase0.txt
+
+      - name: Locate the exact-head planner run
+        id: planner
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+          run_id="$(gh api \
+            "repos/$GITHUB_REPOSITORY/actions/workflows/ci-shadow-planner.yml/runs?head_sha=$HEAD_SHA&status=success&per_page=20" \
+            --jq '.workflow_runs | map(select(.event == "pull_request")) | first | .id // empty')"
+          if [[ -z "$run_id" ]]; then
+            echo "No successful CI Shadow Planner run exists for exact head $HEAD_SHA" >&2
+            exit 1
+          fi
+          echo "run_id=$run_id" >> "$GITHUB_OUTPUT"
+
+      - name: Download the planning-only artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ steps.planner.outputs.run_id }}
+          pattern: ci-shadow-plan-*
+          path: ${{ runner.temp }}/idkmesh-ci-plan
+          merge-multiple: true
+
+      - name: Validate the untrusted planning artifact
+        env:
+          EXPECTED_HEAD: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          from jsonschema import Draft202012Validator
+          from tools.ci_shadow_evaluator import sha256_digest
+
+          root = Path(os.environ['RUNNER_TEMP']) / 'idkmesh-ci-plan'
+          plan = json.loads((root / 'ci-plan.json').read_text(encoding='utf-8'))
+          receipt = json.loads((root / 'ci-receipt.json').read_text(encoding='utf-8'))
+          for artifact, schema_name in (
+              (plan, 'ci-plan-v0.1.schema.json'),
+              (receipt, 'ci-receipt-v0.1.schema.json'),
+          ):
+              schema = json.loads((Path('schemas') / schema_name).read_text(encoding='utf-8'))
+              Draft202012Validator(schema).validate(artifact)
+              assert artifact['head_sha'] == os.environ['EXPECTED_HEAD']
+              assert artifact['authority']['merge'] is False
+              assert artifact['authority']['repository_write'] is False
+          assert receipt['plan_id'] == plan['plan_id']
+          assert receipt['plan_digest'] == sha256_digest(plan)
+          PY
+
+      - name: Collect exact-head GitHub evidence
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/idkmesh-ci-evaluation"
+          gh api --paginate \
+            -H "Accept: application/vnd.github+json" \
+            "repos/$GITHUB_REPOSITORY/commits/$HEAD_SHA/check-runs?per_page=100" \
+            | jq -s '{check_runs: (map(.check_runs) | add // [])}' \
+            > "$RUNNER_TEMP/idkmesh-ci-evaluation/raw-check-runs.json"
+          gh api --paginate \
+            "repos/$GITHUB_REPOSITORY/actions/runs?head_sha=$HEAD_SHA&per_page=100" \
+            | jq -s '{workflow_runs: (map(.workflow_runs) | add // [])}' \
+            > "$RUNNER_TEMP/idkmesh-ci-evaluation/raw-workflow-runs.json"
+          python tools/ci_shadow_evaluator.py collect \
+            --check-runs "$RUNNER_TEMP/idkmesh-ci-evaluation/raw-check-runs.json" \
+            --workflow-runs "$RUNNER_TEMP/idkmesh-ci-evaluation/raw-workflow-runs.json" \
+            --head-sha "$HEAD_SHA" \
+            --output "$RUNNER_TEMP/idkmesh-ci-evaluation/ci-observation.json"
+
+      - name: Evaluate the shadow recommendation
+        run: |
+          set -euo pipefail
+          python tools/ci_shadow_evaluator.py evaluate \
+            --plan "$RUNNER_TEMP/idkmesh-ci-plan/ci-plan.json" \
+            --receipt "$RUNNER_TEMP/idkmesh-ci-plan/ci-receipt.json" \
+            --observation "$RUNNER_TEMP/idkmesh-ci-evaluation/ci-observation.json" \
+            --output "$RUNNER_TEMP/idkmesh-ci-evaluation/ci-evaluation.json" \
+            --output-md "$RUNNER_TEMP/idkmesh-ci-evaluation/ci-evaluation.md"
+
+      - name: Validate evidence contracts and authority boundaries
+        env:
+          EXPECTED_HEAD: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          from jsonschema import Draft202012Validator
+
+          root = Path(os.environ['RUNNER_TEMP']) / 'idkmesh-ci-evaluation'
+          observation = json.loads((root / 'ci-observation.json').read_text(encoding='utf-8'))
+          evaluation = json.loads((root / 'ci-evaluation.json').read_text(encoding='utf-8'))
+          for artifact, schema_name in (
+              (observation, 'ci-observation-v0.1.schema.json'),
+              (evaluation, 'ci-evaluation-v0.1.schema.json'),
+          ):
+              schema = json.loads((Path('schemas') / schema_name).read_text(encoding='utf-8'))
+              Draft202012Validator(schema).validate(artifact)
+              assert artifact['head_sha'] == os.environ['EXPECTED_HEAD']
+              assert artifact['authority']['execute'] is False
+              assert artifact['authority']['skip_required_checks'] is False
+              assert artifact['authority']['merge'] is False
+              assert artifact['authority']['repository_write'] is False
+          assert evaluation['promotion']['eligible'] is False
+          PY
+
+      - name: Publish outcome evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ci-shadow-evaluation-${{ github.run_id }}
+          path: ${{ runner.temp }}/idkmesh-ci-evaluation
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: Publish readable evaluation
+        run: cat "$RUNNER_TEMP/idkmesh-ci-evaluation/ci-evaluation.md" >> "$GITHUB_STEP_SUMMARY"
+
+# Trust boundary:
+# - workflow_run executes only the evaluator committed on the default branch;
+# - candidate artifacts and API responses are parsed strictly as data, never executed;
+# - the token can read actions/checks/content but cannot write repository state;
+# - a missing or mismatched exact-head plan fails closed;
+# - every output is shadow evidence and promotion remains impossible in v0.1.
