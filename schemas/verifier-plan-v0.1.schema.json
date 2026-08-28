@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idkmesh.org/schemas/verifier-plan-v0.1.schema.json",
+  "title": "IDKMesh Independent Verifier Plan v0.1",
+  "description": "Trusted verifier-side configuration. It is intentionally separate from WorkUnit so hidden checks do not need to be disclosed to the worker.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "id", "verifier", "source_input_id", "container_image", "checks"],
+  "properties": {
+    "schema_version": {"const": "0.1"},
+    "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._/-]{2,127}$"},
+    "verifier": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "adapter"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "adapter": {"type": "string", "minLength": 1},
+        "adapter_version": {"type": "string"}
+      }
+    },
+    "source_input_id": {"type": "string", "minLength": 1},
+    "container_image": {"type": "string", "minLength": 1, "maxLength": 256},
+    "checks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "type", "required", "mode"],
+        "properties": {
+          "id": {"type": "string", "minLength": 1},
+          "type": {"enum": ["test", "review", "schema", "lint", "security", "formal", "reproduction", "policy", "other"]},
+          "required": {"type": "boolean"},
+          "mode": {"enum": ["result_schema", "artifact_integrity", "scope_policy", "container_command"]},
+          "command": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 64,
+            "items": {"type": "string", "minLength": 1, "maxLength": 4096}
+          },
+          "timeout_seconds": {"type": "integer", "minimum": 1, "maximum": 1800},
+          "description": {"type": "string"}
+        },
+        "allOf": [
+          {
+            "if": {"properties": {"mode": {"const": "container_command"}}, "required": ["mode"]},
+            "then": {"required": ["command"]}
+          }
+        ]
+      }
+    }
+  }
+}
