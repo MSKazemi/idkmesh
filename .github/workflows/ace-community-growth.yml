@@ -1,0 +1,192 @@
+name: ACE Community Growth
+
+on:
+  issues:
+    types: [opened, closed]
+  pull_request:
+    types: [opened, closed]
+  pull_request_review:
+    types: [submitted]
+  push:
+    branches: [main]
+  watch:
+    types: [started]
+  fork:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+
+concurrency:
+  group: ace-community-growth
+  cancel-in-progress: false
+
+jobs:
+  update-growth-ledger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update ACE Growth Ledger
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const now = new Date();
+            const ledgerTitle = '[ACE] Community Growth Ledger';
+
+            const event = context.eventName;
+            const action = context.payload.action || 'event';
+            let type = `${event}:${action}`;
+            let q = 0.05, d = 0.05, r = 0.05, loadDelta = 0;
+
+            if (event === 'push') {
+              type = 'push:main'; q = 0.25; d = 0.10; r = 0; loadDelta = 0.05;
+            } else if (event === 'issues' && action === 'opened') {
+              q = 0.10; d = 0.60; r = 0.20; loadDelta = 0.30;
+            } else if (event === 'issues' && action === 'closed') {
+              q = 0.80; d = 0.10; r = 0.20; loadDelta = -0.20;
+            } else if (event === 'pull_request' && action === 'opened') {
+              q = 0.20; d = 0.70; r = 0.40; loadDelta = 1.00;
+            } else if (event === 'pull_request' && action === 'closed' && context.payload.pull_request?.merged) {
+              type = 'pull_request:merged'; q = 2.50; d = 0.40; r = 1.00; loadDelta = -0.70;
+            } else if (event === 'pull_request' && action === 'closed') {
+              q = 0.10; d = 0.05; r = 0.10; loadDelta = -0.50;
+            } else if (event === 'pull_request_review' && action === 'submitted') {
+              q = 0.80; d = 0.10; r = 0.50; loadDelta = -0.20;
+            } else if (event === 'watch') {
+              type = 'watch:star'; q = 0; d = 0.35; r = 0; loadDelta = 0;
+            } else if (event === 'fork') {
+              type = 'fork:created'; q = 0.10; d = 0.90; r = 0.10; loadDelta = 0;
+            }
+
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner, repo, state: 'open', per_page: 100
+            });
+            let ledger = issues.find(i => !i.pull_request && i.title === ledgerTitle);
+
+            const defaultState = {
+              version: 1,
+              updated_at: now.toISOString(),
+              credit: 0,
+              review_load: 0,
+              counts: {},
+              total_events: 0
+            };
+
+            let state = defaultState;
+            if (ledger?.body) {
+              const match = ledger.body.match(/<!-- ACE_STATE\n([\s\S]*?)\nACE_STATE -->/);
+              if (match) {
+                try { state = { ...defaultState, ...JSON.parse(match[1]) }; } catch (_) {}
+              }
+            }
+
+            const previous = new Date(state.updated_at || now.toISOString());
+            const days = Math.max(0, (now - previous) / 86400000);
+            const lambda = 0.035;
+            state.credit = Number(state.credit || 0) * Math.exp(-lambda * days);
+
+            const count = Number(state.counts[type] || 0);
+            const novelty = 1 / Math.sqrt(1 + count);
+            state.review_load = Math.max(0, Number(state.review_load || 0) + loadDelta);
+
+            const K = 8;
+            const tau = 2;
+            const capacity = 1 / (1 + Math.exp((state.review_load - K) / tau));
+            const activityEnergy = q + d + r;
+            const deltaCredit = activityEnergy * novelty * capacity;
+
+            state.credit += deltaCredit;
+            state.counts[type] = count + 1;
+            state.total_events = Number(state.total_events || 0) + 1;
+            state.updated_at = now.toISOString();
+
+            let mode = 'DORMANT';
+            if (state.review_load > K) mode = 'CONSOLIDATE';
+            else if (state.credit >= 8) mode = 'GROW';
+            else if (state.credit >= 2) mode = 'EXPLORE';
+
+            const sorted = Object.entries(state.counts)
+              .sort((a,b) => b[1] - a[1])
+              .slice(0, 12)
+              .map(([k,v]) => `| ${k} | ${v} |`)
+              .join('\n');
+
+            const body = `# ACE Community Growth Ledger
+
+This issue is maintained by the experimental [Autocatalytic Community Evolution](../blob/main/COMMUNITY_GROWTH_ENGINE.md) workflow.
+
+**Mode:** ${mode}  
+**Reproductive credit:** ${state.credit.toFixed(3)}  
+**Review-load proxy:** ${state.review_load.toFixed(2)}  
+**Capacity multiplier:** ${capacity.toFixed(3)}  
+**Last event:** \`${type}\`  
+**Last credit increment:** ${deltaCredit.toFixed(3)}  
+**Updated:** ${state.updated_at}
+
+The objective is not maximum activity. ACE aims to increase **verified useful descendants per unit of scarce human attention** while reducing reproduction pressure when review capacity becomes constrained.
+
+| Event type | Observed count |
+| --- | ---: |
+${sorted || '| none yet | 0 |'}
+
+> These weights and thresholds are hypotheses. They should be changed only from measured community evidence. Stars, forks, commits, comments, issues, and PR counts are signals—not success objectives.
+
+<!-- ACE_STATE
+${JSON.stringify(state, null, 2)}
+ACE_STATE -->`;
+
+            if (ledger) {
+              await github.rest.issues.update({ owner, repo, issue_number: ledger.number, body });
+            } else {
+              const created = await github.rest.issues.create({ owner, repo, title: ledgerTitle, body });
+              ledger = created.data;
+            }
+
+            // Conservative v0 actuator: only an explicitly labelled merged PR can reproduce.
+            if (event === 'pull_request' && action === 'closed' && context.payload.pull_request?.merged) {
+              const pr = context.payload.pull_request;
+              const labels = (pr.labels || []).map(l => l.name);
+              if (labels.includes('growth:spawn')) {
+                const marker = `spawned-from:pr-${pr.number}`;
+                const { data: existing } = await github.rest.issues.listForRepo({
+                  owner, repo, state: 'all', per_page: 100
+                });
+                const alreadySpawned = existing.some(i => !i.pull_request && (i.body || '').includes(marker));
+
+                if (!alreadySpawned) {
+                  const seedBody = `## Growth Seed: reproduce, challenge, or extend PR #${pr.number}
+
+A useful contribution should make the next useful contribution easier. This seed was created by ACE because the merged PR was explicitly labelled \`growth:spawn\`.
+
+Choose one bounded path:
+
+- **Reproduce:** independently verify the result and document what you observe.
+- **Challenge:** try to falsify an assumption, test an edge case, or find a regression.
+- **Extend:** propose one small, independently reviewable next step.
+- **Explain:** turn the result into a newcomer-legible example or tutorial.
+
+### Acceptance principle
+
+Return evidence, not only an opinion: a test, reproduction log, benchmark, patch, documentation improvement, threat model, or other inspectable artifact.
+
+### Parent
+
+- PR: #${pr.number} — ${pr.title}
+- ${marker}
+
+### Community impact
+
+Keep the task bounded enough that a new contributor can understand what success means without private maintainer guidance.
+`;
+                  await github.rest.issues.create({
+                    owner,
+                    repo,
+                    title: `[Growth Seed] Reproduce or extend PR #${pr.number}`,
+                    body: seedBody
+                  });
+                }
+              }
+            }
