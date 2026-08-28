@@ -15,7 +15,7 @@ import subprocess
 import sys
 import tempfile
 
-FROZEN = "d638a2f78e4a89353b98e91052233e365f56f90a"
+FROZEN = "cbd40c43497ae4feb3a4a5e410dc78766b6cb19c"
 
 
 def read_if_exists(path: Path) -> str | None:
