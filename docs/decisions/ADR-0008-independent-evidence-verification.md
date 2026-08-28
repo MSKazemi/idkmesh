@@ -159,6 +159,33 @@ imbalanced corpus a constant verifier can post the panel's best accuracy score.
 
 See [`../../experiments/E016-live-verifier-correlation.md`](../../experiments/E016-live-verifier-correlation.md).
 
+## Follow-up — E017 measured `rho`, and found the model shape wrong
+
+E016 could not measure verifier correlation. E017 did, using partial test
+oracles that pass the discrimination screen. Three consequences for this ADR:
+
+1. **A declared independence label predicts correlation only partly.** Verifiers
+   sharing an input-region label correlate at `+0.892`; verifiers sharing no
+   declared attribute still correlate at `+0.526`. Metadata grouping is
+   informative but systematically overstates independence, so an aggregation
+   rule keyed on declared groups alone will over-count evidence. This is the
+   measured form of E013's warning.
+2. **`rho` is not a sufficient statistic for panel error.** Fed the measured
+   `rho`, the shared-shock mixture underestimates real panel error by 1.71x, and
+   a nested version matching the block structure by 1.62x. Real panels fail
+   *partially* — a majority wrong while a minority is right — which shared-shock
+   assigns near-zero probability. An item-difficulty (beta-binomial)
+   parameterisation at the same parameter count reproduces it. Any aggregation
+   rule this ADR specifies should be evaluated under that model, not under a
+   single correlation knob.
+3. **Aggregation rule can matter more than panel size.** For the one-sided
+   errors typical of test-based verification, moving from majority to
+   unanimity-to-accept cut error 3.7x, while growing the panel from 1 to 25
+   changed nothing (effective size 1.00). The ADR should therefore require
+   measuring error sidedness before choosing a quorum.
+
+See [`../../experiments/E017-item-difficulty-and-quorum.md`](../../experiments/E017-item-difficulty-and-quorum.md).
+
 ## Implementation references
 
 - `docs/architecture/MATHEMATICAL_EVOLUTION_KERNEL.md`

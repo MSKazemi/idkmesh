@@ -128,6 +128,41 @@ therefore remains open.
 See [`../experiments/E016-live-verifier-correlation.md`](../experiments/E016-live-verifier-correlation.md).
 
 
+## E017 — measured correlation, item difficulty, and quorum (positive result)
+
+E016 failed to measure `rho` because its LLM verifiers did not discriminate.
+E017 uses verifiers that do: **partial test oracles**, each sampling inputs from
+one named region of a problem's input domain (`e017_oracles.py`), accepting a
+candidate only if it matches the reference implementation there.
+
+```bash
+python sim/e017_verify.py --seeds 5 --out e017-votes.jsonl
+python sim/e017_analyze.py experiments/results/E017-partial-oracle-votes.jsonl.gz
+```
+
+25 verifiers over the 72-candidate corpus, deterministic, ~5 seconds. All 25
+pass the discrimination screen, so the correlation is interpretable:
+
+- measured `rho` = **0.587** (0.892 within a region, 0.526 across) — verifiers
+  sharing no declared attribute still share **53%** of their errors;
+- under majority vote, **25 verifiers are worth 1.00 independent one**, and the
+  `N_eff` heuristic overstates that by 1.66x (E015's direction, on real data);
+- the flat shared-shock model, fed the measured `rho`, underestimates panel
+  error by **1.71x**, and a nested variant matching the block structure barely
+  helps. The cause is shape: **11 of ~15 real panel failures are partial**
+  (majority wrong, minority right), an outcome shared-shock assigns essentially
+  zero probability. A **beta-binomial** item-difficulty model with the same two
+  parameters reproduces it (11.2) and is 3.7x closer on panel error;
+- errors here are strictly one-sided (368 false accepts, **0** false rejects),
+  so majority vote is the wrong rule: unanimity-to-accept cuts error 3.7x
+  (0.2083 -> 0.0556) while growing the panel to 25 bought nothing.
+
+`rho` remains a useful summary of a panel, but it is **not a sufficient
+statistic for its error**.
+
+See [`../experiments/E017-item-difficulty-and-quorum.md`](../experiments/E017-item-difficulty-and-quorum.md).
+
+
 ## Multi-seed emergence sweeps
 
 ```bash
@@ -148,12 +183,13 @@ python -m pytest -q \
   tests/test_verification_aggregation_sim.py \
   tests/test_e015_phase_diagram.py \
   tests/test_e015_quorum_frontier.py \
-  tests/test_e016_analyze.py
+  tests/test_e016_analyze.py \
+  tests/test_e017_item_difficulty.py
 ```
 
 This is the same list `.github/workflows/emergence-sim.yml` runs; keep the two in step.
 
-The tests cover deterministic replay, budget invariants, niche preservation, perfect verification compatibility, correlated-error mechanics, sweep configuration, the E013 regime where independence-aware aggregation can help or hurt, the E015 effective-panel-size metrics, and the E016 discrimination screen.
+The tests cover deterministic replay, budget invariants, niche preservation, perfect verification compatibility, correlated-error mechanics, sweep configuration, the E013 regime where independence-aware aggregation can help or hurt, the E015 effective-panel-size metrics, the E016 discrimination screen, and the E017 item-difficulty model.
 
 ## Interpretation
 
