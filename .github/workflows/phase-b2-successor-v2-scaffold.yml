@@ -30,7 +30,7 @@ jobs:
         run: |
           python tools/benchmark_cohort.py validate \
             --cohort benchmarks/phase-b2-successor-v2/cohort.json
-      - name: Prove scaffold is not frozen
+      - name: Prove schema-valid scaffold is not frozen
         run: |
           python - <<'PY'
           import json
@@ -38,14 +38,19 @@ jobs:
           path = Path("benchmarks/phase-b2-successor-v2/cohort.json")
           cohort = json.loads(path.read_text(encoding="utf-8"))
           assert cohort["stage"] == "scaffold"
-          assert cohort["taxonomy_frozen_before_outcomes"] is False
+          # Benchmark Cohort v0.1 requires the task taxonomy to be committed
+          # before outcomes. That does not imply evaluator calibration/freeze.
+          assert cohort["taxonomy_frozen_before_outcomes"] is True
           assert "definition_digest" not in cohort
           assert len(cohort["tasks"]) == 5
           assert all(task["source"]["revision"] == "a69aa0ae1ae4862e507511cbd9ad854237d0ad32" for task in cohort["tasks"])
           assert all(task["evidence"]["status"] == "pending" for task in cohort["tasks"])
           assert all(task["negative_case"]["evidence_status"] == "pending" for task in cohort["tasks"])
-          assert all(task["extensions"]["org.idkmesh.phase_b2_v2"]["calibration_status"] == "pending" for task in cohort["tasks"])
-          print("OK: successor v2 remains an unfrozen five-task calibration scaffold")
+          gate = cohort["extensions"]["org.idkmesh.phase_b2_v2"]
+          assert gate["calibration_required_for_every_task"] is True
+          assert gate["freeze_ready"] is False
+          assert set(gate["calibration_pending_task_ids"]) == {task["id"] for task in cohort["tasks"]}
+          print("OK: successor v2 is schema-valid, outcome-empty, calibration-pending, and unfrozen")
           PY
       - name: Show pre-outcome digest preview without freezing
         run: |
@@ -54,6 +59,7 @@ jobs:
 
 # Safety / scientific boundary:
 # - this workflow validates definitions only; it does not generate scored candidates;
+# - the five-task taxonomy is fixed before outcomes as required by Benchmark Cohort v0.1;
 # - all five evaluator plans are provisional until issue #180 calibration gates pass;
 # - printing a digest preview is not a freeze: the scaffold intentionally stores no definition_digest;
 # - the source snapshot is fixed to the pre-definition commit a69aa0ae...;
