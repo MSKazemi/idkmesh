@@ -77,6 +77,36 @@ class IDKGraphLinkCheckTests(unittest.TestCase):
                 docs["docs/a.md"]["document_id"],
             )
 
+    def test_anchor_suffix_allocation_is_globally_collision_safe(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            self.write(
+                root,
+                "README.md",
+                (
+                    "# Root\n\n"
+                    "[First](#repeat)\n"
+                    "[Named suffix](#repeat-1)\n"
+                    "[Second repeat](#repeat-2)\n\n"
+                    "## Repeat\n"
+                    "## Repeat-1\n"
+                    "## Repeat\n"
+                ),
+            )
+
+            report = check_links(root)
+            self.assertEqual(report["summary"]["errors"], 0)
+            t1 = build_index(root)
+            headings = t1["documents"][0]["headings"]
+            repeat_ids = [item["heading_id"] for item in headings if item["text"] == "Repeat"]
+            named_suffix_id = next(
+                item["heading_id"] for item in headings if item["text"] == "Repeat-1"
+            )
+            resolved = {item["raw_target"]: item for item in report["resolved_links"]}
+            self.assertEqual(resolved["#repeat"]["target_heading_id"], repeat_ids[0])
+            self.assertEqual(resolved["#repeat-1"]["target_heading_id"], named_suffix_id)
+            self.assertEqual(resolved["#repeat-2"]["target_heading_id"], repeat_ids[1])
+
     def test_missing_file_anchor_escape_and_absolute_are_distinct(self) -> None:
         with tempfile.TemporaryDirectory() as raw:
             root = Path(raw) / "repo"
