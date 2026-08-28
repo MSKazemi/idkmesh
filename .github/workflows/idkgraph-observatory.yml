@@ -97,7 +97,7 @@ jobs:
           cmp /tmp/idkgraph-run-a/idkgraph.json /tmp/idkgraph-run-b/idkgraph.json
           cmp /tmp/idkgraph-run-a/observatory.json /tmp/idkgraph-run-b/observatory.json
           cmp /tmp/idkgraph-run-a/repository-health.md /tmp/idkgraph-run-b/repository-health.md
-      - name: Validate integrated graph and report residual health counts
+      - name: Validate integrated graph and live repository health
         run: |
           python - <<'PY'
           import json
@@ -105,22 +105,25 @@ jobs:
           schema = json.load(open('schemas/idkgraph.schema.json', encoding='utf-8'))
           graph = json.load(open('/tmp/idkgraph-run-a/idkgraph.json', encoding='utf-8'))
           summary = json.load(open('/tmp/idkgraph-run-a/observatory.json', encoding='utf-8'))
-          errors = sorted(Draft202012Validator(schema).iter_errors(graph), key=lambda error: list(error.absolute_path))
-          if errors:
-              for error in errors[:20]:
+          schema_errors = sorted(Draft202012Validator(schema).iter_errors(graph), key=lambda error: list(error.absolute_path))
+          if schema_errors:
+              for error in schema_errors[:20]:
                   print('/'.join(map(str, error.absolute_path)), error.message)
-              raise SystemExit(f'{len(errors)} schema validation error(s)')
+              raise SystemExit(f'{len(schema_errors)} schema validation error(s)')
+
+          hard_errors = [finding for finding in summary['findings'] if finding['severity'] == 'error']
           print(
               'OK: '
               f"{summary['graph']['nodes']} nodes, "
               f"{summary['graph']['hyperedges']} hyperedges, "
-              f"{summary['finding_counts']['by_severity'].get('error', 0)} deterministic error(s), "
+              f"{len(hard_errors)} deterministic error(s), "
               f"{summary['finding_counts']['by_severity'].get('warning', 0)} warning(s), "
+              f"{summary['expected_negative_fixtures']['finding_count']} expected negative-fixture finding(s), "
               f"{summary['residual_health']['orphan_document_candidates']} orphan candidate(s), "
               f"{summary['residual_health']['accepted_decisions_without_document_link']} accepted-decision linkage warning(s)"
           )
-          for finding in summary['findings']:
-              if finding['severity'] == 'error':
+          if hard_errors:
+              for finding in hard_errors:
                   print(
                       'ERROR:',
                       finding['category'],
@@ -128,6 +131,7 @@ jobs:
                       f"line={finding.get('line', 0)}",
                       finding.get('message', ''),
                   )
+              raise SystemExit(f'{len(hard_errors)} unexpected deterministic repository-health error(s)')
           PY
 
 # The observatory composes deterministic observation only. It has no repository/GitHub
