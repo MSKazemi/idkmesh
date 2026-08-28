@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "idkmesh-node"
+version = "0.2.0"
+description = "Bounded local worker for canonical IDKMesh Work Units"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "Apache-2.0"}
+authors = [{name = "IDKMesh contributors"}]
+dependencies = ["jsonschema>=4.23,<5"]
+
+[project.scripts]
+idkmesh-node = "idkmesh_node.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
