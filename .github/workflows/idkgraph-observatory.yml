@@ -3,6 +3,7 @@ name: idkgraph-observatory
 on:
   pull_request:
     paths:
+      - "**/*.md"
       - "tools/idkgraph_observatory.py"
       - "tools/idkgraph_health_checks.py"
       - "tools/idkgraph_markdown_index.py"
@@ -15,13 +16,11 @@ on:
       - "tests/test_idkgraph_warning_sample.py"
       - "tests/fixtures/idkgraph_observatory/**"
       - "schemas/idkgraph.schema.json"
-      - "docs/decisions/ADR-*.md"
-      - "docs/specifications/IDKGRAPH_OBSERVATORY_V0_1.md"
-      - "docs/specifications/IDKGRAPH_P0_RESIDUAL_HEALTH_CHECKS.md"
       - ".github/workflows/idkgraph-observatory.yml"
   push:
     branches: [main]
     paths:
+      - "**/*.md"
       - "tools/idkgraph_observatory.py"
       - "tools/idkgraph_health_checks.py"
       - "tools/idkgraph_markdown_index.py"
@@ -34,9 +33,6 @@ on:
       - "tests/test_idkgraph_warning_sample.py"
       - "tests/fixtures/idkgraph_observatory/**"
       - "schemas/idkgraph.schema.json"
-      - "docs/decisions/ADR-*.md"
-      - "docs/specifications/IDKGRAPH_OBSERVATORY_V0_1.md"
-      - "docs/specifications/IDKGRAPH_P0_RESIDUAL_HEALTH_CHECKS.md"
       - ".github/workflows/idkgraph-observatory.yml"
 
 permissions:
