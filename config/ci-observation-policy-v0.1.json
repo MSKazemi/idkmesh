@@ -1,0 +1,84 @@
+{
+  "schema_version": "0.1",
+  "mode": "shadow",
+  "required_contexts": [
+    {
+      "workflow_name": "PR Gate",
+      "check_name": "gate (3.11)"
+    },
+    {
+      "workflow_name": "PR Gate",
+      "check_name": "gate (3.13)"
+    }
+  ],
+  "ignored_checks": [
+    {
+      "workflow_name": "CI Shadow Outcome Evaluator",
+      "check_name_pattern": "evaluate"
+    }
+  ],
+  "failure_conclusions": [
+    "action_required",
+    "failure",
+    "stale",
+    "startup_failure",
+    "timed_out"
+  ],
+  "success_conclusions": [
+    "neutral",
+    "skipped",
+    "success"
+  ],
+  "check_mappings": [
+    {
+      "logical_check_id": "full-regression",
+      "workflow_name": "PR Gate",
+      "check_name_patterns": [
+        "gate (3.11)",
+        "gate (3.13)"
+      ]
+    },
+    {
+      "logical_check_id": "ci-control-plane",
+      "workflow_name": "CI Shadow Planner",
+      "check_name_patterns": [
+        "plan"
+      ]
+    },
+    {
+      "logical_check_id": "schema-contracts",
+      "workflow_name": "Phase 0 schema check",
+      "check_name_patterns": [
+        "validate"
+      ]
+    },
+    {
+      "logical_check_id": "interop",
+      "workflow_name": "Interoperability bindings check",
+      "check_name_patterns": [
+        "bindings"
+      ]
+    },
+    {
+      "logical_check_id": "documentation-integrity",
+      "workflow_name": "IDKGraph T2 Link Integrity",
+      "check_name_patterns": [
+        "deterministic-link-integrity"
+      ]
+    },
+    {
+      "logical_check_id": "research-simulations",
+      "workflow_name": "randomness-lab",
+      "check_name_patterns": [
+        "test (*)"
+      ]
+    },
+    {
+      "logical_check_id": "research-simulations",
+      "workflow_name": "emergence-sim",
+      "check_name_patterns": [
+        "test (*)"
+      ]
+    }
+  ]
+}
