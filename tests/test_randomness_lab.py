@@ -1,6 +1,7 @@
 import random
 import unittest
 
+from randomness_lab.experiments import run_trials
 from randomness_lab.model import Worker
 from randomness_lab.policies import POLICIES, make_policy, power_of_d_least_loaded
 from randomness_lab.simulator import SimulationConfig, run_simulation
@@ -19,6 +20,22 @@ class RandomnessLabTests(unittest.TestCase):
         first = run_simulation(self.workers, make_policy("thompson"), config)
         second = run_simulation(self.workers, make_policy("thompson"), config)
         self.assertEqual(first, second)
+
+    def test_repeated_trials_are_reproducible_and_report_uncertainty(self) -> None:
+        kwargs = dict(
+            workers=self.workers,
+            policy_factory=lambda: make_policy("thompson"),
+            rounds=100,
+            trials=5,
+            base_seed=31,
+            error_correlation=0.2,
+        )
+        first = run_trials(**kwargs)
+        second = run_trials(**kwargs)
+        self.assertEqual(first, second)
+        self.assertEqual(first["trial_count"], 5)
+        self.assertEqual(len(first["trials"]), 5)
+        self.assertIsNotNone(first["summary"]["normal_approx_95_ci_verified_success_rate"])
 
     def test_all_registered_policies_run(self) -> None:
         for name in POLICIES:
