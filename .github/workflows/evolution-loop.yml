@@ -31,11 +31,14 @@ jobs:
       contents: read
       issues: read
       pull-requests: read
+      actions: read
     concurrency:
+      # Artifact-backed Bayesian state must have one successor lineage. The observer
+      # converges to the newest state rather than forking from concurrent restores.
       group: evolution-observer
       cancel-in-progress: true
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 10
     steps:
       - name: Check out trusted default branch
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -73,10 +76,80 @@ jobs:
           fi
           echo "kind=$kind" >> "$GITHUB_OUTPUT"
 
-      - name: Verify observer implementation
+      - name: Find latest successful default-branch Bayesian checkpoint
+        id: previous
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
-          python -m py_compile scripts/evolution_snapshot.py scripts/repository_evolution_score.py tests/test_evolution_observer.py
-          python -m unittest tests.test_evolution_observer -v
+          set -euo pipefail
+          selected=""
+          for run_id in $(gh api \
+            "repos/${GITHUB_REPOSITORY}/actions/workflows/evolution-loop.yml/runs?branch=${DEFAULT_BRANCH}&status=success&per_page=20" \
+            --jq '.workflow_runs[].id'); do
+            count="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${run_id}/artifacts" \
+              --jq '[.artifacts[] | select(.expired == false and (.name | startswith("evolution-checkpoint-")))] | length' || echo 0)"
+            if [[ "$count" -gt 0 ]]; then
+              selected="$run_id"
+              break
+            fi
+          done
+          echo "run_id=${selected}" >> "$GITHUB_OUTPUT"
+
+      - name: Download previous trusted Bayesian checkpoint
+        if: steps.previous.outputs.run_id != ''
+        continue-on-error: true
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: evolution-checkpoint-*
+          path: /tmp/previous-evolution
+          merge-multiple: true
+          repository: ${{ github.repository }}
+          github-token: ${{ github.token }}
+          run-id: ${{ steps.previous.outputs.run_id }}
+
+      - name: Restore Bayesian checkpoint or use repository seed
+        id: checkpoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          source="repository-seed"
+          if [[ -f /tmp/previous-evolution/state/evolution-state.json ]]; then
+            cp /tmp/previous-evolution/state/evolution-state.json state/evolution-state.json
+            if [[ -f /tmp/previous-evolution/state/evolution-events.jsonl ]]; then
+              cp /tmp/previous-evolution/state/evolution-events.jsonl state/evolution-events.jsonl
+            fi
+            source="trusted-main-artifact:${{ steps.previous.outputs.run_id }}"
+          fi
+          echo "source=${source}" >> "$GITHUB_OUTPUT"
+
+      - name: Verify persistent and live mathematical implementations
+        run: |
+          python -m py_compile \
+            scripts/evolution_math.py \
+            scripts/evolution_score.py \
+            scripts/evolution_snapshot.py \
+            scripts/repository_evolution_score.py \
+            scripts/conjunctive_evolution_control.py \
+            tests/test_evolution_math.py \
+            tests/test_evolution_observer.py \
+            tests/test_conjunctive_evolution_control.py
+          python -m unittest -v \
+            tests.test_evolution_math \
+            tests.test_evolution_observer \
+            tests.test_conjunctive_evolution_control
+
+      - name: Update persistent Bayesian history
+        run: |
+          python scripts/evolution_score.py \
+            --kind '${{ steps.event.outputs.kind }}' \
+            --actor '${{ github.actor }}' \
+            --repository '${{ github.repository }}' \
+            --ref '${{ github.ref }}' \
+            --run-id '${{ github.run_id }}' \
+            --source '${{ github.event_name }}' \
+            --checkpoint-source '${{ steps.checkpoint.outputs.source }}'
 
       - name: Collect bounded live repository evidence
         env:
@@ -88,7 +161,7 @@ jobs:
             --run-id '${{ github.run_id }}' \
             --output results/evolution/repository-snapshot.json
 
-      - name: Evaluate multi-algorithm evolution policy
+      - name: Evaluate multi-algorithm live evolution policy
         run: |
           python scripts/repository_evolution_score.py \
             --snapshot results/evolution/repository-snapshot.json \
@@ -96,21 +169,56 @@ jobs:
             --output results/evolution/evolution-decision.json \
             --report results/evolution/EVOLUTION_REPORT.md
 
-      - name: Validate generated evidence
+      - name: Evaluate conjunctive history plus live guards
         run: |
+          python scripts/conjunctive_evolution_control.py \
+            --history state/evolution-state.json \
+            --math-policy state/evolution-math-policy.json \
+            --live results/evolution/evolution-decision.json \
+            --live-policy config/evolution-policy-v1.json \
+            --output results/evolution/conjunctive-control.json \
+            --report results/evolution/CONJUNCTIVE_CONTROL_REPORT.md
+
+      - name: Validate generated evidence and state
+        run: |
+          python -m json.tool state/evolution-state.json >/dev/null
+          python -m json.tool state/evolution-math-policy.json >/dev/null
+          python -m json.tool config/evolution-policy-v1.json >/dev/null
           python -m json.tool results/evolution/repository-snapshot.json >/dev/null
           python -m json.tool results/evolution/evolution-decision.json >/dev/null
+          python -m json.tool results/evolution/conjunctive-control.json >/dev/null
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          for line in Path('state/evolution-events.jsonl').read_text().splitlines():
+              if line.strip():
+                  json.loads(line)
+          print('Bayesian history, live observation, and conjunctive control are valid')
+          PY
 
-      - name: Publish evolution observation artifact
+      - name: Publish persistent checkpoint and live evidence
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: evolution-observation-${{ github.run_id }}
-          path: results/evolution/
+          name: evolution-checkpoint-${{ github.run_id }}
+          path: |
+            EVOLUTION_REPORT.md
+            state/evolution-state.json
+            state/evolution-events.jsonl
+            state/evolution-math-policy.json
+            config/evolution-policy-v1.json
+            results/evolution/
           retention-days: 30
           if-no-files-found: error
 
       - name: Job summary
-        run: cat results/evolution/EVOLUTION_REPORT.md >> "$GITHUB_STEP_SUMMARY"
+        run: |
+          echo "# Persistent Bayesian history" >> "$GITHUB_STEP_SUMMARY"
+          cat EVOLUTION_REPORT.md >> "$GITHUB_STEP_SUMMARY"
+          echo >> "$GITHUB_STEP_SUMMARY"
+          echo "# Recomputed live repository observatory" >> "$GITHUB_STEP_SUMMARY"
+          cat results/evolution/EVOLUTION_REPORT.md >> "$GITHUB_STEP_SUMMARY"
+          echo >> "$GITHUB_STEP_SUMMARY"
+          cat results/evolution/CONJUNCTIVE_CONTROL_REPORT.md >> "$GITHUB_STEP_SUMMARY"
 
   verify-pr-head:
     # Proposed code receives only public-repository contents read authority and no
@@ -122,7 +230,7 @@ jobs:
       group: evolution-pr-${{ github.event.pull_request.number }}
       cancel-in-progress: true
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 6
     steps:
       - name: Check out proposed PR code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -135,7 +243,17 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Test deterministic observer policy
+      - name: Test deterministic persistent, live, and conjunctive policies
         run: |
-          python -m py_compile scripts/evolution_snapshot.py scripts/repository_evolution_score.py tests/test_evolution_observer.py
-          python -m unittest tests.test_evolution_observer -v
+          python -m py_compile \
+            scripts/evolution_math.py \
+            scripts/evolution_score.py \
+            scripts/evolution_snapshot.py \
+            scripts/repository_evolution_score.py \
+            scripts/conjunctive_evolution_control.py
+          python -m unittest -v \
+            tests.test_evolution_math \
+            tests.test_evolution_observer \
+            tests.test_conjunctive_evolution_control
+          python -m json.tool state/evolution-math-policy.json >/dev/null
+          python -m json.tool config/evolution-policy-v1.json >/dev/null
