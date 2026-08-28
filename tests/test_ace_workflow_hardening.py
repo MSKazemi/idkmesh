@@ -1,3 +1,4 @@
+import re
 import unittest
 from pathlib import Path
 
@@ -17,8 +18,9 @@ class AceWorkflowHardeningTests(unittest.TestCase):
         )
         self.assertNotIn("actions/github-script@v7", self.text)
 
-    def test_privileged_workflow_never_checks_out_pr_code(self):
+    def test_privileged_workflow_never_checks_out_or_shell_executes_pr_code(self):
         self.assertNotIn("actions/checkout", self.text)
+        self.assertNotRegex(self.text, re.compile(r"^\s+run:\s*", re.MULTILINE))
         self.assertNotIn("contents: write", self.text)
         self.assertIn("contents: read", self.text)
         self.assertIn("issues: write", self.text)
