@@ -30,7 +30,7 @@ class RunnerPolicyTests(unittest.TestCase):
         self.assertIn("--memory 256m", joined)
         self.assertNotIn("/var/run/docker.sock", joined)
         self.assertNotIn("--privileged", command)
-        self.assertEqual(command[-3:-1], ["python:3.12-alpine", "python"])
+        self.assertEqual(command[-4:-2], ["python:3.12-alpine", "python"])
 
     def test_allowed_candidate_change_has_no_policy_violation(self) -> None:
         self.assertEqual(path_policy_violations(work_unit(), ["README.md"]), [])
