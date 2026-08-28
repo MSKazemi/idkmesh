@@ -38,7 +38,7 @@
   "constraints": {
     "allowed_paths": ["experiments/", "examples/", "schemas/", "results/"],
     "forbidden_paths": [".github/workflows/"],
-    "policies": ["No network access", "Do not interpret smoke_score as scientific performance"]
+    "policies": ["No network access", "No project-paid compute", "Do not interpret smoke_score as scientific performance"]
   },
   "uncertainty": [
     {
@@ -97,7 +97,9 @@
     "wall_seconds": 10,
     "compute_units": 0.01,
     "human_minutes": 1,
-    "tokens": 0
+    "tokens": 0,
+    "project_spend_usd_max": 0,
+    "paid_fallback_allowed": false
   },
   "provenance": {
     "created_by": "IDKMesh Phase 0",
