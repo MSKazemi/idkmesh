@@ -1,0 +1,20 @@
+{
+  "schema_version": "0.1",
+  "run_id": "two-attempt-evaluator-plan-good-vs-bad",
+  "work_unit": "examples/work-units/patch-verifier-smoke.work-unit.json",
+  "evaluator_plan": "verification/fixtures/patch-smoke-evaluator-plan-v0.2.json",
+  "attempts": [
+    {
+      "attempt_id": "attempt-001",
+      "worker_adapter": "result-bundle",
+      "result_manifest": "examples/verifier/patch/good/result-manifest.json",
+      "candidate_root": "examples/verifier/patch/good"
+    },
+    {
+      "attempt_id": "attempt-002",
+      "worker_adapter": "result-bundle",
+      "result_manifest": "examples/verifier/patch/wrong-semantic/result-manifest.json",
+      "candidate_root": "examples/verifier/patch/wrong-semantic"
+    }
+  ]
+}
