@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://idkmesh.org/schemas/resource-compute-bindings-v0.1.schema.json",
   "title": "IDKMesh Resource to Compute Binding v0.1",
-  "description": "Checked-in, expiring authorization that allows already-concrete zero-project-cost compute offers to survive Free Resource Mesh admission. This schema grants no dispatch, correctness, repository-write, or merge authority.",
+  "description": "Checked-in, expiring authorization that allows already-concrete zero-project-cost compute offers to survive Free Resource Mesh admission. Discovery/resource capabilities and concrete runtime capabilities use separate vocabularies and are gated separately. This schema grants no dispatch, correctness, repository-write, or merge authority.",
   "type": "object",
   "additionalProperties": false,
   "required": ["version", "bindings"],
@@ -22,6 +22,7 @@
         "resource_id",
         "provider",
         "allowed_cost_classes",
+        "required_resource_capabilities",
         "allowed_capabilities",
         "enabled",
         "terms_eligible",
@@ -41,8 +42,17 @@
             "enum": ["local_owned", "donated", "public_project_ci", "grant", "free_tier"]
           }
         },
-        "allowed_capabilities": {
+        "required_resource_capabilities": {
+          "description": "Broad capability evidence that must still be present on the bound Free Resource Mesh resource. These names belong to the discovery/resource vocabulary, not the concrete runtime-offer vocabulary.",
           "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "allowed_capabilities": {
+          "description": "Concrete runtime capability names that the binding permits an already-materialized Compute Offer to expose.",
+          "type": "array",
+          "minItems": 1,
           "uniqueItems": true,
           "items": {"type": "string", "minLength": 1}
         },
