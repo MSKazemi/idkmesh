@@ -70,6 +70,7 @@
         "relationship": {"enum": ["independent", "partially_independent", "unknown"]},
         "basis": {
           "type": "array",
+          "minItems": 1,
           "uniqueItems": true,
           "items": {"enum": ["separate_process", "separate_adapter", "separate_model", "separate_human", "hidden_tests", "isolated_credentials", "separate_organization", "other"]}
         },
