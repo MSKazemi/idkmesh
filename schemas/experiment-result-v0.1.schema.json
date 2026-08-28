@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idkmesh.org/schemas/experiment-result-v0.1.schema.json",
+  "title": "IDKMesh Experiment Result v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "experiment_id", "run_id", "configuration_id", "seed", "status", "started_at", "finished_at", "metrics", "costs", "verification", "artifacts", "provenance"],
+  "properties": {
+    "schema_version": {"const": "0.1"},
+    "experiment_id": {"type": "string", "minLength": 1},
+    "run_id": {"type": "string", "minLength": 1},
+    "configuration_id": {"type": "string", "minLength": 1},
+    "seed": {"type": "integer", "minimum": 0},
+    "status": {"enum": ["passed", "failed", "error", "skipped"]},
+    "started_at": {"type": "string", "format": "date-time"},
+    "finished_at": {"type": "string", "format": "date-time"},
+    "metrics": {"type": "object", "additionalProperties": {"type": ["number", "integer", "null"]}},
+    "costs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["wall_seconds", "compute_units", "human_minutes"],
+      "properties": {
+        "wall_seconds": {"type": "number", "minimum": 0},
+        "compute_units": {"type": "number", "minimum": 0},
+        "human_minutes": {"type": "number", "minimum": 0},
+        "tokens": {"type": "integer", "minimum": 0}
+      }
+    },
+    "verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["policy", "passed", "checks"],
+      "properties": {
+        "policy": {"type": "string"},
+        "passed": {"type": "boolean"},
+        "checks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "passed"],
+            "properties": {
+              "id": {"type": "string"},
+              "passed": {"type": "boolean"},
+              "detail": {"type": "string"}
+            }
+          }
+        }
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["type", "locator"],
+        "properties": {
+          "type": {"type": "string"},
+          "locator": {"type": "string"},
+          "digest": {"type": "string"}
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["harness_version", "manifest_digest"],
+      "properties": {
+        "harness_version": {"type": "string"},
+        "manifest_digest": {"type": "string"},
+        "git_commit": {"type": "string"},
+        "host": {"type": "string"}
+      }
+    },
+    "notes": {"type": "string"},
+    "extensions": {"type": "object", "additionalProperties": true}
+  }
+}
