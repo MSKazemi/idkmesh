@@ -1,0 +1,12 @@
+{
+  "schema_version": "0.1",
+  "id": "verifier-smoke-policy",
+  "candidate_artifact_id": "candidate-result",
+  "allowed_files": ["candidate.json"],
+  "max_candidate_bytes": 4096,
+  "required_json": {
+    "schema_version": "0.1",
+    "answer": 42,
+    "status": "ready"
+  }
+}
