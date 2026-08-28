@@ -110,11 +110,31 @@ Both ecosystems are evolving. Bindings therefore pin explicit protocol revisions
 
 For A2A specifically, keep **specification release** and **negotiated protocol version** distinct: protocol negotiation uses `Major.Minor`, while patch releases do not change protocol compatibility and should not be sent as request protocol versions.
 
-## Next implementation tests
+## Heterogeneous adapter boundary
+
+`interop.adapters` now defines one coordinator-facing `WorkerAdapter` protocol.
+Both `LocalAdapter` and `A2AMockAdapter` cross that same `run_with_adapter()`
+path; the coordinator contains no provider- or protocol-specific branch.
+
+The A2A mock performs a real canonical JSON serialization/deserialization of
+the existing `SendMessage` binding, reconstructs the exact Work Unit, follows a
+submitted → working → completed lifecycle, and returns immutable candidate
+artifact bytes. The coordinator normalizes either adapter into a schema-valid
+ResultManifest v0.1 with exact Work Unit and artifact digests.
+
+Verification is a separate call and component. `verify_result_bundle()` checks
+the Work Unit binding, declared artifact digests, verifier-owned expected bytes,
+and the no-worker-acceptance boundary without executing candidate code. Its
+VerificationResult remains decision support and explicitly has no integration
+authority. The bounded mock uses one process, so it truthfully reports a shared
+runtime even though worker and verifier roles remain separate.
+
+## Remaining implementation tests
 
 1. Validate the binding module against real A2A 1.0 SDK types and the A2A TCK.
 2. Validate the MCP envelope against a 2026-07-28 SDK that supports custom extensions; Tasks runtime support is still uneven across SDKs.
-3. Build a local adapter and one A2A or MCP mock adapter behind the same coordinator interface.
-4. Convert external artifacts into canonical worker ResultManifest v0.1.
-5. Add capability matching from A2A Agent Cards / MCP server discovery into scheduler experiments.
-6. Keep protocol compatibility tests in CI.
+3. Validate a live or official-TCK external lifecycle without weakening the
+   deterministic mock boundary.
+4. Add capability matching from A2A Agent Cards / MCP server discovery into
+   scheduler experiments.
+5. Keep protocol compatibility tests in CI.
