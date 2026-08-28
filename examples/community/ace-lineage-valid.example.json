@@ -1,0 +1,36 @@
+{
+  "version": "0.1",
+  "lineage_id": "bootstrap-lineage-25-48",
+  "parent": {
+    "repo": "MSKazemi/idkmesh",
+    "kind": "issue",
+    "number": 10
+  },
+  "seed": {
+    "repo": "MSKazemi/idkmesh",
+    "kind": "issue",
+    "number": 25
+  },
+  "descendant": {
+    "repo": "MSKazemi/idkmesh",
+    "kind": "pr",
+    "number": 48
+  },
+  "descendant_type": "measure",
+  "status": "verified",
+  "recorded_at": "2026-08-28T14:30:00Z",
+  "actor": "github:example-contributor",
+  "reviewer_minutes": 12,
+  "verification": {
+    "method": "review",
+    "evidence_refs": [
+      "pr:48",
+      "workflow:ace-lineage-check"
+    ],
+    "verified_at": "2026-08-28T14:45:00Z",
+    "verifier": "github:independent-reviewer"
+  },
+  "metadata": {
+    "cohort": "bootstrap-1"
+  }
+}

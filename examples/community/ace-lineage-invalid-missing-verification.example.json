@@ -1,0 +1,21 @@
+{
+  "version": "0.1",
+  "parent": {
+    "repo": "MSKazemi/idkmesh",
+    "kind": "issue",
+    "number": 10
+  },
+  "seed": {
+    "repo": "MSKazemi/idkmesh",
+    "kind": "issue",
+    "number": 25
+  },
+  "descendant": {
+    "repo": "MSKazemi/idkmesh",
+    "kind": "pr",
+    "number": 48
+  },
+  "descendant_type": "measure",
+  "status": "verified",
+  "recorded_at": "2026-08-28T14:30:00Z"
+}

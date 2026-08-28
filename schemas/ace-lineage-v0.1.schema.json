@@ -1,0 +1,168 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/MSKazemi/idkmesh/schemas/ace-lineage-v0.1.schema.json",
+  "title": "IDKMesh ACE Lineage Record v0.1",
+  "description": "A minimal evidence edge linking a verified parent, a Growth Seed, and a candidate or verified descendant.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "parent",
+    "seed",
+    "descendant",
+    "descendant_type",
+    "status",
+    "recorded_at"
+  ],
+  "properties": {
+    "version": {
+      "const": "0.1"
+    },
+    "lineage_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "parent": {
+      "$ref": "#/$defs/artifactRef"
+    },
+    "seed": {
+      "$ref": "#/$defs/artifactRef"
+    },
+    "descendant": {
+      "$ref": "#/$defs/artifactRef"
+    },
+    "descendant_type": {
+      "enum": [
+        "reproduce",
+        "extend",
+        "challenge",
+        "explain",
+        "translate",
+        "secure",
+        "measure",
+        "connect",
+        "review",
+        "onboard",
+        "other"
+      ]
+    },
+    "status": {
+      "enum": ["candidate", "merged", "verified", "rejected"]
+    },
+    "recorded_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "actor": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "reviewer_minutes": {
+      "type": "number",
+      "minimum": 0
+    },
+    "verification": {
+      "$ref": "#/$defs/verification"
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": {
+        "type": ["string", "number", "integer", "boolean", "null"]
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {"const": "verified"}
+        },
+        "required": ["status"]
+      },
+      "then": {
+        "required": ["verification"]
+      }
+    }
+  ],
+  "$defs": {
+    "artifactRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repo", "kind"],
+      "properties": {
+        "repo": {
+          "type": "string",
+          "pattern": "^[^/\\s]+/[^/\\s]+$"
+        },
+        "kind": {
+          "enum": ["issue", "pr", "commit"]
+        },
+        "number": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "sha": {
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{7,64}$"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {"enum": ["issue", "pr"]}
+            },
+            "required": ["kind"]
+          },
+          "then": {
+            "required": ["number"],
+            "not": {"required": ["sha"]}
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {"const": "commit"}
+            },
+            "required": ["kind"]
+          },
+          "then": {
+            "required": ["sha"],
+            "not": {"required": ["number"]}
+          }
+        }
+      ]
+    },
+    "verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["method", "evidence_refs", "verified_at"],
+      "properties": {
+        "method": {
+          "enum": ["label", "tests", "review", "reproduction", "manual"]
+        },
+        "evidence_refs": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          }
+        },
+        "verified_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "verifier": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        }
+      }
+    }
+  }
+}

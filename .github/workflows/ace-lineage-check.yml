@@ -1,0 +1,50 @@
+name: ACE lineage check
+
+on:
+  pull_request:
+    paths:
+      - 'schemas/ace-lineage-v0.1.schema.json'
+      - 'examples/community/ace-lineage-*.example.json'
+      - 'scripts/ace_lineage.py'
+      - 'tests/test_ace_lineage_schema.py'
+      - 'tests/test_ace_lineage_parser.py'
+      - '.github/workflows/ace-lineage-check.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'schemas/ace-lineage-v0.1.schema.json'
+      - 'examples/community/ace-lineage-*.example.json'
+      - 'scripts/ace_lineage.py'
+      - 'tests/test_ace_lineage_schema.py'
+      - 'tests/test_ace_lineage_parser.py'
+      - '.github/workflows/ace-lineage-check.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-lineage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Phase 0 dependency
+        run: python -m pip install -r requirements-phase0.txt
+
+      - name: Validate ACE lineage invariants
+        run: |
+          python -m unittest tests.test_ace_lineage_schema -v
+          python -m unittest tests.test_ace_lineage_parser -v
+
+# Security: this workflow only parses repository-owned JSON/Markdown fixtures
+# against a JSON Schema. It does not execute contributor-supplied task commands,
+# call the GitHub API with write permissions, or grant verification/integration
+# authority.
