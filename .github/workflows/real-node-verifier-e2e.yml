@@ -77,10 +77,20 @@ jobs:
             echo 'Canonical VerificationResult generated under evaluator-owned results/.' >> "$GITHUB_STEP_SUMMARY"
           fi
 
+      - name: Persist replayable evaluator evidence
+        if: success()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: real-node-verifier-evidence-${{ github.run_id }}
+          path: evaluator/results/verification/real-node-520ad2c/
+          if-no-files-found: error
+          retention-days: 30
+
 # Authority boundary:
 # - worker is checked out by exact accepted SHA and cannot modify evaluator control;
 # - checkout credentials are not persisted and no repository secrets are supplied;
 # - evaluator plan is derived from the current canonical v0.2 fixture only after candidate generation;
 # - verifier is metadata-only and executes no candidate code;
 # - workflow has read-only repository permission and no approve/push/merge authority;
+# - persisted artifacts are review/replay evidence only and grant no integration authority;
 # - verifier recommendation remains decision support; human integration is external.
