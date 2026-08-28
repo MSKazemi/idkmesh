@@ -1,0 +1,13 @@
+{
+  "graph_id": "idkgraph-example-invalid-cycle",
+  "version": "0.1",
+  "nodes": [
+    {"id": "WU-A", "type": "work_unit", "title": "A"},
+    {"id": "WU-B", "type": "work_unit", "title": "B"}
+  ],
+  "hyperedges": [
+    {"id": "H-A", "relation": "depends_on", "sources": ["WU-A"], "targets": ["WU-B"]},
+    {"id": "H-B", "relation": "depends_on", "sources": ["WU-B"], "targets": ["WU-A"]}
+  ],
+  "events": []
+}
