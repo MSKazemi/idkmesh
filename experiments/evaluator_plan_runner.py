@@ -218,7 +218,7 @@ def cmd_verify(args: argparse.Namespace) -> int:
     result_manifest_path = local_verifier.resolve_repo_path(args.result_manifest)
     candidate_root = local_verifier.resolve_repo_path(args.candidate_root)
     plan_path = local_verifier.resolve_repo_path(args.evaluator_plan)
-    output_path = local_verifier.resolve_repo_path(args.output)
+    output_path = local_verifier.resolve_output_path(args.output)
 
     plan = load_plan(plan_path)
     if plan["policy"]["require_output_outside_candidate_root"]:
@@ -250,6 +250,16 @@ def cmd_self_test(args: argparse.Namespace) -> int:
     good_candidate_root = local_verifier.resolve_repo_path(args.good_candidate_root)
     bad_result_path = local_verifier.resolve_repo_path(args.bad_result_manifest)
     bad_candidate_root = local_verifier.resolve_repo_path(args.bad_candidate_root)
+
+    expect_plan_error(
+        "canonical repository verification output",
+        lambda: local_verifier.resolve_output_path("README.md"),
+    )
+    allowed_output = local_verifier.resolve_output_path(
+        "results/verification/evaluator-plan-self-test.json"
+    )
+    if allowed_output.relative_to(ROOT).parts[0] != "results":
+        raise EvaluatorPlanError("results/ output path guard rejected its own invariant")
 
     work_unit = local_verifier.load_json(work_unit_path)
     plan = load_plan(plan_path)
@@ -364,7 +374,8 @@ def cmd_self_test(args: argparse.Namespace) -> int:
     print(
         "OK: bound EvaluatorPlan accepts/rejects the existing verifier fixtures and fails closed "
         "on WorkUnit digest drift, source-revision drift, validator-coverage loss, identity collision, "
-        "candidate-owned evaluator control, and candidate-local verification output"
+        "candidate-owned evaluator control, candidate-local verification output, and canonical "
+        "repository output targets"
     )
     return 0
 
@@ -380,7 +391,11 @@ def build_parser() -> argparse.ArgumentParser:
     verify.add_argument("--result-manifest", required=True)
     verify.add_argument("--candidate-root", required=True)
     verify.add_argument("--evaluator-plan", required=True)
-    verify.add_argument("--output", required=True)
+    verify.add_argument(
+        "--output",
+        required=True,
+        help="Repository-relative generated evidence path under results/.",
+    )
     verify.set_defaults(func=cmd_verify)
 
     self_test = sub.add_parser(
