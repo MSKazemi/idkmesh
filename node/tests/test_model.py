@@ -24,6 +24,12 @@ class WorkUnitModelTests(unittest.TestCase):
         self.assertEqual(work.required_validator_ids, ("result-manifest-schema", "independent-review"))
         self.assertEqual(work.minimum_independent_verifiers, 1)
 
+    def test_canonical_fixture_python_command_compiles(self) -> None:
+        work = parse_work_unit(fixture())
+        self.assertGreaterEqual(len(work.execution.command), 3)
+        self.assertEqual(work.execution.command[:2], ("python", "-c"))
+        compile(work.execution.command[2], "<canonical-node-smoke>", "exec")
+
     def test_old_private_work_unit_shape_is_rejected(self) -> None:
         old_shape = {
             "version": "0.1",
