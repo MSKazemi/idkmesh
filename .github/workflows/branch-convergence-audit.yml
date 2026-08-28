@@ -9,6 +9,7 @@ on:
       - 'tools/branch_convergence_audit.py'
       - 'tests/test_branch_convergence_audit.py'
       - 'docs/planning/BRANCH_CONVERGENCE_POLICY.md'
+      - 'docs/planning/BRANCH_STEWARD_AGENT.md'
       - '.github/workflows/branch-convergence-audit.yml'
 
 permissions:
