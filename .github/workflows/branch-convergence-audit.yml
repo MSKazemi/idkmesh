@@ -19,7 +19,7 @@ permissions:
   pull-requests: read
 
 concurrency:
-  group: branch-convergence-audit
+  group: branch-convergence-audit-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
