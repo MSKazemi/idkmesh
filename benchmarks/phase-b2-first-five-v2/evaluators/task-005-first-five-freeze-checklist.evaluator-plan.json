@@ -1,0 +1,50 @@
+{
+  "backend": {
+    "max_candidate_bytes": 200000,
+    "max_log_bytes": 262144,
+    "require_nonempty_patch": true,
+    "required_added_text": [
+      "## First-five freeze checklist",
+      "- [ ] Record the frozen `definition_digest`."
+    ],
+    "required_log_types": [
+      "stdout",
+      "stderr"
+    ],
+    "type": "unified_diff",
+    "verify_log_digests": true
+  },
+  "binding": {
+    "source_revision": "9c53bb4069a5db1c0688dbbe7a8f028540cbf7c2",
+    "work_unit_digest": "sha256:8dc195e5221d04af69e259e93b40db471f4df6f9761a0c4b10efd692db5c7527",
+    "work_unit_id": "benchmark/phase-b2/005-first-five-freeze-checklist",
+    "work_unit_version": 1
+  },
+  "candidate_artifact_id": "candidate-patch",
+  "execution_mode": "metadata_only",
+  "extensions": {
+    "org.idkmesh.benchmark": {
+      "cohort": "phase-b2-first-five-v2",
+      "semantic_scope": "bootstrap public structural evaluator with exact complete-line predicates",
+      "task_id": "benchmark/phase-b2/005-first-five-freeze-checklist"
+    }
+  },
+  "id": "benchmark/phase-b2/005-first-five-freeze-checklist/evaluator-v2",
+  "policy": {
+    "require_output_outside_candidate_root": true,
+    "require_plan_outside_candidate_root": true,
+    "require_verifier_distinct_from_worker": true
+  },
+  "required_validator_ids": [
+    "result-manifest-schema",
+    "independent-review"
+  ],
+  "schema_version": "0.2",
+  "verifier": {
+    "adapter": "deterministic-patch-verifier",
+    "adapter_version": "0.1.1",
+    "id": "idkmesh-local-verifier",
+    "type": "system"
+  },
+  "visibility": "public"
+}
