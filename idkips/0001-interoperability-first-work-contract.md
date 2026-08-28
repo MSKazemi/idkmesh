@@ -3,321 +3,263 @@
 - **Status:** Experimental
 - **Authors:** IDKMesh bootstrap project
 - **Created:** 2026-08-28
-- **Discussion:** GitHub issue to be linked
-- **Implementation:** issues #3, #4, #6 plus follow-up interoperability tasks
+- **Discussion:** GitHub issue #17
+- **Implementation:** WorkUnit v0.2, `interop/`, node adapter work, issues #4/#16/#17
 
 ## Summary
 
-IDKMesh should define its core Work Contract as a **scheduling, verification, evidence, and provenance envelope** that can map onto existing agent/task protocols rather than defining a new generic remote-agent transport.
+IDKMesh should keep **WorkUnit v0.2** as its scheduling, authority, verification-policy, evidence-requirement, and provenance contract while mapping it onto existing agent/task protocols instead of inventing another generic remote-agent transport.
 
-The first interoperability targets should be:
+Initial interoperability targets:
 
-- Agent2Agent (A2A) Task / Agent Card / Artifact;
-- Model Context Protocol (MCP) tool calls plus the Tasks extension where appropriate;
-- direct local adapters for coding-agent harnesses such as mini-SWE-agent and OpenHands.
+- Agent2Agent (A2A) 1.0 for remote autonomous agents;
+- Model Context Protocol (MCP) 2026-07-28 for tools/context and optional Tasks-style asynchronous work;
+- direct adapters for local workers and coding agents such as `idkmesh-node`, mini-SWE-agent, and OpenHands.
+
+The defining trust rule is:
+
+> **External execution completion is not IDKMesh acceptance.**
 
 ## Problem
 
-IDKMesh needs a machine-readable unit of bounded work, but the agent ecosystem is converging around open interoperability protocols.
+A2A and MCP solve important interoperability problems, but neither defines all semantics required by verification-first collective engineering.
 
-If IDKMesh defines a complete competing agent protocol too early, it risks:
+WorkUnit v0.2 explicitly contains IDKMesh-specific requirements including:
 
-- unnecessary implementation work;
-- a smaller compatible ecosystem;
-- duplicated discovery/task-lifecycle concepts;
-- contributor confusion;
-- long-term maintenance of commodity transport concerns rather than the project's distinctive research layer.
-
-At the same time, A2A and MCP do not define all of the information IDKMesh needs for verification-first collective engineering.
-
-Examples of IDKMesh-specific requirements include:
-
-- risk/trust class;
-- allowed files/resources/actions;
+- vendor-neutral worker capabilities/resources;
+- allowed files/actions/network/secrets;
+- risk class, data classification, minimum worker trust, and sandbox requirement;
 - dependency graph;
-- expected evidence;
-- verification policy;
-- replication/diversity policy;
-- resource/capability hints;
-- provenance requirements;
-- integration/acceptance policy.
+- explicit uncertainty;
+- independent verification policy;
+- required validators and evidence;
+- budgets;
+- provenance;
+- failure semantics.
 
-## Motivation
-
-As of 2026, A2A provides an open agent interoperability model with Agent Cards, skills, stateful Tasks, Messages, and Artifacts. MCP has become a major tool/context substrate and its Tasks extension provides durable asynchronous task handles for long-running operations.
-
-IDKMesh can move faster and attract more external implementations by fitting into this ecosystem.
-
-The project's innovation budget should be spent primarily on:
-
-- collective task decomposition;
-- verification;
-- evidence;
-- diversity/error correlation;
-- scheduling;
-- uncertain goal management;
-- integration policy;
-- community-scale coordination.
-
-## Scope
-
-This proposal defines the architectural relationship between the IDKMesh Work Contract and external task/agent protocols.
-
-## Non-goals
-
-This proposal does not:
-
-- freeze the final JSON fields of WorkUnit v0;
-- require every worker to implement A2A or MCP;
-- require networked execution for the first release;
-- replace GitHub collaboration;
-- standardize model prompts or internal agent reasoning;
-- define an economic settlement protocol.
+Recreating agent discovery, asynchronous task lifecycle, artifact transport, or generic tool calling inside IDKMesh would spend community effort on commodity infrastructure and reduce interoperability.
 
 ## Proposal
 
-### 1. Define the Work Contract as an IDKMesh semantic envelope
+### 1. Canonical semantic contract
 
-The Work Contract should contain the information needed by coordinator, scheduler, worker adapter, verifier, and integrator.
-
-Conceptual groups:
+WorkUnit v0.2 remains transport-neutral and model/provider-neutral.
 
 ```text
-identity
-  id, project, goal/task references, version
-
-intent
-  objective, scope, constraints, dependencies
-
-capability/resource contract
-  required capabilities, CPU/GPU/memory hints, timeout, environment
-
-execution policy
-  allowed paths/actions/network, sandbox/risk class
-
-verification contract
-  expected artifact types, verifier policy, hidden-check references,
-  replication/diversity requirements, acceptance threshold
-
-provenance contract
-  input hashes, required environment/tool metadata, signatures/attestations
-
-integration policy
-  candidate-only / human-review / merge restrictions
-
-interop metadata
-  transport/adapter-specific references without coupling core semantics
+WorkUnit v0.2
+    -> adapter/binding
+    -> worker execution
+    -> worker ResultManifest v0.1
+    -> independent verifier evidence
+    -> human/policy integration decision
 ```
 
-### 2. ResultManifest becomes an Evidence Report
+Provider/protocol-specific data belongs in namespaced extensions or adapter provenance.
 
-The result object should not merely say that a worker finished.
+### 2. Lossless external bindings
 
-It should return:
+Bindings SHOULD use native external protocol fields where semantics match, but MUST preserve the complete canonical WorkUnit plus a canonical digest whenever external concepts do not cover the full IDKMesh contract.
 
-- candidate artifact references/hashes;
-- patch/branch/worktree reference where relevant;
-- worker/adapter identity and version;
-- environment/tool/model provenance;
-- execution logs/metrics references;
-- self-reported confidence where useful;
-- tests run by the worker, clearly distinguished from independent verification;
-- reproducibility information;
-- signatures/attestations where enabled.
+A mapping must not silently discard:
 
-Independent verifier results should remain separable so a worker cannot certify itself.
+- `security`;
+- `permissions`;
+- `verification_policy`;
+- `validators`;
+- `evidence_requirements`;
+- budgets or provenance;
+- dependency/failure semantics.
+
+A digest mismatch is a binding error.
 
 ### 3. A2A mapping
 
-A2A should be treated as a candidate remote-agent interoperability transport.
+A2A 1.0 is the preferred first remote-agent binding candidate.
 
-Possible mapping:
+Conceptual mapping:
 
 ```text
-IDKMesh worker capability
-    <-> A2A Agent Card + skills
+worker discovery/capability
+    <-> Agent Card / skills / capabilities
 
-IDKMesh Work Contract invocation
-    -> A2A Message / Task request with structured Part metadata
+WorkUnit invocation
+    -> Message / Task with IDKMesh extension data
 
-long-running worker lifecycle
-    <-> A2A Task state
+long-running execution
+    <-> Task lifecycle
 
-candidate outputs
-    <-> A2A Artifacts
+candidate output
+    <-> Artifact / Parts
 
-IDKMesh-specific verification/scheduling data
-    -> A2A extension / structured data Part
+IDKMesh security + verification semantics
+    -> IDKMesh extension payload
 ```
 
-IDKMesh should explore a declared A2A extension for the Work Contract instead of modifying A2A core semantics.
+The binding should use a declared extension rather than modifying A2A core semantics.
 
 ### 4. MCP mapping
 
-MCP remains especially useful for tools/resources available to an agent or coordinator.
-
-Where a Work Contract is naturally implemented as a tool operation:
+MCP remains especially useful for tool and context integration.
 
 ```text
 IDKMesh operation
-   -> MCP tools/call
+    -> tools/call
 
-long-running execution
-   -> MCP Tasks extension
+optional long-running execution
+    -> io.modelcontextprotocol/tasks
 
-status/result
-   <- durable task handle + final tool result
+final worker output
+    <- tool/task result
 ```
 
-MCP should not be forced into every worker relationship. A2A and direct adapters may be more natural for autonomous remote agents.
+MCP Tasks is an optional extension, not a dependency of the local IDKMesh kernel.
 
 ### 5. Direct adapters remain first-class
 
-The local v0.1 runner should not require a network protocol.
+The first Verified Swarm Runner remains local-first and must work without network protocols.
 
-A simple interface should allow adapters such as:
+Candidate adapters:
 
-- local subprocess/shell;
+- `idkmesh-node`;
+- local subprocess/test fixture;
 - mini-SWE-agent;
 - OpenHands;
 - human/GitHub task;
 - A2A remote agent;
-- MCP-backed task/tool.
+- MCP-backed tool/task.
 
-This makes the core testable before distributed networking exists.
+### 6. Worker ResultManifest remains a self-report
 
-### 6. Core must remain vendor-neutral
+An earlier version of this proposal described ResultManifest as becoming an “Evidence Report.” Implementation evidence showed that wording was unsafe/ambiguous.
 
-The core Work Contract must not contain mandatory fields specific to one model provider, coding agent, Git forge, or cloud.
+**Current decision:**
 
-Provider-specific metadata belongs in namespaced adapter/provenance fields.
+- `result-manifest-v0.1.schema.json` is the worker self-report boundary;
+- it may contain candidate artifacts, logs, resource use, worker claims/confidence, provenance, and a request for validation;
+- it must not contain an authoritative `accepted` verdict;
+- independent verifier evidence is a separate object/stage;
+- integration/merge is a later human/policy decision.
+
+This separation prevents a generator from certifying its own artifact.
 
 ## Alternatives considered
 
-### Alternative A — Invent a complete IDKMesh agent protocol now
+### Invent a complete IDKMesh agent wire protocol now
 
-Rejected as the default direction because it duplicates rapidly standardizing ecosystem primitives and increases community burden.
+Not selected. It duplicates rapidly standardizing ecosystem primitives and increases maintenance burden. A custom transport remains possible later if measured requirements cannot be satisfied by adapters/extensions.
 
-It remains possible to define a custom wire protocol later if experiments reveal requirements A2A/MCP cannot satisfy.
+### Use A2A Task directly as WorkUnit
 
-### Alternative B — Use A2A Task directly as the WorkUnit
+Insufficient. A2A intentionally does not define IDKMesh-specific scheduling, risk, verification, evidence, and integration policy.
 
-Not sufficient. A2A intentionally focuses on interoperability and task/artifact exchange, not IDKMesh-specific resource scheduling, verification, risk, provenance, or integration policy.
+### Use MCP Task directly as WorkUnit
 
-### Alternative C — Use MCP Task directly as the WorkUnit
+Insufficient. MCP Tasks provide asynchronous lifecycle around operations; they are not a complete collective-engineering trust contract.
 
-Not sufficient. MCP Tasks are asynchronous handles augmenting tool calls; they are not a complete collective-engineering work/evidence contract.
+### Delay interoperability entirely
 
-### Alternative D — Delay interoperability entirely
-
-This risks freezing core schemas that are awkward to map later and creating unnecessary rework.
-
-## Interoperability / compatibility
-
-WorkUnit v0 should be designed so transport-specific bindings can be added without changing core semantics.
-
-A first compatibility test should round-trip one logical coding Work Contract through:
-
-1. a direct local adapter;
-2. an A2A-style representation;
-3. an MCP Tasks-style representation where appropriate.
-
-Semantic information must not silently disappear during mapping. Fields without direct external equivalents should remain in an IDKMesh extension/envelope.
+Rejected. The contract is already executable; testing mappings now is cheaper than discovering coupling after multiple worker implementations exist.
 
 ## Security / abuse considerations
 
-Interoperability increases the number of trust boundaries.
+Interoperability adds trust boundaries. IDKMesh must distinguish:
 
-The core must distinguish:
-
-- discovery metadata from trusted capability evidence;
-- worker self-report from independent verification;
-- task status from correctness;
+- discovery claims from verified capability;
 - authentication from authorization;
-- artifact transport from artifact trust.
+- worker self-report from independent evidence;
+- task completion from correctness;
+- artifact transport from artifact trust;
+- protocol metadata from project policy.
 
-A remote agent completing an A2A/MCP task does **not** imply that IDKMesh should accept its artifact.
-
-Verification policy remains authoritative.
+Remote agents must never receive authority beyond the WorkUnit permissions/risk policy merely because the remote protocol authenticated them.
 
 ## Community Impact
 
-Positive effects:
+Expected benefits:
 
-- contributors can build adapters without changing core coordination logic;
-- users can bring existing agent systems;
-- IDKMesh becomes easier to integrate into external projects;
-- less project effort is spent maintaining commodity protocol machinery;
-- standards-oriented contributors get a clear workstream.
+- contributors can add adapters without editing coordinator core;
+- existing agent ecosystems can participate;
+- standards specialists have bounded contribution surfaces;
+- less project energy is spent on transport machinery;
+- WorkUnit semantics become easier to test against heterogeneous implementations.
 
 Costs:
 
-- contributors need clear documentation explaining the difference between IDKMesh Work Contract semantics and A2A/MCP task lifecycles;
-- compatibility tests become a permanent maintenance responsibility;
-- external protocol evolution must be tracked.
+- compatibility tests become permanent maintenance work;
+- external standards must be tracked;
+- documentation must clearly explain external completion versus IDKMesh acceptance.
 
 ## Measurable success criteria
 
-Before accepting this IDKIP permanently:
+Before moving this IDKIP to `Accepted`:
 
-1. One logical Work Contract can execute through at least two heterogeneous worker adapters.
-2. An A2A mapping can represent the relevant worker lifecycle/artifacts without losing IDKMesh verification requirements.
-3. An MCP mapping is documented for tool/task cases where it is appropriate.
-4. Core scheduler/verifier code does not need model/vendor-specific branching for those adapters.
-5. Adding a new worker adapter is demonstrably smaller than implementing a new coordinator path.
-6. Contributors can understand the mapping from documentation/examples without reading protocol implementation internals.
+1. A field-by-field WorkUnit v0.2 mapping exists for A2A and MCP.
+2. A2A and MCP semantic round trips preserve the complete WorkUnit and reject tampering.
+3. External task completion cannot create an IDKMesh acceptance verdict.
+4. At least two heterogeneous worker adapters execute through one coordinator interface.
+5. Remote outputs normalize to canonical worker ResultManifest v0.1.
+6. Coordinator/verifier core contains no mandatory vendor/model branching for those adapters.
+7. A contributor unfamiliar with coordinator internals can implement a small adapter from public docs/tests.
 
-## Experiment / evidence plan
+## Evidence so far
 
-### E-0001-A — semantic mapping table
+WorkUnit v0.2 completed issue #3 and now explicitly represents capabilities/resources, security/trust, independent verification policy, validators, and evidence requirements.
 
-Create a field-by-field mapping between WorkUnit/ResultManifest draft fields and A2A/MCP concepts. Mark each field as:
+Issue #17 / `docs/interoperability/A2A_MCP_MAPPING_V0_2.md` add:
 
-- direct mapping;
-- extension metadata;
-- IDKMesh-only;
-- external-only;
-- incompatible/ambiguous.
+- explicit field mapping;
+- A2A 1.0 semantic binding fixture;
+- MCP 2026-07-28 semantic binding fixture;
+- lossless digest-protected round trips;
+- tamper tests;
+- completion-vs-acceptance tests.
 
-### E-0001-B — adapter prototype
+This is sufficient to keep the proposal `Experimental`, not to accept it permanently.
 
-Run the same small repository task through two adapters behind one coordinator interface.
+## Remaining experiments
 
-### E-0001-C — protocol round trip
+### E-0001-A — official SDK conformance
 
-Serialize a Work Contract into an A2A-compatible structured request, execute or mock the lifecycle, and reconstruct the IDKMesh result/evidence representation.
+Represent the same fixture using official/generated A2A 1.0 types and an MCP implementation matching the 2026-07-28 extension model.
 
-### E-0001-D — contributor test
+### E-0001-B — heterogeneous adapters
 
-Ask a contributor unfamiliar with coordinator internals to implement a trivial worker adapter from the public interface/docs.
+Run one bounded WorkUnit through at least two worker adapters behind the same coordinator interface.
+
+### E-0001-C — canonical result normalization
+
+Normalize local and remote worker output into worker ResultManifest v0.1, then send it to an independent verifier.
+
+### E-0001-D — contributor adapter test
+
+Ask an external contributor to implement a trivial adapter using only public docs/interfaces/tests. Record friction.
 
 ## Dissent / unresolved questions
 
-- Should the Work Contract be one schema or a smaller core plus DomainPack extensions?
-- Should A2A interoperability live in core or a plugin package?
-- Is MCP primarily a worker capability interface, coordinator tool interface, or both?
-- What namespaces/versioning strategy should extension metadata use?
-- Should human workers have the same adapter protocol or a separate GitHub-native lifecycle mapped into the same evidence model?
-- How much resource scheduling data belongs in the portable contract versus local scheduler policy?
+- Should A2A/MCP bindings live in core or a separate plugin package?
+- Should human workers use the same adapter interface or a GitHub-native binding into the same evidence model?
+- How should capability claims from Agent Cards/MCP discovery be attested for higher-risk WorkUnits?
+- Which WorkUnit fields should eventually gain standardized A2A extensions rather than an opaque namespaced payload?
+- When SDK support for MCP Tasks is uneven, what minimum synchronous contract should every MCP adapter support?
 
 ## Migration / rollback
 
-Issue #3 schemas are not yet frozen, so this proposal can influence them with low migration cost.
+WorkUnit v0.1 remains available for historical reproducibility. Current bindings target v0.2 and are versioned independently.
 
-If A2A/MCP integration proves burdensome, direct adapters remain valid and external mappings can be removed without changing the core verification semantics.
+If A2A/MCP integration proves burdensome, direct adapters remain valid; external bindings can be removed without changing IDKMesh verification semantics.
 
 ## Implementation links
 
-- Issue #3 — WorkUnit v0 and ResultManifest v0
-- Issue #4 — single-machine multi-worker orchestrator
-- Issue #6 — ProjectManifest and DomainPack
-- `EVOLUTION.md`
+- Issue #17 — interoperability experiment
+- Issue #16 — Verified Swarm Runner
+- `schemas/work-unit-v0.2.schema.json`
+- `schemas/result-manifest-v0.1.schema.json`
+- `docs/interoperability/A2A_MCP_MAPPING_V0_2.md`
 - A2A: https://a2a-protocol.org/
 - MCP: https://modelcontextprotocol.io/
 - MCP Tasks extension: https://tasks.extensions.modelcontextprotocol.io/
-- OpenHands asynchronous agents research: https://www.openhands.dev/blog/asynchronous-software-engineering-agents
-- mini-SWE-agent: https://github.com/SWE-agent/mini-swe-agent
 
 ## Decision history
 
-2026-08-28 — Added as `Experimental` to force interoperability testing before freezing WorkUnit v0.
+- **2026-08-28:** Added as `Experimental` to force interoperability testing before contract freeze.
+- **2026-08-28:** Updated after WorkUnit v0.2 landed. Corrected ResultManifest semantics so worker self-report and independent verifier evidence remain separate.
