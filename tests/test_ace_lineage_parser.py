@@ -37,6 +37,18 @@ class AceLineageParserTests(unittest.TestCase):
         with self.assertRaises(MODULE.LineageError):
             MODULE.extract_markdown(block(INVALID))
 
+    def test_invalid_recorded_at_timestamp_is_rejected(self):
+        record = json.loads(json.dumps(VALID))
+        record["recorded_at"] = "not-a-timestamp"
+        with self.assertRaises(MODULE.LineageError):
+            MODULE.extract_markdown(block(record))
+
+    def test_invalid_verification_timestamp_is_rejected(self):
+        record = json.loads(json.dumps(VALID))
+        record["verification"]["verified_at"] = "2026-99-99T99:99:99Z"
+        with self.assertRaises(MODULE.LineageError):
+            MODULE.extract_markdown(block(record))
+
     def test_duplicate_lineage_identity_is_rejected(self):
         text = block(VALID) + "\n" + block(VALID)
         with self.assertRaises(MODULE.LineageError):
