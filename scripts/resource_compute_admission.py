@@ -9,8 +9,16 @@ are true:
 2. an enabled checked-in binding explicitly authorizes its provider/cost class;
 3. the bound Free Resource Mesh entry is current, zero-cost, direct-compute,
    and carries no repository write/merge authority;
-4. both external evidence and local binding review are fresh;
-5. the concrete offer does not exceed the binding's capability allowlist.
+4. both external evidence and local binding review are current and not future-dated;
+5. the bound resource still exposes the broad discovery capabilities required by
+   the binding;
+6. the concrete offer does not exceed the binding's separate runtime-capability
+   allowlist.
+
+Discovery/resource capability names and concrete runtime capability names are
+intentionally separate vocabularies. The checked-in binding is the reviewed
+materialization boundary between them; admission does not infer string equality
+between the two layers.
 
 The output is another Compute Offer Pool, suitable for the existing
 ``free_compute_router.py``. Correctness and execution authority remain outside
@@ -55,7 +63,7 @@ def _parse_date(raw: str) -> dt.date:
 def _fresh(checked_at: str, max_age_days: int, today: dt.date) -> tuple[bool, int]:
     _require(isinstance(max_age_days, int) and max_age_days > 0, "max_age_days must be positive")
     age = (today - _parse_date(checked_at)).days
-    return age <= max_age_days, age
+    return 0 <= age <= max_age_days, age
 
 
 def validate_registry(registry: dict[str, Any]) -> None:
@@ -70,6 +78,13 @@ def validate_registry(registry: dict[str, Any]) -> None:
         _require(isinstance(resource_id, str) and resource_id, "registry offer id required")
         _require(resource_id not in seen, f"duplicate registry offer: {resource_id}")
         seen.add(resource_id)
+        capabilities = offer.get("capabilities")
+        _require(isinstance(capabilities, list), f"{resource_id}: capabilities must be a list")
+        _require(
+            all(isinstance(value, str) and value for value in capabilities),
+            f"{resource_id}: invalid capability",
+        )
+        _require(len(capabilities) == len(set(capabilities)), f"{resource_id}: capabilities must be unique")
         _require(offer.get("project_cost_usd") == 0, f"{resource_id}: project cost must be zero")
         security = offer.get("security")
         _require(isinstance(security, dict), f"{resource_id}: security object required")
@@ -97,7 +112,13 @@ def validate_pool(pool: dict[str, Any]) -> None:
         _require(offer_id not in seen, f"duplicate compute offer: {offer_id}")
         seen.add(offer_id)
         _require(isinstance(offer.get("provider"), str) and offer["provider"], f"{offer_id}: provider required")
-        _require(isinstance(offer.get("capabilities"), list), f"{offer_id}: capabilities must be a list")
+        capabilities = offer.get("capabilities")
+        _require(isinstance(capabilities, list), f"{offer_id}: capabilities must be a list")
+        _require(
+            all(isinstance(value, str) and value for value in capabilities),
+            f"{offer_id}: invalid capability",
+        )
+        _require(len(capabilities) == len(set(capabilities)), f"{offer_id}: capabilities must be unique")
 
 
 def validate_bindings(bindings: dict[str, Any]) -> None:
@@ -126,9 +147,24 @@ def validate_bindings(bindings: dict[str, Any]) -> None:
         cost_classes = binding.get("allowed_cost_classes")
         _require(isinstance(cost_classes, list) and cost_classes, f"{binding_id}: allowed_cost_classes required")
         _require(all(isinstance(x, str) and x for x in cost_classes), f"{binding_id}: invalid cost class")
+        _require(len(cost_classes) == len(set(cost_classes)), f"{binding_id}: allowed_cost_classes must be unique")
+        required_resource_capabilities = binding.get("required_resource_capabilities")
+        _require(
+            isinstance(required_resource_capabilities, list) and required_resource_capabilities,
+            f"{binding_id}: required_resource_capabilities required",
+        )
+        _require(
+            all(isinstance(x, str) and x for x in required_resource_capabilities),
+            f"{binding_id}: invalid required resource capability",
+        )
+        _require(
+            len(required_resource_capabilities) == len(set(required_resource_capabilities)),
+            f"{binding_id}: required_resource_capabilities must be unique",
+        )
         capabilities = binding.get("allowed_capabilities")
-        _require(isinstance(capabilities, list), f"{binding_id}: allowed_capabilities must be a list")
+        _require(isinstance(capabilities, list) and capabilities, f"{binding_id}: allowed_capabilities required")
         _require(all(isinstance(x, str) and x for x in capabilities), f"{binding_id}: invalid capability")
+        _require(len(capabilities) == len(set(capabilities)), f"{binding_id}: allowed_capabilities must be unique")
         prefix = binding.get("offer_id_prefix")
         _require(prefix is None or (isinstance(prefix, str) and prefix), f"{binding_id}: invalid offer_id_prefix")
 
@@ -146,6 +182,14 @@ def _binding_matches(binding: dict[str, Any], offer: dict[str, Any]) -> bool:
     return prefix is None or offer["id"].startswith(prefix)
 
 
+def _freshness_reason(label: str, fresh: bool, age: int) -> str | None:
+    if fresh:
+        return None
+    if age < 0:
+        return f"{label} future-dated ({-age} days ahead)"
+    return f"{label} stale ({age} days)"
+
+
 def _binding_reason(
     binding: dict[str, Any],
     resource: dict[str, Any] | None,
@@ -158,8 +202,9 @@ def _binding_reason(
     if not binding["terms_eligible"]:
         reasons.append("binding terms eligibility not affirmed")
     binding_fresh, binding_age = _fresh(binding["reviewed_at"], binding["max_age_days"], today)
-    if not binding_fresh:
-        reasons.append(f"binding review stale ({binding_age} days)")
+    binding_freshness = _freshness_reason("binding review", binding_fresh, binding_age)
+    if binding_freshness:
+        reasons.append(binding_freshness)
     if resource is None:
         reasons.append("bound resource missing from registry")
         return reasons
@@ -169,13 +214,21 @@ def _binding_reason(
         reasons.append("bound resource status is not executable")
     source = resource["source"]
     resource_fresh, resource_age = _fresh(source["checked_at"], source["max_age_days"], today)
-    if not resource_fresh:
-        reasons.append(f"resource evidence stale ({resource_age} days)")
+    resource_freshness = _freshness_reason("resource evidence", resource_fresh, resource_age)
+    if resource_freshness:
+        reasons.append(resource_freshness)
     if resource.get("project_cost_usd") != 0:
         reasons.append("resource is not zero-project-cost")
     security = resource.get("security", {})
     if security.get("repo_write_authority") is not False or security.get("merge_authority") is not False:
         reasons.append("resource authority invariant violated")
+    missing_resource_capabilities = sorted(
+        set(binding["required_resource_capabilities"]) - set(resource.get("capabilities", []))
+    )
+    if missing_resource_capabilities:
+        reasons.append(
+            "resource evidence missing required capabilities: " + ", ".join(missing_resource_capabilities)
+        )
     if offer.get("project_cost_usd") != 0:
         reasons.append("concrete offer is not zero-project-cost")
     if offer.get("available") is not True:
@@ -195,6 +248,11 @@ def admit(
     validate_registry(registry)
     validate_bindings(bindings)
     validate_pool(pool)
+    observed_at = _parse_date(registry["observed_at"])
+    _require(
+        observed_at <= today,
+        f"registry observed_at future-dated ({(observed_at - today).days} days ahead)",
+    )
     resources = _registry_index(registry)
     admitted: list[dict[str, Any]] = []
     admitted_report: list[dict[str, str]] = []
