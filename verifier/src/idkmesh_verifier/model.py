@@ -116,6 +116,11 @@ def _verify_lineage(work_unit: dict[str, Any], worker_result: dict[str, Any]) ->
     source_revision = worker_result["provenance"]["source_revision"]
     if not SHA_RE.fullmatch(source_revision):
         raise VerifierError("verifier v0.1 requires a full immutable 40-character Git source revision")
+    declared_work_unit_revision = work_unit.get("provenance", {}).get("source_revision")
+    if declared_work_unit_revision and declared_work_unit_revision.lower() != source_revision.lower():
+        raise VerifierError(
+            "worker ResultManifest source_revision does not match WorkUnit provenance.source_revision"
+        )
 
 
 def _verify_policy(work_unit: dict[str, Any], worker_result: dict[str, Any], plan: dict[str, Any]) -> None:
