@@ -8,7 +8,7 @@ on:
     branches:
       - main
   # Canonical-state resnapshot on PR lifecycle changes. pull_request_target
-  # runs the trusted base-branch workflow/code, never contributor-head code.
+  # runs trusted default-branch code, never contributor-head code.
   pull_request_target:
     types:
       - opened
@@ -49,9 +49,10 @@ jobs:
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
-          # For pull_request_target, pin the trusted base SHA explicitly. Never
-          # execute code from the contributor head in this privileged event.
-          ref: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.base.sha || github.sha }}
+          # pull_request_target is a live canonical-state observer. Use the
+          # repository's current trusted default branch, never contributor-head
+          # code and never a potentially stale PR-recorded base SHA.
+          ref: ${{ github.event_name == 'pull_request_target' && github.event.repository.default_branch || github.sha }}
 
       - name: Set up Python
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
@@ -113,7 +114,7 @@ jobs:
 
 # Authority boundary:
 # - read-only repository and PR permissions;
-# - pull_request_target executes only trusted base-SHA code, never PR-head code;
+# - pull_request_target executes only current trusted default-branch code, never PR-head code;
 # - no push, merge, approval, branch deletion, label, issue, or settings mutation;
 # - no execution of issue/PR natural-language content;
 # - branch state and merge-plan lanes are decision support only;
