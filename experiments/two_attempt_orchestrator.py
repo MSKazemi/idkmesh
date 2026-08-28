@@ -17,6 +17,7 @@ import sys
 from typing import Any, Protocol
 
 from local_verifier import (
+    VerifierError,
     load_json,
     resolve_repo_path,
     run_fixture,
@@ -109,6 +110,18 @@ def validate_config(config: dict[str, Any]) -> None:
         raise OrchestratorError("attempt_id values must be unique")
 
 
+def resolve_output_path(raw: str) -> Path:
+    """Restrict CLI output to the repository's non-canonical results/ subtree."""
+
+    path = resolve_repo_path(raw)
+    relative = path.relative_to(ROOT)
+    if not relative.parts or relative.parts[0] != "results":
+        raise OrchestratorError(
+            "orchestrator output must be under results/; canonical repository files are not writable"
+        )
+    return path
+
+
 def _verification_record(verification: dict[str, Any]) -> dict[str, Any]:
     signature = semantic_signature(verification)
     return {
@@ -127,6 +140,16 @@ def _verification_record(verification: dict[str, Any]) -> dict[str, Any]:
         "semantic_digest": canonical_digest(signature),
         "work_unit_digest": verification["provenance"]["work_unit_digest"],
         "result_manifest_digest": verification["provenance"]["result_manifest_digest"],
+    }
+
+
+def _result_manifest_record(worker_result: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "id": worker_result["id"],
+        "attempt": worker_result["attempt"],
+        "worker_id": worker_result["worker"]["id"],
+        "worker_status": worker_result["status"],
+        "digest": canonical_digest(worker_result),
     }
 
 
@@ -166,19 +189,34 @@ def orchestrate(config: dict[str, Any]) -> dict[str, Any]:
 
         try:
             worker_result = load_json(candidate.result_manifest_path)
+        except (VerifierError, OSError) as exc:
+            attempt_records.append(
+                {
+                    **base_record,
+                    "state": "result_manifest_error",
+                    "error": f"{type(exc).__name__}: {exc}",
+                    "result_manifest": None,
+                    "verification": None,
+                }
+            )
+            continue
+
+        result_record = _result_manifest_record(worker_result)
+        try:
             verification = run_fixture(
                 work_unit_path=work_unit_path,
                 result_manifest_path=candidate.result_manifest_path,
                 candidate_root=candidate.candidate_root,
                 policy_path=policy_path,
             )
-        except Exception as exc:  # fail one attempt without aborting the peer attempt
+        except (VerifierError, OSError) as exc:
             attempt_records.append(
                 {
                     **base_record,
                     "state": "verification_error",
                     "error": f"{type(exc).__name__}: {exc}",
-                    "result_manifest": None,
+                    "candidate_root": candidate.candidate_root.relative_to(ROOT).as_posix(),
+                    "result_manifest": result_record,
                     "verification": None,
                 }
             )
@@ -190,18 +228,17 @@ def orchestrate(config: dict[str, Any]) -> dict[str, Any]:
                 "state": "verified",
                 "error": None,
                 "candidate_root": candidate.candidate_root.relative_to(ROOT).as_posix(),
-                "result_manifest": {
-                    "id": worker_result["id"],
-                    "worker_id": worker_result["worker"]["id"],
-                    "worker_status": worker_result["status"],
-                    "digest": canonical_digest(worker_result),
-                },
+                "result_manifest": result_record,
                 "verification": _verification_record(verification),
             }
         )
 
     control_failures = sum(
-        record["state"] in {"worker_error", "verification_error"}
+        record["state"] in {
+            "worker_error",
+            "result_manifest_error",
+            "verification_error",
+        }
         for record in attempt_records
     )
     supported = sum(
@@ -276,6 +313,16 @@ def cmd_self_test(args: argparse.Namespace) -> int:
     }:
         raise OrchestratorError("orchestrator authority invariant changed")
 
+    try:
+        resolve_output_path("README.md")
+    except OrchestratorError:
+        pass
+    else:
+        raise OrchestratorError("canonical repository path was accepted as orchestrator output")
+    allowed_output = resolve_output_path("results/orchestration/self-test.json")
+    if allowed_output.relative_to(ROOT).parts[0] != "results":
+        raise OrchestratorError("results/ output path guard rejected its own invariant")
+
     good = _attempt_by_id(first, "attempt-001")
     bad = _attempt_by_id(first, "attempt-002")
     if good["state"] != "verified" or good["verification"]["recommendation"] != "accept_candidate":
@@ -297,14 +344,15 @@ def cmd_self_test(args: argparse.Namespace) -> int:
     print(
         "OK: two-attempt coordinator is deterministic, keeps attempts isolated, collects separate "
         "ResultManifests, routes each candidate to independent verification, preserves support/reject "
-        "outcomes, survives one worker failure, and has no canonical write/merge authority"
+        "outcomes, survives one worker failure, restricts output to results/, and has no canonical "
+        "write/merge authority"
     )
     return 0
 
 
 def cmd_run(args: argparse.Namespace) -> int:
     config_path = resolve_repo_path(args.config)
-    output_path = resolve_repo_path(args.output)
+    output_path = resolve_output_path(args.output)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     record = run_config(config_path)
     output_path.write_text(json.dumps(record, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -329,7 +377,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     run = subparsers.add_parser("run", help="Replay one two-attempt orchestration configuration.")
     run.add_argument("--config", required=True)
-    run.add_argument("--output", required=True)
+    run.add_argument("--output", required=True, help="Repository-relative path under results/.")
     run.set_defaults(func=cmd_run)
     return parser
 
@@ -338,7 +386,7 @@ def main() -> int:
     args = build_parser().parse_args()
     try:
         return args.func(args)
-    except (OrchestratorError, OSError, json.JSONDecodeError) as exc:
+    except (OrchestratorError, WorkerAttemptError, VerifierError, OSError, json.JSONDecodeError) as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 2
 
