@@ -3,6 +3,8 @@
 Date: 2026-08-28
 Status: architecture hypothesis / implementation plan
 
+[`../../ITERATION_MODEL.md`](../../ITERATION_MODEL.md) is the canonical whole-system vocabulary and lifecycle; this document specializes it for repository-structure observation and graph rewrites.
+
 ## Goal
 
 Make IDKMesh progressively better at maintaining and reorganizing itself without creating an uncontrolled self-modifying repository.

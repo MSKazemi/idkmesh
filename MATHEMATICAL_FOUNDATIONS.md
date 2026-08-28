@@ -734,7 +734,7 @@ These should remain lower priority than graph theory, optimization, robust stati
 
 ## 33. Canonical action-selection rule
 
-The first serious mathematical decision rule for a proposed action `a` is
+The lifecycle and hard-gate order are defined in [`ITERATION_MODEL.md`](ITERATION_MODEL.md). After an action is admissible and Pareto-acceptable, a useful attention/tie-break rule for proposed action `a` is
 
 `J(a) = [E(Delta U | b_t, a) + beta IG(a) + eta CM(a)] / [C_h(a) + C_c(a) + C_q(a) + rho Risk(a)]`
 
