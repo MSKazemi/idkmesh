@@ -159,6 +159,9 @@ python -m randomness_lab.r2_scale \
 
 The 100,000-worker runs may be materially more expensive than the smaller cells. Keep the raw configuration with every published result.
 
+The first five-seed full-ladder evidence and guarded interpretation are retained
+in [`../../results/experiments/r2/reference-scale-seeds41-45.md`](../../results/experiments/r2/reference-scale-seeds41-45.md).
+
 ## Interpretation
 
 The sweep is specifically designed to allow several outcomes:
