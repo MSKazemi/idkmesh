@@ -39,8 +39,9 @@ Seven methods are compared:
 
 Scores are evaluated by Brier score, false-accept, false-reject, total error,
 and high-confidence error (`p <= 0.10` or `p >= 0.90`). Every aggregate has a
-95% normal interval across deterministic seeds; posterior interval width makes
-finite calibration uncertainty visible.
+unbounded 95% normal interval across deterministic seeds; rate intervals may
+extend outside `[0,1]` and must not be read as probability bounds. Posterior
+interval width makes finite calibration uncertainty visible.
 
 ## Regimes and stopping rule
 

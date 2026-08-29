@@ -8807,7 +8807,7 @@
     ],
     "seed_start": 0,
     "seeds": 20,
-    "uncertainty": "95% normal intervals across independent deterministic seeds"
+    "uncertainty": "unbounded 95% normal intervals across independent deterministic seeds; rate intervals may extend outside [0,1]"
   },
   "experiment": "E025-learned-verifier-reliability-dependence",
   "findings": {
@@ -8823,7 +8823,7 @@
     "Pairwise correlation does not identify dependence shape or shared blind spots.",
     "N/(1+(N-1)rho) is an intentionally unsafe E015 baseline, not a confidence guarantee.",
     "The shared-shock ceiling is not applied under item difficulty because E018 found it model-specific.",
-    "Intervals are descriptive and are not sequential guarantees."
+    "Intervals are descriptive unbounded normal approximations, may extend outside parameter bounds, and are not sequential guarantees."
   ],
   "schema_version": "e025.learned-verifier-results.v1",
   "separation": {

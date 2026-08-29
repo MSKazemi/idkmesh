@@ -10,18 +10,31 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib.util
 import json
 import math
 import random
+import sys
 from dataclasses import dataclass
 from functools import lru_cache
+from pathlib import Path
 from statistics import mean, stdev
 from typing import Iterable, Sequence
 
 try:
     from sim.e015_analyze import effective_n as e015_effective_n
-except ModuleNotFoundError:  # Direct execution from outside the repository root.
-    from e015_analyze import effective_n as e015_effective_n
+except ModuleNotFoundError:
+    # File-based test loaders do not necessarily put the repository root or this
+    # directory on sys.path. Load the sibling deterministically in that case.
+    _E015_SPEC = importlib.util.spec_from_file_location(
+        "_idkmesh_e015_analyze", Path(__file__).with_name("e015_analyze.py")
+    )
+    if _E015_SPEC is None or _E015_SPEC.loader is None:
+        raise RuntimeError("could not load sim/e015_analyze.py")
+    _E015 = importlib.util.module_from_spec(_E015_SPEC)
+    sys.modules[_E015_SPEC.name] = _E015
+    _E015_SPEC.loader.exec_module(_E015)
+    e015_effective_n = _E015.effective_n
 
 METHODS = (
     "naive_majority", "declared_group_oracle", "inferred_dependence_groups",
@@ -391,7 +404,7 @@ def run_experiment(histories: Iterable[int], heldout_trials: int, seeds: int,
             "history_trials": list(histories), "heldout_trials": heldout_trials,
             "panel": [v.__dict__ for v in BASE_PANEL], "correlation_threshold": .20,
             "methods": list(METHODS),
-            "uncertainty": "95% normal intervals across independent deterministic seeds"},
+            "uncertainty": "unbounded 95% normal intervals across independent deterministic seeds; rate intervals may extend outside [0,1]"},
         "separation": {"calibration_seed_formula": "1000003 + seed * 10007",
             "heldout_seed_formula": "2000003 + seed * 10009",
             "frozen_model_before_heldout": True, "heldout_truth_available_to_aggregator": False,
@@ -406,7 +419,7 @@ def run_experiment(histories: Iterable[int], heldout_trials: int, seeds: int,
             "Pairwise correlation does not identify dependence shape or shared blind spots.",
             "N/(1+(N-1)rho) is an intentionally unsafe E015 baseline, not a confidence guarantee.",
             "The shared-shock ceiling is not applied under item difficulty because E018 found it model-specific.",
-            "Intervals are descriptive and are not sequential guarantees.",
+            "Intervals are descriptive unbounded normal approximations, may extend outside parameter bounds, and are not sequential guarantees.",
         ],
     }
 
