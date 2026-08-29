@@ -264,6 +264,29 @@ not central tendency. The benchmark still gives QD the predefined plausible-goal
 set and does not measure real compute, energy, or human attention. See
 [`../experiments/E024-matched-budget-emergence.md`](../experiments/E024-matched-budget-emergence.md).
 
+### E026 — the same benchmark with an imperfect, correlated panel
+
+The panel is perfect by default, which is how the committed reference above was
+produced. `--imperfect-panel` swaps in the panel E017 and E020 measured: 25
+partial test oracles, marginal accuracy 0.7956, item-difficulty dependence at
+`icc` 0.4513, and an irreducible blind-spot floor `lambda` 0.0556 (implied
+marginal pairwise `rho` 0.5873). The individual flags — `--verifiers`,
+`--verifier-accuracy`, `--verifier-correlation`, `--verifier-blind-spot`,
+`--verifier-dependence`, `--verification-quorum` — then override any part of it,
+and are rejected without `--imperfect-panel` so the default cannot drift.
+
+```bash
+python sim/matched_budget_emergence.py --seeds 100 --imperfect-panel --pretty
+```
+
+An imperfect run adds `configuration.panel_provenance`, a `catastrophic_seeds`
+block, and panel-specific limitations; a perfect run emits exactly the schema the
+reference artifact was published with. Every conclusion survives the imperfect
+panel, but E026 records why that is weak evidence: a falsely accepted candidate
+is non-viable, scores 0, and is discarded by the same predicate the verifier was
+meant to enforce. See
+[`../experiments/E026-imperfect-verifier-panel.md`](../experiments/E026-imperfect-verifier-panel.md).
+
 ## Tests
 
 With `pytest` installed:

@@ -183,3 +183,175 @@ def test_committed_reference_reports_all_five_arms():
     qd = result["aggregate"]["qd"]["post_change_utility_auc"]
     assert majority["stdev"] > 10 * qd["stdev"]
     assert majority["min"] < qd["min"]
+
+
+PERFECT_PANEL_REPORT_KEYS = {
+    "experiment_id",
+    "experiment",
+    "configuration",
+    "aggregate",
+    "pairwise_wins",
+    "limitations",
+}
+PERFECT_PANEL_CONFIGURATION_KEYS = {
+    "seed_start",
+    "seeds",
+    "agents",
+    "generations",
+    "change_at",
+    "bins",
+    "evaluation_budget_per_strategy_per_seed",
+    "verification",
+}
+
+
+def test_default_panel_is_perfect_and_keeps_the_published_report_schema():
+    # The committed 100-seed reference was produced by this default. Any key
+    # added here, or any random number consumed by the panel, would stop it
+    # reproducing byte-for-byte.
+    default = benchmark.sim.VerificationConfig()
+    assert benchmark.panel_is_perfect(default)
+    result = benchmark.sweep(
+        seeds=3, seed_start=0, agents=10, generations=10, change_at=5, bins=4
+    )
+    assert set(result) == PERFECT_PANEL_REPORT_KEYS
+    assert set(result["configuration"]) == PERFECT_PANEL_CONFIGURATION_KEYS
+    assert result["configuration"]["verification"] == default.as_dict()
+    reference = benchmark.json.loads(
+        (
+            Path(__file__).parents[1]
+            / "experiments"
+            / "results"
+            / "E024-matched-budget-emergence-100-seed-summary.json"
+        ).read_text(encoding="utf-8")
+    )
+    assert set(reference) == set(result)
+    assert set(reference["configuration"]) == set(result["configuration"])
+    assert reference["configuration"]["verification"] == default.as_dict()
+    for strategy in benchmark.STRATEGIES:
+        for metric in ("false_accept_rate", "false_reject_rate", "panel_disagreement_rate"):
+            assert result["aggregate"][strategy][metric]["max"] == 0.0
+
+
+def test_measured_panel_parameters_come_from_e017_and_e020():
+    panel = benchmark.measured_panel()
+    assert panel.verifiers == 25
+    assert panel.accuracy == 0.7956
+    assert panel.dependence == "item-difficulty"
+    assert panel.blind_spot == 0.0556
+    # E017's headline rho is the marginal correlation of the whole panel,
+    # blind-spot units included. Using it as the base correlation as well would
+    # count those shared failures twice, so the base is E020's decomposition.
+    assert panel.correlation == 0.4513
+    assert benchmark.E017_MEASURED_MARGINAL_CORRELATION == 0.5873
+    assert panel.correlation < benchmark.E017_MEASURED_MARGINAL_CORRELATION
+    provenance = benchmark.PANEL_PROVENANCE
+    assert provenance["source_experiments"] == [
+        "experiments/E017-item-difficulty-and-quorum.md",
+        "experiments/E020-quorum-frontier-under-measured-shape.md",
+    ]
+    assert "synthetic" in provenance["evidence_level"]
+    assert "shared-shock" in provenance["shape_rejected"]
+
+
+def test_measured_panel_overrides_only_what_is_named():
+    panel = benchmark.measured_panel(correlation=0.0, blind_spot=0.0)
+    assert panel.correlation == 0.0
+    assert panel.blind_spot == 0.0
+    assert panel.verifiers == 25
+    assert panel.accuracy == 0.7956
+
+
+def test_imperfect_panel_produces_real_non_zero_error_rates():
+    result = benchmark.run_seed(
+        3,
+        agents=20,
+        generations=12,
+        change_at=6,
+        bins=4,
+        verification=benchmark.measured_panel(),
+    )
+    for row in result["results"]:
+        assert row["false_accept_rate"] > 0.0
+        assert row["false_reject_rate"] > 0.0
+        assert row["panel_disagreement_rate"] > 0.0
+
+
+def test_imperfect_panel_keeps_the_budget_matched_across_every_arm():
+    panel = benchmark.measured_panel()
+    result = benchmark.run_seed(
+        5, agents=10, generations=12, change_at=6, bins=4, verification=panel
+    )
+    contract = result["budget_contract"]
+    assert contract["per_strategy"] == 120
+    # A bigger panel costs the same for every arm, so it cannot buy one of them
+    # more evidence than another.
+    assert contract["verifier_votes_per_strategy"] == 120 * panel.verifiers
+    for row in result["results"]:
+        assert row["verification_attempts"] == 120
+        assert row["proposal_attempts"] == 120
+        assert row["matched_evaluation_budget"] == 120
+        assert row["bootstrap_anchors"] == 0
+    perfect = benchmark.run_seed(5, agents=10, generations=12, change_at=6, bins=4)
+    assert perfect["budget_contract"]["verifier_votes_per_strategy"] == 120
+
+
+def test_imperfect_sweep_adds_provenance_catastrophe_counts_and_limitations():
+    result = benchmark.sweep(
+        seeds=4,
+        seed_start=0,
+        agents=10,
+        generations=12,
+        change_at=6,
+        bins=4,
+        verification=benchmark.measured_panel(),
+    )
+    assert result["configuration"]["panel_provenance"] == benchmark.PANEL_PROVENANCE
+    assert result["configuration"]["verification"]["blind_spot"] == 0.0556
+    catastrophes = result["catastrophic_seeds"]
+    assert catastrophes["post_change_horizon"] == 6
+    assert catastrophes["utility_auc_threshold"] == round(
+        benchmark.CATASTROPHE_FRACTION * 6, 6
+    )
+    assert set(catastrophes["by_strategy"]) == set(benchmark.STRATEGIES)
+    for counts in catastrophes["by_strategy"].values():
+        assert counts["trials"] == 4
+        assert 0 <= counts["seeds"] <= 4
+    assert any("blind-spot" in limitation for limitation in result["limitations"])
+    assert any("one-sided error" in limitation for limitation in result["limitations"])
+
+
+def test_committed_imperfect_panel_reference_is_measured_and_honest():
+    path = (
+        Path(__file__).parents[1]
+        / "experiments"
+        / "results"
+        / "E024-imperfect-panel-100-seed-summary.json"
+    )
+    result = benchmark.json.loads(path.read_text(encoding="utf-8"))
+    assert result["experiment_id"] == "E024"
+    assert result["configuration"]["seeds"] == 100
+    assert result["configuration"]["verification"] == benchmark.measured_panel().as_dict()
+    assert result["configuration"]["panel_provenance"]["measured_verifiers"] == 25
+    # The whole point of the artifact: these were structurally zero before.
+    for strategy in benchmark.STRATEGIES:
+        aggregate = result["aggregate"][strategy]
+        assert aggregate["false_accept_rate"]["mean"] > 0.05
+        assert aggregate["false_reject_rate"]["mean"] > 0.05
+        assert aggregate["panel_disagreement_rate"]["mean"] > 0.05
+    assert result["catastrophic_seeds"]["by_strategy"]["qd"]["seeds"] == 0
+    assert result["catastrophic_seeds"]["by_strategy"]["majority"]["seeds"] > 0
+    assert any("synthetic" in limitation for limitation in result["limitations"])
+
+
+def test_panel_flags_require_the_imperfect_panel_switch():
+    import subprocess
+
+    module = Path(__file__).parents[1] / "sim" / "matched_budget_emergence.py"
+    completed = subprocess.run(
+        [sys.executable, str(module), "--seeds", "2", "--verifier-accuracy", "0.8"],
+        capture_output=True,
+        text=True,
+    )
+    assert completed.returncode != 0
+    assert "--imperfect-panel" in completed.stderr
