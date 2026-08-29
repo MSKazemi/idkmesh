@@ -152,7 +152,7 @@ The repository does not yet contain a sufficient real multi-worker corpus.
 **Issue:** #31 — completed  
 **Implementation PRs:** #77, #80  
 **Reference evidence PR:** #83  
-**Stronger follow-up:** #84
+**Stronger follow-up:** #84 — synthetic Phase A/B/C completed
 
 ## Question
 
@@ -218,16 +218,20 @@ These are reference observations, not universal conclusions.
 - Capability-oblivious policies produced many more failed assignments, especially at large scale.
 - Some small moderate/stale cells triggered the explicit `loses_badly` diagnostic, proving the harness can expose local-routing failure regimes.
 
-## Open evidence work
+## Stronger evidence completed
 
-#84 tracks:
+#84 now retains:
 
-- multiple seeds;
-- capability-rarity sweeps;
-- availability/load staleness isolation;
-- correlated regional failures;
-- workload saturation;
-- stronger communication/metadata cost accounting.
+- a five-seed full scale ladder;
+- factor-isolated capability-rarity sweeps;
+- independent availability/load staleness sweeps;
+- matched independent and regional failure shapes;
+- workload saturation separate from fleet-size scaling;
+- deterministic communication, directory, and state-cost proxies;
+- an explicitly host-specific scheduler CPU/peak-memory profile.
+
+The result is a regime map, not a universal power-of-two claim. Real network
+and fleet measurements remain outside this synthetic evidence boundary.
 
 ---
 
@@ -482,7 +486,7 @@ Do not reuse experimental routing metrics as governance power without separate w
 If you want to contribute to this program now:
 
 1. **Real coding evidence:** #70 (R1).
-2. **Stronger distributed scheduling evidence:** #84 (R2).
+2. **R2 real-fleet validation:** open a bounded follow-up from completed #84 evidence.
 3. **Real evolutionary orchestration evidence:** #96 (R3).
 4. **New bio-inspired algorithm implementation:** #97 (R4 stigmergy).
 

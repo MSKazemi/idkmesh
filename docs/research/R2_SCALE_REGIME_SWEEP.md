@@ -178,21 +178,26 @@ The sweep is specifically designed to allow several outcomes:
 
 All are useful findings.
 
-## Remaining research gaps
+## Factor-isolated follow-up
 
-The current scale sweep still does not isolate:
+Issue #84 Phase B/C is retained in
+[`reference-factor-isolation-seeds41-45.md`](../../results/experiments/r2/reference-factor-isolation-seeds41-45.md).
+It varies availability lag, load lag, regional failure correlation, and offered
+load separately across five seeds. It also reports directory operations,
+modeled messages/bytes, state entries, locality mismatch, and a separate
+host-specific CPU/peak-memory profile. The preceding capability-prevalence
+benchmark supplies the other Phase B factor.
 
-- capability rarity as an independent factor;
-- regional/correlated failures;
-- network bytes and topology;
-- multi-resource matching;
-- checkpointing;
-- replicated tasks;
-- malicious/faulty workers;
-- capability-directory maintenance cost;
-- true scheduler CPU/memory cost.
+The combined follow-ups expose both useful and negative regimes.
+Capability-aware two-choice avoids blind rarity failures, while its latency
+advantage over simpler local policies narrows as offered load reaches and
+exceeds capacity.
 
-Those should become separate experiments rather than hidden parameters inside one opaque benchmark.
+Remaining extensions include real network packet measurements, distributed
+directory consistency, multi-resource matching, checkpointing, replicated
+tasks, malicious workers, and real-fleet CPU/memory measurements. Those require
+different systems or experiments and are not inferred from the synthetic
+factor sweep.
 
 ## Evidence rule
 

@@ -82,6 +82,23 @@ python -m unittest discover -s tests -v
 
 The tests check seeded reproducibility, repeated-trial reproducibility and uncertainty output, policy interchangeability, environment interchangeability, the correlation control, Thompson-sampling adaptation, and the power-of-d helper.
 
+## R2 factor-isolation benchmark
+
+The final issue #84 follow-up separates availability lag, load lag, regional
+failure correlation, and offered load instead of changing them in one stress
+preset. It also emits deterministic coordination-cost proxies and a separate
+host-specific scheduler profile. Capability rarity is covered by the companion
+`r2_capability_rarity` benchmark.
+
+```bash
+python -m randomness_lab.r2_factor_sweep --self-test
+python -m randomness_lab.r2_factor_sweep --benchmark --output /tmp/r2-factors.json
+python -m randomness_lab.r2_factor_sweep --profile --repetitions 5 --output /tmp/r2-profile.json
+```
+
+The retained five-seed evidence and interpretation are in
+[`../results/experiments/r2/reference-factor-isolation-seeds41-45.md`](../results/experiments/r2/reference-factor-isolation-seeds41-45.md).
+
 ## Adding a policy
 
 1. Implement the `Policy` protocol from `randomness_lab/policies.py`.
