@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "study_id": "E023-first-review-latency-recurrence-v1",
+  "status": "preregistered_no_outcomes",
+  "registered_at": "2026-08-29T00:00:00Z",
+  "population": "external first-time contributors whose first pull request is merged during a frozen enrollment window",
+  "exposure": {
+    "name": "hours_to_first_independent_substantive_review",
+    "primary_contrast": "at_or_below_72_hours_vs_above_72_hours",
+    "time_origin": "pull_request_marked_ready_for_review"
+  },
+  "outcome": {
+    "name": "second_meaningful_contribution_within_90_days",
+    "definition": "a second merged pull request or trusted independently verified review, reproduction, documentation, research, or triage contribution",
+    "window_days": 90
+  },
+  "estimand": "risk_difference_in_90_day_recurrence",
+  "baseline": "unadjusted preregistered 72-hour exposure groups",
+  "adjustment_covariates": ["first_contribution_type", "first_change_size", "calendar_month", "maintainer_workload_at_arrival"],
+  "exclusions": ["repository_owner", "bot", "draft_never_marked_ready", "spam_or_security_abuse", "withdrawn_before_review"],
+  "missing_data": "report missingness by field; do not impute the primary exposure or outcome",
+  "analysis": {
+    "primary": "risk difference with bootstrap 95% interval",
+    "sensitivity": ["continuous latency logistic model", "time_to_second_contribution survival model"],
+    "minimum_reporting": ["eligible_count", "excluded_count_by_reason", "group_sizes", "event_counts", "effect_interval", "negative_or_null_result"]
+  },
+  "interpretation": {
+    "causal_claim_allowed": false,
+    "reason": "observational exposure is confounded unless a later randomized or credible quasi-experimental assignment is registered",
+    "policy_activation_allowed": false
+  }
+}
