@@ -32,6 +32,40 @@ class R2ScaleSweepTests(unittest.TestCase):
                 }
                 self.assertEqual(len(digests), 1)
             self.assertEqual(set(cell["aggregate"]), set(R2_POLICIES))
+            for policy in R2_POLICIES:
+                summary = cell["aggregate"][policy]
+                if summary["status"] != "ok":
+                    continue
+                completion = summary["metrics"]["completion_rate"]
+                self.assertIsNotNone(completion["sample_standard_deviation"])
+                self.assertEqual(
+                    completion["mean_ci95"]["method"],
+                    "student_t_95_clipped_to_metric_domain",
+                )
+                self.assertLessEqual(completion["mean_ci95"]["low"], completion["mean"])
+                self.assertGreaterEqual(completion["mean_ci95"]["high"], completion["mean"])
+                self.assertGreaterEqual(completion["mean_ci95"]["low"], 0.0)
+                self.assertLessEqual(completion["mean_ci95"]["high"], 1.0)
+
+    def test_single_seed_does_not_invent_an_uncertainty_interval(self):
+        report = run_r2_scale_sweep(
+            R2ScaleConfig(
+                worker_counts=(10,),
+                trace_seeds=(5,),
+                regimes=("fresh",),
+                ticks=4,
+                arrival_divisor=10,
+                max_arrivals_per_tick=1,
+                max_work_units=2,
+                drain_ticks=10,
+                oracle_max_workers=10,
+            )
+        )
+        summary = report["cells"][0]["aggregate"]["power-two"]["metrics"][
+            "completion_rate"
+        ]
+        self.assertIsNone(summary["sample_standard_deviation"])
+        self.assertIsNone(summary["mean_ci95"])
 
     def test_oracle_is_explicitly_skipped_above_threshold(self):
         report = run_r2_scale_sweep(
