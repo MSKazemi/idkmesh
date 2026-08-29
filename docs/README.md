@@ -22,7 +22,7 @@ Different documents serve different roles. When two files appear to disagree, pr
 | current staged next gates | [`../ROADMAP.md`](../ROADMAP.md), [`../EVOLUTION.md`](../EVOLUTION.md) |
 | governance / authority | [`../GOVERNANCE.md`](../GOVERNANCE.md), [`../CONSTITUTION.md`](../CONSTITUTION.md) |
 | durable decisions | [`../DECISIONS.md`](../DECISIONS.md), [`decisions/`](decisions/) |
-| bounded review snapshots | [`audits/`](audits/) |
+| bounded review snapshots | [`audits/`](audits/README.md) |
 | research/engineering findings | [`findings/`](findings/README.md) |
 | append-only collaboration history | [`conversations/`](conversations/README.md) |
 
@@ -46,6 +46,7 @@ For a newcomer trying to understand the executable foundation, this order is usu
 - [Specifications index](specifications/README.md) — versioned work, evidence, evaluator, repository-graph, and project-configuration contracts.
 - [Research index](research/README.md) — research programs, experiments, verification studies, and benchmark-calibration evidence.
 - [Findings index](findings/README.md) — working theses, repository-health evidence, growth/landscape studies, and retained source notes.
+- [Audits index](audits/README.md) — bounded review snapshots with the baseline revision each one declares.
 
 ## Important active subsystem documents
 
@@ -103,7 +104,7 @@ Some records are intentionally preserved as **project memory or evidence**, not 
 
 - [`conversations/`](conversations/README.md) contains structured records of substantive project conversations required by [`../PROJECT_RULES.md`](../PROJECT_RULES.md). Important conclusions should also be promoted into canonical architecture, decisions, research, governance, or implementation artifacts.
 - [`findings/`](findings/README.md) contains research/engineering findings and source/evidence notes. Some are historical support for later decisions rather than current implementation documentation; the index separates the two.
-- [`audits/`](audits/) contains bounded reviews and evidence snapshots. They remain useful after findings are resolved because they preserve what was inspected and why a decision changed.
+- [`audits/`](audits/README.md) contains bounded reviews and evidence snapshots. They remain useful after findings are resolved because they preserve what was inspected and why a decision changed. Read each as a snapshot at its stated baseline, not as current status.
 - [`evidence/`](evidence/) contains retained evidence artifacts where a subsystem requires a durable evidence surface.
 
 For these collections, **category-level discoverability can be sufficient**. Do not manufacture one inbound link per archival record merely to reduce a warning counter.
