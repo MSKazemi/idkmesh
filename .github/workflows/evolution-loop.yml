@@ -152,16 +152,34 @@ jobs:
             --checkpoint-source '${{ steps.checkpoint.outputs.source }}'
 
       - name: Collect bounded live repository evidence
+        id: observation
+        shell: bash
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
+          set +e
           python scripts/evolution_snapshot.py \
             --repository '${{ github.repository }}' \
             --event-kind '${{ steps.event.outputs.kind }}' \
             --run-id '${{ github.run_id }}' \
-            --output results/evolution/repository-snapshot.json
+            --output results/evolution/repository-snapshot.json \
+            2>"$RUNNER_TEMP/evolution-observation-error.txt"
+          status=$?
+          set -e
+          if [[ "$status" -eq 75 ]]; then
+            cat "$RUNNER_TEMP/evolution-observation-error.txt" >&2
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "reason=github_api_rate_limit" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [[ "$status" -ne 0 ]]; then
+            cat "$RUNNER_TEMP/evolution-observation-error.txt" >&2
+            exit "$status"
+          fi
+          echo "available=true" >> "$GITHUB_OUTPUT"
 
       - name: Evaluate multi-algorithm live evolution policy
+        if: steps.observation.outputs.available == 'true'
         run: |
           python scripts/repository_evolution_score.py \
             --snapshot results/evolution/repository-snapshot.json \
@@ -170,6 +188,7 @@ jobs:
             --report results/evolution/EVOLUTION_REPORT.md
 
       - name: Evaluate conjunctive history plus live guards
+        if: steps.observation.outputs.available == 'true'
         run: |
           python scripts/conjunctive_evolution_control.py \
             --history state/evolution-state.json \
@@ -180,6 +199,7 @@ jobs:
             --report results/evolution/CONJUNCTIVE_CONTROL_REPORT.md
 
       - name: Validate generated evidence and state
+        if: steps.observation.outputs.available == 'true'
         run: |
           python -m json.tool state/evolution-state.json >/dev/null
           python -m json.tool state/evolution-math-policy.json >/dev/null
@@ -197,6 +217,7 @@ jobs:
           PY
 
       - name: Publish persistent checkpoint and live evidence
+        if: steps.observation.outputs.available == 'true'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: evolution-checkpoint-${{ github.run_id }}
@@ -211,6 +232,7 @@ jobs:
           if-no-files-found: error
 
       - name: Job summary
+        if: steps.observation.outputs.available == 'true'
         run: |
           echo "# Persistent Bayesian history" >> "$GITHUB_STEP_SUMMARY"
           cat EVOLUTION_REPORT.md >> "$GITHUB_STEP_SUMMARY"
@@ -219,6 +241,14 @@ jobs:
           cat results/evolution/EVOLUTION_REPORT.md >> "$GITHUB_STEP_SUMMARY"
           echo >> "$GITHUB_STEP_SUMMARY"
           cat results/evolution/CONJUNCTIVE_CONTROL_REPORT.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Record fail-closed unavailable observation
+        if: steps.observation.outputs.available != 'true'
+        run: |
+          echo "# Evolution observation unavailable" >> "$GITHUB_STEP_SUMMARY"
+          echo >> "$GITHUB_STEP_SUMMARY"
+          echo "GitHub API rate-limit exhaustion prevented a complete live snapshot." >> "$GITHUB_STEP_SUMMARY"
+          echo "No decision, recommendation, or Bayesian checkpoint was published; authority remains fail-closed." >> "$GITHUB_STEP_SUMMARY"
 
   verify-pr-head:
     # Proposed code receives only public-repository contents read authority and no

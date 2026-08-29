@@ -12,9 +12,11 @@ import argparse
 import json
 import os
 import re
+import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
+from urllib.error import HTTPError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
@@ -22,6 +24,11 @@ API = "https://api.github.com"
 REFERENCE_RE = re.compile(r"(?<![A-Za-z0-9_])#([1-9][0-9]*)")
 USES_RE = re.compile(r"^\s*(?:-\s*)?uses:\s*['\"]?([^'\"\s#]+)")
 SHA40_RE = re.compile(r"^[0-9a-fA-F]{40}$")
+OBSERVATION_UNAVAILABLE_EXIT = 75
+
+
+class GitHubObservationUnavailable(RuntimeError):
+    """The live API cannot currently provide a complete observation."""
 
 
 def _is_bot(login: str | None, user_type: str | None = None) -> bool:
@@ -104,8 +111,25 @@ def _request_json(path: str, token: str, params: dict[str, Any] | None = None) -
             "User-Agent": "idkmesh-evolution-observer/1",
         },
     )
-    with urlopen(request, timeout=20) as response:  # nosec: B310 - fixed GitHub API origin
-        return json.load(response)
+    try:
+        with urlopen(request, timeout=20) as response:  # nosec: B310 - fixed GitHub API origin
+            return json.load(response)
+    except HTTPError as error:
+        body = error.read(16_384).decode("utf-8", errors="replace").lower()
+        remaining = error.headers.get("X-RateLimit-Remaining") if error.headers else None
+        rate_limited = (
+            error.code == 403
+            and (
+                remaining == "0"
+                or "rate limit exceeded" in body
+                or "secondary rate limit" in body
+            )
+        )
+        if rate_limited:
+            raise GitHubObservationUnavailable(
+                f"GitHub API rate limit prevented a complete observation at {path}"
+            ) from error
+        raise
 
 
 def _request_all(path: str, token: str, params: dict[str, Any] | None = None, max_pages: int = 5) -> tuple[list[Any], bool]:
@@ -279,7 +303,11 @@ def main() -> int:
     token = os.environ.get("GITHUB_TOKEN")
     if not token:
         raise SystemExit("GITHUB_TOKEN is required for live snapshot collection")
-    snapshot = collect(args.repository, token, Path(args.root).resolve(), args.event_kind, args.run_id)
+    try:
+        snapshot = collect(args.repository, token, Path(args.root).resolve(), args.event_kind, args.run_id)
+    except GitHubObservationUnavailable as error:
+        print(f"observation unavailable: {error}", file=sys.stderr)
+        return OBSERVATION_UNAVAILABLE_EXIT
     output = Path(args.output)
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(snapshot, indent=2, sort_keys=True) + "\n", encoding="utf-8")
