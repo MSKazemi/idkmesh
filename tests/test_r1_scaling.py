@@ -47,6 +47,12 @@ class R1ScalingTests(unittest.TestCase):
             for trial in cell["raw_trials"]
         ]
         self.assertTrue(all(0.0 <= value <= 1.0 for value in all_deltas))
+        self.assertTrue(
+            any(
+                marginal["verified_success_rate_delta"]["min"] < 0.0
+                for marginal in result["marginal_curves"]
+            )
+        )
 
     def test_report_and_coverage_refuse_a_real_agent_claim(self) -> None:
         result = run_r1_scaling(self.config)
