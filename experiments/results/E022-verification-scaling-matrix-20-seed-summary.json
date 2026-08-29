@@ -1,0 +1,2585 @@
+{
+  "authority": {
+    "integration_authority": "none",
+    "simulated_acceptance_is_canonical_acceptance": false
+  },
+  "benchmark_version": "verification-scaling-matrix-v0.1",
+  "candidate_generator_version": "matched-hidden-defect-stream-v0.1",
+  "evidence_channel_model": {
+    "adversarial_reviewer_sensitivity_by_defect_class": {
+      "correctness": 0.9,
+      "regression": 0.91,
+      "security": 0.96
+    },
+    "independent_test_sensitivity_by_defect_class": {
+      "correctness": 0.86,
+      "regression": 0.8,
+      "security": 0.62
+    },
+    "reviewer_independent_error_rate": 0.18,
+    "reviewer_shared_error_rate": 0.25
+  },
+  "experiment": "issue-14-seven-mode-verification-scaling",
+  "fairness": "At fixed fanout and seed all non-adaptive modes receive the same candidate stream. Backpressure receives a deterministic prefix because it changes future generation volume.",
+  "initial_fanouts": [
+    2,
+    4,
+    8,
+    12
+  ],
+  "modes": [
+    "no-independent-verification",
+    "one-reviewer",
+    "fixed-three-reviewer-quorum",
+    "independent-tests",
+    "tests-plus-adversarial-reviewer",
+    "risk-adaptive",
+    "risk-adaptive-backpressure"
+  ],
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19
+  ],
+  "steps": 100,
+  "summaries": [
+    {
+      "detected_defects": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "escaped_defect_rate": {
+        "max": 0.4,
+        "mean": 0.35825,
+        "min": 0.305
+      },
+      "escaped_defects": {
+        "max": 80.0,
+        "mean": 71.65,
+        "min": 61.0
+      },
+      "false_rejections": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "final_fanout": {
+        "max": 2.0,
+        "mean": 2.0,
+        "min": 2.0
+      },
+      "generated_candidates": {
+        "max": 200.0,
+        "mean": 200.0,
+        "min": 200.0
+      },
+      "human_attention_units": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "independent_test_executions": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "independently_examined_candidates": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "initial_fanout": 2,
+      "mean_queue_length": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "mean_wait_steps": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "mode": "no-independent-verification",
+      "peak_queue_length": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "pending_candidates": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "runs": 20,
+      "simulated_accepted_candidates": {
+        "max": 200.0,
+        "mean": 200.0,
+        "min": 200.0
+      },
+      "verification_cost_consumed": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "verified_useful_accepted_candidates": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "verified_useful_throughput_per_window": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      }
+    },
+    {
+      "detected_defects": {
+        "max": 55.0,
+        "mean": 44.2,
+        "min": 34.0
+      },
+      "escaped_defect_rate": {
+        "max": 0.324324,
+        "mean": 0.263195,
+        "min": 0.192661
+      },
+      "escaped_defects": {
+        "max": 36.0,
+        "mean": 27.45,
+        "min": 21.0
+      },
+      "false_rejections": {
+        "max": 64.0,
+        "mean": 51.55,
+        "min": 41.0
+      },
+      "final_fanout": {
+        "max": 2.0,
+        "mean": 2.0,
+        "min": 2.0
+      },
+      "generated_candidates": {
+        "max": 200.0,
+        "mean": 200.0,
+        "min": 200.0
+      },
+      "human_attention_units": {
+        "max": 200.0,
+        "mean": 200.0,
+        "min": 200.0
+      },
+      "independent_test_executions": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "independently_examined_candidates": {
+        "max": 200.0,
+        "mean": 200.0,
+        "min": 200.0
+      },
+      "initial_fanout": 2,
+      "mean_queue_length": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "mean_wait_steps": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "mode": "one-reviewer",
+      "peak_queue_length": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "pending_candidates": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "runs": 20,
+      "simulated_accepted_candidates": {
+        "max": 114.0,
+        "mean": 104.25,
+        "min": 93.0
+      },
+      "verification_cost_consumed": {
+        "max": 200.0,
+        "mean": 200.0,
+        "min": 200.0
+      },
+      "verified_useful_accepted_candidates": {
+        "max": 90.0,
+        "mean": 76.8,
+        "min": 71.0
+      },
+      "verified_useful_throughput_per_window": {
+        "max": 0.9,
+        "mean": 0.768,
+        "min": 0.71
+      }
+    },
+    {
+      "detected_defects": {
+        "max": 57.0,
+        "mean": 49.4,
+        "min": 39.0
+      },
+      "escaped_defect_rate": {
+        "max": 0.252174,
+        "mean": 0.206072,
+        "min": 0.141509
+      },
+      "escaped_defects": {
+        "max": 29.0,
+        "mean": 22.25,
+        "min": 15.0
+      },
+      "false_rejections": {
+        "max": 53.0,
+        "mean": 42.7,
+        "min": 31.0
+      },
+      "final_fanout": {
+        "max": 2.0,
+        "mean": 2.0,
+        "min": 2.0
+      },
+      "generated_candidates": {
+        "max": 200.0,
+        "mean": 200.0,
+        "min": 200.0
+      },
+      "human_attention_units": {
+        "max": 600.0,
+        "mean": 600.0,
+        "min": 600.0
+      },
+      "independent_test_executions": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "independently_examined_candidates": {
+        "max": 200.0,
+        "mean": 200.0,
+        "min": 200.0
+      },
+      "initial_fanout": 2,
+      "mean_queue_length": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "mean_wait_steps": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "mode": "fixed-three-reviewer-quorum",
+      "peak_queue_length": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "pending_candidates": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "runs": 20,
+      "simulated_accepted_candidates": {
+        "max": 118.0,
+        "mean": 107.9,
+        "min": 98.0
+      },
+      "verification_cost_consumed": {
+        "max": 600.0,
+        "mean": 600.0,
+        "min": 600.0
+      },
+      "verified_useful_accepted_candidates": {
+        "max": 100.0,
+        "mean": 85.65,
+        "min": 75.0
+      },
+      "verified_useful_throughput_per_window": {
+        "max": 1.0,
+        "mean": 0.8565,
+        "min": 0.75
+      }
+    },
+    {
+      "detected_defects": {
+        "max": 63.0,
+        "mean": 54.85,
+        "min": 47.0
+      },
+      "escaped_defect_rate": {
+        "max": 0.165517,
+        "mean": 0.116571,
+        "min": 0.064748
+      },
+      "escaped_defects": {
+        "max": 24.0,
+        "mean": 16.8,
+        "min": 9.0
+      },
+      "false_rejections": {
+        "max": 3.0,
+        "mean": 1.15,
+        "min": 0.0
+      },
+      "final_fanout": {
+        "max": 2.0,
+        "mean": 2.0,
+        "min": 2.0
+      },
+      "generated_candidates": {
+        "max": 200.0,
+        "mean": 200.0,
+        "min": 200.0
+      },
+      "human_attention_units": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "independent_test_executions": {
+        "max": 200.0,
+        "mean": 200.0,
+        "min": 200.0
+      },
+      "independently_examined_candidates": {
+        "max": 200.0,
+        "mean": 200.0,
+        "min": 200.0
+      },
+      "initial_fanout": 2,
+      "mean_queue_length": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "mean_wait_steps": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "mode": "independent-tests",
+      "peak_queue_length": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "pending_candidates": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "runs": 20,
+      "simulated_accepted_candidates": {
+        "max": 153.0,
+        "mean": 144.0,
+        "min": 135.0
+      },
+      "verification_cost_consumed": {
+        "max": 200.0,
+        "mean": 200.0,
+        "min": 200.0
+      },
+      "verified_useful_accepted_candidates": {
+        "max": 139.0,
+        "mean": 127.2,
+        "min": 119.0
+      },
+      "verified_useful_throughput_per_window": {
+        "max": 1.39,
+        "mean": 1.272,
+        "min": 1.19
+      }
+    },
+    {
+      "detected_defects": {
+        "max": 79.0,
+        "mean": 70.4,
+        "min": 58.0
+      },
+      "escaped_defect_rate": {
+        "max": 0.024,
+        "mean": 0.01003,
+        "min": 0.0
+      },
+      "escaped_defects": {
+        "max": 3.0,
+        "mean": 1.25,
+        "min": 0.0
+      },
+      "false_rejections": {
+        "max": 13.0,
+        "mean": 5.95,
+        "min": 3.0
+      },
+      "final_fanout": {
+        "max": 2.0,
+        "mean": 2.0,
+        "min": 2.0
+      },
+      "generated_candidates": {
+        "max": 200.0,
+        "mean": 200.0,
+        "min": 200.0
+      },
+      "human_attention_units": {
+        "max": 400.0,
+        "mean": 400.0,
+        "min": 400.0
+      },
+      "independent_test_executions": {
+        "max": 200.0,
+        "mean": 200.0,
+        "min": 200.0
+      },
+      "independently_examined_candidates": {
+        "max": 200.0,
+        "mean": 200.0,
+        "min": 200.0
+      },
+      "initial_fanout": 2,
+      "mean_queue_length": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "mean_wait_steps": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "mode": "tests-plus-adversarial-reviewer",
+      "peak_queue_length": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "pending_candidates": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "runs": 20,
+      "simulated_accepted_candidates": {
+        "max": 134.0,
+        "mean": 123.65,
+        "min": 112.0
+      },
+      "verification_cost_consumed": {
+        "max": 600.0,
+        "mean": 600.0,
+        "min": 600.0
+      },
+      "verified_useful_accepted_candidates": {
+        "max": 132.0,
+        "mean": 122.4,
+        "min": 110.0
+      },
+      "verified_useful_throughput_per_window": {
+        "max": 1.32,
+        "mean": 1.224,
+        "min": 1.1
+      }
+    },
+    {
+      "detected_defects": {
+        "max": 74.0,
+        "mean": 65.45,
+        "min": 55.0
+      },
+      "escaped_defect_rate": {
+        "max": 0.092593,
+        "mean": 0.054548,
+        "min": 0.017699
+      },
+      "escaped_defects": {
+        "max": 10.0,
+        "mean": 6.2,
+        "min": 2.0
+      },
+      "false_rejections": {
+        "max": 31.0,
+        "mean": 20.6,
+        "min": 13.0
+      },
+      "final_fanout": {
+        "max": 2.0,
+        "mean": 2.0,
+        "min": 2.0
+      },
+      "generated_candidates": {
+        "max": 200.0,
+        "mean": 200.0,
+        "min": 200.0
+      },
+      "human_attention_units": {
+        "max": 201.0,
+        "mean": 186.85,
+        "min": 167.0
+      },
+      "independent_test_executions": {
+        "max": 200.0,
+        "mean": 200.0,
+        "min": 200.0
+      },
+      "independently_examined_candidates": {
+        "max": 200.0,
+        "mean": 200.0,
+        "min": 200.0
+      },
+      "initial_fanout": 2,
+      "mean_queue_length": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "mean_wait_steps": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "mode": "risk-adaptive",
+      "peak_queue_length": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "pending_candidates": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "runs": 20,
+      "simulated_accepted_candidates": {
+        "max": 126.0,
+        "mean": 113.95,
+        "min": 104.0
+      },
+      "verification_cost_consumed": {
+        "max": 401.0,
+        "mean": 386.85,
+        "min": 367.0
+      },
+      "verified_useful_accepted_candidates": {
+        "max": 120.0,
+        "mean": 107.75,
+        "min": 97.0
+      },
+      "verified_useful_throughput_per_window": {
+        "max": 1.2,
+        "mean": 1.0775,
+        "min": 0.97
+      }
+    },
+    {
+      "detected_defects": {
+        "max": 150.0,
+        "mean": 138.7,
+        "min": 127.0
+      },
+      "escaped_defect_rate": {
+        "max": 0.103139,
+        "mean": 0.059369,
+        "min": 0.018265
+      },
+      "escaped_defects": {
+        "max": 23.0,
+        "mean": 13.5,
+        "min": 4.0
+      },
+      "false_rejections": {
+        "max": 50.0,
+        "mean": 41.6,
+        "min": 33.0
+      },
+      "final_fanout": {
+        "max": 7.0,
+        "mean": 3.95,
+        "min": 1.0
+      },
+      "generated_candidates": {
+        "max": 443.0,
+        "mean": 420.9,
+        "min": 400.0
+      },
+      "human_attention_units": {
+        "max": 398.0,
+        "mean": 384.1,
+        "min": 370.0
+      },
+      "independent_test_executions": {
+        "max": 423.0,
+        "mean": 407.45,
+        "min": 394.0
+      },
+      "independently_examined_candidates": {
+        "max": 423.0,
+        "mean": 407.45,
+        "min": 394.0
+      },
+      "initial_fanout": 2,
+      "mean_queue_length": {
+        "max": 15.69,
+        "mean": 11.356,
+        "min": 8.75
+      },
+      "mean_wait_steps": {
+        "max": 3.341346,
+        "mean": 2.542106,
+        "min": 1.978049
+      },
+      "mode": "risk-adaptive-backpressure",
+      "peak_queue_length": {
+        "max": 25.0,
+        "mean": 21.55,
+        "min": 17.0
+      },
+      "pending_candidates": {
+        "max": 23.0,
+        "mean": 13.45,
+        "min": 2.0
+      },
+      "runs": 20,
+      "simulated_accepted_candidates": {
+        "max": 245.0,
+        "mean": 227.15,
+        "min": 205.0
+      },
+      "verification_cost_consumed": {
+        "max": 795.0,
+        "mean": 791.55,
+        "min": 786.0
+      },
+      "verified_useful_accepted_candidates": {
+        "max": 229.0,
+        "mean": 213.65,
+        "min": 195.0
+      },
+      "verified_useful_throughput_per_window": {
+        "max": 2.29,
+        "mean": 2.1365,
+        "min": 1.95
+      }
+    },
+    {
+      "detected_defects": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "escaped_defect_rate": {
+        "max": 0.4175,
+        "mean": 0.369125,
+        "min": 0.3375
+      },
+      "escaped_defects": {
+        "max": 167.0,
+        "mean": 147.65,
+        "min": 135.0
+      },
+      "false_rejections": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "final_fanout": {
+        "max": 4.0,
+        "mean": 4.0,
+        "min": 4.0
+      },
+      "generated_candidates": {
+        "max": 400.0,
+        "mean": 400.0,
+        "min": 400.0
+      },
+      "human_attention_units": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "independent_test_executions": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "independently_examined_candidates": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "initial_fanout": 4,
+      "mean_queue_length": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "mean_wait_steps": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "mode": "no-independent-verification",
+      "peak_queue_length": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "pending_candidates": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "runs": 20,
+      "simulated_accepted_candidates": {
+        "max": 400.0,
+        "mean": 400.0,
+        "min": 400.0
+      },
+      "verification_cost_consumed": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "verified_useful_accepted_candidates": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "verified_useful_throughput_per_window": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      }
+    },
+    {
+      "detected_defects": {
+        "max": 104.0,
+        "mean": 92.0,
+        "min": 82.0
+      },
+      "escaped_defect_rate": {
+        "max": 0.330144,
+        "mean": 0.264418,
+        "min": 0.190698
+      },
+      "escaped_defects": {
+        "max": 69.0,
+        "mean": 55.65,
+        "min": 41.0
+      },
+      "false_rejections": {
+        "max": 112.0,
+        "mean": 97.3,
+        "min": 80.0
+      },
+      "final_fanout": {
+        "max": 4.0,
+        "mean": 4.0,
+        "min": 4.0
+      },
+      "generated_candidates": {
+        "max": 400.0,
+        "mean": 400.0,
+        "min": 400.0
+      },
+      "human_attention_units": {
+        "max": 400.0,
+        "mean": 400.0,
+        "min": 400.0
+      },
+      "independent_test_executions": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "independently_examined_candidates": {
+        "max": 400.0,
+        "mean": 400.0,
+        "min": 400.0
+      },
+      "initial_fanout": 4,
+      "mean_queue_length": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "mean_wait_steps": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "mode": "one-reviewer",
+      "peak_queue_length": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "pending_candidates": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "runs": 20,
+      "simulated_accepted_candidates": {
+        "max": 227.0,
+        "mean": 210.7,
+        "min": 196.0
+      },
+      "verification_cost_consumed": {
+        "max": 400.0,
+        "mean": 400.0,
+        "min": 400.0
+      },
+      "verified_useful_accepted_candidates": {
+        "max": 177.0,
+        "mean": 155.05,
+        "min": 140.0
+      },
+      "verified_useful_throughput_per_window": {
+        "max": 1.77,
+        "mean": 1.5505,
+        "min": 1.4
+      }
+    },
+    {
+      "detected_defects": {
+        "max": 57.0,
+        "mean": 49.4,
+        "min": 39.0
+      },
+      "escaped_defect_rate": {
+        "max": 0.252174,
+        "mean": 0.206072,
+        "min": 0.141509
+      },
+      "escaped_defects": {
+        "max": 29.0,
+        "mean": 22.25,
+        "min": 15.0
+      },
+      "false_rejections": {
+        "max": 53.0,
+        "mean": 42.7,
+        "min": 31.0
+      },
+      "final_fanout": {
+        "max": 4.0,
+        "mean": 4.0,
+        "min": 4.0
+      },
+      "generated_candidates": {
+        "max": 400.0,
+        "mean": 400.0,
+        "min": 400.0
+      },
+      "human_attention_units": {
+        "max": 600.0,
+        "mean": 600.0,
+        "min": 600.0
+      },
+      "independent_test_executions": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "independently_examined_candidates": {
+        "max": 200.0,
+        "mean": 200.0,
+        "min": 200.0
+      },
+      "initial_fanout": 4,
+      "mean_queue_length": {
+        "max": 101.0,
+        "mean": 101.0,
+        "min": 101.0
+      },
+      "mean_wait_steps": {
+        "max": 25.0,
+        "mean": 25.0,
+        "min": 25.0
+      },
+      "mode": "fixed-three-reviewer-quorum",
+      "peak_queue_length": {
+        "max": 200.0,
+        "mean": 200.0,
+        "min": 200.0
+      },
+      "pending_candidates": {
+        "max": 200.0,
+        "mean": 200.0,
+        "min": 200.0
+      },
+      "runs": 20,
+      "simulated_accepted_candidates": {
+        "max": 118.0,
+        "mean": 107.9,
+        "min": 98.0
+      },
+      "verification_cost_consumed": {
+        "max": 600.0,
+        "mean": 600.0,
+        "min": 600.0
+      },
+      "verified_useful_accepted_candidates": {
+        "max": 100.0,
+        "mean": 85.65,
+        "min": 75.0
+      },
+      "verified_useful_throughput_per_window": {
+        "max": 1.0,
+        "mean": 0.8565,
+        "min": 0.75
+      }
+    },
+    {
+      "detected_defects": {
+        "max": 125.0,
+        "mean": 112.05,
+        "min": 101.0
+      },
+      "escaped_defect_rate": {
+        "max": 0.164234,
+        "mean": 0.124798,
+        "min": 0.095238
+      },
+      "escaped_defects": {
+        "max": 45.0,
+        "mean": 35.6,
+        "min": 26.0
+      },
+      "false_rejections": {
+        "max": 5.0,
+        "mean": 2.55,
+        "min": 0.0
+      },
+      "final_fanout": {
+        "max": 4.0,
+        "mean": 4.0,
+        "min": 4.0
+      },
+      "generated_candidates": {
+        "max": 400.0,
+        "mean": 400.0,
+        "min": 400.0
+      },
+      "human_attention_units": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "independent_test_executions": {
+        "max": 400.0,
+        "mean": 400.0,
+        "min": 400.0
+      },
+      "independently_examined_candidates": {
+        "max": 400.0,
+        "mean": 400.0,
+        "min": 400.0
+      },
+      "initial_fanout": 4,
+      "mean_queue_length": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "mean_wait_steps": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "mode": "independent-tests",
+      "peak_queue_length": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "pending_candidates": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "runs": 20,
+      "simulated_accepted_candidates": {
+        "max": 299.0,
+        "mean": 285.4,
+        "min": 273.0
+      },
+      "verification_cost_consumed": {
+        "max": 400.0,
+        "mean": 400.0,
+        "min": 400.0
+      },
+      "verified_useful_accepted_candidates": {
+        "max": 265.0,
+        "mean": 249.8,
+        "min": 229.0
+      },
+      "verified_useful_throughput_per_window": {
+        "max": 2.65,
+        "mean": 2.498,
+        "min": 2.29
+      }
+    },
+    {
+      "detected_defects": {
+        "max": 79.0,
+        "mean": 70.4,
+        "min": 58.0
+      },
+      "escaped_defect_rate": {
+        "max": 0.024,
+        "mean": 0.01003,
+        "min": 0.0
+      },
+      "escaped_defects": {
+        "max": 3.0,
+        "mean": 1.25,
+        "min": 0.0
+      },
+      "false_rejections": {
+        "max": 13.0,
+        "mean": 5.95,
+        "min": 3.0
+      },
+      "final_fanout": {
+        "max": 4.0,
+        "mean": 4.0,
+        "min": 4.0
+      },
+      "generated_candidates": {
+        "max": 400.0,
+        "mean": 400.0,
+        "min": 400.0
+      },
+      "human_attention_units": {
+        "max": 400.0,
+        "mean": 400.0,
+        "min": 400.0
+      },
+      "independent_test_executions": {
+        "max": 200.0,
+        "mean": 200.0,
+        "min": 200.0
+      },
+      "independently_examined_candidates": {
+        "max": 200.0,
+        "mean": 200.0,
+        "min": 200.0
+      },
+      "initial_fanout": 4,
+      "mean_queue_length": {
+        "max": 101.0,
+        "mean": 101.0,
+        "min": 101.0
+      },
+      "mean_wait_steps": {
+        "max": 25.0,
+        "mean": 25.0,
+        "min": 25.0
+      },
+      "mode": "tests-plus-adversarial-reviewer",
+      "peak_queue_length": {
+        "max": 200.0,
+        "mean": 200.0,
+        "min": 200.0
+      },
+      "pending_candidates": {
+        "max": 200.0,
+        "mean": 200.0,
+        "min": 200.0
+      },
+      "runs": 20,
+      "simulated_accepted_candidates": {
+        "max": 134.0,
+        "mean": 123.65,
+        "min": 112.0
+      },
+      "verification_cost_consumed": {
+        "max": 600.0,
+        "mean": 600.0,
+        "min": 600.0
+      },
+      "verified_useful_accepted_candidates": {
+        "max": 132.0,
+        "mean": 122.4,
+        "min": 110.0
+      },
+      "verified_useful_throughput_per_window": {
+        "max": 1.32,
+        "mean": 1.224,
+        "min": 1.1
+      }
+    },
+    {
+      "detected_defects": {
+        "max": 144.0,
+        "mean": 132.8,
+        "min": 120.0
+      },
+      "escaped_defect_rate": {
+        "max": 0.105991,
+        "mean": 0.058265,
+        "min": 0.018519
+      },
+      "escaped_defects": {
+        "max": 23.0,
+        "mean": 13.0,
+        "min": 4.0
+      },
+      "false_rejections": {
+        "max": 51.0,
+        "mean": 40.1,
+        "min": 31.0
+      },
+      "final_fanout": {
+        "max": 4.0,
+        "mean": 4.0,
+        "min": 4.0
+      },
+      "generated_candidates": {
+        "max": 400.0,
+        "mean": 400.0,
+        "min": 400.0
+      },
+      "human_attention_units": {
+        "max": 394.0,
+        "mean": 370.15,
+        "min": 344.0
+      },
+      "independent_test_executions": {
+        "max": 400.0,
+        "mean": 396.0,
+        "min": 391.0
+      },
+      "independently_examined_candidates": {
+        "max": 400.0,
+        "mean": 396.0,
+        "min": 391.0
+      },
+      "initial_fanout": 4,
+      "mean_queue_length": {
+        "max": 6.55,
+        "mean": 2.944,
+        "min": 1.3
+      },
+      "mean_wait_steps": {
+        "max": 1.56266,
+        "mean": 0.699822,
+        "min": 0.325
+      },
+      "mode": "risk-adaptive",
+      "peak_queue_length": {
+        "max": 10.0,
+        "mean": 6.95,
+        "min": 4.0
+      },
+      "pending_candidates": {
+        "max": 9.0,
+        "mean": 4.0,
+        "min": 0.0
+      },
+      "runs": 20,
+      "simulated_accepted_candidates": {
+        "max": 239.0,
+        "mean": 223.1,
+        "min": 208.0
+      },
+      "verification_cost_consumed": {
+        "max": 786.0,
+        "mean": 766.15,
+        "min": 742.0
+      },
+      "verified_useful_accepted_candidates": {
+        "max": 225.0,
+        "mean": 210.1,
+        "min": 193.0
+      },
+      "verified_useful_throughput_per_window": {
+        "max": 2.25,
+        "mean": 2.101,
+        "min": 1.93
+      }
+    },
+    {
+      "detected_defects": {
+        "max": 150.0,
+        "mean": 139.45,
+        "min": 127.0
+      },
+      "escaped_defect_rate": {
+        "max": 0.10177,
+        "mean": 0.059547,
+        "min": 0.018182
+      },
+      "escaped_defects": {
+        "max": 23.0,
+        "mean": 13.65,
+        "min": 4.0
+      },
+      "false_rejections": {
+        "max": 50.0,
+        "mean": 42.0,
+        "min": 33.0
+      },
+      "final_fanout": {
+        "max": 7.0,
+        "mean": 3.9,
+        "min": 1.0
+      },
+      "generated_candidates": {
+        "max": 447.0,
+        "mean": 423.15,
+        "min": 401.0
+      },
+      "human_attention_units": {
+        "max": 399.0,
+        "mean": 386.95,
+        "min": 371.0
+      },
+      "independent_test_executions": {
+        "max": 428.0,
+        "mean": 410.2,
+        "min": 395.0
+      },
+      "independently_examined_candidates": {
+        "max": 428.0,
+        "mean": 410.2,
+        "min": 395.0
+      },
+      "initial_fanout": 4,
+      "mean_queue_length": {
+        "max": 17.27,
+        "mean": 11.51,
+        "min": 9.24
+      },
+      "mean_wait_steps": {
+        "max": 3.720764,
+        "mean": 2.566573,
+        "min": 2.075949
+      },
+      "mode": "risk-adaptive-backpressure",
+      "peak_queue_length": {
+        "max": 28.0,
+        "mean": 21.35,
+        "min": 17.0
+      },
+      "pending_candidates": {
+        "max": 21.0,
+        "mean": 12.95,
+        "min": 3.0
+      },
+      "runs": 20,
+      "simulated_accepted_candidates": {
+        "max": 246.0,
+        "mean": 228.75,
+        "min": 205.0
+      },
+      "verification_cost_consumed": {
+        "max": 800.0,
+        "mean": 797.15,
+        "min": 791.0
+      },
+      "verified_useful_accepted_candidates": {
+        "max": 229.0,
+        "mean": 215.1,
+        "min": 195.0
+      },
+      "verified_useful_throughput_per_window": {
+        "max": 2.29,
+        "mean": 2.151,
+        "min": 1.95
+      }
+    },
+    {
+      "detected_defects": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "escaped_defect_rate": {
+        "max": 0.4025,
+        "mean": 0.368625,
+        "min": 0.345
+      },
+      "escaped_defects": {
+        "max": 322.0,
+        "mean": 294.9,
+        "min": 276.0
+      },
+      "false_rejections": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "final_fanout": {
+        "max": 8.0,
+        "mean": 8.0,
+        "min": 8.0
+      },
+      "generated_candidates": {
+        "max": 800.0,
+        "mean": 800.0,
+        "min": 800.0
+      },
+      "human_attention_units": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "independent_test_executions": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "independently_examined_candidates": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "initial_fanout": 8,
+      "mean_queue_length": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "mean_wait_steps": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "mode": "no-independent-verification",
+      "peak_queue_length": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "pending_candidates": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "runs": 20,
+      "simulated_accepted_candidates": {
+        "max": 800.0,
+        "mean": 800.0,
+        "min": 800.0
+      },
+      "verification_cost_consumed": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "verified_useful_accepted_candidates": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "verified_useful_throughput_per_window": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      }
+    },
+    {
+      "detected_defects": {
+        "max": 199.0,
+        "mean": 184.85,
+        "min": 166.0
+      },
+      "escaped_defect_rate": {
+        "max": 0.300971,
+        "mean": 0.260725,
+        "min": 0.216783
+      },
+      "escaped_defects": {
+        "max": 126.0,
+        "mean": 110.05,
+        "min": 93.0
+      },
+      "false_rejections": {
+        "max": 211.0,
+        "mean": 192.85,
+        "min": 171.0
+      },
+      "final_fanout": {
+        "max": 8.0,
+        "mean": 8.0,
+        "min": 8.0
+      },
+      "generated_candidates": {
+        "max": 800.0,
+        "mean": 800.0,
+        "min": 800.0
+      },
+      "human_attention_units": {
+        "max": 800.0,
+        "mean": 800.0,
+        "min": 800.0
+      },
+      "independent_test_executions": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "independently_examined_candidates": {
+        "max": 800.0,
+        "mean": 800.0,
+        "min": 800.0
+      },
+      "initial_fanout": 8,
+      "mean_queue_length": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "mean_wait_steps": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "mode": "one-reviewer",
+      "peak_queue_length": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "pending_candidates": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "runs": 20,
+      "simulated_accepted_candidates": {
+        "max": 452.0,
+        "mean": 422.3,
+        "min": 404.0
+      },
+      "verification_cost_consumed": {
+        "max": 800.0,
+        "mean": 800.0,
+        "min": 800.0
+      },
+      "verified_useful_accepted_candidates": {
+        "max": 347.0,
+        "mean": 312.25,
+        "min": 288.0
+      },
+      "verified_useful_throughput_per_window": {
+        "max": 3.47,
+        "mean": 3.1225,
+        "min": 2.88
+      }
+    },
+    {
+      "detected_defects": {
+        "max": 57.0,
+        "mean": 49.4,
+        "min": 39.0
+      },
+      "escaped_defect_rate": {
+        "max": 0.252174,
+        "mean": 0.206072,
+        "min": 0.141509
+      },
+      "escaped_defects": {
+        "max": 29.0,
+        "mean": 22.25,
+        "min": 15.0
+      },
+      "false_rejections": {
+        "max": 53.0,
+        "mean": 42.7,
+        "min": 31.0
+      },
+      "final_fanout": {
+        "max": 8.0,
+        "mean": 8.0,
+        "min": 8.0
+      },
+      "generated_candidates": {
+        "max": 800.0,
+        "mean": 800.0,
+        "min": 800.0
+      },
+      "human_attention_units": {
+        "max": 600.0,
+        "mean": 600.0,
+        "min": 600.0
+      },
+      "independent_test_executions": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "independently_examined_candidates": {
+        "max": 200.0,
+        "mean": 200.0,
+        "min": 200.0
+      },
+      "initial_fanout": 8,
+      "mean_queue_length": {
+        "max": 303.0,
+        "mean": 303.0,
+        "min": 303.0
+      },
+      "mean_wait_steps": {
+        "max": 37.5,
+        "mean": 37.5,
+        "min": 37.5
+      },
+      "mode": "fixed-three-reviewer-quorum",
+      "peak_queue_length": {
+        "max": 600.0,
+        "mean": 600.0,
+        "min": 600.0
+      },
+      "pending_candidates": {
+        "max": 600.0,
+        "mean": 600.0,
+        "min": 600.0
+      },
+      "runs": 20,
+      "simulated_accepted_candidates": {
+        "max": 118.0,
+        "mean": 107.9,
+        "min": 98.0
+      },
+      "verification_cost_consumed": {
+        "max": 600.0,
+        "mean": 600.0,
+        "min": 600.0
+      },
+      "verified_useful_accepted_candidates": {
+        "max": 100.0,
+        "mean": 85.65,
+        "min": 75.0
+      },
+      "verified_useful_throughput_per_window": {
+        "max": 1.0,
+        "mean": 0.8565,
+        "min": 0.75
+      }
+    },
+    {
+      "detected_defects": {
+        "max": 246.0,
+        "mean": 225.75,
+        "min": 213.0
+      },
+      "escaped_defect_rate": {
+        "max": 0.168421,
+        "mean": 0.12156,
+        "min": 0.106115
+      },
+      "escaped_defects": {
+        "max": 96.0,
+        "mean": 69.15,
+        "min": 59.0
+      },
+      "false_rejections": {
+        "max": 10.0,
+        "mean": 5.45,
+        "min": 2.0
+      },
+      "final_fanout": {
+        "max": 8.0,
+        "mean": 8.0,
+        "min": 8.0
+      },
+      "generated_candidates": {
+        "max": 800.0,
+        "mean": 800.0,
+        "min": 800.0
+      },
+      "human_attention_units": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "independent_test_executions": {
+        "max": 800.0,
+        "mean": 800.0,
+        "min": 800.0
+      },
+      "independently_examined_candidates": {
+        "max": 800.0,
+        "mean": 800.0,
+        "min": 800.0
+      },
+      "initial_fanout": 8,
+      "mean_queue_length": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "mean_wait_steps": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "mode": "independent-tests",
+      "peak_queue_length": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "pending_candidates": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "runs": 20,
+      "simulated_accepted_candidates": {
+        "max": 584.0,
+        "mean": 568.8,
+        "min": 544.0
+      },
+      "verification_cost_consumed": {
+        "max": 800.0,
+        "mean": 800.0,
+        "min": 800.0
+      },
+      "verified_useful_accepted_candidates": {
+        "max": 518.0,
+        "mean": 499.65,
+        "min": 474.0
+      },
+      "verified_useful_throughput_per_window": {
+        "max": 5.18,
+        "mean": 4.9965,
+        "min": 4.74
+      }
+    },
+    {
+      "detected_defects": {
+        "max": 79.0,
+        "mean": 70.4,
+        "min": 58.0
+      },
+      "escaped_defect_rate": {
+        "max": 0.024,
+        "mean": 0.01003,
+        "min": 0.0
+      },
+      "escaped_defects": {
+        "max": 3.0,
+        "mean": 1.25,
+        "min": 0.0
+      },
+      "false_rejections": {
+        "max": 13.0,
+        "mean": 5.95,
+        "min": 3.0
+      },
+      "final_fanout": {
+        "max": 8.0,
+        "mean": 8.0,
+        "min": 8.0
+      },
+      "generated_candidates": {
+        "max": 800.0,
+        "mean": 800.0,
+        "min": 800.0
+      },
+      "human_attention_units": {
+        "max": 400.0,
+        "mean": 400.0,
+        "min": 400.0
+      },
+      "independent_test_executions": {
+        "max": 200.0,
+        "mean": 200.0,
+        "min": 200.0
+      },
+      "independently_examined_candidates": {
+        "max": 200.0,
+        "mean": 200.0,
+        "min": 200.0
+      },
+      "initial_fanout": 8,
+      "mean_queue_length": {
+        "max": 303.0,
+        "mean": 303.0,
+        "min": 303.0
+      },
+      "mean_wait_steps": {
+        "max": 37.5,
+        "mean": 37.5,
+        "min": 37.5
+      },
+      "mode": "tests-plus-adversarial-reviewer",
+      "peak_queue_length": {
+        "max": 600.0,
+        "mean": 600.0,
+        "min": 600.0
+      },
+      "pending_candidates": {
+        "max": 600.0,
+        "mean": 600.0,
+        "min": 600.0
+      },
+      "runs": 20,
+      "simulated_accepted_candidates": {
+        "max": 134.0,
+        "mean": 123.65,
+        "min": 112.0
+      },
+      "verification_cost_consumed": {
+        "max": 600.0,
+        "mean": 600.0,
+        "min": 600.0
+      },
+      "verified_useful_accepted_candidates": {
+        "max": 132.0,
+        "mean": 122.4,
+        "min": 110.0
+      },
+      "verified_useful_throughput_per_window": {
+        "max": 1.32,
+        "mean": 1.224,
+        "min": 1.1
+      }
+    },
+    {
+      "detected_defects": {
+        "max": 151.0,
+        "mean": 139.05,
+        "min": 126.0
+      },
+      "escaped_defect_rate": {
+        "max": 0.100437,
+        "mean": 0.058946,
+        "min": 0.0181
+      },
+      "escaped_defects": {
+        "max": 23.0,
+        "mean": 13.75,
+        "min": 4.0
+      },
+      "false_rejections": {
+        "max": 51.0,
+        "mean": 41.9,
+        "min": 33.0
+      },
+      "final_fanout": {
+        "max": 8.0,
+        "mean": 8.0,
+        "min": 8.0
+      },
+      "generated_candidates": {
+        "max": 800.0,
+        "mean": 800.0,
+        "min": 800.0
+      },
+      "human_attention_units": {
+        "max": 401.0,
+        "mean": 386.35,
+        "min": 369.0
+      },
+      "independent_test_executions": {
+        "max": 431.0,
+        "mean": 413.55,
+        "min": 399.0
+      },
+      "independently_examined_candidates": {
+        "max": 431.0,
+        "mean": 413.55,
+        "min": 399.0
+      },
+      "initial_fanout": 8,
+      "mean_queue_length": {
+        "max": 203.25,
+        "mean": 194.9495,
+        "min": 185.97
+      },
+      "mean_wait_steps": {
+        "max": 25.553659,
+        "mean": 24.102245,
+        "min": 22.974478
+      },
+      "mode": "risk-adaptive",
+      "peak_queue_length": {
+        "max": 401.0,
+        "mean": 386.45,
+        "min": 369.0
+      },
+      "pending_candidates": {
+        "max": 401.0,
+        "mean": 386.45,
+        "min": 369.0
+      },
+      "runs": 20,
+      "simulated_accepted_candidates": {
+        "max": 251.0,
+        "mean": 232.6,
+        "min": 212.0
+      },
+      "verification_cost_consumed": {
+        "max": 800.0,
+        "mean": 799.9,
+        "min": 799.0
+      },
+      "verified_useful_accepted_candidates": {
+        "max": 234.0,
+        "mean": 218.85,
+        "min": 200.0
+      },
+      "verified_useful_throughput_per_window": {
+        "max": 2.34,
+        "mean": 2.1885,
+        "min": 2.0
+      }
+    },
+    {
+      "detected_defects": {
+        "max": 151.0,
+        "mean": 139.6,
+        "min": 127.0
+      },
+      "escaped_defect_rate": {
+        "max": 0.102222,
+        "mean": 0.059716,
+        "min": 0.018182
+      },
+      "escaped_defects": {
+        "max": 23.0,
+        "mean": 13.7,
+        "min": 4.0
+      },
+      "false_rejections": {
+        "max": 51.0,
+        "mean": 42.05,
+        "min": 33.0
+      },
+      "final_fanout": {
+        "max": 6.0,
+        "mean": 3.9,
+        "min": 1.0
+      },
+      "generated_candidates": {
+        "max": 445.0,
+        "mean": 423.3,
+        "min": 402.0
+      },
+      "human_attention_units": {
+        "max": 400.0,
+        "mean": 387.5,
+        "min": 373.0
+      },
+      "independent_test_executions": {
+        "max": 427.0,
+        "mean": 410.45,
+        "min": 395.0
+      },
+      "independently_examined_candidates": {
+        "max": 427.0,
+        "mean": 410.45,
+        "min": 395.0
+      },
+      "initial_fanout": 8,
+      "mean_queue_length": {
+        "max": 16.37,
+        "mean": 11.4995,
+        "min": 8.29
+      },
+      "mean_wait_steps": {
+        "max": 3.490476,
+        "mean": 2.55897,
+        "min": 1.905569
+      },
+      "mode": "risk-adaptive-backpressure",
+      "peak_queue_length": {
+        "max": 26.0,
+        "mean": 21.5,
+        "min": 18.0
+      },
+      "pending_candidates": {
+        "max": 20.0,
+        "mean": 12.85,
+        "min": 3.0
+      },
+      "runs": 20,
+      "simulated_accepted_candidates": {
+        "max": 246.0,
+        "mean": 228.8,
+        "min": 204.0
+      },
+      "verification_cost_consumed": {
+        "max": 800.0,
+        "mean": 797.95,
+        "min": 792.0
+      },
+      "verified_useful_accepted_candidates": {
+        "max": 229.0,
+        "mean": 215.1,
+        "min": 194.0
+      },
+      "verified_useful_throughput_per_window": {
+        "max": 2.29,
+        "mean": 2.151,
+        "min": 1.94
+      }
+    },
+    {
+      "detected_defects": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "escaped_defect_rate": {
+        "max": 0.391667,
+        "mean": 0.367542,
+        "min": 0.35
+      },
+      "escaped_defects": {
+        "max": 470.0,
+        "mean": 441.05,
+        "min": 420.0
+      },
+      "false_rejections": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "final_fanout": {
+        "max": 12.0,
+        "mean": 12.0,
+        "min": 12.0
+      },
+      "generated_candidates": {
+        "max": 1200.0,
+        "mean": 1200.0,
+        "min": 1200.0
+      },
+      "human_attention_units": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "independent_test_executions": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "independently_examined_candidates": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "initial_fanout": 12,
+      "mean_queue_length": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "mean_wait_steps": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "mode": "no-independent-verification",
+      "peak_queue_length": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "pending_candidates": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "runs": 20,
+      "simulated_accepted_candidates": {
+        "max": 1200.0,
+        "mean": 1200.0,
+        "min": 1200.0
+      },
+      "verification_cost_consumed": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "verified_useful_accepted_candidates": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "verified_useful_throughput_per_window": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      }
+    },
+    {
+      "detected_defects": {
+        "max": 199.0,
+        "mean": 184.85,
+        "min": 166.0
+      },
+      "escaped_defect_rate": {
+        "max": 0.300971,
+        "mean": 0.260725,
+        "min": 0.216783
+      },
+      "escaped_defects": {
+        "max": 126.0,
+        "mean": 110.05,
+        "min": 93.0
+      },
+      "false_rejections": {
+        "max": 211.0,
+        "mean": 192.85,
+        "min": 171.0
+      },
+      "final_fanout": {
+        "max": 12.0,
+        "mean": 12.0,
+        "min": 12.0
+      },
+      "generated_candidates": {
+        "max": 1200.0,
+        "mean": 1200.0,
+        "min": 1200.0
+      },
+      "human_attention_units": {
+        "max": 800.0,
+        "mean": 800.0,
+        "min": 800.0
+      },
+      "independent_test_executions": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "independently_examined_candidates": {
+        "max": 800.0,
+        "mean": 800.0,
+        "min": 800.0
+      },
+      "initial_fanout": 12,
+      "mean_queue_length": {
+        "max": 202.0,
+        "mean": 202.0,
+        "min": 202.0
+      },
+      "mean_wait_steps": {
+        "max": 16.665,
+        "mean": 16.665,
+        "min": 16.665
+      },
+      "mode": "one-reviewer",
+      "peak_queue_length": {
+        "max": 400.0,
+        "mean": 400.0,
+        "min": 400.0
+      },
+      "pending_candidates": {
+        "max": 400.0,
+        "mean": 400.0,
+        "min": 400.0
+      },
+      "runs": 20,
+      "simulated_accepted_candidates": {
+        "max": 452.0,
+        "mean": 422.3,
+        "min": 404.0
+      },
+      "verification_cost_consumed": {
+        "max": 800.0,
+        "mean": 800.0,
+        "min": 800.0
+      },
+      "verified_useful_accepted_candidates": {
+        "max": 347.0,
+        "mean": 312.25,
+        "min": 288.0
+      },
+      "verified_useful_throughput_per_window": {
+        "max": 3.47,
+        "mean": 3.1225,
+        "min": 2.88
+      }
+    },
+    {
+      "detected_defects": {
+        "max": 57.0,
+        "mean": 49.4,
+        "min": 39.0
+      },
+      "escaped_defect_rate": {
+        "max": 0.252174,
+        "mean": 0.206072,
+        "min": 0.141509
+      },
+      "escaped_defects": {
+        "max": 29.0,
+        "mean": 22.25,
+        "min": 15.0
+      },
+      "false_rejections": {
+        "max": 53.0,
+        "mean": 42.7,
+        "min": 31.0
+      },
+      "final_fanout": {
+        "max": 12.0,
+        "mean": 12.0,
+        "min": 12.0
+      },
+      "generated_candidates": {
+        "max": 1200.0,
+        "mean": 1200.0,
+        "min": 1200.0
+      },
+      "human_attention_units": {
+        "max": 600.0,
+        "mean": 600.0,
+        "min": 600.0
+      },
+      "independent_test_executions": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "independently_examined_candidates": {
+        "max": 200.0,
+        "mean": 200.0,
+        "min": 200.0
+      },
+      "initial_fanout": 12,
+      "mean_queue_length": {
+        "max": 505.0,
+        "mean": 505.0,
+        "min": 505.0
+      },
+      "mean_wait_steps": {
+        "max": 41.66,
+        "mean": 41.66,
+        "min": 41.66
+      },
+      "mode": "fixed-three-reviewer-quorum",
+      "peak_queue_length": {
+        "max": 1000.0,
+        "mean": 1000.0,
+        "min": 1000.0
+      },
+      "pending_candidates": {
+        "max": 1000.0,
+        "mean": 1000.0,
+        "min": 1000.0
+      },
+      "runs": 20,
+      "simulated_accepted_candidates": {
+        "max": 118.0,
+        "mean": 107.9,
+        "min": 98.0
+      },
+      "verification_cost_consumed": {
+        "max": 600.0,
+        "mean": 600.0,
+        "min": 600.0
+      },
+      "verified_useful_accepted_candidates": {
+        "max": 100.0,
+        "mean": 85.65,
+        "min": 75.0
+      },
+      "verified_useful_throughput_per_window": {
+        "max": 1.0,
+        "mean": 0.8565,
+        "min": 0.75
+      }
+    },
+    {
+      "detected_defects": {
+        "max": 246.0,
+        "mean": 225.75,
+        "min": 213.0
+      },
+      "escaped_defect_rate": {
+        "max": 0.168421,
+        "mean": 0.12156,
+        "min": 0.106115
+      },
+      "escaped_defects": {
+        "max": 96.0,
+        "mean": 69.15,
+        "min": 59.0
+      },
+      "false_rejections": {
+        "max": 10.0,
+        "mean": 5.45,
+        "min": 2.0
+      },
+      "final_fanout": {
+        "max": 12.0,
+        "mean": 12.0,
+        "min": 12.0
+      },
+      "generated_candidates": {
+        "max": 1200.0,
+        "mean": 1200.0,
+        "min": 1200.0
+      },
+      "human_attention_units": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "independent_test_executions": {
+        "max": 800.0,
+        "mean": 800.0,
+        "min": 800.0
+      },
+      "independently_examined_candidates": {
+        "max": 800.0,
+        "mean": 800.0,
+        "min": 800.0
+      },
+      "initial_fanout": 12,
+      "mean_queue_length": {
+        "max": 202.0,
+        "mean": 202.0,
+        "min": 202.0
+      },
+      "mean_wait_steps": {
+        "max": 16.665,
+        "mean": 16.665,
+        "min": 16.665
+      },
+      "mode": "independent-tests",
+      "peak_queue_length": {
+        "max": 400.0,
+        "mean": 400.0,
+        "min": 400.0
+      },
+      "pending_candidates": {
+        "max": 400.0,
+        "mean": 400.0,
+        "min": 400.0
+      },
+      "runs": 20,
+      "simulated_accepted_candidates": {
+        "max": 584.0,
+        "mean": 568.8,
+        "min": 544.0
+      },
+      "verification_cost_consumed": {
+        "max": 800.0,
+        "mean": 800.0,
+        "min": 800.0
+      },
+      "verified_useful_accepted_candidates": {
+        "max": 518.0,
+        "mean": 499.65,
+        "min": 474.0
+      },
+      "verified_useful_throughput_per_window": {
+        "max": 5.18,
+        "mean": 4.9965,
+        "min": 4.74
+      }
+    },
+    {
+      "detected_defects": {
+        "max": 79.0,
+        "mean": 70.4,
+        "min": 58.0
+      },
+      "escaped_defect_rate": {
+        "max": 0.024,
+        "mean": 0.01003,
+        "min": 0.0
+      },
+      "escaped_defects": {
+        "max": 3.0,
+        "mean": 1.25,
+        "min": 0.0
+      },
+      "false_rejections": {
+        "max": 13.0,
+        "mean": 5.95,
+        "min": 3.0
+      },
+      "final_fanout": {
+        "max": 12.0,
+        "mean": 12.0,
+        "min": 12.0
+      },
+      "generated_candidates": {
+        "max": 1200.0,
+        "mean": 1200.0,
+        "min": 1200.0
+      },
+      "human_attention_units": {
+        "max": 400.0,
+        "mean": 400.0,
+        "min": 400.0
+      },
+      "independent_test_executions": {
+        "max": 200.0,
+        "mean": 200.0,
+        "min": 200.0
+      },
+      "independently_examined_candidates": {
+        "max": 200.0,
+        "mean": 200.0,
+        "min": 200.0
+      },
+      "initial_fanout": 12,
+      "mean_queue_length": {
+        "max": 505.0,
+        "mean": 505.0,
+        "min": 505.0
+      },
+      "mean_wait_steps": {
+        "max": 41.66,
+        "mean": 41.66,
+        "min": 41.66
+      },
+      "mode": "tests-plus-adversarial-reviewer",
+      "peak_queue_length": {
+        "max": 1000.0,
+        "mean": 1000.0,
+        "min": 1000.0
+      },
+      "pending_candidates": {
+        "max": 1000.0,
+        "mean": 1000.0,
+        "min": 1000.0
+      },
+      "runs": 20,
+      "simulated_accepted_candidates": {
+        "max": 134.0,
+        "mean": 123.65,
+        "min": 112.0
+      },
+      "verification_cost_consumed": {
+        "max": 600.0,
+        "mean": 600.0,
+        "min": 600.0
+      },
+      "verified_useful_accepted_candidates": {
+        "max": 132.0,
+        "mean": 122.4,
+        "min": 110.0
+      },
+      "verified_useful_throughput_per_window": {
+        "max": 1.32,
+        "mean": 1.224,
+        "min": 1.1
+      }
+    },
+    {
+      "detected_defects": {
+        "max": 150.0,
+        "mean": 139.3,
+        "min": 128.0
+      },
+      "escaped_defect_rate": {
+        "max": 0.100437,
+        "mean": 0.058809,
+        "min": 0.018018
+      },
+      "escaped_defects": {
+        "max": 23.0,
+        "mean": 13.7,
+        "min": 4.0
+      },
+      "false_rejections": {
+        "max": 50.0,
+        "mean": 41.9,
+        "min": 33.0
+      },
+      "final_fanout": {
+        "max": 12.0,
+        "mean": 12.0,
+        "min": 12.0
+      },
+      "generated_candidates": {
+        "max": 1200.0,
+        "mean": 1200.0,
+        "min": 1200.0
+      },
+      "human_attention_units": {
+        "max": 401.0,
+        "mean": 386.55,
+        "min": 369.0
+      },
+      "independent_test_executions": {
+        "max": 431.0,
+        "mean": 413.45,
+        "min": 399.0
+      },
+      "independently_examined_candidates": {
+        "max": 431.0,
+        "mean": 413.45,
+        "min": 399.0
+      },
+      "initial_fanout": 12,
+      "mean_queue_length": {
+        "max": 404.91,
+        "mean": 397.159,
+        "min": 388.43
+      },
+      "mean_wait_steps": {
+        "max": 33.980488,
+        "mean": 32.759259,
+        "min": 31.854118
+      },
+      "mode": "risk-adaptive",
+      "peak_queue_length": {
+        "max": 801.0,
+        "mean": 786.55,
+        "min": 769.0
+      },
+      "pending_candidates": {
+        "max": 801.0,
+        "mean": 786.55,
+        "min": 769.0
+      },
+      "runs": 20,
+      "simulated_accepted_candidates": {
+        "max": 251.0,
+        "mean": 232.25,
+        "min": 211.0
+      },
+      "verification_cost_consumed": {
+        "max": 800.0,
+        "mean": 800.0,
+        "min": 800.0
+      },
+      "verified_useful_accepted_candidates": {
+        "max": 234.0,
+        "mean": 218.55,
+        "min": 201.0
+      },
+      "verified_useful_throughput_per_window": {
+        "max": 2.34,
+        "mean": 2.1855,
+        "min": 2.01
+      }
+    },
+    {
+      "detected_defects": {
+        "max": 151.0,
+        "mean": 139.65,
+        "min": 128.0
+      },
+      "escaped_defect_rate": {
+        "max": 0.101322,
+        "mean": 0.059321,
+        "min": 0.018182
+      },
+      "escaped_defects": {
+        "max": 23.0,
+        "mean": 13.65,
+        "min": 4.0
+      },
+      "false_rejections": {
+        "max": 51.0,
+        "mean": 42.0,
+        "min": 33.0
+      },
+      "final_fanout": {
+        "max": 6.0,
+        "mean": 3.9,
+        "min": 1.0
+      },
+      "generated_candidates": {
+        "max": 447.0,
+        "mean": 423.85,
+        "min": 402.0
+      },
+      "human_attention_units": {
+        "max": 401.0,
+        "mean": 387.5,
+        "min": 371.0
+      },
+      "independent_test_executions": {
+        "max": 429.0,
+        "mean": 411.15,
+        "min": 395.0
+      },
+      "independently_examined_candidates": {
+        "max": 429.0,
+        "mean": 411.15,
+        "min": 395.0
+      },
+      "initial_fanout": 12,
+      "mean_queue_length": {
+        "max": 16.65,
+        "mean": 11.604,
+        "min": 8.52
+      },
+      "mean_wait_steps": {
+        "max": 3.628571,
+        "mean": 2.5915,
+        "min": 1.961259
+      },
+      "mode": "risk-adaptive-backpressure",
+      "peak_queue_length": {
+        "max": 27.0,
+        "mean": 21.3,
+        "min": 16.0
+      },
+      "pending_candidates": {
+        "max": 19.0,
+        "mean": 12.7,
+        "min": 3.0
+      },
+      "runs": 20,
+      "simulated_accepted_candidates": {
+        "max": 246.0,
+        "mean": 229.5,
+        "min": 204.0
+      },
+      "verification_cost_consumed": {
+        "max": 800.0,
+        "mean": 798.65,
+        "min": 793.0
+      },
+      "verified_useful_accepted_candidates": {
+        "max": 230.0,
+        "mean": 215.85,
+        "min": 194.0
+      },
+      "verified_useful_throughput_per_window": {
+        "max": 2.3,
+        "mean": 2.1585,
+        "min": 1.94
+      }
+    }
+  ],
+  "verification_capacity_per_window": 8.0
+}
