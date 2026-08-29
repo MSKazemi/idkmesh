@@ -1,0 +1,89 @@
+{
+  "attempt": 1,
+  "extensions": {
+    "org.idkmesh.authority": {
+      "automatic_candidate_selection": false,
+      "canonical_state_write": false,
+      "git_push": false,
+      "merge": false
+    },
+    "org.idkmesh.benchmark.structural_signature": "single-worker-baseline-v1"
+  },
+  "finished_at": "2026-08-29T03:56:02.022372Z",
+  "id": "benchmark/phase-b2/005-first-five-freeze-checklist/single-worker-baseline-v1/attempt-001",
+  "logs": [
+    {
+      "digest": "sha256:bd7e06d2aaa9c3e9419b8634cdad2a25975a531b8ee55f269ab1d684cf5b4c30",
+      "locator": "stdout.txt",
+      "type": "stdout"
+    },
+    {
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "locator": "stderr.txt",
+      "type": "stderr"
+    }
+  ],
+  "metrics": {
+    "candidate_authority_violations": 0,
+    "changed_path_count": 1,
+    "documented_freeze_gates": 8
+  },
+  "produced_artifacts": [
+    {
+      "description": "Unverified frozen-source Task 005 candidate patch.",
+      "digest": "sha256:33286056c6b17eff34c36a2f8b5847bcc953ee5da2d61cb8e059783c7ee6b97f",
+      "id": "candidate-patch",
+      "locator": "candidate.patch",
+      "media_type": "text/x-diff",
+      "type": "patch"
+    }
+  ],
+  "provenance": {
+    "environment": {
+      "platform": "Linux-7.0.0-30-generic-x86_64-with-glibc2.39",
+      "python": "3.12.3",
+      "tool_versions": {
+        "git": "git version 2.43.0",
+        "phase-b2-task005-worker": "0.1"
+      }
+    },
+    "source_revision": "9c53bb4069a5db1c0688dbbe7a8f028540cbf7c2",
+    "work_unit_digest": "sha256:8dc195e5221d04af69e259e93b40db471f4df6f9761a0c4b10efd692db5c7527",
+    "worker_config_digest": "sha256:38f6d0ed04639007194f4e029cfa42129db41da5c49c517682596f6ff92245c4"
+  },
+  "resources": {
+    "compute_units": 0.0,
+    "human_minutes": 0.0,
+    "tokens": 0,
+    "wall_seconds": 0.004211810999549925
+  },
+  "schema_version": "0.1",
+  "self_report": {
+    "claims": [
+      "Only the allowed specification was changed.",
+      "All required pre-outcome gates are explicit.",
+      "The checklist denies automatic integration authority."
+    ],
+    "summary": "Deterministic baseline adds the first-five freeze checklist; self-report is not acceptance."
+  },
+  "started_at": "2026-08-29T03:56:02.018144Z",
+  "status": "succeeded",
+  "verification_request": {
+    "evidence_artifact_ids": [
+      "candidate-patch"
+    ],
+    "expected_validator_ids": [
+      "independent-review",
+      "result-manifest-schema"
+    ],
+    "notes": "Route through the frozen public EvaluatorPlan; worker self-report is not acceptance."
+  },
+  "work_unit_id": "benchmark/phase-b2/005-first-five-freeze-checklist",
+  "work_unit_version": 1,
+  "worker": {
+    "adapter": "deterministic-document-rewrite",
+    "adapter_version": "0.1",
+    "id": "idkmesh-phase-b2-task005-worker",
+    "type": "system"
+  }
+}

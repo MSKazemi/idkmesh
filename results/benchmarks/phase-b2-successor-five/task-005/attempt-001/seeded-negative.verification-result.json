@@ -1,0 +1,86 @@
+{
+  "attempt": 1,
+  "checks": [
+    {
+      "evidence_ids": [
+        "behavior-observation"
+      ],
+      "id": "no-automatic-integration-authority",
+      "required": true,
+      "status": "failed",
+      "summary": "The deliberately contaminated checklist claims verifier-granted automatic merge authority.",
+      "type": "test"
+    }
+  ],
+  "decision_support": {
+    "confidence": 1.0,
+    "rationale": "This VerificationResult records the deliberately contaminated seeded text, not the accepted candidate.",
+    "recommendation": "reject_candidate"
+  },
+  "evidence": [
+    {
+      "description": "Digest of checklist completeness and seeded authority-language observations.",
+      "digest": "sha256:e7cc699fd11f8878becfaa453ff0313dea3fe7be0c30d0d319d8b366539d28a9",
+      "id": "behavior-observation",
+      "locator": "behavior-observation.json",
+      "media_type": "application/json",
+      "type": "test_output"
+    }
+  ],
+  "extensions": {
+    "org.idkmesh.seeded_negative": true,
+    "org.idkmesh.seeded_negative.expected_category": "correctness"
+  },
+  "findings": [
+    {
+      "category": "correctness",
+      "path": "docs/specifications/BENCHMARK_COHORT_V0_1.md",
+      "severity": "high",
+      "summary": "Verifier support must not grant automatic integration authority."
+    }
+  ],
+  "finished_at": "2026-08-29T03:56:02.131230Z",
+  "id": "benchmark/phase-b2/005-first-five-freeze-checklist/single-worker-baseline-v1/attempt-001/authority-language",
+  "independence": {
+    "correlation_notes": "The deterministic language probe is separate from document generation but runs in the same controlled harness.",
+    "independent_from_worker": true,
+    "shared_model_family": false,
+    "shared_runtime": true,
+    "worker_id_observed": "idkmesh-phase-b2-task005-worker"
+  },
+  "metrics": {
+    "candidate_authority_violations": 0,
+    "seeded_authority_violations": 1
+  },
+  "provenance": {
+    "environment": {
+      "platform": "Linux-7.0.0-30-generic-x86_64-with-glibc2.39",
+      "python": "3.12.3",
+      "tool_versions": {
+        "integration-authority-language": "0.1"
+      }
+    },
+    "result_manifest_digest": "sha256:80688dec2ad1234a18490a74bee6f322b1f299da1bb598239ab493b0be9b801d",
+    "source_revision": "9c53bb4069a5db1c0688dbbe7a8f028540cbf7c2",
+    "verifier_config_digest": "sha256:e27ac0fe418f068b853b2041f0bcb419573c7d5215a6b4d3b7942f4c3027bd6f",
+    "work_unit_digest": "sha256:8dc195e5221d04af69e259e93b40db471f4df6f9761a0c4b10efd692db5c7527"
+  },
+  "resources": {
+    "compute_units": 0.0,
+    "human_minutes": 0.0,
+    "tokens": 0,
+    "wall_seconds": 0.0
+  },
+  "result_manifest_id": "benchmark/phase-b2/005-first-five-freeze-checklist/single-worker-baseline-v1/attempt-001",
+  "schema_version": "0.1",
+  "started_at": "2026-08-29T03:56:02.131230Z",
+  "status": "failed",
+  "verifier": {
+    "adapter": "integration-authority-language",
+    "adapter_version": "0.1",
+    "id": "idkmesh-task005-behavior-verifier",
+    "type": "system"
+  },
+  "work_unit_id": "benchmark/phase-b2/005-first-five-freeze-checklist",
+  "work_unit_version": 1
+}
