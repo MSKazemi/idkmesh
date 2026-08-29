@@ -1,0 +1,88 @@
+{
+  "attempt": 1,
+  "extensions": {
+    "org.idkmesh.authority": {
+      "automatic_candidate_selection": false,
+      "canonical_state_write": false,
+      "git_push": false,
+      "merge": false
+    },
+    "org.idkmesh.benchmark.structural_signature": "single-worker-baseline-v1"
+  },
+  "finished_at": "2026-08-28T17:44:25.122315Z",
+  "id": "benchmark/phase-b2-successor/001-negative-evidence-type-boundary/single-worker-baseline-v1/attempt-001",
+  "logs": [
+    {
+      "digest": "sha256:445436e0da35f30d64d60b250208c49422bc280ec795253df8e3684d59f2282c",
+      "locator": "stdout.txt",
+      "type": "stdout"
+    },
+    {
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "locator": "stderr.txt",
+      "type": "stderr"
+    }
+  ],
+  "metrics": {
+    "baseline_negative_accepted": 1,
+    "candidate_negative_rejected": 1,
+    "changed_path_count": 1
+  },
+  "produced_artifacts": [
+    {
+      "description": "Unverified successor Task 001 candidate patch.",
+      "digest": "sha256:d20c895d09e2f9521d8c1451cae29f9f859479f2f3401d81ba8b839ec87769eb",
+      "id": "candidate-patch",
+      "locator": "candidate.patch",
+      "media_type": "text/x-diff",
+      "type": "patch"
+    }
+  ],
+  "provenance": {
+    "environment": {
+      "platform": "Linux-6.17.0-1022-azure-x86_64-with-glibc2.39",
+      "python": "3.12.14",
+      "tool_versions": {
+        "git": "git version 2.55.0",
+        "phase-b2-successor-task001-attempt": "0.1"
+      }
+    },
+    "source_revision": "a69aa0ae1ae4862e507511cbd9ad854237d0ad32",
+    "work_unit_digest": "sha256:04258ad63d36368ae6780b351f5e3729fe5f7a12de66aee16d1bc475a8b69096",
+    "worker_config_digest": "sha256:17929820c66415682c38de449e17e1401a16b9ee35c6419ae7ee20b1a846ad56"
+  },
+  "resources": {
+    "compute_units": 0.0,
+    "human_minutes": 0.0,
+    "tokens": 0,
+    "wall_seconds": 0.8676335279999989
+  },
+  "schema_version": "0.1",
+  "self_report": {
+    "claims": [
+      "The frozen source accepted opaque security evidence before the candidate.",
+      "The patched source rejects the same negative fixture before semantic evidence is trusted."
+    ],
+    "summary": "One bounded deterministic baseline candidate; self-report is not acceptance."
+  },
+  "started_at": "2026-08-28T17:44:24.254675Z",
+  "status": "succeeded",
+  "verification_request": {
+    "evidence_artifact_ids": [
+      "candidate-patch"
+    ],
+    "expected_validator_ids": [
+      "independent-review",
+      "result-manifest-schema"
+    ],
+    "notes": "Frozen EvaluatorPlan plus separate behavioral seeded-negative evidence required."
+  },
+  "work_unit_id": "benchmark/phase-b2-successor/001-negative-evidence-type-boundary",
+  "work_unit_version": 1,
+  "worker": {
+    "adapter": "bounded-source-transform",
+    "adapter_version": "0.1",
+    "id": "idkmesh-phase-b2-deterministic-baseline",
+    "type": "system"
+  }
+}

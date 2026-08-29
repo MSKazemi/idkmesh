@@ -1,0 +1,20 @@
+{
+  "baseline": {
+    "accepted": true,
+    "fixture_digest": "sha256:6722095d942bd28e0530e8c5295735044f73bb60a0d8b7c26f0fc1dea329b567",
+    "rejected_for_evidence_type": false,
+    "returncode": 0,
+    "stderr_excerpt": "",
+    "stderr_sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "sha256:c244e6a90cde43f544a69e49a4f7ee30495fd0e4bf2dacaee7b19ffbed2103e0"
+  },
+  "candidate": {
+    "accepted": false,
+    "fixture_digest": "sha256:6722095d942bd28e0530e8c5295735044f73bb60a0d8b7c26f0fc1dea329b567",
+    "rejected_for_evidence_type": true,
+    "returncode": 2,
+    "stderr_excerpt": "ERROR: benchmark/contract-self-test/task-001: canonical negative category requires VerificationResult evidence",
+    "stderr_sha256": "sha256:9d2e64c0d45089eecd924a580e995cb07a7cb9d85b03b9c367cb7ad5b3b6806a",
+    "stdout_sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}
