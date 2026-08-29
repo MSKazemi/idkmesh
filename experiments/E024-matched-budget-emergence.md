@@ -1,4 +1,4 @@
-# E022 — Matched-budget emergence after a goal change
+# E024 — Matched-budget emergence after a goal change
 
 ## Research question
 
@@ -16,7 +16,7 @@ not cost matched:
   batch, so it could spend many more verification attempts;
 - Quality-Diversity received a separate archive-initialization budget.
 
-That confound was explicitly recorded in E011. E022 removes it without changing
+That confound was explicitly recorded in E011. E024 removes it without changing
 the historical E011 implementation or artifacts.
 
 ## Hypothesis and falsification condition
@@ -68,11 +68,11 @@ python sim/matched_budget_emergence.py \
 
 Machine-readable result:
 
-`experiments/results/E022-matched-budget-emergence-100-seed-summary.json`
+`experiments/results/E024-matched-budget-emergence-100-seed-summary.json`
 
 ## Measurements
 
-E022 adds two fixed-horizon adaptation measures over the 25 post-change
+E024 adds two fixed-horizon adaptation measures over the 25 post-change
 generations:
 
 ```text
@@ -127,7 +127,7 @@ extra compute allowance.
   defects, and catastrophic failures remain outside this benchmark;
 - no real software/configuration tasks or hidden tests are used.
 
-Issue #22 therefore remains open. E022 completes one previously named
+Issue #22 therefore remains open. E024 completes one previously named
 falsification step; it does not satisfy the issue's full simulation scope.
 
 ## Decision

@@ -75,9 +75,10 @@ def test_committed_reference_is_explicitly_synthetic_and_budget_matched():
         Path(__file__).parents[1]
         / "experiments"
         / "results"
-        / "E022-matched-budget-emergence-100-seed-summary.json"
+        / "E024-matched-budget-emergence-100-seed-summary.json"
     )
     result = benchmark.json.loads(path.read_text(encoding="utf-8"))
+    assert result["experiment_id"] == "E024"
     assert result["experiment"] == "matched-budget-emergence-sweep-v1"
     assert result["configuration"]["seeds"] == 100
     assert result["configuration"]["evaluation_budget_per_strategy_per_seed"] == 2500

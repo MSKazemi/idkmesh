@@ -23,7 +23,7 @@ filled an accepted batch, while QD had a separate initialization allowance.
 
 ## Implemented experiment
 
-E022 is a separate benchmark over the unchanged E011 landscape. Random,
+E024 is a separate benchmark over the unchanged E011 landscape. Random,
 fixed-scalar, and QD search each receive exactly 2,500 proposals and 2,500 panel
 verification attempts per seed. Initialization is charged to that budget and
 acceptance retries are disabled.
