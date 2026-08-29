@@ -1,0 +1,1118 @@
+{
+  "collection": {
+    "actor_logins_retained": false,
+    "api_budget_at_start": 5000,
+    "limitations": [
+      "bounded_recent_window_not_complete_repository_history",
+      "merged_pull_request_is_the_only_meaningful_contribution_proxy",
+      "ownership_is_last_merged_toucher_inside_the_window_not_repository_history",
+      "structural_debt_findings_outside_the_window_are_unattributed"
+    ],
+    "maximum_pull_requests": 50,
+    "method": "github-collaboration-window-v0.2",
+    "observed_pull_requests": 50,
+    "ownership": {
+      "attributed_files": 66,
+      "model": "last_merged_toucher_within_window-v1",
+      "saturated_file_lists": [],
+      "unattributed_files": 215
+    },
+    "raw_bodies_retained": false,
+    "strategy_outcomes_classified": false,
+    "structural_debt": {
+      "findings_attributed": 0,
+      "findings_loaded": 4,
+      "findings_unattributed": 4,
+      "index": [
+        {
+          "category": "document_referenced_only_by_non_markdown_artifact",
+          "id": "debt:01f073c92450dd93",
+          "severity": "notice",
+          "source_path": "docs/acceptance/PR91_CONTROLLED_DOCKER_GATE.md"
+        },
+        {
+          "category": "document_referenced_only_by_non_markdown_artifact",
+          "id": "debt:79ce72d82f955b84",
+          "severity": "notice",
+          "source_path": "docs/algorithms/HOMEOSTATIC_STIGMERGY_ROUTING.md"
+        },
+        {
+          "category": "document_referenced_only_by_non_markdown_artifact",
+          "id": "debt:8abf4cf4deb90d50",
+          "severity": "notice",
+          "source_path": "docs/protocols/CONSTITUTIONAL_EVOLUTIONARY_MESH.md"
+        },
+        {
+          "category": "document_referenced_only_by_non_markdown_artifact",
+          "id": "debt:e43a860112808597",
+          "severity": "notice",
+          "source_path": "docs/algorithms/ACO_STIGMERGIC_TASK_ROUTING.md"
+        }
+      ],
+      "model": "deterministic_observatory_attributed_to_last_toucher-v1",
+      "report_supplied": true,
+      "unattributed_paths": [
+        "docs/acceptance/PR91_CONTROLLED_DOCKER_GATE.md",
+        "docs/algorithms/ACO_STIGMERGIC_TASK_ROUTING.md",
+        "docs/algorithms/HOMEOSTATIC_STIGMERGY_ROUTING.md",
+        "docs/protocols/CONSTITUTIONAL_EVOLUTIONARY_MESH.md"
+      ]
+    },
+    "window": "most_recent_pull_requests_by_creation"
+  },
+  "contributors": [],
+  "cutoff_at": "2026-08-29T22:03:24.129672Z",
+  "inventory_complete": false,
+  "pull_requests": [
+    {
+      "author": "actor:583e3222f3523c69",
+      "changed_file_count": 2,
+      "changed_file_owners": [],
+      "changed_files_truncated": false,
+      "ci_checks": {
+        "passed": 5,
+        "total": 13
+      },
+      "closed_at": "2026-08-29T01:48:38Z",
+      "created_at": "2026-08-29T01:43:29Z",
+      "first_independent_review_at": null,
+      "independent_reviewers": [],
+      "number": 288,
+      "review_ready": false,
+      "review_ready_at": "2026-08-29T01:43:29Z",
+      "structural_debt_finding_ids": [],
+      "unattributed_changed_files": 2
+    },
+    {
+      "author": "actor:583e3222f3523c69",
+      "changed_file_count": 42,
+      "changed_file_owners": [],
+      "changed_files_truncated": false,
+      "ci_checks": {
+        "passed": 69,
+        "total": 73
+      },
+      "closed_at": "2026-08-29T01:48:40Z",
+      "created_at": "2026-08-29T01:43:31Z",
+      "first_independent_review_at": null,
+      "independent_reviewers": [],
+      "number": 289,
+      "review_ready": false,
+      "review_ready_at": "2026-08-29T01:43:31Z",
+      "structural_debt_finding_ids": [],
+      "unattributed_changed_files": 42
+    },
+    {
+      "author": "actor:609d5c422eca95d6",
+      "changed_file_count": 3,
+      "changed_file_owners": [],
+      "changed_files_truncated": false,
+      "ci_checks": {
+        "passed": 13,
+        "total": 14
+      },
+      "closed_at": "2026-08-29T01:47:51Z",
+      "created_at": "2026-08-29T01:46:12Z",
+      "first_independent_review_at": null,
+      "independent_reviewers": [],
+      "number": 290,
+      "review_ready": false,
+      "review_ready_at": "2026-08-29T01:46:12Z",
+      "structural_debt_finding_ids": [],
+      "unattributed_changed_files": 3
+    },
+    {
+      "author": "actor:609d5c422eca95d6",
+      "changed_file_count": 3,
+      "changed_file_owners": [],
+      "changed_files_truncated": false,
+      "ci_checks": {
+        "passed": 20,
+        "total": 21
+      },
+      "closed_at": "2026-08-29T01:51:46Z",
+      "created_at": "2026-08-29T01:50:15Z",
+      "first_independent_review_at": null,
+      "independent_reviewers": [],
+      "number": 291,
+      "review_ready": false,
+      "review_ready_at": "2026-08-29T01:50:15Z",
+      "structural_debt_finding_ids": [],
+      "unattributed_changed_files": 3
+    },
+    {
+      "author": "actor:609d5c422eca95d6",
+      "changed_file_count": 16,
+      "changed_file_owners": [],
+      "changed_files_truncated": false,
+      "ci_checks": {
+        "passed": 24,
+        "total": 24
+      },
+      "closed_at": "2026-08-29T01:55:43Z",
+      "created_at": "2026-08-29T01:51:40Z",
+      "first_independent_review_at": null,
+      "independent_reviewers": [],
+      "number": 292,
+      "review_ready": false,
+      "review_ready_at": "2026-08-29T01:51:40Z",
+      "structural_debt_finding_ids": [],
+      "unattributed_changed_files": 16
+    },
+    {
+      "author": "actor:609d5c422eca95d6",
+      "changed_file_count": 17,
+      "changed_file_owners": [],
+      "changed_files_truncated": false,
+      "ci_checks": {
+        "passed": 24,
+        "total": 25
+      },
+      "closed_at": "2026-08-29T01:56:58Z",
+      "created_at": "2026-08-29T01:55:24Z",
+      "first_independent_review_at": null,
+      "independent_reviewers": [],
+      "number": 293,
+      "review_ready": false,
+      "review_ready_at": "2026-08-29T01:55:24Z",
+      "structural_debt_finding_ids": [],
+      "unattributed_changed_files": 17
+    },
+    {
+      "author": "actor:609d5c422eca95d6",
+      "changed_file_count": 6,
+      "changed_file_owners": [],
+      "changed_files_truncated": false,
+      "ci_checks": {
+        "passed": 19,
+        "total": 20
+      },
+      "closed_at": "2026-08-29T02:02:03Z",
+      "created_at": "2026-08-29T02:00:21Z",
+      "first_independent_review_at": null,
+      "independent_reviewers": [],
+      "number": 294,
+      "review_ready": false,
+      "review_ready_at": "2026-08-29T02:00:21Z",
+      "structural_debt_finding_ids": [],
+      "unattributed_changed_files": 6
+    },
+    {
+      "author": "actor:609d5c422eca95d6",
+      "changed_file_count": 9,
+      "changed_file_owners": [
+        "actor:609d5c422eca95d6",
+        "actor:609d5c422eca95d6",
+        "actor:609d5c422eca95d6",
+        "actor:609d5c422eca95d6",
+        "actor:609d5c422eca95d6",
+        "actor:609d5c422eca95d6",
+        "actor:609d5c422eca95d6",
+        "actor:609d5c422eca95d6",
+        "actor:609d5c422eca95d6"
+      ],
+      "changed_files_truncated": false,
+      "ci_checks": {
+        "passed": 22,
+        "total": 23
+      },
+      "closed_at": "2026-08-29T02:06:59Z",
+      "created_at": "2026-08-29T02:03:14Z",
+      "first_independent_review_at": null,
+      "independent_reviewers": [],
+      "number": 295,
+      "review_ready": false,
+      "review_ready_at": "2026-08-29T02:03:14Z",
+      "structural_debt_finding_ids": [],
+      "unattributed_changed_files": 0
+    },
+    {
+      "author": "actor:609d5c422eca95d6",
+      "changed_file_count": 3,
+      "changed_file_owners": [
+        "actor:609d5c422eca95d6",
+        "actor:609d5c422eca95d6",
+        "actor:609d5c422eca95d6"
+      ],
+      "changed_files_truncated": false,
+      "ci_checks": {
+        "passed": 23,
+        "total": 24
+      },
+      "closed_at": "2026-08-29T02:12:06Z",
+      "created_at": "2026-08-29T02:10:23Z",
+      "first_independent_review_at": null,
+      "independent_reviewers": [],
+      "number": 296,
+      "review_ready": false,
+      "review_ready_at": "2026-08-29T02:10:23Z",
+      "structural_debt_finding_ids": [],
+      "unattributed_changed_files": 0
+    },
+    {
+      "author": "actor:609d5c422eca95d6",
+      "changed_file_count": 3,
+      "changed_file_owners": [
+        "actor:609d5c422eca95d6",
+        "actor:609d5c422eca95d6"
+      ],
+      "changed_files_truncated": false,
+      "ci_checks": {
+        "passed": 20,
+        "total": 20
+      },
+      "closed_at": "2026-08-29T02:25:16Z",
+      "created_at": "2026-08-29T02:15:04Z",
+      "first_independent_review_at": null,
+      "independent_reviewers": [],
+      "number": 297,
+      "review_ready": false,
+      "review_ready_at": "2026-08-29T02:15:04Z",
+      "structural_debt_finding_ids": [],
+      "unattributed_changed_files": 1
+    },
+    {
+      "author": "actor:609d5c422eca95d6",
+      "changed_file_count": 1,
+      "changed_file_owners": [
+        "actor:609d5c422eca95d6"
+      ],
+      "changed_files_truncated": false,
+      "ci_checks": {
+        "passed": 20,
+        "total": 22
+      },
+      "closed_at": "2026-08-29T02:18:49Z",
+      "created_at": "2026-08-29T02:16:58Z",
+      "first_independent_review_at": null,
+      "independent_reviewers": [],
+      "number": 298,
+      "review_ready": false,
+      "review_ready_at": "2026-08-29T02:16:58Z",
+      "structural_debt_finding_ids": [],
+      "unattributed_changed_files": 0
+    },
+    {
+      "author": "actor:609d5c422eca95d6",
+      "changed_file_count": 2,
+      "changed_file_owners": [
+        "actor:609d5c422eca95d6",
+        "actor:609d5c422eca95d6"
+      ],
+      "changed_files_truncated": false,
+      "ci_checks": {
+        "passed": 22,
+        "total": 24
+      },
+      "closed_at": "2026-08-29T02:23:32Z",
+      "created_at": "2026-08-29T02:21:34Z",
+      "first_independent_review_at": null,
+      "independent_reviewers": [],
+      "number": 299,
+      "review_ready": false,
+      "review_ready_at": "2026-08-29T02:21:34Z",
+      "structural_debt_finding_ids": [],
+      "unattributed_changed_files": 0
+    },
+    {
+      "author": "actor:609d5c422eca95d6",
+      "changed_file_count": 3,
+      "changed_file_owners": [
+        "actor:609d5c422eca95d6",
+        "actor:609d5c422eca95d6"
+      ],
+      "changed_files_truncated": false,
+      "ci_checks": {
+        "passed": 19,
+        "total": 20
+      },
+      "closed_at": "2026-08-29T02:28:42Z",
+      "created_at": "2026-08-29T02:27:18Z",
+      "first_independent_review_at": null,
+      "independent_reviewers": [],
+      "number": 300,
+      "review_ready": false,
+      "review_ready_at": "2026-08-29T02:27:18Z",
+      "structural_debt_finding_ids": [],
+      "unattributed_changed_files": 1
+    },
+    {
+      "author": "actor:609d5c422eca95d6",
+      "changed_file_count": 2,
+      "changed_file_owners": [],
+      "changed_files_truncated": false,
+      "ci_checks": {
+        "passed": 13,
+        "total": 14
+      },
+      "closed_at": "2026-08-29T02:41:43Z",
+      "created_at": "2026-08-29T02:40:34Z",
+      "first_independent_review_at": null,
+      "independent_reviewers": [],
+      "number": 301,
+      "review_ready": false,
+      "review_ready_at": "2026-08-29T02:40:34Z",
+      "structural_debt_finding_ids": [],
+      "unattributed_changed_files": 2
+    },
+    {
+      "author": "actor:609d5c422eca95d6",
+      "changed_file_count": 6,
+      "changed_file_owners": [],
+      "changed_files_truncated": false,
+      "ci_checks": {
+        "passed": 21,
+        "total": 21
+      },
+      "closed_at": "2026-08-29T02:50:14Z",
+      "created_at": "2026-08-29T02:47:20Z",
+      "first_independent_review_at": null,
+      "independent_reviewers": [],
+      "number": 303,
+      "review_ready": false,
+      "review_ready_at": "2026-08-29T02:47:20Z",
+      "structural_debt_finding_ids": [],
+      "unattributed_changed_files": 6
+    },
+    {
+      "author": "actor:609d5c422eca95d6",
+      "changed_file_count": 4,
+      "changed_file_owners": [
+        "actor:609d5c422eca95d6",
+        "actor:609d5c422eca95d6",
+        "actor:609d5c422eca95d6"
+      ],
+      "changed_files_truncated": false,
+      "ci_checks": {
+        "passed": 26,
+        "total": 26
+      },
+      "closed_at": "2026-08-29T02:56:29Z",
+      "created_at": "2026-08-29T02:54:47Z",
+      "first_independent_review_at": null,
+      "independent_reviewers": [],
+      "number": 304,
+      "review_ready": false,
+      "review_ready_at": "2026-08-29T02:54:47Z",
+      "structural_debt_finding_ids": [],
+      "unattributed_changed_files": 1
+    },
+    {
+      "author": "actor:609d5c422eca95d6",
+      "changed_file_count": 1,
+      "changed_file_owners": [],
+      "changed_files_truncated": false,
+      "ci_checks": {
+        "passed": 15,
+        "total": 15
+      },
+      "closed_at": "2026-08-29T03:03:36Z",
+      "created_at": "2026-08-29T03:01:51Z",
+      "first_independent_review_at": null,
+      "independent_reviewers": [],
+      "number": 305,
+      "review_ready": false,
+      "review_ready_at": "2026-08-29T03:01:51Z",
+      "structural_debt_finding_ids": [],
+      "unattributed_changed_files": 1
+    },
+    {
+      "author": "actor:609d5c422eca95d6",
+      "changed_file_count": 1,
+      "changed_file_owners": [
+        "actor:609d5c422eca95d6"
+      ],
+      "changed_files_truncated": false,
+      "ci_checks": {
+        "passed": 15,
+        "total": 15
+      },
+      "closed_at": "2026-08-29T03:07:45Z",
+      "created_at": "2026-08-29T03:05:57Z",
+      "first_independent_review_at": null,
+      "independent_reviewers": [],
+      "number": 306,
+      "review_ready": false,
+      "review_ready_at": "2026-08-29T03:05:57Z",
+      "structural_debt_finding_ids": [],
+      "unattributed_changed_files": 0
+    },
+    {
+      "author": "actor:609d5c422eca95d6",
+      "changed_file_count": 1,
+      "changed_file_owners": [
+        "actor:609d5c422eca95d6"
+      ],
+      "changed_files_truncated": false,
+      "ci_checks": {
+        "passed": 15,
+        "total": 15
+      },
+      "closed_at": "2026-08-29T03:11:15Z",
+      "created_at": "2026-08-29T03:09:08Z",
+      "first_independent_review_at": null,
+      "independent_reviewers": [],
+      "number": 307,
+      "review_ready": false,
+      "review_ready_at": "2026-08-29T03:09:08Z",
+      "structural_debt_finding_ids": [],
+      "unattributed_changed_files": 0
+    },
+    {
+      "author": "actor:609d5c422eca95d6",
+      "changed_file_count": 1,
+      "changed_file_owners": [],
+      "changed_files_truncated": false,
+      "ci_checks": {
+        "passed": 15,
+        "total": 15
+      },
+      "closed_at": "2026-08-29T03:13:39Z",
+      "created_at": "2026-08-29T03:12:14Z",
+      "first_independent_review_at": null,
+      "independent_reviewers": [],
+      "number": 308,
+      "review_ready": false,
+      "review_ready_at": "2026-08-29T03:12:14Z",
+      "structural_debt_finding_ids": [],
+      "unattributed_changed_files": 1
+    },
+    {
+      "author": "actor:609d5c422eca95d6",
+      "changed_file_count": 9,
+      "changed_file_owners": [],
+      "changed_files_truncated": false,
+      "ci_checks": {
+        "passed": 13,
+        "total": 13
+      },
+      "closed_at": "2026-08-29T03:21:44Z",
+      "created_at": "2026-08-29T03:20:10Z",
+      "first_independent_review_at": null,
+      "independent_reviewers": [],
+      "number": 309,
+      "review_ready": false,
+      "review_ready_at": "2026-08-29T03:20:10Z",
+      "structural_debt_finding_ids": [],
+      "unattributed_changed_files": 9
+    },
+    {
+      "author": "actor:609d5c422eca95d6",
+      "changed_file_count": 11,
+      "changed_file_owners": [
+        "actor:609d5c422eca95d6"
+      ],
+      "changed_files_truncated": false,
+      "ci_checks": {
+        "passed": 19,
+        "total": 19
+      },
+      "closed_at": "2026-08-29T03:34:16Z",
+      "created_at": "2026-08-29T03:30:34Z",
+      "first_independent_review_at": null,
+      "independent_reviewers": [],
+      "number": 310,
+      "review_ready": false,
+      "review_ready_at": "2026-08-29T03:30:34Z",
+      "structural_debt_finding_ids": [],
+      "unattributed_changed_files": 10
+    },
+    {
+      "author": "actor:609d5c422eca95d6",
+      "changed_file_count": 15,
+      "changed_file_owners": [
+        "actor:609d5c422eca95d6",
+        "actor:609d5c422eca95d6",
+        "actor:609d5c422eca95d6",
+        "actor:609d5c422eca95d6"
+      ],
+      "changed_files_truncated": false,
+      "ci_checks": {
+        "passed": 21,
+        "total": 21
+      },
+      "closed_at": "2026-08-29T03:46:29Z",
+      "created_at": "2026-08-29T03:44:27Z",
+      "first_independent_review_at": null,
+      "independent_reviewers": [],
+      "number": 311,
+      "review_ready": false,
+      "review_ready_at": "2026-08-29T03:44:27Z",
+      "structural_debt_finding_ids": [],
+      "unattributed_changed_files": 11
+    },
+    {
+      "author": "actor:609d5c422eca95d6",
+      "changed_file_count": 13,
+      "changed_file_owners": [
+        "actor:609d5c422eca95d6",
+        "actor:609d5c422eca95d6"
+      ],
+      "changed_files_truncated": false,
+      "ci_checks": {
+        "passed": 23,
+        "total": 23
+      },
+      "closed_at": "2026-08-29T03:52:45Z",
+      "created_at": "2026-08-29T03:50:55Z",
+      "first_independent_review_at": null,
+      "independent_reviewers": [],
+      "number": 312,
+      "review_ready": false,
+      "review_ready_at": "2026-08-29T03:50:55Z",
+      "structural_debt_finding_ids": [],
+      "unattributed_changed_files": 11
+    },
+    {
+      "author": "actor:609d5c422eca95d6",
+      "changed_file_count": 13,
+      "changed_file_owners": [
+        "actor:609d5c422eca95d6",
+        "actor:609d5c422eca95d6"
+      ],
+      "changed_files_truncated": false,
+      "ci_checks": {
+        "passed": 23,
+        "total": 23
+      },
+      "closed_at": "2026-08-29T03:59:45Z",
+      "created_at": "2026-08-29T03:58:04Z",
+      "first_independent_review_at": null,
+      "independent_reviewers": [],
+      "number": 313,
+      "review_ready": false,
+      "review_ready_at": "2026-08-29T03:58:04Z",
+      "structural_debt_finding_ids": [],
+      "unattributed_changed_files": 11
+    },
+    {
+      "author": "actor:609d5c422eca95d6",
+      "changed_file_count": 9,
+      "changed_file_owners": [
+        "actor:609d5c422eca95d6",
+        "actor:609d5c422eca95d6"
+      ],
+      "changed_files_truncated": false,
+      "ci_checks": {
+        "passed": 22,
+        "total": 22
+      },
+      "closed_at": "2026-08-29T04:07:29Z",
+      "created_at": "2026-08-29T04:05:42Z",
+      "first_independent_review_at": null,
+      "independent_reviewers": [],
+      "number": 314,
+      "review_ready": false,
+      "review_ready_at": "2026-08-29T04:05:42Z",
+      "structural_debt_finding_ids": [],
+      "unattributed_changed_files": 7
+    },
+    {
+      "author": "actor:609d5c422eca95d6",
+      "changed_file_count": 5,
+      "changed_file_owners": [
+        "actor:609d5c422eca95d6",
+        "actor:609d5c422eca95d6"
+      ],
+      "changed_files_truncated": false,
+      "ci_checks": {
+        "passed": 21,
+        "total": 21
+      },
+      "closed_at": "2026-08-29T15:11:17Z",
+      "created_at": "2026-08-29T04:12:34Z",
+      "first_independent_review_at": null,
+      "independent_reviewers": [],
+      "number": 315,
+      "review_ready": false,
+      "review_ready_at": "2026-08-29T04:12:34Z",
+      "structural_debt_finding_ids": [],
+      "unattributed_changed_files": 3
+    },
+    {
+      "author": "actor:609d5c422eca95d6",
+      "changed_file_count": 1,
+      "changed_file_owners": [],
+      "changed_files_truncated": false,
+      "ci_checks": {
+        "passed": 14,
+        "total": 14
+      },
+      "closed_at": "2026-08-29T15:55:09Z",
+      "created_at": "2026-08-29T15:54:03Z",
+      "first_independent_review_at": null,
+      "independent_reviewers": [],
+      "number": 316,
+      "review_ready": false,
+      "review_ready_at": "2026-08-29T15:54:03Z",
+      "structural_debt_finding_ids": [],
+      "unattributed_changed_files": 1
+    },
+    {
+      "author": "actor:609d5c422eca95d6",
+      "changed_file_count": 4,
+      "changed_file_owners": [],
+      "changed_files_truncated": false,
+      "ci_checks": {
+        "passed": 22,
+        "total": 22
+      },
+      "closed_at": "2026-08-29T17:19:29Z",
+      "created_at": "2026-08-29T17:17:46Z",
+      "first_independent_review_at": null,
+      "independent_reviewers": [],
+      "number": 317,
+      "review_ready": false,
+      "review_ready_at": "2026-08-29T17:17:46Z",
+      "structural_debt_finding_ids": [],
+      "unattributed_changed_files": 4
+    },
+    {
+      "author": "actor:609d5c422eca95d6",
+      "changed_file_count": 2,
+      "changed_file_owners": [
+        "actor:609d5c422eca95d6",
+        "actor:609d5c422eca95d6"
+      ],
+      "changed_files_truncated": false,
+      "ci_checks": {
+        "passed": 20,
+        "total": 20
+      },
+      "closed_at": "2026-08-29T17:27:15Z",
+      "created_at": "2026-08-29T17:25:46Z",
+      "first_independent_review_at": null,
+      "independent_reviewers": [],
+      "number": 318,
+      "review_ready": false,
+      "review_ready_at": "2026-08-29T17:25:46Z",
+      "structural_debt_finding_ids": [],
+      "unattributed_changed_files": 0
+    },
+    {
+      "author": "actor:609d5c422eca95d6",
+      "changed_file_count": 2,
+      "changed_file_owners": [],
+      "changed_files_truncated": false,
+      "ci_checks": {
+        "passed": 12,
+        "total": 12
+      },
+      "closed_at": "2026-08-29T19:28:51Z",
+      "created_at": "2026-08-29T19:25:30Z",
+      "first_independent_review_at": null,
+      "independent_reviewers": [],
+      "number": 319,
+      "review_ready": false,
+      "review_ready_at": "2026-08-29T19:25:30Z",
+      "structural_debt_finding_ids": [],
+      "unattributed_changed_files": 2
+    },
+    {
+      "author": "actor:609d5c422eca95d6",
+      "changed_file_count": 3,
+      "changed_file_owners": [],
+      "changed_files_truncated": false,
+      "ci_checks": {
+        "passed": 9,
+        "total": 14
+      },
+      "closed_at": "2026-08-29T19:33:19Z",
+      "created_at": "2026-08-29T19:32:58Z",
+      "first_independent_review_at": null,
+      "independent_reviewers": [],
+      "number": 320,
+      "review_ready": false,
+      "review_ready_at": "2026-08-29T19:32:58Z",
+      "structural_debt_finding_ids": [],
+      "unattributed_changed_files": 3
+    },
+    {
+      "author": "actor:609d5c422eca95d6",
+      "changed_file_count": 9,
+      "changed_file_owners": [
+        "actor:609d5c422eca95d6",
+        "actor:609d5c422eca95d6",
+        "actor:609d5c422eca95d6"
+      ],
+      "changed_files_truncated": false,
+      "ci_checks": {
+        "passed": 13,
+        "total": 13
+      },
+      "closed_at": "2026-08-29T19:46:41Z",
+      "created_at": "2026-08-29T19:41:56Z",
+      "first_independent_review_at": null,
+      "independent_reviewers": [],
+      "number": 321,
+      "review_ready": false,
+      "review_ready_at": "2026-08-29T19:41:56Z",
+      "structural_debt_finding_ids": [],
+      "unattributed_changed_files": 6
+    },
+    {
+      "author": "actor:609d5c422eca95d6",
+      "changed_file_count": 1,
+      "changed_file_owners": [
+        "actor:609d5c422eca95d6"
+      ],
+      "changed_files_truncated": false,
+      "ci_checks": {
+        "passed": 14,
+        "total": 14
+      },
+      "closed_at": "2026-08-29T19:48:50Z",
+      "created_at": "2026-08-29T19:47:31Z",
+      "first_independent_review_at": null,
+      "independent_reviewers": [],
+      "number": 322,
+      "review_ready": false,
+      "review_ready_at": "2026-08-29T19:47:31Z",
+      "structural_debt_finding_ids": [],
+      "unattributed_changed_files": 0
+    },
+    {
+      "author": "actor:609d5c422eca95d6",
+      "changed_file_count": 4,
+      "changed_file_owners": [
+        "actor:609d5c422eca95d6",
+        "actor:609d5c422eca95d6",
+        "actor:609d5c422eca95d6"
+      ],
+      "changed_files_truncated": false,
+      "ci_checks": {
+        "passed": 14,
+        "total": 14
+      },
+      "closed_at": "2026-08-29T19:53:16Z",
+      "created_at": "2026-08-29T19:52:00Z",
+      "first_independent_review_at": null,
+      "independent_reviewers": [],
+      "number": 323,
+      "review_ready": false,
+      "review_ready_at": "2026-08-29T19:52:00Z",
+      "structural_debt_finding_ids": [],
+      "unattributed_changed_files": 1
+    },
+    {
+      "author": "actor:609d5c422eca95d6",
+      "changed_file_count": 5,
+      "changed_file_owners": [],
+      "changed_files_truncated": false,
+      "ci_checks": {
+        "passed": 27,
+        "total": 27
+      },
+      "closed_at": "2026-08-29T20:12:51Z",
+      "created_at": "2026-08-29T20:11:12Z",
+      "first_independent_review_at": null,
+      "independent_reviewers": [],
+      "number": 324,
+      "review_ready": false,
+      "review_ready_at": "2026-08-29T20:11:12Z",
+      "structural_debt_finding_ids": [],
+      "unattributed_changed_files": 5
+    },
+    {
+      "author": "actor:609d5c422eca95d6",
+      "changed_file_count": 2,
+      "changed_file_owners": [
+        "actor:609d5c422eca95d6"
+      ],
+      "changed_files_truncated": false,
+      "ci_checks": {
+        "passed": 14,
+        "total": 14
+      },
+      "closed_at": "2026-08-29T20:19:15Z",
+      "created_at": "2026-08-29T20:17:54Z",
+      "first_independent_review_at": null,
+      "independent_reviewers": [],
+      "number": 325,
+      "review_ready": false,
+      "review_ready_at": "2026-08-29T20:17:54Z",
+      "structural_debt_finding_ids": [],
+      "unattributed_changed_files": 1
+    },
+    {
+      "author": "actor:609d5c422eca95d6",
+      "changed_file_count": 3,
+      "changed_file_owners": [
+        "actor:609d5c422eca95d6"
+      ],
+      "changed_files_truncated": false,
+      "ci_checks": {
+        "passed": 14,
+        "total": 14
+      },
+      "closed_at": "2026-08-29T20:29:54Z",
+      "created_at": "2026-08-29T20:28:23Z",
+      "first_independent_review_at": null,
+      "independent_reviewers": [],
+      "number": 326,
+      "review_ready": false,
+      "review_ready_at": "2026-08-29T20:28:23Z",
+      "structural_debt_finding_ids": [],
+      "unattributed_changed_files": 2
+    },
+    {
+      "author": "actor:609d5c422eca95d6",
+      "changed_file_count": 2,
+      "changed_file_owners": [
+        "actor:609d5c422eca95d6"
+      ],
+      "changed_files_truncated": false,
+      "ci_checks": {
+        "passed": 14,
+        "total": 14
+      },
+      "closed_at": "2026-08-29T20:33:44Z",
+      "created_at": "2026-08-29T20:32:12Z",
+      "first_independent_review_at": null,
+      "independent_reviewers": [],
+      "number": 327,
+      "review_ready": false,
+      "review_ready_at": "2026-08-29T20:32:12Z",
+      "structural_debt_finding_ids": [],
+      "unattributed_changed_files": 1
+    },
+    {
+      "author": "actor:609d5c422eca95d6",
+      "changed_file_count": 2,
+      "changed_file_owners": [
+        "actor:609d5c422eca95d6"
+      ],
+      "changed_files_truncated": false,
+      "ci_checks": {
+        "passed": 14,
+        "total": 14
+      },
+      "closed_at": "2026-08-29T20:37:24Z",
+      "created_at": "2026-08-29T20:36:06Z",
+      "first_independent_review_at": null,
+      "independent_reviewers": [],
+      "number": 328,
+      "review_ready": false,
+      "review_ready_at": "2026-08-29T20:36:06Z",
+      "structural_debt_finding_ids": [],
+      "unattributed_changed_files": 1
+    },
+    {
+      "author": "actor:609d5c422eca95d6",
+      "changed_file_count": 4,
+      "changed_file_owners": [
+        "actor:609d5c422eca95d6",
+        "actor:609d5c422eca95d6"
+      ],
+      "changed_files_truncated": false,
+      "ci_checks": {
+        "passed": 22,
+        "total": 22
+      },
+      "closed_at": "2026-08-29T20:42:26Z",
+      "created_at": "2026-08-29T20:40:32Z",
+      "first_independent_review_at": null,
+      "independent_reviewers": [],
+      "number": 329,
+      "review_ready": false,
+      "review_ready_at": "2026-08-29T20:40:32Z",
+      "structural_debt_finding_ids": [],
+      "unattributed_changed_files": 2
+    },
+    {
+      "author": "actor:609d5c422eca95d6",
+      "changed_file_count": 1,
+      "changed_file_owners": [
+        "actor:609d5c422eca95d6"
+      ],
+      "changed_files_truncated": false,
+      "ci_checks": {
+        "passed": 14,
+        "total": 14
+      },
+      "closed_at": "2026-08-29T20:46:51Z",
+      "created_at": "2026-08-29T20:45:30Z",
+      "first_independent_review_at": null,
+      "independent_reviewers": [],
+      "number": 330,
+      "review_ready": false,
+      "review_ready_at": "2026-08-29T20:45:30Z",
+      "structural_debt_finding_ids": [],
+      "unattributed_changed_files": 0
+    },
+    {
+      "author": "actor:609d5c422eca95d6",
+      "changed_file_count": 2,
+      "changed_file_owners": [
+        "actor:609d5c422eca95d6"
+      ],
+      "changed_files_truncated": false,
+      "ci_checks": {
+        "passed": 14,
+        "total": 14
+      },
+      "closed_at": "2026-08-29T20:52:06Z",
+      "created_at": "2026-08-29T20:50:45Z",
+      "first_independent_review_at": null,
+      "independent_reviewers": [],
+      "number": 331,
+      "review_ready": false,
+      "review_ready_at": "2026-08-29T20:50:45Z",
+      "structural_debt_finding_ids": [],
+      "unattributed_changed_files": 1
+    },
+    {
+      "author": "actor:609d5c422eca95d6",
+      "changed_file_count": 1,
+      "changed_file_owners": [
+        "actor:609d5c422eca95d6"
+      ],
+      "changed_files_truncated": false,
+      "ci_checks": {
+        "passed": 13,
+        "total": 14
+      },
+      "closed_at": "2026-08-29T21:07:15Z",
+      "created_at": "2026-08-29T21:01:09Z",
+      "first_independent_review_at": null,
+      "independent_reviewers": [],
+      "number": 332,
+      "review_ready": false,
+      "review_ready_at": "2026-08-29T21:01:09Z",
+      "structural_debt_finding_ids": [],
+      "unattributed_changed_files": 0
+    },
+    {
+      "author": "actor:609d5c422eca95d6",
+      "changed_file_count": 4,
+      "changed_file_owners": [],
+      "changed_files_truncated": false,
+      "ci_checks": {
+        "passed": 25,
+        "total": 25
+      },
+      "closed_at": "2026-08-29T21:09:19Z",
+      "created_at": "2026-08-29T21:07:18Z",
+      "first_independent_review_at": null,
+      "independent_reviewers": [],
+      "number": 333,
+      "review_ready": false,
+      "review_ready_at": "2026-08-29T21:07:18Z",
+      "structural_debt_finding_ids": [],
+      "unattributed_changed_files": 4
+    },
+    {
+      "author": "actor:609d5c422eca95d6",
+      "changed_file_count": 5,
+      "changed_file_owners": [
+        "actor:609d5c422eca95d6",
+        "actor:609d5c422eca95d6"
+      ],
+      "changed_files_truncated": false,
+      "ci_checks": {
+        "passed": 14,
+        "total": 14
+      },
+      "closed_at": "2026-08-29T21:26:47Z",
+      "created_at": "2026-08-29T21:24:43Z",
+      "first_independent_review_at": null,
+      "independent_reviewers": [],
+      "number": 334,
+      "review_ready": false,
+      "review_ready_at": "2026-08-29T21:24:43Z",
+      "structural_debt_finding_ids": [],
+      "unattributed_changed_files": 3
+    },
+    {
+      "author": "actor:609d5c422eca95d6",
+      "changed_file_count": 7,
+      "changed_file_owners": [
+        "actor:609d5c422eca95d6"
+      ],
+      "changed_files_truncated": false,
+      "ci_checks": {
+        "passed": 20,
+        "total": 20
+      },
+      "closed_at": "2026-08-29T21:42:59Z",
+      "created_at": "2026-08-29T21:29:26Z",
+      "first_independent_review_at": null,
+      "independent_reviewers": [],
+      "number": 335,
+      "review_ready": false,
+      "review_ready_at": "2026-08-29T21:29:26Z",
+      "structural_debt_finding_ids": [],
+      "unattributed_changed_files": 6
+    },
+    {
+      "author": "actor:609d5c422eca95d6",
+      "changed_file_count": 3,
+      "changed_file_owners": [
+        "actor:609d5c422eca95d6",
+        "actor:609d5c422eca95d6"
+      ],
+      "changed_files_truncated": false,
+      "ci_checks": {
+        "passed": 22,
+        "total": 22
+      },
+      "closed_at": "2026-08-29T21:43:52Z",
+      "created_at": "2026-08-29T21:33:36Z",
+      "first_independent_review_at": null,
+      "independent_reviewers": [],
+      "number": 336,
+      "review_ready": false,
+      "review_ready_at": "2026-08-29T21:33:36Z",
+      "structural_debt_finding_ids": [],
+      "unattributed_changed_files": 1
+    },
+    {
+      "author": "actor:609d5c422eca95d6",
+      "changed_file_count": 11,
+      "changed_file_owners": [
+        "actor:609d5c422eca95d6",
+        "actor:609d5c422eca95d6",
+        "actor:609d5c422eca95d6",
+        "actor:609d5c422eca95d6",
+        "actor:609d5c422eca95d6"
+      ],
+      "changed_files_truncated": false,
+      "ci_checks": {
+        "passed": 26,
+        "total": 27
+      },
+      "closed_at": "2026-08-29T21:44:44Z",
+      "created_at": "2026-08-29T21:42:49Z",
+      "first_independent_review_at": null,
+      "independent_reviewers": [],
+      "number": 337,
+      "review_ready": false,
+      "review_ready_at": "2026-08-29T21:42:49Z",
+      "structural_debt_finding_ids": [],
+      "unattributed_changed_files": 6
+    },
+    {
+      "author": "actor:609d5c422eca95d6",
+      "changed_file_count": 2,
+      "changed_file_owners": [
+        "actor:609d5c422eca95d6"
+      ],
+      "changed_files_truncated": false,
+      "ci_checks": {
+        "passed": 14,
+        "total": 14
+      },
+      "closed_at": "2026-08-29T21:50:22Z",
+      "created_at": "2026-08-29T21:48:13Z",
+      "first_independent_review_at": null,
+      "independent_reviewers": [],
+      "number": 338,
+      "review_ready": false,
+      "review_ready_at": "2026-08-29T21:48:13Z",
+      "structural_debt_finding_ids": [],
+      "unattributed_changed_files": 1
+    }
+  ],
+  "repository": "MSKazemi/idkmesh",
+  "version": 1
+}

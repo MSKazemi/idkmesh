@@ -53,6 +53,7 @@ treats a lower warning count as a standalone objective.
   — this directory's own bounded pass: classification of all 15 findings and the
   measured effect of adding this index.
 - [First Production Collaboration-Observables Snapshot](2026-08-29-collaboration-observables-first-snapshot.md)
+- [Ownership Concentration: First Real Measurement](2026-08-30-ownership-concentration-first-measurement.md)
   — the only production run the observables pipeline has produced, committed
   before its 30-day artifact retention expired; which of its six zero-valued
   observables are real measurements and which are declared collector limitations.

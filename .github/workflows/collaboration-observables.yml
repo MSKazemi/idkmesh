@@ -31,6 +31,13 @@ jobs:
       - name: Test collector and analysis contracts
         run: python -m unittest tests.test_collaboration_snapshot tests.test_collaboration_observables -v
 
+      # The deterministic observatory is the structural-debt inventory. It reads the
+      # tree only, so it runs before any network collection and cannot be influenced
+      # by pull request content.
+      - name: Inventory deterministic structural debt
+        run: |
+          python tools/idkgraph_observatory.py --output-dir results/observatory
+
       - name: Collect bounded public metadata
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -38,6 +45,7 @@ jobs:
           python scripts/collaboration_snapshot.py \
             --repository '${{ github.repository }}' \
             --max-pull-requests 50 \
+            --structural-debt-report results/observatory/observatory.json \
             --output results/collaboration/snapshot.json
 
       - name: Derive observational metrics
@@ -63,6 +71,10 @@ jobs:
               f"- Pull requests observed: {metrics['structural_debt']['pull_requests_observed']}",
               f"- First-review samples: {metrics['first_independent_review_latency']['samples']}",
               f"- Review HHI: {metrics['review_concentration']['hhi']}",
+              f"- Ownership HHI: {metrics['ownership_concentration']['hhi']}",
+              f"- Ownership attributions: {metrics['ownership_concentration']['observations']}",
+              f"- Structural debt findings attributed: {metrics['structural_debt']['observed_findings']}",
+              f"- Structural debt inventory complete: {metrics['structural_debt']['inventory_complete']}",
               f"- External recurrence trials: {metrics['contributor_recurrence']['trials']}",
               f"- Open review-ready queue: {metrics['review_queue']['open_review_ready']}",
               f"- Evidence-derived strategy priors: {len(result['evidence_derived_strategy_priors'])}",
