@@ -12,6 +12,9 @@ policy changes or merge decisions.
   scaling, verification, governance, and community growth.
 - [Metric Uncertainty v0.1](METRIC_UNCERTAINTY_V0_1.md) — uncertainty and
   reporting rules for repository metrics.
+- [Collaboration Observables v0.1](COLLABORATION_OBSERVABLES_V0_1.md) —
+  deterministic latency, concentration, recurrence, queue, CI, and debt
+  measurements plus the preregistered E022 community analysis.
 - [Phase 0: Executable Research Foundation](PHASE_0_SPEC.md) — schemas,
   fixtures, and replay requirements beneath later experiments.
 - [Randomness Research Roadmap](RANDOMNESS_ROADMAP.md) and
