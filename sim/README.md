@@ -245,18 +245,23 @@ Verifier parameters can be supplied to the sweep with the same CLI flags.
 
 ## E024 — matched evaluation budgets
 
-`matched_budget_emergence.py` reruns the original three E011 strategies with an
-exact common proposal and verification-attempt budget. Initialization consumes
-the same budget and acceptance retries are disabled. The benchmark adds
-fixed-horizon post-change utility and regret AUC.
+`matched_budget_emergence.py` runs all five strategies named by issue #22 with an
+exact common proposal and verification-attempt budget: random search,
+fixed-scalar evolution, a centralized planner with one fixed objective, a
+majority-vote swarm, and Quality-Diversity. Initialization consumes the same
+budget and acceptance retries are disabled. The benchmark adds fixed-horizon
+post-change utility and regret AUC.
 
 ```bash
 python sim/matched_budget_emergence.py --seeds 100 --pretty
 ```
 
-The synthetic 100-seed result preserves E011's QD ordering, but still gives QD
-the predefined plausible-goal set and does not measure real compute, energy, or
-human attention. See
+The synthetic 100-seed result preserves E011's QD ordering against random,
+scalar, and the planner (100/100 paired seeds each), but **not** against the
+majority-vote swarm, which wins 49/100 on mean utility AUC while failing
+catastrophically in 44/100 seeds. QD's surviving advantage there is reliability,
+not central tendency. The benchmark still gives QD the predefined plausible-goal
+set and does not measure real compute, energy, or human attention. See
 [`../experiments/E024-matched-budget-emergence.md`](../experiments/E024-matched-budget-emergence.md).
 
 ## Tests
