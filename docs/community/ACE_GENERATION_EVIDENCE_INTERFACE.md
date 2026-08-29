@@ -74,6 +74,7 @@ Example:
 The Phase-A controller assumes structural/schema validation occurred before the receipt reached the controller. It still enforces local safety invariants:
 
 - lineage identity is unique;
+- normalized descendant artifact is unique, even when two records claim different lineage IDs;
 - parent reference exists in the provided parent inventory when one is present;
 - status is one of `candidate`, `merged`, `verified`, `rejected`;
 - `verified` boolean agrees exactly with `status == verified`;
@@ -82,10 +83,13 @@ The Phase-A controller assumes structural/schema validation occurred before the 
 The reproduction numerator is:
 
 ```text
-count(lineage receipt where status=verified and verified=true)
+count(unique descendant artifact where
+  receipt.status=verified
+  and receipt.verified=true
+  and receipt.parent is an eligible matured verified parent)
 ```
 
-A merge, label, comment, or strategy-outcome row does not enter this numerator by itself.
+A merge, label, comment, repeated event, or strategy-outcome row does not enter this numerator by itself. A verified receipt attached to a right-censored or otherwise ineligible parent also cannot inflate the numerator.
 
 ## 3. Strategy outcomes
 
@@ -184,4 +188,14 @@ actuation_enabled = false
 
 Even when a recommendation exists, no modeled public action is emitted unless both gates are true, capacity is healthy, the mode is not `CONSOLIDATE`, and the public-write budget is at most one.
 
-Actual GitHub actuation remains a separate, independently reviewed integration step and is additionally gated on the repository safety/protection work in PR #51.
+Actual GitHub actuation remains a separate, independently reviewed integration step and is additionally gated on the merged safety/protection controls from PR #98 plus the fail-closed activation contract.
+
+## 8. Deterministic state fixtures
+
+`tests/fixtures/ace_generation_scenarios_v1.json` fixes the three Phase-A states requested by #57 against the canonical example snapshot:
+
+- under-reproduction: `R_community=0.5` -> `EXPLORE`;
+- healthy reproduction: `R_community=1.0` -> `GROW`;
+- overload: healthy reproduction evidence plus excessive review load -> `CONSOLIDATE`.
+
+Every fixture runs in shadow mode, emits zero public actions, and must reproduce equivalent result objects across repeated evaluations.

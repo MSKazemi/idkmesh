@@ -113,6 +113,7 @@ def validate_snapshot(snapshot: dict[str, Any]) -> None:
         _require(isinstance(parent.get("matured", False), bool), f"parents[{index}].matured must be boolean")
 
     receipt_ids: set[str] = set()
+    descendant_ids: set[str] = set()
     for index, receipt in enumerate(receipts):
         _require(isinstance(receipt, dict), f"lineage_receipts[{index}] must be an object")
         identity = receipt.get("identity")
@@ -130,6 +131,12 @@ def validate_snapshot(snapshot: dict[str, Any]) -> None:
                 isinstance(receipt.get(field), str) and receipt.get(field),
                 f"lineage_receipts[{index}].{field} must be non-empty",
             )
+        descendant = receipt["descendant"]
+        _require(
+            descendant not in descendant_ids,
+            f"duplicate descendant artifact: {descendant}",
+        )
+        descendant_ids.add(descendant)
         status = receipt.get("status")
         _require(status in LINEAGE_STATUSES, f"lineage_receipts[{index}].status invalid")
         verified = receipt.get("verified")
@@ -250,9 +257,14 @@ def apply_capacity_homeostasis(weights: dict[str, float], capacity: float) -> di
 
 def reproduction_number(snapshot: dict[str, Any]) -> tuple[float, int, int]:
     parents = [p for p in snapshot.get("parents", []) if p.get("verified") and p.get("matured")]
+    eligible_parent_ids = {parent["id"] for parent in parents}
     verified_receipts = [
         receipt for receipt in snapshot.get("lineage_receipts", [])
-        if receipt.get("status") == "verified" and receipt.get("verified") is True
+        if (
+            receipt.get("status") == "verified"
+            and receipt.get("verified") is True
+            and receipt.get("parent") in eligible_parent_ids
+        )
     ]
     denominator = len(parents)
     numerator = len(verified_receipts)
