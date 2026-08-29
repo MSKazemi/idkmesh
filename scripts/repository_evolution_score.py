@@ -227,6 +227,30 @@ def determine_mode(signals: dict[str, float], capacity: dict[str, Any], reviews:
     return "EXPLORE"
 
 
+# Priority inputs are not all the same kind of number, and the emitted score does
+# not distinguish them on its own. Three kinds exist:
+#
+#   snapshot_derived            computed from observed repository state;
+#   snapshot_conditioned_prior  a hand-authored constant selected by an observed
+#                               boolean, so the branch is evidence and the value
+#                               is not;
+#   hand_authored_prior         a hand-authored constant with no evidence behind
+#                               it at all.
+#
+# Only the first is evidence. The rest are the target list for replacing
+# hand-authored evolution priors with derived evidence.
+NUMERATOR_PARTS = ("value", "confidence", "unlock", "community", "reversibility")
+DENOMINATOR_PARTS = ("review", "complexity", "coordination", "risk")
+SNAPSHOT_DERIVED = "snapshot_derived"
+SNAPSHOT_CONDITIONED_PRIOR = "snapshot_conditioned_prior"
+HAND_AUTHORED_PRIOR = "hand_authored_prior"
+
+# How far an unevidenced constant is perturbed when bounding the score. This
+# fraction is itself an authored choice, not a measurement, and it is reported
+# alongside the bounds so a reader can reject it.
+AUTHORED_SENSITIVITY = 0.25
+
+
 def _priority(parts: dict[str, float]) -> float:
     numerator = (
         parts["value"]
@@ -239,11 +263,55 @@ def _priority(parts: dict[str, float]) -> float:
     return round(numerator / denominator, 6)
 
 
+def _perturbed(value: float, provenance: str, direction: int) -> float:
+    """Move an unevidenced constant by the declared sensitivity fraction.
+
+    Snapshot-derived parts are observations and are never perturbed. A part
+    selected by an observed boolean is perturbed too: the branch is evidence,
+    the magnitude it selects is not.
+    """
+    if provenance == SNAPSHOT_DERIVED:
+        return value
+    return clamp01(value * (1.0 + direction * AUTHORED_SENSITIVITY))
+
+
+def _priority_bounds(parts: dict[str, float], provenance: dict[str, str]) -> tuple[float, float]:
+    """Bound the score against the unevidenced constants that feed it.
+
+    These are worst-case and best-case sensitivity bounds under a declared
+    perturbation, not a statistical confidence interval. Nothing here is a
+    posterior; there is no sample to form one from.
+    """
+    bounds: list[float] = []
+    for numerator_direction in (-1, 1):
+        moved = dict(parts)
+        for part in NUMERATOR_PARTS:
+            moved[part] = _perturbed(parts[part], provenance[part], numerator_direction)
+        for part in DENOMINATOR_PARTS:
+            moved[part] = _perturbed(parts[part], provenance[part], -numerator_direction)
+        bounds.append(_priority(moved))
+    return min(bounds), max(bounds)
+
+
+def _scored(parts: dict[str, float], provenance: dict[str, str]) -> dict[str, Any]:
+    if set(provenance) != set(NUMERATOR_PARTS) | set(DENOMINATOR_PARTS):
+        raise ValueError("every priority part must declare a provenance")
+    low, high = _priority_bounds(parts, provenance)
+    unevidenced = sorted(part for part, kind in provenance.items() if kind != SNAPSHOT_DERIVED)
+    return {
+        "priority": _priority(parts),
+        "priority_bounds": [low, high],
+        "priority_input_provenance": dict(sorted(provenance.items())),
+        "unevidenced_priority_inputs": unevidenced,
+    }
+
+
 def candidate_actions(snapshot: dict[str, Any], policy: dict[str, Any], capacity: dict[str, Any], signals: dict[str, float], graph: dict[str, Any]) -> list[dict[str, Any]]:
     actions: list[dict[str, Any]] = []
     if signals["main_protection"] < 1.0:
         parts = {"value": 1.0, "confidence": 1.0, "unlock": 1.0, "community": 0.6, "reversibility": 0.8, "review": 0.4, "complexity": 0.3, "coordination": 0.5, "risk": 0.2}
-        actions.append({"id": "protect-main", "type": "admin_gate", "target": "issue:35", "requires_admin": True, "priority": _priority(parts), "reason": "Canonical integration is not externally protected; stronger automation must remain blocked."})
+        provenance = dict.fromkeys(parts, HAND_AUTHORED_PRIOR)
+        actions.append({"id": "protect-main", "type": "admin_gate", "target": "issue:35", "requires_admin": True, **_scored(parts, provenance), "reason": "Canonical integration is not externally protected; stronger automation must remain blocked."})
 
     indegree = graph["indegree"]
     for pr in snapshot.get("open_pull_requests") or []:
@@ -261,31 +329,57 @@ def candidate_actions(snapshot: dict[str, Any], policy: dict[str, Any], capacity
             "coordination": 0.2,
             "risk": 0.5 if pr.get("draft") else 0.35,
         }
+        # `unlock` is computed from the observed dependency graph. `value`,
+        # `review`, and `risk` are authored constants selected by an observed
+        # boolean: the branch is evidence, the magnitude is not.
+        provenance = {
+            "value": SNAPSHOT_CONDITIONED_PRIOR,
+            "confidence": HAND_AUTHORED_PRIOR,
+            "unlock": SNAPSHOT_DERIVED,
+            "community": HAND_AUTHORED_PRIOR,
+            "reversibility": HAND_AUTHORED_PRIOR,
+            "review": SNAPSHOT_CONDITIONED_PRIOR,
+            "complexity": HAND_AUTHORED_PRIOR,
+            "coordination": HAND_AUTHORED_PRIOR,
+            "risk": SNAPSHOT_CONDITIONED_PRIOR,
+        }
         actions.append({
             "id": f"review-pr-{number}" if no_review else f"integrate-pr-{number}",
             "type": "independent_review" if no_review else "integration_review",
             "target": f"pr:{number}",
             "requires_admin": False,
-            "priority": _priority(parts),
+            **_scored(parts, provenance),
             "reason": "Independent review is missing." if no_review else "Independent review exists; inspect exact-head evidence and convergence before integration.",
         })
 
     pin_ratio = float((snapshot.get("workflow_supply_chain") or {}).get("pin_ratio", 1.0))
     if pin_ratio < float(policy["targets"]["minimum_workflow_pin_ratio"]):
         parts = {"value": 0.7, "confidence": 1.0, "unlock": 0.4, "community": 0.2, "reversibility": 0.9, "review": 0.3, "complexity": 0.4, "coordination": 0.2, "risk": 0.2}
-        actions.append({"id": "pin-workflow-dependencies", "type": "supply_chain_hardening", "target": "workflows", "requires_admin": False, "priority": _priority(parts), "reason": "One or more external GitHub Actions dependencies use floating refs."})
+        actions.append({"id": "pin-workflow-dependencies", "type": "supply_chain_hardening", "target": "workflows", "requires_admin": False, **_scored(parts, dict.fromkeys(parts, HAND_AUTHORED_PRIOR)), "reason": "One or more external GitHub Actions dependencies use floating refs."})
 
     if signals["starter_task_supply"] < 1.0 and signals["review_capacity"] >= 0.5:
         starters = sorted(int(issue["number"]) for issue in snapshot.get("open_issues") or [] if "good first issue" in set(issue.get("labels") or []))
         parts = {"value": 0.65, "confidence": 0.8, "unlock": 0.4, "community": 1.0, "reversibility": 1.0, "review": 0.3, "complexity": 0.2, "coordination": 0.2, "risk": 0.1}
-        actions.append({"id": "improve-starter-surface", "type": "community_onboarding", "target": f"issue:{starters[0]}" if starters else "new-bounded-starter", "requires_admin": False, "priority": _priority(parts), "reason": "Starter-task supply is below the configured minimum while review capacity is available."})
+        actions.append({"id": "improve-starter-surface", "type": "community_onboarding", "target": f"issue:{starters[0]}" if starters else "new-bounded-starter", "requires_admin": False, **_scored(parts, dict.fromkeys(parts, HAND_AUTHORED_PRIOR)), "reason": "Starter-task supply is below the configured minimum while review capacity is available."})
 
     if signals["branch_pressure"] > 0:
         parts = {"value": 0.55, "confidence": 0.9, "unlock": 0.3, "community": 0.35, "reversibility": 0.8, "review": 0.4, "complexity": 0.4, "coordination": 0.3, "risk": 0.25}
-        actions.append({"id": "converge-stale-branches", "type": "repository_hygiene", "target": "issue:127", "requires_admin": False, "priority": _priority(parts), "reason": "Branch count is above the soft coordination threshold; use the read-only convergence audit rather than bulk merging."})
+        actions.append({"id": "converge-stale-branches", "type": "repository_hygiene", "target": "issue:127", "requires_admin": False, **_scored(parts, dict.fromkeys(parts, HAND_AUTHORED_PRIOR)), "reason": "Branch count is above the soft coordination threshold; use the read-only convergence audit rather than bulk merging."})
 
     actions.sort(key=lambda action: (-float(action["priority"]), str(action["id"])))
-    return actions[:10]
+    ranked = actions[:10]
+    # Two adjacent recommendations whose sensitivity bounds overlap are not
+    # ordered by evidence. Saying so is the point: a reader who acts on rank
+    # order alone would otherwise not be able to tell.
+    for index, action in enumerate(ranked):
+        following = ranked[index + 1] if index + 1 < len(ranked) else None
+        if following is None:
+            action["separated_from_next"] = None
+        else:
+            action["separated_from_next"] = bool(
+                action["priority_bounds"][0] > following["priority_bounds"][1]
+            )
+    return ranked
 
 
 def evaluate(snapshot: dict[str, Any], policy: dict[str, Any]) -> dict[str, Any]:
@@ -330,6 +424,31 @@ def evaluate(snapshot: dict[str, Any], policy: dict[str, Any]) -> dict[str, Any]
         "strategy_weights": strategy_weights,
         "blockers": blockers,
         "recommended_actions": actions,
+        "priority_uncertainty": {
+            "method": "one-sided-joint-perturbation-of-unevidenced-constants-v1",
+            "authored_sensitivity_fraction": AUTHORED_SENSITIVITY,
+            "bounds_are_a_confidence_interval": False,
+            "unevidenced_in_at_least_one_action": sorted(
+                {part for action in actions for part in action["unevidenced_priority_inputs"]}
+            ),
+            "unevidenced_in_every_action": sorted(
+                set.intersection(
+                    *(set(action["unevidenced_priority_inputs"]) for action in actions)
+                )
+            )
+            if actions
+            else [],
+            "adjacent_pairs_not_separated": sum(
+                1 for action in actions if action["separated_from_next"] is False
+            ),
+            "note": (
+                "Bounds move every unevidenced constant by the declared fraction in the "
+                "direction that helps and the direction that hurts. They are sensitivity "
+                "bounds over authored inputs, not a posterior over an observed sample, and "
+                "the fraction is itself authored. Overlapping bounds between adjacent "
+                "recommendations mean the ordering is not evidence."
+            ),
+        },
         "project_memory": snapshot.get("project_memory") or {},
         "workflow_supply_chain": snapshot.get("workflow_supply_chain") or {},
         "collection": snapshot.get("collection") or {},
@@ -356,7 +475,9 @@ def render_report(result: dict[str, Any]) -> str:
     actions = result["recommended_actions"][:5]
     strategy = sorted(result["strategy_weights"].items(), key=lambda pair: (-pair[1], pair[0]))
     action_lines = "\n".join(
-        f"{index}. `{action['type']}` -> `{action['target']}` (priority `{action['priority']:.3f}`){' **[admin]**' if action['requires_admin'] else ''}: {action['reason']}"
+        f"{index}. `{action['type']}` -> `{action['target']}` (priority `{action['priority']:.3f}`, "
+        f"authored-input bounds `{action['priority_bounds'][0]:.3f}`-`{action['priority_bounds'][1]:.3f}`)"
+        f"{' **[admin]**' if action['requires_admin'] else ''}: {action['reason']}"
         for index, action in enumerate(actions, start=1)
     ) or "No bounded recommendation was produced."
     strategy_rows = "\n".join(f"| {name} | {weight:.3f} |" for name, weight in strategy)
