@@ -321,6 +321,7 @@
     }
   },
   "experiment": "matched-budget-emergence-sweep-v1",
+  "experiment_id": "E024",
   "limitations": [
     "All candidates, goals, and verification outcomes are synthetic.",
     "One evaluation unit is a simulator proposal plus panel decision, not measured compute, energy, or human attention.",
