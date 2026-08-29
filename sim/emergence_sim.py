@@ -260,18 +260,35 @@ def verify_candidate(c: Candidate, rng: random.Random, config: VerificationConfi
     return accepted
 
 
+def unchecked_utility(c: Candidate, weights: Sequence[float]) -> float:
+    """The utility a candidate *appears* to have, ignoring viability.
+
+    This is the score a system would compute from an artifact's observable
+    traits alone -- it is what the verifier panel exists to qualify. Split out
+    of :func:`utility` so a caller can model a system that trusts its panel
+    instead of consulting a free viability oracle; see E027's defect channel.
+    The arithmetic is unchanged, so ``utility`` is bit-for-bit what it was.
+    """
+    interaction = 0.08 * math.sqrt(c.traits[0] * c.traits[4])
+    return min(1.0, sum(w * x for w, x in zip(weights, c.traits)) + interaction)
+
+
 def utility(c: Candidate, weights: Sequence[float]) -> float:
     if not viable(c):
         return 0.0
-    interaction = 0.08 * math.sqrt(c.traits[0] * c.traits[4])
-    return min(1.0, sum(w * x for w, x in zip(weights, c.traits)) + interaction)
+    return unchecked_utility(c, weights)
+
+
+def unchecked_robust_quality(c: Candidate) -> float:
+    """:func:`robust_quality` without the viability gate. See E027."""
+    scores = [unchecked_utility(c, w) for w in PLAUSIBLE_GOALS]
+    return 0.75 * mean(scores) + 0.25 * min(scores)
 
 
 def robust_quality(c: Candidate) -> float:
     if not viable(c):
         return 0.0
-    scores = [utility(c, w) for w in PLAUSIBLE_GOALS]
-    return 0.75 * mean(scores) + 0.25 * min(scores)
+    return unchecked_robust_quality(c)
 
 
 def niche(c: Candidate, bins: int = 8) -> Tuple[int, int]:

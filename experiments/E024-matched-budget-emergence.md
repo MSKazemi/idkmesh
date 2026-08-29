@@ -186,6 +186,20 @@ extra compute allowance.
 > predicate the verifier was meant to enforce, so this landscape has no
 > defect-propagation channel and the test has little power. Do not cite E024 as
 > evidence about verification quality.
+>
+> **Follow-up (E027).** That gap is now closed.
+> [`E027-defect-propagation.md`](E027-defect-propagation.md) adds an opt-in
+> channel in which an accepted defect can evict a real solution, occupy an
+> archive niche, be drawn as a parent, and deliver nothing when it ships. It has
+> teeth — random search goes from 0/100 to 94/100 catastrophic seeds under a
+> stress panel — and the Quality-Diversity reliability claim above still holds,
+> at 0/100 catastrophes in every one of the twenty panel-by-cost cells. E027
+> also shows why that survival is narrower than it reads: in this landscape
+> apparent quality alone separates viable from non-viable candidates at AUROC
+> ~0.94 among accepted candidates, so elitist selection is a second, free
+> verifier. The conclusion above may now be cited as surviving a defect channel,
+> but **not** as evidence that retained diversity is what defeats verifier
+> error.
 
 ## Limitations and remaining issue scope
 
@@ -197,8 +211,10 @@ extra compute allowance.
   set, so its bimodality is a property of this landscape rather than a measured
   property of real swarms;
 - novelty and information gain are not separately measured;
-- churn, specialization, malicious workers, stigmergic traces, post-integration
-  defects, and catastrophic failures remain outside this benchmark;
+- churn, specialization, malicious workers, and stigmergic traces remain
+  outside this benchmark; post-integration defects are outside *this record*
+  but are modelled behind an opt-in flag in
+  [E027](E027-defect-propagation.md);
 - no real software/configuration tasks or hidden tests are used.
 
 Issue #22 therefore remains open. All five baselines it names are now

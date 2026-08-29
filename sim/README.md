@@ -287,6 +287,36 @@ is non-viable, scores 0, and is discarded by the same predicate the verifier was
 meant to enforce. See
 [`../experiments/E026-imperfect-verifier-panel.md`](../experiments/E026-imperfect-verifier-panel.md).
 
+### E027 — giving an accepted defect a cost
+
+E026's null was a finding about the benchmark, not about Quality-Diversity, so
+E027 removes the free viability oracle that caused it. `--defect-channel` makes
+every arm rank, retain and ship artifacts by *apparent* quality — what a system
+can observe once its panel has accepted something — while the trace still scores
+the delivered artifact by ground truth. A falsely accepted artifact can then
+evict an incumbent, occupy an archive niche, be drawn as a parent, and deliver
+`0.0` when it is the artifact that ships.
+
+`--defect-cost` is the single declared knob, in `[0.0, 1.0]`: `0.0` reproduces
+the E024/E026 behaviour exactly and `1.0` (the default) adds no assumption at
+all. It is rejected without `--defect-channel`, so the committed reference
+sweeps cannot drift.
+
+```bash
+python sim/matched_budget_emergence.py --seeds 100 --imperfect-panel --defect-channel --pretty
+python sim/e027_defect_propagation.py --mode matrix --seeds 100 --pretty
+python sim/e027_defect_propagation.py --mode audit --seed 7 --panel stress --pretty
+python sim/e027_defect_propagation.py --mode matrix --seeds 100 \
+  --panels stress --costs 0.80,0.85,0.90,0.95 --pretty
+```
+
+The channel has teeth — random search goes from 0/100 to 94/100 catastrophic
+seeds under the stress panel — and the Quality-Diversity archive still never
+fails catastrophically. E027 records why that survival is narrower than it
+looks: apparent quality alone separates viable from non-viable candidates well
+enough that elitist selection acts as a second, free verifier. See
+[`../experiments/E027-defect-propagation.md`](../experiments/E027-defect-propagation.md).
+
 ## Tests
 
 With `pytest` installed:
@@ -305,12 +335,14 @@ python -m pytest -q \
   tests/test_e018_dependence_models.py \
   tests/test_e019_group_independence.py \
   tests/test_e020_quorum_frontier.py \
-  tests/test_matched_budget_emergence.py
+  tests/test_matched_budget_emergence.py \
+  tests/test_e026_archive_contamination.py \
+  tests/test_e027_defect_propagation.py
 ```
 
 This is the same list `.github/workflows/emergence-sim.yml` runs; keep the two in step.
 
-The tests cover deterministic replay, budget invariants, niche preservation, perfect verification compatibility, correlated-error mechanics, sweep configuration, the E013 regime where independence-aware aggregation can help or hurt, E025's calibration separation and preserved shift failures, the E015 effective-panel-size metrics, the E016 discrimination screen, the E017 item-difficulty model, the E018 model comparison, the E019 group-independence result, the E020 quorum frontier, and E024's exact matched-evaluation contract.
+The tests cover deterministic replay, budget invariants, niche preservation, perfect verification compatibility, correlated-error mechanics, sweep configuration, the E013 regime where independence-aware aggregation can help or hurt, E025's calibration separation and preserved shift failures, the E015 effective-panel-size metrics, the E016 discrimination screen, the E017 item-difficulty model, the E018 model comparison, the E019 group-independence result, the E020 quorum frontier, E024's exact matched-evaluation contract, E026's archive-contamination audit, and E027's defect-propagation channel — its matched budget, its cost-zero identity with the channel off, and the demonstration that an accepted defect now persists and does harm.
 
 ## Interpretation
 
