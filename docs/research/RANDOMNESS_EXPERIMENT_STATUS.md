@@ -139,6 +139,17 @@ Worker self-report alone never establishes truth.
 
 The replay compares equal candidate budgets and can measure actual structural-signature failure correlation.
 
+### Real-corpus readiness gate
+
+`randomness_lab.r1_readiness` now fails closed before a BenchmarkCohort is
+interpreted as real R1 evidence. It checks held-out/frozen status, the
+prospective 20-work-unit target, exact per-signature candidate budgets,
+conclusive independent verification, replay/cohort signature agreement,
+independent tests, retained seeded negatives, complete cost measurements, and
+non-selecting authority. The committed current-state audit is blocked at zero
+eligible work units; it is explicitly contract-state evidence, not a coding
+outcome.
+
 ## Evidence boundary
 
 The repository does not yet contain a sufficient real multi-worker corpus.

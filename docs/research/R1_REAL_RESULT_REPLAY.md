@@ -171,6 +171,13 @@ python -m randomness_lab.r1_replay \
 
 Before replay, validate records through the Phase 0 schema workflow/harness.
 
+For a BenchmarkCohort-backed real experiment, also run the fail-closed
+readiness audit documented in
+`docs/research/R1_CORPUS_READINESS.md`. The readiness command validates the
+cohort/evidence bindings and checks the held-out task count, exact signature
+budget, independent-test coverage, negative retention, and cost completeness
+without changing this replay's decision rules.
+
 ## What replay can and cannot establish
 
 Replay is stronger than synthetic probability assumptions because it uses measured outcomes from actual candidate artifacts and actual independent verification records.

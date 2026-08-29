@@ -7,12 +7,13 @@ canonical files designated by [`../../PROJECT_RULES.md`](../../PROJECT_RULES.md)
 (decisions, specifications, architecture, findings); this directory keeps the trail
 that produced them.
 
-117 records across 2 dates, newest first.
+118 records across 2 dates, newest first.
 
 ## Index
 
 ### 2026-08-29
 
+- [R1 real-corpus readiness gate](2026-08-29-r1-real-corpus-readiness.md)
 - [Issue #24 newcomer-path audit](2026-08-29-issue-24-newcomer-path-audit.md)
 - [Issue #49 coordination-criticality experiment](2026-08-29-issue-49-criticality-experiment.md)
 - [Successor-v2 Task 001 symlink calibration](2026-08-29-phase-b2-v2-task001-symlink-calibration.md)

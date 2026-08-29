@@ -5,6 +5,10 @@ on:
     paths:
       - "schemas/benchmark-cohort-v0.1.schema.json"
       - "tools/benchmark_cohort.py"
+      - "randomness_lab/r1_readiness.py"
+      - "tests/test_r1_readiness.py"
+      - "docs/research/R1_CORPUS_READINESS.md"
+      - "results/experiments/r1/real-corpus-readiness-current.json"
       - "docs/specifications/BENCHMARK_COHORT_V0_1.md"
       - "benchmarks/phase-b2-first-five/**"
       - "benchmarks/phase-b2-successor-five/**"
@@ -14,6 +18,10 @@ on:
     paths:
       - "schemas/benchmark-cohort-v0.1.schema.json"
       - "tools/benchmark_cohort.py"
+      - "randomness_lab/r1_readiness.py"
+      - "tests/test_r1_readiness.py"
+      - "docs/research/R1_CORPUS_READINESS.md"
+      - "results/experiments/r1/real-corpus-readiness-current.json"
       - "docs/specifications/BENCHMARK_COHORT_V0_1.md"
       - "benchmarks/phase-b2-first-five/**"
       - "benchmarks/phase-b2-successor-five/**"
@@ -44,6 +52,19 @@ jobs:
 
       - name: Run deterministic contract self-test
         run: python tools/benchmark_cohort.py self-test
+
+      - name: Test R1 corpus readiness gate
+        run: python -m unittest tests.test_r1_readiness -v
+
+      - name: Reproduce current blocked R1 readiness audit
+        run: |
+          python -m randomness_lab.r1_readiness \
+            --cohort benchmarks/phase-b2-successor-v2/cohort.json \
+            --baseline-signature single-worker-baseline-v2 \
+            --diversity-signature single-worker-baseline-v2 \
+            --diversity-signature role-specialized-two-attempts-v2 \
+            --output /tmp/r1-readiness.json
+          cmp results/experiments/r1/real-corpus-readiness-current.json /tmp/r1-readiness.json
 
       - name: Validate burned Phase B2 first-five cohort
         run: python tools/benchmark_cohort.py validate --cohort benchmarks/phase-b2-first-five/cohort.json
