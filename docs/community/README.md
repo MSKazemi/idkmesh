@@ -15,6 +15,27 @@ The layers are separate on purpose: causal evidence, denominator inventory, and
 value/cost measurement must not collapse into one object. The ordering below is
 the one the documents themselves describe.
 
+## Two tracking issues must stay open
+
+Two workflows locate their state container by scanning **open** issues for a
+label, and create a new one when the scan finds nothing:
+
+- `ace-community-growth.yml` finds the ledger by label `ace:ledger` among
+  `state: 'open'` issues (issue 23);
+- `ace-cohort-observer.yml` finds the observatory by label
+  `ace:cohort-observer` among `state: 'open'` issues (issue 109).
+
+Closing either issue does not fail loudly. The workflow falls through to its
+default seed state and **creates a duplicate issue**, discarding the accumulated
+controller state in the original. Reopening the closed one afterwards is worse:
+`ace-community-growth.yml` throws `Multiple open ACE ledgers carry ace:ledger;
+refusing ambiguous controller state.` on every run until a human removes one
+label.
+
+Both issues are workflow-owned state containers whose bodies are rewritten on
+each run. They are not tasks, they have no acceptance criteria, and they must not
+be closed as part of any issue-tidying pass.
+
 ## Strategy and measurement models
 
 - [Community Growth Strategy](COMMUNITY_GROWTH_STRATEGY.md) — why community
