@@ -110,14 +110,33 @@
         "visibility": "public"
       },
       "evidence": {
-        "attempts": [],
-        "status": "pending"
+        "attempts": [
+          {
+            "attempt_id": "attempt-001",
+            "outcome": "support",
+            "result_manifest": {
+              "digest": "sha256:3d555f311bb78ee80f3ad5215be7b3f7cc198bd5e625c101077d306e7cffb901",
+              "id": "benchmark/phase-b2/002-frozen-definition-digest-test/single-worker-baseline-v1/attempt-001",
+              "path": "results/benchmarks/phase-b2-successor-five/task-002/attempt-001/result-manifest.json"
+            },
+            "structural_signature": "single-worker-baseline-v1",
+            "verification_result": {
+              "digest": "sha256:4739ee44037d92d6d2d3d68cb2182419d544f0e801a5e22fd52fa233cde08883",
+              "id": "benchmark/phase-b2/002-frozen-definition-digest-test/single-worker-baseline-v1/attempt-001/patch-verification",
+              "path": "results/benchmarks/phase-b2-successor-five/task-002/attempt-001/verification-result.json"
+            }
+          }
+        ],
+        "status": "verified"
       },
       "family": "test_failure",
       "id": "benchmark/phase-b2/002-frozen-definition-digest-test",
       "negative_case": {
         "description": "A frozen cohort with definition_digest omitted must fail validation instead of being treated as frozen evidence.",
-        "evidence_status": "pending",
+        "evidence_digest": "sha256:3c3c0496692a40f2c06530ef443a80e9e5227000bfde763d9b034ba441de92b6",
+        "evidence_path": "results/benchmarks/phase-b2-successor-five/task-002/attempt-001/seeded-negative.verification-result.json",
+        "evidence_status": "verified",
+        "evidence_type": "verification_result",
         "expected_category": "regression"
       },
       "source": {

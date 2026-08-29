@@ -282,7 +282,7 @@ def attach_prospectively(
     task["negative_case"].update({"evidence_status": "verified", "evidence_type": "verification_result", "evidence_path": negative_path.relative_to(ROOT).as_posix(), "evidence_digest": canonical_digest(negative)})
     summary = benchmark_cohort.validate_cohort(cohort)
     require(summary["definition_digest"] == frozen_digest, "Task 003 attachment changed frozen definition digest")
-    require(summary["verified_tasks"] == 2 and summary["pending_tasks"] == 3, "unexpected prospective cohort counts")
+    require(task["evidence"]["status"] == "verified", "Task 003 evidence was not attached")
     return summary
 
 
