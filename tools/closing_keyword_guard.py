@@ -43,7 +43,8 @@ REFERENCE_PATTERN = (
 )
 
 # GitHub tolerates punctuation and a few filler words between the keyword and
-# the reference; PR #315 was closed through ``Closes: Refs #152``. The window is
+# the reference; a real pull request here was closed through a line reading
+# ``Closes: Refs #<issue>``. The window is
 # deliberately generous, because a false positive costs one rephrasing while a
 # false negative silently closes someone else's review gate.
 GAP_LIMIT = 40

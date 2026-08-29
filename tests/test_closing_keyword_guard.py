@@ -128,6 +128,21 @@ class ClosingKeywordReportTests(unittest.TestCase):
             path.unlink()
 
 
+class GuardSelfConsistencyTests(unittest.TestCase):
+    def test_the_guard_source_cannot_create_a_closing_reference(self) -> None:
+        """The tool must not carry the pattern it forbids, so quoting it is safe."""
+        source = (ROOT / "tools" / "closing_keyword_guard.py").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertEqual(scan_text(source, source="tool"), [])
+
+    def test_the_contributor_guidance_cannot_create_a_closing_reference(self) -> None:
+        guidance = (ROOT / "CONTRIBUTING.md").read_text(encoding="utf-8")
+
+        self.assertEqual(scan_text(guidance, source="contributing"), [])
+
+
 class PullRequestTemplateTests(unittest.TestCase):
     def test_the_committed_template_cannot_create_a_closing_reference(self) -> None:
         template = (ROOT / ".github" / "PULL_REQUEST_TEMPLATE.md").read_text(
