@@ -1,0 +1,159 @@
+{
+  "attempt": 1,
+  "checks": [
+    {
+      "evidence_ids": [
+        "result-manifest-canonical"
+      ],
+      "id": "result-manifest-schema",
+      "required": true,
+      "status": "passed",
+      "summary": "Worker ResultManifest is schema-valid and bound to the exact WorkUnit.",
+      "type": "schema"
+    },
+    {
+      "diagnostics": "{\"artifact\":{\"artifact_locator\":\"candidate.patch\",\"bytes\":1004,\"declared_digest\":\"sha256:cc1af62d06e33e31dbdfde66ac3dd252536df989f66468ba97cbb96e3f4add20\",\"decode_error\":null,\"observed_digest\":\"sha256:cc1af62d06e33e31dbdfde66ac3dd252536df989f66468ba97cbb96e3f4add20\",\"within_limit\":true},\"logs\":{\"coverage_violations\":[],\"logs\":[{\"bytes\":337,\"declared_digest\":\"sha256:a94f62159f653ec06a59537163f7fd559dc48be40b6154ef24afee68965fef29\",\"index\":1,\"locator\":\"stdout.txt\",\"matches\":true,\"observed_digest\":\"sha256:a94f62159f653ec06a59537163f7fd559dc48be40b6154ef24afee68965fef29\",\"type\":\"stdout\",\"within_limit\":true},{\"bytes\":0,\"declared_digest\":\"sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"index\":2,\"locator\":\"stderr.txt\",\"matches\":true,\"observed_digest\":\"sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"type\":\"stderr\",\"within_limit\":true}],\"observed_type_counts\":{\"stderr\":1,\"stdout\":1},\"required_log_types\":[\"stdout\",\"stderr\"]},\"scope\":{\"allowed_paths\":[\"tools/benchmark_cohort.py\"],\"changed_paths\":[\"tools/benchmark_cohort.py\"],\"filesystem_write\":[\"tools/benchmark_cohort.py\"],\"forbidden_paths\":[\".github/**\",\"schemas/**\",\"benchmarks/**\",\"verification/**\"],\"violations\":[]},\"semantic\":{\"missing_added_text\":[],\"observed_added_lines\":[\"    frozen_without_digest = copy.deepcopy(baseline)\",\"    frozen_without_digest[\\\"stage\\\"] = \\\"frozen\\\"\",\"    try:\",\"        validate_cohort(frozen_without_digest)\",\"    except CohortError as exc:\",\"        require(\",\"            \\\"definition_digest\\\" in str(exc),\",\"            \\\"frozen cohort without definition_digest failed for an unrelated reason\\\",\",\"        )\",\"    else:\",\"        raise CohortError(\",\"            \\\"self-test expected frozen cohort without definition_digest to fail closed\\\"\",\"        )\",\"\"],\"required_added_text\":[\"    frozen_without_digest = copy.deepcopy(baseline)\",\"            \\\"self-test expected frozen cohort without definition_digest to fail closed\\\"\"]},\"semantic_substrings\":{\"matches\":[{\"matched_line\":\"    frozen_without_digest = copy.deepcopy(baseline)\",\"substring\":\"frozen_without_digest = copy.deepcopy(baseline)\"},{\"matched_line\":\"            \\\"self-test expected frozen cohort without definition_digest to fail closed\\\"\",\"substring\":\"self-test expected frozen cohort without definition_digest to fail closed\"}],\"missing_substrings\":[],\"observed_added_lines\":[\"    frozen_without_digest = copy.deepcopy(baseline)\",\"    frozen_without_digest[\\\"stage\\\"] = \\\"frozen\\\"\",\"    try:\",\"        validate_cohort(frozen_without_digest)\",\"    except CohortError as exc:\",\"        require(\",\"            \\\"definition_digest\\\" in str(exc),\",\"            \\\"frozen cohort without definition_digest failed for an unrelated reason\\\",\",\"        )\",\"    else:\",\"        raise CohortError(\",\"            \\\"self-test expected frozen cohort without definition_digest to fail closed\\\"\",\"        )\",\"\"],\"parse_error\":null,\"required_added_substrings\":[\"frozen_without_digest = copy.deepcopy(baseline)\",\"self-test expected frozen cohort without definition_digest to fail closed\"],\"semantic_mode\":\"added_line_substring_all\"},\"worker_status\":\"succeeded\"}",
+      "evidence_ids": [
+        "candidate-patch-hash",
+        "log-integrity-observation",
+        "patch-scope-observation",
+        "patch-semantic-observation",
+        "worker-status-observation",
+        "added-substring-semantic-observation"
+      ],
+      "id": "independent-review",
+      "required": true,
+      "status": "passed",
+      "summary": "Independent metadata-only patch review passed artifact/log integrity, strict patch structure, scope, and explicit v0.3 added-line substring checks.",
+      "type": "review"
+    }
+  ],
+  "decision_support": {
+    "confidence": 1.0,
+    "rationale": "All WorkUnit-required checks passed, including explicit v0.3 added-line substring semantics.",
+    "recommendation": "accept_candidate"
+  },
+  "evidence": [
+    {
+      "description": "Canonical digest of the schema-valid worker ResultManifest evaluated by the verifier.",
+      "digest": "sha256:3d555f311bb78ee80f3ad5215be7b3f7cc198bd5e625c101077d306e7cffb901",
+      "id": "result-manifest-canonical",
+      "locator": "inline://result-manifest-canonical",
+      "media_type": "application/json",
+      "type": "attestation"
+    },
+    {
+      "description": "SHA-256 observed directly from candidate patch bytes.",
+      "digest": "sha256:cc1af62d06e33e31dbdfde66ac3dd252536df989f66468ba97cbb96e3f4add20",
+      "id": "candidate-patch-hash",
+      "locator": "candidate.patch",
+      "media_type": "text/x-diff",
+      "type": "artifact_hash"
+    },
+    {
+      "description": "Canonical digest of evaluator-required log coverage and independently recomputed log integrity observations.",
+      "digest": "sha256:c73612ffeb5590ba80d071c16dadf436107e9d9d2d0c44eeb5cf5796c18f4eb5",
+      "id": "log-integrity-observation",
+      "locator": "inline://log-integrity",
+      "media_type": "application/json",
+      "type": "trace"
+    },
+    {
+      "description": "Canonical digest of independently parsed unified-diff paths and WorkUnit scope checks.",
+      "digest": "sha256:8204f5ca4536bcacb40173e1c68859ab851e726c909694857fbb2bdca48f0984",
+      "id": "patch-scope-observation",
+      "locator": "inline://patch-scope",
+      "media_type": "application/json",
+      "type": "static_analysis"
+    },
+    {
+      "description": "Canonical digest of verifier-owned required-added-text checks from validated hunks only.",
+      "digest": "sha256:5067ced35b1b63c9f185b22d34e1a865c0ba95130b9302dce1be58fe17b850f8",
+      "id": "patch-semantic-observation",
+      "locator": "inline://patch-semantic",
+      "media_type": "application/json",
+      "type": "test_output"
+    },
+    {
+      "description": "Canonical digest of the worker execution status observed by the verifier.",
+      "digest": "sha256:557d907fbdaf9ce5bb0ad618c35c2709b08665790555d991c6c93eda39897452",
+      "id": "worker-status-observation",
+      "locator": "inline://worker-status",
+      "media_type": "application/json",
+      "type": "trace"
+    },
+    {
+      "description": "Canonical digest of explicit case-sensitive, single-added-line substring matching for EvaluatorPlan v0.3.",
+      "digest": "sha256:5d998976fac18b95e60c93a2f503a5f1bd7553e2412ac34cd0eb40589a0ff38e",
+      "id": "added-substring-semantic-observation",
+      "locator": "inline://added-substring-semantic-observation",
+      "media_type": "application/json",
+      "type": "test_output"
+    }
+  ],
+  "extensions": {
+    "org.idkmesh.evaluator_plan.backend": "unified_diff_substring",
+    "org.idkmesh.evaluator_plan.digest": "sha256:185b46d16cb45948fc03b05a40622a58d96de05a149a1528d166625f1b82a059",
+    "org.idkmesh.evaluator_plan.execution_mode": "metadata_only",
+    "org.idkmesh.evaluator_plan.id": "benchmark/phase-b2-successor/002-frozen-definition-digest-test/evaluator-v0.3",
+    "org.idkmesh.evaluator_plan.runner_version": "0.3",
+    "org.idkmesh.evaluator_plan.visibility": "public",
+    "org.idkmesh.local_verifier.backend": "unified_diff",
+    "org.idkmesh.local_verifier.legacy_patch_core_version": "0.1.1",
+    "org.idkmesh.local_verifier.policy_id": "benchmark/phase-b2-successor/002-frozen-definition-digest-test/evaluator-v0.3",
+    "org.idkmesh.local_verifier.semantic_match_mode": "added_line_substring_all"
+  },
+  "findings": [],
+  "finished_at": "2026-08-29T03:40:57.132076Z",
+  "id": "benchmark/phase-b2/002-frozen-definition-digest-test/single-worker-baseline-v1/attempt-001/patch-verification",
+  "independence": {
+    "correlation_notes": "Evaluator control is outside the candidate root; candidate code is never executed. Strict diff/provenance/log/scope checks reuse verifier v0.1.1, while v0.2.0 adds explicit case-sensitive substring matching within each validated-hunk added line.",
+    "independent_from_worker": true,
+    "shared_model_family": false,
+    "shared_runtime": false,
+    "worker_id_observed": "idkmesh-phase-b2-task002-worker"
+  },
+  "metrics": {
+    "candidate_bytes": 1004,
+    "changed_path_count": 1,
+    "log_count": 2,
+    "matched_substring_count": 2,
+    "required_checks_failed": 0,
+    "required_checks_passed": 2,
+    "required_substring_count": 2
+  },
+  "provenance": {
+    "environment": {
+      "platform": "Linux-7.0.0-30-generic-x86_64-with-glibc2.39",
+      "python": "3.12.3",
+      "tool_versions": {
+        "deterministic-patch-verifier": "0.2.0",
+        "deterministic-patch-verifier-legacy-core": "0.1.1",
+        "idkmesh-local-verifier": "0.1",
+        "jsonschema": "installed"
+      }
+    },
+    "result_manifest_digest": "sha256:3d555f311bb78ee80f3ad5215be7b3f7cc198bd5e625c101077d306e7cffb901",
+    "source_revision": "9c53bb4069a5db1c0688dbbe7a8f028540cbf7c2",
+    "verifier_config_digest": "sha256:185b46d16cb45948fc03b05a40622a58d96de05a149a1528d166625f1b82a059",
+    "work_unit_digest": "sha256:1cfe014af545f227ddefce9e3e1094becc2b2f4d4527b0f9a857cbc8f8f8463d"
+  },
+  "resources": {
+    "compute_units": 0.0,
+    "human_minutes": 0.0,
+    "tokens": 0,
+    "wall_seconds": 0.0010328490170650184
+  },
+  "result_manifest_id": "benchmark/phase-b2/002-frozen-definition-digest-test/single-worker-baseline-v1/attempt-001",
+  "schema_version": "0.1",
+  "started_at": "2026-08-29T03:40:57.131017Z",
+  "status": "passed",
+  "verifier": {
+    "adapter": "deterministic-patch-verifier",
+    "adapter_version": "0.2.0",
+    "id": "idkmesh-local-verifier",
+    "type": "system"
+  },
+  "work_unit_id": "benchmark/phase-b2/002-frozen-definition-digest-test",
+  "work_unit_version": 1
+}

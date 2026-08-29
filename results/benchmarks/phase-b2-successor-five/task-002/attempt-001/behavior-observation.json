@@ -1,0 +1,16 @@
+{
+  "authority": {
+    "automatic_candidate_selection": false,
+    "canonical_state_write": false,
+    "git_push": false,
+    "merge": false
+  },
+  "baseline_self_test_passed": true,
+  "candidate_self_test_passed": true,
+  "schema_version": "0.1",
+  "seeded_returncode": 2,
+  "seeded_schema_bypass_detected": true,
+  "seeded_stderr_digest": "sha256:da163625100fa94413f9de131259516541ddab93c93ca34d92e3bda50cff6f57",
+  "source_revision": "9c53bb4069a5db1c0688dbbe7a8f028540cbf7c2",
+  "task_id": "benchmark/phase-b2/002-frozen-definition-digest-test"
+}

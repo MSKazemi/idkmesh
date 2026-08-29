@@ -1,0 +1,88 @@
+{
+  "attempt": 1,
+  "extensions": {
+    "org.idkmesh.authority": {
+      "automatic_candidate_selection": false,
+      "canonical_state_write": false,
+      "git_push": false,
+      "merge": false
+    },
+    "org.idkmesh.benchmark.structural_signature": "single-worker-baseline-v1"
+  },
+  "finished_at": "2026-08-29T03:40:57.002145Z",
+  "id": "benchmark/phase-b2/002-frozen-definition-digest-test/single-worker-baseline-v1/attempt-001",
+  "logs": [
+    {
+      "digest": "sha256:a94f62159f653ec06a59537163f7fd559dc48be40b6154ef24afee68965fef29",
+      "locator": "stdout.txt",
+      "type": "stdout"
+    },
+    {
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "locator": "stderr.txt",
+      "type": "stderr"
+    }
+  ],
+  "metrics": {
+    "changed_path_count": 1,
+    "seeded_regressions_detected": 1
+  },
+  "produced_artifacts": [
+    {
+      "description": "Unverified frozen-source Task 002 candidate patch.",
+      "digest": "sha256:cc1af62d06e33e31dbdfde66ac3dd252536df989f66468ba97cbb96e3f4add20",
+      "id": "candidate-patch",
+      "locator": "candidate.patch",
+      "media_type": "text/x-diff",
+      "type": "patch"
+    }
+  ],
+  "provenance": {
+    "environment": {
+      "platform": "Linux-7.0.0-30-generic-x86_64-with-glibc2.39",
+      "python": "3.12.3",
+      "tool_versions": {
+        "git": "git version 2.43.0",
+        "phase-b2-task002-worker": "0.1"
+      }
+    },
+    "source_revision": "9c53bb4069a5db1c0688dbbe7a8f028540cbf7c2",
+    "work_unit_digest": "sha256:1cfe014af545f227ddefce9e3e1094becc2b2f4d4527b0f9a857cbc8f8f8463d",
+    "worker_config_digest": "sha256:eaabe540489f672ad3afb468e0d01483a8e7b78c29b45b254f8a951d484f39c2"
+  },
+  "resources": {
+    "compute_units": 0.0,
+    "human_minutes": 0.0,
+    "tokens": 0,
+    "wall_seconds": 0.5709333640115801
+  },
+  "schema_version": "0.1",
+  "self_report": {
+    "claims": [
+      "Only the allowed tool was changed.",
+      "The candidate self-test detects the seeded missing-digest regression.",
+      "Worker success grants no integration authority."
+    ],
+    "summary": "Deterministic baseline adds one fail-closed regression self-test; self-report is not acceptance."
+  },
+  "started_at": "2026-08-29T03:40:56.431179Z",
+  "status": "succeeded",
+  "verification_request": {
+    "evidence_artifact_ids": [
+      "candidate-patch"
+    ],
+    "expected_validator_ids": [
+      "independent-review",
+      "result-manifest-schema"
+    ],
+    "notes": "Route through the frozen public EvaluatorPlan; worker self-report is not acceptance."
+  },
+  "work_unit_id": "benchmark/phase-b2/002-frozen-definition-digest-test",
+  "work_unit_version": 1,
+  "worker": {
+    "adapter": "deterministic-text-rewrite",
+    "adapter_version": "0.1",
+    "id": "idkmesh-phase-b2-task002-worker",
+    "type": "system"
+  }
+}

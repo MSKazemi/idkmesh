@@ -1,0 +1,21 @@
+{
+  "authority": {
+    "automatic_candidate_selection": false,
+    "canonical_state_write": false,
+    "git_push": false,
+    "merge": false
+  },
+  "candidate_patch_digest": "sha256:cc1af62d06e33e31dbdfde66ac3dd252536df989f66468ba97cbb96e3f4add20",
+  "cohort_after_attachment": {
+    "pending_tasks": 2,
+    "verified_tasks": 3
+  },
+  "definition_digest": "sha256:3182d8710e1239c19cb95daddd0677241c0cd9123614786fd919b036922dbdd9",
+  "negative_evidence_digest": "sha256:3c3c0496692a40f2c06530ef443a80e9e5227000bfde763d9b034ba441de92b6",
+  "result_manifest_digest": "sha256:3d555f311bb78ee80f3ad5215be7b3f7cc198bd5e625c101077d306e7cffb901",
+  "schema_version": "0.1",
+  "source_revision": "9c53bb4069a5db1c0688dbbe7a8f028540cbf7c2",
+  "structural_signature": "single-worker-baseline-v1",
+  "task_id": "benchmark/phase-b2/002-frozen-definition-digest-test",
+  "verification_result_digest": "sha256:4739ee44037d92d6d2d3d68cb2182419d544f0e801a5e22fd52fa233cde08883"
+}

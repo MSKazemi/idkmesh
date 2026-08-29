@@ -7,7 +7,7 @@ try:
     import jsonschema  # noqa: F401
 except ModuleNotFoundError as exc:
     raise unittest.SkipTest(
-        "Phase B2 Task 003 evidence tests require requirements-phase0.txt"
+        "Phase B2 Task 002 evidence tests require requirements-phase0.txt"
     ) from exc
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -17,27 +17,32 @@ for directory in (ROOT / "experiments", ROOT / "tools"):
 
 import evaluator_plan_runner  # noqa: E402
 import benchmark_cohort  # noqa: E402
-import phase_b2_successor_task003_evidence as task003  # noqa: E402
+import phase_b2_successor_task002_evidence as task002  # noqa: E402
 
-EVIDENCE = ROOT / "results/benchmarks/phase-b2-successor-five/task-003/attempt-001"
+EVIDENCE = ROOT / "results/benchmarks/phase-b2-successor-five/task-002/attempt-001"
 
 
-class PhaseB2SuccessorTask003EvidenceTests(unittest.TestCase):
-    def test_projection_boundary_detects_only_mutable_outcomes(self) -> None:
-        clean = {"tasks": [{"id": "task-1"}]}
-        contaminated = {"tasks": [{"id": "task-1", "evidence": {"status": "pending"}}]}
-        self.assertFalse(task003.projection_leaks_outcomes(clean))
-        self.assertTrue(task003.projection_leaks_outcomes(contaminated))
-        self.assertTrue(task003.projection_leaks_outcomes({"stage": "frozen", "tasks": []}))
+class PhaseB2SuccessorTask002EvidenceTests(unittest.TestCase):
+    def test_seeded_regression_requires_expected_failure(self) -> None:
+        message = "ERROR: self-test expected frozen cohort without definition_digest to fail closed\n"
+        self.assertTrue(task002.seeded_regression_detected(2, message))
+        self.assertFalse(task002.seeded_regression_detected(0, message))
+        self.assertFalse(
+            task002.seeded_regression_detected(
+                2,
+                "ERROR: frozen cohort without definition_digest failed for an unrelated reason\n",
+            )
+        )
+        self.assertFalse(task002.seeded_regression_detected(2, "ERROR: unrelated\n"))
 
     def test_committed_evidence_replays_through_frozen_plan(self) -> None:
         result = json.loads((EVIDENCE / "result-manifest.json").read_text(encoding="utf-8"))
         expected = json.loads((EVIDENCE / "verification-result.json").read_text(encoding="utf-8"))
         observed = evaluator_plan_runner.run_fixture(
-            work_unit_path=task003.WORK_UNIT_PATH,
+            work_unit_path=task002.WORK_UNIT_PATH,
             result_manifest_path=EVIDENCE / "result-manifest.json",
             candidate_root=EVIDENCE,
-            plan_path=task003.PLAN_PATH,
+            plan_path=task002.PLAN_PATH,
         )
         for value in (observed, expected):
             value["started_at"] = "<runtime>"
@@ -49,10 +54,10 @@ class PhaseB2SuccessorTask003EvidenceTests(unittest.TestCase):
         self.assertEqual(observed["decision_support"]["recommendation"], "accept_candidate")
         self.assertEqual(observed["result_manifest_id"], result["id"])
 
-    def test_active_cohort_retains_task003_without_digest_drift(self) -> None:
-        cohort = benchmark_cohort.load_json(task003.COHORT_PATH)
+    def test_active_cohort_retains_task002_without_digest_drift(self) -> None:
+        cohort = benchmark_cohort.load_json(task002.COHORT_PATH)
         summary = benchmark_cohort.validate_cohort(cohort)
-        task = next(item for item in cohort["tasks"] if item["id"] == task003.TASK_ID)
+        task = next(item for item in cohort["tasks"] if item["id"] == task002.TASK_ID)
         self.assertEqual(task["evidence"]["status"], "verified")
         self.assertEqual(
             summary["definition_digest"],

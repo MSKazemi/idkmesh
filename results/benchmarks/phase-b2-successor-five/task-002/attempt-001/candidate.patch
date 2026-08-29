@@ -1,0 +1,25 @@
+diff --git a/tools/benchmark_cohort.py b/tools/benchmark_cohort.py
+index aae8f56..d453ff1 100644
+--- a/tools/benchmark_cohort.py
++++ b/tools/benchmark_cohort.py
+@@ -440,6 +440,20 @@ def cmd_self_test(_: argparse.Namespace) -> int:
+     summary = validate_cohort(baseline)
+     require(summary["pending_tasks"] == 1, "self-test scaffold was not classified as pending")
+ 
++    frozen_without_digest = copy.deepcopy(baseline)
++    frozen_without_digest["stage"] = "frozen"
++    try:
++        validate_cohort(frozen_without_digest)
++    except CohortError as exc:
++        require(
++            "definition_digest" in str(exc),
++            "frozen cohort without definition_digest failed for an unrelated reason",
++        )
++    else:
++        raise CohortError(
++            "self-test expected frozen cohort without definition_digest to fail closed"
++        )
++
+     original_digest = definition_digest(baseline)
+     outcome_only = copy.deepcopy(baseline)
+     outcome_only["tasks"][0]["evidence"] = {
