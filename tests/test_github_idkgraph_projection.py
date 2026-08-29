@@ -110,6 +110,13 @@ class GitHubIDKGraphProjectionTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "complete learning record"):
             project_snapshot(changed)
 
+    def test_nonfinite_capacity_fails_closed(self) -> None:
+        changed = copy.deepcopy(self.snapshot)
+        capacity = next(row for row in changed["records"] if row["source_id"] == "ace-capacity")
+        capacity["attributes"]["value"] = float("nan")
+        with self.assertRaisesRegex(ValueError, "must be finite"):
+            project_snapshot(changed)
+
     def test_cli_output_shape_can_be_written(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             destination = Path(directory) / "projection.json"

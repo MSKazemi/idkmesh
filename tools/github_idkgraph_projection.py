@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -213,6 +214,20 @@ def project_snapshot(
             }
             _require(required_outcome <= set(attributes),
                      "outcome must include the complete learning record")
+            _require(attributes["decision"] in {"merged", "rejected"},
+                     "outcome decision must be merged or rejected")
+            _require(isinstance(attributes["verification_result"], str)
+                     and bool(attributes["verification_result"]),
+                     "outcome verification_result must be non-empty")
+            _require(isinstance(attributes["regression_or_revert"], bool),
+                     "outcome regression_or_revert must be boolean")
+            for field in ("predicted_improvement", "reviewer_effort", "health_delta"):
+                value = attributes[field]
+                _require(isinstance(value, (int, float)) and not isinstance(value, bool)
+                         and math.isfinite(float(value)),
+                         f"outcome {field} must be finite")
+            _require(float(attributes["reviewer_effort"]) >= 0,
+                     "outcome reviewer_effort must be non-negative")
         if body is not None:
             attributes["body_sha256"] = hashlib.sha256(body.encode()).hexdigest()
         nodes.append({
@@ -317,6 +332,8 @@ def project_snapshot(
                  "capacity signal observation_id is required")
         _require(isinstance(value, (int, float)) and not isinstance(value, bool),
                  "capacity signal value must be numeric")
+        _require(math.isfinite(float(value)),
+                 "capacity signal value must be finite")
         row = {
             "observation_id": identity,
             "value": float(value),
