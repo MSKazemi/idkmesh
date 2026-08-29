@@ -7,12 +7,13 @@ canonical files designated by [`../../PROJECT_RULES.md`](../../PROJECT_RULES.md)
 (decisions, specifications, architecture, findings); this directory keeps the trail
 that produced them.
 
-143 records across 2 dates, newest first.
+144 records across 2 dates, newest first.
 
 ## Index
 
 ### 2026-08-29
 
+- [Phase B2 Task 004 evidence](2026-08-29-phase-b2-task004-evidence.md)
 - [Open-issue continuation — Phase B2 Task 002 evidence](2026-08-29-open-issue-continuation-task002.md)
 - [Issue #151 control-plane audit and hardening](2026-08-29-issue-151-control-plane-audit.md)
 - [R1 real-corpus readiness gate](2026-08-29-r1-real-corpus-readiness.md)
