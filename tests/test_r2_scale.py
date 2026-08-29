@@ -38,9 +38,14 @@ class R2ScaleSweepTests(unittest.TestCase):
                     continue
                 completion = summary["metrics"]["completion_rate"]
                 self.assertIsNotNone(completion["sample_standard_deviation"])
-                self.assertEqual(completion["mean_ci95"]["method"], "student_t_95")
+                self.assertEqual(
+                    completion["mean_ci95"]["method"],
+                    "student_t_95_clipped_to_metric_domain",
+                )
                 self.assertLessEqual(completion["mean_ci95"]["low"], completion["mean"])
                 self.assertGreaterEqual(completion["mean_ci95"]["high"], completion["mean"])
+                self.assertGreaterEqual(completion["mean_ci95"]["low"], 0.0)
+                self.assertLessEqual(completion["mean_ci95"]["high"], 1.0)
 
     def test_single_seed_does_not_invent_an_uncertainty_interval(self):
         report = run_r2_scale_sweep(

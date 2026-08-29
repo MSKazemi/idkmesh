@@ -99,7 +99,9 @@ Aggregates report mean/min/max across seeds for:
 
 With two or more seeds, every numeric aggregate also reports the sample standard
 deviation and a two-sided 95% Student-t interval for the mean. A one-seed run
-reports both fields as `null` rather than inventing uncertainty evidence.
+reports both fields as `null` rather than inventing uncertainty evidence. The
+interval is clipped to the metric's physical domain: zero for all reported
+metrics and one for rates, utilization, and Jain fairness.
 
 ## Oracle comparisons
 

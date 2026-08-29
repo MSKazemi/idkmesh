@@ -116,7 +116,12 @@ def _make_single_worker_fully_capable(trace: R2Trace) -> R2Trace:
     return replace(trace, workers=(replace(worker, capabilities=capabilities),))
 
 
-def _metric_summary(values: Sequence[float]) -> dict[str, object]:
+def _metric_summary(
+    values: Sequence[float],
+    *,
+    lower_bound: float | None = 0.0,
+    upper_bound: float | None = None,
+) -> dict[str, object]:
     count = len(values)
     average = mean(values) if values else None
     sample_stddev = stdev(values) if count >= 2 else None
@@ -158,10 +163,16 @@ def _metric_summary(values: Sequence[float]) -> dict[str, object]:
         }
         critical = t95_by_df.get(count - 1, 1.96)
         half_width = critical * sample_stddev / math.sqrt(count)
+        low = average - half_width
+        high = average + half_width
+        if lower_bound is not None:
+            low = max(lower_bound, low)
+        if upper_bound is not None:
+            high = min(upper_bound, high)
         ci95 = {
-            "low": average - half_width,
-            "high": average + half_width,
-            "method": "student_t_95",
+            "low": low,
+            "high": high,
+            "method": "student_t_95_clipped_to_metric_domain",
         }
     return {
         "count": count,
@@ -189,13 +200,21 @@ def _aggregate_policy_runs(runs: Sequence[dict[str, object]]) -> dict[str, objec
         "mean_churn_recovery_ticks",
     )
     output: dict[str, object] = {}
+    unit_interval_metrics = {
+        "completion_rate",
+        "capacity_utilization",
+        "jain_worker_utilization_fairness",
+    }
     for metric_name in metric_names:
         values = []
         for run in runs:
             value = run["metrics"].get(metric_name)
             if isinstance(value, (int, float)) and not isinstance(value, bool):
                 values.append(float(value))
-        output[metric_name] = _metric_summary(values)
+        output[metric_name] = _metric_summary(
+            values,
+            upper_bound=1.0 if metric_name in unit_interval_metrics else None,
+        )
     return output
 
 
