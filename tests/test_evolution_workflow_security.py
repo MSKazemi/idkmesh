@@ -56,7 +56,10 @@ class EvolutionWorkflowSecurityTests(unittest.TestCase):
     def test_checkpoint_selection_requires_one_exact_unexpired_artifact(self) -> None:
         for workflow in (self.evolution, self.portfolio):
             self.assertIn(".expired == false and .name == $name", workflow)
-            self.assertIn('select(.event == "issues" or .event == "pull_request_target"', workflow)
+            self.assertIn('select(.event == "issues" or .event == "push"', workflow)
+            self.assertIn("exclude_pull_requests=true", workflow)
+            self.assertIn("gh api --paginate", workflow)
+            self.assertNotIn('.event == "pull_request_target"', workflow)
             self.assertIn('if [[ "$count" -gt 1 ]]', workflow)
             self.assertIn('if [[ "$count" -eq 1 ]]', workflow)
             self.assertNotIn(".workflow_runs[0].id", workflow)
