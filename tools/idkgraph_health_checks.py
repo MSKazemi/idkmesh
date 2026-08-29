@@ -58,6 +58,13 @@ EXERCISER_PREFIXES = (".github/workflows/", "tests/")
 # Where a tool's output would have been recorded if it had ever produced one.
 RECORDED_OUTPUT_PREFIXES = ("benchmarks/", "docs/", "experiments/results/", "results/")
 
+# Findings reports are excluded, and the exclusion is not hypothetical. The first
+# report this check produced named all five of its own findings in a table, which
+# cleared all five on the next run. A report *about* repository health is analysis,
+# not evidence that a tool ran; without this exclusion the check silences itself the
+# moment anyone writes down what it found.
+RECORDED_OUTPUT_EXCLUDED_PREFIXES = ("docs/findings/",)
+
 # Binary and compressed payloads are skipped rather than decoded; a tool name
 # hidden inside a gzip member is not a reference a human reviewer could follow.
 OPAQUE_SUFFIXES = {".gz", ".jpg", ".jpeg", ".pdf", ".png", ".zip"}
@@ -135,11 +142,18 @@ def _mentions(blob: str, relative_path: str) -> bool:
     return re.search(rf"(?<![A-Za-z0-9_]){stem}(?![A-Za-z0-9_])", blob) is not None
 
 
-def _readable_blob(root: Path, tracked: set[str], prefixes: tuple[str, ...]) -> str:
+def _readable_blob(
+    root: Path,
+    tracked: set[str],
+    prefixes: tuple[str, ...],
+    excluded: tuple[str, ...] = (),
+) -> str:
     """Concatenate tracked text files under the given prefixes, in path order."""
     parts: list[str] = []
     for relative_path in sorted(tracked):
         if not relative_path.startswith(prefixes):
+            continue
+        if excluded and relative_path.startswith(excluded):
             continue
         if Path(relative_path).suffix.lower() in OPAQUE_SUFFIXES:
             continue
@@ -169,7 +183,9 @@ def _unexercised_executables(root: Path) -> list[str]:
     if not candidates:
         return []
     exercisers = _readable_blob(root, tracked, EXERCISER_PREFIXES)
-    recorded = _readable_blob(root, tracked, RECORDED_OUTPUT_PREFIXES)
+    recorded = _readable_blob(
+        root, tracked, RECORDED_OUTPUT_PREFIXES, RECORDED_OUTPUT_EXCLUDED_PREFIXES
+    )
     return [
         relative_path
         for relative_path in candidates

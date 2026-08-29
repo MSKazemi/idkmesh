@@ -1,0 +1,34 @@
+{
+  "baseline_patch_negative_matrix_passed": true,
+  "candidate_sha": "520ad2c9aa5825476de4957da4702d6823f4edb3",
+  "evaluator": {
+    "backend": "unified_diff",
+    "execution_mode": "metadata_only",
+    "independent_from_worker": true,
+    "plan_digest": "sha256:a0e89da54213408e942317816da0ef040d486f182ef160375fffe374c130c968",
+    "plan_id": "verification/real-node-520ad2c-plan",
+    "recommendation": "accept_candidate",
+    "required_checks": {
+      "independent-review": "passed",
+      "result-manifest-schema": "passed"
+    },
+    "status": "passed",
+    "verification_result_digest": "sha256:352ff6275e8a445b661372d03cf073367c25a093527a5c34f0fb5f6cb329f82b",
+    "verification_result_id": "node/canonical-smoke/attempt-1-7c642cfd4d/patch-verification"
+  },
+  "human_integration_decision_required": true,
+  "schema_version": "0.1",
+  "source_revision": "b1397a9be91da6570e8ae370de4fa9f4bc44df5c",
+  "work_unit": {
+    "digest": "sha256:40993e892a5b83962364686809f7ec6e94ef379e10aaea9492a0526ed7695e2e",
+    "id": "node/canonical-smoke",
+    "version": 2
+  },
+  "worker": {
+    "candidate_patch_digest": "sha256:8383a0dd5217e9472e5f55eb658248620e539394cb96012dc61c24a3cc33f6cf",
+    "id": "local/idkmesh-node",
+    "result_manifest_digest": "sha256:4247dffda2596ff17916021197fd8cf07837054fa6568f07cd8215c0c095b913",
+    "result_manifest_id": "node/canonical-smoke/attempt-1-7c642cfd4d",
+    "status": "succeeded"
+  }
+}

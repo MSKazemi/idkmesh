@@ -1,0 +1,48 @@
+{
+  "backend": {
+    "max_candidate_bytes": 1000000,
+    "max_log_bytes": 262144,
+    "require_nonempty_patch": true,
+    "required_added_text": [
+      "<!-- idkmesh-node candidate smoke -->"
+    ],
+    "required_log_types": [
+      "stdout",
+      "stderr"
+    ],
+    "type": "unified_diff",
+    "verify_log_digests": true
+  },
+  "binding": {
+    "source_revision": "b1397a9be91da6570e8ae370de4fa9f4bc44df5c",
+    "work_unit_digest": "sha256:40993e892a5b83962364686809f7ec6e94ef379e10aaea9492a0526ed7695e2e",
+    "work_unit_id": "node/canonical-smoke",
+    "work_unit_version": 2
+  },
+  "candidate_artifact_id": "candidate-patch",
+  "execution_mode": "metadata_only",
+  "extensions": {
+    "org.idkmesh.real_node_e2e": {
+      "candidate_sha": "520ad2c9aa5825476de4957da4702d6823f4edb3",
+      "purpose": "independent replay of a real canonical-node patch bundle"
+    }
+  },
+  "id": "verification/real-node-520ad2c-plan",
+  "policy": {
+    "require_output_outside_candidate_root": true,
+    "require_plan_outside_candidate_root": true,
+    "require_verifier_distinct_from_worker": true
+  },
+  "required_validator_ids": [
+    "independent-review",
+    "result-manifest-schema"
+  ],
+  "schema_version": "0.2",
+  "verifier": {
+    "adapter": "deterministic-patch-verifier",
+    "adapter_version": "0.1.1",
+    "id": "idkmesh-local-verifier",
+    "type": "system"
+  },
+  "visibility": "public"
+}
