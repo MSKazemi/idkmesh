@@ -42,6 +42,15 @@ High-priority areas include:
 - Sybil/collusion attacks on reputation or verification;
 - privacy leakage in distributed workloads.
 
+## Automated repository checks
+
+GitHub secret scanning and push protection are enabled in repository settings.
+The pinned `.github/workflows/codeql.yml` workflow analyzes Python changes on
+pull requests, pushes to `main`, and a weekly schedule. `.github/dependabot.yml`
+checks GitHub Actions and Python dependency declarations weekly with a bounded
+open-PR limit. These controls supplement review; they do not establish that a
+candidate, dependency update, or release is safe.
+
 ## Supported versions
 
 IDKMesh is currently pre-release research software. There is not yet a stable supported-version matrix. Security fixes should normally target the current main branch and any explicitly maintained release branches once releases begin.
