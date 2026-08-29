@@ -10,6 +10,10 @@ on:
       - "docs/specifications/IDKGRAPH_REPOSITORY_MAPPING_V0_1.md"
       - "schemas/idkgraph.schema.json"
       - "tools/idkgraph_markdown_index.py"
+      - "tools/github_idkgraph_projection.py"
+      - "tests/test_github_idkgraph_projection.py"
+      - "tests/fixtures/github_idkgraph_snapshot.json"
+      - "docs/specifications/GITHUB_IDKGRAPH_PROJECTION_V0_1.md"
       - ".github/workflows/idkgraph-repository-mapping.yml"
   push:
     branches: [main]
@@ -21,6 +25,10 @@ on:
       - "docs/specifications/IDKGRAPH_REPOSITORY_MAPPING_V0_1.md"
       - "schemas/idkgraph.schema.json"
       - "tools/idkgraph_markdown_index.py"
+      - "tools/github_idkgraph_projection.py"
+      - "tests/test_github_idkgraph_projection.py"
+      - "tests/fixtures/github_idkgraph_snapshot.json"
+      - "docs/specifications/GITHUB_IDKGRAPH_PROJECTION_V0_1.md"
       - ".github/workflows/idkgraph-repository-mapping.yml"
 
 permissions:
@@ -41,7 +49,9 @@ jobs:
       - name: Install Phase 0 schema validator
         run: python -m pip install --disable-pip-version-check -r requirements-phase0.txt
       - name: Run focused mapper tests
-        run: python -m unittest tests.test_idkgraph_repository_mapping -v
+        run: |
+          python -m unittest tests.test_idkgraph_repository_mapping -v
+          python -m unittest tests.test_github_idkgraph_projection -v
       - name: Generate full repository graph twice
         run: |
           python tools/idkgraph_repository_mapping.py . --output /tmp/repository-graph-a.json
@@ -62,6 +72,11 @@ jobs:
               raise SystemExit(f'{len(errors)} schema validation error(s)')
           print(f"OK: {len(graph['nodes'])} nodes, {len(graph['hyperedges'])} deterministic relations")
           PY
+      - name: Replay GitHub projection twice
+        run: |
+          python tools/github_idkgraph_projection.py tests/fixtures/github_idkgraph_snapshot.json --output /tmp/github-graph-a.json
+          python tools/github_idkgraph_projection.py tests/fixtures/github_idkgraph_snapshot.json --output /tmp/github-graph-b.json
+          cmp /tmp/github-graph-a.json /tmp/github-graph-b.json
 
 # T3 is a read-only derivation layer. It does not write back to repository files,
 # modify IDKGraph sources, call GitHub APIs, infer semantic relations, or integrate changes.
