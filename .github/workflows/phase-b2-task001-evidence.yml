@@ -1,0 +1,149 @@
+name: Phase B2 Task 001 Evidence
+
+on:
+  pull_request:
+    paths:
+      - "tools/phase_b2_task001_evidence.py"
+      - "tools/phase_b2_task001_evaluator_probe.py"
+      - "tools/phase_b2_task001_burn_evidence.py"
+      - "benchmarks/phase-b2-first-five/**"
+      - "tools/benchmark_cohort.py"
+      - ".github/workflows/phase-b2-task001-evidence.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  task-001-single-worker-baseline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out evaluator and benchmark control plane
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          path: evaluator
+          persist-credentials: false
+
+      - name: Check out exact frozen benchmark source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: 9c53bb4069a5db1c0688dbbe7a8f028540cbf7c2
+          path: source
+          persist-credentials: false
+
+      - name: Verify frozen source identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C source rev-parse HEAD)" = "9c53bb4069a5db1c0688dbbe7a8f028540cbf7c2"
+          test -z "$(git -C source status --porcelain)"
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12"
+
+      - name: Install verifier dependency
+        run: python -m pip install -r evaluator/requirements-phase0.txt
+
+      - name: Validate frozen benchmark definition before outcomes
+        working-directory: evaluator
+        run: |
+          python tools/benchmark_cohort.py self-test
+          python tools/benchmark_cohort.py validate \
+            --cohort benchmarks/phase-b2-first-five/cohort.json
+
+      - name: Run straightforward Task 001 candidate and preserve observed rejection
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +e
+          python evaluator/tools/phase_b2_task001_evidence.py \
+            --source source \
+            --output-root results/benchmarks/phase-b2-first-five/task-001/single-worker-baseline-v1
+          rc=$?
+          set -e
+
+          # The first exact-head run established rc=2 because the frozen evaluator
+          # rejected the straightforward correct patch. Any other outcome is drift
+          # and must fail closed rather than silently changing benchmark semantics.
+          if test "$rc" -ne 2; then
+            echo "Expected the frozen evaluator rejection (exit 2), observed exit $rc" >&2
+            exit 1
+          fi
+
+          test -f evaluator/results/benchmarks/phase-b2-first-five/task-001/single-worker-baseline-v1/attempt-001/result-manifest.json
+          test -f evaluator/results/benchmarks/phase-b2-first-five/task-001/single-worker-baseline-v1/negative-evidence.json
+
+      - name: Reset frozen source before adversarial evaluator calibration
+        shell: bash
+        run: |
+          set -euo pipefail
+          git -C source reset --hard 9c53bb4069a5db1c0688dbbe7a8f028540cbf7c2
+          git -C source clean -fdx
+          test "$(git -C source rev-parse HEAD)" = "9c53bb4069a5db1c0688dbbe7a8f028540cbf7c2"
+          test -z "$(git -C source status --porcelain)"
+
+      - name: Generate adversarial evaluator calibration evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +e
+          python evaluator/tools/phase_b2_task001_evaluator_probe.py \
+            --source source \
+            --evidence-root evaluator/results/benchmarks/phase-b2-first-five/task-001/single-worker-baseline-v1
+          probe_rc=$?
+          set -e
+
+          # The probe currently reaches its final prospective-exclusion assertion
+          # after generating both VerificationResults. Current main has already
+          # burned/excluded the entire first-five cohort, so that legacy assertion
+          # returns 2. The next step is authoritative: it must independently prove
+          # both calibration outcomes and align them with the existing burn record.
+          if test "$probe_rc" -ne 2; then
+            echo "Expected post-calibration burned-cohort assertion exit 2, observed $probe_rc" >&2
+            exit 1
+          fi
+
+          test -f evaluator/results/benchmarks/phase-b2-first-five/task-001/single-worker-baseline-v1/straightforward-verification-result.json
+          test -f evaluator/results/benchmarks/phase-b2-first-five/task-001/single-worker-baseline-v1/evaluator-decoy-verification-result.json
+
+      - name: Finalize calibration against current burned cohort
+        shell: bash
+        run: |
+          set -euo pipefail
+          python evaluator/tools/phase_b2_task001_burn_evidence.py \
+            --source source \
+            --evidence-root evaluator/results/benchmarks/phase-b2-first-five/task-001/single-worker-baseline-v1
+
+      - name: Publish non-selecting evidence summary
+        if: always()
+        shell: bash
+        run: |
+          ROOT="evaluator/results/benchmarks/phase-b2-first-five/task-001/single-worker-baseline-v1"
+          if test -f "$ROOT/evidence-summary.md"; then
+            cat "$ROOT/evidence-summary.md" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Phase B2 Task 001 evidence summary was not produced." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload exact evidence bundle
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: phase-b2-task001-single-worker-evidence
+          path: evaluator/results/benchmarks/phase-b2-first-five/task-001/single-worker-baseline-v1/
+          if-no-files-found: error
+          retention-days: 14
+
+# Scientific and authority boundaries:
+# - the task definition/source/evaluator commitments remain frozen after the observed outcome;
+# - the straightforward worker changes only an isolated checkout of the exact frozen source revision;
+# - the independent EvaluatorPlan and VerificationResult remain outside the worker bundle;
+# - the metadata-only evaluator never executes candidate code;
+# - controlled regression/probe execution uses only the frozen public repository source;
+# - an evaluator false negative/false positive is retained as evidence, not repaired post hoc;
+# - current main's burned-cohort decision and original definition digest are treated as canonical context;
+# - workflow permissions are read-only; checkout credentials are not persisted; no secrets are used;
+# - no canonical write, push, approval, merge, or automatic candidate-selection authority exists.
