@@ -11,6 +11,7 @@ This directory contains the machine-readable contracts used by the executable re
 - `verification-result-v0.1.schema.json` — **independent verifier result** for one ResultManifest: checks, evidence, findings, resource cost, independence/correlation metadata, provenance, and a recommendation. It is deliberately decision support rather than an automated merge/integration verdict.
 - `experiment-manifest-v0.1.schema.json` — preregistered experiment design: hypotheses, configurations, metrics, seeds, budgets, and stopping rules.
 - `experiment-result-v0.1.schema.json` — one normalized **experiment-run result** with metrics, costs, verification outcomes, artifacts, and provenance.
+- `decomposition-benchmark-v0.1.schema.json` — five-arm issue #15 decomposition comparison with per-unit observations, explicit evidence classification, and stable integration/context/verification metrics.
 - `ci-plan-v0.1.schema.json` — exact-revision shadow CI recommendation with risk, mandatory dependency closure, optional-budget decisions, and no execution/skip/merge authority.
 - `ci-receipt-v0.1.schema.json` — planning-only receipt proving that a shadow plan was emitted; it contains no executed checks or integration verdict.
 - `ci-observation-v0.1.schema.json` — normalized exact-SHA GitHub check snapshot with required-baseline completeness and no authority.
@@ -132,3 +133,7 @@ Additive research-specific data should normally go in the `extensions` object, u
 10. **Safe CI** — repository CI validates manifests and fixtures but does not execute commands supplied by experiment manifests.
 
 See `PROJECT_RULES.md`, `docs/decisions/ADR-0006-zero-project-spend-compute.md`, `docs/architecture/OPPORTUNISTIC_COMPUTE_FABRIC.md`, `docs/research/PHASE_0_SPEC.md`, `docs/research/VERIFICATION_DEBT_AND_BACKPRESSURE.md`, issues #3, #5, #11, #14, #15, #17, and the completed Phase 0 issue #19.
+
+The WorkUnit composability benchmark and its strict synthetic-versus-observed
+evidence boundary are documented in
+`docs/specifications/WORK_UNIT_COMPOSABILITY_V0_2.md`.

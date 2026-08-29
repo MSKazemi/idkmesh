@@ -11,6 +11,7 @@ on:
       - "tests/test_verification_backpressure_benchmark.py"
       - "tests/test_criticality_susceptibility.py"
       - "tests/test_patch_evaluator_transition_v04.py"
+      - "tests/test_work_unit_decomposition.py"
       - "requirements-phase0.txt"
       - ".github/workflows/phase0-schema-check.yml"
   push:
@@ -24,6 +25,7 @@ on:
       - "tests/test_verification_backpressure_benchmark.py"
       - "tests/test_criticality_susceptibility.py"
       - "tests/test_patch_evaluator_transition_v04.py"
+      - "tests/test_work_unit_decomposition.py"
       - "requirements-phase0.txt"
       - ".github/workflows/phase0-schema-check.yml"
 
@@ -71,6 +73,12 @@ jobs:
         run: |
           python experiments/criticality_susceptibility.py --self-test
           python -m unittest discover -s tests -p 'test_criticality_susceptibility.py' -v
+      - name: Validate Work Unit composability benchmark
+        run: |
+          python experiments/work_unit_decomposition.py \
+            examples/benchmarks/work-unit-decomposition-v0.1.json \
+            --pretty
+          python -m unittest tests.test_work_unit_decomposition -v
       - name: Verify zero-cost compute routing
         run: python experiments/free_compute_router.py self-test
       - name: Verify capped local capability discovery
@@ -98,6 +106,8 @@ jobs:
 # canonical-write, push, or merge authority. The verification backpressure
 # utilities perform deterministic scheduling, queue, and synthetic evidence
 # arithmetic only; the temporal benchmark does not execute candidates or grant
-# integration authority. local_compute_offer.py performs local resource discovery
+# integration authority. The decomposition benchmark validates static JSON,
+# dependency/evidence edges, and synthetic metric arithmetic without dispatching
+# workers or executing WorkUnit commands. local_compute_offer.py performs local resource discovery
 # only, and free_compute_router.py performs selection only. Repository policy must
 # fail closed rather than granting new execution or project-paid compute authority.
