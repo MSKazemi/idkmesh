@@ -68,16 +68,16 @@ observer                 accepted (#106)
 lineage                  accepted (#48)
 security                 accepted (#98)
 controller               accepted (#68)
-integration protection   BLOCKED (main still publicly unprotected)
+integration protection   accepted (#35: main protected, required checks gate (3.11)/gate (3.13))
 verified descendants     0
-live capacity            ~0.818 (healthy against current 0.6 gate)
+live capacity            ~0.913 (healthy against current 0.6 gate)
 ```
 
 The capacity value is taken from the Bootstrap Cohort Observatory (#109), which reported at its snapshot:
 
 ```text
-ACE review load: 5
-ACE capacity: 0.817574476...
+ACE review load: 3.3
+ACE capacity: 0.912934227...
 external participants: 0
 bootstrap verified descendant PRs: 0
 recommendation: HOLD_COHORT_1
@@ -91,10 +91,9 @@ Therefore the expected decision remains:
 BLOCK
 ```
 
-with the meaningful current blockers:
+with the single meaningful current blocker:
 
 ```text
-component:integration_protection
 real_verified_descendant_evidence
 ```
 
@@ -135,11 +134,13 @@ At least one descendant must be independently verified under the accepted observ
 
 ## Integration protection
 
-Repository files cannot substitute for actual GitHub branch protection/rulesets. Public branch metadata currently reports `main` as unprotected.
+Repository files cannot substitute for actual GitHub branch protection/rulesets, so this component is read from public branch metadata, never from documentation.
 
-The `integration_protection` component therefore remains `blocked` until the repository-admin procedure tracked by #35 is completed and independently checked.
+As of 2026-08-29 that metadata reports `main` as protected, with `gate (3.11)` and `gate (3.13)` required, force-pushes and deletions denied, and conversation resolution required. The repository-admin procedure tracked by #35 is therefore complete, and the `integration_protection` component reads `accepted`.
 
-The explicit ACE actuation opt-in introduced by #98 is an additional authority gate; it does not make an unprotected branch acceptable.
+This component is re-derived from live metadata whenever the fixture is refreshed; it is not a permanent grant. If protection were removed, the component would return to `blocked` and the gate would fail closed for a second, independent reason.
+
+The explicit ACE actuation opt-in introduced by #98 is an additional authority gate; neither it nor branch protection is by itself an activation authority.
 
 ## Forbidden capabilities in v0
 
@@ -184,13 +185,13 @@ This change does not:
 
 ## Next step
 
-Integrate this gate as an offline canonical contract. Then collect real external cohort evidence and configure/verify actual `main` protection. Only after every independent check passes should a separately reviewed metadata adapter even be considered.
+Integrate this gate as an offline canonical contract. Branch protection is now configured and verified, so the single remaining blocker is real external cohort evidence: at least one independently verified descendant. Only after every independent check passes should a separately reviewed metadata adapter even be considered.
 
 ## Related
 
 - #10 repository-driven community engine
 - #23 ACE Growth Ledger
-- #35 protected `main`
+- #35 protected `main` (completed 2026-08-28)
 - #48 causal lineage
 - #57 ACE v1 controller
 - #68 shadow controller
