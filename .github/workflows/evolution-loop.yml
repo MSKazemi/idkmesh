@@ -157,11 +157,11 @@ jobs:
               /tmp/previous-evolution/state/evolution-state.json \
               /tmp/previous-evolution/state/evolution-events.jsonl <<'PY'
           import sys
-          from evolution_score import TRUSTED_EVENT_SOURCES, load_event_ledger, load_json, validate_event_ledger, validate_evolution_state
+          from evolution_score import load_event_ledger, load_json, validate_event_ledger, validate_evolution_state
 
           state = load_json(sys.argv[1])
           validate_evolution_state(state)
-          validate_event_ledger(state, load_event_ledger(sys.argv[2]), TRUSTED_EVENT_SOURCES)
+          validate_event_ledger(state, load_event_ledger(sys.argv[2]))
           PY
             cp /tmp/previous-evolution/state/evolution-state.json state/evolution-state.json
             cp /tmp/previous-evolution/state/evolution-events.jsonl state/evolution-events.jsonl
