@@ -143,6 +143,24 @@ A useful review can check more than correctness. Consider:
 7. Update the change until the evidence and maintainability are sufficient.
 8. If the change represents a major durable decision, add/update a decision record.
 
+### Linking issues without closing them
+
+Reference an issue on the template's `Refs:` line. Use `Closes on merge:` only
+when merging should actually resolve it.
+
+This distinction is enforced, because GitHub closes an issue whenever a closing
+keyword (`close`, `fix`, `resolve`, and their inflections) sits near an issue
+reference, in a pull request title or body **and in any commit message** — and a
+parenthetical such as "(does not close)" does not prevent it. Evidence pull
+requests here routinely land while an independent-human review gate stays open,
+so an accidental closure would post a false "resolved" status and dissolve that
+gate.
+
+The `PR Gate` check runs `tools/closing_keyword_guard.py` over the title, the
+body, and every commit message in the pull request. If it fails, either move the
+reference to `Closes on merge:` when closure is intended, or write the number
+without `#` in prose, for example "issue 152".
+
 ## Newcomers are allowed to be uncertain
 
 You may open an issue that says:
