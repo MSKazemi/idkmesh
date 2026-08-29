@@ -1,0 +1,61 @@
+{
+  "version": 1,
+  "repository": "MSKazemi/idkmesh",
+  "cutoff_at": "2026-08-29T00:00:00Z",
+  "inventory_complete": true,
+  "pull_requests": [
+    {
+      "number": 1,
+      "author": "carol",
+      "created_at": "2026-08-20T00:00:00Z",
+      "review_ready_at": "2026-08-20T00:00:00Z",
+      "first_independent_review_at": "2026-08-21T00:00:00Z",
+      "closed_at": "2026-08-22T00:00:00Z",
+      "review_ready": true,
+      "independent_reviewers": ["alice", "bob"],
+      "changed_file_owners": ["alice", "alice"],
+      "ci_checks": {"passed": 3, "total": 4},
+      "structural_debt_finding_ids": ["debt:missing-test"],
+      "strategy": "verification",
+      "verified_useful": true,
+      "verification_independent": true
+    },
+    {
+      "number": 2,
+      "author": "carol",
+      "created_at": "2026-08-25T00:00:00Z",
+      "review_ready_at": "2026-08-25T00:00:00Z",
+      "first_independent_review_at": "2026-08-27T00:00:00Z",
+      "closed_at": null,
+      "review_ready": true,
+      "independent_reviewers": ["alice"],
+      "changed_file_owners": ["bob"],
+      "ci_checks": {"passed": 1, "total": 2},
+      "structural_debt_finding_ids": ["debt:missing-test", "debt:ownership-gap"],
+      "strategy": "verification",
+      "verified_useful": false,
+      "verification_independent": true
+    },
+    {
+      "number": 3,
+      "author": "bob",
+      "created_at": "2026-08-28T00:00:00Z",
+      "review_ready_at": "2026-08-28T00:00:00Z",
+      "first_independent_review_at": null,
+      "closed_at": null,
+      "review_ready": true,
+      "independent_reviewers": [],
+      "changed_file_owners": ["alice"],
+      "ci_checks": {"passed": 2, "total": 2},
+      "structural_debt_finding_ids": [],
+      "strategy": "documentation",
+      "verified_useful": true,
+      "verification_independent": true
+    }
+  ],
+  "contributors": [
+    {"login": "alice", "meaningful_contributions": ["2026-08-20T00:00:00Z", "2026-08-28T00:00:00Z"]},
+    {"login": "bob", "meaningful_contributions": ["2026-08-21T00:00:00Z"]},
+    {"login": "carol", "meaningful_contributions": ["2026-08-22T00:00:00Z", "2026-08-23T00:00:00Z", "2026-08-24T00:00:00Z"]}
+  ]
+}
