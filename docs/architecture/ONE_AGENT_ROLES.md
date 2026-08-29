@@ -1,7 +1,10 @@
 # ONE Multi-Agent Roles
 
-**Status:** experimental operating contract  
+**Status:** historical, non-canonical design; router retired
 **Date:** 2026-08-28
+
+> This role model is retained for design provenance. The ONE router is not an
+> active authority surface; canonical orchestration remains in the ACE stack.
 
 ONE uses a small ecology of specialized roles over the same public GitHub state. A role is a **logical responsibility**, not necessarily one permanently running process. Several roles may have dedicated scheduled ChatGPT workers; other roles can be assumed by the general ONE worker when the queue assigns them.
 
