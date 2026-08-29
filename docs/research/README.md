@@ -15,6 +15,9 @@ policy changes or merge decisions.
 - [Collaboration Observables v0.1](COLLABORATION_OBSERVABLES_V0_1.md) —
   deterministic latency, concentration, recurrence, queue, CI, and debt
   measurements plus the preregistered E023 community analysis.
+- [Preregistration v1: First-Review Latency and Contributor Recurrence](PREREG_FIRST_REVIEW_LATENCY_V1.md) —
+  the specification, the randomized design it would take to earn a causal
+  claim, and the threats to validity, registered against zero observations.
 - [Phase 0: Executable Research Foundation](PHASE_0_SPEC.md) — schemas,
   fixtures, and replay requirements beneath later experiments.
 - [Randomness Research Roadmap](RANDOMNESS_ROADMAP.md) and

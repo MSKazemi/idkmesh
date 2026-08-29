@@ -54,6 +54,15 @@ jobs:
             results/collaboration/snapshot.json \
             --output results/collaboration/observables.json
 
+      # The preregistration runs on every snapshot by construction, so the
+      # protocol's stopping rule is enforced by the code rather than by intent.
+      # It reports `analyzable: false` until both arms reach their minimum.
+      - name: Run the preregistered first-review-latency analysis
+        run: |
+          python scripts/prereg_first_review_latency.py \
+            results/collaboration/snapshot.json \
+            --output results/collaboration/prereg-first-review-latency.json
+
       - name: Publish bounded summary
         run: |
           python - <<'PY'
@@ -63,6 +72,9 @@ jobs:
 
           result = json.loads(Path("results/collaboration/observables.json").read_text())
           metrics = result["metrics"]
+          prereg = json.loads(
+              Path("results/collaboration/prereg-first-review-latency.json").read_text()
+          )
           lines = [
               "# Collaboration Observables",
               "",
@@ -78,6 +90,7 @@ jobs:
               f"- External recurrence trials: {metrics['contributor_recurrence']['trials']}",
               f"- Open review-ready queue: {metrics['review_queue']['open_review_ready']}",
               f"- Evidence-derived strategy priors: {len(result['evidence_derived_strategy_priors'])}",
+              f"- Preregistration `{prereg['protocol']}` analyzable: {prereg['analyzable']}",
           ]
           with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as stream:
               stream.write("\n".join(lines) + "\n")
