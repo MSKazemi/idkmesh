@@ -16,9 +16,19 @@ SPEC.loader.exec_module(MODULE)
 class AceGenerationControllerTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.fixture = json.loads(
-            (ROOT / "examples" / "community" / "ace-generation-shadow.example.json").read_text(encoding="utf-8")
+        cls.scenarios = json.loads(
+            (ROOT / "tests" / "fixtures" / "ace_generation_scenarios_v1.json").read_text(encoding="utf-8")
         )
+        cls.fixture = json.loads((ROOT / cls.scenarios["base_snapshot"]).read_text(encoding="utf-8"))
+
+    def scenario_snapshot(self, scenario):
+        snapshot = copy.deepcopy(self.fixture)
+        snapshot["review_load"] = scenario["review_load"]
+        statuses = scenario["lineage_statuses"]
+        for receipt in snapshot["lineage_receipts"]:
+            receipt["status"] = statuses[receipt["identity"]]
+            receipt["verified"] = receipt["status"] == "verified"
+        return snapshot
 
     def test_weights_normalize_and_mutation_keeps_all_strategies_alive(self):
         result = MODULE.evaluate(copy.deepcopy(self.fixture))
@@ -127,6 +137,38 @@ class AceGenerationControllerTests(unittest.TestCase):
         snapshot["lineage_receipts"].append(copy.deepcopy(snapshot["lineage_receipts"][0]))
         with self.assertRaises(ValueError):
             MODULE.evaluate(snapshot)
+
+    def test_duplicate_descendant_under_different_identity_is_rejected(self):
+        snapshot = copy.deepcopy(self.fixture)
+        duplicate = copy.deepcopy(snapshot["lineage_receipts"][0])
+        duplicate["identity"] = "lineage:duplicate-event-with-new-id"
+        snapshot["lineage_receipts"].append(duplicate)
+        with self.assertRaisesRegex(ValueError, "duplicate descendant artifact"):
+            MODULE.evaluate(snapshot)
+
+    def test_descendant_of_ineligible_parent_does_not_enter_reproduction_number(self):
+        snapshot = copy.deepcopy(self.fixture)
+        snapshot["parents"][0]["matured"] = False
+        result = MODULE.evaluate(snapshot)
+        self.assertEqual(result["verified_descendants"], 0)
+        self.assertEqual(result["eligible_matured_verified_parents"], 1)
+        self.assertEqual(result["R_community"], 0.0)
+
+    def test_fixed_state_fixture_matrix_is_deterministic(self):
+        self.assertEqual(self.scenarios["version"], 1)
+        for scenario in self.scenarios["cases"]:
+            with self.subTest(scenario=scenario["name"]):
+                snapshot = self.scenario_snapshot(scenario)
+                first = MODULE.evaluate(copy.deepcopy(snapshot))
+                second = MODULE.evaluate(copy.deepcopy(snapshot))
+                self.assertEqual(first, second)
+                self.assertEqual(first["mode"], scenario["expected"]["mode"])
+                self.assertEqual(first["R_community"], scenario["expected"]["R_community"])
+                self.assertEqual(
+                    first["verified_descendants"],
+                    scenario["expected"]["verified_descendants"],
+                )
+                self.assertIsNone(first["public_action"])
 
     def test_invalid_activation_gate_type_is_rejected(self):
         snapshot = copy.deepcopy(self.fixture)
