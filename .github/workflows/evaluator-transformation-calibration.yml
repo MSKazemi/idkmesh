@@ -1,0 +1,114 @@
+name: Evaluator transformation calibration
+
+on:
+  pull_request:
+    paths:
+      - "schemas/evaluator-plan-v0.4.schema.json"
+      - "experiments/evaluator_plan_runner.py"
+      - "experiments/substring_patch_verifier.py"
+      - "experiments/transformation_patch_verifier.py"
+      - "tools/task001_evaluator_calibration_v04.py"
+      - "tools/task001_evaluator_calibration_v04_ci.py"
+      - "verification/fixtures/task001-transformation-calibration-evaluator-plan-v0.4.json"
+      - "benchmarks/phase-b2-first-five/work-units/task-001-cohort-path-boundary.work-unit.json"
+      - "benchmarks/phase-b2-first-five/cohort.json"
+      - ".github/workflows/evaluator-transformation-calibration.yml"
+  push:
+    branches: [main]
+    paths:
+      - "schemas/evaluator-plan-v0.4.schema.json"
+      - "experiments/evaluator_plan_runner.py"
+      - "experiments/substring_patch_verifier.py"
+      - "experiments/transformation_patch_verifier.py"
+      - "tools/task001_evaluator_calibration_v04.py"
+      - "tools/task001_evaluator_calibration_v04_ci.py"
+      - "verification/fixtures/task001-transformation-calibration-evaluator-plan-v0.4.json"
+      - "benchmarks/phase-b2-first-five/work-units/task-001-cohort-path-boundary.work-unit.json"
+      - "benchmarks/phase-b2-first-five/cohort.json"
+      - ".github/workflows/evaluator-transformation-calibration.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  calibrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out evaluator control plane
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          path: evaluator
+          persist-credentials: false
+
+      - name: Check out exact burned-pilot source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: 9c53bb4069a5db1c0688dbbe7a8f028540cbf7c2
+          path: source
+          persist-credentials: false
+
+      - name: Verify frozen source identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C source rev-parse HEAD)" = "9c53bb4069a5db1c0688dbbe7a8f028540cbf7c2"
+          test -z "$(git -C source status --porcelain)"
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12"
+
+      - name: Install verifier dependency
+        working-directory: evaluator
+        run: python -m pip install -r requirements-phase0.txt
+
+      - name: Compile calibrated evaluator path
+        working-directory: evaluator
+        run: |
+          python -m py_compile \
+            experiments/evaluator_plan_runner.py \
+            experiments/transformation_patch_verifier.py \
+            tools/task001_evaluator_calibration_v04.py \
+            tools/task001_evaluator_calibration_v04_ci.py
+
+      - name: Calibrate straightforward fix against inert decoy
+        working-directory: evaluator
+        run: |
+          python tools/task001_evaluator_calibration_v04_ci.py \
+            --source ../source \
+            --output-root results/verification/task001-v04-calibration
+
+      - name: Publish calibration summary
+        if: always()
+        shell: bash
+        run: |
+          SUMMARY="evaluator/results/verification/task001-v04-calibration/calibration-summary.json"
+          if test -f "$SUMMARY"; then
+            echo '### Evaluator v0.4 calibration' >> "$GITHUB_STEP_SUMMARY"
+            echo '```json' >> "$GITHUB_STEP_SUMMARY"
+            cat "$SUMMARY" >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'Calibration summary was not produced.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload calibration evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: evaluator-v04-task001-calibration
+          path: evaluator/results/verification/task001-v04-calibration/
+          if-no-files-found: error
+          retention-days: 14
+
+# Scientific and authority boundaries:
+# - v0.2 and v0.3 meanings remain unchanged; this is a new v0.4 contract;
+# - the v0.4 metadata-only verifier parses candidate artifacts and never executes candidate code;
+# - behavioral CLI execution is a separate explicit calibration channel over an isolated checkout of public frozen source;
+# - the CI wrapper separately verifies that the current evaluator-owned first-five cohort is still burned with the original definition digest; the outside-path behavioral probe itself is a self-contained scaffold built only from files present at the exact historical source SHA, so later control-plane files cannot confound boundary acceptance;
+# - the straightforward and decoy candidates are post-burn calibration objects, not scored benchmark outcomes;
+# - the burned cohort/WorkUnit/old EvaluatorPlans are never rewritten;
+# - workflow permissions are read-only, checkout credentials are not persisted, and no secrets are used;
+# - no canonical write, push, approval, merge, spending, or automatic candidate-selection authority exists.
