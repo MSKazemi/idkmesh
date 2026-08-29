@@ -10,8 +10,6 @@ on:
   # PR-head event is used only by the token-minimal deterministic test job below.
   pull_request:
     types: [opened, reopened, synchronize, ready_for_review, converted_to_draft]
-  pull_request_review:
-    types: [submitted, dismissed]
   push:
     branches: [main]
   workflow_dispatch:
@@ -24,8 +22,8 @@ permissions: {}
 jobs:
   observe:
     # Never run the live observer from a pull_request-controlled workflow definition.
-    # On PR activity the observer arrives through pull_request_target, whose YAML and
-    # checked-out implementation both come from the trusted default branch.
+    # Trusted PR metadata arrives only through pull_request_target; scheduled snapshots
+    # observe review changes without granting a review event a checkpoint-producing job.
     if: github.event_name != 'pull_request' && github.actor != 'github-actions[bot]'
     permissions:
       contents: read
@@ -85,26 +83,42 @@ jobs:
         run: |
           set -euo pipefail
           selected=""
-          for run_id in $(gh api \
-            "repos/${GITHUB_REPOSITORY}/actions/workflows/evolution-loop.yml/runs?branch=${DEFAULT_BRANCH}&status=success&per_page=20" \
-            --jq '.workflow_runs[].id'); do
-            count="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${run_id}/artifacts" \
-              --jq '[.artifacts[] | select(.expired == false and (.name | startswith("evolution-checkpoint-")))] | length' || echo 0)"
-            if [[ "$count" -gt 0 ]]; then
+          selected_head_sha=""
+          selected_event=""
+          runs="$(gh api \
+            "repos/${GITHUB_REPOSITORY}/actions/workflows/evolution-loop.yml/runs?branch=${DEFAULT_BRANCH}&status=success&per_page=20")"
+          rows="$(jq -r '.workflow_runs[] | select(.event == "issues" or .event == "pull_request_target" or .event == "push" or .event == "workflow_dispatch" or .event == "schedule") | [.id, .head_sha, .event] | @tsv' <<<"$runs")"
+          while IFS=$'\t' read -r run_id head_sha run_event; do
+            [[ -n "$run_id" ]] || continue
+            [[ "$run_id" =~ ^[0-9]+$ ]] || { echo "invalid workflow run id" >&2; exit 1; }
+            [[ "$head_sha" =~ ^[0-9a-f]{40}$ ]] || { echo "invalid workflow head SHA" >&2; exit 1; }
+            [[ "$run_event" =~ ^[a-z_]+$ ]] || { echo "invalid workflow event" >&2; exit 1; }
+            artifact_name="evolution-checkpoint-v2-${run_id}"
+            artifacts="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${run_id}/artifacts")"
+            count="$(jq --arg name "$artifact_name" \
+              '[.artifacts[] | select(.expired == false and .name == $name)] | length' \
+              <<<"$artifacts")"
+            if [[ "$count" -gt 1 ]]; then
+              echo "multiple unexpired checkpoints named ${artifact_name}" >&2
+              exit 1
+            fi
+            if [[ "$count" -eq 1 ]]; then
               selected="$run_id"
+              selected_head_sha="$head_sha"
+              selected_event="$run_event"
               break
             fi
-          done
+          done <<<"$rows"
           echo "run_id=${selected}" >> "$GITHUB_OUTPUT"
+          echo "head_sha=${selected_head_sha}" >> "$GITHUB_OUTPUT"
+          echo "event_name=${selected_event}" >> "$GITHUB_OUTPUT"
 
       - name: Download previous trusted Bayesian checkpoint
         if: steps.previous.outputs.run_id != ''
-        continue-on-error: true
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          pattern: evolution-checkpoint-*
+          name: evolution-checkpoint-v2-${{ steps.previous.outputs.run_id }}
           path: /tmp/previous-evolution
-          merge-multiple: true
           repository: ${{ github.repository }}
           github-token: ${{ github.token }}
           run-id: ${{ steps.previous.outputs.run_id }}
@@ -112,15 +126,46 @@ jobs:
       - name: Restore Bayesian checkpoint or use repository seed
         id: checkpoint
         shell: bash
+        env:
+          SELECTED_RUN_ID: ${{ steps.previous.outputs.run_id }}
+          SELECTED_HEAD_SHA: ${{ steps.previous.outputs.head_sha }}
+          SELECTED_EVENT_NAME: ${{ steps.previous.outputs.event_name }}
         run: |
           set -euo pipefail
           source="repository-seed"
-          if [[ -f /tmp/previous-evolution/state/evolution-state.json ]]; then
-            cp /tmp/previous-evolution/state/evolution-state.json state/evolution-state.json
-            if [[ -f /tmp/previous-evolution/state/evolution-events.jsonl ]]; then
-              cp /tmp/previous-evolution/state/evolution-events.jsonl state/evolution-events.jsonl
+          if [[ -n "$SELECTED_RUN_ID" ]]; then
+            test -f /tmp/previous-evolution/state/evolution-state.json
+            test -f /tmp/previous-evolution/state/evolution-events.jsonl
+            test -f /tmp/previous-evolution/state/evolution-checkpoint-manifest.json
+            parent_run_id="$(jq -r '.provenance.parent_run_id // empty' /tmp/previous-evolution/state/evolution-checkpoint-manifest.json)"
+            verify_args=(
+              verify
+              --manifest /tmp/previous-evolution/state/evolution-checkpoint-manifest.json
+              --repository "$GITHUB_REPOSITORY"
+              --workflow evolution-loop.yml
+              --run-id "$SELECTED_RUN_ID"
+              --head-sha "$SELECTED_HEAD_SHA"
+              --event-name "$SELECTED_EVENT_NAME"
+              --file evolution-state.json=/tmp/previous-evolution/state/evolution-state.json
+              --file evolution-events.jsonl=/tmp/previous-evolution/state/evolution-events.jsonl
+            )
+            if [[ -n "$parent_run_id" ]]; then
+              verify_args+=(--parent-run-id "$parent_run_id")
             fi
-            source="trusted-main-artifact:${{ steps.previous.outputs.run_id }}"
+            python scripts/checkpoint_manifest.py "${verify_args[@]}"
+            PYTHONPATH=scripts python - \
+              /tmp/previous-evolution/state/evolution-state.json \
+              /tmp/previous-evolution/state/evolution-events.jsonl <<'PY'
+          import sys
+          from evolution_score import load_event_ledger, load_json, validate_event_ledger, validate_evolution_state
+
+          state = load_json(sys.argv[1])
+          validate_evolution_state(state)
+          validate_event_ledger(state, load_event_ledger(sys.argv[2]))
+          PY
+            cp /tmp/previous-evolution/state/evolution-state.json state/evolution-state.json
+            cp /tmp/previous-evolution/state/evolution-events.jsonl state/evolution-events.jsonl
+            source="trusted-main-artifact:${SELECTED_RUN_ID}"
           fi
           echo "source=${source}" >> "$GITHUB_OUTPUT"
 
@@ -128,17 +173,24 @@ jobs:
         run: |
           python -m py_compile \
             scripts/evolution_math.py \
+            scripts/checkpoint_manifest.py \
             scripts/evolution_score.py \
             scripts/evolution_snapshot.py \
             scripts/repository_evolution_score.py \
             scripts/conjunctive_evolution_control.py \
             tests/test_evolution_math.py \
             tests/test_evolution_observer.py \
-            tests/test_conjunctive_evolution_control.py
+            tests/test_conjunctive_evolution_control.py \
+            tests/test_checkpoint_manifest.py \
+            tests/test_evolution_checkpoint_validation.py \
+            tests/test_evolution_workflow_security.py
           python -m unittest -v \
             tests.test_evolution_math \
             tests.test_evolution_observer \
-            tests.test_conjunctive_evolution_control
+            tests.test_conjunctive_evolution_control \
+            tests.test_checkpoint_manifest \
+            tests.test_evolution_checkpoint_validation \
+            tests.test_evolution_workflow_security
 
       - name: Update persistent Bayesian history
         run: |
@@ -216,15 +268,37 @@ jobs:
           print('Bayesian history, live observation, and conjunctive control are valid')
           PY
 
+      - name: Bind checkpoint files to trusted run provenance
+        env:
+          PARENT_RUN_ID: ${{ steps.previous.outputs.run_id }}
+        run: |
+          set -euo pipefail
+          manifest_args=(
+            create
+            --manifest state/evolution-checkpoint-manifest.json
+            --repository "$GITHUB_REPOSITORY"
+            --workflow evolution-loop.yml
+            --run-id "$GITHUB_RUN_ID"
+            --head-sha "$GITHUB_SHA"
+            --event-name "$GITHUB_EVENT_NAME"
+            --file evolution-state.json=state/evolution-state.json
+            --file evolution-events.jsonl=state/evolution-events.jsonl
+          )
+          if [[ -n "$PARENT_RUN_ID" ]]; then
+            manifest_args+=(--parent-run-id "$PARENT_RUN_ID")
+          fi
+          python scripts/checkpoint_manifest.py "${manifest_args[@]}"
+
       - name: Publish persistent checkpoint and live evidence
         if: steps.observation.outputs.available == 'true'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: evolution-checkpoint-${{ github.run_id }}
+          name: evolution-checkpoint-v2-${{ github.run_id }}
           path: |
             EVOLUTION_REPORT.md
             state/evolution-state.json
             state/evolution-events.jsonl
+            state/evolution-checkpoint-manifest.json
             state/evolution-math-policy.json
             config/evolution-policy-v1.json
             results/evolution/
@@ -277,13 +351,20 @@ jobs:
         run: |
           python -m py_compile \
             scripts/evolution_math.py \
+            scripts/checkpoint_manifest.py \
             scripts/evolution_score.py \
             scripts/evolution_snapshot.py \
             scripts/repository_evolution_score.py \
-            scripts/conjunctive_evolution_control.py
+            scripts/conjunctive_evolution_control.py \
+            tests/test_checkpoint_manifest.py \
+            tests/test_evolution_checkpoint_validation.py \
+            tests/test_evolution_workflow_security.py
           python -m unittest -v \
             tests.test_evolution_math \
             tests.test_evolution_observer \
-            tests.test_conjunctive_evolution_control
+            tests.test_conjunctive_evolution_control \
+            tests.test_checkpoint_manifest \
+            tests.test_evolution_checkpoint_validation \
+            tests.test_evolution_workflow_security
           python -m json.tool state/evolution-math-policy.json >/dev/null
           python -m json.tool config/evolution-policy-v1.json >/dev/null

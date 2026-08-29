@@ -41,7 +41,10 @@ open issues
 
 No private repository data, secrets, or external services are required.
 
-The snapshot itself is retained as replayable evidence so a portfolio decision can be reconstructed from the exact observed input.
+The raw snapshot is ephemeral because it contains untrusted issue and pull-request
+text. The retained checkpoint stores the derived feature vectors, rankings,
+state, report, and policy; exact-input replay requires reacquiring the public
+source data or an explicitly governed future evidence contract.
 
 ---
 
@@ -242,10 +245,11 @@ For trusted default-branch runs:
 
 ```text
 successful main portfolio run N
-  -> repository-portfolio-checkpoint-N artifact
+  -> repository-portfolio-checkpoint-v2-N artifact
 
 main portfolio run N+1
-  -> Actions API finds previous successful run
+  -> Actions API finds a successful allowlisted trusted-event run
+  -> exact artifact, provenance manifest, size, and SHA-256 verify
   -> actions/download-artifact restores state
   -> update strategy weights / UCB counts
   -> publish checkpoint N+1
@@ -253,7 +257,9 @@ main portfolio run N+1
 
 The workflow also downloads the latest trusted Bayesian evolution checkpoint to compute health needs.
 
-PR runs can test the code and produce artifacts, but are not allowed to become trusted future-main portfolio state.
+Ordinary PR runs can test the code and produce artifacts, but their event type is
+explicitly excluded from trusted future-state selection. A selected artifact that
+cannot be downloaded or validated aborts rather than silently resetting to seed.
 
 Permissions remain:
 
@@ -293,11 +299,13 @@ checkout
  -> multiplicative attention update
  -> UCB exploration focus
  -> JSON + Markdown report
- -> retain snapshot/state/report/policy artifact
+ -> retain derived state/report/policy artifact; discard raw snapshot
  -> GitHub job summary
 ```
 
-The exact input snapshot is retained with the output so later calibration can distinguish model changes from repository-state changes.
+The raw input snapshot is deliberately ephemeral. Retained derived features and
+checkpoint provenance support bounded calibration without preserving issue or PR bodies;
+exact replay requires reacquiring the public snapshot or a separately governed evidence contract.
 
 ---
 
@@ -309,7 +317,7 @@ The exact input snapshot is retained with the output so later calibration can di
 4. Generic issue references do not become dependency edges.
 5. Missing labels/metadata do not justify invented semantics.
 6. No issue, PR, label, assignee, branch, review, or merge is mutated.
-7. Trusted persistent state comes only from successful default-branch workflow artifacts.
+7. Trusted persistent state comes only from successful allowlisted-event workflow artifacts with exact run-bound names, verified manifests, and valid semantic state.
 8. Branch protection and independent verification remain external hard governance gates.
 9. Every proxy coefficient is versioned and reviewable.
 10. Calibration against delayed real outcomes is preferable to adding more unmeasured heuristics.
@@ -323,15 +331,18 @@ This layer intentionally creates the data required for a stronger next generatio
 Each retained artifact contains:
 
 ```text
-exact repository snapshot
-+ exact policy
+exact policy
 + Bayesian health checkpoint reference
++ checkpoint provenance and SHA-256 integrity manifest
 + candidate feature vectors
 + Pareto fronts
 + dependency edges
 + attention mixture
 + UCB focus
 ```
+
+It intentionally excludes the raw repository snapshot and its issue/PR bodies,
+as specified by `EVOLUTION_ARTIFACT_MINIMIZATION.md`.
 
 Future delayed outcomes can then be joined to these historical states, including:
 
