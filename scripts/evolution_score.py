@@ -40,7 +40,8 @@ DIMENSIONS = (
     "exploration_capacity",
     "risk_debt",
 )
-TRUSTED_EVENT_SOURCES = {"issues", "push", "workflow_dispatch", "schedule"}
+TRUSTED_EVENT_SOURCES = frozenset({"issues", "push", "workflow_dispatch", "schedule"})
+ADVISORY_EVENT_SOURCES = frozenset({"pull_request_target"})
 EVENT_KIND_RE = re.compile(r"^[a-z_]+(?:\.[a-z_]+)+$")
 REPOSITORY_RE = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
 EXPECTED_WEIGHTS = {
@@ -171,6 +172,10 @@ def validate_evolution_state(state: dict[str, Any]) -> None:
     policy = state.get("policy")
     if policy != EXPECTED_STATE_POLICY:
         raise ValueError("policy: does not match immutable version-2 authority policy")
+    if events_seen > 0 and not math.isclose(
+        float(signals["last_score"]), fitness(state), rel_tol=1e-9, abs_tol=1e-6
+    ):
+        raise ValueError("signals.last_score: inconsistent with Bayesian fitness")
 
 
 def load_event_ledger(path: str | Path) -> list[dict[str, Any]]:
@@ -191,7 +196,7 @@ def load_event_ledger(path: str | Path) -> list[dict[str, Any]]:
 def validate_event_ledger(
     state: dict[str, Any],
     records: list[dict[str, Any]],
-    allowed_sources: set[str] | None = None,
+    allowed_sources: frozenset[str] = TRUSTED_EVENT_SOURCES,
 ) -> None:
     """Validate bounded event history and its lineage to the state counters."""
     maximum = int(state["policy"]["max_event_log_entries"])
@@ -219,7 +224,7 @@ def validate_event_ledger(
         source = record.get("source")
         if not isinstance(source, str) or not source:
             raise ValueError(f"event ledger record {index}: invalid event source")
-        if allowed_sources is not None and source not in allowed_sources:
+        if source not in allowed_sources:
             raise ValueError(f"event ledger record {index}: untrusted event source")
         run_id = record.get("run_id")
         if not isinstance(run_id, str) or not run_id.isdigit() or int(run_id) <= 0:
@@ -571,7 +576,13 @@ def main() -> int:
 
     next_records = (ledger_records + [record])[-int(state["policy"]["max_event_log_entries"]):]
     validate_evolution_state(state)
-    validate_event_ledger(state, next_records)
+    # A pull_request_target run may report advisory PR metadata, but its
+    # resulting artifact is never eligible as a canonical parent. Keep this
+    # one-run exception explicit instead of weakening the validator's default.
+    next_allowed_sources = TRUSTED_EVENT_SOURCES
+    if event["source"] in ADVISORY_EVENT_SOURCES:
+        next_allowed_sources |= ADVISORY_EVENT_SOURCES
+    validate_event_ledger(state, next_records, next_allowed_sources)
 
     state_path.write_text(json.dumps(state, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     append_bounded_jsonl(Path(args.events), record, int(state["policy"]["max_event_log_entries"]))

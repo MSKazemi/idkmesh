@@ -80,7 +80,14 @@ class EvolutionCheckpointValidationTests(unittest.TestCase):
 
     def test_ledger_must_match_latest_state_event(self) -> None:
         state = copy.deepcopy(self.state)
-        state["signals"].update({"events_seen": 1, "last_event": "issues.opened", "last_actor": "alice"})
+        state["signals"].update(
+            {
+                "events_seen": 1,
+                "last_event": "issues.opened",
+                "last_actor": "alice",
+                "last_score": evolution_score.fitness(state),
+            }
+        )
         state["activity_counts"] = {"event_kinds": {"issues.opened": 1}, "actors": {"alice": 1}}
         record = self.record(state, kind="issues.closed")
         evolution_score.validate_evolution_state(state)
@@ -90,6 +97,16 @@ class EvolutionCheckpointValidationTests(unittest.TestCase):
     def test_authority_policy_cannot_be_enabled_by_checkpoint(self) -> None:
         self.state["policy"]["autonomous_merge"] = True
         with self.assertRaisesRegex(ValueError, "immutable version-2"):
+            evolution_score.validate_evolution_state(self.state)
+
+    def test_last_score_must_match_bayesian_fitness(self) -> None:
+        self.state["signals"]["events_seen"] = 1
+        self.state["activity_counts"] = {
+            "event_kinds": {"issues.opened": 1},
+            "actors": {"alice": 1},
+        }
+        self.state["signals"]["last_score"] = 0.0
+        with self.assertRaisesRegex(ValueError, "Bayesian fitness"):
             evolution_score.validate_evolution_state(self.state)
 
     def test_retained_ledger_cardinality_is_exact(self) -> None:
@@ -115,6 +132,7 @@ class EvolutionCheckpointValidationTests(unittest.TestCase):
                 "events_seen": 1,
                 "last_event": "pull_request.opened",
                 "last_actor": "alice",
+                "last_score": evolution_score.fitness(state),
             }
         )
         state["activity_counts"] = {
@@ -130,9 +148,40 @@ class EvolutionCheckpointValidationTests(unittest.TestCase):
         )
         evolution_score.validate_evolution_state(state)
         with self.assertRaisesRegex(ValueError, "untrusted event source"):
-            evolution_score.validate_event_ledger(
-                state, [record], evolution_score.TRUSTED_EVENT_SOURCES
-            )
+            evolution_score.validate_event_ledger(state, [record])
+
+    def test_advisory_pr_target_source_requires_explicit_scope(self) -> None:
+        state = copy.deepcopy(self.state)
+        state["updated_at"] = "2026-08-29T00:00:00+00:00"
+        state["signals"].update(
+            {
+                "events_seen": 1,
+                "last_event": "pull_request.opened",
+                "last_actor": "alice",
+                "last_score": evolution_score.fitness(state),
+                "last_delta": 0.0,
+                "homeostatic_potential": 0.0,
+            }
+        )
+        state["activity_counts"] = {
+            "event_kinds": {"pull_request.opened": 1},
+            "actors": {"alice": 1},
+        }
+        record = self.record(
+            state,
+            kind="pull_request.opened",
+            source="pull_request_target",
+            timestamp=state["updated_at"],
+            fitness_before=evolution_score.fitness(state),
+            fitness_after=evolution_score.fitness(state),
+        )
+        with self.assertRaisesRegex(ValueError, "untrusted event source"):
+            evolution_score.validate_event_ledger(state, [record])
+        evolution_score.validate_event_ledger(
+            state,
+            [record],
+            evolution_score.TRUSTED_EVENT_SOURCES | evolution_score.ADVISORY_EVENT_SOURCES,
+        )
 
 
 class PortfolioCheckpointValidationTests(unittest.TestCase):
