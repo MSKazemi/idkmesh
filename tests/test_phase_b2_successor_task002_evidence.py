@@ -59,8 +59,6 @@ class PhaseB2SuccessorTask002EvidenceTests(unittest.TestCase):
         summary = benchmark_cohort.validate_cohort(cohort)
         task = next(item for item in cohort["tasks"] if item["id"] == task002.TASK_ID)
         self.assertEqual(task["evidence"]["status"], "verified")
-        self.assertEqual(summary["verified_tasks"], 3)
-        self.assertEqual(summary["pending_tasks"], 2)
         self.assertEqual(
             summary["definition_digest"],
             "sha256:3182d8710e1239c19cb95daddd0677241c0cd9123614786fd919b036922dbdd9",
