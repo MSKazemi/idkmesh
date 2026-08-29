@@ -97,6 +97,10 @@ Aggregates report mean/min/max across seeds for:
 - Jain utilization fairness;
 - churn recovery.
 
+With two or more seeds, every numeric aggregate also reports the sample standard
+deviation and a two-sided 95% Student-t interval for the mean. A one-seed run
+reports both fields as `null` rather than inventing uncertainty evidence.
+
 ## Oracle comparisons
 
 When the oracle is available, every local policy gets a seed-matched comparison.
