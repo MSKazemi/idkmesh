@@ -35,12 +35,12 @@ Current open starter paths:
 
 Before starting one, check its assignees, recent comments, and linked pull requests, then leave a short comment stating what you plan to change.
 
-- [#24 — audit the 15-minute newcomer path](../../issues/24) — documentation/community; this is the best path if you are new to IDKMesh;
+- [Browse current `good first issue` tasks](https://github.com/MSKazemi/idkmesh/issues?q=is%3Aissue+state%3Aopen+label%3A%22good+first+issue%22) — use this live view instead of relying on a stale issue number;
 - [#167 — independently review IDKGraph orphan cohort 1](../../issues/167) — evidence/review; a bounded `good first issue` that records real reviewer attention rather than inventing it.
 
 High-value expert contribution:
 
-- [#138 — independently inspect PR #159 canonical-node evidence](../../issues/138) — security/runtime/evidence review. The automated and same-owner evidence is deliberately **not** treated as independent human approval.
+- [#151 — independently audit the mathematical evolution control plane](../../issues/151) — GitHub Actions security, control systems, Bayesian inference, or governance. The automated and same-owner evidence is deliberately **not** treated as independent human approval.
 
 Completed Bootstrap Cohort examples remain public provenance, but are no longer available starter tasks:
 
