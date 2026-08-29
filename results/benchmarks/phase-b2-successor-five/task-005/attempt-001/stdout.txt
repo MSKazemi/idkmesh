@@ -1,0 +1,5 @@
+Phase B2 Task 005 deterministic worker
+source_revision=9c53bb4069a5db1c0688dbbe7a8f028540cbf7c2
+checklist_complete=true
+candidate_authority_violation=false
+seeded_authority_violation=true

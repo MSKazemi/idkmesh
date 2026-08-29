@@ -1,0 +1,159 @@
+{
+  "attempt": 1,
+  "checks": [
+    {
+      "evidence_ids": [
+        "result-manifest-canonical"
+      ],
+      "id": "result-manifest-schema",
+      "required": true,
+      "status": "passed",
+      "summary": "Worker ResultManifest is schema-valid and bound to the exact WorkUnit.",
+      "type": "schema"
+    },
+    {
+      "diagnostics": "{\"artifact\":{\"artifact_locator\":\"candidate.patch\",\"bytes\":1439,\"declared_digest\":\"sha256:33286056c6b17eff34c36a2f8b5847bcc953ee5da2d61cb8e059783c7ee6b97f\",\"decode_error\":null,\"observed_digest\":\"sha256:33286056c6b17eff34c36a2f8b5847bcc953ee5da2d61cb8e059783c7ee6b97f\",\"within_limit\":true},\"logs\":{\"coverage_violations\":[],\"logs\":[{\"bytes\":188,\"declared_digest\":\"sha256:bd7e06d2aaa9c3e9419b8634cdad2a25975a531b8ee55f269ab1d684cf5b4c30\",\"index\":1,\"locator\":\"stdout.txt\",\"matches\":true,\"observed_digest\":\"sha256:bd7e06d2aaa9c3e9419b8634cdad2a25975a531b8ee55f269ab1d684cf5b4c30\",\"type\":\"stdout\",\"within_limit\":true},{\"bytes\":0,\"declared_digest\":\"sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"index\":2,\"locator\":\"stderr.txt\",\"matches\":true,\"observed_digest\":\"sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"type\":\"stderr\",\"within_limit\":true}],\"observed_type_counts\":{\"stderr\":1,\"stdout\":1},\"required_log_types\":[\"stdout\",\"stderr\"]},\"scope\":{\"allowed_paths\":[\"docs/specifications/BENCHMARK_COHORT_V0_1.md\"],\"changed_paths\":[\"docs/specifications/BENCHMARK_COHORT_V0_1.md\"],\"filesystem_write\":[\"docs/specifications/BENCHMARK_COHORT_V0_1.md\"],\"forbidden_paths\":[\".github/**\",\"schemas/**\",\"benchmarks/**\",\"verification/**\"],\"violations\":[]},\"semantic\":{\"missing_added_text\":[],\"observed_added_lines\":[\"\",\"## First-five freeze checklist\",\"\",\"Before freezing the first five-task Phase B2 cohort:\",\"\",\"- Pin every task to a full 40-character immutable source SHA.\",\"- Cover five distinct task families and meet `minimum_final_tasks` without duplicating a WorkUnit.\",\"- Bind each canonical WorkUnit and EvaluatorPlan by id, version, digest, source revision, backend, and required validators.\",\"- Inspect `definition-json`. Record the frozen `definition_digest` and reproduce it with `definition-digest`.\",\"- Confirm every attempt and seeded-negative evidence field is still `pending`; do not tune the definition after observing a candidate.\",\"- Keep canonical writes, Git push, merge, and automatic candidate selection set to `false`.\",\"- Run `validate` and obtain review of the frozen definition before generating scored attempts.\",\"\",\"If later evidence exposes a definition or evaluator defect, preserve the record and burn or supersede the cohort. Never rewrite a frozen commitment to fit an observed outcome.\",\"\"],\"required_added_text\":[\"## First-five freeze checklist\",\"- Inspect `definition-json`. Record the frozen `definition_digest` and reproduce it with `definition-digest`.\"]},\"semantic_substrings\":{\"matches\":[{\"matched_line\":\"## First-five freeze checklist\",\"substring\":\"## First-five freeze checklist\"},{\"matched_line\":\"- Inspect `definition-json`. Record the frozen `definition_digest` and reproduce it with `definition-digest`.\",\"substring\":\"Record the frozen `definition_digest`\"}],\"missing_substrings\":[],\"observed_added_lines\":[\"\",\"## First-five freeze checklist\",\"\",\"Before freezing the first five-task Phase B2 cohort:\",\"\",\"- Pin every task to a full 40-character immutable source SHA.\",\"- Cover five distinct task families and meet `minimum_final_tasks` without duplicating a WorkUnit.\",\"- Bind each canonical WorkUnit and EvaluatorPlan by id, version, digest, source revision, backend, and required validators.\",\"- Inspect `definition-json`. Record the frozen `definition_digest` and reproduce it with `definition-digest`.\",\"- Confirm every attempt and seeded-negative evidence field is still `pending`; do not tune the definition after observing a candidate.\",\"- Keep canonical writes, Git push, merge, and automatic candidate selection set to `false`.\",\"- Run `validate` and obtain review of the frozen definition before generating scored attempts.\",\"\",\"If later evidence exposes a definition or evaluator defect, preserve the record and burn or supersede the cohort. Never rewrite a frozen commitment to fit an observed outcome.\",\"\"],\"parse_error\":null,\"required_added_substrings\":[\"## First-five freeze checklist\",\"Record the frozen `definition_digest`\"],\"semantic_mode\":\"added_line_substring_all\"},\"worker_status\":\"succeeded\"}",
+      "evidence_ids": [
+        "candidate-patch-hash",
+        "log-integrity-observation",
+        "patch-scope-observation",
+        "patch-semantic-observation",
+        "worker-status-observation",
+        "added-substring-semantic-observation"
+      ],
+      "id": "independent-review",
+      "required": true,
+      "status": "passed",
+      "summary": "Independent metadata-only patch review passed artifact/log integrity, strict patch structure, scope, and explicit v0.3 added-line substring checks.",
+      "type": "review"
+    }
+  ],
+  "decision_support": {
+    "confidence": 1.0,
+    "rationale": "All WorkUnit-required checks passed, including explicit v0.3 added-line substring semantics.",
+    "recommendation": "accept_candidate"
+  },
+  "evidence": [
+    {
+      "description": "Canonical digest of the schema-valid worker ResultManifest evaluated by the verifier.",
+      "digest": "sha256:80688dec2ad1234a18490a74bee6f322b1f299da1bb598239ab493b0be9b801d",
+      "id": "result-manifest-canonical",
+      "locator": "inline://result-manifest-canonical",
+      "media_type": "application/json",
+      "type": "attestation"
+    },
+    {
+      "description": "SHA-256 observed directly from candidate patch bytes.",
+      "digest": "sha256:33286056c6b17eff34c36a2f8b5847bcc953ee5da2d61cb8e059783c7ee6b97f",
+      "id": "candidate-patch-hash",
+      "locator": "candidate.patch",
+      "media_type": "text/x-diff",
+      "type": "artifact_hash"
+    },
+    {
+      "description": "Canonical digest of evaluator-required log coverage and independently recomputed log integrity observations.",
+      "digest": "sha256:cae90385fa657a4e86b7f2b94a2945153c7000b7f9d91081e24b60356c49b52e",
+      "id": "log-integrity-observation",
+      "locator": "inline://log-integrity",
+      "media_type": "application/json",
+      "type": "trace"
+    },
+    {
+      "description": "Canonical digest of independently parsed unified-diff paths and WorkUnit scope checks.",
+      "digest": "sha256:50de594cf81435db9a2eb528b7c836c328d0a66d5d5162ff3ce484067f2271c9",
+      "id": "patch-scope-observation",
+      "locator": "inline://patch-scope",
+      "media_type": "application/json",
+      "type": "static_analysis"
+    },
+    {
+      "description": "Canonical digest of verifier-owned required-added-text checks from validated hunks only.",
+      "digest": "sha256:7cb373aece706792fa0002e9886662980592256f6f406c67c6fbd2b5d23acee4",
+      "id": "patch-semantic-observation",
+      "locator": "inline://patch-semantic",
+      "media_type": "application/json",
+      "type": "test_output"
+    },
+    {
+      "description": "Canonical digest of the worker execution status observed by the verifier.",
+      "digest": "sha256:557d907fbdaf9ce5bb0ad618c35c2709b08665790555d991c6c93eda39897452",
+      "id": "worker-status-observation",
+      "locator": "inline://worker-status",
+      "media_type": "application/json",
+      "type": "trace"
+    },
+    {
+      "description": "Canonical digest of explicit case-sensitive, single-added-line substring matching for EvaluatorPlan v0.3.",
+      "digest": "sha256:34410d174954a473ea7a0c57c53ce98b019eec8994d66e4387bc1d24cf37f615",
+      "id": "added-substring-semantic-observation",
+      "locator": "inline://added-substring-semantic-observation",
+      "media_type": "application/json",
+      "type": "test_output"
+    }
+  ],
+  "extensions": {
+    "org.idkmesh.evaluator_plan.backend": "unified_diff_substring",
+    "org.idkmesh.evaluator_plan.digest": "sha256:e27ac0fe418f068b853b2041f0bcb419573c7d5215a6b4d3b7942f4c3027bd6f",
+    "org.idkmesh.evaluator_plan.execution_mode": "metadata_only",
+    "org.idkmesh.evaluator_plan.id": "benchmark/phase-b2-successor/005-first-five-freeze-checklist/evaluator-v0.3",
+    "org.idkmesh.evaluator_plan.runner_version": "0.3",
+    "org.idkmesh.evaluator_plan.visibility": "public",
+    "org.idkmesh.local_verifier.backend": "unified_diff",
+    "org.idkmesh.local_verifier.legacy_patch_core_version": "0.1.1",
+    "org.idkmesh.local_verifier.policy_id": "benchmark/phase-b2-successor/005-first-five-freeze-checklist/evaluator-v0.3",
+    "org.idkmesh.local_verifier.semantic_match_mode": "added_line_substring_all"
+  },
+  "findings": [],
+  "finished_at": "2026-08-29T03:56:02.106447Z",
+  "id": "benchmark/phase-b2/005-first-five-freeze-checklist/single-worker-baseline-v1/attempt-001/patch-verification",
+  "independence": {
+    "correlation_notes": "Evaluator control is outside the candidate root; candidate code is never executed. Strict diff/provenance/log/scope checks reuse verifier v0.1.1, while v0.2.0 adds explicit case-sensitive substring matching within each validated-hunk added line.",
+    "independent_from_worker": true,
+    "shared_model_family": false,
+    "shared_runtime": false,
+    "worker_id_observed": "idkmesh-phase-b2-task005-worker"
+  },
+  "metrics": {
+    "candidate_bytes": 1439,
+    "changed_path_count": 1,
+    "log_count": 2,
+    "matched_substring_count": 2,
+    "required_checks_failed": 0,
+    "required_checks_passed": 2,
+    "required_substring_count": 2
+  },
+  "provenance": {
+    "environment": {
+      "platform": "Linux-7.0.0-30-generic-x86_64-with-glibc2.39",
+      "python": "3.12.3",
+      "tool_versions": {
+        "deterministic-patch-verifier": "0.2.0",
+        "deterministic-patch-verifier-legacy-core": "0.1.1",
+        "idkmesh-local-verifier": "0.1",
+        "jsonschema": "installed"
+      }
+    },
+    "result_manifest_digest": "sha256:80688dec2ad1234a18490a74bee6f322b1f299da1bb598239ab493b0be9b801d",
+    "source_revision": "9c53bb4069a5db1c0688dbbe7a8f028540cbf7c2",
+    "verifier_config_digest": "sha256:e27ac0fe418f068b853b2041f0bcb419573c7d5215a6b4d3b7942f4c3027bd6f",
+    "work_unit_digest": "sha256:8dc195e5221d04af69e259e93b40db471f4df6f9761a0c4b10efd692db5c7527"
+  },
+  "resources": {
+    "compute_units": 0.0,
+    "human_minutes": 0.0,
+    "tokens": 0,
+    "wall_seconds": 0.0007536769844591618
+  },
+  "result_manifest_id": "benchmark/phase-b2/005-first-five-freeze-checklist/single-worker-baseline-v1/attempt-001",
+  "schema_version": "0.1",
+  "started_at": "2026-08-29T03:56:02.105675Z",
+  "status": "passed",
+  "verifier": {
+    "adapter": "deterministic-patch-verifier",
+    "adapter_version": "0.2.0",
+    "id": "idkmesh-local-verifier",
+    "type": "system"
+  },
+  "work_unit_id": "benchmark/phase-b2/005-first-five-freeze-checklist",
+  "work_unit_version": 1
+}

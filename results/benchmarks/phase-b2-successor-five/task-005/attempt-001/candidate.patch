@@ -1,0 +1,26 @@
+diff --git a/docs/specifications/BENCHMARK_COHORT_V0_1.md b/docs/specifications/BENCHMARK_COHORT_V0_1.md
+index d8ae02f..9323366 100644
+--- a/docs/specifications/BENCHMARK_COHORT_V0_1.md
++++ b/docs/specifications/BENCHMARK_COHORT_V0_1.md
+@@ -201,6 +201,21 @@ Every cohort must explicitly preserve:
+ 
+ A benchmark measures candidates. It does not grant integration authority.
+ 
++
++## First-five freeze checklist
++
++Before freezing the first five-task Phase B2 cohort:
++
++- Pin every task to a full 40-character immutable source SHA.
++- Cover five distinct task families and meet `minimum_final_tasks` without duplicating a WorkUnit.
++- Bind each canonical WorkUnit and EvaluatorPlan by id, version, digest, source revision, backend, and required validators.
++- Inspect `definition-json`. Record the frozen `definition_digest` and reproduce it with `definition-digest`.
++- Confirm every attempt and seeded-negative evidence field is still `pending`; do not tune the definition after observing a candidate.
++- Keep canonical writes, Git push, merge, and automatic candidate selection set to `false`.
++- Run `validate` and obtain review of the frozen definition before generating scored attempts.
++
++If later evidence exposes a definition or evaluator defect, preserve the record and burn or supersede the cohort. Never rewrite a frozen commitment to fit an observed outcome.
++
+ ## CLI
+ 
+ Validate a cohort and all currently attached evidence:

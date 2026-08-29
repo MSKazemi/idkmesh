@@ -1,0 +1,15 @@
+{
+  "authority": {
+    "automatic_candidate_selection": false,
+    "canonical_state_write": false,
+    "git_push": false,
+    "merge": false
+  },
+  "candidate_authority_violation": false,
+  "candidate_checklist_complete": true,
+  "required_gate_count": 8,
+  "schema_version": "0.1",
+  "seeded_authority_violation": true,
+  "source_revision": "9c53bb4069a5db1c0688dbbe7a8f028540cbf7c2",
+  "task_id": "benchmark/phase-b2/005-first-five-freeze-checklist"
+}

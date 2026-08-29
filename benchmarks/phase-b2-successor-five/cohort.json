@@ -296,14 +296,33 @@
         "visibility": "public"
       },
       "evidence": {
-        "attempts": [],
-        "status": "pending"
+        "attempts": [
+          {
+            "attempt_id": "attempt-001",
+            "outcome": "support",
+            "result_manifest": {
+              "digest": "sha256:80688dec2ad1234a18490a74bee6f322b1f299da1bb598239ab493b0be9b801d",
+              "id": "benchmark/phase-b2/005-first-five-freeze-checklist/single-worker-baseline-v1/attempt-001",
+              "path": "results/benchmarks/phase-b2-successor-five/task-005/attempt-001/result-manifest.json"
+            },
+            "structural_signature": "single-worker-baseline-v1",
+            "verification_result": {
+              "digest": "sha256:9a08e34e6bdd64a43b355b2200b2892fa57a1da3808ac71965fbd382f6a00e34",
+              "id": "benchmark/phase-b2/005-first-five-freeze-checklist/single-worker-baseline-v1/attempt-001/patch-verification",
+              "path": "results/benchmarks/phase-b2-successor-five/task-005/attempt-001/verification-result.json"
+            }
+          }
+        ],
+        "status": "verified"
       },
       "family": "documentation_contract",
       "id": "benchmark/phase-b2/005-first-five-freeze-checklist",
       "negative_case": {
         "description": "The checklist must not describe verifier support or benchmark inclusion as automatic merge/integration authority.",
-        "evidence_status": "pending",
+        "evidence_digest": "sha256:e16333560df3f11311dccde4a2e5769205004ec7a988bd7e6c97503424130d03",
+        "evidence_path": "results/benchmarks/phase-b2-successor-five/task-005/attempt-001/seeded-negative.verification-result.json",
+        "evidence_status": "verified",
+        "evidence_type": "verification_result",
         "expected_category": "correctness"
       },
       "source": {

@@ -1,0 +1,21 @@
+{
+  "authority": {
+    "automatic_candidate_selection": false,
+    "canonical_state_write": false,
+    "git_push": false,
+    "merge": false
+  },
+  "candidate_patch_digest": "sha256:33286056c6b17eff34c36a2f8b5847bcc953ee5da2d61cb8e059783c7ee6b97f",
+  "cohort_after_attachment": {
+    "pending_tasks": 0,
+    "verified_tasks": 5
+  },
+  "definition_digest": "sha256:3182d8710e1239c19cb95daddd0677241c0cd9123614786fd919b036922dbdd9",
+  "negative_evidence_digest": "sha256:e16333560df3f11311dccde4a2e5769205004ec7a988bd7e6c97503424130d03",
+  "result_manifest_digest": "sha256:80688dec2ad1234a18490a74bee6f322b1f299da1bb598239ab493b0be9b801d",
+  "schema_version": "0.1",
+  "source_revision": "9c53bb4069a5db1c0688dbbe7a8f028540cbf7c2",
+  "structural_signature": "single-worker-baseline-v1",
+  "task_id": "benchmark/phase-b2/005-first-five-freeze-checklist",
+  "verification_result_digest": "sha256:9a08e34e6bdd64a43b355b2200b2892fa57a1da3808ac71965fbd382f6a00e34"
+}
