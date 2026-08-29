@@ -1,0 +1,21 @@
+{
+  "authority": {
+    "automatic_candidate_selection": false,
+    "canonical_state_write": false,
+    "git_push": false,
+    "merge": false
+  },
+  "candidate_patch_digest": "sha256:ea578160dc43ba380c104a3d1a8821d58013747370761d7c24f9146d5c13b581",
+  "cohort_after_attachment": {
+    "pending_tasks": 3,
+    "verified_tasks": 2
+  },
+  "definition_digest": "sha256:3182d8710e1239c19cb95daddd0677241c0cd9123614786fd919b036922dbdd9",
+  "negative_evidence_digest": "sha256:edd95e072275cf9655b3da5253da8a6b1dc55c463e38a96bd2078725c8226c40",
+  "result_manifest_digest": "sha256:14398dca9a5351416197f5262ca5907741b3e32e9dd4afe4aa3265a7288265fe",
+  "schema_version": "0.1",
+  "source_revision": "9c53bb4069a5db1c0688dbbe7a8f028540cbf7c2",
+  "structural_signature": "single-worker-baseline-v1",
+  "task_id": "benchmark/phase-b2/003-definition-json-command",
+  "verification_result_digest": "sha256:51fc60985bc76a1a54c16315515c2734c81adb1611cc0a7fd79201b56fe13195"
+}

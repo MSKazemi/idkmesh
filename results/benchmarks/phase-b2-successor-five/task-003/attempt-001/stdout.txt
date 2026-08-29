@@ -1,0 +1,6 @@
+Phase B2 Task 003 deterministic worker
+source_revision=9c53bb4069a5db1c0688dbbe7a8f028540cbf7c2
+baseline_command_absent=true
+candidate_projection_digest_matches=true
+candidate_projection_leaks_outcomes=false
+source_self_test=passed

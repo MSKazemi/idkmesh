@@ -1,0 +1,86 @@
+{
+  "attempt": 1,
+  "checks": [
+    {
+      "evidence_ids": [
+        "projection-boundary-observation"
+      ],
+      "id": "outcome-fields-excluded",
+      "required": true,
+      "status": "failed",
+      "summary": "A deliberately contaminated projection containing task evidence is rejected.",
+      "type": "test"
+    }
+  ],
+  "decision_support": {
+    "confidence": 1.0,
+    "rationale": "This VerificationResult represents the deliberately invalid outcome-leaking projection, not the accepted candidate.",
+    "recommendation": "reject_candidate"
+  },
+  "evidence": [
+    {
+      "description": "Digest of baseline, candidate, and seeded outcome-leak observations.",
+      "digest": "sha256:ac4ba52d63f13d2d88a9fabf5d96f177ddcdcac7791a3664f069ccd71f1dac46",
+      "id": "projection-boundary-observation",
+      "locator": "behavior-observation.json",
+      "media_type": "application/json",
+      "type": "test_output"
+    }
+  ],
+  "extensions": {
+    "org.idkmesh.seeded_negative": true,
+    "org.idkmesh.seeded_negative.expected_category": "correctness"
+  },
+  "findings": [
+    {
+      "category": "correctness",
+      "path": "tools/benchmark_cohort.py",
+      "severity": "high",
+      "summary": "Seeded mutable outcome fields violate the pre-outcome projection contract."
+    }
+  ],
+  "finished_at": "2026-08-29T03:25:59.566914Z",
+  "id": "benchmark/phase-b2/003-definition-json-command/single-worker-baseline-v1/attempt-001/outcome-leak-negative",
+  "independence": {
+    "correlation_notes": "Behavioral projection inspection is separate from the text rewrite and metadata-only patch verifier.",
+    "independent_from_worker": true,
+    "shared_model_family": false,
+    "shared_runtime": false,
+    "worker_id_observed": "idkmesh-phase-b2-task003-worker"
+  },
+  "metrics": {
+    "candidate_outcome_leak": 0,
+    "seeded_negative_outcome_leak": 1
+  },
+  "provenance": {
+    "environment": {
+      "platform": "Linux-7.0.0-30-generic-x86_64-with-glibc2.39",
+      "python": "3.12.3",
+      "tool_versions": {
+        "definition-projection-boundary": "0.1"
+      }
+    },
+    "result_manifest_digest": "sha256:14398dca9a5351416197f5262ca5907741b3e32e9dd4afe4aa3265a7288265fe",
+    "source_revision": "9c53bb4069a5db1c0688dbbe7a8f028540cbf7c2",
+    "verifier_config_digest": "sha256:8466c3bddc442451582d52f7616dfb55351e5bef851891a72249f219b1e43d3d",
+    "work_unit_digest": "sha256:a51bbfd143470f1893e40bd800e0e79c04d1dd93adbbe57f72e74ade5f2ad545"
+  },
+  "resources": {
+    "compute_units": 0.0,
+    "human_minutes": 0.0,
+    "tokens": 0,
+    "wall_seconds": 0.0
+  },
+  "result_manifest_id": "benchmark/phase-b2/003-definition-json-command/single-worker-baseline-v1/attempt-001",
+  "schema_version": "0.1",
+  "started_at": "2026-08-29T03:25:59.566914Z",
+  "status": "failed",
+  "verifier": {
+    "adapter": "definition-projection-boundary",
+    "adapter_version": "0.1",
+    "id": "idkmesh-task003-behavior-verifier",
+    "type": "system"
+  },
+  "work_unit_id": "benchmark/phase-b2/003-definition-json-command",
+  "work_unit_version": 1
+}

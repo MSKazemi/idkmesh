@@ -153,14 +153,33 @@
         "visibility": "public"
       },
       "evidence": {
-        "attempts": [],
-        "status": "pending"
+        "attempts": [
+          {
+            "attempt_id": "attempt-001",
+            "outcome": "support",
+            "result_manifest": {
+              "digest": "sha256:14398dca9a5351416197f5262ca5907741b3e32e9dd4afe4aa3265a7288265fe",
+              "id": "benchmark/phase-b2/003-definition-json-command/single-worker-baseline-v1/attempt-001",
+              "path": "results/benchmarks/phase-b2-successor-five/task-003/attempt-001/result-manifest.json"
+            },
+            "structural_signature": "single-worker-baseline-v1",
+            "verification_result": {
+              "digest": "sha256:51fc60985bc76a1a54c16315515c2734c81adb1611cc0a7fd79201b56fe13195",
+              "id": "benchmark/phase-b2/003-definition-json-command/single-worker-baseline-v1/attempt-001/patch-verification",
+              "path": "results/benchmarks/phase-b2-successor-five/task-003/attempt-001/verification-result.json"
+            }
+          }
+        ],
+        "status": "verified"
       },
       "family": "bounded_feature",
       "id": "benchmark/phase-b2/003-definition-json-command",
       "negative_case": {
         "description": "The new command must not include outcome/evidence fields that are deliberately excluded from the pre-outcome commitment.",
-        "evidence_status": "pending",
+        "evidence_digest": "sha256:edd95e072275cf9655b3da5253da8a6b1dc55c463e38a96bd2078725c8226c40",
+        "evidence_path": "results/benchmarks/phase-b2-successor-five/task-003/attempt-001/seeded-negative.verification-result.json",
+        "evidence_status": "verified",
+        "evidence_type": "verification_result",
         "expected_category": "correctness"
       },
       "source": {
