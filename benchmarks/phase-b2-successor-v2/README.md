@@ -1,6 +1,13 @@
 # Phase B2 successor first-five v2 — scaffold
 
-Status: **mutable pre-freeze scaffold** tracked by issue #180.
+Status: **mutable, unfrozen calibration corpus** tracked by issue #180.
+
+The required post-calibration novelty audit failed for all five tasks because
+the committed calibration programs publicly reconstruct their accepted
+straightforward repairs. See the
+[pre-freeze novelty audit](../../docs/research/PHASE_B2_V2_PRE_FREEZE_NOVELTY_AUDIT.md).
+Do not freeze this scaffold or use it for solution-unseen scored outcomes. The
+`freeze_ready=true` bookkeeping value records calibration completion only.
 
 Source snapshot for all five tasks:
 

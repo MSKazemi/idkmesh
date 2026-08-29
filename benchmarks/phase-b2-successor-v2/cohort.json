@@ -162,7 +162,20 @@
       "calibration_pending_task_ids": [],
       "calibration_required_for_every_task": true,
       "freeze_ready": true,
-      "note": "Do not add definition_digest or set stage=frozen until all five evaluator calibration/behavior gates are green. Task taxonomy is fixed before outcomes; calibration records are post-definition evidence only and task evidence fields remain pending until scored runs begin after freeze.",
+      "note": "All evaluator calibration/behavior gates are green, but freeze_ready describes calibration readiness only. The fresh novelty audit failed because every exact reference solution is public; keep this scaffold outcome-empty and unfrozen.",
+      "pre_freeze_novelty_audit": {
+        "audited_revision": "ed23a3995961cca784f7f049ee74732ea44a5fc7",
+        "exposed_task_ids": [
+          "benchmark/phase-b2-v2/001-cohort-symlink-reference",
+          "benchmark/phase-b2-v2/002-router-nonfinite-numbers",
+          "benchmark/phase-b2-v2/003-branch-unobserved-head",
+          "benchmark/phase-b2-v2/004-rwvb-nonfinite-domain",
+          "benchmark/phase-b2-v2/005-local-offer-output-boundary"
+        ],
+        "freeze_allowed": false,
+        "report_path": "docs/evidence/phase-b2-successor-v2-novelty-audit.json",
+        "status": "failed"
+      },
       "source_revision": "a69aa0ae1ae4862e507511cbd9ad854237d0ad32",
       "tracker_issue": 180
     }

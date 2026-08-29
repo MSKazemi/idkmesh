@@ -68,5 +68,8 @@ policy changes or merge decisions.
   [Task 004](PHASE_B2_V2_TASK004_NONFINITE_RWVB_CALIBRATION.md), and
   [Task 005](PHASE_B2_V2_TASK005_OUTPUT_CALIBRATION.md).
 
+- [Successor-v2 pre-freeze novelty audit](PHASE_B2_V2_PRE_FREEZE_NOVELTY_AUDIT.md)
+  — records why the calibrated scaffold must remain unscored and unfrozen.
+
 Calibration candidates are not scored benchmark outcomes. Preserve exact
 source revisions, digests, and lifecycle status when citing these records.
