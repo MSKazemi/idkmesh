@@ -10,6 +10,7 @@ from pathlib import Path
 
 from experiments.work_unit_decomposition import (
     BenchmarkError,
+    JSONSCHEMA_AVAILABLE,
     run_benchmark,
     serialize_report,
     validate_benchmark,
@@ -20,6 +21,10 @@ ROOT = Path(__file__).resolve().parents[1]
 FIXTURE = ROOT / "examples/benchmarks/work-unit-decomposition-v0.1.json"
 
 
+@unittest.skipUnless(
+    JSONSCHEMA_AVAILABLE,
+    "Work Unit decomposition tests require requirements-phase0.txt",
+)
 class WorkUnitDecompositionTests(unittest.TestCase):
     def setUp(self) -> None:
         self.benchmark = json.loads(FIXTURE.read_text(encoding="utf-8"))

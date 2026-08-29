@@ -14,7 +14,10 @@ import sys
 from pathlib import Path
 from typing import Any, Iterable
 
-from jsonschema import Draft202012Validator
+try:
+    from jsonschema import Draft202012Validator
+except ModuleNotFoundError:  # Generic repository suites omit Phase 0 dependencies.
+    Draft202012Validator = None  # type: ignore[assignment,misc]
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -28,6 +31,7 @@ REQUIRED_STRATEGIES = (
     "formal_work_units",
 )
 REPORT_SCHEMA_VERSION = "work-unit-decomposition-report-v0.1"
+JSONSCHEMA_AVAILABLE = Draft202012Validator is not None
 
 
 class BenchmarkError(ValueError):
@@ -42,6 +46,10 @@ def _load_json(path: Path) -> dict[str, Any]:
 
 
 def _schema_errors(value: Any, schema_path: Path) -> list[str]:
+    if Draft202012Validator is None:
+        raise BenchmarkError(
+            "jsonschema is required; install requirements-phase0.txt"
+        )
     schema = _load_json(schema_path)
     Draft202012Validator.check_schema(schema)
     errors = sorted(
