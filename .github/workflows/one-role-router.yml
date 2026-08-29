@@ -1,0 +1,210 @@
+name: ONE Role Router
+
+on:
+  issues:
+    types: [opened, labeled, reopened]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: one-role-router
+  cancel-in-progress: false
+
+jobs:
+  route:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Route ONE tasks to one logical role
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            // This workflow only assigns metadata labels. It never checks out or executes
+            // repository, issue, PR, or comment content. Routing is advisory and does not
+            // grant additional GitHub permissions or acceptance authority.
+
+            const roles = {
+              worker: {
+                label: 'one:role:worker',
+                color: '6F42C1',
+                description: 'ONE logical role: general worker/fallback coordinator'
+              },
+              planner: {
+                label: 'one:role:planner',
+                color: '0052CC',
+                description: 'ONE logical role: planning, decomposition, priority clarification'
+              },
+              builder: {
+                label: 'one:role:builder',
+                color: '0E8A16',
+                description: 'ONE logical role: bounded implementation artifact'
+              },
+              verifier: {
+                label: 'one:role:verifier',
+                color: 'B60205',
+                description: 'ONE logical role: verification, reproduction, challenge'
+              },
+              researcher: {
+                label: 'one:role:researcher',
+                color: '5319E7',
+                description: 'ONE logical role: falsifiable research and uncertainty reduction'
+              },
+              security: {
+                label: 'one:role:security',
+                color: 'D93F0B',
+                description: 'ONE logical role: security and trust-boundary audit'
+              },
+              experimenter: {
+                label: 'one:role:experimenter',
+                color: '1D76DB',
+                description: 'ONE logical role: reproducible experiment and measurement'
+              },
+              community: {
+                label: 'one:role:community',
+                color: 'FBCA04',
+                description: 'ONE logical role: newcomer/community growth and retention'
+              },
+              integrator: {
+                label: 'one:role:integrator',
+                color: '006B75',
+                description: 'ONE logical role: integration, supersession, canonical convergence'
+              }
+            };
+
+            for (const role of Object.values(roles)) {
+              try {
+                await github.rest.issues.getLabel({ owner, repo, name: role.label });
+              } catch (error) {
+                if (error.status !== 404) throw error;
+                await github.rest.issues.createLabel({
+                  owner,
+                  repo,
+                  name: role.label,
+                  color: role.color,
+                  description: role.description
+                });
+              }
+            }
+
+            const roleLabels = new Set(Object.values(roles).map(role => role.label));
+            const labelNames = item => (item.labels || []).map(label =>
+              typeof label === 'string' ? label : label.name
+            );
+
+            const chooseRole = ({ task, source, sourceType }) => {
+              if (sourceType === 'onboarding') {
+                return { role: 'community', reason: 'ONE newcomer-inventory task' };
+              }
+
+              const sourceLabels = source ? labelNames(source) : [];
+              const title = `${source?.title || task.title || ''}`.toLowerCase();
+              const labelText = sourceLabels.join(' ').toLowerCase();
+              const signal = `${title} ${labelText}`;
+
+              if (/security|threat|sandbox|secret|permission|supply.chain|provenance|trust.boundary/.test(signal)) {
+                return { role: 'security', reason: 'security/trust-boundary signal' };
+              }
+              if (/benchmark|experiment|replay|sweep|simulation|measure|measurement|correlation|randomness/.test(signal)) {
+                return { role: 'experimenter', reason: 'experiment/measurement signal' };
+              }
+              if (/research|hypothesis|research question|formalize|theory|study/.test(signal)) {
+                return { role: 'researcher', reason: 'research/uncertainty signal' };
+              }
+              if (/community|onboard|newcomer|growth.seed|growth seed|contributor|retention|recurrence/.test(signal)) {
+                return { role: 'community', reason: 'community/onboarding signal' };
+              }
+              if (/verification|evidence|validator|evaluator|independent review|reproduce|reproduction/.test(signal)) {
+                return { role: 'verifier', reason: 'verification/evidence signal' };
+              }
+              if (/decompos|roadmap|priority|planning|plan:|clarify/.test(signal)) {
+                return { role: 'planner', reason: 'planning/decomposition signal' };
+              }
+              if (/integrat|merge|rebase|conflict|supersed|migration|canonical/.test(signal)) {
+                return { role: 'integrator', reason: 'integration/convergence signal' };
+              }
+              if (/implement|build|prototype|worker|orchestrator|schema|cli|adapter|runtime/.test(signal)) {
+                return { role: 'builder', reason: 'implementation signal' };
+              }
+              if (sourceType === 'pr') {
+                return { role: 'integrator', reason: 'PR integration is the default PR route' };
+              }
+              return { role: 'worker', reason: 'no stronger specialized signal' };
+            };
+
+            const routeTask = async task => {
+              const labels = labelNames(task);
+              if (!labels.includes('one:agent-task')) return null;
+              if (labels.some(label => roleLabels.has(label))) return null;
+
+              const marker = (task.body || '').match(/<!-- ONE_TASK source=([a-z0-9-]+) version=1 -->/i);
+              const sourceKey = marker?.[1] || '';
+              let source = null;
+              let sourceType = 'unknown';
+
+              if (sourceKey === 'onboarding-seed-v0') {
+                sourceType = 'onboarding';
+              } else {
+                const sourceMatch = sourceKey.match(/^(pr|issue)-(\d+)$/);
+                if (sourceMatch) {
+                  sourceType = sourceMatch[1];
+                  try {
+                    const { data } = await github.rest.issues.get({
+                      owner,
+                      repo,
+                      issue_number: Number(sourceMatch[2])
+                    });
+                    source = data;
+                  } catch (error) {
+                    core.warning(`Could not fetch ONE source ${sourceKey}: ${error.message}`);
+                  }
+                }
+              }
+
+              const decision = chooseRole({ task, source, sourceType });
+              await github.rest.issues.addLabels({
+                owner,
+                repo,
+                issue_number: task.number,
+                labels: [roles[decision.role].label]
+              });
+
+              core.info(`Routed ONE task #${task.number} -> ${decision.role}: ${decision.reason}`);
+              return { number: task.number, role: decision.role, reason: decision.reason };
+            };
+
+            let candidates = [];
+            if (context.eventName === 'issues') {
+              candidates = [context.payload.issue];
+            } else {
+              const open = await github.paginate(github.rest.issues.listForRepo, {
+                owner,
+                repo,
+                state: 'open',
+                labels: 'one:agent-task',
+                per_page: 100
+              });
+              candidates = open.filter(item => !item.pull_request).slice(0, 5);
+            }
+
+            const routed = [];
+            for (const candidate of candidates) {
+              const result = await routeTask(candidate);
+              if (result) routed.push(result);
+            }
+
+            core.summary.addHeading('ONE Role Router');
+            if (!routed.length) {
+              core.summary.addRaw('No unrouted ONE task required a role assignment.');
+            } else {
+              core.summary.addTable([
+                [{ data: 'Task', header: true }, { data: 'Role', header: true }, { data: 'Reason', header: true }],
+                ...routed.map(item => [`#${item.number}`, item.role, item.reason])
+              ]);
+            }
+            await core.summary.write();
