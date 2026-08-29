@@ -2,7 +2,7 @@
 
 **Date:** 2026-08-29  
 **Baseline:** `649df7b77ac7ab690f15f88e8eac2d4291d1edb8`  
-**Scope:** repository tree, primary code/contract surfaces, public README, architecture/roadmap/navigation documentation, live issue references, and protected-main validation.
+**Scope:** repository tree, primary code/contract surfaces, public README, architecture/roadmap/evolution/navigation documentation, live issue references, and protected-main validation.
 
 ## User instruction
 
@@ -17,7 +17,7 @@ The audit:
 1. pinned the current protected `main` revision;
 2. inventoried the full Git tree and top-level responsibility areas;
 3. inspected the public README and primary canonical documents;
-4. compared old roadmap/architecture claims with current schema, interop, simulation, experiment, script, test, and workflow surfaces;
+4. compared old roadmap/architecture/evolution claims with current schema, interop, simulation, experiment, script, test, and workflow surfaces;
 5. checked live status for README-linked contribution issues;
 6. inspected the stable protected-main PR gate to align local verification instructions with CI;
 7. preserved historical evidence instead of rewriting archival conversations/findings merely because terminology evolved;
@@ -57,7 +57,7 @@ Final correctness is also delegated to the repository's deterministic full test 
 - `docs/README.md`;
 - architecture index;
 - project identity document;
-- current roadmap/evolution/iteration vocabulary relationship;
+- roadmap/evolution/iteration-model relationship;
 - live starter/review issue references.
 
 ## Findings
@@ -101,13 +101,19 @@ The previous roadmap still listed creation of first WorkUnit/ResultManifest/Goal
 
 **Correction:** rebase the roadmap on the implemented foundation and make current gates about real execution evidence, heterogeneous adapters, controlled benchmark runs, reproducible release UX, independent review, and later earned scale.
 
-### F6 — documentation lacked a sufficiently explicit authority hierarchy
+### F6 — `EVOLUTION.md` treated implemented interoperability/contracts as future milestones
+
+The previous strategy still described A2A/MCP mapping as something to test before freezing the WorkUnit contract and presented early contract/simulator milestones as future progression.
+
+**Correction:** restate the implemented checkpoint and make evolution priorities about convergence, observed evidence, current heterogeneous adapters, reviewer capacity, reproducible release UX, and earned multi-machine scale.
+
+### F7 — documentation lacked a sufficiently explicit authority hierarchy
 
 The repository intentionally retains large historical/audit/conversation collections. Without an authority map, a newcomer can mistake an old plan, experiment note, or conversation for current behavior.
 
 **Correction:** make `docs/README.md` explain which surfaces are current protocol truth, current architecture, research evidence, audits, findings, decisions, and append-only history.
 
-### F7 — `docs/WHAT_IS_IDKMESH.md` used future tense for self-hosting that is already happening
+### F8 — `docs/WHAT_IS_IDKMESH.md` used future tense for self-hosting that is already happening
 
 The project identity document said the first practical project “should be” IDKMesh improving IDKMesh and described the implementation as future-focused, while the repository already contains self-observation/evolution/community experiments.
 
@@ -137,6 +143,7 @@ The project identity document said the first practical project “should be” I
 - `README.md`
 - `ARCHITECTURE.md`
 - `ROADMAP.md`
+- `EVOLUTION.md`
 - `docs/README.md`
 - `docs/WHAT_IS_IDKMESH.md`
 - this audit record
