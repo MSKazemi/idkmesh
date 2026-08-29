@@ -28,6 +28,8 @@ class SecurityAutomationTests(unittest.TestCase):
         self.assertIn("package-ecosystem: github-actions", config)
         self.assertIn("package-ecosystem: pip", config)
         self.assertEqual(config.count("open-pull-requests-limit: 3"), 2)
+        self.assertEqual(config.count("dependency-name: \"*\""), 2)
+        self.assertEqual(config.count("version-update:semver-major"), 2)
 
 
 if __name__ == "__main__":
