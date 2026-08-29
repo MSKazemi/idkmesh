@@ -49,7 +49,10 @@ The pinned `.github/workflows/codeql.yml` workflow analyzes Python changes on
 pull requests, pushes to `main`, and a weekly schedule. `.github/dependabot.yml`
 checks GitHub Actions and Python dependency declarations weekly with a bounded
 open-PR limit. Routine update automation excludes semantic major versions;
-major migrations require a focused compatibility and trust-boundary review.
+major migrations require a focused compatibility and trust-boundary review. A
+pinned weekly OpenSSF Scorecard workflow uploads SARIF to GitHub code scanning
+and retains a five-day diagnostic artifact. It deliberately does not publish
+results to the external Scorecard service or request an OIDC token.
 These controls supplement review; they do not establish that a candidate,
 dependency update, or release is safe.
 
