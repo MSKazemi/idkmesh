@@ -1,0 +1,80 @@
+name: Collaboration Observables
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "37 5 * * 1"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: collaboration-observables
+  cancel-in-progress: true
+
+jobs:
+  observe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out trusted main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+
+      - name: Test collector and analysis contracts
+        run: python -m unittest tests.test_collaboration_snapshot tests.test_collaboration_observables -v
+
+      - name: Collect bounded public metadata
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python scripts/collaboration_snapshot.py \
+            --repository '${{ github.repository }}' \
+            --max-pull-requests 50 \
+            --output results/collaboration/snapshot.json
+
+      - name: Derive observational metrics
+        run: |
+          python scripts/collaboration_observables.py \
+            results/collaboration/snapshot.json \
+            --output results/collaboration/observables.json
+
+      - name: Publish bounded summary
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          result = json.loads(Path("results/collaboration/observables.json").read_text())
+          metrics = result["metrics"]
+          lines = [
+              "# Collaboration Observables",
+              "",
+              "> Bounded observational evidence; no causal, policy, or integration authority.",
+              "",
+              f"- Pull requests observed: {metrics['structural_debt']['pull_requests_observed']}",
+              f"- First-review samples: {metrics['first_independent_review_latency']['samples']}",
+              f"- Review HHI: {metrics['review_concentration']['hhi']}",
+              f"- External recurrence trials: {metrics['contributor_recurrence']['trials']}",
+              f"- Open review-ready queue: {metrics['review_queue']['open_review_ready']}",
+              f"- Evidence-derived strategy priors: {len(result['evidence_derived_strategy_priors'])}",
+          ]
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as stream:
+              stream.write("\n".join(lines) + "\n")
+          PY
+
+      - name: Upload observational evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: collaboration-observables-${{ github.run_id }}
+          path: results/collaboration/
+          retention-days: 30
+          if-no-files-found: error

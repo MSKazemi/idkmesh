@@ -23,13 +23,28 @@ Run:
     python scripts/collaboration_observables.py tests/fixtures/collaboration_observables_snapshot.json
     python -m unittest tests.test_collaboration_observables -v
 
+## Live bounded collection
+
+`scripts/collaboration_snapshot.py` collects the 50 most recently created pull
+requests through public GitHub metadata. It retains no bodies or raw actor
+logins, reserves API capacity before starting, and aborts rather than publish a
+partially paginated review, timeline, or check inventory. The weekly/manual
+`Collaboration Observables` workflow runs the collector and analyzer from
+trusted `main` with read-only permissions.
+
+The live window is explicitly incomplete repository history. It does not infer
+file ownership or structural-debt findings, and it treats merged pull requests
+as the only meaningful-contribution proxy. Most importantly, it emits **no
+evidence-derived strategy prior** unless a separate input has independently
+classified verified-useful outcomes; merged status and green CI are not enough.
+
 ## Metric contracts
 
 | Metric | Observable/model | Uncertainty | Prediction and baseline | Main failure modes |
 | --- | --- | --- | --- | --- |
-| First independent review latency | Hours from ready/open timestamp to first independent review | Deterministic 1,000-replicate bootstrap interval for the observed median; unreviewed items separately right-censored | Lower latency may predict recurrence; compare the preregistered 72-hour groups | Bots/self-review must be removed upstream; censoring and workload confounding |
+| First independent review latency | Hours from ready/open timestamp to first independent review | Deterministic 1,000-replicate bootstrap interval for the observed median; still-open items are right-censored and closed-without-review items are reported separately | Lower latency may predict recurrence; compare the preregistered 72-hour groups | Bots/self-review must be removed upstream; censoring and workload confounding |
 | Cycle latency | Hours from creation to closure | Same observed-median bootstrap plus open-item count | Review concentration may predict longer cycles | Closure is not necessarily acceptance; right censoring |
-| Review HHI | Share-squared over independent review events | Descriptive snapshot only | Compare with equal-share baseline and future cycle latency | Event counts are not effort or quality; identity aliases |
+| Review HHI | Share-squared over distinct independent reviewer–pull-request pairs | Descriptive snapshot only | Compare with equal-share baseline and future cycle latency | Reviewer–PR pairs are not effort or quality; identity aliases |
 | Ownership HHI | Share-squared over changed-file owner attributions | Descriptive snapshot only | High concentration may identify bus-factor risk | CODEOWNERS/attribution quality and multi-owner files |
 | Contributor recurrence | Contributors with at least two meaningful contributions / observed contributors | Beta-binomial posterior with explicit evidence mass | Compare cohorts, never raw activity volume | Eligibility and meaningful-contribution definitions |
 | CI evidence | Passing / observed checks | Beta-binomial posterior | Compare like-for-like check suites | Check dependence and heterogeneous coverage |
