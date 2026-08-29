@@ -1,0 +1,89 @@
+{
+  "attempt": 1,
+  "extensions": {
+    "org.idkmesh.authority": {
+      "automatic_candidate_selection": false,
+      "canonical_state_write": false,
+      "git_push": false,
+      "merge": false
+    },
+    "org.idkmesh.benchmark.structural_signature": "single-worker-baseline-v1"
+  },
+  "finished_at": "2026-08-29T03:48:43.136530Z",
+  "id": "benchmark/phase-b2/004-safe-cohort-loader-refactor/single-worker-baseline-v1/attempt-001",
+  "logs": [
+    {
+      "digest": "sha256:e2ab00455b28797b7699db546fd456ad3522230e82d6f7f9768fc3e52e52f8f0",
+      "locator": "stdout.txt",
+      "type": "stdout"
+    },
+    {
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "locator": "stderr.txt",
+      "type": "stderr"
+    }
+  ],
+  "metrics": {
+    "centralized_call_sites": 2,
+    "changed_path_count": 1,
+    "seeded_divergences_detected": 1
+  },
+  "produced_artifacts": [
+    {
+      "description": "Unverified frozen-source Task 004 candidate patch.",
+      "digest": "sha256:424ca42b27bb7df29e85e68911a62f8373ea44dfda6d61ef8c8baa7924d4cb45",
+      "id": "candidate-patch",
+      "locator": "candidate.patch",
+      "media_type": "text/x-diff",
+      "type": "patch"
+    }
+  ],
+  "provenance": {
+    "environment": {
+      "platform": "Linux-7.0.0-30-generic-x86_64-with-glibc2.39",
+      "python": "3.12.3",
+      "tool_versions": {
+        "git": "git version 2.43.0",
+        "phase-b2-task004-worker": "0.1"
+      }
+    },
+    "source_revision": "9c53bb4069a5db1c0688dbbe7a8f028540cbf7c2",
+    "work_unit_digest": "sha256:adb4ad893aa58ad18376c49fd0a6c0328db808bfe5946136a5631c63d933f2d4",
+    "worker_config_digest": "sha256:452de6e734890ff13d8cdb06688515ec00f649209a13b900d7a30141d0de3e2b"
+  },
+  "resources": {
+    "compute_units": 0.0,
+    "human_minutes": 0.0,
+    "tokens": 0,
+    "wall_seconds": 0.5400703580235131
+  },
+  "schema_version": "0.1",
+  "self_report": {
+    "claims": [
+      "Only the allowed tool was changed.",
+      "Both commands reject external paths through one helper.",
+      "Worker success grants no integration authority."
+    ],
+    "summary": "Deterministic baseline centralizes two CLI loaders; self-report is not acceptance."
+  },
+  "started_at": "2026-08-29T03:48:42.596440Z",
+  "status": "succeeded",
+  "verification_request": {
+    "evidence_artifact_ids": [
+      "candidate-patch"
+    ],
+    "expected_validator_ids": [
+      "independent-review",
+      "result-manifest-schema"
+    ],
+    "notes": "Route through the frozen public EvaluatorPlan; worker self-report is not acceptance."
+  },
+  "work_unit_id": "benchmark/phase-b2/004-safe-cohort-loader-refactor",
+  "work_unit_version": 1,
+  "worker": {
+    "adapter": "deterministic-text-rewrite",
+    "adapter_version": "0.1",
+    "id": "idkmesh-phase-b2-task004-worker",
+    "type": "system"
+  }
+}

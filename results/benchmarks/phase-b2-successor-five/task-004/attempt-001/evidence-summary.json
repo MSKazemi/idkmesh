@@ -1,0 +1,21 @@
+{
+  "authority": {
+    "automatic_candidate_selection": false,
+    "canonical_state_write": false,
+    "git_push": false,
+    "merge": false
+  },
+  "candidate_patch_digest": "sha256:424ca42b27bb7df29e85e68911a62f8373ea44dfda6d61ef8c8baa7924d4cb45",
+  "cohort_after_attachment": {
+    "pending_tasks": 1,
+    "verified_tasks": 4
+  },
+  "definition_digest": "sha256:3182d8710e1239c19cb95daddd0677241c0cd9123614786fd919b036922dbdd9",
+  "negative_evidence_digest": "sha256:fa35320375b1106db97a9ba1477d41c4f0aaa4c499df7a9f5794d8fb1be789c5",
+  "result_manifest_digest": "sha256:b56047bfce6017cdb3399fee7db72f2bd86229b29a6b13de6e10fd3a7d5e19d7",
+  "schema_version": "0.1",
+  "source_revision": "9c53bb4069a5db1c0688dbbe7a8f028540cbf7c2",
+  "structural_signature": "single-worker-baseline-v1",
+  "task_id": "benchmark/phase-b2/004-safe-cohort-loader-refactor",
+  "verification_result_digest": "sha256:2f4c8493a4044c448294a699159a7e4492ed66280c7037ab18c93e19674b1038"
+}

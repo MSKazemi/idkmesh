@@ -1,0 +1,7 @@
+Phase B2 Task 004 deterministic worker
+source_revision=9c53bb4069a5db1c0688dbbe7a8f028540cbf7c2
+candidate_boundary_consistency=passed
+seeded_loader_divergence=detected
+source_self_test=passed
+
+OK: benchmark cohort schema, cross-object WorkUnit/EvaluatorPlan binding, pre-outcome definition commitment, and fail-closed drift checks passed

@@ -1,0 +1,172 @@
+{
+  "attempt": 1,
+  "checks": [
+    {
+      "evidence_ids": [
+        "result-manifest-canonical"
+      ],
+      "id": "result-manifest-schema",
+      "required": true,
+      "status": "passed",
+      "summary": "Worker ResultManifest is schema-valid and bound to the exact WorkUnit.",
+      "type": "schema"
+    },
+    {
+      "diagnostics": "{\"artifact\":{\"artifact_locator\":\"candidate.patch\",\"bytes\":1036,\"declared_digest\":\"sha256:424ca42b27bb7df29e85e68911a62f8373ea44dfda6d61ef8c8baa7924d4cb45\",\"decode_error\":null,\"observed_digest\":\"sha256:424ca42b27bb7df29e85e68911a62f8373ea44dfda6d61ef8c8baa7924d4cb45\",\"within_limit\":true},\"logs\":{\"coverage_violations\":[],\"logs\":[{\"bytes\":338,\"declared_digest\":\"sha256:e2ab00455b28797b7699db546fd456ad3522230e82d6f7f9768fc3e52e52f8f0\",\"index\":1,\"locator\":\"stdout.txt\",\"matches\":true,\"observed_digest\":\"sha256:e2ab00455b28797b7699db546fd456ad3522230e82d6f7f9768fc3e52e52f8f0\",\"type\":\"stdout\",\"within_limit\":true},{\"bytes\":0,\"declared_digest\":\"sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"index\":2,\"locator\":\"stderr.txt\",\"matches\":true,\"observed_digest\":\"sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"type\":\"stderr\",\"within_limit\":true}],\"observed_type_counts\":{\"stderr\":1,\"stdout\":1},\"required_log_types\":[\"stdout\",\"stderr\"]},\"scope\":{\"allowed_paths\":[\"tools/benchmark_cohort.py\"],\"changed_paths\":[\"tools/benchmark_cohort.py\"],\"filesystem_write\":[\"tools/benchmark_cohort.py\"],\"forbidden_paths\":[\".github/**\",\"schemas/**\",\"benchmarks/**\",\"verification/**\"],\"violations\":[]},\"semantic\":{\"missing_added_text\":[],\"observed_added_lines\":[\"def load_cohort_argument(raw: str) -> dict[str, Any]:\",\"    \\\"\\\"\\\"Load one CLI cohort argument through the repository path boundary.\\\"\\\"\\\"\",\"\",\"    return load_json(resolve_repo_file(raw, label=\\\"BenchmarkCohort\\\"))\",\"\",\"\",\"    cohort = load_cohort_argument(args.cohort)\",\"    cohort = load_cohort_argument(args.cohort)\"],\"required_added_text\":[\"def load_cohort_argument(raw: str) -> dict[str, Any]:\",\"    return load_json(resolve_repo_file(raw, label=\\\"BenchmarkCohort\\\"))\"]},\"semantic_removed_substrings\":{\"matches\":[{\"matched_line\":\"    cohort = load_json((ROOT / args.cohort).resolve())\",\"substring\":\"(ROOT / args.cohort).resolve()\"}],\"missing_substrings\":[],\"observed_removed_lines\":[\"    cohort = load_json((ROOT / args.cohort).resolve())\",\"    cohort = load_json((ROOT / args.cohort).resolve())\"],\"parse_error\":null,\"required_removed_substrings\":[\"(ROOT / args.cohort).resolve()\"],\"semantic_mode\":\"removed_line_substring_all\"},\"semantic_substrings\":{\"matches\":[{\"matched_line\":\"def load_cohort_argument(raw: str) -> dict[str, Any]:\",\"substring\":\"def load_cohort_argument(\"},{\"matched_line\":\"    return load_json(resolve_repo_file(raw, label=\\\"BenchmarkCohort\\\"))\",\"substring\":\"resolve_repo_file(raw, label=\"}],\"missing_substrings\":[],\"observed_added_lines\":[\"def load_cohort_argument(raw: str) -> dict[str, Any]:\",\"    \\\"\\\"\\\"Load one CLI cohort argument through the repository path boundary.\\\"\\\"\\\"\",\"\",\"    return load_json(resolve_repo_file(raw, label=\\\"BenchmarkCohort\\\"))\",\"\",\"\",\"    cohort = load_cohort_argument(args.cohort)\",\"    cohort = load_cohort_argument(args.cohort)\"],\"parse_error\":null,\"required_added_substrings\":[\"def load_cohort_argument(\",\"resolve_repo_file(raw, label=\"],\"semantic_mode\":\"added_line_substring_all\"},\"semantic_transition_mode\":\"added_and_removed_line_substring_all\",\"worker_status\":\"succeeded\"}",
+      "evidence_ids": [
+        "candidate-patch-hash",
+        "log-integrity-observation",
+        "patch-scope-observation",
+        "patch-semantic-observation",
+        "worker-status-observation",
+        "added-substring-semantic-observation",
+        "removed-substring-semantic-observation"
+      ],
+      "id": "independent-review",
+      "required": true,
+      "status": "passed",
+      "summary": "Independent metadata-only patch review passed artifact/log integrity, strict patch structure, scope, v0.3 added-line substring checks, and v0.4 removed-line transition checks.",
+      "type": "review"
+    }
+  ],
+  "decision_support": {
+    "confidence": 1.0,
+    "rationale": "All WorkUnit-required checks passed, including explicit v0.4 added-and-removed line substring transition semantics.",
+    "recommendation": "accept_candidate"
+  },
+  "evidence": [
+    {
+      "description": "Canonical digest of the schema-valid worker ResultManifest evaluated by the verifier.",
+      "digest": "sha256:b56047bfce6017cdb3399fee7db72f2bd86229b29a6b13de6e10fd3a7d5e19d7",
+      "id": "result-manifest-canonical",
+      "locator": "inline://result-manifest-canonical",
+      "media_type": "application/json",
+      "type": "attestation"
+    },
+    {
+      "description": "SHA-256 observed directly from candidate patch bytes.",
+      "digest": "sha256:424ca42b27bb7df29e85e68911a62f8373ea44dfda6d61ef8c8baa7924d4cb45",
+      "id": "candidate-patch-hash",
+      "locator": "candidate.patch",
+      "media_type": "text/x-diff",
+      "type": "artifact_hash"
+    },
+    {
+      "description": "Canonical digest of evaluator-required log coverage and independently recomputed log integrity observations.",
+      "digest": "sha256:c0436ac5fac4277f551b3a58684c11549914b57f357b971fa57dae5a8821b85a",
+      "id": "log-integrity-observation",
+      "locator": "inline://log-integrity",
+      "media_type": "application/json",
+      "type": "trace"
+    },
+    {
+      "description": "Canonical digest of independently parsed unified-diff paths and WorkUnit scope checks.",
+      "digest": "sha256:8204f5ca4536bcacb40173e1c68859ab851e726c909694857fbb2bdca48f0984",
+      "id": "patch-scope-observation",
+      "locator": "inline://patch-scope",
+      "media_type": "application/json",
+      "type": "static_analysis"
+    },
+    {
+      "description": "Canonical digest of verifier-owned required-added-text checks from validated hunks only.",
+      "digest": "sha256:08b3dea9e2c333431d5a67ac557279459ca9dc3b42f622707f105bc4f06557a1",
+      "id": "patch-semantic-observation",
+      "locator": "inline://patch-semantic",
+      "media_type": "application/json",
+      "type": "test_output"
+    },
+    {
+      "description": "Canonical digest of the worker execution status observed by the verifier.",
+      "digest": "sha256:557d907fbdaf9ce5bb0ad618c35c2709b08665790555d991c6c93eda39897452",
+      "id": "worker-status-observation",
+      "locator": "inline://worker-status",
+      "media_type": "application/json",
+      "type": "trace"
+    },
+    {
+      "description": "Canonical digest of explicit case-sensitive, single-added-line substring matching for EvaluatorPlan v0.3.",
+      "digest": "sha256:d2ef525b42b08b7bccb947b3811849bbcfae5a56b74288d6c2f7123b863b4dac",
+      "id": "added-substring-semantic-observation",
+      "locator": "inline://added-substring-semantic-observation",
+      "media_type": "application/json",
+      "type": "test_output"
+    },
+    {
+      "description": "Canonical digest of explicit case-sensitive, single-removed-line substring matching for EvaluatorPlan v0.4.",
+      "digest": "sha256:c1192144994493105a74f5b6ae6b0f5122dac415eb1ea8e1f7702383c30918d8",
+      "id": "removed-substring-semantic-observation",
+      "locator": "inline://removed-substring-semantic-observation",
+      "media_type": "application/json",
+      "type": "test_output"
+    }
+  ],
+  "extensions": {
+    "org.idkmesh.evaluator_plan.backend": "unified_diff_transition",
+    "org.idkmesh.evaluator_plan.digest": "sha256:00e20edc78efdf96206e7f532aaac2ed2389e35644f986da1d7354fed410ba17",
+    "org.idkmesh.evaluator_plan.execution_mode": "metadata_only",
+    "org.idkmesh.evaluator_plan.id": "benchmark/phase-b2-successor/004-safe-cohort-loader-refactor/evaluator-v0.4",
+    "org.idkmesh.evaluator_plan.runner_version": "0.4",
+    "org.idkmesh.evaluator_plan.visibility": "public",
+    "org.idkmesh.local_verifier.added_substring_core_version": "0.2.0",
+    "org.idkmesh.local_verifier.backend": "unified_diff",
+    "org.idkmesh.local_verifier.legacy_patch_core_version": "0.1.1",
+    "org.idkmesh.local_verifier.policy_id": "benchmark/phase-b2-successor/004-safe-cohort-loader-refactor/evaluator-v0.4",
+    "org.idkmesh.local_verifier.semantic_match_mode": "added_and_removed_line_substring_all"
+  },
+  "findings": [],
+  "finished_at": "2026-08-29T03:48:43.220623Z",
+  "id": "benchmark/phase-b2/004-safe-cohort-loader-refactor/single-worker-baseline-v1/attempt-001/patch-verification",
+  "independence": {
+    "correlation_notes": "Evaluator control is outside the candidate root; candidate code is never executed. Strict diff/provenance/log/scope checks reuse verifier v0.1.1; v0.2.0 supplies explicit added-line substring matching; v0.3.0 additionally requires verifier-owned unsafe substrings to occur in validated removed lines.",
+    "independent_from_worker": true,
+    "shared_model_family": false,
+    "shared_runtime": false,
+    "worker_id_observed": "idkmesh-phase-b2-task004-worker"
+  },
+  "metrics": {
+    "candidate_bytes": 1036,
+    "changed_path_count": 1,
+    "log_count": 2,
+    "matched_removed_substring_count": 1,
+    "matched_substring_count": 2,
+    "required_checks_failed": 0,
+    "required_checks_passed": 2,
+    "required_removed_substring_count": 1,
+    "required_substring_count": 2
+  },
+  "provenance": {
+    "environment": {
+      "platform": "Linux-7.0.0-30-generic-x86_64-with-glibc2.39",
+      "python": "3.12.3",
+      "tool_versions": {
+        "deterministic-patch-verifier": "0.3.0",
+        "deterministic-patch-verifier-added-substring-core": "0.2.0",
+        "deterministic-patch-verifier-legacy-core": "0.1.1",
+        "idkmesh-local-verifier": "0.1",
+        "jsonschema": "installed"
+      }
+    },
+    "result_manifest_digest": "sha256:b56047bfce6017cdb3399fee7db72f2bd86229b29a6b13de6e10fd3a7d5e19d7",
+    "source_revision": "9c53bb4069a5db1c0688dbbe7a8f028540cbf7c2",
+    "verifier_config_digest": "sha256:00e20edc78efdf96206e7f532aaac2ed2389e35644f986da1d7354fed410ba17",
+    "work_unit_digest": "sha256:adb4ad893aa58ad18376c49fd0a6c0328db808bfe5946136a5631c63d933f2d4"
+  },
+  "resources": {
+    "compute_units": 0.0,
+    "human_minutes": 0.0,
+    "tokens": 0,
+    "wall_seconds": 0.0006613890000153333
+  },
+  "result_manifest_id": "benchmark/phase-b2/004-safe-cohort-loader-refactor/single-worker-baseline-v1/attempt-001",
+  "schema_version": "0.1",
+  "started_at": "2026-08-29T03:48:43.219942Z",
+  "status": "passed",
+  "verifier": {
+    "adapter": "deterministic-patch-verifier",
+    "adapter_version": "0.3.0",
+    "id": "idkmesh-local-verifier",
+    "type": "system"
+  },
+  "work_unit_id": "benchmark/phase-b2/004-safe-cohort-loader-refactor",
+  "work_unit_version": 1
+}
