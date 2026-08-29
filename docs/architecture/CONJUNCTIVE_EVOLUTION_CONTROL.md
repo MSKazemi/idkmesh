@@ -164,15 +164,19 @@ The converged workflow restores Bayesian persistence without removing the new ob
 
 On each trusted observation it:
 
-1. searches recent **successful default-branch runs** of the same workflow;
-2. finds the newest run that actually retained an `evolution-checkpoint-*` artifact;
-3. restores `state/evolution-state.json` and the bounded event ledger when available;
-4. performs the Bayesian update;
-5. recomputes the live observatory from fresh GitHub evidence;
-6. evaluates the conjunctive controller;
-7. retains all three evidence layers in the next `evolution-checkpoint-*` artifact.
+1. searches recent **successful default-branch runs from an explicit trusted-event allowlist** of the same workflow;
+2. finds the newest run with the exact unexpired `evolution-checkpoint-v2-<run-id>` artifact;
+3. verifies a manifest binding repository, workflow, run, head SHA, event, parent run, file sizes, and SHA-256 digests;
+4. validates state schema, finite/bounded beliefs, authority invariants, counters, and ledger lineage before use;
+5. performs the Bayesian update;
+6. recomputes the live observatory from fresh GitHub evidence;
+7. evaluates the conjunctive controller;
+8. retains all three evidence layers in the next `evolution-checkpoint-v2-*` artifact.
 
-This lookup is intentionally constrained to successful default-branch workflow runs so PR-generated artifacts cannot become trusted history.
+Ordinary `pull_request` runs are excluded by event type, not inferred safe from a
+branch name. Once a checkpoint has been selected, download, manifest, or semantic
+validation failure aborts the run; only the absence of any eligible checkpoint
+permits the deterministic repository seed.
 
 ---
 
@@ -190,6 +194,12 @@ For PR metadata, the live observers use `pull_request_target` and:
 - use only job-local read permissions;
 - disable persisted checkout credentials;
 - pin the core Actions by immutable SHA.
+
+Direct `pull_request_review` events do not run the checkpoint-producing observer.
+Review state is refreshed by trusted PR-target lifecycle events and scheduled snapshots.
+Review coverage counts only the latest non-author, non-bot `APPROVED` or
+`CHANGES_REQUESTED` review attached to the PR's exact current head SHA; approvals
+remain a separate signal.
 
 ### Proposed-code verification
 

@@ -51,6 +51,79 @@ def load_json(path: str | Path) -> dict[str, Any]:
     return value
 
 
+def _finite_number(value: Any, field: str) -> float:
+    if isinstance(value, bool):
+        raise ValueError(f"{field}: expected finite number")
+    try:
+        number = float(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{field}: expected finite number") from exc
+    if not math.isfinite(number):
+        raise ValueError(f"{field}: expected finite number")
+    return number
+
+
+def validate_portfolio_state(state: Mapping[str, Any], policy: Mapping[str, Any]) -> None:
+    """Reject malformed persistent controller state before it influences ranking."""
+    if state.get("version") != 1:
+        raise ValueError("portfolio state: unsupported version")
+    strategies = set(policy["strategy_arms"])
+    weights = state.get("strategy_weights")
+    arms = state.get("arms")
+    if not isinstance(weights, Mapping) or set(weights) != strategies:
+        raise ValueError("portfolio state: strategy_weights do not match configured arms")
+    if not isinstance(arms, Mapping) or set(arms) != strategies:
+        raise ValueError("portfolio state: arms do not match configured strategies")
+    weight_total = 0.0
+    for strategy in strategies:
+        weight = _finite_number(weights[strategy], f"strategy_weights.{strategy}")
+        if weight < 0:
+            raise ValueError(f"strategy_weights.{strategy}: expected non-negative value")
+        weight_total += weight
+        arm = arms[strategy]
+        if not isinstance(arm, Mapping):
+            raise ValueError(f"arms.{strategy}: expected object")
+        pulls = arm.get("pulls")
+        if isinstance(pulls, bool) or not isinstance(pulls, int) or pulls < 0:
+            raise ValueError(f"arms.{strategy}.pulls: expected non-negative integer")
+        opportunity = _finite_number(arm.get("last_opportunity"), f"arms.{strategy}.last_opportunity")
+        if not 0.0 <= opportunity <= 1.0:
+            raise ValueError(f"arms.{strategy}.last_opportunity: expected value in [0, 1]")
+    if not math.isclose(weight_total, 1.0, rel_tol=1e-6, abs_tol=1e-6):
+        raise ValueError("portfolio state: strategy weights must sum to one")
+    selected = state.get("last_selected_arm")
+    if selected is not None and selected not in strategies:
+        raise ValueError("portfolio state: unknown last_selected_arm")
+    if not isinstance(state.get("checkpoint_source"), str) or not state["checkpoint_source"]:
+        raise ValueError("portfolio state: checkpoint_source must be a non-empty string")
+
+
+def validate_evolution_health_state(state: Mapping[str, Any], math_policy: Mapping[str, Any]) -> None:
+    """Validate the Bayesian health state consumed by the portfolio controller."""
+    if state.get("version") != 2:
+        raise ValueError("evolution health state: unsupported version")
+    dimensions = set(math_policy["homeostasis"]["targets"])
+    fitness = state.get("fitness")
+    beliefs = state.get("beliefs")
+    if not isinstance(fitness, Mapping) or set(fitness) != dimensions:
+        raise ValueError("evolution health state: invalid fitness dimensions")
+    if not isinstance(beliefs, Mapping) or set(beliefs) != dimensions:
+        raise ValueError("evolution health state: invalid belief dimensions")
+    for dimension in dimensions:
+        belief = beliefs[dimension]
+        if not isinstance(belief, Mapping):
+            raise ValueError(f"beliefs.{dimension}: expected object")
+        alpha = _finite_number(belief.get("alpha"), f"beliefs.{dimension}.alpha")
+        beta = _finite_number(belief.get("beta"), f"beliefs.{dimension}.beta")
+        if alpha <= 0 or beta <= 0:
+            raise ValueError(f"beliefs.{dimension}: alpha and beta must be positive")
+        observed = _finite_number(fitness[dimension], f"fitness.{dimension}")
+        if not 0.0 <= observed <= 1.0:
+            raise ValueError(f"fitness.{dimension}: expected value in [0, 1]")
+        if not math.isclose(observed, alpha / (alpha + beta), rel_tol=1e-9, abs_tol=1e-9):
+            raise ValueError(f"fitness.{dimension}: inconsistent with Bayesian belief")
+
+
 def _parse_time(raw: str | None) -> datetime:
     if not raw:
         return datetime.now(timezone.utc)
@@ -513,6 +586,8 @@ def main() -> int:
     evolution_state = load_json(args.evolution_state)
     math_policy = load_json(args.math_policy)
     policy = load_json(args.policy)
+    validate_portfolio_state(state, policy)
+    validate_evolution_health_state(evolution_state, math_policy)
     portfolio = build_portfolio(snapshot, state, evolution_state, math_policy, policy, args.checkpoint_source)
     Path(args.output).write_text(json.dumps(portfolio, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     Path(args.state).write_text(json.dumps(state, indent=2, sort_keys=True) + "\n", encoding="utf-8")

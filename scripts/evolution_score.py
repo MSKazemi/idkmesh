@@ -15,6 +15,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -39,6 +40,9 @@ DIMENSIONS = (
     "exploration_capacity",
     "risk_debt",
 )
+TRUSTED_EVENT_SOURCES = {"issues", "pull_request_target", "push", "workflow_dispatch", "schedule"}
+EVENT_KIND_RE = re.compile(r"^[a-z_]+(?:\.[a-z_]+)+$")
+REPOSITORY_RE = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
 
 
 def load_json(path: str | Path) -> dict[str, Any]:
@@ -48,10 +52,189 @@ def load_json(path: str | Path) -> dict[str, Any]:
     return value
 
 
+def _finite_number(value: Any, field: str) -> float:
+    if isinstance(value, bool):
+        raise ValueError(f"{field}: expected finite number")
+    try:
+        number = float(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{field}: expected finite number") from exc
+    if not math.isfinite(number):
+        raise ValueError(f"{field}: expected finite number")
+    return number
+
+
+def _non_negative_int(value: Any, field: str) -> int:
+    if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+        raise ValueError(f"{field}: expected non-negative integer")
+    return value
+
+
+def _count_map(value: Any, field: str) -> dict[str, int]:
+    if not isinstance(value, dict):
+        raise ValueError(f"{field}: expected object")
+    result: dict[str, int] = {}
+    for key, count in value.items():
+        if not isinstance(key, str) or not key:
+            raise ValueError(f"{field}: keys must be non-empty strings")
+        result[key] = _non_negative_int(count, f"{field}.{key}")
+    return result
+
+
+def _timestamp(value: Any, field: str) -> str:
+    if not isinstance(value, str) or not value:
+        raise ValueError(f"{field}: expected ISO-8601 timestamp")
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise ValueError(f"{field}: expected ISO-8601 timestamp") from exc
+    if parsed.tzinfo is None:
+        raise ValueError(f"{field}: timestamp must include timezone")
+    return value
+
+
+def validate_evolution_state(state: dict[str, Any]) -> None:
+    """Reject malformed or internally inconsistent Bayesian checkpoints."""
+    if state.get("version") != 2:
+        raise ValueError("evolution state: unsupported version")
+    expected = set(DIMENSIONS)
+    for field in ("beliefs", "fitness", "weights"):
+        value = state.get(field)
+        if not isinstance(value, dict) or set(value) != expected:
+            raise ValueError(f"evolution state: {field} must contain exactly the configured dimensions")
+
+    for dimension in DIMENSIONS:
+        belief = state["beliefs"][dimension]
+        if not isinstance(belief, dict):
+            raise ValueError(f"beliefs.{dimension}: expected object")
+        alpha = _finite_number(belief.get("alpha"), f"beliefs.{dimension}.alpha")
+        beta = _finite_number(belief.get("beta"), f"beliefs.{dimension}.beta")
+        if alpha <= 0 or beta <= 0:
+            raise ValueError(f"beliefs.{dimension}: alpha and beta must be positive")
+        observed = _finite_number(state["fitness"][dimension], f"fitness.{dimension}")
+        if not 0.0 <= observed <= 1.0:
+            raise ValueError(f"fitness.{dimension}: expected value in [0, 1]")
+        if not math.isclose(observed, beta_mean(alpha, beta), rel_tol=1e-9, abs_tol=1e-9):
+            raise ValueError(f"fitness.{dimension}: inconsistent with Bayesian belief")
+        if _finite_number(state["weights"][dimension], f"weights.{dimension}") <= 0:
+            raise ValueError(f"weights.{dimension}: expected positive value")
+
+    activity = state.get("activity_counts")
+    if not isinstance(activity, dict):
+        raise ValueError("activity_counts: expected object")
+    kinds = _count_map(activity.get("event_kinds"), "activity_counts.event_kinds")
+    actors = _count_map(activity.get("actors"), "activity_counts.actors")
+    signals = state.get("signals")
+    if not isinstance(signals, dict):
+        raise ValueError("signals: expected object")
+    events_seen = _non_negative_int(signals.get("events_seen"), "signals.events_seen")
+    if sum(kinds.values()) != events_seen or sum(actors.values()) != events_seen:
+        raise ValueError("signals.events_seen: inconsistent with activity counts")
+    for field in ("event_entropy", "actor_entropy"):
+        value = _finite_number(signals.get(field), f"signals.{field}")
+        if not 0.0 <= value <= 1.0:
+            raise ValueError(f"signals.{field}: expected value in [0, 1]")
+    if not isinstance(signals.get("checkpoint_source"), str) or not signals["checkpoint_source"]:
+        raise ValueError("signals.checkpoint_source: expected non-empty string")
+    for field in ("last_score", "last_delta"):
+        _finite_number(signals.get(field), f"signals.{field}")
+    potential_value = signals.get("homeostatic_potential")
+    if potential_value is not None and _finite_number(
+        potential_value, "signals.homeostatic_potential"
+    ) < 0:
+        raise ValueError("signals.homeostatic_potential: expected non-negative value")
+    updated_at = state.get("updated_at")
+    if updated_at is not None:
+        _timestamp(updated_at, "updated_at")
+
+    policy = state.get("policy")
+    if not isinstance(policy, dict):
+        raise ValueError("policy: expected object")
+    if _finite_number(policy.get("minimum_meaningful_delta"), "policy.minimum_meaningful_delta") < 0:
+        raise ValueError("policy.minimum_meaningful_delta: expected non-negative value")
+    if _non_negative_int(policy.get("max_event_log_entries"), "policy.max_event_log_entries") <= 0:
+        raise ValueError("policy.max_event_log_entries: expected positive integer")
+    if policy.get("autonomous_merge") is not False:
+        raise ValueError("policy.autonomous_merge must remain false")
+    if policy.get("constitutional_changes_require_review") is not True:
+        raise ValueError("policy.constitutional_changes_require_review must remain true")
+
+
+def load_event_ledger(path: str | Path) -> list[dict[str, Any]]:
+    records: list[dict[str, Any]] = []
+    ledger_path = Path(path)
+    if not ledger_path.exists():
+        return records
+    for line_number, line in enumerate(ledger_path.read_text(encoding="utf-8").splitlines(), start=1):
+        if not line.strip():
+            continue
+        value = json.loads(line)
+        if not isinstance(value, dict):
+            raise ValueError(f"{path}:{line_number}: expected JSON object")
+        records.append(value)
+    return records
+
+
+def validate_event_ledger(
+    state: dict[str, Any],
+    records: list[dict[str, Any]],
+    allowed_sources: set[str] | None = None,
+) -> None:
+    """Validate bounded event history and its lineage to the state counters."""
+    maximum = int(state["policy"]["max_event_log_entries"])
+    if len(records) > maximum:
+        raise ValueError("event ledger exceeds configured bound")
+    observed: list[dict[str, Any]] = []
+    for index, record in enumerate(records, start=1):
+        version = record.get("version")
+        if version == 1 and record.get("kind") == "bootstrap":
+            continue
+        if version != 2:
+            raise ValueError(f"event ledger record {index}: unsupported version")
+        for field in ("kind", "actor", "repository", "timestamp", "checkpoint_source"):
+            if not isinstance(record.get(field), str) or not record[field]:
+                raise ValueError(f"event ledger record {index}: invalid {field}")
+        if not EVENT_KIND_RE.fullmatch(record["kind"]):
+            raise ValueError(f"event ledger record {index}: invalid kind")
+        if not REPOSITORY_RE.fullmatch(record["repository"]):
+            raise ValueError(f"event ledger record {index}: invalid repository")
+        source = record.get("source")
+        if not isinstance(source, str) or not source:
+            raise ValueError(f"event ledger record {index}: invalid event source")
+        if allowed_sources is not None and source not in allowed_sources:
+            raise ValueError(f"event ledger record {index}: untrusted event source")
+        run_id = record.get("run_id")
+        if not isinstance(run_id, str) or not run_id.isdigit() or int(run_id) <= 0:
+            raise ValueError(f"event ledger record {index}: invalid run_id")
+        if not isinstance(record.get("ref"), str):
+            raise ValueError(f"event ledger record {index}: invalid ref")
+        _timestamp(record["timestamp"], f"event ledger record {index}.timestamp")
+        observed.append(record)
+
+    events_seen = int(state["signals"]["events_seen"])
+    if events_seen < len(observed):
+        raise ValueError("event ledger contains more observations than state")
+    if events_seen < maximum and events_seen != len(observed):
+        raise ValueError("event ledger lineage does not match state event count")
+    if observed:
+        latest = observed[-1]
+        if state["signals"].get("last_event") != latest["kind"]:
+            raise ValueError("event ledger latest kind does not match state")
+        if state["signals"].get("last_actor") != latest["actor"]:
+            raise ValueError("event ledger latest actor does not match state")
+        if state.get("updated_at") != latest["timestamp"]:
+            raise ValueError("event ledger latest timestamp does not match state")
+        if state["signals"].get("checkpoint_source") != latest["checkpoint_source"]:
+            raise ValueError("event ledger checkpoint source does not match state")
+
+
 def migrate_state(state: dict[str, Any], math_policy: dict[str, Any]) -> dict[str, Any]:
     """Migrate the old additive v1 state into a Bayesian v2 representation."""
+    version = state.get("version", 1)
+    if isinstance(version, bool) or not isinstance(version, int) or version not in {1, 2}:
+        raise ValueError("evolution state: unsupported version")
     state.setdefault("fitness", {})
-    if state.get("version", 1) < 2 or "beliefs" not in state:
+    if version == 1:
         concentration = 8.0
         beliefs: dict[str, dict[str, float]] = {}
         for dimension in DIMENSIONS:
@@ -64,6 +247,8 @@ def migrate_state(state: dict[str, Any], math_policy: dict[str, Any]) -> dict[st
             }
         state["beliefs"] = beliefs
         state["version"] = 2
+    elif not isinstance(state.get("beliefs"), dict):
+        raise ValueError("evolution state: beliefs must be an object")
 
     fresh_alpha = float(math_policy["bayesian"]["fresh_alpha"])
     fresh_beta = float(math_policy["bayesian"]["fresh_beta"])
@@ -227,6 +412,9 @@ def main() -> int:
     math_policy = load_json(args.math_policy)
     state_path = Path(args.state)
     state = migrate_state(load_json(state_path), math_policy)
+    ledger_records = load_event_ledger(args.events)
+    validate_evolution_state(state)
+    validate_event_ledger(state, ledger_records)
     event = normalize_event(args)
     state["signals"]["checkpoint_source"] = args.checkpoint_source
 
@@ -274,6 +462,10 @@ def main() -> int:
         "meaningful_improvement": meaningful,
         "evidence_quality": "bayesian-soft-evidence",
     }
+
+    next_records = (ledger_records + [record])[-int(state["policy"]["max_event_log_entries"]):]
+    validate_evolution_state(state)
+    validate_event_ledger(state, next_records)
 
     state_path.write_text(json.dumps(state, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     append_bounded_jsonl(Path(args.events), record, int(state["policy"]["max_event_log_entries"]))
