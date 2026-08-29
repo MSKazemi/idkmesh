@@ -7,6 +7,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 FULL_SHA_USE = re.compile(r"^\s*uses:\s*[^\s]+@([0-9a-f]{40})(?:\s+#.*)?$", re.MULTILINE)
+CODEQL_V4_PIN = "f205ea1c3313d32999d8d6a48b4f6530d4437b38"
 
 
 class SecurityAutomationTests(unittest.TestCase):
@@ -22,6 +23,8 @@ class SecurityAutomationTests(unittest.TestCase):
         uses_lines = [line for line in workflow.splitlines() if line.strip().startswith("uses:")]
         self.assertEqual(len(uses_lines), 3)
         self.assertEqual(len(FULL_SHA_USE.findall(workflow)), len(uses_lines))
+        self.assertEqual(workflow.count(f"github/codeql-action/init@{CODEQL_V4_PIN}"), 1)
+        self.assertEqual(workflow.count(f"github/codeql-action/analyze@{CODEQL_V4_PIN}"), 1)
 
     def test_dependabot_covers_actions_and_python_dependencies(self) -> None:
         config = (ROOT / ".github/dependabot.yml").read_text(encoding="utf-8")
@@ -40,6 +43,7 @@ class SecurityAutomationTests(unittest.TestCase):
         self.assertNotIn("pull_request_target:", workflow)
         self.assertIn("publish_results: false", workflow)
         self.assertIn("retention-days: 5", workflow)
+        self.assertEqual(workflow.count(f"github/codeql-action/upload-sarif@{CODEQL_V4_PIN}"), 1)
 
         uses_lines = [line for line in workflow.splitlines() if line.strip().startswith("uses:")]
         self.assertEqual(len(uses_lines), 4)
