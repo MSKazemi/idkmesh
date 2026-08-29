@@ -223,6 +223,11 @@ WorkUnits carry explicit verification policy, validators, and evidence requireme
 
 The v0.2 schema is still a falsifiable hypothesis. Experiments should measure which fields reduce context, rework, coupling, integration failures, and verification cost.
 
+`docs/specifications/WORK_UNIT_COMPOSABILITY_V0_2.md` defines the reference
+five-arm benchmark, metrics, formal example DAG, and validation interface. Its
+committed observations are explicitly synthetic infrastructure fixtures; only
+controlled independent runs may be promoted to research evidence.
+
 ### #17 interoperability
 
 The WorkUnit stays model/vendor neutral so its semantics can be mapped to external agent/task protocols without forcing the coordinator to branch by provider.
