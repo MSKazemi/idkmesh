@@ -128,11 +128,15 @@ The next evidence step is to replace synthetic worker outcomes with adapters tha
 
 ## Next steps
 
-1. Add parameter sweeps over worker error correlation, verifier correlation, swarm size, and worker quality.
-2. Automatically identify regions where diversity helps or hurts after accounting for cost.
-3. Add real-task replay input so previously generated coding candidates can be evaluated through the same experiment pipeline.
-4. Run on held-out coding tasks with hidden tests and publish raw results.
-5. Measure real pairwise failure correlation by model/prompt/tool/role rather than assuming it.
-6. Compare randomized verifier assignment with genuinely different verifier models/tools.
+The assumption sweep, synthetic N-scaling curves, and conservative real-result
+replay adapter now exist. See [R1 collective-capability scaling](R1_COLLECTIVE_SCALING.md)
+for the N = 1, 2, 5, 10 reference and the explicit issue #13 coverage ledger.
+
+The remaining steps require evidence rather than more synthetic plumbing:
+
+1. Run on held-out coding tasks with hidden tests and publish raw results.
+2. Measure real pairwise failure correlation by model/prompt/tool/role rather than assuming it.
+3. Compare randomized verifier assignment with genuinely different verifier models/tools.
+4. Execute the planner/role and task-DAG configurations under the same frozen budgets.
 
 The project should not promote a swarm strategy into the Verified Swarm Runner solely because it performs well in this synthetic experiment.
