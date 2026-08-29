@@ -1,6 +1,6 @@
 # GitHub Pages Front Door — Activation Runbook
 
-**Status:** prepared repository-side source; GitHub Pages remains an explicit repository-owner/admin activation.
+**Status:** active and verified as of 2026-08-29; retained as the activation/reverification runbook.
 
 The public landing page source is:
 
@@ -20,33 +20,45 @@ The page is a short first-contact surface for visitors who do not yet understand
 
 Canonical technical and project documentation remains in the repository. The Pages site must not become a competing source of truth.
 
-## Owner activation
+## Current live state
 
-After the landing-page PR is merged and reviewed:
+Repository evidence recorded in issue #173 confirms:
+
+- Pages enabled from protected `main:/docs`;
+- HTTPS enforced;
+- repository homepage set to `https://mskazemi.com/idkmesh/`;
+- the live page returned the expected IDKMesh landing page;
+- the first public research-preview release was published from the same reviewed repository state.
+
+Do not treat this runbook's historical activation steps as evidence that activation is still pending.
+
+## Activation / recovery procedure
+
+If Pages must be recreated or repaired:
 
 1. open repository **Settings → Pages**;
 2. choose **Deploy from a branch**;
 3. select branch `main`;
 4. select folder `/docs`;
 5. save;
-6. wait for GitHub to publish the site;
+6. verify GitHub publishes the site;
 7. set the repository homepage field to the published Pages URL;
 8. verify the public page from a logged-out/private-browser session.
 
-Do not configure a custom domain for the first experiment unless there is a concrete need.
+Do not configure a custom domain unless there is a concrete need.
 
 ## Post-activation checks
 
 Verify that:
 
 - the published page loads without authentication;
-- the three current contribution links resolve to open/relevant GitHub surfaces;
+- current contribution links resolve to open/relevant GitHub surfaces;
 - repository, README, CONTRIBUTING, and docs-map links resolve;
 - mobile layout remains readable;
 - no external trackers/scripts are loaded;
 - the page does not claim production readiness or external adoption without evidence.
 
-Then update issue #173 with the exact published URL and observed repository metadata.
+Record materially changed observations in the canonical tracker rather than leaving stale status prose here.
 
 ## Maintenance rule
 
@@ -68,6 +80,6 @@ discover
  -> receive review
 ```
 
-The immediate experiment succeeds when at least one genuinely external person reaches a bounded project surface through the public front door and leaves an inspectable question, claim, review, or contribution.
+The immediate experiment succeeds when at least one genuinely external person reaches a bounded project surface through the public front door and leaves an inspectable question, claim, review, or contribution. That external-participation evidence remains tracked by the community-growth work (#9, #10, #23, #109) and is not implied by Pages activation.
 
-Related: #10, #109, #167, #173.
+Related: #9, #10, #23, #109, #167, #173.
