@@ -82,6 +82,20 @@ For a newcomer trying to understand the executable foundation, this order is usu
 - [Evolution Artifact Minimization](architecture/EVOLUTION_ARTIFACT_MINIMIZATION.md) — retain reproducible evidence without unnecessary untrusted content.
 - [CI Shadow Planner](architecture/CI_SHADOW_PLANNER.md) and [CI Shadow Outcome Evaluator](architecture/CI_SHADOW_OUTCOME_EVALUATOR.md) — advisory exact-revision CI planning/evaluation without skip or merge authority.
 
+### Contribution surface and public front door
+
+- [Multidisciplinary Collaboration in IDKMesh](CONTRIBUTOR_PERSPECTIVES.md) —
+  the contribution tracks a newcomer can enter from, and the rule that different
+  perspectives are composed rather than forced into premature agreement.
+- [GitHub Pages Front Door — Activation Runbook](PAGES_SETUP.md) — the
+  dependency-free landing page, its activation and reverification procedure, and
+  what the page is allowed to claim. Implementation surface for
+  [ADR-0011](decisions/ADR-0011-discovery-surface-completion.md).
+- [Artistic Inspiration: M. C. Escher](design/ARTISTIC_INSPIRATION_M_C_ESCHER.md)
+  — recursion, local rules producing global order, self-reference, and
+  composability as conceptual framing. Inspiration at the level of ideas, not a
+  visual or branding directive.
+
 ### Security
 
 - [ACE GitHub Workflow Threat Model](security/ACE_THREAT_MODEL.md) — trust boundaries and fail-closed requirements for privileged ACE workflows.
