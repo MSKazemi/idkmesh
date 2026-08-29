@@ -1,0 +1,36 @@
+name: ACE safety contract
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/ace-community-growth.yml'
+      - 'tests/test_ace_safety_contract.py'
+      - '.github/workflows/ace-safety-contract.yml'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/ace-community-growth.yml'
+      - 'tests/test_ace_safety_contract.py'
+      - '.github/workflows/ace-safety-contract.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Enforce ACE privileged-workflow safety invariants
+        run: python -m unittest tests.test_ace_safety_contract -v
+
+# This workflow only reads repository-owned workflow text and enforces invariants.
+# It has no write permission and never executes pull-request-controlled code under
+# pull_request_target.
