@@ -172,13 +172,18 @@ def _normalize_issue(item: dict[str, Any], now: datetime) -> dict[str, Any]:
     }
 
 
-def _normalize_pr(item: dict[str, Any], now: datetime, reviews: list[dict[str, Any]]) -> dict[str, Any]:
+def _normalize_pr(
+    item: dict[str, Any],
+    now: datetime,
+    reviews: list[dict[str, Any]],
+    reviews_truncated: bool = False,
+) -> dict[str, Any]:
     author = ((item.get("user") or {}).get("login") or "").lower()
     head_sha = str((item.get("head") or {}).get("sha") or "")
     independent_reviewers: set[str] = set()
     independent_approvers: set[str] = set()
     latest_by_reviewer: dict[str, tuple[tuple[str, int], dict[str, Any]]] = {}
-    for review in reviews:
+    for review in [] if reviews_truncated else reviews:
         user = review.get("user") or {}
         login = (user.get("login") or "").lower()
         if not login or login == author or _is_bot(login, user.get("type")):
@@ -238,12 +243,26 @@ def collect(repository: str, token: str, root: Path, event_kind: str, run_id: st
     raw_branches, branches_truncated = _request_all(f"/repos/{owner}/{name}/branches", token, max_pages=3)
 
     reviews_by_pr: dict[int, list[dict[str, Any]]] = {}
+    truncated_review_prs: set[int] = set()
     for pull in raw_pulls[:25]:
-        reviews, _ = _request_all(f"/repos/{owner}/{name}/pulls/{pull['number']}/reviews", token, max_pages=1)
-        reviews_by_pr[int(pull["number"])] = reviews
+        pull_number = int(pull["number"])
+        reviews, reviews_truncated = _request_all(
+            f"/repos/{owner}/{name}/pulls/{pull_number}/reviews", token, max_pages=5
+        )
+        reviews_by_pr[pull_number] = reviews
+        if reviews_truncated:
+            truncated_review_prs.add(pull_number)
 
     open_issues = [_normalize_issue(item, now) for item in raw_issues]
-    open_prs = [_normalize_pr(item, now, reviews_by_pr.get(int(item["number"]), [])) for item in raw_pulls]
+    open_prs = [
+        _normalize_pr(
+            item,
+            now,
+            reviews_by_pr.get(int(item["number"]), []),
+            int(item["number"]) in truncated_review_prs,
+        )
+        for item in raw_pulls
+    ]
 
     external: set[str] = set()
     owner_login = str((repo.get("owner") or {}).get("login") or owner).lower()
@@ -300,8 +319,10 @@ def collect(repository: str, token: str, root: Path, event_kind: str, run_id: st
             "closed_pulls_truncated": closed_truncated,
             "branches_truncated": branches_truncated,
             "comments_truncated": comments_truncated,
+            "review_history_truncated_prs": sorted(truncated_review_prs),
             "external_participant_comment_window_days": 30,
-            "reviewed_prs_capped_at": 25
+            "reviewed_prs_capped_at": 25,
+            "review_pages_per_pr_capped_at": 5,
         }
     }
     return snapshot

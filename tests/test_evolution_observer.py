@@ -204,6 +204,24 @@ class EvolutionObserverTests(unittest.TestCase):
         self.assertEqual(normalized["independent_review_count"], 0)
         self.assertEqual(normalized["independent_approval_count"], 0)
 
+    def test_truncated_review_history_fails_closed(self):
+        item = {
+            "number": 80,
+            "draft": False,
+            "labels": [],
+            "body": "",
+            "created_at": "2026-08-28T10:00:00Z",
+            "user": {"login": "author", "type": "User"},
+            "head": {"sha": "current-head"},
+        }
+        reviews = [
+            {"state": "APPROVED", "commit_id": "current-head", "user": {"login": "reviewer", "type": "User"}},
+        ]
+        now = evolution_snapshot.datetime(2026, 8, 28, 16, tzinfo=evolution_snapshot.timezone.utc)
+        normalized = evolution_snapshot._normalize_pr(item, now, reviews, reviews_truncated=True)
+        self.assertEqual(normalized["independent_review_count"], 0)
+        self.assertEqual(normalized["independent_approval_count"], 0)
+
     def test_workflow_pin_scan_detects_floating_and_pinned_actions(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
