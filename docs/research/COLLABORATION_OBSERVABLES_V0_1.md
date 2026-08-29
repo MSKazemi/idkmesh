@@ -14,7 +14,9 @@ contributor histories. Pull requests carry timestamps, independent reviewer
 IDs, changed-file owner attributions, CI counts, structural-debt findings, and
 optional strategy/outcome labels. Records are sorted by stable identifiers, and
 bootstrap seeds are derived from repository plus cutoff, so record order cannot
-change the output.
+change the output. Contributor timestamps must be unique within each contributor
+record, and `inventory_complete` must be a JSON boolean; malformed or duplicate
+observations fail closed instead of changing recurrence or completeness.
 
 Run:
 

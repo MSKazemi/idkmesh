@@ -55,6 +55,19 @@ class CollaborationObservablesTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "after cutoff"):
             analyze(changed)
 
+    def test_duplicate_contribution_observation_fails_closed(self):
+        changed = copy.deepcopy(self.snapshot)
+        duplicate = changed["contributors"][0]["meaningful_contributions"][0]
+        changed["contributors"][0]["meaningful_contributions"].append(duplicate)
+        with self.assertRaisesRegex(ValueError, "timestamps must be unique"):
+            analyze(changed)
+
+    def test_inventory_completeness_requires_boolean(self):
+        changed = copy.deepcopy(self.snapshot)
+        changed["inventory_complete"] = "false"
+        with self.assertRaisesRegex(ValueError, "must be a boolean"):
+            analyze(changed)
+
     def test_self_review_and_self_report_fail_closed(self):
         changed = copy.deepcopy(self.snapshot)
         changed["pull_requests"][0]["independent_reviewers"] = ["carol"]
