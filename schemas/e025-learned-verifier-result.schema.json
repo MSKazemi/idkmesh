@@ -1,0 +1,180 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idkmesh.org/schemas/e025-learned-verifier-result.schema.json",
+  "title": "E025 learned verifier experiment result",
+  "$defs": {
+    "summary": {
+      "type": "object",
+      "required": ["n", "mean", "stdev", "ci95_low", "ci95_high", "min", "max"],
+      "properties": {
+        "n": {"type": "integer", "minimum": 1},
+        "mean": {"type": "number"},
+        "stdev": {"type": "number", "minimum": 0},
+        "ci95_low": {"type": "number"},
+        "ci95_high": {"type": "number"},
+        "min": {"type": "number"},
+        "max": {"type": "number"}
+      },
+      "additionalProperties": false
+    },
+    "methodMetrics": {
+      "type": "object",
+      "required": ["false_accept_rate", "false_reject_rate", "error_rate", "brier_score", "mean_confidence", "high_confidence_error_rate"],
+      "properties": {
+        "false_accept_rate": {"$ref": "#/$defs/summary"},
+        "false_reject_rate": {"$ref": "#/$defs/summary"},
+        "error_rate": {"$ref": "#/$defs/summary"},
+        "brier_score": {"$ref": "#/$defs/summary"},
+        "mean_confidence": {"$ref": "#/$defs/summary"},
+        "high_confidence_error_rate": {"$ref": "#/$defs/summary"}
+      },
+      "additionalProperties": false
+    },
+    "streamConfig": {
+      "type": "object",
+      "required": ["correlation", "dependence", "accuracy"],
+      "properties": {
+        "correlation": {"type": "number", "minimum": 0, "maximum": 1},
+        "dependence": {"enum": ["shared-shock", "item-difficulty"]},
+        "accuracy": {
+          "type": "array", "minItems": 11, "maxItems": 11,
+          "items": {"type": "number", "exclusiveMinimum": 0.5, "exclusiveMaximum": 1}
+        }
+      },
+      "additionalProperties": false
+    },
+    "correlationDiagnostics": {
+      "type": "object",
+      "required": ["pairwise_correlation_mae", "pairwise_correlation_signed_error", "overestimated_independence_pair_rate", "underestimated_independence_pair_rate", "exact_group_recovery"],
+      "properties": {
+        "pairwise_correlation_mae": {"$ref": "#/$defs/summary"},
+        "pairwise_correlation_signed_error": {"$ref": "#/$defs/summary"},
+        "overestimated_independence_pair_rate": {"$ref": "#/$defs/summary"},
+        "underestimated_independence_pair_rate": {"$ref": "#/$defs/summary"},
+        "exact_group_recovery": {"$ref": "#/$defs/summary"}
+      },
+      "additionalProperties": false
+    },
+    "evidenceDiagnostics": {
+      "type": "object",
+      "required": ["learned_rho_heuristic_total", "true_rho_heuristic_total", "calibration_observed_effective_total", "nominal_verifiers"],
+      "properties": {
+        "learned_rho_heuristic_total": {"$ref": "#/$defs/summary"},
+        "true_rho_heuristic_total": {"$ref": "#/$defs/summary"},
+        "calibration_observed_effective_total": {"$ref": "#/$defs/summary"},
+        "nominal_verifiers": {"$ref": "#/$defs/summary"}
+      },
+      "additionalProperties": false
+    }
+  },
+  "type": "object",
+  "required": ["schema_version", "experiment", "configuration", "separation", "findings", "cells", "limitations"],
+  "properties": {
+    "schema_version": {"const": "e025.learned-verifier-results.v1"},
+    "experiment": {"const": "E025-learned-verifier-reliability-dependence"},
+    "configuration": {
+      "type": "object",
+      "required": ["seed_start", "seeds", "history_trials", "heldout_trials", "panel", "correlation_threshold", "methods", "uncertainty"],
+      "properties": {
+        "seed_start": {"type": "integer", "minimum": 0},
+        "seeds": {"type": "integer", "minimum": 2},
+        "history_trials": {"type": "array", "minItems": 1, "items": {"type": "integer", "minimum": 2}},
+        "heldout_trials": {"type": "integer", "minimum": 2},
+        "panel": {
+          "type": "array", "minItems": 1,
+          "items": {
+            "type": "object", "required": ["name", "group", "accuracy"],
+            "properties": {
+              "name": {"type": "string", "minLength": 1},
+              "group": {"type": "string", "minLength": 1},
+              "accuracy": {"type": "number", "exclusiveMinimum": 0.5, "exclusiveMaximum": 1}
+            },
+            "additionalProperties": false
+          }
+        },
+        "correlation_threshold": {"type": "number", "minimum": -1, "maximum": 1},
+        "methods": {
+          "type": "array", "minItems": 7, "maxItems": 7, "uniqueItems": true,
+          "items": {"enum": ["naive_majority", "declared_group_oracle", "inferred_dependence_groups", "effective_sample_heuristic", "empirical_effective_evidence", "bayesian_reliability", "combined_reliability_dependence"]}
+        },
+        "uncertainty": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": false
+    },
+    "separation": {
+      "type": "object",
+      "required": ["calibration_seed_formula", "heldout_seed_formula", "frozen_model_before_heldout", "heldout_truth_available_to_aggregator", "matched_heldout_votes_across_methods"],
+      "properties": {
+        "calibration_seed_formula": {"type": "string", "minLength": 1},
+        "heldout_seed_formula": {"type": "string", "minLength": 1},
+        "frozen_model_before_heldout": {"const": true},
+        "heldout_truth_available_to_aggregator": {"const": false},
+        "matched_heldout_votes_across_methods": {"const": true}
+      },
+      "additionalProperties": false
+    },
+    "findings": {
+      "type": "object",
+      "required": ["stable_improvement_cells", "shift_harm_cells", "improvement_observed", "harm_observed", "production_reputation_claim"],
+      "properties": {
+        "stable_improvement_cells": {"type": "integer", "minimum": 0},
+        "shift_harm_cells": {"type": "integer", "minimum": 0},
+        "improvement_observed": {"type": "boolean"},
+        "harm_observed": {"type": "boolean"},
+        "production_reputation_claim": {"const": false}
+      },
+      "additionalProperties": false
+    },
+    "cells": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["scenario", "purpose", "history_trials", "heldout_trials", "calibration", "heldout", "metrics", "correlation_estimation", "heldout_correlation_misspecification", "effective_evidence", "model_uncertainty", "stream_identity"],
+        "properties": {
+          "scenario": {"enum": ["stable_shared_shock", "stable_item_difficulty", "reliability_shift", "dependence_dissipates", "dependence_emerges"]},
+          "purpose": {"type": "string", "minLength": 1},
+          "history_trials": {"type": "integer", "minimum": 2},
+          "heldout_trials": {"type": "integer", "minimum": 2},
+          "calibration": {"$ref": "#/$defs/streamConfig"},
+          "heldout": {"$ref": "#/$defs/streamConfig"},
+          "metrics": {
+            "type": "object",
+            "required": ["naive_majority", "declared_group_oracle", "inferred_dependence_groups", "effective_sample_heuristic", "empirical_effective_evidence", "bayesian_reliability", "combined_reliability_dependence"],
+            "properties": {
+              "naive_majority": {"$ref": "#/$defs/methodMetrics"},
+              "declared_group_oracle": {"$ref": "#/$defs/methodMetrics"},
+              "inferred_dependence_groups": {"$ref": "#/$defs/methodMetrics"},
+              "effective_sample_heuristic": {"$ref": "#/$defs/methodMetrics"},
+              "empirical_effective_evidence": {"$ref": "#/$defs/methodMetrics"},
+              "bayesian_reliability": {"$ref": "#/$defs/methodMetrics"},
+              "combined_reliability_dependence": {"$ref": "#/$defs/methodMetrics"}
+            },
+            "additionalProperties": false
+          },
+          "correlation_estimation": {"$ref": "#/$defs/correlationDiagnostics"},
+          "heldout_correlation_misspecification": {"$ref": "#/$defs/correlationDiagnostics"},
+          "effective_evidence": {"$ref": "#/$defs/evidenceDiagnostics"},
+          "model_uncertainty": {
+            "type": "object", "required": ["mean_accuracy_ci95_width", "interval"],
+            "properties": {
+              "mean_accuracy_ci95_width": {"$ref": "#/$defs/summary"},
+              "interval": {"type": "string", "minLength": 1}
+            },
+            "additionalProperties": false
+          },
+          "stream_identity": {
+            "type": "object", "required": ["distinct_calibration_digests", "distinct_heldout_digests"],
+            "properties": {
+              "distinct_calibration_digests": {"type": "integer", "minimum": 1},
+              "distinct_heldout_digests": {"type": "integer", "minimum": 1}
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "limitations": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
+  },
+  "additionalProperties": false
+}

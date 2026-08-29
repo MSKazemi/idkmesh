@@ -216,6 +216,25 @@ declared groups carry genuinely independent evidence, which is a property to be
 See [`../experiments/E019-group-independence-under-item-difficulty.md`](../experiments/E019-group-independence-under-item-difficulty.md).
 
 
+## E025 — learn reliability and dependence from history
+
+`e025_learned_verifiers.py` removes E013's oracle grouping from learned methods.
+It calibrates on labelled history, freezes the model, then evaluates every
+method on the same held-out votes under two dependence shapes and three shifts.
+
+```bash
+python sim/e025_learned_verifiers.py --histories 40,200,1000 --seeds 20 --heldout-trials 1000 --pretty
+```
+
+At 200 history claims under item difficulty, combined weighting cuts error from
+`.2312` to `.0597`; after reliability reversal it raises error from `.1071` to
+`.2182`. When dependence appears only after calibration, error improves slightly
+while Brier score and high-confidence errors worsen. Learned weights are
+fallible evidence, not reputation or a confidence guarantee.
+
+See [`../experiments/E025-learned-verifier-reliability.md`](../experiments/E025-learned-verifier-reliability.md).
+
+
 ## Multi-seed emergence sweeps
 
 ```bash
@@ -250,6 +269,7 @@ python -m pytest -q \
   tests/test_emergence_sweep.py \
   tests/test_verifier_correlation_sweep.py \
   tests/test_verification_aggregation_sim.py \
+  tests/test_e025_learned_verifiers.py \
   tests/test_e015_phase_diagram.py \
   tests/test_e015_quorum_frontier.py \
   tests/test_e016_analyze.py \
@@ -262,7 +282,7 @@ python -m pytest -q \
 
 This is the same list `.github/workflows/emergence-sim.yml` runs; keep the two in step.
 
-The tests cover deterministic replay, budget invariants, niche preservation, perfect verification compatibility, correlated-error mechanics, sweep configuration, the E013 regime where independence-aware aggregation can help or hurt, the E015 effective-panel-size metrics, the E016 discrimination screen, the E017 item-difficulty model, the E018 model comparison, the E019 group-independence result, the E020 quorum frontier, and E024's exact matched-evaluation contract.
+The tests cover deterministic replay, budget invariants, niche preservation, perfect verification compatibility, correlated-error mechanics, sweep configuration, the E013 regime where independence-aware aggregation can help or hurt, E025's calibration separation and preserved shift failures, the E015 effective-panel-size metrics, the E016 discrimination screen, the E017 item-difficulty model, the E018 model comparison, the E019 group-independence result, the E020 quorum frontier, and E024's exact matched-evaluation contract.
 
 ## Interpretation
 
