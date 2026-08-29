@@ -1,5 +1,207 @@
 {
   "aggregate": {
+    "majority": {
+      "archive_size": {
+        "ci95_high": 0.0,
+        "ci95_low": 0.0,
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0,
+        "n": 100,
+        "stdev": 0.0
+      },
+      "false_accept_rate": {
+        "ci95_high": 0.0,
+        "ci95_low": 0.0,
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0,
+        "n": 100,
+        "stdev": 0.0
+      },
+      "false_reject_rate": {
+        "ci95_high": 0.0,
+        "ci95_low": 0.0,
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0,
+        "n": 100,
+        "stdev": 0.0
+      },
+      "final_best": {
+        "ci95_high": 0.773994,
+        "ci95_low": 0.710048,
+        "max": 0.899998,
+        "mean": 0.742021,
+        "min": 0.528073,
+        "n": 100,
+        "stdev": 0.163127
+      },
+      "panel_disagreement_rate": {
+        "ci95_high": 0.0,
+        "ci95_low": 0.0,
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0,
+        "n": 100,
+        "stdev": 0.0
+      },
+      "post_change_immediate": {
+        "ci95_high": 0.775467,
+        "ci95_low": 0.712375,
+        "max": 0.899998,
+        "mean": 0.743921,
+        "min": 0.528073,
+        "n": 100,
+        "stdev": 0.160948
+      },
+      "post_change_mean": {
+        "ci95_high": 0.774823,
+        "ci95_low": 0.711289,
+        "max": 0.899998,
+        "mean": 0.743056,
+        "min": 0.528073,
+        "n": 100,
+        "stdev": 0.162076
+      },
+      "post_change_regret_auc": {
+        "ci95_high": 7.217765,
+        "ci95_low": 5.629424,
+        "max": 11.798181,
+        "mean": 6.423594,
+        "min": 2.500049,
+        "n": 100,
+        "stdev": 4.05189
+      },
+      "post_change_utility_auc": {
+        "ci95_high": 19.370576,
+        "ci95_low": 17.782235,
+        "max": 22.499951,
+        "mean": 18.576406,
+        "min": 13.201819,
+        "n": 100,
+        "stdev": 4.05189
+      },
+      "pre_change_best": {
+        "ci95_high": 0.760218,
+        "ci95_low": 0.732403,
+        "max": 0.821997,
+        "mean": 0.746311,
+        "min": 0.669807,
+        "n": 100,
+        "stdev": 0.070958
+      },
+      "verification_accepts": {
+        "ci95_high": 2467.141982,
+        "ci95_low": 2461.038018,
+        "max": 2482.0,
+        "mean": 2464.09,
+        "min": 2373.0,
+        "n": 100,
+        "stdev": 15.571338
+      }
+    },
+    "planner": {
+      "archive_size": {
+        "ci95_high": 0.0,
+        "ci95_low": 0.0,
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0,
+        "n": 100,
+        "stdev": 0.0
+      },
+      "false_accept_rate": {
+        "ci95_high": 0.0,
+        "ci95_low": 0.0,
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0,
+        "n": 100,
+        "stdev": 0.0
+      },
+      "false_reject_rate": {
+        "ci95_high": 0.0,
+        "ci95_low": 0.0,
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0,
+        "n": 100,
+        "stdev": 0.0
+      },
+      "final_best": {
+        "ci95_high": 0.565196,
+        "ci95_low": 0.559035,
+        "max": 0.625248,
+        "mean": 0.562116,
+        "min": 0.524218,
+        "n": 100,
+        "stdev": 0.015717
+      },
+      "panel_disagreement_rate": {
+        "ci95_high": 0.0,
+        "ci95_low": 0.0,
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0,
+        "n": 100,
+        "stdev": 0.0
+      },
+      "post_change_immediate": {
+        "ci95_high": 0.568453,
+        "ci95_low": 0.56037,
+        "max": 0.634585,
+        "mean": 0.564411,
+        "min": 0.521538,
+        "n": 100,
+        "stdev": 0.020619
+      },
+      "post_change_mean": {
+        "ci95_high": 0.565915,
+        "ci95_low": 0.559358,
+        "max": 0.625248,
+        "mean": 0.562637,
+        "min": 0.524218,
+        "n": 100,
+        "stdev": 0.016727
+      },
+      "post_change_regret_auc": {
+        "ci95_high": 11.016047,
+        "ci95_low": 10.852118,
+        "max": 11.894555,
+        "mean": 10.934083,
+        "min": 9.368805,
+        "n": 100,
+        "stdev": 0.418186
+      },
+      "post_change_utility_auc": {
+        "ci95_high": 14.147882,
+        "ci95_low": 13.983953,
+        "max": 15.631195,
+        "mean": 14.065917,
+        "min": 13.105445,
+        "n": 100,
+        "stdev": 0.418186
+      },
+      "pre_change_best": {
+        "ci95_high": 0.821732,
+        "ci95_low": 0.821622,
+        "max": 0.821983,
+        "mean": 0.821677,
+        "min": 0.820525,
+        "n": 100,
+        "stdev": 0.000283
+      },
+      "verification_accepts": {
+        "ci95_high": 2456.462829,
+        "ci95_low": 2447.917171,
+        "max": 2478.0,
+        "mean": 2452.19,
+        "min": 2387.0,
+        "n": 100,
+        "stdev": 21.800146
+      }
+    },
     "qd": {
       "archive_size": {
         "ci95_high": 64.0,
@@ -326,11 +528,22 @@
     "All candidates, goals, and verification outcomes are synthetic.",
     "One evaluation unit is a simulator proposal plus panel decision, not measured compute, energy, or human attention.",
     "Quality-Diversity is given the four predefined plausible goals; the Goal Graph does not yet learn from evidence.",
-    "The three strategies receive equal evaluation counts, but their internal bookkeeping costs are not measured.",
+    "The five strategies receive equal evaluation counts, but their internal bookkeeping costs are not measured.",
     "The benchmark does not model churn, malicious workers, task dependencies, stigmergic traces, or post-integration defects.",
+    "The centralized planner and majority-vote swarm are single-artifact baselines by construction; their archive_size is always 0 and is not a defect.",
     "The legacy strategy-relative recovery_generations field remains in per-seed rows but is not aggregated; post-change utility/regret AUC is the comparable adaptation measure."
   ],
   "pairwise_wins": {
+    "qd_gt_majority_post_change_utility_auc": {
+      "rate": 0.51,
+      "trials": 100,
+      "wins": 51
+    },
+    "qd_gt_planner_post_change_utility_auc": {
+      "rate": 1.0,
+      "trials": 100,
+      "wins": 100
+    },
     "qd_gt_random_post_change_utility_auc": {
       "rate": 1.0,
       "trials": 100,
