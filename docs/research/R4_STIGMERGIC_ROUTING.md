@@ -1,13 +1,30 @@
 # R4 — Verified Stigmergic Routing
 
 **Issue:** #97  
-**Status:** Synthetic mechanism experiment
+**Status:** Synthetic mechanism and frozen reference experiment complete
 
 ## Research question
 
 Can a local ant-colony/stigmergic memory learn task→worker affinities from **verified outcomes**, forget stale advantages, adapt after capabilities change, and still let newcomers demonstrate value?
 
 The experiment is intentionally limited to routing. A pheromone trace is **not** contributor authority, governance power, or evidence that a result is correct.
+
+## Reference evidence
+
+The frozen default and lock-in traces, readable comparison, exact generation
+commands, and artifact digests are published in the
+[`R4 reference report`](../../results/experiments/r4/reference-summary.md). The
+committed artifact hashes and cross-runtime replay invariants are checked in
+`tests/test_r4_reference.py`; byte identity is bound to the recorded Python 3.12
+runtime family.
+
+The evidence is deliberately mixed: evaporation plus exploration avoids the
+permanent-pheromone lock-in failure, but Thompson sampling wins the adversarial
+lock-in scenario and slightly leads realized success in the default scenario.
+This is mechanism evidence, not a claim that stigmergy is the preferred router.
+The issue selection, failed predecessor, and clean current-`main` continuation
+are preserved in the
+[`issue #97 completion record`](../conversations/2026-08-29-issue-97-reference-evidence.md).
 
 ## Governing invariant
 
