@@ -31,6 +31,20 @@ class SecurityAutomationTests(unittest.TestCase):
         self.assertEqual(config.count("dependency-name: \"*\""), 2)
         self.assertEqual(config.count("version-update:semver-major"), 2)
 
+    def test_scorecard_is_pinned_bounded_and_least_privilege(self) -> None:
+        workflow = (ROOT / ".github/workflows/scorecard.yml").read_text(encoding="utf-8")
+        self.assertIn("security-events: write", workflow)
+        self.assertIn("contents: read", workflow)
+        self.assertIn("actions: read", workflow)
+        self.assertNotIn("id-token: write", workflow)
+        self.assertNotIn("pull_request_target:", workflow)
+        self.assertIn("publish_results: false", workflow)
+        self.assertIn("retention-days: 5", workflow)
+
+        uses_lines = [line for line in workflow.splitlines() if line.strip().startswith("uses:")]
+        self.assertEqual(len(uses_lines), 4)
+        self.assertEqual(len(FULL_SHA_USE.findall(workflow)), len(uses_lines))
+
 
 if __name__ == "__main__":
     unittest.main()
