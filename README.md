@@ -33,6 +33,8 @@ ACE (Autocatalytic Community Evolution) is testing whether useful repository act
 
 Current open starter paths:
 
+Before starting one, check its assignees, recent comments, and linked pull requests, then leave a short comment stating what you plan to change.
+
 - [#24 — audit the 15-minute newcomer path](../../issues/24) — documentation/community; this is the best path if you are new to IDKMesh;
 - [#167 — independently review IDKGraph orphan cohort 1](../../issues/167) — evidence/review; a bounded `good first issue` that records real reviewer attention rather than inventing it.
 
