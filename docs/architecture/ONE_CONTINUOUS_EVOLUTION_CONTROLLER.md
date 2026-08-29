@@ -1,7 +1,13 @@
 # ONE: Continuous GitHub + ChatGPT Evolution Controller
 
-**Status:** v0 design and implementation contract  
+**Status:** historical, non-canonical design; automation retired
 **Date:** 2026-08-28
+
+> This design is retained for provenance only. Its write-capable workflows were
+> retired because the canonical ACE stack already owns observation, capacity,
+> task-generation, and safety policy. Do not reactivate ONE as a parallel
+> controller; transplant independently useful ideas into ACE through a bounded,
+> reviewed change.
 
 ONE means **One Next Evolution**.
 
