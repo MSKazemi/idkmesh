@@ -36,20 +36,36 @@ class AceActivationGateTests(unittest.TestCase):
         self.assertEqual(result["decision"], "BLOCK")
         self.assertFalse(result["activation_gate_passed"])
         self.assertEqual(result["required_controller_mode_if_blocked"], "SHADOW")
-        self.assertIn("component:integration_protection", result["blockers"])
-        self.assertIn("real_verified_descendant_evidence", result["blockers"])
-        self.assertNotIn("review_capacity", result["blockers"])
-        self.assertNotIn("component:observer", result["blockers"])
-        self.assertNotIn("component:lineage", result["blockers"])
-        self.assertNotIn("component:security", result["blockers"])
-        self.assertNotIn("component:controller", result["blockers"])
+        # `main` is protected with required checks, so protection must not appear
+        # as a blocker. Asserting the opposite would pin a false claim about the
+        # repository into CI, and the claim would break the moment the fixture is
+        # refreshed from real branch metadata.
+        self.assertNotIn("component:integration_protection", result["blockers"])
+        # Real independently verified descendant evidence is the only honest
+        # remaining gate, so it must be the whole blocker set.
+        self.assertEqual(result["blockers"], ["real_verified_descendant_evidence"])
 
-    def test_capacity_recovery_does_not_bypass_protection_or_descendant_gate(self):
+    def test_capacity_recovery_does_not_bypass_descendant_gate(self):
         snapshot = copy.deepcopy(self.current)
         snapshot["review_capacity"]["capacity"] = 1.0
         result = MODULE.evaluate(snapshot)
-        self.assertIn("component:integration_protection", result["blockers"])
+        self.assertEqual(result["decision"], "BLOCK")
         self.assertIn("real_verified_descendant_evidence", result["blockers"])
+        self.assertNotIn("review_capacity", result["blockers"])
+
+    def test_losing_branch_protection_re_blocks_even_at_maximum_capacity(self):
+        # Protection is read from live branch metadata, so `accepted` is a
+        # revocable observation rather than a permanent grant. If protection were
+        # removed, the gate must fail closed again on its own, independently of
+        # the descendant gate.
+        snapshot = self.healthy_snapshot()
+        snapshot["review_capacity"]["capacity"] = 1.0
+        snapshot["components"]["integration_protection"]["status"] = "blocked"
+        snapshot["components"]["integration_protection"]["source"] = "branch:main@unprotected"
+        result = MODULE.evaluate(snapshot)
+        self.assertEqual(result["decision"], "BLOCK")
+        self.assertFalse(result["activation_gate_passed"])
+        self.assertIn("component:integration_protection", result["blockers"])
         self.assertNotIn("review_capacity", result["blockers"])
 
     def test_all_required_evidence_can_pass(self):

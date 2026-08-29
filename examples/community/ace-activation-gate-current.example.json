@@ -18,23 +18,23 @@
       "source": "pr:68"
     },
     "integration_protection": {
-      "status": "blocked",
-      "source": "branch:main@unprotected"
+      "status": "accepted",
+      "source": "branch:main@protected+required-checks:gate(3.11),gate(3.13)"
     }
   },
   "descendant_evidence": {
     "verified_count": 0,
     "independently_verified": false,
-    "source": "issue:109@2026-08-28T15:37:12.220Z"
+    "source": "issue:109@2026-08-29T21:01:33Z"
   },
   "review_capacity": {
-    "capacity": 0.8175744761936437,
+    "capacity": 0.9129342275597286,
     "minimum_capacity": 0.6,
     "readable": true,
     "single_writer": true,
     "snapshot_age_hours": 0.0,
     "max_snapshot_age_hours": 24.0,
-    "source": "issue:109@2026-08-28T15:37:12.220Z"
+    "source": "issue:109@2026-08-29T21:01:33Z"
   },
   "safety": {
     "public_write_budget": 1,
