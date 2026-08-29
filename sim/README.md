@@ -224,6 +224,22 @@ python sim/run_emergence_sweep.py --seeds 100 --pretty
 
 Verifier parameters can be supplied to the sweep with the same CLI flags.
 
+## E022 — matched evaluation budgets
+
+`matched_budget_emergence.py` reruns the original three E011 strategies with an
+exact common proposal and verification-attempt budget. Initialization consumes
+the same budget and acceptance retries are disabled. The benchmark adds
+fixed-horizon post-change utility and regret AUC.
+
+```bash
+python sim/matched_budget_emergence.py --seeds 100 --pretty
+```
+
+The synthetic 100-seed result preserves E011's QD ordering, but still gives QD
+the predefined plausible-goal set and does not measure real compute, energy, or
+human attention. See
+[`../experiments/E022-matched-budget-emergence.md`](../experiments/E022-matched-budget-emergence.md).
+
 ## Tests
 
 With `pytest` installed:
@@ -239,12 +255,14 @@ python -m pytest -q \
   tests/test_e016_analyze.py \
   tests/test_e017_item_difficulty.py \
   tests/test_e018_dependence_models.py \
-  tests/test_e019_group_independence.py
+  tests/test_e019_group_independence.py \
+  tests/test_e020_quorum_frontier.py \
+  tests/test_matched_budget_emergence.py
 ```
 
 This is the same list `.github/workflows/emergence-sim.yml` runs; keep the two in step.
 
-The tests cover deterministic replay, budget invariants, niche preservation, perfect verification compatibility, correlated-error mechanics, sweep configuration, the E013 regime where independence-aware aggregation can help or hurt, the E015 effective-panel-size metrics, the E016 discrimination screen, the E017 item-difficulty model, the E018 model comparison, and the E019 group-independence result.
+The tests cover deterministic replay, budget invariants, niche preservation, perfect verification compatibility, correlated-error mechanics, sweep configuration, the E013 regime where independence-aware aggregation can help or hurt, the E015 effective-panel-size metrics, the E016 discrimination screen, the E017 item-difficulty model, the E018 model comparison, the E019 group-independence result, the E020 quorum frontier, and E022's exact matched-evaluation contract.
 
 ## Interpretation
 
