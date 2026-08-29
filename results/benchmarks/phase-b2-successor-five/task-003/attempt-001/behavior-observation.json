@@ -1,0 +1,16 @@
+{
+  "authority": {
+    "automatic_candidate_selection": false,
+    "canonical_state_write": false,
+    "git_push": false,
+    "merge": false
+  },
+  "baseline_command_absent": true,
+  "candidate_command_succeeded": true,
+  "candidate_projection_digest_matches": true,
+  "candidate_projection_leaks_outcomes": false,
+  "schema_version": "0.1",
+  "seeded_bad_projection_leaks_outcomes": true,
+  "source_revision": "9c53bb4069a5db1c0688dbbe7a8f028540cbf7c2",
+  "task_id": "benchmark/phase-b2/003-definition-json-command"
+}

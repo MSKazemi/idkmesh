@@ -1,0 +1,88 @@
+{
+  "attempt": 1,
+  "extensions": {
+    "org.idkmesh.authority": {
+      "automatic_candidate_selection": false,
+      "canonical_state_write": false,
+      "git_push": false,
+      "merge": false
+    },
+    "org.idkmesh.benchmark.structural_signature": "single-worker-baseline-v1"
+  },
+  "finished_at": "2026-08-29T03:25:59.417744Z",
+  "id": "benchmark/phase-b2/003-definition-json-command/single-worker-baseline-v1/attempt-001",
+  "logs": [
+    {
+      "digest": "sha256:b4486150d03084bd9a6a4d83804a6d2404db551795bfac2f4b4bfa67e806f2d5",
+      "locator": "stdout.txt",
+      "type": "stdout"
+    },
+    {
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "locator": "stderr.txt",
+      "type": "stderr"
+    }
+  ],
+  "metrics": {
+    "changed_path_count": 1,
+    "projection_outcome_field_count": 0
+  },
+  "produced_artifacts": [
+    {
+      "description": "Unverified frozen-source Task 003 candidate patch.",
+      "digest": "sha256:ea578160dc43ba380c104a3d1a8821d58013747370761d7c24f9146d5c13b581",
+      "id": "candidate-patch",
+      "locator": "candidate.patch",
+      "media_type": "text/x-diff",
+      "type": "patch"
+    }
+  ],
+  "provenance": {
+    "environment": {
+      "platform": "Linux-7.0.0-30-generic-x86_64-with-glibc2.39",
+      "python": "3.12.3",
+      "tool_versions": {
+        "git": "git version 2.43.0",
+        "phase-b2-task003-worker": "0.1"
+      }
+    },
+    "source_revision": "9c53bb4069a5db1c0688dbbe7a8f028540cbf7c2",
+    "work_unit_digest": "sha256:a51bbfd143470f1893e40bd800e0e79c04d1dd93adbbe57f72e74ade5f2ad545",
+    "worker_config_digest": "sha256:74ccb417ed2a2070f643574f07a84a55b15dc7dbd07150f5dd8b76cc7eabdbdb"
+  },
+  "resources": {
+    "compute_units": 0.0,
+    "human_minutes": 0.0,
+    "tokens": 0,
+    "wall_seconds": 0.5847882989910431
+  },
+  "schema_version": "0.1",
+  "self_report": {
+    "claims": [
+      "Only the allowed tool was changed.",
+      "The emitted projection matches definition-digest and excludes outcome fields.",
+      "Worker success grants no integration authority."
+    ],
+    "summary": "Deterministic baseline adds a read-only definition-json command; self-report is not acceptance."
+  },
+  "started_at": "2026-08-29T03:25:58.832930Z",
+  "status": "succeeded",
+  "verification_request": {
+    "evidence_artifact_ids": [
+      "candidate-patch"
+    ],
+    "expected_validator_ids": [
+      "independent-review",
+      "result-manifest-schema"
+    ],
+    "notes": "Route through the frozen public EvaluatorPlan; worker self-report is not acceptance."
+  },
+  "work_unit_id": "benchmark/phase-b2/003-definition-json-command",
+  "work_unit_version": 1,
+  "worker": {
+    "adapter": "deterministic-text-rewrite",
+    "adapter_version": "0.1",
+    "id": "idkmesh-phase-b2-task003-worker",
+    "type": "system"
+  }
+}
