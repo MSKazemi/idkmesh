@@ -40,9 +40,24 @@ DIMENSIONS = (
     "exploration_capacity",
     "risk_debt",
 )
-TRUSTED_EVENT_SOURCES = {"issues", "pull_request_target", "push", "workflow_dispatch", "schedule"}
+TRUSTED_EVENT_SOURCES = {"issues", "push", "workflow_dispatch", "schedule"}
 EVENT_KIND_RE = re.compile(r"^[a-z_]+(?:\.[a-z_]+)+$")
 REPOSITORY_RE = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
+EXPECTED_WEIGHTS = {
+    "goal_clarity": 1.2,
+    "product_quality": 1.0,
+    "community_health": 1.3,
+    "verification_strength": 1.3,
+    "maintainability": 1.0,
+    "exploration_capacity": 0.8,
+    "risk_debt": 1.2,
+}
+EXPECTED_STATE_POLICY = {
+    "minimum_meaningful_delta": 0.01,
+    "max_event_log_entries": 1000,
+    "autonomous_merge": False,
+    "constitutional_changes_require_review": True,
+}
 
 
 def load_json(path: str | Path) -> dict[str, Any]:
@@ -116,8 +131,9 @@ def validate_evolution_state(state: dict[str, Any]) -> None:
             raise ValueError(f"fitness.{dimension}: expected value in [0, 1]")
         if not math.isclose(observed, beta_mean(alpha, beta), rel_tol=1e-9, abs_tol=1e-9):
             raise ValueError(f"fitness.{dimension}: inconsistent with Bayesian belief")
-        if _finite_number(state["weights"][dimension], f"weights.{dimension}") <= 0:
-            raise ValueError(f"weights.{dimension}: expected positive value")
+        weight = _finite_number(state["weights"][dimension], f"weights.{dimension}")
+        if weight != EXPECTED_WEIGHTS[dimension]:
+            raise ValueError(f"weights.{dimension}: does not match version-2 policy")
 
     activity = state.get("activity_counts")
     if not isinstance(activity, dict):
@@ -130,6 +146,11 @@ def validate_evolution_state(state: dict[str, Any]) -> None:
     events_seen = _non_negative_int(signals.get("events_seen"), "signals.events_seen")
     if sum(kinds.values()) != events_seen or sum(actors.values()) != events_seen:
         raise ValueError("signals.events_seen: inconsistent with activity counts")
+    for dimension in DIMENSIONS:
+        belief = state["beliefs"][dimension]
+        concentration = float(belief["alpha"]) + float(belief["beta"])
+        if concentration < 8.0 - 1e-9 or concentration > 8.0 + events_seen + 1e-9:
+            raise ValueError(f"beliefs.{dimension}: concentration exceeds event lineage")
     for field in ("event_entropy", "actor_entropy"):
         value = _finite_number(signals.get(field), f"signals.{field}")
         if not 0.0 <= value <= 1.0:
@@ -148,16 +169,8 @@ def validate_evolution_state(state: dict[str, Any]) -> None:
         _timestamp(updated_at, "updated_at")
 
     policy = state.get("policy")
-    if not isinstance(policy, dict):
-        raise ValueError("policy: expected object")
-    if _finite_number(policy.get("minimum_meaningful_delta"), "policy.minimum_meaningful_delta") < 0:
-        raise ValueError("policy.minimum_meaningful_delta: expected non-negative value")
-    if _non_negative_int(policy.get("max_event_log_entries"), "policy.max_event_log_entries") <= 0:
-        raise ValueError("policy.max_event_log_entries: expected positive integer")
-    if policy.get("autonomous_merge") is not False:
-        raise ValueError("policy.autonomous_merge must remain false")
-    if policy.get("constitutional_changes_require_review") is not True:
-        raise ValueError("policy.constitutional_changes_require_review must remain true")
+    if policy != EXPECTED_STATE_POLICY:
+        raise ValueError("policy: does not match immutable version-2 authority policy")
 
 
 def load_event_ledger(path: str | Path) -> list[dict[str, Any]]:
@@ -175,15 +188,24 @@ def load_event_ledger(path: str | Path) -> list[dict[str, Any]]:
     return records
 
 
-def validate_event_ledger(state: dict[str, Any], records: list[dict[str, Any]]) -> None:
+def validate_event_ledger(
+    state: dict[str, Any],
+    records: list[dict[str, Any]],
+    allowed_sources: set[str] | None = None,
+) -> None:
     """Validate bounded event history and its lineage to the state counters."""
     maximum = int(state["policy"]["max_event_log_entries"])
     if len(records) > maximum:
         raise ValueError("event ledger exceeds configured bound")
     observed: list[dict[str, Any]] = []
+    previous: dict[str, Any] | None = None
+    bootstrap_seen = False
     for index, record in enumerate(records, start=1):
         version = record.get("version")
         if version == 1 and record.get("kind") == "bootstrap":
+            if bootstrap_seen or index != 1:
+                raise ValueError("event ledger bootstrap must appear at most once and first")
+            bootstrap_seen = True
             continue
         if version != 2:
             raise ValueError(f"event ledger record {index}: unsupported version")
@@ -194,7 +216,10 @@ def validate_event_ledger(state: dict[str, Any], records: list[dict[str, Any]]) 
             raise ValueError(f"event ledger record {index}: invalid kind")
         if not REPOSITORY_RE.fullmatch(record["repository"]):
             raise ValueError(f"event ledger record {index}: invalid repository")
-        if record.get("source") not in TRUSTED_EVENT_SOURCES:
+        source = record.get("source")
+        if not isinstance(source, str) or not source:
+            raise ValueError(f"event ledger record {index}: invalid event source")
+        if allowed_sources is not None and source not in allowed_sources:
             raise ValueError(f"event ledger record {index}: untrusted event source")
         run_id = record.get("run_id")
         if not isinstance(run_id, str) or not run_id.isdigit() or int(run_id) <= 0:
@@ -202,12 +227,60 @@ def validate_event_ledger(state: dict[str, Any], records: list[dict[str, Any]]) 
         if not isinstance(record.get("ref"), str):
             raise ValueError(f"event ledger record {index}: invalid ref")
         _timestamp(record["timestamp"], f"event ledger record {index}.timestamp")
+        evidence = record.get("signed_soft_evidence")
+        if not isinstance(evidence, dict) or not set(evidence).issubset(DIMENSIONS):
+            raise ValueError(f"event ledger record {index}: invalid signed_soft_evidence")
+        for dimension, value in evidence.items():
+            number = _finite_number(value, f"event ledger record {index}.evidence.{dimension}")
+            if not -1.0 <= number <= 1.0:
+                raise ValueError(f"event ledger record {index}: evidence outside [-1, 1]")
+        before = _finite_number(record.get("fitness_before"), f"event ledger record {index}.fitness_before")
+        after = _finite_number(record.get("fitness_after"), f"event ledger record {index}.fitness_after")
+        delta = _finite_number(record.get("fitness_delta"), f"event ledger record {index}.fitness_delta")
+        if not math.isclose(delta, after - before, rel_tol=1e-9, abs_tol=1e-6):
+            raise ValueError(f"event ledger record {index}: inconsistent fitness delta")
+        if previous is not None and not math.isclose(
+            before, float(previous["fitness_after"]), rel_tol=1e-9, abs_tol=1e-6
+        ):
+            raise ValueError(f"event ledger record {index}: broken fitness lineage")
+        posterior = record.get("posterior")
+        if not isinstance(posterior, dict) or set(posterior) != set(DIMENSIONS):
+            raise ValueError(f"event ledger record {index}: invalid posterior dimensions")
+        for dimension in DIMENSIONS:
+            summary = posterior[dimension]
+            if not isinstance(summary, dict):
+                raise ValueError(f"event ledger record {index}: invalid posterior")
+            alpha = _finite_number(summary.get("alpha"), f"event ledger record {index}.posterior.{dimension}.alpha")
+            beta = _finite_number(summary.get("beta"), f"event ledger record {index}.posterior.{dimension}.beta")
+            mean = _finite_number(summary.get("mean"), f"event ledger record {index}.posterior.{dimension}.mean")
+            if alpha <= 0 or beta <= 0 or not math.isclose(
+                mean, beta_mean(alpha, beta), rel_tol=1e-9, abs_tol=1e-9
+            ):
+                raise ValueError(f"event ledger record {index}: inconsistent posterior")
+            for field in ("variance", "lower_confidence", "upper_confidence"):
+                value = _finite_number(
+                    summary.get(field), f"event ledger record {index}.posterior.{dimension}.{field}"
+                )
+                if not 0.0 <= value <= 1.0:
+                    raise ValueError(f"event ledger record {index}: invalid posterior {field}")
+        for field in ("event_entropy", "actor_entropy"):
+            value = _finite_number(record.get(field), f"event ledger record {index}.{field}")
+            if not 0.0 <= value <= 1.0:
+                raise ValueError(f"event ledger record {index}: invalid {field}")
+        for field in ("homeostatic_potential_before", "homeostatic_potential_after"):
+            if _finite_number(record.get(field), f"event ledger record {index}.{field}") < 0:
+                raise ValueError(f"event ledger record {index}: invalid {field}")
+        if not isinstance(record.get("lyapunov_condition_satisfied"), bool):
+            raise ValueError(f"event ledger record {index}: invalid Lyapunov result")
+        if not isinstance(record.get("meaningful_improvement"), bool):
+            raise ValueError(f"event ledger record {index}: invalid improvement result")
+        if record.get("evidence_quality") != "bayesian-soft-evidence":
+            raise ValueError(f"event ledger record {index}: invalid evidence quality")
         observed.append(record)
+        previous = record
 
     events_seen = int(state["signals"]["events_seen"])
-    if events_seen < len(observed):
-        raise ValueError("event ledger contains more observations than state")
-    if events_seen < maximum and events_seen != len(observed):
+    if len(observed) != min(events_seen, maximum):
         raise ValueError("event ledger lineage does not match state event count")
     if observed:
         latest = observed[-1]
@@ -219,6 +292,46 @@ def validate_event_ledger(state: dict[str, Any], records: list[dict[str, Any]]) 
             raise ValueError("event ledger latest timestamp does not match state")
         if state["signals"].get("checkpoint_source") != latest["checkpoint_source"]:
             raise ValueError("event ledger checkpoint source does not match state")
+        if not math.isclose(
+            float(state["signals"]["last_score"]),
+            float(latest["fitness_after"]),
+            rel_tol=1e-9,
+            abs_tol=1e-6,
+        ):
+            raise ValueError("event ledger latest fitness does not match state")
+        if not math.isclose(
+            float(state["signals"]["last_delta"]),
+            float(latest["fitness_delta"]),
+            rel_tol=1e-9,
+            abs_tol=1e-6,
+        ):
+            raise ValueError("event ledger latest delta does not match state")
+        if not math.isclose(
+            float(state["signals"]["homeostatic_potential"]),
+            float(latest["homeostatic_potential_after"]),
+            rel_tol=1e-9,
+            abs_tol=1e-6,
+        ):
+            raise ValueError("event ledger latest potential does not match state")
+        if not math.isclose(
+            float(state["signals"]["event_entropy"]),
+            float(latest["event_entropy"]),
+            rel_tol=1e-9,
+            abs_tol=1e-6,
+        ) or not math.isclose(
+            float(state["signals"]["actor_entropy"]),
+            float(latest["actor_entropy"]),
+            rel_tol=1e-9,
+            abs_tol=1e-6,
+        ):
+            raise ValueError("event ledger latest diversity does not match state")
+        for dimension in DIMENSIONS:
+            summary = latest["posterior"][dimension]
+            belief = state["beliefs"][dimension]
+            if not math.isclose(float(belief["alpha"]), float(summary["alpha"]), rel_tol=1e-9, abs_tol=1e-9):
+                raise ValueError("event ledger posterior alpha does not match state")
+            if not math.isclose(float(belief["beta"]), float(summary["beta"]), rel_tol=1e-9, abs_tol=1e-9):
+                raise ValueError("event ledger posterior beta does not match state")
 
 
 def migrate_state(state: dict[str, Any], math_policy: dict[str, Any]) -> dict[str, Any]:

@@ -26,6 +26,33 @@ class EvolutionCheckpointValidationTests(unittest.TestCase):
         self.state = json.loads((ROOT / "state/evolution-state.json").read_text(encoding="utf-8"))
         self.records = evolution_score.load_event_ledger(ROOT / "state/evolution-events.jsonl")
 
+    def record(self, state: dict, **overrides) -> dict:
+        value = {
+            "version": 2,
+            "kind": "issues.opened",
+            "actor": "alice",
+            "repository": "MSKazemi/idkmesh",
+            "ref": "refs/heads/main",
+            "run_id": "123",
+            "source": "issues",
+            "timestamp": "2026-08-29T00:00:00+00:00",
+            "checkpoint_source": "repository-seed",
+            "signed_soft_evidence": {},
+            "fitness_before": 0.0,
+            "fitness_after": 0.0,
+            "fitness_delta": 0.0,
+            "homeostatic_potential_before": 0.0,
+            "homeostatic_potential_after": 0.0,
+            "lyapunov_condition_satisfied": True,
+            "event_entropy": 0.0,
+            "actor_entropy": 0.0,
+            "posterior": evolution_score.posterior_summary(state, 1.96),
+            "meaningful_improvement": False,
+            "evidence_quality": "bayesian-soft-evidence",
+        }
+        value.update(overrides)
+        return value
+
     def test_repository_seed_is_valid(self) -> None:
         evolution_score.validate_evolution_state(self.state)
         evolution_score.validate_event_ledger(self.state, self.records)
@@ -45,29 +72,40 @@ class EvolutionCheckpointValidationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "finite number"):
             evolution_score.validate_evolution_state(self.state)
 
+    def test_belief_concentration_cannot_exceed_event_lineage(self) -> None:
+        self.state["beliefs"]["goal_clarity"] = {"alpha": 999999.0, "beta": 1.0}
+        self.state["fitness"]["goal_clarity"] = 999999.0 / 1000000.0
+        with self.assertRaisesRegex(ValueError, "concentration exceeds"):
+            evolution_score.validate_evolution_state(self.state)
+
     def test_ledger_must_match_latest_state_event(self) -> None:
         state = copy.deepcopy(self.state)
         state["signals"].update({"events_seen": 1, "last_event": "issues.opened", "last_actor": "alice"})
         state["activity_counts"] = {"event_kinds": {"issues.opened": 1}, "actors": {"alice": 1}}
-        record = {
-            "version": 2,
-            "kind": "issues.closed",
-            "actor": "alice",
-            "repository": "MSKazemi/idkmesh",
-            "ref": "refs/heads/main",
-            "run_id": "123",
-            "source": "issues",
-            "timestamp": "2026-08-29T00:00:00+00:00",
-            "checkpoint_source": "repository-seed",
-        }
+        record = self.record(state, kind="issues.closed")
         evolution_score.validate_evolution_state(state)
         with self.assertRaisesRegex(ValueError, "latest kind"):
             evolution_score.validate_event_ledger(state, [record])
 
     def test_authority_policy_cannot_be_enabled_by_checkpoint(self) -> None:
         self.state["policy"]["autonomous_merge"] = True
-        with self.assertRaisesRegex(ValueError, "must remain false"):
+        with self.assertRaisesRegex(ValueError, "immutable version-2"):
             evolution_score.validate_evolution_state(self.state)
+
+    def test_retained_ledger_cardinality_is_exact(self) -> None:
+        state = copy.deepcopy(self.state)
+        state["signals"]["events_seen"] = 1000
+        state["activity_counts"] = {
+            "event_kinds": {"issues.opened": 1000},
+            "actors": {"alice": 1000},
+        }
+        with self.assertRaisesRegex(ValueError, "lineage"):
+            evolution_score.validate_event_ledger(state, [self.record(state)])
+
+    def test_bootstrap_record_is_unique_and_first(self) -> None:
+        bootstrap = self.records[0]
+        with self.assertRaisesRegex(ValueError, "at most once and first"):
+            evolution_score.validate_event_ledger(self.state, [bootstrap, bootstrap])
 
     def test_untrusted_event_source_is_rejected(self) -> None:
         state = copy.deepcopy(self.state)
@@ -83,20 +121,18 @@ class EvolutionCheckpointValidationTests(unittest.TestCase):
             "event_kinds": {"pull_request.opened": 1},
             "actors": {"alice": 1},
         }
-        record = {
-            "version": 2,
-            "kind": "pull_request.opened",
-            "actor": "alice",
-            "repository": "MSKazemi/idkmesh",
-            "ref": "refs/pull/1/merge",
-            "run_id": "123",
-            "source": "pull_request",
-            "timestamp": state["updated_at"],
-            "checkpoint_source": "repository-seed",
-        }
+        record = self.record(
+            state,
+            kind="pull_request.opened",
+            ref="refs/pull/1/merge",
+            source="pull_request",
+            timestamp=state["updated_at"],
+        )
         evolution_score.validate_evolution_state(state)
         with self.assertRaisesRegex(ValueError, "untrusted event source"):
-            evolution_score.validate_event_ledger(state, [record])
+            evolution_score.validate_event_ledger(
+                state, [record], evolution_score.TRUSTED_EVENT_SOURCES
+            )
 
 
 class PortfolioCheckpointValidationTests(unittest.TestCase):

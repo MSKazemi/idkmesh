@@ -98,9 +98,9 @@ jobs:
           selected=""
           selected_head_sha=""
           selected_event=""
-          runs="$(gh api \
-            "repos/${GITHUB_REPOSITORY}/actions/workflows/repository-math-portfolio.yml/runs?branch=${DEFAULT_BRANCH}&status=success&per_page=20")"
-          rows="$(jq -r '.workflow_runs[] | select(.event == "issues" or .event == "pull_request_target" or .event == "push" or .event == "workflow_dispatch" or .event == "schedule") | [.id, .head_sha, .event] | @tsv' <<<"$runs")"
+          rows="$(gh api --paginate \
+            "repos/${GITHUB_REPOSITORY}/actions/workflows/repository-math-portfolio.yml/runs?branch=${DEFAULT_BRANCH}&status=success&exclude_pull_requests=true&per_page=100" \
+            --jq '.workflow_runs[] | select(.event == "issues" or .event == "push" or .event == "workflow_dispatch" or .event == "schedule") | [.id, .head_sha, .event] | @tsv')"
           while IFS=$'\t' read -r run_id head_sha run_event; do
             [[ -n "$run_id" ]] || continue
             [[ "$run_id" =~ ^[0-9]+$ ]] || { echo "invalid workflow run id" >&2; exit 1; }
@@ -189,9 +189,9 @@ jobs:
           selected=""
           selected_head_sha=""
           selected_event=""
-          runs="$(gh api \
-            "repos/${GITHUB_REPOSITORY}/actions/workflows/evolution-loop.yml/runs?branch=${DEFAULT_BRANCH}&status=success&per_page=20")"
-          rows="$(jq -r '.workflow_runs[] | select(.event == "issues" or .event == "pull_request_target" or .event == "push" or .event == "workflow_dispatch" or .event == "schedule") | [.id, .head_sha, .event] | @tsv' <<<"$runs")"
+          rows="$(gh api --paginate \
+            "repos/${GITHUB_REPOSITORY}/actions/workflows/evolution-loop.yml/runs?branch=${DEFAULT_BRANCH}&status=success&exclude_pull_requests=true&per_page=100" \
+            --jq '.workflow_runs[] | select(.event == "issues" or .event == "push" or .event == "workflow_dispatch" or .event == "schedule") | [.id, .head_sha, .event] | @tsv')"
           while IFS=$'\t' read -r run_id head_sha run_event; do
             [[ -n "$run_id" ]] || continue
             [[ "$run_id" =~ ^[0-9]+$ ]] || { echo "invalid workflow run id" >&2; exit 1; }

@@ -31,6 +31,8 @@ defect were found.
 
 - Live jobs explicitly check out the default branch with `persist-credentials: false`.
 - Ordinary PR-head jobs have `contents: read` only and do not restore checkpoints or call the live observer.
+- `pull_request_target` observations cannot become canonical checkpoint parents;
+  the persistent allowlist is limited to issue, push, manual, and scheduled runs.
 - Core external Actions are pinned to immutable 40-character commits.
 - Issue and PR text is parsed as data and is never passed to a shell or evaluator.
 - Checkpoint selection does not infer trust from the branch name: ordinary
@@ -40,7 +42,8 @@ defect were found.
 
 ## Persistence and concurrency result
 
-- Only successful allowlisted-event runs with one exact, unexpired artifact are candidates.
+- All pages of successful runs are searched server-side with ordinary PR runs
+  excluded; only allowlisted events with one exact, unexpired artifact are candidates.
 - A selected artifact is mandatory: download, file presence, manifest, or semantic
   validation failure aborts without publishing a successor.
 - Bayesian event counts must equal both cumulative activity-count maps; the latest

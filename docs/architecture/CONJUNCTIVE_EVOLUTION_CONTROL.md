@@ -197,6 +197,9 @@ For PR metadata, the live observers use `pull_request_target` and:
 
 Direct `pull_request_review` events do not run the checkpoint-producing observer.
 Review state is refreshed by trusted PR-target lifecycle events and scheduled snapshots.
+`pull_request_target` may publish advisory run output, but it is excluded from the
+persistent-checkpoint source allowlist; only issue, push, manual, and scheduled
+default-branch executions can extend canonical v2 state.
 Review coverage counts only the latest non-author, non-bot `APPROVED` or
 `CHANGES_REQUESTED` review attached to the PR's exact current head SHA; approvals
 remain a separate signal.
