@@ -7,12 +7,13 @@ canonical files designated by [`../../PROJECT_RULES.md`](../../PROJECT_RULES.md)
 (decisions, specifications, architecture, findings); this directory keeps the trail
 that produced them.
 
-149 records across 2 dates, newest first.
+150 records across 2 dates, newest first.
 
 ## Index
 
 ### 2026-08-29
 
+- [Tracker reconciliation and the evidence arc](2026-08-29-tracker-reconciliation-and-evidence-arc.md)
 - [IDKGraph P1 Phase 3 bounded-corrections arc](2026-08-29-idkgraph-navigation-phase3.md)
 - [Solve all open issues and pull requests](2026-08-29-solve-all-open-issues-and-prs.md)
 - [Resolve one open issue professionally and integrate it](2026-08-29-resolve-discovery-surface-gate.md)
