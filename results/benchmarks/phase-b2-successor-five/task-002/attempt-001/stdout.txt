@@ -1,0 +1,7 @@
+Phase B2 Task 002 deterministic worker
+source_revision=9c53bb4069a5db1c0688dbbe7a8f028540cbf7c2
+baseline_self_test=passed
+candidate_self_test=passed
+seeded_missing_digest_regression=detected
+
+OK: benchmark cohort schema, cross-object WorkUnit/EvaluatorPlan binding, pre-outcome definition commitment, and fail-closed drift checks passed
