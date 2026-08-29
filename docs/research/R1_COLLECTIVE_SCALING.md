@@ -107,8 +107,19 @@ Reproduce from the repository root:
       --report /tmp/r1-topology.md
 
 The default invocation stays flat-only and reproduces the committed
-`collective-scaling-seeds42-51` payload byte for byte; a test replays it and
-compares the bytes.
+`collective-scaling-seeds42-51` payload; a test replays it and compares every
+value.
+
+The replay compares values rather than bytes, and the reason is worth stating.
+The payload reproduces byte for byte on the machine that generated it, but not
+on every machine: the simulation goes through `exp` and `**`, whose last-place
+rounding is not identical across CPUs and C libraries, and a one-ulp difference
+changes the JSON representation and therefore the file digest. A byte-equality
+replay would assert something about the runner rather than about the code, so
+the test asserts value equality within a relative tolerance of `1e-9` instead.
+The committed artifact's own digest is still pinned, so the file cannot change
+silently. Treat "frozen and reproducible" for these artifacts as meaning
+*reproducible in value*, not bit-identical off the generating platform.
 
 The output reports, for every adjacent N pair:
 
