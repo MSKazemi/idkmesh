@@ -14,7 +14,15 @@ How did you check the change? Include tests, reproduction steps, references, exp
 
 Link the issue(s) this work addresses. If this pull request is a candidate response to an ACE Growth Seed, include a line such as `ACE-Seed: #24` so the public cohort observer can associate the candidate with its seed.
 
-- Related/Closes:
+Put issue numbers on `Refs:` by default. Use `Closes on merge:` only when merging
+this pull request should actually close the issue. GitHub auto-closes an issue
+whenever a closing keyword sits near its number, and it **ignores any disclaimer
+you add in parentheses** — a line reading `Closes: Refs #<issue> (does not close)`
+still closes that issue on merge. Evidence PRs that must leave a review gate open
+therefore belong on `Refs:`.
+
+- Refs:
+- Closes on merge (leave blank unless the merge should close it):
 - ACE-Seed:
 
 ## Community Impact
