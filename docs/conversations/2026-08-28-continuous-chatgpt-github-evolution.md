@@ -1,5 +1,9 @@
 # Conversation record: continuous GitHub + ChatGPT repository evolution
 
+> **Historical outcome:** the parallel ONE controller was not accepted as a
+> canonical actuator. Its workflows were retired after the lineage was
+> accidentally integrated; the accepted ACE stack remains authoritative.
+
 **Date:** 2026-08-28  
 **Repository:** `MSKazemi/idkmesh`
 
