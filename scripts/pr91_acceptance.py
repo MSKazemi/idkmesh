@@ -2,11 +2,12 @@
 """Fail-closed controlled-host acceptance harness for PR #91.
 
 This helper does not weaken or replace issue #37. It automates the positive
-controlled-Docker path and independently checks the emitted ResultManifest bundle.
-The required negative runtime checks remain explicit issue #37 evidence.
+controlled-Docker path, independently checks the emitted ResultManifest bundle,
+and can execute the required negative A-E runtime matrix using temporary WorkUnit
+variants on an explicitly controlled host.
 
 The harness can be reviewed/tested without Docker via ``self-test``. Real
-``preflight`` and ``run-positive`` commands require Docker on the controlled host.
+``preflight``, ``run-positive``, and ``run-negatives`` commands require Docker.
 """
 
 from __future__ import annotations
@@ -28,10 +29,13 @@ EXPECTED_PR91_HEAD = "d638a2f78e4a89353b98e91052233e365f56f90a"
 EXPECTED_NODE_CI_RUN = 33183974768
 EXPECTED_PHASE0_CI_RUN = 33183974817
 DEFAULT_IMAGE = "python:3.12-alpine"
+NEGATIVE_IMAGE = "alpine:3.20"
 DEFAULT_WORK_UNIT = "node/examples/work-unit.canonical-smoke.json"
 DEFAULT_OUTPUT = "/tmp/idkmesh-node-acceptance"
+DEFAULT_NEGATIVE_OUTPUT = "/tmp/idkmesh-node-negative-acceptance"
 IMAGE_ID_RE = re.compile(r"^sha256:[0-9a-f]{64}$")
 REPO_DIGEST_RE = re.compile(r"^[^@]+@sha256:[0-9a-f]{64}$")
+NEGATIVE_CASES = ("A", "B", "C", "D", "E")
 
 
 class AcceptanceError(RuntimeError):
@@ -77,6 +81,15 @@ def run(
         detail = proc.stderr.strip() or proc.stdout.strip() or f"exit {proc.returncode}"
         raise AcceptanceError(f"command failed: {' '.join(command)}\n{detail}")
     return proc
+
+
+def command_observation(command: list[str], proc: subprocess.CompletedProcess[str]) -> dict[str, Any]:
+    return {
+        "command": command,
+        "returncode": proc.returncode,
+        "stdout_tail": proc.stdout[-4000:],
+        "stderr_tail": proc.stderr[-4000:],
+    }
 
 
 def _image_repository(reference: str) -> str:
@@ -398,14 +411,7 @@ def run_positive(repo: Path, output: Path, image: str) -> dict[str, Any]:
     ]
     for command, timeout in command_specs:
         proc = run(command, cwd=repo, timeout=timeout)
-        commands.append(
-            {
-                "command": command,
-                "returncode": proc.returncode,
-                "stdout_tail": proc.stdout[-4000:],
-                "stderr_tail": proc.stderr[-4000:],
-            }
-        )
+        commands.append(command_observation(command, proc))
 
     validation = validate_positive_bundle(
         repo=repo,
@@ -415,12 +421,374 @@ def run_positive(repo: Path, output: Path, image: str) -> dict[str, Any]:
         expected_repo_digest=pre["container"]["resolved_repo_digest"],
     )
     return {
-        "schema_version": "0.1",
+        "schema_version": "0.2",
         "kind": "pr91-positive-controlled-docker-evidence",
         "preflight": pre,
         "commands": commands,
         "bundle_validation": validation,
-        "negative_runtime_checks_required_separately": ["A", "B", "C", "D", "E"],
+        "negative_runtime_checks_required": list(NEGATIVE_CASES),
+    }
+
+
+def _copy_document(value: dict[str, Any]) -> dict[str, Any]:
+    return json.loads(json.dumps(value))
+
+
+def build_negative_work_unit(base: dict[str, Any], case: str) -> dict[str, Any]:
+    if case not in NEGATIVE_CASES:
+        raise AcceptanceError(f"unsupported negative case: {case}")
+    work = _copy_document(base)
+    work["id"] = f"{base['id']}/acceptance-negative-{case.lower()}"
+    work["objective"] = f"Controlled Docker negative acceptance case {case}; failure is the expected outcome."
+    binding = work["extensions"]["org.idkmesh.node.execution"]
+    container = binding["container"]
+
+    if case == "A":
+        container["command"] = [
+            "python",
+            "-c",
+            "from pathlib import Path; p=Path('SECURITY.md'); p.write_text(p.read_text() + '\n<!-- pr91 negative A -->\n')",
+        ]
+    elif case == "B":
+        work["constraints"]["allowed_paths"] = ["README.md", "results/**"]
+        work["permissions"]["filesystem_write"] = ["README.md", "results/**"]
+        container["command"] = [
+            "python",
+            "-c",
+            "from pathlib import Path; p=Path('results/ignored-output.txt'); p.parent.mkdir(parents=True, exist_ok=True); p.write_text('pr91 negative B ignored output\n')",
+        ]
+    elif case == "C":
+        container["command"] = [
+            "python",
+            "-c",
+            "from pathlib import Path; Path('.git').write_text('gitdir: /tmp/attacker-controlled\\n'); p=Path('README.md'); p.write_text(p.read_text() + '\n<!-- pr91 negative C visible change -->\n')",
+        ]
+    elif case == "D":
+        binding["output_limits"]["max_patch_bytes"] = 128
+        container["command"] = [
+            "python",
+            "-c",
+            "from pathlib import Path; p=Path('README.md'); p.write_text(p.read_text() + '\n' + ('X' * 5000) + '\n')",
+        ]
+    elif case == "E":
+        container["image"] = NEGATIVE_IMAGE
+        container["command"] = ["python", "-c", "raise SystemExit(77)"]
+    return work
+
+
+def _negative_common_errors(manifest: dict[str, Any], bundle: Path) -> tuple[list[str], dict[str, Any]]:
+    errors: list[str] = []
+    if manifest.get("schema_version") != "0.1":
+        errors.append("negative ResultManifest schema_version must be 0.1")
+    if manifest.get("status") == "succeeded":
+        errors.append("negative case unexpectedly reported status=succeeded")
+    for forbidden_claim in ("accepted", "decision_support", "verification_result"):
+        if forbidden_claim in manifest:
+            errors.append(f"negative worker ResultManifest contains forbidden authority claim: {forbidden_claim}")
+
+    patch_path = bundle / "changes.patch"
+    candidate = find_artifact(manifest, "candidate-patch")
+    patch_digest = None
+    patch_bytes = None
+    if not patch_path.is_file():
+        errors.append("negative bundle missing changes.patch")
+    else:
+        patch_digest = sha256_file(patch_path)
+        patch_bytes = patch_path.stat().st_size
+        if candidate is None:
+            errors.append("negative ResultManifest missing candidate-patch artifact")
+        elif candidate.get("digest") != patch_digest:
+            errors.append("negative candidate-patch digest does not match stored patch bytes")
+
+    for log_type in ("stdout", "stderr"):
+        log = find_log(manifest, log_type)
+        path = bundle / f"{log_type}.txt"
+        if not path.is_file():
+            errors.append(f"negative bundle missing {log_type}.txt")
+        elif log is None:
+            errors.append(f"negative ResultManifest missing {log_type} log")
+        elif log.get("digest") != sha256_file(path):
+            errors.append(f"negative {log_type} digest does not match stored bytes")
+
+    return errors, {
+        "status": manifest.get("status"),
+        "patch_sha256": patch_digest,
+        "patch_bytes": patch_bytes,
+    }
+
+
+def validate_negative_bundle(case: str, bundle: Path) -> dict[str, Any]:
+    bundle = bundle.resolve()
+    manifest_path = bundle / "result-manifest.json"
+    if not manifest_path.is_file():
+        raise AcceptanceError(f"negative {case} bundle missing ResultManifest: {manifest_path}")
+    manifest = load_json(manifest_path)
+    errors, observed = _negative_common_errors(manifest, bundle)
+    metrics = manifest.get("metrics") or {}
+    ext = ((manifest.get("extensions") or {}).get("org.idkmesh.node.v0_1") or {})
+    changed = list(ext.get("changed_paths") or [])
+
+    if case == "A":
+        if "SECURITY.md" not in changed:
+            errors.append(f"negative A did not retain SECURITY.md in changed_paths: {changed!r}")
+        violations = list(ext.get("path_policy_violations") or [])
+        if not any("SECURITY.md" in item for item in violations):
+            errors.append("negative A did not record a SECURITY.md path-policy violation")
+        observed["path_policy_violations"] = violations
+    elif case == "B":
+        expected = "results/ignored-output.txt"
+        untracked = list(ext.get("untracked_paths") or [])
+        unpackaged = list(ext.get("unpackaged_artifact_violations") or [])
+        if metrics.get("untracked_file_count", 0) < 1:
+            errors.append("negative B did not report untracked_file_count > 0")
+        if expected not in untracked:
+            errors.append(f"negative B did not observe ignored untracked path {expected!r}")
+        if not any(expected in item for item in unpackaged):
+            errors.append("negative B did not record unpackaged-artifact violation for ignored output")
+        if ext.get("path_policy_violations") != []:
+            errors.append(
+                "negative B should isolate the unpackaged-artifact rule without path-policy violations"
+            )
+        observed.update({"untracked_paths": untracked, "unpackaged_artifact_violations": unpackaged})
+    elif case == "C":
+        protected = list(ext.get("protected_metadata_violations") or [])
+        if not protected:
+            errors.append("negative C did not record protected Git metadata pointer tampering")
+        if "README.md" not in changed:
+            errors.append(
+                "negative C host evidence capture did not retain the visible README change after .git tampering"
+            )
+        patch_path = bundle / "changes.patch"
+        if patch_path.is_file():
+            try:
+                paths = parse_patch_paths(patch_path.read_text(encoding="utf-8"))
+            except (AcceptanceError, UnicodeDecodeError) as exc:
+                errors.append(f"negative C patch could not be independently parsed: {exc}")
+                paths = []
+            if "README.md" not in paths:
+                errors.append(
+                    "negative C stored patch did not retain README.md despite task-visible .git tampering"
+                )
+            observed["independently_parsed_patch_paths"] = paths
+        observed["protected_metadata_violations"] = protected
+    elif case == "D":
+        output_violations = list(ext.get("output_policy_violations") or [])
+        if metrics.get("patch_truncated") != 1:
+            errors.append(f"negative D expected patch_truncated=1, got {metrics.get('patch_truncated')!r}")
+        if not output_violations:
+            errors.append("negative D did not record output-policy violation")
+        patch_path = bundle / "changes.patch"
+        if patch_path.is_file() and patch_path.stat().st_size > 128:
+            errors.append("negative D stored diagnostic patch exceeded configured 128-byte bound")
+        observed["output_policy_violations"] = output_violations
+    else:
+        raise AcceptanceError(f"validate_negative_bundle does not handle case {case}")
+
+    if metrics.get("policy_violation_count", 0) < 1:
+        errors.append(f"negative {case} did not report any policy violation")
+    observed.update(
+        {
+            "changed_paths": changed,
+            "policy_violation_count": metrics.get("policy_violation_count"),
+        }
+    )
+    return {"passed": not errors, "errors": errors, "observed": observed}
+
+
+def _node_run_command(work_unit: Path, output: Path) -> list[str]:
+    return [
+        sys.executable,
+        "-m",
+        "idkmesh_node",
+        "run",
+        str(work_unit),
+        "--output",
+        str(output),
+    ]
+
+
+def _run_negative_abcd(
+    *, repo: Path, work_unit_dir: Path, output_base: Path, base: dict[str, Any], case: str
+) -> dict[str, Any]:
+    work = build_negative_work_unit(base, case)
+    work_unit_path = work_unit_dir / f"negative-{case.lower()}.work-unit.json"
+    write_json(work_unit_path, work)
+    output = output_base / case.lower()
+    safe_reset_output(output)
+    command = _node_run_command(work_unit_path, output)
+    proc = run(command, cwd=repo, timeout=180, allow_failure=True)
+    errors: list[str] = []
+    if proc.returncode != 1:
+        errors.append(
+            f"negative {case} expected node CLI return code 1 for a retained failed ResultManifest, got {proc.returncode}"
+        )
+    try:
+        validation = validate_negative_bundle(case, output)
+    except (AcceptanceError, OSError, json.JSONDecodeError) as exc:
+        validation = {"passed": False, "errors": [str(exc)], "observed": {}}
+    errors.extend(validation["errors"])
+    return {
+        "passed": not errors,
+        "errors": errors,
+        "command": command_observation(command, proc),
+        "bundle": str(output),
+        "validation": validation,
+    }
+
+
+def _docker_tag_exists(reference: str) -> bool:
+    proc = run(["docker", "image", "inspect", reference], timeout=30, allow_failure=True)
+    return proc.returncode == 0
+
+
+def _run_negative_e(
+    *,
+    repo: Path,
+    work_unit_dir: Path,
+    output_base: Path,
+    base: dict[str, Any],
+    pre: dict[str, Any],
+) -> dict[str, Any]:
+    """Exercise both missing-image and locally-retagged-image refusal safely.
+
+    The alternate allowlisted tag must be absent before this function starts. We
+    never replace an existing host tag. A temporary local retag is removed in a
+    finally block and absence is re-verified.
+    """
+
+    if _docker_tag_exists(NEGATIVE_IMAGE):
+        raise AcceptanceError(
+            f"negative E requires {NEGATIVE_IMAGE!r} to be absent initially; refusing to overwrite an existing host Docker tag"
+        )
+
+    work = build_negative_work_unit(base, "E")
+    work_unit_path = work_unit_dir / "negative-e.work-unit.json"
+    write_json(work_unit_path, work)
+    errors: list[str] = []
+
+    missing_output = output_base / "e-missing"
+    safe_reset_output(missing_output)
+    missing_command = _node_run_command(work_unit_path, missing_output)
+    missing_proc = run(missing_command, cwd=repo, timeout=90, allow_failure=True)
+    if missing_proc.returncode != 2:
+        errors.append(
+            f"negative E missing-image case expected CLI return code 2, got {missing_proc.returncode}"
+        )
+    missing_detail = (missing_proc.stderr + "\n" + missing_proc.stdout).lower()
+    if "no such image" not in missing_detail and "not available locally" not in missing_detail:
+        errors.append("negative E missing-image case did not report local image absence")
+    if _docker_tag_exists(NEGATIVE_IMAGE):
+        errors.append("negative E missing-image run caused the node to pull/create the absent image tag")
+
+    retag_created = False
+    retag_observation: dict[str, Any] = {}
+    try:
+        source_image_id = pre["container"]["resolved_image_id"]
+        tag_command = ["docker", "tag", source_image_id, NEGATIVE_IMAGE]
+        tag_proc = run(tag_command, timeout=30)
+        retag_created = True
+        inspect = run(["docker", "image", "inspect", NEGATIVE_IMAGE], timeout=30)
+        parser_rejected = False
+        parser_error = None
+        try:
+            parse_image_inspect(inspect.stdout, NEGATIVE_IMAGE)
+        except AcceptanceError as exc:
+            parser_rejected = True
+            parser_error = str(exc)
+        if not parser_rejected:
+            errors.append("negative E temporary local retag unexpectedly had a matching immutable RepoDigest")
+
+        retag_output = output_base / "e-local-retag"
+        safe_reset_output(retag_output)
+        retag_command = _node_run_command(work_unit_path, retag_output)
+        retag_proc = run(retag_command, cwd=repo, timeout=90, allow_failure=True)
+        if retag_proc.returncode != 2:
+            errors.append(
+                f"negative E local-retag case expected CLI return code 2, got {retag_proc.returncode}"
+            )
+        retag_detail = (retag_proc.stderr + "\n" + retag_proc.stdout).lower()
+        if "no matching immutable repository digest" not in retag_detail:
+            errors.append("negative E local-retag case did not fail on repository-digest mismatch")
+        retag_observation = {
+            "tag_command": command_observation(tag_command, tag_proc),
+            "inspect_payload": json.loads(inspect.stdout),
+            "harness_parser_rejected": parser_rejected,
+            "harness_parser_error": parser_error,
+            "node_command": command_observation(retag_command, retag_proc),
+        }
+    finally:
+        cleanup: dict[str, Any] | None = None
+        if retag_created:
+            cleanup_command = ["docker", "image", "rm", NEGATIVE_IMAGE]
+            cleanup_proc = run(cleanup_command, timeout=30, allow_failure=True)
+            cleanup = command_observation(cleanup_command, cleanup_proc)
+            if cleanup_proc.returncode != 0:
+                errors.append("negative E could not remove its temporary local Docker tag")
+        if _docker_tag_exists(NEGATIVE_IMAGE):
+            errors.append("negative E temporary Docker tag still exists after cleanup")
+        if cleanup is not None:
+            retag_observation["cleanup"] = cleanup
+
+    return {
+        "passed": not errors,
+        "errors": errors,
+        "missing_image": command_observation(missing_command, missing_proc),
+        "local_retag": retag_observation,
+    }
+
+
+def run_negatives(repo: Path, output_base: Path, image: str) -> dict[str, Any]:
+    repo = repo.resolve()
+    pre = preflight(repo, image)
+    if image != DEFAULT_IMAGE:
+        raise AcceptanceError(
+            f"negative matrix is pinned to configured positive image {DEFAULT_IMAGE!r}; got {image!r}"
+        )
+    output_base = output_base.resolve()
+    safe_reset_output(output_base)
+    output_base.mkdir(parents=True, exist_ok=True)
+    work_unit_dir = output_base / "work-units"
+    work_unit_dir.mkdir()
+
+    install_command = [sys.executable, "-m", "pip", "install", "-e", "node"]
+    install_proc = run(install_command, cwd=repo, timeout=180)
+    base = load_json(repo / DEFAULT_WORK_UNIT)
+
+    cases: dict[str, Any] = {}
+    for case in ("A", "B", "C", "D"):
+        cases[case] = _run_negative_abcd(
+            repo=repo,
+            work_unit_dir=work_unit_dir,
+            output_base=output_base,
+            base=base,
+            case=case,
+        )
+    try:
+        cases["E"] = _run_negative_e(
+            repo=repo,
+            work_unit_dir=work_unit_dir,
+            output_base=output_base,
+            base=base,
+            pre=pre,
+        )
+    except AcceptanceError as exc:
+        cases["E"] = {"passed": False, "errors": [str(exc)]}
+
+    failed = [case for case in NEGATIVE_CASES if not cases[case]["passed"]]
+    return {
+        "schema_version": "0.1",
+        "kind": "pr91-negative-controlled-docker-evidence",
+        "preflight": pre,
+        "install": command_observation(install_command, install_proc),
+        "output_base": str(output_base),
+        "cases": cases,
+        "passed": not failed,
+        "failed_cases": failed,
+        "authority": {
+            "runtime_failure_is_evidence_only": True,
+            "automatic_merge": False,
+            "integration_decision": None,
+        },
     }
 
 
@@ -431,6 +799,12 @@ def self_test() -> None:
     observed_id, observed_digest = parse_image_inspect(inspect_payload, DEFAULT_IMAGE)
     assert observed_id == fake_id
     assert observed_digest == fake_digest
+    try:
+        parse_image_inspect(inspect_payload, NEGATIVE_IMAGE)
+    except AcceptanceError:
+        pass
+    else:
+        raise AcceptanceError("self-test expected local-retag repository-digest mismatch rejection")
 
     patch = """diff --git a/README.md b/README.md\n--- a/README.md\n+++ b/README.md\n@@ -1 +1,2 @@\n hello\n+world\n"""
     assert parse_patch_paths(patch) == ["README.md"]
@@ -444,6 +818,7 @@ def self_test() -> None:
     work_unit = {
         "id": "node/canonical-smoke",
         "version": 2,
+        "objective": "self-test",
         "constraints": {"allowed_paths": ["README.md"], "forbidden_paths": ["SECURITY.md"]},
         "permissions": {"filesystem_write": ["README.md"]},
         "validators": [
@@ -451,8 +826,24 @@ def self_test() -> None:
             {"id": "independent-review", "required": True},
         ],
         "provenance": {"source_revision": "a" * 40},
-        "extensions": {"org.idkmesh.node.execution": {"source_revision": "a" * 40}},
+        "extensions": {
+            "org.idkmesh.node.execution": {
+                "source_revision": "a" * 40,
+                "container": {"image": DEFAULT_IMAGE, "command": ["python", "-c", "print('ok')"]},
+                "output_limits": {"max_patch_bytes": 1000000, "max_log_bytes": 262144},
+            }
+        },
     }
+    negative_a = build_negative_work_unit(work_unit, "A")
+    assert "SECURITY.md" in negative_a["extensions"]["org.idkmesh.node.execution"]["container"]["command"][2]
+    negative_b = build_negative_work_unit(work_unit, "B")
+    assert "results/**" in negative_b["constraints"]["allowed_paths"]
+    negative_c = build_negative_work_unit(work_unit, "C")
+    assert ".git" in negative_c["extensions"]["org.idkmesh.node.execution"]["container"]["command"][2]
+    negative_d = build_negative_work_unit(work_unit, "D")
+    assert negative_d["extensions"]["org.idkmesh.node.execution"]["output_limits"]["max_patch_bytes"] == 128
+    negative_e = build_negative_work_unit(work_unit, "E")
+    assert negative_e["extensions"]["org.idkmesh.node.execution"]["container"]["image"] == NEGATIVE_IMAGE
 
     with tempfile.TemporaryDirectory(prefix="idkmesh-pr91-harness-") as tmp_raw:
         tmp = Path(tmp_raw)
@@ -554,7 +945,16 @@ def build_parser() -> argparse.ArgumentParser:
     positive.add_argument("--image", default=DEFAULT_IMAGE)
     positive.add_argument("--report", type=Path)
 
-    sub.add_parser("self-test", help="Exercise deterministic parsing/digest checks without Docker.")
+    negatives = sub.add_parser(
+        "run-negatives",
+        help="Run controlled-Docker negative acceptance cases A-E using temporary WorkUnit variants.",
+    )
+    negatives.add_argument("--repo", required=True, type=Path)
+    negatives.add_argument("--output-base", type=Path, default=Path(DEFAULT_NEGATIVE_OUTPUT))
+    negatives.add_argument("--image", default=DEFAULT_IMAGE)
+    negatives.add_argument("--report", type=Path)
+
+    sub.add_parser("self-test", help="Exercise deterministic parsing/digest/negative-fixture checks without Docker.")
     return parser
 
 
@@ -588,6 +988,12 @@ def main() -> int:
                 write_json(args.report, result)
             print(json.dumps(result, indent=2, sort_keys=True))
             return 0 if result["bundle_validation"]["passed"] else 1
+        if args.command == "run-negatives":
+            result = run_negatives(args.repo.resolve(), args.output_base, args.image)
+            if args.report:
+                write_json(args.report, result)
+            print(json.dumps(result, indent=2, sort_keys=True))
+            return 0 if result["passed"] else 1
         raise AcceptanceError(f"unsupported command: {args.command}")
     except (AcceptanceError, OSError, json.JSONDecodeError) as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
