@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "base_snapshot": "examples/community/ace-generation-shadow.example.json",
+  "cases": [
+    {
+      "name": "under-reproduction",
+      "review_load": 3.0,
+      "lineage_statuses": {
+        "lineage:pr39-reproduction": "verified",
+        "lineage:pr58-challenge": "candidate"
+      },
+      "expected": {
+        "mode": "EXPLORE",
+        "R_community": 0.5,
+        "verified_descendants": 1
+      }
+    },
+    {
+      "name": "healthy-reproduction",
+      "review_load": 3.0,
+      "lineage_statuses": {
+        "lineage:pr39-reproduction": "verified",
+        "lineage:pr58-challenge": "verified"
+      },
+      "expected": {
+        "mode": "GROW",
+        "R_community": 1.0,
+        "verified_descendants": 2
+      }
+    },
+    {
+      "name": "overload",
+      "review_load": 20.0,
+      "lineage_statuses": {
+        "lineage:pr39-reproduction": "verified",
+        "lineage:pr58-challenge": "verified"
+      },
+      "expected": {
+        "mode": "CONSOLIDATE",
+        "R_community": 1.0,
+        "verified_descendants": 2
+      }
+    }
+  ]
+}

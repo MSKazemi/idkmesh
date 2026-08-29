@@ -5,16 +5,20 @@ on:
     paths:
       - 'scripts/ace_generation_controller.py'
       - 'tests/test_ace_generation_controller.py'
+      - 'tests/fixtures/ace_generation_scenarios_v1.json'
       - 'examples/community/ace-generation-shadow.example.json'
       - 'docs/community/ACE_ACTIVITY_METABOLISM.md'
+      - 'docs/community/ACE_GENERATION_EVIDENCE_INTERFACE.md'
       - '.github/workflows/ace-generation-shadow.yml'
   push:
     branches: [main]
     paths:
       - 'scripts/ace_generation_controller.py'
       - 'tests/test_ace_generation_controller.py'
+      - 'tests/fixtures/ace_generation_scenarios_v1.json'
       - 'examples/community/ace-generation-shadow.example.json'
       - 'docs/community/ACE_ACTIVITY_METABOLISM.md'
+      - 'docs/community/ACE_GENERATION_EVIDENCE_INTERFACE.md'
       - '.github/workflows/ace-generation-shadow.yml'
   workflow_dispatch:
 
