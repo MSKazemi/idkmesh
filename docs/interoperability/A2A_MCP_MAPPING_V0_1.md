@@ -8,7 +8,9 @@
 IDKMesh should **bind to** A2A and MCP, not replace them.
 
 - **A2A 1.0** is a strong fit for remote agent discovery, task lifecycle, messages, artifacts, asynchronous progress, and protocol extensions.
-- **MCP 2026-07-28** is a strong fit for tool/context integration. Its `io.modelcontextprotocol/tasks` extension provides a durable asynchronous task handle for long-running tool calls.
+- **MCP 2026-07-28** is a strong fit for synchronous tool/context integration.
+  The pinned SDK scopes its older Tasks types to revision `2025-11-25`, so this
+  binding does not claim asynchronous Tasks support at the newer revision.
 - Neither protocol, by itself, means that a returned result satisfies IDKMesh verification, risk, provenance, or integration policy.
 
 Therefore the binding rule is:
@@ -22,7 +24,7 @@ Therefore the binding rule is:
 | Work Unit identity | message/task metadata and task ID relationship | request ID / tool arguments | native hint + canonical extension payload |
 | objective | user `Message` text part | `tools/call` arguments | protocol native |
 | worker capability | Agent Card skills/capabilities | `server/discover`, tools/list, extension capabilities | protocol native discovery; IDKMesh scheduler interprets capabilities |
-| execution lifecycle | `Task` states | synchronous tool result or Tasks extension | protocol native |
+| execution lifecycle | `Task` states | synchronous tool result; current async mechanism pending conformance | protocol native when supported |
 | candidate artifacts | A2A `Artifact` + `Part` | tool result/resources/task final result | protocol native transport; normalize to ResultManifest artifacts |
 | inputs | message parts / URLs / data | tool arguments/resources | partial; canonical Work Unit remains authoritative |
 | outputs expected | accepted output modes + extension metadata | tool input contract / tool result expectations | partial |
@@ -46,7 +48,8 @@ Therefore the binding rule is:
 - explicit transport-neutral service parameters for `A2A-Version: 1.0` and `A2A-Extensions: https://idkmesh.org/extensions/work-contract/v0.1`;
 - `ROLE_USER`;
 - a text part containing the Work Unit objective;
-- a JSON data part containing the complete canonical Work Unit and its canonical digest;
+- a raw canonical-JSON part containing the complete Work Unit and its canonical
+  digest (the raw bytes avoid protobuf `Value` coercing JSON integers to floats);
 - the IDKMesh extension URI `https://idkmesh.org/extensions/work-contract/v0.1`;
 - accepted output modes appropriate for structured result data, text, and patches.
 
@@ -62,12 +65,16 @@ A future network adapter should fetch and inspect Agent Cards before dispatch, n
 
 It advertises:
 
-- `io.modelcontextprotocol/tasks` for asynchronous execution;
 - `org.idkmesh/work-contract` as the IDKMesh binding extension;
 - the complete Work Unit plus canonical digest in tool arguments;
 - modern routing headers: `MCP-Protocol-Version`, `Mcp-Method`, and `Mcp-Name`.
 
-A server may return a normal tool result or a Tasks handle. Either path is normalized as worker execution; independent IDKMesh verification still follows.
+Official `mcp` SDK 2.1.1 identifies `2026-07-28` as its latest protocol but
+marks `TaskMetadata` and `ClientTasksCapability` as `2025-11-25 only`. The
+current binding therefore makes a synchronous `tools/call`, omits `params.task`,
+does not advertise `io.modelcontextprotocol/tasks`, and records
+`asyncTaskMode=unsupported-for-2026-07-28`. A future revision may add the
+current asynchronous mechanism only after its lifecycle is type-checked.
 
 ## Round-trip invariant
 
@@ -131,10 +138,10 @@ runtime even though worker and verifier roles remain separate.
 
 ## Remaining implementation tests
 
-1. Validate the binding module against real A2A 1.0 SDK types and the A2A TCK.
-2. Validate the MCP envelope against a 2026-07-28 SDK that supports custom extensions; Tasks runtime support is still uneven across SDKs.
-3. Validate a live or official-TCK external lifecycle without weakening the
+1. Validate the binding module against the A2A TCK in addition to the pinned
+   official SDK protobuf types.
+2. Validate a live or official-TCK external lifecycle without weakening the
    deterministic mock boundary.
-4. Add capability matching from A2A Agent Cards / MCP server discovery into
+3. Add capability matching from A2A Agent Cards / MCP server discovery into
    scheduler experiments.
-5. Keep protocol compatibility tests in CI.
+4. Keep protocol compatibility tests in CI.

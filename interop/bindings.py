@@ -9,6 +9,7 @@ silently discarded.
 
 from __future__ import annotations
 
+import base64
 import hashlib
 import json
 from typing import Any
@@ -19,6 +20,9 @@ A2A_PROTOCOL_VERSION = "1.0"
 MCP_PROTOCOL_VERSION = "2026-07-28"
 A2A_WORK_CONTRACT_EXTENSION = "https://idkmesh.org/extensions/work-contract/v0.1"
 MCP_WORK_CONTRACT_EXTENSION = "org.idkmesh/work-contract"
+# Retained as the official extension identifier for explicit compatibility
+# reporting. It is not advertised by the 2026-07-28 binding because the current
+# SDK limits Tasks request metadata/capabilities to protocol revision 2025-11-25.
 MCP_TASKS_EXTENSION = "io.modelcontextprotocol/tasks"
 MCP_EXECUTE_TOOL = "idkmesh.execute_work_unit"
 
@@ -106,8 +110,9 @@ def to_a2a_send_message(work_unit: dict[str, Any]) -> dict[str, Any]:
     """Create an A2A 1.0 SendMessage request payload.
 
     Native A2A fields expose the human-readable objective and lifecycle hints. The
-    canonical contract is also carried as JSON data under the IDKMesh extension so
-    a remote adapter can reconstruct it exactly. `serviceParameters` models the
+    canonical contract is also carried as canonical JSON bytes under the IDKMesh
+    extension so protobuf Struct number coercion cannot change integer fields.
+    `serviceParameters` models the
     A2A-Version/A2A-Extensions negotiation that a transport adapter must send.
     """
 
@@ -130,7 +135,9 @@ def to_a2a_send_message(work_unit: dict[str, Any]) -> dict[str, Any]:
                         "mediaType": "text/plain",
                     },
                     {
-                        "data": payload,
+                        "raw": base64.b64encode(
+                            canonical_json(payload).encode("utf-8")
+                        ).decode("ascii"),
                         "mediaType": "application/json",
                     },
                 ],
@@ -170,9 +177,18 @@ def from_a2a_send_message(envelope: dict[str, Any]) -> dict[str, Any]:
         raise BindingError("A2A message did not carry the IDKMesh Work Contract extension")
 
     for part in parts:
-        if not isinstance(part, dict) or "data" not in part:
+        if not isinstance(part, dict):
             continue
-        data = part["data"]
+        data = None
+        if "raw" in part:
+            try:
+                raw = base64.b64decode(part["raw"], validate=True)
+                data = json.loads(raw.decode("utf-8"))
+            except (TypeError, ValueError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+                raise BindingError("invalid A2A canonical JSON bytes part") from exc
+        elif "data" in part:
+            # Backward-compatible decoder for pre-SDK-conformance envelopes.
+            data = part["data"]
         if not isinstance(data, dict) or "workUnit" not in data:
             continue
         work_unit = data["workUnit"]
@@ -182,14 +198,16 @@ def from_a2a_send_message(envelope: dict[str, Any]) -> dict[str, Any]:
             raise BindingError("A2A Work Contract digest mismatch")
         _require_work_unit(work_unit)
         return work_unit
-    raise BindingError("A2A envelope contains no IDKMesh Work Contract data part")
+    raise BindingError("A2A envelope contains no IDKMesh Work Contract payload part")
 
 
 def to_mcp_tool_call(work_unit: dict[str, Any]) -> dict[str, Any]:
-    """Create an MCP 2026-07-28 tools/call request with Tasks capability.
+    """Create a synchronous MCP 2026-07-28 tools/call request.
 
-    The MCP server may execute synchronously or return a Tasks extension handle.
-    IDKMesh acceptance remains a separate verification decision either way.
+    Official SDK 2.1.1 marks Tasks request metadata and capabilities as
+    2025-11-25-only. This newer protocol binding therefore fails closed to a
+    synchronous call and declares Tasks unsupported instead of advertising a
+    capability that the selected revision does not define.
     """
 
     payload = _contract_payload(work_unit)
@@ -218,8 +236,10 @@ def to_mcp_tool_call(work_unit: dict[str, Any]) -> dict[str, Any]:
                     },
                     "io.modelcontextprotocol/clientCapabilities": {
                         "extensions": {
-                            MCP_TASKS_EXTENSION: {},
-                            MCP_WORK_CONTRACT_EXTENSION: {"version": "0.1"},
+                            MCP_WORK_CONTRACT_EXTENSION: {
+                                "version": "0.1",
+                                "asyncTaskMode": "unsupported-for-2026-07-28",
+                            },
                         }
                     },
                     MCP_WORK_CONTRACT_EXTENSION: {

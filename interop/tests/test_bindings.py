@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import base64
 import json
 from pathlib import Path
 import sys
@@ -48,6 +49,7 @@ class BindingTests(unittest.TestCase):
             envelope["request"]["message"]["role"],
             "ROLE_USER",
         )
+        self.assertIn("raw", envelope["request"]["message"]["parts"][1])
         self.assertEqual(from_a2a_send_message(envelope), self.work_unit)
 
     def test_a2a_wrong_protocol_version_fails_closed(self) -> None:
@@ -64,23 +66,31 @@ class BindingTests(unittest.TestCase):
         with self.assertRaisesRegex(BindingError, "activate"):
             from_a2a_send_message(missing)
 
-    def test_mcp_round_trip_is_lossless_and_advertises_tasks(self) -> None:
+    def test_mcp_round_trip_is_lossless_and_rejects_legacy_tasks_claim(self) -> None:
         envelope = to_mcp_tool_call(self.work_unit)
         self.assertEqual(envelope["protocolVersion"], "2026-07-28")
         self.assertEqual(envelope["request"]["method"], "tools/call")
         extensions = envelope["request"]["params"]["_meta"][
             "io.modelcontextprotocol/clientCapabilities"
         ]["extensions"]
-        self.assertIn(MCP_TASKS_EXTENSION, extensions)
+        self.assertNotIn(MCP_TASKS_EXTENSION, extensions)
         self.assertIn(MCP_WORK_CONTRACT_EXTENSION, extensions)
+        self.assertEqual(
+            extensions[MCP_WORK_CONTRACT_EXTENSION]["asyncTaskMode"],
+            "unsupported-for-2026-07-28",
+        )
+        self.assertNotIn("task", envelope["request"]["params"])
         self.assertEqual(from_mcp_tool_call(envelope), self.work_unit)
 
     def test_a2a_tampering_is_detected(self) -> None:
         envelope = to_a2a_send_message(self.work_unit)
         tampered = copy.deepcopy(envelope)
-        tampered["request"]["message"]["parts"][1]["data"]["workUnit"][
-            "objective"
-        ] = "tampered"
+        part = tampered["request"]["message"]["parts"][1]
+        payload = json.loads(base64.b64decode(part["raw"]).decode("utf-8"))
+        payload["workUnit"]["objective"] = "tampered"
+        part["raw"] = base64.b64encode(
+            json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        ).decode("ascii")
         with self.assertRaisesRegex(BindingError, "digest mismatch"):
             from_a2a_send_message(tampered)
 
