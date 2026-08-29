@@ -1,6 +1,6 @@
 # IDKMesh Randomness / Bio-Inspired Experiment Status
 
-**Updated:** 2026-08-28  
+**Updated:** 2026-08-29
 **Program rule:** Randomness controls exploration, not acceptance.
 
 This page is a compact status map for the executable research program derived from `RANDOMNESS_AND_BIOINSPIRED_ALGORITHMS.md` and `docs/research/RANDOMNESS_ROADMAP.md`.
@@ -59,7 +59,7 @@ Randomness must not substitute for:
       |      |
       |      +-- #96 real-task R3 phase         OPEN
       |
-      +-- #97 R4 verified stigmergic routing    OPEN / NEXT BIO-INSPIRED TRACK
+      +-- #97 R4 verified stigmergic routing    SYNTHETIC COMPLETE
 ```
 
 ---
@@ -329,7 +329,7 @@ The synthetic held-out split is now burned for confirmatory tuning.
 
 # R4 — verified stigmergic routing
 
-**Issue:** #97 — open / next implementation candidate
+**Issue:** #97 — synthetic mechanism and frozen reference complete
 
 ## Question
 
@@ -350,7 +350,7 @@ Critical constraints:
 - canonical acceptance remains independent from routing weight;
 - no direct conversion of pheromone into governance power.
 
-Planned baselines:
+Implemented baselines:
 
 - uniform random;
 - greedy empirical success;
@@ -359,7 +359,7 @@ Planned baselines:
 - stigmergy with evaporation;
 - stigmergy + evaporation + exploration/newcomer floor.
 
-Planned stressors:
+Implemented stressors:
 
 - specialization;
 - capability shift;
@@ -367,6 +367,25 @@ Planned stressors:
 - misleading early success;
 - churn;
 - lock-in.
+
+## Frozen reference evidence
+
+- `results/experiments/r4/reference-default.json` — full 800-step routing
+  traces, metrics, and pheromone snapshots;
+- `results/experiments/r4/reference-lockin.json` — full 500-step adversarial
+  lock-in traces, metrics, and snapshots;
+- `results/experiments/r4/reference-summary.md` — commands, digests, comparison,
+  limitations, and interpretation.
+
+The adaptive stigmergic policy avoided the catastrophic permanent-pheromone
+lock-in and explored both strong and weak newcomers. Thompson sampling still
+slightly led realized success in the default trace and decisively won the
+lock-in trap. The biological analogy therefore does not establish superiority.
+
+Every stigmergic reference run records exactly zero pheromone increase from
+unverified activity. A deterministic regression test verifies both artifact
+hashes, preserves cross-runtime replay invariants and the negative regime, and
+requires byte identity on the recorded Python 3.12 runtime family.
 
 ---
 
