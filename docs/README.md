@@ -24,6 +24,7 @@ Different documents serve different roles. When two files appear to disagree, pr
 | durable decisions | [`../DECISIONS.md`](../DECISIONS.md), [`decisions/`](decisions/) |
 | bounded review snapshots | [`audits/`](audits/README.md) |
 | research/engineering findings | [`findings/`](findings/README.md) |
+| community growth and the ACE stack | [`community/`](community/README.md) |
 | append-only collaboration history | [`conversations/`](conversations/README.md) |
 
 A conversation, old roadmap section, experiment note, or historical architecture sketch is evidence about project evolution; it does **not** automatically override current schemas, current architecture documents, or later accepted decisions.
@@ -47,6 +48,7 @@ For a newcomer trying to understand the executable foundation, this order is usu
 - [Research index](research/README.md) — research programs, experiments, verification studies, and benchmark-calibration evidence.
 - [Findings index](findings/README.md) — working theses, repository-health evidence, growth/landscape studies, and retained source notes.
 - [Audits index](audits/README.md) — bounded review snapshots with the baseline revision each one declares.
+- [Community and ACE index](community/README.md) — growth strategy, measurement models, the layered ACE control stack, and its bounded experiments.
 
 ## Important active subsystem documents
 
@@ -59,6 +61,7 @@ For a newcomer trying to understand the executable foundation, this order is usu
 
 ### Community / ACE
 
+- [Community and ACE index](community/README.md) — every community document by layer, with the authority each one declares.
 - [ACE Lineage Protocol v0.1](community/ACE_LINEAGE_PROTOCOL.md) — machine-readable parent → seed → descendant evidence semantics.
 - [ACE Bootstrap Experiment](community/ACE_BOOTSTRAP_EXPERIMENT.md) — bounded cohort/evidence rules.
 - [`../COMMUNITY_GROWTH_ENGINE.md`](../COMMUNITY_GROWTH_ENGINE.md) — growth model, capacity, and safeguards.
