@@ -40,6 +40,11 @@ jobs:
         run: |
           python -m randomness_lab.r1_sweep --tasks 15 --trials 2 --worker-correlations 0,1 --verifier-correlations 0.5 --quality-penalties 0,0.5 --swarm-sizes 2 --seed 42 --output /tmp/r1-sweep.json
           python -m json.tool /tmp/r1-sweep.json > /dev/null
+      - name: Smoke-test R1 collective-capability scaling
+        run: |
+          python -m randomness_lab.r1_scaling --tasks 10 --trials 2 --swarm-sizes 1,2,5 --difficulties easy:0.8,hard:0.4 --seed 42 --output /tmp/r1-scaling.json --report /tmp/r1-scaling.md
+          python -m json.tool /tmp/r1-scaling.json > /dev/null
+          grep -q "synthetic mechanism only" /tmp/r1-scaling.md
       - name: Smoke-test R1 real-result replay command surface
         run: python -m randomness_lab.r1_replay --help > /dev/null
       - name: Smoke-test R2 replayable scheduling benchmark
