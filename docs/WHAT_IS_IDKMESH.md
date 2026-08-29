@@ -2,106 +2,139 @@
 
 ## Short answer
 
-**IDKMesh is an open research program building a verification-first coordination framework for distributed human + AI work. Its first reference application is a Git-native Verified Swarm Runner, and this repository is the first self-hosting experiment.**
+**IDKMesh is an open research and engineering program building a verification-first coordination framework for distributed human + AI work. Its first reference application is a Git-native Verified Swarm Runner, and this repository is its first self-hosting experiment.**
 
 It is intended to become reusable infrastructure, not only one application. That generality is a design target, not a capability already proven at scale.
 
-The framework, research program, community, reference implementation, and self-hosting experiment are different layers of one system. [`../ITERATION_MODEL.md`](../ITERATION_MODEL.md) defines their shared terms and the end-to-end evolution algorithm.
+The framework, research program, community, reference implementation, and self-hosting experiment are different layers of one system. [`../ITERATION_MODEL.md`](../ITERATION_MODEL.md) defines their shared lifecycle and authority vocabulary.
 
-The first major use case is collaborative software engineering, because software gives us unusually strong verification tools: tests, compilers, static analysis, reproducible builds, benchmarks, code review, and version control. But the underlying framework should be general enough to support other research and engineering projects later.
+The first major use case is collaborative software engineering because software gives unusually strong verification tools: tests, compilers, static analysis, reproducible builds, benchmarks, code review, and version control.
 
-## Three layers
+## Five views of the same project
+
+IDKMesh is simultaneously:
+
+1. **a coordination framework and protocol set** — bounded work, evidence, provenance, resources, and authority;
+2. **a research program** — experiments about collective intelligence, verification, scheduling, diversity, and governance;
+3. **an open community** — humans and agents working in public with explicit review/authority boundaries;
+4. **a reference application** — the Git-native Verified Swarm Runner;
+5. **a self-hosting experiment** — IDKMesh is already being used as the subject of its own repository/community evolution experiments.
+
+These are complementary layers, not separate projects.
+
+## Framework layers
 
 ### Layer 1 — IDKMesh Core
 
-Reusable infrastructure for coordinating work:
+Reusable semantics and infrastructure for coordinating work:
 
-- Goal Graph / evolving intent;
-- Work Unit protocol;
-- participant and capability discovery;
-- task decomposition;
+- goals, questions, assumptions, and evolving intent;
+- WorkUnit contracts;
+- task/dependency/evidence graphs;
+- participant/capability/resource discovery;
 - scheduling and matching;
-- isolated execution;
+- isolated execution boundaries;
 - artifact exchange;
-- verification;
+- verification and evidence aggregation;
 - provenance;
-- reputation and contribution history;
-- governance primitives;
-- experiment and metrics infrastructure.
+- experiment/metrics infrastructure;
+- governance and integration authority.
 
-This is the part that other projects should eventually be able to use.
+The repository already contains executable pieces of many of these functions, but they are not all packaged as one production service.
 
 ### Layer 2 — Domain Packs / Project Protocols
 
-Different projects need different schemas, validators, roles, and constraints.
+Different projects need different validators, roles, risks, evidence, and integration rules.
 
-Examples:
+Example domains include:
 
 - software development;
 - scientific research;
-- data analysis;
-- simulation;
-- documentation / knowledge projects;
+- data analysis and simulation;
+- documentation/knowledge projects;
 - hardware design;
 - open educational resources.
 
-A domain pack may define:
+A domain/project layer can define:
 
-- allowed Work Unit types;
+- allowed WorkUnit kinds;
 - verification rules;
 - domain-specific worker roles;
-- risk classes;
+- risk/security classes;
 - required evidence;
-- integration rules;
+- integration policies;
 - project-specific metrics.
 
 ### Layer 3 — Actual Projects
 
-Independent projects can run on top of IDKMesh.
-
-Examples:
+Independent projects should eventually be able to use the framework without becoming IDKMesh itself.
 
 ```text
 IDKMesh Core
    |
-   +-- Project A: build an open-source application
-   +-- Project B: reproduce a scientific result
-   +-- Project C: improve an AI benchmark
-   +-- Project D: create an open knowledge base
-   +-- Project E: IDKMesh improving IDKMesh
+   +-- software-engineering project
+   +-- scientific reproduction project
+   +-- benchmark-improvement project
+   +-- knowledge/documentation project
+   +-- IDKMesh improving IDKMesh
 ```
 
-The first practical project should be **IDKMesh improving IDKMesh**, because it creates a tight feedback loop and directly tests the platform.
+The final item is not merely future intent: this repository already runs bounded self-observation, CI/evolution, IDKGraph, and community-growth experiments against itself.
+
+## What exists today
+
+Current `main` includes, among other things:
+
+- WorkUnit v0.2 as the current bounded-work semantic contract;
+- ResultManifest/EvaluatorPlan/VerificationResult evidence separation;
+- experiment and benchmark schemas;
+- deterministic simulators and analysis code;
+- independent verification/provenance checks;
+- protocol-neutral worker-adapter infrastructure plus A2A/MCP mappings;
+- zero-project-spend compute admission/routing experiments;
+- repository graph/observability/link-integrity tooling;
+- GitHub-native evolution and community-growth experiments;
+- protected integration through stable PR gates.
+
+This means IDKMesh is beyond a pure architecture proposal. It does **not** mean the full reference runner or a distributed production mesh is complete.
+
+## The core abstraction
+
+A useful conceptual flow is:
+
+```text
+uncertain goal
+   -> competing interpretations / hypotheses
+   -> bounded WorkUnits
+   -> matched humans / agents / tools / resources
+   -> candidate artifacts + worker provenance
+   -> independent verification and evidence
+   -> explicit integration / rejection / further questions
+   -> updated project state
+   -> next bounded work
+```
+
+The critical trust rule is that stages do not grant themselves the authority of later stages:
+
+```text
+worker completion != acceptance
+verification recommendation != canonical integration
+```
 
 ## Why the framework approach matters
 
-If IDKMesh is defined as one giant application, contributors must agree on that application's product goal before they can contribute meaningfully.
+If IDKMesh were one giant application, contributors would have to agree on that application's complete product goal before making useful progress.
 
-If IDKMesh is a collaboration framework, people can contribute to different layers without sharing the exact same product perspective.
+A framework lets different expertise compose through explicit contracts:
 
-A distributed-systems researcher can improve scheduling.
-A security engineer can improve sandboxing and provenance.
-An AI researcher can study model diversity and verification.
-A mathematician can work on allocation and aggregation mechanisms.
-An economist can study incentives.
-A governance researcher can study decision systems.
-A community organizer can improve onboarding and contributor health.
-A software engineer can build the coordinator, worker, or verifier.
-A designer can improve contributor UX.
-A domain expert can define project-specific Work Units and acceptance criteria.
-
-Their work can compose through explicit interfaces.
-
-## Project identity
-
-IDKMesh is best understood as a layered combination:
-
-1. **an emerging open-source framework** — reusable software/protocols for distributed collaboration;
-2. **a research program** — experiments about collective intelligence, distributed work, verification, incentives, and governance;
-3. **a community** — humans and AI agents from different disciplines working in public;
-4. **a reference implementation** — software that demonstrates the protocols;
-5. **a self-hosting meta-project** — a system testing whether it can help improve itself;
-6. **a substrate for other projects** — future projects should be able to use IDKMesh without becoming IDKMesh itself.
+- distributed-systems researchers can study scheduling/locality;
+- security engineers can study sandboxing/provenance;
+- AI researchers can study model/agent diversity and verification;
+- mathematicians can study allocation, dependence, and aggregation;
+- governance/community researchers can study review, authority, and contributor capacity;
+- software engineers can improve adapters, validators, tooling, and runner UX;
+- designers/documentarians can reduce comprehension and coordination cost;
+- domain experts can define project-specific tasks and evaluation criteria.
 
 ## What IDKMesh is not
 
@@ -116,50 +149,26 @@ It is not merely:
 - a blockchain network;
 - a social network for developers.
 
-It may borrow mechanisms from all of those areas, but the unifying problem is **how to convert heterogeneous, imperfect, distributed participation into verified useful work on evolving goals**.
-
-## The core abstraction
-
-A useful conceptual flow is:
-
-```text
-uncertain goal
-   -> competing interpretations / hypotheses
-   -> decomposed Work Units
-   -> matched humans / agents / machines
-   -> independent candidate artifacts
-   -> verification and evidence
-   -> integration / rejection / further questions
-   -> updated Goal Graph
-   -> next Work Units
-```
-
-This loop is more fundamental than any specific application built on top of it.
+It may integrate mechanisms from those areas, but the unifying problem is **how to convert heterogeneous, imperfect, distributed participation into verified useful work on evolving goals**.
 
 ## Architectural boundary
 
-The core should know as little as possible about a specific model, coding environment, Git forge, or project domain.
+The semantic core should know as little as practical about a specific model vendor, agent harness, Git forge, cloud, or domain.
 
-The core should provide primitives for:
+External systems should connect through adapters and protocol mappings. In particular, A2A/MCP are useful interoperability surfaces; IDKMesh should not create another generic transport simply to carry its own WorkUnit semantics.
 
-- identity/capability;
-- goals and dependencies;
-- bounded work;
-- artifacts;
-- evidence;
-- verification;
-- scheduling;
-- trust/provenance;
-- governance.
+Project-specific behavior belongs in versioned schemas, policies, adapters, validators, domain/project configurations, and evidence rules.
 
-Project-specific behavior should be expressed through adapters, policies, schemas, and domain packs.
+## Current scope
 
-## Initial scope
+The implementation is intentionally focused on the software-engineering domain and GitHub-native self-hosting because they offer strong observable verification and provenance.
 
-To avoid becoming too abstract, the first implementation is intentionally narrow:
+The immediate task is not to generalize everything. It is to make the current local/interop/evidence path coherent, independently reviewed, reproducible, and useful—then generalize only where observed evidence supports it.
 
-> build and experimentally validate the software-engineering domain on top of the general framework.
+For the current truth and next gates, see:
 
-That means the first reference implementation will focus on Git repositories, coding agents, tests, isolated worktrees/sandboxes, validators, and integration workflows.
-
-If those abstractions prove useful, generalize them only where evidence supports generalization.
+- [`../README.md`](../README.md);
+- [`../ARCHITECTURE.md`](../ARCHITECTURE.md);
+- [`../schemas/README.md`](../schemas/README.md);
+- [`../ROADMAP.md`](../ROADMAP.md);
+- [`README.md`](README.md) for documentation navigation.

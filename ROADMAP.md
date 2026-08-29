@@ -1,692 +1,379 @@
 # IDKMesh Roadmap
 
-This roadmap converts the project vision into a sequence of falsifiable research and engineering milestones. The rule is to **earn scale**: do not claim that an algorithm works for one million nodes until simulation and progressively larger deployments support the claim.
+**Status:** evidence-gated roadmap from the current repository state.
 
-The intended progression is approximately:
+IDKMesh should **earn scale**. A mechanism demonstrated in a schema test, simulation, GitHub workflow, or one controlled machine must not be advertised as proven at Internet scale.
 
-`1 -> 10 -> 100 -> 10,000 -> 1,000,000`
+The project optimizes for **verified useful work under scarce human attention and compute**, not raw task count, model tokens, CPU-hours, commits, issues, or contributor count.
 
-The project should optimize for **verified useful work**, not raw task count, raw model tokens, raw CPU-hours, or raw contributor count.
+## 0. Where the project is now
 
----
+The original roadmap began when most of the experimental kernel was still hypothetical. That is no longer true.
 
-# 0. Primary success metric
+Already implemented on `main`:
 
-The first headline metric should be:
+- WorkUnit v0.1/v0.2 and related machine-readable contracts;
+- ResultManifest, EvaluatorPlan, VerificationResult, experiment, CI, decomposition, compute, and graph schemas;
+- Phase 0 schema/cross-object validation;
+- deterministic simulation and experiment code;
+- independent verification/evidence machinery;
+- replay/non-selecting reporting research;
+- WorkUnit decomposition benchmark infrastructure;
+- protocol-neutral adapter boundary and A2A/MCP interop bindings;
+- zero-project-spend compute routing/admission experiments;
+- IDKGraph repository observability and link-integrity tooling;
+- repository mathematical/evolution control experiments;
+- ACE community-growth observation/control experiments;
+- protected `main` with stable Python 3.11/3.13 PR gates.
 
-`Verified Useful Work / (Human Attention + Compute Cost)`
+Therefore the current bottleneck is **not “define the first JSON schemas”**. The bottleneck is converting the existing foundation into independently reviewed, real, comparable execution evidence and a coherent user-facing runner.
 
-Supporting metrics:
+## 1. Primary success model
 
-- accepted useful artifacts;
-- post-acceptance defect rate;
-- test pass rate and test quality;
-- independent reproducibility;
-- security findings;
-- time to verified result;
-- CPU/GPU-hours per accepted result;
-- energy per accepted result where measurable;
-- human review minutes per accepted result;
-- duplicate-work ratio;
-- agent error correlation;
-- disagreement/calibration quality;
-- node failure recovery time;
-- bandwidth per verified result.
-
-No single metric should become a permanent master objective. Maintain a Pareto view.
-
----
-
-# 1. Scientific operating loop
-
-Every significant idea follows:
-
-`Question -> Hypothesis -> Formal model -> Baseline -> Experiment -> Evidence -> Decision -> Implementation -> Re-test`
-
-Repository artifacts should preserve:
-
-- positive results;
-- negative results;
-- uncertainty;
-- assumptions;
-- datasets/workloads;
-- benchmark configurations;
-- random seeds when relevant;
-- hardware/software environment;
-- result provenance.
-
----
-
-# Phase 0 — Define the experimental kernel
-
-## Goal
-
-Build the minimum local framework needed to test IDKMesh ideas on one computer without prematurely building a distributed platform.
-
-## Deliverables
-
-### A. Work Unit schema
-
-Define a machine-readable `WorkUnit` containing at least:
-
-- `id`;
-- parent goal/task;
-- inputs and content hashes;
-- resource requirements;
-- required capabilities;
-- execution constraints;
-- expected artifact types;
-- verification policy;
-- replication policy;
-- timeout/deadline hints;
-- privacy/trust class;
-- provenance requirements;
-- reward/priority metadata;
-- dependency IDs.
-
-### B. Result / Evidence schema
-
-Define a `ResultManifest`:
-
-- Work Unit ID;
-- produced artifact hashes;
-- worker identity/key;
-- environment/build information;
-- logs/metrics references;
-- self-reported confidence;
-- signature;
-- verifier results;
-- reproducibility status.
-
-### C. Goal Graph schema
-
-Initial node types:
-
-- Goal;
-- Question;
-- Assumption;
-- Hypothesis;
-- Requirement;
-- Proposal;
-- WorkUnit;
-- Artifact;
-- Test;
-- Evidence;
-- Decision;
-- Risk;
-- Contributor/Agent.
-
-Initial edge types:
-
-- `depends_on`;
-- `supports`;
-- `contradicts`;
-- `implements`;
-- `verifies`;
-- `derived_from`;
-- `supersedes`;
-- `blocks`;
-- `produced_by`.
-
-### D. Simulator
-
-Create a discrete-event simulator able to generate virtual workers with different:
-
-- CPU/GPU capacity;
-- latency/bandwidth;
-- reliability;
-- availability/churn;
-- task skills;
-- model quality;
-- error correlation;
-- malicious behavior probability.
-
-### E. Metrics harness
-
-Every algorithm comparison should write a common metrics format.
-
-## Exit criterion
-
-At least two scheduling/aggregation algorithms can run on the same synthetic workload and produce directly comparable metrics.
-
----
-
-# Phase 1 — Single-machine multi-agent scientific prototype
-
-## Goal
-
-Test the central collective-intelligence hypothesis before networking laptops.
-
-Run multiple AI roles on one machine or controlled environment:
-
-1. proposer;
-2. alternative proposer;
-3. critic;
-4. test author;
-5. adversarial tester;
-6. integrator;
-7. verifier.
-
-## First experiment
-
-Compare:
-
-- **Baseline A:** one capable coding agent;
-- **Baseline B:** N copies of the same agent + majority/selection;
-- **IDKMesh C:** diverse roles/models/prompts + independent tests + correlation-aware verification.
-
-Keep task set and compute budget as comparable as practical.
-
-## Key measurements
-
-- accepted tasks;
-- hidden-test success;
-- post-integration regressions;
-- review effort;
-- duplicate reasoning;
-- error correlation;
-- total token/compute use;
-- calibration of confidence;
-- time to verified artifact.
-
-## Mathematical experiments
-
-- majority vote versus weighted Bayesian aggregation;
-- random diversification versus measured diversity;
-- UCB/Thompson task allocation versus uniform allocation;
-- greedy selection versus annealing/evolutionary search;
-- one verifier versus quorum/redundant verification.
-
-## Exit criterion
-
-Demonstrate at least one reproducible workload where a structured diverse swarm produces a better verification-adjusted result than a single-agent baseline, or document a negative result explaining why it does not.
-
----
-
-# Phase 2 — Local mesh: 3–10 real machines
-
-## Goal
-
-Create the first actual compute mesh.
-
-## Components
-
-1. **Coordinator prototype** — receives goals and emits Work Units.
-2. **Worker daemon** — advertises capabilities and executes sandboxed Work Units.
-3. **Artifact store** — content-addressed result storage.
-4. **Scheduler** — capability-aware assignment.
-5. **Verifier service** — runs tests/quorum checks.
-6. **Provenance service** — hashes and signs artifacts/results.
-7. **Metrics collector** — stores benchmark events.
-8. **CLI** — joins a worker and submits/observes jobs.
-
-## Scheduling baselines
-
-Compare:
-
-- central FIFO;
-- capability matching;
-- shortest expected processing time;
-- work stealing;
-- multi-objective scheduler.
-
-## Failure tests
-
-- worker disappears mid-task;
-- slow/straggler worker;
-- duplicate result;
-- corrupted result;
-- network partition;
-- coordinator restart;
-- incompatible environment.
-
-## Exit criterion
-
-A job graph can finish correctly despite planned worker failures, with reproducible artifacts and end-to-end provenance.
-
----
-
-# Phase 3 — Verification-first swarm: 10–20 laptops
-
-## Goal
-
-Run the first headline experiment already identified in the decision log: can ordinary laptops with diverse AI coding agents improve IDKMesh itself better than a single-agent baseline?
-
-## Work types
-
-- implementation;
-- test generation;
-- fuzzing;
-- static analysis;
-- benchmark execution;
-- documentation verification;
-- architecture critique;
-- dependency/security review;
-- reproducibility checks.
-
-## Verification policies
-
-Experiment with:
-
-- deterministic tests;
-- independent test generation;
-- redundant execution;
-- majority/quorum;
-- trimmed/median aggregation;
-- model-family diversity;
-- adversarial verifier;
-- human escalation for unresolved high-risk disagreement.
-
-## Key scientific question
-
-How does verification cost scale as generation fan-out increases?
-
-The system should seek an operating point where marginal generation still produces positive verified value.
-
-## Exit criterion
-
-Publish a reproducible benchmark report with raw data, failures, compute cost, and uncertainty intervals.
-
----
-
-# Phase 4 — Decentralized state and churn
-
-## Goal
-
-Reduce dependence on a single always-available coordinator.
-
-## Research tracks
-
-### Gossip
-
-Use randomized gossip for selected distributed summaries such as load estimates or liveness information.
-
-### CRDTs
-
-Use CRDTs for state that can tolerate eventual consistency.
-
-### Consensus
-
-Use consensus only for state that actually needs one ordered authoritative decision.
-
-### Graph partitioning / islands
-
-Create local clusters of workers based on latency, trust, capability, organization, or workload affinity.
-
-## Physics/science experiments
-
-- graph Laplacian/spectral monitoring of fragmentation;
-- percolation simulations under churn and targeted failures;
-- load diffusion/backpressure;
-- partial synchronization versus fully asynchronous operation;
-- epidemic-style propagation analysis for compromised updates.
-
-## Exit criterion
-
-The mesh continues useful operation through partitions/churn and reconciles allowed state after reconnection without global corruption.
-
----
-
-# Phase 5 — Security and adversarial network
-
-## Goal
-
-Assume both workers and coordinators can be hostile.
-
-## Required work
-
-- least-privilege sandbox;
-- network/filesystem policy;
-- reproducible execution environments;
-- signed Work Units;
-- signed result manifests;
-- content-addressed artifacts;
-- software supply-chain controls;
-- verifier separation;
-- Byzantine result tests;
-- replay protection;
-- rate limits;
-- identity/reputation experimentation;
-- secrets isolation;
-- incident/audit logs.
-
-## Adversarial simulations
-
-- worker fabricates success;
-- worker returns poisoned artifact;
-- verifier colludes with worker;
-- coordinator sends malicious code;
-- compromised high-reputation node;
-- Sybil population;
-- correlated model attack;
-- artifact-history rewrite attempt.
-
-## Provenance implementation order
-
-`hashes -> signatures -> attestations -> transparency log -> independent monitors`
-
-Do not require blockchain at this stage.
-
-## Exit criterion
-
-Publish a threat model and show that selected attacks are detected, contained, or explicitly documented as unresolved.
-
----
-
-# Phase 6 — 100+ node hierarchical mesh
-
-## Goal
-
-Test the architecture beyond a laboratory cluster.
-
-## Architecture hypothesis
-
-`worker -> local swarm -> compute island -> regional/federated coordinator -> global goal graph`
-
-The hierarchy should aggregate summaries rather than pushing all worker state globally.
-
-## Multiscale / renormalization question
-
-Determine what information can be coarse-grained at each level without losing important scheduling or verification decisions.
-
-## Metrics
-
-- control-plane messages per worker;
-- data-plane bandwidth;
-- scheduling regret;
-- stale task rate;
-- island imbalance;
-- fault containment;
-- convergence after partition;
-- spectral connectivity;
-- energy per verified result.
-
-## Exit criterion
-
-Show sublinear or bounded-per-node control overhead for the tested workload and explain any central bottlenecks.
-
----
-
-# Phase 7 — Distributed/federated model learning experiments
-
-## Goal
-
-Only after the work mesh is stable, test whether the same infrastructure can support distributed model learning.
-
-## Candidate methods
-
-- FedAvg/FedProx-style methods;
-- asynchronous federated optimization;
-- local-SGD/island methods;
-- DiLoCo-like low-communication training;
-- gradient compression;
-- secure aggregation;
-- robust aggregation;
-- gradient/coded computation for stragglers.
-
-## Constraint
-
-Do not assume synchronized large-model pretraining across home Internet connections is a suitable first workload.
-
-## Exit criterion
-
-For a selected model/workload, beat a clearly defined centralized or naive-distributed baseline on a Pareto dimension such as cost, privacy, communication, resilience, or utilization without unacceptable quality loss.
-
----
-
-# Phase 8 — Cross-organization federation
-
-## Goal
-
-Allow independent organizations to run infrastructure while sharing selected goals, tasks, artifacts, and provenance.
-
-## Research questions
-
-- federated identity;
-- policy boundaries;
-- trust domains;
-- data locality;
-- organizational reputation;
-- replicated provenance;
-- permissioned consensus where necessary;
-- dispute resolution.
-
-## Blockchain decision point
-
-At this stage compare:
-
-1. signed central/federated database;
-2. replicated Merkle transparency logs;
-3. Byzantine replicated state machine;
-4. permissioned blockchain/ledger.
-
-Adopt blockchain only if the threat model and benchmark justify the cost.
-
----
-
-# Phase 9 — Optional open compute economy
-
-## Goal
-
-Only after IDKMesh produces demonstrated useful work, investigate economic incentives.
-
-## Start without a token
-
-Test:
-
-- public contribution scores;
-- reputation;
-- compute credits;
-- grants/bounties;
-- sponsorship;
-- conventional payments.
-
-## Economic experiments
-
-- proper scoring rules for probabilistic claims;
-- Shapley-style marginal contribution estimates;
-- auction-based scarce-resource allocation;
-- Nash bargaining for shared resource allocation;
-- peer prediction where ground truth is delayed;
-- Sybil-resistance mechanisms.
-
-## Blockchain/token gate
-
-A token should be considered only if transferability, permissionless settlement, or programmable economic coordination is demonstrably necessary.
-
----
-
-# Phase 10 — Internet-scale research
-
-## Goal
-
-Study rather than assume operation at 10,000–1,000,000 participants.
-
-Much of this phase begins in simulation before real deployment.
-
-## Required areas
-
-- hierarchical control;
-- locality-aware scheduling;
-- failure domains;
-- network-of-networks percolation;
-- economic/adversarial simulation;
-- observability sampling;
-- privacy-preserving aggregation;
-- global-versus-local governance;
-- protocol evolution;
-- heterogeneous accelerators;
-- energy/carbon accounting;
-- disaster recovery.
-
-## Scaling rule
-
-Any claim of scale should report:
-
-- node count;
-- task rate;
-- bandwidth;
-- state size;
-- coordinator count;
-- failure assumptions;
-- latency distribution;
-- workload distribution;
-- simulation versus real-node percentage.
-
----
-
-# 2. Immediate implementation backlog
-
-These are the recommended next concrete artifacts, in order:
-
-1. `schemas/work-unit.schema.json`
-2. `schemas/result-manifest.schema.json`
-3. `schemas/goal-graph.schema.json`
-4. `sim/` discrete-event simulator
-5. `metrics/` common benchmark schema
-6. baseline FIFO scheduler
-7. capability-aware scheduler
-8. work-stealing scheduler
-9. baseline majority aggregator
-10. Bayesian/weighted aggregator
-11. correlation/diversity estimator
-12. redundant verifier/quorum module
-13. content-addressed artifact store
-14. signing/attestation module
-15. local worker daemon
-16. coordinator prototype
-17. reproducible sandbox executor
-18. first multi-agent coding benchmark
-19. first 3–10-node fault/churn benchmark
-20. first 10–20-laptop self-improvement experiment
-
----
-
-# 3. Proposed repository structure
+A useful headline quantity is:
 
 ```text
-idkmesh/
-  README.md
-  docs/foundations/VISION.md
-  ARCHITECTURE.md
-  MATHEMATICAL_FOUNDATIONS.md
-  SCIENTIFIC_FOUNDATIONS.md
-  BLOCKCHAIN_STRATEGY.md
-  RESEARCH_QUESTIONS.md
-  ROADMAP.md
-  DECISIONS.md
-  GOVERNANCE.md
-  CONTRIBUTING.md
-  PROJECT_RULES.md
-
-  schemas/
-    work-unit.schema.json
-    result-manifest.schema.json
-    goal-graph.schema.json
-
-  src/
-    coordinator/
-    worker/
-    scheduler/
-    verifier/
-    provenance/
-    graph/
-    reputation/
-
-  sim/
-    worker_model/
-    network_model/
-    adversary_model/
-
-  experiments/
-    manifests/
-    results/
-    analysis/
-
-  benchmarks/
-    coding/
-    scheduling/
-    churn/
-    byzantine/
-
-  docs/
-    conversations/
-    findings/
-    protocols/
-    threat-models/
+Verified Useful Work
+---------------------------------------------
+Human Attention + Compute/Resource Cost + Risk
 ```
 
-This structure should evolve only when implementation produces evidence for a better organization.
+Keep a Pareto view rather than collapsing everything into one permanent scalar.
 
----
+Supporting measurements include:
 
-# 4. First experiment suite
+- correctness and hidden-test success;
+- post-integration defects/regressions;
+- independent reproducibility;
+- security findings;
+- human reviewer minutes;
+- verification latency/debt;
+- wall-clock and resource use;
+- error correlation and independence;
+- merge/integration conflict;
+- provenance completeness;
+- contributor onboarding/return/review capacity;
+- structural maintenance burden.
 
-## E001 — Does diversity beat duplication?
+## 2. Scientific operating loop
 
-Compare same-model replication versus model/role diversity under a fixed compute budget.
+Every significant mechanism should follow:
 
-## E002 — Does independent verification improve scaling?
+```text
+Question
+ -> falsifiable hypothesis
+ -> baseline / comparator
+ -> bounded implementation or experiment
+ -> independent checks
+ -> retained evidence
+ -> scoped decision
+ -> delayed outcome observation where relevant
+```
 
-Increase generation fan-out and measure marginal verified value with and without independent verification.
+Repository artifacts must distinguish:
 
-## E003 — How harmful is correlated error?
+- implemented mechanism;
+- synthetic fixture/simulation evidence;
+- observed real-run evidence;
+- accepted conclusion;
+- unresolved uncertainty.
 
-Artificially vary error correlation in simulation and compare majority, weighted voting, Bayesian aggregation, and robust methods.
+## 3. Current priority gates
 
-## E004 — Which scheduler works under heterogeneous churn?
+### Gate A — coherent Verified Swarm Runner path
 
-Compare FIFO, capability matching, work stealing, and multi-objective scheduling.
+**Goal:** make the existing contracts and verifier/orchestration work usable as one understandable local product path.
 
-## E005 — What replication factor is economically optimal?
+Required outcomes:
 
-Vary redundant execution versus worker reliability and task risk.
+- one current, independently reviewed real worker/execution adapter;
+- at least one additional heterogeneous adapter through the same coordinator-facing interface;
+- multiple isolated attempts from one bounded WorkUnit;
+- canonical ResultManifest per completed attempt;
+- verifier-owned EvaluatorPlan and independent VerificationResult;
+- peer failure isolation;
+- non-selecting evidence/reporting and replay;
+- explicit human integration outside worker/verifier authority;
+- newcomer-facing run/inspect/replay instructions.
 
-## E006 — Can bandits allocate research compute better?
+Do not count historical worker prototypes as current integration merely because their bytes or behavior were previously tested. Exact current candidate evidence and review gates still matter.
 
-Compare uniform allocation with UCB/Thompson allocation across competing approaches.
+### Gate B — real WorkUnit decomposition evidence
 
-## E007 — Can annealing/evolution escape architecture local optima?
+The five-arm decomposition benchmark infrastructure exists. The research question remains open.
 
-Compare greedy, random, simulated annealing, genetic, and bandit/tree-search approaches on synthetic architecture/configuration problems.
+Required outcomes before claiming a preferred decomposition strategy:
 
-## E008 — Where is the network failure transition?
+- controlled independently assigned worker runs across the benchmark arms;
+- bounded and comparable context/resource budgets;
+- shared hidden evaluation criteria;
+- measured rework/integration/context/verification costs;
+- retained raw evidence and uncertainty;
+- no assumption that formal decomposition must win.
 
-Use percolation/churn simulations for random and targeted failures across the three-network model.
+This is the remaining empirical boundary tracked by issue #15.
 
-## E009 — Does hierarchical coarse-graining preserve decisions?
+### Gate C — interoperability beyond faithful mocks
 
-Compare flat global scheduling with island summaries at increasing network sizes.
+The repository has a protocol-neutral worker boundary plus A2A/MCP mappings and conformance helpers.
 
-## E010 — Transparency log versus blockchain
+Next evidence should show:
 
-When multiple operators exist, benchmark signed database, Merkle transparency log, BFT replication, and permissioned ledger for provenance.
+- official/current SDK/type conformance where feasible;
+- the same logical WorkUnit round-tripping without semantic loss;
+- at least one external/heterogeneous lifecycle normalized to canonical ResultManifest evidence;
+- transport completion remaining distinct from acceptance;
+- identity/provenance and artifact normalization surviving the boundary.
 
----
+See issue #17 and the interoperability docs.
 
-# 5. What we should deliberately NOT build yet
+### Gate D — independent review capacity
 
-Avoid premature complexity:
+Several important subsystems deliberately require genuinely separate review. Automation must not manufacture this evidence.
 
-- custom cryptocurrency/token;
-- public blockchain dependency;
-- one-million-node deployment;
+Continue to measure:
+
+- time to first independent review;
+- reviewer minutes per bounded decision;
+- disagreement/uncertainty;
+- concentration of approvals in one maintainer;
+- whether documentation reduces review/onboarding cost.
+
+### Gate E — documentation and product coherence
+
+The repository now contains much more implementation/evidence than a newcomer should read directly.
+
+Maintain progressive disclosure:
+
+1. README: identity, current truth, how to start;
+2. contributor docs: workflow and live work;
+3. architecture/specification indexes: current subsystem truth;
+4. research/audit/history: evidence and provenance.
+
+Historical records should remain inspectable without silently becoming current architecture.
+
+## 4. Near-term engineering sequence
+
+### R0 — Keep the foundation green
+
+- protect `main`;
+- require stable PR gates;
+- preserve deterministic link/schema checks;
+- keep untrusted PR text/data out of privileged execution paths;
+- keep project compute spend at the declared repository policy ceiling;
+- fix documentation drift when implementations or gates change.
+
+### R1 — Finish one real local product loop
+
+Target experience:
+
+```text
+bounded repository task
+ -> WorkUnit
+ -> two or more isolated attempts
+ -> canonical candidate bundles
+ -> independent verification
+ -> evidence report
+ -> exact replay
+ -> human decision
+```
+
+The result should be runnable and explainable without reading research-history documents.
+
+### R2 — Demonstrate heterogeneous worker interchangeability
+
+Route at least two materially different worker implementations through the same coordinator-facing contract without coordinator-core rewrites.
+
+Measure semantic equivalence, adapter-specific failures, evidence/provenance quality, and integration cost.
+
+### R3 — Execute the first controlled comparative benchmark cohort
+
+Use the existing decomposition/benchmark contracts with real bounded attempts.
+
+Publish negative results and uncertainty. Do not optimize only for task success; record verification/reviewer/resource costs.
+
+### R4 — Package the first reproducible release
+
+A release should contain or point to:
+
+- install/run instructions;
+- exact contract versions;
+- a small reproducible example;
+- saved result/evidence bundle;
+- replay instructions;
+- known limitations/security boundaries;
+- benchmark/evidence provenance.
+
+### R5 — Small multi-machine experiment
+
+Only after the local loop is coherent, test 3–10 real machines/resources.
+
+Study:
+
+- churn and retries;
+- stragglers;
+- heterogeneous environments;
+- artifact transfer;
+- coordinator restart;
+- resource admission;
+- corrupted/malicious results;
+- sandbox boundaries;
+- end-to-end provenance.
+
+### R6 — Community-scale experiment
+
+With real external participants, measure whether the system reduces or increases human coordination burden.
+
+The social system is part of the distributed system: a technically scalable mesh that requires one human bottleneck is not scalable.
+
+## 5. Medium-term research phases
+
+### Phase M1 — Stronger execution isolation and provenance
+
+Progressively add or test, when threat models require them:
+
+- stronger container isolation;
+- gVisor/microVM/WASI-style backends where appropriate;
+- immutable source/environment identifiers;
+- signed manifests/attestations;
+- transparency/audit logs;
+- independent monitors.
+
+Do not add blockchain merely because provenance matters.
+
+### Phase M2 — Verification-market/backpressure research
+
+Study how verification capacity should be allocated under generation pressure:
+
+- risk-aware verification;
+- adaptive fan-out;
+- verifier diversity/correlation;
+- sequential/anytime evidence;
+- overload/criticality signals;
+- human escalation by information value.
+
+### Phase M3 — Locality and federated scheduling
+
+Test the fractal scaling hypothesis:
+
+```text
+node -> cell -> region/fabric -> federation
+```
+
+Measure what summaries can be coarse-grained without losing important scheduling, verification, or governance decisions.
+
+### Phase M4 — Decentralized state only where needed
+
+Evaluate gossip, CRDTs, ordered consensus, and partitioned/federated state according to the semantics of each state class.
+
+Do not create one global real-time database for every worker simply because the long-term vision is distributed.
+
+### Phase M5 — Cross-organization trust
+
+When multiple real operators exist, compare:
+
+1. signed/federated databases;
+2. Merkle/transparency logs;
+3. Byzantine replicated state machines;
+4. permissioned ledgers.
+
+Choose the cheapest mechanism that satisfies the demonstrated threat model.
+
+### Phase M6 — Optional economic mechanisms
+
+Only after IDKMesh produces demonstrated useful work, study credits, grants, conventional payments, reputation, auctions, scoring rules, or other incentives.
+
+A token is not a prerequisite and should not be introduced without a concrete need for transferable permissionless settlement or equivalent functionality.
+
+## 6. Internet-scale research
+
+Claims about 10,000–1,000,000 participants should begin in simulation and progressively larger observed deployments.
+
+Any scale claim should report at least:
+
+- real vs simulated node count;
+- task/event rate;
+- workload distribution;
+- coordinator/federation count;
+- state size;
+- bandwidth;
+- latency distribution;
+- failure/churn assumptions;
+- trust/adversary assumptions;
+- resource and verification cost;
+- human governance/review load.
+
+Relevant research areas include hierarchical control, locality-aware scheduling, network-of-networks failure, privacy-preserving aggregation, protocol evolution, heterogeneous accelerators, disaster recovery, and global-vs-local governance.
+
+## 7. Current repository structure
+
+The repository has evolved beyond the old proposed `src/coordinator`, `src/worker`, and three-schema sketch. Current top-level responsibility is distributed roughly as follows:
+
+```text
+.github/workflows/   GitHub-native checks, observers, experiments, and gates
+benchmarks/          benchmark cohorts/fixtures
+config/              repository policies
+examples/            machine-readable examples and fixtures
+docs/                architecture, specs, research, audits, evidence, history
+experiments/         executable experiment and validation tooling
+idkips/              improvement proposals
+interop/             protocol-neutral adapters and A2A/MCP interoperability
+schemas/             versioned machine-readable contracts
+scripts/             repository/community/evolution control and analysis code
+sim/                 deterministic research simulations/analysis
+tests/               repository-wide regression and contract tests
+tools/               repository observatory/link/maintenance tooling
+state/               bounded machine-readable evolution state/history
+```
+
+Do not reorganize this tree merely to match an old roadmap diagram. Structural changes should reduce a demonstrated maintenance/navigation problem and preserve provenance.
+
+## 8. Research program examples
+
+Current and planned experiment families include:
+
+- diversity vs duplication under matched budgets;
+- correlated-error and verifier-independence effects;
+- quorum/dependence model shape;
+- verification scaling/backpressure;
+- adaptive allocation and scheduling;
+- coordination criticality;
+- WorkUnit decomposition strategies;
+- learned verifier reliability;
+- community reproduction and reviewer load;
+- repository evolution/control quality.
+
+The purpose is not to prove the preferred architecture. The purpose is to find where it works, where it fails, and what boundary conditions matter.
+
+## 9. Deliberate non-goals for the current stage
+
+Do not prematurely build or claim:
+
+- a custom cryptocurrency/token;
+- a public blockchain dependency;
+- a custom generic agent transport replacing A2A/MCP;
+- a one-million-node production network;
 - synchronized giant-model training over arbitrary home Internet;
-- custom consensus protocol without a formal need;
-- global real-time state for every node;
 - one universal reputation score;
 - one permanent global objective function;
-- unverified autonomous code merging;
-- physics/quantum claims without benchmark evidence.
+- autonomous self-approval or merge;
+- production-grade hostile multi-tenant guarantees without the required isolation evidence;
+- superiority of swarm/decomposition strategies before controlled results exist.
 
----
+## 10. Definition of progress
 
-# 6. Near-term definition of success
+The roadmap advances when evidence removes a gate, not when a document accumulates more future features.
 
-IDKMesh does **not** need to prove the million-laptop vision immediately.
+A useful transition should leave an inspectable chain:
 
-A convincing first success is much smaller:
+```text
+baseline
+ -> bounded action/experiment
+ -> exact artifacts
+ -> independent checks
+ -> scoped decision
+ -> observed outcome
+ -> updated next gate
+```
 
-> A reproducible open-source system in which a heterogeneous group of AI agents and a small number of ordinary computers can decompose useful software work, execute it safely, independently verify results, preserve provenance, survive worker failures, and demonstrate better verification-adjusted productivity than a well-defined single-agent baseline.
-
-If that cannot be demonstrated, the failure is scientifically valuable and should guide the next architecture.
+See [`ITERATION_MODEL.md`](ITERATION_MODEL.md), [`EVOLUTION.md`](EVOLUTION.md), [`schemas/README.md`](schemas/README.md), and the curated [`docs/`](docs/README.md) indexes for the current contracts behind this roadmap.

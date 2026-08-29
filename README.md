@@ -1,329 +1,292 @@
 # IDKMesh
 
-> **I don't know. You don't know. Together, the mesh can discover, build, and know.**
+> **I don't know. You don't know. Together, the mesh can discover, build, verify, and learn.**
 
-**IDKMesh** is an open-source research and engineering community exploring how very large numbers of humans, AI agents, and heterogeneous computers can collaborate on useful software and research — from one laptop to potentially millions of participating machines.
+IDKMesh is an open-source research and engineering project exploring how humans, AI agents, software tools, and heterogeneous compute can coordinate on uncertain goals and turn proposals into **verified useful work**.
 
-The final system is **not fully known yet**. That uncertainty is intentional.
+The project is intentionally ambitious, but the repository is not claiming a finished planetary-scale system. Today it is a **GitHub-native research laboratory with an executable coordination/evidence foundation** and a reference-product target: the Git-native Verified Swarm Runner.
 
-The central question is:
+## The central question
 
-> **Can a large open community of humans and AI agents collectively discover goals, decompose work, build, verify, and maintain enterprise-quality systems better than isolated developers or agents can?**
+> **Can a large open community of humans and AI agents discover goals, decompose work, execute bounded tasks, verify results independently, and maintain complex systems better than isolated developers or agents can?**
 
-## Community first
+IDKMesh treats that as an empirical question. More agents, more activity, more commits, or more votes are not automatically better.
 
-**The community is part of the product.**
+## Current status
 
-IDKMesh cannot first build a giant collaboration system and add contributors later. Every substantial addition should consider whether it makes the project easier to discover, understand, join, contribute to, review, maintain, and eventually lead.
+**Executable research foundation; reference runner still incomplete.**
 
-You do **not** need to understand the whole architecture before helping.
+What is already present on `main`:
 
-Start here:
+- versioned WorkUnit contracts, with `work-unit-v0.2.schema.json` as the current semantic task contract;
+- ResultManifest, EvaluatorPlan, and VerificationResult contracts that separate worker claims, verifier evidence, and integration authority;
+- cross-object provenance and integrity validation;
+- a five-arm WorkUnit decomposition benchmark contract and strict synthetic-vs-observed evidence boundary;
+- protocol-neutral worker-adapter code plus A2A/MCP bindings and SDK/conformance helpers under [`interop/`](interop/);
+- simulation and experiment code under [`sim/`](sim/) and [`experiments/`](experiments/);
+- zero-project-spend compute admission and routing experiments;
+- IDKGraph repository modeling, observability, link-integrity, and warning/review machinery;
+- GitHub-native ACE community-growth experiments and repository-evolution control tooling;
+- protected `main` with the stable PR gate required on Python 3.11 and 3.13.
+
+What is **not** yet a finished capability:
+
+- there is no claim that IDKMesh can safely coordinate thousands or millions of real machines;
+- the reference Verified Swarm Runner is not yet a polished install-and-run product with multiple production worker adapters;
+- canonical real-node integration remains subject to its independent-review/evidence gates rather than being inferred from historical prototypes;
+- A2A/MCP support is an interoperability layer, not a claim that every external agent framework is production-integrated;
+- autonomous repository/community actuation remains policy- and authority-gated;
+- benchmark infrastructure is not scientific proof until controlled observed runs exist.
+
+This distinction is important: **implemented infrastructure is evidence of capability to run experiments, not evidence that the research hypotheses are true.**
+
+## Start here
+
+You do not need to understand the entire repository before contributing.
 
 1. Read this README.
 2. Read [`CONTRIBUTING.md`](CONTRIBUTING.md).
-3. Pick a contribution path in [`COMMUNITY.md`](COMMUNITY.md).
-4. Open a question, research idea, community improvement, bug report, or small pull request.
+3. Choose a contribution path in [`COMMUNITY.md`](COMMUNITY.md).
+4. Browse the live [`good first issue`](https://github.com/MSKazemi/idkmesh/issues?q=is%3Aissue+state%3Aopen+label%3A%22good+first+issue%22) and [`help wanted`](https://github.com/MSKazemi/idkmesh/issues?q=is%3Aissue+state%3Aopen+label%3A%22help+wanted%22) views.
+5. Before starting, check assignees, recent comments, and linked pull requests, then state the bounded change you intend to make.
 
-If something is confusing, **that itself is useful project feedback**.
+Two live examples at the time of this audit:
 
-### Want one bounded task right now?
+- [#167 — independently review IDKGraph orphan cohort 1](https://github.com/MSKazemi/idkmesh/issues/167), a bounded newcomer-friendly evidence/review task;
+- [#151 — independently audit the mathematical evolution control plane](https://github.com/MSKazemi/idkmesh/issues/151), a higher-skill security/control-systems review task.
 
-ACE (Autocatalytic Community Evolution) is testing whether useful repository activity can create the next useful contribution opportunity while keeping review load bounded. The Bootstrap Cohort is intentionally small, and the public front door should show **open work, not historical work**.
+The [ACE Bootstrap Cohort Observatory](https://github.com/MSKazemi/idkmesh/issues/109) is the live evidence source for the original growth-seed cohort. It intentionally distinguishes activity from verified external participation.
 
-Current open starter paths:
-
-Before starting one, check its assignees, recent comments, and linked pull requests, then leave a short comment stating what you plan to change.
-
-- [Browse current `good first issue` tasks](https://github.com/MSKazemi/idkmesh/issues?q=is%3Aissue+state%3Aopen+label%3A%22good+first+issue%22) — use this live view instead of relying on a stale issue number;
-- [#167 — independently review IDKGraph orphan cohort 1](../../issues/167) — evidence/review; a bounded `good first issue` that records real reviewer attention rather than inventing it.
-
-High-value expert contribution:
-
-- [#151 — independently audit the mathematical evolution control plane](../../issues/151) — GitHub Actions security, control systems, Bayesian inference, or governance. The automated and same-owner evidence is deliberately **not** treated as independent human approval.
-
-Completed Bootstrap Cohort examples remain public provenance, but are no longer available starter tasks:
-
-- #25 — ACE parent -> descendant evidence links;
-- #26 — ACE workflow threat model;
-- #27 — ACE population simulation;
-- #28 — research-track microtask decomposition.
-
-Check the live [ACE Bootstrap Cohort Observatory](../../issues/109) for the current evidence state. At the time of this update it reports no verified external ACE descendant yet. **That is evidence, not embarrassment.** We deliberately will **not** flood the tracker with Cohort 2 merely because review capacity is healthy.
-
-See [`COMMUNITY_GROWTH_ENGINE.md`](COMMUNITY_GROWTH_ENGINE.md), [`docs/community/ACE_BOOTSTRAP_EXPERIMENT.md`](docs/community/ACE_BOOTSTRAP_EXPERIMENT.md), and the [whole-system First Contact audit](docs/audits/2026-08-28-whole-system-first-contact-audit.md).
+If something is confusing, stale, contradictory, or difficult to discover, reporting or fixing that is useful project work.
 
 ## IDKMesh in 60 seconds
 
-- **IDK** means *I Don't Know*: incomplete knowledge and competing interpretations are first-class states.
-- **Mesh** means a network of people, AI agents, knowledge, tasks, evidence, and compute.
-- The first reference domain is **distributed software engineering**.
-- Workers should receive bounded **Work Units**, not unlimited access to an entire project.
-- Proposals are not trusted just because they came from a strong model, many models, or an expert human.
-- Verification, testing, review, provenance, reproducibility, and security scale with generation.
-- The project investigates whether many smaller agents can become powerful through diversity, specialization, coordination, competition, and independent verification.
-- The repository is also a public research notebook: important decisions, findings, failed ideas, and project conversations should remain discoverable.
+- **IDK** means *I Don't Know*: uncertainty, disagreement, assumptions, and competing hypotheses are first-class states.
+- **Mesh** means a network of people, agents, tools, evidence, tasks, and compute rather than one monolithic agent.
+- Workers should receive bounded **Work Units**, not unlimited project authority.
+- Worker completion is not acceptance; verifier recommendation is not merge authority.
+- Verification, provenance, reproducibility, and security must scale with generation volume.
+- Diversity matters only when it adds sufficiently independent useful evidence.
+- Git/GitHub are the current collaboration and canonical-history substrate.
+- A2A and MCP are integration surfaces; IDKMesh should not invent commodity transport protocols unnecessarily.
+- The public repository is also project memory: durable decisions, findings, evidence, and important collaboration history should remain inspectable.
 
-## Status
+## The reference product
 
-**Exploration / research / architecture / early-community phase.**
+The first reference application is a **Git-native Verified Swarm Runner**.
 
-This is a good time to contribute because fundamental questions are still open. Architecture critiques, research, experiments, documentation, security analysis, governance work, UX, community building, benchmarks, and negative results are all valuable.
-
-## What are we building first?
-
-The first reference product is a **Git-native Verified Swarm Runner**.
-
-A user gives IDKMesh a bounded repository task. Several replaceable human/AI worker adapters attempt the task in isolated Git worktrees/branches. A separate verifier evaluates the candidates and produces an evidence-backed report for human review.
+The target lifecycle is:
 
 ```text
-bounded Git task
-      -> Work Contract
-      -> isolated worker attempts
-      -> independent verification
-      -> Evidence Report
-      -> human accept / reject / refine
+bounded repository task
+        |
+        v
+   WorkUnit v0.2
+        |
+        v
+ replaceable worker adapters
+        |
+        v
+ candidate artifacts + ResultManifest
+        |
+        v
+ verifier-owned EvaluatorPlan
+        |
+        v
+ independent VerificationResult
+        |
+        v
+ non-selecting evidence/reporting
+        |
+        v
+ explicit human/governance integration decision
 ```
 
-The first release does **not** need decentralized networking and does **not** auto-merge into `main`.
-
-This small product lets us test the central thesis before scaling it. Read [`EVOLUTION.md`](EVOLUTION.md) for the current evolution path and [`IDKIPS.md`](IDKIPS.md) for how major competing ideas are proposed and tested.
-
-## Ways to contribute today
-
-You can help even if you are not a core software engineer.
-
-| You are interested in... | Useful contributions |
-| --- | --- |
-| Coding | prototypes, simulators, tests, tooling, schedulers, validators |
-| AI agents | agent orchestration, decomposition, evaluation, model diversity |
-| Distributed systems | scheduling, work stealing, CRDTs, consensus, fault tolerance |
-| Security | sandboxing, provenance, supply chain, adversarial workers, Sybil resistance |
-| Research | literature, falsifiable hypotheses, experiment design, reproductions |
-| Mathematics | graphs, optimization, Bayesian methods, game theory, information theory |
-| Documentation | newcomer explanations, tutorials, diagrams, examples, translations |
-| Community | onboarding, governance, issue design, contributor growth, accessibility |
-| Design / UX | developer experience, workflow design, observability, visual explanations |
-| Domain expertise | real-world goals, constraints, tests, evaluation criteria |
-| Compute | future volunteer-compute testing; today, help design safe worker protocols |
-
-See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the workflow and [`COMMUNITY.md`](COMMUNITY.md) for the contributor ladder.
-
-## What are we trying to build?
-
-IDKMesh is primarily a **general coordination framework, research program, and community**, not one fixed application.
-
-A possible long-term structure is:
+The key authority rule is:
 
 ```text
-IDKMesh Core
-   |
-   +-- domain/project protocols
-          |
-          +-- distributed software engineering
-          +-- scientific/research collaboration
-          +-- future collaborative domains
+worker success != acceptance
+verification recommendation != merge authority
+CI success != independent human review
 ```
 
-The core may eventually provide reusable primitives for:
+The current codebase already implements substantial pieces of this trust path, but the end-to-end newcomer product is still being converged and experimentally validated. See [`EVOLUTION.md`](EVOLUTION.md), [`ROADMAP.md`](ROADMAP.md), and the open project issues for the live gates.
 
-- evolving goals and uncertainty;
-- bounded Work Units;
-- dependency/task graphs;
-- capability-aware scheduling;
-- isolated execution;
-- independent verification;
-- evidence and provenance;
-- reputation and contribution history;
-- governance and dispute resolution;
-- metrics and observability.
+## Run the repository checks
 
-Different projects can add their own validators, policies, roles, and evidence rules.
+For the repository's Python research/control code:
 
-For a deeper explanation, read [`docs/WHAT_IS_IDKMESH.md`](docs/WHAT_IS_IDKMESH.md) and [`GOALS.md`](docs/foundations/GOALS.md).
+```bash
+python -m pip install --disable-pip-version-check pytest
+python -m pip install --disable-pip-version-check -r requirements-phase0.txt
+PYTHONPATH=. python -m pytest -q
+```
 
-## Flagship research question: many small coders vs one big coder
+Validate the core Phase 0 contracts directly with:
 
-One motivating experiment is deliberately simple:
+```bash
+python experiments/harness.py validate
+```
+
+Pull requests to protected `main` run the stable PR gate on Python 3.11 and 3.13 plus deterministic Markdown-link integrity. Individual subsystems also have narrower workflows.
+
+## Core architecture
+
+IDKMesh is best understood as one layered system:
 
 ```text
-1 strong coding model
-        vs
-1 small model
-        vs
-5 small independent models
-        vs
-10 small independent models
-        vs
-planner + implementers + tester + reviewer
-        vs
-parallel task-DAG teams
+human constitution / governance
+           |
+           v
+ goals + questions + evidence
+           |
+           v
+       Work Units
+           |
+           v
+ capability/resource matching
+           |
+           v
+ isolated humans / agents / tools / compute
+           |
+           v
+ candidate artifacts + provenance
+           |
+           v
+ independent verification / criticism
+           |
+           v
+ explicit integration decision
+           |
+           v
+ canonical state + outcome evidence
+           |
+           +------> next goals / policy learning
 ```
 
-The interesting question is **not** whether 100 weak agents magically equal one frontier model. They do not provide a quality guarantee.
+The canonical lifecycle vocabulary—event, action, candidate, iteration, generation, learning, and improvement—is defined in [`ITERATION_MODEL.md`](ITERATION_MODEL.md).
 
-The real question is when this combination helps:
+For implementation-level boundaries, see [`ARCHITECTURE.md`](ARCHITECTURE.md) and the curated [`docs/architecture/`](docs/architecture/README.md) index.
+
+## What IDKMesh builds vs reuses
+
+IDKMesh should spend its complexity budget on the parts that express its research thesis:
+
+- goals, uncertainty, and evidence;
+- bounded Work Units and authority;
+- decomposition and dependency structure;
+- capability/resource matching;
+- independent verification and evidence aggregation;
+- provenance and reproducibility;
+- experiment/benchmark machinery;
+- community and governance feedback loops;
+- measured self-improvement under external authority constraints.
+
+Commodity infrastructure should normally be integrated rather than reinvented. Current examples include Git/GitHub, OCI-style isolation patterns, A2A, MCP, and established provenance/supply-chain approaches.
+
+## Research discipline
+
+The repository distinguishes at least four states:
+
+1. **implemented mechanism** — code/schema/workflow exists;
+2. **synthetic validation** — deterministic fixtures/simulations test mechanics;
+3. **observed evidence** — controlled runs measured real behavior;
+4. **accepted conclusion** — evidence is strong enough for the scoped decision.
+
+Do not collapse these states. A simulator can validate an algorithm's implementation without proving that the algorithm improves real collaboration.
+
+One flagship research family compares, under matched budgets:
 
 ```text
-diversity
-+ decomposition
-+ isolated attempts
-+ specialization
-+ independent tests
-+ criticism
-+ selection
-+ integration
-+ project memory
---------------------------------
-= stronger collective engineering?
+one strong worker
+vs one small worker
+vs replicated workers
+vs heterogeneous workers
+vs specialized roles
+vs task/evidence DAG teams
 ```
 
-We want reproducible evidence about where this works and where it fails.
+Important outcomes include correctness, hidden-test success, regressions, error correlation, reviewer time, compute/resource use, latency, integration conflict, provenance quality, and verified useful work per unit of scarce attention/cost.
 
-Important metrics include hidden-test success, regressions, security, human reviewer time, wall-clock time, compute cost, merge conflicts, error correlation, maintainability, and **verified useful work per unit of human attention and compute**.
-
-See [`RESEARCH_QUESTIONS.md`](RESEARCH_QUESTIONS.md) and the project issues.
-
-## Architecture at a glance
-
-A candidate flow is:
-
-```text
-Goal / unresolved question
-          |
-          v
-Goal Graph / specification
-          |
-          v
-Task + dependency graph
-          |
-          v
-Scheduler / matching
-          |
-     +----+--------------------+
-     |            |            |
-     v            v            v
-   Human       AI agent    compute/test worker
-     |            |            |
-     +------------+------------+
-                  |
-                  v
-          Candidate artifacts
-                  |
-                  v
-       Verification / criticism
-   tests | review | fuzz | security
-                  |
-                  v
-        Selection / integration
-                  |
-                  v
-      Canonical project + evidence
-                  |
-                  v
-        Metrics / reputation / memory
-```
-
-The current scalability hypothesis is **Fractal Autonomous Cells**:
-
-`node -> cell -> region/fabric -> federation`
-
-Most coordination should remain local, with higher levels exchanging summaries, overflow work, discovery, attestations, and protocol metadata rather than centralizing every task globally.
-
-This is a hypothesis to test, not settled truth. See [`docs/architecture/SCALABILITY_AND_AGILITY.md`](docs/architecture/SCALABILITY_AND_AGILITY.md).
+See [`RESEARCH_QUESTIONS.md`](RESEARCH_QUESTIONS.md), [`docs/research/`](docs/research/README.md), and [`experiments/`](experiments/).
 
 ## Project principles
 
-**Community first.** Contributor experience and leadership scalability are engineering concerns.
+**Community first.** Contributor experience, review capacity, and leadership scalability are engineering constraints.
 
-**Proposal is not proof.** Human- or AI-generated output must be verified appropriately.
+**Proposal is not proof.** Human or AI confidence does not replace evidence.
 
-**Popularity is not correctness.** Votes, stars, reputation, or majority model agreement cannot replace evidence.
+**Popularity is not correctness.** Votes, stars, reputation, or correlated model agreement cannot override failed checks.
 
-**More agents are not automatically better.** Diversity and independent error matter more than raw count.
+**More agents are not automatically better.** Diversity, independence, decomposition quality, and verification capacity matter more than raw count.
 
-**Uncertainty is first-class.** Competing goals, hypotheses, confidence, and unresolved questions should remain explicit.
+**Uncertainty is data.** Competing goals and unresolved hypotheses should remain explicit when evidence is insufficient.
 
-**Decentralization still needs structure.** Interfaces, ownership, quality gates, security, and governance become more important at scale.
+**Generation must not outrun verification.** Output volume is harmful if the project cannot review, reproduce, and maintain it.
 
-**Scientific analogies are hypotheses, not evidence.** Physics/economics/biology-inspired mechanisms must be converted into falsifiable experiments.
+**Integrate before reinventing.** Reuse open standards for commodity capabilities and keep IDKMesh-specific semantics at the coordination/evidence layer.
 
-**Cryptographic provenance comes before blockchain.** Add expensive trust infrastructure only when a demonstrated problem requires it.
+**Scale must be earned.** Simulated or small-scale results must not be advertised as Internet-scale guarantees.
 
-**Generation must not outrun verification.** AI-generated volume is not progress if humans and validators cannot maintain it.
+**Cryptographic provenance comes before blockchain.** Add heavier trust infrastructure only when a demonstrated threat model requires it.
 
-**Integrate before reinventing.** Reuse open agent, tool, sandbox, provenance, and networking standards when they solve commodity problems; spend IDKMesh complexity on coordination, verification, evidence, and collective intelligence.
-
-## How community and governance work
-
-IDKMesh currently uses lightweight bootstrap governance.
-
-- `@MSKazemi` is the initial bootstrap maintainer.
-- Useful contribution is broader than code.
-- The intended path is **Participant -> Contributor -> Reviewer -> Maintainer / Community Steward**.
-- Leadership should become more distributed as sustained contributors emerge.
-- Major changes should be public, document alternatives, and include **Community Impact**.
-- Important disagreement can be resolved by competing experiments when possible.
-
-Read [`GOVERNANCE.md`](GOVERNANCE.md), [`MAINTAINERS.md`](MAINTAINERS.md), and [`docs/community/COMMUNITY_GROWTH_STRATEGY.md`](docs/community/COMMUNITY_GROWTH_STRATEGY.md).
+**Canonical authority remains external to generators and verifiers.** Protected integration is a separate decision boundary.
 
 ## Repository guide
 
-### Start here
+### New contributor
 
-- [`CONTRIBUTING.md`](CONTRIBUTING.md) — make a successful contribution.
-- [`COMMUNITY.md`](COMMUNITY.md) — participation, community values, contributor ladder.
-- [`COMMUNITY_GROWTH_ENGINE.md`](COMMUNITY_GROWTH_ENGINE.md) — ACE self-growing community algorithm and safeguards.
-- [`docs/community/ACE_BOOTSTRAP_EXPERIMENT.md`](docs/community/ACE_BOOTSTRAP_EXPERIMENT.md) — Bootstrap Cohort protocol, evidence rules, and expansion gate.
+- [`CONTRIBUTING.md`](CONTRIBUTING.md) — contribution workflow and checks.
+- [`COMMUNITY.md`](COMMUNITY.md) — participation paths and contributor ladder.
 - [`SUPPORT.md`](SUPPORT.md) — how to ask for help.
-- [`GOVERNANCE.md`](GOVERNANCE.md) — roles and decisions.
-- [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) — community behavior.
+- [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) — community expectations.
 - [`SECURITY.md`](SECURITY.md) — vulnerability reporting.
 
-### Understand the project
+### Understand the system
 
-- [`EVOLUTION.md`](EVOLUTION.md) — what we build next and how the project should evolve.
-- [`IDKIPS.md`](IDKIPS.md) — improvement-proposal process for major competing ideas.
-- [`docs/foundations/`](docs/foundations/README.md) — vision, goals, and field-defining questions.
-- [`GOALS.md`](docs/foundations/GOALS.md) — goal hierarchy and success criteria.
-- [`docs/WHAT_IS_IDKMESH.md`](docs/WHAT_IS_IDKMESH.md) — framework/core/domain model.
-- [`ROADMAP.md`](ROADMAP.md) — staged research and implementation path.
-- [`RESEARCH_QUESTIONS.md`](RESEARCH_QUESTIONS.md) — open questions.
-- [`docs/research/TOP_20_QUESTIONS.md`](docs/research/TOP_20_QUESTIONS.md) — current priorities.
+- [`docs/WHAT_IS_IDKMESH.md`](docs/WHAT_IS_IDKMESH.md) — framework, research, community, reference application, and self-hosting layers.
+- [`ITERATION_MODEL.md`](ITERATION_MODEL.md) — canonical evolution vocabulary and authority flow.
+- [`ARCHITECTURE.md`](ARCHITECTURE.md) — current architecture map.
+- [`EVOLUTION.md`](EVOLUTION.md) — strategy, implemented foundation, and next gates.
+- [`ROADMAP.md`](ROADMAP.md) — evidence-gated progression from the current state.
+- [`docs/README.md`](docs/README.md) — curated documentation navigation.
 
-### Go deeper
+### Contracts and interoperability
 
-- [`ARCHITECTURE.md`](ARCHITECTURE.md) — system model.
-- [`docs/architecture/SCALABILITY_AND_AGILITY.md`](docs/architecture/SCALABILITY_AND_AGILITY.md) — scaling hypothesis.
-- [`docs/architecture/IDKGRAPH_TASK_AND_EVOLUTION_MODEL.md`](docs/architecture/IDKGRAPH_TASK_AND_EVOLUTION_MODEL.md) — typed temporal hypergraph for goals, WorkUnits, evidence, provenance, documents, and executable projections.
-- [`docs/architecture/SELF_EVOLVING_REPOSITORY.md`](docs/architecture/SELF_EVOLVING_REPOSITORY.md) — guarded repository self-evolution, graph rewrites, control loops, invariants, and autonomy ladder.
-- [`docs/community/COMMUNITY_GROWTH_DYNAMICS.md`](docs/community/COMMUNITY_GROWTH_DYNAMICS.md) — branching, network, queueing, control, and information-theoretic models for contributor growth.
-- [`schemas/idkgraph.schema.json`](schemas/idkgraph.schema.json) and [`examples/idkgraph.example.yaml`](examples/idkgraph.example.yaml) — initial machine-readable graph schema and example.
-- [`MATHEMATICAL_FOUNDATIONS.md`](MATHEMATICAL_FOUNDATIONS.md) — algorithms and formulations.
-- [`SCIENTIFIC_FOUNDATIONS.md`](SCIENTIFIC_FOUNDATIONS.md) — scientific inspirations mapped to experiments.
-- [`BLOCKCHAIN_STRATEGY.md`](BLOCKCHAIN_STRATEGY.md) — staged trust/provenance strategy.
-- [`docs/decisions/`](docs/decisions/) — architecture/major decision records.
-- [`docs/findings/`](docs/findings/) — research findings.
-- [`docs/conversations/`](docs/conversations/README.md) — structured project conversation records.
+- [`schemas/README.md`](schemas/README.md) — current machine-readable contracts and versioning rules.
+- [`docs/specifications/`](docs/specifications/README.md) — protocol/specification index.
+- [`interop/`](interop/) — protocol-neutral adapter boundary, A2A/MCP mappings, identity binding, and conformance helpers.
+- [`IDKIPS.md`](IDKIPS.md) — major improvement-proposal process.
+
+### Research and evidence
+
+- [`docs/research/`](docs/research/README.md) — research programs and evidence.
+- [`sim/`](sim/) — deterministic simulations/analysis code.
+- [`experiments/`](experiments/) — experiment definitions, harnesses, and results tooling.
+- [`docs/audits/`](docs/audits/) — bounded audits and repository-health evidence.
+- [`docs/findings/`](docs/findings/) — research and engineering findings.
+
+### Community, governance, and project memory
+
+- [`GOVERNANCE.md`](GOVERNANCE.md) and [`CONSTITUTION.md`](CONSTITUTION.md) — authority and protected principles.
+- [`COMMUNITY_GROWTH_ENGINE.md`](COMMUNITY_GROWTH_ENGINE.md) — ACE community-growth experiment and safeguards.
+- [`PROJECT_RULES.md`](PROJECT_RULES.md) — repository-wide operating rules.
+- [`docs/conversations/`](docs/conversations/README.md) — append-only structured collaboration history.
 
 ## Public project record
 
-Project reasoning is part of the open-source artifact.
+The repository is the durable project record. Important conclusions from project work should be promoted into current architecture, specifications, decisions, findings, research evidence, governance, or implementation—not left only in chats or buried in historical notes.
 
-Useful IDKMesh conversations should be distilled into the repository as decisions, findings, research questions, issues, architecture, roadmap changes, community/process changes, or structured conversation records.
-
-The goal is **not** to dump chats. The goal is to make the evolution of the project understandable to someone who was not present.
-
-See [`PROJECT_RULES.md`](PROJECT_RULES.md).
+Historical records remain valuable, but they should not silently override current canonical documents. See [`PROJECT_RULES.md`](PROJECT_RULES.md) and [`docs/README.md`](docs/README.md) for the documentation hierarchy.
 
 ## License
 
 Apache License 2.0. See [`LICENSE`](LICENSE).
 
-## The invitation
+## Invitation
 
-IDKMesh starts from a simple admission: **we do not yet know the best way to build a system like this.**
+IDKMesh starts from a simple admission: **we do not yet know the best way to coordinate intelligence at this scale.**
 
-If you can improve the question, challenge an assumption, reproduce an experiment, write a test, explain the project more clearly, help a newcomer, design a protocol, find a security problem, or build a small verified component, you can contribute.
+If you can improve a question, falsify an assumption, reproduce an experiment, write a test, find a security problem, make a contract clearer, reduce reviewer burden, improve onboarding, or build one verified component, you can contribute.
 
-> **From uncertainty to collective intelligence.**
+> **From uncertainty to collective intelligence—through evidence.**
