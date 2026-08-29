@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "capacity": {
+    "K": 8.0,
+    "tau": 2.0,
+    "ready_pr_weight": 1.0,
+    "draft_pr_weight": 0.25,
+    "growth_seed_weight": 0.5,
+    "other_issue_weight": 0.1,
+    "other_issue_cap": 20
+  },
+  "targets": {
+    "minimum_capacity": 0.6,
+    "max_ready_prs": 5,
+    "minimum_starter_tasks": 2,
+    "minimum_external_participants": 1,
+    "minimum_workflow_pin_ratio": 0.95,
+    "maximum_branch_count_soft": 40
+  },
+  "homeostasis": {
+    "targets": {
+      "main_protection": 1.0,
+      "review_capacity": 0.75,
+      "independent_review_coverage": 1.0,
+      "starter_task_supply": 1.0,
+      "external_witness": 1.0,
+      "workflow_pin_ratio": 1.0,
+      "branch_health": 1.0
+    },
+    "scales": {
+      "main_protection": 1.0,
+      "review_capacity": 0.5,
+      "independent_review_coverage": 1.0,
+      "starter_task_supply": 1.0,
+      "external_witness": 1.0,
+      "workflow_pin_ratio": 1.0,
+      "branch_health": 1.0
+    },
+    "weights": {
+      "main_protection": 2.0,
+      "review_capacity": 1.4,
+      "independent_review_coverage": 1.2,
+      "starter_task_supply": 0.8,
+      "external_witness": 1.2,
+      "workflow_pin_ratio": 0.8,
+      "branch_health": 0.4
+    }
+  }
+}
