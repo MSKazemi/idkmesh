@@ -1,3 +1,4 @@
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -171,6 +172,106 @@ class ResidualHealthChecksTests(unittest.TestCase):
                 self.assertTrue(finding["evidence"]["rule"])
             self.assertFalse(result["authority"]["repository_write"])
             self.assertFalse(result["authority"]["semantic_inference"])
+
+
+
+class UnexercisedExecutableTests(unittest.TestCase):
+    """The check only speaks when the repository can answer the question.
+
+    Every fixture here is a real git work tree, because the tracked-file set is
+    what makes the answer reproducible across clones.
+    """
+
+    def _repository(self, root: Path, files: dict[str, str]) -> None:
+        subprocess.run(["git", "-C", str(root), "init", "-q"], check=True)
+        for relative, content in files.items():
+            path = root / relative
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(content, encoding="utf-8")
+        subprocess.run(["git", "-C", str(root), "add", "-A"], check=True)
+
+    def _executable_findings(self, root: Path) -> list[str]:
+        graph = build_repository_graph(root)
+        links = check_links(root)
+        result = check_residual_health(root, graph, links)
+        return sorted(
+            finding["source_path"]
+            for finding in result["findings"]
+            if finding["category"] == "executable_without_exercise_or_recorded_output"
+        )
+
+    def test_only_the_executable_with_neither_exercise_nor_output_is_flagged(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self._repository(
+                root,
+                {
+                    "tools/wired.py": "print('wired')\n",
+                    "tools/recorded.py": "print('recorded')\n",
+                    "tools/dormant.py": "print('dormant')\n",
+                    "scripts/tested.py": "print('tested')\n",
+                    ".github/workflows/run.yml": "run: python tools/wired.py\n",
+                    "tests/test_thing.py": "from scripts.tested import main\n",
+                    "docs/report.md": "# Report\n\nProduced by `tools/recorded.py`.\n",
+                },
+            )
+            self.assertEqual(["tools/dormant.py"], self._executable_findings(root))
+
+    def test_stem_matching_respects_identifier_boundaries(self) -> None:
+        """A longer name must not silently clear the shorter one it contains."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self._repository(
+                root,
+                {
+                    "tools/verify_e2e.py": "print('short')\n",
+                    "tools/real_verify_e2e.py": "print('long')\n",
+                    ".github/workflows/run.yml": "run: python tools/real_verify_e2e.py\n",
+                },
+            )
+            # Only the long name is referenced. Substring matching would clear both.
+            self.assertEqual(["tools/verify_e2e.py"], self._executable_findings(root))
+
+    def test_module_plumbing_is_not_an_entry_point(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self._repository(
+                root,
+                {
+                    "tools/__init__.py": "",
+                    "tools/__main__.py": "print('entry')\n",
+                },
+            )
+            self.assertEqual([], self._executable_findings(root))
+
+    def test_unanswerable_outside_a_work_tree_reports_nothing(self) -> None:
+        """No tracked-file set means no finding, never a finding by default."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "tools").mkdir()
+            (root / "tools" / "dormant.py").write_text("print('x')\n", encoding="utf-8")
+            self.assertEqual([], self._executable_findings(root))
+
+    def test_the_finding_is_a_review_candidate_not_a_defect(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self._repository(root, {"tools/dormant.py": "print('dormant')\n"})
+            graph = build_repository_graph(root)
+            links = check_links(root)
+            findings = [
+                finding
+                for finding in check_residual_health(root, graph, links)["findings"]
+                if finding["category"] == "executable_without_exercise_or_recorded_output"
+            ]
+            self.assertEqual(1, len(findings))
+            finding = findings[0]
+            # Notice, not warning: an executable can be legitimately dormant while it
+            # waits on an absent dependency, and this module cannot tell that apart
+            # from abandonment.
+            self.assertEqual("notice", finding["severity"])
+            self.assertEqual("executable:tools/dormant.py", finding["source_id"])
+            self.assertEqual("P0-health", finding["evidence"]["producer"])
+            self.assertTrue(finding["evidence"]["rule"])
 
 
 if __name__ == "__main__":
