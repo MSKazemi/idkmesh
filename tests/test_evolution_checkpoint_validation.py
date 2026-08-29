@@ -36,7 +36,7 @@ class EvolutionCheckpointValidationTests(unittest.TestCase):
             "run_id": "123",
             "source": "issues",
             "timestamp": "2026-08-29T00:00:00+00:00",
-            "checkpoint_source": "repository-seed",
+            "checkpoint_source": state["signals"]["checkpoint_source"],
             "signed_soft_evidence": {},
             "fitness_before": 0.0,
             "fitness_after": 0.0,
