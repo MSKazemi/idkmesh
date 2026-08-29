@@ -5,7 +5,10 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from jsonschema import Draft202012Validator
+try:
+    from jsonschema import Draft202012Validator
+except ImportError:  # Full stdlib-only CI intentionally omits optional validators.
+    Draft202012Validator = None
 
 from tools.github_idkgraph_projection import project_snapshot, serialize
 
@@ -19,6 +22,8 @@ class GitHubIDKGraphProjectionTests(unittest.TestCase):
         self.snapshot = json.loads(FIXTURE.read_text(encoding="utf-8"))
 
     def test_output_validates_against_idkgraph_schema(self) -> None:
+        if Draft202012Validator is None:
+            self.skipTest("IDKGraph schema validation requires jsonschema")
         output = project_snapshot(self.snapshot)
         schema = json.loads((ROOT / "schemas/idkgraph.schema.json").read_text())
         errors = list(Draft202012Validator(schema).iter_errors(output["graph"]))
