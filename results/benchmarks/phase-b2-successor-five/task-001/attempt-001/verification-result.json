@@ -1,0 +1,172 @@
+{
+  "attempt": 1,
+  "checks": [
+    {
+      "evidence_ids": [
+        "result-manifest-canonical"
+      ],
+      "id": "result-manifest-schema",
+      "required": true,
+      "status": "passed",
+      "summary": "Worker ResultManifest is schema-valid and bound to the exact WorkUnit.",
+      "type": "schema"
+    },
+    {
+      "diagnostics": "{\"artifact\":{\"artifact_locator\":\"candidate.patch\",\"bytes\":2055,\"declared_digest\":\"sha256:d20c895d09e2f9521d8c1451cae29f9f859479f2f3401d81ba8b839ec87769eb\",\"decode_error\":null,\"observed_digest\":\"sha256:d20c895d09e2f9521d8c1451cae29f9f859479f2f3401d81ba8b839ec87769eb\",\"within_limit\":true},\"logs\":{\"coverage_violations\":[],\"logs\":[{\"bytes\":167,\"declared_digest\":\"sha256:445436e0da35f30d64d60b250208c49422bc280ec795253df8e3684d59f2282c\",\"index\":1,\"locator\":\"stdout.txt\",\"matches\":true,\"observed_digest\":\"sha256:445436e0da35f30d64d60b250208c49422bc280ec795253df8e3684d59f2282c\",\"type\":\"stdout\",\"within_limit\":true},{\"bytes\":0,\"declared_digest\":\"sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"index\":2,\"locator\":\"stderr.txt\",\"matches\":true,\"observed_digest\":\"sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"type\":\"stderr\",\"within_limit\":true}],\"observed_type_counts\":{\"stderr\":1,\"stdout\":1},\"required_log_types\":[\"stdout\",\"stderr\"]},\"scope\":{\"allowed_paths\":[\"tools/benchmark_cohort.py\"],\"changed_paths\":[\"tools/benchmark_cohort.py\"],\"filesystem_write\":[\"tools/benchmark_cohort.py\"],\"forbidden_paths\":[\".github/**\",\"schemas/**\",\"benchmarks/**\",\"verification/**\"],\"violations\":[]},\"semantic\":{\"missing_added_text\":[],\"observed_added_lines\":[\"    if negative[\\\"expected_category\\\"] in VERIFICATION_FINDING_CATEGORIES:\",\"            negative[\\\"evidence_type\\\"] == \\\"verification_result\\\",\",\"            f\\\"{task['id']}: canonical negative category requires VerificationResult evidence\\\",\",\"\",\"    if negative[\\\"evidence_type\\\"] != \\\"verification_result\\\":\",\"        return\",\"\",\"    validate_schema(value, VERIFICATION_RESULT_SCHEMA, f\\\"{task['id']} negative VerificationResult\\\")\",\"    require(\",\"        value[\\\"decision_support\\\"][\\\"recommendation\\\"] != \\\"accept_candidate\\\",\",\"        f\\\"{task['id']}: negative VerificationResult unexpectedly recommends acceptance\\\",\",\"    )\",\"    expected = negative[\\\"expected_category\\\"]\",\"    if expected in VERIFICATION_FINDING_CATEGORIES:\",\"        categories = {finding[\\\"category\\\"] for finding in value[\\\"findings\\\"]}\",\"        require(expected in categories, f\\\"{task['id']}: negative evidence lacks expected {expected} finding\\\")\"],\"required_added_text\":[\"    if negative[\\\"expected_category\\\"] in VERIFICATION_FINDING_CATEGORIES:\",\"            negative[\\\"evidence_type\\\"] == \\\"verification_result\\\",\"]},\"semantic_removed_substrings\":{\"matches\":[{\"matched_line\":\"    if negative[\\\"evidence_type\\\"] == \\\"verification_result\\\":\",\"substring\":\"if negative[\\\"evidence_type\\\"] == \\\"verification_result\\\":\"}],\"missing_substrings\":[],\"observed_removed_lines\":[\"    if negative[\\\"evidence_type\\\"] == \\\"verification_result\\\":\",\"        validate_schema(value, VERIFICATION_RESULT_SCHEMA, f\\\"{task['id']} negative VerificationResult\\\")\",\"            value[\\\"decision_support\\\"][\\\"recommendation\\\"] != \\\"accept_candidate\\\",\",\"            f\\\"{task['id']}: negative VerificationResult unexpectedly recommends acceptance\\\",\",\"        expected = negative[\\\"expected_category\\\"]\",\"        if expected in VERIFICATION_FINDING_CATEGORIES:\",\"            categories = {finding[\\\"category\\\"] for finding in value[\\\"findings\\\"]}\",\"            require(expected in categories, f\\\"{task['id']}: negative evidence lacks expected {expected} finding\\\")\"],\"parse_error\":null,\"required_removed_substrings\":[\"if negative[\\\"evidence_type\\\"] == \\\"verification_result\\\":\"],\"semantic_mode\":\"removed_line_substring_all\"},\"semantic_substrings\":{\"matches\":[{\"matched_line\":\"    if negative[\\\"expected_category\\\"] in VERIFICATION_FINDING_CATEGORIES:\",\"substring\":\"negative[\\\"expected_category\\\"] in VERIFICATION_FINDING_CATEGORIES\"},{\"matched_line\":\"            negative[\\\"evidence_type\\\"] == \\\"verification_result\\\",\",\"substring\":\"negative[\\\"evidence_type\\\"] == \\\"verification_result\\\"\"}],\"missing_substrings\":[],\"observed_added_lines\":[\"    if negative[\\\"expected_category\\\"] in VERIFICATION_FINDING_CATEGORIES:\",\"            negative[\\\"evidence_type\\\"] == \\\"verification_result\\\",\",\"            f\\\"{task['id']}: canonical negative category requires VerificationResult evidence\\\",\",\"\",\"    if negative[\\\"evidence_type\\\"] != \\\"verification_result\\\":\",\"        return\",\"\",\"    validate_schema(value, VERIFICATION_RESULT_SCHEMA, f\\\"{task['id']} negative VerificationResult\\\")\",\"    require(\",\"        value[\\\"decision_support\\\"][\\\"recommendation\\\"] != \\\"accept_candidate\\\",\",\"        f\\\"{task['id']}: negative VerificationResult unexpectedly recommends acceptance\\\",\",\"    )\",\"    expected = negative[\\\"expected_category\\\"]\",\"    if expected in VERIFICATION_FINDING_CATEGORIES:\",\"        categories = {finding[\\\"category\\\"] for finding in value[\\\"findings\\\"]}\",\"        require(expected in categories, f\\\"{task['id']}: negative evidence lacks expected {expected} finding\\\")\"],\"parse_error\":null,\"required_added_substrings\":[\"negative[\\\"expected_category\\\"] in VERIFICATION_FINDING_CATEGORIES\",\"negative[\\\"evidence_type\\\"] == \\\"verification_result\\\"\"],\"semantic_mode\":\"added_line_substring_all\"},\"semantic_transition_mode\":\"added_and_removed_line_substring_all\",\"worker_status\":\"succeeded\"}",
+      "evidence_ids": [
+        "candidate-patch-hash",
+        "log-integrity-observation",
+        "patch-scope-observation",
+        "patch-semantic-observation",
+        "worker-status-observation",
+        "added-substring-semantic-observation",
+        "removed-substring-semantic-observation"
+      ],
+      "id": "independent-review",
+      "required": true,
+      "status": "passed",
+      "summary": "Independent metadata-only patch review passed artifact/log integrity, strict patch structure, scope, v0.3 added-line substring checks, and v0.4 removed-line transition checks.",
+      "type": "review"
+    }
+  ],
+  "decision_support": {
+    "confidence": 1.0,
+    "rationale": "All WorkUnit-required checks passed, including explicit v0.4 added-and-removed line substring transition semantics.",
+    "recommendation": "accept_candidate"
+  },
+  "evidence": [
+    {
+      "description": "Canonical digest of the schema-valid worker ResultManifest evaluated by the verifier.",
+      "digest": "sha256:44ae21059a9a36f56a4dce4d5641079e3ecb734c80d38e4d940501232eb10592",
+      "id": "result-manifest-canonical",
+      "locator": "inline://result-manifest-canonical",
+      "media_type": "application/json",
+      "type": "attestation"
+    },
+    {
+      "description": "SHA-256 observed directly from candidate patch bytes.",
+      "digest": "sha256:d20c895d09e2f9521d8c1451cae29f9f859479f2f3401d81ba8b839ec87769eb",
+      "id": "candidate-patch-hash",
+      "locator": "candidate.patch",
+      "media_type": "text/x-diff",
+      "type": "artifact_hash"
+    },
+    {
+      "description": "Canonical digest of evaluator-required log coverage and independently recomputed log integrity observations.",
+      "digest": "sha256:95a61f3631e1233a0c87ffdb62d94094f964122ab5e4535bedb42cc5d8c79f51",
+      "id": "log-integrity-observation",
+      "locator": "inline://log-integrity",
+      "media_type": "application/json",
+      "type": "trace"
+    },
+    {
+      "description": "Canonical digest of independently parsed unified-diff paths and WorkUnit scope checks.",
+      "digest": "sha256:8204f5ca4536bcacb40173e1c68859ab851e726c909694857fbb2bdca48f0984",
+      "id": "patch-scope-observation",
+      "locator": "inline://patch-scope",
+      "media_type": "application/json",
+      "type": "static_analysis"
+    },
+    {
+      "description": "Canonical digest of verifier-owned required-added-text checks from validated hunks only.",
+      "digest": "sha256:192b5aec8b701c8146bf78df2b2135efd121e257c0dab7a8fc826baff2036242",
+      "id": "patch-semantic-observation",
+      "locator": "inline://patch-semantic",
+      "media_type": "application/json",
+      "type": "test_output"
+    },
+    {
+      "description": "Canonical digest of the worker execution status observed by the verifier.",
+      "digest": "sha256:557d907fbdaf9ce5bb0ad618c35c2709b08665790555d991c6c93eda39897452",
+      "id": "worker-status-observation",
+      "locator": "inline://worker-status",
+      "media_type": "application/json",
+      "type": "trace"
+    },
+    {
+      "description": "Canonical digest of explicit case-sensitive, single-added-line substring matching for EvaluatorPlan v0.3.",
+      "digest": "sha256:a2b429eb3731d5a1c3b253e02dff2d0dacd52936e3012fa69c964443eb683b79",
+      "id": "added-substring-semantic-observation",
+      "locator": "inline://added-substring-semantic-observation",
+      "media_type": "application/json",
+      "type": "test_output"
+    },
+    {
+      "description": "Canonical digest of explicit case-sensitive, single-removed-line substring matching for EvaluatorPlan v0.4.",
+      "digest": "sha256:948ccb1180cfa65f5ef06cf56d781a8eaa25c5ec593394b589dce7627807e377",
+      "id": "removed-substring-semantic-observation",
+      "locator": "inline://removed-substring-semantic-observation",
+      "media_type": "application/json",
+      "type": "test_output"
+    }
+  ],
+  "extensions": {
+    "org.idkmesh.evaluator_plan.backend": "unified_diff_transition",
+    "org.idkmesh.evaluator_plan.digest": "sha256:1abee7b4886e8c4626af8714cfad72c04cac6e93a42920af8dddf598a2236ddc",
+    "org.idkmesh.evaluator_plan.execution_mode": "metadata_only",
+    "org.idkmesh.evaluator_plan.id": "benchmark/phase-b2-successor/001-negative-evidence-type-boundary/evaluator-v0.4",
+    "org.idkmesh.evaluator_plan.runner_version": "0.4",
+    "org.idkmesh.evaluator_plan.visibility": "public",
+    "org.idkmesh.local_verifier.added_substring_core_version": "0.2.0",
+    "org.idkmesh.local_verifier.backend": "unified_diff",
+    "org.idkmesh.local_verifier.legacy_patch_core_version": "0.1.1",
+    "org.idkmesh.local_verifier.policy_id": "benchmark/phase-b2-successor/001-negative-evidence-type-boundary/evaluator-v0.4",
+    "org.idkmesh.local_verifier.semantic_match_mode": "added_and_removed_line_substring_all"
+  },
+  "findings": [],
+  "finished_at": "2026-08-28T17:44:25.394524Z",
+  "id": "benchmark/phase-b2-successor/001-negative-evidence-type-boundary/single-worker-baseline-v1/attempt-001/patch-verification",
+  "independence": {
+    "correlation_notes": "Evaluator control is outside the candidate root; candidate code is never executed. Strict diff/provenance/log/scope checks reuse verifier v0.1.1; v0.2.0 supplies explicit added-line substring matching; v0.3.0 additionally requires verifier-owned unsafe substrings to occur in validated removed lines.",
+    "independent_from_worker": true,
+    "shared_model_family": false,
+    "shared_runtime": false,
+    "worker_id_observed": "idkmesh-phase-b2-deterministic-baseline"
+  },
+  "metrics": {
+    "candidate_bytes": 2055,
+    "changed_path_count": 1,
+    "log_count": 2,
+    "matched_removed_substring_count": 1,
+    "matched_substring_count": 2,
+    "required_checks_failed": 0,
+    "required_checks_passed": 2,
+    "required_removed_substring_count": 1,
+    "required_substring_count": 2
+  },
+  "provenance": {
+    "environment": {
+      "platform": "Linux-6.17.0-1022-azure-x86_64-with-glibc2.39",
+      "python": "3.12.14",
+      "tool_versions": {
+        "deterministic-patch-verifier": "0.3.0",
+        "deterministic-patch-verifier-added-substring-core": "0.2.0",
+        "deterministic-patch-verifier-legacy-core": "0.1.1",
+        "idkmesh-local-verifier": "0.1",
+        "jsonschema": "installed"
+      }
+    },
+    "result_manifest_digest": "sha256:44ae21059a9a36f56a4dce4d5641079e3ecb734c80d38e4d940501232eb10592",
+    "source_revision": "a69aa0ae1ae4862e507511cbd9ad854237d0ad32",
+    "verifier_config_digest": "sha256:1abee7b4886e8c4626af8714cfad72c04cac6e93a42920af8dddf598a2236ddc",
+    "work_unit_digest": "sha256:04258ad63d36368ae6780b351f5e3729fe5f7a12de66aee16d1bc475a8b69096"
+  },
+  "resources": {
+    "compute_units": 0.0,
+    "human_minutes": 0.0,
+    "tokens": 0,
+    "wall_seconds": 0.001145565999998155
+  },
+  "result_manifest_id": "benchmark/phase-b2-successor/001-negative-evidence-type-boundary/single-worker-baseline-v1/attempt-001",
+  "schema_version": "0.1",
+  "started_at": "2026-08-28T17:44:25.393354Z",
+  "status": "passed",
+  "verifier": {
+    "adapter": "deterministic-patch-verifier",
+    "adapter_version": "0.3.0",
+    "id": "idkmesh-local-verifier",
+    "type": "system"
+  },
+  "work_unit_id": "benchmark/phase-b2-successor/001-negative-evidence-type-boundary",
+  "work_unit_version": 1
+}
