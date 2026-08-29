@@ -37,3 +37,6 @@ still fail under other factors not present here. These results do not establish
 optimality under churn, stale observations, correlated regional loss,
 heterogeneous requirements, or saturation; those remain separate issue #84
 sweeps.
+
+The first five-seed reference result and guarded interpretation are retained in
+[`../../results/experiments/r2/capability-rarity-seeds41-45.md`](../../results/experiments/r2/capability-rarity-seeds41-45.md).
