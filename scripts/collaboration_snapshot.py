@@ -24,7 +24,9 @@ except ModuleNotFoundError:  # Direct execution places scripts/ on sys.path.
 
 
 OBSERVATION_UNAVAILABLE_EXIT = 75
-COLLECTOR = "github-collaboration-window-v0.1"
+COLLECTOR = "github-collaboration-window-v0.2"
+OWNERSHIP_MODEL = "last_merged_toucher_within_window-v1"
+STRUCTURAL_DEBT_MODEL = "deterministic_observatory_attributed_to_last_toucher-v1"
 REVIEW_STATES = frozenset({"APPROVED", "CHANGES_REQUESTED", "COMMENTED"})
 CONCLUSIVE_CHECK_CONCLUSIONS = frozenset(
     {"success", "failure", "cancelled", "timed_out", "action_required", "stale", "startup_failure"}
@@ -112,6 +114,92 @@ def _independent_reviews(
     return sorted({actor for _, actor in observed}), first
 
 
+def _changed_paths(
+    request_json: RequestJSON, repository: str, number: int, token: str
+) -> tuple[list[str], bool]:
+    """Return the paths a pull request changed and whether the page saturated.
+
+    A pull request with 100 or more changed files exceeds one bounded page. The
+    collector keeps the partial observation rather than failing the whole window,
+    but flags it so no downstream metric can silently treat it as complete.
+    """
+    rows = _bounded_list(
+        request_json,
+        f"/repos/{repository}/pulls/{number}/files",
+        token,
+        {"per_page": 100},
+        allow_full_page=True,
+    )
+    paths: list[str] = []
+    for row in rows:
+        filename = row.get("filename")
+        if isinstance(filename, str) and filename:
+            paths.append(filename)
+    return sorted(set(paths)), len(rows) >= 100
+
+
+def _finding_id(finding: dict[str, Any]) -> str:
+    """Derive a stable identifier for a deterministic observatory finding.
+
+    The identity is the (category, path, line) triple the producer already emits,
+    so the same repository state yields the same identifier on any machine and the
+    identifier stays stable when unrelated findings appear or disappear.
+    """
+    category = str(finding.get("category") or "")
+    source_path = str(finding.get("source_path") or "")
+    line = int(finding.get("line") or 0)
+    digest = hashlib.sha256(f"{category}|{source_path}|{line}".encode()).hexdigest()
+    return f"debt:{digest[:16]}"
+
+
+def _load_structural_debt(report: Path | None) -> list[dict[str, Any]]:
+    """Read deterministic structural-debt findings from an observatory report."""
+    if report is None:
+        return []
+    payload = json.loads(report.read_text(encoding="utf-8"))
+    _require(isinstance(payload, dict), "structural debt report must be a JSON object")
+    findings = payload.get("findings")
+    _require(isinstance(findings, list), "structural debt report must contain findings")
+    loaded: list[dict[str, Any]] = []
+    for finding in findings:
+        _require(isinstance(finding, dict), "each structural debt finding must be an object")
+        source_path = finding.get("source_path")
+        _require(
+            isinstance(source_path, str) and source_path,
+            "each structural debt finding requires a source_path",
+        )
+        loaded.append(
+            {
+                "id": _finding_id(finding),
+                "category": str(finding.get("category") or "uncategorized"),
+                "severity": str(finding.get("severity") or "unknown"),
+                "source_path": source_path,
+            }
+        )
+    return loaded
+
+
+def _attribute_structural_debt(
+    findings: list[dict[str, Any]], touched: dict[str, list[int]]
+) -> tuple[dict[int, list[str]], list[dict[str, Any]]]:
+    """Attach each finding to the last pull request in the window that touched it.
+
+    A finding whose path was never touched inside the bounded window is left
+    unattributed rather than assigned to an arbitrary pull request. The caller
+    reports those separately so the observable cannot understate the inventory
+    without saying so.
+    """
+    attributed: dict[int, list[str]] = defaultdict(list)
+    unattributed: list[dict[str, Any]] = []
+    for finding in findings:
+        numbers = touched.get(finding["source_path"])
+        if not numbers:
+            unattributed.append(finding)
+            continue
+        attributed[max(numbers)].append(finding["id"])
+    return {number: sorted(set(ids)) for number, ids in attributed.items()}, unattributed
+
+
 def _ci_counts(checks: list[dict[str, Any]]) -> dict[str, int]:
     conclusive = [
         row
@@ -130,6 +218,7 @@ def collect(
     max_pull_requests: int = 50,
     request_json: RequestJSON = _request_json,
     now: datetime | None = None,
+    structural_debt_report: Path | None = None,
 ) -> dict[str, Any]:
     _require("/" in repository and repository.count("/") == 1, "repository must be owner/name")
     _require(1 <= max_pull_requests <= 99, "max_pull_requests must be in [1, 99]")
@@ -138,7 +227,7 @@ def collect(
 
     rate = request_json("/rate_limit", token, None)
     remaining = int((((rate or {}).get("resources") or {}).get("core") or {}).get("remaining", 0))
-    required_budget = 3 * max_pull_requests + 10
+    required_budget = 4 * max_pull_requests + 10
     if remaining < required_budget:
         raise GitHubObservationUnavailable(
             f"GitHub API budget {remaining} is below required reserve {required_budget}"
@@ -154,6 +243,13 @@ def collect(
     )
     normalized: list[dict[str, Any]] = []
     contribution_times: dict[str, list[str]] = defaultdict(list)
+    # Ownership is a within-window model: a path is owned by the author of the most
+    # recent merged pull request that changed it. Iterating in ascending number order
+    # means `owner_of_path` always holds the state as of the pull request being read,
+    # so a pull request is never attributed ownership it only acquired by merging.
+    owner_of_path: dict[str, str] = {}
+    touched_by: dict[str, list[int]] = defaultdict(list)
+    saturated_file_lists: list[int] = []
 
     for pull in sorted(pulls, key=lambda row: int(row["number"])):
         number = int(pull["number"])
@@ -185,6 +281,16 @@ def collect(
         reviewer_ids, first_review = _independent_reviews(
             pull, reviews, repository, cutoff, ready_at
         )
+        changed_paths, saturated = _changed_paths(request_json, repository, number, token)
+        if saturated:
+            saturated_file_lists.append(number)
+        # One attribution per changed file, so a pull request that touches many files
+        # owned by one actor weighs on concentration as heavily as the change it made.
+        changed_file_owners = [
+            owner_of_path[path] for path in changed_paths if path in owner_of_path
+        ]
+        for path in changed_paths:
+            touched_by[path].append(number)
         normalized.append(
             {
                 "number": number,
@@ -195,7 +301,10 @@ def collect(
                 "closed_at": pull.get("closed_at"),
                 "review_ready": pull.get("state") == "open" and pull.get("draft") is False,
                 "independent_reviewers": reviewer_ids,
-                "changed_file_owners": [],
+                "changed_file_owners": changed_file_owners,
+                "changed_file_count": len(changed_paths),
+                "changed_files_truncated": saturated,
+                "unattributed_changed_files": len(changed_paths) - len(changed_file_owners),
                 "ci_checks": _ci_counts(checks),
                 "structural_debt_finding_ids": [],
             }
@@ -207,17 +316,44 @@ def collect(
             and not _is_bot(author, author_user.get("type"))
         ):
             contribution_times[_pseudonym(author, repository)].append(merged_at)
+        if isinstance(merged_at, str):
+            for path in changed_paths:
+                owner_of_path[path] = _pseudonym(author, repository)
 
     contributors = [
         {"login": actor, "meaningful_contributions": sorted(set(timestamps))}
         for actor, timestamps in sorted(contribution_times.items())
     ]
+
+    debt_findings = _load_structural_debt(structural_debt_report)
+    attributed, unattributed = _attribute_structural_debt(debt_findings, touched_by)
+    for row in normalized:
+        row["structural_debt_finding_ids"] = attributed.get(row["number"], [])
+
+    limitations = [
+        "bounded_recent_window_not_complete_repository_history",
+        "merged_pull_request_is_the_only_meaningful_contribution_proxy",
+        "ownership_is_last_merged_toucher_inside_the_window_not_repository_history",
+    ]
+    if structural_debt_report is None:
+        limitations.append("structural_debt_inventory_not_collected")
+    if unattributed:
+        limitations.append("structural_debt_findings_outside_the_window_are_unattributed")
+    if saturated_file_lists:
+        limitations.append("changed_file_list_saturated_the_bounded_page_for_some_pull_requests")
+
+    # The inventory is only complete when a deterministic report was supplied *and*
+    # every finding in it reached a pull request. An unattributed finding would make
+    # the downstream count an undercount, and claiming completeness over an
+    # undercount would be a false statement about the repository.
+    inventory_complete = bool(structural_debt_report is not None and not unattributed)
+
     cutoff_text = cutoff.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
     return {
         "version": 1,
         "repository": repository,
         "cutoff_at": cutoff_text,
-        "inventory_complete": False,
+        "inventory_complete": inventory_complete,
         "pull_requests": normalized,
         "contributors": contributors,
         "collection": {
@@ -229,12 +365,36 @@ def collect(
             "raw_bodies_retained": False,
             "actor_logins_retained": False,
             "strategy_outcomes_classified": False,
-            "limitations": [
-                "bounded_recent_window_not_complete_repository_history",
-                "ownership_attribution_not_collected",
-                "structural_debt_inventory_not_collected",
-                "merged_pull_request_is_the_only_meaningful_contribution_proxy",
-            ],
+            "ownership": {
+                "model": OWNERSHIP_MODEL,
+                "attributed_files": sum(
+                    len(row["changed_file_owners"]) for row in normalized
+                ),
+                "unattributed_files": sum(
+                    row["unattributed_changed_files"] for row in normalized
+                ),
+                "saturated_file_lists": sorted(saturated_file_lists),
+            },
+            "structural_debt": {
+                "model": STRUCTURAL_DEBT_MODEL,
+                "report_supplied": structural_debt_report is not None,
+                "findings_loaded": len(debt_findings),
+                "findings_attributed": sum(len(ids) for ids in attributed.values()),
+                "findings_unattributed": len(unattributed),
+                "unattributed_paths": sorted(
+                    {finding["source_path"] for finding in unattributed}
+                ),
+                "index": [
+                    {
+                        "id": finding["id"],
+                        "category": finding["category"],
+                        "severity": finding["severity"],
+                        "source_path": finding["source_path"],
+                    }
+                    for finding in sorted(debt_findings, key=lambda row: row["id"])
+                ],
+            },
+            "limitations": sorted(limitations),
         },
     }
 
@@ -244,12 +404,27 @@ def main() -> int:
     parser.add_argument("--repository", required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--max-pull-requests", type=int, default=50)
+    parser.add_argument(
+        "--structural-debt-report",
+        type=Path,
+        default=None,
+        help=(
+            "observatory.json emitted by tools/idkgraph_observatory.py; its "
+            "deterministic findings are attributed to the last pull request in the "
+            "window that changed the finding's path"
+        ),
+    )
     args = parser.parse_args()
     token = os.environ.get("GITHUB_TOKEN")
     if not token:
         raise SystemExit("GITHUB_TOKEN is required")
     try:
-        snapshot = collect(args.repository, token, max_pull_requests=args.max_pull_requests)
+        snapshot = collect(
+            args.repository,
+            token,
+            max_pull_requests=args.max_pull_requests,
+            structural_debt_report=args.structural_debt_report,
+        )
     except GitHubObservationUnavailable as error:
         print(f"observation unavailable: {error}", file=sys.stderr)
         return OBSERVATION_UNAVAILABLE_EXIT

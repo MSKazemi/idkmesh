@@ -44,6 +44,8 @@ An HHI of `0.0` here must not be read as "perfectly distributed review". It is t
 
 Reading either of these as "no ownership concentration" or "no structural debt" would be a category error. Nothing was measured. The collector says so in machine-readable form, and `inventory_complete: false` is carried all the way into the output.
 
+**Superseded for this snapshot only.** Collector `v0.2` closes both gaps. The follow-up run measured ownership concentration at HHI `1.0` over 66 attributions and loaded four deterministic structural-debt findings, none of which fell inside the observed window — see [Ownership Concentration: First Real Measurement](2026-08-30-ownership-concentration-first-measurement.md). The two zeros recorded above remain the correct reading of *this* snapshot, which was collected by `v0.1`.
+
 ## Consequences for the open research questions
 
 - **`evidence_derived_strategy_priors: []`.** The run derived no priors from evidence. The evolution policy therefore still runs on the seven hand-authored uniform `0.142857` priors in `config/evolution-policy-v1.json`. The relevant checklist item in issue 86 remains genuinely open.
