@@ -14,6 +14,7 @@ on:
       - "tools/idkgraph_review_session.py"
       - "tests/test_idkgraph_health_checks.py"
       - "tests/test_idkgraph_observatory.py"
+      - "tests/test_conversation_index.py"
       - "tests/test_idkgraph_warning_sample.py"
       - "tests/test_idkgraph_review_session.py"
       - "tests/fixtures/idkgraph_observatory/**"
@@ -34,6 +35,7 @@ on:
       - "tools/idkgraph_review_session.py"
       - "tests/test_idkgraph_health_checks.py"
       - "tests/test_idkgraph_observatory.py"
+      - "tests/test_conversation_index.py"
       - "tests/test_idkgraph_warning_sample.py"
       - "tests/test_idkgraph_review_session.py"
       - "tests/fixtures/idkgraph_observatory/**"
@@ -61,8 +63,8 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install Phase 0 schema validator
         run: python -m pip install --disable-pip-version-check -r requirements-phase0.txt
-      - name: Run focused observatory, residual-health, sampling, and review-evidence tests
-        run: python -m unittest tests.test_idkgraph_health_checks tests.test_idkgraph_observatory tests.test_idkgraph_warning_sample tests.test_idkgraph_review_session -v
+      - name: Run focused observatory, navigation, sampling, and review-evidence tests
+        run: python -m unittest tests.test_idkgraph_health_checks tests.test_idkgraph_observatory tests.test_conversation_index tests.test_idkgraph_warning_sample tests.test_idkgraph_review_session -v
       - name: Clean fixture must have zero deterministic errors
         run: |
           rm -rf /tmp/idkgraph-valid

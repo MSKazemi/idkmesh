@@ -13,6 +13,17 @@ that produced them.
 
 ### 2026-08-29
 
+- [Issue #97 selection and reference-evidence completion](2026-08-29-issue-97-reference-evidence.md)
+- [Issue #84 factor-isolation closure](2026-08-29-issue-84-factor-isolation-closure.md)
+- [Issue #79 learned verifier reliability](2026-08-29-issue-79-learned-verifier-reliability.md)
+- [Issue #22 matched-budget emergence](2026-08-29-issue-22-matched-budget-emergence.md)
+- [Issue #15 Work Unit composability](2026-08-29-issue-15-work-unit-composability.md)
+- [Issue #14 verification-scaling closure](2026-08-29-issue-14-verification-scaling-closure.md)
+- [Issue #13 scaling synthesis](2026-08-29-issue-13-scaling-synthesis.md)
+- [GitHub activity to IDKGraph projection](2026-08-29-github-idkgraph-projection.md)
+- [Operationalizing repository collaboration observables](2026-08-29-collaboration-observables.md)
+- [CI shadow outcome evaluator v0.1](2026-08-29-ci-shadow-outcome-evaluator-v0.1.md)
+- [ACE v1 acceptance audit and deduplication hardening](2026-08-29-ace-v1-acceptance-audit.md)
 - [Phase B2 successor-v2 novelty audit](2026-08-29-phase-b2-successor-v2-novelty-audit.md)
 - [Phase B2 Task 005 evidence](2026-08-29-phase-b2-task005-evidence.md)
 - [Phase B2 Task 004 evidence](2026-08-29-phase-b2-task004-evidence.md)
@@ -26,6 +37,18 @@ that produced them.
 
 ### 2026-08-28
 
+- [Versioned semantic matching after the burned cohort](2026-08-28-versioned-semantic-matching-after-burned-cohort.md)
+- [Execute current priorities and protect `main`](2026-08-28-priority-execution-main-safety.md)
+- [PR #91 negative runtime matrix](2026-08-28-pr91-negative-runtime-matrix.md)
+- [Phase B2 Task 001 evidence and evaluator calibration](2026-08-28-phase-b2-task001-evidence.md)
+- [Phase B2 v0.3 legitimate-vs-decoy calibration](2026-08-28-phase-b2-v03-calibration.md)
+- [Open-weight benchmark producer experiment](2026-08-28-open-model-benchmark-producer.md)
+- [Continuous GitHub + ChatGPT repository evolution](2026-08-28-continuous-chatgpt-github-evolution.md)
+- [Continue ACE and Verified Swarm Runner convergence](2026-08-28-continue-ace-real-node-e2e.md)
+- [Conjunctive evolution governor convergence](2026-08-28-conjunctive-evolution-governor-convergence.md)
+- [Executable ACO continuation](2026-08-28-aco-executable-continuation.md)
+- [ACE security hardening continuation](2026-08-28-ace-security-hardening.md)
+- [ACE safety and evidence convergence](2026-08-28-ace-safety-and-evidence-convergence.md)
 - [Zero-Project-Spend Compute Router](2026-08-28-zero-project-spend-compute-router.md)
 - [Whole-System Audit and First Contact Mode](2026-08-28-whole-system-audit-and-first-contact.md)
 - [versioned evaluator semantic matching](2026-08-28-versioned-evaluator-semantic-matching.md)

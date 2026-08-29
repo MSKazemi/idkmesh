@@ -71,5 +71,7 @@ warning candidate
 The first cohort classification is recorded in [IDKGraph P1 orphan cohort 1](audits/2026-08-28-idkgraph-p1-orphan-cohort-1.md).
 The later bounded architecture-directory correction is recorded in
 [IDKGraph architecture navigation pass](findings/2026-08-29-idkgraph-architecture-navigation.md).
+The conversation archive's exhaustive-index repair and recurrence guard are
+recorded in [Conversation index drift review](findings/2026-08-29-conversation-index-drift.md).
 
 Do not optimize warning count as a standalone repository-health objective.
