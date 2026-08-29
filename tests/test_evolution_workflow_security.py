@@ -74,6 +74,12 @@ class EvolutionWorkflowSecurityTests(unittest.TestCase):
             self.assertIn('--head-sha "$SELECTED_HEAD_SHA"', workflow)
             self.assertIn('--event-name "$SELECTED_EVENT_NAME"', workflow)
 
+    def test_checked_in_tests_run_before_checkpoint_restore(self) -> None:
+        self.assertLess(
+            self.evolution.index("Verify checked-in persistent and live implementations"),
+            self.evolution.index("Restore Bayesian checkpoint or use repository seed"),
+        )
+
     def test_live_observer_has_no_pull_request_review_trigger(self) -> None:
         trigger_block = self.evolution.split("permissions: {}", 1)[0]
         self.assertNotIn("pull_request_review:", trigger_block)

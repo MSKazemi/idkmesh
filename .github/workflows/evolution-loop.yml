@@ -50,6 +50,29 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Verify checked-in persistent and live implementations
+        run: |
+          python -m py_compile \
+            scripts/evolution_math.py \
+            scripts/checkpoint_manifest.py \
+            scripts/evolution_score.py \
+            scripts/evolution_snapshot.py \
+            scripts/repository_evolution_score.py \
+            scripts/conjunctive_evolution_control.py \
+            tests/test_evolution_math.py \
+            tests/test_evolution_observer.py \
+            tests/test_conjunctive_evolution_control.py \
+            tests/test_checkpoint_manifest.py \
+            tests/test_evolution_checkpoint_validation.py \
+            tests/test_evolution_workflow_security.py
+          python -m unittest -v \
+            tests.test_evolution_math \
+            tests.test_evolution_observer \
+            tests.test_conjunctive_evolution_control \
+            tests.test_checkpoint_manifest \
+            tests.test_evolution_checkpoint_validation \
+            tests.test_evolution_workflow_security
+
       - name: Normalize event kind
         id: event
         shell: bash
@@ -168,29 +191,6 @@ jobs:
             source="trusted-main-artifact:${SELECTED_RUN_ID}"
           fi
           echo "source=${source}" >> "$GITHUB_OUTPUT"
-
-      - name: Verify persistent and live mathematical implementations
-        run: |
-          python -m py_compile \
-            scripts/evolution_math.py \
-            scripts/checkpoint_manifest.py \
-            scripts/evolution_score.py \
-            scripts/evolution_snapshot.py \
-            scripts/repository_evolution_score.py \
-            scripts/conjunctive_evolution_control.py \
-            tests/test_evolution_math.py \
-            tests/test_evolution_observer.py \
-            tests/test_conjunctive_evolution_control.py \
-            tests/test_checkpoint_manifest.py \
-            tests/test_evolution_checkpoint_validation.py \
-            tests/test_evolution_workflow_security.py
-          python -m unittest -v \
-            tests.test_evolution_math \
-            tests.test_evolution_observer \
-            tests.test_conjunctive_evolution_control \
-            tests.test_checkpoint_manifest \
-            tests.test_evolution_checkpoint_validation \
-            tests.test_evolution_workflow_security
 
       - name: Update persistent Bayesian history
         run: |
