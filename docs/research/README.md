@@ -34,6 +34,8 @@ policy changes or merge decisions.
 
 ## Verification Research
 
+- [Coordination Criticality and Finite-Difference Response](CRITICALITY_AND_FLUCTUATION_RESPONSE.md)
+  — matched small-load probes compared with utilization and backlog baselines.
 - [Evaluator Plan Binding](EVALUATOR_PLAN_BINDING.md) — binds verifier-owned
   evaluation intent to exact task evidence.
 - [Executable Independent Verifier MVP](EXECUTABLE_VERIFIER_MVP.md) — defines
