@@ -32,9 +32,22 @@ partially paginated review, timeline, or check inventory. The weekly/manual
 `Collaboration Observables` workflow runs the collector and analyzer from
 trusted `main` with read-only permissions.
 
-The live window is explicitly incomplete repository history. It does not infer
-file ownership or structural-debt findings, and it treats merged pull requests
-as the only meaningful-contribution proxy. Most importantly, it emits **no
+The live window is explicitly incomplete repository history, and it treats
+merged pull requests as the only meaningful-contribution proxy.
+
+Collector `v0.2` adds two attributions, both bounded by that same window.
+Ownership follows `last_merged_toucher_within_window-v1`: a path is owned by the
+author of the most recent merged pull request inside the window that changed it,
+and the model advances only after a merge, so a pull request is never credited
+with ownership its own merge created. A path first seen inside the window has no
+owner and is counted in `unattributed_changed_files` rather than guessed at.
+Structural debt is not inferred at all: `--structural-debt-report` consumes the
+deterministic `tools/idkgraph_observatory.py` inventory and attaches each finding
+to the last pull request in the window that changed the finding's path. A finding
+whose path the window never touched stays unattributed, and `inventory_complete`
+is `true` only when a report was supplied **and** every finding in it reached a
+pull request — so the downstream count can never claim completeness over an
+undercount. Most importantly, it emits **no
 evidence-derived strategy prior** unless a separate input has independently
 classified verified-useful outcomes; merged status and green CI are not enough.
 
