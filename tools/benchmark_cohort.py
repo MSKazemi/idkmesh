@@ -436,17 +436,21 @@ def _fixture_cohort(
     }
 
 
+def load_cohort_argument(raw: str) -> dict[str, Any]:
+    """Load one CLI cohort argument through the repository path boundary."""
+
+    return load_json(resolve_repo_file(raw, label="BenchmarkCohort"))
+
+
 def cmd_validate(args: argparse.Namespace) -> int:
-    cohort_path = resolve_repo_file(args.cohort, label="BenchmarkCohort")
-    cohort = load_json(cohort_path)
+    cohort = load_cohort_argument(args.cohort)
     summary = validate_cohort(cohort, require_evidence=args.require_evidence)
     print(json.dumps(summary, indent=2, sort_keys=True))
     return 0
 
 
 def cmd_definition_digest(args: argparse.Namespace) -> int:
-    cohort_path = resolve_repo_file(args.cohort, label="BenchmarkCohort")
-    cohort = load_json(cohort_path)
+    cohort = load_cohort_argument(args.cohort)
     validate_schema(cohort, COHORT_SCHEMA, "BenchmarkCohort")
     print(definition_digest(cohort))
     return 0
@@ -455,8 +459,7 @@ def cmd_definition_digest(args: argparse.Namespace) -> int:
 def cmd_definition_json(args: argparse.Namespace) -> int:
     """Print the canonical pre-outcome projection committed by the digest."""
 
-    cohort_path = resolve_repo_file(args.cohort, label="BenchmarkCohort")
-    cohort = load_json(cohort_path)
+    cohort = load_cohort_argument(args.cohort)
     validate_schema(cohort, COHORT_SCHEMA, "BenchmarkCohort")
     print(json.dumps(definition_projection(cohort), indent=2, sort_keys=True))
     return 0
