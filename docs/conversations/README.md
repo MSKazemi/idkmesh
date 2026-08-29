@@ -7,12 +7,13 @@ canonical files designated by [`../../PROJECT_RULES.md`](../../PROJECT_RULES.md)
 (decisions, specifications, architecture, findings); this directory keeps the trail
 that produced them.
 
-147 records across 2 dates, newest first.
+148 records across 2 dates, newest first.
 
 ## Index
 
 ### 2026-08-29
 
+- [Solve all open issues and pull requests](2026-08-29-solve-all-open-issues-and-prs.md)
 - [Resolve one open issue professionally and integrate it](2026-08-29-resolve-discovery-surface-gate.md)
 - [Issue #97 selection and reference-evidence completion](2026-08-29-issue-97-reference-evidence.md)
 - [Issue #84 factor-isolation closure](2026-08-29-issue-84-factor-isolation-closure.md)
