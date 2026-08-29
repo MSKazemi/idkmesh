@@ -33,7 +33,10 @@ jobs:
     concurrency:
       # Artifact-backed Bayesian state must have one successor lineage. The observer
       # converges to the newest state rather than forking from concurrent restores.
-      group: evolution-observer
+      # Advisory PR-target observations cannot become canonical checkpoint parents,
+      # so isolate them: a PR-close event must not cancel the canonical main-push
+      # observation that the merge just triggered.
+      group: evolution-observer-${{ github.event_name == 'pull_request_target' && 'advisory' || 'canonical' }}
       cancel-in-progress: true
     runs-on: ubuntu-latest
     timeout-minutes: 10
