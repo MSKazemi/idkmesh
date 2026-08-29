@@ -264,3 +264,114 @@ class EvolutionObserverTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class PriorityUncertaintyTests(unittest.TestCase):
+    """P0 item 3 of #86: a point score must not be presented as truth."""
+
+    PARTS = frozenset(evolution_score.NUMERATOR_PARTS) | frozenset(evolution_score.DENOMINATOR_PARTS)
+
+    def actions(self, **kwargs):
+        result = evolution_score.evaluate(snapshot(**kwargs), POLICY)
+        self.assertTrue(result["recommended_actions"], "fixture produced no recommendations")
+        return result
+
+    def test_every_action_declares_provenance_for_every_priority_input(self):
+        for action in self.actions()["recommended_actions"]:
+            with self.subTest(action=action["id"]):
+                self.assertEqual(set(action["priority_input_provenance"]), self.PARTS)
+                self.assertTrue(
+                    set(action["priority_input_provenance"].values())
+                    <= {
+                        evolution_score.SNAPSHOT_DERIVED,
+                        evolution_score.SNAPSHOT_CONDITIONED_PRIOR,
+                        evolution_score.HAND_AUTHORED_PRIOR,
+                    }
+                )
+
+    def test_point_score_lies_inside_its_own_sensitivity_bounds(self):
+        for action in self.actions()["recommended_actions"]:
+            low, high = action["priority_bounds"]
+            with self.subTest(action=action["id"]):
+                self.assertLessEqual(low, action["priority"])
+                self.assertLessEqual(action["priority"], high)
+                self.assertLess(low, high)
+
+    def test_snapshot_derived_inputs_are_not_perturbed_and_not_listed_as_unevidenced(self):
+        actions = {action["id"]: action for action in self.actions()["recommended_actions"]}
+        pull_request_actions = [
+            action for identifier, action in actions.items() if identifier.endswith("-pr-100")
+        ]
+        self.assertTrue(pull_request_actions, "fixture produced no pull-request action")
+        for action in pull_request_actions:
+            with self.subTest(action=action["id"]):
+                self.assertEqual(
+                    action["priority_input_provenance"]["unlock"],
+                    evolution_score.SNAPSHOT_DERIVED,
+                )
+                self.assertNotIn("unlock", action["unevidenced_priority_inputs"])
+
+    def test_fully_authored_action_reports_every_input_as_unevidenced(self):
+        actions = {action["id"]: action for action in self.actions()["recommended_actions"]}
+        self.assertIn("protect-main", actions)
+        self.assertEqual(
+            set(actions["protect-main"]["unevidenced_priority_inputs"]), self.PARTS
+        )
+
+    def test_adjacent_recommendations_report_whether_ordering_is_separated(self):
+        result = self.actions()
+        ranked = result["recommended_actions"]
+        self.assertIsNone(ranked[-1]["separated_from_next"])
+        for action in ranked[:-1]:
+            with self.subTest(action=action["id"]):
+                self.assertIsInstance(action["separated_from_next"], bool)
+        self.assertEqual(
+            result["priority_uncertainty"]["adjacent_pairs_not_separated"],
+            sum(1 for action in ranked if action["separated_from_next"] is False),
+        )
+
+    def test_the_current_ranking_is_not_separated_by_evidence(self):
+        # This is the finding, pinned as a test: under a 25% perturbation of the
+        # authored constants, no adjacent pair of recommendations is ordered by
+        # evidence. If a future change makes the ranking separable, this test
+        # should fail and be updated deliberately rather than silently.
+        result = self.actions()
+        ranked = result["recommended_actions"]
+        self.assertEqual(
+            result["priority_uncertainty"]["adjacent_pairs_not_separated"], len(ranked) - 1
+        )
+
+    def test_bounds_are_not_advertised_as_a_confidence_interval(self):
+        uncertainty = self.actions()["priority_uncertainty"]
+        self.assertFalse(uncertainty["bounds_are_a_confidence_interval"])
+        self.assertEqual(
+            uncertainty["authored_sensitivity_fraction"], evolution_score.AUTHORED_SENSITIVITY
+        )
+
+    def test_wider_perturbation_never_narrows_the_bounds(self):
+        parts = {
+            "value": 0.7, "confidence": 0.8, "unlock": 0.4, "community": 0.5,
+            "reversibility": 0.9, "review": 0.3, "complexity": 0.4,
+            "coordination": 0.2, "risk": 0.2,
+        }
+        provenance = dict.fromkeys(parts, evolution_score.HAND_AUTHORED_PRIOR)
+        narrow = evolution_score._priority_bounds(parts, provenance)
+        original = evolution_score.AUTHORED_SENSITIVITY
+        try:
+            evolution_score.AUTHORED_SENSITIVITY = original * 2
+            wide = evolution_score._priority_bounds(parts, provenance)
+        finally:
+            evolution_score.AUTHORED_SENSITIVITY = original
+        self.assertLessEqual(wide[0], narrow[0])
+        self.assertGreaterEqual(wide[1], narrow[1])
+
+    def test_provenance_must_cover_every_part(self):
+        parts = {
+            "value": 1.0, "confidence": 1.0, "unlock": 1.0, "community": 0.6,
+            "reversibility": 0.8, "review": 0.4, "complexity": 0.3,
+            "coordination": 0.5, "risk": 0.2,
+        }
+        incomplete = dict.fromkeys(parts, evolution_score.HAND_AUTHORED_PRIOR)
+        del incomplete["risk"]
+        with self.assertRaises(ValueError):
+            evolution_score._scored(parts, incomplete)

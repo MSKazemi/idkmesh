@@ -285,6 +285,52 @@ The Observatory is a consumer/recommender, not a replacement controller:
 
 Long-term direction remains a guarded composition of repository, collaboration, and evidence graphs—not parallel competing sources of truth.
 
+## Priority uncertainty and unevidenced inputs
+
+The priority score is a ratio of nine inputs. They are not all the same kind of
+number, and a bare score does not distinguish them, so every recommendation now
+carries the provenance of each input:
+
+| Kind | Meaning |
+| --- | --- |
+| `snapshot_derived` | computed from observed repository state |
+| `snapshot_conditioned_prior` | a hand-authored constant selected by an observed boolean — the branch is evidence, the magnitude is not |
+| `hand_authored_prior` | a hand-authored constant with no evidence behind it |
+
+Only the first is evidence. Today exactly one input is ever `snapshot_derived`:
+`unlock`, computed from dependency-graph in-degree, and only for pull-request
+actions. Every other input in every action is authored. The remaining two kinds
+are the target list for replacing hand-authored evolution priors with derived
+evidence.
+
+### Sensitivity bounds, not confidence intervals
+
+Each recommendation also carries `priority_bounds`: the score recomputed with
+every unevidenced constant moved by a declared fraction, once in the direction
+that helps it and once in the direction that hurts it. Observed inputs are never
+perturbed.
+
+These are **sensitivity bounds over authored inputs, not a posterior over an
+observed sample**, and the perturbation fraction is itself authored. The output
+says so in a machine-readable field, `bounds_are_a_confidence_interval: false`,
+precisely so the number is not mistaken for a calibrated interval. There is no
+sample here to form a posterior from; presenting one would be the failure mode
+this section exists to prevent.
+
+### What the bounds currently say
+
+`separated_from_next` reports whether a recommendation's bounds clear the next
+one's. On the observer's own test fixture, at a 25% perturbation, **no adjacent
+pair is separated**: the ranked list is not ordered by evidence, only by
+authored constants that happen to differ. A consumer that reads
+`recommended_actions[0]` as "the most important thing to do next" is reading a
+preference, not a measurement.
+
+This is not a defect introduced by the bounds; it is a property the scorer
+always had, now visible. It is pinned as a test, so a future change that makes
+the ranking genuinely separable will fail that test and have to be updated
+deliberately.
+
 ## Falsification and calibration
 
 Treat the model as wrong or incomplete if, for example:
