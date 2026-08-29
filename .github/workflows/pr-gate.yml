@@ -35,11 +35,41 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
+          # Full history so the guard below can read every commit message in the
+          # pull request. The repository is a few MiB, so this is effectively free.
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: ${{ matrix.python-version }}
+
+      # Runs before the dependency install so an accidental auto-closure fails
+      # fast. The guard is pure standard library and needs no packages.
+      - name: Guard against unintended issue auto-closure
+        if: github.event_name == 'pull_request'
+        env:
+          PYTHONPATH: .
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          # Untrusted pull request text reaches the tool through the environment
+          # and argv only, never through the shell as code.
+          args=(--text "pull-request-title=${PR_TITLE}" --text "pull-request-body=${PR_BODY}")
+          messages="${RUNNER_TEMP}/commit-messages"
+          mkdir -p "${messages}"
+          if ! revisions="$(git rev-list "${BASE_SHA}..${HEAD_SHA}" 2>/dev/null)"; then
+            echo "::warning::commit range unavailable; scanning the head commit only"
+            revisions="${HEAD_SHA}"
+          fi
+          for sha in ${revisions}; do
+            git log -1 --format=%B "${sha}" > "${messages}/${sha}.txt"
+            args+=(--file "commit-${sha:0:8}=${messages}/${sha}.txt")
+          done
+          python tools/closing_keyword_guard.py "${args[@]}"
 
       - name: Install dependencies
         run: |
