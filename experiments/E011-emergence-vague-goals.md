@@ -103,12 +103,12 @@ The hypothesis should be weakened or rejected if, across well-designed benchmark
 9. Replace synthetic traits with small real software tasks/configurations.
 10. Measure `Verified Useful Work / (Human Attention + Compute Cost)`.
 
-**Follow-up:** E022 completes items 2 and 3 for the original three-strategy
+**Follow-up:** E024 completes items 2 and 3 for the original three-strategy
 synthetic comparison. It gives every strategy exactly 2,500 proposal and
 verification attempts per seed, adds post-change utility/regret AUC, and retains
 the QD ordering across 100 seeds. This removes one known confound but does not
 resolve the supplied plausible-goal advantage or establish real-world evidence.
-See [`E022-matched-budget-emergence.md`](E022-matched-budget-emergence.md).
+See [`E024-matched-budget-emergence.md`](E024-matched-budget-emergence.md).
 
 ## Relationship to IDKMesh architecture
 

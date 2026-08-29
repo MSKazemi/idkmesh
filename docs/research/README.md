@@ -14,7 +14,7 @@ policy changes or merge decisions.
   reporting rules for repository metrics.
 - [Collaboration Observables v0.1](COLLABORATION_OBSERVABLES_V0_1.md) —
   deterministic latency, concentration, recurrence, queue, CI, and debt
-  measurements plus the preregistered E022 community analysis.
+  measurements plus the preregistered E023 community analysis.
 - [Phase 0: Executable Research Foundation](PHASE_0_SPEC.md) — schemas,
   fixtures, and replay requirements beneath later experiments.
 - [Randomness Research Roadmap](RANDOMNESS_ROADMAP.md) and
@@ -50,6 +50,8 @@ policy changes or merge decisions.
   — multi-window benchmark for that controller.
 - [E022 Seven-Mode Verification Scaling Matrix](../../experiments/E022-verification-scaling-matrix.md)
   — matched comparison of every verification condition required by issue #14.
+- [E024 Matched-Budget Emergence](../../experiments/E024-matched-budget-emergence.md)
+  — equal-evaluation comparison of random, fixed-scalar, and Quality-Diversity search.
 - [IDKGraph P1 Independent Review Protocol](IDKGRAPH_P1_INDEPENDENT_REVIEW_PROTOCOL.md)
   — frozen-cohort human review and attention measurement for issue #152.
 

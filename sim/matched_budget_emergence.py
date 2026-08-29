@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Matched-evaluation-budget emergence benchmark for E022.
+"""Matched-evaluation-budget emergence benchmark for E024.
 
 This module reuses the E011 landscape and candidate/verifier mechanics while
 giving random, fixed-scalar, and Quality-Diversity search exactly the same
@@ -29,6 +29,7 @@ assert spec.loader is not None
 spec.loader.exec_module(sim)
 
 STRATEGIES = ("random", "scalar", "qd")
+EXPERIMENT_ID = "E024"
 SUMMARY_METRICS = (
     "pre_change_best",
     "post_change_immediate",
@@ -201,6 +202,7 @@ def run_seed(
         results.append(result)
 
     return {
+        "experiment_id": EXPERIMENT_ID,
         "experiment": "matched-budget-emergence-v1",
         "seed": seed,
         "agents": agents,
@@ -272,6 +274,7 @@ def sweep(
         )
 
     return {
+        "experiment_id": EXPERIMENT_ID,
         "experiment": "matched-budget-emergence-sweep-v1",
         "configuration": {
             "seed_start": seed_start,
