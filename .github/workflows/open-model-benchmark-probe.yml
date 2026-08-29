@@ -1,0 +1,156 @@
+name: Open Model Benchmark Probe
+
+on:
+  pull_request:
+    paths:
+      - "tools/open_model_text_generator.py"
+      - "tools/open_model_benchmark_probe.py"
+      - ".github/workflows/open-model-benchmark-probe.yml"
+      - "docs/conversations/2026-08-28-open-model-benchmark-producer.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  harness-self-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out evaluator-owned harness
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12"
+
+      - name: Compile bounded producer harness
+        run: |
+          python -m py_compile \
+            tools/open_model_text_generator.py \
+            tools/open_model_benchmark_probe.py
+
+      - name: Run no-model invariant self-test
+        run: python tools/open_model_benchmark_probe.py --self-test
+
+  task-001-open-model-probe:
+    needs: harness-self-test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      HF_HUB_DISABLE_TELEMETRY: "1"
+      HF_HUB_DISABLE_XET: "1"
+      TOKENIZERS_PARALLELISM: "false"
+      MODEL_NAME: "Qwen/Qwen2.5-Coder-0.5B-Instruct"
+      MODEL_REVISION: "bbf27711794f58ebd1796058f4280b53c32e19fc"
+      MODEL_IMAGE: "idkmesh-open-model-producer:task001"
+    steps:
+      - name: Check out evaluator-owned current tree
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          path: harness
+          persist-credentials: false
+
+      - name: Check out immutable frozen benchmark source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: 9c53bb4069a5db1c0688dbbe7a8f028540cbf7c2
+          path: source
+          persist-credentials: false
+
+      - name: Verify frozen source identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C source rev-parse HEAD)" = "9c53bb4069a5db1c0688dbbe7a8f028540cbf7c2"
+
+      - name: Set up Python for trusted harness and verifier
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12"
+
+      - name: Install evaluator dependency only on host
+        run: python -m pip install -r harness/requirements-phase0.txt
+
+      - name: Revalidate frozen cohort definition before outcomes
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd harness
+          python tools/benchmark_cohort.py validate \
+            --cohort benchmarks/phase-b2-first-five/cohort.json
+
+      - name: Resolve model-build base image provenance
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker pull python:3.12-slim
+          BASE_REPO_DIGEST="$(docker image inspect python:3.12-slim --format '{{index .RepoDigests 0}}')"
+          test -n "$BASE_REPO_DIGEST"
+          echo "BASE_REPO_DIGEST=$BASE_REPO_DIGEST" >> "$GITHUB_ENV"
+          echo "Resolved model-build base: $BASE_REPO_DIGEST"
+
+      - name: Provision pinned open-weight model image
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/idkmesh-open-model-image"
+          cat > "$RUNNER_TEMP/idkmesh-open-model-image/Dockerfile" <<'DOCKERFILE'
+          FROM python:3.12-slim
+          ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
+              PIP_NO_CACHE_DIR=1 \
+              HF_HUB_DISABLE_TELEMETRY=1 \
+              HF_HUB_DISABLE_XET=1
+          RUN python -m pip install --index-url https://download.pytorch.org/whl/cpu torch==2.8.0
+          RUN python -m pip install transformers==4.56.2 huggingface_hub==0.34.4 safetensors==0.6.2
+          RUN python -c "from huggingface_hub import snapshot_download; snapshot_download('Qwen/Qwen2.5-Coder-0.5B-Instruct', revision='bbf27711794f58ebd1796058f4280b53c32e19fc', local_dir='/model')"
+          LABEL org.idkmesh.purpose="bounded-open-model-benchmark-producer" \
+                org.idkmesh.model="Qwen/Qwen2.5-Coder-0.5B-Instruct" \
+                org.idkmesh.model_revision="bbf27711794f58ebd1796058f4280b53c32e19fc"
+          DOCKERFILE
+          docker build -t "$MODEL_IMAGE" "$RUNNER_TEMP/idkmesh-open-model-image"
+          docker image inspect "$MODEL_IMAGE" --format 'model-image-id={{.Id}}'
+
+      - name: Run frozen task 001 candidate generation and independent verification
+        shell: bash
+        run: |
+          set -euo pipefail
+          python harness/tools/open_model_benchmark_probe.py \
+            --harness harness \
+            --source source \
+            --image "$MODEL_IMAGE" \
+            --base-image-digest "$BASE_REPO_DIGEST" \
+            --output-root results/benchmark/open-model/task-001
+
+      - name: Publish concise probe evidence
+        if: always()
+        shell: bash
+        run: |
+          EVIDENCE="harness/results/benchmark/open-model/task-001/probe-evidence.json"
+          if test -f "$EVIDENCE"; then
+            echo '## Open-weight benchmark producer probe' >> "$GITHUB_STEP_SUMMARY"
+            echo '' >> "$GITHUB_STEP_SUMMARY"
+            echo '```json' >> "$GITHUB_STEP_SUMMARY"
+            cat "$EVIDENCE" >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'Open-model probe evidence was not produced.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+# Security / authority boundary:
+# - standard public-repository runner only; no larger or paid runner is requested;
+# - no model/API secret is required or passed;
+# - model and Python dependency download happen only during trusted provisioning;
+# - model inference runs in a separate container with network=none, read-only root,
+#   dropped capabilities, no-new-privileges, PID/CPU/RAM bounds, and no repo checkout;
+# - the model receives only the frozen objective plus frozen allowed-file text;
+# - current main, evaluator controls, GITHUB_TOKEN, and repository credentials are not
+#   mounted or passed into the model container;
+# - model output is untrusted text; the harness accepts only one bounded textual patch;
+# - candidate code is never executed by this workflow;
+# - the existing EvaluatorPlan verifier independently evaluates the normalized patch;
+# - no artifact upload/cache, repository write, issue mutation, push, merge, approval,
+#   or automatic candidate selection is available to the workflow.
