@@ -56,6 +56,20 @@ classified verified-useful outcomes, using the same explicit Beta evidence
 model. These are evidence summaries, not production-policy activation. Empty
 or sparse histories remain visibly uncertain.
 
+## Committed production evidence
+
+The scheduled workflow uploads its output with `retention-days: 30`, so a run's
+artifact expires. The first successful production run
+(`33229934255`, head `16f4ba59`, cutoff `2026-08-29T02:50:35.294099Z`) is
+therefore committed under `results/collaboration/`, and read in
+[First Production Collaboration-Observables Snapshot](../findings/2026-08-29-collaboration-observables-first-snapshot.md).
+
+That note is worth reading before interpreting any zero in this pipeline: three
+of the run's zero-valued observables are real measurements of a repository with
+no independent review, one is a point-in-time queue reading, and two are
+observables the collector declares it does not collect at all. The output format
+does not distinguish those cases on its own.
+
 ## Preregistered community analysis
 
 The E023 JSON record under experiments freezes the population, exposure,
