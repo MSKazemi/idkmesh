@@ -1,6 +1,6 @@
 # ACE v1 acceptance audit and deduplication hardening
 
-**Date:** 2026-08-29  
+**Date:** 2026-08-29
 **Related:** issue #57, merged PRs #48, #68, #98, #104, and #106
 
 ## User requirement
