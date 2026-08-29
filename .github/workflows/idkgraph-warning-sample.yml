@@ -1,0 +1,63 @@
+name: idkgraph-warning-sample
+
+on:
+  pull_request:
+    paths:
+      - "tools/idkgraph_warning_sample.py"
+      - "tests/test_idkgraph_warning_sample.py"
+      - "tools/idkgraph_observatory.py"
+      - "tools/idkgraph_health_checks.py"
+      - ".github/workflows/idkgraph-warning-sample.yml"
+  push:
+    branches: [main]
+    paths:
+      - "tools/idkgraph_warning_sample.py"
+      - "tests/test_idkgraph_warning_sample.py"
+      - "tools/idkgraph_observatory.py"
+      - "tools/idkgraph_health_checks.py"
+      - ".github/workflows/idkgraph-warning-sample.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  sample:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Run sampler tests
+        run: python -m unittest tests.test_idkgraph_warning_sample -v
+      - name: Generate current observatory evidence
+        run: |
+          rm -rf /tmp/idkgraph-warning-sample
+          python tools/idkgraph_observatory.py . \
+            --output-dir /tmp/idkgraph-warning-sample \
+            --pretty
+      - name: Select deterministic orphan cohort for issue 152
+        run: |
+          python tools/idkgraph_warning_sample.py \
+            /tmp/idkgraph-warning-sample/observatory.json \
+            --category orphan_document_candidate \
+            --size 15 \
+            --seed issue-152-v1 \
+            --output /tmp/orphan-sample.json \
+            --pretty
+          cat /tmp/orphan-sample.json
+      - name: Select all current accepted-decision linkage candidates
+        run: |
+          python tools/idkgraph_warning_sample.py \
+            /tmp/idkgraph-warning-sample/observatory.json \
+            --category accepted_decision_without_document_link \
+            --size 100 \
+            --seed issue-152-v1 \
+            --output /tmp/decision-sample.json \
+            --pretty
+          cat /tmp/decision-sample.json
+
+# This workflow selects review cohorts only. It does not modify repository files,
+# issues, decisions, warnings, or observatory semantics.
