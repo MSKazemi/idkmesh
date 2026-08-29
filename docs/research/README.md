@@ -30,7 +30,9 @@ policy changes or merge decisions.
 - [R1 Collective-Capability Scaling](R1_COLLECTIVE_SCALING.md) — synthetic
   mechanism extension for issue #13: verified-success increment, compute, and
   verifier attention as N moves through 1, 2, 5, and 10 under controlled task
-  difficulty. Not real coding-agent performance.
+  difficulty, plus budget-matched flat, role-specialized, and task-DAG
+  coordination topologies and their fitted scaling exponents. Not real
+  coding-agent performance.
 - [R1 Real-Corpus Readiness Gate](R1_CORPUS_READINESS.md) — the contract that
   must hold before `randomness_lab.r1_replay` may be run on a real held-out
   corpus. Readiness tooling only; no real R1 outcome. Issues #30 and #70.
