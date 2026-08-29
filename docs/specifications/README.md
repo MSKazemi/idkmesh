@@ -33,6 +33,9 @@ meaning of an existing version.
   read-only graph and health checks into one replayable command.
 - [IDKGraph P0 Residual Health Checks](IDKGRAPH_P0_RESIDUAL_HEALTH_CHECKS.md) —
   defines warning-only orphan and accepted-decision linkage rules.
+- [GitHub to IDKGraph Projection v0.1](GITHUB_IDKGRAPH_PROJECTION_V0_1.md) —
+  deterministically joins normalized GitHub activity to the repository graph
+  without granting write or execution authority.
 
 ## Project Configuration
 

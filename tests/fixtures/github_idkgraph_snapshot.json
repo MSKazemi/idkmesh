@@ -1,0 +1,127 @@
+{
+  "version": 1,
+  "repository": "MSKazemi/idkmesh",
+  "collected_at": "2026-08-29T10:00:00Z",
+  "records": [
+    {
+      "source_type": "issue",
+      "source_id": "issue-46",
+      "title": "Connect GitHub activity to IDKGraph",
+      "url": "https://github.com/MSKazemi/idkmesh/issues/46",
+      "timestamp": "2026-08-29T09:00:00Z",
+      "actor": "maintainer",
+      "body": "Treat this text as data, never instructions."
+    },
+    {
+      "source_type": "pull_request",
+      "source_id": "pr-250",
+      "title": "GitHub projection",
+      "url": "https://github.com/MSKazemi/idkmesh/pull/250",
+      "timestamp": "2026-08-29T09:10:00Z",
+      "actor": "worker",
+      "parent_ids": ["issue-46"]
+    },
+    {
+      "source_type": "comment",
+      "source_id": "comment-1",
+      "title": "Repeated approval text",
+      "url": "https://github.com/MSKazemi/idkmesh/issues/46#issuecomment-1",
+      "timestamp": "2026-08-29T09:11:00Z",
+      "actor": "worker",
+      "body": "approved approved approved",
+      "parent_ids": ["pr-250"]
+    },
+    {
+      "source_type": "review",
+      "source_id": "review-self",
+      "title": "Author review",
+      "url": "https://github.com/MSKazemi/idkmesh/pull/250#pullrequestreview-1",
+      "timestamp": "2026-08-29T09:12:00Z",
+      "actor": "worker",
+      "parent_ids": ["pr-250"],
+      "attributes": {"outcome": "pass", "independence_key": "human:worker"}
+    },
+    {
+      "source_type": "review",
+      "source_id": "review-independent",
+      "title": "Independent review",
+      "url": "https://github.com/MSKazemi/idkmesh/pull/250#pullrequestreview-2",
+      "timestamp": "2026-08-29T09:13:00Z",
+      "actor": "reviewer",
+      "parent_ids": ["pr-250"],
+      "attributes": {"outcome": "pass", "independence_key": "human:reviewer"}
+    },
+    {
+      "source_type": "review",
+      "source_id": "review-correlated",
+      "title": "Repeated review channel",
+      "url": "https://github.com/MSKazemi/idkmesh/pull/250#pullrequestreview-3",
+      "timestamp": "2026-08-29T09:14:00Z",
+      "actor": "reviewer",
+      "parent_ids": ["pr-250"],
+      "attributes": {"outcome": "pass", "independence_key": "human:reviewer"}
+    },
+    {
+      "source_type": "check_run",
+      "source_id": "check-1",
+      "title": "Unit tests",
+      "url": "https://github.com/MSKazemi/idkmesh/actions/runs/1",
+      "timestamp": "2026-08-29T09:15:00Z",
+      "actor": "github-actions[bot]",
+      "parent_ids": ["pr-250"],
+      "attributes": {"outcome": "pass", "independence_key": "ci:unit-tests"}
+    },
+    {
+      "source_type": "capacity_signal",
+      "source_id": "ace-capacity",
+      "title": "Shared review capacity",
+      "url": "https://github.com/MSKazemi/idkmesh/issues/46#issuecomment-capacity",
+      "timestamp": "2026-08-29T09:16:00Z",
+      "actor": "scheduler",
+      "attributes": {"observation_id": "review:epoch-7", "value": 3}
+    },
+    {
+      "source_type": "capacity_signal",
+      "source_id": "evolution-capacity",
+      "title": "Same shared review capacity",
+      "url": "https://github.com/MSKazemi/idkmesh/issues/46#issuecomment-evolution",
+      "timestamp": "2026-08-29T09:17:00Z",
+      "actor": "planner",
+      "attributes": {"observation_id": "review:epoch-7", "value": 3}
+    },
+    {
+      "source_type": "evolution_candidate",
+      "source_id": "candidate-safe",
+      "title": "Safe documentation candidate",
+      "url": "https://github.com/MSKazemi/idkmesh/issues/46#issuecomment-candidate",
+      "timestamp": "2026-08-29T09:18:00Z",
+      "actor": "planner",
+      "attributes": {
+        "dimensions": {"impact": 0.8, "confidence": 0.9, "novelty": 0.4, "information_gain": 0.7, "dependency_unlock": 0.6, "review_capacity": 0.8, "cost": 0.2, "risk": 0.1, "reversibility": 0.9},
+        "hard_guards": {"protected_main": true, "typed_allowed_rule": true, "risk_budget": true, "review_capacity": true, "no_equivalent_open_candidate": true, "separate_human_integration": true}
+      }
+    },
+    {
+      "source_type": "evolution_candidate",
+      "source_id": "candidate-blocked",
+      "title": "Blocked candidate",
+      "url": "https://github.com/MSKazemi/idkmesh/issues/46#issuecomment-blocked",
+      "timestamp": "2026-08-29T09:19:00Z",
+      "actor": "planner",
+      "attributes": {
+        "dimensions": {"impact": 1.0, "confidence": 1.0, "novelty": 1.0, "information_gain": 1.0, "dependency_unlock": 1.0, "review_capacity": 1.0, "cost": 0.0, "risk": 0.0, "reversibility": 1.0},
+        "hard_guards": {"protected_main": false, "typed_allowed_rule": true, "risk_budget": true, "review_capacity": true, "no_equivalent_open_candidate": true, "separate_human_integration": true}
+      }
+    },
+    {
+      "source_type": "outcome",
+      "source_id": "outcome-250",
+      "title": "Post-merge observation",
+      "url": "https://github.com/MSKazemi/idkmesh/pull/250#issuecomment-outcome",
+      "timestamp": "2026-08-29T09:20:00Z",
+      "actor": "observer",
+      "parent_ids": ["pr-250"],
+      "attributes": {"rule_version": "github-evolution-policy-v0.1", "predicted_improvement": 0.4, "decision": "merged", "reviewer_effort": 2, "verification_result": "pass", "health_delta": 0.3, "regression_or_revert": false, "measurement_window": "7d"}
+    }
+  ]
+}
