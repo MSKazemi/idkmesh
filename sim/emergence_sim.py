@@ -7,9 +7,9 @@ Compares three ways of searching under an initially vague objective:
   * qd: constraint-guided Quality-Diversity archive over multiple plausible goals.
 
 Verification can be perfect (the default) or performed by an imperfect panel with
-controllable shared-error correlation. This is intentionally a small falsifiable
-model, not evidence that open-ended collective intelligence will work in
-production.
+controllable shared-error correlation and an irreducible shared blind spot. This
+is intentionally a small falsifiable model, not evidence that open-ended
+collective intelligence will work in production.
 """
 
 from __future__ import annotations
@@ -77,6 +77,19 @@ class VerificationConfig:
     E017 measured real verifiers and found the shared-shock shape wrong: it
     assigns near-zero probability to a panel failing *partially*, which is how
     most real panel failures look. See experiments/E017-item-difficulty-and-quorum.md.
+
+    ``blind_spot`` is the irreducible fraction of work units that the *whole*
+    panel gets wrong together, whatever its size and whatever the quorum. E020
+    measured it on E017's 25 real partial oracles: 4 of 72 defects were missed
+    by every single verifier, ``lambda = 0.0556``. Neither two-parameter model
+    predicts that floor -- shared-shock puts it 2.13x too high, the plain
+    beta-binomial has no floor at all and lands 1.77x too low -- so it is
+    carried as its own parameter. Adding it turns the item-difficulty model
+    into E020's one-inflated model. See
+    experiments/E020-quorum-frontier-under-measured-shape.md.
+
+    ``accuracy`` is the *marginal* accuracy of one verifier over all work units,
+    blind-spot units included, so ``blind_spot`` may not exceed ``1 - accuracy``.
     """
 
     verifiers: int = 1
@@ -84,15 +97,33 @@ class VerificationConfig:
     correlation: float = 0.0
     quorum: float = 0.5
     dependence: str = "shared-shock"
+    blind_spot: float = 0.0
+
+    def __post_init__(self) -> None:
+        if not 0.0 <= self.blind_spot <= 1.0:
+            raise ValueError("blind_spot must be in [0.0, 1.0]")
+        if self.blind_spot > 1.0 - self.accuracy + 1e-12:
+            raise ValueError(
+                "blind_spot must not exceed the marginal error rate 1 - accuracy; "
+                "a unit the whole panel misses is already an error for every "
+                "verifier on it"
+            )
 
     def as_dict(self) -> Dict[str, object]:
-        return {
+        payload: Dict[str, object] = {
             "verifiers": self.verifiers,
             "accuracy": self.accuracy,
             "correlation": self.correlation,
             "quorum": self.quorum,
             "dependence": self.dependence,
         }
+        # The blind-spot atom was added after several reference artifacts were
+        # published. Emitting the key only when the atom is armed keeps every
+        # disarmed run's recorded configuration byte-identical to those
+        # artifacts -- E024's committed 100-seed sweep among them.
+        if self.blind_spot > 0.0:
+            payload["blind_spot"] = self.blind_spot
+        return payload
 
 
 @dataclass
@@ -154,6 +185,26 @@ def beta_parameters(accuracy: float, correlation: float):
     return mu * scale, (1.0 - mu) * scale
 
 
+def reducible_accuracy(accuracy: float, blind_spot: float) -> float:
+    """Per-verifier accuracy on the work units outside the panel's blind spot.
+
+    ``accuracy`` is the marginal accuracy over *all* units. A fraction
+    ``blind_spot`` of them is missed by every verifier, so the rest must carry
+    the remaining error:
+
+        1 - accuracy = blind_spot + (1 - blind_spot) * (1 - reducible)
+
+    This is exactly E020's one-inflated parameterisation. Checked against the
+    measured panel: E017's marginal error 0.2044 with lambda 0.0556 gives
+    0.1576, which is the reducible-only mean E020 fits directly from the votes.
+    """
+    if blind_spot <= 0.0:
+        return accuracy
+    if blind_spot >= 1.0:
+        return 0.0
+    return 1.0 - (1.0 - accuracy - blind_spot) / (1.0 - blind_spot)
+
+
 def verify_candidate(c: Candidate, rng: random.Random, config: VerificationConfig, stats: VerificationStats) -> bool:
     """Return the verifier panel's decision and record error statistics.
 
@@ -170,26 +221,33 @@ def verify_candidate(c: Candidate, rng: random.Random, config: VerificationConfi
 
     if config.accuracy >= 1.0:
         votes = [truth] * config.verifiers
+    elif config.blind_spot > 0.0 and rng.random() < config.blind_spot:
+        # A shared blind spot, not a correlated shock: every verifier is wrong
+        # together and no panel size or quorum reaches past it (E020).
+        votes = [not truth] * config.verifiers
     else:
+        # Outside the blind spot the panel carries the reducible error only, so
+        # the marginal per-verifier accuracy stays exactly `config.accuracy`.
+        accuracy = reducible_accuracy(config.accuracy, config.blind_spot)
         if config.dependence == "item-difficulty":
-            params = beta_parameters(config.accuracy, config.correlation)
+            params = beta_parameters(accuracy, config.correlation)
             if params is None:
                 # Degenerate ends: identical to the shared-shock model there.
                 if config.correlation >= 1.0:
-                    shared_correct = rng.random() < config.accuracy
+                    shared_correct = rng.random() < accuracy
                     correctness = [shared_correct] * config.verifiers
                 else:
-                    correctness = [rng.random() < config.accuracy
+                    correctness = [rng.random() < accuracy
                                    for _ in range(config.verifiers)]
             else:
                 difficulty = rng.betavariate(*params)
                 correctness = [rng.random() >= difficulty
                                for _ in range(config.verifiers)]
         elif rng.random() < config.correlation:
-            shared_correct = rng.random() < config.accuracy
+            shared_correct = rng.random() < accuracy
             correctness = [shared_correct] * config.verifiers
         else:
-            correctness = [rng.random() < config.accuracy for _ in range(config.verifiers)]
+            correctness = [rng.random() < accuracy for _ in range(config.verifiers)]
         votes = [truth if correct else not truth for correct in correctness]
 
     positive = sum(1 for vote in votes if vote)
@@ -326,13 +384,14 @@ def _summary(strategy: str, trace: List[float], stats: VerificationStats, archiv
     return result
 
 
-def run(strategy: str, seed: int, agents: int, generations: int, change_at: int, bins: int, verifiers: int = 1, verifier_accuracy: float = 1.0, verifier_correlation: float = 0.0, verification_quorum: float = 0.5, verifier_dependence: str = "shared-shock") -> Dict[str, object]:
+def run(strategy: str, seed: int, agents: int, generations: int, change_at: int, bins: int, verifiers: int = 1, verifier_accuracy: float = 1.0, verifier_correlation: float = 0.0, verification_quorum: float = 0.5, verifier_dependence: str = "shared-shock", verifier_blind_spot: float = 0.0) -> Dict[str, object]:
     verification = VerificationConfig(
         verifiers=verifiers,
         accuracy=verifier_accuracy,
         correlation=verifier_correlation,
         dependence=verifier_dependence,
         quorum=verification_quorum,
+        blind_spot=verifier_blind_spot,
     )
     runners = {
         "random": lambda r, vr: run_random(r, vr, agents, generations, change_at, verification),
@@ -383,6 +442,10 @@ def parse_args() -> argparse.Namespace:
                         default="shared-shock",
                         help="how verifiers depend on each other; E017 found "
                              "item-difficulty matches real panels better")
+    parser.add_argument("--verifier-blind-spot", type=float, default=0.0,
+                        help="irreducible fraction of work units the whole "
+                             "panel gets wrong together; E020 measured 0.0556 "
+                             "on E017's real 25-verifier panel")
     parser.add_argument("--verification-quorum", type=float, default=0.5)
     parser.add_argument("--pretty", action="store_true")
     args = parser.parse_args()
@@ -402,6 +465,10 @@ def parse_args() -> argparse.Namespace:
         parser.error("--verifier-correlation must be between 0.0 and 1.0")
     if not 0.0 <= args.verification_quorum < 1.0:
         parser.error("--verification-quorum must be in [0.0, 1.0)")
+    if not 0.0 <= args.verifier_blind_spot <= 1.0 - args.verifier_accuracy + 1e-12:
+        parser.error(
+            "--verifier-blind-spot must be in [0.0, 1 - verifier-accuracy]"
+        )
     return args
 
 
@@ -419,6 +486,7 @@ def main() -> None:
         verifier_correlation=args.verifier_correlation,
         verification_quorum=args.verification_quorum,
         verifier_dependence=args.verifier_dependence,
+        verifier_blind_spot=args.verifier_blind_spot,
     )
     print(json.dumps(result, indent=2 if args.pretty else None, sort_keys=True))
 
