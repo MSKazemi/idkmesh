@@ -66,6 +66,8 @@ policy changes or merge decisions.
   — matched comparison of every verification condition required by issue #14.
 - [E024 Matched-Budget Emergence](../../experiments/E024-matched-budget-emergence.md)
   — equal-evaluation comparison of random, fixed-scalar, and Quality-Diversity search.
+- [E026 Imperfect Verifier Panel](../../experiments/E026-imperfect-verifier-panel.md)
+  — E024 rerun with E017/E020's measured correlated panel and blind-spot floor.
 - [E025 Learned Verifier Reliability](../../experiments/E025-learned-verifier-reliability.md)
   — calibration/held-out evidence for reliability and dependence-aware aggregation.
 - [IDKGraph P1 Independent Review Protocol](IDKGRAPH_P1_INDEPENDENT_REVIEW_PROTOCOL.md)

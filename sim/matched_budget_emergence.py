@@ -18,6 +18,12 @@ E024 previously recorded as absent:
 New strategies are appended to :data:`STRATEGIES` rather than inserted, because
 ``run_seed`` derives each arm's seed from its index.  Appending keeps the
 previously published random/scalar/qd results bit-for-bit reproducible.
+
+The verifier panel is perfect by default, which is how the committed 100-seed
+reference sweep was produced.  ``--imperfect-panel`` swaps in the panel E017
+measured -- 25 correlated partial test oracles with an irreducible shared blind
+spot -- so the benchmark can ask whether the Quality-Diversity result survives
+verifiers that are wrong *together*.  See :data:`E017_MEASURED_PANEL`.
 """
 
 from __future__ import annotations
@@ -43,6 +49,58 @@ spec.loader.exec_module(sim)
 
 STRATEGIES = ("random", "scalar", "qd", "planner", "majority")
 EXPERIMENT_ID = "E024"
+
+# The imperfect panel is not invented: every number below was measured in this
+# repository on 25 partial test oracles over 72 candidates whose ground truth is
+# decided by executing hidden tests.
+#
+#   experiments/E017-item-difficulty-and-quorum.md
+#     25 verifiers, mean per-verifier accuracy 0.7956 (marginal error 0.2044),
+#     mean pairwise error correlation rho = +0.5873, and the finding that the
+#     shared-shock shape is wrong: it under-predicts real panel error by 1.71x
+#     because real panels fail *partially*. A beta-binomial over per-item
+#     difficulty reproduces that at the same parameter count.
+#   experiments/E020-quorum-frontier-under-measured-shape.md
+#     the same votes refit with a lambda-atom: 4 of 72 units are missed by every
+#     verifier, lambda = 0.0556, and the residual reducible tasks fit
+#     mu = 0.1576, icc = 0.4513.
+#
+# CORRELATION PROVENANCE, stated precisely because it is easy to double-count.
+# E017's headline rho = +0.5873 is the *marginal* pairwise correlation of the
+# whole panel, blind-spot units included -- those units contribute perfectly
+# correlated errors. Once the blind spot is represented explicitly as its own
+# atom, the correlation left in the reducible units is E020's icc = 0.4513.
+# Feeding 0.5873 as the base correlation *and* arming the atom would count the
+# same shared failures twice, so the panel below uses the decomposed pair
+# (0.4513, 0.0556) whose implied marginal correlation is E017's measurement.
+# `--verifier-correlation` overrides it for sensitivity work.
+E017_MEASURED_PANEL = {
+    "verifiers": 25,
+    "accuracy": 0.7956,
+    "correlation": 0.4513,
+    "blind_spot": 0.0556,
+    "dependence": "item-difficulty",
+    "quorum": 0.5,
+}
+E017_MEASURED_MARGINAL_CORRELATION = 0.5873
+PANEL_PROVENANCE = {
+    "panel": "E017 partial-test-oracle panel, refit with a blind-spot atom in E020",
+    "source_experiments": [
+        "experiments/E017-item-difficulty-and-quorum.md",
+        "experiments/E020-quorum-frontier-under-measured-shape.md",
+    ],
+    "measured_verifiers": 25,
+    "measured_candidates": 72,
+    "measured_marginal_accuracy": 0.7956,
+    "measured_marginal_pairwise_correlation": E017_MEASURED_MARGINAL_CORRELATION,
+    "measured_blind_spot_lambda": 0.0556,
+    "measured_blind_spot_units": "4 of 72",
+    "reducible_fit_mean_error": 0.1576,
+    "reducible_fit_icc": 0.4513,
+    "dependence_shape": "beta-binomial over per-item difficulty plus a blind-spot atom",
+    "shape_rejected": "shared-shock; E017 measured it 1.71x too low on panel error",
+    "evidence_level": "measured-on-real-verifiers parameters, applied to a synthetic landscape",
+}
 SUMMARY_METRICS = (
     "pre_change_best",
     "post_change_immediate",
@@ -56,6 +114,42 @@ SUMMARY_METRICS = (
     "panel_disagreement_rate",
     "archive_size",
 )
+
+
+# A seed is called catastrophic for an arm when its post-change utility AUC
+# falls below this fraction of the achievable horizon.  0.64 of a 25-generation
+# horizon is AUC 16, the exact threshold the published E024 record used to count
+# the majority-vote swarm's stale-consensus failures, so the two are comparable.
+CATASTROPHE_FRACTION = 0.64
+
+
+# Each strategy gets its own proposal stream and its own verifier stream, so an
+# arm cannot consume another arm's randomness. Named here rather than inlined so
+# a replay can derive the identical streams instead of copying magic numbers.
+STRATEGY_SEED_STRIDE = 100003
+VERIFIER_STREAM_MASK = 0x5EED5EED
+
+
+def measured_panel(**overrides: object) -> "sim.VerificationConfig":
+    """The E017/E020 panel: 25 correlated oracles with a shared blind spot.
+
+    Every parameter is measured; see :data:`E017_MEASURED_PANEL` for the
+    provenance and for why the base correlation is E020's decomposed 0.4513
+    rather than E017's marginal 0.5873.
+    """
+    settings = dict(E017_MEASURED_PANEL)
+    settings.update({key: value for key, value in overrides.items() if value is not None})
+    return sim.VerificationConfig(**settings)
+
+
+def panel_is_perfect(verification: "sim.VerificationConfig") -> bool:
+    """True when the panel cannot err, so the report keeps its original schema.
+
+    An imperfect-panel report is a strict superset of the perfect-panel one.
+    Keeping the perfect case byte-identical is what lets the committed 100-seed
+    reference sweep still reproduce after this module learned to be wrong.
+    """
+    return verification.accuracy >= 1.0 and verification.blind_spot <= 0.0
 
 
 def _summary(
@@ -293,10 +387,10 @@ def run_seed(
     evaluation_budget = agents * generations
     results = []
     for offset, strategy in enumerate(STRATEGIES):
-        strategy_seed = seed + offset * 100003
+        strategy_seed = seed + offset * STRATEGY_SEED_STRIDE
         result = RUNNERS[strategy](
             random.Random(strategy_seed),
-            random.Random(strategy_seed ^ 0x5EED5EED),
+            random.Random(strategy_seed ^ VERIFIER_STREAM_MASK),
             agents,
             generations,
             change_at,
@@ -320,6 +414,10 @@ def run_seed(
             "per_strategy": evaluation_budget,
             "includes_initialization": True,
             "retry_until_acceptance": False,
+            # One panel decision costs `verifiers` verifier votes for every arm,
+            # so enlarging the panel scales the cost identically across arms and
+            # cannot quietly buy one of them more evidence than another.
+            "verifier_votes_per_strategy": evaluation_budget * verification.verifiers,
         },
         "verification": verification.as_dict(),
         "results": results,
@@ -378,7 +476,8 @@ def sweep(
                 > by_strategy[baseline]["post_change_utility_auc"]
             )
 
-    return {
+    verification = verification or sim.VerificationConfig()
+    report: Dict[str, object] = {
         "experiment_id": EXPERIMENT_ID,
         "experiment": "matched-budget-emergence-sweep-v1",
         "configuration": {
@@ -389,7 +488,7 @@ def sweep(
             "change_at": change_at,
             "bins": bins,
             "evaluation_budget_per_strategy_per_seed": agents * generations,
-            "verification": (verification or sim.VerificationConfig()).as_dict(),
+            "verification": verification.as_dict(),
         },
         "aggregate": {
             strategy: {
@@ -417,6 +516,50 @@ def sweep(
         ],
     }
 
+    if panel_is_perfect(verification):
+        # Exactly the schema the committed reference artifact was published
+        # with. Anything below would change it, so it stays behind this guard.
+        return report
+
+    horizon = generations - change_at
+    threshold = CATASTROPHE_FRACTION * horizon
+    report["configuration"]["panel_provenance"] = dict(PANEL_PROVENANCE)
+    report["catastrophic_seeds"] = {
+        "definition": "post_change_utility_auc below CATASTROPHE_FRACTION of the post-change horizon",
+        "fraction_of_horizon": CATASTROPHE_FRACTION,
+        "post_change_horizon": horizon,
+        "utility_auc_threshold": round(threshold, 6),
+        "by_strategy": {
+            strategy: {
+                "seeds": sum(
+                    1
+                    for value in metrics["post_change_utility_auc"]
+                    if value < threshold
+                ),
+                "trials": seeds,
+                "rate": round(
+                    sum(
+                        1
+                        for value in metrics["post_change_utility_auc"]
+                        if value < threshold
+                    )
+                    / seeds,
+                    6,
+                ),
+            }
+            for strategy, metrics in rows.items()
+        },
+    }
+    report["limitations"].extend(
+        [
+            "The verifier panel is imperfect here; its accuracy, correlation, and blind-spot floor are taken from E017/E020 measurements of 25 real partial test oracles, but they are applied to a synthetic landscape and are not a universal constant for verification panels.",
+            "E017's oracles had strictly one-sided error (368 false accepts, 0 false rejects); this simulator's panel errs in both directions, so its false_reject_rate is a model output rather than a transferred measurement.",
+            "The blind-spot fraction lambda rests on 4 of 72 tasks (Clopper-Pearson 95%: 0.015-0.136) and is a property of that panel's blind spots, not a transferable constant.",
+            "Panel size scales verifier votes for every arm identically, so the comparison stays matched, but the extra verifier cost is counted in votes and not in wall time, energy, or human attention.",
+        ]
+    )
+    return report
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
@@ -426,6 +569,33 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--generations", type=int, default=50)
     parser.add_argument("--change-at", type=int, default=25)
     parser.add_argument("--bins", type=int, default=8)
+    panel = parser.add_argument_group(
+        "verifier panel",
+        "Perfect by default, which is how the committed reference sweep was "
+        "produced. --imperfect-panel loads the measured E017/E020 panel; the "
+        "individual flags then override any part of it.",
+    )
+    panel.add_argument(
+        "--imperfect-panel",
+        action="store_true",
+        help="verify with the panel E017 measured: 25 partial test oracles, "
+             "marginal accuracy 0.7956, item-difficulty dependence at icc "
+             "0.4513, and E020's irreducible blind spot lambda=0.0556 "
+             "(implied marginal pairwise rho 0.5873)",
+    )
+    panel.add_argument("--verifiers", type=int, default=None)
+    panel.add_argument("--verifier-accuracy", type=float, default=None,
+                       help="marginal per-verifier accuracy over all work units")
+    panel.add_argument("--verifier-correlation", type=float, default=None,
+                       help="pairwise error correlation of the reducible units, "
+                            "excluding the blind-spot atom")
+    panel.add_argument("--verifier-blind-spot", type=float, default=None,
+                       help="irreducible fraction of units the whole panel gets "
+                            "wrong together, whatever its size")
+    panel.add_argument("--verifier-dependence",
+                       choices=("shared-shock", "item-difficulty"), default=None,
+                       help="E017 measured shared-shock to be the wrong shape")
+    panel.add_argument("--verification-quorum", type=float, default=None)
     parser.add_argument("--pretty", action="store_true")
     args = parser.parse_args()
     if args.seeds < 2:
@@ -438,6 +608,39 @@ def parse_args() -> argparse.Namespace:
         parser.error("--change-at must satisfy 1 <= change-at < generations")
     if args.bins < 2:
         parser.error("--bins must be >= 2")
+
+    overrides = {
+        "verifiers": args.verifiers,
+        "accuracy": args.verifier_accuracy,
+        "correlation": args.verifier_correlation,
+        "blind_spot": args.verifier_blind_spot,
+        "dependence": args.verifier_dependence,
+        "quorum": args.verification_quorum,
+    }
+    named = {key: value for key, value in overrides.items() if value is not None}
+    if named and not args.imperfect_panel:
+        parser.error(
+            "panel flags require --imperfect-panel; the default panel is "
+            "perfect so that the committed reference sweep reproduces"
+        )
+    if args.verifiers is not None and args.verifiers < 1:
+        parser.error("--verifiers must be >= 1")
+    if args.verifier_accuracy is not None and not 0.5 <= args.verifier_accuracy <= 1.0:
+        parser.error("--verifier-accuracy must be between 0.5 and 1.0")
+    if args.verifier_correlation is not None and not 0.0 <= args.verifier_correlation <= 1.0:
+        parser.error("--verifier-correlation must be between 0.0 and 1.0")
+    if args.verifier_blind_spot is not None and not 0.0 <= args.verifier_blind_spot <= 1.0:
+        parser.error("--verifier-blind-spot must be between 0.0 and 1.0")
+    if args.verification_quorum is not None and not 0.0 <= args.verification_quorum < 1.0:
+        parser.error("--verification-quorum must be in [0.0, 1.0)")
+
+    if args.imperfect_panel:
+        try:
+            args.verification = measured_panel(**named)
+        except ValueError as error:
+            parser.error(str(error))
+    else:
+        args.verification = None
     return args
 
 
@@ -450,6 +653,7 @@ def main() -> None:
         generations=args.generations,
         change_at=args.change_at,
         bins=args.bins,
+        verification=args.verification,
     )
     print(json.dumps(result, indent=2 if args.pretty else None, sort_keys=True))
 

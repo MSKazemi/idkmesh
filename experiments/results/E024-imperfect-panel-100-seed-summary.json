@@ -1,0 +1,614 @@
+{
+  "aggregate": {
+    "majority": {
+      "archive_size": {
+        "ci95_high": 0.0,
+        "ci95_low": 0.0,
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0,
+        "n": 100,
+        "stdev": 0.0
+      },
+      "false_accept_rate": {
+        "ci95_high": 0.177901,
+        "ci95_low": 0.150928,
+        "max": 0.40625,
+        "mean": 0.164414,
+        "min": 0.03125,
+        "n": 100,
+        "stdev": 0.06881
+      },
+      "false_reject_rate": {
+        "ci95_high": 0.17291,
+        "ci95_low": 0.169843,
+        "max": 0.197326,
+        "mean": 0.171376,
+        "min": 0.15297,
+        "n": 100,
+        "stdev": 0.007823
+      },
+      "final_best": {
+        "ci95_high": 0.774626,
+        "ci95_low": 0.711771,
+        "max": 0.899997,
+        "mean": 0.743198,
+        "min": 0.536404,
+        "n": 100,
+        "stdev": 0.160344
+      },
+      "panel_disagreement_rate": {
+        "ci95_high": 0.46956,
+        "ci95_low": 0.466056,
+        "max": 0.4872,
+        "mean": 0.467808,
+        "min": 0.4444,
+        "n": 100,
+        "stdev": 0.008941
+      },
+      "post_change_immediate": {
+        "ci95_high": 0.777588,
+        "ci95_low": 0.716062,
+        "max": 0.899997,
+        "mean": 0.746825,
+        "min": 0.525498,
+        "n": 100,
+        "stdev": 0.156954
+      },
+      "post_change_mean": {
+        "ci95_high": 0.775983,
+        "ci95_low": 0.713818,
+        "max": 0.899997,
+        "mean": 0.744901,
+        "min": 0.526371,
+        "n": 100,
+        "stdev": 0.158584
+      },
+      "post_change_regret_auc": {
+        "ci95_high": 7.154542,
+        "ci95_low": 5.600423,
+        "max": 11.840732,
+        "mean": 6.377483,
+        "min": 2.500078,
+        "n": 100,
+        "stdev": 3.964589
+      },
+      "post_change_utility_auc": {
+        "ci95_high": 19.399577,
+        "ci95_low": 17.845458,
+        "max": 22.499922,
+        "mean": 18.622517,
+        "min": 13.159268,
+        "n": 100,
+        "stdev": 3.964589
+      },
+      "pre_change_best": {
+        "ci95_high": 0.760011,
+        "ci95_low": 0.732149,
+        "max": 0.821986,
+        "mean": 0.74608,
+        "min": 0.669258,
+        "n": 100,
+        "stdev": 0.071076
+      },
+      "verification_accepts": {
+        "ci95_high": 2051.927432,
+        "ci95_low": 2044.052568,
+        "max": 2089.0,
+        "mean": 2047.99,
+        "min": 1991.0,
+        "n": 100,
+        "stdev": 20.088941
+      }
+    },
+    "planner": {
+      "archive_size": {
+        "ci95_high": 0.0,
+        "ci95_low": 0.0,
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0,
+        "n": 100,
+        "stdev": 0.0
+      },
+      "false_accept_rate": {
+        "ci95_high": 0.172995,
+        "ci95_low": 0.151081,
+        "max": 0.323529,
+        "mean": 0.162038,
+        "min": 0.035714,
+        "n": 100,
+        "stdev": 0.055902
+      },
+      "false_reject_rate": {
+        "ci95_high": 0.174586,
+        "ci95_low": 0.171686,
+        "max": 0.191558,
+        "mean": 0.173136,
+        "min": 0.149616,
+        "n": 100,
+        "stdev": 0.007399
+      },
+      "final_best": {
+        "ci95_high": 0.566898,
+        "ci95_low": 0.559882,
+        "max": 0.629207,
+        "mean": 0.56339,
+        "min": 0.520924,
+        "n": 100,
+        "stdev": 0.017896
+      },
+      "panel_disagreement_rate": {
+        "ci95_high": 0.468901,
+        "ci95_low": 0.464931,
+        "max": 0.488,
+        "mean": 0.466916,
+        "min": 0.4376,
+        "n": 100,
+        "stdev": 0.010127
+      },
+      "post_change_immediate": {
+        "ci95_high": 0.572277,
+        "ci95_low": 0.561425,
+        "max": 0.649456,
+        "mean": 0.566851,
+        "min": 0.494392,
+        "n": 100,
+        "stdev": 0.027683
+      },
+      "post_change_mean": {
+        "ci95_high": 0.569461,
+        "ci95_low": 0.561212,
+        "max": 0.646595,
+        "mean": 0.565336,
+        "min": 0.508806,
+        "n": 100,
+        "stdev": 0.021043
+      },
+      "post_change_regret_auc": {
+        "ci95_high": 10.969698,
+        "ci95_low": 10.763479,
+        "max": 12.279859,
+        "mean": 10.866589,
+        "min": 8.835125,
+        "n": 100,
+        "stdev": 0.526067
+      },
+      "post_change_utility_auc": {
+        "ci95_high": 14.236521,
+        "ci95_low": 14.030302,
+        "max": 16.164875,
+        "mean": 14.133411,
+        "min": 12.720141,
+        "n": 100,
+        "stdev": 0.526067
+      },
+      "pre_change_best": {
+        "ci95_high": 0.821603,
+        "ci95_low": 0.821437,
+        "max": 0.821973,
+        "mean": 0.82152,
+        "min": 0.819703,
+        "n": 100,
+        "stdev": 0.000424
+      },
+      "verification_accepts": {
+        "ci95_high": 2039.368994,
+        "ci95_low": 2026.771006,
+        "max": 2106.0,
+        "mean": 2033.07,
+        "min": 1877.0,
+        "n": 100,
+        "stdev": 32.137726
+      }
+    },
+    "qd": {
+      "archive_size": {
+        "ci95_high": 64.0,
+        "ci95_low": 64.0,
+        "max": 64.0,
+        "mean": 64.0,
+        "min": 64.0,
+        "n": 100,
+        "stdev": 0.0
+      },
+      "false_accept_rate": {
+        "ci95_high": 0.176931,
+        "ci95_low": 0.168122,
+        "max": 0.217391,
+        "mean": 0.172527,
+        "min": 0.09699,
+        "n": 100,
+        "stdev": 0.022472
+      },
+      "false_reject_rate": {
+        "ci95_high": 0.173444,
+        "ci95_low": 0.170021,
+        "max": 0.191892,
+        "mean": 0.171733,
+        "min": 0.151515,
+        "n": 100,
+        "stdev": 0.008734
+      },
+      "final_best": {
+        "ci95_high": 0.887812,
+        "ci95_low": 0.883536,
+        "max": 0.899987,
+        "mean": 0.885674,
+        "min": 0.854983,
+        "n": 100,
+        "stdev": 0.010908
+      },
+      "panel_disagreement_rate": {
+        "ci95_high": 0.4701,
+        "ci95_low": 0.465908,
+        "max": 0.492,
+        "mean": 0.468004,
+        "min": 0.4416,
+        "n": 100,
+        "stdev": 0.010693
+      },
+      "post_change_immediate": {
+        "ci95_high": 0.867065,
+        "ci95_low": 0.859722,
+        "max": 0.899465,
+        "mean": 0.863393,
+        "min": 0.818759,
+        "n": 100,
+        "stdev": 0.018732
+      },
+      "post_change_mean": {
+        "ci95_high": 0.87863,
+        "ci95_low": 0.873596,
+        "max": 0.899465,
+        "mean": 0.876113,
+        "min": 0.841608,
+        "n": 100,
+        "stdev": 0.01284
+      },
+      "post_change_regret_auc": {
+        "ci95_high": 3.160088,
+        "ci95_low": 3.034257,
+        "max": 3.95979,
+        "mean": 3.097172,
+        "min": 2.51338,
+        "n": 100,
+        "stdev": 0.320995
+      },
+      "post_change_utility_auc": {
+        "ci95_high": 21.965743,
+        "ci95_low": 21.839912,
+        "max": 22.48662,
+        "mean": 21.902828,
+        "min": 21.04021,
+        "n": 100,
+        "stdev": 0.320995
+      },
+      "pre_change_best": {
+        "ci95_high": 0.804681,
+        "ci95_low": 0.801887,
+        "max": 0.818999,
+        "mean": 0.803284,
+        "min": 0.784344,
+        "n": 100,
+        "stdev": 0.007129
+      },
+      "verification_accepts": {
+        "ci95_high": 1867.140517,
+        "ci95_low": 1857.239483,
+        "max": 1925.0,
+        "mean": 1862.19,
+        "min": 1763.0,
+        "n": 100,
+        "stdev": 25.25774
+      }
+    },
+    "random": {
+      "archive_size": {
+        "ci95_high": 0.0,
+        "ci95_low": 0.0,
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0,
+        "n": 100,
+        "stdev": 0.0
+      },
+      "false_accept_rate": {
+        "ci95_high": 0.173842,
+        "ci95_low": 0.169742,
+        "max": 0.195187,
+        "mean": 0.171792,
+        "min": 0.143924,
+        "n": 100,
+        "stdev": 0.01046
+      },
+      "false_reject_rate": {
+        "ci95_high": 0.172291,
+        "ci95_low": 0.16779,
+        "max": 0.197305,
+        "mean": 0.17004,
+        "min": 0.1417,
+        "n": 100,
+        "stdev": 0.011482
+      },
+      "final_best": {
+        "ci95_high": 0.749606,
+        "ci95_low": 0.726689,
+        "max": 0.870107,
+        "mean": 0.738147,
+        "min": 0.61229,
+        "n": 100,
+        "stdev": 0.058462
+      },
+      "panel_disagreement_rate": {
+        "ci95_high": 0.468591,
+        "ci95_low": 0.464761,
+        "max": 0.4912,
+        "mean": 0.466676,
+        "min": 0.4392,
+        "n": 100,
+        "stdev": 0.00977
+      },
+      "post_change_immediate": {
+        "ci95_high": 0.741397,
+        "ci95_low": 0.721594,
+        "max": 0.844908,
+        "mean": 0.731495,
+        "min": 0.606817,
+        "n": 100,
+        "stdev": 0.050518
+      },
+      "post_change_mean": {
+        "ci95_high": 0.732163,
+        "ci95_low": 0.728048,
+        "max": 0.756079,
+        "mean": 0.730105,
+        "min": 0.69979,
+        "n": 100,
+        "stdev": 0.010496
+      },
+      "post_change_regret_auc": {
+        "ci95_high": 6.798802,
+        "ci95_low": 6.695936,
+        "max": 7.505253,
+        "mean": 6.747369,
+        "min": 6.098024,
+        "n": 100,
+        "stdev": 0.262412
+      },
+      "post_change_utility_auc": {
+        "ci95_high": 18.304064,
+        "ci95_low": 18.201198,
+        "max": 18.901976,
+        "mean": 18.252631,
+        "min": 17.494747,
+        "n": 100,
+        "stdev": 0.262412
+      },
+      "pre_change_best": {
+        "ci95_high": 0.698726,
+        "ci95_low": 0.68357,
+        "max": 0.755244,
+        "mean": 0.691148,
+        "min": 0.589896,
+        "n": 100,
+        "stdev": 0.038664
+      },
+      "verification_accepts": {
+        "ci95_high": 1091.806585,
+        "ci95_low": 1081.493415,
+        "max": 1145.0,
+        "mean": 1086.65,
+        "min": 1019.0,
+        "n": 100,
+        "stdev": 26.309109
+      }
+    },
+    "scalar": {
+      "archive_size": {
+        "ci95_high": 0.0,
+        "ci95_low": 0.0,
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0,
+        "n": 100,
+        "stdev": 0.0
+      },
+      "false_accept_rate": {
+        "ci95_high": 0.175862,
+        "ci95_low": 0.155148,
+        "max": 0.294118,
+        "mean": 0.165505,
+        "min": 0.021739,
+        "n": 100,
+        "stdev": 0.052843
+      },
+      "false_reject_rate": {
+        "ci95_high": 0.173628,
+        "ci95_low": 0.170789,
+        "max": 0.190164,
+        "mean": 0.172209,
+        "min": 0.15069,
+        "n": 100,
+        "stdev": 0.007241
+      },
+      "final_best": {
+        "ci95_high": 0.647324,
+        "ci95_low": 0.638789,
+        "max": 0.683765,
+        "mean": 0.643057,
+        "min": 0.57233,
+        "n": 100,
+        "stdev": 0.021773
+      },
+      "panel_disagreement_rate": {
+        "ci95_high": 0.471419,
+        "ci95_low": 0.467781,
+        "max": 0.4904,
+        "mean": 0.4696,
+        "min": 0.4424,
+        "n": 100,
+        "stdev": 0.009278
+      },
+      "post_change_immediate": {
+        "ci95_high": 0.654768,
+        "ci95_low": 0.643218,
+        "max": 0.728103,
+        "mean": 0.648993,
+        "min": 0.585151,
+        "n": 100,
+        "stdev": 0.029463
+      },
+      "post_change_mean": {
+        "ci95_high": 0.65191,
+        "ci95_low": 0.643802,
+        "max": 0.681514,
+        "mean": 0.647856,
+        "min": 0.601434,
+        "n": 100,
+        "stdev": 0.020683
+      },
+      "post_change_regret_auc": {
+        "ci95_high": 8.904954,
+        "ci95_low": 8.702257,
+        "max": 9.964138,
+        "mean": 8.803606,
+        "min": 7.962154,
+        "n": 100,
+        "stdev": 0.517084
+      },
+      "post_change_utility_auc": {
+        "ci95_high": 16.297743,
+        "ci95_low": 16.095046,
+        "max": 17.037846,
+        "mean": 16.196394,
+        "min": 15.035862,
+        "n": 100,
+        "stdev": 0.517084
+      },
+      "pre_change_best": {
+        "ci95_high": 0.821382,
+        "ci95_low": 0.821189,
+        "max": 0.821998,
+        "mean": 0.821286,
+        "min": 0.820118,
+        "n": 100,
+        "stdev": 0.000494
+      },
+      "verification_accepts": {
+        "ci95_high": 2027.620643,
+        "ci95_low": 2016.599357,
+        "max": 2097.0,
+        "mean": 2022.11,
+        "min": 1917.0,
+        "n": 100,
+        "stdev": 28.115525
+      }
+    }
+  },
+  "catastrophic_seeds": {
+    "by_strategy": {
+      "majority": {
+        "rate": 0.44,
+        "seeds": 44,
+        "trials": 100
+      },
+      "planner": {
+        "rate": 0.99,
+        "seeds": 99,
+        "trials": 100
+      },
+      "qd": {
+        "rate": 0.0,
+        "seeds": 0,
+        "trials": 100
+      },
+      "random": {
+        "rate": 0.0,
+        "seeds": 0,
+        "trials": 100
+      },
+      "scalar": {
+        "rate": 0.36,
+        "seeds": 36,
+        "trials": 100
+      }
+    },
+    "definition": "post_change_utility_auc below CATASTROPHE_FRACTION of the post-change horizon",
+    "fraction_of_horizon": 0.64,
+    "post_change_horizon": 25,
+    "utility_auc_threshold": 16.0
+  },
+  "configuration": {
+    "agents": 50,
+    "bins": 8,
+    "change_at": 25,
+    "evaluation_budget_per_strategy_per_seed": 2500,
+    "generations": 50,
+    "panel_provenance": {
+      "dependence_shape": "beta-binomial over per-item difficulty plus a blind-spot atom",
+      "evidence_level": "measured-on-real-verifiers parameters, applied to a synthetic landscape",
+      "measured_blind_spot_lambda": 0.0556,
+      "measured_blind_spot_units": "4 of 72",
+      "measured_candidates": 72,
+      "measured_marginal_accuracy": 0.7956,
+      "measured_marginal_pairwise_correlation": 0.5873,
+      "measured_verifiers": 25,
+      "panel": "E017 partial-test-oracle panel, refit with a blind-spot atom in E020",
+      "reducible_fit_icc": 0.4513,
+      "reducible_fit_mean_error": 0.1576,
+      "shape_rejected": "shared-shock; E017 measured it 1.71x too low on panel error",
+      "source_experiments": [
+        "experiments/E017-item-difficulty-and-quorum.md",
+        "experiments/E020-quorum-frontier-under-measured-shape.md"
+      ]
+    },
+    "seed_start": 0,
+    "seeds": 100,
+    "verification": {
+      "accuracy": 0.7956,
+      "blind_spot": 0.0556,
+      "correlation": 0.4513,
+      "dependence": "item-difficulty",
+      "quorum": 0.5,
+      "verifiers": 25
+    }
+  },
+  "experiment": "matched-budget-emergence-sweep-v1",
+  "experiment_id": "E024",
+  "limitations": [
+    "All candidates, goals, and verification outcomes are synthetic.",
+    "One evaluation unit is a simulator proposal plus panel decision, not measured compute, energy, or human attention.",
+    "Quality-Diversity is given the four predefined plausible goals; the Goal Graph does not yet learn from evidence.",
+    "The five strategies receive equal evaluation counts, but their internal bookkeeping costs are not measured.",
+    "The benchmark does not model churn, malicious workers, task dependencies, stigmergic traces, or post-integration defects.",
+    "The centralized planner and majority-vote swarm are single-artifact baselines by construction; their archive_size is always 0 and is not a defect.",
+    "The legacy strategy-relative recovery_generations field remains in per-seed rows but is not aggregated; post-change utility/regret AUC is the comparable adaptation measure.",
+    "The verifier panel is imperfect here; its accuracy, correlation, and blind-spot floor are taken from E017/E020 measurements of 25 real partial test oracles, but they are applied to a synthetic landscape and are not a universal constant for verification panels.",
+    "E017's oracles had strictly one-sided error (368 false accepts, 0 false rejects); this simulator's panel errs in both directions, so its false_reject_rate is a model output rather than a transferred measurement.",
+    "The blind-spot fraction lambda rests on 4 of 72 tasks (Clopper-Pearson 95%: 0.015-0.136) and is a property of that panel's blind spots, not a transferable constant.",
+    "Panel size scales verifier votes for every arm identically, so the comparison stays matched, but the extra verifier cost is counted in votes and not in wall time, energy, or human attention."
+  ],
+  "pairwise_wins": {
+    "qd_gt_majority_post_change_utility_auc": {
+      "rate": 0.51,
+      "trials": 100,
+      "wins": 51
+    },
+    "qd_gt_planner_post_change_utility_auc": {
+      "rate": 1.0,
+      "trials": 100,
+      "wins": 100
+    },
+    "qd_gt_random_post_change_utility_auc": {
+      "rate": 1.0,
+      "trials": 100,
+      "wins": 100
+    },
+    "qd_gt_scalar_post_change_utility_auc": {
+      "rate": 1.0,
+      "trials": 100,
+      "wins": 100
+    }
+  }
+}

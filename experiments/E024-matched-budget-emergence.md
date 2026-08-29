@@ -175,6 +175,18 @@ The strategies accept different numbers of viable candidates despite equal
 attempt counts. That is an outcome of where each search policy proposes, not an
 extra compute allowance.
 
+> **Follow-up (E026).** This record was produced with a **perfect** verifier
+> panel: `false_accept_rate`, `false_reject_rate` and `panel_disagreement_rate`
+> are structurally `0.0` in all 100 seeds.
+> [`E026-imperfect-verifier-panel.md`](E026-imperfect-verifier-panel.md) reruns
+> the same benchmark with the panel E017 and E020 measured — 25 correlated
+> partial oracles with an irreducible blind spot. Every conclusion above
+> survives unchanged, but E026 shows why that is weak evidence: a falsely
+> accepted candidate is non-viable, scores `0.0`, and is discarded by the same
+> predicate the verifier was meant to enforce, so this landscape has no
+> defect-propagation channel and the test has little power. Do not cite E024 as
+> evidence about verification quality.
+
 ## Limitations and remaining issue scope
 
 - candidates, objectives, changes, and verifier outcomes are synthetic;
