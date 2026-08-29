@@ -32,6 +32,18 @@ Repository evidence recorded in issue #173 confirms:
 
 Do not treat this runbook's historical activation steps as evidence that activation is still pending.
 
+### Welcome-discussion pinning is optional
+
+Pinning the welcome discussion (#302) is **presentation polish, not a completion
+gate**. The repository API exposes no reliable pin mutation/verification surface,
+so pin state cannot be independently witnessed from repository evidence. The
+project must not fabricate that witness, and a pin carries no authority,
+correctness, security, reproducibility, or external-participation control.
+
+Pinning may still be performed through the GitHub UI as a first-contact usability
+improvement. Its absence does not block discovery-surface completion. See
+[ADR-0011](decisions/ADR-0011-discovery-surface-completion.md).
+
 ## Activation / recovery procedure
 
 If Pages must be recreated or repaired:
