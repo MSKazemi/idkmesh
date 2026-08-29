@@ -8,6 +8,8 @@ For the project front door, start with [`../README.md`](../README.md), [`../CONT
 
 ## Documentation indexes
 
+- [Architecture index](architecture/README.md) — active system, compute,
+  evidence, repository-evolution, CI, and retained historical designs.
 - [Specifications index](specifications/README.md) — versioned work, evidence,
   evaluator, repository-graph, and project-configuration contracts.
 - [Research index](research/README.md) — research programs, experiments,
@@ -67,5 +69,7 @@ warning candidate
 ```
 
 The first cohort classification is recorded in [IDKGraph P1 orphan cohort 1](audits/2026-08-28-idkgraph-p1-orphan-cohort-1.md).
+The later bounded architecture-directory correction is recorded in
+[IDKGraph architecture navigation pass](findings/2026-08-29-idkgraph-architecture-navigation.md).
 
 Do not optimize warning count as a standalone repository-health objective.
