@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+from email.message import Message
+import io
 import json
 import tempfile
 import unittest
 from pathlib import Path
 import sys
+from unittest import mock
+from urllib.error import HTTPError
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = ROOT / "scripts"
@@ -52,6 +56,19 @@ def snapshot(*, protected=False, ready=2, draft=1, issues=4, reviewed=0, externa
 
 
 class EvolutionObserverTests(unittest.TestCase):
+    @staticmethod
+    def _http_error(*, body: str, remaining: str | None = None) -> HTTPError:
+        headers = Message()
+        if remaining is not None:
+            headers["X-RateLimit-Remaining"] = remaining
+        return HTTPError(
+            "https://api.github.com/repos/example/repository",
+            403,
+            "Forbidden",
+            headers,
+            io.BytesIO(body.encode("utf-8")),
+        )
+
     def test_capacity_recovers_when_open_work_decreases(self):
         high = evolution_score.capacity_metrics(snapshot(ready=8, draft=4, issues=20), POLICY)
         low = evolution_score.capacity_metrics(snapshot(ready=1, draft=0, issues=2), POLICY)
@@ -87,6 +104,39 @@ class EvolutionObserverTests(unittest.TestCase):
     def test_dependency_references_are_deduplicated(self):
         refs = evolution_snapshot.references_from_text("See #12 #12 and #13, then #12")
         self.assertEqual(refs, [12, 13])
+
+    def test_rate_limit_exhaustion_has_distinct_unavailable_outcome(self):
+        error = self._http_error(body='{"message":"API rate limit exceeded"}', remaining="0")
+        with mock.patch.object(evolution_snapshot, "urlopen", side_effect=error):
+            with self.assertRaises(evolution_snapshot.GitHubObservationUnavailable):
+                evolution_snapshot._request_json("/repos/example/repository", "token")
+
+    def test_unrelated_forbidden_response_remains_a_failure(self):
+        error = self._http_error(body='{"message":"Resource not accessible by integration"}', remaining="42")
+        with mock.patch.object(evolution_snapshot, "urlopen", side_effect=error):
+            with self.assertRaises(HTTPError):
+                evolution_snapshot._request_json("/repos/example/repository", "token")
+
+    def test_cli_does_not_write_partial_snapshot_when_observation_is_unavailable(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp) / "snapshot.json"
+            argv = [
+                "evolution_snapshot.py",
+                "--repository",
+                "example/repository",
+                "--event-kind",
+                "test",
+                "--output",
+                str(output),
+            ]
+            unavailable = evolution_snapshot.GitHubObservationUnavailable("rate limit")
+            with (
+                mock.patch.object(sys, "argv", argv),
+                mock.patch.dict(evolution_snapshot.os.environ, {"GITHUB_TOKEN": "token"}, clear=True),
+                mock.patch.object(evolution_snapshot, "collect", side_effect=unavailable),
+            ):
+                self.assertEqual(evolution_snapshot.main(), evolution_snapshot.OBSERVATION_UNAVAILABLE_EXIT)
+            self.assertFalse(output.exists())
 
     def test_reference_extraction_is_bounded_and_structural_only(self):
         text = "ignore words and URLs " + " ".join(f"#{number}" for number in range(1, 80))
@@ -136,6 +186,12 @@ class EvolutionObserverTests(unittest.TestCase):
     def test_workflow_avoids_per_comment_observation_amplification(self):
         workflow = (ROOT / ".github" / "workflows" / "evolution-loop.yml").read_text(encoding="utf-8")
         self.assertNotIn("\n  issue_comment:\n", workflow)
+
+    def test_workflow_does_not_publish_incomplete_observations(self):
+        workflow = (ROOT / ".github" / "workflows" / "evolution-loop.yml").read_text(encoding="utf-8")
+        self.assertIn("status\" -eq 75", workflow)
+        self.assertGreaterEqual(workflow.count("if: steps.observation.outputs.available == 'true'"), 5)
+        self.assertIn("No decision, recommendation, or Bayesian checkpoint was published", workflow)
 
     def test_ready_pr_review_coverage_is_measured_independently(self):
         s = snapshot(protected=True, ready=2, issues=1, reviewed=1)
