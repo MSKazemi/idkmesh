@@ -209,9 +209,23 @@ def analyze(snapshot: dict[str, Any]) -> dict[str, Any]:
         "method": VERSION,
         "source": {"repository": repository, "cutoff_at": cutoff, "natural_language_trusted": False},
         "metrics": {
-            "first_independent_review_latency": {**_bootstrap_median(first_review_hours, repository + cutoff + ":review"), "right_censored": sum(1 for row in pulls if row.get("first_independent_review_at") is None)},
+            "first_independent_review_latency": {
+                **_bootstrap_median(first_review_hours, repository + cutoff + ":review"),
+                "right_censored": sum(
+                    1
+                    for row in pulls
+                    if row.get("first_independent_review_at") is None
+                    and row.get("closed_at") is None
+                ),
+                "closed_without_review": sum(
+                    1
+                    for row in pulls
+                    if row.get("first_independent_review_at") is None
+                    and row.get("closed_at") is not None
+                ),
+            },
             "cycle_latency": {**_bootstrap_median(cycle_hours, repository + cutoff + ":cycle"), "right_censored": sum(1 for row in pulls if row.get("closed_at") is None)},
-            "review_concentration": _hhi(reviewers, "independent_review_events"),
+            "review_concentration": _hhi(reviewers, "independent_reviewer_pull_request_pairs"),
             "ownership_concentration": _hhi(owners, "changed_file_owner_attributions"),
             "contributor_recurrence": beta_binomial_summary(recurring, len(contributors)),
             "ci_evidence": beta_binomial_summary(ci_passed, ci_total),

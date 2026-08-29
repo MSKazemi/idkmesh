@@ -21,9 +21,14 @@ class CollaborationObservablesTests(unittest.TestCase):
         metrics = result["metrics"]
         self.assertEqual(36.0, metrics["first_independent_review_latency"]["median_hours"])
         self.assertEqual(1, metrics["first_independent_review_latency"]["right_censored"])
+        self.assertEqual(0, metrics["first_independent_review_latency"]["closed_without_review"])
         self.assertEqual(2, metrics["review_queue"]["open_review_ready"])
         self.assertEqual(60.0, metrics["review_queue"]["median_age_hours"])
         self.assertEqual(0.555556, metrics["review_concentration"]["hhi"])
+        self.assertEqual(
+            "independent_reviewer_pull_request_pairs",
+            metrics["review_concentration"]["population"],
+        )
         self.assertEqual(0.625, metrics["ownership_concentration"]["hhi"])
         self.assertEqual(2, metrics["structural_debt"]["observed_findings"])
         self.assertEqual(6, metrics["ci_evidence"]["successes"])
