@@ -1,0 +1,17 @@
+{
+  "authority": {
+    "automatic_candidate_selection": false,
+    "canonical_state_write": false,
+    "git_push": false,
+    "merge": false
+  },
+  "candidate_commands_consistent": true,
+  "candidate_definition_digest_rejected_external_path": true,
+  "candidate_validate_rejected_external_path": true,
+  "schema_version": "0.1",
+  "seeded_definition_digest_accepted_external_path": true,
+  "seeded_divergence_detected": true,
+  "seeded_validate_rejected_external_path": true,
+  "source_revision": "9c53bb4069a5db1c0688dbbe7a8f028540cbf7c2",
+  "task_id": "benchmark/phase-b2/004-safe-cohort-loader-refactor"
+}

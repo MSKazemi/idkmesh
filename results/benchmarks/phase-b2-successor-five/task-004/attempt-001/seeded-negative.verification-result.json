@@ -1,0 +1,86 @@
+{
+  "attempt": 1,
+  "checks": [
+    {
+      "evidence_ids": [
+        "behavior-observation"
+      ],
+      "id": "cohort-loader-boundary-parity",
+      "required": true,
+      "status": "failed",
+      "summary": "The deliberately divergent definition-digest loader accepts an external path rejected by validate.",
+      "type": "test"
+    }
+  ],
+  "decision_support": {
+    "confidence": 1.0,
+    "rationale": "This VerificationResult records the deliberately divergent seeded case, not the accepted candidate.",
+    "recommendation": "reject_candidate"
+  },
+  "evidence": [
+    {
+      "description": "Digest of candidate parity and seeded divergence observations.",
+      "digest": "sha256:682c79b5850dd300bb044d951de51885bcbd6b28cc13f86164c019c6f187d05d",
+      "id": "behavior-observation",
+      "locator": "behavior-observation.json",
+      "media_type": "application/json",
+      "type": "test_output"
+    }
+  ],
+  "extensions": {
+    "org.idkmesh.seeded_negative": true,
+    "org.idkmesh.seeded_negative.expected_category": "regression"
+  },
+  "findings": [
+    {
+      "category": "regression",
+      "path": "tools/benchmark_cohort.py",
+      "severity": "high",
+      "summary": "CLI cohort loaders diverge at the repository boundary."
+    }
+  ],
+  "finished_at": "2026-08-29T03:48:43.250575Z",
+  "id": "benchmark/phase-b2/004-safe-cohort-loader-refactor/single-worker-baseline-v1/attempt-001/loader-divergence",
+  "independence": {
+    "correlation_notes": "The behavioral probe is logically separate from candidate generation but reuses the isolated source runtime and executes an explicit one-command divergence.",
+    "independent_from_worker": true,
+    "shared_model_family": false,
+    "shared_runtime": true,
+    "worker_id_observed": "idkmesh-phase-b2-task004-worker"
+  },
+  "metrics": {
+    "candidate_boundary_divergences": 0,
+    "seeded_boundary_divergences": 1
+  },
+  "provenance": {
+    "environment": {
+      "platform": "Linux-7.0.0-30-generic-x86_64-with-glibc2.39",
+      "python": "3.12.3",
+      "tool_versions": {
+        "cohort-loader-boundary-parity": "0.1"
+      }
+    },
+    "result_manifest_digest": "sha256:b56047bfce6017cdb3399fee7db72f2bd86229b29a6b13de6e10fd3a7d5e19d7",
+    "source_revision": "9c53bb4069a5db1c0688dbbe7a8f028540cbf7c2",
+    "verifier_config_digest": "sha256:00e20edc78efdf96206e7f532aaac2ed2389e35644f986da1d7354fed410ba17",
+    "work_unit_digest": "sha256:adb4ad893aa58ad18376c49fd0a6c0328db808bfe5946136a5631c63d933f2d4"
+  },
+  "resources": {
+    "compute_units": 0.0,
+    "human_minutes": 0.0,
+    "tokens": 0,
+    "wall_seconds": 0.0
+  },
+  "result_manifest_id": "benchmark/phase-b2/004-safe-cohort-loader-refactor/single-worker-baseline-v1/attempt-001",
+  "schema_version": "0.1",
+  "started_at": "2026-08-29T03:48:43.250575Z",
+  "status": "failed",
+  "verifier": {
+    "adapter": "cohort-loader-boundary-parity",
+    "adapter_version": "0.1",
+    "id": "idkmesh-task004-behavior-verifier",
+    "type": "system"
+  },
+  "work_unit_id": "benchmark/phase-b2/004-safe-cohort-loader-refactor",
+  "work_unit_version": 1
+}
