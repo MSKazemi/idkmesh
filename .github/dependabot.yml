@@ -9,6 +9,10 @@ updates:
       time: "06:00"
       timezone: Europe/Rome
     open-pull-requests-limit: 3
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - version-update:semver-major
     commit-message:
       prefix: "deps"
 
@@ -21,5 +25,9 @@ updates:
       timezone: Europe/Rome
     open-pull-requests-limit: 3
     versioning-strategy: increase-if-necessary
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - version-update:semver-major
     commit-message:
       prefix: "deps"
