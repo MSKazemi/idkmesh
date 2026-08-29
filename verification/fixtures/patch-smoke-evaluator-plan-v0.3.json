@@ -1,0 +1,39 @@
+{
+  "backend": {
+    "max_candidate_bytes": 200000,
+    "max_log_bytes": 262144,
+    "require_nonempty_patch": true,
+    "required_added_substrings": ["patch-evaluator expected"],
+    "required_log_types": ["stdout", "stderr"],
+    "type": "unified_diff",
+    "verify_log_digests": true
+  },
+  "binding": {
+    "source_revision": "patch-verifier-fixture-v1",
+    "work_unit_digest": "sha256:3f8b78df3f43329fe72223018ab42300fcb19523a82769e47ba31098861c24fd",
+    "work_unit_id": "verification/patch-smoke",
+    "work_unit_version": 1
+  },
+  "candidate_artifact_id": "candidate-patch",
+  "execution_mode": "metadata_only",
+  "extensions": {
+    "org.idkmesh.patch_evaluator": {
+      "purpose": "versioned fixture proving explicit substring semantics without changing v0.2 exact-line behavior"
+    }
+  },
+  "id": "verification/patch-smoke-plan-v03-substring",
+  "policy": {
+    "require_output_outside_candidate_root": true,
+    "require_plan_outside_candidate_root": true,
+    "require_verifier_distinct_from_worker": true
+  },
+  "required_validator_ids": ["result-manifest-schema", "independent-review"],
+  "schema_version": "0.3",
+  "verifier": {
+    "adapter": "deterministic-patch-verifier",
+    "adapter_version": "0.2.0",
+    "id": "idkmesh-local-verifier",
+    "type": "system"
+  },
+  "visibility": "public"
+}
