@@ -1,0 +1,185 @@
+{
+  "cohort_definition_digest": null,
+  "cohort_id": "benchmark/phase-b2-successor-v2",
+  "configuration": {
+    "baseline_signature": "single-worker-baseline-v2",
+    "diversity_signatures": [
+      "single-worker-baseline-v2",
+      "role-specialized-two-attempts-v2"
+    ],
+    "expected_attempt_signature_counts_per_work_unit": {
+      "role-specialized-two-attempts-v2": 1,
+      "single-worker-baseline-v2": 2
+    },
+    "minimum_eligible_work_units": 20,
+    "require_complete_costs": true,
+    "require_independent_tests": true,
+    "swarm_size": 2
+  },
+  "coverage": {
+    "cohort_tasks": 5,
+    "conclusive_outcomes": {},
+    "eligible_work_units": 0,
+    "ineligible_work_units": 5,
+    "pairwise_signature_overlap": {
+      "single-worker-baseline-v2::role-specialized-two-attempts-v2": 0
+    }
+  },
+  "evidence_class": "repository_contract_state_not_coding_outcome",
+  "global_conditions": [
+    {
+      "code": "frozen_or_burned_cohort",
+      "observed": "scaffold",
+      "passed": false,
+      "required": [
+        "frozen",
+        "burned"
+      ]
+    },
+    {
+      "code": "definition_digest_committed",
+      "observed": null,
+      "passed": false,
+      "required": "sha256 commitment present before analyzed outcomes"
+    },
+    {
+      "code": "taxonomy_frozen_before_outcomes",
+      "observed": true,
+      "passed": true,
+      "required": true
+    },
+    {
+      "code": "prospective_minimum_target",
+      "observed": 5,
+      "passed": false,
+      "required": 20
+    },
+    {
+      "code": "non_selecting_authority",
+      "observed": {
+        "automatic_candidate_selection": false,
+        "canonical_state_write": false,
+        "git_push": false,
+        "merge": false
+      },
+      "passed": true,
+      "required": "all four authority capabilities false"
+    },
+    {
+      "code": "normalization_has_no_dropped_candidates",
+      "observed": {
+        "excluded": {
+          "inconclusive_or_conflicting_verification": 0,
+          "no_independent_verification": 0
+        },
+        "unknown_verification_result_references": 0
+      },
+      "passed": true,
+      "required": "zero excluded candidates and zero unknown verification references"
+    },
+    {
+      "code": "all_analyzed_tasks_eligible",
+      "observed": [],
+      "passed": true,
+      "required": "no verified or attempt-bearing task may be ineligible"
+    },
+    {
+      "code": "minimum_eligible_work_units",
+      "observed": 0,
+      "passed": false,
+      "required": 20
+    }
+  ],
+  "interpretation": "Passing this audit establishes mechanical readiness only. It does not prove that tasks were truly held out, that the temporal freeze preceded outcome inspection, that all generated attempts were retained, or that diversity helps. The cohort definition digest excludes attempts/evidence, so those claims require provenance review and the unchanged randomness_lab.r1_replay output.",
+  "normalization": {
+    "conclusive_candidates": 0,
+    "excluded": {
+      "inconclusive_or_conflicting_verification": 0,
+      "no_independent_verification": 0
+    },
+    "input_result_manifests": 0,
+    "input_verification_results": 0,
+    "unknown_verification_result_references": 0
+  },
+  "provenance_review_required": [
+    "confirm tasks were genuinely held out",
+    "confirm the definition was frozen before outcome inspection",
+    "confirm no generated attempt was omitted from attached evidence"
+  ],
+  "report_kind": "r1_real_corpus_readiness_audit",
+  "status": "blocked",
+  "supports_empirical_r1_claim": false,
+  "tasks": [
+    {
+      "blockers": [
+        "cost_metrics_not_predeclared",
+        "evidence_not_verified",
+        "not_held_out",
+        "seeded_negative_not_verified",
+        "unequal_or_unexpected_signature_budget"
+      ],
+      "eligible": false,
+      "evidence_status": "pending",
+      "observed_signature_counts": {},
+      "split": "pilot",
+      "task_id": "benchmark/phase-b2-v2/001-cohort-symlink-reference"
+    },
+    {
+      "blockers": [
+        "cost_metrics_not_predeclared",
+        "evidence_not_verified",
+        "not_held_out",
+        "seeded_negative_not_verified",
+        "unequal_or_unexpected_signature_budget"
+      ],
+      "eligible": false,
+      "evidence_status": "pending",
+      "observed_signature_counts": {},
+      "split": "pilot",
+      "task_id": "benchmark/phase-b2-v2/002-router-nonfinite-numbers"
+    },
+    {
+      "blockers": [
+        "cost_metrics_not_predeclared",
+        "evidence_not_verified",
+        "not_held_out",
+        "seeded_negative_not_verified",
+        "unequal_or_unexpected_signature_budget"
+      ],
+      "eligible": false,
+      "evidence_status": "pending",
+      "observed_signature_counts": {},
+      "split": "pilot",
+      "task_id": "benchmark/phase-b2-v2/003-branch-unobserved-head"
+    },
+    {
+      "blockers": [
+        "cost_metrics_not_predeclared",
+        "evidence_not_verified",
+        "not_held_out",
+        "seeded_negative_not_verified",
+        "unequal_or_unexpected_signature_budget"
+      ],
+      "eligible": false,
+      "evidence_status": "pending",
+      "observed_signature_counts": {},
+      "split": "pilot",
+      "task_id": "benchmark/phase-b2-v2/004-rwvb-nonfinite-domain"
+    },
+    {
+      "blockers": [
+        "analysis_signatures_not_predeclared",
+        "cost_metrics_not_predeclared",
+        "evidence_not_verified",
+        "not_held_out",
+        "seeded_negative_not_verified",
+        "unequal_or_unexpected_signature_budget"
+      ],
+      "eligible": false,
+      "evidence_status": "pending",
+      "observed_signature_counts": {},
+      "split": "pilot",
+      "task_id": "benchmark/phase-b2-v2/005-local-offer-output-boundary"
+    }
+  ]
+}
