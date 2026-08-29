@@ -19,13 +19,13 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Check out evaluator-owned current tree
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           path: evaluator
           persist-credentials: false
 
       - name: Check out exact burned-pilot source
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: 9c53bb4069a5db1c0688dbbe7a8f028540cbf7c2
           path: source
