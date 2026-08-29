@@ -24,6 +24,17 @@ reference sweep was produced.  ``--imperfect-panel`` swaps in the panel E017
 measured -- 25 correlated partial test oracles with an irreducible shared blind
 spot -- so the benchmark can ask whether the Quality-Diversity result survives
 verifiers that are wrong *together*.  See :data:`E017_MEASURED_PANEL`.
+
+E026 armed that panel and found that nothing moved, and diagnosed why: every arm
+here ranks candidates with ``utility()`` and ``robust_quality()``, both of which
+consult ``viable()`` directly.  A falsely accepted artifact therefore scores
+0.0, never displaces anything, and is discarded by the very predicate the
+verifier panel was meant to enforce -- so verifier error cannot reach the
+outcome metric at all.  ``--defect-channel`` closes that gap: selection and
+delivery then rank by *apparent* quality, which is what a system can observe
+once its panel has accepted an artifact, while the trace still scores the
+delivered artifact by ground truth.  See :class:`DefectChannel`.  It is off by
+default, so the committed reference sweep still reproduces.
 """
 
 from __future__ import annotations
@@ -34,6 +45,7 @@ import json
 import math
 import random
 import sys
+from dataclasses import dataclass
 from pathlib import Path
 from statistics import mean, stdev
 from typing import Callable, Dict, List, Sequence, Tuple
@@ -101,6 +113,164 @@ PANEL_PROVENANCE = {
     "shape_rejected": "shared-shock; E017 measured it 1.71x too low on panel error",
     "evidence_level": "measured-on-real-verifiers parameters, applied to a synthetic landscape",
 }
+# The defect-propagation channel closes the gap E026 measured. Its provenance is
+# a *diagnosis*, not a measurement: no defect cost was observed anywhere, so the
+# knob is swept across its whole range rather than fitted, and the range
+# includes the setting that reproduces E026's null exactly.
+DEFECT_MECHANISM = (
+    "selection, retention and delivery rank candidates by apparent quality -- the "
+    "quality a system can observe once its verifier panel has accepted an artifact -- "
+    "while the trace scores the delivered artifact by ground truth. A falsely "
+    "accepted non-viable artifact is credited `cost` times its apparent quality, so "
+    "it can displace an incumbent, occupy an archive niche, be drawn as a parent, and "
+    "be shipped; when it is shipped it delivers 0.0."
+)
+DEFECT_PROVENANCE = {
+    "channel": "E027 latent-defect propagation channel",
+    "motivating_result": "experiments/E026-imperfect-verifier-panel.md",
+    "gap_closed": (
+        "E024 and E026 rank candidates with utility() and robust_quality(), both of "
+        "which consult viable() directly. A falsely accepted artifact therefore scores "
+        "0.0 and is silently discarded by the same predicate the verifier panel was "
+        "meant to enforce, so verifier error cannot reach the outcome metric."
+    ),
+    "mechanism": DEFECT_MECHANISM,
+    "knob": "defect cost in [0, 1]",
+    "knob_meaning": (
+        "the fraction of a latent defect's apparent quality that the system's own "
+        "selection machinery still credits, i.e. how far the defect stays latent past "
+        "the acceptance gate"
+    ),
+    "knob_zero_means": (
+        "exactly the E024/E026 behaviour: the search operator holds a free viability "
+        "oracle and discards a falsely accepted artifact for nothing"
+    ),
+    "knob_one_means": (
+        "no free oracle anywhere: the system trusts its verifier panel completely, "
+        "which is the only assumption-free setting"
+    ),
+    "default_cost": 1.0,
+    "why_the_default_is_the_extreme": (
+        "cost 1.0 adds no parameter. Every value below it hands the search operator "
+        "ground-truth viability information that no real system has, so the knob is a "
+        "dial back toward E024's optimistic assumption rather than a dial tuned to "
+        "manufacture an effect."
+    ),
+    "evidence_level": "synthetic mechanism; no defect cost is measured anywhere",
+}
+
+# Aggregated only when the channel is armed, so a disarmed report keeps exactly
+# the schema the committed E024 and E026 artifacts were published with.
+DEFECT_METRICS = (
+    "delivered_defect_rate",
+    "retained_defect_rate",
+)
+
+
+@dataclass(frozen=True)
+class DefectChannel:
+    """How much of an accepted defect the system keeps believing in.
+
+    ``cost`` is the single knob, in ``[0.0, 1.0]``:
+
+    ``0.0``
+        The E024/E026 behaviour. A non-viable candidate is worth 0.0 to every
+        selection rule, so it is thrown away the instant it is accepted --
+        which is a free viability oracle sitting behind the verifier panel.
+        The channel is armed but inert, and the outcome metrics are identical
+        to a run with no channel at all. A regression test pins that identity.
+    ``1.0``
+        No free oracle. The system ranks and ships artifacts on what it can
+        observe, so a falsely accepted defect competes on its apparent merits,
+        can evict a real solution, can be drawn as a parent, and delivers 0.0
+        whenever it is the artifact that ships.
+
+    The default is 1.0 because it is the end of the range that adds no
+    assumption; see :data:`DEFECT_PROVENANCE`.
+    """
+
+    cost: float = 1.0
+
+    def __post_init__(self) -> None:
+        if not 0.0 <= self.cost <= 1.0:
+            raise ValueError("defect cost must be in [0.0, 1.0]")
+
+    def as_dict(self) -> Dict[str, object]:
+        return {"cost": self.cost, "mechanism": DEFECT_MECHANISM}
+
+
+@dataclass
+class DefectStats:
+    """What the defect channel actually did, per arm."""
+
+    generations: int = 0
+    delivered_defects: int = 0
+    retained_artifacts: int = 0
+    retained_defects: int = 0
+
+    def record_delivery(self, chosen: "sim.Candidate | None") -> None:
+        self.generations += 1
+        if chosen is not None and not sim.viable(chosen):
+            self.delivered_defects += 1
+
+    def record_retention(self, retained: Sequence["sim.Candidate"]) -> None:
+        self.retained_artifacts = len(retained)
+        self.retained_defects = sum(1 for c in retained if not sim.viable(c))
+
+    def as_metrics(self) -> Dict[str, object]:
+        delivered_rate = self.delivered_defects / self.generations if self.generations else 0.0
+        retained_rate = (
+            self.retained_defects / self.retained_artifacts if self.retained_artifacts else 0.0
+        )
+        return {
+            "delivered_defect_generations": self.delivered_defects,
+            "delivered_defect_rate": round(delivered_rate, 6),
+            "retained_artifacts": self.retained_artifacts,
+            "retained_defects": self.retained_defects,
+            "retained_defect_rate": round(retained_rate, 6),
+        }
+
+
+def _apparent_utility(
+    candidate: "sim.Candidate", weights: Sequence[float], cost: float
+) -> float:
+    """Utility as the system sees it after the panel has accepted the artifact.
+
+    At ``cost`` 0.0 this is ``sim.utility`` exactly -- same expression, and the
+    non-viable branch multiplies by zero -- which is what keeps an armed-but-
+    inert channel numerically identical to no channel.
+    """
+    value = sim.unchecked_utility(candidate, weights)
+    return value if sim.viable(candidate) else cost * value
+
+
+def _apparent_robust_quality(candidate: "sim.Candidate", cost: float) -> float:
+    """``sim.robust_quality`` as the system sees it. Identical at ``cost`` 0.0."""
+    value = sim.unchecked_robust_quality(candidate)
+    return value if sim.viable(candidate) else cost * value
+
+
+def _deliver(
+    population: Sequence["sim.Candidate"], goal: Sequence[float], cost: float
+) -> Tuple[float, "sim.Candidate | None"]:
+    """Ship the artifact that looks best, then score it honestly.
+
+    Separating the choice from the score is the whole channel: the choice is
+    made on apparent quality, which the panel's verdict is part of, and the
+    score is ground truth. At ``cost`` 0.0 the chosen artifact is always the
+    true maximiser, so this returns exactly what ``sim._best_actual`` returned.
+    """
+    chosen: "sim.Candidate | None" = None
+    best: float | None = None
+    for candidate in population:
+        apparent = _apparent_utility(candidate, goal, cost)
+        if best is None or apparent > best:
+            best, chosen = apparent, candidate
+    if chosen is None:
+        return 0.0, None
+    return sim.utility(chosen, goal), chosen
+
+
 SUMMARY_METRICS = (
     "pre_change_best",
     "post_change_immediate",
@@ -159,6 +329,8 @@ def _summary(
     archive_size: int,
     change_at: int,
     evaluation_budget: int,
+    defect: "DefectChannel | None" = None,
+    defects: "DefectStats | None" = None,
 ) -> Dict[str, object]:
     result = sim._summary(strategy, trace, stats, archive_size, change_at)
     post_trace = trace[change_at:]
@@ -170,7 +342,15 @@ def _summary(
             "post_change_regret_auc": round(sum(1.0 - value for value in post_trace), 6),
         }
     )
+    # Emitted only when the channel is armed, so a disarmed row stays exactly
+    # the row the committed E024 and E026 artifacts were published with.
+    if defect is not None and defects is not None:
+        result.update(defects.as_metrics())
     return result
+
+
+def _defect_cost(defect: "DefectChannel | None") -> float:
+    return defect.cost if defect is not None else 0.0
 
 
 def _random_search(
@@ -181,10 +361,14 @@ def _random_search(
     change_at: int,
     verification: "sim.VerificationConfig",
     bins: int,
+    defect: "DefectChannel | None" = None,
 ) -> Dict[str, object]:
     del bins
+    cost = _defect_cost(defect)
     trace: List[float] = []
     stats = sim.VerificationStats()
+    defects = DefectStats()
+    accepted: List["sim.Candidate"] = []
     for generation in range(generations):
         proposals = [sim.Candidate.random(rng) for _ in range(agents)]
         accepted = [
@@ -192,8 +376,13 @@ def _random_search(
             for candidate in proposals
             if sim.verify_candidate(candidate, verifier_rng, verification, stats)
         ]
-        trace.append(sim._best_actual(accepted, sim._goal_at(generation, change_at)))
-    return _summary("random", trace, stats, 0, change_at, agents * generations)
+        value, chosen = _deliver(accepted, sim._goal_at(generation, change_at), cost)
+        defects.record_delivery(chosen)
+        trace.append(value)
+    defects.record_retention(accepted)
+    return _summary(
+        "random", trace, stats, 0, change_at, agents * generations, defect, defects
+    )
 
 
 def _scalar_search(
@@ -204,17 +393,20 @@ def _scalar_search(
     change_at: int,
     verification: "sim.VerificationConfig",
     bins: int,
+    defect: "DefectChannel | None" = None,
 ) -> Dict[str, object]:
     del bins
+    cost = _defect_cost(defect)
     population: List["sim.Candidate"] = []
     trace: List[float] = []
     stats = sim.VerificationStats()
+    defects = DefectStats()
     elite_count = max(2, min(32, agents // 4))
 
     for generation in range(generations):
         ranked = sorted(
             population,
-            key=lambda candidate: sim.utility(candidate, sim.INITIAL_GOAL),
+            key=lambda candidate: _apparent_utility(candidate, sim.INITIAL_GOAL, cost),
             reverse=True,
         )
         elites = ranked[:elite_count]
@@ -228,9 +420,14 @@ def _scalar_search(
             if sim.verify_candidate(candidate, verifier_rng, verification, stats)
         ]
         population = elites + accepted
-        trace.append(sim._best_actual(population, sim._goal_at(generation, change_at)))
+        value, chosen = _deliver(population, sim._goal_at(generation, change_at), cost)
+        defects.record_delivery(chosen)
+        trace.append(value)
 
-    return _summary("scalar", trace, stats, 0, change_at, agents * generations)
+    defects.record_retention(population)
+    return _summary(
+        "scalar", trace, stats, 0, change_at, agents * generations, defect, defects
+    )
 
 
 def _qd_search(
@@ -241,10 +438,13 @@ def _qd_search(
     change_at: int,
     verification: "sim.VerificationConfig",
     bins: int,
+    defect: "DefectChannel | None" = None,
 ) -> Dict[str, object]:
+    cost = _defect_cost(defect)
     archive: Dict[Tuple[int, int], "sim.Candidate"] = {}
     trace: List[float] = []
     stats = sim.VerificationStats()
+    defects = DefectStats()
 
     for generation in range(generations):
         parents = list(archive.values())
@@ -259,11 +459,20 @@ def _qd_search(
                 continue
             key = sim.niche(candidate, bins)
             incumbent = archive.get(key)
-            if incumbent is None or sim.robust_quality(candidate) > sim.robust_quality(incumbent):
+            if incumbent is None or _apparent_robust_quality(
+                candidate, cost
+            ) > _apparent_robust_quality(incumbent, cost):
                 archive[key] = candidate
-        trace.append(sim._best_actual(archive.values(), sim._goal_at(generation, change_at)))
+        value, chosen = _deliver(
+            list(archive.values()), sim._goal_at(generation, change_at), cost
+        )
+        defects.record_delivery(chosen)
+        trace.append(value)
 
-    return _summary("qd", trace, stats, len(archive), change_at, agents * generations)
+    defects.record_retention(list(archive.values()))
+    return _summary(
+        "qd", trace, stats, len(archive), change_at, agents * generations, defect, defects
+    )
 
 
 def _planner_search(
@@ -274,6 +483,7 @@ def _planner_search(
     change_at: int,
     verification: "sim.VerificationConfig",
     bins: int,
+    defect: "DefectChannel | None" = None,
 ) -> Dict[str, object]:
     """Centralized planner with one fixed objective (issue #22 baseline 1).
 
@@ -284,9 +494,11 @@ def _planner_search(
     the true goal changes, which is the property the baseline exists to expose.
     """
     del bins
+    cost = _defect_cost(defect)
     incumbent: "sim.Candidate | None" = None
     trace: List[float] = []
     stats = sim.VerificationStats()
+    defects = DefectStats()
     fixed_goal = sim.INITIAL_GOAL
 
     for generation in range(generations):
@@ -299,14 +511,19 @@ def _planner_search(
         for candidate in proposals:
             if not sim.verify_candidate(candidate, verifier_rng, verification, stats):
                 continue
-            if incumbent is None or sim.utility(candidate, fixed_goal) > sim.utility(
-                incumbent, fixed_goal
-            ):
+            if incumbent is None or _apparent_utility(
+                candidate, fixed_goal, cost
+            ) > _apparent_utility(incumbent, fixed_goal, cost):
                 incumbent = candidate
         current = [incumbent] if incumbent is not None else []
-        trace.append(sim._best_actual(current, sim._goal_at(generation, change_at)))
+        value, chosen = _deliver(current, sim._goal_at(generation, change_at), cost)
+        defects.record_delivery(chosen)
+        trace.append(value)
 
-    return _summary("planner", trace, stats, 0, change_at, agents * generations)
+    defects.record_retention([incumbent] if incumbent is not None else [])
+    return _summary(
+        "planner", trace, stats, 0, change_at, agents * generations, defect, defects
+    )
 
 
 def _majority_search(
@@ -317,6 +534,7 @@ def _majority_search(
     change_at: int,
     verification: "sim.VerificationConfig",
     bins: int,
+    defect: "DefectChannel | None" = None,
 ) -> Dict[str, object]:
     """Majority-vote swarm (issue #22 baseline 2).
 
@@ -327,11 +545,13 @@ def _majority_search(
     swarm collapses onto a single consensus artifact instead of an archive.
     """
     del bins
+    cost = _defect_cost(defect)
     beliefs = [rng.choice(sim.PLAUSIBLE_GOALS) for _ in range(agents)]
     threshold = agents // 2 + 1
     consensus: "sim.Candidate | None" = None
     trace: List[float] = []
     stats = sim.VerificationStats()
+    defects = DefectStats()
 
     for generation in range(generations):
         proposals = [
@@ -347,14 +567,20 @@ def _majority_search(
             votes = sum(
                 1
                 for goal in beliefs
-                if sim.utility(candidate, goal) > sim.utility(consensus, goal)
+                if _apparent_utility(candidate, goal, cost)
+                > _apparent_utility(consensus, goal, cost)
             )
             if votes >= threshold:
                 consensus = candidate
         current = [consensus] if consensus is not None else []
-        trace.append(sim._best_actual(current, sim._goal_at(generation, change_at)))
+        value, chosen = _deliver(current, sim._goal_at(generation, change_at), cost)
+        defects.record_delivery(chosen)
+        trace.append(value)
 
-    return _summary("majority", trace, stats, 0, change_at, agents * generations)
+    defects.record_retention([consensus] if consensus is not None else [])
+    return _summary(
+        "majority", trace, stats, 0, change_at, agents * generations, defect, defects
+    )
 
 
 RUNNERS: Dict[str, Callable[..., Dict[str, object]]] = {
@@ -373,6 +599,7 @@ def run_seed(
     change_at: int,
     bins: int,
     verification: "sim.VerificationConfig | None" = None,
+    defect: "DefectChannel | None" = None,
 ) -> Dict[str, object]:
     if agents < 2:
         raise ValueError("agents must be >= 2")
@@ -396,12 +623,13 @@ def run_seed(
             change_at,
             verification,
             bins,
+            defect,
         )
         if result["verification_attempts"] != evaluation_budget:
             raise RuntimeError(f"{strategy} violated the matched evaluation budget")
         results.append(result)
 
-    return {
+    payload: Dict[str, object] = {
         "experiment_id": EXPERIMENT_ID,
         "experiment": "matched-budget-emergence-v1",
         "seed": seed,
@@ -422,6 +650,11 @@ def run_seed(
         "verification": verification.as_dict(),
         "results": results,
     }
+    # Absent when the channel is disarmed, so a default run's per-seed record
+    # stays byte-identical to the one E024 and E026 published.
+    if defect is not None:
+        payload["defect_channel"] = defect.as_dict()
+    return payload
 
 
 def _stats(values: Sequence[float]) -> Dict[str, float | int]:
@@ -448,12 +681,14 @@ def sweep(
     change_at: int,
     bins: int,
     verification: "sim.VerificationConfig | None" = None,
+    defect: "DefectChannel | None" = None,
 ) -> Dict[str, object]:
     if seeds < 2:
         raise ValueError("seeds must be >= 2")
 
+    metrics_collected = SUMMARY_METRICS + (DEFECT_METRICS if defect is not None else ())
     rows = {
-        strategy: {metric: [] for metric in SUMMARY_METRICS}
+        strategy: {metric: [] for metric in metrics_collected}
         for strategy in STRATEGIES
     }
     # Compare the constraint-guided archive against every other arm, so adding a
@@ -464,10 +699,10 @@ def sweep(
     }
 
     for seed in range(seed_start, seed_start + seeds):
-        result = run_seed(seed, agents, generations, change_at, bins, verification)
+        result = run_seed(seed, agents, generations, change_at, bins, verification, defect)
         by_strategy = {row["strategy"]: row for row in result["results"]}
         for strategy, row in by_strategy.items():
-            for metric in SUMMARY_METRICS:
+            for metric in metrics_collected:
                 rows[strategy][metric].append(float(row[metric]))
 
         for baseline in baselines:
@@ -516,14 +751,15 @@ def sweep(
         ],
     }
 
-    if panel_is_perfect(verification):
+    if panel_is_perfect(verification) and defect is None:
         # Exactly the schema the committed reference artifact was published
         # with. Anything below would change it, so it stays behind this guard.
         return report
 
     horizon = generations - change_at
     threshold = CATASTROPHE_FRACTION * horizon
-    report["configuration"]["panel_provenance"] = dict(PANEL_PROVENANCE)
+    if not panel_is_perfect(verification):
+        report["configuration"]["panel_provenance"] = dict(PANEL_PROVENANCE)
     report["catastrophic_seeds"] = {
         "definition": "post_change_utility_auc below CATASTROPHE_FRACTION of the post-change horizon",
         "fraction_of_horizon": CATASTROPHE_FRACTION,
@@ -550,15 +786,32 @@ def sweep(
             for strategy, metrics in rows.items()
         },
     }
-    report["limitations"].extend(
-        [
-            "The verifier panel is imperfect here; its accuracy, correlation, and blind-spot floor are taken from E017/E020 measurements of 25 real partial test oracles, but they are applied to a synthetic landscape and are not a universal constant for verification panels.",
-            "E017's oracles had strictly one-sided error (368 false accepts, 0 false rejects); this simulator's panel errs in both directions, so its false_reject_rate is a model output rather than a transferred measurement.",
-            "The blind-spot fraction lambda rests on 4 of 72 tasks (Clopper-Pearson 95%: 0.015-0.136) and is a property of that panel's blind spots, not a transferable constant.",
-            "Panel size scales verifier votes for every arm identically, so the comparison stays matched, but the extra verifier cost is counted in votes and not in wall time, energy, or human attention.",
-        ]
-    )
+    if not panel_is_perfect(verification):
+        report["limitations"].extend(_panel_limitations())
+    if defect is not None:
+        report["configuration"]["defect_channel"] = defect.as_dict()
+        report["configuration"]["defect_provenance"] = dict(DEFECT_PROVENANCE)
+        report["limitations"].extend(_defect_limitations())
     return report
+
+
+def _panel_limitations() -> List[str]:
+    return [
+        "The verifier panel is imperfect here; its accuracy, correlation, and blind-spot floor are taken from E017/E020 measurements of 25 real partial test oracles, but they are applied to a synthetic landscape and are not a universal constant for verification panels.",
+        "E017's oracles had strictly one-sided error (368 false accepts, 0 false rejects); this simulator's panel errs in both directions, so its false_reject_rate is a model output rather than a transferred measurement.",
+        "The blind-spot fraction lambda rests on 4 of 72 tasks (Clopper-Pearson 95%: 0.015-0.136) and is a property of that panel's blind spots, not a transferable constant.",
+        "Panel size scales verifier votes for every arm identically, so the comparison stays matched, but the extra verifier cost is counted in votes and not in wall time, energy, or human attention.",
+    ]
+
+
+def _defect_limitations() -> List[str]:
+    return [
+        "The defect-propagation channel is a synthetic mechanism. No defect cost was measured anywhere; the knob is swept across its whole range, including the zero that reproduces the E024/E026 behaviour, rather than fitted.",
+        "A latent defect costs exactly the ground-truth utility of the artifact carrying it. Rework, blast radius, remediation effort, and defects that damage artifacts other than their own are not modelled.",
+        "Defect propagation is instantaneous within a generation: there is no latency before a defect surfaces and no retroactive correction of an earlier trace point.",
+        "The channel is deliberately not neutral across arms. A single-artifact arm ships a defect for a whole generation while an archive can route around a contaminated niche; that asymmetry is the mechanism under test, not a bias to be corrected.",
+        "The channel changes what each arm retains, so the arms explore different regions than they did with the channel disarmed. Differences against E024 or E026 are the combined effect of contamination and of the altered search trajectory, which this benchmark does not separate.",
+    ]
 
 
 def parse_args() -> argparse.Namespace:
@@ -596,6 +849,29 @@ def parse_args() -> argparse.Namespace:
                        choices=("shared-shock", "item-difficulty"), default=None,
                        help="E017 measured shared-shock to be the wrong shape")
     panel.add_argument("--verification-quorum", type=float, default=None)
+    defects = parser.add_argument_group(
+        "defect propagation",
+        "Off by default, which is how the committed reference sweeps were "
+        "produced. --defect-channel makes an accepted defect able to persist "
+        "and do harm; --defect-cost then dials how much of it the system still "
+        "believes in.",
+    )
+    defects.add_argument(
+        "--defect-channel",
+        action="store_true",
+        help="rank and ship artifacts by apparent quality rather than by a free "
+             "viability oracle, so a falsely accepted artifact can evict an "
+             "incumbent, occupy a niche, be drawn as a parent, and deliver 0.0 "
+             "when it ships (E027; closes the gap E026 measured)",
+    )
+    defects.add_argument(
+        "--defect-cost",
+        type=float,
+        default=None,
+        help="fraction of a latent defect's apparent quality the system still "
+             "credits, in [0.0, 1.0]. 0.0 reproduces the E024/E026 behaviour "
+             "exactly; 1.0 (the default) adds no assumption at all",
+    )
     parser.add_argument("--pretty", action="store_true")
     args = parser.parse_args()
     if args.seeds < 2:
@@ -634,6 +910,14 @@ def parse_args() -> argparse.Namespace:
     if args.verification_quorum is not None and not 0.0 <= args.verification_quorum < 1.0:
         parser.error("--verification-quorum must be in [0.0, 1.0)")
 
+    if args.defect_cost is not None and not args.defect_channel:
+        parser.error(
+            "--defect-cost requires --defect-channel; the channel is off by "
+            "default so that the committed reference sweeps reproduce"
+        )
+    if args.defect_cost is not None and not 0.0 <= args.defect_cost <= 1.0:
+        parser.error("--defect-cost must be between 0.0 and 1.0")
+
     if args.imperfect_panel:
         try:
             args.verification = measured_panel(**named)
@@ -641,6 +925,12 @@ def parse_args() -> argparse.Namespace:
             parser.error(str(error))
     else:
         args.verification = None
+    if args.defect_channel:
+        args.defect = DefectChannel(
+            **({} if args.defect_cost is None else {"cost": args.defect_cost})
+        )
+    else:
+        args.defect = None
     return args
 
 
@@ -654,6 +944,7 @@ def main() -> None:
         change_at=args.change_at,
         bins=args.bins,
         verification=args.verification,
+        defect=args.defect,
     )
     print(json.dumps(result, indent=2 if args.pretty else None, sort_keys=True))
 

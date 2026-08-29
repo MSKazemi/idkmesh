@@ -1,0 +1,977 @@
+{
+  "cells": [
+    {
+      "catastrophic_seeds": {
+        "majority": 44,
+        "planner": 100,
+        "qd": 0,
+        "random": 0,
+        "scalar": 25
+      },
+      "defect_cost": 0.0,
+      "delivered_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "false_accept_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "panel": "perfect",
+      "post_change_utility_auc": {
+        "majority": 18.576406,
+        "planner": 14.065917,
+        "qd": 22.061411,
+        "random": 18.467677,
+        "scalar": 16.2297
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 51,
+        "qd_gt_planner_post_change_utility_auc": 100,
+        "qd_gt_random_post_change_utility_auc": 100,
+        "qd_gt_scalar_post_change_utility_auc": 100
+      },
+      "retained_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      }
+    },
+    {
+      "catastrophic_seeds": {
+        "majority": 44,
+        "planner": 100,
+        "qd": 0,
+        "random": 0,
+        "scalar": 25
+      },
+      "defect_cost": 0.25,
+      "delivered_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "false_accept_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "panel": "perfect",
+      "post_change_utility_auc": {
+        "majority": 18.576406,
+        "planner": 14.065917,
+        "qd": 22.061411,
+        "random": 18.467677,
+        "scalar": 16.2297
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 51,
+        "qd_gt_planner_post_change_utility_auc": 100,
+        "qd_gt_random_post_change_utility_auc": 100,
+        "qd_gt_scalar_post_change_utility_auc": 100
+      },
+      "retained_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      }
+    },
+    {
+      "catastrophic_seeds": {
+        "majority": 44,
+        "planner": 100,
+        "qd": 0,
+        "random": 0,
+        "scalar": 25
+      },
+      "defect_cost": 0.5,
+      "delivered_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "false_accept_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "panel": "perfect",
+      "post_change_utility_auc": {
+        "majority": 18.576406,
+        "planner": 14.065917,
+        "qd": 22.061411,
+        "random": 18.467677,
+        "scalar": 16.2297
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 51,
+        "qd_gt_planner_post_change_utility_auc": 100,
+        "qd_gt_random_post_change_utility_auc": 100,
+        "qd_gt_scalar_post_change_utility_auc": 100
+      },
+      "retained_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      }
+    },
+    {
+      "catastrophic_seeds": {
+        "majority": 44,
+        "planner": 100,
+        "qd": 0,
+        "random": 0,
+        "scalar": 25
+      },
+      "defect_cost": 0.75,
+      "delivered_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "false_accept_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "panel": "perfect",
+      "post_change_utility_auc": {
+        "majority": 18.576406,
+        "planner": 14.065917,
+        "qd": 22.061411,
+        "random": 18.467677,
+        "scalar": 16.2297
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 51,
+        "qd_gt_planner_post_change_utility_auc": 100,
+        "qd_gt_random_post_change_utility_auc": 100,
+        "qd_gt_scalar_post_change_utility_auc": 100
+      },
+      "retained_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      }
+    },
+    {
+      "catastrophic_seeds": {
+        "majority": 44,
+        "planner": 100,
+        "qd": 0,
+        "random": 0,
+        "scalar": 25
+      },
+      "defect_cost": 1.0,
+      "delivered_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "false_accept_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "panel": "perfect",
+      "post_change_utility_auc": {
+        "majority": 18.576406,
+        "planner": 14.065917,
+        "qd": 22.061411,
+        "random": 18.467677,
+        "scalar": 16.2297
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 51,
+        "qd_gt_planner_post_change_utility_auc": 100,
+        "qd_gt_random_post_change_utility_auc": 100,
+        "qd_gt_scalar_post_change_utility_auc": 100
+      },
+      "retained_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      }
+    },
+    {
+      "catastrophic_seeds": {
+        "majority": 44,
+        "planner": 100,
+        "qd": 0,
+        "random": 0,
+        "scalar": 27
+      },
+      "defect_cost": 0.0,
+      "delivered_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "false_accept_rate": {
+        "majority": 0.000357,
+        "planner": 0.000222,
+        "qd": 0.000354,
+        "random": 0.000453,
+        "scalar": 0.000336
+      },
+      "panel": "independent",
+      "post_change_utility_auc": {
+        "majority": 18.576406,
+        "planner": 14.071351,
+        "qd": 22.059078,
+        "random": 18.467677,
+        "scalar": 16.21862
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 51,
+        "qd_gt_planner_post_change_utility_auc": 100,
+        "qd_gt_random_post_change_utility_auc": 100,
+        "qd_gt_scalar_post_change_utility_auc": 100
+      },
+      "retained_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      }
+    },
+    {
+      "catastrophic_seeds": {
+        "majority": 44,
+        "planner": 100,
+        "qd": 0,
+        "random": 0,
+        "scalar": 27
+      },
+      "defect_cost": 0.25,
+      "delivered_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "false_accept_rate": {
+        "majority": 0.000357,
+        "planner": 0.000222,
+        "qd": 0.000354,
+        "random": 0.000453,
+        "scalar": 0.000336
+      },
+      "panel": "independent",
+      "post_change_utility_auc": {
+        "majority": 18.576406,
+        "planner": 14.071351,
+        "qd": 22.059078,
+        "random": 18.467677,
+        "scalar": 16.21862
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 51,
+        "qd_gt_planner_post_change_utility_auc": 100,
+        "qd_gt_random_post_change_utility_auc": 100,
+        "qd_gt_scalar_post_change_utility_auc": 100
+      },
+      "retained_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      }
+    },
+    {
+      "catastrophic_seeds": {
+        "majority": 44,
+        "planner": 100,
+        "qd": 0,
+        "random": 0,
+        "scalar": 27
+      },
+      "defect_cost": 0.5,
+      "delivered_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "false_accept_rate": {
+        "majority": 0.000357,
+        "planner": 0.000222,
+        "qd": 0.000354,
+        "random": 0.000453,
+        "scalar": 0.000336
+      },
+      "panel": "independent",
+      "post_change_utility_auc": {
+        "majority": 18.576406,
+        "planner": 14.071351,
+        "qd": 22.059078,
+        "random": 18.467677,
+        "scalar": 16.21862
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 51,
+        "qd_gt_planner_post_change_utility_auc": 100,
+        "qd_gt_random_post_change_utility_auc": 100,
+        "qd_gt_scalar_post_change_utility_auc": 100
+      },
+      "retained_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      }
+    },
+    {
+      "catastrophic_seeds": {
+        "majority": 44,
+        "planner": 100,
+        "qd": 0,
+        "random": 0,
+        "scalar": 27
+      },
+      "defect_cost": 0.75,
+      "delivered_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "false_accept_rate": {
+        "majority": 0.000357,
+        "planner": 0.000222,
+        "qd": 0.000354,
+        "random": 0.000453,
+        "scalar": 0.000336
+      },
+      "panel": "independent",
+      "post_change_utility_auc": {
+        "majority": 18.576406,
+        "planner": 14.071351,
+        "qd": 22.059078,
+        "random": 18.467677,
+        "scalar": 16.21862
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 51,
+        "qd_gt_planner_post_change_utility_auc": 100,
+        "qd_gt_random_post_change_utility_auc": 100,
+        "qd_gt_scalar_post_change_utility_auc": 100
+      },
+      "retained_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      }
+    },
+    {
+      "catastrophic_seeds": {
+        "majority": 44,
+        "planner": 100,
+        "qd": 0,
+        "random": 0,
+        "scalar": 27
+      },
+      "defect_cost": 1.0,
+      "delivered_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "false_accept_rate": {
+        "majority": 0.000357,
+        "planner": 0.000222,
+        "qd": 0.000354,
+        "random": 0.000453,
+        "scalar": 0.000336
+      },
+      "panel": "independent",
+      "post_change_utility_auc": {
+        "majority": 18.576406,
+        "planner": 14.071351,
+        "qd": 22.059078,
+        "random": 18.467677,
+        "scalar": 16.21862
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 51,
+        "qd_gt_planner_post_change_utility_auc": 100,
+        "qd_gt_random_post_change_utility_auc": 100,
+        "qd_gt_scalar_post_change_utility_auc": 100
+      },
+      "retained_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      }
+    },
+    {
+      "catastrophic_seeds": {
+        "majority": 44,
+        "planner": 99,
+        "qd": 0,
+        "random": 0,
+        "scalar": 36
+      },
+      "defect_cost": 0.0,
+      "delivered_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "false_accept_rate": {
+        "majority": 0.164414,
+        "planner": 0.162038,
+        "qd": 0.172527,
+        "random": 0.171792,
+        "scalar": 0.165505
+      },
+      "panel": "measured",
+      "post_change_utility_auc": {
+        "majority": 18.622517,
+        "planner": 14.133411,
+        "qd": 21.902828,
+        "random": 18.252631,
+        "scalar": 16.196394
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 51,
+        "qd_gt_planner_post_change_utility_auc": 100,
+        "qd_gt_random_post_change_utility_auc": 100,
+        "qd_gt_scalar_post_change_utility_auc": 100
+      },
+      "retained_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.000156,
+        "random": 0.247591,
+        "scalar": 0.000546
+      }
+    },
+    {
+      "catastrophic_seeds": {
+        "majority": 44,
+        "planner": 99,
+        "qd": 0,
+        "random": 0,
+        "scalar": 36
+      },
+      "defect_cost": 0.25,
+      "delivered_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "false_accept_rate": {
+        "majority": 0.164414,
+        "planner": 0.162038,
+        "qd": 0.172552,
+        "random": 0.171792,
+        "scalar": 0.164938
+      },
+      "panel": "measured",
+      "post_change_utility_auc": {
+        "majority": 18.622517,
+        "planner": 14.133411,
+        "qd": 21.909441,
+        "random": 18.252631,
+        "scalar": 16.199589
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 51,
+        "qd_gt_planner_post_change_utility_auc": 100,
+        "qd_gt_random_post_change_utility_auc": 100,
+        "qd_gt_scalar_post_change_utility_auc": 100
+      },
+      "retained_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.000156,
+        "random": 0.247591,
+        "scalar": 0.000546
+      }
+    },
+    {
+      "catastrophic_seeds": {
+        "majority": 44,
+        "planner": 99,
+        "qd": 0,
+        "random": 0,
+        "scalar": 36
+      },
+      "defect_cost": 0.5,
+      "delivered_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "false_accept_rate": {
+        "majority": 0.164414,
+        "planner": 0.162038,
+        "qd": 0.172552,
+        "random": 0.171792,
+        "scalar": 0.164811
+      },
+      "panel": "measured",
+      "post_change_utility_auc": {
+        "majority": 18.622517,
+        "planner": 14.133411,
+        "qd": 21.909441,
+        "random": 18.252631,
+        "scalar": 16.199589
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 51,
+        "qd_gt_planner_post_change_utility_auc": 100,
+        "qd_gt_random_post_change_utility_auc": 100,
+        "qd_gt_scalar_post_change_utility_auc": 100
+      },
+      "retained_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.000156,
+        "random": 0.247591,
+        "scalar": 0.000546
+      }
+    },
+    {
+      "catastrophic_seeds": {
+        "majority": 44,
+        "planner": 99,
+        "qd": 0,
+        "random": 0,
+        "scalar": 36
+      },
+      "defect_cost": 0.75,
+      "delivered_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0002,
+        "scalar": 0.0
+      },
+      "false_accept_rate": {
+        "majority": 0.164414,
+        "planner": 0.162038,
+        "qd": 0.172753,
+        "random": 0.171792,
+        "scalar": 0.16521
+      },
+      "panel": "measured",
+      "post_change_utility_auc": {
+        "majority": 18.622517,
+        "planner": 14.133411,
+        "qd": 21.907833,
+        "random": 18.252631,
+        "scalar": 16.199799
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 51,
+        "qd_gt_planner_post_change_utility_auc": 100,
+        "qd_gt_random_post_change_utility_auc": 100,
+        "qd_gt_scalar_post_change_utility_auc": 100
+      },
+      "retained_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.000156,
+        "random": 0.247591,
+        "scalar": 0.000546
+      }
+    },
+    {
+      "catastrophic_seeds": {
+        "majority": 44,
+        "planner": 99,
+        "qd": 0,
+        "random": 12,
+        "scalar": 37
+      },
+      "defect_cost": 1.0,
+      "delivered_defect_rate": {
+        "majority": 0.0008,
+        "planner": 0.001,
+        "qd": 0.0026,
+        "random": 0.0596,
+        "scalar": 0.001
+      },
+      "false_accept_rate": {
+        "majority": 0.164374,
+        "planner": 0.162735,
+        "qd": 0.172601,
+        "random": 0.171792,
+        "scalar": 0.168294
+      },
+      "panel": "measured",
+      "post_change_utility_auc": {
+        "majority": 18.621898,
+        "planner": 14.132179,
+        "qd": 21.910788,
+        "random": 17.148883,
+        "scalar": 16.174804
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 51,
+        "qd_gt_planner_post_change_utility_auc": 100,
+        "qd_gt_random_post_change_utility_auc": 100,
+        "qd_gt_scalar_post_change_utility_auc": 100
+      },
+      "retained_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.247591,
+        "scalar": 0.000546
+      }
+    },
+    {
+      "catastrophic_seeds": {
+        "majority": 43,
+        "planner": 100,
+        "qd": 0,
+        "random": 0,
+        "scalar": 37
+      },
+      "defect_cost": 0.0,
+      "delivered_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "false_accept_rate": {
+        "majority": 0.441966,
+        "planner": 0.460071,
+        "qd": 0.451065,
+        "random": 0.447647,
+        "scalar": 0.443508
+      },
+      "panel": "stress",
+      "post_change_utility_auc": {
+        "majority": 18.724284,
+        "planner": 14.155496,
+        "qd": 21.715453,
+        "random": 17.687337,
+        "scalar": 16.118088
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 52,
+        "qd_gt_planner_post_change_utility_auc": 100,
+        "qd_gt_random_post_change_utility_auc": 100,
+        "qd_gt_scalar_post_change_utility_auc": 100
+      },
+      "retained_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.000156,
+        "random": 0.567793,
+        "scalar": 0.005024
+      }
+    },
+    {
+      "catastrophic_seeds": {
+        "majority": 43,
+        "planner": 100,
+        "qd": 0,
+        "random": 0,
+        "scalar": 38
+      },
+      "defect_cost": 0.25,
+      "delivered_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "false_accept_rate": {
+        "majority": 0.441966,
+        "planner": 0.460071,
+        "qd": 0.449891,
+        "random": 0.447647,
+        "scalar": 0.440386
+      },
+      "panel": "stress",
+      "post_change_utility_auc": {
+        "majority": 18.724284,
+        "planner": 14.155496,
+        "qd": 21.716597,
+        "random": 17.687337,
+        "scalar": 16.130126
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 52,
+        "qd_gt_planner_post_change_utility_auc": 100,
+        "qd_gt_random_post_change_utility_auc": 100,
+        "qd_gt_scalar_post_change_utility_auc": 100
+      },
+      "retained_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.000313,
+        "random": 0.567793,
+        "scalar": 0.005735
+      }
+    },
+    {
+      "catastrophic_seeds": {
+        "majority": 43,
+        "planner": 100,
+        "qd": 0,
+        "random": 0,
+        "scalar": 38
+      },
+      "defect_cost": 0.5,
+      "delivered_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "false_accept_rate": {
+        "majority": 0.441966,
+        "planner": 0.460071,
+        "qd": 0.449891,
+        "random": 0.447647,
+        "scalar": 0.440886
+      },
+      "panel": "stress",
+      "post_change_utility_auc": {
+        "majority": 18.724284,
+        "planner": 14.155496,
+        "qd": 21.716597,
+        "random": 17.687337,
+        "scalar": 16.123344
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 52,
+        "qd_gt_planner_post_change_utility_auc": 100,
+        "qd_gt_random_post_change_utility_auc": 100,
+        "qd_gt_scalar_post_change_utility_auc": 100
+      },
+      "retained_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.000313,
+        "random": 0.567793,
+        "scalar": 0.005252
+      }
+    },
+    {
+      "catastrophic_seeds": {
+        "majority": 43,
+        "planner": 100,
+        "qd": 0,
+        "random": 0,
+        "scalar": 33
+      },
+      "defect_cost": 0.75,
+      "delivered_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0006,
+        "scalar": 0.0
+      },
+      "false_accept_rate": {
+        "majority": 0.441966,
+        "planner": 0.460071,
+        "qd": 0.450219,
+        "random": 0.447647,
+        "scalar": 0.445481
+      },
+      "panel": "stress",
+      "post_change_utility_auc": {
+        "majority": 18.724284,
+        "planner": 14.155496,
+        "qd": 21.717051,
+        "random": 17.67327,
+        "scalar": 16.130191
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 52,
+        "qd_gt_planner_post_change_utility_auc": 100,
+        "qd_gt_random_post_change_utility_auc": 100,
+        "qd_gt_scalar_post_change_utility_auc": 100
+      },
+      "retained_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.000313,
+        "random": 0.567793,
+        "scalar": 0.004362
+      }
+    },
+    {
+      "catastrophic_seeds": {
+        "majority": 43,
+        "planner": 100,
+        "qd": 0,
+        "random": 94,
+        "scalar": 51
+      },
+      "defect_cost": 1.0,
+      "delivered_defect_rate": {
+        "majority": 0.002,
+        "planner": 0.0096,
+        "qd": 0.0226,
+        "random": 0.208,
+        "scalar": 0.0118
+      },
+      "false_accept_rate": {
+        "majority": 0.440477,
+        "planner": 0.45369,
+        "qd": 0.451068,
+        "random": 0.447647,
+        "scalar": 0.443709
+      },
+      "panel": "stress",
+      "post_change_utility_auc": {
+        "majority": 18.701218,
+        "planner": 14.088093,
+        "qd": 21.685199,
+        "random": 13.962203,
+        "scalar": 15.956249
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 51,
+        "qd_gt_planner_post_change_utility_auc": 100,
+        "qd_gt_random_post_change_utility_auc": 100,
+        "qd_gt_scalar_post_change_utility_auc": 100
+      },
+      "retained_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.000156,
+        "random": 0.567793,
+        "scalar": 0.006593
+      }
+    }
+  ],
+  "configuration": {
+    "agents": 50,
+    "bins": 8,
+    "catastrophe_utility_auc_threshold": 16.0,
+    "change_at": 25,
+    "defect_costs": [
+      0.0,
+      0.25,
+      0.5,
+      0.75,
+      1.0
+    ],
+    "defect_provenance": {
+      "channel": "E027 latent-defect propagation channel",
+      "default_cost": 1.0,
+      "evidence_level": "synthetic mechanism; no defect cost is measured anywhere",
+      "gap_closed": "E024 and E026 rank candidates with utility() and robust_quality(), both of which consult viable() directly. A falsely accepted artifact therefore scores 0.0 and is silently discarded by the same predicate the verifier panel was meant to enforce, so verifier error cannot reach the outcome metric.",
+      "knob": "defect cost in [0, 1]",
+      "knob_meaning": "the fraction of a latent defect's apparent quality that the system's own selection machinery still credits, i.e. how far the defect stays latent past the acceptance gate",
+      "knob_one_means": "no free oracle anywhere: the system trusts its verifier panel completely, which is the only assumption-free setting",
+      "knob_zero_means": "exactly the E024/E026 behaviour: the search operator holds a free viability oracle and discards a falsely accepted artifact for nothing",
+      "mechanism": "selection, retention and delivery rank candidates by apparent quality -- the quality a system can observe once its verifier panel has accepted an artifact -- while the trace scores the delivered artifact by ground truth. A falsely accepted non-viable artifact is credited `cost` times its apparent quality, so it can displace an incumbent, occupy an archive niche, be drawn as a parent, and be shipped; when it is shipped it delivers 0.0.",
+      "motivating_result": "experiments/E026-imperfect-verifier-panel.md",
+      "why_the_default_is_the_extreme": "cost 1.0 adds no parameter. Every value below it hands the search operator ground-truth viability information that no real system has, so the knob is a dial back toward E024's optimistic assumption rather than a dial tuned to manufacture an effect."
+    },
+    "evaluation_budget_per_strategy_per_seed": 2500,
+    "generations": 50,
+    "panels": {
+      "independent": {
+        "accuracy": 0.7956,
+        "correlation": 0.0,
+        "dependence": "item-difficulty",
+        "quorum": 0.5,
+        "verifiers": 25
+      },
+      "measured": {
+        "accuracy": 0.7956,
+        "blind_spot": 0.0556,
+        "correlation": 0.4513,
+        "dependence": "item-difficulty",
+        "quorum": 0.5,
+        "verifiers": 25
+      },
+      "perfect": {
+        "accuracy": 1.0,
+        "correlation": 0.0,
+        "dependence": "shared-shock",
+        "quorum": 0.5,
+        "verifiers": 1
+      },
+      "stress": {
+        "accuracy": 0.55,
+        "blind_spot": 0.4,
+        "correlation": 0.9,
+        "dependence": "item-difficulty",
+        "quorum": 0.5,
+        "verifiers": 25
+      }
+    },
+    "post_change_horizon": 25,
+    "seed_start": 0,
+    "seeds": 100
+  },
+  "experiment": "defect-propagation-panel-by-cost-matrix-v1",
+  "experiment_id": "E027",
+  "limitations": [
+    "Every cell is the same synthetic landscape; only the verifier-panel parameters are measured, and the defect cost is not measured at all.",
+    "The defect cost is a swept dial, not a fitted quantity. Reading one column of this matrix as 'the' answer would be exactly the free-parameter mistake the sweep exists to prevent.",
+    "Cost 0.0 reproduces the E024/E026 behaviour by construction, so the cost-0.0 column is a control rather than an independent confirmation.",
+    "The perfect-panel rows cannot vary with cost: a panel that never accepts a non-viable candidate never creates a defect for the channel to propagate. They are a null control.",
+    "Catastrophe counts use E024's threshold of 0.64 of the post-change horizon; a different threshold would move the counts but not the ordering.",
+    "The matrix reports means and counts over 100 seeds per cell; it does not report a paired significance test across cells."
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "accepted_but_non_viable": 0,
+  "archive_size": 64,
+  "defect_channel": {
+    "cost": 0.0,
+    "mechanism": "selection, retention and delivery rank candidates by apparent quality -- the quality a system can observe once its verifier panel has accepted an artifact -- while the trace scores the delivered artifact by ground truth. A falsely accepted non-viable artifact is credited `cost` times its apparent quality, so it can displace an incumbent, occupy an archive niche, be drawn as a parent, and be shipped; when it is shipped it delivers 0.0."
+  },
+  "defects_entered_archive": 0,
+  "defects_evicting_a_viable_incumbent": 0,
+  "experiment_id": "E027",
+  "generations": 50,
+  "generations_delivering_a_defect": 0,
+  "non_viable_in_final_archive": 0,
+  "panel": {
+    "accuracy": 1.0,
+    "correlation": 0.0,
+    "dependence": "shared-shock",
+    "quorum": 0.5,
+    "verifiers": 1
+  },
+  "peak_defects_in_archive": 0,
+  "seed": 7,
+  "selection_as_free_verifier": {
+    "accepted_defects": 0,
+    "accepted_viable": 2228,
+    "auroc": 0.0,
+    "statistic": "AUROC of apparent robust quality as a viability classifier, over this seed's accepted candidates",
+    "why_it_matters": "an AUROC above 0.5 means the archive's own quality comparison is already a partial verifier, so the archive is protected from accepted defects by the landscape and not only by retained diversity"
+  },
+  "verification_accepts": 2228,
+  "verification_attempts": 2500
+}

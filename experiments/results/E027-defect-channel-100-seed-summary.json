@@ -1,0 +1,726 @@
+{
+  "aggregate": {
+    "majority": {
+      "archive_size": {
+        "ci95_high": 0.0,
+        "ci95_low": 0.0,
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0,
+        "n": 100,
+        "stdev": 0.0
+      },
+      "delivered_defect_rate": {
+        "ci95_high": 0.001572,
+        "ci95_low": 2.8e-05,
+        "max": 0.02,
+        "mean": 0.0008,
+        "min": 0.0,
+        "n": 100,
+        "stdev": 0.003939
+      },
+      "false_accept_rate": {
+        "ci95_high": 0.177856,
+        "ci95_low": 0.150892,
+        "max": 0.40625,
+        "mean": 0.164374,
+        "min": 0.03125,
+        "n": 100,
+        "stdev": 0.068785
+      },
+      "false_reject_rate": {
+        "ci95_high": 0.172939,
+        "ci95_low": 0.169865,
+        "max": 0.197326,
+        "mean": 0.171402,
+        "min": 0.15297,
+        "n": 100,
+        "stdev": 0.007841
+      },
+      "final_best": {
+        "ci95_high": 0.774516,
+        "ci95_low": 0.7116,
+        "max": 0.899997,
+        "mean": 0.743058,
+        "min": 0.536404,
+        "n": 100,
+        "stdev": 0.1605
+      },
+      "panel_disagreement_rate": {
+        "ci95_high": 0.46956,
+        "ci95_low": 0.466056,
+        "max": 0.4872,
+        "mean": 0.467808,
+        "min": 0.4444,
+        "n": 100,
+        "stdev": 0.008941
+      },
+      "post_change_immediate": {
+        "ci95_high": 0.77748,
+        "ci95_low": 0.715937,
+        "max": 0.899997,
+        "mean": 0.746709,
+        "min": 0.525498,
+        "n": 100,
+        "stdev": 0.156996
+      },
+      "post_change_mean": {
+        "ci95_high": 0.775957,
+        "ci95_low": 0.713795,
+        "max": 0.899997,
+        "mean": 0.744876,
+        "min": 0.526371,
+        "n": 100,
+        "stdev": 0.158578
+      },
+      "post_change_regret_auc": {
+        "ci95_high": 7.155133,
+        "ci95_low": 5.601071,
+        "max": 11.840732,
+        "mean": 6.378102,
+        "min": 2.500078,
+        "n": 100,
+        "stdev": 3.964445
+      },
+      "post_change_utility_auc": {
+        "ci95_high": 19.398929,
+        "ci95_low": 17.844867,
+        "max": 22.499922,
+        "mean": 18.621898,
+        "min": 13.159268,
+        "n": 100,
+        "stdev": 3.964445
+      },
+      "pre_change_best": {
+        "ci95_high": 0.76,
+        "ci95_low": 0.732126,
+        "max": 0.821986,
+        "mean": 0.746063,
+        "min": 0.669258,
+        "n": 100,
+        "stdev": 0.071106
+      },
+      "retained_defect_rate": {
+        "ci95_high": 0.0,
+        "ci95_low": 0.0,
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0,
+        "n": 100,
+        "stdev": 0.0
+      },
+      "verification_accepts": {
+        "ci95_high": 2050.865234,
+        "ci95_low": 2041.234766,
+        "max": 2089.0,
+        "mean": 2046.05,
+        "min": 1904.0,
+        "n": 100,
+        "stdev": 24.567522
+      }
+    },
+    "planner": {
+      "archive_size": {
+        "ci95_high": 0.0,
+        "ci95_low": 0.0,
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0,
+        "n": 100,
+        "stdev": 0.0
+      },
+      "delivered_defect_rate": {
+        "ci95_high": 0.002024,
+        "ci95_low": -2.4e-05,
+        "max": 0.04,
+        "mean": 0.001,
+        "min": 0.0,
+        "n": 100,
+        "stdev": 0.005222
+      },
+      "false_accept_rate": {
+        "ci95_high": 0.173603,
+        "ci95_low": 0.151868,
+        "max": 0.323529,
+        "mean": 0.162735,
+        "min": 0.035714,
+        "n": 100,
+        "stdev": 0.055446
+      },
+      "false_reject_rate": {
+        "ci95_high": 0.174541,
+        "ci95_low": 0.171627,
+        "max": 0.191558,
+        "mean": 0.173084,
+        "min": 0.149616,
+        "n": 100,
+        "stdev": 0.007432
+      },
+      "final_best": {
+        "ci95_high": 0.566963,
+        "ci95_low": 0.559956,
+        "max": 0.629207,
+        "mean": 0.56346,
+        "min": 0.520924,
+        "n": 100,
+        "stdev": 0.017875
+      },
+      "panel_disagreement_rate": {
+        "ci95_high": 0.468901,
+        "ci95_low": 0.464931,
+        "max": 0.488,
+        "mean": 0.466916,
+        "min": 0.4376,
+        "n": 100,
+        "stdev": 0.010127
+      },
+      "post_change_immediate": {
+        "ci95_high": 0.571848,
+        "ci95_low": 0.561004,
+        "max": 0.649456,
+        "mean": 0.566426,
+        "min": 0.494392,
+        "n": 100,
+        "stdev": 0.027664
+      },
+      "post_change_mean": {
+        "ci95_high": 0.569417,
+        "ci95_low": 0.561157,
+        "max": 0.646595,
+        "mean": 0.565287,
+        "min": 0.508806,
+        "n": 100,
+        "stdev": 0.02107
+      },
+      "post_change_regret_auc": {
+        "ci95_high": 10.971065,
+        "ci95_low": 10.764578,
+        "max": 12.279859,
+        "mean": 10.867821,
+        "min": 8.835125,
+        "n": 100,
+        "stdev": 0.526752
+      },
+      "post_change_utility_auc": {
+        "ci95_high": 14.235422,
+        "ci95_low": 14.028935,
+        "max": 16.164875,
+        "mean": 14.132179,
+        "min": 12.720141,
+        "n": 100,
+        "stdev": 0.526752
+      },
+      "pre_change_best": {
+        "ci95_high": 0.821615,
+        "ci95_low": 0.821449,
+        "max": 0.821973,
+        "mean": 0.821532,
+        "min": 0.819703,
+        "n": 100,
+        "stdev": 0.000423
+      },
+      "retained_defect_rate": {
+        "ci95_high": 0.0,
+        "ci95_low": 0.0,
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0,
+        "n": 100,
+        "stdev": 0.0
+      },
+      "verification_accepts": {
+        "ci95_high": 2037.880598,
+        "ci95_low": 2023.559402,
+        "max": 2106.0,
+        "mean": 2030.72,
+        "min": 1859.0,
+        "n": 100,
+        "stdev": 36.533665
+      }
+    },
+    "qd": {
+      "archive_size": {
+        "ci95_high": 64.0,
+        "ci95_low": 64.0,
+        "max": 64.0,
+        "mean": 64.0,
+        "min": 64.0,
+        "n": 100,
+        "stdev": 0.0
+      },
+      "delivered_defect_rate": {
+        "ci95_high": 0.004331,
+        "ci95_low": 0.000869,
+        "max": 0.04,
+        "mean": 0.0026,
+        "min": 0.0,
+        "n": 100,
+        "stdev": 0.008833
+      },
+      "false_accept_rate": {
+        "ci95_high": 0.177009,
+        "ci95_low": 0.168193,
+        "max": 0.223368,
+        "mean": 0.172601,
+        "min": 0.09699,
+        "n": 100,
+        "stdev": 0.022489
+      },
+      "false_reject_rate": {
+        "ci95_high": 0.173366,
+        "ci95_low": 0.17006,
+        "max": 0.191892,
+        "mean": 0.171713,
+        "min": 0.152771,
+        "n": 100,
+        "stdev": 0.008435
+      },
+      "final_best": {
+        "ci95_high": 0.887048,
+        "ci95_low": 0.882688,
+        "max": 0.899987,
+        "mean": 0.884868,
+        "min": 0.854983,
+        "n": 100,
+        "stdev": 0.011124
+      },
+      "panel_disagreement_rate": {
+        "ci95_high": 0.4701,
+        "ci95_low": 0.465908,
+        "max": 0.492,
+        "mean": 0.468004,
+        "min": 0.4416,
+        "n": 100,
+        "stdev": 0.010693
+      },
+      "post_change_immediate": {
+        "ci95_high": 0.869365,
+        "ci95_low": 0.86232,
+        "max": 0.899465,
+        "mean": 0.865842,
+        "min": 0.824129,
+        "n": 100,
+        "stdev": 0.017973
+      },
+      "post_change_mean": {
+        "ci95_high": 0.878833,
+        "ci95_low": 0.87403,
+        "max": 0.899465,
+        "mean": 0.876432,
+        "min": 0.841608,
+        "n": 100,
+        "stdev": 0.012254
+      },
+      "post_change_regret_auc": {
+        "ci95_high": 3.149256,
+        "ci95_low": 3.029167,
+        "max": 3.95979,
+        "mean": 3.089212,
+        "min": 2.51338,
+        "n": 100,
+        "stdev": 0.306349
+      },
+      "post_change_utility_auc": {
+        "ci95_high": 21.970833,
+        "ci95_low": 21.850744,
+        "max": 22.48662,
+        "mean": 21.910788,
+        "min": 21.04021,
+        "n": 100,
+        "stdev": 0.306349
+      },
+      "pre_change_best": {
+        "ci95_high": 0.804725,
+        "ci95_low": 0.801952,
+        "max": 0.819726,
+        "mean": 0.803338,
+        "min": 0.784344,
+        "n": 100,
+        "stdev": 0.007074
+      },
+      "retained_defect_rate": {
+        "ci95_high": 0.0,
+        "ci95_low": 0.0,
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0,
+        "n": 100,
+        "stdev": 0.0
+      },
+      "verification_accepts": {
+        "ci95_high": 1865.147488,
+        "ci95_low": 1855.232512,
+        "max": 1928.0,
+        "mean": 1860.19,
+        "min": 1793.0,
+        "n": 100,
+        "stdev": 25.293308
+      }
+    },
+    "random": {
+      "archive_size": {
+        "ci95_high": 0.0,
+        "ci95_low": 0.0,
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0,
+        "n": 100,
+        "stdev": 0.0
+      },
+      "delivered_defect_rate": {
+        "ci95_high": 0.065626,
+        "ci95_low": 0.053574,
+        "max": 0.14,
+        "mean": 0.0596,
+        "min": 0.0,
+        "n": 100,
+        "stdev": 0.030746
+      },
+      "false_accept_rate": {
+        "ci95_high": 0.173842,
+        "ci95_low": 0.169742,
+        "max": 0.195187,
+        "mean": 0.171792,
+        "min": 0.143924,
+        "n": 100,
+        "stdev": 0.01046
+      },
+      "false_reject_rate": {
+        "ci95_high": 0.172291,
+        "ci95_low": 0.16779,
+        "max": 0.197305,
+        "mean": 0.17004,
+        "min": 0.1417,
+        "n": 100,
+        "stdev": 0.011482
+      },
+      "final_best": {
+        "ci95_high": 0.734885,
+        "ci95_low": 0.662175,
+        "max": 0.870107,
+        "mean": 0.69853,
+        "min": 0.0,
+        "n": 100,
+        "stdev": 0.185482
+      },
+      "panel_disagreement_rate": {
+        "ci95_high": 0.468591,
+        "ci95_low": 0.464761,
+        "max": 0.4912,
+        "mean": 0.466676,
+        "min": 0.4392,
+        "n": 100,
+        "stdev": 0.00977
+      },
+      "post_change_immediate": {
+        "ci95_high": 0.730093,
+        "ci95_low": 0.664253,
+        "max": 0.844908,
+        "mean": 0.697173,
+        "min": 0.0,
+        "n": 100,
+        "stdev": 0.167957
+      },
+      "post_change_mean": {
+        "ci95_high": 0.692732,
+        "ci95_low": 0.679178,
+        "max": 0.756079,
+        "mean": 0.685955,
+        "min": 0.59282,
+        "n": 100,
+        "stdev": 0.034577
+      },
+      "post_change_regret_auc": {
+        "ci95_high": 8.020546,
+        "ci95_low": 7.681689,
+        "max": 10.17949,
+        "mean": 7.851117,
+        "min": 6.098024,
+        "n": 100,
+        "stdev": 0.86443
+      },
+      "post_change_utility_auc": {
+        "ci95_high": 17.318311,
+        "ci95_low": 16.979454,
+        "max": 18.901976,
+        "mean": 17.148883,
+        "min": 14.82051,
+        "n": 100,
+        "stdev": 0.86443
+      },
+      "pre_change_best": {
+        "ci95_high": 0.693461,
+        "ci95_low": 0.63805,
+        "max": 0.755244,
+        "mean": 0.665755,
+        "min": 0.0,
+        "n": 100,
+        "stdev": 0.141355
+      },
+      "retained_defect_rate": {
+        "ci95_high": 0.26665,
+        "ci95_low": 0.228532,
+        "max": 0.529412,
+        "mean": 0.247591,
+        "min": 0.0,
+        "n": 100,
+        "stdev": 0.097238
+      },
+      "verification_accepts": {
+        "ci95_high": 1091.806585,
+        "ci95_low": 1081.493415,
+        "max": 1145.0,
+        "mean": 1086.65,
+        "min": 1019.0,
+        "n": 100,
+        "stdev": 26.309109
+      }
+    },
+    "scalar": {
+      "archive_size": {
+        "ci95_high": 0.0,
+        "ci95_low": 0.0,
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0,
+        "n": 100,
+        "stdev": 0.0
+      },
+      "delivered_defect_rate": {
+        "ci95_high": 0.002024,
+        "ci95_low": -2.4e-05,
+        "max": 0.04,
+        "mean": 0.001,
+        "min": 0.0,
+        "n": 100,
+        "stdev": 0.005222
+      },
+      "false_accept_rate": {
+        "ci95_high": 0.177937,
+        "ci95_low": 0.158651,
+        "max": 0.294118,
+        "mean": 0.168294,
+        "min": 0.021739,
+        "n": 100,
+        "stdev": 0.0492
+      },
+      "false_reject_rate": {
+        "ci95_high": 0.173563,
+        "ci95_low": 0.1707,
+        "max": 0.189832,
+        "mean": 0.172132,
+        "min": 0.150204,
+        "n": 100,
+        "stdev": 0.007306
+      },
+      "final_best": {
+        "ci95_high": 0.647057,
+        "ci95_low": 0.638727,
+        "max": 0.692642,
+        "mean": 0.642892,
+        "min": 0.57233,
+        "n": 100,
+        "stdev": 0.02125
+      },
+      "panel_disagreement_rate": {
+        "ci95_high": 0.471419,
+        "ci95_low": 0.467781,
+        "max": 0.4904,
+        "mean": 0.4696,
+        "min": 0.4424,
+        "n": 100,
+        "stdev": 0.009278
+      },
+      "post_change_immediate": {
+        "ci95_high": 0.652718,
+        "ci95_low": 0.642221,
+        "max": 0.701343,
+        "mean": 0.647469,
+        "min": 0.582435,
+        "n": 100,
+        "stdev": 0.026779
+      },
+      "post_change_mean": {
+        "ci95_high": 0.650848,
+        "ci95_low": 0.643137,
+        "max": 0.681514,
+        "mean": 0.646992,
+        "min": 0.605533,
+        "n": 100,
+        "stdev": 0.019671
+      },
+      "post_change_regret_auc": {
+        "ci95_high": 8.921584,
+        "ci95_low": 8.728808,
+        "max": 9.861676,
+        "mean": 8.825196,
+        "min": 7.962154,
+        "n": 100,
+        "stdev": 0.491777
+      },
+      "post_change_utility_auc": {
+        "ci95_high": 16.271192,
+        "ci95_low": 16.078416,
+        "max": 17.037846,
+        "mean": 16.174804,
+        "min": 15.138324,
+        "n": 100,
+        "stdev": 0.491777
+      },
+      "pre_change_best": {
+        "ci95_high": 0.821402,
+        "ci95_low": 0.821217,
+        "max": 0.821947,
+        "mean": 0.82131,
+        "min": 0.819891,
+        "n": 100,
+        "stdev": 0.000471
+      },
+      "retained_defect_rate": {
+        "ci95_high": 0.001159,
+        "ci95_low": -6.6e-05,
+        "max": 0.018868,
+        "mean": 0.000546,
+        "min": 0.0,
+        "n": 100,
+        "stdev": 0.003124
+      },
+      "verification_accepts": {
+        "ci95_high": 2023.68283,
+        "ci95_low": 2012.35717,
+        "max": 2091.0,
+        "mean": 2018.02,
+        "min": 1901.0,
+        "n": 100,
+        "stdev": 28.89199
+      }
+    }
+  },
+  "catastrophic_seeds": {
+    "by_strategy": {
+      "majority": {
+        "rate": 0.44,
+        "seeds": 44,
+        "trials": 100
+      },
+      "planner": {
+        "rate": 0.99,
+        "seeds": 99,
+        "trials": 100
+      },
+      "qd": {
+        "rate": 0.0,
+        "seeds": 0,
+        "trials": 100
+      },
+      "random": {
+        "rate": 0.12,
+        "seeds": 12,
+        "trials": 100
+      },
+      "scalar": {
+        "rate": 0.37,
+        "seeds": 37,
+        "trials": 100
+      }
+    },
+    "definition": "post_change_utility_auc below CATASTROPHE_FRACTION of the post-change horizon",
+    "fraction_of_horizon": 0.64,
+    "post_change_horizon": 25,
+    "utility_auc_threshold": 16.0
+  },
+  "configuration": {
+    "agents": 50,
+    "bins": 8,
+    "change_at": 25,
+    "defect_channel": {
+      "cost": 1.0,
+      "mechanism": "selection, retention and delivery rank candidates by apparent quality -- the quality a system can observe once its verifier panel has accepted an artifact -- while the trace scores the delivered artifact by ground truth. A falsely accepted non-viable artifact is credited `cost` times its apparent quality, so it can displace an incumbent, occupy an archive niche, be drawn as a parent, and be shipped; when it is shipped it delivers 0.0."
+    },
+    "defect_provenance": {
+      "channel": "E027 latent-defect propagation channel",
+      "default_cost": 1.0,
+      "evidence_level": "synthetic mechanism; no defect cost is measured anywhere",
+      "gap_closed": "E024 and E026 rank candidates with utility() and robust_quality(), both of which consult viable() directly. A falsely accepted artifact therefore scores 0.0 and is silently discarded by the same predicate the verifier panel was meant to enforce, so verifier error cannot reach the outcome metric.",
+      "knob": "defect cost in [0, 1]",
+      "knob_meaning": "the fraction of a latent defect's apparent quality that the system's own selection machinery still credits, i.e. how far the defect stays latent past the acceptance gate",
+      "knob_one_means": "no free oracle anywhere: the system trusts its verifier panel completely, which is the only assumption-free setting",
+      "knob_zero_means": "exactly the E024/E026 behaviour: the search operator holds a free viability oracle and discards a falsely accepted artifact for nothing",
+      "mechanism": "selection, retention and delivery rank candidates by apparent quality -- the quality a system can observe once its verifier panel has accepted an artifact -- while the trace scores the delivered artifact by ground truth. A falsely accepted non-viable artifact is credited `cost` times its apparent quality, so it can displace an incumbent, occupy an archive niche, be drawn as a parent, and be shipped; when it is shipped it delivers 0.0.",
+      "motivating_result": "experiments/E026-imperfect-verifier-panel.md",
+      "why_the_default_is_the_extreme": "cost 1.0 adds no parameter. Every value below it hands the search operator ground-truth viability information that no real system has, so the knob is a dial back toward E024's optimistic assumption rather than a dial tuned to manufacture an effect."
+    },
+    "evaluation_budget_per_strategy_per_seed": 2500,
+    "generations": 50,
+    "panel_provenance": {
+      "dependence_shape": "beta-binomial over per-item difficulty plus a blind-spot atom",
+      "evidence_level": "measured-on-real-verifiers parameters, applied to a synthetic landscape",
+      "measured_blind_spot_lambda": 0.0556,
+      "measured_blind_spot_units": "4 of 72",
+      "measured_candidates": 72,
+      "measured_marginal_accuracy": 0.7956,
+      "measured_marginal_pairwise_correlation": 0.5873,
+      "measured_verifiers": 25,
+      "panel": "E017 partial-test-oracle panel, refit with a blind-spot atom in E020",
+      "reducible_fit_icc": 0.4513,
+      "reducible_fit_mean_error": 0.1576,
+      "shape_rejected": "shared-shock; E017 measured it 1.71x too low on panel error",
+      "source_experiments": [
+        "experiments/E017-item-difficulty-and-quorum.md",
+        "experiments/E020-quorum-frontier-under-measured-shape.md"
+      ]
+    },
+    "seed_start": 0,
+    "seeds": 100,
+    "verification": {
+      "accuracy": 0.7956,
+      "blind_spot": 0.0556,
+      "correlation": 0.4513,
+      "dependence": "item-difficulty",
+      "quorum": 0.5,
+      "verifiers": 25
+    }
+  },
+  "experiment": "matched-budget-emergence-sweep-v1",
+  "experiment_id": "E024",
+  "limitations": [
+    "All candidates, goals, and verification outcomes are synthetic.",
+    "One evaluation unit is a simulator proposal plus panel decision, not measured compute, energy, or human attention.",
+    "Quality-Diversity is given the four predefined plausible goals; the Goal Graph does not yet learn from evidence.",
+    "The five strategies receive equal evaluation counts, but their internal bookkeeping costs are not measured.",
+    "The benchmark does not model churn, malicious workers, task dependencies, stigmergic traces, or post-integration defects.",
+    "The centralized planner and majority-vote swarm are single-artifact baselines by construction; their archive_size is always 0 and is not a defect.",
+    "The legacy strategy-relative recovery_generations field remains in per-seed rows but is not aggregated; post-change utility/regret AUC is the comparable adaptation measure.",
+    "The verifier panel is imperfect here; its accuracy, correlation, and blind-spot floor are taken from E017/E020 measurements of 25 real partial test oracles, but they are applied to a synthetic landscape and are not a universal constant for verification panels.",
+    "E017's oracles had strictly one-sided error (368 false accepts, 0 false rejects); this simulator's panel errs in both directions, so its false_reject_rate is a model output rather than a transferred measurement.",
+    "The blind-spot fraction lambda rests on 4 of 72 tasks (Clopper-Pearson 95%: 0.015-0.136) and is a property of that panel's blind spots, not a transferable constant.",
+    "Panel size scales verifier votes for every arm identically, so the comparison stays matched, but the extra verifier cost is counted in votes and not in wall time, energy, or human attention.",
+    "The defect-propagation channel is a synthetic mechanism. No defect cost was measured anywhere; the knob is swept across its whole range, including the zero that reproduces the E024/E026 behaviour, rather than fitted.",
+    "A latent defect costs exactly the ground-truth utility of the artifact carrying it. Rework, blast radius, remediation effort, and defects that damage artifacts other than their own are not modelled.",
+    "Defect propagation is instantaneous within a generation: there is no latency before a defect surfaces and no retroactive correction of an earlier trace point.",
+    "The channel is deliberately not neutral across arms. A single-artifact arm ships a defect for a whole generation while an archive can route around a contaminated niche; that asymmetry is the mechanism under test, not a bias to be corrected.",
+    "The channel changes what each arm retains, so the arms explore different regions than they did with the channel disarmed. Differences against E024 or E026 are the combined effect of contamination and of the altered search trajectory, which this benchmark does not separate."
+  ],
+  "pairwise_wins": {
+    "qd_gt_majority_post_change_utility_auc": {
+      "rate": 0.51,
+      "trials": 100,
+      "wins": 51
+    },
+    "qd_gt_planner_post_change_utility_auc": {
+      "rate": 1.0,
+      "trials": 100,
+      "wins": 100
+    },
+    "qd_gt_random_post_change_utility_auc": {
+      "rate": 1.0,
+      "trials": 100,
+      "wins": 100
+    },
+    "qd_gt_scalar_post_change_utility_auc": {
+      "rate": 1.0,
+      "trials": 100,
+      "wins": 100
+    }
+  }
+}

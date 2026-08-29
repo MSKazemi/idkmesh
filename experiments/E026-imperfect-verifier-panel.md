@@ -203,6 +203,19 @@ supposed to enforce. A false *reject* is merely one lost draw from a
 names "post-integration defects" as out of scope; E026 shows that this omission
 is not a minor caveat but the thing that decides the experiment's answer.
 
+> **Closed by E027.** [`E027-defect-propagation.md`](E027-defect-propagation.md)
+> supplies the missing channel and re-runs this comparison through it. Two
+> corrections to the reading above follow from it. First, the mechanism was
+> slightly narrower than stated: defects *did* already drop into empty archive
+> niches under E026, because an empty niche accepts unconditionally — they were
+> simply worth `0.0`, so they never displaced anything and never shipped.
+> Second, the channel is not what carries the whole story. Once the free
+> viability oracle is removed, apparent quality alone still separates viable
+> from non-viable candidates at AUROC ~0.94 among accepted candidates, so the
+> archive's own quality comparison is a second verifier. E026's `0` in the
+> "non-viable in the final archive" column is reproduced by E027's cost-`0.0`
+> column exactly, which is how E027's knob is anchored.
+
 One secondary result is worth recording. The shared-shock row above reports a
 false-accept rate of 0.1204 where the measured shape gives 0.1725 — the rejected
 model understates panel error by **1.43x** at the same nominal correlation,
@@ -221,6 +234,10 @@ reproducing E017's 1.71x finding inside a second, independent benchmark.
   contaminated archive niche, or a downstream failure — so that verifier error
   can reach the outcome metric at all. Until then, E024's benchmark should not be
   cited as evidence about verification.
+  **[E027](E027-defect-propagation.md) took that step**: an accepted defect now
+  competes on its observable merits, can evict a real solution, and delivers
+  nothing when it ships. The channel changes outcomes — random search collapses
+  — and the Quality-Diversity reliability result survives it.
 - The correlation and blind-spot machinery itself behaves as the prior results
   predict: 25 *independent* verifiers drive panel error to 0.0004 while the same
   25 at the measured correlation leave it at 0.17, and no panel size escapes the
@@ -264,3 +281,10 @@ verifier model.
 Issue #22's requirement for "independent verifiers with controllable error
 correlation" is now met mechanically. Its scientific intent is not: the arms are
 insensitive to those verifiers.
+
+**Superseded in part by [E027](E027-defect-propagation.md).** The last paragraph
+no longer holds unconditionally: with the defect channel armed the arms are
+*not* all insensitive — random search and fixed-scalar evolution are damaged
+substantially. The Quality-Diversity arm remains insensitive, and E027 measures
+why. Cite E026 for the panel model and for the diagnosis; cite E027 for what
+happens once an accepted defect costs something.
