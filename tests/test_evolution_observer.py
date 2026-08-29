@@ -152,18 +152,57 @@ class EvolutionObserverTests(unittest.TestCase):
             "body": "Refs #35 #91",
             "created_at": "2026-08-28T10:00:00Z",
             "user": {"login": "author", "type": "User"},
+            "head": {"sha": "current-head"},
         }
         reviews = [
-            {"state": "APPROVED", "user": {"login": "author", "type": "User"}},
-            {"state": "APPROVED", "user": {"login": "ci-bot[bot]", "type": "Bot"}},
-            {"state": "COMMENTED", "user": {"login": "reviewer-one", "type": "User"}},
-            {"state": "APPROVED", "user": {"login": "reviewer-two", "type": "User"}},
+            {"state": "APPROVED", "commit_id": "current-head", "user": {"login": "author", "type": "User"}},
+            {"state": "APPROVED", "commit_id": "current-head", "user": {"login": "ci-bot[bot]", "type": "Bot"}},
+            {"state": "COMMENTED", "commit_id": "current-head", "user": {"login": "reviewer-one", "type": "User"}},
+            {"state": "APPROVED", "commit_id": "current-head", "user": {"login": "reviewer-two", "type": "User"}},
+            {"state": "APPROVED", "commit_id": "stale-head", "user": {"login": "reviewer-three", "type": "User"}},
         ]
         now = evolution_snapshot.datetime(2026, 8, 28, 16, tzinfo=evolution_snapshot.timezone.utc)
         normalized = evolution_snapshot._normalize_pr(item, now, reviews)
         self.assertEqual(normalized["references"], [35, 91])
-        self.assertEqual(normalized["independent_review_count"], 2)
+        self.assertEqual(normalized["independent_review_count"], 1)
         self.assertEqual(normalized["independent_approval_count"], 1)
+
+    def test_current_head_changes_requested_is_review_evidence_but_not_approval(self):
+        item = {
+            "number": 78,
+            "draft": False,
+            "labels": [],
+            "body": "",
+            "created_at": "2026-08-28T10:00:00Z",
+            "user": {"login": "author", "type": "User"},
+            "head": {"sha": "current-head"},
+        }
+        reviews = [
+            {"state": "CHANGES_REQUESTED", "commit_id": "current-head", "user": {"login": "reviewer", "type": "User"}},
+        ]
+        now = evolution_snapshot.datetime(2026, 8, 28, 16, tzinfo=evolution_snapshot.timezone.utc)
+        normalized = evolution_snapshot._normalize_pr(item, now, reviews)
+        self.assertEqual(normalized["independent_review_count"], 1)
+        self.assertEqual(normalized["independent_approval_count"], 0)
+
+    def test_latest_current_head_review_state_controls_evidence(self):
+        item = {
+            "number": 79,
+            "draft": False,
+            "labels": [],
+            "body": "",
+            "created_at": "2026-08-28T10:00:00Z",
+            "user": {"login": "author", "type": "User"},
+            "head": {"sha": "current-head"},
+        }
+        reviews = [
+            {"id": 1, "state": "APPROVED", "commit_id": "current-head", "submitted_at": "2026-08-28T11:00:00Z", "user": {"login": "reviewer", "type": "User"}},
+            {"id": 2, "state": "DISMISSED", "commit_id": "current-head", "submitted_at": "2026-08-28T12:00:00Z", "user": {"login": "reviewer", "type": "User"}},
+        ]
+        now = evolution_snapshot.datetime(2026, 8, 28, 16, tzinfo=evolution_snapshot.timezone.utc)
+        normalized = evolution_snapshot._normalize_pr(item, now, reviews)
+        self.assertEqual(normalized["independent_review_count"], 0)
+        self.assertEqual(normalized["independent_approval_count"], 0)
 
     def test_workflow_pin_scan_detects_floating_and_pinned_actions(self):
         with tempfile.TemporaryDirectory() as tmp:

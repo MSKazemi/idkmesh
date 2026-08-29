@@ -174,15 +174,30 @@ def _normalize_issue(item: dict[str, Any], now: datetime) -> dict[str, Any]:
 
 def _normalize_pr(item: dict[str, Any], now: datetime, reviews: list[dict[str, Any]]) -> dict[str, Any]:
     author = ((item.get("user") or {}).get("login") or "").lower()
+    head_sha = str((item.get("head") or {}).get("sha") or "")
     independent_reviewers: set[str] = set()
     independent_approvers: set[str] = set()
+    latest_by_reviewer: dict[str, tuple[tuple[str, int], dict[str, Any]]] = {}
     for review in reviews:
         user = review.get("user") or {}
         login = (user.get("login") or "").lower()
         if not login or login == author or _is_bot(login, user.get("type")):
             continue
+        if not head_sha or str(review.get("commit_id") or "") != head_sha:
+            continue
+        review_id = review.get("id")
+        order = (
+            str(review.get("submitted_at") or ""),
+            review_id if isinstance(review_id, int) and not isinstance(review_id, bool) else 0,
+        )
+        if login not in latest_by_reviewer or order >= latest_by_reviewer[login][0]:
+            latest_by_reviewer[login] = (order, review)
+    for login, (_, review) in latest_by_reviewer.items():
+        state = str(review.get("state") or "").upper()
+        if state not in {"APPROVED", "CHANGES_REQUESTED"}:
+            continue
         independent_reviewers.add(login)
-        if str(review.get("state") or "").upper() == "APPROVED":
+        if state == "APPROVED":
             independent_approvers.add(login)
     return {
         "number": int(item["number"]),

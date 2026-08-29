@@ -271,23 +271,32 @@ The evolution workflow therefore uses a read-only checkpoint protocol:
 
 ```text
 trusted main run N
-  -> upload evolution-checkpoint-N artifact
+  -> upload evolution-checkpoint-v2-N artifact
 
 trusted main run N+1
-  -> GitHub Actions API finds latest successful main run
+  -> GitHub Actions API finds latest successful run from an allowlisted trusted event
+  -> exact run-bound artifact + SHA-256 manifest are verified
+  -> state/ledger schema and lineage invariants are verified
   -> first-party actions/download-artifact restores checkpoint-N
   -> Bayesian update
-  -> upload evolution-checkpoint-(N+1)
+  -> upload evolution-checkpoint-v2-(N+1)
 ```
 
 Security boundary:
 
 - workflow permission remains `contents: read` + `actions: read`;
-- PR runs may generate evidence artifacts but are not accepted as the trusted source of future `main` state;
+- ordinary PR runs may generate evidence artifacts but their event type is explicitly excluded from checkpoint selection;
+- exact artifact names, run/head/event provenance, parent run, file sizes, and SHA-256 digests are bound in a manifest;
+- a selected checkpoint that is missing, unavailable, malformed, or inconsistent fails the run rather than resetting history to seed;
 - no repository file is autonomously committed;
 - no issue/PR is autonomously approved or merged;
 - the checked-in state remains a deterministic recovery seed;
 - the bounded JSONL ledger is retained in checkpoint artifacts.
+
+The `v2` artifact namespace is a deliberate trust-epoch boundary: legacy
+checkpoints without provenance manifests are not candidates. The first v2 run
+starts from the checked-in deterministic seed; later v2 runs preserve that
+validated lineage.
 
 This is real cross-iteration memory without bypassing issue #35's branch-protection gate.
 
@@ -312,7 +321,7 @@ On relevant pushes, PRs, manual dispatch, and a weekly schedule it:
 It now:
 
 1. observes repository events;
-2. restores only trusted-main checkpoint state where available;
+2. restores only allowlisted trusted-event checkpoint state whose exact artifact, manifest, and semantic invariants verify;
 3. converts the event to signed soft evidence;
 4. updates Bayesian beliefs;
 5. computes confidence bounds, entropy, scalar diagnostic fitness, and homeostatic potential;
