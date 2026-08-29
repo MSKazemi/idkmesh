@@ -255,6 +255,11 @@ results/evolution/EVOLUTION_REPORT.md
 
 The job summary publishes the human-readable report. These outputs are decision-support evidence, not canonical-state mutations.
 
+GitHub API rate-limit exhaustion is an explicit unavailable observation, not a
+negative repository result or an implementation failure. In that state the job
+records a blocked summary and publishes no decision, recommendation, or Bayesian
+checkpoint. Other HTTP and authorization failures remain hard workflow failures.
+
 ## Hard external gates
 
 The Observatory must remain fail-closed around capabilities it cannot enforce itself:
