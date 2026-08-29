@@ -1,0 +1,143 @@
+{
+  "schema_version": "0.1.0",
+  "dataset_id": "idkmesh-routing-replay-illustrative-v0",
+  "repository": {
+    "full_name": "MSKazemi/idkmesh",
+    "source_url": "https://github.com/MSKazemi/idkmesh",
+    "captured_at": "2026-08-28T14:59:00Z"
+  },
+  "annotation_policy": {
+    "method": "Illustrative manual normalized annotations for demonstrating the replay format only; not historical Level-2 evidence.",
+    "hindsight_rule": "Task input features must be assigned from information available at each snapshot; later verified outcomes stay only in retrospective_outcomes.",
+    "annotator": "bootstrap research example",
+    "notes": [
+      "The feature values in this example are synthetic/illustrative and must not be cited as measurements of the real issues.",
+      "A real replay dataset should freeze source metadata and annotation rules before evaluating retrospective outcomes."
+    ]
+  },
+  "tasks": [
+    {
+      "id": "seed-24",
+      "source_ref": "https://github.com/MSKazemi/idkmesh/issues/24",
+      "skill": "community",
+      "impact": 0.68,
+      "information_gain": 0.82,
+      "review_cost": 0.12,
+      "compute_cost": 0.03,
+      "risk": 0.05,
+      "accessibility": 0.98,
+      "feature_provenance": {
+        "all_features": "illustrative manual annotation; not empirical"
+      }
+    },
+    {
+      "id": "seed-26",
+      "source_ref": "https://github.com/MSKazemi/idkmesh/issues/26",
+      "skill": "security",
+      "impact": 0.90,
+      "information_gain": 0.84,
+      "review_cost": 0.40,
+      "compute_cost": 0.08,
+      "risk": 0.48,
+      "accessibility": 0.62,
+      "feature_provenance": {
+        "all_features": "illustrative manual annotation; not empirical"
+      }
+    },
+    {
+      "id": "seed-27",
+      "source_ref": "https://github.com/MSKazemi/idkmesh/issues/27",
+      "skill": "code",
+      "impact": 0.78,
+      "information_gain": 0.91,
+      "review_cost": 0.27,
+      "compute_cost": 0.18,
+      "risk": 0.14,
+      "accessibility": 0.79,
+      "feature_provenance": {
+        "all_features": "illustrative manual annotation; not empirical"
+      }
+    }
+  ],
+  "workers": [
+    {
+      "id": "illustrative-generalist",
+      "group": "human-generalist",
+      "skills": {
+        "community": 0.75,
+        "security": 0.40,
+        "code": 0.68
+      },
+      "profile_provenance": "illustrative synthetic profile"
+    },
+    {
+      "id": "illustrative-security-agent",
+      "group": "agent-family-a",
+      "skills": {
+        "community": 0.30,
+        "security": 0.88,
+        "code": 0.62
+      },
+      "profile_provenance": "illustrative synthetic profile"
+    }
+  ],
+  "snapshots": [
+    {
+      "id": "illustrative-t0",
+      "observed_at": "2026-08-28T14:10:40Z",
+      "available_task_ids": ["seed-24", "seed-26", "seed-27"],
+      "available_worker_ids": ["illustrative-generalist", "illustrative-security-agent"],
+      "active_attempts": [],
+      "evidence": [],
+      "observed_duplicate_rate": 0.0,
+      "observed_concentration": 0.0,
+      "retrospective_outcomes": {
+        "seed-24": {"verified_utility": 0.0, "eventual_verified": false},
+        "seed-26": {"verified_utility": 0.0, "eventual_verified": false},
+        "seed-27": {"verified_utility": 0.0, "eventual_verified": false}
+      },
+      "source_refs": [
+        "https://github.com/MSKazemi/idkmesh/issues/24",
+        "https://github.com/MSKazemi/idkmesh/issues/26",
+        "https://github.com/MSKazemi/idkmesh/issues/27"
+      ]
+    },
+    {
+      "id": "illustrative-t1",
+      "observed_at": "2026-08-28T14:20:00Z",
+      "available_task_ids": ["seed-24", "seed-26", "seed-27"],
+      "available_worker_ids": ["illustrative-generalist", "illustrative-security-agent"],
+      "active_attempts": [
+        {"task_id": "seed-27", "worker_group": "agent-family-a"},
+        {"task_id": "seed-27", "worker_group": "agent-family-a"}
+      ],
+      "evidence": [
+        {
+          "task_id": "seed-24",
+          "verified": true,
+          "quality": 0.70,
+          "verification_strength": 0.80,
+          "diversity": 1.0,
+          "descendant_value": 0.72,
+          "human_review_cost": 0.12,
+          "compute_cost": 0.03,
+          "penalty": 0.0,
+          "source_ref": "illustrative evidence only"
+        }
+      ],
+      "observed_duplicate_rate": 0.45,
+      "observed_concentration": 0.65,
+      "retrospective_outcomes": {
+        "seed-24": {"verified_utility": 0.50, "eventual_verified": true},
+        "seed-26": {"verified_utility": 0.70, "eventual_verified": true},
+        "seed-27": {"verified_utility": 0.40, "eventual_verified": true}
+      },
+      "source_refs": ["illustrative example; not a historical claim"]
+    }
+  ],
+  "limitations": [
+    "Feature scores, workers, evidence, and retrospective outcomes are illustrative synthetic values.",
+    "This file demonstrates the replay contract only and is not Level-2 evidence for ACO or HSR.",
+    "A real dataset needs frozen source timestamps, defensible feature extraction/annotation, and independent review for hindsight leakage."
+  ]
+}
