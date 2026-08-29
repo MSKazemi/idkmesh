@@ -2,9 +2,22 @@
 """Matched-evaluation-budget emergence benchmark for E024.
 
 This module reuses the E011 landscape and candidate/verifier mechanics while
-giving random, fixed-scalar, and Quality-Diversity search exactly the same
-number of proposals and verification attempts.  It is a synthetic mechanism
-test, not evidence of real-world system emergence.
+giving every search strategy exactly the same number of proposals and
+verification attempts.  It is a synthetic mechanism test, not evidence of
+real-world system emergence.
+
+Issue #22 names five comparison arms.  Alongside random, fixed-scalar, and
+Quality-Diversity search this module implements the two the issue requires and
+E024 previously recorded as absent:
+
+- ``planner``  -- a centralized planner committed to one fixed objective,
+  refined by directed local search rather than by evolution;
+- ``majority`` -- a majority-vote swarm whose consensus advances only when a
+  strict majority of agents prefer a candidate under their own goal hypothesis.
+
+New strategies are appended to :data:`STRATEGIES` rather than inserted, because
+``run_seed`` derives each arm's seed from its index.  Appending keeps the
+previously published random/scalar/qd results bit-for-bit reproducible.
 """
 
 from __future__ import annotations
@@ -28,7 +41,7 @@ sys.modules[spec.name] = sim
 assert spec.loader is not None
 spec.loader.exec_module(sim)
 
-STRATEGIES = ("random", "scalar", "qd")
+STRATEGIES = ("random", "scalar", "qd", "planner", "majority")
 EXPERIMENT_ID = "E024"
 SUMMARY_METRICS = (
     "pre_change_best",
@@ -159,10 +172,103 @@ def _qd_search(
     return _summary("qd", trace, stats, len(archive), change_at, agents * generations)
 
 
+def _planner_search(
+    rng: random.Random,
+    verifier_rng: random.Random,
+    agents: int,
+    generations: int,
+    change_at: int,
+    verification: "sim.VerificationConfig",
+    bins: int,
+) -> Dict[str, object]:
+    """Centralized planner with one fixed objective (issue #22 baseline 1).
+
+    One central plan is broadcast each generation and refined by directed local
+    search.  The planner is deliberately non-evolutionary: it keeps a single
+    incumbent rather than a population, retains no diversity, and scores every
+    candidate against ``INITIAL_GOAL`` only.  Its objective never updates when
+    the true goal changes, which is the property the baseline exists to expose.
+    """
+    del bins
+    incumbent: "sim.Candidate | None" = None
+    trace: List[float] = []
+    stats = sim.VerificationStats()
+    fixed_goal = sim.INITIAL_GOAL
+
+    for generation in range(generations):
+        # The whole swarm works from the plan held at the start of the
+        # generation, so direction is centralized rather than emergent.
+        proposals = [
+            incumbent.mutate(rng) if incumbent is not None else sim.Candidate.random(rng)
+            for _ in range(agents)
+        ]
+        for candidate in proposals:
+            if not sim.verify_candidate(candidate, verifier_rng, verification, stats):
+                continue
+            if incumbent is None or sim.utility(candidate, fixed_goal) > sim.utility(
+                incumbent, fixed_goal
+            ):
+                incumbent = candidate
+        current = [incumbent] if incumbent is not None else []
+        trace.append(sim._best_actual(current, sim._goal_at(generation, change_at)))
+
+    return _summary("planner", trace, stats, 0, change_at, agents * generations)
+
+
+def _majority_search(
+    rng: random.Random,
+    verifier_rng: random.Random,
+    agents: int,
+    generations: int,
+    change_at: int,
+    verification: "sim.VerificationConfig",
+    bins: int,
+) -> Dict[str, object]:
+    """Majority-vote swarm (issue #22 baseline 2).
+
+    Each agent holds one fixed goal hypothesis drawn from the plausible set, so
+    the swarm's beliefs are genuinely spread.  A verified candidate replaces the
+    consensus only when a strict majority prefer it under their own hypothesis.
+    Selection is therefore by vote rather than by independent evidence, and the
+    swarm collapses onto a single consensus artifact instead of an archive.
+    """
+    del bins
+    beliefs = [rng.choice(sim.PLAUSIBLE_GOALS) for _ in range(agents)]
+    threshold = agents // 2 + 1
+    consensus: "sim.Candidate | None" = None
+    trace: List[float] = []
+    stats = sim.VerificationStats()
+
+    for generation in range(generations):
+        proposals = [
+            consensus.mutate(rng) if consensus is not None else sim.Candidate.random(rng)
+            for _ in range(agents)
+        ]
+        for candidate in proposals:
+            if not sim.verify_candidate(candidate, verifier_rng, verification, stats):
+                continue
+            if consensus is None:
+                consensus = candidate
+                continue
+            votes = sum(
+                1
+                for goal in beliefs
+                if sim.utility(candidate, goal) > sim.utility(consensus, goal)
+            )
+            if votes >= threshold:
+                consensus = candidate
+        current = [consensus] if consensus is not None else []
+        trace.append(sim._best_actual(current, sim._goal_at(generation, change_at)))
+
+    return _summary("majority", trace, stats, 0, change_at, agents * generations)
+
+
 RUNNERS: Dict[str, Callable[..., Dict[str, object]]] = {
     "random": _random_search,
     "scalar": _scalar_search,
     "qd": _qd_search,
+    "planner": _planner_search,
+    "majority": _majority_search,
 }
 
 
@@ -252,9 +358,11 @@ def sweep(
         strategy: {metric: [] for metric in SUMMARY_METRICS}
         for strategy in STRATEGIES
     }
+    # Compare the constraint-guided archive against every other arm, so adding a
+    # baseline extends the comparison table instead of silently going unreported.
+    baselines = tuple(s for s in STRATEGIES if s != "qd")
     qd_wins = {
-        "qd_gt_random_post_change_utility_auc": 0,
-        "qd_gt_scalar_post_change_utility_auc": 0,
+        f"qd_gt_{baseline}_post_change_utility_auc": 0 for baseline in baselines
     }
 
     for seed in range(seed_start, seed_start + seeds):
@@ -264,14 +372,11 @@ def sweep(
             for metric in SUMMARY_METRICS:
                 rows[strategy][metric].append(float(row[metric]))
 
-        qd_wins["qd_gt_random_post_change_utility_auc"] += int(
-            by_strategy["qd"]["post_change_utility_auc"]
-            > by_strategy["random"]["post_change_utility_auc"]
-        )
-        qd_wins["qd_gt_scalar_post_change_utility_auc"] += int(
-            by_strategy["qd"]["post_change_utility_auc"]
-            > by_strategy["scalar"]["post_change_utility_auc"]
-        )
+        for baseline in baselines:
+            qd_wins[f"qd_gt_{baseline}_post_change_utility_auc"] += int(
+                by_strategy["qd"]["post_change_utility_auc"]
+                > by_strategy[baseline]["post_change_utility_auc"]
+            )
 
     return {
         "experiment_id": EXPERIMENT_ID,
@@ -305,8 +410,9 @@ def sweep(
             "All candidates, goals, and verification outcomes are synthetic.",
             "One evaluation unit is a simulator proposal plus panel decision, not measured compute, energy, or human attention.",
             "Quality-Diversity is given the four predefined plausible goals; the Goal Graph does not yet learn from evidence.",
-            "The three strategies receive equal evaluation counts, but their internal bookkeeping costs are not measured.",
+            "The five strategies receive equal evaluation counts, but their internal bookkeeping costs are not measured.",
             "The benchmark does not model churn, malicious workers, task dependencies, stigmergic traces, or post-integration defects.",
+            "The centralized planner and majority-vote swarm are single-artifact baselines by construction; their archive_size is always 0 and is not a defect.",
             "The legacy strategy-relative recovery_generations field remains in per-seed rows but is not aggregated; post-change utility/regret AUC is the comparable adaptation measure.",
         ],
     }
