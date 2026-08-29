@@ -25,7 +25,8 @@ policy changes or merge decisions.
   [real-result replay](R1_REAL_RESULT_REPLAY.md) — identify and replay regimes
   where diverse attempts help or hurt.
 - [R2 Randomized Scheduling Under Churn](R2_SCHEDULING_CHURN_EXPERIMENT.md) and
-  [scale/regime sweep](R2_SCALE_REGIME_SWEEP.md) — measure capability,
+  [scale/regime sweep](R2_SCALE_REGIME_SWEEP.md), plus the
+  [capability-rarity sweep](R2_CAPABILITY_RARITY_SWEEP.md) — measure capability,
   staleness, failure, and scale effects.
 - [R3 Evolutionary Orchestration](R3_EVOLUTIONARY_ORCHESTRATION.md) — evolve
   policies on training tasks and confirm on held-out work.

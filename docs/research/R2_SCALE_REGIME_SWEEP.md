@@ -162,6 +162,9 @@ The 100,000-worker runs may be materially more expensive than the smaller cells.
 The first five-seed full-ladder evidence and guarded interpretation are retained
 in [`../../results/experiments/r2/reference-scale-seeds41-45.md`](../../results/experiments/r2/reference-scale-seeds41-45.md).
 
+The factor-isolated capability-prevalence design is specified in
+[`R2_CAPABILITY_RARITY_SWEEP.md`](R2_CAPABILITY_RARITY_SWEEP.md).
+
 ## Interpretation
 
 The sweep is specifically designed to allow several outcomes:
