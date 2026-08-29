@@ -2,6 +2,23 @@
 
 Experiments are small, reproducible programs used to challenge IDKMesh hypotheses before those hypotheses become architecture or automation.
 
+## E022 verification-scaling matrix
+
+`verification_scaling_matrix.py` compares all seven verification conditions
+named in issue #14 on a matched, seeded hidden-defect stream. It separates
+simulated acceptance from independently verified useful work and measures queue
+stability, escaped defects, verification cost, and attention.
+
+```bash
+python experiments/verification_scaling_matrix.py --self-test
+python experiments/verification_scaling_matrix.py --benchmark --summary-only
+```
+
+The result is a Pareto trade-off: independent tests maximize synthetic
+throughput, tests plus adversarial review minimize escaped defects, and
+risk-adaptive backpressure keeps overload bounded. See
+[`E022-verification-scaling-matrix.md`](E022-verification-scaling-matrix.md).
+
 ## E021 coordination-criticality experiment
 
 `criticality_susceptibility.py` compares matched constant-load, `+5%` pulse,

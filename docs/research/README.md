@@ -44,6 +44,8 @@ policy changes or merge decisions.
   — controller model for limiting unverified work.
 - [Verification Backpressure Temporal Benchmark](VERIFICATION_BACKPRESSURE_BENCHMARK.md)
   — multi-window benchmark for that controller.
+- [E022 Seven-Mode Verification Scaling Matrix](../../experiments/E022-verification-scaling-matrix.md)
+  — matched comparison of every verification condition required by issue #14.
 - [IDKGraph P1 Independent Review Protocol](IDKGRAPH_P1_INDEPENDENT_REVIEW_PROTOCOL.md)
   — frozen-cohort human review and attention measurement for issue #152.
 
