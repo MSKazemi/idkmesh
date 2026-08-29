@@ -52,6 +52,8 @@ policy changes or merge decisions.
   — matched comparison of every verification condition required by issue #14.
 - [E024 Matched-Budget Emergence](../../experiments/E024-matched-budget-emergence.md)
   — equal-evaluation comparison of random, fixed-scalar, and Quality-Diversity search.
+- [E025 Learned Verifier Reliability](../../experiments/E025-learned-verifier-reliability.md)
+  — calibration/held-out evidence for reliability and dependence-aware aggregation.
 - [IDKGraph P1 Independent Review Protocol](IDKGRAPH_P1_INDEPENDENT_REVIEW_PROTOCOL.md)
   — frozen-cohort human review and attention measurement for issue #152.
 
