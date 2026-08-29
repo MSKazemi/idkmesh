@@ -1,0 +1,234 @@
+{
+  "cells": [
+    {
+      "catastrophic_seeds": {
+        "majority": 43,
+        "planner": 100,
+        "qd": 0,
+        "random": 0,
+        "scalar": 39
+      },
+      "defect_cost": 0.8,
+      "delivered_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0034,
+        "scalar": 0.0002
+      },
+      "false_accept_rate": {
+        "majority": 0.441966,
+        "planner": 0.460071,
+        "qd": 0.450846,
+        "random": 0.447647,
+        "scalar": 0.444676
+      },
+      "panel": "stress",
+      "post_change_utility_auc": {
+        "majority": 18.724284,
+        "planner": 14.155496,
+        "qd": 21.701419,
+        "random": 17.611355,
+        "scalar": 16.076639
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 52,
+        "qd_gt_planner_post_change_utility_auc": 100,
+        "qd_gt_random_post_change_utility_auc": 100,
+        "qd_gt_scalar_post_change_utility_auc": 100
+      },
+      "retained_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.000469,
+        "random": 0.567793,
+        "scalar": 0.006019
+      }
+    },
+    {
+      "catastrophic_seeds": {
+        "majority": 43,
+        "planner": 100,
+        "qd": 0,
+        "random": 0,
+        "scalar": 38
+      },
+      "defect_cost": 0.85,
+      "delivered_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0004,
+        "qd": 0.0004,
+        "random": 0.013,
+        "scalar": 0.0004
+      },
+      "false_accept_rate": {
+        "majority": 0.441966,
+        "planner": 0.459908,
+        "qd": 0.450161,
+        "random": 0.447647,
+        "scalar": 0.445709
+      },
+      "panel": "stress",
+      "post_change_utility_auc": {
+        "majority": 18.724284,
+        "planner": 14.150053,
+        "qd": 21.691061,
+        "random": 17.397067,
+        "scalar": 16.017434
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 52,
+        "qd_gt_planner_post_change_utility_auc": 100,
+        "qd_gt_random_post_change_utility_auc": 100,
+        "qd_gt_scalar_post_change_utility_auc": 100
+      },
+      "retained_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.000469,
+        "random": 0.567793,
+        "scalar": 0.00693
+      }
+    },
+    {
+      "catastrophic_seeds": {
+        "majority": 43,
+        "planner": 100,
+        "qd": 0,
+        "random": 13,
+        "scalar": 39
+      },
+      "defect_cost": 0.9,
+      "delivered_defect_rate": {
+        "majority": 0.0002,
+        "planner": 0.0016,
+        "qd": 0.0008,
+        "random": 0.0456,
+        "scalar": 0.0012
+      },
+      "false_accept_rate": {
+        "majority": 0.441541,
+        "planner": 0.458792,
+        "qd": 0.450474,
+        "random": 0.447647,
+        "scalar": 0.446231
+      },
+      "panel": "stress",
+      "post_change_utility_auc": {
+        "majority": 18.715967,
+        "planner": 14.129855,
+        "qd": 21.700033,
+        "random": 16.809331,
+        "scalar": 16.043212
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 52,
+        "qd_gt_planner_post_change_utility_auc": 100,
+        "qd_gt_random_post_change_utility_auc": 100,
+        "qd_gt_scalar_post_change_utility_auc": 100
+      },
+      "retained_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.000469,
+        "random": 0.567793,
+        "scalar": 0.006762
+      }
+    },
+    {
+      "catastrophic_seeds": {
+        "majority": 43,
+        "planner": 100,
+        "qd": 0,
+        "random": 57,
+        "scalar": 41
+      },
+      "defect_cost": 0.95,
+      "delivered_defect_rate": {
+        "majority": 0.0002,
+        "planner": 0.003,
+        "qd": 0.0056,
+        "random": 0.1114,
+        "scalar": 0.0042
+      },
+      "false_accept_rate": {
+        "majority": 0.441541,
+        "planner": 0.455006,
+        "qd": 0.450398,
+        "random": 0.447647,
+        "scalar": 0.444129
+      },
+      "panel": "stress",
+      "post_change_utility_auc": {
+        "majority": 18.715967,
+        "planner": 14.094719,
+        "qd": 21.70318,
+        "random": 15.630351,
+        "scalar": 16.04877
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 52,
+        "qd_gt_planner_post_change_utility_auc": 100,
+        "qd_gt_random_post_change_utility_auc": 100,
+        "qd_gt_scalar_post_change_utility_auc": 100
+      },
+      "retained_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.000625,
+        "random": 0.567793,
+        "scalar": 0.00613
+      }
+    }
+  ],
+  "configuration": {
+    "agents": 50,
+    "bins": 8,
+    "catastrophe_utility_auc_threshold": 16.0,
+    "change_at": 25,
+    "defect_costs": [
+      0.8,
+      0.85,
+      0.9,
+      0.95
+    ],
+    "defect_provenance": {
+      "channel": "E027 latent-defect propagation channel",
+      "default_cost": 1.0,
+      "evidence_level": "synthetic mechanism; no defect cost is measured anywhere",
+      "gap_closed": "E024 and E026 rank candidates with utility() and robust_quality(), both of which consult viable() directly. A falsely accepted artifact therefore scores 0.0 and is silently discarded by the same predicate the verifier panel was meant to enforce, so verifier error cannot reach the outcome metric.",
+      "knob": "defect cost in [0, 1]",
+      "knob_meaning": "the fraction of a latent defect's apparent quality that the system's own selection machinery still credits, i.e. how far the defect stays latent past the acceptance gate",
+      "knob_one_means": "no free oracle anywhere: the system trusts its verifier panel completely, which is the only assumption-free setting",
+      "knob_zero_means": "exactly the E024/E026 behaviour: the search operator holds a free viability oracle and discards a falsely accepted artifact for nothing",
+      "mechanism": "selection, retention and delivery rank candidates by apparent quality -- the quality a system can observe once its verifier panel has accepted an artifact -- while the trace scores the delivered artifact by ground truth. A falsely accepted non-viable artifact is credited `cost` times its apparent quality, so it can displace an incumbent, occupy an archive niche, be drawn as a parent, and be shipped; when it is shipped it delivers 0.0.",
+      "motivating_result": "experiments/E026-imperfect-verifier-panel.md",
+      "why_the_default_is_the_extreme": "cost 1.0 adds no parameter. Every value below it hands the search operator ground-truth viability information that no real system has, so the knob is a dial back toward E024's optimistic assumption rather than a dial tuned to manufacture an effect."
+    },
+    "evaluation_budget_per_strategy_per_seed": 2500,
+    "generations": 50,
+    "panels": {
+      "stress": {
+        "accuracy": 0.55,
+        "blind_spot": 0.4,
+        "correlation": 0.9,
+        "dependence": "item-difficulty",
+        "quorum": 0.5,
+        "verifiers": 25
+      }
+    },
+    "post_change_horizon": 25,
+    "seed_start": 0,
+    "seeds": 100
+  },
+  "experiment": "defect-propagation-panel-by-cost-matrix-v1",
+  "experiment_id": "E027",
+  "limitations": [
+    "Every cell is the same synthetic landscape; only the verifier-panel parameters are measured, and the defect cost is not measured at all.",
+    "The defect cost is a swept dial, not a fitted quantity. Reading one column of this matrix as 'the' answer would be exactly the free-parameter mistake the sweep exists to prevent.",
+    "Cost 0.0 reproduces the E024/E026 behaviour by construction, so the cost-0.0 column is a control rather than an independent confirmation.",
+    "The perfect-panel rows cannot vary with cost: a panel that never accepts a non-viable candidate never creates a defect for the channel to propagate. They are a null control.",
+    "Catastrophe counts use E024's threshold of 0.64 of the post-change horizon; a different threshold would move the counts but not the ordering.",
+    "The matrix reports means and counts over 100 seeds per cell; it does not report a paired significance test across cells."
+  ]
+}
