@@ -59,6 +59,10 @@ The professional resolution is therefore to change the requirement explicitly, r
 
 Revisit if evidence shows that pinning materially affects newcomer conversion, or if GitHub exposes a reliable repository API for pin state and the project chooses to make it an observable operational invariant.
 
+## Implementation references
+
+- `docs/PAGES_SETUP.md`
+
 ## References
 
 - issue #173 — discovery-surface activation

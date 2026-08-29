@@ -126,7 +126,8 @@ Relevant records include:
 
 - [IDKGraph P1 orphan cohort 1](audits/2026-08-28-idkgraph-p1-orphan-cohort-1.md);
 - [IDKGraph architecture navigation pass](findings/2026-08-29-idkgraph-architecture-navigation.md);
-- [Conversation index drift review](findings/2026-08-29-conversation-index-drift.md).
+- [Conversation index drift review](findings/2026-08-29-conversation-index-drift.md);
+- [IDKGraph P1 ADR-0011 linkage review](audits/2026-08-29-idkgraph-p1-adr-0011-linkage.md).
 
 Do not optimize warning count as a standalone repository-health objective.
 
