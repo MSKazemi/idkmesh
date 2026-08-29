@@ -1,0 +1,119 @@
+{
+  "benchmark_version": "r2-factor-isolation-v0.1",
+  "environment": {
+    "implementation": "CPython",
+    "platform": "Linux-7.0.0-30-generic-x86_64-with-glibc2.39",
+    "python": "3.12.3 (main, Jul 15 2026, 23:46:41) [GCC 13.3.0]"
+  },
+  "guardrail": "Measured timings and allocations are host-specific observations, not deterministic protocol costs or distributed-network measurements.",
+  "offered_work_per_capacity_tick": 0.728735632183908,
+  "policies": {
+    "capability-power-two": {
+      "cpu_time_ms_median": 619.639506,
+      "cpu_time_ms_samples": [
+        593.430172,
+        630.549777,
+        644.643615,
+        600.115325,
+        619.639506
+      ],
+      "peak_traced_bytes_median": 1248119.0,
+      "peak_traced_bytes_samples": [
+        1248151.0,
+        1248135.0,
+        1248119.0,
+        1248103.0,
+        1248087.0
+      ]
+    },
+    "global-least-loaded": {
+      "cpu_time_ms_median": 642.963999,
+      "cpu_time_ms_samples": [
+        642.963999,
+        713.415373,
+        661.045263,
+        632.007166,
+        577.119585
+      ],
+      "peak_traced_bytes_median": 1246743.0,
+      "peak_traced_bytes_samples": [
+        1246759.0,
+        1246751.0,
+        1246743.0,
+        1246727.0,
+        1246727.0
+      ]
+    },
+    "one-random": {
+      "cpu_time_ms_median": 646.493479,
+      "cpu_time_ms_samples": [
+        687.902478,
+        646.493479,
+        619.552657,
+        663.592585,
+        607.424689
+      ],
+      "peak_traced_bytes_median": 1260119.0,
+      "peak_traced_bytes_samples": [
+        1262007.0,
+        1260135.0,
+        1260119.0,
+        1260103.0,
+        1260087.0
+      ]
+    },
+    "power-three": {
+      "cpu_time_ms_median": 1071.077346,
+      "cpu_time_ms_samples": [
+        1521.111564,
+        1172.802581,
+        906.842522,
+        999.852651,
+        1071.077346
+      ],
+      "peak_traced_bytes_median": 1251007.0,
+      "peak_traced_bytes_samples": [
+        1251039.0,
+        1251023.0,
+        1251007.0,
+        1250991.0,
+        1250967.0
+      ]
+    },
+    "power-two": {
+      "cpu_time_ms_median": 952.172847,
+      "cpu_time_ms_samples": [
+        869.121349,
+        904.705784,
+        952.172847,
+        1013.350925,
+        1429.477314
+      ],
+      "peak_traced_bytes_median": 1251063.0,
+      "peak_traced_bytes_samples": [
+        1251111.0,
+        1251087.0,
+        1251063.0,
+        1251047.0,
+        1251031.0
+      ]
+    }
+  },
+  "profile": "single-process scheduler CPU and Python traced peak allocation",
+  "repetitions": 5,
+  "schema_version": 1,
+  "trace": {
+    "capability_worker_counts": {
+      "cpu": 37,
+      "gpu": 29,
+      "python": 55
+    },
+    "outage_count": 0,
+    "seed": 41,
+    "task_count": 1560,
+    "ticks": 30,
+    "total_worker_capacity": 174,
+    "trace_digest": "sha256:16821b21d265ec843c672c5669a166581d2704529e58316ab2b70399b4a63691",
+    "worker_count": 100
+  }
+}
