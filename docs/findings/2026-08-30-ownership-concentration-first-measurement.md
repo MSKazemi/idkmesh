@@ -97,3 +97,7 @@ request to attach to.
 No policy changes on this evidence. The measurable next step is to widen the debt inventory
 beyond the four deterministic notice categories, because a debt observable whose whole population
 is four notices cannot discriminate between a healthy repository and an unexamined one.
+
+That step is taken in
+[Five Committed Executables That Nothing Demonstrates Ever Ran](2026-08-30-executables-nothing-ever-ran.md),
+which adds a second deterministic category and five findings.

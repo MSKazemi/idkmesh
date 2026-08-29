@@ -8,7 +8,18 @@ inference:
   have no inbound resolved local Markdown link from another document;
 - accepted ADR linkage: mapped ``decision`` nodes whose source file contains an
   explicit accepted ``Status:`` value but has no T3 ``implements`` edge from a
-  mapped ``document`` node.
+  mapped ``document`` node;
+- executables that nothing exercises: committed Python entry points below
+  ``tools/`` or ``scripts/`` that no workflow and no test names, and whose name
+  appears in no recorded result, benchmark, or document.
+
+The third check is deliberately conjunctive. A one-shot calibration tool that
+ran once and left committed evidence behind is doing exactly its job and is not
+debt; only a tool that is neither wired into automation *nor* traceable to any
+recorded output is a review candidate. It is reported as a notice, because an
+executable can be legitimately dormant -- waiting on an absent dependency, or
+staged ahead of the run that will use it -- and this module cannot tell that
+apart from abandonment.
 
 A document with no inbound Markdown link is not necessarily abandoned: it may be
 owned by a workflow, script, or schema that references it by repository-relative
@@ -36,6 +47,20 @@ except ImportError:  # pragma: no cover
 SCHEMA_VERSION = "idkgraph-health-checks-v0.1"
 ACCEPTED_STATUS = re.compile(r"^accepted\b", re.IGNORECASE)
 INDEX_FILENAMES = {"README.md", "index.md"}
+
+# Committed Python entry points. Dunder files are module plumbing, not entry
+# points, so a package's ``__main__.py`` is never a candidate on its own.
+EXECUTABLE_PREFIXES = ("scripts/", "tools/")
+
+# What counts as exercising an executable: CI wiring or the test suite.
+EXERCISER_PREFIXES = (".github/workflows/", "tests/")
+
+# Where a tool's output would have been recorded if it had ever produced one.
+RECORDED_OUTPUT_PREFIXES = ("benchmarks/", "docs/", "experiments/results/", "results/")
+
+# Binary and compressed payloads are skipped rather than decoded; a tool name
+# hidden inside a gzip member is not a reference a human reviewer could follow.
+OPAQUE_SUFFIXES = {".gz", ".jpg", ".jpeg", ".pdf", ".png", ".zip"}
 
 # Repository-relative Markdown paths as they appear inside non-Markdown artifacts.
 DOCUMENT_REFERENCE = re.compile(r"docs/[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)*\.md")
@@ -82,6 +107,74 @@ def _artifact_document_references(root: Path) -> dict[str, list[str]]:
         for target in DOCUMENT_REFERENCE.findall(text):
             references.setdefault(target, set()).add(relative_posix)
     return {target: sorted(sources) for target, sources in sorted(references.items())}
+
+
+def _tool_id(relative_path: str) -> str:
+    """Identify an executable that the T3 mapping does not give a node.
+
+    ``tools/`` and ``scripts/`` are outside the typed graph, so this identifier
+    is deliberately in its own namespace rather than borrowing ``artifact:``.
+    """
+    return f"executable:{relative_path}"
+
+
+def _mentions(blob: str, relative_path: str) -> bool:
+    """True when text refers to an executable by path, module, or bare stem.
+
+    The stem must match on identifier boundaries. Plain substring matching is
+    wrong here: ``tools/real_node_verifier_e2e.py`` contains the stem of
+    ``tools/node_verifier_e2e.py``, so a substring test would silently clear an
+    executable that nothing actually references.
+    """
+    if relative_path in blob:
+        return True
+    module = relative_path[:-3].replace("/", ".")
+    if module in blob:
+        return True
+    stem = re.escape(Path(relative_path).stem)
+    return re.search(rf"(?<![A-Za-z0-9_]){stem}(?![A-Za-z0-9_])", blob) is not None
+
+
+def _readable_blob(root: Path, tracked: set[str], prefixes: tuple[str, ...]) -> str:
+    """Concatenate tracked text files under the given prefixes, in path order."""
+    parts: list[str] = []
+    for relative_path in sorted(tracked):
+        if not relative_path.startswith(prefixes):
+            continue
+        if Path(relative_path).suffix.lower() in OPAQUE_SUFFIXES:
+            continue
+        try:
+            parts.append((root / relative_path).read_text(encoding="utf-8"))
+        except (OSError, UnicodeError):
+            continue
+    return "\n".join(parts)
+
+
+def _unexercised_executables(root: Path) -> list[str]:
+    """Return committed entry points with no automated exercise and no output.
+
+    Returns an empty list when the tracked-file set is unavailable: an
+    unanswerable question is reported as no finding, never as a finding.
+    """
+    tracked = tracked_relative_paths(root)
+    if tracked is None:
+        return []
+    candidates = [
+        relative_path
+        for relative_path in sorted(tracked)
+        if relative_path.startswith(EXECUTABLE_PREFIXES)
+        and relative_path.endswith(".py")
+        and not Path(relative_path).name.startswith("__")
+    ]
+    if not candidates:
+        return []
+    exercisers = _readable_blob(root, tracked, EXERCISER_PREFIXES)
+    recorded = _readable_blob(root, tracked, RECORDED_OUTPUT_PREFIXES)
+    return [
+        relative_path
+        for relative_path in candidates
+        if not _mentions(exercisers, relative_path) and not _mentions(recorded, relative_path)
+    ]
 
 
 def _explicit_status(path: Path) -> str | None:
@@ -237,6 +330,30 @@ def check_residual_health(
                     "producer_schema": SCHEMA_VERSION,
                     "rule": "accepted_adr_without_document_implements_edge",
                     "status": status,
+                },
+            }
+        )
+
+    for relative_path in _unexercised_executables(root):
+        findings.append(
+            {
+                "severity": "notice",
+                "category": "executable_without_exercise_or_recorded_output",
+                "source_path": relative_path,
+                "source_id": _tool_id(relative_path),
+                "line": 0,
+                "message": (
+                    "This committed entry point is named by no workflow and no test, and its name "
+                    "appears in no recorded result, benchmark, or document. Nothing in the "
+                    "repository demonstrates that it has ever run. Review whether it should be "
+                    "wired into automation, exercised once and its evidence recorded, or removed."
+                ),
+                "evidence": {
+                    "producer": "P0-health",
+                    "producer_schema": SCHEMA_VERSION,
+                    "rule": "executable_absent_from_automation_and_from_recorded_output",
+                    "exerciser_prefixes": list(EXERCISER_PREFIXES),
+                    "recorded_output_prefixes": list(RECORDED_OUTPUT_PREFIXES),
                 },
             }
         )
