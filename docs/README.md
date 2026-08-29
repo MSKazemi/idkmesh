@@ -23,7 +23,7 @@ Different documents serve different roles. When two files appear to disagree, pr
 | governance / authority | [`../GOVERNANCE.md`](../GOVERNANCE.md), [`../CONSTITUTION.md`](../CONSTITUTION.md) |
 | durable decisions | [`../DECISIONS.md`](../DECISIONS.md), [`decisions/`](decisions/) |
 | bounded review snapshots | [`audits/`](audits/) |
-| research/engineering findings | [`findings/`](findings/) |
+| research/engineering findings | [`findings/`](findings/README.md) |
 | append-only collaboration history | [`conversations/`](conversations/README.md) |
 
 A conversation, old roadmap section, experiment note, or historical architecture sketch is evidence about project evolution; it does **not** automatically override current schemas, current architecture documents, or later accepted decisions.
@@ -45,6 +45,7 @@ For a newcomer trying to understand the executable foundation, this order is usu
 - [Architecture index](architecture/README.md) — active system, compute, evidence, repository-evolution, CI, and retained historical designs.
 - [Specifications index](specifications/README.md) — versioned work, evidence, evaluator, repository-graph, and project-configuration contracts.
 - [Research index](research/README.md) — research programs, experiments, verification studies, and benchmark-calibration evidence.
+- [Findings index](findings/README.md) — working theses, repository-health evidence, growth/landscape studies, and retained source notes.
 
 ## Important active subsystem documents
 
@@ -101,7 +102,7 @@ The repository often intentionally stops at an earlier stage. For example, a ben
 Some records are intentionally preserved as **project memory or evidence**, not primary navigation destinations.
 
 - [`conversations/`](conversations/README.md) contains structured records of substantive project conversations required by [`../PROJECT_RULES.md`](../PROJECT_RULES.md). Important conclusions should also be promoted into canonical architecture, decisions, research, governance, or implementation artifacts.
-- [`findings/`](findings/) contains research/engineering findings and source/evidence notes. Some are historical support for later decisions rather than current implementation documentation.
+- [`findings/`](findings/README.md) contains research/engineering findings and source/evidence notes. Some are historical support for later decisions rather than current implementation documentation; the index separates the two.
 - [`audits/`](audits/) contains bounded reviews and evidence snapshots. They remain useful after findings are resolved because they preserve what was inspected and why a decision changed.
 - [`evidence/`](evidence/) contains retained evidence artifacts where a subsystem requires a durable evidence surface.
 
@@ -127,7 +128,8 @@ Relevant records include:
 - [IDKGraph P1 orphan cohort 1](audits/2026-08-28-idkgraph-p1-orphan-cohort-1.md);
 - [IDKGraph architecture navigation pass](findings/2026-08-29-idkgraph-architecture-navigation.md);
 - [Conversation index drift review](findings/2026-08-29-conversation-index-drift.md);
-- [IDKGraph P1 ADR-0011 linkage review](audits/2026-08-29-idkgraph-p1-adr-0011-linkage.md).
+- [IDKGraph P1 ADR-0011 linkage review](audits/2026-08-29-idkgraph-p1-adr-0011-linkage.md);
+- [IDKGraph findings navigation pass](findings/2026-08-29-idkgraph-findings-navigation.md).
 
 Do not optimize warning count as a standalone repository-health objective.
 
