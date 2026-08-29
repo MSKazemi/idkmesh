@@ -452,6 +452,16 @@ def cmd_definition_digest(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_definition_json(args: argparse.Namespace) -> int:
+    """Print the canonical pre-outcome projection committed by the digest."""
+
+    cohort_path = resolve_repo_file(args.cohort, label="BenchmarkCohort")
+    cohort = load_json(cohort_path)
+    validate_schema(cohort, COHORT_SCHEMA, "BenchmarkCohort")
+    print(json.dumps(definition_projection(cohort), indent=2, sort_keys=True))
+    return 0
+
+
 def cmd_self_test(_: argparse.Namespace) -> int:
     baseline = _fixture_cohort()
     summary = validate_cohort(baseline)
@@ -567,6 +577,13 @@ def build_parser() -> argparse.ArgumentParser:
     digest = subparsers.add_parser("definition-digest", help="Print the pre-outcome benchmark definition digest.")
     digest.add_argument("--cohort", required=True)
     digest.set_defaults(func=cmd_definition_digest)
+
+    definition_json = subparsers.add_parser(
+        "definition-json",
+        help="Print the canonical pre-outcome benchmark definition as JSON.",
+    )
+    definition_json.add_argument("--cohort", required=True)
+    definition_json.set_defaults(func=cmd_definition_json)
 
     self_test = subparsers.add_parser("self-test", help="Run deterministic contract and drift tests.")
     self_test.set_defaults(func=cmd_self_test)
