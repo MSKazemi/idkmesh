@@ -1,0 +1,68 @@
+name: Phase B2 Task 001 v0.3 Calibration
+
+on:
+  pull_request:
+    paths:
+      - "verification/fixtures/phase-b2-task001-v03/**"
+      - "verification/fixtures/phase-b2-task001-v03-calibration.evaluator-plan.json"
+      - "tools/phase_b2_task001_v03_calibration.py"
+      - ".github/workflows/phase-b2-task001-v03-calibration.yml"
+  push:
+    branches: [main]
+    paths:
+      - "verification/fixtures/phase-b2-task001-v03/**"
+      - "verification/fixtures/phase-b2-task001-v03-calibration.evaluator-plan.json"
+      - "tools/phase_b2_task001_v03_calibration.py"
+      - ".github/workflows/phase-b2-task001-v03-calibration.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  calibrate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out verifier control plane
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Phase 0 dependency
+        run: python -m pip install -r requirements-phase0.txt
+
+      - name: Check out frozen source for straightforward calibration
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: MSKazemi/idkmesh
+          ref: 9c53bb4069a5db1c0688dbbe7a8f028540cbf7c2
+          path: calibration-straightforward-source
+          persist-credentials: false
+
+      - name: Check out frozen source for decoy calibration
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: MSKazemi/idkmesh
+          ref: 9c53bb4069a5db1c0688dbbe7a8f028540cbf7c2
+          path: calibration-decoy-source
+          persist-credentials: false
+
+      - name: Compile calibration harness
+        run: python -m py_compile tools/phase_b2_task001_v03_calibration.py
+
+      - name: Run legitimate-vs-decoy v0.3 calibration matrix
+        run: >-
+          python tools/phase_b2_task001_v03_calibration.py
+          --straight-source calibration-straightforward-source
+          --decoy-source calibration-decoy-source
+
+# Safety boundary:
+# - EvaluatorPlan v0.3 remains metadata-only and never executes candidate code.
+# - The behavioral step executes only two fixed, checked-in post-burn calibration
+#   patches against the immutable public Task 001 source; no worker input is used.
+# - no secrets, persisted credentials, project-paid compute authority, canonical
+#   writes, candidate selection, PR approval, push, or merge authority are granted.
