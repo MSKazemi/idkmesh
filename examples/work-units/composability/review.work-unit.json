@@ -1,0 +1,22 @@
+{
+  "schema_version": "0.2",
+  "id": "issue15/example/review",
+  "version": 1,
+  "kind": "review",
+  "objective": "Independently review the implementation and test evidence and issue a non-integrating recommendation.",
+  "context": {"summary": "Bounded review unit in the issue #15 decomposition fixture.", "references": ["issue15/example/coding", "issue15/example/testing"], "max_context_bytes": 16384},
+  "inputs": [{"id": "candidate", "type": "git_ref", "locator": "candidate-head"}, {"id": "test-evidence", "type": "json", "locator": "candidate-test-result.json"}],
+  "outputs": [{"id": "review", "type": "review", "description": "An evidence-backed recommendation without merge authority.", "media_type": "text/markdown"}],
+  "dependencies": [{"work_unit_id": "issue15/example/testing", "relationship": "requires"}],
+  "requirements": {"capabilities": ["independent-code-review"], "resources": {"cpu_cores_min": 0.1, "memory_mb_min": 64, "disk_mb_min": 2, "gpu": "none", "accelerator_capabilities": []}},
+  "constraints": {"allowed_paths": [], "forbidden_paths": ["**"], "policies": ["Read-only review", "Reviewer must differ from candidate worker", "No integration authority"]},
+  "uncertainty": [{"statement": "Passing visible tests may not cover all integration risks.", "confidence": 0.9, "resolution_strategy": "Record residual risk and request additional evidence when needed."}],
+  "security": {"risk_class": "low", "data_classification": "public", "minimum_worker_trust": "identified", "sandbox_required": false},
+  "permissions": {"network": "none", "network_allowlist": [], "filesystem_write": [], "secrets": [], "process_execution": false},
+  "verification_policy": {"strategy": "all_required", "independent_from_worker": true, "minimum_independent_verifiers": 1, "acceptance_rule": "Review provenance, scope, tests, and residual risk are explicit."},
+  "validators": [{"id": "review-completeness", "type": "review", "required": true, "description": "Check that the review addresses behavior, scope, evidence, and residual risks."}],
+  "evidence_requirements": [{"type": "review", "required": true, "description": "Retain the independent review and reviewer identity."}, {"type": "attestation", "required": true, "description": "Attest that the reviewer did not produce the candidate."}],
+  "budget": {"wall_seconds": 900, "compute_units": 0.1, "human_minutes": 20, "tokens": 0, "project_spend_usd_max": 0, "paid_fallback_allowed": false},
+  "provenance": {"created_by": "Issue #15 composability fixture", "creator_type": "hybrid", "source": "Issue #15", "source_revision": "example-dag-v1", "parent_work_unit_ids": ["issue15/example/testing"]},
+  "failure_semantics": {"retryable": false, "max_attempts": 1, "on_failure": "escalate"}
+}

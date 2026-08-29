@@ -1,0 +1,408 @@
+{
+  "schema_version": "0.1",
+  "benchmark_id": "issue15/canonical-json-decomposition-fixture",
+  "task_class": "small-python-library-change",
+  "task_description": "Specify, implement, test, and independently review a deterministic canonical-JSON helper.",
+  "evidence_class": "synthetic_fixture",
+  "workers": [
+    {
+      "id": "synthetic-fixture-worker",
+      "worker_type": "synthetic",
+      "implementation": "deterministic hand-authored infrastructure fixture",
+      "revision": "v1"
+    }
+  ],
+  "provenance": {
+    "source": "Issue #15",
+    "source_revision": "fixture-v1",
+    "recorded_by": "IDKMesh issue #15 implementation"
+  },
+  "arms": [
+    {
+      "strategy": "monolithic",
+      "units": [
+        {
+          "id": "mono/all",
+          "description": "Complete the whole change from one natural-language task.",
+          "dependencies": [],
+          "allowed_paths": [
+            "**"
+          ],
+          "global_context_required": true
+        }
+      ],
+      "observations": [
+        {
+          "attempt_id": "mono/all/1",
+          "worker_id": "synthetic-fixture-worker",
+          "unit_id": "mono/all",
+          "completed": true,
+          "integration_failed": false,
+          "merge_conflicts": 0,
+          "rework_cycles": 1,
+          "context_bytes": 50000,
+          "cross_worker_messages": 0,
+          "hidden_tests_passed": 4,
+          "hidden_tests_total": 5,
+          "assumption_mismatches": 1,
+          "dependency_violations": 0,
+          "verification_seconds": 8.0,
+          "human_integration_minutes": 12.0
+        }
+      ]
+    },
+    {
+      "strategy": "human_subtasks",
+      "units": [
+        {
+          "id": "human/implementation",
+          "description": "Implement the helper.",
+          "dependencies": [],
+          "allowed_paths": [
+            "experiments/",
+            "tests/"
+          ],
+          "global_context_required": true
+        },
+        {
+          "id": "human/review",
+          "description": "Review the completed change.",
+          "dependencies": [
+            "human/implementation"
+          ],
+          "allowed_paths": [],
+          "global_context_required": false
+        }
+      ],
+      "observations": [
+        {
+          "attempt_id": "human/implementation/1",
+          "worker_id": "synthetic-fixture-worker",
+          "unit_id": "human/implementation",
+          "completed": true,
+          "integration_failed": false,
+          "merge_conflicts": 0,
+          "rework_cycles": 1,
+          "context_bytes": 34000,
+          "cross_worker_messages": 1,
+          "hidden_tests_passed": 5,
+          "hidden_tests_total": 5,
+          "assumption_mismatches": 0,
+          "dependency_violations": 0,
+          "verification_seconds": 6.0,
+          "human_integration_minutes": 8.0
+        },
+        {
+          "attempt_id": "human/review/1",
+          "worker_id": "synthetic-fixture-worker",
+          "unit_id": "human/review",
+          "completed": true,
+          "integration_failed": false,
+          "merge_conflicts": 0,
+          "rework_cycles": 0,
+          "context_bytes": 14000,
+          "cross_worker_messages": 1,
+          "hidden_tests_passed": 0,
+          "hidden_tests_total": 0,
+          "assumption_mismatches": 0,
+          "dependency_violations": 0,
+          "verification_seconds": 5.0,
+          "human_integration_minutes": 5.0
+        }
+      ]
+    },
+    {
+      "strategy": "file_module",
+      "units": [
+        {
+          "id": "file/implementation",
+          "description": "Own the implementation module.",
+          "dependencies": [],
+          "allowed_paths": [
+            "experiments/canonical_json.py"
+          ],
+          "global_context_required": false
+        },
+        {
+          "id": "file/tests",
+          "description": "Own the test module.",
+          "dependencies": [],
+          "allowed_paths": [
+            "tests/test_canonical_json.py"
+          ],
+          "global_context_required": false
+        }
+      ],
+      "observations": [
+        {
+          "attempt_id": "file/implementation/1",
+          "worker_id": "synthetic-fixture-worker",
+          "unit_id": "file/implementation",
+          "completed": true,
+          "integration_failed": false,
+          "merge_conflicts": 0,
+          "rework_cycles": 1,
+          "context_bytes": 12000,
+          "cross_worker_messages": 2,
+          "hidden_tests_passed": 3,
+          "hidden_tests_total": 5,
+          "assumption_mismatches": 1,
+          "dependency_violations": 0,
+          "verification_seconds": 5.0,
+          "human_integration_minutes": 6.0
+        },
+        {
+          "attempt_id": "file/tests/1",
+          "worker_id": "synthetic-fixture-worker",
+          "unit_id": "file/tests",
+          "completed": true,
+          "integration_failed": true,
+          "merge_conflicts": 0,
+          "rework_cycles": 1,
+          "context_bytes": 10000,
+          "cross_worker_messages": 2,
+          "hidden_tests_passed": 0,
+          "hidden_tests_total": 0,
+          "assumption_mismatches": 1,
+          "dependency_violations": 0,
+          "verification_seconds": 5.0,
+          "human_integration_minutes": 7.0
+        }
+      ]
+    },
+    {
+      "strategy": "dependency_dag",
+      "units": [
+        {
+          "id": "dag/requirements",
+          "description": "Define behavior.",
+          "dependencies": [],
+          "allowed_paths": [
+            "docs/"
+          ],
+          "global_context_required": false
+        },
+        {
+          "id": "dag/implementation",
+          "description": "Implement accepted behavior.",
+          "dependencies": [
+            "dag/requirements"
+          ],
+          "allowed_paths": [
+            "experiments/canonical_json.py"
+          ],
+          "global_context_required": false
+        },
+        {
+          "id": "dag/tests",
+          "description": "Test the implementation.",
+          "dependencies": [
+            "dag/implementation"
+          ],
+          "allowed_paths": [
+            "tests/test_canonical_json.py"
+          ],
+          "global_context_required": false
+        },
+        {
+          "id": "dag/review",
+          "description": "Review the candidate and evidence.",
+          "dependencies": [
+            "dag/tests"
+          ],
+          "allowed_paths": [],
+          "global_context_required": false
+        }
+      ],
+      "observations": [
+        {
+          "attempt_id": "dag/requirements/1",
+          "worker_id": "synthetic-fixture-worker",
+          "unit_id": "dag/requirements",
+          "completed": true,
+          "integration_failed": false,
+          "merge_conflicts": 0,
+          "rework_cycles": 0,
+          "context_bytes": 7000,
+          "cross_worker_messages": 1,
+          "hidden_tests_passed": 0,
+          "hidden_tests_total": 0,
+          "assumption_mismatches": 0,
+          "dependency_violations": 0,
+          "verification_seconds": 2.0,
+          "human_integration_minutes": 2.0
+        },
+        {
+          "attempt_id": "dag/implementation/1",
+          "worker_id": "synthetic-fixture-worker",
+          "unit_id": "dag/implementation",
+          "completed": true,
+          "integration_failed": false,
+          "merge_conflicts": 0,
+          "rework_cycles": 0,
+          "context_bytes": 10000,
+          "cross_worker_messages": 1,
+          "hidden_tests_passed": 5,
+          "hidden_tests_total": 5,
+          "assumption_mismatches": 0,
+          "dependency_violations": 0,
+          "verification_seconds": 4.0,
+          "human_integration_minutes": 3.0
+        },
+        {
+          "attempt_id": "dag/tests/1",
+          "worker_id": "synthetic-fixture-worker",
+          "unit_id": "dag/tests",
+          "completed": true,
+          "integration_failed": false,
+          "merge_conflicts": 0,
+          "rework_cycles": 0,
+          "context_bytes": 9000,
+          "cross_worker_messages": 1,
+          "hidden_tests_passed": 0,
+          "hidden_tests_total": 0,
+          "assumption_mismatches": 0,
+          "dependency_violations": 0,
+          "verification_seconds": 5.0,
+          "human_integration_minutes": 3.0
+        },
+        {
+          "attempt_id": "dag/review/1",
+          "worker_id": "synthetic-fixture-worker",
+          "unit_id": "dag/review",
+          "completed": true,
+          "integration_failed": false,
+          "merge_conflicts": 0,
+          "rework_cycles": 0,
+          "context_bytes": 12000,
+          "cross_worker_messages": 1,
+          "hidden_tests_passed": 0,
+          "hidden_tests_total": 0,
+          "assumption_mismatches": 0,
+          "dependency_violations": 0,
+          "verification_seconds": 4.0,
+          "human_integration_minutes": 4.0
+        }
+      ]
+    },
+    {
+      "strategy": "formal_work_units",
+      "units": [
+        {
+          "id": "issue15/example/research",
+          "description": "Formal requirements research Work Unit.",
+          "dependencies": [],
+          "allowed_paths": [
+            "docs/specifications/"
+          ],
+          "global_context_required": false,
+          "formal_work_unit_path": "examples/work-units/composability/research.work-unit.json"
+        },
+        {
+          "id": "issue15/example/coding",
+          "description": "Formal coding Work Unit.",
+          "dependencies": [
+            "issue15/example/research"
+          ],
+          "allowed_paths": [
+            "experiments/canonical_json.py"
+          ],
+          "global_context_required": false,
+          "formal_work_unit_path": "examples/work-units/composability/coding.work-unit.json"
+        },
+        {
+          "id": "issue15/example/testing",
+          "description": "Formal testing Work Unit.",
+          "dependencies": [
+            "issue15/example/coding"
+          ],
+          "allowed_paths": [
+            "tests/test_canonical_json.py"
+          ],
+          "global_context_required": false,
+          "formal_work_unit_path": "examples/work-units/composability/testing.work-unit.json"
+        },
+        {
+          "id": "issue15/example/review",
+          "description": "Formal independent review Work Unit.",
+          "dependencies": [
+            "issue15/example/testing"
+          ],
+          "allowed_paths": [],
+          "global_context_required": false,
+          "formal_work_unit_path": "examples/work-units/composability/review.work-unit.json"
+        }
+      ],
+      "observations": [
+        {
+          "attempt_id": "formal/research/1",
+          "worker_id": "synthetic-fixture-worker",
+          "unit_id": "issue15/example/research",
+          "completed": true,
+          "integration_failed": false,
+          "merge_conflicts": 0,
+          "rework_cycles": 0,
+          "context_bytes": 6000,
+          "cross_worker_messages": 1,
+          "hidden_tests_passed": 0,
+          "hidden_tests_total": 0,
+          "assumption_mismatches": 0,
+          "dependency_violations": 0,
+          "verification_seconds": 2.0,
+          "human_integration_minutes": 2.0
+        },
+        {
+          "attempt_id": "formal/coding/1",
+          "worker_id": "synthetic-fixture-worker",
+          "unit_id": "issue15/example/coding",
+          "completed": true,
+          "integration_failed": false,
+          "merge_conflicts": 0,
+          "rework_cycles": 0,
+          "context_bytes": 9000,
+          "cross_worker_messages": 1,
+          "hidden_tests_passed": 5,
+          "hidden_tests_total": 5,
+          "assumption_mismatches": 0,
+          "dependency_violations": 0,
+          "verification_seconds": 4.0,
+          "human_integration_minutes": 3.0
+        },
+        {
+          "attempt_id": "formal/testing/1",
+          "worker_id": "synthetic-fixture-worker",
+          "unit_id": "issue15/example/testing",
+          "completed": true,
+          "integration_failed": false,
+          "merge_conflicts": 0,
+          "rework_cycles": 0,
+          "context_bytes": 8000,
+          "cross_worker_messages": 1,
+          "hidden_tests_passed": 0,
+          "hidden_tests_total": 0,
+          "assumption_mismatches": 0,
+          "dependency_violations": 0,
+          "verification_seconds": 5.0,
+          "human_integration_minutes": 3.0
+        },
+        {
+          "attempt_id": "formal/review/1",
+          "worker_id": "synthetic-fixture-worker",
+          "unit_id": "issue15/example/review",
+          "completed": true,
+          "integration_failed": false,
+          "merge_conflicts": 0,
+          "rework_cycles": 0,
+          "context_bytes": 10000,
+          "cross_worker_messages": 1,
+          "hidden_tests_passed": 0,
+          "hidden_tests_total": 0,
+          "assumption_mismatches": 0,
+          "dependency_violations": 0,
+          "verification_seconds": 4.0,
+          "human_integration_minutes": 4.0
+        }
+      ]
+    }
+  ]
+}

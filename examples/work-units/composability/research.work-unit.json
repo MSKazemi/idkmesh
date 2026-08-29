@@ -1,0 +1,22 @@
+{
+  "schema_version": "0.2",
+  "id": "issue15/example/research",
+  "version": 1,
+  "kind": "research",
+  "objective": "Define the observable behavior and edge cases for a deterministic canonical-JSON helper.",
+  "context": {"summary": "Bounded research unit in the issue #15 decomposition fixture.", "references": ["docs/specifications/WORK_UNIT_COMPOSABILITY_V0_2.md"], "max_context_bytes": 8192},
+  "inputs": [],
+  "outputs": [{"id": "requirements", "type": "report", "description": "A concise behavior and edge-case report.", "media_type": "text/markdown"}],
+  "dependencies": [],
+  "requirements": {"capabilities": ["requirements-analysis"], "resources": {"cpu_cores_min": 0.1, "memory_mb_min": 32, "disk_mb_min": 1, "gpu": "none", "accelerator_capabilities": []}},
+  "constraints": {"allowed_paths": ["docs/specifications/"], "forbidden_paths": ["schemas/work-unit-v0.1.schema.json", "schemas/work-unit-v0.2.schema.json"], "policies": ["No network access", "No project-paid compute"]},
+  "uncertainty": [{"statement": "Canonicalization requirements may expand after external interoperability trials.", "confidence": 0.8, "resolution_strategy": "Record unsupported cases explicitly for follow-up rather than expanding this unit."}],
+  "security": {"risk_class": "low", "data_classification": "public", "minimum_worker_trust": "untrusted", "sandbox_required": false},
+  "permissions": {"network": "none", "network_allowlist": [], "filesystem_write": ["docs/specifications/"], "secrets": [], "process_execution": false},
+  "verification_policy": {"strategy": "all_required", "independent_from_worker": true, "minimum_independent_verifiers": 1, "acceptance_rule": "The report identifies deterministic ordering, encoding, and unsupported-value behavior."},
+  "validators": [{"id": "requirements-review", "type": "review", "required": true, "description": "Independently review requirements for ambiguity and missing edge cases."}],
+  "evidence_requirements": [{"type": "review", "required": true, "description": "Retain the independent requirements review."}],
+  "budget": {"wall_seconds": 900, "compute_units": 0.1, "human_minutes": 15, "tokens": 0, "project_spend_usd_max": 0, "paid_fallback_allowed": false},
+  "provenance": {"created_by": "Issue #15 composability fixture", "creator_type": "hybrid", "source": "Issue #15", "source_revision": "example-dag-v1", "parent_work_unit_ids": []},
+  "failure_semantics": {"retryable": true, "max_attempts": 2, "on_failure": "replan"}
+}
