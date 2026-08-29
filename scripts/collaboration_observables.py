@@ -99,11 +99,13 @@ def analyze(snapshot: dict[str, Any]) -> dict[str, Any]:
     cutoff = snapshot.get("cutoff_at")
     pulls = snapshot.get("pull_requests")
     contributors = snapshot.get("contributors")
+    inventory_complete = snapshot.get("inventory_complete")
     _require(isinstance(repository, str) and "/" in repository, "repository must be owner/name")
     _require(isinstance(cutoff, str), "cutoff_at is required")
     cutoff_time = _time(cutoff)
     _require(isinstance(pulls, list), "pull_requests must be an array")
     _require(isinstance(contributors, list), "contributors must be an array")
+    _require(isinstance(inventory_complete, bool), "inventory_complete must be a boolean")
 
     first_review_hours: list[float] = []
     cycle_hours: list[float] = []
@@ -179,7 +181,11 @@ def analyze(snapshot: dict[str, Any]) -> dict[str, Any]:
         contributor_ids.add(login.lower())
         timestamps = row.get("meaningful_contributions")
         _require(isinstance(timestamps, list) and timestamps, "contributor requires meaningful contributions")
-        parsed = sorted({_time(value) for value in timestamps})
+        parsed = sorted(_time(value) for value in timestamps)
+        _require(
+            len(set(parsed)) == len(parsed),
+            "meaningful contribution timestamps must be unique per contributor",
+        )
         _require(parsed[-1] <= cutoff_time, "contribution occurs after cutoff")
         recurring += len(parsed) >= 2
 
@@ -210,7 +216,7 @@ def analyze(snapshot: dict[str, Any]) -> dict[str, Any]:
             "contributor_recurrence": beta_binomial_summary(recurring, len(contributors)),
             "ci_evidence": beta_binomial_summary(ci_passed, ci_total),
             "review_queue": queue_summary,
-            "structural_debt": {"model": "bounded_inventory_count-v1", "observed_findings": len(debt_ids), "finding_ids": sorted(debt_ids), "pull_requests_observed": len(pulls), "inventory_complete": bool(snapshot.get("inventory_complete"))},
+            "structural_debt": {"model": "bounded_inventory_count-v1", "observed_findings": len(debt_ids), "finding_ids": sorted(debt_ids), "pull_requests_observed": len(pulls), "inventory_complete": inventory_complete},
         },
         "evidence_derived_strategy_priors": prior_rows,
         "authority": {"causal_claim": False, "policy_activation": False, "github_write": False},
