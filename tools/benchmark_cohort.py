@@ -457,6 +457,20 @@ def cmd_self_test(_: argparse.Namespace) -> int:
     summary = validate_cohort(baseline)
     require(summary["pending_tasks"] == 1, "self-test scaffold was not classified as pending")
 
+    frozen_without_digest = copy.deepcopy(baseline)
+    frozen_without_digest["stage"] = "frozen"
+    try:
+        validate_cohort(frozen_without_digest)
+    except CohortError as exc:
+        require(
+            "definition_digest" in str(exc),
+            "frozen cohort without definition_digest failed for an unrelated reason",
+        )
+    else:
+        raise CohortError(
+            "self-test expected frozen cohort without definition_digest to fail closed"
+        )
+
     v03_baseline = _fixture_cohort(
         plan_path="verification/fixtures/patch-fragment-substring-evaluator-plan-v0.3.json"
     )
