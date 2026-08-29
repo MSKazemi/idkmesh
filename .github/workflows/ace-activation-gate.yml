@@ -42,7 +42,7 @@ jobs:
             examples/community/ace-activation-gate-current.example.json \
             --output /tmp/ace-activation.json
           python -m json.tool /tmp/ace-activation.json >/dev/null
-      - name: Assert current fixture remains blocked for real remaining gates
+      - name: Assert current fixture remains blocked by real descendant evidence only
         run: |
           python - <<'PY'
           import json
@@ -52,12 +52,16 @@ jobs:
           assert result['decision'] == 'BLOCK'
           assert result['activation_gate_passed'] is False
           assert result['required_controller_mode_if_blocked'] == 'SHADOW'
-          assert 'component:integration_protection' in blockers
           assert 'real_verified_descendant_evidence' in blockers
+          # `main` is protected with required checks, so protection must NOT block.
+          # Asserting the opposite would pin a false claim about repository state.
+          assert 'component:integration_protection' not in blockers
+          # Real external descendant evidence is the only honest remaining gate.
+          assert blockers == {'real_verified_descendant_evidence'}
           assert 'review_capacity' not in blockers
           assert 'component:observer' not in blockers
           assert 'component:lineage' not in blockers
           assert 'component:security' not in blockers
           assert 'component:controller' not in blockers
-          print('ACE Phase B correctly remains blocked by protection and real-descendant evidence, not capacity')
+          print('ACE Phase B correctly remains blocked by real-descendant evidence alone')
           PY
