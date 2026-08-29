@@ -92,7 +92,7 @@ jobs:
             --repository "${GITHUB_REPOSITORY}" \
             --ref "${GITHUB_REF}" \
             --run-id "${GITHUB_RUN_ID}" \
-            --source "Mathematical Evolution Kernel" \
+            --source workflow_dispatch \
             --checkpoint-source ci-smoke >/tmp/evolution-record.json
           python -m json.tool /tmp/evolution-state.json >/dev/null
           python -m json.tool /tmp/evolution-record.json >/dev/null

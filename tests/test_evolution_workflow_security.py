@@ -8,6 +8,7 @@ import unittest
 ROOT = Path(__file__).resolve().parents[1]
 EVOLUTION = ROOT / ".github" / "workflows" / "evolution-loop.yml"
 PORTFOLIO = ROOT / ".github" / "workflows" / "repository-math-portfolio.yml"
+KERNEL = ROOT / ".github" / "workflows" / "mathematical-evolution-kernel.yml"
 
 
 class EvolutionWorkflowSecurityTests(unittest.TestCase):
@@ -73,6 +74,11 @@ class EvolutionWorkflowSecurityTests(unittest.TestCase):
     def test_live_observer_has_no_pull_request_review_trigger(self) -> None:
         trigger_block = self.evolution.split("permissions: {}", 1)[0]
         self.assertNotIn("pull_request_review:", trigger_block)
+
+    def test_kernel_smoke_event_uses_trusted_source_fixture(self) -> None:
+        kernel = KERNEL.read_text(encoding="utf-8")
+        self.assertIn("--source workflow_dispatch", kernel)
+        self.assertNotIn('--source "Mathematical Evolution Kernel"', kernel)
 
     def test_live_jobs_use_trusted_checkout_and_read_only_permissions(self) -> None:
         for workflow in (self.evolution, self.portfolio):
