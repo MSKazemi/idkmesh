@@ -1,0 +1,61 @@
+{
+  "authority": {
+    "automatic_candidate_selection": false,
+    "canonical_state_write": false,
+    "git_push": false,
+    "merge": false
+  },
+  "audited_revision": "ed23a3995961cca784f7f049ee74732ea44a5fc7",
+  "id": "audit/phase-b2-successor-v2/pre-freeze-novelty/2026-08-29",
+  "method": "Inspect public merged PRs, calibration scripts, and calibration reports published after the fixed source revision for an explicit straightforward transformation matching each WorkUnit objective.",
+  "schema_version": "0.1",
+  "source_revision": "a69aa0ae1ae4862e507511cbd9ad854237d0ad32",
+  "summary": {
+    "exposed_tasks": 5,
+    "freeze_allowed": false,
+    "novel_tasks": 0,
+    "task_count": 5
+  },
+  "tasks": [
+    {
+      "calibration_script": "tools/task001_cohort_symlink_calibration.py",
+      "evidence_report": "docs/research/PHASE_B2_V2_TASK001_SYMLINK_CALIBRATION.md",
+      "merge_commit": "b6505bd624f7e6a2b9285a9fe936288ea3920e4d",
+      "pull_request": 235,
+      "status": "solution_public",
+      "task_id": "benchmark/phase-b2-v2/001-cohort-symlink-reference"
+    },
+    {
+      "calibration_script": "tools/task002_router_nonfinite_calibration.py",
+      "evidence_report": "docs/research/PHASE_B2_V2_TASK002_NONFINITE_ROUTER_CALIBRATION.md",
+      "merge_commit": "1f6eafe981d5f34106c9018c10e8fc1f581b04fc",
+      "pull_request": 207,
+      "status": "solution_public",
+      "task_id": "benchmark/phase-b2-v2/002-router-nonfinite-numbers"
+    },
+    {
+      "calibration_script": "tools/task003_branch_unobserved_head_calibration.py",
+      "evidence_report": "docs/research/PHASE_B2_V2_TASK003_UNOBSERVED_HEAD_CALIBRATION.md",
+      "merge_commit": "0b0887bef5b9aea71b8000d8b5f971b4cbf4d2df",
+      "pull_request": 198,
+      "status": "solution_public",
+      "task_id": "benchmark/phase-b2-v2/003-branch-unobserved-head"
+    },
+    {
+      "calibration_script": "tools/task004_rwvb_nonfinite_calibration.py",
+      "evidence_report": "docs/research/PHASE_B2_V2_TASK004_NONFINITE_RWVB_CALIBRATION.md",
+      "merge_commit": "621e648d6eb9503489a7cbddd53f95bfaf9941e7",
+      "pull_request": 233,
+      "status": "solution_public",
+      "task_id": "benchmark/phase-b2-v2/004-rwvb-nonfinite-domain"
+    },
+    {
+      "calibration_script": "tools/task005_local_offer_output_calibration.py",
+      "evidence_report": "docs/research/PHASE_B2_V2_TASK005_OUTPUT_CALIBRATION.md",
+      "merge_commit": "ad00a1ccf8de6a534e897a2b2cfe0fa1355f83fd",
+      "pull_request": 189,
+      "status": "solution_public",
+      "task_id": "benchmark/phase-b2-v2/005-local-offer-output-boundary"
+    }
+  ]
+}

@@ -55,6 +55,22 @@ jobs:
           assert pending.isdisjoint(completed)
           assert pending | completed == task_ids
           assert gate["freeze_ready"] is (len(pending) == 0)
+          novelty = gate["pre_freeze_novelty_audit"]
+          assert novelty["status"] == "failed"
+          assert novelty["freeze_allowed"] is False
+          assert set(novelty["exposed_task_ids"]) == task_ids
+          report_path = Path(novelty["report_path"])
+          assert report_path.is_file()
+          report = json.loads(report_path.read_text(encoding="utf-8"))
+          assert report["audited_revision"] == novelty["audited_revision"]
+          assert report["summary"] == {
+              "exposed_tasks": 5,
+              "freeze_allowed": False,
+              "novel_tasks": 0,
+              "task_count": 5,
+          }
+          assert {task["task_id"] for task in report["tasks"]} == task_ids
+          assert {task["status"] for task in report["tasks"]} == {"solution_public"}
 
           for task_id, record in gate.get("calibration_completed", {}).items():
               assert task_id in task_ids
