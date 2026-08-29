@@ -222,7 +222,11 @@ The same separation is applied to the Repository Mathematical Portfolio.
 
 Artifact-backed observer state cannot safely have two concurrent successors restoring the same parent checkpoint.
 
-Trusted observers therefore use one repository-level concurrency group with `cancel-in-progress: true`.
+Canonical checkpoint-producing observers therefore use one repository-level
+concurrency group with `cancel-in-progress: true`. Advisory
+`pull_request_target` observations use a separate concurrency group because
+they cannot become checkpoint parents; a merge-close advisory run must not
+cancel the canonical observation triggered by the same merge's `main` push.
 
 The semantics are explicit:
 
