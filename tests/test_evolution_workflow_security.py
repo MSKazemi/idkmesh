@@ -97,6 +97,13 @@ class EvolutionWorkflowSecurityTests(unittest.TestCase):
             self.assertNotIn("issues: write", workflow)
             self.assertNotIn("pull-requests: write", workflow)
 
+    def test_advisory_pr_metadata_cannot_cancel_canonical_observer(self) -> None:
+        self.assertIn(
+            "group: evolution-observer-${{ github.event_name == 'pull_request_target' && 'advisory' || 'canonical' }}",
+            self.evolution,
+        )
+        self.assertIn("cancel-in-progress: true", self.evolution)
+
     def test_external_actions_are_immutable_sha_pinned(self) -> None:
         for path in (EVOLUTION, PORTFOLIO):
             workflow = path.read_text(encoding="utf-8")

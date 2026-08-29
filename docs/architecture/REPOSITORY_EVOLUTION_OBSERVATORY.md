@@ -233,13 +233,18 @@ The Observatory workflow's third-party actions are pinned to reviewed immutable 
 
 ## Event storms and compute budget
 
-The trusted observer uses one concurrency group with `cancel-in-progress: true`:
+Canonical checkpoint-producing events use one concurrency group with
+`cancel-in-progress: true`:
 
 ```text
-many rapid events -> cancel stale observation -> compute newest snapshot
+many rapid canonical events -> cancel stale canonical observation -> compute newest snapshot
 ```
 
-PR-head tests use a separate per-PR group, so proposed-code verification cannot cancel the trusted observer or vice versa.
+Advisory `pull_request_target` observations use a separate group because their
+artifacts are deliberately ineligible as checkpoint parents. This prevents the
+PR-close event emitted by a merge from cancelling the authoritative `main`-push
+observation. PR-head tests use a third per-PR group, so proposed-code
+verification cannot cancel either observer class.
 
 A daily scheduled observation provides quiet drift detection.
 
