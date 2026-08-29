@@ -1,8 +1,8 @@
-# Work Unit Research Track — completion map
+# Work Unit Research Track — protocol status map
 
 Issue: #15
 
-This record maps the original formal Work Unit research questions onto the repository's current executable contracts and identifies which parts are complete versus continuing empirical work.
+This record maps the formal Work Unit research questions onto the repository's current executable contracts and separates the completed protocol-definition foundation from the empirical acceptance work that still keeps issue #15 open.
 
 ## Current canonical contract
 
@@ -18,17 +18,19 @@ IDKMesh now has a versioned Work Unit lineage:
 
 The v0.2 Work Unit carries the fields the research track originally asked to make explicit: stable identity/version, objective, bounded scope, inputs/outputs, dependencies, assumptions, validators/evidence requirements, permissions/security constraints, capability/resource requirements, budgets, provenance, and failure semantics.
 
+PR #248 subsequently added the five-arm decomposition benchmark contract, strict validator, canonical coding/testing/research/review WorkUnit DAG, metrics, and a deliberately synthetic fixture. That infrastructure establishes the experimental surface; it does not establish which decomposition strategy is better.
+
 ## Research hypotheses mapped to executable evidence
 
 ### H1 — explicit contracts reduce integration ambiguity
 
 Implemented structurally. WorkUnit -> ResultManifest -> EvaluatorPlan -> VerificationResult now forms a typed evidence path, and the repository validates exact digest/provenance bindings between these objects. Worker success is explicitly separated from independent acceptance.
 
-This hypothesis remains open empirically: the repository should continue measuring integration failure/rework against less-structured task descriptions rather than treating the contract's existence as proof of benefit.
+This hypothesis remains open empirically: the repository should measure integration failure/rework against less-structured task descriptions rather than treating the contract's existence as proof of benefit.
 
 ### H2 — an optimal Work Unit granularity exists
 
-Not closed empirically. The repository now has a decomposition benchmark schema suitable for comparing monolithic, human-written, module/file, dependency-DAG, and formal-contract decompositions. The remaining work belongs to experiment execution and measurement, not another Work Unit schema revision.
+Open empirically. The repository has the five-arm decomposition benchmark machinery needed to compare decomposition strategies, but the checked-in observations are synthetic infrastructure data. Controlled runs by independently assigned workers with bounded context and shared hidden tests are still required.
 
 ### H3 — explicit assumptions/uncertainty reduce rework
 
@@ -45,14 +47,14 @@ The repository has typed Goal/graph and evidence contracts plus decomposition ex
 | versioned Work Unit schema | complete: v0.1 + canonical v0.2 |
 | JSON/YAML representation | complete through JSON schema and checked-in fixtures |
 | task/evidence DAG model | available through Goal/graph + dependency/evidence bindings |
-| decomposition benchmark | contract exists; real comparative runs remain research work |
-| decomposition/integration metrics | partially available; empirical study remains |
+| decomposition benchmark | complete as experimental infrastructure via #248 |
+| decomposition/integration metrics | defined; real comparative measurements remain |
 | example Work Units | present across benchmark, node, verifier, and experiment fixtures |
 | reference validator interface | implemented through schema harnesses, EvaluatorPlan, and independent verifier path |
 
 ## Architectural decision
 
-Do not create a new Work Unit protocol merely because issue #15 remained open.
+Do not create a new Work Unit protocol merely because issue #15 remains open.
 
 The correct current boundary is:
 
@@ -68,18 +70,20 @@ Goal / project policy
 
 A2A, MCP, OpenHands, mini-SWE-agent, local nodes, and future adapters should map into this semantic contract rather than redefine it.
 
-## What remains research, not protocol debt
+## What remains before issue #15 can close
 
-The following questions remain intentionally open:
+Issue #15's own current evidence ledger requires genuine controlled comparative runs rather than synthetic fixtures alone. Closure therefore still requires, at minimum:
 
-- optimal task granularity by task class;
-- causal effect of explicit assumptions and uncertainty;
-- context-size versus coordination-cost trade-offs;
-- decomposition strategy comparisons on real repository tasks;
-- effect of task/evidence DAGs on rework, conflicts, verifier cost, and human integration minutes.
+- independently assigned workers across the five decomposition arms;
+- bounded and comparable context budgets;
+- shared hidden tests/evaluation criteria;
+- measured integration failures/rework and context/coordination costs;
+- analysis that does not assume any decomposition strategy is superior before outcomes are observed.
 
-These should be tracked as experiments under the existing research program. Any future breaking Work Unit change should require evidence that v0.2 cannot represent a necessary invariant, and should use a new schema version rather than silently changing v0.2 semantics.
+Additional hypotheses remain intentionally open, including the causal effect of explicit assumptions/uncertainty and the effect of task/evidence DAGs on verifier cost and human integration minutes.
 
-## Completion conclusion
+Any future breaking Work Unit change should require evidence that v0.2 cannot represent a necessary invariant and should use a new schema version rather than silently changing v0.2 semantics.
 
-The **protocol-definition objective of issue #15 is complete**. The remaining falsifiable hypotheses are downstream experimental questions and should continue in the research/benchmark issues rather than keeping the core Work Unit definition track open indefinitely.
+## Status conclusion
+
+The **protocol-definition and benchmark-infrastructure foundation is complete enough to run the research**, but **issue #15 is not complete**. Its remaining acceptance criterion is empirical: execute the controlled independent-worker comparison and retain the measured evidence. This distinction prevents protocol churn while preserving the falsifiable research question.
