@@ -97,6 +97,12 @@ Aggregates report mean/min/max across seeds for:
 - Jain utilization fairness;
 - churn recovery.
 
+With two or more seeds, every numeric aggregate also reports the sample standard
+deviation and a two-sided 95% Student-t interval for the mean. A one-seed run
+reports both fields as `null` rather than inventing uncertainty evidence. The
+interval is clipped to the metric's physical domain: zero for all reported
+metrics and one for rates, utilization, and Jain fairness.
+
 ## Oracle comparisons
 
 When the oracle is available, every local policy gets a seed-matched comparison.
@@ -152,6 +158,9 @@ python -m randomness_lab.r2_scale \
 ```
 
 The 100,000-worker runs may be materially more expensive than the smaller cells. Keep the raw configuration with every published result.
+
+The first five-seed full-ladder evidence and guarded interpretation are retained
+in [`../../results/experiments/r2/reference-scale-seeds41-45.md`](../../results/experiments/r2/reference-scale-seeds41-45.md).
 
 ## Interpretation
 
