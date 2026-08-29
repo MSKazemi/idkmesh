@@ -86,6 +86,26 @@ The count is a review prompt. It is not a target, and nothing in CI enforces it.
 - Scope is `tools/` and `scripts/` Python entry points. Shell scripts, `sim/`, `experiments/`,
   and `randomness_lab/` are out of scope for this rule.
 
+## Follow-up: the report defeated the check
+
+Publishing the table above cleared every finding in it. `docs/` counts as recorded output, so
+naming all five executables in prose satisfied condition 2 for all five, and the next observatory
+run reported zero. The limitation noted below turned out not to be theoretical — it fired
+immediately, on the first report.
+
+`docs/findings/` is now excluded from the recorded-output corpus. A report *about* repository
+health is analysis, not evidence that a tool ran, and without the exclusion the check silences
+itself the moment anyone writes down what it found.
+`test_a_findings_report_does_not_clear_what_it_reports` pins the case; a non-findings document
+still clears an executable, which is the intended behaviour.
+
+Three of the five have since left the list by the intended route. `tools/node_verifier_e2e.py`,
+`tools/node_verifier_e2e_current.py`, and `tools/node_runtime_acceptance.py` were run against the
+preserved worker candidate and their evidence is committed — see
+[Replaying the Node Evidence](2026-08-30-node-evidence-replay-and-digest-reproducibility.md).
+Two remain flagged, and both are genuinely unexercised: `tools/open_model_benchmark_probe.py` and
+`tools/open_model_text_generator.py`.
+
 ## Decision
 
 No removals, no CI enforcement, no threshold. The five are recorded as review candidates. Two of

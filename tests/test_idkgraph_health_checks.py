@@ -252,6 +252,40 @@ class UnexercisedExecutableTests(unittest.TestCase):
             (root / "tools" / "dormant.py").write_text("print('x')\n", encoding="utf-8")
             self.assertEqual([], self._executable_findings(root))
 
+    def test_a_findings_report_does_not_clear_what_it_reports(self) -> None:
+        """The check must not silence itself when someone writes down what it found.
+
+        The first report this check produced listed all five of its findings in a
+        table. Because docs/ counts as recorded output, that table cleared all five
+        on the next run.
+        """
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self._repository(
+                root,
+                {
+                    "tools/dormant.py": "print('dormant')\n",
+                    "docs/findings/2026-01-01-health.md": (
+                        "# Health\n\nNothing runs `tools/dormant.py`.\n"
+                    ),
+                },
+            )
+            self.assertEqual(["tools/dormant.py"], self._executable_findings(root))
+
+    def test_a_non_findings_document_still_counts_as_recorded_output(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self._repository(
+                root,
+                {
+                    "tools/documented.py": "print('documented')\n",
+                    "docs/guides/how-to.md": (
+                        "# How to\n\nRun `tools/documented.py` to produce the bundle.\n"
+                    ),
+                },
+            )
+            self.assertEqual([], self._executable_findings(root))
+
     def test_the_finding_is_a_review_candidate_not_a_defect(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

@@ -1,0 +1,145 @@
+{
+  "attempt": 1,
+  "checks": [
+    {
+      "evidence_ids": [
+        "result-manifest-canonical"
+      ],
+      "id": "result-manifest-schema",
+      "required": true,
+      "status": "passed",
+      "summary": "Worker ResultManifest is schema-valid and bound to the exact WorkUnit.",
+      "type": "schema"
+    },
+    {
+      "diagnostics": "{\"artifact\":{\"artifact_locator\":\"changes.patch\",\"bytes\":623,\"declared_digest\":\"sha256:8383a0dd5217e9472e5f55eb658248620e539394cb96012dc61c24a3cc33f6cf\",\"decode_error\":null,\"observed_digest\":\"sha256:8383a0dd5217e9472e5f55eb658248620e539394cb96012dc61c24a3cc33f6cf\",\"within_limit\":true},\"logs\":{\"coverage_violations\":[],\"logs\":[{\"bytes\":0,\"declared_digest\":\"sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"index\":1,\"locator\":\"stdout.txt\",\"matches\":true,\"observed_digest\":\"sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"type\":\"stdout\",\"within_limit\":true},{\"bytes\":0,\"declared_digest\":\"sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"index\":2,\"locator\":\"stderr.txt\",\"matches\":true,\"observed_digest\":\"sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\"type\":\"stderr\",\"within_limit\":true}],\"observed_type_counts\":{\"stderr\":1,\"stdout\":1},\"required_log_types\":[\"stdout\",\"stderr\"]},\"scope\":{\"allowed_paths\":[\"README.md\"],\"changed_paths\":[\"README.md\"],\"filesystem_write\":[\"README.md\"],\"forbidden_paths\":[\".github/**\",\"SECURITY.md\"],\"violations\":[]},\"semantic\":{\"missing_added_text\":[],\"observed_added_lines\":[\"> **From uncertainty to collective intelligence.**\",\"<!-- idkmesh-node candidate smoke -->\"],\"required_added_text\":[\"<!-- idkmesh-node candidate smoke -->\"]},\"worker_status\":\"succeeded\"}",
+      "evidence_ids": [
+        "candidate-patch-hash",
+        "log-integrity-observation",
+        "patch-scope-observation",
+        "patch-semantic-observation",
+        "worker-status-observation"
+      ],
+      "id": "independent-review",
+      "required": true,
+      "status": "passed",
+      "summary": "Independent metadata-only patch review passed artifact/log completeness and integrity, strict patch structure, scope, and verifier-owned semantic checks.",
+      "type": "review"
+    }
+  ],
+  "decision_support": {
+    "confidence": 1.0,
+    "rationale": "Both WorkUnit-required validators passed using independently observed metadata-only evidence.",
+    "recommendation": "accept_candidate"
+  },
+  "evidence": [
+    {
+      "description": "Canonical digest of the schema-valid worker ResultManifest evaluated by the verifier.",
+      "digest": "sha256:4247dffda2596ff17916021197fd8cf07837054fa6568f07cd8215c0c095b913",
+      "id": "result-manifest-canonical",
+      "locator": "inline://result-manifest-canonical",
+      "media_type": "application/json",
+      "type": "attestation"
+    },
+    {
+      "description": "SHA-256 observed directly from candidate patch bytes.",
+      "digest": "sha256:8383a0dd5217e9472e5f55eb658248620e539394cb96012dc61c24a3cc33f6cf",
+      "id": "candidate-patch-hash",
+      "locator": "changes.patch",
+      "media_type": "text/x-diff",
+      "type": "artifact_hash"
+    },
+    {
+      "description": "Canonical digest of evaluator-required log coverage and independently recomputed log integrity observations.",
+      "digest": "sha256:ee6dbad8f3c96512ea49e9dca40ceb4fce3254d5324f3e49e6f93397ab9f6bc4",
+      "id": "log-integrity-observation",
+      "locator": "inline://log-integrity",
+      "media_type": "application/json",
+      "type": "trace"
+    },
+    {
+      "description": "Canonical digest of independently parsed unified-diff paths and WorkUnit scope checks.",
+      "digest": "sha256:426e21293023a522c43b32c61544238225575bf7f0226ad6c5a91980224a0e81",
+      "id": "patch-scope-observation",
+      "locator": "inline://patch-scope",
+      "media_type": "application/json",
+      "type": "static_analysis"
+    },
+    {
+      "description": "Canonical digest of verifier-owned required-added-text checks from validated hunks only.",
+      "digest": "sha256:11c135941f4605b4647ae6d0de3fcfa282bdf073799eb3310d52e45fb0f942dc",
+      "id": "patch-semantic-observation",
+      "locator": "inline://patch-semantic",
+      "media_type": "application/json",
+      "type": "test_output"
+    },
+    {
+      "description": "Canonical digest of the worker execution status observed by the verifier.",
+      "digest": "sha256:557d907fbdaf9ce5bb0ad618c35c2709b08665790555d991c6c93eda39897452",
+      "id": "worker-status-observation",
+      "locator": "inline://worker-status",
+      "media_type": "application/json",
+      "type": "trace"
+    }
+  ],
+  "extensions": {
+    "org.idkmesh.evaluator_plan.backend": "unified_diff",
+    "org.idkmesh.evaluator_plan.digest": "sha256:a0e89da54213408e942317816da0ef040d486f182ef160375fffe374c130c968",
+    "org.idkmesh.evaluator_plan.execution_mode": "metadata_only",
+    "org.idkmesh.evaluator_plan.id": "verification/real-node-520ad2c-plan",
+    "org.idkmesh.evaluator_plan.runner_version": "0.3",
+    "org.idkmesh.evaluator_plan.visibility": "public",
+    "org.idkmesh.local_verifier.backend": "unified_diff",
+    "org.idkmesh.local_verifier.policy_id": "verification/real-node-520ad2c-plan"
+  },
+  "findings": [],
+  "finished_at": "2026-08-29T22:21:45.425786Z",
+  "id": "node/canonical-smoke/attempt-1-7c642cfd4d/patch-verification",
+  "independence": {
+    "correlation_notes": "Evaluator policy is verifier-owned and outside the candidate root; candidate code is never executed. Patch structure/paths, artifact/log digests, required log coverage, and semantic markers are independently recomputed.",
+    "independent_from_worker": true,
+    "shared_model_family": false,
+    "shared_runtime": false,
+    "worker_id_observed": "local/idkmesh-node"
+  },
+  "metrics": {
+    "candidate_bytes": 623,
+    "changed_path_count": 1,
+    "log_count": 2,
+    "required_checks_failed": 0,
+    "required_checks_passed": 2
+  },
+  "provenance": {
+    "environment": {
+      "platform": "Linux-7.0.0-30-generic-x86_64-with-glibc2.39",
+      "python": "3.12.3",
+      "tool_versions": {
+        "deterministic-patch-verifier": "0.1.1",
+        "idkmesh-local-verifier": "0.1",
+        "jsonschema": "installed"
+      }
+    },
+    "result_manifest_digest": "sha256:4247dffda2596ff17916021197fd8cf07837054fa6568f07cd8215c0c095b913",
+    "source_revision": "b1397a9be91da6570e8ae370de4fa9f4bc44df5c",
+    "verifier_config_digest": "sha256:a0e89da54213408e942317816da0ef040d486f182ef160375fffe374c130c968",
+    "work_unit_digest": "sha256:40993e892a5b83962364686809f7ec6e94ef379e10aaea9492a0526ed7695e2e"
+  },
+  "resources": {
+    "compute_units": 0.0,
+    "human_minutes": 0.0,
+    "tokens": 0,
+    "wall_seconds": 0.0021544089995586546
+  },
+  "result_manifest_id": "node/canonical-smoke/attempt-1-7c642cfd4d",
+  "schema_version": "0.1",
+  "started_at": "2026-08-29T22:21:45.423576Z",
+  "status": "passed",
+  "verifier": {
+    "adapter": "deterministic-patch-verifier",
+    "adapter_version": "0.1.1",
+    "id": "idkmesh-local-verifier",
+    "type": "system"
+  },
+  "work_unit_id": "node/canonical-smoke",
+  "work_unit_version": 2
+}

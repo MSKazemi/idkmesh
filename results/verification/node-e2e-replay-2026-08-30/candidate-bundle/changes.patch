@@ -1,0 +1,12 @@
+diff --git a/README.md b/README.md
+index 79c31f6..77a825f 100644
+--- a/README.md
++++ b/README.md
+@@ -311,4 +311,5 @@ IDKMesh starts from a simple admission: **we do not yet know the best way to bui
+ 
+ If you can improve the question, challenge an assumption, reproduce an experiment, write a test, explain the project more clearly, help a newcomer, design a protocol, find a security problem, or build a small verified component, you can contribute.
+ 
+-> **From uncertainty to collective intelligence.**
+\ No newline at end of file
++> **From uncertainty to collective intelligence.**
++<!-- idkmesh-node candidate smoke -->

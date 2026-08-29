@@ -55,6 +55,7 @@ treats a lower warning count as a standalone objective.
 - [First Production Collaboration-Observables Snapshot](2026-08-29-collaboration-observables-first-snapshot.md)
 - [Ownership Concentration: First Real Measurement](2026-08-30-ownership-concentration-first-measurement.md)
 - [Five Committed Executables That Nothing Demonstrates Ever Ran](2026-08-30-executables-nothing-ever-ran.md)
+- [Replaying the Node Evidence: One Digest Reproduces, Four Cannot](2026-08-30-node-evidence-replay-and-digest-reproducibility.md)
   — the only production run the observables pipeline has produced, committed
   before its 30-day artifact retention expired; which of its six zero-valued
   observables are real measurements and which are declared collector limitations.
