@@ -1,0 +1,24 @@
+{
+  "authority": {
+    "automatic_candidate_selection": false,
+    "canonical_state_write": false,
+    "git_push": false,
+    "merge": false
+  },
+  "baseline_seeded_negative_accepted": true,
+  "candidate_patch_digest": "sha256:d20c895d09e2f9521d8c1451cae29f9f859479f2f3401d81ba8b839ec87769eb",
+  "candidate_recommendation": "accept_candidate",
+  "candidate_seeded_negative_rejected": true,
+  "candidate_verification_status": "passed",
+  "cohort_definition_digest": "sha256:3182d8710e1239c19cb95daddd0677241c0cd9123614786fd919b036922dbdd9",
+  "cohort_id": "benchmark/phase-b2-successor-five",
+  "frozen_evaluator_plan_digest": "sha256:1abee7b4886e8c4626af8714cfad72c04cac6e93a42920af8dddf598a2236ddc",
+  "result_manifest_digest": "sha256:44ae21059a9a36f56a4dce4d5641079e3ecb734c80d38e4d940501232eb10592",
+  "schema_version": "0.1",
+  "seeded_negative_category": "security",
+  "seeded_negative_verification_result_digest": "sha256:4956d0c335d42c25adb29e81add2c97cd832d6f4ad7de24c426b1ce017577ebe",
+  "source_revision": "a69aa0ae1ae4862e507511cbd9ad854237d0ad32",
+  "structural_signature": "single-worker-baseline-v1",
+  "task_id": "benchmark/phase-b2-successor/001-negative-evidence-type-boundary",
+  "verification_result_digest": "sha256:1f850bb3675ce43a61ceddb38ab9b72d565e87047e65374ccdb7a51413ccc7ab"
+}

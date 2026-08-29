@@ -1,0 +1,4 @@
+structural_signature=single-worker-baseline-v1
+baseline_opaque_security_evidence_accepted=true
+candidate_opaque_security_evidence_rejected=true
+self_test_returncode=0

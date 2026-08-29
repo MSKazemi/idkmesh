@@ -1,0 +1,88 @@
+{
+  "attempt": 1,
+  "checks": [
+    {
+      "diagnostics": "",
+      "evidence_ids": [
+        "opaque-negative-observation"
+      ],
+      "id": "opaque-security-evidence-rejected",
+      "required": true,
+      "status": "failed",
+      "summary": "Opaque non-VerificationResult evidence is rejected for a canonical security negative.",
+      "type": "policy"
+    }
+  ],
+  "decision_support": {
+    "confidence": 1.0,
+    "rationale": "This object represents the deliberately invalid opaque-evidence negative case, which must be rejected. It is not the acceptance verdict for the corrected candidate patch.",
+    "recommendation": "reject_candidate"
+  },
+  "evidence": [
+    {
+      "description": "Canonical digest of before/after opaque security-evidence regression observations.",
+      "digest": "sha256:f1b6755c8883c8f48baad34449cd850d01dce73bf7ce433038bff457a7d4ab39",
+      "id": "opaque-negative-observation",
+      "locator": "inline://phase-b2-successor-task001/opaque-negative",
+      "media_type": "application/json",
+      "type": "test_output"
+    }
+  ],
+  "extensions": {
+    "org.idkmesh.seeded_negative": true,
+    "org.idkmesh.seeded_negative.candidate_fix_observed": true,
+    "org.idkmesh.seeded_negative.expected_category": "security"
+  },
+  "findings": [
+    {
+      "category": "security",
+      "path": "tools/benchmark_cohort.py",
+      "severity": "high",
+      "summary": "Seeded opaque security evidence is rejected unless it is a canonical VerificationResult."
+    }
+  ],
+  "finished_at": "2026-08-28T17:44:25.496115Z",
+  "id": "phase-b2-successor/task001/attempt-001/opaque-security-negative",
+  "independence": {
+    "correlation_notes": "Behavioral negative is evaluated separately from the worker transform and metadata-only patch verifier.",
+    "independent_from_worker": true,
+    "shared_model_family": false,
+    "shared_runtime": false,
+    "worker_id_observed": "idkmesh-phase-b2-deterministic-baseline"
+  },
+  "metrics": {
+    "baseline_accepted": 1,
+    "candidate_rejected": 1
+  },
+  "provenance": {
+    "environment": {
+      "platform": "Linux-6.17.0-1022-azure-x86_64-with-glibc2.39",
+      "python": "3.12.14",
+      "tool_versions": {
+        "opaque-evidence-security-regression": "0.1"
+      }
+    },
+    "result_manifest_digest": "sha256:44ae21059a9a36f56a4dce4d5641079e3ecb734c80d38e4d940501232eb10592",
+    "source_revision": "a69aa0ae1ae4862e507511cbd9ad854237d0ad32",
+    "verifier_config_digest": "sha256:1abee7b4886e8c4626af8714cfad72c04cac6e93a42920af8dddf598a2236ddc",
+    "work_unit_digest": "sha256:04258ad63d36368ae6780b351f5e3729fe5f7a12de66aee16d1bc475a8b69096"
+  },
+  "resources": {
+    "compute_units": 0.0,
+    "human_minutes": 0.0,
+    "tokens": 0,
+    "wall_seconds": 0.0
+  },
+  "result_manifest_id": "benchmark/phase-b2-successor/001-negative-evidence-type-boundary/single-worker-baseline-v1/attempt-001",
+  "schema_version": "0.1",
+  "started_at": "2026-08-28T17:44:25.496115Z",
+  "status": "failed",
+  "verifier": {
+    "adapter": "opaque-evidence-security-regression",
+    "adapter_version": "0.1",
+    "id": "idkmesh-seeded-negative-verifier",
+    "type": "system"
+  },
+  "work_unit_id": "benchmark/phase-b2-successor/001-negative-evidence-type-boundary",
+  "work_unit_version": 1
+}

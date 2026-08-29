@@ -48,14 +48,33 @@
         "visibility": "public"
       },
       "evidence": {
-        "attempts": [],
-        "status": "pending"
+        "attempts": [
+          {
+            "attempt_id": "attempt-001",
+            "outcome": "support",
+            "result_manifest": {
+              "digest": "sha256:44ae21059a9a36f56a4dce4d5641079e3ecb734c80d38e4d940501232eb10592",
+              "id": "benchmark/phase-b2-successor/001-negative-evidence-type-boundary/single-worker-baseline-v1/attempt-001",
+              "path": "results/benchmarks/phase-b2-successor-five/task-001/attempt-001/result-manifest.json"
+            },
+            "structural_signature": "single-worker-baseline-v1",
+            "verification_result": {
+              "digest": "sha256:1f850bb3675ce43a61ceddb38ab9b72d565e87047e65374ccdb7a51413ccc7ab",
+              "id": "benchmark/phase-b2-successor/001-negative-evidence-type-boundary/single-worker-baseline-v1/attempt-001/patch-verification",
+              "path": "results/benchmarks/phase-b2-successor-five/task-001/attempt-001/verification-result.json"
+            }
+          }
+        ],
+        "status": "verified"
       },
       "family": "bug_fix",
       "id": "benchmark/phase-b2-successor/001-negative-evidence-type-boundary",
       "negative_case": {
         "description": "A canonical security negative with evidence_status=verified and evidence_type=other must fail cohort validation even when the referenced JSON exists and its digest matches.",
-        "evidence_status": "pending",
+        "evidence_digest": "sha256:4956d0c335d42c25adb29e81add2c97cd832d6f4ad7de24c426b1ce017577ebe",
+        "evidence_path": "results/benchmarks/phase-b2-successor-five/task-001/attempt-001/seeded-negative.verification-result.json",
+        "evidence_status": "verified",
+        "evidence_type": "verification_result",
         "expected_category": "security"
       },
       "source": {
