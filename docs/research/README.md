@@ -27,6 +27,13 @@ policy changes or merge decisions.
   [help/hurt sweep](R1_HELP_HURT_SWEEP.md), and
   [real-result replay](R1_REAL_RESULT_REPLAY.md) — identify and replay regimes
   where diverse attempts help or hurt.
+- [R1 Collective-Capability Scaling](R1_COLLECTIVE_SCALING.md) — synthetic
+  mechanism extension for issue #13: verified-success increment, compute, and
+  verifier attention as N moves through 1, 2, 5, and 10 under controlled task
+  difficulty. Not real coding-agent performance.
+- [R1 Real-Corpus Readiness Gate](R1_CORPUS_READINESS.md) — the contract that
+  must hold before `randomness_lab.r1_replay` may be run on a real held-out
+  corpus. Readiness tooling only; no real R1 outcome. Issues #30 and #70.
 - [R2 Randomized Scheduling Under Churn](R2_SCHEDULING_CHURN_EXPERIMENT.md) and
   [scale/regime sweep](R2_SCALE_REGIME_SWEEP.md), plus the
   [capability-rarity sweep](R2_CAPABILITY_RARITY_SWEEP.md) — measure capability,
@@ -35,6 +42,11 @@ policy changes or merge decisions.
   policies on training tasks and confirm on held-out work.
 - [R4 Verified Stigmergic Routing](R4_STIGMERGIC_ROUTING.md) — route from
   verified outcomes with evaporation and newcomer exploration.
+
+- [Work Unit Research Track — protocol status map](WORK_UNIT_RESEARCH_TRACK_COMPLETION.md)
+  — maps the formal Work Unit research questions onto current executable
+  contracts and separates the converged protocol-definition foundation from the
+  empirical acceptance work that keeps issue #15 open.
 
 ## Verification Research
 

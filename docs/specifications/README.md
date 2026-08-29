@@ -16,6 +16,11 @@ meaning of an existing version.
 - [Verification Provenance Integrity](VERIFICATION_PROVENANCE_INTEGRITY.md) —
   binds WorkUnit, result, and verification objects with canonical digests.
 
+- [Work Unit Composability Profile v0.2](WORK_UNIT_COMPOSABILITY_V0_2.md) —
+  experimental reference profile adding the five-arm decomposition benchmark
+  contract and a canonical WorkUnit DAG without changing either historical
+  WorkUnit schema. Related: issues #3, #15, #17.
+
 ## Evaluation Contracts
 
 - [Bound Unified-Diff Evaluator Backend](PATCH_EVALUATOR_BACKEND.md) — verifies
@@ -24,6 +29,11 @@ meaning of an existing version.
   — preserves the historical added-substring matching contract.
 - [EvaluatorPlan v0.4 Transition Semantics](EVALUATOR_PLAN_V0_4_TRANSITION_SEMANTICS.md)
   — requires both added and removed transition evidence.
+
+- [EvaluatorPlan v0.4 Calibrated Transformation Semantics](EVALUATOR_PLAN_V0_4_TRANSFORMATION_CALIBRATION.md)
+  — experimental P0 calibration contract for issue #157; adds a metadata-only
+  transformation requirement so neither an exact-line false negative nor an
+  inert-substring false positive passes.
 
 ## Repository Graph Contracts
 
