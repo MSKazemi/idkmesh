@@ -38,6 +38,7 @@ All three are produced by existing tooling; none is new to this audit.
 | `randomness_lab.r1_readiness` over `benchmarks/*/cohort.json` | the preregistered fail-closed audit for a real R1 replay corpus |
 | newest `results/collaboration/observables-*.json` | independent-review latency, contributor recurrence, ownership concentration, evidence-derived priors |
 | `.github/workflows/*.yml` | workflows that store state inside an open issue body |
+| `examples/community/ace-activation-gate-current.example.json` | the ACE activation gate's verified-descendant count, as a committed snapshot |
 
 ## Measured state at `e16a8d0`
 
@@ -50,6 +51,8 @@ All three are produced by existing tooling; none is new to this audit.
 | evidence-derived strategy priors | `0` | `>= 1` | no |
 | canonical `node/` directory | absent | present | no |
 | no workflow stores state in an issue | `ace-cohort-observer.yml`, `ace-community-growth.yml` | none | no |
+| distinct actors for a worker fleet | `1` | `>= 10` | no |
+| verified descendant evidence | `0` | `>= 1` | no |
 
 The corpus number is the one most likely to be misread. Four cohorts exist —
 `phase-b2-first-five`, `phase-b2-first-five-v2`, `phase-b2-successor-five`,
@@ -71,26 +74,61 @@ Attempts are not evidence.
 | 138, 151, 167 | independent review exists | each asks for an independent inspection |
 | 152 | independent review exists | gated on issue 167 |
 | 86 | evidence-derived priors | P0 item 4 only; items 2 and 5 are already met |
+| 1 | distinct actors `>= 10` | its minimum experiment's step 4 is to connect 10-20 heterogeneous worker nodes |
+| 4, 16 | independent review exists | every remaining box in both begins with PR 159's required separate human review |
+| 57 | verified descendant evidence | Phase A shipped; the one unchecked activation-gate box needs a cohort with real descendants |
+
+### The four external dependencies
+
+Re-reading all twenty-one open issues on 2026-08-30 against `53ca25a` found that
+every externally blocked one reduces to exactly one of four things:
+
+1. **A genuinely separate human reviewer** — 4, 11, 16, 138, 151, 167, and 152 by
+   a criterion its owner added after the body was written. Repository-wide: `0`
+   independent reviews across `50` pull requests.
+2. **Real external contributors** — 9, 10, 57. `distinct_actors: 1`, HHI `1.0`.
+3. **A real held-out corpus, or compute for a larger producer** — 1, 30, 70, 96.
+4. **Owner-held credentials or the repository admin UI** — 12, and the
+   social-preview half of 10. No repository evidence can observe these, so 12
+   stays unclassified rather than being recorded on a guess.
+
+Issues 23 and 109 are outside that taxonomy because they are not tasks at all:
+they are the ACE workflows' storage. `ace-cohort-observer.yml` locates its ledger
+by scanning *open* issues for the `ace:cohort-observer` label and creates a new
+one when it finds none, so closing either forks a duplicate ledger at a new
+number on the next scheduled run.
 
 Issue 86's entry is marked `partial_gate`, because the issue is a programme
 rather than a single deliverable and only one of its items is gated this way.
 
 ## Issues deliberately left unclassified
 
-`1`, `2`, `4`, `12`, `13`, `16`, `22`, `57`.
+`2`, `12`, `13`, `22`.
 
 No mechanical precondition was read off their text, so none is recorded. **That
 is not evidence that they are blocked**, and a test asserts they stay out of the
 registry so a future guess cannot be laundered into a machine-checked status.
 
-Two of them are actively being worked rather than waiting:
+`12` is blocked, but on owner-held credentials and a third-party hosted service,
+which no evidence surface in this repository can observe. Recording it would mean
+asserting a blocker the tool cannot check, which is the thing this registry
+exists to avoid.
+
+The other three are actively being worked rather than waiting:
 
 - **22** — E030 and E031 landed against it, and E031's decision section states
   plainly that it closes none of the issue by itself.
 - **13** — hypothesis 1 ("increasing `N` with low diversity produces diminishing
   or negative returns after a measurable threshold") is testable in the existing
   simulator and had been sitting in a plan file, unconnected to the issue. That
-  connection was the one real error this audit corrected.
+  connection was the one real error this audit corrected. E032 acts on it.
+- **2** — the benchmark task set, runner, isolation, result schema, independent
+  validator and public negative results all exist; what is missing is the
+  strong-model baseline arm, which is work, not a blocker.
+
+A partial gate is recorded for `4`, `16`, `57` and `86`, because each has shipped
+deliverables and recording them as wholly blocked would misreport the repository's
+own state.
 
 ## When the evidence cannot be read
 

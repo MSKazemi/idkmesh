@@ -30,6 +30,9 @@ def _evidence(**overrides):
                       "state_writing_workflows": ["ace-community-growth.yml"],
                       "hard_coded_issue_numbers": {}, "referenced_issue_numbers": []},
         "node": {"available": True, "node_directory_present": False},
+        "activation_gate": {"available": True, "verified_descendant_count": 0,
+                            "independently_verified": False,
+                            "source": "examples/community/x.json (provenance: issue:109)"},
     }
     for key, value in overrides.items():
         base[key] = {**base[key], **value}
@@ -54,6 +57,10 @@ class PreconditionTest(unittest.TestCase):
             "evidence_priors": {"collaboration": {"evidence_derived_strategy_priors": 1}},
             "node_directory": {"node": {"node_directory_present": True}},
             "not_a_state_store": {"workflows": {"state_writing_workflows": []}},
+            "worker_fleet": {"collaboration": {"distinct_actors": 10}},
+            "external_descendant_evidence": {
+                "activation_gate": {"verified_descendant_count": 1}
+            },
         }
         self.assertEqual(set(flips), set(gate.PRECONDITIONS))
         for name, override in flips.items():
@@ -74,7 +81,7 @@ class PreconditionTest(unittest.TestCase):
         ev = _evidence()
         ev["collaboration"] = {"available": False, "source": None}
         for name in ("independent_review", "recurring_contributors",
-                     "multiple_actors", "evidence_priors"):
+                     "multiple_actors", "evidence_priors", "worker_fleet"):
             with self.subTest(precondition=name):
                 check = gate.PRECONDITIONS[name](ev)
                 self.assertFalse(check["met"])
@@ -93,8 +100,91 @@ class RegistryTest(unittest.TestCase):
     def test_the_registry_does_not_claim_issues_it_cannot_measure(self) -> None:
         # Issues whose blocking reason was never verified mechanically must stay
         # out of the registry rather than be recorded as blocked on a guess.
-        unclassified = {1, 2, 4, 12, 13, 16, 22, 57}
+        # 2, 13, 22 and 86 are advanceable by work in this repository and 12 is
+        # blocked on owner-held credentials, which no repository evidence can
+        # observe; none of the first four may be recorded as externally blocked.
+        unclassified = {2, 12, 13, 22}
         self.assertFalse(unclassified & set(gate.REGISTRY))
+
+    def test_an_advanceable_research_issue_is_never_recorded_as_blocked(self) -> None:
+        # The failure this guards against is the tempting one: filing a research
+        # question as "structurally blocked" because no one has done it yet.
+        for number in (2, 13, 22):
+            with self.subTest(issue=number):
+                self.assertNotIn(number, gate.REGISTRY)
+
+
+class WorkerFleetTest(unittest.TestCase):
+    def test_one_actor_does_not_meet_a_ten_node_fleet(self) -> None:
+        check = gate.PRECONDITIONS["worker_fleet"](
+            {"collaboration": {"available": True, "distinct_actors": 1}}
+        )
+        self.assertFalse(check["met"])
+        self.assertEqual(check["observed"], 1)
+        self.assertEqual(check["required"], ">= 10")
+
+    def test_the_fleet_bar_is_higher_than_the_two_actor_bar(self) -> None:
+        # Issue 1 asks for 10-20 nodes; issue 10 only needs a second actor.
+        evidence = {"collaboration": {"available": True, "distinct_actors": 3}}
+        self.assertTrue(gate.PRECONDITIONS["multiple_actors"](evidence)["met"])
+        self.assertFalse(gate.PRECONDITIONS["worker_fleet"](evidence)["met"])
+
+    def test_a_real_fleet_would_meet_it(self) -> None:
+        check = gate.PRECONDITIONS["worker_fleet"](
+            {"collaboration": {"available": True, "distinct_actors": 12}}
+        )
+        self.assertTrue(check["met"])
+
+    def test_unavailable_observables_report_no_measurement(self) -> None:
+        check = gate.PRECONDITIONS["worker_fleet"](
+            {"collaboration": {"available": False}}
+        )
+        self.assertIsNone(check["observed"], "a missing snapshot is not zero nodes")
+        self.assertFalse(check["met"])
+
+
+class ActivationGateEvidenceTest(unittest.TestCase):
+    def test_the_committed_snapshot_reports_no_verified_descendants(self) -> None:
+        evidence = gate.activation_gate_evidence(REPO_ROOT)
+        self.assertTrue(evidence["available"])
+        self.assertEqual(evidence["verified_descendant_count"], 0)
+
+    def test_the_source_names_the_snapshot_and_its_provenance(self) -> None:
+        # The count is a committed snapshot, not a live GitHub query, so the
+        # report must say so rather than imply it was measured just now.
+        evidence = gate.activation_gate_evidence(REPO_ROOT)
+        self.assertIn("ace-activation-gate-current.example.json", evidence["source"])
+        self.assertIn("provenance:", evidence["source"])
+
+    def test_a_missing_snapshot_yields_no_measurement(self) -> None:
+        evidence = gate.activation_gate_evidence(REPO_ROOT / "does" / "not" / "exist")
+        self.assertFalse(evidence["available"])
+        self.assertIsNone(evidence["verified_descendant_count"])
+        check = gate.PRECONDITIONS["external_descendant_evidence"](
+            {"activation_gate": evidence}
+        )
+        self.assertIsNone(check["observed"])
+        self.assertFalse(check["met"])
+
+    def test_a_verified_descendant_would_meet_it(self) -> None:
+        check = gate.PRECONDITIONS["external_descendant_evidence"](
+            {"activation_gate": {"available": True, "verified_descendant_count": 2}}
+        )
+        self.assertTrue(check["met"])
+
+
+class PartialGateTest(unittest.TestCase):
+    def test_issues_with_delivered_work_are_marked_partial(self) -> None:
+        # 4, 16, 57 and 86 all have shipped deliverables; recording them as
+        # wholly blocked would misreport the repository's own state.
+        for number in (4, 16, 57, 86):
+            with self.subTest(issue=number):
+                self.assertTrue(gate.REGISTRY[number].get("partial"))
+
+    def test_the_partial_flag_reaches_the_report(self) -> None:
+        report = gate.audit()
+        self.assertTrue(report["issues"]["57"]["partial_gate"])
+        self.assertFalse(report["issues"]["9"]["partial_gate"])
 
 
 class AuditTest(unittest.TestCase):
