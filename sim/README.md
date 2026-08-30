@@ -649,6 +649,32 @@ Counters are pooled rather than averaged, because the arms have different
 denominators. See
 [`../experiments/E038-symmetric-gate.md`](../experiments/E038-symmetric-gate.md).
 
+### E039 — the blind spot has no address, and giving it one baits the optimiser
+
+E036 asked for a *coordinated* adversary that learns the panel's shared blind
+spot. `e039_content_addressed_blind_spot.py` shows that test cannot be run as
+posed: `verify_candidate` reads the artifact through exactly one bit, so the
+blind spot is a memoryless coin and there is no address to learn. The probe
+proves it by getting bit-identical decision sequences from two structurally
+different candidates that agree on `viable`.
+
+```bash
+PYTHONPATH=. python3 sim/e039_content_addressed_blind_spot.py --blindness-only
+PYTHONPATH=. python3 sim/e039_content_addressed_blind_spot.py \
+  --seeds 100 --pretty --jobs 10 \
+  --output experiments/results/E039-content-addressed-blind-spot.json
+```
+
+Give the blind spot a *content* address at the same marginal accuracy -- two
+niches carrying the `0.0556` the coin carried -- and the arms that rank on
+apparent quality walk into it with no adversary coordination at all: `scalar`
+falls from AUC `13.505` to `0.137` with 57% of its verification traffic inside
+a region calibrated to 5.5%. The archive is the *least* exposed arm (`0.0531`),
+because one elite per niche caps a bounded region at `region_size /
+niche_count` of the portfolio. Two of five preregistered clauses came out
+false and are kept as written. See
+[`../experiments/E039-content-addressed-blind-spot.md`](../experiments/E039-content-addressed-blind-spot.md).
+
 ## Tests
 
 With `pytest` installed:
@@ -680,6 +706,7 @@ python -m pytest -q \
   tests/test_e036_adversarial_contributors.py \
   tests/test_e037_ladder_under_panels.py \
   tests/test_e038_symmetric_gate_asymmetric_burden.py
+  tests/test_e039_content_addressed_blind_spot.py
 ```
 
 This is the same list `.github/workflows/emergence-sim.yml` runs; keep the two in step.

@@ -292,3 +292,15 @@ and cannot see what was accepted. The test that would move this is a *coordinate
 adversary that adapts to feedback — if independence of the verifiers is the
 defence, an attacker who learns the panel's shared blind spot should be able to
 remove it.
+
+**Answered by [E039](E039-content-addressed-blind-spot.md), and the answer
+reverses this paragraph's premise.** The test cannot be run against the panel as
+written: `verify_candidate` reads the artifact through exactly one bit
+(`viable(c)`), so the blind spot is a memoryless coin rather than a region and
+there is no address for an attacker to learn. Give it a content address at the
+same marginal rate and the arms that rank on apparent quality walk into it
+unaided — `scalar` falls from AUC 13.505 to 0.137 against a *goal-blind*
+adversary, with 57% of its verification traffic inside a region calibrated to
+carry 5.5%. Coordination then makes things *better* for the archive rather than
+worse (20 → 12 catastrophic seeds, unresolved), because concentrating an attack
+on a portfolio defender is containment. The blind spot is bait, not a hole.
