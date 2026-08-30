@@ -38,7 +38,16 @@ import pathlib
 import sys
 from typing import Any, Dict, List
 
-import tools.benchmark_cohort as bc
+try:
+    import tools.benchmark_cohort as bc
+
+    JSONSCHEMA_AVAILABLE = True
+except ImportError:  # pragma: no cover - dependency-free CI legs take this path
+    # tools.benchmark_cohort needs jsonschema, which the randomness-lab leg does
+    # not install. Importing this module must still succeed there so unittest
+    # discovery can collect and skip its tests rather than erroring out.
+    bc = None
+    JSONSCHEMA_AVAILABLE = False
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 BENCHMARK_DIR = ROOT / "benchmarks"

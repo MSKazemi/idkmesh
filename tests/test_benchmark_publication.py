@@ -70,6 +70,10 @@ def _measured(outcome="support", signature="single-worker-baseline-v1", n=2):
     return cohort
 
 
+@unittest.skipUnless(
+    bp.JSONSCHEMA_AVAILABLE,
+    "benchmark publication tests require requirements-phase0.txt",
+)
 class DiscoveryTest(unittest.TestCase):
     def test_every_committed_cohort_is_discovered(self):
         found = {p.parent.name for p in bp.discover()}
@@ -84,6 +88,10 @@ class DiscoveryTest(unittest.TestCase):
         self.assertEqual(paths, sorted(paths))
 
 
+@unittest.skipUnless(
+    bp.JSONSCHEMA_AVAILABLE,
+    "benchmark publication tests require requirements-phase0.txt",
+)
 class OutcomeCountingTest(unittest.TestCase):
     def test_attempts_are_read_from_evidence_not_the_task_root(self):
         # The attempts live under evidence.attempts. Reading task["attempts"]
@@ -110,6 +118,10 @@ class OutcomeCountingTest(unittest.TestCase):
         self.assertEqual(out["by_outcome"], {})
 
 
+@unittest.skipUnless(
+    bp.JSONSCHEMA_AVAILABLE,
+    "benchmark publication tests require requirements-phase0.txt",
+)
 class StatementTest(unittest.TestCase):
     """The statements are the part a reader will quote. They must be earned."""
 
@@ -172,6 +184,10 @@ class StatementTest(unittest.TestCase):
         self.assertNotIn("has not been shown to discriminate", statements)
 
 
+@unittest.skipUnless(
+    bp.JSONSCHEMA_AVAILABLE,
+    "benchmark publication tests require requirements-phase0.txt",
+)
 class DeterminismTest(unittest.TestCase):
     def test_two_runs_agree_byte_for_byte(self):
         a = bp._serialize(bp.publication())
@@ -184,6 +200,10 @@ class DeterminismTest(unittest.TestCase):
             self.assertNotIn(f'"{word}"', text)
 
 
+@unittest.skipUnless(
+    bp.JSONSCHEMA_AVAILABLE,
+    "benchmark publication tests require requirements-phase0.txt",
+)
 class CommittedPublicationTest(unittest.TestCase):
     """The committed files must be exactly what the generator produces."""
 
@@ -247,6 +267,10 @@ class CommittedPublicationTest(unittest.TestCase):
             self.assertNotIn(banned, text)
 
 
+@unittest.skipUnless(
+    bp.JSONSCHEMA_AVAILABLE,
+    "benchmark publication tests require requirements-phase0.txt",
+)
 class CheckModeTest(unittest.TestCase):
     def test_a_drifted_file_is_reported_rather_than_silently_rewritten(self):
         import tempfile
@@ -279,6 +303,10 @@ class CheckModeTest(unittest.TestCase):
             self.assertEqual(rc, 1)
 
 
+@unittest.skipUnless(
+    bp.JSONSCHEMA_AVAILABLE,
+    "benchmark publication tests require requirements-phase0.txt",
+)
 class WorkflowCoverageTest(unittest.TestCase):
     """Every cohort must be covered by the contract workflow's path filters."""
 
@@ -302,6 +330,10 @@ class WorkflowCoverageTest(unittest.TestCase):
         self.assertIn("tools/benchmark_publication.py --check", workflow)
 
 
+@unittest.skipUnless(
+    bp.JSONSCHEMA_AVAILABLE,
+    "benchmark publication tests require requirements-phase0.txt",
+)
 class AuditAgreementTest(unittest.TestCase):
     """The open-issue audit quotes cohort counts; they must match the generator.
 
