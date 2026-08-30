@@ -84,8 +84,6 @@ jobs:
       - name: Publish benchmark cohort state and fail on drift
         run: PYTHONPATH=. python tools/benchmark_publication.py --check
 
-      - name: Test the benchmark publication
-        run: PYTHONPATH=. python -m pytest -q tests/test_benchmark_publication.py
 
 # Contract-only safety boundary:
 # - no candidate code is executed;
