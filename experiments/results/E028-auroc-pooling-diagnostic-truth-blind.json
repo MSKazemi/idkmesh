@@ -1,0 +1,86 @@
+{
+  "experiment": "pooled-versus-stratified-auroc-by-landscape-v1",
+  "experiment_id": "E028",
+  "integrity_sigma": 0.12,
+  "landscape_provenance": {
+    "caveat_closed": "E027 measured apparent robust quality as a 0.937-AUROC viability classifier over its own accepted candidates, so elitist selection was already acting as a second free verifier and the archive's survival could not be attributed to retained diversity alone.",
+    "direction_of_residual_bias": "the default sigma leaves viability MORE heritable in the latent landscape than in the original, which helps every arm retain viable material and therefore biases against finding that an arm collapses",
+    "evidence_level": "synthetic mechanism; the landscape is constructed, not measured",
+    "held_fixed": {
+      "base_viability_rate": {
+        "latent_by_construction": 0.4,
+        "original_measured": 0.398413,
+        "original_sample": 400000
+      },
+      "heritability_p_child_viable_given_parent_viable": {
+        "latent_at_default_sigma": 0.880437,
+        "latent_at_matched_sigma": 0.831456,
+        "matched_sigma": 0.171,
+        "original_measured": 0.831209,
+        "original_sample": 79388
+      }
+    },
+    "landscape": "E028 latent-defect dimension",
+    "mechanism": "ground-truth viability is decided by a sixth `integrity` trait that no plausible goal weights, no behaviour descriptor reads, and the trait budget does not constrain. The five budgeted traits, their budget, the goals, the descriptor, the panels, the defect channel and the catastrophe threshold are unchanged.",
+    "motivating_result": "experiments/E027-defect-propagation.md"
+  },
+  "measurements": [
+    {
+      "accepted_defects": 284,
+      "accepted_viable": 1001,
+      "change_at": 25,
+      "defect_cost": 1.0,
+      "diagnostic": "pooled-versus-generation-stratified-auroc-v1",
+      "experiment_id": "E028",
+      "generation_stratified_auroc": {
+        "pairs": 4737,
+        "scored_generations": 48,
+        "statistic": "the same figure computed within each generation, weighted by pair count",
+        "value": 0.877137
+      },
+      "generations": 50,
+      "landscape": "original",
+      "panel": "truth-blind",
+      "pooled_auroc": {
+        "statistic": "E027's figure: apparent robust quality over all accepted candidates",
+        "undefined_when": "the panel accepted no defect at all, so there is nothing to separate",
+        "value": 0.922739
+      },
+      "seed": 7,
+      "viable_fraction_of_accepted": {
+        "first_scored": 0.25,
+        "last_scored": 0.896552,
+        "why_it_matters": "if this drifts upward while archive quality also rises, the pooled AUROC is measuring the shared trend and not the landscape"
+      }
+    },
+    {
+      "accepted_defects": 961,
+      "accepted_viable": 301,
+      "change_at": 25,
+      "defect_cost": 1.0,
+      "diagnostic": "pooled-versus-generation-stratified-auroc-v1",
+      "experiment_id": "E028",
+      "generation_stratified_auroc": {
+        "pairs": 5584,
+        "scored_generations": 50,
+        "statistic": "the same figure computed within each generation, weighted by pair count",
+        "value": 0.459885
+      },
+      "generations": 50,
+      "landscape": "latent-defect",
+      "panel": "truth-blind",
+      "pooled_auroc": {
+        "statistic": "E027's figure: apparent robust quality over all accepted candidates",
+        "undefined_when": "the panel accepted no defect at all, so there is nothing to separate",
+        "value": 0.493807
+      },
+      "seed": 7,
+      "viable_fraction_of_accepted": {
+        "first_scored": 0.185185,
+        "last_scored": 0.344828,
+        "why_it_matters": "if this drifts upward while archive quality also rises, the pooled AUROC is measuring the shared trend and not the landscape"
+      }
+    }
+  ],
+  "reading": "the pooled figure is E027's. The stratified figure conditions on generation and removes the shared upward drift in archive quality and in the accepted pool's viable fraction. What survives stratification on the original landscape is a real landscape property; what survives it on the latent landscape is induced by a panel that is better than chance, and vanishes when the panel is not."
+}

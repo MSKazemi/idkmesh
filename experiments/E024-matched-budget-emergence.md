@@ -200,6 +200,24 @@ extra compute allowance.
 > verifier. The conclusion above may now be cited as surviving a defect channel,
 > but **not** as evidence that retained diversity is what defeats verifier
 > error.
+>
+> **Follow-up (E028).** That last caveat has now been tested directly.
+> [`E028-latent-defect-dimension.md`](E028-latent-defect-dimension.md) moves
+> ground-truth viability into a dimension no goal weights, no descriptor reads
+> and the trait budget does not constrain, holding the base viability rate and
+> the heritability of viability at this landscape's measured values so only the
+> informativeness of the quality signal changes — AUROC `0.784979` to
+> `0.500642` over fresh draws. The reliability claim survives in `18` of the
+> `20` cells measured, degrades to `3/100` catastrophic seeds under the measured
+> panel at the assumption-free end of the cost knob, and fails at `62/100` only
+> under a deliberately pessimistic stress panel at that same setting. The
+> *ordering* carries over on means and tails — the archive holds the highest
+> mean post-change AUC in `20/20` cells and never more catastrophes than any
+> other arm — but its
+> per-seed dominance does not survive that worst cell, where it wins `44`–`57`
+> of 100 paired seeds. Cite this record for "the archive is the best arm on
+> average", never for "the archive is safe" or "the archive wins the run you
+> get".
 
 ## Limitations and remaining issue scope
 

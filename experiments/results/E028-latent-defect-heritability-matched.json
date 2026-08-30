@@ -1,0 +1,634 @@
+{
+  "cells": [
+    {
+      "catastrophic_seeds": {
+        "majority": {
+          "delta": -3,
+          "latent": 40,
+          "original": 43
+        },
+        "planner": {
+          "delta": -2,
+          "latent": 98,
+          "original": 100
+        },
+        "qd": {
+          "delta": 0,
+          "latent": 0,
+          "original": 0
+        },
+        "random": {
+          "delta": 0,
+          "latent": 0,
+          "original": 0
+        },
+        "scalar": {
+          "delta": 11,
+          "latent": 48,
+          "original": 37
+        }
+      },
+      "defect_cost": 0.0,
+      "delivered_defect_rate": {
+        "majority": {
+          "latent": 0.0,
+          "original": 0.0
+        },
+        "planner": {
+          "latent": 0.0,
+          "original": 0.0
+        },
+        "qd": {
+          "latent": 0.0,
+          "original": 0.0
+        },
+        "random": {
+          "latent": 0.0,
+          "original": 0.0
+        },
+        "scalar": {
+          "latent": 0.0,
+          "original": 0.0
+        }
+      },
+      "panel": "stress",
+      "post_change_utility_auc": {
+        "majority": {
+          "latent": 18.739737,
+          "original": 18.724284
+        },
+        "planner": {
+          "latent": 14.138096,
+          "original": 14.155496
+        },
+        "qd": {
+          "latent": 21.388324,
+          "original": 21.715453
+        },
+        "random": {
+          "latent": 16.756679,
+          "original": 17.687337
+        },
+        "scalar": {
+          "latent": 15.970793,
+          "original": 16.118088
+        }
+      },
+      "qd_pairwise_wins": {
+        "latent": {
+          "qd_gt_majority_post_change_utility_auc": 51,
+          "qd_gt_planner_post_change_utility_auc": 100,
+          "qd_gt_random_post_change_utility_auc": 100,
+          "qd_gt_scalar_post_change_utility_auc": 100
+        },
+        "original": {
+          "qd_gt_majority_post_change_utility_auc": 52,
+          "qd_gt_planner_post_change_utility_auc": 100,
+          "qd_gt_random_post_change_utility_auc": 100,
+          "qd_gt_scalar_post_change_utility_auc": 100
+        }
+      },
+      "retained_defect_rate": {
+        "majority": {
+          "latent": 0.0,
+          "original": 0.0
+        },
+        "planner": {
+          "latent": 0.0,
+          "original": 0.0
+        },
+        "qd": {
+          "latent": 0.000156,
+          "original": 0.000156
+        },
+        "random": {
+          "latent": 0.563327,
+          "original": 0.567793
+        },
+        "scalar": {
+          "latent": 0.05612,
+          "original": 0.005024
+        }
+      }
+    },
+    {
+      "catastrophic_seeds": {
+        "majority": {
+          "delta": -3,
+          "latent": 40,
+          "original": 43
+        },
+        "planner": {
+          "delta": -2,
+          "latent": 98,
+          "original": 100
+        },
+        "qd": {
+          "delta": 0,
+          "latent": 0,
+          "original": 0
+        },
+        "random": {
+          "delta": 0,
+          "latent": 0,
+          "original": 0
+        },
+        "scalar": {
+          "delta": 10,
+          "latent": 48,
+          "original": 38
+        }
+      },
+      "defect_cost": 0.25,
+      "delivered_defect_rate": {
+        "majority": {
+          "latent": 0.0,
+          "original": 0.0
+        },
+        "planner": {
+          "latent": 0.0,
+          "original": 0.0
+        },
+        "qd": {
+          "latent": 0.0,
+          "original": 0.0
+        },
+        "random": {
+          "latent": 0.0,
+          "original": 0.0
+        },
+        "scalar": {
+          "latent": 0.0,
+          "original": 0.0
+        }
+      },
+      "panel": "stress",
+      "post_change_utility_auc": {
+        "majority": {
+          "latent": 18.739737,
+          "original": 18.724284
+        },
+        "planner": {
+          "latent": 14.138096,
+          "original": 14.155496
+        },
+        "qd": {
+          "latent": 21.379751,
+          "original": 21.716597
+        },
+        "random": {
+          "latent": 16.756679,
+          "original": 17.687337
+        },
+        "scalar": {
+          "latent": 15.966173,
+          "original": 16.130126
+        }
+      },
+      "qd_pairwise_wins": {
+        "latent": {
+          "qd_gt_majority_post_change_utility_auc": 51,
+          "qd_gt_planner_post_change_utility_auc": 100,
+          "qd_gt_random_post_change_utility_auc": 100,
+          "qd_gt_scalar_post_change_utility_auc": 100
+        },
+        "original": {
+          "qd_gt_majority_post_change_utility_auc": 52,
+          "qd_gt_planner_post_change_utility_auc": 100,
+          "qd_gt_random_post_change_utility_auc": 100,
+          "qd_gt_scalar_post_change_utility_auc": 100
+        }
+      },
+      "retained_defect_rate": {
+        "majority": {
+          "latent": 0.0,
+          "original": 0.0
+        },
+        "planner": {
+          "latent": 0.0,
+          "original": 0.0
+        },
+        "qd": {
+          "latent": 0.0,
+          "original": 0.000313
+        },
+        "random": {
+          "latent": 0.563327,
+          "original": 0.567793
+        },
+        "scalar": {
+          "latent": 0.060813,
+          "original": 0.005735
+        }
+      }
+    },
+    {
+      "catastrophic_seeds": {
+        "majority": {
+          "delta": -3,
+          "latent": 40,
+          "original": 43
+        },
+        "planner": {
+          "delta": -2,
+          "latent": 98,
+          "original": 100
+        },
+        "qd": {
+          "delta": 0,
+          "latent": 0,
+          "original": 0
+        },
+        "random": {
+          "delta": 0,
+          "latent": 0,
+          "original": 0
+        },
+        "scalar": {
+          "delta": 11,
+          "latent": 49,
+          "original": 38
+        }
+      },
+      "defect_cost": 0.5,
+      "delivered_defect_rate": {
+        "majority": {
+          "latent": 0.0,
+          "original": 0.0
+        },
+        "planner": {
+          "latent": 0.0,
+          "original": 0.0
+        },
+        "qd": {
+          "latent": 0.0,
+          "original": 0.0
+        },
+        "random": {
+          "latent": 0.0,
+          "original": 0.0
+        },
+        "scalar": {
+          "latent": 0.0,
+          "original": 0.0
+        }
+      },
+      "panel": "stress",
+      "post_change_utility_auc": {
+        "majority": {
+          "latent": 18.739737,
+          "original": 18.724284
+        },
+        "planner": {
+          "latent": 14.138096,
+          "original": 14.155496
+        },
+        "qd": {
+          "latent": 21.373537,
+          "original": 21.716597
+        },
+        "random": {
+          "latent": 16.756679,
+          "original": 17.687337
+        },
+        "scalar": {
+          "latent": 15.991889,
+          "original": 16.123344
+        }
+      },
+      "qd_pairwise_wins": {
+        "latent": {
+          "qd_gt_majority_post_change_utility_auc": 51,
+          "qd_gt_planner_post_change_utility_auc": 100,
+          "qd_gt_random_post_change_utility_auc": 100,
+          "qd_gt_scalar_post_change_utility_auc": 100
+        },
+        "original": {
+          "qd_gt_majority_post_change_utility_auc": 52,
+          "qd_gt_planner_post_change_utility_auc": 100,
+          "qd_gt_random_post_change_utility_auc": 100,
+          "qd_gt_scalar_post_change_utility_auc": 100
+        }
+      },
+      "retained_defect_rate": {
+        "majority": {
+          "latent": 0.0,
+          "original": 0.0
+        },
+        "planner": {
+          "latent": 0.0,
+          "original": 0.0
+        },
+        "qd": {
+          "latent": 0.0,
+          "original": 0.000313
+        },
+        "random": {
+          "latent": 0.563327,
+          "original": 0.567793
+        },
+        "scalar": {
+          "latent": 0.057265,
+          "original": 0.005252
+        }
+      }
+    },
+    {
+      "catastrophic_seeds": {
+        "majority": {
+          "delta": -3,
+          "latent": 40,
+          "original": 43
+        },
+        "planner": {
+          "delta": -2,
+          "latent": 98,
+          "original": 100
+        },
+        "qd": {
+          "delta": 0,
+          "latent": 0,
+          "original": 0
+        },
+        "random": {
+          "delta": 30,
+          "latent": 30,
+          "original": 0
+        },
+        "scalar": {
+          "delta": 22,
+          "latent": 55,
+          "original": 33
+        }
+      },
+      "defect_cost": 0.75,
+      "delivered_defect_rate": {
+        "majority": {
+          "latent": 0.0006,
+          "original": 0.0
+        },
+        "planner": {
+          "latent": 0.0,
+          "original": 0.0
+        },
+        "qd": {
+          "latent": 0.001,
+          "original": 0.0
+        },
+        "random": {
+          "latent": 0.0238,
+          "original": 0.0006
+        },
+        "scalar": {
+          "latent": 0.0,
+          "original": 0.0
+        }
+      },
+      "panel": "stress",
+      "post_change_utility_auc": {
+        "majority": {
+          "latent": 18.743168,
+          "original": 18.724284
+        },
+        "planner": {
+          "latent": 14.138096,
+          "original": 14.155496
+        },
+        "qd": {
+          "latent": 21.380758,
+          "original": 21.717051
+        },
+        "random": {
+          "latent": 16.354545,
+          "original": 17.67327
+        },
+        "scalar": {
+          "latent": 15.914762,
+          "original": 16.130191
+        }
+      },
+      "qd_pairwise_wins": {
+        "latent": {
+          "qd_gt_majority_post_change_utility_auc": 51,
+          "qd_gt_planner_post_change_utility_auc": 100,
+          "qd_gt_random_post_change_utility_auc": 100,
+          "qd_gt_scalar_post_change_utility_auc": 100
+        },
+        "original": {
+          "qd_gt_majority_post_change_utility_auc": 52,
+          "qd_gt_planner_post_change_utility_auc": 100,
+          "qd_gt_random_post_change_utility_auc": 100,
+          "qd_gt_scalar_post_change_utility_auc": 100
+        }
+      },
+      "retained_defect_rate": {
+        "majority": {
+          "latent": 0.0,
+          "original": 0.0
+        },
+        "planner": {
+          "latent": 0.0,
+          "original": 0.0
+        },
+        "qd": {
+          "latent": 0.000313,
+          "original": 0.000313
+        },
+        "random": {
+          "latent": 0.563327,
+          "original": 0.567793
+        },
+        "scalar": {
+          "latent": 0.059711,
+          "original": 0.004362
+        }
+      }
+    },
+    {
+      "catastrophic_seeds": {
+        "majority": {
+          "delta": 26,
+          "latent": 69,
+          "original": 43
+        },
+        "planner": {
+          "delta": 0,
+          "latent": 100,
+          "original": 100
+        },
+        "qd": {
+          "delta": 53,
+          "latent": 53,
+          "original": 0
+        },
+        "random": {
+          "delta": 6,
+          "latent": 100,
+          "original": 94
+        },
+        "scalar": {
+          "delta": 41,
+          "latent": 92,
+          "original": 51
+        }
+      },
+      "defect_cost": 1.0,
+      "delivered_defect_rate": {
+        "majority": {
+          "latent": 0.4406,
+          "original": 0.002
+        },
+        "planner": {
+          "latent": 0.521,
+          "original": 0.0096
+        },
+        "qd": {
+          "latent": 0.4794,
+          "original": 0.0226
+        },
+        "random": {
+          "latent": 0.5472,
+          "original": 0.208
+        },
+        "scalar": {
+          "latent": 0.4504,
+          "original": 0.0118
+        }
+      },
+      "panel": "stress",
+      "post_change_utility_auc": {
+        "majority": {
+          "latent": 10.980744,
+          "original": 18.701218
+        },
+        "planner": {
+          "latent": 6.967393,
+          "original": 14.088093
+        },
+        "qd": {
+          "latent": 12.504408,
+          "original": 21.685199
+        },
+        "random": {
+          "latent": 8.13479,
+          "original": 13.962203
+        },
+        "scalar": {
+          "latent": 9.273015,
+          "original": 15.956249
+        }
+      },
+      "qd_pairwise_wins": {
+        "latent": {
+          "qd_gt_majority_post_change_utility_auc": 52,
+          "qd_gt_planner_post_change_utility_auc": 68,
+          "qd_gt_random_post_change_utility_auc": 66,
+          "qd_gt_scalar_post_change_utility_auc": 61
+        },
+        "original": {
+          "qd_gt_majority_post_change_utility_auc": 51,
+          "qd_gt_planner_post_change_utility_auc": 100,
+          "qd_gt_random_post_change_utility_auc": 100,
+          "qd_gt_scalar_post_change_utility_auc": 100
+        }
+      },
+      "retained_defect_rate": {
+        "majority": {
+          "latent": 0.41,
+          "original": 0.0
+        },
+        "planner": {
+          "latent": 0.5,
+          "original": 0.0
+        },
+        "qd": {
+          "latent": 0.427656,
+          "original": 0.000156
+        },
+        "random": {
+          "latent": 0.563327,
+          "original": 0.567793
+        },
+        "scalar": {
+          "latent": 0.446152,
+          "original": 0.006593
+        }
+      }
+    }
+  ],
+  "configuration": {
+    "agents": 50,
+    "bins": 8,
+    "catastrophe_utility_auc_threshold": 16.0,
+    "change_at": 25,
+    "defect_costs": [
+      0.0,
+      0.25,
+      0.5,
+      0.75,
+      1.0
+    ],
+    "defect_provenance": {
+      "channel": "E027 latent-defect propagation channel",
+      "default_cost": 1.0,
+      "evidence_level": "synthetic mechanism; no defect cost is measured anywhere",
+      "gap_closed": "E024 and E026 rank candidates with utility() and robust_quality(), both of which consult viable() directly. A falsely accepted artifact therefore scores 0.0 and is silently discarded by the same predicate the verifier panel was meant to enforce, so verifier error cannot reach the outcome metric.",
+      "knob": "defect cost in [0, 1]",
+      "knob_meaning": "the fraction of a latent defect's apparent quality that the system's own selection machinery still credits, i.e. how far the defect stays latent past the acceptance gate",
+      "knob_one_means": "no free oracle anywhere: the system trusts its verifier panel completely, which is the only assumption-free setting",
+      "knob_zero_means": "exactly the E024/E026 behaviour: the search operator holds a free viability oracle and discards a falsely accepted artifact for nothing",
+      "mechanism": "selection, retention and delivery rank candidates by apparent quality -- the quality a system can observe once its verifier panel has accepted an artifact -- while the trace scores the delivered artifact by ground truth. A falsely accepted non-viable artifact is credited `cost` times its apparent quality, so it can displace an incumbent, occupy an archive niche, be drawn as a parent, and be shipped; when it is shipped it delivers 0.0.",
+      "motivating_result": "experiments/E026-imperfect-verifier-panel.md",
+      "why_the_default_is_the_extreme": "cost 1.0 adds no parameter. Every value below it hands the search operator ground-truth viability information that no real system has, so the knob is a dial back toward E024's optimistic assumption rather than a dial tuned to manufacture an effect."
+    },
+    "evaluation_budget_per_strategy_per_seed": 2500,
+    "generations": 50,
+    "integrity_sigma": 0.171,
+    "panels": {
+      "stress": {
+        "accuracy": 0.55,
+        "blind_spot": 0.4,
+        "correlation": 0.9,
+        "dependence": "item-difficulty",
+        "quorum": 0.5,
+        "verifiers": 25
+      }
+    },
+    "post_change_horizon": 25,
+    "reused_from": "sim.e027_defect_propagation.matrix",
+    "seed_start": 0,
+    "seeds": 100
+  },
+  "experiment": "latent-defect-landscape-paired-matrix-v1",
+  "experiment_id": "E028",
+  "landscape_provenance": {
+    "caveat_closed": "E027 measured apparent robust quality as a 0.937-AUROC viability classifier over its own accepted candidates, so elitist selection was already acting as a second free verifier and the archive's survival could not be attributed to retained diversity alone.",
+    "direction_of_residual_bias": "the default sigma leaves viability MORE heritable in the latent landscape than in the original, which helps every arm retain viable material and therefore biases against finding that an arm collapses",
+    "evidence_level": "synthetic mechanism; the landscape is constructed, not measured",
+    "held_fixed": {
+      "base_viability_rate": {
+        "latent_by_construction": 0.4,
+        "original_measured": 0.398413,
+        "original_sample": 400000
+      },
+      "heritability_p_child_viable_given_parent_viable": {
+        "latent_at_default_sigma": 0.880437,
+        "latent_at_matched_sigma": 0.831456,
+        "matched_sigma": 0.171,
+        "original_measured": 0.831209,
+        "original_sample": 79388
+      }
+    },
+    "landscape": "E028 latent-defect dimension",
+    "mechanism": "ground-truth viability is decided by a sixth `integrity` trait that no plausible goal weights, no behaviour descriptor reads, and the trait budget does not constrain. The five budgeted traits, their budget, the goals, the descriptor, the panels, the defect channel and the catastrophe threshold are unchanged.",
+    "motivating_result": "experiments/E027-defect-propagation.md"
+  },
+  "limitations": [
+    "Both landscapes are synthetic. Only the verifier-panel parameters are measured; the latent dimension is constructed to be uninformative, not observed to be.",
+    "The latent landscape holds base viability rate and heritability near the original's measured values, but no other moment of the original landscape is matched.",
+    "At the default integrity sigma the latent landscape is MORE heritable than the original (0.880 against 0.831). Run --integrity-sigma 0.171 for the heritability-matched sensitivity arm.",
+    "The original column here is a live re-run of E027's matrix; it is the same synthetic model and is not independent evidence for E027's conclusion.",
+    "Catastrophe counts use E024's threshold of 0.64 of the post-change horizon, unchanged, so the two landscapes are scored identically.",
+    "A cell reports means and counts over its seeds; no paired significance test across cells is computed."
+  ]
+}

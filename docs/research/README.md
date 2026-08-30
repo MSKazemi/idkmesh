@@ -74,6 +74,9 @@ policy changes or merge decisions.
 - [E027 Defect Propagation](../../experiments/E027-defect-propagation.md)
   — gives an accepted defect a cost, so verifier error can reach the outcome
   metric, and sweeps the cost knob across its whole range.
+- [E028 Latent Defect Dimension](../../experiments/E028-latent-defect-dimension.md)
+  — removes E027's confound by moving viability into a dimension the goals cannot
+  see, and finds the archive's survival does not carry over.
 - [E025 Learned Verifier Reliability](../../experiments/E025-learned-verifier-reliability.md)
   — calibration/held-out evidence for reliability and dependence-aware aggregation.
 - [IDKGraph P1 Independent Review Protocol](IDKGRAPH_P1_INDEPENDENT_REVIEW_PROTOCOL.md)
