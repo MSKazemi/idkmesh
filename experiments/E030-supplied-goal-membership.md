@@ -278,6 +278,15 @@ substitute direction is one direction.
   This measures the value of being handed the answer, not the cost of having to
   learn it. A real Goal Graph particle filter is the natural successor — and
   E030 says where to point it: at the `majority` arm, not the archive.
+  **[E031](E031-learned-goal-filter.md) built it**, and the answer is not the one
+  this limitation implies: learning the goal from generation 0 roughly doubles
+  the swarm's catastrophic seeds, while the same filter restricted to
+  post-change evidence is the best variant in all eight of its cells. E031 also
+  reuses the `unheld` goal built here as its second condition, and that is what
+  makes its own headline safe: an evidence-free rescue that takes `38/100`
+  catastrophic seeds to `0/100` under the held goal reaches `71/100` under this
+  substitute. Belief correctness buys nothing in either condition; belief spread
+  buys everything in one and less than nothing in the other.
 - **The defect channel is disarmed.** E027 and E028 cover it. Arming both
   confounds at once would make any effect unattributable to either.
 - **The landscape is synthetic**, as in every experiment from E011 onward. No

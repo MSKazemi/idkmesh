@@ -49,6 +49,14 @@ on:
       - "sim/e028_latent_defect_dimension.py"
       - "experiments/E028-latent-defect-dimension.md"
       - "experiments/results/E028-*.json"
+      - "tests/test_e030_supplied_goal_membership.py"
+      - "sim/e030_supplied_goal_membership.py"
+      - "experiments/E030-supplied-goal-membership.md"
+      - "experiments/results/E030-*.json"
+      - "tests/test_e031_learned_goal_filter.py"
+      - "sim/e031_learned_goal_filter.py"
+      - "experiments/E031-learned-goal-filter.md"
+      - "experiments/results/E031-*.json"
       - "sim/e015_quorum_frontier.py"
       - "schemas/work-unit.schema.json"
       - "schemas/result-manifest.schema.json"
@@ -105,6 +113,14 @@ on:
       - "sim/e028_latent_defect_dimension.py"
       - "experiments/E028-latent-defect-dimension.md"
       - "experiments/results/E028-*.json"
+      - "tests/test_e030_supplied_goal_membership.py"
+      - "sim/e030_supplied_goal_membership.py"
+      - "experiments/E030-supplied-goal-membership.md"
+      - "experiments/results/E030-*.json"
+      - "tests/test_e031_learned_goal_filter.py"
+      - "sim/e031_learned_goal_filter.py"
+      - "experiments/E031-learned-goal-filter.md"
+      - "experiments/results/E031-*.json"
       - "sim/e015_quorum_frontier.py"
       - "schemas/work-unit.schema.json"
       - "schemas/result-manifest.schema.json"
@@ -131,7 +147,7 @@ jobs:
       - name: Install test dependencies
         run: python -m pip install --disable-pip-version-check pytest jsonschema
       - name: Run emergence tests
-        run: python -m pytest -q tests/test_emergence_sim.py tests/test_emergence_sweep.py tests/test_verifier_correlation_sweep.py tests/test_verification_aggregation_sim.py tests/test_e025_learned_verifiers.py tests/test_e015_phase_diagram.py tests/test_e015_quorum_frontier.py tests/test_e016_analyze.py tests/test_e017_item_difficulty.py tests/test_e018_dependence_models.py tests/test_e019_group_independence.py tests/test_e020_quorum_frontier.py tests/test_matched_budget_emergence.py tests/test_e026_archive_contamination.py tests/test_e027_defect_propagation.py tests/test_e028_latent_defect_dimension.py
+        run: python -m pytest -q tests/test_emergence_sim.py tests/test_emergence_sweep.py tests/test_verifier_correlation_sweep.py tests/test_verification_aggregation_sim.py tests/test_e025_learned_verifiers.py tests/test_e015_phase_diagram.py tests/test_e015_quorum_frontier.py tests/test_e016_analyze.py tests/test_e017_item_difficulty.py tests/test_e018_dependence_models.py tests/test_e019_group_independence.py tests/test_e020_quorum_frontier.py tests/test_matched_budget_emergence.py tests/test_e026_archive_contamination.py tests/test_e027_defect_propagation.py tests/test_e028_latent_defect_dimension.py tests/test_e030_supplied_goal_membership.py tests/test_e031_learned_goal_filter.py
       - name: Smoke-test simulator JSON
         run: |
           python sim/emergence_sim.py --strategy all --seed 7 --agents 40 --generations 30 --change-at 15 > /tmp/emergence.json
@@ -161,6 +177,15 @@ jobs:
           PYTHONPATH=. python sim/e028_latent_defect_dimension.py --mode diagnostic --seed 7 \
             --agents 20 --generations 20 --change-at 10 --panel truth-blind > /tmp/e028-diagnostic.json
           python -m json.tool /tmp/e028-diagnostic.json > /dev/null
+      - name: Smoke-test the E031 learned goal filter
+        run: |
+          PYTHONPATH=. python sim/e031_learned_goal_filter.py --mode trajectory --seed 7 \
+            --variant learned --agents 20 --generations 20 --change-at 10 > /tmp/e031-trajectory.json
+          python -m json.tool /tmp/e031-trajectory.json > /dev/null
+          PYTHONPATH=. python sim/e031_learned_goal_filter.py --mode matrix --seeds 3 \
+            --agents 20 --generations 20 --change-at 10 --panel perfect \
+            --variant control --variant learned --variant diffusion > /tmp/e031-matrix.json
+          python -m json.tool /tmp/e031-matrix.json > /dev/null
       - name: Reproduce E015 phase diagram from committed results
         run: |
           python sim/e015_analyze.py experiments/results/E015-verification-phase-diagram-raw.jsonl.gz > /tmp/e015.txt

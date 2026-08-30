@@ -382,6 +382,51 @@ panels in both conditions; the majority-vote swarm loses `-0.86` to `-0.92` and
 goes negative in three of four. See
 [`../experiments/E030-supplied-goal-membership.md`](../experiments/E030-supplied-goal-membership.md).
 
+### E031 — a swarm whose beliefs update
+
+E024's caveat had two halves; E030 closed the *supplied* half and this closes the
+*not learned* half. `learned` is `majority` with a particle filter behind the
+beliefs. Every structural choice is the same — one hypothesis per agent, drawn
+from the same set with the same draw, a strict-majority pairwise vote, one
+consensus artifact, the same matched budget — so at a flat likelihood the filter is inert,
+consumes no random number, and the arm reproduces **the published `majority` row
+of `run_seed` bit-for-bit**. The credibility-weighted vote is what makes that
+possible: mass above one half with uniform weights *is* `count >= n//2 + 1`.
+
+The evidence is deliberately ordinal. A delivered artifact's realized utility is
+a linear equation in the goal weights, so an arm that observed it could solve for
+the goal in four generations; the swarm therefore learns only whether its last
+shipment beat the one before.
+
+`VARIANTS` is a ladder, not a sweep: each rung rules out one alternative
+explanation for the rung above it — pinned particles, coin-flip placebo,
+pure diffusion, post-change-only learning, and an oracle change-detector.
+
+```bash
+python sim/e031_learned_goal_filter.py --mode matrix --seeds 100 \
+  --output experiments/results/E031-learned-goal-filter.json
+python sim/e031_learned_goal_filter.py --mode trajectory --seed 7 --variant learned
+python sim/e031_learned_goal_filter.py --mode matrix --seeds 100 \
+  --panel stress --variant diffusion --variant control
+```
+
+Every run reports two independent properties of the belief population: the
+posterior's **error** (distance to the goal in force) and its **spread** (mean
+particle distance from that posterior). Belief accuracy never predicts the
+outcome; the variable that does depends on the goal condition.
+
+The filter demonstrably learns — error `0.171` to `0.061` in six generations —
+and learning *from generation 0* is what hurts: it trades spread for accuracy
+before the change and roughly doubles the swarm's catastrophic seeds.
+`learned-after-change`, the same filter restricted to post-change evidence, is
+the best variant in all eight matrix cells on both the tail and the mean. The
+evidence-free rescue is conditional: perturbing each agent's hypothesis **once
+at initialisation and then freezing it** takes `38/100` catastrophic seeds to
+`0/100` while the new goal is one of the four supplied hypotheses, and to
+`71/100` against E030's parity-matched goal that is not. Run both conditions
+before quoting either. See
+[`../experiments/E031-learned-goal-filter.md`](../experiments/E031-learned-goal-filter.md).
+
 ## Tests
 
 With `pytest` installed:
@@ -404,7 +449,8 @@ python -m pytest -q \
   tests/test_e026_archive_contamination.py \
   tests/test_e027_defect_propagation.py \
   tests/test_e028_latent_defect_dimension.py \
-  tests/test_e030_supplied_goal_membership.py
+  tests/test_e030_supplied_goal_membership.py \
+  tests/test_e031_learned_goal_filter.py
 ```
 
 This is the same list `.github/workflows/emergence-sim.yml` runs; keep the two in step.
