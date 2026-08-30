@@ -12,6 +12,8 @@ on:
       - "tools/idkgraph_workunit_cycles.py"
       - "tools/idkgraph_warning_sample.py"
       - "tools/idkgraph_review_session.py"
+      - "tools/issue_evidence_gate.py"
+      - "tests/test_issue_evidence_gate.py"
       - "tests/test_idkgraph_health_checks.py"
       - "tests/test_idkgraph_observatory.py"
       - "tests/test_conversation_index.py"
@@ -34,6 +36,8 @@ on:
       - "tools/idkgraph_workunit_cycles.py"
       - "tools/idkgraph_warning_sample.py"
       - "tools/idkgraph_review_session.py"
+      - "tools/issue_evidence_gate.py"
+      - "tests/test_issue_evidence_gate.py"
       - "tests/test_idkgraph_health_checks.py"
       - "tests/test_idkgraph_observatory.py"
       - "tests/test_conversation_index.py"
@@ -66,7 +70,12 @@ jobs:
       - name: Install Phase 0 schema validator
         run: python -m pip install --disable-pip-version-check -r requirements-phase0.txt
       - name: Run focused observatory, navigation, sampling, and review-evidence tests
-        run: python -m unittest tests.test_idkgraph_health_checks tests.test_idkgraph_observatory tests.test_conversation_index tests.test_documentation_directory_index tests.test_idkgraph_warning_sample tests.test_idkgraph_review_session -v
+        run: python -m unittest tests.test_idkgraph_health_checks tests.test_idkgraph_observatory tests.test_conversation_index tests.test_documentation_directory_index tests.test_idkgraph_warning_sample tests.test_idkgraph_review_session tests.test_issue_evidence_gate -v
+      - name: Open-issue evidence gate must have no stale registry entries
+        run: |
+          PYTHONPATH=. python tools/issue_evidence_gate.py \
+            --require-no-stale-entries --output /tmp/issue-evidence-gate.json
+          python -m json.tool /tmp/issue-evidence-gate.json > /dev/null
       - name: Clean fixture must have zero deterministic errors
         run: |
           rm -rf /tmp/idkgraph-valid
