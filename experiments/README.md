@@ -36,6 +36,7 @@ listed here fails the suite rather than becoming quietly undiscoverable.
 | **E034** | [The archive's failures are directional. Which direction?](E034-goal-direction.md) |
 | **E035** | [Does the direction result survive at a second distance?](E035-direction-across-shells.md) |
 | **E036** | [Does the archive survive contributors who optimise to pass the gate?](E036-adversarial-contributors.md) |
+| **E037** | [Is the direction result about the goal geometry, or about a perfect verifier?](E037-ladder-under-panels.md) |
 
 E014's sweeps publish their own result documents:
 [reference sweep](results/E014-reference-sweep.md),
