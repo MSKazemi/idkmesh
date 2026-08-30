@@ -1,0 +1,286 @@
+{
+  "change_size": 0.391918,
+  "experiment_id": "E035",
+  "feasibility": [
+    {
+      "distance_to_supplied": 0.24,
+      "feasible": false,
+      "members": 9967,
+      "thinnest_cell_goals": 0,
+      "thinnest_cell_trait": "adaptability",
+      "thinnest_cell_weight": 0.02
+    },
+    {
+      "distance_to_supplied": 0.245,
+      "feasible": false,
+      "members": 10570,
+      "thinnest_cell_goals": 0,
+      "thinnest_cell_trait": "adaptability",
+      "thinnest_cell_weight": 0.02
+    },
+    {
+      "distance_to_supplied": 0.25,
+      "feasible": false,
+      "members": 11334,
+      "thinnest_cell_goals": 0,
+      "thinnest_cell_trait": "adaptability",
+      "thinnest_cell_weight": 0.02
+    },
+    {
+      "distance_to_supplied": 0.255,
+      "feasible": false,
+      "members": 12428,
+      "thinnest_cell_goals": 0,
+      "thinnest_cell_trait": "adaptability",
+      "thinnest_cell_weight": 0.02
+    },
+    {
+      "distance_to_supplied": 0.26,
+      "feasible": false,
+      "members": 14136,
+      "thinnest_cell_goals": 0,
+      "thinnest_cell_trait": "adaptability",
+      "thinnest_cell_weight": 0.02
+    },
+    {
+      "distance_to_supplied": 0.265,
+      "feasible": false,
+      "members": 16313,
+      "thinnest_cell_goals": 0,
+      "thinnest_cell_trait": "adaptability",
+      "thinnest_cell_weight": 0.02
+    },
+    {
+      "distance_to_supplied": 0.27,
+      "feasible": false,
+      "members": 19247,
+      "thinnest_cell_goals": 0,
+      "thinnest_cell_trait": "adaptability",
+      "thinnest_cell_weight": 0.02
+    },
+    {
+      "distance_to_supplied": 0.275,
+      "feasible": false,
+      "members": 22653,
+      "thinnest_cell_goals": 8,
+      "thinnest_cell_trait": "adaptability",
+      "thinnest_cell_weight": 0.02
+    },
+    {
+      "distance_to_supplied": 0.28,
+      "feasible": true,
+      "members": 26324,
+      "thinnest_cell_goals": 75,
+      "thinnest_cell_trait": "adaptability",
+      "thinnest_cell_weight": 0.02
+    },
+    {
+      "distance_to_supplied": 0.285,
+      "feasible": true,
+      "members": 30248,
+      "thinnest_cell_goals": 289,
+      "thinnest_cell_trait": "simplicity",
+      "thinnest_cell_weight": 0.4
+    },
+    {
+      "distance_to_supplied": 0.29,
+      "feasible": true,
+      "members": 33631,
+      "thinnest_cell_goals": 582,
+      "thinnest_cell_trait": "simplicity",
+      "thinnest_cell_weight": 0.4
+    },
+    {
+      "distance_to_supplied": 0.295,
+      "feasible": true,
+      "members": 36502,
+      "thinnest_cell_goals": 685,
+      "thinnest_cell_trait": "reliability",
+      "thinnest_cell_weight": 0.4
+    },
+    {
+      "distance_to_supplied": 0.3,
+      "feasible": true,
+      "members": 38643,
+      "thinnest_cell_goals": 753,
+      "thinnest_cell_trait": "reliability",
+      "thinnest_cell_weight": 0.4
+    },
+    {
+      "distance_to_supplied": 0.305,
+      "feasible": true,
+      "members": 40030,
+      "thinnest_cell_goals": 800,
+      "thinnest_cell_trait": "reliability",
+      "thinnest_cell_weight": 0.4
+    },
+    {
+      "distance_to_supplied": 0.31,
+      "feasible": true,
+      "members": 41054,
+      "thinnest_cell_goals": 818,
+      "thinnest_cell_trait": "reliability",
+      "thinnest_cell_weight": 0.4
+    },
+    {
+      "distance_to_supplied": 0.315,
+      "feasible": true,
+      "members": 40781,
+      "thinnest_cell_goals": 841,
+      "thinnest_cell_trait": "reliability",
+      "thinnest_cell_weight": 0.4
+    },
+    {
+      "distance_to_supplied": 0.32,
+      "feasible": true,
+      "members": 40203,
+      "thinnest_cell_goals": 865,
+      "thinnest_cell_trait": "reliability",
+      "thinnest_cell_weight": 0.4
+    },
+    {
+      "distance_to_supplied": 0.325,
+      "feasible": true,
+      "members": 39073,
+      "thinnest_cell_goals": 821,
+      "thinnest_cell_trait": "reliability",
+      "thinnest_cell_weight": 0.3
+    },
+    {
+      "distance_to_supplied": 0.33,
+      "feasible": true,
+      "members": 37306,
+      "thinnest_cell_goals": 772,
+      "thinnest_cell_trait": "reliability",
+      "thinnest_cell_weight": 0.3
+    },
+    {
+      "distance_to_supplied": 0.335,
+      "feasible": true,
+      "members": 35362,
+      "thinnest_cell_goals": 708,
+      "thinnest_cell_trait": "reliability",
+      "thinnest_cell_weight": 0.3
+    },
+    {
+      "distance_to_supplied": 0.34,
+      "feasible": true,
+      "members": 32584,
+      "thinnest_cell_goals": 624,
+      "thinnest_cell_trait": "reliability",
+      "thinnest_cell_weight": 0.3
+    },
+    {
+      "distance_to_supplied": 0.345,
+      "feasible": true,
+      "members": 30122,
+      "thinnest_cell_goals": 586,
+      "thinnest_cell_trait": "reliability",
+      "thinnest_cell_weight": 0.3
+    },
+    {
+      "distance_to_supplied": 0.35,
+      "feasible": true,
+      "members": 27335,
+      "thinnest_cell_goals": 556,
+      "thinnest_cell_trait": "reliability",
+      "thinnest_cell_weight": 0.3
+    },
+    {
+      "distance_to_supplied": 0.355,
+      "feasible": true,
+      "members": 24492,
+      "thinnest_cell_goals": 487,
+      "thinnest_cell_trait": "efficiency",
+      "thinnest_cell_weight": 0.4
+    },
+    {
+      "distance_to_supplied": 0.36,
+      "feasible": true,
+      "members": 21987,
+      "thinnest_cell_goals": 338,
+      "thinnest_cell_trait": "efficiency",
+      "thinnest_cell_weight": 0.4
+    },
+    {
+      "distance_to_supplied": 0.365,
+      "feasible": true,
+      "members": 21951,
+      "thinnest_cell_goals": 250,
+      "thinnest_cell_trait": "efficiency",
+      "thinnest_cell_weight": 0.4
+    },
+    {
+      "distance_to_supplied": 0.37,
+      "feasible": true,
+      "members": 23518,
+      "thinnest_cell_goals": 187,
+      "thinnest_cell_trait": "efficiency",
+      "thinnest_cell_weight": 0.4
+    },
+    {
+      "distance_to_supplied": 0.375,
+      "feasible": true,
+      "members": 24650,
+      "thinnest_cell_goals": 134,
+      "thinnest_cell_trait": "efficiency",
+      "thinnest_cell_weight": 0.4
+    },
+    {
+      "distance_to_supplied": 0.38,
+      "feasible": true,
+      "members": 25824,
+      "thinnest_cell_goals": 104,
+      "thinnest_cell_trait": "efficiency",
+      "thinnest_cell_weight": 0.4
+    },
+    {
+      "distance_to_supplied": 0.385,
+      "feasible": true,
+      "members": 27060,
+      "thinnest_cell_goals": 57,
+      "thinnest_cell_trait": "reliability",
+      "thinnest_cell_weight": 0.02
+    },
+    {
+      "distance_to_supplied": 0.39,
+      "feasible": false,
+      "members": 27923,
+      "thinnest_cell_goals": 8,
+      "thinnest_cell_trait": "reliability",
+      "thinnest_cell_weight": 0.02
+    },
+    {
+      "distance_to_supplied": 0.395,
+      "feasible": false,
+      "members": 24314,
+      "thinnest_cell_goals": 0,
+      "thinnest_cell_trait": "reliability",
+      "thinnest_cell_weight": 0.02
+    },
+    {
+      "distance_to_supplied": 0.4,
+      "feasible": false,
+      "members": 18498,
+      "thinnest_cell_goals": 0,
+      "thinnest_cell_trait": "reliability",
+      "thinnest_cell_weight": 0.02
+    },
+    {
+      "distance_to_supplied": 0.405,
+      "feasible": false,
+      "members": 13461,
+      "thinnest_cell_goals": 0,
+      "thinnest_cell_trait": "reliability",
+      "thinnest_cell_weight": 0.02
+    }
+  ],
+  "goals_per_cell": 16,
+  "shell_tolerance": 0.015,
+  "weight_tolerance": 0.02,
+  "window": {
+    "high": 0.385,
+    "low": 0.28,
+    "width": 0.105
+  }
+}

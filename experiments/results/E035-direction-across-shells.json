@@ -1,0 +1,334 @@
+{
+  "descriptor_cancellation_replicates": true,
+  "descriptor_contrast": {
+    "0.3": {
+      "contrast": 4.885769,
+      "resolved": true,
+      "standard_error": 0.941988,
+      "t": 5.186655
+    },
+    "0.35": {
+      "contrast": 5.504845,
+      "resolved": true,
+      "standard_error": 0.947858,
+      "t": 5.807669
+    },
+    "0.375": {
+      "contrast": 4.276176,
+      "resolved": true,
+      "standard_error": 0.754303,
+      "t": 5.669045
+    }
+  },
+  "distances": [
+    0.3,
+    0.35,
+    0.375
+  ],
+  "experiment": "goal-direction-across-shells-v1",
+  "experiment_id": "E035",
+  "floored_contrast": {
+    "0.3": {
+      "contrast": 1.640644,
+      "resolved": false,
+      "standard_error": 0.898288,
+      "t": 1.826411
+    },
+    "0.35": {
+      "contrast": 1.602475,
+      "resolved": false,
+      "standard_error": 0.954706,
+      "t": 1.6785
+    },
+    "0.375": {
+      "contrast": 0.314981,
+      "resolved": false,
+      "standard_error": 0.73733,
+      "t": 0.427191
+    }
+  },
+  "floored_pair_asymmetry_replicates": true,
+  "per_shell": {
+    "0.3": {
+      "direction_spread": {
+        "goals": 385,
+        "lead_max": 4.47128,
+        "lead_mean": 1.188708,
+        "lead_min": -4.893853,
+        "lead_sd": 1.940291,
+        "negative_goals": 93,
+        "negative_share": 0.241558,
+        "spread": 9.365133
+      },
+      "ladders": {
+        "adaptability": {
+          "change": 2.440552,
+          "degrees_of_freedom": 25.468198,
+          "resolved": true,
+          "standard_error": 0.6418,
+          "t": 3.802669
+        },
+        "efficiency": {
+          "change": -2.445217,
+          "degrees_of_freedom": 18.157454,
+          "resolved": true,
+          "standard_error": 0.689518,
+          "t": -3.546271
+        },
+        "reliability": {
+          "change": 3.052406,
+          "degrees_of_freedom": 25.196205,
+          "resolved": true,
+          "standard_error": 0.526321,
+          "t": 5.799518
+        },
+        "security": {
+          "change": 1.411762,
+          "degrees_of_freedom": 22.654154,
+          "resolved": false,
+          "standard_error": 0.727948,
+          "t": 1.939373
+        },
+        "simplicity": {
+          "change": -2.628403,
+          "degrees_of_freedom": 21.488347,
+          "resolved": true,
+          "standard_error": 0.72168,
+          "t": -3.642061
+        }
+      },
+      "shell": {
+        "change_size": 0.391918,
+        "distance_to_supplied": 0.3,
+        "members": 38643,
+        "pool_draws": 2000000,
+        "pool_seed": 20260831,
+        "tolerance": 0.015
+      }
+    },
+    "0.35": {
+      "direction_spread": {
+        "goals": 381,
+        "lead_max": 4.430211,
+        "lead_mean": 0.997574,
+        "lead_min": -4.977829,
+        "lead_sd": 2.02863,
+        "negative_goals": 102,
+        "negative_share": 0.267717,
+        "spread": 9.40804
+      },
+      "ladders": {
+        "adaptability": {
+          "change": 2.33171,
+          "degrees_of_freedom": 28.452601,
+          "resolved": true,
+          "standard_error": 0.667857,
+          "t": 3.49133
+        },
+        "efficiency": {
+          "change": -3.173135,
+          "degrees_of_freedom": 20.601557,
+          "resolved": true,
+          "standard_error": 0.672608,
+          "t": -4.71766
+        },
+        "reliability": {
+          "change": 2.747975,
+          "degrees_of_freedom": 25.09703,
+          "resolved": true,
+          "standard_error": 0.545385,
+          "t": 5.038598
+        },
+        "security": {
+          "change": 1.1455,
+          "degrees_of_freedom": 25.07833,
+          "resolved": false,
+          "standard_error": 0.783594,
+          "t": 1.461854
+        },
+        "simplicity": {
+          "change": -1.260033,
+          "degrees_of_freedom": 23.516326,
+          "resolved": false,
+          "standard_error": 0.78152,
+          "t": -1.612284
+        }
+      },
+      "shell": {
+        "change_size": 0.391918,
+        "distance_to_supplied": 0.35,
+        "members": 27335,
+        "pool_draws": 2000000,
+        "pool_seed": 20260831,
+        "tolerance": 0.015
+      }
+    },
+    "0.375": {
+      "direction_spread": {
+        "goals": 370,
+        "lead_max": 4.367961,
+        "lead_mean": 1.231735,
+        "lead_min": -5.040943,
+        "lead_sd": 1.689083,
+        "negative_goals": 75,
+        "negative_share": 0.202703,
+        "spread": 9.408904
+      },
+      "ladders": {
+        "adaptability": {
+          "change": 1.657187,
+          "degrees_of_freedom": 27.457562,
+          "resolved": false,
+          "standard_error": 0.601623,
+          "t": 2.754529
+        },
+        "efficiency": {
+          "change": -2.618989,
+          "degrees_of_freedom": 23.398206,
+          "resolved": true,
+          "standard_error": 0.454997,
+          "t": -5.75606
+        },
+        "reliability": {
+          "change": 1.030512,
+          "degrees_of_freedom": 25.710874,
+          "resolved": false,
+          "standard_error": 0.37695,
+          "t": 2.733818
+        },
+        "security": {
+          "change": 0.715531,
+          "degrees_of_freedom": 25.52221,
+          "resolved": false,
+          "standard_error": 0.633691,
+          "t": 1.129148
+        },
+        "simplicity": {
+          "change": 0.722522,
+          "degrees_of_freedom": 29.954663,
+          "resolved": false,
+          "standard_error": 0.473845,
+          "t": 1.524807
+        }
+      },
+      "shell": {
+        "change_size": 0.391918,
+        "distance_to_supplied": 0.375,
+        "members": 24650,
+        "pool_draws": 2000000,
+        "pool_seed": 20260831,
+        "tolerance": 0.015
+      }
+    }
+  },
+  "resolved_t": 2.878,
+  "shell_overlap": [
+    {
+      "band_intersection": 0.0,
+      "disjoint": true,
+      "distances": [
+        0.3,
+        0.35
+      ],
+      "separation": 0.05,
+      "shared_goals": 0,
+      "shared_share": 0.0
+    },
+    {
+      "band_intersection": 0.0,
+      "disjoint": true,
+      "distances": [
+        0.3,
+        0.375
+      ],
+      "separation": 0.075,
+      "shared_goals": 0,
+      "shared_share": 0.0
+    },
+    {
+      "band_intersection": 0.005,
+      "disjoint": false,
+      "distances": [
+        0.35,
+        0.375
+      ],
+      "separation": 0.025,
+      "shared_goals": 5,
+      "shared_share": 0.013514
+    }
+  ],
+  "sign_flip_shells_are_disjoint": true,
+  "spread_grows_with_distance": false,
+  "trait_replication": {
+    "adaptability": {
+      "changes": [
+        2.440552,
+        2.33171,
+        1.657187
+      ],
+      "resolved": [
+        true,
+        true,
+        false
+      ],
+      "resolved_count": 2,
+      "verdict": "consistent"
+    },
+    "efficiency": {
+      "changes": [
+        -2.445217,
+        -3.173135,
+        -2.618989
+      ],
+      "resolved": [
+        true,
+        true,
+        true
+      ],
+      "resolved_count": 3,
+      "verdict": "replicates"
+    },
+    "reliability": {
+      "changes": [
+        3.052406,
+        2.747975,
+        1.030512
+      ],
+      "resolved": [
+        true,
+        true,
+        false
+      ],
+      "resolved_count": 2,
+      "verdict": "consistent"
+    },
+    "security": {
+      "changes": [
+        1.411762,
+        1.1455,
+        0.715531
+      ],
+      "resolved": [
+        false,
+        false,
+        false
+      ],
+      "resolved_count": 0,
+      "verdict": "consistent"
+    },
+    "simplicity": {
+      "changes": [
+        -2.628403,
+        -1.260033,
+        0.722522
+      ],
+      "resolved": [
+        true,
+        false,
+        false
+      ],
+      "resolved_count": 1,
+      "verdict": "sign_flips"
+    }
+  }
+}
