@@ -459,6 +459,39 @@ only when its 95% paired interval excludes zero, and a trend is only named when
 the end gains differ by more than the intervals they sit inside. See
 [`../experiments/E032-population-scaling.md`](../experiments/E032-population-scaling.md).
 
+### E033 — how far can the goal drift?
+
+`e033_goal_distance.py` turns E030's single substitute goal into a ladder.
+E030 measured the archive's rescue at one distance from the supplied set, which
+cannot tell a lead that decays smoothly from one that holds until a radius and
+then breaks.
+
+```bash
+PYTHONPATH=. python3 sim/e033_goal_distance.py --ladder matched --jobs 8 \
+  --output experiments/results/E033-matched-change-size.json
+
+PYTHONPATH=. python3 sim/e033_goal_distance.py --ladder free --jobs 8 \
+  --output experiments/results/E033-free-ring.json
+```
+
+`--jobs` changes speed and not the answer: each goal is an independent, seeded
+measurement and the results are collected in input order. The workers must be
+processes, because pointing the environment at a new future goal rewrites module
+globals in both copies of the arena.
+
+The axis is the distance from the future goal to the *nearest* member of
+`PLAUSIBLE_GOALS`. `PLAUSIBLE_GOALS` contains `INITIAL_GOAL`, so that distance
+can never exceed the size of the change itself — pushing the goal away from the
+box also makes the change bigger, which is why the `matched` ladder holds the
+change size fixed at E030's own `0.391918` and why it stops at `0.35`. Every
+number reported is E030's lead statistic, `mean(arm) - mean(best arm holding no
+hypothesis)`, so a goal that is merely harder moves the baseline too and
+cancels. Each ring carries six goals chosen by farthest-point selection rather
+than one, which is the direct answer to E030's own limitation. The two anchors
+rerun E030's published points and must reproduce its committed perfect-panel
+cell exactly. See
+[`../experiments/E033-goal-distance.md`](../experiments/E033-goal-distance.md).
+
 ## Tests
 
 With `pytest` installed:
@@ -483,12 +516,13 @@ python -m pytest -q \
   tests/test_e028_latent_defect_dimension.py \
   tests/test_e030_supplied_goal_membership.py \
   tests/test_e031_learned_goal_filter.py \
-  tests/test_e032_population_scaling.py
+  tests/test_e032_population_scaling.py \
+  tests/test_e033_goal_distance.py
 ```
 
 This is the same list `.github/workflows/emergence-sim.yml` runs; keep the two in step.
 
-The tests cover deterministic replay, budget invariants, niche preservation, perfect verification compatibility, correlated-error mechanics, sweep configuration, the E013 regime where independence-aware aggregation can help or hurt, E025's calibration separation and preserved shift failures, the E015 effective-panel-size metrics, the E016 discrimination screen, the E017 item-difficulty model, the E018 model comparison, the E019 group-independence result, the E020 quorum frontier, E024's exact matched-evaluation contract, E026's archive-contamination audit, E027's defect-propagation channel — its matched budget, its cost-zero identity with the channel off, and the demonstration that an accepted defect now persists and does harm — E028's latent-defect dimension, E030's supplied-goal membership condition, E031's learned goal filter, and E032's matched-budget population sweep, whose driver is checked against `mbe.sweep` arm-for-arm so that keeping per-seed values cannot change what a seed does.
+The tests cover deterministic replay, budget invariants, niche preservation, perfect verification compatibility, correlated-error mechanics, sweep configuration, the E013 regime where independence-aware aggregation can help or hurt, E025's calibration separation and preserved shift failures, the E015 effective-panel-size metrics, the E016 discrimination screen, the E017 item-difficulty model, the E018 model comparison, the E019 group-independence result, the E020 quorum frontier, E024's exact matched-evaluation contract, E026's archive-contamination audit, E027's defect-propagation channel — its matched budget, its cost-zero identity with the channel off, and the demonstration that an accepted defect now persists and does harm — E028's latent-defect dimension, E030's supplied-goal membership condition, E031's learned goal filter, and E032's matched-budget population sweep, whose driver is checked against `mbe.sweep` arm-for-arm so that keeping per-seed values cannot change what a seed does, and E033's goal-distance ladder, whose two anchors are checked against E030's committed cell so the ladder cannot quietly measure something else.
 
 ## Interpretation
 

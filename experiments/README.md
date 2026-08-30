@@ -32,6 +32,7 @@ listed here fails the suite rather than becoming quietly undiscoverable.
 | **E030** | [Does the archive's advantage depend on being handed the future goal?](E030-supplied-goal-membership.md) |
 | **E031** | [Does *learning* the goal rescue the consensus swarm?](E031-learned-goal-filter.md) |
 | **E032** | [At a fixed budget, when is another agent worth adding?](E032-population-scaling.md) |
+| **E033** | [How far can the goal drift before the archive stops helping?](E033-goal-distance.md) |
 
 E014's sweeps publish their own result documents:
 [reference sweep](results/E014-reference-sweep.md),
