@@ -1,0 +1,23 @@
+diff --git a/docs/specifications/BENCHMARK_COHORT_V0_1.md b/docs/specifications/BENCHMARK_COHORT_V0_1.md
+index a266b3e..068d501 100644
+--- a/docs/specifications/BENCHMARK_COHORT_V0_1.md
++++ b/docs/specifications/BENCHMARK_COHORT_V0_1.md
+@@ -35,6 +35,6 @@
+ - `independent_from_worker == true`;
+ - indexed outcome equals verifier recommendation;
+ - structural signature was predeclared;
+- required resource/accounting fields are present in worker or verifier evidence.
+
+---
+
+---
+file: benchmarks/phase-b2/005-first-five-freeze-checklist/README.md
+index 57e2b2f..5f96c47 100644
+--- benchmarks/phase-b2/005-first-five-freeze-checklist/README.md
++++ benchmarks/phase-b2/005-first-five-freeze-checklist/README.md
+@@ -1,25 +1,25 @@
+ ## Overview
+
+### Purpose
+
+IDKMesh now has real evidence for:

@@ -1,0 +1,69 @@
+{
+  "attempt": 2,
+  "authority": {
+    "automatic_candidate_selection": false,
+    "canonical_state_write": false,
+    "git_push": false,
+    "merge": false
+  },
+  "cohort_evidence_attached": false,
+  "evaluator_plan_digest": "sha256:1965941c5c2844dc302049bcf461815df885571107e73d430ca3f68cac0adc16",
+  "experiment": "phase-b2-open-model-task-probe",
+  "human_integration_decision_required": true,
+  "model_metadata": {
+    "generation": {
+      "do_sample": true,
+      "max_new_tokens": 1536,
+      "seed": 1,
+      "temperature": 0.8,
+      "top_p": 0.95
+    },
+    "inference_seconds": 460.901321845,
+    "input_tokens": 2424,
+    "output_tokens": 1536,
+    "python": "3.12.14",
+    "schema_version": "0.1",
+    "torch": "2.13.0+cpu",
+    "transformers": "5.16.1"
+  },
+  "outcome": "producer_output_rejected",
+  "producer": {
+    "adapter": "open-weight-local-text-patch",
+    "adapter_version": "0.1",
+    "base_image_digest": "sha256:09f7da3bc104798d0afb40bc08d23ab2da20a76130cec1f2ef170848f5d85217",
+    "decode": {
+      "attempt": 2,
+      "do_sample": true,
+      "max_new_tokens": 1536,
+      "seed": 1,
+      "temperature": 0.8,
+      "top_p": 0.95
+    },
+    "image_id": "sha256:4c8b9fc09c2a0f8ac3da4cd17aa4b63b43ce7d21049a6a8c31ebedfc5b6efc24",
+    "model": "Qwen/Qwen2.5-Coder-0.5B-Instruct",
+    "model_revision": "bbf27711794f58ebd1796058f4280b53c32e19fc",
+    "prompt_digest": "sha256:e90107a6d7c7529afb47e022f5fc76065f7129fbab3f570605536baf0ec1a40d"
+  },
+  "producer_reason": "model patch targeted a path other than the WorkUnit allowed path",
+  "producer_returncode": 0,
+  "raw_response_digest": "sha256:7b0a5a70e4fe76621433176241ea832f6a0c95459e58c6da632b14a0b8b1ab69",
+  "result_manifest": null,
+  "sandbox": {
+    "capabilities_dropped": true,
+    "cpu_limit": 2.0,
+    "evaluator_plan_exposed_to_model": false,
+    "memory_limit_mb": 6144,
+    "network_none": true,
+    "no_new_privileges": true,
+    "pid_limit": 128,
+    "read_only_root": true,
+    "repository_credentials_exposed": false,
+    "source_checkout_mounted_to_model": false
+  },
+  "schema_version": "0.1",
+  "source_revision": "a69aa0ae1ae4862e507511cbd9ad854237d0ad32",
+  "structural_signature": "single-worker-baseline-v1",
+  "task_id": "benchmark/phase-b2-v2/005-local-offer-output-boundary",
+  "verification_result": null,
+  "work_unit_digest": "sha256:063dd0504fac4b9eb474f4d16e68ffc3680edd5ab6570f3473b1634cc8edd7f8"
+}

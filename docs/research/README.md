@@ -76,7 +76,12 @@ policy changes or merge decisions.
   metric, and sweeps the cost knob across its whole range.
 - [E028 Latent Defect Dimension](../../experiments/E028-latent-defect-dimension.md)
   — removes E027's confound by moving viability into a dimension the goals cannot
-  see, and finds the archive's survival does not carry over.
+  see; the archive's survival holds in 18 of 20 cells and breaks only under the
+  stress panel at full defect cost.
+- [E029 First Real Model Attempts](../../experiments/E029-first-real-model-attempts.md)
+  — 60 sandboxed attempts by a pinned 0.5B open-weight producer on the frozen
+  benchmark: 0 accepted, 56 of 60 failing the diff protocol before any
+  repository content was consulted.
 - [E025 Learned Verifier Reliability](../../experiments/E025-learned-verifier-reliability.md)
   — calibration/held-out evidence for reliability and dependence-aware aggregation.
 - [IDKGraph P1 Independent Review Protocol](IDKGRAPH_P1_INDEPENDENT_REVIEW_PROTOCOL.md)

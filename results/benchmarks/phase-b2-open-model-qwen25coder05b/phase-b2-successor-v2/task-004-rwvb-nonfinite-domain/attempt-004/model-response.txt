@@ -1,0 +1,34 @@
+```diff
+diff --git a/experiments/verification_backpressure.py b/experiments/verification_backpressure.py
+index 5b1d04f..a1b2c3e 100644
+--- a/experiments/verification_backpressure.py
++++ b/experiments/verification_backpressure.py
+@@ -1,10 +1,10 @@
+ from __future__ import annotations
+
+ import argparse
+ import json
+ import math
+-from dataclasses import asdict, dataclass
+
+@@ -32,4 +32,4 @@
+         "age_steps": 4,
+         "low_watermark": 0.60,
+         "high_watermark": 1.20,
+         "response_rate": 0.60,
+         "min_fanout": 1,
+         "max_fanout": 32
+     }
+     def validate(self) -> None:
+-        for name in ("risk", "uncertainty", "evidence_diversity"):
++        for name in ("risk", "uncertainty", "evidence_diversity", "age_steps"):
+            value = getattr(self, name)
+            if not 0.0 <= value <= 1.0:
+                raise ValueError(f"{name} must be in [0, 1], got {value}")
+        if self.impact < 0.0:
+            raise ValueError("impact must be >= 0")
+        if self.estimated_verification_cost <= 0.0:
+            raise ValueError("estimated_verification_cost must be > 0")
+        if self.age_steps < 0:
+            raise ValueError("age_steps must be >= 0")
+```

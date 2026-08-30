@@ -1,0 +1,223 @@
+```diff
+diff --git a/tools/branch_convergence_audit.py b/tools/branch_convergence_audit.py
+index 9b7c6d9..b0a0a0a 100644
+--- a/tools/branch_convergence_audit.py
++++ b/tools/branch_convergence_audit.py
+@@ -1,10 +1,10 @@
+ #!/usr/bin/env python3
+ """Read-only branch convergence audit for IDKMesh.
+
+The auditor classifies repository branches using independent facts:
+
+1. pull-request state for the branch;
+2. the current branch head SHA; and
+3. commit ancestry relative to the default branch.
+
+It never merges, deletes, pushes, approves, or changes repository settings.
+Its purpose is to distinguish work that is already integrated from work that
+needs review, extraction, or a clean current-main replacement.
+"""
+
+from __future__ import annotations
+
+import argparse
+from collections import Counter, defaultdict
+from dataclasses import asdict, dataclass
+from datetime import datetime, timezone
+import json
+import os
+from pathlib import Path
+import sys
+from typing import Any
+from urllib.error import HTTPError, URLError
+from urllib.parse import quote
+from urllib.request import Request, urlopen
+
+API_ROOT = "https://api.github.com"
+USER_AGENT = "idkmesh-branch-convergence-audit/0.2"
+
+
+class AuditError(RuntimeError):
+    pass
+
+
+@dataclass(frozen=True)
+class PullRequestRef:
+    number: int
+    state: str
+    merged: bool
+    draft: bool
+    head_sha: str
+    base_ref: str
+    updated_at: str | None
+
+
+@dataclass(frozen=True)
+class Comparison:
+    status: str
+    ahead_by: int
+    behind_by: int
+
+
+@dataclass(frozen=True)
+class BranchDecision:
+    branch: str
+    head_sha: str | None
+    state: str
+    recommendation: str
+    direct_merge_allowed: bool
+    cleanup_eligible: bool
+    comparison_status: str
+    ahead_by: int
+    behind_by: int
+    pull_requests: tuple[int, ...]
+    notes: tuple[str, ...]
+
+
+def _no_unique_commits(comparison: Comparison) -> bool:
+    return comparison.ahead_by == 0 and comparison.status in {"behind", "identical"}
+
+
+def _evidence_sensitive(branch: str) -> bool:
+    lowered = branch.lower()
+    return (
+        lowered.startswith("acceptance/")
+        or "reference" in lowered
+        or "evidence" in lowered
+    )
+
+
+def classify_branch(
+    *,
+    branch: str,
+    default_branch: str,
+    comparison: Comparison,
+    prs: list[PullRequestRef],
+    head_sha: str | None = None,
+) -> BranchDecision:
+    """Classify one branch without performing any repository mutation."""
+
+    pr_numbers = tuple(sorted(pr.number for pr in prs))
+
+    if branch == default_branch:
+        return BranchDecision(
+            branch=branch,
+            head_sha=head_sha,
+            state="canonical",
+            recommendation="keep canonical branch",
+            direct_merge_allowed=False,
+            cleanup_eligible=False,
+            comparison_status=comparison.status,
+            ahead_by=comparison.ahead_by,
+            behind_by=comparison.behind_by,
+            pull_requests=pr_numbers,
+            notes=("canonical state is never treated as a source branch",),
+        )
+
+    open_prs = [pr for pr in prs if pr.state == "open"]
+    merged_prs = [pr for pr in prs if pr.merged]
+    closed_unmerged_prs = [pr for pr in prs if pr.state == "closed" and not pr.merged]
+
+    if len(open_prs) > 1:
+        return BranchDecision(
+            branch=branch,
+            head_sha=head_sha,
+            state="ambiguous-open-prs",
+            recommendation="block integration until one canonical PR remains",
+            direct_merge_allowed=False,
+            cleanup_eligible=False,
+            comparison_status=comparison.status,
+            ahead_by=comparison.ahead_by,
+            behind_by=comparison.behind_by,
+            pull_requests=pr_numbers,
+            notes=("multiple open PRs reference the same branch",),
+        )
+
+    if len(open_prs) == 1:
+        pr = open_prs[0]
+        head_moved = head_sha is not None and pr.head_sha != head_sha
+        if head_moved:
+            return BranchDecision(
+                branch=branch,
+                head_sha=head_sha,
+                state="open-pr-head-mismatch",
+                recommendation="hold integration; refresh PR metadata/evidence against the current branch head",
+                direct_merge_allowed=False,
+                cleanup_eligible=False,
+                comparison_status=comparison.status,
+                ahead_by=comparison.ahead_by,
+                behind_by=comparison.behind_by,
+                pull_requests=pr_numbers,
+                notes=(
+                    f"open PR #{pr.number} records head {pr.head_sha}",
+                    f"current branch head is {head_sha}",
+                ),
+            )
+        if pr.draft:
+            return BranchDecision(
+                branch=branch,
+                head_sha=head_sha,
+                state="active-draft-pr",
+                recommendation="keep branch; satisfy explicit PR blockers before merge review",
+                direct_merge_allowed=False,
+                cleanup_eligible=False,
+                comparison_status=comparison.status,
+                ahead_by=comparison.ahead_by,
+                behind_by=comparison.behind_by,
+                pull_requests=pr_numbers,
+                notes=(
+                    f"open draft PR #{pr.number}",
+                    "if exact-SHA evidence is bound to this head, moving the branch invalidates that evidence",
+                ),
+            )
+        return BranchDecision(
+            branch=branch,
+            head_sha=head_sha,
+            state="active-review-pr",
+            recommendation="use the PR merge gate; never merge the branch wholesale",
+            direct_merge_allowed=False,
+            cleanup_eligible=False,
+            comparison_status=comparison.status,
+            ahead_by=comparison.ahead_by,
+            behind_by=comparison.behind_by,
+            pull_requests=pr_numbers,
+            notes=(
+                f"open review PR #{pr.number}",
+            ),
+        )
+
+    if closed_unmerged_prs:
+        if _no_unique_commits(comparison):
+            return BranchDecision(
+                branch=branch,
+                head_sha=head_sha,
+                state="closed-unmerged-no-unique-commits",
+                recommendation="delete branch after confirming no external workflow depends on the branch name",
+                direct_merge_allowed=False,
+                cleanup_eligible=True,
+                comparison_status=comparison.status,
+                ahead_by=comparison.ahead_by,
+                behind_by=comparison.behind_by,
+                pull_requests=(),
+                notes=("branch has no PR and no commits ahead of main",),
+            )
+
+        evidence_sensitive = _evidence_sensitive(branch)
+        state = (
+            "closed-unmerged-evidence-branch"
+            if evidence_sensitive
+            else "closed-unmerged-unique-work"
+        )
+        recommendation = (
+            "inspect evidence/provenance references, then delete or extract only the still-useful artifact onto current main"
+            if evidence_sensitive
+            else "review unique commits; extract useful pieces into a clean current-main PR or delete as superseded"
+        )
+        return BranchDecision(
+            branch=branch,
+            head_sha=head_sha,
+            state=state,
+            recommendation=recommendation,
+            direct_merge_allowed=False,
+            cleanup_eligible=False,
+            comparison_status=comparison.status

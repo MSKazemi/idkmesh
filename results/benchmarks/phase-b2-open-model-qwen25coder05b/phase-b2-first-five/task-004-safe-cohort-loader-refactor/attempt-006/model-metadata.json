@@ -1,0 +1,16 @@
+{
+  "generation": {
+    "do_sample": true,
+    "max_new_tokens": 1536,
+    "seed": 5,
+    "temperature": 0.8,
+    "top_p": 0.95
+  },
+  "inference_seconds": 512.5588768810012,
+  "input_tokens": 5254,
+  "output_tokens": 1536,
+  "python": "3.12.14",
+  "schema_version": "0.1",
+  "torch": "2.13.0+cpu",
+  "transformers": "5.16.1"
+}

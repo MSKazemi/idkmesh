@@ -1,0 +1,11 @@
+diff --git a/experiments/verification_backpressure.py b/experiments/verification_backpressure.py
+index 21a7f17..351d432 100644
+--- a/experiments/verification_backpressure.py
++++ b/experiments/verification_backpressure.py
+@@ -20,6 +20,7 @@
+     candidates.append(candidate)
+     used += cost
+   return selected
++
++def self_test():
++  config = ControllerConfig()

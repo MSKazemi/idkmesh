@@ -1,0 +1,40 @@
+diff --git a/docs/specifications/BENCHMARK_COHORT_V0_1.md b/docs/specifications/BENCHMARK_COHORT_V0_1.md
+index 0000000..b000000
+--- a/docs/specifications/BENCHMARK_COHORT_V0_1.md
++++ b/docs/specifications/BENCHMARK_COHORT_V0_1.md
+@@ -0,0 +1 @@
++# Benchmark Cohort Index v0.1
+
++Status: experimental Phase B2 contract  
++Tracker: #5  
++Related research: #30, #70, #96
+
++## Purpose
+
++IDKMesh now has real evidence for:
+
++```text
++WorkUnit
++ -> exact-SHA real worker
++ -> ResultManifest
++ -> verifier-owned EvaluatorPlan
++ -> independent VerificationResult
++ -> multi-attempt run record
++ -> non-selecting Evidence Report
++```
+
++The next problem is no longer how to represent one task or one verification result. It is how to assemble a **small, frozen, replayable benchmark cohort** without creating a second task protocol or changing task labels/evaluator expectations after outcomes are known.
+
+`schemas/benchmark-cohort-v0.1.schema.json` is therefore a thin **index** over existing canonical objects.
+
+It does not replace:
+
+- WorkUnit v0.2;
+- EvaluatorPlan v0.2;
+- ResultManifest v0.1;
+- VerificationResult v0.1;
+- the run Evidence Report.
+
+## Cohort lifecycle
+
+A cohort moves through four explicit stages:

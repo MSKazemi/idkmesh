@@ -24,6 +24,14 @@ def main() -> int:
     parser.add_argument("--response", required=True, type=Path)
     parser.add_argument("--metadata", required=True, type=Path)
     parser.add_argument("--max-new-tokens", type=int, default=1536)
+    parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument(
+        "--do-sample",
+        action="store_true",
+        help="Draw an independent sample instead of the default greedy decode.",
+    )
+    parser.add_argument("--temperature", type=float, default=1.0)
+    parser.add_argument("--top-p", type=float, default=1.0)
     args = parser.parse_args()
 
     # The runtime container is expected to have --network none. These settings
@@ -50,7 +58,7 @@ def main() -> int:
         torch_dtype=torch.float32,
     )
     model.eval()
-    torch.manual_seed(0)
+    torch.manual_seed(args.seed)
     torch.set_num_threads(max(1, min(2, os.cpu_count() or 1)))
 
     messages = [
@@ -72,14 +80,18 @@ def main() -> int:
     inputs = tokenizer(rendered, return_tensors="pt")
     input_tokens = int(inputs["input_ids"].shape[-1])
 
+    generation_kwargs: dict[str, object] = {
+        "max_new_tokens": args.max_new_tokens,
+        "do_sample": bool(args.do_sample),
+        "pad_token_id": tokenizer.eos_token_id,
+    }
+    if args.do_sample:
+        generation_kwargs["temperature"] = args.temperature
+        generation_kwargs["top_p"] = args.top_p
+
     started = time.monotonic()
     with torch.no_grad():
-        generated = model.generate(
-            **inputs,
-            max_new_tokens=args.max_new_tokens,
-            do_sample=False,
-            pad_token_id=tokenizer.eos_token_id,
-        )
+        generated = model.generate(**inputs, **generation_kwargs)
     inference_seconds = time.monotonic() - started
     generated_ids = generated[0, input_tokens:]
     response = tokenizer.decode(generated_ids, skip_special_tokens=True).strip()
@@ -95,9 +107,11 @@ def main() -> int:
         "torch": torch.__version__,
         "transformers": transformers.__version__,
         "generation": {
-            "do_sample": False,
+            "do_sample": bool(args.do_sample),
             "max_new_tokens": args.max_new_tokens,
-            "seed": 0,
+            "seed": args.seed,
+            "temperature": args.temperature if args.do_sample else None,
+            "top_p": args.top_p if args.do_sample else None,
         },
     }
     args.metadata.write_text(
