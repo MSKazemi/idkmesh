@@ -137,16 +137,20 @@ policy changes or merge decisions.
   directions and average to nothing. E033's post-hoc 'security' observation
   (-1.362) does not survive the control, which gives +0.279 [-1.095, +1.653].
 - [E040 Diversity Correlation Threshold](../../experiments/E040-diversity-correlation-threshold.md)
-  — gives issue 13's hypothesis 2 its first named test by sweeping the assumed
-  worker-error correlation the R1 scaling runner had fixed at 0.25. There is no
+  — sweeps the assumed worker-error correlation the R1 scaling runner had fixed
+  at 0.25, and connects the result to issue 13's hypothesis 2. There is no
   threshold: the equal-budget advantage is proportional to retained
   independence, 1 - rho, in 17 of 18 curves at an uncentered R-squared of at
-  least 0.99 through the origin, so the harness returns 'hypothesis 2 holds' at
-  every correlation short of 1.0 and cannot falsify it. Splitting the two arms
-  also splits the hypothesis: randomizing verifier assignment raises the slope
-  in 5 of 9 cells, by at most 0.0181 against worker-diversity slopes running to
-  0.5504, so the whole measured effect is on the worker side and none of it
-  belongs to the 'with independent verification' half.
+  least 0.99 through the origin, so this grid returns 'hypothesis 2 holds' at
+  every correlation short of 1.0 and cannot falsify it. The issue 30 help/hurt
+  sweep corroborates that and bounds it: across its whole correlation ladder it
+  reports 0 hurts cells at quality penalty 0, and all 13 of its hurts cells
+  carry a non-zero penalty. Correlation sets the size of the advantage; worker
+  quality sets its sign. Splitting the two arms also splits the hypothesis:
+  randomizing verifier assignment raises the slope in 5 of 9 cells, by at most
+  0.0181 against worker-diversity slopes running to 0.5504, so the whole
+  measured effect is on the worker side and none of it belongs to the 'with
+  independent verification' half.
 - [E025 Learned Verifier Reliability](../../experiments/E025-learned-verifier-reliability.md)
   — calibration/held-out evidence for reliability and dependence-aware aggregation.
 - [IDKGraph P1 Independent Review Protocol](IDKGRAPH_P1_INDEPENDENT_REVIEW_PROTOCOL.md)

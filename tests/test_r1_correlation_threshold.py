@@ -13,6 +13,7 @@ from randomness_lab.r1_correlation_threshold import (
     run_correlation_sweep,
 )
 from randomness_lab.r1_scaling import R1ScalingConfig
+from randomness_lab.r1_sweep import R1SweepConfig, run_r1_sweep
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -236,6 +237,77 @@ class PublishedFindingTests(unittest.TestCase):
                     )
                     found += 1
         self.assertEqual(found, 9)
+
+
+class CrossRunnerCorroborationTests(unittest.TestCase):
+    """Pin what the issue #30 help/hurt sweep already establishes.
+
+    E040 shipped a revision claiming hypothesis 2 had no named test. It did:
+    `randomness_lab.r1_sweep` had been sweeping the same worker-correlation
+    axis all along. Prose is what let that through, so the relationship between
+    the two runners is asserted here instead of only described.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        # The invocation documented in docs/research/R1_HELP_HURT_SWEEP.md.
+        cls.sweep = run_r1_sweep(
+            R1SweepConfig(
+                tasks_per_trial=200,
+                trials=10,
+                base_seed=42,
+                worker_correlations=(0.0, 0.25, 0.5, 0.75, 1.0),
+                verifier_correlations=(0.0, 0.5, 1.0),
+                quality_penalties=(0.0, 0.05, 0.10),
+                swarm_sizes=(2, 5),
+            )
+        )
+
+    def _counts(self, penalty: float) -> dict[str, int]:
+        counts = {"helps": 0, "hurts": 0, "uncertain": 0}
+        for cell in self.sweep["cells"]:
+            if cell["parameters"]["structural_worker_quality_penalty"] == penalty:
+                counts[cell["success_delta"]["classification"]] += 1
+        return counts
+
+    def test_the_correlation_axis_was_already_swept(self) -> None:
+        swept = sorted(self.sweep["config"]["worker_correlations"])
+        self.assertEqual(swept, [0.0, 0.25, 0.5, 0.75, 1.0])
+        self.assertEqual(self.sweep["cell_count"], 90)
+
+    def test_correlation_alone_never_flips_the_sign(self) -> None:
+        # The claim E040 Result 2 is bounded by: with diversity unpriced, no
+        # correlation in the ladder produces a losing cell.
+        self.assertEqual(self._counts(0.0)["hurts"], 0)
+
+    def test_every_losing_cell_is_bought_with_a_quality_penalty(self) -> None:
+        losing = [
+            cell
+            for cell in self.sweep["cells"]
+            if cell["success_delta"]["classification"] == "hurts"
+        ]
+        self.assertTrue(losing, "the sweep must retain a failure regime")
+        for cell in losing:
+            with self.subTest(cell=cell["cell_index"]):
+                self.assertGreater(
+                    cell["parameters"]["structural_worker_quality_penalty"], 0.0
+                )
+
+    def test_writeup_corroboration_table_matches_the_rerun(self) -> None:
+        text = WRITEUP.read_text(encoding="utf-8")
+        for penalty, label in ((0.0, "0.00"), (0.05, "0.05"), (0.10, "0.10")):
+            counts = self._counts(penalty)
+            row = re.search(
+                rf"^\| {re.escape(label)} \| (\d+) \| \*?\*?(\d+)\*?\*? \| (\d+) \|$",
+                text,
+                re.MULTILINE,
+            )
+            with self.subTest(penalty=penalty):
+                self.assertIsNotNone(row, msg=f"no corroboration row for {label}")
+                self.assertEqual(
+                    [int(value) for value in row.groups()],
+                    [counts["helps"], counts["hurts"], counts["uncertain"]],
+                )
 
 
 class ReplayTests(unittest.TestCase):

@@ -178,6 +178,14 @@ arm losing, so its equal-budget result cannot be evidence that the effect
 exists — only a sized effect under a stated assumption, which is how the
 paragraph above already asks it to be read.
 
+The reason it has no losing regime is that it never charges for diversity: all
+arms draw profiles at the same base success probability. The issue #30
+help/hurt sweep ([`R1_HELP_HURT_SWEEP.md`](R1_HELP_HURT_SWEEP.md)) does charge
+for it, through a structural-worker quality penalty, and every one of its
+thirteen `hurts` cells carries a non-zero penalty while its penalty-free slice
+reports none across the whole correlation ladder. Correlation sets the size of
+the advantage; worker quality sets its sign.
+
 E040 also splits the `diverse_verifiers` arm off from `structural_diversity` and
 finds the verification half contributes nothing distinguishable: randomizing
 verifier assignment raised the fitted slope in 5 of 9 cells, by at most `0.0181`

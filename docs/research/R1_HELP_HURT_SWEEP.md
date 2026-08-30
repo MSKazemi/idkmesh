@@ -84,6 +84,27 @@ For example, structural diversity can plausibly hurt when:
 
 The synthetic sweep can establish whether the orchestration logic detects such regimes. Only real-task experiments can estimate where the actual system lies in this parameter space.
 
+## What it turned out to also answer
+
+This sweep was written for issue #30. It also, without saying so, tested issue
+#13's hypothesis 2 — heterogeneous teams beat homogeneous teams at an equal
+budget — because that is exactly the `structural_diversity` versus
+`identical_replication` contrast it classifies. That connection went unrecorded
+long enough for
+[E040](../../experiments/E040-diversity-correlation-threshold.md) to claim the
+hypothesis had no test at all before finding this page.
+
+Read together, the two runners say something neither says alone. E040 fits the
+advantage against retained independence and finds it proportional to `1 - rho`
+with no knee, in a grid where diverse workers cost nothing extra. This sweep
+charges for diversity through the quality penalty, and every one of its
+`hurts` cells carries a non-zero penalty while the penalty-free slice reports
+none across the whole correlation ladder.
+
+**Correlation sets the size of the diversity advantage; worker quality sets its
+sign.** A sign is what this sweep can produce and E040's grid cannot, which is
+the reason to keep both.
+
 ## What this still does not prove
 
 The sweep does **not** estimate real model error correlation, real security risk, or real human-review cost. Its probabilities are controlled assumptions.
