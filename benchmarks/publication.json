@@ -1,0 +1,227 @@
+{
+  "cohorts": [
+    {
+      "authority": {
+        "automatic_candidate_selection": false,
+        "canonical_state_write": false,
+        "git_push": false,
+        "merge": false
+      },
+      "contract": {
+        "error": null,
+        "valid": true
+      },
+      "definition_digest": "sha256:58f0f690c482204be2ac3481b91af05953f543a7f0998863c93c69fb2dab7f41",
+      "evidence_status": {
+        "pending": 5
+      },
+      "families_present": [
+        "bounded_feature",
+        "bug_fix",
+        "other",
+        "refactor",
+        "test_failure"
+      ],
+      "id": "benchmark/phase-b2-successor-v2",
+      "measured_tasks": 0,
+      "meets_minimum": true,
+      "minimum_final_tasks": 5,
+      "missing_families": [],
+      "negative_cases": 5,
+      "outcomes": {
+        "attempts": 0,
+        "by_outcome": {},
+        "by_structural_signature": {},
+        "distinct_structural_signatures": 0
+      },
+      "path": "benchmarks/phase-b2-successor-v2/cohort.json",
+      "required_families": [
+        "bounded_feature",
+        "bug_fix",
+        "other",
+        "refactor",
+        "test_failure"
+      ],
+      "splits": [
+        "pilot"
+      ],
+      "stage": "scaffold",
+      "tasks": 5,
+      "taxonomy_frozen_before_outcomes": true,
+      "title": "IDKMesh Phase B2 calibrated successor scaffold v2"
+    },
+    {
+      "authority": {
+        "automatic_candidate_selection": false,
+        "canonical_state_write": false,
+        "git_push": false,
+        "merge": false
+      },
+      "contract": {
+        "error": null,
+        "valid": true
+      },
+      "definition_digest": "sha256:7ecb58c72a5819151c98c3916f810f22313e2fd0981cfa09ff6158a6e7103f8c",
+      "evidence_status": {
+        "pending": 5
+      },
+      "families_present": [
+        "bounded_feature",
+        "bug_fix",
+        "documentation_contract",
+        "refactor",
+        "test_failure"
+      ],
+      "id": "benchmark/phase-b2-first-five-v2",
+      "measured_tasks": 0,
+      "meets_minimum": true,
+      "minimum_final_tasks": 5,
+      "missing_families": [],
+      "negative_cases": 5,
+      "outcomes": {
+        "attempts": 0,
+        "by_outcome": {},
+        "by_structural_signature": {},
+        "distinct_structural_signatures": 0
+      },
+      "path": "benchmarks/phase-b2-first-five-v2/cohort.json",
+      "required_families": [
+        "bounded_feature",
+        "bug_fix",
+        "documentation_contract",
+        "refactor",
+        "test_failure"
+      ],
+      "splits": [
+        "pilot"
+      ],
+      "stage": "frozen",
+      "tasks": 5,
+      "taxonomy_frozen_before_outcomes": true,
+      "title": "IDKMesh Phase B2 first-five repository benchmark v2"
+    },
+    {
+      "authority": {
+        "automatic_candidate_selection": false,
+        "canonical_state_write": false,
+        "git_push": false,
+        "merge": false
+      },
+      "contract": {
+        "error": null,
+        "valid": true
+      },
+      "definition_digest": "sha256:3182d8710e1239c19cb95daddd0677241c0cd9123614786fd919b036922dbdd9",
+      "evidence_status": {
+        "verified": 5
+      },
+      "families_present": [
+        "bounded_feature",
+        "bug_fix",
+        "documentation_contract",
+        "refactor",
+        "test_failure"
+      ],
+      "id": "benchmark/phase-b2-successor-five",
+      "measured_tasks": 5,
+      "meets_minimum": true,
+      "minimum_final_tasks": 5,
+      "missing_families": [],
+      "negative_cases": 5,
+      "outcomes": {
+        "attempts": 5,
+        "by_outcome": {
+          "support": 5
+        },
+        "by_structural_signature": {
+          "single-worker-baseline-v1": 5
+        },
+        "distinct_structural_signatures": 1
+      },
+      "path": "benchmarks/phase-b2-successor-five/cohort.json",
+      "required_families": [
+        "bounded_feature",
+        "bug_fix",
+        "documentation_contract",
+        "refactor",
+        "test_failure"
+      ],
+      "splits": [
+        "pilot"
+      ],
+      "stage": "frozen",
+      "tasks": 5,
+      "taxonomy_frozen_before_outcomes": true,
+      "title": "IDKMesh Phase B2 successor five-task repository benchmark"
+    },
+    {
+      "authority": {
+        "automatic_candidate_selection": false,
+        "canonical_state_write": false,
+        "git_push": false,
+        "merge": false
+      },
+      "contract": {
+        "error": null,
+        "valid": true
+      },
+      "definition_digest": "sha256:4fdec8a2768e32dc223b218ed70aec3a67aefcd87c64b72c5675c9921a4eab5c",
+      "evidence_status": {
+        "excluded": 5
+      },
+      "families_present": [
+        "bounded_feature",
+        "bug_fix",
+        "documentation_contract",
+        "refactor",
+        "test_failure"
+      ],
+      "id": "benchmark/phase-b2-first-five",
+      "measured_tasks": 0,
+      "meets_minimum": true,
+      "minimum_final_tasks": 5,
+      "missing_families": [],
+      "negative_cases": 5,
+      "outcomes": {
+        "attempts": 0,
+        "by_outcome": {},
+        "by_structural_signature": {},
+        "distinct_structural_signatures": 0
+      },
+      "path": "benchmarks/phase-b2-first-five/cohort.json",
+      "required_families": [
+        "bounded_feature",
+        "bug_fix",
+        "documentation_contract",
+        "refactor",
+        "test_failure"
+      ],
+      "splits": [
+        "pilot"
+      ],
+      "stage": "burned",
+      "tasks": 5,
+      "taxonomy_frozen_before_outcomes": true,
+      "title": "IDKMesh Phase B2 first-five repository benchmark"
+    }
+  ],
+  "generator": "tools/benchmark_publication.py",
+  "schema_version": "0.1",
+  "statements": [
+    "5 of 20 tasks carry a verified outcome, across 1 of 4 cohorts.",
+    "Every measured attempt comes from a single structural signature (single-worker-baseline-v1). These are baseline observations, not a comparison: no diversity, replication or error-correlation claim can be drawn from them, because there is nothing to compare against.",
+    "Every measured attempt resolved to 'support'. A benchmark on which nothing has yet failed has not been shown to discriminate."
+  ],
+  "totals": {
+    "attempts": 5,
+    "by_stage": {
+      "burned": 1,
+      "frozen": 2,
+      "scaffold": 1
+    },
+    "cohorts": 4,
+    "contract_valid": 4,
+    "measured_tasks": 5,
+    "tasks": 20
+  }
+}

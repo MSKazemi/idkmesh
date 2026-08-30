@@ -56,11 +56,18 @@ All three are produced by existing tooling; none is new to this audit.
 
 The corpus number is the one most likely to be misread. Four cohorts exist —
 `phase-b2-first-five`, `phase-b2-first-five-v2`, `phase-b2-successor-five`,
-`phase-b2-successor-v2` — and each has five tasks with six recorded attempts, so
-the tree is not empty. The frozen audit still returns `status: blocked` and
-`eligible_work_units: 0` for all four, because the recorded attempts are
-untrusted model patches with no independent verification result beside them.
-Attempts are not evidence.
+`phase-b2-successor-v2` — and each carries five tasks, so the tree is not empty.
+The attempts are concentrated rather than spread: `phase-b2-successor-five` holds
+all five recorded attempts and the other three cohorts hold none. The frozen
+audit still returns `status: blocked` and `eligible_work_units: 0` for all four,
+because the recorded attempts are untrusted model patches with no independent
+verification result beside them. Attempts are not evidence.
+
+These counts are no longer written by hand. `tools/benchmark_publication.py`
+derives them from the cohort files and `--check` fails when the committed
+`benchmarks/publication.json` drifts from the tree; an earlier revision of this
+paragraph claimed six attempts spread across all four cohorts, which the
+generated count contradicts.
 
 ## Issues with a machine-checked precondition
 
