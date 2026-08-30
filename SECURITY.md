@@ -53,6 +53,14 @@ major migrations require a focused compatibility and trust-boundary review. A
 pinned weekly OpenSSF Scorecard workflow uploads SARIF to GitHub code scanning
 and retains a five-day diagnostic artifact. It deliberately does not publish
 results to the external Scorecard service or request an OIDC token.
+Every third-party GitHub Action is pinned to an immutable commit SHA rather
+than a floating tag. A tag resolves at run time to whatever it points at then,
+so whoever controls it can change what executes in CI without any change landing
+in this repository. `tests/test_workflow_action_pinning.py` enforces this: it
+fails with the offending file and line if a tag reappears, and also fails if one
+version comment maps to two different SHAs, which would mean one of them is
+stale.
+
 These controls supplement review; they do not establish that a candidate,
 dependency update, or release is safe.
 
