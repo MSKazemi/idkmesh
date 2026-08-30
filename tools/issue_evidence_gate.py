@@ -179,6 +179,38 @@ def node_evidence(root: Path) -> Dict[str, Any]:
 # preconditions
 # --------------------------------------------------------------------------
 
+#: Issue 1 asks to "connect 10-20 heterogeneous worker nodes", so a single
+#: actor is not merely short of the bar, it is short of it by an order of
+#: magnitude. Read off the issue's own minimum-experiment text.
+MINIMUM_WORKER_FLEET = 10
+
+#: The ACE activation gate publishes its descendant evidence as a committed
+#: snapshot rather than a live query, so this is what the repository itself
+#: asserts, not what GitHub reports right now. That is the correct thing to
+#: gate on here: the gate exists to keep the repository's own published claims
+#: honest, and --require-no-stale-entries still fires if the snapshot is
+#: refreshed with a nonzero count.
+ACTIVATION_GATE = Path("examples/community/ace-activation-gate-current.example.json")
+
+
+def activation_gate_evidence(root: Path) -> Dict[str, Any]:
+    path = root / ACTIVATION_GATE
+    if not path.is_file():
+        return {"available": False, "verified_descendant_count": None, "source": None}
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {"available": False, "verified_descendant_count": None, "source": None}
+    descendants = payload.get("descendant_evidence") or {}
+    count = descendants.get("verified_count")
+    return {
+        "available": isinstance(count, int),
+        "verified_descendant_count": count if isinstance(count, int) else None,
+        "independently_verified": bool(descendants.get("independently_verified")),
+        "source": f"{ACTIVATION_GATE.as_posix()} (provenance: {descendants.get('source')})",
+    }
+
+
 def _p_real_corpus(ev: Dict[str, Any]) -> Dict[str, Any]:
     corpus = ev["corpus"]
     required = corpus["minimum_required"]
@@ -263,6 +295,30 @@ def _p_not_a_state_store(ev: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
+def _p_worker_fleet(ev: Dict[str, Any]) -> Dict[str, Any]:
+    collab = ev["collaboration"]
+    observed = collab.get("distinct_actors", 0) if collab["available"] else None
+    return {
+        "code": "distinct_actors_for_a_worker_fleet",
+        "observed": observed,
+        "required": f">= {MINIMUM_WORKER_FLEET}",
+        "met": bool(observed and observed >= MINIMUM_WORKER_FLEET),
+        "source": collab.get("source"),
+    }
+
+
+def _p_external_descendant_evidence(ev: Dict[str, Any]) -> Dict[str, Any]:
+    gate = ev["activation_gate"]
+    observed = gate["verified_descendant_count"] if gate["available"] else None
+    return {
+        "code": "verified_descendant_evidence",
+        "observed": observed,
+        "required": ">= 1",
+        "met": bool(observed),
+        "source": gate.get("source"),
+    }
+
+
 PRECONDITIONS = {
     "real_corpus": _p_real_corpus,
     "independent_review": _p_independent_review,
@@ -271,12 +327,27 @@ PRECONDITIONS = {
     "evidence_priors": _p_evidence_priors,
     "node_directory": _p_node_directory,
     "not_a_state_store": _p_not_a_state_store,
+    "worker_fleet": _p_worker_fleet,
+    "external_descendant_evidence": _p_external_descendant_evidence,
 }
 
 
 #: Each entry was read off the issue's own acceptance text or verified in code.
 #: ``note`` records where, so a reader can check the mapping rather than trust it.
 REGISTRY: Dict[int, Dict[str, Any]] = {
+    1: {
+        "preconditions": ["worker_fleet"],
+        "note": "the minimum experiment's step 4 is to connect 10-20 "
+                "heterogeneous worker nodes; ownership concentration reports a "
+                "single distinct actor, so the fleet does not exist.",
+    },
+    4: {
+        "preconditions": ["independent_review"],
+        "note": "every remaining Phase-A1 box in the body begins 'after PR "
+                "#91's required separate human review'; PR 159 carries zero "
+                "reviews and the whole of Phase B is unstarted.",
+        "partial": True,
+    },
     9: {
         "preconditions": ["recurring_contributors"],
         "note": "title asks for the first 10 recurring contributors; recurrence "
@@ -334,6 +405,21 @@ REGISTRY: Dict[int, Dict[str, Any]] = {
         "preconditions": ["independent_review"],
         "note": "asks an independent reviewer to inspect an orphan cohort.",
     },
+    16: {
+        "preconditions": ["independent_review"],
+        "note": "the release gate's first section is four human-review boxes on "
+                "the same PR 159; acceptance criteria 2, 3, 5, 6, 7, 9 and 10 "
+                "are already demonstrated, so this gates the remainder only.",
+        "partial": True,
+    },
+    57: {
+        "preconditions": ["external_descendant_evidence"],
+        "note": "Phase A shipped (scripts/ace_generation_controller.py with a "
+                "three-regime fixture); the one unchecked activation-gate box "
+                "needs a cohort with real descendant evidence, and the "
+                "published gate snapshot reports a verified count of zero.",
+        "partial": True,
+    },
     86: {
         "preconditions": ["evidence_priors"],
         "note": "P0 item 4 replaces hand-authored evolution priors with "
@@ -351,6 +437,7 @@ def audit(root: Path | None = None, python: str | None = None) -> Dict[str, Any]
         "corpus": corpus_evidence(root, python=python),
         "workflows": workflow_evidence(root),
         "node": node_evidence(root),
+        "activation_gate": activation_gate_evidence(root),
     }
 
     issues: Dict[str, Any] = {}
