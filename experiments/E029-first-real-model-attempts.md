@@ -201,6 +201,17 @@ have changed the contract being measured:
    `idkmesh-open-model-producer:task001` and nothing in the repository built it,
    which is a large part of why it had never been run. Closed here.
 
+> **Defects 1 and 2 are now closed in a follow-up**, after this cohort was
+> recorded, so the contract measured above is the one the numbers were produced
+> under. A header that names only the allowed path is now reported as
+> `model patch header is malformed but names only the allowed path`, still a
+> protocol rejection but no longer worded as a containment breach; and
+> `worker.id` now records the execution context (`local/...` or
+> `github-actions/...`) instead of always claiming CI. The
+> `allowed_path_rejections` block in `cohort-summary.json` is kept so this
+> cohort's 12 rejections stay readable — it should be `0` for any run made after
+> the fix.
+
 ## Reproducing
 
 ```bash
