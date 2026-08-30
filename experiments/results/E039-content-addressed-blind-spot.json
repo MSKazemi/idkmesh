@@ -1,0 +1,906 @@
+{
+  "cells": [
+    {
+      "adversary": "goal-blind",
+      "adversary_effort": 8,
+      "adversary_fraction": 0.02,
+      "catastrophic_seeds": {
+        "majority": 58,
+        "planner": 100,
+        "qd": 12,
+        "random": 95,
+        "scalar": 67
+      },
+      "false_accepts": {
+        "majority": 20467,
+        "planner": 19297,
+        "qd": 12417,
+        "random": 33575,
+        "scalar": 6799
+      },
+      "hostile_submission_share": {
+        "majority": 0.086022,
+        "planner": 0.062988,
+        "qd": 0.031938,
+        "random": 0.020072,
+        "scalar": 0.025356
+      },
+      "pairing_checks": 500,
+      "panel_shape": "memoryless",
+      "post_change_utility_auc": {
+        "majority": 13.003966,
+        "planner": 10.708878,
+        "qd": 20.310111,
+        "random": 13.451296,
+        "scalar": 15.50539
+      },
+      "region_share": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "seeds": 100,
+      "utility_auc_threshold": 16.0,
+      "verification_attempts": {
+        "majority": 320000,
+        "planner": 320000,
+        "qd": 320000,
+        "random": 320000,
+        "scalar": 320000
+      }
+    },
+    {
+      "adversary": "coordinated",
+      "adversary_effort": 8,
+      "adversary_fraction": 0.02,
+      "catastrophic_seeds": {
+        "majority": 56,
+        "planner": 100,
+        "qd": 12,
+        "random": 94,
+        "scalar": 62
+      },
+      "false_accepts": {
+        "majority": 19463,
+        "planner": 19646,
+        "qd": 12328,
+        "random": 33575,
+        "scalar": 6768
+      },
+      "hostile_submission_share": {
+        "majority": 0.083784,
+        "planner": 0.060066,
+        "qd": 0.029716,
+        "random": 0.020072,
+        "scalar": 0.024634
+      },
+      "pairing_checks": 500,
+      "panel_shape": "memoryless",
+      "post_change_utility_auc": {
+        "majority": 13.549406,
+        "planner": 10.615556,
+        "qd": 20.26658,
+        "random": 13.624987,
+        "scalar": 15.68287
+      },
+      "region_share": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "seeds": 100,
+      "utility_auc_threshold": 16.0,
+      "verification_attempts": {
+        "majority": 320000,
+        "planner": 320000,
+        "qd": 320000,
+        "random": 320000,
+        "scalar": 320000
+      }
+    },
+    {
+      "adversary": "goal-blind",
+      "adversary_effort": 8,
+      "adversary_fraction": 0.02,
+      "catastrophic_seeds": {
+        "majority": 60,
+        "planner": 100,
+        "qd": 7,
+        "random": 85,
+        "scalar": 100
+      },
+      "false_accepts": {
+        "majority": 84978,
+        "planner": 187278,
+        "qd": 14135,
+        "random": 33384,
+        "scalar": 167575
+      },
+      "hostile_submission_share": {
+        "majority": 0.120531,
+        "planner": 0.160147,
+        "qd": 0.032281,
+        "random": 0.020072,
+        "scalar": 0.148906
+      },
+      "pairing_checks": 500,
+      "panel_shape": "content-addressed",
+      "post_change_utility_auc": {
+        "majority": 9.222905,
+        "planner": 0.487446,
+        "qd": 20.674931,
+        "random": 14.302434,
+        "scalar": 1.222261
+      },
+      "region_share": {
+        "majority": 0.259378,
+        "planner": 0.607394,
+        "qd": 0.038041,
+        "random": 0.054938,
+        "scalar": 0.539875
+      },
+      "seeds": 100,
+      "utility_auc_threshold": 16.0,
+      "verification_attempts": {
+        "majority": 320000,
+        "planner": 320000,
+        "qd": 320000,
+        "random": 320000,
+        "scalar": 320000
+      }
+    },
+    {
+      "adversary": "coordinated",
+      "adversary_effort": 8,
+      "adversary_fraction": 0.02,
+      "catastrophic_seeds": {
+        "majority": 56,
+        "planner": 100,
+        "qd": 1,
+        "random": 89,
+        "scalar": 100
+      },
+      "false_accepts": {
+        "majority": 88885,
+        "planner": 204663,
+        "qd": 14675,
+        "random": 34597,
+        "scalar": 186670
+      },
+      "hostile_submission_share": {
+        "majority": 0.133356,
+        "planner": 0.200859,
+        "qd": 0.031706,
+        "random": 0.020072,
+        "scalar": 0.194175
+      },
+      "pairing_checks": 500,
+      "panel_shape": "content-addressed",
+      "post_change_utility_auc": {
+        "majority": 9.539828,
+        "planner": 0.010758,
+        "qd": 21.624176,
+        "random": 14.42217,
+        "scalar": 0.589985
+      },
+      "region_share": {
+        "majority": 0.265744,
+        "planner": 0.636866,
+        "qd": 0.040169,
+        "random": 0.058862,
+        "scalar": 0.579116
+      },
+      "seeds": 100,
+      "utility_auc_threshold": 16.0,
+      "verification_attempts": {
+        "majority": 320000,
+        "planner": 320000,
+        "qd": 320000,
+        "random": 320000,
+        "scalar": 320000
+      }
+    },
+    {
+      "adversary": "goal-blind",
+      "adversary_effort": 8,
+      "adversary_fraction": 0.1,
+      "catastrophic_seeds": {
+        "majority": 85,
+        "planner": 100,
+        "qd": 28,
+        "random": 100,
+        "scalar": 93
+      },
+      "false_accepts": {
+        "majority": 39307,
+        "planner": 29870,
+        "qd": 20409,
+        "random": 35168,
+        "scalar": 13410
+      },
+      "hostile_submission_share": {
+        "majority": 0.309694,
+        "planner": 0.201481,
+        "qd": 0.146797,
+        "random": 0.099541,
+        "scalar": 0.128562
+      },
+      "pairing_checks": 500,
+      "panel_shape": "memoryless",
+      "post_change_utility_auc": {
+        "majority": 5.473992,
+        "planner": 7.651402,
+        "qd": 17.678072,
+        "random": 11.771122,
+        "scalar": 13.5051
+      },
+      "region_share": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "seeds": 100,
+      "utility_auc_threshold": 16.0,
+      "verification_attempts": {
+        "majority": 320000,
+        "planner": 320000,
+        "qd": 320000,
+        "random": 320000,
+        "scalar": 320000
+      }
+    },
+    {
+      "adversary": "coordinated",
+      "adversary_effort": 8,
+      "adversary_fraction": 0.1,
+      "catastrophic_seeds": {
+        "majority": 74,
+        "planner": 100,
+        "qd": 25,
+        "random": 100,
+        "scalar": 89
+      },
+      "false_accepts": {
+        "majority": 31828,
+        "planner": 28607,
+        "qd": 18307,
+        "random": 35168,
+        "scalar": 12498
+      },
+      "hostile_submission_share": {
+        "majority": 0.2242,
+        "planner": 0.201131,
+        "qd": 0.128391,
+        "random": 0.099541,
+        "scalar": 0.117031
+      },
+      "pairing_checks": 500,
+      "panel_shape": "memoryless",
+      "post_change_utility_auc": {
+        "majority": 8.717971,
+        "planner": 7.858489,
+        "qd": 18.491575,
+        "random": 12.834335,
+        "scalar": 14.508654
+      },
+      "region_share": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "seeds": 100,
+      "utility_auc_threshold": 16.0,
+      "verification_attempts": {
+        "majority": 320000,
+        "planner": 320000,
+        "qd": 320000,
+        "random": 320000,
+        "scalar": 320000
+      }
+    },
+    {
+      "adversary": "goal-blind",
+      "adversary_effort": 8,
+      "adversary_fraction": 0.1,
+      "catastrophic_seeds": {
+        "majority": 84,
+        "planner": 100,
+        "qd": 20,
+        "random": 96,
+        "scalar": 100
+      },
+      "false_accepts": {
+        "majority": 106635,
+        "planner": 208858,
+        "qd": 19239,
+        "random": 34733,
+        "scalar": 189376
+      },
+      "hostile_submission_share": {
+        "majority": 0.336822,
+        "planner": 0.312122,
+        "qd": 0.139844,
+        "random": 0.099541,
+        "scalar": 0.318116
+      },
+      "pairing_checks": 500,
+      "panel_shape": "content-addressed",
+      "post_change_utility_auc": {
+        "majority": 3.42148,
+        "planner": 0.0,
+        "qd": 19.041648,
+        "random": 12.926648,
+        "scalar": 0.136723
+      },
+      "region_share": {
+        "majority": 0.273503,
+        "planner": 0.631009,
+        "qd": 0.037609,
+        "random": 0.053691,
+        "scalar": 0.572172
+      },
+      "seeds": 100,
+      "utility_auc_threshold": 16.0,
+      "verification_attempts": {
+        "majority": 320000,
+        "planner": 320000,
+        "qd": 320000,
+        "random": 320000,
+        "scalar": 320000
+      }
+    },
+    {
+      "adversary": "coordinated",
+      "adversary_effort": 8,
+      "adversary_fraction": 0.1,
+      "catastrophic_seeds": {
+        "majority": 80,
+        "planner": 100,
+        "qd": 12,
+        "random": 93,
+        "scalar": 100
+      },
+      "false_accepts": {
+        "majority": 115087,
+        "planner": 224871,
+        "qd": 22414,
+        "random": 43163,
+        "scalar": 215786
+      },
+      "hostile_submission_share": {
+        "majority": 0.313216,
+        "planner": 0.353731,
+        "qd": 0.126469,
+        "random": 0.099541,
+        "scalar": 0.369159
+      },
+      "pairing_checks": 500,
+      "panel_shape": "content-addressed",
+      "post_change_utility_auc": {
+        "majority": 4.692829,
+        "planner": 0.0,
+        "qd": 20.176403,
+        "random": 13.830117,
+        "scalar": 0.084835
+      },
+      "region_share": {
+        "majority": 0.305506,
+        "planner": 0.678516,
+        "qd": 0.053106,
+        "random": 0.083325,
+        "scalar": 0.646034
+      },
+      "seeds": 100,
+      "utility_auc_threshold": 16.0,
+      "verification_attempts": {
+        "majority": 320000,
+        "planner": 320000,
+        "qd": 320000,
+        "random": 320000,
+        "scalar": 320000
+      }
+    },
+    {
+      "adversary": "goal-blind",
+      "adversary_effort": 8,
+      "adversary_fraction": 0.1,
+      "catastrophic_seeds": {
+        "majority": 91,
+        "planner": 100,
+        "qd": 26,
+        "random": 100,
+        "scalar": 96
+      },
+      "false_accepts": {
+        "majority": 41909,
+        "planner": 26205,
+        "qd": 43020,
+        "random": 35428,
+        "scalar": 13520
+      },
+      "hostile_submission_share": {
+        "majority": 0.331941,
+        "planner": 0.240106,
+        "qd": 0.172372,
+        "random": 0.099541,
+        "scalar": 0.12875
+      },
+      "pairing_checks": 500,
+      "panel_shape": "content-addressed-diffuse",
+      "post_change_utility_auc": {
+        "majority": 4.308636,
+        "planner": 6.704147,
+        "qd": 17.560584,
+        "random": 10.62048,
+        "scalar": 14.283701
+      },
+      "region_share": {
+        "majority": 0.04595,
+        "planner": 0.010575,
+        "qd": 0.124684,
+        "random": 0.053866,
+        "scalar": 0.016875
+      },
+      "seeds": 100,
+      "utility_auc_threshold": 16.0,
+      "verification_attempts": {
+        "majority": 320000,
+        "planner": 320000,
+        "qd": 320000,
+        "random": 320000,
+        "scalar": 320000
+      }
+    },
+    {
+      "adversary": "coordinated",
+      "adversary_effort": 8,
+      "adversary_fraction": 0.1,
+      "catastrophic_seeds": {
+        "majority": 80,
+        "planner": 99,
+        "qd": 17,
+        "random": 100,
+        "scalar": 80
+      },
+      "false_accepts": {
+        "majority": 40901,
+        "planner": 20648,
+        "qd": 45835,
+        "random": 41085,
+        "scalar": 15194
+      },
+      "hostile_submission_share": {
+        "majority": 0.27125,
+        "planner": 0.186494,
+        "qd": 0.154184,
+        "random": 0.099541,
+        "scalar": 0.125147
+      },
+      "pairing_checks": 500,
+      "panel_shape": "content-addressed-diffuse",
+      "post_change_utility_auc": {
+        "majority": 6.903822,
+        "planner": 9.08756,
+        "qd": 19.134856,
+        "random": 11.33131,
+        "scalar": 14.67369
+      },
+      "region_share": {
+        "majority": 0.05895,
+        "planner": 0.009672,
+        "qd": 0.143953,
+        "random": 0.073856,
+        "scalar": 0.023975
+      },
+      "seeds": 100,
+      "utility_auc_threshold": 16.0,
+      "verification_attempts": {
+        "majority": 320000,
+        "planner": 320000,
+        "qd": 320000,
+        "random": 320000,
+        "scalar": 320000
+      }
+    }
+  ],
+  "configuration": {
+    "adversary_effort": 8,
+    "agents": 64,
+    "base_panel": "measured",
+    "bins": 8,
+    "change_at": 25,
+    "fractions": [
+      0.02,
+      0.1
+    ],
+    "generations": 50,
+    "headline_fraction": 0.1,
+    "seed_start": 1,
+    "seeds": 100,
+    "strategies": [
+      "random",
+      "scalar",
+      "qd",
+      "planner",
+      "majority"
+    ]
+  },
+  "content_blindness": {
+    "candidate_is_read_through_one_bit": true,
+    "decisions_differ_across_the_viability_bit": true,
+    "distinct_candidates": true,
+    "draws": 4000,
+    "identical_decisions_within_nonviable": true,
+    "identical_decisions_within_viable": true,
+    "panel": "measured"
+  },
+  "diffuse_region_contrast": {
+    "arm": "qd",
+    "left": 17,
+    "rate_difference": -0.09,
+    "resolved": false,
+    "right": 26,
+    "trials": [
+      100,
+      100
+    ],
+    "z": -1.5491
+  },
+  "experiment": "content-addressed-blind-spot-and-coordinated-adversary-v1",
+  "experiment_id": "E039",
+  "limitations": [
+    "The content-addressed blind spot is a construction, not a measurement. E020 measured the blind spot's *rate* on 25 real oracles; nothing here measures its shape, and a real one need be neither niche-aligned nor this concentrated.",
+    "Two clauses are nulls -- an unresolved difference at 100 seeds is not evidence of no difference.",
+    "The adversary's memory is exact and noiseless within a run: it sees the accept decision on every one of its own submissions. A real attacker sees a delayed, partial signal.",
+    "The niche grid the blind spot is addressed by is the same grid the archive partitions on. That is the strongest possible alignment between the defence's structure and the attack's, and it is why the exposure clause should be read as an existence result rather than a rate."
+  ],
+  "mechanism": {
+    "archive_is_least_exposed": true,
+    "archive_region_share": 0.053106,
+    "calibration_check": {
+      "note": "The unoptimising arm's realised region share against the mass the region was calibrated to. These should agree; nothing forces them to, because the calibration is measured on initial draws and the run evolves away from them.",
+      "realised_region_share": 0.053691,
+      "unoptimising_arm": "random"
+    },
+    "catastrophic_seeds_memoryless_control": {
+      "majority": 74,
+      "planner": 100,
+      "qd": 25,
+      "random": 100,
+      "scalar": 89
+    },
+    "catastrophic_seeds_under_attack": {
+      "majority": 80,
+      "planner": 100,
+      "qd": 12,
+      "random": 93,
+      "scalar": 100
+    },
+    "caveat": "Post-hoc and single-shaped. The reading predicts the archive's region share should track region_size / niche_count and the elitist arms' should not; that is a further test, not something this run establishes.",
+    "elitist_collapse": {
+      "by_arm": {
+        "majority": {
+          "catastrophic_seeds": [
+            85,
+            84
+          ],
+          "contrast": {
+            "arm": "majority",
+            "left": 84,
+            "rate_difference": -0.01,
+            "resolved": false,
+            "right": 85,
+            "trials": [
+              100,
+              100
+            ],
+            "z": -0.1954
+          },
+          "post_change_utility_auc": [
+            5.473992,
+            3.42148
+          ],
+          "region_share": 0.273503
+        },
+        "planner": {
+          "catastrophic_seeds": [
+            100,
+            100
+          ],
+          "contrast": {
+            "arm": "planner",
+            "left": 100,
+            "rate_difference": 0.0,
+            "resolved": false,
+            "right": 100,
+            "trials": [
+              100,
+              100
+            ],
+            "z": null
+          },
+          "post_change_utility_auc": [
+            7.651402,
+            0.0
+          ],
+          "region_share": 0.631009
+        },
+        "qd": {
+          "catastrophic_seeds": [
+            28,
+            20
+          ],
+          "contrast": {
+            "arm": "qd",
+            "left": 20,
+            "rate_difference": -0.08,
+            "resolved": false,
+            "right": 28,
+            "trials": [
+              100,
+              100
+            ],
+            "z": -1.3245
+          },
+          "post_change_utility_auc": [
+            17.678072,
+            19.041648
+          ],
+          "region_share": 0.037609
+        },
+        "random": {
+          "catastrophic_seeds": [
+            100,
+            96
+          ],
+          "contrast": {
+            "arm": "random",
+            "left": 96,
+            "rate_difference": -0.04,
+            "resolved": true,
+            "right": 100,
+            "trials": [
+              100,
+              100
+            ],
+            "z": -2.0203
+          },
+          "post_change_utility_auc": [
+            11.771122,
+            12.926648
+          ],
+          "region_share": 0.053691
+        },
+        "scalar": {
+          "catastrophic_seeds": [
+            93,
+            100
+          ],
+          "contrast": {
+            "arm": "scalar",
+            "left": 100,
+            "rate_difference": 0.07,
+            "resolved": true,
+            "right": 93,
+            "trials": [
+              100,
+              100
+            ],
+            "z": 2.6933
+          },
+          "post_change_utility_auc": [
+            13.5051,
+            0.136723
+          ],
+          "region_share": 0.572172
+        }
+      },
+      "note": "Content-addressing the blind spot, with no coordination at all, against the arms that rank on apparent quality."
+    },
+    "elitist_region_share": {
+      "majority": 0.305506,
+      "planner": 0.678516,
+      "scalar": 0.646034
+    },
+    "observation": "The exposure clause is backwards. The archive is the *least* exposed arm, not the most.",
+    "reading": "A blind-spot niche is where a non-viable artifact with high apparent quality is certain to be accepted, so it is the most attractive place in the arena to an arm that ranks on apparent quality. The elitist arms converge into it and stay. The archive cannot: it keeps one elite per niche, so however good the region looks it can hold at most as many of the archive's slots as the region has niches. Niche partitioning caps the blind spot's reach at region_size / niche_count of the portfolio.",
+    "region_share_by_arm": {
+      "majority": 0.305506,
+      "planner": 0.678516,
+      "qd": 0.053106,
+      "random": 0.083325,
+      "scalar": 0.646034
+    },
+    "stated_after_the_run": true
+  },
+  "outcome": {
+    "arm": "qd",
+    "clauses_met": 3,
+    "clauses_total": 5,
+    "contrasts": {
+      "content_addressing_with_a_goal_blind_adversary": {
+        "arm": "qd",
+        "left": 20,
+        "rate_difference": -0.08,
+        "resolved": false,
+        "right": 28,
+        "trials": [
+          100,
+          100
+        ],
+        "z": -1.3245
+      },
+      "coordination_on_a_content_addressed_panel": {
+        "arm": "qd",
+        "left": 12,
+        "rate_difference": -0.08,
+        "resolved": false,
+        "right": 20,
+        "trials": [
+          100,
+          100
+        ],
+        "z": -1.543
+      },
+      "coordination_on_a_memoryless_panel": {
+        "arm": "qd",
+        "left": 25,
+        "rate_difference": -0.03,
+        "resolved": false,
+        "right": 28,
+        "trials": [
+          100,
+          100
+        ],
+        "z": -0.4807
+      }
+    },
+    "exposure": {
+      "archive": 0.053106,
+      "best_elitist": 0.678516,
+      "by_arm": {
+        "majority": 0.305506,
+        "planner": 0.678516,
+        "qd": 0.053106,
+        "random": 0.083325,
+        "scalar": 0.646034
+      }
+    },
+    "headline_fraction": 0.1,
+    "null_clause_caveat": "Two clauses pass by failing to resolve a difference, which is not evidence of no difference. At these trial counts the pass is consistent with a small real effect; the observed differences and their z are reported so the reader can judge the width rather than take the pass at face value.",
+    "null_clauses": [
+      "coordination_is_worthless_against_a_memoryless_panel",
+      "content_addressing_alone_is_not_the_attack"
+    ],
+    "observed": {
+      "content_addressing_alone_is_not_the_attack": true,
+      "coordination_is_worthless_against_a_memoryless_panel": true,
+      "coordination_pays_against_a_content_addressed_panel": false,
+      "the_archive_is_the_most_exposed_arm": false,
+      "the_panel_reads_the_artifact_through_one_bit": true
+    },
+    "per_clause": {
+      "content_addressing_alone_is_not_the_attack": true,
+      "coordination_is_worthless_against_a_memoryless_panel": true,
+      "coordination_pays_against_a_content_addressed_panel": false,
+      "the_archive_is_the_most_exposed_arm": false,
+      "the_panel_reads_the_artifact_through_one_bit": true
+    },
+    "predicted": {
+      "content_addressing_alone_is_not_the_attack": true,
+      "coordination_is_worthless_against_a_memoryless_panel": true,
+      "coordination_pays_against_a_content_addressed_panel": true,
+      "the_archive_is_the_most_exposed_arm": true,
+      "the_panel_reads_the_artifact_through_one_bit": true
+    },
+    "supported": false
+  },
+  "panels": {
+    "content_addressed": {
+      "accuracy": 0.84244,
+      "blind_spot": 0.0,
+      "correlation": 0.4513,
+      "note": "accuracy is the base panel's reducible accuracy: outside the region each verifier is exactly as accurate as it was outside the coin, so the marginal rate is unchanged.",
+      "verifiers": 25
+    },
+    "memoryless": {
+      "accuracy": 0.7956,
+      "blind_spot": 0.0556,
+      "correlation": 0.4513,
+      "verifiers": 25
+    }
+  },
+  "prediction": {
+    "claim": "Not against the panel as written -- it reads the artifact through one bit, so there is no address to learn. Give the blind spot a content address at the same marginal rate and the same adversary becomes effective, and the archive is the arm most exposed to it because covering niches is what walking into a niche-addressed blind spot requires.",
+    "clauses": {
+      "content_addressing_alone_is_not_the_attack": true,
+      "coordination_is_worthless_against_a_memoryless_panel": true,
+      "coordination_pays_against_a_content_addressed_panel": true,
+      "the_archive_is_the_most_exposed_arm": true,
+      "the_panel_reads_the_artifact_through_one_bit": true
+    },
+    "falsified_if": "The coordinated adversary gains nothing even against a content-addressed blind spot -- fifty generations of accept feedback is not enough to localise two niches in sixty-four -- or the archive is not the most exposed arm.",
+    "question": "E036's named next step: can an adversary that adapts to feedback learn the panel's shared blind spot and remove verifier independence as a defence?",
+    "stated_before_run": true
+  },
+  "regions": {
+    "concentrated": {
+      "bins": 8,
+      "calibrated_mass": 0.05546,
+      "calibration_error": -0.00014,
+      "draws": 400000,
+      "niche_count": 64,
+      "region": [
+        [
+          0,
+          7
+        ],
+        [
+          4,
+          4
+        ]
+      ],
+      "region_size": 2,
+      "seed": 20260830,
+      "shape": "concentrated",
+      "target_mass": 0.0556
+    },
+    "diffuse": {
+      "bins": 8,
+      "calibrated_mass": 0.049347,
+      "calibration_error": -0.006253,
+      "draws": 400000,
+      "niche_count": 64,
+      "region": [
+        [
+          3,
+          6
+        ],
+        [
+          4,
+          6
+        ],
+        [
+          5,
+          5
+        ],
+        [
+          5,
+          6
+        ],
+        [
+          6,
+          3
+        ],
+        [
+          6,
+          4
+        ],
+        [
+          6,
+          5
+        ],
+        [
+          6,
+          6
+        ],
+        [
+          7,
+          6
+        ]
+      ],
+      "region_size": 9,
+      "seed": 20260830,
+      "shape": "diffuse",
+      "target_mass": 0.0556
+    }
+  }
+}
