@@ -248,6 +248,12 @@ would have been the natural next sentence to write, and it would have been wrong
   is likely noise, not signal.
 - **One panel.** The perfect verification panel throughout, as in E033 and E034.
   Nothing here has been tested against a noisy or correlated panel.
+  **Answered by [E037](E037-ladder-under-panels.md): the structure survives.**
+  The identical ladder on E027's `measured` and `stress` panels keeps every sign
+  and keeps the descriptor contrast resolved (`+4.886`, `+5.060`, `+5.467`),
+  including on a panel that gets 45% of its decisions wrong. The *magnitudes* do
+  move — the archive's mean lead rises from `+1.189` to `+1.659` — so quote a
+  lead with the panel it was measured on.
 - **Absence of resolution is not absence of effect.** `security` never resolving
   at 16 goals a cell is consistent with a real but small effect. The claim is
   that it does not move *with* `reliability`, not that it is inert.
@@ -268,3 +274,9 @@ that verification is imperfect. The test that would move the mechanism now is
 E033's and E034's ladder on a panel with a non-zero blind-spot floor — if the
 directional structure is a property of the goal geometry it should survive, and
 if it is a property of costless perfect verification it should not.
+
+**That sweep is [E037](E037-ladder-under-panels.md), and the structure survived
+all four of the clauses this paragraph was turned into.** Do not carry "these
+results are only known for a perfect panel" forward from this record. Do carry
+the narrower version: `simplicity` sign-flips across *shells*, and E037 holds the
+shell still, so the shell-dependence has not been retested under a weak panel.

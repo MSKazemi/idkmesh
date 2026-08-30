@@ -121,6 +121,7 @@ policy changes or merge decisions.
 - [E034 Goal Direction](../../experiments/E034-goal-direction.md)
 - [E035 Direction Across Shells](../../experiments/E035-direction-across-shells.md)
 - [E036 Adversarial Contributors](../../experiments/E036-adversarial-contributors.md)
+- [E037 Ladder Under Panels](../../experiments/E037-ladder-under-panels.md)
   — holds E033's distance still (0.30 from the supplied set, 0.392 of change)
   and sweeps direction instead, 385 goals on one shell. Direction is worth more
   than distance: the archive's lead runs from -4.894 to +4.471, a spread of
