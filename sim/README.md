@@ -549,6 +549,39 @@ ladder of five flips, which qualifies E034 — the record says which of E034's
 claims to keep and which to withdraw. See
 [`../experiments/E035-direction-across-shells.md`](../experiments/E035-direction-across-shells.md).
 
+### E036 — contributors who optimise to pass the gate
+
+E026-E028 model verification failing by accident. `e036_adversarial_contributors.py`
+models it failing to an opponent, which is the "malicious workers" gap
+`matched_budget_emergence` names in its own limitations.
+
+```bash
+PYTHONPATH=. python3 sim/e036_adversarial_contributors.py \
+  --seeds 100 --agents 64 --generations 50 --change-at 25 --jobs 16 \
+  --output experiments/results/E036-adversarial-contributors.json
+PYTHONPATH=. python3 sim/e036_adversarial_contributors.py --mode identity \
+  --seeds 8 --agents 24 --generations 20 --change-at 10
+```
+
+A fraction of the contributor pool draws `k` candidates and submits the
+best-looking one with `integrity` forced to zero, on E028's latent landscape
+where apparent quality carries no information about soundness. `k=1` is a faulty
+contributor and is statistically indistinguishable from an honest one; `k=8` is
+strategic and looks *better* than honest. The arms are untouched -- the adversary
+is a `Candidate` subclass, installed the way E028 installs its landscape, so no
+arm can special-case it -- and the evaluation budget is identical in every cell.
+
+Cells run in **processes**, never threads: a cell rebinds `Candidate` and
+`viable` on two shared module objects. `--mode identity` proves the
+zero-fraction column is bit-identical to E028 rather than merely close, because
+the hostile branch short-circuits before touching the rng.
+
+The result is that the archive is never strictly beaten in any of the 48 cells,
+but the panel it sits behind decides everything: at equal accuracy, an
+uncorrelated panel is immune and a correlated one lets the archive reach 58
+catastrophic seeds in 100. See
+[`../experiments/E036-adversarial-contributors.md`](../experiments/E036-adversarial-contributors.md).
+
 ## Tests
 
 With `pytest` installed:
@@ -576,12 +609,13 @@ python -m pytest -q \
   tests/test_e032_population_scaling.py \
   tests/test_e033_goal_distance.py
   tests/test_e034_goal_direction.py \
-  tests/test_e035_direction_across_shells.py
+  tests/test_e035_direction_across_shells.py \
+  tests/test_e036_adversarial_contributors.py
 ```
 
 This is the same list `.github/workflows/emergence-sim.yml` runs; keep the two in step.
 
-The tests cover deterministic replay, budget invariants, niche preservation, perfect verification compatibility, correlated-error mechanics, sweep configuration, the E013 regime where independence-aware aggregation can help or hurt, E025's calibration separation and preserved shift failures, the E015 effective-panel-size metrics, the E016 discrimination screen, the E017 item-difficulty model, the E018 model comparison, the E019 group-independence result, the E020 quorum frontier, E024's exact matched-evaluation contract, E026's archive-contamination audit, E027's defect-propagation channel — its matched budget, its cost-zero identity with the channel off, and the demonstration that an accepted defect now persists and does harm — E028's latent-defect dimension, E030's supplied-goal membership condition, E031's learned goal filter, and E032's matched-budget population sweep, whose driver is checked against `mbe.sweep` arm-for-arm so that keeping per-seed values cannot change what a seed does, E033's goal-distance ladder, whose two anchors are checked against E030's committed cell so the ladder cannot quietly measure something else, and E034's goal-direction shell, where every measured goal is re-checked against both held distances and the write-up's own tables are read back off the artifact so a transcribed number cannot drift, and E035's cross-shell comparison, where all nineteen design keys are checked across the three artifacts so that a trait reversing sign cannot be a changed run parameter, and the goals the shells share are counted against the overlap their tolerance bands predict.
+The tests cover deterministic replay, budget invariants, niche preservation, perfect verification compatibility, correlated-error mechanics, sweep configuration, the E013 regime where independence-aware aggregation can help or hurt, E025's calibration separation and preserved shift failures, the E015 effective-panel-size metrics, the E016 discrimination screen, the E017 item-difficulty model, the E018 model comparison, the E019 group-independence result, the E020 quorum frontier, E024's exact matched-evaluation contract, E026's archive-contamination audit, E027's defect-propagation channel — its matched budget, its cost-zero identity with the channel off, and the demonstration that an accepted defect now persists and does harm — E028's latent-defect dimension, E030's supplied-goal membership condition, E031's learned goal filter, and E032's matched-budget population sweep, whose driver is checked against `mbe.sweep` arm-for-arm so that keeping per-seed values cannot change what a seed does, E033's goal-distance ladder, whose two anchors are checked against E030's committed cell so the ladder cannot quietly measure something else, and E034's goal-direction shell, where every measured goal is re-checked against both held distances and the write-up's own tables are read back off the artifact so a transcribed number cannot drift, and E035's cross-shell comparison, where all nineteen design keys are checked across the three artifacts so that a trait reversing sign cannot be a changed run parameter, and the goals the shells share are counted against the overlap their tolerance bands predict, and E036's adversarial contributor pool, whose zero-fraction control is asserted to be bit-identical to E028 on every panel and whose effort knob is checked to raise apparent quality above an honest contributor's rather than merely being labelled.
 
 ## Interpretation
 
