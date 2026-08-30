@@ -1,0 +1,346 @@
+{
+  "draws": 200000,
+  "experiment": "goal-distance-sweep-v1",
+  "experiment_id": "E033",
+  "goals_per_ring": 6,
+  "ladder": "matched",
+  "published_goals": {
+    "changed": {
+      "attainable_ceiling": 0.883853,
+      "headroom": 0.345839,
+      "mean_over_viable": 0.538014,
+      "spread_over_viable": 0.106756
+    },
+    "e030_substitute": {
+      "attainable_ceiling": 0.890478,
+      "headroom": 0.368123,
+      "mean_over_viable": 0.522355,
+      "spread_over_viable": 0.121366
+    },
+    "initial": {
+      "attainable_ceiling": 0.806058,
+      "headroom": 0.268571,
+      "mean_over_viable": 0.537487,
+      "spread_over_viable": 0.090269
+    }
+  },
+  "rings": [
+    {
+      "goal_results": [
+        {
+          "attainable_ceiling": 0.881078,
+          "headroom": 0.347167,
+          "mean_over_viable": 0.533911,
+          "spread_over_viable": 0.107819
+        },
+        {
+          "attainable_ceiling": 0.895521,
+          "headroom": 0.353404,
+          "mean_over_viable": 0.542117,
+          "spread_over_viable": 0.112241
+        },
+        {
+          "attainable_ceiling": 0.923099,
+          "headroom": 0.376591,
+          "mean_over_viable": 0.546508,
+          "spread_over_viable": 0.112381
+        },
+        {
+          "attainable_ceiling": 0.882181,
+          "headroom": 0.352932,
+          "mean_over_viable": 0.529248,
+          "spread_over_viable": 0.110226
+        },
+        {
+          "attainable_ceiling": 0.858794,
+          "headroom": 0.326105,
+          "mean_over_viable": 0.53269,
+          "spread_over_viable": 0.106846
+        },
+        {
+          "attainable_ceiling": 0.910534,
+          "headroom": 0.359375,
+          "mean_over_viable": 0.551158,
+          "spread_over_viable": 0.110537
+        }
+      ],
+      "mean_attainable_ceiling": 0.891868,
+      "mean_distance_to_supplied": 0.055258,
+      "mean_headroom": 0.352596,
+      "mean_spread_over_viable": 0.110008,
+      "target_distance_to_supplied": 0.05
+    },
+    {
+      "goal_results": [
+        {
+          "attainable_ceiling": 0.825596,
+          "headroom": 0.31068,
+          "mean_over_viable": 0.514916,
+          "spread_over_viable": 0.107084
+        },
+        {
+          "attainable_ceiling": 0.956289,
+          "headroom": 0.393827,
+          "mean_over_viable": 0.562462,
+          "spread_over_viable": 0.11702
+        },
+        {
+          "attainable_ceiling": 0.887214,
+          "headroom": 0.342699,
+          "mean_over_viable": 0.544514,
+          "spread_over_viable": 0.106939
+        },
+        {
+          "attainable_ceiling": 0.910052,
+          "headroom": 0.376744,
+          "mean_over_viable": 0.533308,
+          "spread_over_viable": 0.114432
+        },
+        {
+          "attainable_ceiling": 0.890081,
+          "headroom": 0.347352,
+          "mean_over_viable": 0.542729,
+          "spread_over_viable": 0.112613
+        },
+        {
+          "attainable_ceiling": 0.870604,
+          "headroom": 0.34316,
+          "mean_over_viable": 0.527444,
+          "spread_over_viable": 0.114178
+        }
+      ],
+      "mean_attainable_ceiling": 0.889973,
+      "mean_distance_to_supplied": 0.105207,
+      "mean_headroom": 0.35241,
+      "mean_spread_over_viable": 0.112044,
+      "target_distance_to_supplied": 0.1
+    },
+    {
+      "goal_results": [
+        {
+          "attainable_ceiling": 0.919769,
+          "headroom": 0.363662,
+          "mean_over_viable": 0.556107,
+          "spread_over_viable": 0.111526
+        },
+        {
+          "attainable_ceiling": 0.875618,
+          "headroom": 0.356222,
+          "mean_over_viable": 0.519397,
+          "spread_over_viable": 0.1191
+        },
+        {
+          "attainable_ceiling": 0.89212,
+          "headroom": 0.334973,
+          "mean_over_viable": 0.557146,
+          "spread_over_viable": 0.112584
+        },
+        {
+          "attainable_ceiling": 0.826353,
+          "headroom": 0.318398,
+          "mean_over_viable": 0.507954,
+          "spread_over_viable": 0.104109
+        },
+        {
+          "attainable_ceiling": 0.925162,
+          "headroom": 0.391304,
+          "mean_over_viable": 0.533858,
+          "spread_over_viable": 0.121003
+        },
+        {
+          "attainable_ceiling": 0.977851,
+          "headroom": 0.410071,
+          "mean_over_viable": 0.56778,
+          "spread_over_viable": 0.12024
+        }
+      ],
+      "mean_attainable_ceiling": 0.902812,
+      "mean_distance_to_supplied": 0.155906,
+      "mean_headroom": 0.362438,
+      "mean_spread_over_viable": 0.11476,
+      "target_distance_to_supplied": 0.15
+    },
+    {
+      "goal_results": [
+        {
+          "attainable_ceiling": 0.801551,
+          "headroom": 0.308007,
+          "mean_over_viable": 0.493544,
+          "spread_over_viable": 0.10577
+        },
+        {
+          "attainable_ceiling": 1.0,
+          "headroom": 0.422844,
+          "mean_over_viable": 0.577156,
+          "spread_over_viable": 0.128241
+        },
+        {
+          "attainable_ceiling": 0.874755,
+          "headroom": 0.30898,
+          "mean_over_viable": 0.565775,
+          "spread_over_viable": 0.109017
+        },
+        {
+          "attainable_ceiling": 0.886253,
+          "headroom": 0.364499,
+          "mean_over_viable": 0.521753,
+          "spread_over_viable": 0.11941
+        },
+        {
+          "attainable_ceiling": 0.881489,
+          "headroom": 0.365546,
+          "mean_over_viable": 0.515943,
+          "spread_over_viable": 0.122698
+        },
+        {
+          "attainable_ceiling": 0.907343,
+          "headroom": 0.370222,
+          "mean_over_viable": 0.537121,
+          "spread_over_viable": 0.114514
+        }
+      ],
+      "mean_attainable_ceiling": 0.891898,
+      "mean_distance_to_supplied": 0.212514,
+      "mean_headroom": 0.356683,
+      "mean_spread_over_viable": 0.116608,
+      "target_distance_to_supplied": 0.206398
+    },
+    {
+      "goal_results": [
+        {
+          "attainable_ceiling": 0.933915,
+          "headroom": 0.339172,
+          "mean_over_viable": 0.594743,
+          "spread_over_viable": 0.120636
+        },
+        {
+          "attainable_ceiling": 0.813522,
+          "headroom": 0.325651,
+          "mean_over_viable": 0.487871,
+          "spread_over_viable": 0.120944
+        },
+        {
+          "attainable_ceiling": 0.90947,
+          "headroom": 0.382108,
+          "mean_over_viable": 0.527362,
+          "spread_over_viable": 0.114629
+        },
+        {
+          "attainable_ceiling": 1.0,
+          "headroom": 0.425813,
+          "mean_over_viable": 0.574187,
+          "spread_over_viable": 0.128821
+        },
+        {
+          "attainable_ceiling": 0.87485,
+          "headroom": 0.363131,
+          "mean_over_viable": 0.511718,
+          "spread_over_viable": 0.10938
+        },
+        {
+          "attainable_ceiling": 0.878738,
+          "headroom": 0.361212,
+          "mean_over_viable": 0.517526,
+          "spread_over_viable": 0.118622
+        }
+      ],
+      "mean_attainable_ceiling": 0.901749,
+      "mean_distance_to_supplied": 0.253868,
+      "mean_headroom": 0.366181,
+      "mean_spread_over_viable": 0.118839,
+      "target_distance_to_supplied": 0.25
+    },
+    {
+      "goal_results": [
+        {
+          "attainable_ceiling": 0.901536,
+          "headroom": 0.409824,
+          "mean_over_viable": 0.491712,
+          "spread_over_viable": 0.145666
+        },
+        {
+          "attainable_ceiling": 1.0,
+          "headroom": 0.404886,
+          "mean_over_viable": 0.595114,
+          "spread_over_viable": 0.13709
+        },
+        {
+          "attainable_ceiling": 0.880265,
+          "headroom": 0.36339,
+          "mean_over_viable": 0.516875,
+          "spread_over_viable": 0.114574
+        },
+        {
+          "attainable_ceiling": 0.984886,
+          "headroom": 0.392425,
+          "mean_over_viable": 0.592462,
+          "spread_over_viable": 0.130118
+        },
+        {
+          "attainable_ceiling": 0.850026,
+          "headroom": 0.364014,
+          "mean_over_viable": 0.486013,
+          "spread_over_viable": 0.12563
+        },
+        {
+          "attainable_ceiling": 0.886774,
+          "headroom": 0.441492,
+          "mean_over_viable": 0.445283,
+          "spread_over_viable": 0.134583
+        }
+      ],
+      "mean_attainable_ceiling": 0.917248,
+      "mean_distance_to_supplied": 0.306581,
+      "mean_headroom": 0.396005,
+      "mean_spread_over_viable": 0.131277,
+      "target_distance_to_supplied": 0.3
+    },
+    {
+      "goal_results": [
+        {
+          "attainable_ceiling": 0.890352,
+          "headroom": 0.404527,
+          "mean_over_viable": 0.485825,
+          "spread_over_viable": 0.133865
+        },
+        {
+          "attainable_ceiling": 1.0,
+          "headroom": 0.3965,
+          "mean_over_viable": 0.6035,
+          "spread_over_viable": 0.145889
+        },
+        {
+          "attainable_ceiling": 0.976214,
+          "headroom": 0.470428,
+          "mean_over_viable": 0.505786,
+          "spread_over_viable": 0.167406
+        },
+        {
+          "attainable_ceiling": 1.0,
+          "headroom": 0.408157,
+          "mean_over_viable": 0.591843,
+          "spread_over_viable": 0.134835
+        },
+        {
+          "attainable_ceiling": 0.883266,
+          "headroom": 0.394062,
+          "mean_over_viable": 0.489204,
+          "spread_over_viable": 0.125494
+        },
+        {
+          "attainable_ceiling": 1.0,
+          "headroom": 0.535363,
+          "mean_over_viable": 0.464637,
+          "spread_over_viable": 0.164359
+        }
+      ],
+      "mean_attainable_ceiling": 0.958305,
+      "mean_distance_to_supplied": 0.348983,
+      "mean_headroom": 0.43484,
+      "mean_spread_over_viable": 0.145308,
+      "target_distance_to_supplied": 0.35
+    }
+  ],
+  "seed": 20260830,
+  "viable_pool": 79388
+}
