@@ -1,0 +1,140 @@
+diff --git experiments/local_compute_offer.py b/experiments/local_compute_offer.py
+index 30f2e0a..6e13624 100644
+--- a/experiments/local_compute_offer.py
++++ b/experiments/local_compute_offer.py
+@@ -74,7 +74,7 @@ def read_json(path: Path) -> Any:
+     try:
+         return json.loads(path.read_text(encoding="utf-8"))
+     except (FileNotFoundError, json.JSONDecodeError) as exc:
+         print(f"ERROR: Failed to load JSON from {path}: {exc}")
+         return None
+
+@@ -89,7 +89,7 @@ def validate_offer_pool(pool: dict[str, Any]) -> None:
+     schema = read_json(OFFER_SCHEMA)
+     validator = Draft202012Validator(schema)
+     errors = sorted(validator.iter_errors(pool), key=lambda error: list(error.absolute_path))
+     if errors:
+         details = "; ".join(error.message for error in errors)
+         raise DiscoveryError(f"generated offer failed schema validation: {details}")
+
+@@ -100,7 +100,7 @@ def detect_memory_mb() -> int:
+     """Best-effort stdlib-only physical-memory detection; return 0 if unknown."""
+     if hasattr(os, "sysconf"):
+         try:
+             page_size = int(os.sysconf("SC_PAGE_SIZE"))
+             pages = int(os.sysconf("SC_PHYS_PAGES"))
+             if page_size > 0 and pages > 0:
+                 return (page_size * pages) // (1024 * 1024)
+         except (OSError, ValueError, TypeError):
+             pass
+     return 0
+
+@@ -120,7 +120,7 @@ def discover_raw(path: Path) -> dict[str, Any]:
+     cpu = float(os.cpu_count() or 1)
+     memory_mb = detected_memory_mb()
+     try:
+         disk_mb = int(shutil.disk_usage(path).free // (1024 * 1024))
+     except OSError:
+         disk_mb = 0
+
+@@ -130,7 +130,7 @@ def discovered_memory_mb() -> int:
+     """Best-effort stdlib-only physical-memory detection; return 0 if unknown."""
+     if hasattr(os, "sysconf"):
+         try:
+             page_size = int(os.sysconf("SC_PAGE_SIZE"))
+             pages = int(os.sysconf("SC_PHYS_PAGES"))
+             if page_size > 0 and pages > 0:
+                 return (page_size * pages) // (1024 * 1024)
+         except (OSError, ValueError, TypeError):
+             pass
+     return 0
+
+@@ -140,7 +140,7 @@ def discover_raw(path: Path) -> dict[str, Any]:
+     cpu = float(os.cpu_count() or 1)
+     memory_mb = detected_memory_mb()
+     try:
+         disk_mb = int(shutil.disk_usage(path).free // (1024 * 1024))
+     except OSError:
+         disk_mb = 0
+
+@@ -150,7 +150,7 @@ def discovered_raw(path: Path) -> dict[str, Any]:
+     cpu = float(os.cpu_count() or 1)
+     memory_mb = detected_memory_mb()
+     try:
+         disk_mb = int(shutil.disk_usage(path).free // (1024 * 1024))
+     except OSError:
+         disk_mb = 0
+
+@@ -160,7 +160,7 @@ def discovered_raw(path: Path) -> dict[str, Any]:
+     cpu = float(os.cpu_count() or 1)
+     memory_mb = detected_memory_mb()
+     try:
+         disk_mb = int(shutil.disk_usage(path).free // (1024 * 1024))
+     except OSError:
+         disk_mb = 0
+
+@@ -170,7 +170,7 @@ def discovered_raw(path: Path) -> dict[str, Any]:
+     cpu = float(os.cpu_count() or 1)
+     memory_mb = detected_memory_mb()
+     try:
+         disk_mb = int(shutil.disk_usage(path).free // (1024 * 1024))
+     except OSError:
+         disk_mb = 0
+
+@@ -180,7 +180,7 @@ def discovered_raw(path: Path) -> dict[str, Any]:
+     cpu = float(os.cpu_count() or 1)
+     memory_mb = detected_memory_mb()
+     try:
+         disk_mb = int(shutil.disk_usage(path).free // (1024 * 1024))
+     except OSError:
+         disk_mb = 0
+
+@@ -190,7 +190,7 @@ def discovered_raw(path: Path) -> dict[str, Any]:
+     cpu = float(os.cpu_count() or 1)
+     memory_mb = detected_memory_mb()
+     try:
+         disk_mb = int(shutil.disk_usage(path).free // (1024 * 1024))
+     except OSError:
+         disk_mb = 0
+
+@@ -200,7 +200,7 @@ def discovered_raw(path: Path) -> dict[str, Any]:
+     cpu = float(os.cpu_count() or 1)
+     memory_mb = detected_memory_mb()
+     try:
+         disk_mb = int(shutil.disk_usage(path).free // (1024 * 1024))
+     except OSError:
+         disk_mb = 0
+
+@@ -210,7 +210,7 @@ def discovered_raw(path: Path) -> dict[str, Any]:
+     cpu = float(os.cpu_count() or 1)
+     memory_mb = detected_memory_mb()
+     try:
+         disk_mb = int(shutil.disk_usage(path).free // (1024 * 1024))
+     except OSError:
+         disk_mb = 0
+
+@@ -220,7 +220,7 @@ def discovered_raw(path: Path) -> dict[str, Any]:
+     cpu = float(os.cpu_count() or 1)
+     memory_mb = detected_memory_mb()
+     try:
+         disk_mb = int(shutil.disk_usage(path).free // (1024 * 1024))
+     except OSError:
+         disk_mb = 0
+
+@@ -230,7 +230,7 @@ def discovered_raw(path: Path) -> dict[str, Any]:
+     cpu = float(os.cpu_count() or 1)
+     memory_mb = detected_memory_mb()
+     try:
+         disk_mb = int(shutil.disk_usage(path).free // (1024 * 1024))
+     except OSError:
+         disk_mb = 0
+
+@@ -240,7 +240,7 @@ def discovered_raw(path: Path) -> dict[str, Any]:
+     cpu = float(os.cpu_count() or 1)
+     memory_mb = detected_memory_mb()
+     try:
+         disk_mb = int(shutil.disk_usage(path).free // (1024 * 1024))
+     except OSError:
+         disk_mb = 0
+
+@@ -250,7 +250,7 @@

@@ -2,6 +2,27 @@
 
 Experiments are small, reproducible programs used to challenge IDKMesh hypotheses before those hypotheses become architecture or automation.
 
+## E029 first real model attempts on the frozen benchmark
+
+`tools/open_model_benchmark_probe.py` puts a pinned open-weight model
+(`Qwen/Qwen2.5-Coder-0.5B-Instruct`) behind a network-disabled, read-only,
+capability-dropped container as a candidate *producer*, and routes its output
+through the existing independent EvaluatorPlan verifier. E029 is the first time
+it was run: 60 real attempts across all 10 frozen work units, at zero paid API
+spend.
+
+```bash
+./tools/open_model_producer_image.sh
+python tools/open_model_benchmark_probe.py --self-test
+python tools/open_model_probe_summary.py --self-test
+```
+
+The result is negative and blunt: 0 of 60 attempts produced a patch the verifier
+was even asked to judge, and 56 of the 60 failures were unified-diff *protocol*
+failures rather than failures of the proposed change. Pairwise attempt
+correlation is therefore undefined, not zero. See
+[`E029-first-real-model-attempts.md`](E029-first-real-model-attempts.md).
+
 ## E022 verification-scaling matrix
 
 `verification_scaling_matrix.py` compares all seven verification conditions

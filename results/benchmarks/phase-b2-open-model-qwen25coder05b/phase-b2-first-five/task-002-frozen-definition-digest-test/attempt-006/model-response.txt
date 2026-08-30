@@ -1,0 +1,177 @@
+diff --git tools/benchmark_cohort.py b/tools/benchmark_cohort.py
+index b0a5b11..05a0c60 100644
+--- a/tools/benchmark_cohort.py
++++ b/tools/benchmark_cohort.py
+@@ -2,7 +2,7 @@
+ import argparse
+ import copy
+ import hashlib
+ import json
+-from pathlib import Path, PurePosixPath
++from pathlib import Path, PurePosixPath
+ import re
+ import sys
+ from typing import Any
+
+@@ -7,10 +7,10 @@
+ from jsonschema import Draft202012Validator, FormatChecker
+
+ ROOT = Path(__file__).resolve().parents[1]
+SCHEMA_DIR = ROOT / "schemas"
+COHORT_SCHEMA = SCHEMA_DIR / "benchmark-cohort-v0.1.schema.json"
+WORK_UNIT_SCHEMA = SCHEMA_DIR / "work-unit-v0.2.schema.json"
+EVALUATOR_PLAN_SCHEMA = SCHEMA_DIR / "evaluator-plan-v0.2.schema.json"
+RESULT_MANIFEST_SCHEMA = SCHEMA_DIR / "result-manifest-v0.1.schema.json"
+VERIFICATION_RESULT_SCHEMA = SCHEMA_DIR / "verification-result-v0.1.schema.json"
+FULL_GIT_SHA = re.compile(r"^[0-9a-f]{40}$")
+
+RECOMMENDATION_TO_OUTCOME = {
+    "accept_candidate": "support",
+    "reject_candidate": "reject",
+    "escalate": "escalate",
+    "insufficient_evidence": "insufficient_evidence",
+}
+VERIFICATION_FINDING_CATEGORIES = {
+    "correctness",
+    "scope",
+    "provenance",
+    "security",
+    "regression",
+}
+
+class CohortError(RuntimeError):
+    """Raised when a benchmark cohort or referenced evidence fails closed."""
+
+def require(condition: bool, message: str) -> None:
+    if not condition:
+        raise CohortError(message)
+
+def canonical_digest(value: Any) -> str:
+    payload = json.dumps(
+        value,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+    ).encode("utf-8")
+    return "sha256:" + hashlib.sha256(payload).hexdigest()
+
+def load_json(path: Path) -> dict[str, Any]:
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise CohortError(f"cannot load JSON from {path}: {exc}") from exc
+    if not isinstance(value, dict):
+        raise CohortError(f"expected JSON object in {path}")
+    return value
+
+
+def _schema(path: Path) -> dict[str, Any]:
+    schema = load_json(path)
+    Draft202012Validator.check_schema(schema)
+    return schema
+
+
+def validate_schema(instance: dict[str, Any], path: Path, label: str) -> None:
+    validator = Draft202012Validator(_schema(path), format_checker=FormatChecker())
+    errors = sorted(validator.iter_errors(instance), key=lambda error: list(error.absolute_path))
+    if not errors:
+        return
+    details: list[str] = []
+    for error in errors[:12]:
+        location = ".".join(str(part) for part in error.absolute_path) or "<root>"
+        details.append(f"{location}: {error.message}")
+    raise CohortError(f"{label} failed schema validation: " + "; ".join(details))
+
+
+def resolve_repo_file(raw: str, *, label: str) -> Path:
+    posix = PurePosixPath(raw)
+    require(bool(raw) and not posix.is_absolute() and ".." not in posix.parts, f"{label}: unsafe path {raw!r}")
+    path = (ROOT / Path(*posix.parts)).resolve()
+    try:
+        path.relative_to(ROOT)
+    except ValueError as exc:
+        raise CohortError(f"{label}: path escapes repository root: {raw}") from exc
+    require(path.is_file(), f"{label}: referenced file does not exist: {raw}")
+    require(not path.is_symlink(), f"{label}: symlink references are not allowed: {raw}")
+    return path
+
+
+def definition_projection(cohort: dict[str, Any]) -> dict[str, Any]:
+    """Return the pre-outcome benchmark definition committed by definition_digest.
+
+    Evidence/results, lifecycle stage, storage paths, and extensions are excluded.
+    The digest therefore survives result attachment and file relocation while still
+    committing task identity, source snapshot, taxonomy, evaluator digest, negative
+    expectation, accounting requirements, and predeclared structural signatures.
+    """
+
+    tasks: list[dict[str, Any]] = []
+    for task in sorted(cohort["tasks"], key=lambda item: item["id"]):
+        evaluator = task["evaluator"]
+        tasks.append(
+            {
+                "id": task["id"],
+                "family": task["family"],
+                "difficulty": task["difficulty"],
+                "split": task["split"],
+                "source": {
+                    "repository": task["source"]["repository"],
+                    "revision": task["source"]["revision"],
+                },
+                "work_unit": {
+                    "id": task["work_unit"]["id"],
+                    "version": task["work_unit"]["version"],
+                    "digest": task["work_unit"]["digest"],
+                },
+                "evaluator": {
+                    "visibility": evaluator["visibility"],
+                    "plan_id": evaluator["plan_id"],
+                    "plan_digest": evaluator["plan_digest"],
+                    "backend": evaluator["backend"],
+                },
+                "declared_structural_signatures": sorted(task["declared_structural_signatures"]),
+                "negative_case": {
+                    "description": task["negative_case"]["description"],
+                    "expected_category": task["negative_case"]["expected_category"],
+                },
+                "accounting": {
+                    "required_metrics": sorted(task["accounting"]["required_metrics"]),
+                },
+            }
+        )
+    return {
+        "schema_version": cohort["schema_version"],
+        "id": cohort["id"],
+        "title": cohort["title"],
+        "minimum_final_tasks": cohort["minimum_final_tasks"],
+        "required_families": sorted(cohort["required_families"]),
+        "taxonomy_frozen_before_outcomes": cohort["taxonomy_frozen_before_outcomes"],
+        "authority": cohort["authority"],
+        "tasks": tasks,
+    }
+
+
+def definition_digest(cohort: dict[str, Any]) -> str:
+    return canonical_digest(definition_projection(cohort))
+
+
+def _required_validator_ids(work_unit: dict[str, Any]) -> set[str]:
+    return {
+        item["id"]
+        for item in work_unit["validators"]
+        if item.get("required") is True
+    }
+
+
+def _load_and_match_object_ref(ref: dict[str, Any], *, schema: Path, label: str) -> dict[str, Any]:
+    path = resolve_repo_file(ref["path"], label=label)
+    value = load_json(path)
+    validate_schema(value, schema, label)
+    require(canonical_digest(value) == ref["digest"], f"{label}: canonical digest drift")
+    require(value.get("id") == ref["id"], f"{label}: id drift")
+    return value
+
+
+def _validate_public_plan(task: dict[str, Any], work_unit: dict[str, Any]) -> dict[str, Any] | None:
+    evaluator = task["evaluator"]
+    if

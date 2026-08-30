@@ -1,0 +1,14 @@
+```
+diff --git a/tools/benchmark_cohort.py b/tools/benchmark_cohort.py
+index 21a7b17..351d4c2 100644
+--- a/tools/benchmark_cohort.py
++++ b/tools/benchmark_cohort.py
+@@ -20,6 +20,7 @@
+ import json
+ from pathlib import Path, PurePosixPath
+ import re
++import hashlib
++import sys
+ from typing import Any
+
+```

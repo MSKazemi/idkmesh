@@ -1,0 +1,147 @@
+```diff
+--- a/experiments/free_compute_router.py
++++ b/experiments/free_compute_router.py
+@@ -1,5 +1,5 @@
+ from __future__ import annotations
+
+-import argparse
+-import copy
++from pathlib import Path
++from typing import Any
+
+from jsonschema import Draft202012Validator
+
+ROOT = Path(__file__).resolve().parents[1]
+WORK_SCHEMA = ROOT / "schemas/work-unit-v0.2.schema.json"
+OFFER_SCHEMA = ROOT / "schemas/compute-offer-pool-v0.1.schema.json"
+POLICY_SCHEMA = ROOT / "schemas/compute-policy-v0.1.schema.json"
+DEFAULT_WORK = ROOT / "examples/work-units/phase0-smoke.work-unit.json"
+DEFAULT_OFFERS = ROOT / "examples/compute-offers/free-pool.example.json"
+DEFAULT_POLICY = ROOT / "config/compute-policy.json"
+
+TRUST = {"untrusted": 0, "identified": 1, "trusted": 2, "attested": 3}
+
+class RouterError(RuntimeError):
+    pass
+
+def read_json(path: Path) -> Any:
+    return json.loads(path.read_text(encoding="utf-8"))
+
+def validate(value: Any, schema_path: Path, label: str) -> None:
+    schema = read_json(schema_path)
+    validator = Draft202012Validator(schema)
+    errors = sorted(validator.iter_errors(value), key=lambda e: list(e.absolute_path))
+    if errors:
+        details = "; ".join(e.message for e in errors)
+        raise RouterError(f"{label}: {details}")
+
+def reasons(work: dict[str, Any], offer: dict[str, Any], policy: dict[str, Any]) -> list[str]:
+    out: list[str] = []
+    limit = min(
+        float(work["budget"]["project_spend_usd_max"]),
+        float(policy["project_spend_usd_max"]),
+    )
+
+    if not offer["available"]:
+        out.append("unavailable")
+    if offer["cost_class"] not in policy["allowed_cost_classes"]:
+        out.append("cost class disabled by repository policy")
+    if offer["cost_class"] == "paid" and not policy["paid_providers_enabled"]:
+        out.append("paid providers disabled")
+    if float(offer["project_cost_usd"]) > limit:
+        out.append("project cost exceeds effective limit")
+    if not work["budget"]["paid_fallback_allowed"] and offer["cost_class"] == "paid":
+        out.append("Work Unit forbids paid fallback")
+
+    required_caps = set(work["requirements"]["capabilities"])
+    if not required_caps.issubset(set(offer["capabilities"])):
+        out.append("missing capability")
+
+    req = work["requirements"]["resources"]
+    got = offer["resources"]
+    if float(got["cpu_cores"]) < float(req["cpu_cores_min"]):
+        out.append("insufficient CPU")
+    if int(got["memory_mb"]) < int(req["memory_mb_min"]):
+        out.append("insufficient memory")
+    if int(got["disk_mb"]) < int(req.get("disk_mb_min", 0)):
+        out.append("insufficient disk")
+    if req["gpu"] == "required" and not got["gpu"]:
+        out.append("GPU required")
+    if not set(req.get("accelerator_capabilities", [])).issubset(
+        set(got.get("accelerator_capabilities", []))
+    ):
+        out.append("missing accelerator capability")
+
+    minimum_trust = work["security"]["minimum_worker_trust"]
+    if TRUST[offer["trust"]] < TRUST[minimum_trust]:
+        out.append("insufficient trust")
+    return out
+
+def choose(work: dict[str, Any], pool: dict[str, Any], policy: dict[str, Any]):
+    evaluations = []
+    eligible = []
+    for offer in pool["offers"]:
+        why = reasons(work, offer, policy)
+        evaluations.append({"offer_id": offer["id"], "eligible": not why, "reasons": why})
+        if not why:
+            eligible.append(offer)
+    eligible.sort(
+        key=lambda x: (-float(x["success_probability"]), float(x["expected_wait_seconds"]), x["id"])
+    )
+    return (eligible[0] if eligible else None), evaluations
+
+def load_triplet(work_path: Path, offers_path: Path, policy_path: Path):
+    work = read_json(work_path)
+    pool = read_json(offers_path)
+    policy = read_json(policy_path)
+    validate(work, WORK_SCHEMA, "Work Unit")
+    validate(pool, OFFER_SCHEMA, "offer pool")
+    validate(policy, POLICY_SCHEMA, "compute policy")
+    return work, pool, policy
+
+def cmd_select(args: argparse.Namespace) -> int:
+    work, pool, policy = load_triplet(
+        ROOT / args.work_unit, ROOT / args.offers, ROOT / args.policy
+    )
+    selected, evaluations = choose(work, pool, policy)
+    report = {
+        "work_unit_id": work["id"],
+        "status": "selected" if selected else "no_eligible_offer",
+        "repository_project_spend_usd_max": policy["project_spend_usd_max"],
+        "selected": None if selected is None else {
+            "offer_id": selected["id"],
+            "provider": selected["provider"],
+            "cost_class": selected["cost_class"],
+            "project_cost_usd": selected["project_cost_usd"],
+        },
+        "evaluations": evaluations,
+    }
+    print(json.dumps(report, indent=2, sort_keys=True))
+    return 0 if selected else 3
+
+def cmd_self_test(_: argparse.Namespace) -> int:
+    work, pool, policy = load_triplet(DEFAULT_WORK, DEFAULT_OFFERS, DEFAULT_POLICY)
+    selected, evaluations = choose(work, pool, policy)
+    if selected is None or float(selected["project_cost_usd"]) != 0:
+        raise RouterError("zero-cost selection invariant failed")
+    paid = next(x for x in evaluations if x["offer_id"] == "paid-cloud-fast")
+    if paid["eligible"]:
+        raise RouterError("paid offer was eligible under zero-spend policy")
+
+    gpu_work = copy.deepcopy(work)
+    gpu_work["requirements"]["capabilities"].append("cuda")
+    gpu_work["requirements"]["resources"]["gpu"] = "required"
+    gpu_work["requirements"]["accelerator_capabilities"] = ["cuda"]
+    gpu_work["budget"]["project_spend_usd_max"] = 100
+    gpu_work["budget"]["paid_fallback_allowed"] = True
+    validate(gpu_work, WORK_SCHEMA, "synthetic GPU Work Unit")
+    gpu_selected, _ = choose(gpu_work, pool, policy)
+    if gpu_selected is not None:
+        raise RouterError("repository zero-spend ceiling was relaxed by Work Unit")
+
+    print("OK: free offer selected; paid offer rejected; no-free-GPU case failed closed")
+    return 0
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+```
