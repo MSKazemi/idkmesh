@@ -427,6 +427,38 @@ at initialisation and then freezing it** takes `38/100` catastrophic seeds to
 before quoting either. See
 [`../experiments/E031-learned-goal-filter.md`](../experiments/E031-learned-goal-filter.md).
 
+### E032 — is another agent worth adding?
+
+`e032_population_scaling.py` answers issue 13's success criterion — *for a fixed
+budget, when is another agent worth adding* — by running the population sweep
+both ways, because E024's contract is `evaluation_budget = agents * generations`
+and the obvious sweep multiplies the budget 16x along with the population.
+
+```bash
+PYTHONPATH=. python3 sim/e032_population_scaling.py --mode matched --seeds 100 \
+  --output experiments/results/E032-matched-budget.json
+
+PYTHONPATH=. python3 sim/e032_population_scaling.py --mode unmatched --seeds 100 \
+  --output experiments/results/E032-unmatched-budget.json
+
+PYTHONPATH=. python3 sim/e032_population_scaling.py --mode capacity --seeds 100 \
+  --output experiments/results/E032-archive-capacity.json
+```
+
+The two modes disagree, from the same seeds and the same 100 runs per cell: the
+archive gains on every doubling when the budget is free and **nothing at all**
+(0.03 AUC across a 16x population change) when it is held. The scalar
+hill-climber is the mirror image — near-linear gains to `N=256`, and `100/100`
+to `0/100` catastrophic seeds. So **never quote an unmatched population sweep as
+evidence about population size**; report the matched arm or say the budget moved.
+
+Every cell of every mode holds the post-change horizon at 25 generations, so the
+catastrophe threshold stays E024's absolute `16.0` and the counts are comparable
+with E024's, E027's, E028's, E030's and E031's. A step is called a gain or a loss
+only when its 95% paired interval excludes zero, and a trend is only named when
+the end gains differ by more than the intervals they sit inside. See
+[`../experiments/E032-population-scaling.md`](../experiments/E032-population-scaling.md).
+
 ## Tests
 
 With `pytest` installed:
@@ -450,12 +482,13 @@ python -m pytest -q \
   tests/test_e027_defect_propagation.py \
   tests/test_e028_latent_defect_dimension.py \
   tests/test_e030_supplied_goal_membership.py \
-  tests/test_e031_learned_goal_filter.py
+  tests/test_e031_learned_goal_filter.py \
+  tests/test_e032_population_scaling.py
 ```
 
 This is the same list `.github/workflows/emergence-sim.yml` runs; keep the two in step.
 
-The tests cover deterministic replay, budget invariants, niche preservation, perfect verification compatibility, correlated-error mechanics, sweep configuration, the E013 regime where independence-aware aggregation can help or hurt, E025's calibration separation and preserved shift failures, the E015 effective-panel-size metrics, the E016 discrimination screen, the E017 item-difficulty model, the E018 model comparison, the E019 group-independence result, the E020 quorum frontier, E024's exact matched-evaluation contract, E026's archive-contamination audit, and E027's defect-propagation channel — its matched budget, its cost-zero identity with the channel off, and the demonstration that an accepted defect now persists and does harm.
+The tests cover deterministic replay, budget invariants, niche preservation, perfect verification compatibility, correlated-error mechanics, sweep configuration, the E013 regime where independence-aware aggregation can help or hurt, E025's calibration separation and preserved shift failures, the E015 effective-panel-size metrics, the E016 discrimination screen, the E017 item-difficulty model, the E018 model comparison, the E019 group-independence result, the E020 quorum frontier, E024's exact matched-evaluation contract, E026's archive-contamination audit, E027's defect-propagation channel — its matched budget, its cost-zero identity with the channel off, and the demonstration that an accepted defect now persists and does harm — E028's latent-defect dimension, E030's supplied-goal membership condition, E031's learned goal filter, and E032's matched-budget population sweep, whose driver is checked against `mbe.sweep` arm-for-arm so that keeping per-seed values cannot change what a seed does.
 
 ## Interpretation
 
