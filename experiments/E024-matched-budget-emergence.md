@@ -178,6 +178,19 @@ Graph.
 > do **not** hold. The archive's lead moves by `1.6%`-`4.4%` and its `0/100`
 > catastrophic record is unchanged. The majority-vote swarm's lead does not
 > survive at all.
+>
+> **Follow-up (E031).** The "not a learned Goal Graph" half of this paragraph is
+> now tested too: [`E031-learned-goal-filter.md`](E031-learned-goal-filter.md)
+> gives the majority-vote swarm a particle filter over goal hypotheses that
+> updates from ordinal evidence. It demonstrably learns, and learning *from
+> generation 0* is what harms it — its catastrophic seeds roughly double,
+> because it concentrates on an objective that is about to be replaced. The same
+> filter restricted to post-change evidence is the best variant in all eight
+> cells of that matrix, on both the tail and the mean. A second, evidence-free
+> rescue — perturbing each agent's supplied hypothesis once at initialisation
+> and then freezing it — takes `38/100` catastrophic seeds to `0/100`, but only
+> while the goal the environment moves to is one of the four supplied; against
+> E030's parity-matched non-member goal the same arm reaches `71/100`.
 
 The strategies accept different numbers of viable candidates despite equal
 attempt counts. That is an outcome of where each search policy proposes, not an
