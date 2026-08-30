@@ -35,6 +35,7 @@ listed here fails the suite rather than becoming quietly undiscoverable.
 | **E033** | [How far can the goal drift before the archive stops helping?](E033-goal-distance.md) |
 | **E034** | [The archive's failures are directional. Which direction?](E034-goal-direction.md) |
 | **E035** | [Does the direction result survive at a second distance?](E035-direction-across-shells.md) |
+| **E036** | [Does the archive survive contributors who optimise to pass the gate?](E036-adversarial-contributors.md) |
 
 E014's sweeps publish their own result documents:
 [reference sweep](results/E014-reference-sweep.md),

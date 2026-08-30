@@ -1,0 +1,2671 @@
+{
+  "cells": [
+    {
+      "adversary_effort": 1,
+      "adversary_fraction": 0.0,
+      "archive_size": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 64.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "catastrophic_seeds": {
+        "majority": 39,
+        "planner": 100,
+        "qd": 0,
+        "random": 0,
+        "scalar": 32
+      },
+      "delivered_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "false_accept_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "panel": "perfect",
+      "post_change_utility_auc": {
+        "majority": 18.928371,
+        "planner": 14.042814,
+        "qd": 22.038762,
+        "random": 17.963134,
+        "scalar": 16.225428
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 49,
+        "qd_gt_planner_post_change_utility_auc": 100,
+        "qd_gt_random_post_change_utility_auc": 100,
+        "qd_gt_scalar_post_change_utility_auc": 100
+      },
+      "retained_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      }
+    },
+    {
+      "adversary_effort": 1,
+      "adversary_fraction": 0.01,
+      "archive_size": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 64.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "catastrophic_seeds": {
+        "majority": 39,
+        "planner": 100,
+        "qd": 0,
+        "random": 0,
+        "scalar": 26
+      },
+      "delivered_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "false_accept_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "panel": "perfect",
+      "post_change_utility_auc": {
+        "majority": 18.887441,
+        "planner": 14.131725,
+        "qd": 22.14973,
+        "random": 17.95787,
+        "scalar": 16.248714
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 49,
+        "qd_gt_planner_post_change_utility_auc": 100,
+        "qd_gt_random_post_change_utility_auc": 100,
+        "qd_gt_scalar_post_change_utility_auc": 100
+      },
+      "retained_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      }
+    },
+    {
+      "adversary_effort": 1,
+      "adversary_fraction": 0.02,
+      "archive_size": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 64.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "catastrophic_seeds": {
+        "majority": 39,
+        "planner": 100,
+        "qd": 0,
+        "random": 0,
+        "scalar": 33
+      },
+      "delivered_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "false_accept_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "panel": "perfect",
+      "post_change_utility_auc": {
+        "majority": 18.886936,
+        "planner": 14.131525,
+        "qd": 22.108156,
+        "random": 17.950248,
+        "scalar": 16.2377
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 49,
+        "qd_gt_planner_post_change_utility_auc": 100,
+        "qd_gt_random_post_change_utility_auc": 100,
+        "qd_gt_scalar_post_change_utility_auc": 100
+      },
+      "retained_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      }
+    },
+    {
+      "adversary_effort": 1,
+      "adversary_fraction": 0.05,
+      "archive_size": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 64.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "catastrophic_seeds": {
+        "majority": 39,
+        "planner": 100,
+        "qd": 0,
+        "random": 0,
+        "scalar": 26
+      },
+      "delivered_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "false_accept_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "panel": "perfect",
+      "post_change_utility_auc": {
+        "majority": 18.907327,
+        "planner": 14.168229,
+        "qd": 22.066587,
+        "random": 17.91557,
+        "scalar": 16.207248
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 49,
+        "qd_gt_planner_post_change_utility_auc": 100,
+        "qd_gt_random_post_change_utility_auc": 100,
+        "qd_gt_scalar_post_change_utility_auc": 100
+      },
+      "retained_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      }
+    },
+    {
+      "adversary_effort": 1,
+      "adversary_fraction": 0.1,
+      "archive_size": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 64.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "catastrophic_seeds": {
+        "majority": 39,
+        "planner": 100,
+        "qd": 0,
+        "random": 0,
+        "scalar": 33
+      },
+      "delivered_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "false_accept_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "panel": "perfect",
+      "post_change_utility_auc": {
+        "majority": 18.921999,
+        "planner": 14.17434,
+        "qd": 21.991959,
+        "random": 17.851336,
+        "scalar": 16.23725
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 49,
+        "qd_gt_planner_post_change_utility_auc": 100,
+        "qd_gt_random_post_change_utility_auc": 100,
+        "qd_gt_scalar_post_change_utility_auc": 100
+      },
+      "retained_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      }
+    },
+    {
+      "adversary_effort": 1,
+      "adversary_fraction": 0.2,
+      "archive_size": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 64.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "catastrophic_seeds": {
+        "majority": 39,
+        "planner": 100,
+        "qd": 0,
+        "random": 0,
+        "scalar": 38
+      },
+      "delivered_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "false_accept_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "panel": "perfect",
+      "post_change_utility_auc": {
+        "majority": 18.901924,
+        "planner": 14.104135,
+        "qd": 21.968542,
+        "random": 17.715674,
+        "scalar": 16.148094
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 49,
+        "qd_gt_planner_post_change_utility_auc": 100,
+        "qd_gt_random_post_change_utility_auc": 100,
+        "qd_gt_scalar_post_change_utility_auc": 100
+      },
+      "retained_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      }
+    },
+    {
+      "adversary_effort": 8,
+      "adversary_fraction": 0.0,
+      "archive_size": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 64.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "catastrophic_seeds": {
+        "majority": 39,
+        "planner": 100,
+        "qd": 0,
+        "random": 0,
+        "scalar": 32
+      },
+      "delivered_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "false_accept_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "panel": "perfect",
+      "post_change_utility_auc": {
+        "majority": 18.928371,
+        "planner": 14.042814,
+        "qd": 22.038762,
+        "random": 17.963134,
+        "scalar": 16.225428
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 49,
+        "qd_gt_planner_post_change_utility_auc": 100,
+        "qd_gt_random_post_change_utility_auc": 100,
+        "qd_gt_scalar_post_change_utility_auc": 100
+      },
+      "retained_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      }
+    },
+    {
+      "adversary_effort": 8,
+      "adversary_fraction": 0.01,
+      "archive_size": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 64.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "catastrophic_seeds": {
+        "majority": 39,
+        "planner": 100,
+        "qd": 0,
+        "random": 0,
+        "scalar": 27
+      },
+      "delivered_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "false_accept_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "panel": "perfect",
+      "post_change_utility_auc": {
+        "majority": 18.934932,
+        "planner": 14.124241,
+        "qd": 22.130685,
+        "random": 17.957076,
+        "scalar": 16.217988
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 49,
+        "qd_gt_planner_post_change_utility_auc": 100,
+        "qd_gt_random_post_change_utility_auc": 100,
+        "qd_gt_scalar_post_change_utility_auc": 100
+      },
+      "retained_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      }
+    },
+    {
+      "adversary_effort": 8,
+      "adversary_fraction": 0.02,
+      "archive_size": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 64.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "catastrophic_seeds": {
+        "majority": 38,
+        "planner": 100,
+        "qd": 0,
+        "random": 0,
+        "scalar": 34
+      },
+      "delivered_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "false_accept_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "panel": "perfect",
+      "post_change_utility_auc": {
+        "majority": 18.897566,
+        "planner": 14.147151,
+        "qd": 22.067023,
+        "random": 17.947123,
+        "scalar": 16.180016
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 49,
+        "qd_gt_planner_post_change_utility_auc": 100,
+        "qd_gt_random_post_change_utility_auc": 100,
+        "qd_gt_scalar_post_change_utility_auc": 100
+      },
+      "retained_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      }
+    },
+    {
+      "adversary_effort": 8,
+      "adversary_fraction": 0.05,
+      "archive_size": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 64.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "catastrophic_seeds": {
+        "majority": 38,
+        "planner": 100,
+        "qd": 0,
+        "random": 0,
+        "scalar": 37
+      },
+      "delivered_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "false_accept_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "panel": "perfect",
+      "post_change_utility_auc": {
+        "majority": 18.898604,
+        "planner": 14.106096,
+        "qd": 22.032547,
+        "random": 17.899286,
+        "scalar": 16.137679
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 49,
+        "qd_gt_planner_post_change_utility_auc": 100,
+        "qd_gt_random_post_change_utility_auc": 100,
+        "qd_gt_scalar_post_change_utility_auc": 100
+      },
+      "retained_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      }
+    },
+    {
+      "adversary_effort": 8,
+      "adversary_fraction": 0.1,
+      "archive_size": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 64.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "catastrophic_seeds": {
+        "majority": 38,
+        "planner": 100,
+        "qd": 0,
+        "random": 0,
+        "scalar": 40
+      },
+      "delivered_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "false_accept_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "panel": "perfect",
+      "post_change_utility_auc": {
+        "majority": 18.931197,
+        "planner": 14.140906,
+        "qd": 22.007258,
+        "random": 17.825312,
+        "scalar": 16.149244
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 49,
+        "qd_gt_planner_post_change_utility_auc": 100,
+        "qd_gt_random_post_change_utility_auc": 100,
+        "qd_gt_scalar_post_change_utility_auc": 100
+      },
+      "retained_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      }
+    },
+    {
+      "adversary_effort": 8,
+      "adversary_fraction": 0.2,
+      "archive_size": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 64.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "catastrophic_seeds": {
+        "majority": 37,
+        "planner": 100,
+        "qd": 0,
+        "random": 0,
+        "scalar": 35
+      },
+      "delivered_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "false_accept_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "panel": "perfect",
+      "post_change_utility_auc": {
+        "majority": 18.957513,
+        "planner": 14.126634,
+        "qd": 21.953531,
+        "random": 17.684813,
+        "scalar": 16.177272
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 49,
+        "qd_gt_planner_post_change_utility_auc": 100,
+        "qd_gt_random_post_change_utility_auc": 100,
+        "qd_gt_scalar_post_change_utility_auc": 100
+      },
+      "retained_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0,
+        "scalar": 0.0
+      }
+    },
+    {
+      "adversary_effort": 1,
+      "adversary_fraction": 0.0,
+      "archive_size": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 64.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "catastrophic_seeds": {
+        "majority": 39,
+        "planner": 100,
+        "qd": 0,
+        "random": 0,
+        "scalar": 31
+      },
+      "delivered_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.001,
+        "scalar": 0.0
+      },
+      "false_accept_rate": {
+        "majority": 0.000138,
+        "planner": 0.000589,
+        "qd": 0.000334,
+        "random": 0.000463,
+        "scalar": 0.000606
+      },
+      "panel": "independent",
+      "post_change_utility_auc": {
+        "majority": 18.928371,
+        "planner": 14.042814,
+        "qd": 22.03532,
+        "random": 17.955849,
+        "scalar": 16.239162
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 49,
+        "qd_gt_planner_post_change_utility_auc": 100,
+        "qd_gt_random_post_change_utility_auc": 100,
+        "qd_gt_scalar_post_change_utility_auc": 100
+      },
+      "retained_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.001237,
+        "scalar": 0.000159
+      }
+    },
+    {
+      "adversary_effort": 1,
+      "adversary_fraction": 0.01,
+      "archive_size": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 64.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "catastrophic_seeds": {
+        "majority": 39,
+        "planner": 100,
+        "qd": 0,
+        "random": 0,
+        "scalar": 29
+      },
+      "delivered_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0002,
+        "qd": 0.0,
+        "random": 0.0006,
+        "scalar": 0.0
+      },
+      "false_accept_rate": {
+        "majority": 0.000204,
+        "planner": 0.000513,
+        "qd": 0.000342,
+        "random": 0.000424,
+        "scalar": 0.00033
+      },
+      "panel": "independent",
+      "post_change_utility_auc": {
+        "majority": 18.887441,
+        "planner": 14.129519,
+        "qd": 22.151227,
+        "random": 17.950673,
+        "scalar": 16.237846
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 49,
+        "qd_gt_planner_post_change_utility_auc": 100,
+        "qd_gt_random_post_change_utility_auc": 100,
+        "qd_gt_scalar_post_change_utility_auc": 100
+      },
+      "retained_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.000156,
+        "random": 0.000762,
+        "scalar": 0.000133
+      }
+    },
+    {
+      "adversary_effort": 1,
+      "adversary_fraction": 0.02,
+      "archive_size": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 64.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "catastrophic_seeds": {
+        "majority": 39,
+        "planner": 100,
+        "qd": 0,
+        "random": 0,
+        "scalar": 33
+      },
+      "delivered_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0002,
+        "qd": 0.0,
+        "random": 0.0006,
+        "scalar": 0.0
+      },
+      "false_accept_rate": {
+        "majority": 0.000217,
+        "planner": 0.000411,
+        "qd": 0.000396,
+        "random": 0.000421,
+        "scalar": 0.000425
+      },
+      "panel": "independent",
+      "post_change_utility_auc": {
+        "majority": 18.886936,
+        "planner": 14.133276,
+        "qd": 22.1111,
+        "random": 17.94305,
+        "scalar": 16.227689
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 49,
+        "qd_gt_planner_post_change_utility_auc": 100,
+        "qd_gt_random_post_change_utility_auc": 100,
+        "qd_gt_scalar_post_change_utility_auc": 100
+      },
+      "retained_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.000762,
+        "scalar": 0.000133
+      }
+    },
+    {
+      "adversary_effort": 1,
+      "adversary_fraction": 0.05,
+      "archive_size": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 64.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "catastrophic_seeds": {
+        "majority": 39,
+        "planner": 100,
+        "qd": 0,
+        "random": 0,
+        "scalar": 28
+      },
+      "delivered_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0002,
+        "qd": 0.0,
+        "random": 0.0008,
+        "scalar": 0.0002
+      },
+      "false_accept_rate": {
+        "majority": 0.000263,
+        "planner": 0.000402,
+        "qd": 0.000516,
+        "random": 0.000423,
+        "scalar": 0.000571
+      },
+      "panel": "independent",
+      "post_change_utility_auc": {
+        "majority": 18.907327,
+        "planner": 14.165689,
+        "qd": 22.055227,
+        "random": 17.90252,
+        "scalar": 16.21061
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 49,
+        "qd_gt_planner_post_change_utility_auc": 100,
+        "qd_gt_random_post_change_utility_auc": 100,
+        "qd_gt_scalar_post_change_utility_auc": 100
+      },
+      "retained_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.00078,
+        "scalar": 0.000133
+      }
+    },
+    {
+      "adversary_effort": 1,
+      "adversary_fraction": 0.1,
+      "archive_size": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 64.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "catastrophic_seeds": {
+        "majority": 39,
+        "planner": 100,
+        "qd": 0,
+        "random": 0,
+        "scalar": 31
+      },
+      "delivered_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0002,
+        "qd": 0.0,
+        "random": 0.0008,
+        "scalar": 0.0
+      },
+      "false_accept_rate": {
+        "majority": 0.000374,
+        "planner": 0.000472,
+        "qd": 0.000377,
+        "random": 0.00042,
+        "scalar": 0.000478
+      },
+      "panel": "independent",
+      "post_change_utility_auc": {
+        "majority": 18.921999,
+        "planner": 14.171264,
+        "qd": 22.002523,
+        "random": 17.838286,
+        "scalar": 16.247779
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 49,
+        "qd_gt_planner_post_change_utility_auc": 100,
+        "qd_gt_random_post_change_utility_auc": 100,
+        "qd_gt_scalar_post_change_utility_auc": 100
+      },
+      "retained_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.000847,
+        "scalar": 0.000457
+      }
+    },
+    {
+      "adversary_effort": 1,
+      "adversary_fraction": 0.2,
+      "archive_size": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 64.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "catastrophic_seeds": {
+        "majority": 39,
+        "planner": 100,
+        "qd": 0,
+        "random": 0,
+        "scalar": 39
+      },
+      "delivered_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0002,
+        "qd": 0.0,
+        "random": 0.0008,
+        "scalar": 0.0002
+      },
+      "false_accept_rate": {
+        "majority": 0.000456,
+        "planner": 0.000579,
+        "qd": 0.000553,
+        "random": 0.000422,
+        "scalar": 0.000454
+      },
+      "panel": "independent",
+      "post_change_utility_auc": {
+        "majority": 18.901924,
+        "planner": 14.10572,
+        "qd": 21.968045,
+        "random": 17.702624,
+        "scalar": 16.145913
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 49,
+        "qd_gt_planner_post_change_utility_auc": 100,
+        "qd_gt_random_post_change_utility_auc": 100,
+        "qd_gt_scalar_post_change_utility_auc": 100
+      },
+      "retained_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.000156,
+        "random": 0.000943,
+        "scalar": 0.000467
+      }
+    },
+    {
+      "adversary_effort": 8,
+      "adversary_fraction": 0.0,
+      "archive_size": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 64.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "catastrophic_seeds": {
+        "majority": 39,
+        "planner": 100,
+        "qd": 0,
+        "random": 0,
+        "scalar": 31
+      },
+      "delivered_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.001,
+        "scalar": 0.0
+      },
+      "false_accept_rate": {
+        "majority": 0.000138,
+        "planner": 0.000589,
+        "qd": 0.000334,
+        "random": 0.000463,
+        "scalar": 0.000606
+      },
+      "panel": "independent",
+      "post_change_utility_auc": {
+        "majority": 18.928371,
+        "planner": 14.042814,
+        "qd": 22.03532,
+        "random": 17.955849,
+        "scalar": 16.239162
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 49,
+        "qd_gt_planner_post_change_utility_auc": 100,
+        "qd_gt_random_post_change_utility_auc": 100,
+        "qd_gt_scalar_post_change_utility_auc": 100
+      },
+      "retained_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.001237,
+        "scalar": 0.000159
+      }
+    },
+    {
+      "adversary_effort": 8,
+      "adversary_fraction": 0.01,
+      "archive_size": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 64.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "catastrophic_seeds": {
+        "majority": 39,
+        "planner": 100,
+        "qd": 0,
+        "random": 0,
+        "scalar": 27
+      },
+      "delivered_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0004,
+        "scalar": 0.0
+      },
+      "false_accept_rate": {
+        "majority": 0.000223,
+        "planner": 0.000366,
+        "qd": 0.000342,
+        "random": 0.000455,
+        "scalar": 0.000311
+      },
+      "panel": "independent",
+      "post_change_utility_auc": {
+        "majority": 18.934932,
+        "planner": 14.126886,
+        "qd": 22.129673,
+        "random": 17.94131,
+        "scalar": 16.22068
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 49,
+        "qd_gt_planner_post_change_utility_auc": 100,
+        "qd_gt_random_post_change_utility_auc": 100,
+        "qd_gt_scalar_post_change_utility_auc": 100
+      },
+      "retained_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.001172,
+        "scalar": 0.0
+      }
+    },
+    {
+      "adversary_effort": 8,
+      "adversary_fraction": 0.02,
+      "archive_size": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 64.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "catastrophic_seeds": {
+        "majority": 38,
+        "planner": 100,
+        "qd": 0,
+        "random": 0,
+        "scalar": 36
+      },
+      "delivered_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.001,
+        "scalar": 0.0
+      },
+      "false_accept_rate": {
+        "majority": 0.000417,
+        "planner": 0.000569,
+        "qd": 0.000499,
+        "random": 0.000445,
+        "scalar": 0.0005
+      },
+      "panel": "independent",
+      "post_change_utility_auc": {
+        "majority": 18.897566,
+        "planner": 14.140641,
+        "qd": 22.071313,
+        "random": 17.932881,
+        "scalar": 16.159792
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 49,
+        "qd_gt_planner_post_change_utility_auc": 100,
+        "qd_gt_random_post_change_utility_auc": 100,
+        "qd_gt_scalar_post_change_utility_auc": 100
+      },
+      "retained_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.000313,
+        "random": 0.000787,
+        "scalar": 0.0
+      }
+    },
+    {
+      "adversary_effort": 8,
+      "adversary_fraction": 0.05,
+      "archive_size": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 64.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "catastrophic_seeds": {
+        "majority": 38,
+        "planner": 100,
+        "qd": 0,
+        "random": 0,
+        "scalar": 38
+      },
+      "delivered_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0006,
+        "scalar": 0.0
+      },
+      "false_accept_rate": {
+        "majority": 0.000325,
+        "planner": 0.000385,
+        "qd": 0.000336,
+        "random": 0.000373,
+        "scalar": 0.000524
+      },
+      "panel": "independent",
+      "post_change_utility_auc": {
+        "majority": 18.898604,
+        "planner": 14.103594,
+        "qd": 22.039898,
+        "random": 17.886328,
+        "scalar": 16.127867
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 49,
+        "qd_gt_planner_post_change_utility_auc": 100,
+        "qd_gt_random_post_change_utility_auc": 100,
+        "qd_gt_scalar_post_change_utility_auc": 100
+      },
+      "retained_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.000156,
+        "random": 0.001541,
+        "scalar": 0.0
+      }
+    },
+    {
+      "adversary_effort": 8,
+      "adversary_fraction": 0.1,
+      "archive_size": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 64.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "catastrophic_seeds": {
+        "majority": 38,
+        "planner": 100,
+        "qd": 0,
+        "random": 0,
+        "scalar": 38
+      },
+      "delivered_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.002,
+        "scalar": 0.0
+      },
+      "false_accept_rate": {
+        "majority": 0.000454,
+        "planner": 0.000507,
+        "qd": 0.000426,
+        "random": 0.000463,
+        "scalar": 0.000459
+      },
+      "panel": "independent",
+      "post_change_utility_auc": {
+        "majority": 18.934427,
+        "planner": 14.140906,
+        "qd": 22.00099,
+        "random": 17.803249,
+        "scalar": 16.163907
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 49,
+        "qd_gt_planner_post_change_utility_auc": 100,
+        "qd_gt_random_post_change_utility_auc": 100,
+        "qd_gt_scalar_post_change_utility_auc": 100
+      },
+      "retained_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.000767,
+        "scalar": 0.000145
+      }
+    },
+    {
+      "adversary_effort": 8,
+      "adversary_fraction": 0.2,
+      "archive_size": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 64.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "catastrophic_seeds": {
+        "majority": 37,
+        "planner": 100,
+        "qd": 0,
+        "random": 0,
+        "scalar": 36
+      },
+      "delivered_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.0,
+        "random": 0.0012,
+        "scalar": 0.0
+      },
+      "false_accept_rate": {
+        "majority": 0.000458,
+        "planner": 0.000479,
+        "qd": 0.000495,
+        "random": 0.000451,
+        "scalar": 0.000539
+      },
+      "panel": "independent",
+      "post_change_utility_auc": {
+        "majority": 18.957848,
+        "planner": 14.126634,
+        "qd": 21.948348,
+        "random": 17.659455,
+        "scalar": 16.158528
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 49,
+        "qd_gt_planner_post_change_utility_auc": 100,
+        "qd_gt_random_post_change_utility_auc": 100,
+        "qd_gt_scalar_post_change_utility_auc": 100
+      },
+      "retained_defect_rate": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 0.000781,
+        "random": 0.001023,
+        "scalar": 0.000323
+      }
+    },
+    {
+      "adversary_effort": 1,
+      "adversary_fraction": 0.0,
+      "archive_size": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 64.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "catastrophic_seeds": {
+        "majority": 55,
+        "planner": 100,
+        "qd": 7,
+        "random": 89,
+        "scalar": 51
+      },
+      "delivered_defect_rate": {
+        "majority": 0.1702,
+        "planner": 0.1548,
+        "qd": 0.0552,
+        "random": 0.2372,
+        "scalar": 0.0334
+      },
+      "false_accept_rate": {
+        "majority": 0.170608,
+        "planner": 0.171611,
+        "qd": 0.171817,
+        "random": 0.17116,
+        "scalar": 0.168092
+      },
+      "panel": "measured",
+      "post_change_utility_auc": {
+        "majority": 15.449063,
+        "planner": 12.049675,
+        "qd": 21.062508,
+        "random": 13.687374,
+        "scalar": 15.894388
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 61,
+        "qd_gt_planner_post_change_utility_auc": 93,
+        "qd_gt_random_post_change_utility_auc": 95,
+        "qd_gt_scalar_post_change_utility_auc": 93
+      },
+      "retained_defect_rate": {
+        "majority": 0.15,
+        "planner": 0.15,
+        "qd": 0.028125,
+        "random": 0.245987,
+        "scalar": 0.016073
+      }
+    },
+    {
+      "adversary_effort": 1,
+      "adversary_fraction": 0.01,
+      "archive_size": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 64.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "catastrophic_seeds": {
+        "majority": 47,
+        "planner": 100,
+        "qd": 4,
+        "random": 96,
+        "scalar": 50
+      },
+      "delivered_defect_rate": {
+        "majority": 0.2008,
+        "planner": 0.2184,
+        "qd": 0.0538,
+        "random": 0.2412,
+        "scalar": 0.0298
+      },
+      "false_accept_rate": {
+        "majority": 0.167514,
+        "planner": 0.167108,
+        "qd": 0.172138,
+        "random": 0.171291,
+        "scalar": 0.172381
+      },
+      "panel": "measured",
+      "post_change_utility_auc": {
+        "majority": 15.571898,
+        "planner": 11.115724,
+        "qd": 21.295751,
+        "random": 13.766167,
+        "scalar": 15.985042
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 54,
+        "qd_gt_planner_post_change_utility_auc": 97,
+        "qd_gt_random_post_change_utility_auc": 97,
+        "qd_gt_scalar_post_change_utility_auc": 97
+      },
+      "retained_defect_rate": {
+        "majority": 0.19,
+        "planner": 0.21,
+        "qd": 0.028906,
+        "random": 0.245761,
+        "scalar": 0.01829
+      }
+    },
+    {
+      "adversary_effort": 1,
+      "adversary_fraction": 0.02,
+      "archive_size": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 64.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "catastrophic_seeds": {
+        "majority": 49,
+        "planner": 100,
+        "qd": 4,
+        "random": 96,
+        "scalar": 52
+      },
+      "delivered_defect_rate": {
+        "majority": 0.2268,
+        "planner": 0.2446,
+        "qd": 0.0506,
+        "random": 0.2442,
+        "scalar": 0.04
+      },
+      "false_accept_rate": {
+        "majority": 0.169216,
+        "planner": 0.168253,
+        "qd": 0.172691,
+        "random": 0.171252,
+        "scalar": 0.170957
+      },
+      "panel": "measured",
+      "post_change_utility_auc": {
+        "majority": 14.945315,
+        "planner": 10.654913,
+        "qd": 21.29579,
+        "random": 13.725986,
+        "scalar": 15.730438
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 57,
+        "qd_gt_planner_post_change_utility_auc": 97,
+        "qd_gt_random_post_change_utility_auc": 97,
+        "qd_gt_scalar_post_change_utility_auc": 97
+      },
+      "retained_defect_rate": {
+        "majority": 0.23,
+        "planner": 0.24,
+        "qd": 0.03375,
+        "random": 0.248668,
+        "scalar": 0.025897
+      }
+    },
+    {
+      "adversary_effort": 1,
+      "adversary_fraction": 0.05,
+      "archive_size": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 64.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "catastrophic_seeds": {
+        "majority": 58,
+        "planner": 99,
+        "qd": 8,
+        "random": 97,
+        "scalar": 59
+      },
+      "delivered_defect_rate": {
+        "majority": 0.345,
+        "planner": 0.3126,
+        "qd": 0.0616,
+        "random": 0.2528,
+        "scalar": 0.0452
+      },
+      "false_accept_rate": {
+        "majority": 0.16923,
+        "planner": 0.170463,
+        "qd": 0.169713,
+        "random": 0.171203,
+        "scalar": 0.170455
+      },
+      "panel": "measured",
+      "post_change_utility_auc": {
+        "majority": 12.156777,
+        "planner": 9.670606,
+        "qd": 21.043156,
+        "random": 13.577749,
+        "scalar": 15.796832
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 65,
+        "qd_gt_planner_post_change_utility_auc": 97,
+        "qd_gt_random_post_change_utility_auc": 97,
+        "qd_gt_scalar_post_change_utility_auc": 92
+      },
+      "retained_defect_rate": {
+        "majority": 0.36,
+        "planner": 0.31,
+        "qd": 0.049375,
+        "random": 0.258383,
+        "scalar": 0.032558
+      }
+    },
+    {
+      "adversary_effort": 1,
+      "adversary_fraction": 0.1,
+      "archive_size": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 64.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "catastrophic_seeds": {
+        "majority": 63,
+        "planner": 99,
+        "qd": 8,
+        "random": 97,
+        "scalar": 79
+      },
+      "delivered_defect_rate": {
+        "majority": 0.3928,
+        "planner": 0.4404,
+        "qd": 0.0806,
+        "random": 0.268,
+        "scalar": 0.0826
+      },
+      "false_accept_rate": {
+        "majority": 0.169866,
+        "planner": 0.17172,
+        "qd": 0.172049,
+        "random": 0.171314,
+        "scalar": 0.169148
+      },
+      "panel": "measured",
+      "post_change_utility_auc": {
+        "majority": 10.938331,
+        "planner": 7.639467,
+        "qd": 20.787265,
+        "random": 13.255655,
+        "scalar": 14.945133
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 68,
+        "qd_gt_planner_post_change_utility_auc": 95,
+        "qd_gt_random_post_change_utility_auc": 94,
+        "qd_gt_scalar_post_change_utility_auc": 92
+      },
+      "retained_defect_rate": {
+        "majority": 0.43,
+        "planner": 0.45,
+        "qd": 0.067187,
+        "random": 0.275211,
+        "scalar": 0.061258
+      }
+    },
+    {
+      "adversary_effort": 1,
+      "adversary_fraction": 0.2,
+      "archive_size": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 64.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "catastrophic_seeds": {
+        "majority": 80,
+        "planner": 100,
+        "qd": 17,
+        "random": 99,
+        "scalar": 89
+      },
+      "delivered_defect_rate": {
+        "majority": 0.5752,
+        "planner": 0.551,
+        "qd": 0.157,
+        "random": 0.3042,
+        "scalar": 0.1304
+      },
+      "false_accept_rate": {
+        "majority": 0.171617,
+        "planner": 0.17174,
+        "qd": 0.172621,
+        "random": 0.171177,
+        "scalar": 0.172436
+      },
+      "panel": "measured",
+      "post_change_utility_auc": {
+        "majority": 6.95365,
+        "planner": 6.029853,
+        "qd": 19.013203,
+        "random": 12.550675,
+        "scalar": 14.323304
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 80,
+        "qd_gt_planner_post_change_utility_auc": 95,
+        "qd_gt_random_post_change_utility_auc": 88,
+        "qd_gt_scalar_post_change_utility_auc": 86
+      },
+      "retained_defect_rate": {
+        "majority": 0.62,
+        "planner": 0.58,
+        "qd": 0.125156,
+        "random": 0.312661,
+        "scalar": 0.08633
+      }
+    },
+    {
+      "adversary_effort": 8,
+      "adversary_fraction": 0.0,
+      "archive_size": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 64.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "catastrophic_seeds": {
+        "majority": 55,
+        "planner": 100,
+        "qd": 7,
+        "random": 89,
+        "scalar": 51
+      },
+      "delivered_defect_rate": {
+        "majority": 0.1702,
+        "planner": 0.1548,
+        "qd": 0.0552,
+        "random": 0.2372,
+        "scalar": 0.0334
+      },
+      "false_accept_rate": {
+        "majority": 0.170608,
+        "planner": 0.171611,
+        "qd": 0.171817,
+        "random": 0.17116,
+        "scalar": 0.168092
+      },
+      "panel": "measured",
+      "post_change_utility_auc": {
+        "majority": 15.449063,
+        "planner": 12.049675,
+        "qd": 21.062508,
+        "random": 13.687374,
+        "scalar": 15.894388
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 61,
+        "qd_gt_planner_post_change_utility_auc": 93,
+        "qd_gt_random_post_change_utility_auc": 95,
+        "qd_gt_scalar_post_change_utility_auc": 93
+      },
+      "retained_defect_rate": {
+        "majority": 0.15,
+        "planner": 0.15,
+        "qd": 0.028125,
+        "random": 0.245987,
+        "scalar": 0.016073
+      }
+    },
+    {
+      "adversary_effort": 8,
+      "adversary_fraction": 0.01,
+      "archive_size": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 64.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "catastrophic_seeds": {
+        "majority": 56,
+        "planner": 100,
+        "qd": 6,
+        "random": 96,
+        "scalar": 64
+      },
+      "delivered_defect_rate": {
+        "majority": 0.2774,
+        "planner": 0.2452,
+        "qd": 0.0674,
+        "random": 0.253,
+        "scalar": 0.0434
+      },
+      "false_accept_rate": {
+        "majority": 0.167994,
+        "planner": 0.169306,
+        "qd": 0.173477,
+        "random": 0.170938,
+        "scalar": 0.173553
+      },
+      "panel": "measured",
+      "post_change_utility_auc": {
+        "majority": 13.655709,
+        "planner": 10.853978,
+        "qd": 20.832127,
+        "random": 13.575895,
+        "scalar": 15.552972
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 59,
+        "qd_gt_planner_post_change_utility_auc": 96,
+        "qd_gt_random_post_change_utility_auc": 94,
+        "qd_gt_scalar_post_change_utility_auc": 94
+      },
+      "retained_defect_rate": {
+        "majority": 0.29,
+        "planner": 0.23,
+        "qd": 0.040469,
+        "random": 0.243929,
+        "scalar": 0.022882
+      }
+    },
+    {
+      "adversary_effort": 8,
+      "adversary_fraction": 0.02,
+      "archive_size": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 64.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "catastrophic_seeds": {
+        "majority": 58,
+        "planner": 100,
+        "qd": 12,
+        "random": 95,
+        "scalar": 67
+      },
+      "delivered_defect_rate": {
+        "majority": 0.3094,
+        "planner": 0.2668,
+        "qd": 0.0868,
+        "random": 0.2658,
+        "scalar": 0.053
+      },
+      "false_accept_rate": {
+        "majority": 0.169058,
+        "planner": 0.174025,
+        "qd": 0.169307,
+        "random": 0.17205,
+        "scalar": 0.168045
+      },
+      "panel": "measured",
+      "post_change_utility_auc": {
+        "majority": 13.003966,
+        "planner": 10.708878,
+        "qd": 20.310111,
+        "random": 13.451296,
+        "scalar": 15.50539
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 59,
+        "qd_gt_planner_post_change_utility_auc": 89,
+        "qd_gt_random_post_change_utility_auc": 91,
+        "qd_gt_scalar_post_change_utility_auc": 88
+      },
+      "retained_defect_rate": {
+        "majority": 0.31,
+        "planner": 0.22,
+        "qd": 0.054531,
+        "random": 0.244972,
+        "scalar": 0.020556
+      }
+    },
+    {
+      "adversary_effort": 8,
+      "adversary_fraction": 0.05,
+      "archive_size": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 64.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "catastrophic_seeds": {
+        "majority": 71,
+        "planner": 100,
+        "qd": 18,
+        "random": 100,
+        "scalar": 85
+      },
+      "delivered_defect_rate": {
+        "majority": 0.4932,
+        "planner": 0.4322,
+        "qd": 0.1222,
+        "random": 0.3086,
+        "scalar": 0.0966
+      },
+      "false_accept_rate": {
+        "majority": 0.171818,
+        "planner": 0.172242,
+        "qd": 0.169683,
+        "random": 0.171669,
+        "scalar": 0.173341
+      },
+      "panel": "measured",
+      "post_change_utility_auc": {
+        "majority": 9.121932,
+        "planner": 8.158265,
+        "qd": 19.331012,
+        "random": 12.614458,
+        "scalar": 14.544817
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 67,
+        "qd_gt_planner_post_change_utility_auc": 90,
+        "qd_gt_random_post_change_utility_auc": 86,
+        "qd_gt_scalar_post_change_utility_auc": 85
+      },
+      "retained_defect_rate": {
+        "majority": 0.51,
+        "planner": 0.41,
+        "qd": 0.093281,
+        "random": 0.253507,
+        "scalar": 0.035621
+      }
+    },
+    {
+      "adversary_effort": 8,
+      "adversary_fraction": 0.1,
+      "archive_size": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 64.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "catastrophic_seeds": {
+        "majority": 85,
+        "planner": 100,
+        "qd": 28,
+        "random": 100,
+        "scalar": 93
+      },
+      "delivered_defect_rate": {
+        "majority": 0.6688,
+        "planner": 0.4394,
+        "qd": 0.1972,
+        "random": 0.365,
+        "scalar": 0.1508
+      },
+      "false_accept_rate": {
+        "majority": 0.170724,
+        "planner": 0.172388,
+        "qd": 0.172202,
+        "random": 0.171943,
+        "scalar": 0.171755
+      },
+      "panel": "measured",
+      "post_change_utility_auc": {
+        "majority": 5.473992,
+        "planner": 7.651402,
+        "qd": 17.678072,
+        "random": 11.771122,
+        "scalar": 13.5051
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 81,
+        "qd_gt_planner_post_change_utility_auc": 83,
+        "qd_gt_random_post_change_utility_auc": 80,
+        "qd_gt_scalar_post_change_utility_auc": 78
+      },
+      "retained_defect_rate": {
+        "majority": 0.71,
+        "planner": 0.46,
+        "qd": 0.184531,
+        "random": 0.269824,
+        "scalar": 0.055562
+      }
+    },
+    {
+      "adversary_effort": 8,
+      "adversary_fraction": 0.2,
+      "archive_size": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 64.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "catastrophic_seeds": {
+        "majority": 95,
+        "planner": 100,
+        "qd": 58,
+        "random": 100,
+        "scalar": 100
+      },
+      "delivered_defect_rate": {
+        "majority": 0.8268,
+        "planner": 0.75,
+        "qd": 0.4306,
+        "random": 0.4822,
+        "scalar": 0.3144
+      },
+      "false_accept_rate": {
+        "majority": 0.171383,
+        "planner": 0.172505,
+        "qd": 0.17169,
+        "random": 0.171083,
+        "scalar": 0.171847
+      },
+      "panel": "measured",
+      "post_change_utility_auc": {
+        "majority": 2.405112,
+        "planner": 3.143069,
+        "qd": 12.25885,
+        "random": 9.737734,
+        "scalar": 10.091986
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 77,
+        "qd_gt_planner_post_change_utility_auc": 79,
+        "qd_gt_random_post_change_utility_auc": 59,
+        "qd_gt_scalar_post_change_utility_auc": 60
+      },
+      "retained_defect_rate": {
+        "majority": 0.86,
+        "planner": 0.79,
+        "qd": 0.387031,
+        "random": 0.305487,
+        "scalar": 0.143617
+      }
+    },
+    {
+      "adversary_effort": 1,
+      "adversary_fraction": 0.0,
+      "archive_size": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 64.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "catastrophic_seeds": {
+        "majority": 78,
+        "planner": 100,
+        "qd": 50,
+        "random": 100,
+        "scalar": 89
+      },
+      "delivered_defect_rate": {
+        "majority": 0.562,
+        "planner": 0.5264,
+        "qd": 0.4658,
+        "random": 0.5426,
+        "scalar": 0.3898
+      },
+      "false_accept_rate": {
+        "majority": 0.450418,
+        "planner": 0.452713,
+        "qd": 0.449623,
+        "random": 0.448216,
+        "scalar": 0.446798
+      },
+      "panel": "stress",
+      "post_change_utility_auc": {
+        "majority": 7.951495,
+        "planner": 6.514027,
+        "qd": 13.065631,
+        "random": 8.403696,
+        "scalar": 10.098709
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 60,
+        "qd_gt_planner_post_change_utility_auc": 64,
+        "qd_gt_random_post_change_utility_auc": 65,
+        "qd_gt_scalar_post_change_utility_auc": 61
+      },
+      "retained_defect_rate": {
+        "majority": 0.58,
+        "planner": 0.54,
+        "qd": 0.435937,
+        "random": 0.55489,
+        "scalar": 0.378481
+      }
+    },
+    {
+      "adversary_effort": 1,
+      "adversary_fraction": 0.01,
+      "archive_size": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 64.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "catastrophic_seeds": {
+        "majority": 75,
+        "planner": 100,
+        "qd": 62,
+        "random": 100,
+        "scalar": 87
+      },
+      "delivered_defect_rate": {
+        "majority": 0.5266,
+        "planner": 0.5546,
+        "qd": 0.52,
+        "random": 0.5448,
+        "scalar": 0.4272
+      },
+      "false_accept_rate": {
+        "majority": 0.449059,
+        "planner": 0.449898,
+        "qd": 0.447986,
+        "random": 0.448842,
+        "scalar": 0.448335
+      },
+      "panel": "stress",
+      "post_change_utility_auc": {
+        "majority": 8.678322,
+        "planner": 6.590076,
+        "qd": 11.067616,
+        "random": 8.518558,
+        "scalar": 9.42522
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 51,
+        "qd_gt_planner_post_change_utility_auc": 61,
+        "qd_gt_random_post_change_utility_auc": 55,
+        "qd_gt_scalar_post_change_utility_auc": 55
+      },
+      "retained_defect_rate": {
+        "majority": 0.54,
+        "planner": 0.53,
+        "qd": 0.463906,
+        "random": 0.556623,
+        "scalar": 0.404664
+      }
+    },
+    {
+      "adversary_effort": 1,
+      "adversary_fraction": 0.02,
+      "archive_size": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 64.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "catastrophic_seeds": {
+        "majority": 78,
+        "planner": 100,
+        "qd": 69,
+        "random": 100,
+        "scalar": 92
+      },
+      "delivered_defect_rate": {
+        "majority": 0.5612,
+        "planner": 0.5892,
+        "qd": 0.5714,
+        "random": 0.5486,
+        "scalar": 0.4504
+      },
+      "false_accept_rate": {
+        "majority": 0.44825,
+        "planner": 0.448407,
+        "qd": 0.448681,
+        "random": 0.448965,
+        "scalar": 0.449925
+      },
+      "panel": "stress",
+      "post_change_utility_auc": {
+        "majority": 7.89181,
+        "planner": 5.977613,
+        "qd": 8.714851,
+        "random": 8.445289,
+        "scalar": 8.925492
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 42,
+        "qd_gt_planner_post_change_utility_auc": 48,
+        "qd_gt_random_post_change_utility_auc": 43,
+        "qd_gt_scalar_post_change_utility_auc": 45
+      },
+      "retained_defect_rate": {
+        "majority": 0.58,
+        "planner": 0.58,
+        "qd": 0.502031,
+        "random": 0.560882,
+        "scalar": 0.432451
+      }
+    },
+    {
+      "adversary_effort": 1,
+      "adversary_fraction": 0.05,
+      "archive_size": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 64.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "catastrophic_seeds": {
+        "majority": 87,
+        "planner": 100,
+        "qd": 66,
+        "random": 100,
+        "scalar": 99
+      },
+      "delivered_defect_rate": {
+        "majority": 0.679,
+        "planner": 0.7118,
+        "qd": 0.6406,
+        "random": 0.5594,
+        "scalar": 0.5986
+      },
+      "false_accept_rate": {
+        "majority": 0.449904,
+        "planner": 0.450883,
+        "qd": 0.448477,
+        "random": 0.449024,
+        "scalar": 0.450034
+      },
+      "panel": "stress",
+      "post_change_utility_auc": {
+        "majority": 5.105344,
+        "planner": 4.085603,
+        "qd": 8.355068,
+        "random": 8.236815,
+        "scalar": 6.395224
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 47,
+        "qd_gt_planner_post_change_utility_auc": 51,
+        "qd_gt_random_post_change_utility_auc": 42,
+        "qd_gt_scalar_post_change_utility_auc": 45
+      },
+      "retained_defect_rate": {
+        "majority": 0.73,
+        "planner": 0.7,
+        "qd": 0.589063,
+        "random": 0.573888,
+        "scalar": 0.599669
+      }
+    },
+    {
+      "adversary_effort": 1,
+      "adversary_fraction": 0.1,
+      "archive_size": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 64.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "catastrophic_seeds": {
+        "majority": 92,
+        "planner": 100,
+        "qd": 78,
+        "random": 100,
+        "scalar": 100
+      },
+      "delivered_defect_rate": {
+        "majority": 0.7928,
+        "planner": 0.7934,
+        "qd": 0.7156,
+        "random": 0.581,
+        "scalar": 0.693
+      },
+      "false_accept_rate": {
+        "majority": 0.449378,
+        "planner": 0.449499,
+        "qd": 0.449108,
+        "random": 0.449116,
+        "scalar": 0.448378
+      },
+      "panel": "stress",
+      "post_change_utility_auc": {
+        "majority": 2.943499,
+        "planner": 2.629514,
+        "qd": 6.611409,
+        "random": 7.753735,
+        "scalar": 4.410188
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 44,
+        "qd_gt_planner_post_change_utility_auc": 45,
+        "qd_gt_random_post_change_utility_auc": 37,
+        "qd_gt_scalar_post_change_utility_auc": 39
+      },
+      "retained_defect_rate": {
+        "majority": 0.85,
+        "planner": 0.83,
+        "qd": 0.712969,
+        "random": 0.594404,
+        "scalar": 0.733253
+      }
+    },
+    {
+      "adversary_effort": 1,
+      "adversary_fraction": 0.2,
+      "archive_size": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 64.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "catastrophic_seeds": {
+        "majority": 95,
+        "planner": 100,
+        "qd": 90,
+        "random": 100,
+        "scalar": 100
+      },
+      "delivered_defect_rate": {
+        "majority": 0.8828,
+        "planner": 0.9102,
+        "qd": 0.8182,
+        "random": 0.6212,
+        "scalar": 0.8482
+      },
+      "false_accept_rate": {
+        "majority": 0.449886,
+        "planner": 0.450633,
+        "qd": 0.449922,
+        "random": 0.448815,
+        "scalar": 0.448686
+      },
+      "panel": "stress",
+      "post_change_utility_auc": {
+        "majority": 1.527743,
+        "planner": 0.848613,
+        "qd": 3.619502,
+        "random": 6.961594,
+        "scalar": 1.560099
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 30,
+        "qd_gt_planner_post_change_utility_auc": 30,
+        "qd_gt_random_post_change_utility_auc": 22,
+        "qd_gt_scalar_post_change_utility_auc": 27
+      },
+      "retained_defect_rate": {
+        "majority": 0.93,
+        "planner": 0.94,
+        "qd": 0.850156,
+        "random": 0.637708,
+        "scalar": 0.892742
+      }
+    },
+    {
+      "adversary_effort": 8,
+      "adversary_fraction": 0.0,
+      "archive_size": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 64.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "catastrophic_seeds": {
+        "majority": 78,
+        "planner": 100,
+        "qd": 50,
+        "random": 100,
+        "scalar": 89
+      },
+      "delivered_defect_rate": {
+        "majority": 0.562,
+        "planner": 0.5264,
+        "qd": 0.4658,
+        "random": 0.5426,
+        "scalar": 0.3898
+      },
+      "false_accept_rate": {
+        "majority": 0.450418,
+        "planner": 0.452713,
+        "qd": 0.449623,
+        "random": 0.448216,
+        "scalar": 0.446798
+      },
+      "panel": "stress",
+      "post_change_utility_auc": {
+        "majority": 7.951495,
+        "planner": 6.514027,
+        "qd": 13.065631,
+        "random": 8.403696,
+        "scalar": 10.098709
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 60,
+        "qd_gt_planner_post_change_utility_auc": 64,
+        "qd_gt_random_post_change_utility_auc": 65,
+        "qd_gt_scalar_post_change_utility_auc": 61
+      },
+      "retained_defect_rate": {
+        "majority": 0.58,
+        "planner": 0.54,
+        "qd": 0.435937,
+        "random": 0.55489,
+        "scalar": 0.378481
+      }
+    },
+    {
+      "adversary_effort": 8,
+      "adversary_fraction": 0.01,
+      "archive_size": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 64.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "catastrophic_seeds": {
+        "majority": 84,
+        "planner": 100,
+        "qd": 67,
+        "random": 100,
+        "scalar": 99
+      },
+      "delivered_defect_rate": {
+        "majority": 0.6362,
+        "planner": 0.6432,
+        "qd": 0.528,
+        "random": 0.567,
+        "scalar": 0.5004
+      },
+      "false_accept_rate": {
+        "majority": 0.447684,
+        "planner": 0.450211,
+        "qd": 0.449026,
+        "random": 0.448598,
+        "scalar": 0.447656
+      },
+      "panel": "stress",
+      "post_change_utility_auc": {
+        "majority": 6.399879,
+        "planner": 5.144586,
+        "qd": 9.572904,
+        "random": 7.957863,
+        "scalar": 7.853968
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 54,
+        "qd_gt_planner_post_change_utility_auc": 59,
+        "qd_gt_random_post_change_utility_auc": 48,
+        "qd_gt_scalar_post_change_utility_auc": 53
+      },
+      "retained_defect_rate": {
+        "majority": 0.63,
+        "planner": 0.63,
+        "qd": 0.526875,
+        "random": 0.557487,
+        "scalar": 0.459877
+      }
+    },
+    {
+      "adversary_effort": 8,
+      "adversary_fraction": 0.02,
+      "archive_size": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 64.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "catastrophic_seeds": {
+        "majority": 90,
+        "planner": 99,
+        "qd": 74,
+        "random": 100,
+        "scalar": 100
+      },
+      "delivered_defect_rate": {
+        "majority": 0.7586,
+        "planner": 0.6618,
+        "qd": 0.6516,
+        "random": 0.5812,
+        "scalar": 0.59
+      },
+      "false_accept_rate": {
+        "majority": 0.450487,
+        "planner": 0.449671,
+        "qd": 0.448518,
+        "random": 0.449161,
+        "scalar": 0.447481
+      },
+      "panel": "stress",
+      "post_change_utility_auc": {
+        "majority": 3.837608,
+        "planner": 4.673053,
+        "qd": 6.794308,
+        "random": 7.809901,
+        "scalar": 6.515885
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 42,
+        "qd_gt_planner_post_change_utility_auc": 39,
+        "qd_gt_random_post_change_utility_auc": 36,
+        "qd_gt_scalar_post_change_utility_auc": 39
+      },
+      "retained_defect_rate": {
+        "majority": 0.78,
+        "planner": 0.68,
+        "qd": 0.635156,
+        "random": 0.558015,
+        "scalar": 0.53278
+      }
+    },
+    {
+      "adversary_effort": 8,
+      "adversary_fraction": 0.05,
+      "archive_size": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 64.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "catastrophic_seeds": {
+        "majority": 93,
+        "planner": 100,
+        "qd": 81,
+        "random": 100,
+        "scalar": 100
+      },
+      "delivered_defect_rate": {
+        "majority": 0.882,
+        "planner": 0.825,
+        "qd": 0.742,
+        "random": 0.6502,
+        "scalar": 0.7328
+      },
+      "false_accept_rate": {
+        "majority": 0.449003,
+        "planner": 0.451044,
+        "qd": 0.449297,
+        "random": 0.447664,
+        "scalar": 0.448512
+      },
+      "panel": "stress",
+      "post_change_utility_auc": {
+        "majority": 1.826066,
+        "planner": 2.326792,
+        "qd": 5.208905,
+        "random": 6.658957,
+        "scalar": 3.604645
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 37,
+        "qd_gt_planner_post_change_utility_auc": 36,
+        "qd_gt_random_post_change_utility_auc": 28,
+        "qd_gt_scalar_post_change_utility_auc": 36
+      },
+      "retained_defect_rate": {
+        "majority": 0.91,
+        "planner": 0.85,
+        "qd": 0.777813,
+        "random": 0.565214,
+        "scalar": 0.690934
+      }
+    },
+    {
+      "adversary_effort": 8,
+      "adversary_fraction": 0.1,
+      "archive_size": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 64.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "catastrophic_seeds": {
+        "majority": 99,
+        "planner": 100,
+        "qd": 99,
+        "random": 100,
+        "scalar": 100
+      },
+      "delivered_defect_rate": {
+        "majority": 0.9566,
+        "planner": 0.8954,
+        "qd": 0.8934,
+        "random": 0.6972,
+        "scalar": 0.8414
+      },
+      "false_accept_rate": {
+        "majority": 0.449555,
+        "planner": 0.449342,
+        "qd": 0.450089,
+        "random": 0.447903,
+        "scalar": 0.44921
+      },
+      "panel": "stress",
+      "post_change_utility_auc": {
+        "majority": 0.51282,
+        "planner": 1.293621,
+        "qd": 1.363204,
+        "random": 5.679052,
+        "scalar": 1.974123
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 17,
+        "qd_gt_planner_post_change_utility_auc": 17,
+        "qd_gt_random_post_change_utility_auc": 12,
+        "qd_gt_scalar_post_change_utility_auc": 15
+      },
+      "retained_defect_rate": {
+        "majority": 0.97,
+        "planner": 0.93,
+        "qd": 0.910625,
+        "random": 0.590804,
+        "scalar": 0.808045
+      }
+    },
+    {
+      "adversary_effort": 8,
+      "adversary_fraction": 0.2,
+      "archive_size": {
+        "majority": 0.0,
+        "planner": 0.0,
+        "qd": 64.0,
+        "random": 0.0,
+        "scalar": 0.0
+      },
+      "catastrophic_seeds": {
+        "majority": 100,
+        "planner": 100,
+        "qd": 100,
+        "random": 100,
+        "scalar": 100
+      },
+      "delivered_defect_rate": {
+        "majority": 0.9934,
+        "planner": 0.9668,
+        "qd": 0.9458,
+        "random": 0.7968,
+        "scalar": 0.974
+      },
+      "false_accept_rate": {
+        "majority": 0.44975,
+        "planner": 0.450331,
+        "qd": 0.44953,
+        "random": 0.449244,
+        "scalar": 0.448715
+      },
+      "panel": "stress",
+      "post_change_utility_auc": {
+        "majority": 0.016874,
+        "planner": 0.340724,
+        "qd": 0.234294,
+        "random": 3.997282,
+        "scalar": 0.123824
+      },
+      "qd_pairwise_wins": {
+        "qd_gt_majority_post_change_utility_auc": 4,
+        "qd_gt_planner_post_change_utility_auc": 4,
+        "qd_gt_random_post_change_utility_auc": 2,
+        "qd_gt_scalar_post_change_utility_auc": 4
+      },
+      "retained_defect_rate": {
+        "majority": 0.99,
+        "planner": 0.98,
+        "qd": 0.983281,
+        "random": 0.626737,
+        "scalar": 0.982913
+      }
+    }
+  ],
+  "configuration": {
+    "adversary_efforts": [
+      1,
+      8
+    ],
+    "adversary_fractions": [
+      0.0,
+      0.01,
+      0.02,
+      0.05,
+      0.1,
+      0.2
+    ],
+    "adversary_integrity": 0.0,
+    "adversary_target": "unchecked_robust_quality",
+    "agents": 64,
+    "bins": 8,
+    "catastrophe_utility_auc_threshold": 16.0,
+    "change_at": 25,
+    "defect_cost": 1.0,
+    "evaluation_budget_per_strategy_per_seed": 3200,
+    "generations": 50,
+    "integrity_sigma": 0.12,
+    "latent_trait": "integrity",
+    "minimum_integrity": 0.6,
+    "panel_provenance": {
+      "dependence_shape": "beta-binomial over per-item difficulty plus a blind-spot atom",
+      "evidence_level": "measured-on-real-verifiers parameters, applied to a synthetic landscape",
+      "measured_blind_spot_lambda": 0.0556,
+      "measured_blind_spot_units": "4 of 72",
+      "measured_candidates": 72,
+      "measured_marginal_accuracy": 0.7956,
+      "measured_marginal_pairwise_correlation": 0.5873,
+      "measured_verifiers": 25,
+      "panel": "E017 partial-test-oracle panel, refit with a blind-spot atom in E020",
+      "reducible_fit_icc": 0.4513,
+      "reducible_fit_mean_error": 0.1576,
+      "shape_rejected": "shared-shock; E017 measured it 1.71x too low on panel error",
+      "source_experiments": [
+        "experiments/E017-item-difficulty-and-quorum.md",
+        "experiments/E020-quorum-frontier-under-measured-shape.md"
+      ]
+    },
+    "panels": {
+      "independent": {
+        "accuracy": 0.7956,
+        "correlation": 0.0,
+        "dependence": "item-difficulty",
+        "quorum": 0.5,
+        "verifiers": 25
+      },
+      "measured": {
+        "accuracy": 0.7956,
+        "blind_spot": 0.0556,
+        "correlation": 0.4513,
+        "dependence": "item-difficulty",
+        "quorum": 0.5,
+        "verifiers": 25
+      },
+      "perfect": {
+        "accuracy": 1.0,
+        "correlation": 0.0,
+        "dependence": "shared-shock",
+        "quorum": 0.5,
+        "verifiers": 1
+      },
+      "stress": {
+        "accuracy": 0.55,
+        "blind_spot": 0.4,
+        "correlation": 0.9,
+        "dependence": "item-difficulty",
+        "quorum": 0.5,
+        "verifiers": 25
+      }
+    },
+    "post_change_horizon": 25,
+    "seed_start": 1,
+    "seeds": 100,
+    "strategies": [
+      "random",
+      "scalar",
+      "qd",
+      "planner",
+      "majority"
+    ]
+  },
+  "experiment": "adversarial-contributor-fraction-by-effort-matrix-v1",
+  "experiment_id": "E036",
+  "limitations": [
+    "The adversary is goal-blind: it maximises unchecked_robust_quality, which is what the archive and the elitist arm rank on, but not the goal-weighted utility that decides delivery. A goal-aware adversary would be strictly stronger and is not measured here.",
+    "The adversary's effort draws are free to the adversary. The system's evaluation budget is untouched and identical across cells, but a defender who could charge the attacker for its search would face a weaker opponent than this.",
+    "Hostile contributors are independent. They do not coordinate, do not adapt to what was accepted, and do not persist across generations, so this is a lower bound on what an organised attacker does.",
+    "Adversarial artifacts do not breed true: a mutation of an integrity-0.0 parent regains integrity at the mutation sigma, so the pool must be re-poisoned every generation rather than being progressively captured.",
+    "The perfect-panel rows are a null control, not evidence: that panel reads the patched viability predicate, so it sees the latent trait and rejects every hostile artifact. They exist to show the attack runs through the false-accept channel rather than through a defect in the harness.",
+    "One landscape. The panel axis reuses E027's four panels by name so the cells are comparable, but only the defect cost is held at 1.0 and E027's cost axis is not swept again.",
+    "Catastrophe counts use E024's threshold of 0.64 of the post-change horizon, as in E027 and E028, so the counts are comparable across those records but the threshold is still a choice.",
+    "The matrix reports means and counts over the seed set; it does not report a paired significance test across cells."
+  ],
+  "outcome": {
+    "advantage_by_effort": {
+      "1": 513,
+      "8": 478
+    },
+    "advantage_shrinks_with_effort": true,
+    "archive_loses_its_zero_record": false,
+    "panels_where_the_archive_lost_a_clean_record": [],
+    "partially_supported": true,
+    "starvation_only_control": {
+      "admits_no_defect": true,
+      "archive_catastrophes": [
+        0
+      ],
+      "archive_unmoved": true,
+      "worst_archive_auc_loss": 0.196199
+    },
+    "supported": false
+  },
+  "prediction": {
+    "claim": "The archive's catastrophe advantage over the majority-vote swarm shrinks as adversary effort rises, and at the highest fraction and effort the archive loses its 0/100 catastrophic-seed record.",
+    "falsified_if": "The archive holds at 0 catastrophic seeds in every cell, or its advantage over majority does not shrink with effort.",
+    "reasoning": "Diversity preservation is the mechanism under attack rather than the defence: the archive keeps one elite per niche and an optimising adversary can offer the best-looking occupant of every niche.",
+    "stated_before_run": true
+  }
+}
