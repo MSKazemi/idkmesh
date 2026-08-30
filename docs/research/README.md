@@ -87,6 +87,14 @@ policy changes or merge decisions.
   parity-matched goal the arms do not hold; the archive keeps all but 1.6-4.4%
   of its lead and stays 0/100 catastrophic, while the majority-vote swarm loses
   its whole lead in every panel.
+- [E031 Learned Goal Filter](../../experiments/E031-learned-goal-filter.md)
+  — the other half of E024's caveat: gives the consensus swarm a particle filter
+  that learns the goal from ordinal evidence. Learning from generation 0 roughly
+  doubles its catastrophic seeds; learning from post-change evidence alone is the
+  best variant in all eight cells on both the tail and the mean. An evidence-free
+  rescue — perturbing each agent's hypothesis once at initialisation — takes
+  38/100 catastrophic seeds to 0/100 while the new goal is one of the four
+  supplied, and to 71/100 when it is not.
 - [E025 Learned Verifier Reliability](../../experiments/E025-learned-verifier-reliability.md)
   — calibration/held-out evidence for reliability and dependence-aware aggregation.
 - [IDKGraph P1 Independent Review Protocol](IDKGRAPH_P1_INDEPENDENT_REVIEW_PROTOCOL.md)

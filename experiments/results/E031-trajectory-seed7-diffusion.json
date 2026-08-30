@@ -1,0 +1,759 @@
+{
+  "condition": "held",
+  "experiment_id": "E031",
+  "post_change_utility_auc": 21.975476,
+  "seed": 7,
+  "trajectory": [
+    {
+      "belief_spread": 0.147094,
+      "distance_to_true_goal": 0.17132,
+      "effective_sample_size": 64.0,
+      "generation": 0,
+      "observations": 0,
+      "posterior_mean": [
+        0.220312,
+        0.211719,
+        0.189844,
+        0.157031,
+        0.221094
+      ],
+      "resamples": 0
+    },
+    {
+      "belief_spread": 0.147094,
+      "distance_to_true_goal": 0.17132,
+      "effective_sample_size": 64.0,
+      "generation": 1,
+      "observations": 0,
+      "posterior_mean": [
+        0.220312,
+        0.211719,
+        0.189844,
+        0.157031,
+        0.221094
+      ],
+      "resamples": 0
+    },
+    {
+      "belief_spread": 0.147094,
+      "distance_to_true_goal": 0.17132,
+      "effective_sample_size": 64.0,
+      "generation": 2,
+      "observations": 0,
+      "posterior_mean": [
+        0.220312,
+        0.211719,
+        0.189844,
+        0.157031,
+        0.221094
+      ],
+      "resamples": 0
+    },
+    {
+      "belief_spread": 0.147094,
+      "distance_to_true_goal": 0.17132,
+      "effective_sample_size": 64.0,
+      "generation": 3,
+      "observations": 0,
+      "posterior_mean": [
+        0.220312,
+        0.211719,
+        0.189844,
+        0.157031,
+        0.221094
+      ],
+      "resamples": 0
+    },
+    {
+      "belief_spread": 0.147094,
+      "distance_to_true_goal": 0.17132,
+      "effective_sample_size": 64.0,
+      "generation": 4,
+      "observations": 0,
+      "posterior_mean": [
+        0.220312,
+        0.211719,
+        0.189844,
+        0.157031,
+        0.221094
+      ],
+      "resamples": 0
+    },
+    {
+      "belief_spread": 0.169556,
+      "distance_to_true_goal": 0.179538,
+      "effective_sample_size": 64.0,
+      "generation": 5,
+      "observations": 0,
+      "posterior_mean": [
+        0.210395,
+        0.218275,
+        0.189736,
+        0.160638,
+        0.220956
+      ],
+      "resamples": 0
+    },
+    {
+      "belief_spread": 0.169556,
+      "distance_to_true_goal": 0.179538,
+      "effective_sample_size": 64.0,
+      "generation": 6,
+      "observations": 0,
+      "posterior_mean": [
+        0.210395,
+        0.218275,
+        0.189736,
+        0.160638,
+        0.220956
+      ],
+      "resamples": 0
+    },
+    {
+      "belief_spread": 0.169556,
+      "distance_to_true_goal": 0.179538,
+      "effective_sample_size": 64.0,
+      "generation": 7,
+      "observations": 0,
+      "posterior_mean": [
+        0.210395,
+        0.218275,
+        0.189736,
+        0.160638,
+        0.220956
+      ],
+      "resamples": 0
+    },
+    {
+      "belief_spread": 0.169556,
+      "distance_to_true_goal": 0.179538,
+      "effective_sample_size": 64.0,
+      "generation": 8,
+      "observations": 0,
+      "posterior_mean": [
+        0.210395,
+        0.218275,
+        0.189736,
+        0.160638,
+        0.220956
+      ],
+      "resamples": 0
+    },
+    {
+      "belief_spread": 0.169556,
+      "distance_to_true_goal": 0.179538,
+      "effective_sample_size": 64.0,
+      "generation": 9,
+      "observations": 0,
+      "posterior_mean": [
+        0.210395,
+        0.218275,
+        0.189736,
+        0.160638,
+        0.220956
+      ],
+      "resamples": 0
+    },
+    {
+      "belief_spread": 0.193079,
+      "distance_to_true_goal": 0.170495,
+      "effective_sample_size": 64.0,
+      "generation": 10,
+      "observations": 0,
+      "posterior_mean": [
+        0.210957,
+        0.206506,
+        0.198097,
+        0.160171,
+        0.224269
+      ],
+      "resamples": 0
+    },
+    {
+      "belief_spread": 0.193079,
+      "distance_to_true_goal": 0.170495,
+      "effective_sample_size": 64.0,
+      "generation": 11,
+      "observations": 0,
+      "posterior_mean": [
+        0.210957,
+        0.206506,
+        0.198097,
+        0.160171,
+        0.224269
+      ],
+      "resamples": 0
+    },
+    {
+      "belief_spread": 0.193079,
+      "distance_to_true_goal": 0.170495,
+      "effective_sample_size": 64.0,
+      "generation": 12,
+      "observations": 0,
+      "posterior_mean": [
+        0.210957,
+        0.206506,
+        0.198097,
+        0.160171,
+        0.224269
+      ],
+      "resamples": 0
+    },
+    {
+      "belief_spread": 0.193079,
+      "distance_to_true_goal": 0.170495,
+      "effective_sample_size": 64.0,
+      "generation": 13,
+      "observations": 0,
+      "posterior_mean": [
+        0.210957,
+        0.206506,
+        0.198097,
+        0.160171,
+        0.224269
+      ],
+      "resamples": 0
+    },
+    {
+      "belief_spread": 0.193079,
+      "distance_to_true_goal": 0.170495,
+      "effective_sample_size": 64.0,
+      "generation": 14,
+      "observations": 0,
+      "posterior_mean": [
+        0.210957,
+        0.206506,
+        0.198097,
+        0.160171,
+        0.224269
+      ],
+      "resamples": 0
+    },
+    {
+      "belief_spread": 0.220387,
+      "distance_to_true_goal": 0.171238,
+      "effective_sample_size": 64.0,
+      "generation": 15,
+      "observations": 0,
+      "posterior_mean": [
+        0.212848,
+        0.208504,
+        0.19934,
+        0.155671,
+        0.223638
+      ],
+      "resamples": 0
+    },
+    {
+      "belief_spread": 0.220387,
+      "distance_to_true_goal": 0.171238,
+      "effective_sample_size": 64.0,
+      "generation": 16,
+      "observations": 0,
+      "posterior_mean": [
+        0.212848,
+        0.208504,
+        0.19934,
+        0.155671,
+        0.223638
+      ],
+      "resamples": 0
+    },
+    {
+      "belief_spread": 0.220387,
+      "distance_to_true_goal": 0.171238,
+      "effective_sample_size": 64.0,
+      "generation": 17,
+      "observations": 0,
+      "posterior_mean": [
+        0.212848,
+        0.208504,
+        0.19934,
+        0.155671,
+        0.223638
+      ],
+      "resamples": 0
+    },
+    {
+      "belief_spread": 0.220387,
+      "distance_to_true_goal": 0.171238,
+      "effective_sample_size": 64.0,
+      "generation": 18,
+      "observations": 0,
+      "posterior_mean": [
+        0.212848,
+        0.208504,
+        0.19934,
+        0.155671,
+        0.223638
+      ],
+      "resamples": 0
+    },
+    {
+      "belief_spread": 0.220387,
+      "distance_to_true_goal": 0.171238,
+      "effective_sample_size": 64.0,
+      "generation": 19,
+      "observations": 0,
+      "posterior_mean": [
+        0.212848,
+        0.208504,
+        0.19934,
+        0.155671,
+        0.223638
+      ],
+      "resamples": 0
+    },
+    {
+      "belief_spread": 0.241376,
+      "distance_to_true_goal": 0.172374,
+      "effective_sample_size": 64.0,
+      "generation": 20,
+      "observations": 0,
+      "posterior_mean": [
+        0.213202,
+        0.215599,
+        0.203167,
+        0.152184,
+        0.215849
+      ],
+      "resamples": 0
+    },
+    {
+      "belief_spread": 0.241376,
+      "distance_to_true_goal": 0.172374,
+      "effective_sample_size": 64.0,
+      "generation": 21,
+      "observations": 0,
+      "posterior_mean": [
+        0.213202,
+        0.215599,
+        0.203167,
+        0.152184,
+        0.215849
+      ],
+      "resamples": 0
+    },
+    {
+      "belief_spread": 0.241376,
+      "distance_to_true_goal": 0.172374,
+      "effective_sample_size": 64.0,
+      "generation": 22,
+      "observations": 0,
+      "posterior_mean": [
+        0.213202,
+        0.215599,
+        0.203167,
+        0.152184,
+        0.215849
+      ],
+      "resamples": 0
+    },
+    {
+      "belief_spread": 0.241376,
+      "distance_to_true_goal": 0.172374,
+      "effective_sample_size": 64.0,
+      "generation": 23,
+      "observations": 0,
+      "posterior_mean": [
+        0.213202,
+        0.215599,
+        0.203167,
+        0.152184,
+        0.215849
+      ],
+      "resamples": 0
+    },
+    {
+      "belief_spread": 0.241376,
+      "distance_to_true_goal": 0.172374,
+      "effective_sample_size": 64.0,
+      "generation": 24,
+      "observations": 0,
+      "posterior_mean": [
+        0.213202,
+        0.215599,
+        0.203167,
+        0.152184,
+        0.215849
+      ],
+      "resamples": 0
+    },
+    {
+      "belief_spread": 0.252827,
+      "distance_to_true_goal": 0.200334,
+      "effective_sample_size": 64.0,
+      "generation": 25,
+      "observations": 0,
+      "posterior_mean": [
+        0.207586,
+        0.21946,
+        0.204942,
+        0.148243,
+        0.21977
+      ],
+      "resamples": 0
+    },
+    {
+      "belief_spread": 0.252827,
+      "distance_to_true_goal": 0.200334,
+      "effective_sample_size": 64.0,
+      "generation": 26,
+      "observations": 0,
+      "posterior_mean": [
+        0.207586,
+        0.21946,
+        0.204942,
+        0.148243,
+        0.21977
+      ],
+      "resamples": 0
+    },
+    {
+      "belief_spread": 0.252827,
+      "distance_to_true_goal": 0.200334,
+      "effective_sample_size": 64.0,
+      "generation": 27,
+      "observations": 0,
+      "posterior_mean": [
+        0.207586,
+        0.21946,
+        0.204942,
+        0.148243,
+        0.21977
+      ],
+      "resamples": 0
+    },
+    {
+      "belief_spread": 0.252827,
+      "distance_to_true_goal": 0.200334,
+      "effective_sample_size": 64.0,
+      "generation": 28,
+      "observations": 0,
+      "posterior_mean": [
+        0.207586,
+        0.21946,
+        0.204942,
+        0.148243,
+        0.21977
+      ],
+      "resamples": 0
+    },
+    {
+      "belief_spread": 0.252827,
+      "distance_to_true_goal": 0.200334,
+      "effective_sample_size": 64.0,
+      "generation": 29,
+      "observations": 0,
+      "posterior_mean": [
+        0.207586,
+        0.21946,
+        0.204942,
+        0.148243,
+        0.21977
+      ],
+      "resamples": 0
+    },
+    {
+      "belief_spread": 0.263094,
+      "distance_to_true_goal": 0.187771,
+      "effective_sample_size": 64.0,
+      "generation": 30,
+      "observations": 0,
+      "posterior_mean": [
+        0.207615,
+        0.229719,
+        0.198321,
+        0.142039,
+        0.222306
+      ],
+      "resamples": 0
+    },
+    {
+      "belief_spread": 0.263094,
+      "distance_to_true_goal": 0.187771,
+      "effective_sample_size": 64.0,
+      "generation": 31,
+      "observations": 0,
+      "posterior_mean": [
+        0.207615,
+        0.229719,
+        0.198321,
+        0.142039,
+        0.222306
+      ],
+      "resamples": 0
+    },
+    {
+      "belief_spread": 0.263094,
+      "distance_to_true_goal": 0.187771,
+      "effective_sample_size": 64.0,
+      "generation": 32,
+      "observations": 0,
+      "posterior_mean": [
+        0.207615,
+        0.229719,
+        0.198321,
+        0.142039,
+        0.222306
+      ],
+      "resamples": 0
+    },
+    {
+      "belief_spread": 0.263094,
+      "distance_to_true_goal": 0.187771,
+      "effective_sample_size": 64.0,
+      "generation": 33,
+      "observations": 0,
+      "posterior_mean": [
+        0.207615,
+        0.229719,
+        0.198321,
+        0.142039,
+        0.222306
+      ],
+      "resamples": 0
+    },
+    {
+      "belief_spread": 0.263094,
+      "distance_to_true_goal": 0.187771,
+      "effective_sample_size": 64.0,
+      "generation": 34,
+      "observations": 0,
+      "posterior_mean": [
+        0.207615,
+        0.229719,
+        0.198321,
+        0.142039,
+        0.222306
+      ],
+      "resamples": 0
+    },
+    {
+      "belief_spread": 0.276995,
+      "distance_to_true_goal": 0.187012,
+      "effective_sample_size": 64.0,
+      "generation": 35,
+      "observations": 0,
+      "posterior_mean": [
+        0.205345,
+        0.224171,
+        0.195022,
+        0.145815,
+        0.229647
+      ],
+      "resamples": 0
+    },
+    {
+      "belief_spread": 0.276995,
+      "distance_to_true_goal": 0.187012,
+      "effective_sample_size": 64.0,
+      "generation": 36,
+      "observations": 0,
+      "posterior_mean": [
+        0.205345,
+        0.224171,
+        0.195022,
+        0.145815,
+        0.229647
+      ],
+      "resamples": 0
+    },
+    {
+      "belief_spread": 0.276995,
+      "distance_to_true_goal": 0.187012,
+      "effective_sample_size": 64.0,
+      "generation": 37,
+      "observations": 0,
+      "posterior_mean": [
+        0.205345,
+        0.224171,
+        0.195022,
+        0.145815,
+        0.229647
+      ],
+      "resamples": 0
+    },
+    {
+      "belief_spread": 0.276995,
+      "distance_to_true_goal": 0.187012,
+      "effective_sample_size": 64.0,
+      "generation": 38,
+      "observations": 0,
+      "posterior_mean": [
+        0.205345,
+        0.224171,
+        0.195022,
+        0.145815,
+        0.229647
+      ],
+      "resamples": 0
+    },
+    {
+      "belief_spread": 0.276995,
+      "distance_to_true_goal": 0.187012,
+      "effective_sample_size": 64.0,
+      "generation": 39,
+      "observations": 0,
+      "posterior_mean": [
+        0.205345,
+        0.224171,
+        0.195022,
+        0.145815,
+        0.229647
+      ],
+      "resamples": 0
+    },
+    {
+      "belief_spread": 0.29351,
+      "distance_to_true_goal": 0.192137,
+      "effective_sample_size": 64.0,
+      "generation": 40,
+      "observations": 0,
+      "posterior_mean": [
+        0.197909,
+        0.229672,
+        0.206608,
+        0.146907,
+        0.218902
+      ],
+      "resamples": 0
+    },
+    {
+      "belief_spread": 0.29351,
+      "distance_to_true_goal": 0.192137,
+      "effective_sample_size": 64.0,
+      "generation": 41,
+      "observations": 0,
+      "posterior_mean": [
+        0.197909,
+        0.229672,
+        0.206608,
+        0.146907,
+        0.218902
+      ],
+      "resamples": 0
+    },
+    {
+      "belief_spread": 0.29351,
+      "distance_to_true_goal": 0.192137,
+      "effective_sample_size": 64.0,
+      "generation": 42,
+      "observations": 0,
+      "posterior_mean": [
+        0.197909,
+        0.229672,
+        0.206608,
+        0.146907,
+        0.218902
+      ],
+      "resamples": 0
+    },
+    {
+      "belief_spread": 0.29351,
+      "distance_to_true_goal": 0.192137,
+      "effective_sample_size": 64.0,
+      "generation": 43,
+      "observations": 0,
+      "posterior_mean": [
+        0.197909,
+        0.229672,
+        0.206608,
+        0.146907,
+        0.218902
+      ],
+      "resamples": 0
+    },
+    {
+      "belief_spread": 0.29351,
+      "distance_to_true_goal": 0.192137,
+      "effective_sample_size": 64.0,
+      "generation": 44,
+      "observations": 0,
+      "posterior_mean": [
+        0.197909,
+        0.229672,
+        0.206608,
+        0.146907,
+        0.218902
+      ],
+      "resamples": 0
+    },
+    {
+      "belief_spread": 0.298669,
+      "distance_to_true_goal": 0.190392,
+      "effective_sample_size": 64.0,
+      "generation": 45,
+      "observations": 0,
+      "posterior_mean": [
+        0.197311,
+        0.234488,
+        0.201744,
+        0.153062,
+        0.213395
+      ],
+      "resamples": 0
+    },
+    {
+      "belief_spread": 0.298669,
+      "distance_to_true_goal": 0.190392,
+      "effective_sample_size": 64.0,
+      "generation": 46,
+      "observations": 0,
+      "posterior_mean": [
+        0.197311,
+        0.234488,
+        0.201744,
+        0.153062,
+        0.213395
+      ],
+      "resamples": 0
+    },
+    {
+      "belief_spread": 0.298669,
+      "distance_to_true_goal": 0.190392,
+      "effective_sample_size": 64.0,
+      "generation": 47,
+      "observations": 0,
+      "posterior_mean": [
+        0.197311,
+        0.234488,
+        0.201744,
+        0.153062,
+        0.213395
+      ],
+      "resamples": 0
+    },
+    {
+      "belief_spread": 0.298669,
+      "distance_to_true_goal": 0.190392,
+      "effective_sample_size": 64.0,
+      "generation": 48,
+      "observations": 0,
+      "posterior_mean": [
+        0.197311,
+        0.234488,
+        0.201744,
+        0.153062,
+        0.213395
+      ],
+      "resamples": 0
+    },
+    {
+      "belief_spread": 0.298669,
+      "distance_to_true_goal": 0.190392,
+      "effective_sample_size": 64.0,
+      "generation": 49,
+      "observations": 0,
+      "posterior_mean": [
+        0.197311,
+        0.234488,
+        0.201744,
+        0.153062,
+        0.213395
+      ],
+      "resamples": 0
+    }
+  ],
+  "variant": "diffusion"
+}
