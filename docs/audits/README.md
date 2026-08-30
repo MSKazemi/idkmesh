@@ -47,6 +47,12 @@ Each answers one bounded question rather than surveying the repository.
   — 2026-08-29; initial pass against `origin/main` at `566bee13`. Read-only
   review for issue #151. Explicitly AI-assisted independence, not human or
   organizational independence.
+- [Open-Issue Evidence Gates](2026-08-30-open-issue-evidence-gates.md)
+  — 2026-08-30; `e16a8d0`. Answers which open issues name a precondition that is
+  a measured property of the repository rather than a task, and what that
+  precondition currently measures. Backed by `tools/issue_evidence_gate.py`,
+  which fails when a registered precondition becomes met rather than when one
+  stays unmet.
 
 ## IDKGraph P1 warning-triage records
 
