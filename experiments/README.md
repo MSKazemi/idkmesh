@@ -2,6 +2,49 @@
 
 Experiments are small, reproducible programs used to challenge IDKMesh hypotheses before those hypotheses become architecture or automation.
 
+## Every experiment record
+
+Each row's text is that record's own title, so this index cannot drift from what
+the records say. `tests/test_documentation_directory_index.py` asserts the table
+covers every Markdown document under `experiments/`; a new record that is not
+listed here fails the suite rather than becoming quietly undiscoverable.
+
+| record | question it settles |
+|---|---|
+| **E011** | [Emergence from vague goals](E011-emergence-vague-goals.md) |
+| **E012** | [Correlated Verification Failure](E012-correlated-verification.md) |
+| **E013** | [Independence-Aware Verifier Aggregation](E013-independence-aware-aggregation.md) |
+| **E014** | [ACO stigmergic task routing](E014-aco-stigmergic-task-routing.md) |
+| **E015** | [Verification Phase Diagram and Effective Independent Panel Size](E015-verification-phase-diagram.md) |
+| **E016** | [Measuring verifier error correlation with live LLM verifiers](E016-live-verifier-correlation.md) |
+| **E017** | [Measured verifier correlation, and why the shared-shock model is the wrong shape](E017-item-difficulty-and-quorum.md) |
+| **E018** | [Which E015 conclusions depend on the shape of the dependence model?](E018-dependence-model-shape.md) |
+| **E019** | [E013's aggregation rule under the dependence model E017 measured](E019-group-independence-under-item-difficulty.md) |
+| **E020** | [The Acceptance-Quorum Frontier Under the Measured Dependence Shape](E020-quorum-frontier-under-measured-shape.md) |
+| **E021** | [Coordination criticality with matched susceptibility probes](E021-coordination-criticality.md) |
+| **E022** | [Seven-Mode Verification Scaling Matrix](E022-verification-scaling-matrix.md) |
+| **E024** | [Matched-budget emergence after a goal change](E024-matched-budget-emergence.md) |
+| **E025** | [Learned verifier reliability and dependence](E025-learned-verifier-reliability.md) |
+| **E026** | [Does the E024 emergence result survive verifiers that are wrong together?](E026-imperfect-verifier-panel.md) |
+| **E027** | [What changes when an accepted defect finally costs something?](E027-defect-propagation.md) |
+| **E028** | [Does the archive still survive when the defect is invisible?](E028-latent-defect-dimension.md) |
+| **E029** | [The first real model attempts on the frozen benchmark](E029-first-real-model-attempts.md) |
+| **E030** | [Does the archive's advantage depend on being handed the future goal?](E030-supplied-goal-membership.md) |
+| **E031** | [Does *learning* the goal rescue the consensus swarm?](E031-learned-goal-filter.md) |
+| **E032** | [At a fixed budget, when is another agent worth adding?](E032-population-scaling.md) |
+
+E014's sweeps publish their own result documents:
+[reference sweep](results/E014-reference-sweep.md),
+[parameter Pareto front](results/E014-parameter-pareto.md), and the
+[homeostatic hybrid](results/E014-homeostatic-hybrid.md).
+
+Numbering is historical and has gaps. E023 is a preregistration
+(`experiments/E023-first-review-latency-recurrence.json`) rather than a written
+record, and no artifact for E001-E010 exists in this repository.
+
+The sections below give the longer write-up for a few of these. The full record
+for every experiment is the linked document.
+
 ## E029 first real model attempts on the frozen benchmark
 
 `tools/open_model_benchmark_probe.py` puts a pinned open-weight model
@@ -21,7 +64,7 @@ The result is negative and blunt: 0 of 60 attempts produced a patch the verifier
 was even asked to judge, and 56 of the 60 failures were unified-diff *protocol*
 failures rather than failures of the proposed change. Pairwise attempt
 correlation is therefore undefined, not zero. See
-[`E029-first-real-model-attempts.md`](E029-first-real-model-attempts.md).
+`E029-first-real-model-attempts.md`, linked in the index above.
 
 ## E022 verification-scaling matrix
 
@@ -38,7 +81,7 @@ python experiments/verification_scaling_matrix.py --benchmark --summary-only
 The result is a Pareto trade-off: independent tests maximize synthetic
 throughput, tests plus adversarial review minimize escaped defects, and
 risk-adaptive backpressure keeps overload bounded. See
-[`E022-verification-scaling-matrix.md`](E022-verification-scaling-matrix.md).
+`E022-verification-scaling-matrix.md`, linked in the index above.
 
 ## E021 coordination-criticality experiment
 
@@ -55,7 +98,7 @@ python experiments/criticality_susceptibility.py --benchmark --summary-only
 The 40-seed result is intentionally qualified: susceptibility warned earlier
 but produced false alerts, while the utilization threshold detected the measured
 onset without false alerts in the tested grid. See
-[`E021-coordination-criticality.md`](E021-coordination-criticality.md).
+`E021-coordination-criticality.md`, linked in the index above.
 
 ## ACE live-open-work population experiment
 
