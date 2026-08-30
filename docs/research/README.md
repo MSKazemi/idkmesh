@@ -95,6 +95,17 @@ policy changes or merge decisions.
   rescue — perturbing each agent's hypothesis once at initialisation — takes
   38/100 catastrophic seeds to 0/100 while the new goal is one of the four
   supplied, and to 71/100 when it is not.
+- [E032 Population Scaling](../../experiments/E032-population-scaling.md)
+  — answers issue 13's success criterion, *at a fixed budget when is another
+  agent worth adding*, by running the sweep with the budget held and with it
+  free. The two disagree: the archive gains on every doubling when the budget is
+  allowed to grow with the population, and gains nothing at all (0.03 AUC across
+  a 16x change) when it is held. The scalar hill-climber is the opposite — it
+  gains near-linearly to N=256 and goes from 100/100 to 0/100 catastrophic — so
+  returns to population run inversely to how much diversity an arm already
+  retains. No arm shows the negative return hypothesis 1 predicts; the resolved
+  negative returns are on the other two axes, archive capacity past bins=8 and
+  budget spent on generations rather than agents.
 - [E025 Learned Verifier Reliability](../../experiments/E025-learned-verifier-reliability.md)
   — calibration/held-out evidence for reliability and dependence-aware aggregation.
 - [IDKGraph P1 Independent Review Protocol](IDKGRAPH_P1_INDEPENDENT_REVIEW_PROTOCOL.md)
