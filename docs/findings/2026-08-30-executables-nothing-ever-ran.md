@@ -106,6 +106,20 @@ preserved worker candidate and their evidence is committed — see
 Two remain flagged, and both are genuinely unexercised: `tools/open_model_benchmark_probe.py` and
 `tools/open_model_text_generator.py`.
 
+> **Both have since left the list, by the intended route.**
+> [E029](../../experiments/E029-first-real-model-attempts.md) ran the probe for
+> 60 sandboxed attempts and committed the per-attempt evidence, and the
+> generator is the in-container entry point every one of those attempts went
+> through. Clearing them required one change to the check itself: an experiment
+> record now counts as recorded output. A sweep's committed JSON almost never
+> names the program that wrote it, so before that change a tool could have a
+> full experiment record *and* 60 result directories and still be reported as
+> never having run. The narrative scan is Markdown-only — a module under
+> `experiments/` importing a tool is a code reference, not evidence of a run —
+> and the findings exclusion below is now matched by path segment, so a health
+> report cannot escape it by moving.
+> The list is empty as of that change.
+
 ## Decision
 
 No removals, no CI enforcement, no threshold. The five are recorded as review candidates. Two of
