@@ -9,24 +9,39 @@ Issue #13 states three falsifiable hypotheses. Hypothesis 1 was tested by
 [E032](E032-population-scaling.md) and falsified in the direction it was stated.
 Hypothesis 3 was tested by the coordination-topology arms in
 [`docs/research/R1_COLLECTIVE_SCALING.md`](../docs/research/R1_COLLECTIVE_SCALING.md).
-Hypothesis 2 had no named test:
+Hypothesis 2 is the one this experiment is about:
 
 > Heterogeneous teams with independent verification outperform homogeneous
 > teams at equal inference/compute budget on at least some software-engineering
 > workloads.
 
-The R1 scaling runner has in fact been measuring that contrast all along — its
-`equal_attempt_budget_comparisons` section pairs the structurally diverse arm
-against maximally correlated replication at an identical attempt count — but at
-one assumed worker-error correlation, `0.25`. The scaling write-up says of the
-result:
+**An earlier revision of this page said hypothesis 2 had no named test. That
+was wrong, and the correction is the most useful thing on this page.** The
+worker-correlation axis was already swept, under a different name: the
+help/hurt regime sweep built for issue #30
+([`randomness_lab/r1_sweep.py`](../randomness_lab/r1_sweep.py),
+[`R1_HELP_HURT_SWEEP.md`](../docs/research/R1_HELP_HURT_SWEEP.md)) runs
+`structural_diversity` against `identical_replication` across worker
+correlations `0, 0.25, 0.5, 0.75, 1.0`, crossed with verifier correlation and a
+structural-worker quality penalty, and classifies every cell `helps`, `hurts`,
+or `uncertain`. It was never connected to issue #13's hypothesis 2, which is
+how it went unnoticed, but the axis was not unswept. See
+[what the help/hurt sweep already knew](#what-the-helphurt-sweep-already-knew)
+below, which corroborates the result here and bounds it correctly.
+
+What was genuinely missing is narrower: the R1 *scaling* runner measures the
+same contrast — its `equal_attempt_budget_comparisons` section pairs the
+structurally diverse arm against maximally correlated replication at an
+identical attempt count — but only at one assumed correlation, `0.25`. The
+scaling write-up says of the result:
 
 > That result is partly constructed by the correlation assumptions; it must not
 > be cited as evidence that heterogeneous coding agents outperform replicated
 > models.
 
-That hedge is correct and unquantified. E040 quantifies it, and the answer is
-worse for the hypothesis than the hedge suggested.
+That hedge is correct and unquantified. Nothing anywhere fitted the shape of
+the decay, and nothing separated the two halves of hypothesis 2's sentence.
+This page does both.
 
 ## The claim, stated before the run
 
@@ -65,25 +80,56 @@ Slopes scale with the two things one would expect:
 Harder tasks and larger swarms buy more per unit of retained independence.
 Nothing here is a threshold; it is a slope.
 
-## Result 2 — so the harness cannot falsify hypothesis 2
+## Result 2 — correlation alone cannot flip the sign
 
-The consequence is the point of this experiment. If the advantage is
-`slope * (1 - rho)` with slope positive everywhere, then for **any** assumed
-correlation short of `1.0` the diverse arm wins, and it wins by an amount the
-assumption sets. The advantage stops resolving at `rho = 0.85` in exactly two
-of eighteen cells — both `easy / N=2`, the smallest effect in the grid — and
-otherwise survives to the last correlation before the arms are identical by
-construction.
+If the advantage is `slope * (1 - rho)` with slope positive everywhere, then
+for **any** assumed correlation short of `1.0` the diverse arm wins, and it
+wins by an amount the assumption sets. The advantage stops resolving at
+`rho = 0.85` in exactly two of eighteen cells — both `easy / N=2`, the smallest
+effect in the grid — and otherwise survives to the last correlation before the
+arms are identical by construction. No cell in this grid ever reports the
+diverse arm *losing*.
 
-A synthetic mechanism that returns "hypothesis 2 holds" at every parameter
-value it can be run at is not evidence for hypothesis 2. It is a harness with
-no failure mode, and reporting its output as support would be reporting the
-assumption back.
+So this grid cannot falsify hypothesis 2, and its output must not be quoted as
+support for it: a mechanism that returns "hypothesis 2 holds" at every value it
+can be given is reporting its assumption back. That is a statement about this
+grid, not about the R1 lab as a whole — see the next section, which finds the
+lever that does flip the sign, and it is not correlation.
 
 This is a finding about the repository's own tooling, in the same class as
 [E027's finding that E024 had no defect-propagation channel at all](E027-defect-propagation.md).
 The correct use of the R1 scaling runner is to size an effect under a stated
 assumption, never to decide whether the effect exists.
+
+## What the help/hurt sweep already knew
+
+The issue #30 sweep was rerun at its documented reference invocation to see how
+much of the above it had already established. Ninety cells, `--tasks 200
+--trials 10 --worker-correlations 0,0.25,0.5,0.75,1 --verifier-correlations
+0,0.5,1 --quality-penalties 0,0.05,0.10 --swarm-sizes 2,5 --seed 42`:
+
+| structural-worker quality penalty | helps | hurts | uncertain |
+| ---: | ---: | ---: | ---: |
+| 0.00 | 24 | **0** | 6 |
+| 0.05 | 19 | 5 | 6 |
+| 0.10 | 15 | 8 | 7 |
+
+**All thirteen `hurts` cells carry a non-zero quality penalty, and eleven of
+the thirteen sit at `rho_w = 1.0`.** Across the entire worker-correlation
+ladder at penalty `0`, including `rho_w = 1.0`, the sweep never once reports
+structural diversity hurting.
+
+That is an independent corroboration of Result 1 and Result 2 from a runner
+this experiment did not write, and it supplies the boundary Result 2 needs:
+E040's grid gives its diverse workers no quality penalty, so it is exactly the
+slice in which the sign cannot flip. The R1 lab *does* have a failure mode for
+hypothesis 2. It is that diverse workers may be individually weaker, which the
+help/hurt sweep charges explicitly and this grid does not charge at all.
+
+Stated as one sentence: **correlation sets the size of the diversity advantage;
+worker quality sets its sign.** Neither runner alone says that — the help/hurt
+sweep classifies without fitting, and this grid fits without charging for
+diversity.
 
 ## Result 3 — the verification half of the hypothesis is worth nothing here
 
@@ -175,6 +221,11 @@ The whole sweep takes about eight seconds.
 - **Only the worker correlation moves.** `verifier_error_correlation` is held at
   `0.60`. The sweep says nothing about the verifier-independence axis, which
   Result 3 identifies as the one that would matter.
+- **Diversity is free in this grid, and it is not free in reality.** Every arm
+  draws profiles at the same base success probability, so the structurally
+  diverse arm is never charged for being diverse. The help/hurt sweep's quality
+  penalty is the honest version of that cost, and it is where every `hurts`
+  cell lives.
 
 ## Decision
 
@@ -183,10 +234,18 @@ said about it:
 
 1. The R1 scaling runner's equal-budget advantage is not evidence for
    hypothesis 2 at any correlation, and should be cited as a sized effect under
-   a stated assumption or not at all.
+   a stated assumption or not at all. Where a sign is wanted rather than a
+   size, the help/hurt sweep is the runner that can produce one, because it
+   charges for diversity.
 2. Any future claim about "independent verification" must come from an arm that
    moves verifier independence. The `diverse_verifiers` arm does not; it moves
    verifier *assignment* over an identically parameterized pool.
 3. The next test that would move this is a sweep of `verifier_error_correlation`
    against a beta-binomial joint-failure shape rather than a flat shared shock,
-   using E017's fitted parameters as the reference point.
+   using E017's fitted parameters as the reference point. The help/hurt sweep
+   already crosses verifier correlation with a flat shape and finds it does not
+   separate the `hurts` cells — eleven of thirteen are at `rho_w = 1.0`
+   regardless of `rho_v` — so the shape, not the axis, is the open part.
+4. A cross-runner check belongs in the test suite, not in prose. This revision
+   adds one; the reason it is needed is that this page shipped a false claim
+   about what the repository already contained, and prose is what allowed it.
