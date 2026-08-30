@@ -519,6 +519,36 @@ kept in the artifact only because the write-up needs to show that it misleads.
 See
 [`../experiments/E034-goal-direction.md`](../experiments/E034-goal-direction.md).
 
+### E035 — does the direction result survive a second distance?
+
+`e035_direction_across_shells.py` takes E034's answer to the shell it was
+measured on. E034's `sweep()` already accepted `--distance`, so the two extra
+shells are the same simulation moved, and this module only compares them.
+
+```bash
+PYTHONPATH=. python3 sim/e034_goal_direction.py --distance 0.35 --jobs 8 \
+  --goals-per-cell 16 --output experiments/results/E035-shell-0.350.json
+PYTHONPATH=. python3 sim/e035_direction_across_shells.py \
+  --shell 0.30=experiments/results/E034-goal-direction.json \
+  --shell 0.35=experiments/results/E035-shell-0.350.json \
+  --shell 0.375=experiments/results/E035-shell-0.375.json \
+  --output experiments/results/E035-direction-across-shells.json
+PYTHONPATH=. python3 sim/e035_direction_across_shells.py --window \
+  --output experiments/results/E035-feasibility-window.json
+```
+
+`--window` measures where the design can be run at all, rather than assuming it.
+Holding the distance to the supplied set *and* the change size is two
+constraints on one simplex, and outside `0.280`–`0.385` at least one
+trait-by-weight cell is empty, so the ladder has no rung to stand on.
+
+Each trait is classified `replicates`, `consistent` or `sign_flips` across the
+shells, and `sign_flips` outranks the others: a ladder that points one way on one
+shell and the other way on another describes that shell, not the arena. One
+ladder of five flips, which qualifies E034 — the record says which of E034's
+claims to keep and which to withdraw. See
+[`../experiments/E035-direction-across-shells.md`](../experiments/E035-direction-across-shells.md).
+
 ## Tests
 
 With `pytest` installed:
@@ -545,12 +575,13 @@ python -m pytest -q \
   tests/test_e031_learned_goal_filter.py \
   tests/test_e032_population_scaling.py \
   tests/test_e033_goal_distance.py
-  tests/test_e034_goal_direction.py
+  tests/test_e034_goal_direction.py \
+  tests/test_e035_direction_across_shells.py
 ```
 
 This is the same list `.github/workflows/emergence-sim.yml` runs; keep the two in step.
 
-The tests cover deterministic replay, budget invariants, niche preservation, perfect verification compatibility, correlated-error mechanics, sweep configuration, the E013 regime where independence-aware aggregation can help or hurt, E025's calibration separation and preserved shift failures, the E015 effective-panel-size metrics, the E016 discrimination screen, the E017 item-difficulty model, the E018 model comparison, the E019 group-independence result, the E020 quorum frontier, E024's exact matched-evaluation contract, E026's archive-contamination audit, E027's defect-propagation channel — its matched budget, its cost-zero identity with the channel off, and the demonstration that an accepted defect now persists and does harm — E028's latent-defect dimension, E030's supplied-goal membership condition, E031's learned goal filter, and E032's matched-budget population sweep, whose driver is checked against `mbe.sweep` arm-for-arm so that keeping per-seed values cannot change what a seed does, E033's goal-distance ladder, whose two anchors are checked against E030's committed cell so the ladder cannot quietly measure something else, and E034's goal-direction shell, where every measured goal is re-checked against both held distances and the write-up's own tables are read back off the artifact so a transcribed number cannot drift.
+The tests cover deterministic replay, budget invariants, niche preservation, perfect verification compatibility, correlated-error mechanics, sweep configuration, the E013 regime where independence-aware aggregation can help or hurt, E025's calibration separation and preserved shift failures, the E015 effective-panel-size metrics, the E016 discrimination screen, the E017 item-difficulty model, the E018 model comparison, the E019 group-independence result, the E020 quorum frontier, E024's exact matched-evaluation contract, E026's archive-contamination audit, E027's defect-propagation channel — its matched budget, its cost-zero identity with the channel off, and the demonstration that an accepted defect now persists and does harm — E028's latent-defect dimension, E030's supplied-goal membership condition, E031's learned goal filter, and E032's matched-budget population sweep, whose driver is checked against `mbe.sweep` arm-for-arm so that keeping per-seed values cannot change what a seed does, E033's goal-distance ladder, whose two anchors are checked against E030's committed cell so the ladder cannot quietly measure something else, and E034's goal-direction shell, where every measured goal is re-checked against both held distances and the write-up's own tables are read back off the artifact so a transcribed number cannot drift, and E035's cross-shell comparison, where all nineteen design keys are checked across the three artifacts so that a trait reversing sign cannot be a changed run parameter, and the goals the shells share are counted against the overlap their tolerance bands predict.
 
 ## Interpretation
 

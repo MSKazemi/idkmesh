@@ -23,6 +23,15 @@ E033 was sweeping. E033 recorded it as a hypothesis, not a finding.
 
 E034 holds the distance still and sweeps the direction.
 
+> **Partly superseded by [E035](E035-direction-across-shells.md).** E034 measured
+> one shell. E035 repeats this ladder at `0.350` and `0.375` and reports which
+> results survive. Two do, unqualified: direction dominating distance, and the
+> structural categories being an invalid grouping. Two do not, and both are
+> marked in place below — the conjecture that the spread widens with distance
+> (measured flat), and the `simplicity` ladder, which reverses sign across the
+> window. The falsification of the viability-floor hypothesis stands, but on the
+> `reliability`/`security` asymmetry alone rather than on both of its legs.
+
 ## Design
 
 Every goal measured here sits on one shell: `0.30 ± 0.015` from the nearest
@@ -249,7 +258,10 @@ survive goal drift cannot budget from the mean alone.
   prediction had held.
 - **One shell.** Everything is `0.30` from the box at a change size of `0.392`.
   Whether the direction spread widens or narrows nearer the box is unmeasured;
-  E033's per-ring spreads suggest it widens with distance.
+  E033's per-ring spreads suggest it widens with distance. **Answered by E035:
+  it does not — `9.365`, `9.408`, `9.409` across the whole feasible window. E035
+  also shows the window is only `0.280`–`0.385` wide, so this design cannot be
+  run near the supplied set at all, and `0.30` sits near its lower edge.**
 - **One panel.** The perfect verification panel throughout, as in E033.
 - **16 goals a cell.** A 4-goal pilot resolved nothing at all and was discarded
   unpublished; the scarce resource is goals, not seeds, since each per-goal lead
@@ -269,3 +281,11 @@ Next: the mechanism is open. The test that would move it is a shell sweep — th
 same direction ladder at two or three distances — to establish whether the
 spread grows with distance and whether the trait ordering (`reliability` up,
 `simplicity` down) is stable or is itself a property of this one shell.
+
+**That sweep is [E035](E035-direction-across-shells.md), and it found the
+ordering is only partly stable.** `efficiency` falls and resolves at every
+distance; `reliability` and `adaptability` keep their sign everywhere;
+`simplicity` reverses. Do not carry "de-weighting `simplicity` breaks the
+archive" forward from this record — it is specific to the `0.30` shell. The
+`9.365` spread and the negative share, by contrast, hold at every distance
+measured.
