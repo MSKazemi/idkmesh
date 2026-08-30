@@ -118,6 +118,19 @@ policy changes or merge decisions.
   there is 78.3% on average, not the 95.6% one goal reports. Sweeping the same
   axis without holding the change size returns 'unresolved' and would have
   missed the decay entirely.
+- [E034 Goal Direction](../../experiments/E034-goal-direction.md)
+  — holds E033's distance still (0.30 from the supplied set, 0.392 of change)
+  and sweeps direction instead, 385 goals on one shell. Direction is worth more
+  than distance: the archive's lead runs from -4.894 to +4.471, a spread of
+  9.365 against the 3.309 E033's whole distance sweep moved, and 24.2% of
+  directions leave the archive behind the arms that hold no hypothesis. The
+  mechanism E033 proposed for this — the viability floor — is falsified by its
+  own preregistered test: the control trait 'simplicity' was predicted flat and
+  instead carries the lead from +2.257 to -0.371, and the two traits sim.viable
+  floors identically do not behave alike. The structural trait categories are
+  not a valid grouping either; the two descriptor traits move in opposite
+  directions and average to nothing. E033's post-hoc 'security' observation
+  (-1.362) does not survive the control, which gives +0.279 [-1.095, +1.653].
 - [E025 Learned Verifier Reliability](../../experiments/E025-learned-verifier-reliability.md)
   — calibration/held-out evidence for reliability and dependence-aware aggregation.
 - [IDKGraph P1 Independent Review Protocol](IDKGRAPH_P1_INDEPENDENT_REVIEW_PROTOCOL.md)

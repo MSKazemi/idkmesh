@@ -492,6 +492,33 @@ rerun E030's published points and must reproduce its committed perfect-panel
 cell exactly. See
 [`../experiments/E033-goal-distance.md`](../experiments/E033-goal-distance.md).
 
+### E034 — at a fixed distance, which direction?
+
+`e034_goal_direction.py` answers the question E033 could not: a ring is a
+sphere, and E033 averaged over direction by design.
+
+```bash
+PYTHONPATH=. python3 sim/e034_goal_direction.py --jobs 8 --goals-per-cell 16 \
+  --output experiments/results/E034-goal-direction.json
+```
+
+Every goal sits on one shell — `0.30 ± 0.015` from the nearest member of
+`PLAUSIBLE_GOALS` **and** `0.391918 ± 0.015` from `INITIAL_GOAL` — so both the
+distance to the box and the size of the change are constant and only the
+direction varies. Holding both is what makes the comparison mean anything, for
+the same reason E033 needed a matched ladder. The sweep walks the weight the
+future goal places on each of the five traits from `0.02` to `0.40`, sixteen
+goals a cell by farthest-point selection on a shell of 38,643 members.
+
+The five traits are grouped by what the arena does with them, read off
+`sim.viable` and `sim.niche` rather than asserted, and the module states its
+prediction before the run. Both the grouping and the prediction lost: the
+control trait moves, the two identically-floored traits diverge, and the two
+descriptor traits move in opposite directions and cancel. The category view is
+kept in the artifact only because the write-up needs to show that it misleads.
+See
+[`../experiments/E034-goal-direction.md`](../experiments/E034-goal-direction.md).
+
 ## Tests
 
 With `pytest` installed:
@@ -518,11 +545,12 @@ python -m pytest -q \
   tests/test_e031_learned_goal_filter.py \
   tests/test_e032_population_scaling.py \
   tests/test_e033_goal_distance.py
+  tests/test_e034_goal_direction.py
 ```
 
 This is the same list `.github/workflows/emergence-sim.yml` runs; keep the two in step.
 
-The tests cover deterministic replay, budget invariants, niche preservation, perfect verification compatibility, correlated-error mechanics, sweep configuration, the E013 regime where independence-aware aggregation can help or hurt, E025's calibration separation and preserved shift failures, the E015 effective-panel-size metrics, the E016 discrimination screen, the E017 item-difficulty model, the E018 model comparison, the E019 group-independence result, the E020 quorum frontier, E024's exact matched-evaluation contract, E026's archive-contamination audit, E027's defect-propagation channel — its matched budget, its cost-zero identity with the channel off, and the demonstration that an accepted defect now persists and does harm — E028's latent-defect dimension, E030's supplied-goal membership condition, E031's learned goal filter, and E032's matched-budget population sweep, whose driver is checked against `mbe.sweep` arm-for-arm so that keeping per-seed values cannot change what a seed does, and E033's goal-distance ladder, whose two anchors are checked against E030's committed cell so the ladder cannot quietly measure something else.
+The tests cover deterministic replay, budget invariants, niche preservation, perfect verification compatibility, correlated-error mechanics, sweep configuration, the E013 regime where independence-aware aggregation can help or hurt, E025's calibration separation and preserved shift failures, the E015 effective-panel-size metrics, the E016 discrimination screen, the E017 item-difficulty model, the E018 model comparison, the E019 group-independence result, the E020 quorum frontier, E024's exact matched-evaluation contract, E026's archive-contamination audit, E027's defect-propagation channel — its matched budget, its cost-zero identity with the channel off, and the demonstration that an accepted defect now persists and does harm — E028's latent-defect dimension, E030's supplied-goal membership condition, E031's learned goal filter, and E032's matched-budget population sweep, whose driver is checked against `mbe.sweep` arm-for-arm so that keeping per-seed values cannot change what a seed does, E033's goal-distance ladder, whose two anchors are checked against E030's committed cell so the ladder cannot quietly measure something else, and E034's goal-direction shell, where every measured goal is re-checked against both held distances and the write-up's own tables are read back off the artifact so a transcribed number cannot drift.
 
 ## Interpretation
 
