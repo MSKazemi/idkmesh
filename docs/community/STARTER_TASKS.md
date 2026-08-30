@@ -2,7 +2,7 @@
 
 Ten small, independently useful pieces of work, across seven kinds of
 contribution. Each one is bounded, has an acceptance test you can run yourself,
-and was checked against the repository at `ce5051b` before being listed here —
+and was checked against the repository at `2ce141a` before being listed here —
 none of them is hypothetical.
 
 ## Why this file exists
@@ -104,18 +104,33 @@ are provably over-scoped. Do not widen anything.
 
 ## Documentation
 
-### D1 — Mark the completed research tracks as completed
+### D1 — Tell live issue references apart from historical ones
 
-~30 minutes.
+**Parallel welcome.** ~2 hours.
 
-[`docs/research/FIRST_RESEARCH_PROGRAM.md`](../research/FIRST_RESEARCH_PROGRAM.md)
-presents three research tracks as the current program. Two of the three are
-finished: issue `#14` and issue `#15` are both closed, while `#13` is still
-open. A reader following the program cannot tell which is which.
+Markdown in this repository contains 15 distinct external URLs, and every one of
+them points back into this same repository — issue links and the two
+newcomer label queries. Nothing checks them. The repository link checker
+resolves local Markdown targets and deliberately ignores external links, which
+it reports as `ignored_external_links`.
 
-**Acceptance:** each track annotated with its state and, where the work landed
-somewhere in the tree, a link to it. Do not delete the closed tracks — the
-document is a record of what the program was.
+Six of the thirteen linked issues are closed. Most are correct: a provenance
+header such as `**Issue:** #49` on a finished experiment *should* point at a
+closed issue. The problem is that nothing distinguishes those from a reference
+that offers a reader current work — which is how
+`FIRST_RESEARCH_PROGRAM.md` came to present two finished tracks as the live
+program.
+
+```bash
+grep -rhoE '\]\((https?://[^)]+)\)' --include=*.md . | sed 's/^](//; s/)$//' | sort -u
+```
+
+**Acceptance:** a check that reports every in-repository issue link with its
+current state, and a stated rule for which document contexts may reference a
+closed issue. It must not require network access during the ordinary test run —
+follow the committed-snapshot pattern already used by
+[`tools/issue_evidence_gate.py`](../../tools/issue_evidence_gate.py). Report
+what you find; do not mass-edit provenance headers.
 
 ### D2 — Resolve the four documents reachable only from non-markdown artifacts
 

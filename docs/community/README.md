@@ -90,7 +90,7 @@ stated window or revision, not current status.
   microtasks; produced for Growth Seed #28.
 - [Starter Tasks](STARTER_TASKS.md) — ten bounded contribution opportunities
   across testing, security, documentation, research, review, community and
-  tooling, each checked against the tree at `ce5051b` and carrying its own
+  tooling, each checked against the tree at `2ce141a` and carrying its own
   acceptance test. Written because every newcomer-labelled issue at that
   revision was an independent-review request.
 
