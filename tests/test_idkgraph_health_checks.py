@@ -286,6 +286,61 @@ class UnexercisedExecutableTests(unittest.TestCase):
             )
             self.assertEqual([], self._executable_findings(root))
 
+    def test_an_experiment_record_counts_as_recorded_output(self) -> None:
+        """A sweep's JSON rarely names the program that wrote it; the record does.
+
+        Without this, a tool could have a full experiment record and a directory
+        of committed results and still be reported as never having run.
+        """
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self._repository(
+                root,
+                {
+                    "tools/probe.py": "print('probe')\n",
+                    "experiments/E999-probe.md": (
+                        "# E999\n\nRun with `tools/probe.py`; 60 attempts, 0 accepted.\n"
+                    ),
+                    "experiments/results/E999-sweep.json": '{"attempts": 60}\n',
+                },
+            )
+            self.assertEqual([], self._executable_findings(root))
+
+    def test_an_experiment_module_referencing_a_tool_is_not_a_record(self) -> None:
+        """Importing a tool is a code reference, not evidence that it ever ran."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self._repository(
+                root,
+                {
+                    "tools/probe.py": "print('probe')\n",
+                    "experiments/driver.py": "# see tools/probe.py\nprint('driver')\n",
+                },
+            )
+            self.assertEqual(["tools/probe.py"], self._executable_findings(root))
+
+    def test_a_findings_report_cannot_escape_the_exclusion_by_relocating(self) -> None:
+        """The exclusion is by path segment, not by one hardcoded directory.
+
+        Now that experiment records count, a health report filed anywhere named
+        `findings/` would otherwise clear exactly what it reports.
+        """
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self._repository(
+                root,
+                {
+                    "tools/dormant.py": "print('dormant')\n",
+                    "experiments/findings/2026-01-01-health.md": (
+                        "# Health\n\nNothing runs `tools/dormant.py`.\n"
+                    ),
+                    "docs/audits/findings/2026-01-01-audit.md": (
+                        "# Audit\n\nNothing runs `tools/dormant.py`.\n"
+                    ),
+                },
+            )
+            self.assertEqual(["tools/dormant.py"], self._executable_findings(root))
+
     def test_the_finding_is_a_review_candidate_not_a_defect(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

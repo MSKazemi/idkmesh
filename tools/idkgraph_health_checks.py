@@ -36,7 +36,7 @@ conditions for human review rather than asserting semantic defects.
 from __future__ import annotations
 
 import re
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any
 
 try:  # pragma: no cover - import shape depends on invocation
@@ -64,6 +64,19 @@ RECORDED_OUTPUT_PREFIXES = ("benchmarks/", "docs/", "experiments/results/", "res
 # not evidence that a tool ran; without this exclusion the check silences itself the
 # moment anyone writes down what it found.
 RECORDED_OUTPUT_EXCLUDED_PREFIXES = ("docs/findings/",)
+
+# An experiment record is the artifact that says a tool was run and what came out
+# of it. Its sibling `experiments/results/` already counts as recorded output, but
+# a sweep's JSON almost never names the program that wrote it, so a tool could have
+# a full experiment record and 60 committed result directories and still be
+# reported as never having run. Restricted to Markdown: a module under
+# `experiments/` importing a tool is a code reference, not evidence of a run.
+RECORDED_OUTPUT_NARRATIVE_PREFIXES = ("experiments/",)
+RECORDED_OUTPUT_NARRATIVE_SUFFIXES = (".md",)
+
+# The findings exclusion is by path segment, not by one hardcoded directory, so
+# that relocating a health report does not re-open the hole it closes.
+FINDINGS_SEGMENT = "findings"
 
 # Binary and compressed payloads are skipped rather than decoded; a tool name
 # hidden inside a gzip member is not a reference a human reviewer could follow.
@@ -147,6 +160,7 @@ def _readable_blob(
     tracked: set[str],
     prefixes: tuple[str, ...],
     excluded: tuple[str, ...] = (),
+    suffixes: tuple[str, ...] = (),
 ) -> str:
     """Concatenate tracked text files under the given prefixes, in path order."""
     parts: list[str] = []
@@ -154,6 +168,10 @@ def _readable_blob(
         if not relative_path.startswith(prefixes):
             continue
         if excluded and relative_path.startswith(excluded):
+            continue
+        if FINDINGS_SEGMENT in PurePosixPath(relative_path).parts[:-1]:
+            continue
+        if suffixes and not relative_path.endswith(suffixes):
             continue
         if Path(relative_path).suffix.lower() in OPAQUE_SUFFIXES:
             continue
@@ -183,8 +201,19 @@ def _unexercised_executables(root: Path) -> list[str]:
     if not candidates:
         return []
     exercisers = _readable_blob(root, tracked, EXERCISER_PREFIXES)
-    recorded = _readable_blob(
-        root, tracked, RECORDED_OUTPUT_PREFIXES, RECORDED_OUTPUT_EXCLUDED_PREFIXES
+    recorded = "\n".join(
+        (
+            _readable_blob(
+                root, tracked, RECORDED_OUTPUT_PREFIXES, RECORDED_OUTPUT_EXCLUDED_PREFIXES
+            ),
+            _readable_blob(
+                root,
+                tracked,
+                RECORDED_OUTPUT_NARRATIVE_PREFIXES,
+                RECORDED_OUTPUT_EXCLUDED_PREFIXES,
+                RECORDED_OUTPUT_NARRATIVE_SUFFIXES,
+            ),
+        )
     )
     return [
         relative_path
@@ -370,6 +399,9 @@ def check_residual_health(
                     "rule": "executable_absent_from_automation_and_from_recorded_output",
                     "exerciser_prefixes": list(EXERCISER_PREFIXES),
                     "recorded_output_prefixes": list(RECORDED_OUTPUT_PREFIXES),
+                    "recorded_output_narrative_prefixes": list(
+                        RECORDED_OUTPUT_NARRATIVE_PREFIXES
+                    ),
                 },
             }
         )

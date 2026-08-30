@@ -37,7 +37,12 @@ no committed result. E029 runs it.
 - **Image**: built by `tools/open_model_producer_image.sh` from
   `tools/open_model_producer.Dockerfile` — added here, because the probe named
   an image the repository had no recipe for. The weights are baked in so the
-  runtime container needs no network at all.
+  runtime container needs no network at all. Inside the container the entry
+  point is `tools/open_model_text_generator.py`, which loads the pinned local
+  snapshot, reads the one mounted prompt file, and writes the raw response and
+  its generation metadata to the one writable output directory. It has no
+  repository credentials, no source checkout and no evaluator input, and it is
+  the only program the model's weights are ever loaded by in this experiment.
 - **Tasks**: all 10 frozen work units — 5 in `benchmarks/phase-b2-first-five/`
   (source revision `9c53bb4069a5`) and 5 in
   `benchmarks/phase-b2-successor-v2/` (source revision `a69aa0ae1ae4`). Each
