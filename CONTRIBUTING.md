@@ -161,6 +161,18 @@ body, and every commit message in the pull request. If it fails, either move the
 reference to `Closes on merge:` when closure is intended, or write the number
 without `#` in prose, for example "issue 152".
 
+When you check a squash subject by hand, pass the pull request's own number:
+
+```bash
+python tools/closing_keyword_guard.py --file "subject=subject.txt" --self 362
+```
+
+`gh pr merge --squash` appends `(#N)` to the subject, so a title that
+legitimately contains a closing keyword otherwise reports a violation against
+the pull request being merged. `--self` suppresses that one number and reports
+it under `suppressed_self_references`; a reference to any other number in the
+same subject is still a violation.
+
 ## Newcomers are allowed to be uncertain
 
 You may open an issue that says:

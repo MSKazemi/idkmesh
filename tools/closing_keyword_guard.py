@@ -115,20 +115,46 @@ def scan_text(text: str, *, source: str) -> list[Violation]:
     return violations
 
 
-def scan_sources(sources: Iterable[tuple[str, str]]) -> dict[str, Any]:
-    """Build a deterministic report over ``(source_name, text)`` pairs."""
+def scan_sources(
+    sources: Iterable[tuple[str, str]],
+    *,
+    self_reference: int | None = None,
+) -> dict[str, Any]:
+    """Build a deterministic report over ``(source_name, text)`` pairs.
+
+    ``self_reference`` suppresses violations that point at one specific number:
+    the pull request's own. ``gh pr merge --squash`` appends ``(#N)`` to the
+    subject by default, so a title that legitimately contains a closing keyword
+    trips the guard on a reference to the pull request being merged. That
+    reference cannot close an issue, because it is not an issue.
+
+    The suppression is deliberately narrow. The caller has to name the number,
+    so it can never widen into "ignore trailing parentheticals" -- a reference
+    to any *other* number in the same subject is still reported.
+    """
 
     violations: list[Violation] = []
+    suppressed: list[dict[str, Any]] = []
     scanned: list[str] = []
+    marker = f"#{self_reference}" if self_reference is not None else None
     for name, text in sources:
         scanned.append(name)
-        violations.extend(scan_text(text, source=name))
-    return {
+        for violation in scan_text(text, source=name):
+            if marker is not None and violation.reference == marker:
+                suppressed.append(asdict(violation))
+                continue
+            violations.append(violation)
+    report: dict[str, Any] = {
         "schema_version": SCHEMA_VERSION,
         "sources_scanned": scanned,
         "violations": [asdict(v) for v in violations],
         "summary": {"sources": len(scanned), "violations": len(violations)},
     }
+    if self_reference is not None:
+        report["self_reference"] = marker
+        report["suppressed_self_references"] = suppressed
+        report["summary"]["suppressed_self_references"] = len(suppressed)
+    return report
 
 
 def serialize_report(report: dict[str, Any], *, pretty: bool = False) -> str:
@@ -166,6 +192,18 @@ def main(argv: list[str] | None = None) -> int:
         metavar="NAME=PATH",
         help="File source to scan, as NAME=PATH. A missing path is skipped.",
     )
+    parser.add_argument(
+        "--self",
+        dest="self_reference",
+        type=int,
+        default=None,
+        metavar="N",
+        help=(
+            "The pull request's own number. References to #N are reported as "
+            "suppressed rather than as violations, because a squash subject "
+            "carries '(#N)' by convention and that reference is not an issue."
+        ),
+    )
     parser.add_argument("--json", action="store_true", help="Emit deterministic JSON.")
     parser.add_argument("--pretty", action="store_true", help="Pretty-print JSON output.")
     args = parser.parse_args(argv)
@@ -181,7 +219,7 @@ def main(argv: list[str] | None = None) -> int:
             continue
         sources.append((name, path.read_text(encoding="utf-8", errors="replace")))
 
-    report = scan_sources(sources)
+    report = scan_sources(sources, self_reference=args.self_reference)
 
     if args.json:
         sys.stdout.write(serialize_report(report, pretty=args.pretty))
