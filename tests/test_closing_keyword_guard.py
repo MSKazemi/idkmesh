@@ -166,5 +166,61 @@ class PullRequestTemplateTests(unittest.TestCase):
         )
 
 
+class SelfReferenceTests(unittest.TestCase):
+    """`gh pr merge --squash` appends the pull request's own number.
+
+    A title that legitimately uses a closing keyword therefore trips the guard
+    on a reference to the pull request being merged. That reference is not an
+    issue, so reporting it as a violation trains reviewers to merge past the
+    guard -- which is the exact failure the guard exists to prevent.
+
+    PR 362 hit this: its subject was
+    "tools: record a registered issue that closed while its precondition
+    stayed unmet (#362)".
+    """
+
+    SUBJECT = (
+        "tools: record a registered issue that closed while its precondition "
+        "stayed unmet (#362)"
+    )
+
+    def test_the_squash_subject_is_a_violation_without_the_flag(self):
+        report = scan_sources([("subject", self.SUBJECT)])
+        self.assertEqual(report["summary"]["violations"], 1)
+        self.assertEqual(report["violations"][0]["reference"], "#362")
+
+    def test_naming_the_pull_request_suppresses_only_its_own_number(self):
+        report = scan_sources([("subject", self.SUBJECT)], self_reference=362)
+        self.assertEqual(report["summary"]["violations"], 0)
+        self.assertEqual(report["summary"]["suppressed_self_references"], 1)
+        self.assertEqual(
+            report["suppressed_self_references"][0]["reference"], "#362"
+        )
+
+    def test_a_real_issue_reference_survives_the_suppression(self):
+        report = scan_sources(
+            [("subject", "fix: closed #10 while merging (#362)")],
+            self_reference=362,
+        )
+        self.assertEqual(report["summary"]["violations"], 1)
+        self.assertEqual(report["violations"][0]["reference"], "#10")
+
+    def test_a_different_number_is_not_suppressed(self):
+        report = scan_sources([("subject", self.SUBJECT)], self_reference=999)
+        self.assertEqual(report["summary"]["violations"], 1)
+        self.assertEqual(report["summary"]["suppressed_self_references"], 0)
+
+    def test_the_report_omits_the_key_when_no_number_is_given(self):
+        report = scan_sources([("subject", self.SUBJECT)])
+        self.assertNotIn("self_reference", report)
+        self.assertNotIn("suppressed_self_references", report)
+
+    def test_the_report_stays_deterministic_under_suppression(self):
+        sources = [("subject", self.SUBJECT)]
+        first = serialize_report(scan_sources(sources, self_reference=362))
+        second = serialize_report(scan_sources(sources, self_reference=362))
+        self.assertEqual(first, second)
+
+
 if __name__ == "__main__":
     unittest.main()
