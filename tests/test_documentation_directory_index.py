@@ -32,6 +32,10 @@ EXHAUSTIVELY_INDEXED_DIRECTORIES = (
     "docs/findings",
     "docs/research",
     "docs/specifications",
+    # Added after an audit found 21 experiment records with 3 linked from their
+    # own index. A record nobody can navigate to is a published result nobody
+    # reads, which on a public research repository is the whole cost.
+    "experiments",
 )
 
 MARKDOWN_LINK = re.compile(r"\[[^\]]*\]\(([^)#\s]+\.md)(?:#[^)]*)?\)")
