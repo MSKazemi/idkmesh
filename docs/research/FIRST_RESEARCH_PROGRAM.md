@@ -4,9 +4,16 @@ This document turns three field-defining questions into the first coordinated ID
 
 ## Research tracks
 
-1. [Issue #13 — Measure the scaling law of collective intelligence](https://github.com/MSKazemi/idkmesh/issues/13)
-2. [Issue #14 — Make verification scale with generation](https://github.com/MSKazemi/idkmesh/issues/14)
-3. [Issue #15 — Define a formal Work Unit for composable distributed work](https://github.com/MSKazemi/idkmesh/issues/15)
+Two of the three tracks are finished. They are kept here because this document
+is a record of what the program was, not a list of what is currently claimable.
+
+1. **Open.** [Issue #13 — Measure the scaling law of collective intelligence](https://github.com/MSKazemi/idkmesh/issues/13)
+2. **Closed 2026-08-29**, by pull request 252. [Issue #14 — Make verification scale with generation](https://github.com/MSKazemi/idkmesh/issues/14)
+   — the result is the seven-condition comparison recorded in
+   [`E022-verification-scaling-matrix.md`](../../experiments/E022-verification-scaling-matrix.md).
+3. **Closed 2026-08-29**, by pull request 319. [Issue #15 — Define a formal Work Unit for composable distributed work](https://github.com/MSKazemi/idkmesh/issues/15)
+   — the closure argument and its empirical gate are recorded in
+   [`WORK_UNIT_RESEARCH_TRACK_COMPLETION.md`](WORK_UNIT_RESEARCH_TRACK_COMPLETION.md).
 
 These tracks should not become three isolated projects. They share one experimental substrate.
 
