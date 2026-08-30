@@ -1,0 +1,449 @@
+{
+  "agents": 64,
+  "bins": 8,
+  "catastrophe_utility_auc_threshold": 16.0,
+  "cells": [
+    {
+      "advantage": {
+        "catastrophe_utility_auc_threshold": 16.0,
+        "delta_unheld_minus_held": {
+          "majority": -0.49387,
+          "planner": -0.907429,
+          "qd": 0.212707,
+          "random": 0.364261,
+          "scalar": -1.31313
+        },
+        "held": {
+          "best_hypothesis_free_arm": 18.723512,
+          "catastrophic_seeds": {
+            "majority": 38,
+            "planner": 100,
+            "qd": 0,
+            "random": 0,
+            "scalar": 16
+          },
+          "lead_over_hypothesis_free": {
+            "majority": 0.16272,
+            "qd": 3.459809
+          },
+          "means": {
+            "majority": 18.886232,
+            "planner": 14.06998,
+            "qd": 22.183321,
+            "random": 18.723512,
+            "scalar": 16.342242
+          },
+          "reference_arm": "random"
+        },
+        "hypothesis_free_arms": [
+          "random",
+          "scalar",
+          "planner"
+        ],
+        "hypothesis_holding_arms": [
+          "qd",
+          "majority"
+        ],
+        "lead_delta_unheld_minus_held": {
+          "majority": -0.858131,
+          "qd": -0.151554
+        },
+        "metric": "post_change_utility_auc",
+        "paired_seed_wins_unheld_over_held": {
+          "majority": 51,
+          "planner": 0,
+          "qd": 94,
+          "random": 99,
+          "scalar": 0
+        },
+        "unheld": {
+          "best_hypothesis_free_arm": 19.087773,
+          "catastrophic_seeds": {
+            "majority": 43,
+            "planner": 100,
+            "qd": 0,
+            "random": 0,
+            "scalar": 100
+          },
+          "lead_over_hypothesis_free": {
+            "majority": -0.695411,
+            "qd": 3.308255
+          },
+          "means": {
+            "majority": 18.392362,
+            "planner": 13.162551,
+            "qd": 22.396028,
+            "random": 19.087773,
+            "scalar": 15.029112
+          },
+          "reference_arm": "random"
+        }
+      },
+      "panel": "perfect"
+    },
+    {
+      "advantage": {
+        "catastrophe_utility_auc_threshold": 16.0,
+        "delta_unheld_minus_held": {
+          "majority": -0.49387,
+          "planner": -0.907429,
+          "qd": 0.219907,
+          "random": 0.364112,
+          "scalar": -1.323301
+        },
+        "held": {
+          "best_hypothesis_free_arm": 18.723512,
+          "catastrophic_seeds": {
+            "majority": 38,
+            "planner": 100,
+            "qd": 0,
+            "random": 0,
+            "scalar": 15
+          },
+          "lead_over_hypothesis_free": {
+            "majority": 0.16272,
+            "qd": 3.451172
+          },
+          "means": {
+            "majority": 18.886232,
+            "planner": 14.06998,
+            "qd": 22.174684,
+            "random": 18.723512,
+            "scalar": 16.354006
+          },
+          "reference_arm": "random"
+        },
+        "hypothesis_free_arms": [
+          "random",
+          "scalar",
+          "planner"
+        ],
+        "hypothesis_holding_arms": [
+          "qd",
+          "majority"
+        ],
+        "lead_delta_unheld_minus_held": {
+          "majority": -0.857982,
+          "qd": -0.144205
+        },
+        "metric": "post_change_utility_auc",
+        "paired_seed_wins_unheld_over_held": {
+          "majority": 51,
+          "planner": 0,
+          "qd": 94,
+          "random": 99,
+          "scalar": 0
+        },
+        "unheld": {
+          "best_hypothesis_free_arm": 19.087624,
+          "catastrophic_seeds": {
+            "majority": 43,
+            "planner": 100,
+            "qd": 0,
+            "random": 0,
+            "scalar": 100
+          },
+          "lead_over_hypothesis_free": {
+            "majority": -0.695262,
+            "qd": 3.306967
+          },
+          "means": {
+            "majority": 18.392362,
+            "planner": 13.162551,
+            "qd": 22.394591,
+            "random": 19.087624,
+            "scalar": 15.030705
+          },
+          "reference_arm": "random"
+        }
+      },
+      "panel": "independent"
+    },
+    {
+      "advantage": {
+        "catastrophe_utility_auc_threshold": 16.0,
+        "delta_unheld_minus_held": {
+          "majority": -0.512403,
+          "planner": -0.916464,
+          "qd": 0.230073,
+          "random": 0.348213,
+          "scalar": -1.383592
+        },
+        "held": {
+          "best_hypothesis_free_arm": 18.535897,
+          "catastrophic_seeds": {
+            "majority": 38,
+            "planner": 100,
+            "qd": 0,
+            "random": 0,
+            "scalar": 18
+          },
+          "lead_over_hypothesis_free": {
+            "majority": 0.39026,
+            "qd": 3.561924
+          },
+          "means": {
+            "majority": 18.926157,
+            "planner": 14.080258,
+            "qd": 22.097821,
+            "random": 18.535897,
+            "scalar": 16.369997
+          },
+          "reference_arm": "random"
+        },
+        "hypothesis_free_arms": [
+          "random",
+          "scalar",
+          "planner"
+        ],
+        "hypothesis_holding_arms": [
+          "qd",
+          "majority"
+        ],
+        "lead_delta_unheld_minus_held": {
+          "majority": -0.860617,
+          "qd": -0.11814
+        },
+        "metric": "post_change_utility_auc",
+        "paired_seed_wins_unheld_over_held": {
+          "majority": 51,
+          "planner": 0,
+          "qd": 97,
+          "random": 99,
+          "scalar": 0
+        },
+        "unheld": {
+          "best_hypothesis_free_arm": 18.88411,
+          "catastrophic_seeds": {
+            "majority": 42,
+            "planner": 100,
+            "qd": 0,
+            "random": 0,
+            "scalar": 100
+          },
+          "lead_over_hypothesis_free": {
+            "majority": -0.470357,
+            "qd": 3.443784
+          },
+          "means": {
+            "majority": 18.413754,
+            "planner": 13.163794,
+            "qd": 22.327894,
+            "random": 18.88411,
+            "scalar": 14.986405
+          },
+          "reference_arm": "random"
+        }
+      },
+      "panel": "measured"
+    },
+    {
+      "advantage": {
+        "catastrophe_utility_auc_threshold": 16.0,
+        "delta_unheld_minus_held": {
+          "majority": -0.583572,
+          "planner": -0.87363,
+          "qd": 0.275218,
+          "random": 0.335555,
+          "scalar": -1.429031
+        },
+        "held": {
+          "best_hypothesis_free_arm": 18.047763,
+          "catastrophic_seeds": {
+            "majority": 39,
+            "planner": 100,
+            "qd": 0,
+            "random": 0,
+            "scalar": 24
+          },
+          "lead_over_hypothesis_free": {
+            "majority": 0.981297,
+            "qd": 3.761379
+          },
+          "means": {
+            "majority": 19.029061,
+            "planner": 14.02194,
+            "qd": 21.809143,
+            "random": 18.047763,
+            "scalar": 16.285337
+          },
+          "reference_arm": "random"
+        },
+        "hypothesis_free_arms": [
+          "random",
+          "scalar",
+          "planner"
+        ],
+        "hypothesis_holding_arms": [
+          "qd",
+          "majority"
+        ],
+        "lead_delta_unheld_minus_held": {
+          "majority": -0.919126,
+          "qd": -0.060336
+        },
+        "metric": "post_change_utility_auc",
+        "paired_seed_wins_unheld_over_held": {
+          "majority": 52,
+          "planner": 2,
+          "qd": 93,
+          "random": 90,
+          "scalar": 0
+        },
+        "unheld": {
+          "best_hypothesis_free_arm": 18.383318,
+          "catastrophic_seeds": {
+            "majority": 43,
+            "planner": 100,
+            "qd": 0,
+            "random": 0,
+            "scalar": 100
+          },
+          "lead_over_hypothesis_free": {
+            "majority": 0.062171,
+            "qd": 3.701043
+          },
+          "means": {
+            "majority": 18.445489,
+            "planner": 13.14831,
+            "qd": 22.084361,
+            "random": 18.383318,
+            "scalar": 14.856306
+          },
+          "reference_arm": "random"
+        }
+      },
+      "panel": "stress"
+    }
+  ],
+  "change_at": 25,
+  "experiment": "supplied-goal-membership-v1",
+  "experiment_id": "E030",
+  "generations": 50,
+  "goal_difficulty": {
+    "attainable_ceiling": {
+      "held": 0.883853,
+      "initial": 0.806058,
+      "unheld": 0.890478
+    },
+    "draws": 200000,
+    "evolved_initial_elite_utility": {
+      "held": 0.566294,
+      "note": "A negative gap means the substitute goal is harder for an arm committed to the old objective. It does not affect the reference arm, which commits to nothing.",
+      "seeds": 60,
+      "unheld": 0.527268,
+      "unheld_minus_held": -0.039025
+    },
+    "initial_optimal_traits": [
+      0.998003,
+      0.036559,
+      1.0,
+      0.724333,
+      0.388713
+    ],
+    "mean_over_viable": {
+      "held": 0.538014,
+      "initial": 0.537487,
+      "unheld": 0.522355
+    },
+    "seed": 20260830,
+    "transfer_regret_from_initial_optimum": {
+      "held": 0.382482,
+      "initial": 0.0,
+      "unheld": 0.376827
+    },
+    "viable_pool": 79388
+  },
+  "goal_parity": {
+    "distance_between_held_and_unheld": 0.206398,
+    "distance_from_initial": {
+      "held": 0.374166,
+      "unheld": 0.391918
+    },
+    "distance_to_nearest_held_hypothesis": {
+      "held_excluding_itself": 0.2,
+      "unheld": 0.206398
+    },
+    "held_goal": [
+      0.15,
+      0.35,
+      0.1,
+      0.1,
+      0.3
+    ],
+    "held_goal_is_a_member": true,
+    "supplied_goals": [
+      [
+        0.3,
+        0.1,
+        0.25,
+        0.2,
+        0.15
+      ],
+      [
+        0.15,
+        0.35,
+        0.1,
+        0.1,
+        0.3
+      ],
+      [
+        0.25,
+        0.2,
+        0.15,
+        0.15,
+        0.25
+      ],
+      [
+        0.2,
+        0.15,
+        0.3,
+        0.2,
+        0.15
+      ]
+    ],
+    "supplied_set_dispersion": 0.23714,
+    "trait_rank": {
+      "held": [
+        1,
+        4,
+        0,
+        2,
+        3
+      ],
+      "initial": [
+        0,
+        2,
+        3,
+        4,
+        1
+      ],
+      "unheld": [
+        1,
+        0,
+        4,
+        3,
+        2
+      ]
+    },
+    "unheld_goal": [
+      0.24,
+      0.43,
+      0.06,
+      0.13,
+      0.14
+    ],
+    "unheld_goal_is_a_member": false,
+    "unheld_goal_sums_to_one": true
+  },
+  "limitations": [
+    "The defect channel is disarmed. E027 and E028 cover it; arming both confounds at once would make an effect unattributable to either.",
+    "The substitute goal is one point, not a distribution over unheld goals. It is matched on change size, isolation from the held set and reordering structure, but a single direction cannot rule out that this particular one is unusual.",
+    "Only the environment's post-change goal moves. An arm that could UPDATE its hypotheses from evidence is not modelled here, so this measures the value of being handed the answer, not the cost of having to learn it.",
+    "Raw means are not comparable across conditions -- the goal itself changed -- which is why the reported statistic is the lead over the arms that hold no hypothesis. The goal_difficulty block is what makes that lead readable, and it must be checked before the lead is.",
+    "The two goals reorder trait priorities differently: both promote adaptability to first, but the substitute promotes reliability where the published goal promotes security. Matching that as well leaves no admissible goal on this simplex."
+  ],
+  "metric": "post_change_utility_auc",
+  "seed_start": 1,
+  "seeds": 100
+}

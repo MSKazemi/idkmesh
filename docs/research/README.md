@@ -82,6 +82,11 @@ policy changes or merge decisions.
   — 60 sandboxed attempts by a pinned 0.5B open-weight producer on the frozen
   benchmark: 0 accepted, 56 of 60 failing the diff protocol before any
   repository content was consulted.
+- [E030 Supplied-Goal Membership](../../experiments/E030-supplied-goal-membership.md)
+  — removes E024's supplied-oracle confound by switching the environment to a
+  parity-matched goal the arms do not hold; the archive keeps all but 1.6-4.4%
+  of its lead and stays 0/100 catastrophic, while the majority-vote swarm loses
+  its whole lead in every panel.
 - [E025 Learned Verifier Reliability](../../experiments/E025-learned-verifier-reliability.md)
   — calibration/held-out evidence for reliability and dependence-aware aggregation.
 - [IDKGraph P1 Independent Review Protocol](IDKGRAPH_P1_INDEPENDENT_REVIEW_PROTOCOL.md)

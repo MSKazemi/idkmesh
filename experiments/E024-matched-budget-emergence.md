@@ -171,6 +171,14 @@ while the scalar baseline is deliberately fixed to the initial goal. This is a
 test of retaining alternatives under known goal ambiguity, not a learned Goal
 Graph.
 
+> **Follow-up (E030).** How much the archive's result depends on that set
+> containing the later goal is now measured rather than assumed:
+> [`E030-supplied-goal-membership.md`](E030-supplied-goal-membership.md) reruns
+> this matrix with the environment switching to a parity-matched goal the arms
+> do **not** hold. The archive's lead moves by `1.6%`-`4.4%` and its `0/100`
+> catastrophic record is unchanged. The majority-vote swarm's lead does not
+> survive at all.
+
 The strategies accept different numbers of viable candidates despite equal
 attempt counts. That is an outcome of where each search policy proposes, not an
 extra compute allowance.
@@ -227,7 +235,16 @@ extra compute allowance.
 - the plausible goals are supplied by the experimenter rather than learned, and
   the majority-vote swarm's per-agent belief is drawn from that same supplied
   set, so its bimodality is a property of this landscape rather than a measured
-  property of real swarms;
+  property of real swarms — **[E030](E030-supplied-goal-membership.md) measures
+  how much this matters, and the answer differs sharply by arm.** Switching the
+  environment to a parity-matched goal the arms do **not** hold costs the
+  Quality-Diversity archive at most `4.4%` of its lead over the arms that hold
+  no hypothesis, leaves it at `0/100` catastrophic seeds in all four panels in
+  both conditions, and it wins `93`-`97` of 100 paired seeds against its own
+  held-goal self. The majority-vote swarm loses its entire lead — `-0.86` to
+  `-0.92` in every panel, going negative under three of four — so its advantage
+  here is contingent on the supplied set containing the answer, and should not
+  be quoted as a general hypothesis-hedging baseline;
 - novelty and information gain are not separately measured;
 - churn, specialization, malicious workers, and stigmergic traces remain
   outside this benchmark; post-integration defects are outside *this record*
