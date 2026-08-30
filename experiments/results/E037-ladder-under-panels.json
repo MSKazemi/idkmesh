@@ -1,0 +1,487 @@
+{
+  "against_baseline": {
+    "measured": {
+      "archive_catastrophes": {
+        "baseline_mean": 2.098701,
+        "baseline_total": 808,
+        "goals": 385,
+        "goals_that_get_better": 15,
+        "goals_that_get_worse": 5,
+        "panel_mean": 1.54026,
+        "panel_total": 593
+      },
+      "archive_score": {
+        "mean_difference": 0.033038,
+        "pairs": 385,
+        "resolved": true,
+        "standard_error": 0.004227,
+        "t": 7.815922
+      },
+      "consensus_lead": {
+        "goals_where_lead_falls": 86,
+        "mean_difference": 0.116073,
+        "pairs": 385,
+        "resolved": true,
+        "share_where_lead_falls": 0.223377,
+        "standard_error": 0.005802,
+        "t": 20.00525
+      },
+      "lead": {
+        "goals_where_lead_falls": 108,
+        "mean_difference": 0.139718,
+        "pairs": 385,
+        "resolved": true,
+        "share_where_lead_falls": 0.280519,
+        "standard_error": 0.008836,
+        "t": 15.812037
+      },
+      "reference_arm": {
+        "goals": 385,
+        "goals_with_a_different_reference_arm": 6,
+        "share": 0.015584,
+        "transitions": {
+          "random->scalar": 6
+        },
+        "yardstick_is_stable": false
+      }
+    },
+    "stress": {
+      "archive_catastrophes": {
+        "baseline_mean": 2.098701,
+        "baseline_total": 808,
+        "goals": 385,
+        "goals_that_get_better": 14,
+        "goals_that_get_worse": 0,
+        "panel_mean": 0.358442,
+        "panel_total": 138
+      },
+      "archive_score": {
+        "mean_difference": 0.121759,
+        "pairs": 385,
+        "resolved": true,
+        "standard_error": 0.017465,
+        "t": 6.971422
+      },
+      "consensus_lead": {
+        "goals_where_lead_falls": 33,
+        "mean_difference": 0.386153,
+        "pairs": 385,
+        "resolved": true,
+        "share_where_lead_falls": 0.085714,
+        "standard_error": 0.017275,
+        "t": 22.353287
+      },
+      "lead": {
+        "goals_where_lead_falls": 95,
+        "mean_difference": 0.470448,
+        "pairs": 385,
+        "resolved": true,
+        "share_where_lead_falls": 0.246753,
+        "standard_error": 0.026306,
+        "t": 17.883826
+      },
+      "reference_arm": {
+        "goals": 385,
+        "goals_with_a_different_reference_arm": 34,
+        "share": 0.088312,
+        "transitions": {
+          "random->scalar": 34
+        },
+        "yardstick_is_stable": false
+      }
+    }
+  },
+  "archive_is_best_arm_on_every_panel": false,
+  "archive_still_leads": true,
+  "baseline_panel": "perfect",
+  "catastrophe_best_arm_by_panel": {
+    "measured": "random",
+    "perfect": "random",
+    "stress": "random"
+  },
+  "catastrophe_ranking_is_panel_invariant": true,
+  "comparability": {
+    "baseline_present": true,
+    "declared_panels": {
+      "measured": "measured",
+      "perfect": "perfect",
+      "stress": "stress"
+    },
+    "differing_design_keys": {},
+    "differs_only_in_panel": true,
+    "panel_labels_match_artifacts": true,
+    "panels": [
+      "measured",
+      "perfect",
+      "stress"
+    ]
+  },
+  "descriptor_cancellation_survives": true,
+  "experiment": "goal-direction-under-imperfect-panels-v1",
+  "experiment_id": "E037",
+  "floored_pair_asymmetry_survives": true,
+  "goal_alignment": {
+    "goals_per_panel": {
+      "measured": 385,
+      "perfect": 385,
+      "stress": 385
+    },
+    "identical_goal_sets": true,
+    "shared_goals": 385
+  },
+  "no_sign_flips": true,
+  "panels": [
+    "perfect",
+    "measured",
+    "stress"
+  ],
+  "per_panel": {
+    "measured": {
+      "catastrophes": {
+        "archive_is_best": false,
+        "archive_is_strictly_best": false,
+        "best_arm": "random",
+        "goals": 385,
+        "seeds_per_goal": 100,
+        "totals": {
+          "majority": 13983,
+          "planner": 13945,
+          "qd": 593,
+          "random": 0,
+          "scalar": 6249
+        }
+      },
+      "descriptor_contrast": {
+        "contrast": 5.060444,
+        "resolved": true,
+        "standard_error": 0.914264,
+        "t": 5.534991
+      },
+      "direction_spread": {
+        "goals": 385,
+        "lead_max": 4.700642,
+        "lead_mean": 1.328425,
+        "lead_min": -4.467565,
+        "lead_sd": 1.922747,
+        "negative_goals": 84,
+        "negative_share": 0.218182,
+        "spread": 9.168207
+      },
+      "floored_contrast": {
+        "contrast": 1.766309,
+        "resolved": false,
+        "standard_error": 0.90084,
+        "t": 1.960736
+      },
+      "ladders": {
+        "adaptability": {
+          "change": 2.665789,
+          "degrees_of_freedom": 25.503108,
+          "resolved": true,
+          "standard_error": 0.615631,
+          "t": 4.330171
+        },
+        "efficiency": {
+          "change": -2.394655,
+          "degrees_of_freedom": 18.705825,
+          "resolved": true,
+          "standard_error": 0.675927,
+          "t": -3.542774
+        },
+        "reliability": {
+          "change": 2.941028,
+          "degrees_of_freedom": 27.020396,
+          "resolved": true,
+          "standard_error": 0.529807,
+          "t": 5.55113
+        },
+        "security": {
+          "change": 1.174719,
+          "degrees_of_freedom": 23.570545,
+          "resolved": false,
+          "standard_error": 0.728572,
+          "t": 1.612358
+        },
+        "simplicity": {
+          "change": -2.391056,
+          "degrees_of_freedom": 23.334175,
+          "resolved": true,
+          "standard_error": 0.726813,
+          "t": -3.28978
+        }
+      },
+      "panel": {
+        "accuracy": 0.7956,
+        "blind_spot": 0.0556,
+        "correlation": 0.4513,
+        "verification_drawn": true,
+        "verifiers": 25
+      }
+    },
+    "perfect": {
+      "catastrophes": {
+        "archive_is_best": false,
+        "archive_is_strictly_best": false,
+        "best_arm": "random",
+        "goals": 385,
+        "seeds_per_goal": 100,
+        "totals": {
+          "majority": 14025,
+          "planner": 13938,
+          "qd": 808,
+          "random": 0,
+          "scalar": 5879
+        }
+      },
+      "descriptor_contrast": {
+        "contrast": 4.885769,
+        "resolved": true,
+        "standard_error": 0.941988,
+        "t": 5.186655
+      },
+      "direction_spread": {
+        "goals": 385,
+        "lead_max": 4.47128,
+        "lead_mean": 1.188708,
+        "lead_min": -4.893853,
+        "lead_sd": 1.940291,
+        "negative_goals": 93,
+        "negative_share": 0.241558,
+        "spread": 9.365133
+      },
+      "floored_contrast": {
+        "contrast": 1.640644,
+        "resolved": false,
+        "standard_error": 0.898288,
+        "t": 1.826411
+      },
+      "ladders": {
+        "adaptability": {
+          "change": 2.440552,
+          "degrees_of_freedom": 25.468198,
+          "resolved": true,
+          "standard_error": 0.6418,
+          "t": 3.802669
+        },
+        "efficiency": {
+          "change": -2.445217,
+          "degrees_of_freedom": 18.157454,
+          "resolved": true,
+          "standard_error": 0.689518,
+          "t": -3.546271
+        },
+        "reliability": {
+          "change": 3.052406,
+          "degrees_of_freedom": 25.196205,
+          "resolved": true,
+          "standard_error": 0.526321,
+          "t": 5.799518
+        },
+        "security": {
+          "change": 1.411762,
+          "degrees_of_freedom": 22.654154,
+          "resolved": false,
+          "standard_error": 0.727948,
+          "t": 1.939373
+        },
+        "simplicity": {
+          "change": -2.628403,
+          "degrees_of_freedom": 21.488347,
+          "resolved": true,
+          "standard_error": 0.72168,
+          "t": -3.642061
+        }
+      },
+      "panel": {
+        "accuracy": 1.0,
+        "blind_spot": 0.0,
+        "correlation": 0.0,
+        "verification_drawn": false,
+        "verifiers": 0
+      }
+    },
+    "stress": {
+      "catastrophes": {
+        "archive_is_best": false,
+        "archive_is_strictly_best": false,
+        "best_arm": "random",
+        "goals": 385,
+        "seeds_per_goal": 100,
+        "totals": {
+          "majority": 13939,
+          "planner": 14082,
+          "qd": 138,
+          "random": 125,
+          "scalar": 6624
+        }
+      },
+      "descriptor_contrast": {
+        "contrast": 5.467351,
+        "resolved": true,
+        "standard_error": 0.871702,
+        "t": 6.272045
+      },
+      "direction_spread": {
+        "goals": 385,
+        "lead_max": 5.134757,
+        "lead_mean": 1.659156,
+        "lead_min": -3.902835,
+        "lead_sd": 1.911165,
+        "negative_goals": 69,
+        "negative_share": 0.179221,
+        "spread": 9.037592
+      },
+      "floored_contrast": {
+        "contrast": 1.820676,
+        "resolved": false,
+        "standard_error": 0.915927,
+        "t": 1.987795
+      },
+      "ladders": {
+        "adaptability": {
+          "change": 3.204078,
+          "degrees_of_freedom": 23.89134,
+          "resolved": true,
+          "standard_error": 0.560306,
+          "t": 5.718442
+        },
+        "efficiency": {
+          "change": -2.263273,
+          "degrees_of_freedom": 19.817953,
+          "resolved": true,
+          "standard_error": 0.667773,
+          "t": -3.389287
+        },
+        "reliability": {
+          "change": 2.60642,
+          "degrees_of_freedom": 28.777695,
+          "resolved": true,
+          "standard_error": 0.559231,
+          "t": 4.660719
+        },
+        "security": {
+          "change": 0.785744,
+          "degrees_of_freedom": 24.430179,
+          "resolved": false,
+          "standard_error": 0.725385,
+          "t": 1.08321
+        },
+        "simplicity": {
+          "change": -1.913591,
+          "degrees_of_freedom": 25.987069,
+          "resolved": false,
+          "standard_error": 0.74202,
+          "t": -2.578894
+        }
+      },
+      "panel": {
+        "accuracy": 0.55,
+        "blind_spot": 0.4,
+        "correlation": 0.9,
+        "verification_drawn": true,
+        "verifiers": 25
+      }
+    }
+  },
+  "prediction": {
+    "if_the_structure_is_geometric": {
+      "archive_still_leads_on_every_panel": true,
+      "descriptor_contrast_resolves_on_every_panel": true,
+      "floored_pair_asymmetry_holds": true,
+      "no_trait_sign_flips_across_panels": true
+    },
+    "reasoning": "E034's ladder is a statement about which directions the archive's diversity covers. Coverage is a property of the niche grid and the budget, neither of which the panel touches. If instead the ladder was an artifact of free, exact quality observation, weakening the panel should break it -- and `stress`, at 0.55 accuracy and 0.9 correlation, is as weak as the arena's published panels get.",
+    "source": "E035, Decision: the ladder on a panel with a non-zero blind-spot floor"
+  },
+  "prediction_outcome": {
+    "clause_count": 4,
+    "clauses": {
+      "archive_still_leads_on_every_panel": true,
+      "descriptor_contrast_resolves_on_every_panel": true,
+      "floored_pair_asymmetry_holds": true,
+      "no_trait_sign_flips_across_panels": true
+    },
+    "met": {
+      "archive_still_leads_on_every_panel": true,
+      "descriptor_contrast_resolves_on_every_panel": true,
+      "floored_pair_asymmetry_holds": true,
+      "no_trait_sign_flips_across_panels": true
+    },
+    "met_count": 4,
+    "partially_supported": false,
+    "supported": true
+  },
+  "resolved_t": 2.878,
+  "trait_replication": {
+    "adaptability": {
+      "changes": [
+        2.440552,
+        2.665789,
+        3.204078
+      ],
+      "resolved": [
+        true,
+        true,
+        true
+      ],
+      "resolved_count": 3,
+      "verdict": "replicates"
+    },
+    "efficiency": {
+      "changes": [
+        -2.445217,
+        -2.394655,
+        -2.263273
+      ],
+      "resolved": [
+        true,
+        true,
+        true
+      ],
+      "resolved_count": 3,
+      "verdict": "replicates"
+    },
+    "reliability": {
+      "changes": [
+        3.052406,
+        2.941028,
+        2.60642
+      ],
+      "resolved": [
+        true,
+        true,
+        true
+      ],
+      "resolved_count": 3,
+      "verdict": "replicates"
+    },
+    "security": {
+      "changes": [
+        1.411762,
+        1.174719,
+        0.785744
+      ],
+      "resolved": [
+        false,
+        false,
+        false
+      ],
+      "resolved_count": 0,
+      "verdict": "consistent"
+    },
+    "simplicity": {
+      "changes": [
+        -2.628403,
+        -2.391056,
+        -1.913591
+      ],
+      "resolved": [
+        true,
+        true,
+        false
+      ],
+      "resolved_count": 2,
+      "verdict": "consistent"
+    }
+  }
+}

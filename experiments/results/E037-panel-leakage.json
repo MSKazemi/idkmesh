@@ -1,0 +1,153 @@
+{
+  "agents": 64,
+  "archive_is_capacity_bound": true,
+  "archive_size_by_panel": {
+    "measured": 64.0,
+    "perfect": 64.0,
+    "stress": 64.0
+  },
+  "bins": 8,
+  "change_at": 25,
+  "error_asymmetry": {
+    "measured": 0.00628,
+    "perfect": 0.0,
+    "stress": -0.003848
+  },
+  "experiment_id": "E037",
+  "false_accepts_rise_as_the_panel_weakens": true,
+  "false_rejects_rise_as_the_panel_weakens": true,
+  "generations": 50,
+  "goals": {
+    "adaptability": [
+      0.157551812,
+      0.400001132,
+      0.321287022,
+      0.035869512,
+      0.085290523
+    ],
+    "efficiency": [
+      0.071115184,
+      0.333124072,
+      0.400002853,
+      0.047974539,
+      0.147783351
+    ],
+    "reliability": [
+      0.399997199,
+      0.363288646,
+      0.011360681,
+      0.10516157,
+      0.120191905
+    ],
+    "security": [
+      0.00217646,
+      0.159103365,
+      0.261094094,
+      0.177593525,
+      0.400032556
+    ],
+    "simplicity": [
+      0.039526123,
+      0.117249108,
+      0.402964855,
+      0.40000413,
+      0.040255785
+    ]
+  },
+  "mode": "leakage",
+  "panels": [
+    "perfect",
+    "measured",
+    "stress"
+  ],
+  "per_panel": {
+    "measured": {
+      "majority": {
+        "archive_size": 0.0,
+        "false_accept_rate": 0.177125,
+        "false_reject_rate": 0.172725
+      },
+      "planner": {
+        "archive_size": 0.0,
+        "false_accept_rate": 0.174116,
+        "false_reject_rate": 0.174032
+      },
+      "qd": {
+        "archive_size": 64.0,
+        "false_accept_rate": 0.178223,
+        "false_reject_rate": 0.171943
+      },
+      "random": {
+        "archive_size": 0.0,
+        "false_accept_rate": 0.172728,
+        "false_reject_rate": 0.166123
+      },
+      "scalar": {
+        "archive_size": 0.0,
+        "false_accept_rate": 0.185071,
+        "false_reject_rate": 0.172196
+      }
+    },
+    "perfect": {
+      "majority": {
+        "archive_size": 0.0,
+        "false_accept_rate": 0.0,
+        "false_reject_rate": 0.0
+      },
+      "planner": {
+        "archive_size": 0.0,
+        "false_accept_rate": 0.0,
+        "false_reject_rate": 0.0
+      },
+      "qd": {
+        "archive_size": 64.0,
+        "false_accept_rate": 0.0,
+        "false_reject_rate": 0.0
+      },
+      "random": {
+        "archive_size": 0.0,
+        "false_accept_rate": 0.0,
+        "false_reject_rate": 0.0
+      },
+      "scalar": {
+        "archive_size": 0.0,
+        "false_accept_rate": 0.0,
+        "false_reject_rate": 0.0
+      }
+    },
+    "stress": {
+      "majority": {
+        "archive_size": 0.0,
+        "false_accept_rate": 0.457856,
+        "false_reject_rate": 0.447545
+      },
+      "planner": {
+        "archive_size": 0.0,
+        "false_accept_rate": 0.454191,
+        "false_reject_rate": 0.451001
+      },
+      "qd": {
+        "archive_size": 64.0,
+        "false_accept_rate": 0.443982,
+        "false_reject_rate": 0.44783
+      },
+      "random": {
+        "archive_size": 0.0,
+        "false_accept_rate": 0.44963,
+        "false_reject_rate": 0.447135
+      },
+      "scalar": {
+        "archive_size": 0.0,
+        "false_accept_rate": 0.438276,
+        "false_reject_rate": 0.448093
+      }
+    }
+  },
+  "seed_start": 1,
+  "seeds": 20,
+  "widest_false_accept_gap_between_arms": {
+    "measured": 0.012343,
+    "perfect": 0.0,
+    "stress": 0.01958
+  }
+}

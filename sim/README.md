@@ -582,6 +582,47 @@ uncorrelated panel is immune and a correlated one lets the archive reach 58
 catastrophic seeds in 100. See
 [`../experiments/E036-adversarial-contributors.md`](../experiments/E036-adversarial-contributors.md).
 
+### E037 — the same ladder behind an imperfect panel
+
+Everything E030-E035 concluded was measured with verification that was exact and
+free. `e037_ladder_under_panels.py` reruns E034's ladder on E027's `measured` and
+`stress` panels and compares the three, which needed **no new simulation code**:
+`e033_goal_distance.py` has always taken a `panel` setting and
+`e034_goal_direction.py` has always forwarded it.
+
+```bash
+PYTHONPATH=. python3 sim/e034_goal_direction.py --panel measured --goals-per-cell 16 --jobs 8 \
+  --output experiments/results/E037-panel-measured.json
+PYTHONPATH=. python3 sim/e034_goal_direction.py --panel stress   --goals-per-cell 16 --jobs 8 \
+  --output experiments/results/E037-panel-stress.json
+PYTHONPATH=. python3 sim/e037_ladder_under_panels.py \
+  --panel perfect=experiments/results/E034-goal-direction.json \
+  --panel measured=experiments/results/E037-panel-measured.json \
+  --panel stress=experiments/results/E037-panel-stress.json \
+  --output experiments/results/E037-ladder-under-panels.json
+PYTHONPATH=. python3 sim/e037_ladder_under_panels.py --mode leakage \
+  --panel perfect=experiments/results/E034-goal-direction.json \
+  --panel measured=experiments/results/E037-panel-measured.json \
+  --panel stress=experiments/results/E037-panel-stress.json \
+  --output experiments/results/E037-panel-leakage.json
+```
+
+Because the shell is held, the three panels measure the *same* 385 goals, so the
+comparison is paired rather than Welch's — sharper than E035 could be, and
+checked rather than assumed: `comparability` refuses artifacts differing in
+anything but the panel and `goal_alignment` refuses to pair unequal goal sets.
+The `perfect` column reports `verification_drawn: false`, because
+`e033._panel("perfect")` returns `None` and skips the draw rather than using
+`e027.PANELS["perfect"]`.
+
+Every ladder keeps its sign and the descriptor contrast stays resolved on all
+three panels, so the direction result is geometric rather than an artifact of
+perfect verification. The archive's lead *rises* as the panel weakens
+(`+1.189` -> `+1.328` -> `+1.659`), but `--mode leakage` rules out the obvious
+explanations: the archive is capacity-bound at the agent count on every panel,
+and the gate's error is symmetric and arm-blind. See
+[`../experiments/E037-ladder-under-panels.md`](../experiments/E037-ladder-under-panels.md).
+
 ## Tests
 
 With `pytest` installed:
@@ -607,15 +648,16 @@ python -m pytest -q \
   tests/test_e030_supplied_goal_membership.py \
   tests/test_e031_learned_goal_filter.py \
   tests/test_e032_population_scaling.py \
-  tests/test_e033_goal_distance.py
+  tests/test_e033_goal_distance.py \
   tests/test_e034_goal_direction.py \
   tests/test_e035_direction_across_shells.py \
-  tests/test_e036_adversarial_contributors.py
+  tests/test_e036_adversarial_contributors.py \
+  tests/test_e037_ladder_under_panels.py
 ```
 
 This is the same list `.github/workflows/emergence-sim.yml` runs; keep the two in step.
 
-The tests cover deterministic replay, budget invariants, niche preservation, perfect verification compatibility, correlated-error mechanics, sweep configuration, the E013 regime where independence-aware aggregation can help or hurt, E025's calibration separation and preserved shift failures, the E015 effective-panel-size metrics, the E016 discrimination screen, the E017 item-difficulty model, the E018 model comparison, the E019 group-independence result, the E020 quorum frontier, E024's exact matched-evaluation contract, E026's archive-contamination audit, E027's defect-propagation channel — its matched budget, its cost-zero identity with the channel off, and the demonstration that an accepted defect now persists and does harm — E028's latent-defect dimension, E030's supplied-goal membership condition, E031's learned goal filter, and E032's matched-budget population sweep, whose driver is checked against `mbe.sweep` arm-for-arm so that keeping per-seed values cannot change what a seed does, E033's goal-distance ladder, whose two anchors are checked against E030's committed cell so the ladder cannot quietly measure something else, and E034's goal-direction shell, where every measured goal is re-checked against both held distances and the write-up's own tables are read back off the artifact so a transcribed number cannot drift, and E035's cross-shell comparison, where all nineteen design keys are checked across the three artifacts so that a trait reversing sign cannot be a changed run parameter, and the goals the shells share are counted against the overlap their tolerance bands predict, and E036's adversarial contributor pool, whose zero-fraction control is asserted to be bit-identical to E028 on every panel and whose effort knob is checked to raise apparent quality above an honest contributor's rather than merely being labelled.
+The tests cover deterministic replay, budget invariants, niche preservation, perfect verification compatibility, correlated-error mechanics, sweep configuration, the E013 regime where independence-aware aggregation can help or hurt, E025's calibration separation and preserved shift failures, the E015 effective-panel-size metrics, the E016 discrimination screen, the E017 item-difficulty model, the E018 model comparison, the E019 group-independence result, the E020 quorum frontier, E024's exact matched-evaluation contract, E026's archive-contamination audit, E027's defect-propagation channel — its matched budget, its cost-zero identity with the channel off, and the demonstration that an accepted defect now persists and does harm — E028's latent-defect dimension, E030's supplied-goal membership condition, E031's learned goal filter, and E032's matched-budget population sweep, whose driver is checked against `mbe.sweep` arm-for-arm so that keeping per-seed values cannot change what a seed does, E033's goal-distance ladder, whose two anchors are checked against E030's committed cell so the ladder cannot quietly measure something else, and E034's goal-direction shell, where every measured goal is re-checked against both held distances and the write-up's own tables are read back off the artifact so a transcribed number cannot drift, and E035's cross-shell comparison, where all nineteen design keys are checked across the three artifacts so that a trait reversing sign cannot be a changed run parameter, and the goals the shells share are counted against the overlap their tolerance bands predict, and E036's adversarial contributor pool, whose zero-fraction control is asserted to be bit-identical to E028 on every panel and whose effort knob is checked to raise apparent quality above an honest contributor's rather than merely being labelled. E037's cross-panel comparison is checked the same way from the other side: all twenty-two design keys must match across the three artifacts, the goal sets must be identical before any paired statistic is computed, and the leakage probe's verdicts are re-derived from its own committed rows so a mechanism the record rules out cannot quietly be re-asserted.
 
 ## Interpretation
 
