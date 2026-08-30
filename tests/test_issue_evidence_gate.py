@@ -279,5 +279,45 @@ class CommandLineTest(unittest.TestCase):
             self.assertIn("issues", json.loads(out.read_text()))
 
 
+class ResolvedRegistrationTest(unittest.TestCase):
+    """A closed issue must leave the live registry.
+
+    The gate detects staleness by watching for a precondition that has become
+    met. That cannot fire when an issue is closed for an unrelated reason: the
+    measured evidence is unchanged, so the entry keeps reporting a closed issue
+    as waiting on evidence and the blocked count reads one too high.
+    """
+
+    def test_the_two_registries_are_disjoint(self):
+        overlap = set(gate.REGISTRY) & set(gate.RESOLVED)
+        self.assertEqual(
+            overlap,
+            set(),
+            f"issue(s) {sorted(overlap)} are both registered and resolved",
+        )
+
+    def test_issue_152_is_recorded_as_resolved_not_registered(self):
+        self.assertIn(152, gate.RESOLVED)
+        self.assertNotIn(152, gate.REGISTRY)
+
+    def test_every_resolved_entry_explains_the_closure(self):
+        for number, note in gate.RESOLVED.items():
+            with self.subTest(issue=number):
+                self.assertTrue(note.strip(), f"issue {number} has an empty note")
+
+    def test_a_resolved_issue_is_absent_from_the_reported_issues(self):
+        report = gate.audit()
+        for number in gate.RESOLVED:
+            with self.subTest(issue=number):
+                self.assertNotIn(str(number), report["issues"])
+
+    def test_the_report_publishes_the_resolved_registrations(self):
+        report = gate.audit()
+        self.assertEqual(
+            set(report["resolved_registrations"]),
+            {str(number) for number in gate.RESOLVED},
+        )
+
+
 if __name__ == "__main__":  # pragma: no cover
     unittest.main()
