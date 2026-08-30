@@ -348,6 +348,40 @@ a live control rather than a quoted number. AUROC drops from `0.784979` to
 survives; the never-catastrophic claim does not. See
 [`../experiments/E028-latent-defect-dimension.md`](../experiments/E028-latent-defect-dimension.md).
 
+### E030 — taking the supplied answer away
+
+`PLAUSIBLE_GOALS` contains `CHANGED_GOAL`, so the two arms that read it — the
+archive and the majority-vote swarm — are handed the goal the environment later
+switches to, while `random`, `scalar` and `planner` are not. E024 recorded that
+as a limitation on its own result. E030 removes it without changing anything
+else: the goal set stays **byte-identical** and the environment switches instead
+to a parity-matched goal that is not a member, so the manipulation is exactly one
+bit. Deleting the goal from the set would also shrink it from four hypotheses to
+three and confound "lost the answer" with "lost a quarter of the set".
+
+`future_goal()` patches `CHANGED_GOAL` in both module objects, like E028's
+landscape swap, and restores on exception. `goal_parity()` and
+`goal_difficulty()` report every property the substitute is supposed to match —
+change size, isolation, attainable ceiling, mean attainable utility and transfer
+regret — rather than asserting them, so a future edit that breaks the match shows
+up in the artifact instead of hiding behind a passing test.
+
+```bash
+python sim/e030_supplied_goal_membership.py --mode parity --draws 200000 \
+  --output experiments/results/E030-goal-parity.json
+python sim/e030_supplied_goal_membership.py --mode matrix --seeds 100 \
+  --output experiments/results/E030-supplied-goal-membership.json
+python sim/e030_supplied_goal_membership.py --mode matrix --seeds 100 --panel stress
+```
+
+Because the environment's goal itself moves, raw means are not comparable across
+conditions; the reported statistic is each arm's lead over the best arm that
+holds no hypothesis, and the reference arm is named in every cell. The archive
+keeps `95.6%`-`98.4%` of its lead and stays `0/100` catastrophic in all four
+panels in both conditions; the majority-vote swarm loses `-0.86` to `-0.92` and
+goes negative in three of four. See
+[`../experiments/E030-supplied-goal-membership.md`](../experiments/E030-supplied-goal-membership.md).
+
 ## Tests
 
 With `pytest` installed:
@@ -369,7 +403,8 @@ python -m pytest -q \
   tests/test_matched_budget_emergence.py \
   tests/test_e026_archive_contamination.py \
   tests/test_e027_defect_propagation.py \
-  tests/test_e028_latent_defect_dimension.py
+  tests/test_e028_latent_defect_dimension.py \
+  tests/test_e030_supplied_goal_membership.py
 ```
 
 This is the same list `.github/workflows/emergence-sim.yml` runs; keep the two in step.
