@@ -106,6 +106,18 @@ policy changes or merge decisions.
   retains. No arm shows the negative return hypothesis 1 predicts; the resolved
   negative returns are on the other two axes, archive capacity past bins=8 and
   budget spent on generations rather than agents.
+- [E033 Goal Distance](../../experiments/E033-goal-distance.md)
+  — turns E030's single substitute goal into a ladder of rings, six goals each,
+  at a matched change size. The archive's lead over the arms that hold no
+  hypothesis decays smoothly rather than off a cliff, and is fully gone by 0.35
+  from the supplied set — about one and a half times the set's own spread. It
+  closes not because the archive gets worse (22.4 to 22.1) but because the
+  simple arms get better (18.9 to 21.9), and distant goals are measurably more
+  discriminating rather than less, so 'nothing helps out there' is falsified.
+  E030's published point ranks second of seven at its own distance: retention
+  there is 78.3% on average, not the 95.6% one goal reports. Sweeping the same
+  axis without holding the change size returns 'unresolved' and would have
+  missed the decay entirely.
 - [E025 Learned Verifier Reliability](../../experiments/E025-learned-verifier-reliability.md)
   — calibration/held-out evidence for reliability and dependence-aware aggregation.
 - [IDKGraph P1 Independent Review Protocol](IDKGRAPH_P1_INDEPENDENT_REVIEW_PROTOCOL.md)
