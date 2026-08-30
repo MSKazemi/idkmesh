@@ -92,6 +92,20 @@ Two of them are actively being worked rather than waiting:
   simulator and had been sitting in a plan file, unconnected to the issue. That
   connection was the one real error this audit corrected.
 
+## When the evidence cannot be read
+
+The readiness audit validates cohorts against the Phase 0 schemas, so it needs
+the `requirements-phase0.txt` dependencies. Some workflows deliberately run
+without them.
+
+In that case the tool reports `available: false`, `observed: null` and
+`met: false` for the corpus precondition — **"cannot tell", never "measured
+zero"**. The two are indistinguishable in a bare number and mean opposite things:
+one is an empty corpus, the other is an audit that never ran. A partially
+audited set is treated the same way, because one unreadable cohort could hide a
+ready one behind it. Two tests pin this, one of them by running the audit
+through an interpreter that genuinely cannot import the validator.
+
 ## What this audit does not establish
 
 - It does not show any issue *should* stay open. It shows what each issue's own

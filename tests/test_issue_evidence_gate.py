@@ -23,8 +23,9 @@ def _evidence(**overrides):
             "contributor_recurrence_trials": 0, "distinct_actors": 1,
             "evidence_derived_strategy_priors": 0,
         },
-        "corpus": {"available": True, "cohorts": [],
-                   "best_eligible_work_units": 0, "minimum_required": 20},
+        "corpus": {"available": True, "cohorts": [], "audited_cohorts": 4,
+                   "total_cohorts": 4, "best_eligible_work_units": 0,
+                   "minimum_required": 20},
         "workflows": {"available": True,
                       "state_writing_workflows": ["ace-community-growth.yml"],
                       "hard_coded_issue_numbers": {}, "referenced_issue_numbers": []},
@@ -114,10 +115,53 @@ class AuditTest(unittest.TestCase):
         # preregistered thresholds could drift without anyone noticing.
         report = gate.audit()
         corpus = report["evidence"]["corpus"]
-        self.assertTrue(corpus["available"], "no cohort was audited")
-        self.assertTrue(corpus["cohorts"])
+        self.assertTrue(corpus["cohorts"], "no cohort was found")
+        self.assertEqual(corpus["total_cohorts"], len(corpus["cohorts"]))
         for row in corpus["cohorts"]:
-            self.assertIn("eligible_work_units", row, row)
+            # Either the frozen audit ran and reported coverage, or it could not
+            # run and said so. A row that claims neither is a silent zero.
+            self.assertTrue(
+                "eligible_work_units" in row or row["status"] == "audit_did_not_run",
+                row,
+            )
+
+    def test_an_unrunnable_corpus_audit_reads_as_cannot_tell_not_as_zero(self) -> None:
+        # The audit needs the Phase 0 schema validator. Workflows that run
+        # without it must not turn "could not measure" into "measured zero",
+        # which would look identical to a genuinely empty corpus.
+        ev = _evidence()
+        ev["corpus"] = {"available": False, "cohorts": [], "audited_cohorts": 0,
+                        "total_cohorts": 4, "best_eligible_work_units": None,
+                        "minimum_required": 20}
+        check = gate.PRECONDITIONS["real_corpus"](ev)
+        self.assertFalse(check["met"])
+        self.assertIsNone(check["observed"])
+
+    def test_a_partially_audited_corpus_is_not_treated_as_complete(self) -> None:
+        # One unreadable cohort could hide a ready one behind it.
+        ev = _evidence()
+        ev["corpus"] = {"available": False, "cohorts": [], "audited_cohorts": 3,
+                        "total_cohorts": 4, "best_eligible_work_units": 0,
+                        "minimum_required": 20}
+        self.assertIsNone(gate.PRECONDITIONS["real_corpus"](ev)["observed"])
+
+    def test_a_readiness_audit_that_cannot_run_yields_no_measurement(self) -> None:
+        # Reproduces the CI shape: a job that runs without the Phase 0 schema
+        # validator cannot execute the readiness audit at all. `/bin/false`
+        # stands in -- it exits non-zero with no stdout, exactly like the
+        # interpreter that cannot import jsonschema.
+        if not Path("/bin/false").exists():  # pragma: no cover
+            self.skipTest("/bin/false is unavailable")
+        evidence = gate.corpus_evidence(REPO_ROOT, python="/bin/false")
+        self.assertFalse(evidence["available"])
+        self.assertEqual(evidence["audited_cohorts"], 0)
+        self.assertGreater(evidence["total_cohorts"], 0)
+        self.assertIsNone(evidence["best_eligible_work_units"])
+        for row in evidence["cohorts"]:
+            self.assertEqual(row["status"], "audit_did_not_run")
+        check = gate.PRECONDITIONS["real_corpus"]({"corpus": evidence})
+        self.assertFalse(check["met"])
+        self.assertIsNone(check["observed"], "an unrunnable audit must not report 0")
 
     def test_workflows_that_store_state_in_issues_are_found(self) -> None:
         found = gate.workflow_evidence(REPO_ROOT)["state_writing_workflows"]

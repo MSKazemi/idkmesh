@@ -35,6 +35,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import subprocess
 import sys
@@ -94,7 +95,13 @@ def corpus_evidence(root: Path, python: str | None = None) -> Dict[str, Any]:
     """
     python = python or sys.executable
     cohorts = sorted((root / "benchmarks").glob("*/cohort.json"))
+    # The audit validates cohorts against the Phase 0 schemas, so it needs the
+    # `requirements-phase0.txt` dependencies. Some workflows deliberately run
+    # without them; there the audit cannot run and this function must say so
+    # rather than report a zero it never measured.
+    env = {**os.environ, "PYTHONPATH": "."}
     rows: List[Dict[str, Any]] = []
+    audited: List[Dict[str, Any]] = []
     for cohort in cohorts:
         completed = subprocess.run(
             [python, "-m", "randomness_lab.r1_readiness",
@@ -102,16 +109,15 @@ def corpus_evidence(root: Path, python: str | None = None) -> Dict[str, Any]:
              "--baseline-signature", "replication",
              "--diversity-signature", "replication",
              "--diversity-signature", "structural"],
-            cwd=root, capture_output=True, text=True,
-            env={"PYTHONPATH": ".", "PATH": "/usr/bin:/bin"},
+            cwd=root, capture_output=True, text=True, env=env,
         )
-        if completed.returncode != 0 and not completed.stdout.strip():
+        if not completed.stdout.strip():
             rows.append({"cohort": str(cohort.relative_to(root)),
-                         "status": "audit_failed",
-                         "stderr": completed.stderr.strip()[:400]})
+                         "status": "audit_did_not_run",
+                         "stderr": completed.stderr.strip()[-400:]})
             continue
         report = json.loads(completed.stdout)
-        rows.append({
+        row = {
             "cohort": report.get("cohort_id", str(cohort.relative_to(root))),
             "status": report.get("status"),
             "eligible_work_units": report["coverage"]["eligible_work_units"],
@@ -119,14 +125,20 @@ def corpus_evidence(root: Path, python: str | None = None) -> Dict[str, Any]:
             "minimum_required": report["configuration"].get(
                 "minimum_eligible_work_units", DEFAULT_MINIMUM_WORK_UNITS),
             "supports_empirical_r1_claim": report.get("supports_empirical_r1_claim"),
-        })
-    eligible = [r.get("eligible_work_units", 0) for r in rows]
-    minimums = [r.get("minimum_required", DEFAULT_MINIMUM_WORK_UNITS)
-                for r in rows if "minimum_required" in r]
+        }
+        rows.append(row)
+        audited.append(row)
+    minimums = [r["minimum_required"] for r in audited]
     return {
-        "available": bool(rows),
+        # Available only when every cohort in the tree was actually audited.
+        # A partial read could hide a ready cohort behind an unreadable one.
+        "available": bool(cohorts) and len(audited) == len(cohorts),
         "cohorts": rows,
-        "best_eligible_work_units": max(eligible) if eligible else 0,
+        "audited_cohorts": len(audited),
+        "total_cohorts": len(cohorts),
+        "best_eligible_work_units": (
+            max(r["eligible_work_units"] for r in audited) if audited else None
+        ),
         "minimum_required": min(minimums) if minimums else DEFAULT_MINIMUM_WORK_UNITS,
     }
 
@@ -170,12 +182,12 @@ def node_evidence(root: Path) -> Dict[str, Any]:
 def _p_real_corpus(ev: Dict[str, Any]) -> Dict[str, Any]:
     corpus = ev["corpus"]
     required = corpus["minimum_required"]
-    observed = corpus["best_eligible_work_units"]
+    observed = corpus["best_eligible_work_units"] if corpus["available"] else None
     return {
         "code": "eligible_held_out_work_units",
         "observed": observed,
         "required": f">= {required}",
-        "met": observed >= required,
+        "met": observed is not None and observed >= required,
         "source": "randomness_lab.r1_readiness over benchmarks/*/cohort.json",
     }
 
