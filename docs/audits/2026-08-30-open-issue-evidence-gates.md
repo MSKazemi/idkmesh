@@ -9,7 +9,8 @@ authority.
 
 ## What was inspected, and why
 
-Twenty-one issues are open. Several of them cannot be closed by writing code,
+Twenty-one issues were open when this audit was written; issue 152 has since
+been closed, leaving twenty. Several of them cannot be closed by writing code,
 because their own acceptance text names a precondition that is a **measured
 property of the repository** rather than a task: a held-out corpus that has to
 be collected, an independent reviewer who has to appear, a contributor who has
@@ -92,7 +93,10 @@ every externally blocked one reduces to exactly one of four things:
 
 1. **A genuinely separate human reviewer** — 4, 11, 16, 138, 151, 167, and 152 by
    a criterion its owner added after the body was written. Repository-wide: `0`
-   independent reviews across `50` pull requests.
+   independent reviews across `50` pull requests. Issue 152 was closed on
+   2026-08-30 without that reviewer appearing, so it now sits in the evidence
+   gate's `resolved_registrations` rather than its live registry; the
+   independent-review count is unchanged.
 2. **Real external contributors** — 9, 10, 57. `distinct_actors: 1`, HHI `1.0`.
 3. **A real held-out corpus, or compute for a larger producer** — 1, 30, 70, 96.
 4. **Owner-held credentials or the repository admin UI** — 12, and the

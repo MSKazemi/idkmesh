@@ -397,10 +397,6 @@ REGISTRY: Dict[int, Dict[str, Any]] = {
         "preconditions": ["independent_review"],
         "note": "asks for an independent audit; same measurement.",
     },
-    152: {
-        "preconditions": ["independent_review"],
-        "note": "gated on issue 167, which is itself an independent review request.",
-    },
     167: {
         "preconditions": ["independent_review"],
         "note": "asks an independent reviewer to inspect an orphan cohort.",
@@ -427,6 +423,25 @@ REGISTRY: Dict[int, Dict[str, Any]] = {
                 "Items 2 and 5 are already met, so this is a partial gate.",
         "partial": True,
     },
+}
+
+
+#: Issues that were registered here and have since been closed.
+#:
+#: The registry has two staleness modes, not one. The first is that a
+#: precondition becomes met, which ``newly_actionable`` already reports. The
+#: second is that the issue is closed for a reason unrelated to its
+#: precondition -- the work was scoped down, split, or superseded. Nothing in
+#: the measured evidence changes when that happens, so the entry would sit here
+#: indefinitely describing a closed issue as waiting on evidence, and the count
+#: of blocked issues would be silently too high by one.
+#:
+#: Closures are recorded rather than deleted so that the removal is auditable
+#: and so a later pass does not re-register an issue that is already done.
+RESOLVED: Dict[int, str] = {
+    152: "closed 2026-08-30 after the IDKGraph P1 warning-debt triage shipped; "
+         "its registered precondition (an independent review) was never met, so "
+         "newly_actionable could not have detected this closure.",
 }
 
 
@@ -464,12 +479,18 @@ def audit(root: Path | None = None, python: str | None = None) -> Dict[str, Any]
         "evidence": evidence,
         "issues": issues,
         "registered_issues": sorted(REGISTRY),
+        "resolved_registrations": {
+            str(number): note for number, note in sorted(RESOLVED.items())
+        },
         "newly_actionable": sorted(stale),
         "interpretation": (
             "A precondition that is not met is the expected steady state and is "
             "not an error. A precondition that has become met means the registry "
             "is stale: the issue can be worked now and its entry should be "
-            "removed. Issues absent from the registry are unclassified -- no "
+            "removed. An issue that is closed while its precondition is still "
+            "unmet is the other staleness mode; those move to "
+            "resolved_registrations, because no measured value changes when "
+            "they close. Issues absent from the registry are unclassified -- no "
             "mechanical precondition was read off their text, which is not "
             "evidence that they are blocked."
         ),
