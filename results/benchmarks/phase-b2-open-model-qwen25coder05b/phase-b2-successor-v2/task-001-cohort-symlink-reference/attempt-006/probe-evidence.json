@@ -1,0 +1,69 @@
+{
+  "attempt": 6,
+  "authority": {
+    "automatic_candidate_selection": false,
+    "canonical_state_write": false,
+    "git_push": false,
+    "merge": false
+  },
+  "cohort_evidence_attached": false,
+  "evaluator_plan_digest": "sha256:b6e3b0bc2627b3600a7a91ec5bd647d800d612228acb7c721795dc2ab0c5ab5e",
+  "experiment": "phase-b2-open-model-task-probe",
+  "human_integration_decision_required": true,
+  "model_metadata": {
+    "generation": {
+      "do_sample": true,
+      "max_new_tokens": 1536,
+      "seed": 5,
+      "temperature": 0.8,
+      "top_p": 0.95
+    },
+    "inference_seconds": 758.5195166330013,
+    "input_tokens": 5740,
+    "output_tokens": 1536,
+    "python": "3.12.14",
+    "schema_version": "0.1",
+    "torch": "2.13.0+cpu",
+    "transformers": "5.16.1"
+  },
+  "outcome": "producer_output_rejected",
+  "producer": {
+    "adapter": "open-weight-local-text-patch",
+    "adapter_version": "0.1",
+    "base_image_digest": "sha256:09f7da3bc104798d0afb40bc08d23ab2da20a76130cec1f2ef170848f5d85217",
+    "decode": {
+      "attempt": 6,
+      "do_sample": true,
+      "max_new_tokens": 1536,
+      "seed": 5,
+      "temperature": 0.8,
+      "top_p": 0.95
+    },
+    "image_id": "sha256:4c8b9fc09c2a0f8ac3da4cd17aa4b63b43ce7d21049a6a8c31ebedfc5b6efc24",
+    "model": "Qwen/Qwen2.5-Coder-0.5B-Instruct",
+    "model_revision": "bbf27711794f58ebd1796058f4280b53c32e19fc",
+    "prompt_digest": "sha256:5927dab855b1123014769ed36fd237d75d47f183c7cf935866b11cbc0dc4536a"
+  },
+  "producer_reason": "model patch targeted a path other than the WorkUnit allowed path",
+  "producer_returncode": 0,
+  "raw_response_digest": "sha256:8b15c3268d57173c4be9f9efa4153c877e269c00609bc362009eef9459df0344",
+  "result_manifest": null,
+  "sandbox": {
+    "capabilities_dropped": true,
+    "cpu_limit": 2.0,
+    "evaluator_plan_exposed_to_model": false,
+    "memory_limit_mb": 6144,
+    "network_none": true,
+    "no_new_privileges": true,
+    "pid_limit": 128,
+    "read_only_root": true,
+    "repository_credentials_exposed": false,
+    "source_checkout_mounted_to_model": false
+  },
+  "schema_version": "0.1",
+  "source_revision": "a69aa0ae1ae4862e507511cbd9ad854237d0ad32",
+  "structural_signature": "single-worker-baseline-v1",
+  "task_id": "benchmark/phase-b2-v2/001-cohort-symlink-reference",
+  "verification_result": null,
+  "work_unit_digest": "sha256:2e0b49e98e6626131c2b08916753b3b7f6ea7c25519cc9610f7212474d8712b3"
+}

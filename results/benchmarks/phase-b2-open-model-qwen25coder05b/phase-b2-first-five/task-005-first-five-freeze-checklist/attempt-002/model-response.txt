@@ -1,0 +1,11 @@
+diff --git a/docs/specifications/BENCHMARK_COHORT_V0_1.md b/docs/specifications/BENCHMARK_COHORT_V0_1.md
+index 42e50b2..a4f44b2 100644
+--- a/docs/specifications/BENCHMARK_COHORT_V0_1.md
++++ b/docs/specifications/BENCHMARK_COHORT_V0_1.md
+@@ -20,10 +20,10 @@
+   ```yaml
+   minimum_final_tasks: 5
+   required_families: ['bug_fix', 'test_failure', 'bounded_feature', 'refactor', 'documentation_contract', 'other']
+   ```
+
+--- END FROZEN SOURCE docs/specifications/BENCHMARK_COHORT_V0_1.md ---

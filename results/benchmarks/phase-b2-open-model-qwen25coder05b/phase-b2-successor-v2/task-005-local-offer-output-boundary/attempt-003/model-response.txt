@@ -1,0 +1,15 @@
+```
+diff --git experiments/local_compute_offer.py b/experiments/local_compute_offer.py
+index 0f4021a..b170351 100644
+--- a/experiments/local_compute_offer.py
++++ b/experiments/local_compute_offer.py
+@@ -0,0 +1 @@
++#!/usr/bin/env python3
++"""Discover conservative local capacity and emit a zero-project-cost compute offer.
+
+This utility performs discovery only. It does not execute a Work Unit, open a
+network connection, register a node, or expose remote-control functionality.
+The output conforms to compute-offer-pool-v0.1 and can be consumed by
+free_compute_router.py.
+"""
+```

@@ -199,10 +199,14 @@ def model_container_command(
     prompt_path: Path,
     model_output: Path,
     max_new_tokens: int,
+    seed: int,
+    sample: bool,
+    temperature: float,
+    top_p: float,
 ) -> list[str]:
     model_output.mkdir(parents=True, exist_ok=True)
     model_output.chmod(0o777)
-    return [
+    command = [
         "docker",
         "run",
         "--rm",
@@ -252,7 +256,18 @@ def model_container_command(
         "/output/metadata.json",
         "--max-new-tokens",
         str(max_new_tokens),
+        "--seed",
+        str(seed),
     ]
+    if sample:
+        command += [
+            "--do-sample",
+            "--temperature",
+            str(temperature),
+            "--top-p",
+            str(top_p),
+        ]
+    return command
 
 
 def run_probe(args: argparse.Namespace) -> int:
@@ -316,6 +331,10 @@ def run_probe(args: argparse.Namespace) -> int:
         prompt_path=prompt_path,
         model_output=model_output,
         max_new_tokens=args.max_new_tokens,
+        seed=args.seed,
+        sample=args.sample,
+        temperature=args.temperature,
+        top_p=args.top_p,
     )
     container_proc = run(
         command,
@@ -341,7 +360,16 @@ def run_probe(args: argparse.Namespace) -> int:
             "image_id": model_image_id,
             "base_image_digest": args.base_image_digest,
             "prompt_digest": prompt_digest,
+            "decode": {
+                "attempt": args.attempt,
+                "do_sample": bool(args.sample),
+                "seed": args.seed,
+                "temperature": args.temperature if args.sample else None,
+                "top_p": args.top_p if args.sample else None,
+                "max_new_tokens": args.max_new_tokens,
+            },
         },
+        "attempt": args.attempt,
         "sandbox": {
             "network_none": True,
             "read_only_root": True,
@@ -468,10 +496,10 @@ def run_probe(args: argparse.Namespace) -> int:
     wall_seconds = time.monotonic() - attempt_started
     result_manifest = {
         "schema_version": "0.1",
-        "id": "benchmark/phase-b2/001-open-model-qwen25coder05b-attempt-1",
+        "id": f"{work_unit['id']}/open-model-qwen25coder05b/attempt-{args.attempt}",
         "work_unit_id": work_unit["id"],
         "work_unit_version": work_unit["version"],
-        "attempt": 1,
+        "attempt": args.attempt,
         "worker": {
             "id": "github-actions/qwen2.5-coder-0.5b",
             "type": "agent",
@@ -646,6 +674,15 @@ def main() -> int:
     parser.add_argument("--image", default="idkmesh-open-model-producer:task001")
     parser.add_argument("--base-image-digest", default="unrecorded")
     parser.add_argument("--max-new-tokens", type=int, default=1536)
+    parser.add_argument("--attempt", type=int, default=1)
+    parser.add_argument(
+        "--sample",
+        action="store_true",
+        help="Draw an independent sample instead of the default greedy decode.",
+    )
+    parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--temperature", type=float, default=1.0)
+    parser.add_argument("--top-p", type=float, default=1.0)
     parser.add_argument(
         "--structural-signatures",
         nargs="*",
