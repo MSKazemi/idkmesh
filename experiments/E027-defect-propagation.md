@@ -194,6 +194,20 @@ catastrophic seeds.
 
 ## Result 2 — the Quality-Diversity result survives, and the ordering does not move
 
+> **Bounded by E028, and the bound is narrow.**
+> [`E028-latent-defect-dimension.md`](E028-latent-defect-dimension.md) built the
+> landscape this record's Decision section asked for — one in which apparent
+> quality carries no information about viability — and re-ran the full 20-cell
+> matrix on it against a live re-run of this one. The result is **not** that the
+> `0/100` below was an artifact. The Quality-Diversity arm stays at `0/100` in
+> **18 of the 20 cells**; it moves to `3/100` under the measured panel below at
+> cost `1.0`; and it reaches `62/100` only under E026's *stress* panel at cost
+> `1.0` (`53/100` in the heritability-matched sensitivity arm). The stress panel
+> is a deliberately pessimistic construct, not a measured one. So the survival
+> claim holds wherever the panel is a measured object and breaks at the
+> pessimistic extreme — quote it with that exception rather than
+> unconditionally.
+
 Headline sweep: E017/E020 measured panel, channel armed at cost `1.0`, 100
 seeds, against E026's same-panel run (which is this record's cost-`0.0` column).
 
@@ -414,3 +428,22 @@ apparent-quality signal is *uninformative* about viability, so that verification
 is the only thing standing between an accepted defect and the outcome. Until
 that exists, E027's survival result is bounded by an AUROC of 0.94 and should be
 quoted with it.
+
+> **That step was taken.** [E028](E028-latent-defect-dimension.md) moved
+> ground-truth viability into a dimension no goal weights, no descriptor reads
+> and the trait budget does not constrain, holding the base viability rate and
+> the heritability of viability at this landscape's measured values so only the
+> informativeness changed — AUROC `0.784979` to `0.500642` over fresh draws.
+> The survival result **mostly** carries over: `0/100` in 18 of 20 cells,
+> `3/100` under the measured panel at cost `1.0`, and `62/100` only under the
+> unmeasured stress panel at that cost. The comparative claim carries over on
+> means and tails — Quality-Diversity holds the highest mean post-change AUC in
+> `20/20` cells and never more catastrophes than any other arm — but **not** per
+> seed: in the
+> stress/cost-`1.0` cell its paired-seed win rate against the other arms falls
+> to `44`–`57` of 100. E028 also measured the mechanism this record could only
+> infer: the archive's retained-defect rate in that cell goes `0.0002` to
+> `0.4500`, so the filtering advantage really was the landscape's doing. And it
+> checked whether this record's `0.937` was itself an artifact of pooling across
+> generations, and found it was not — conditioning on generation moves it only
+> to `0.885`, so the caveat above was correctly stated.
