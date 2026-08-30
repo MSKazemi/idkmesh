@@ -1,0 +1,434 @@
+{
+  "agents": 64,
+  "arms": [
+    "random",
+    "scalar",
+    "qd",
+    "planner",
+    "majority"
+  ],
+  "baseline_panel": "perfect",
+  "bins": 8,
+  "change_at": 25,
+  "damage": {
+    "measured": {
+      "majority": {
+        "baseline_utility": 17.194623,
+        "change": -0.011181,
+        "panel_utility": 17.183442
+      },
+      "planner": {
+        "baseline_utility": 16.618794,
+        "change": -0.005105,
+        "panel_utility": 16.613689
+      },
+      "qd": {
+        "baseline_utility": 20.674623,
+        "change": 0.10239,
+        "panel_utility": 20.777013
+      },
+      "random": {
+        "baseline_utility": 18.79444,
+        "change": -0.236045,
+        "panel_utility": 18.558395
+      },
+      "scalar": {
+        "baseline_utility": 18.327316,
+        "change": -0.031054,
+        "panel_utility": 18.296262
+      }
+    },
+    "stress": {
+      "majority": {
+        "baseline_utility": 17.194623,
+        "change": -0.01446,
+        "panel_utility": 17.180163
+      },
+      "planner": {
+        "baseline_utility": 16.618794,
+        "change": -0.020276,
+        "panel_utility": 16.598518
+      },
+      "qd": {
+        "baseline_utility": 20.674623,
+        "change": 0.166218,
+        "panel_utility": 20.840841
+      },
+      "random": {
+        "baseline_utility": 18.79444,
+        "change": -0.829071,
+        "panel_utility": 17.965369
+      },
+      "scalar": {
+        "baseline_utility": 18.327316,
+        "change": -0.094335,
+        "panel_utility": 18.232981
+      }
+    }
+  },
+  "experiment": "symmetric-gate-asymmetric-burden-v1",
+  "experiment_id": "E038",
+  "exposure": {
+    "measured": {
+      "majority": {
+        "errors": 109480.0,
+        "false_accept_share": 0.013792,
+        "false_accepts": 1510.0,
+        "false_rejects": 107970.0
+      },
+      "planner": {
+        "errors": 111285.0,
+        "false_accept_share": 0.021521,
+        "false_accepts": 2395.0,
+        "false_rejects": 108890.0
+      },
+      "qd": {
+        "errors": 110445.0,
+        "false_accept_share": 0.119562,
+        "false_accepts": 13205.0,
+        "false_rejects": 97240.0
+      },
+      "random": {
+        "errors": 109620.0,
+        "false_accept_share": 0.604862,
+        "false_accepts": 66305.0,
+        "false_rejects": 43315.0
+      },
+      "scalar": {
+        "errors": 110200.0,
+        "false_accept_share": 0.02863,
+        "false_accepts": 3155.0,
+        "false_rejects": 107045.0
+      }
+    },
+    "perfect": {
+      "majority": {
+        "errors": 0.0,
+        "false_accept_share": 0.0,
+        "false_accepts": 0.0,
+        "false_rejects": 0.0
+      },
+      "planner": {
+        "errors": 0.0,
+        "false_accept_share": 0.0,
+        "false_accepts": 0.0,
+        "false_rejects": 0.0
+      },
+      "qd": {
+        "errors": 0.0,
+        "false_accept_share": 0.0,
+        "false_accepts": 0.0,
+        "false_rejects": 0.0
+      },
+      "random": {
+        "errors": 0.0,
+        "false_accept_share": 0.0,
+        "false_accepts": 0.0,
+        "false_rejects": 0.0
+      },
+      "scalar": {
+        "errors": 0.0,
+        "false_accept_share": 0.0,
+        "false_accepts": 0.0,
+        "false_rejects": 0.0
+      }
+    },
+    "stress": {
+      "majority": {
+        "errors": 287760.0,
+        "false_accept_share": 0.01496,
+        "false_accepts": 4305.0,
+        "false_rejects": 283455.0
+      },
+      "planner": {
+        "errors": 287180.0,
+        "false_accept_share": 0.025629,
+        "false_accepts": 7360.0,
+        "false_rejects": 279820.0
+      },
+      "qd": {
+        "errors": 286520.0,
+        "false_accept_share": 0.161734,
+        "false_accepts": 46340.0,
+        "false_rejects": 240180.0
+      },
+      "random": {
+        "errors": 286695.0,
+        "false_accept_share": 0.600446,
+        "false_accepts": 172145.0,
+        "false_rejects": 114550.0
+      },
+      "scalar": {
+        "errors": 287830.0,
+        "false_accept_share": 0.029427,
+        "false_accepts": 8470.0,
+        "false_rejects": 279360.0
+      }
+    }
+  },
+  "generations": 50,
+  "goals": {
+    "adaptability": [
+      0.157551812,
+      0.400001132,
+      0.321287022,
+      0.035869512,
+      0.085290523
+    ],
+    "efficiency": [
+      0.071115184,
+      0.333124072,
+      0.400002853,
+      0.047974539,
+      0.147783351
+    ],
+    "reliability": [
+      0.399997199,
+      0.363288646,
+      0.011360681,
+      0.10516157,
+      0.120191905
+    ],
+    "security": [
+      0.00217646,
+      0.159103365,
+      0.261094094,
+      0.177593525,
+      0.400032556
+    ],
+    "simplicity": [
+      0.039526123,
+      0.117249108,
+      0.402964855,
+      0.40000413,
+      0.040255785
+    ]
+  },
+  "panels": [
+    "perfect",
+    "measured",
+    "stress"
+  ],
+  "per_panel": {
+    "measured": {
+      "majority": {
+        "accept_rate": 0.820164,
+        "false_accepts": 1510.0,
+        "false_rejects": 107970.0,
+        "mean_utility_auc": 17.183442,
+        "post_change_utility_auc": 3436.688367,
+        "proposal_attempts": 640000.0,
+        "verification_accepts": 524905.0,
+        "verification_attempts": 640000.0,
+        "viable_evaluations": 631365.0
+      },
+      "planner": {
+        "accept_rate": 0.811078,
+        "false_accepts": 2395.0,
+        "false_rejects": 108890.0,
+        "mean_utility_auc": 16.613689,
+        "post_change_utility_auc": 3322.737703,
+        "proposal_attempts": 640000.0,
+        "verification_accepts": 519090.0,
+        "verification_attempts": 640000.0,
+        "viable_evaluations": 625585.0
+      },
+      "qd": {
+        "accept_rate": 0.74725,
+        "false_accepts": 13205.0,
+        "false_rejects": 97240.0,
+        "mean_utility_auc": 20.777013,
+        "post_change_utility_auc": 4155.402537,
+        "proposal_attempts": 640000.0,
+        "verification_accepts": 478240.0,
+        "verification_attempts": 640000.0,
+        "viable_evaluations": 562275.0
+      },
+      "random": {
+        "accept_rate": 0.434039,
+        "false_accepts": 66305.0,
+        "false_rejects": 43315.0,
+        "mean_utility_auc": 18.558395,
+        "post_change_utility_auc": 3711.679062,
+        "proposal_attempts": 640000.0,
+        "verification_accepts": 277785.0,
+        "verification_attempts": 640000.0,
+        "viable_evaluations": 254795.0
+      },
+      "scalar": {
+        "accept_rate": 0.810492,
+        "false_accepts": 3155.0,
+        "false_rejects": 107045.0,
+        "mean_utility_auc": 18.296262,
+        "post_change_utility_auc": 3659.252376,
+        "proposal_attempts": 640000.0,
+        "verification_accepts": 518715.0,
+        "verification_attempts": 640000.0,
+        "viable_evaluations": 622605.0
+      }
+    },
+    "perfect": {
+      "majority": {
+        "accept_rate": 0.986414,
+        "false_accepts": 0.0,
+        "false_rejects": 0.0,
+        "mean_utility_auc": 17.194623,
+        "post_change_utility_auc": 3438.924556,
+        "proposal_attempts": 640000.0,
+        "verification_accepts": 631305.0,
+        "verification_attempts": 640000.0,
+        "viable_evaluations": 631305.0
+      },
+      "planner": {
+        "accept_rate": 0.978469,
+        "false_accepts": 0.0,
+        "false_rejects": 0.0,
+        "mean_utility_auc": 16.618794,
+        "post_change_utility_auc": 3323.75885,
+        "proposal_attempts": 640000.0,
+        "verification_accepts": 626220.0,
+        "verification_attempts": 640000.0,
+        "viable_evaluations": 626220.0
+      },
+      "qd": {
+        "accept_rate": 0.890016,
+        "false_accepts": 0.0,
+        "false_rejects": 0.0,
+        "mean_utility_auc": 20.674623,
+        "post_change_utility_auc": 4134.924526,
+        "proposal_attempts": 640000.0,
+        "verification_accepts": 569610.0,
+        "verification_attempts": 640000.0,
+        "viable_evaluations": 569610.0
+      },
+      "random": {
+        "accept_rate": 0.398117,
+        "false_accepts": 0.0,
+        "false_rejects": 0.0,
+        "mean_utility_auc": 18.79444,
+        "post_change_utility_auc": 3758.887932,
+        "proposal_attempts": 640000.0,
+        "verification_accepts": 254795.0,
+        "verification_attempts": 640000.0,
+        "viable_evaluations": 254795.0
+      },
+      "scalar": {
+        "accept_rate": 0.974734,
+        "false_accepts": 0.0,
+        "false_rejects": 0.0,
+        "mean_utility_auc": 18.327316,
+        "post_change_utility_auc": 3665.46315,
+        "proposal_attempts": 640000.0,
+        "verification_accepts": 623830.0,
+        "verification_attempts": 640000.0,
+        "viable_evaluations": 623830.0
+      }
+    },
+    "stress": {
+      "majority": {
+        "accept_rate": 0.549227,
+        "false_accepts": 4305.0,
+        "false_rejects": 283455.0,
+        "mean_utility_auc": 17.180163,
+        "post_change_utility_auc": 3436.032664,
+        "proposal_attempts": 640000.0,
+        "verification_accepts": 351505.0,
+        "verification_attempts": 640000.0,
+        "viable_evaluations": 630655.0
+      },
+      "planner": {
+        "accept_rate": 0.548805,
+        "false_accepts": 7360.0,
+        "false_rejects": 279820.0,
+        "mean_utility_auc": 16.598518,
+        "post_change_utility_auc": 3319.703601,
+        "proposal_attempts": 640000.0,
+        "verification_accepts": 351235.0,
+        "verification_attempts": 640000.0,
+        "viable_evaluations": 623695.0
+      },
+      "qd": {
+        "accept_rate": 0.535438,
+        "false_accepts": 46340.0,
+        "false_rejects": 240180.0,
+        "mean_utility_auc": 20.840841,
+        "post_change_utility_auc": 4168.168121,
+        "proposal_attempts": 640000.0,
+        "verification_accepts": 342680.0,
+        "verification_attempts": 640000.0,
+        "viable_evaluations": 536520.0
+      },
+      "random": {
+        "accept_rate": 0.488109,
+        "false_accepts": 172145.0,
+        "false_rejects": 114550.0,
+        "mean_utility_auc": 17.965369,
+        "post_change_utility_auc": 3593.073836,
+        "proposal_attempts": 640000.0,
+        "verification_accepts": 312390.0,
+        "verification_attempts": 640000.0,
+        "viable_evaluations": 254795.0
+      },
+      "scalar": {
+        "accept_rate": 0.547438,
+        "false_accepts": 8470.0,
+        "false_rejects": 279360.0,
+        "mean_utility_auc": 18.232981,
+        "post_change_utility_auc": 3646.596259,
+        "proposal_attempts": 640000.0,
+        "verification_accepts": 350360.0,
+        "verification_attempts": 640000.0,
+        "viable_evaluations": 621250.0
+      }
+    }
+  },
+  "prediction": {
+    "claim": "an arm-blind gate is not an arm-neutral gate, because the arms are not equally exposed to the two directions of error",
+    "clauses": {
+      "arms_differ_sharply_in_base_viability": true,
+      "the_archive_is_not_the_most_damaged_arm": true,
+      "the_least_viable_arm_is_the_most_exposed_to_false_accepts": true,
+      "the_least_viable_arm_takes_the_worst_utility_damage": true
+    },
+    "question": "E037 Result 2 -- why does the archive's lead rise as the panel weakens?"
+  },
+  "runs_per_panel": 200,
+  "seed_start": 1,
+  "seeds": 40,
+  "verdicts": {
+    "base_viability": {
+      "majority": 0.986414,
+      "planner": 0.978469,
+      "qd": 0.890016,
+      "random": 0.398117,
+      "scalar": 0.974734
+    },
+    "base_viability_spread": 0.588297,
+    "clause_count": 4,
+    "clauses": {
+      "arms_differ_sharply_in_base_viability": true,
+      "the_archive_is_not_the_most_damaged_arm": true,
+      "the_least_viable_arm_is_the_most_exposed_to_false_accepts": true,
+      "the_least_viable_arm_takes_the_worst_utility_damage": true
+    },
+    "least_viable_arm": "random",
+    "met": {
+      "arms_differ_sharply_in_base_viability": true,
+      "the_archive_is_not_the_most_damaged_arm": true,
+      "the_least_viable_arm_is_the_most_exposed_to_false_accepts": true,
+      "the_least_viable_arm_takes_the_worst_utility_damage": true
+    },
+    "met_count": 4,
+    "most_false_accept_exposed_arm": {
+      "measured": "random",
+      "stress": "random"
+    },
+    "partially_supported": false,
+    "supported": true,
+    "worst_damaged_arm": {
+      "measured": "random",
+      "stress": "random"
+    }
+  },
+  "viability_gap": 0.2
+}
