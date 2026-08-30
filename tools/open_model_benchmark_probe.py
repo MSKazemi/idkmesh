@@ -19,6 +19,7 @@ import argparse
 from datetime import datetime, timezone
 import hashlib
 import json
+import os
 from pathlib import Path, PurePosixPath
 import platform
 import shutil
@@ -145,6 +146,25 @@ def build_prompt(work_unit: dict[str, Any], target_path: str, source_text: str) 
     )
 
 
+def diff_header_names_only(header: str, target_path: str) -> bool:
+    """True when a `diff --git` header names `target_path` and nothing else.
+
+    Tolerates a missing or unexpected `a/` / `b/` prefix, which is the failure a
+    small model actually makes. It never tolerates a second path, so a header
+    reaching another file is still reported as out of scope.
+    """
+    if not header.startswith("diff --git "):
+        return False
+    operands = header[len("diff --git ") :].split()
+    if len(operands) != 2:
+        return False
+    stripped = [
+        operand[2:] if operand.startswith(("a/", "b/")) else operand
+        for operand in operands
+    ]
+    return all(operand == target_path for operand in stripped)
+
+
 def extract_candidate_diff(response: str, target_path: str) -> str:
     start = response.find("diff --git ")
     if start < 0:
@@ -161,6 +181,14 @@ def extract_candidate_diff(response: str, target_path: str) -> str:
     expected_new = f"+++ b/{target_path}"
     lines = patch.splitlines()
     if not lines or lines[0] != expected_diff:
+        # A header that names the allowed path on both sides but drops the a/ or
+        # b/ prefix is a diff-format failure, not an attempt to reach outside the
+        # WorkUnit. Reporting both as a containment breach makes the benchmark
+        # read as if the producer tried to escape its scope when it did not.
+        if diff_header_names_only(lines[0] if lines else "", target_path):
+            raise ProducerOutcome(
+                "model patch header is malformed but names only the allowed path"
+            )
         raise ProducerOutcome("model patch targeted a path other than the WorkUnit allowed path")
     if expected_old not in lines or expected_new not in lines:
         raise ProducerOutcome("model patch did not preserve exact old/new target paths")
@@ -501,7 +529,7 @@ def run_probe(args: argparse.Namespace) -> int:
         "work_unit_version": work_unit["version"],
         "attempt": args.attempt,
         "worker": {
-            "id": "github-actions/qwen2.5-coder-0.5b",
+            "id": args.worker_id,
             "type": "agent",
             "adapter": "open-weight-local-text-patch",
             "adapter_version": PROBE_VERSION,
@@ -633,6 +661,17 @@ def run_probe(args: argparse.Namespace) -> int:
     return 0
 
 
+def default_worker_id() -> str:
+    """Where this attempt actually ran.
+
+    A hardcoded `github-actions/...` id would label every local run as a CI run
+    in its own ResultManifest, which is a provenance claim the run cannot
+    support.
+    """
+    context = "github-actions" if os.environ.get("GITHUB_ACTIONS") == "true" else "local"
+    return f"{context}/qwen2.5-coder-0.5b"
+
+
 def self_test() -> int:
     target = "tools/benchmark_cohort.py"
     good = (
@@ -653,6 +692,26 @@ def self_test() -> int:
         pass
     else:
         raise ProbeError("self-test accepted a cross-path model patch")
+    malformed = good.replace(f"diff --git a/{target} b/{target}", f"diff --git {target} b/{target}", 1)
+    try:
+        extract_candidate_diff(malformed, target)
+    except ProducerOutcome as exc:
+        if "names only the allowed path" not in str(exc):
+            raise ProbeError(
+                f"self-test reported a formatting failure as out of scope: {exc}"
+            )
+    else:
+        raise ProbeError("self-test accepted a malformed diff header")
+    if diff_header_names_only(f"diff --git a/{target} b/SECURITY.md", target):
+        raise ProbeError("self-test treated a cross-path header as allowed-path-only")
+    if diff_header_names_only(f"diff --git a/{target}", target):
+        raise ProbeError("self-test treated a one-operand header as allowed-path-only")
+    if default_worker_id() != (
+        "github-actions/qwen2.5-coder-0.5b"
+        if os.environ.get("GITHUB_ACTIONS") == "true"
+        else "local/qwen2.5-coder-0.5b"
+    ):
+        raise ProbeError("self-test worker id does not match the execution context")
     try:
         repo_relative_path("../escape.py", label="self-test")
     except ProbeError:
@@ -675,6 +734,12 @@ def main() -> int:
     parser.add_argument("--base-image-digest", default="unrecorded")
     parser.add_argument("--max-new-tokens", type=int, default=1536)
     parser.add_argument("--attempt", type=int, default=1)
+    parser.add_argument(
+        "--worker-id",
+        default=default_worker_id(),
+        help="ResultManifest worker id. Defaults to the execution context, so a "
+        "local run is not recorded as a CI run.",
+    )
     parser.add_argument(
         "--sample",
         action="store_true",
