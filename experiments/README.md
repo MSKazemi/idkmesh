@@ -39,6 +39,7 @@ listed here fails the suite rather than becoming quietly undiscoverable.
 | **E037** | [Is the direction result about the goal geometry, or about a perfect verifier?](E037-ladder-under-panels.md) |
 | **E038** | [A symmetric gate is not a symmetric burden](E038-symmetric-gate.md) |
 | **E039** | [The blind spot has no address, and giving it one baits the optimiser](E039-content-addressed-blind-spot.md) |
+| **E040** | [Hypothesis 2 has no threshold to find, and its verification half is worth nothing](E040-diversity-correlation-threshold.md) |
 
 E014's sweeps publish their own result documents:
 [reference sweep](results/E014-reference-sweep.md),

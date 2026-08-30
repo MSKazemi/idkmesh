@@ -83,7 +83,10 @@ verification before execution.
 - [compact generated table, flat arm](../../results/experiments/r1/collective-scaling-seeds42-51.md)
 - [machine-readable seeded results, three topologies](../../results/experiments/r1/coordination-topology-seeds42-51.json.gz)
 - [compact generated table, three topologies](../../results/experiments/r1/coordination-topology-seeds42-51.md)
+- [machine-readable seeded results, correlation sweep](../../results/experiments/r1/diversity-correlation-threshold-seeds42-51.json.gz)
+- [compact generated table, correlation sweep](../../results/experiments/r1/diversity-correlation-threshold-seeds42-51.md)
 - [runner](../../randomness_lab/r1_scaling.py)
+- [correlation-sweep runner](../../randomness_lab/r1_correlation_threshold.py)
 
 Reproduce from the repository root:
 
@@ -163,6 +166,26 @@ At equal N and attempt count, the synthetic diversity conditions beat the
 maximally correlated homogeneous condition in this frozen run. That result is
 partly constructed by the correlation assumptions; it must not be cited as
 evidence that heterogeneous coding agents outperform replicated models.
+
+[E040](../../experiments/E040-diversity-correlation-threshold.md) measured how
+much of it the assumption constructs, by rerunning this grid across a ladder of
+assumed correlations instead of the single `0.25`. The answer is: all of the
+size and none of the sign. The advantage is proportional to retained
+independence, `1 - rho`, at an uncentered R-squared of at least `0.99` through
+the origin in 17 of 18 curves, and the two arms coincide by construction at
+`rho = 1.0`. There is no correlation at which this harness reports the diverse
+arm losing, so its equal-budget result cannot be evidence that the effect
+exists — only a sized effect under a stated assumption, which is how the
+paragraph above already asks it to be read.
+
+E040 also splits the `diverse_verifiers` arm off from `structural_diversity` and
+finds the verification half contributes nothing distinguishable: randomizing
+verifier assignment raised the fitted slope in 5 of 9 cells, by at most `0.0181`
+against worker-diversity slopes running to `0.5504`. Every verifier in the pool
+is built with the same sensitivity and false-positive rate, so randomizing which
+one reads a candidate cannot add independence the pool does not have. Claims
+about independent verification need an arm that moves
+`verifier_error_correlation`, which this grid holds fixed at `0.60`.
 
 ## Coordination-topology exponent comparison
 

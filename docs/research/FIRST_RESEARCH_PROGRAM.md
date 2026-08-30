@@ -8,6 +8,21 @@ Two of the three tracks are finished. They are kept here because this document
 is a record of what the program was, not a list of what is currently claimable.
 
 1. **Open.** [Issue #13 — Measure the scaling law of collective intelligence](https://github.com/MSKazemi/idkmesh/issues/13)
+   — all three of its falsifiable hypotheses now have a named synthetic test,
+   and none of the three is closed by one. Hypothesis 1 is falsified in the
+   direction it was stated, by
+   [`E032-population-scaling.md`](../../experiments/E032-population-scaling.md).
+   Hypothesis 3 is tested by the budget-matched coordination-topology arms in
+   [`R1_COLLECTIVE_SCALING.md`](R1_COLLECTIVE_SCALING.md), which find topology
+   shifts the exponent by roughly an order of magnitude less than error
+   correlation does. Hypothesis 2 is tested by
+   [`E040-diversity-correlation-threshold.md`](../../experiments/E040-diversity-correlation-threshold.md),
+   whose result is about the harness rather than the hypothesis: the
+   equal-budget advantage is proportional to retained independence at every
+   assumed correlation short of 1.0, so the synthetic runner has no failure
+   mode for hypothesis 2 and cannot supply evidence either way. The track stays
+   open on the real held-out corpus, which is
+   [issue #70](https://github.com/MSKazemi/idkmesh/issues/70).
 2. **Closed 2026-08-29**, by pull request 252. [Issue #14 — Make verification scale with generation](https://github.com/MSKazemi/idkmesh/issues/14)
    — the result is the seven-condition comparison recorded in
    [`E022-verification-scaling-matrix.md`](../../experiments/E022-verification-scaling-matrix.md).
