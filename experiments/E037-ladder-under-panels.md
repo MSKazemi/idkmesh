@@ -212,8 +212,18 @@ Three things follow, and the first kills the tempting explanation:
   E030 through E035 would be confounded, so it is measured rather than assumed.
 
 E037 therefore reports *that* the archive's relative position improves under a
-noisy gate and *that* the two obvious mechanisms are not it. Why it improves is
-not established here.
+noisy gate and *that* the two obvious mechanisms are not it.
+
+**Answered by [E038](E038-symmetric-gate.md), and by reading the second of those
+findings the other way round.** An arm-blind gate is not an arm-*neutral* gate:
+the arms differ enormously in how often they propose viable work at all
+(`random` `0.3981`, every other arm `0.8900` or above), so three fifths of
+`random`'s verification errors are false accepts against one to three per cent
+of everyone else's. On `stress`, `random` loses `-0.8291` of utility and the
+next worst arm loses `-0.0943`. `random` is the reference arm, so the archive's
+lead rises without the archive improving — which is exactly the 74% measured in
+Result 3. What E038 does *not* explain is the remaining quarter: the archive's
+own `+0.1662` gain.
 
 ## Result 5 — what this panel is, and is not, a model of
 
@@ -241,10 +251,12 @@ on its own; it is dangerous when something is optimising against it.
   *sign-flips* across shells at a fixed panel; E037 shows it merely attenuates
   across panels at a fixed shell. Neither result generalises to the other axis,
   and the two have not been crossed.
-- **The lead is a utility measure, and the mechanism behind Result 2 is not
-  established.** Result 4 rules out the archive absorbing more and rules out
-  differential treatment by the panel. It does not say what does explain the
-  rise.
+- **The lead is a utility measure, and the mechanism behind Result 2 is only
+  partly established.** Result 4 rules out the archive absorbing more and rules
+  out differential treatment by the panel. [E038](E038-symmetric-gate.md) then
+  explained the larger part — the baseline arm's collapse, 74% of the effect —
+  by differential exposure to false accepts. The archive's own gain, the other
+  quarter, is still unexplained.
 - **Three panels, not a sweep.** `perfect`, `measured` and `stress` are three
   points, and `perfect` is not even the same *kind* of condition as the other
   two — it skips the verifier draw rather than drawing a perfect one. The

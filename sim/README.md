@@ -623,6 +623,32 @@ explanations: the archive is capacity-bound at the agent count on every panel,
 and the gate's error is symmetric and arm-blind. See
 [`../experiments/E037-ladder-under-panels.md`](../experiments/E037-ladder-under-panels.md).
 
+### E038 — a symmetric gate is not a symmetric burden
+
+E037 measured that weakening the panel *raises* the archive's lead and could not
+say why. `e038_symmetric_gate_asymmetric_burden.py` keeps the per-arm counters
+the sweeps discard — `proposal_attempts`, `viable_evaluations`, `false_accepts`,
+`false_rejects` — and answers it.
+
+```bash
+PYTHONPATH=. python3 sim/e038_symmetric_gate_asymmetric_burden.py \
+  --sweep experiments/results/E034-goal-direction.json \
+  --output experiments/results/E038-symmetric-gate-asymmetric-burden.json
+```
+
+E037's finding that the gate is arm-*blind* does not make it arm-*neutral*. Base
+viability -- an arm's true rate of proposing viable work, read off the perfect
+panel where the accept rate *is* the truth rate -- runs from `0.3981` for
+`random` to `0.9864` for `majority`. So three fifths of `random`'s verification
+errors are false accepts and one to three per cent of everyone else's are, and
+on `stress` `random` loses `-0.8291` of utility against `-0.0943` for the next
+worst arm. `random` is the reference arm, which is why every other arm's *lead*
+rises without any of them improving.
+
+Counters are pooled rather than averaged, because the arms have different
+denominators. See
+[`../experiments/E038-symmetric-gate.md`](../experiments/E038-symmetric-gate.md).
+
 ## Tests
 
 With `pytest` installed:
@@ -652,7 +678,8 @@ python -m pytest -q \
   tests/test_e034_goal_direction.py \
   tests/test_e035_direction_across_shells.py \
   tests/test_e036_adversarial_contributors.py \
-  tests/test_e037_ladder_under_panels.py
+  tests/test_e037_ladder_under_panels.py \
+  tests/test_e038_symmetric_gate_asymmetric_burden.py
 ```
 
 This is the same list `.github/workflows/emergence-sim.yml` runs; keep the two in step.
