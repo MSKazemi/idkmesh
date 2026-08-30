@@ -39,18 +39,34 @@ and seen it pass, so you can tell your change apart from a pre-existing failure.
 
 ---
 
+## For the maintainer
+
+This file is not a door until the tasks are visible where contributors look,
+which is the issue list. To see exactly what would be filed:
+
+```bash
+python tools/publish_starter_tasks.py          # prints the plan, files nothing
+python tools/publish_starter_tasks.py --full   # also prints each issue body
+```
+
+`--post` files them. The tool never files a task whose section names a tracking
+issue (`V1` stays pointed at `#167`), never files a title that an open issue
+already carries, and never creates a label.
+
+---
+
 ## Testing
 
 ### T1 — Assert every command-line tool answers `--help`
 
 **Parallel welcome.** ~45 minutes.
 
-`tools/` contains 40 modules that build an `argparse` parser. Nothing asserts
+`tools/` contains 41 modules that build an `argparse` parser. Nothing asserts
 that they still start. A tool can be broken by an import error, a bad default,
 or a renamed helper, and no test in the suite would notice until someone ran it
 by hand.
 
-All 40 currently pass, so this task adds a guard rather than fixing a bug.
+All 41 currently pass, so this task adds a guard rather than fixing a bug.
 
 **Acceptance:** a test that discovers the tools rather than hard-coding a list,
 runs each with `--help` in a subprocess, and asserts a zero exit status and
