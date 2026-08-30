@@ -1,0 +1,64 @@
+{
+  "experiment": "latent-defect-landscape-parity-v1",
+  "experiment_id": "E028",
+  "integrity_sigma": 0.171,
+  "landscape_provenance": {
+    "caveat_closed": "E027 measured apparent robust quality as a 0.937-AUROC viability classifier over its own accepted candidates, so elitist selection was already acting as a second free verifier and the archive's survival could not be attributed to retained diversity alone.",
+    "direction_of_residual_bias": "the default sigma leaves viability MORE heritable in the latent landscape than in the original, which helps every arm retain viable material and therefore biases against finding that an arm collapses",
+    "evidence_level": "synthetic mechanism; the landscape is constructed, not measured",
+    "held_fixed": {
+      "base_viability_rate": {
+        "latent_by_construction": 0.4,
+        "original_measured": 0.398413,
+        "original_sample": 400000
+      },
+      "heritability_p_child_viable_given_parent_viable": {
+        "latent_at_default_sigma": 0.880437,
+        "latent_at_matched_sigma": 0.831456,
+        "matched_sigma": 0.171,
+        "original_measured": 0.831209,
+        "original_sample": 79388
+      }
+    },
+    "landscape": "E028 latent-defect dimension",
+    "mechanism": "ground-truth viability is decided by a sixth `integrity` trait that no plausible goal weights, no behaviour descriptor reads, and the trait budget does not constrain. The five budgeted traits, their budget, the goals, the descriptor, the panels, the defect channel and the catastrophe threshold are unchanged.",
+    "motivating_result": "experiments/E027-defect-propagation.md"
+  },
+  "measurements": [
+    {
+      "apparent_quality_as_viability_classifier": {
+        "auroc": 0.784979,
+        "non_viable": 120612,
+        "statistic": "AUROC of unchecked robust quality over fresh random draws",
+        "uninformative_value": 0.5,
+        "viable": 79388
+      },
+      "base_viability_rate": 0.39694,
+      "heritability": {
+        "statistic": "P(child viable | parent viable) under one mutation",
+        "value": 0.834937,
+        "viable_parents": 79388
+      },
+      "landscape": "original",
+      "samples": 200000
+    },
+    {
+      "apparent_quality_as_viability_classifier": {
+        "auroc": 0.500642,
+        "non_viable": 119742,
+        "statistic": "AUROC of unchecked robust quality over fresh random draws",
+        "uninformative_value": 0.5,
+        "viable": 80258
+      },
+      "base_viability_rate": 0.40129,
+      "heritability": {
+        "statistic": "P(child viable | parent viable) under one mutation",
+        "value": 0.830447,
+        "viable_parents": 80258
+      },
+      "landscape": "latent-defect",
+      "samples": 200000
+    }
+  ],
+  "reading": "the intended difference is the AUROC alone: base viability rate and heritability are held near the original landscape's measured values so the matrix comparison is not confounded by a change in difficulty"
+}

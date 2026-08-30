@@ -317,6 +317,37 @@ looks: apparent quality alone separates viable from non-viable candidates well
 enough that elitist selection acts as a second, free verifier. See
 [`../experiments/E027-defect-propagation.md`](../experiments/E027-defect-propagation.md).
 
+### E028 — taking the free verifier away
+
+E027's survival result rests on a landscape in which apparent quality is a
+0.94-AUROC viability classifier, so E028 builds one where it is not. Ground-truth
+viability moves into a sixth `integrity` trait that no plausible goal weights, no
+behaviour descriptor reads, and the trait budget does not constrain — so the
+decoupling is structural rather than tuned. The base viability rate and the
+heritability of viability are held at the original landscape's measured values,
+so the only thing that changes is how much the quality signal reveals.
+
+`latent_defect_landscape()` installs it for the duration of a block and restores
+it afterwards, including on an exception. It patches **both** module objects that
+own a copy of the landscape — `sim.emergence_sim` and the `emergence_sim` that
+`matched_budget_emergence` loads by file path — because patching one and not the
+other would leave two disagreeing definitions of ground truth inside one run.
+
+```bash
+python sim/e028_latent_defect_dimension.py --mode parity --samples 200000 --pretty
+python sim/e028_latent_defect_dimension.py --mode matrix --seeds 100 --pretty
+python sim/e028_latent_defect_dimension.py --mode matrix --seeds 100 \
+  --panels stress --integrity-sigma 0.171 --pretty
+python sim/e028_latent_defect_dimension.py --mode diagnostic --seed 7 --panel stress --pretty
+```
+
+`--mode matrix` runs E027's matrix once per landscape, so the original column is
+a live control rather than a quoted number. AUROC drops from `0.784979` to
+`0.500642` over fresh draws, and the Quality-Diversity arm goes from `0/100` to
+`62/100` catastrophic seeds under the stress panel at cost `1.0`. The ordering
+survives; the never-catastrophic claim does not. See
+[`../experiments/E028-latent-defect-dimension.md`](../experiments/E028-latent-defect-dimension.md).
+
 ## Tests
 
 With `pytest` installed:
@@ -337,7 +368,8 @@ python -m pytest -q \
   tests/test_e020_quorum_frontier.py \
   tests/test_matched_budget_emergence.py \
   tests/test_e026_archive_contamination.py \
-  tests/test_e027_defect_propagation.py
+  tests/test_e027_defect_propagation.py \
+  tests/test_e028_latent_defect_dimension.py
 ```
 
 This is the same list `.github/workflows/emergence-sim.yml` runs; keep the two in step.
