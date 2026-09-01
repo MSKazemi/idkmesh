@@ -3,6 +3,12 @@ __pycache__/
 .venv/
 results/
 .claude/
+CLAUDE.md
+GEMINI.md
+.note
+.note.*
+# AGENTS.md is deliberately NOT ignored: unlike CLAUDE.md it holds no private
+# config, it is the public agents.md contributor standard that coding agents read.
 
 # E015 worker output written to the repo root during sweeps
 /e015-*.jsonl
