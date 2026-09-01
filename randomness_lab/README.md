@@ -77,8 +77,12 @@ The current worker model is deliberately synthetic. `error_correlation` uses a t
 ## Tests
 
 ```bash
-python -m unittest discover -s tests -v
+pytest tests/test_randomness_lab.py
 ```
+
+Run the whole suite with a bare `pytest`. Avoid `python -m unittest discover`:
+it sees only `TestCase` methods and silently skips 162 module-level test
+functions elsewhere in `tests/` while still reporting `OK`.
 
 The tests check seeded reproducibility, repeated-trial reproducibility and uncertainty output, policy interchangeability, environment interchangeability, the correlation control, Thompson-sampling adaptation, and the power-of-d helper.
 
