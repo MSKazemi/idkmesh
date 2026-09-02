@@ -11,6 +11,11 @@ T2 deliberately does not define document or heading identity. It consumes
 - emit deterministic JSON with no repository mutation or semantic inference.
 
 GitHub-style anchors are navigation locators, not IDKGraph identities.
+
+Local links to non-Markdown targets (directories, scripts, schemas, images) stay
+outside this contract and are only counted, as ``ignored_non_markdown_links``.
+They are not unchecked: ``tests/test_local_asset_link_integrity.py`` resolves
+exactly that complement, so a rotted directory or script link still fails a gate.
 """
 
 from __future__ import annotations
@@ -78,7 +83,7 @@ def _clean_destination(raw: str) -> str:
     return value
 
 
-def _iter_inline_links(path: Path) -> Iterable[tuple[int, str]]:
+def iter_inline_links(path: Path) -> Iterable[tuple[int, str]]:
     lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
     fence_char: str | None = None
     fence_len = 0
@@ -152,9 +157,16 @@ def heading_anchor_index(document: dict[str, Any]) -> dict[str, str]:
     return result
 
 
-def _is_external(destination: str) -> bool:
+def is_external(destination: str) -> bool:
     parsed = urlsplit(destination)
     return bool(parsed.scheme or parsed.netloc) or destination.startswith("//")
+
+
+# Private aliases retained so existing internal references keep working; the
+# public names above are what out-of-module callers (such as the local asset
+# link guard) import, so link extraction cannot drift between the two.
+_iter_inline_links = iter_inline_links
+_is_external = is_external
 
 
 def _within_root(path: Path, root: Path) -> bool:
@@ -209,9 +221,9 @@ def check_links(root: Path) -> dict[str, Any]:
         source_path = document["path"]
         source_file = root / source_path
 
-        for line, raw_target in _iter_inline_links(source_file):
+        for line, raw_target in iter_inline_links(source_file):
             total_links += 1
-            if _is_external(raw_target):
+            if is_external(raw_target):
                 ignored_external += 1
                 continue
 
