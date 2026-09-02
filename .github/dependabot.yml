@@ -9,6 +9,17 @@ updates:
       time: "06:00"
       timezone: Europe/Rome
     open-pull-requests-limit: 3
+    groups:
+      # github/codeql-action ships init, analyze and upload-sarif from one
+      # repository, and GitHub requires every step to run the same version.
+      # Ungrouped, Dependabot opens one pull request per sub-action, and each one
+      # on its own leaves the workflows mixing two versions -- which
+      # tests/test_security_automation.py correctly rejects. The result was three
+      # open updates, none of which could pass the required gate. Grouping makes
+      # the bump arrive as one mergeable pull request.
+      codeql-action:
+        patterns:
+          - "github/codeql-action*"
     ignore:
       - dependency-name: "*"
         update-types:
