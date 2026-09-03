@@ -41,6 +41,7 @@ listed here fails the suite rather than becoming quietly undiscoverable.
 | **E039** | [The blind spot has no address, and giving it one baits the optimiser](E039-content-addressed-blind-spot.md) |
 | **E040** | [Hypothesis 2 has no threshold to find, and its verification half is worth nothing](E040-diversity-correlation-threshold.md) |
 | **E041** | [The R1 lab's "verifier correlation" is not verifier correlation](E041-verifier-strictness-shock.md) |
+| **E042** | [E040's hedge points the wrong way, and its proportionality is a property of the shape](E042-worker-dependence-shape.md) |
 
 E014's sweeps publish their own result documents:
 [reference sweep](results/E014-reference-sweep.md),

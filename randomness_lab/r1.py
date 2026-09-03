@@ -9,7 +9,11 @@ import random
 from statistics import mean, stdev
 from typing import Sequence
 
-from .model import CorrelatedBernoulliEnvironment, Worker
+from .model import (
+    CorrelatedBernoulliEnvironment,
+    ItemDifficultyEnvironment,
+    Worker,
+)
 from .policies import History, ThompsonSamplingPolicy
 
 
@@ -47,6 +51,12 @@ class Verifier:
             raise ValueError("attention_cost must be non-negative")
 
 
+WORKER_DEPENDENCE_SHAPES = {
+    "shared_shock": CorrelatedBernoulliEnvironment,
+    "item_difficulty": ItemDifficultyEnvironment,
+}
+
+
 @dataclass(frozen=True)
 class R1Condition:
     name: str
@@ -57,6 +67,11 @@ class R1Condition:
     verifier_assignment: str = "fixed"
     verifiers: tuple[Verifier, ...] = (Verifier("verifier-1"),)
     verifier_error_correlation: float = 0.50
+    # Shape of the worker joint-failure distribution. "shared_shock" is the
+    # historical behaviour and stays the default so every committed artifact
+    # keeps reproducing; "item_difficulty" is the beta-binomial E017 measured
+    # and E018 recomputed, matched to the same marginal and correlation.
+    worker_dependence_shape: str = "shared_shock"
 
     def __post_init__(self) -> None:
         if not self.profiles:
@@ -73,6 +88,11 @@ class R1Condition:
             raise ValueError("verifiers must not be empty")
         if not 0.0 <= self.verifier_error_correlation <= 1.0:
             raise ValueError("verifier_error_correlation must be in [0, 1]")
+        if self.worker_dependence_shape not in WORKER_DEPENDENCE_SHAPES:
+            raise ValueError(
+                "worker_dependence_shape must be one of "
+                f"{sorted(WORKER_DEPENDENCE_SHAPES)}"
+            )
 
 
 @dataclass(frozen=True)
@@ -328,7 +348,9 @@ def run_r1_condition(
     rng = random.Random(seed)
     history = History()
     policy = ThompsonSamplingPolicy()
-    environment = CorrelatedBernoulliEnvironment(condition.worker_error_correlation)
+    environment = WORKER_DEPENDENCE_SHAPES[condition.worker_dependence_shape](
+        condition.worker_error_correlation
+    )
     workers = [profile.worker for profile in condition.profiles]
     profile_by_name = {profile.worker.name: profile for profile in condition.profiles}
     latent_outcomes = {worker.name: [] for worker in workers}
@@ -475,6 +497,7 @@ def run_r1_condition(
             "scheduler": condition.scheduler,
             "verifier_assignment": condition.verifier_assignment,
             "verifier_error_correlation": condition.verifier_error_correlation,
+            "worker_dependence_shape": condition.worker_dependence_shape,
             "profiles": [asdict(profile) for profile in condition.profiles],
             "verifiers": [asdict(verifier) for verifier in condition.verifiers],
         },
