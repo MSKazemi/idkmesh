@@ -6,9 +6,15 @@ schema disagree, the schema in [`../../schemas/`](../../schemas/README.md) is
 authoritative.
 
 Every flow below was read off the executable code named in its "Source" line,
-not off a design sketch. The diagrams use Mermaid, which GitHub renders
-natively, so the control flow is legible without reconstructing it from ASCII
-blocks.
+not off a design sketch.
+
+Each flow appears twice. The animated SVG is the rendering GitHub shows in this
+page; the Mermaid source folded underneath it is the diffable form to edit. Both
+are generated from the same drawing as `../pipelines.html`, so a change to one
+flow means changing all three. Nothing enforces that automatically — the binding
+is documentary. The animations are self-contained SVG with SMIL motion, so they play as ordinary
+images with no script, no dependency, and no external asset. A reader who has
+asked for reduced motion sees the same diagram with the moving layers hidden.
 
 ## 1. Canonical work and evidence path
 
@@ -20,6 +26,14 @@ evidence for the next, and only the final stage integrates.
 **Source:** `experiments/two_attempt_orchestrator.py`,
 `schemas/work-unit-v0.2.schema.json`, `schemas/result-manifest-v0.1.schema.json`,
 `schemas/verification-result-v0.1.schema.json`.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="diagrams/work-evidence-path-dark.svg">
+  <img alt="Animated: a goal becomes a WorkUnit, a worker self-report becomes independent evidence, and only the final stage integrates." src="diagrams/work-evidence-path-light.svg">
+</picture>
+
+<details>
+<summary>Mermaid source for this diagram</summary>
 
 ```mermaid
 flowchart TD
@@ -39,6 +53,8 @@ flowchart TD
     class H authority
 ```
 
+</details>
+
 The hard separations this diagram encodes:
 
 | Not equal to | | |
@@ -57,6 +73,14 @@ that isolation is the property the two-attempt design exists to exercise.
 
 **Source:** `orchestrate()` in `experiments/two_attempt_orchestrator.py`.
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="diagrams/orchestrator-states-dark.svg">
+  <img alt="Animated: three attempts traverse the collect / load / verify trunk at the same time, each reaching its own terminal state." src="diagrams/orchestrator-states-light.svg">
+</picture>
+
+<details>
+<summary>Mermaid source for this diagram</summary>
+
 ```mermaid
 stateDiagram-v2
     direction LR
@@ -72,6 +96,8 @@ stateDiagram-v2
     verification_error --> [*]
     verified --> [*]
 ```
+
+</details>
 
 The three error states are counted together as `control_failures`, which sets
 the run to `completed_with_failures`. Only the `verified` state carries a
@@ -105,6 +131,14 @@ cannot be bypassed by a task that asks for more authority than the project has.
 `schemas/compute-offer-pool-v0.1.schema.json`,
 `experiments/local_compute_offer.py`.
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="diagrams/compute-admission-dark.svg">
+  <img alt="Animated: five allowed cost classes reach an eligible offer; the paid class stops at the policy gate." src="diagrams/compute-admission-light.svg">
+</picture>
+
+<details>
+<summary>Mermaid source for this diagram</summary>
+
 ```mermaid
 flowchart TD
     P["config/compute-policy.json<br/>project_spend_usd_max = 0<br/>paid_providers_enabled = false"] --> GATE{"Cost class in<br/>allowed set?"}
@@ -121,6 +155,8 @@ flowchart TD
     class ELIG,ADM allow
 ```
 
+</details>
+
 `paid` exists in the offer schema for interoperability and testing only; it is
 disabled by repository policy. Donated capacity must additionally be opt-in
 (`donor_costs_must_be_opt_in`), and must stay voluntary, visible, capped, and
@@ -135,6 +171,14 @@ would leave a pull request permanently blocked, which is the unrecoverable
 deadlock issue #35 warns about.
 
 **Source:** `.github/workflows/pr-gate.yml`.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="diagrams/pr-gate-dark.svg">
+  <img alt="Animated: the trigger fans out into a Python 3.11 lane and a 3.13 lane, each running the guard before the install." src="diagrams/pr-gate-light.svg">
+</picture>
+
+<details>
+<summary>Mermaid source for this diagram</summary>
 
 ```mermaid
 flowchart TD
@@ -152,6 +196,8 @@ flowchart TD
     classDef guard fill:#fef3c7,stroke:#b45309,color:#78350f
     class GUARD guard
 ```
+
+</details>
 
 The closing-keyword guard runs **before** the dependency install so an
 accidental issue auto-closure fails fast; it is pure standard library and needs
