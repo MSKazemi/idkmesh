@@ -21,7 +21,7 @@ Different documents serve different roles. When two files appear to disagree, pr
 | research questions/programs/evidence | [`research/`](research/README.md) |
 | current staged next gates | [`../ROADMAP.md`](../ROADMAP.md), [`../EVOLUTION.md`](../EVOLUTION.md) |
 | governance / authority | [`../GOVERNANCE.md`](../GOVERNANCE.md), [`../CONSTITUTION.md`](../CONSTITUTION.md) |
-| durable decisions | [`../DECISIONS.md`](../DECISIONS.md), [`decisions/`](decisions/) |
+| durable decisions | [`../DECISIONS.md`](../DECISIONS.md), [`decisions/`](decisions/README.md) |
 | bounded review snapshots | [`audits/`](audits/README.md) |
 | research/engineering findings | [`findings/`](findings/README.md) |
 | community growth and the ACE stack | [`community/`](community/README.md) |
