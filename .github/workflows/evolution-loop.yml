@@ -43,10 +43,7 @@ jobs:
       # pull requests touched together, N-1 reported a red `observe` check that
       # meant nothing. Canonical stays unkeyed on purpose: that single lineage is
       # the property the comment above is protecting.
-      group: >-
-        evolution-observer-${{ github.event_name == 'pull_request_target'
-        && format('advisory-{0}', github.event.pull_request.number)
-        || 'canonical' }}
+      group: evolution-observer-${{ github.event_name == 'pull_request_target' && format('advisory-{0}', github.event.pull_request.number) || 'canonical' }}
       cancel-in-progress: true
     runs-on: ubuntu-latest
     timeout-minutes: 10

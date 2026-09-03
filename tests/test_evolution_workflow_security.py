@@ -105,10 +105,16 @@ class EvolutionWorkflowSecurityTests(unittest.TestCase):
         # pull_request_target observation and the canonical observation can never
         # land in the same concurrency group, so untrusted pull-request metadata
         # cannot cancel the canonical checkpoint lineage.
-        import yaml
-
-        concurrency = yaml.safe_load(self.evolution)["jobs"]["observe"]["concurrency"]
-        group = str(concurrency["group"])
+        #
+        # Text-based, not YAML-parsed: the PR Gate installs jsonschema alone, so
+        # `import yaml` passes locally and fails in the gate.
+        groups = [
+            line.split("group:", 1)[1].strip()
+            for line in self.evolution.splitlines()
+            if line.strip().startswith("group:") and "evolution-observer" in line
+        ]
+        self.assertEqual(len(groups), 1, groups)
+        group = groups[0]
         self.assertIn("pull_request_target", group)
 
         advisory, canonical = group.split("||", 1)

@@ -16,14 +16,19 @@ The rule enforced here is narrow on purpose: a group that cancels must contain
 something that varies per run. It deliberately does *not* require every group to
 be keyed -- an unkeyed group that only queues is a legitimate way to serialise
 writers, which is what the canonical observer lineage needs.
+
+Deliberately text-based rather than YAML-parsed: the PR Gate installs only
+`pytest` and `requirements-phase0.txt` (jsonschema alone), so `import yaml` would
+pass locally and fail in the gate. That is the same constraint recorded in
+tests/test_workflow_ci_hygiene.py, and it is why every `concurrency:` block this
+file reads is written on single lines.
 """
 
 from __future__ import annotations
 
+import re
 import unittest
 from pathlib import Path
-
-import yaml
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -48,60 +53,98 @@ PER_RUN_KEYS = (
 KNOWN_UNKEYED_CANCELLING = {
     # workflow_dispatch + schedule only, so no pull request is affected: a manual
     # dispatch can cancel a running scheduled observation.
-    ("collaboration-observables.yml", "workflow"),
+    ("collaboration-observables.yml", "collaboration-observables"),
     # push, pull_request_target, pull_request, issues, schedule. This is the same
     # defect as the one fixed here, and the same file already keys its other job
     # per pull request, so the pattern is known to its author.
-    ("repository-math-portfolio.yml", "job:portfolio"),
+    ("repository-math-portfolio.yml", "repository-math-portfolio-observer"),
 }
 
-
-def _concurrency_scopes(document: dict) -> list[tuple[str, dict]]:
-    scopes: list[tuple[str, dict]] = []
-    top = document.get("concurrency")
-    if isinstance(top, dict):
-        scopes.append(("workflow", top))
-    for name, job in (document.get("jobs") or {}).items():
-        if isinstance(job, dict) and isinstance(job.get("concurrency"), dict):
-            scopes.append((f"job:{name}", job["concurrency"]))
-    return scopes
+_BLOCK = re.compile(
+    r"^(?P<indent>[ ]*)concurrency:\s*$(?P<body>(?:\n(?:[ ]*#[^\n]*|(?P=indent)[ ]+[^\n]*|[ ]*))*)",
+    re.MULTILINE,
+)
+_GROUP = re.compile(r"^\s*group:\s*(?P<value>.+?)\s*$", re.MULTILINE)
+_CANCEL = re.compile(r"^\s*cancel-in-progress:\s*(?P<value>.+?)\s*$", re.MULTILINE)
 
 
-def _cancels(concurrency: dict) -> bool:
-    value = concurrency.get("cancel-in-progress")
+def concurrency_blocks(text: str) -> list[tuple[str, str]]:
+    """(group, cancel-in-progress) for every `concurrency:` block in a workflow."""
+    blocks = []
+    for match in _BLOCK.finditer(text):
+        body = match.group("body")
+        group = _GROUP.search(body)
+        cancel = _CANCEL.search(body)
+        if group:
+            blocks.append(
+                (group.group("value"), cancel.group("value") if cancel else "")
+            )
+    return blocks
+
+
+def _cancels(cancel_value: str) -> bool:
     # A `${{ ... }}` expression cancels for at least one event, so it counts.
-    return value is True or (isinstance(value, str) and "${{" in value)
+    return cancel_value.strip() == "true" or "${{" in cancel_value
 
 
 def _keyed(group: str) -> bool:
     return any(key in group for key in PER_RUN_KEYS)
 
 
-def _unkeyed_cancelling() -> set[tuple[str, str]]:
+def unkeyed_cancelling() -> set[tuple[str, str]]:
     found: set[tuple[str, str]] = set()
     for path in sorted(WORKFLOWS.glob("*.yml")):
-        document = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
-        for scope, concurrency in _concurrency_scopes(document):
-            if _cancels(concurrency) and not _keyed(str(concurrency.get("group", ""))):
-                found.add((path.name, scope))
+        text = path.read_text(encoding="utf-8")
+        for group, cancel in concurrency_blocks(text):
+            if _cancels(cancel) and not _keyed(group):
+                found.add((path.name, group))
     return found
+
+
+def observe_group() -> str:
+    text = EVOLUTION_LOOP.read_text(encoding="utf-8")
+    groups = [g for g, _ in concurrency_blocks(text) if "evolution-observer" in g]
+    if len(groups) != 1:
+        raise AssertionError(f"expected one evolution-observer group, got {groups}")
+    return groups[0]
+
+
+class ParserSelfTests(unittest.TestCase):
+    """The scan must not pass by finding nothing."""
+
+    def test_the_parser_finds_concurrency_blocks(self) -> None:
+        total = sum(
+            len(concurrency_blocks(p.read_text(encoding="utf-8")))
+            for p in WORKFLOWS.glob("*.yml")
+        )
+        # A regex that silently matched nothing would make every check below
+        # vacuously true, so pin a floor well under the current count.
+        self.assertGreater(total, 5)
+
+    def test_the_parser_reads_group_and_cancel_together(self) -> None:
+        blocks = concurrency_blocks(
+            "concurrency:\n"
+            "  group: example-${{ github.ref }}\n"
+            "  cancel-in-progress: true\n"
+        )
+        self.assertEqual(blocks, [("example-${{ github.ref }}", "true")])
 
 
 class AdvisoryObserverConcurrencyTests(unittest.TestCase):
     """The specific fix for #387."""
 
-    def setUp(self) -> None:
-        self.observe = yaml.safe_load(
-            EVOLUTION_LOOP.read_text(encoding="utf-8")
-        )["jobs"]["observe"]
-
     def test_the_observe_group_cancels(self) -> None:
         # If this ever stops cancelling, the per-pull-request key below is no
         # longer load-bearing and this whole test should be re-read.
-        self.assertTrue(_cancels(self.observe["concurrency"]))
+        text = EVOLUTION_LOOP.read_text(encoding="utf-8")
+        cancels = [
+            c for g, c in concurrency_blocks(text) if "evolution-observer" in g
+        ]
+        self.assertEqual(len(cancels), 1)
+        self.assertTrue(_cancels(cancels[0]))
 
     def test_the_advisory_side_is_keyed_per_pull_request(self) -> None:
-        group = self.observe["concurrency"]["group"]
+        group = observe_group()
         self.assertIn("advisory", group)
         self.assertIn("github.event.pull_request.number", group)
 
@@ -109,8 +152,7 @@ class AdvisoryObserverConcurrencyTests(unittest.TestCase):
         # Artifact-backed Bayesian state must have one successor lineage, so the
         # canonical branch must NOT gain a per-run key. Keying it would let two
         # main-push observations fork the checkpoint chain.
-        group = self.observe["concurrency"]["group"]
-        canonical = group.split("||", 1)[1]
+        canonical = observe_group().split("||", 1)[1]
         self.assertIn("canonical", canonical)
         for key in PER_RUN_KEYS:
             with self.subTest(key=key):
@@ -121,7 +163,7 @@ class CancellingGroupsAreKeyedTests(unittest.TestCase):
     """The general rule, with the pre-existing instances pinned."""
 
     def test_no_new_unkeyed_cancelling_group_appears(self) -> None:
-        unexpected = _unkeyed_cancelling() - KNOWN_UNKEYED_CANCELLING
+        unexpected = unkeyed_cancelling() - KNOWN_UNKEYED_CANCELLING
         self.assertEqual(
             unexpected,
             set(),
@@ -132,13 +174,11 @@ class CancellingGroupsAreKeyedTests(unittest.TestCase):
     def test_the_known_list_has_no_stale_entries(self) -> None:
         # A fixed instance must be removed from the list, so the list keeps
         # meaning what it says rather than decaying into folklore.
-        stale = KNOWN_UNKEYED_CANCELLING - _unkeyed_cancelling()
-        self.assertEqual(stale, set())
+        self.assertEqual(KNOWN_UNKEYED_CANCELLING - unkeyed_cancelling(), set())
 
     def test_the_evolution_observer_is_no_longer_among_them(self) -> None:
-        self.assertNotIn(
-            ("evolution-loop.yml", "job:observe"), _unkeyed_cancelling()
-        )
+        offenders = {group for name, group in unkeyed_cancelling()}
+        self.assertNotIn(observe_group(), offenders)
 
 
 if __name__ == "__main__":
