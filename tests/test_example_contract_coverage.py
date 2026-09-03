@@ -17,12 +17,18 @@ result.
 
 from __future__ import annotations
 
+import importlib.util
 import json
 from pathlib import Path
 import subprocess
 import unittest
 
-import jsonschema
+# The randomness-lab test job installs a minimal dependency set without
+# jsonschema, so importing it at module scope makes that job fail to even
+# collect this file. Guarded the way tests/test_ace_lineage_schema.py does.
+HAS_JSONSCHEMA = importlib.util.find_spec("jsonschema") is not None
+if HAS_JSONSCHEMA:
+    import jsonschema
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 EXAMPLES = "examples"
@@ -129,6 +135,7 @@ def errors_for(example: str, schema_name: str) -> list[str]:
     ]
 
 
+@unittest.skipUnless(HAS_JSONSCHEMA, "example contract coverage requires jsonschema")
 class ExampleContractCoverageTests(unittest.TestCase):
     def test_positive_examples_validate_against_their_schema(self) -> None:
         for example, schema_name in sorted(VALID_AGAINST.items()):
