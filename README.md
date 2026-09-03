@@ -28,7 +28,12 @@ success anyway:
 
 That is the part of IDKMesh that exists and runs today. If you disagree with
 where those lines are drawn, that disagreement is the most useful thing you can
-bring to this project — open an issue and argue it.
+bring to this project — argue it in
+[Discussions](https://github.com/MSKazemi/idkmesh/discussions/categories/q-a).
+
+Questions and "why is it done this way" belong in
+[Discussions](https://github.com/MSKazemi/idkmesh/discussions); the issue tracker
+is for defects and bounded pieces of work.
 
 ## The central question
 
