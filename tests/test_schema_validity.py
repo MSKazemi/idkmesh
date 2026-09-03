@@ -17,18 +17,26 @@ A broken schema does not fail loudly. `jsonschema` may accept an unknown keyword
 and silently validate nothing, so the first symptom is an instance passing a
 check that no longer constrains it.
 
-`jsonschema` is available here because the PR Gate installs
-`requirements-phase0.txt`, which pins it.
+`jsonschema` is available in the PR Gate, which installs
+`requirements-phase0.txt`. It is *not* available in the randomness-lab test job,
+which installs a smaller set, so the import is guarded and these tests skip
+there rather than failing collection for the whole file.
 """
 
 from __future__ import annotations
 
+import importlib.util
 import json
 import unittest
 from pathlib import Path
 
-from jsonschema import Draft202012Validator
-from jsonschema.validators import validator_for
+# The randomness-lab test job installs a minimal dependency set without
+# jsonschema, so importing it at module scope makes that job fail to even
+# collect this file. Guarded the way tests/test_ace_lineage_schema.py does.
+HAS_JSONSCHEMA = importlib.util.find_spec("jsonschema") is not None
+if HAS_JSONSCHEMA:
+    from jsonschema import Draft202012Validator
+    from jsonschema.validators import validator_for
 
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_DIR = ROOT / "schemas"
@@ -38,6 +46,7 @@ def schema_files() -> list[Path]:
     return sorted(SCHEMA_DIR.glob("*.json"))
 
 
+@unittest.skipUnless(HAS_JSONSCHEMA, "schema meta-validation requires jsonschema")
 class SchemaValidityTests(unittest.TestCase):
     def test_the_schema_directory_is_not_empty(self) -> None:
         """Guard the guard: a bad glob would make every check below vacuous."""
