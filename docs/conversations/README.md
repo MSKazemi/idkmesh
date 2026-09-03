@@ -7,9 +7,13 @@ canonical files designated by [`../../PROJECT_RULES.md`](../../PROJECT_RULES.md)
 (decisions, specifications, architecture, findings); this directory keeps the trail
 that produced them.
 
-150 records across 2 dates, newest first.
+151 records across 3 dates, newest first.
 
 ## Index
+
+### 2026-09-02
+
+- [Conversation record — evolution report review and top priorities](2026-09-02-evolution-report-review-and-priorities.md)
 
 ### 2026-08-29
 
