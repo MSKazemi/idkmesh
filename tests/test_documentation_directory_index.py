@@ -29,6 +29,10 @@ EXHAUSTIVELY_INDEXED_DIRECTORIES = (
     "docs/architecture",
     "docs/audits",
     "docs/community",
+    # Added with docs/decisions/README.md. The ADRs are the repository's
+    # canonical current authority -- docs/findings/README.md defers to them by
+    # name -- and were the last authority surface with no index of their own.
+    "docs/decisions",
     "docs/findings",
     "docs/research",
     "docs/specifications",
