@@ -34,16 +34,16 @@ class DemoTests(unittest.TestCase):
     def test_quiet_run_succeeds(self) -> None:
         result = run_demo("--quiet")
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("3 accepted, 3 rejected", result.stdout)
+        self.assertIn("3 accepted, 4 rejected", result.stdout)
 
     def test_narrated_run_tells_the_whole_story(self) -> None:
         result = run_demo()
         self.assertEqual(result.returncode, 0, result.stderr)
         # Every act must appear, so a silently truncated demo fails here.
-        for act in range(1, 7):
+        for act in range(1, 8):
             self.assertIn(f"  {act}. ", result.stdout, f"act {act} missing")
         self.assertEqual(result.stdout.count("ACCEPTED"), 1)
-        self.assertEqual(result.stdout.count("REJECTED"), 3)
+        self.assertEqual(result.stdout.count("REJECTED"), 4)
 
     def test_demo_fails_when_self_acceptance_is_allowed(self) -> None:
         """Red-green: if the contract stops rejecting self-acceptance, the demo must break."""

@@ -16,14 +16,15 @@ python scripts/demo.py
 
 The demo walks one bounded task through the acceptance contract using the real
 schemas in [`schemas/`](schemas/) and the real fixtures in [`examples/`](examples/).
-Three objects are accepted. Three are rejected — **even though every one of them
-reports `passed`**:
+Four objects are rejected — one before any work starts, and three that each report
+success anyway:
 
-| The object | What happens | Why |
-| --- | --- | --- |
-| A worker that accepts its own output | rejected | worker completion is not acceptance |
-| A "verifier" that is the worker under another name | rejected | correlated verification adds volume, not evidence |
-| A verification whose provenance does not bind to what ran | rejected | evidence must reference the exact artifact it checked |
+| The object | Why it is rejected |
+| --- | --- |
+| A task with no security contract | the bound is checked before dispatch, not after the work comes back |
+| A worker that accepts its own output | worker completion is not acceptance |
+| A "verifier" that is the worker under another name | correlated verification adds volume, not evidence |
+| A verification whose provenance does not bind to what ran | evidence must reference the exact artifact it checked |
 
 That is the part of IDKMesh that exists and runs today. If you disagree with
 where those lines are drawn, that disagreement is the most useful thing you can

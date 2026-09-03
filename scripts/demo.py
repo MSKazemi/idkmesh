@@ -38,6 +38,7 @@ from experiments.provenance_integrity import (  # noqa: E402
 from experiments.harness import (  # noqa: E402
     HarnessError,
     WORKER_RESULT_SCHEMA,
+    WORK_UNIT_SCHEMA,
     load_json,
     resolve_repo_path,
     validate_instance,
@@ -53,6 +54,7 @@ SELF_ACCEPTED = "examples/results/invalid-self-acceptance.result-manifest.json"
 NON_INDEPENDENT = "examples/results/invalid-non-independent.verification-result.json"
 BAD_PROVENANCE = "examples/results/invalid-mismatched-provenance.verification-result.json"
 WORK_UNIT_FILE = "examples/work-units/phase0-smoke.work-unit.json"
+UNBOUNDED_WORK_UNIT = "examples/work-units/invalid-missing-security.work-unit.json"
 
 
 class Narrator:
@@ -150,7 +152,19 @@ def run(quiet: bool) -> int:
     )
 
     # ---------------------------------------------------------------- act 2
-    out.act(2, "A worker attempts it and files a claim")
+    out.act(2, "A task that never says what a worker may touch")
+    unbounded = load_json(resolve_repo_path(UNBOUNDED_WORK_UNIT))
+    reason = expect_rejection(
+        lambda: validate_instance(unbounded, WORK_UNIT_SCHEMA, UNBOUNDED_WORK_UNIT)
+    )
+    out.say(
+        f"Work Unit {unbounded['id']!r} is a {unbounded['kind']} task with no security contract."
+    )
+    out.rejected("it is not dispatchable at all", first_line(reason))
+    out.note("The bound is checked before any work happens, not after it comes back.")
+
+    # ---------------------------------------------------------------- act 4
+    out.act(3, "A worker attempts the valid task and files a claim")
     worker_result = validate_worker_result_contract(
         resolve_repo_path(WORKER_RESULT), work_units
     )
@@ -160,8 +174,8 @@ def run(quiet: bool) -> int:
     )
     out.note("This is a claim about the work. It is not yet an acceptance of it.")
 
-    # ---------------------------------------------------------------- act 3
-    out.act(3, "The worker tries to accept its own output")
+    # ---------------------------------------------------------------- act 4
+    out.act(4, "The worker tries to accept its own output")
     self_accepted = load_json(resolve_repo_path(SELF_ACCEPTED))
     claim = self_accepted["self_report"]["claims"][0]
     reason = expect_rejection(
@@ -175,7 +189,7 @@ def run(quiet: bool) -> int:
     out.note("Worker completion is never self-acceptance. This is the whole point.")
 
     # ---------------------------------------------------------------- act 4
-    out.act(4, "An independent verifier looks at the same work")
+    out.act(5, "An independent verifier looks at the same work")
     verification = validate_verification_result_contract(
         resolve_repo_path(VERIFICATION_RESULT), worker_result, work_units
     )
@@ -194,7 +208,7 @@ def run(quiet: bool) -> int:
     )
 
     # ---------------------------------------------------------------- act 5
-    out.act(5, "The worker comes back wearing a verifier badge")
+    out.act(6, "The worker comes back wearing a verifier badge")
     non_independent = load_json(resolve_repo_path(NON_INDEPENDENT))
     reason = expect_rejection(
         lambda: validate_verification_result_contract(
@@ -209,7 +223,7 @@ def run(quiet: bool) -> int:
     out.note("A verifier correlated with the worker adds volume, not evidence.")
 
     # ---------------------------------------------------------------- act 6
-    out.act(6, "Someone edits the provenance to make the story fit")
+    out.act(7, "Someone edits the provenance to make the story fit")
     bad_provenance = load_json(resolve_repo_path(BAD_PROVENANCE))
     standalone_work_unit = load_json(resolve_repo_path(WORK_UNIT_FILE))
     out.say(
@@ -226,16 +240,17 @@ def run(quiet: bool) -> int:
     out.banner("That is the contract: bounded work, independent verification, bound evidence.")
     if not quiet:
         print(
-            "     Three things were accepted only because they earned it, and three\n"
-            "     were rejected even though every one of them said 'passed'.\n"
+            "     Three things were accepted only because they earned it, and four\n"
+            "     were rejected -- one before any work started, three despite\n"
+            "     reporting success.\n"
         )
         print("     Next steps:")
         print("       python experiments/harness.py validate    the full contract check")
-        print("       make test                                 the unit suite")
+        print("       PYTHONPATH=. python -m pytest -q          the unit suite")
         print("       CONTRIBUTING.md                           how to send a change")
         print()
     else:
-        print("demo: ok (3 accepted, 3 rejected as required)")
+        print("demo: ok (3 accepted, 4 rejected as required)")
     return 0
 
 
