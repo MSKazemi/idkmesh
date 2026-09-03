@@ -22,30 +22,14 @@ These roles share one authority rule: **proposal, execution, verification, and c
 
 The current semantic boundary is:
 
-```text
-Goal / project policy
-        |
-        v
-   WorkUnit v0.2
-        |
-        v
- admitted worker adapter
-        |
-        v
-candidate artifacts + ResultManifest v0.1
-        |
-        v
-verifier-owned EvaluatorPlan
-        |
-        v
-independent VerificationResult v0.1
-        |
-        v
-report / evidence aggregation
-        |
-        v
-explicit human or governance integration decision
-```
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/architecture/diagrams/work-evidence-path-dark.svg">
+  <img alt="Goal and project policy becomes a WorkUnit v0.2, which reaches an admitted worker adapter, which produces candidate artifacts and a ResultManifest v0.1 marked as a worker claim. A verifier-owned EvaluatorPlan produces an independent VerificationResult v0.1, which feeds report and evidence aggregation, and finally an explicit human or governance integration decision - the only stage that integrates." src="docs/architecture/diagrams/work-evidence-path-light.svg">
+</picture>
+
+The three other core flows — the two-attempt orchestrator state machine,
+zero-project-spend compute admission, and the PR gate — are rendered the same
+way in [`docs/architecture/PIPELINE_DIAGRAMS.md`](docs/architecture/PIPELINE_DIAGRAMS.md).
 
 Hard separations:
 

@@ -1,0 +1,117 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-14 -14 1148 328" width="1148" height="328" role="img" aria-labelledby="ti de">
+  <title id="ti">IDKMesh PR gate</title>
+  <desc id="de">PR gate: a trigger fans out into a Python 3.11 lane and a Python 3.13 lane. Each lane checks out the exact candidate SHA, runs the closing-keyword guard, installs dependencies, runs pytest, runs the link checker, and reaches gate green.</desc>
+  <style>
+  .bg{fill:#0d1117;stroke:#30363d;stroke-width:1}
+  text{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"DejaVu Sans Mono",monospace}
+  .box{fill:#161b22;stroke:#48566b;stroke-width:1.4}
+  .box.claim{fill:#2c2517;stroke:#dda44a}
+  .box.evidence{fill:#143134;stroke:#3fbcc4}
+  .box.authority{fill:#221f3b;stroke:#9990e8}
+  .box.deny{fill:#2f1d1a;stroke:#e8796a}
+  .stripe{stroke:none}
+  .stripe.claim{fill:#dda44a} .stripe.evidence{fill:#3fbcc4}
+  .stripe.authority{fill:#9990e8} .stripe.deny{fill:#e8796a}
+  .t{fill:#e6edf3;font-size:13px}
+  .t.sm{fill:#9198a1;font-size:10.5px}
+  .t.tag{font-size:10px;letter-spacing:.1em}
+  .t.tag.claim{fill:#dda44a} .t.tag.evidence{fill:#3fbcc4} .t.tag.authority{fill:#9990e8}
+  .t.bound,.t.lane{fill:#9198a1;font-size:10.5px}
+  .edge{stroke:#48566b;stroke-width:1.6;fill:none}
+  .edge.deny{stroke:#e8796a}
+  .boundary{stroke:#48566b;stroke-width:1;stroke-dasharray:3 5;fill:none}
+  .ah{fill:#48566b} .ah-d{fill:#e8796a}
+  .flowline{stroke:#3fbcc4;stroke-width:2;fill:none;stroke-dasharray:5 11}
+  .flowline.deny{stroke:#e8796a}
+  .halo{fill:none;stroke:#3fbcc4;stroke-width:2.4}
+  .token{fill:#3fbcc4} .token.deny{fill:#e8796a}
+  @media (prefers-reduced-motion:reduce){
+    .flowline,.halo,.token{visibility:hidden}
+  }
+  </style>
+  <rect class="bg" x="-14" y="-14" width="1148" height="328" rx="10"/>
+
+            <defs>
+              <marker id="a4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" class="ah"></path>
+              </marker>
+            </defs>
+
+            <rect class="box" x="14" y="118" width="150" height="64" rx="8"></rect>
+            <text class="t" x="89" y="142" text-anchor="middle">trigger</text>
+            <text class="t sm" x="89" y="158" text-anchor="middle">pull_request</text>
+            <text class="t sm" x="89" y="172" text-anchor="middle">push · dispatch</text>
+
+            <g>
+              <path class="edge" d="M 164 138 Q 190 138 190 72 L 208 72" marker-end="url(#a4)"></path>
+              <path class="edge" d="M 164 162 Q 190 162 190 228 L 208 228" marker-end="url(#a4)"></path>
+            </g>
+            <path class="flowline" d="M 164 138 Q 190 138 190 72 L 206 72"><animate attributeName="stroke-dashoffset" values="0;-32" dur="1.1s" repeatCount="indefinite"></animate></path>
+            <path class="flowline" d="M 164 162 Q 190 162 190 228 L 206 228"><animate attributeName="stroke-dashoffset" values="0;-32" dur="1.1s" repeatCount="indefinite"></animate></path>
+
+            <text class="t sm" x="196" y="46">matrix · fail-fast: false</text>
+            <text class="t tag lane" x="208" y="60">PYTHON 3.11</text>
+            <text class="t tag lane" x="208" y="216">PYTHON 3.13</text>
+
+            <rect class="box" x="208" y="68" width="146" height="48" rx="7"></rect>
+            <text class="t sm" x="281" y="88" text-anchor="middle">checkout</text>
+            <text class="t sm" x="281" y="103" text-anchor="middle">exact head SHA</text>
+            <rect class="box authority" x="380" y="68" width="164" height="48" rx="7"></rect>
+            <rect class="stripe authority" x="380" y="68" width="5" height="48"></rect>
+            <text class="t sm" x="464" y="88" text-anchor="middle">closing-keyword</text>
+            <text class="t sm" x="464" y="103" text-anchor="middle">guard — stdlib only</text>
+            <rect class="box" x="570" y="68" width="140" height="48" rx="7"></rect>
+            <text class="t sm" x="640" y="95" text-anchor="middle">install deps</text>
+            <rect class="box evidence" x="736" y="68" width="150" height="48" rx="7"></rect>
+            <rect class="stripe evidence" x="736" y="68" width="5" height="48"></rect>
+            <text class="t sm" x="813" y="95" text-anchor="middle">pytest -q</text>
+            <rect class="box evidence" x="912" y="68" width="150" height="48" rx="7"></rect>
+            <rect class="stripe evidence" x="912" y="68" width="5" height="48"></rect>
+            <text class="t sm" x="989" y="88" text-anchor="middle">link integrity</text>
+            <text class="t sm" x="989" y="103" text-anchor="middle">idkgraph_link_check</text>
+
+            <rect class="box" x="208" y="224" width="146" height="48" rx="7"></rect>
+            <text class="t sm" x="281" y="244" text-anchor="middle">checkout</text>
+            <text class="t sm" x="281" y="259" text-anchor="middle">exact head SHA</text>
+            <rect class="box authority" x="380" y="224" width="164" height="48" rx="7"></rect>
+            <rect class="stripe authority" x="380" y="224" width="5" height="48"></rect>
+            <text class="t sm" x="464" y="244" text-anchor="middle">closing-keyword</text>
+            <text class="t sm" x="464" y="259" text-anchor="middle">guard — stdlib only</text>
+            <rect class="box" x="570" y="224" width="140" height="48" rx="7"></rect>
+            <text class="t sm" x="640" y="251" text-anchor="middle">install deps</text>
+            <rect class="box evidence" x="736" y="224" width="150" height="48" rx="7"></rect>
+            <rect class="stripe evidence" x="736" y="224" width="5" height="48"></rect>
+            <text class="t sm" x="813" y="251" text-anchor="middle">pytest -q</text>
+            <rect class="box evidence" x="912" y="224" width="150" height="48" rx="7"></rect>
+            <rect class="stripe evidence" x="912" y="224" width="5" height="48"></rect>
+            <text class="t sm" x="989" y="244" text-anchor="middle">link integrity</text>
+            <text class="t sm" x="989" y="259" text-anchor="middle">idkgraph_link_check</text>
+
+            <g>
+              <line class="edge" x1="354" y1="92" x2="378" y2="92" marker-end="url(#a4)"></line>
+              <line class="edge" x1="544" y1="92" x2="568" y2="92" marker-end="url(#a4)"></line>
+              <line class="edge" x1="710" y1="92" x2="734" y2="92" marker-end="url(#a4)"></line>
+              <line class="edge" x1="886" y1="92" x2="910" y2="92" marker-end="url(#a4)"></line>
+              <line class="edge" x1="354" y1="248" x2="378" y2="248" marker-end="url(#a4)"></line>
+              <line class="edge" x1="544" y1="248" x2="568" y2="248" marker-end="url(#a4)"></line>
+              <line class="edge" x1="710" y1="248" x2="734" y2="248" marker-end="url(#a4)"></line>
+              <line class="edge" x1="886" y1="248" x2="910" y2="248" marker-end="url(#a4)"></line>
+            </g>
+            <g>
+              <line class="flowline" x1="354" y1="92" x2="376" y2="92"><animate attributeName="stroke-dashoffset" values="0;-32" dur="1.1s" repeatCount="indefinite"></animate></line>
+              <line class="flowline" x1="544" y1="92" x2="566" y2="92"><animate attributeName="stroke-dashoffset" values="0;-32" dur="1.1s" repeatCount="indefinite"></animate></line>
+              <line class="flowline" x1="710" y1="92" x2="732" y2="92"><animate attributeName="stroke-dashoffset" values="0;-32" dur="1.1s" repeatCount="indefinite"></animate></line>
+              <line class="flowline" x1="886" y1="92" x2="908" y2="92"><animate attributeName="stroke-dashoffset" values="0;-32" dur="1.1s" repeatCount="indefinite"></animate></line>
+              <line class="flowline" x1="354" y1="248" x2="376" y2="248"><animate attributeName="stroke-dashoffset" values="0;-32" dur="1.1s" repeatCount="indefinite"></animate></line>
+              <line class="flowline" x1="544" y1="248" x2="566" y2="248"><animate attributeName="stroke-dashoffset" values="0;-32" dur="1.1s" repeatCount="indefinite"></animate></line>
+              <line class="flowline" x1="710" y1="248" x2="732" y2="248"><animate attributeName="stroke-dashoffset" values="0;-32" dur="1.1s" repeatCount="indefinite"></animate></line>
+              <line class="flowline" x1="886" y1="248" x2="908" y2="248"><animate attributeName="stroke-dashoffset" values="0;-32" dur="1.1s" repeatCount="indefinite"></animate></line>
+            </g>
+
+            <text class="t bound" x="380" y="160">the guard runs before the install, so an accidental</text>
+            <text class="t bound" x="380" y="174">issue auto-closure fails fast with no packages</text>
+
+            <circle class="token" r="5.5" opacity="0"><animateMotion dur="4s" begin="0s" repeatCount="indefinite" path="M 208 92 L 380 92 L 570 92 L 736 92 L 912 92 L 1062 92" calcMode="linear" keyPoints="0;1;1" keyTimes="0;0.7;1"></animateMotion><animate attributeName="opacity" values="0;1;1;0;0" keyTimes="0;0.08;0.7;0.86;1" dur="4s" begin="0s" repeatCount="indefinite"></animate></circle>
+            <circle class="token" r="5.5" opacity="0"><animateMotion dur="4s" begin=".35s" repeatCount="indefinite" path="M 208 248 L 380 248 L 570 248 L 736 248 L 912 248 L 1062 248" calcMode="linear" keyPoints="0;1;1" keyTimes="0;0.7;1"></animateMotion><animate attributeName="opacity" values="0;1;1;0;0" keyTimes="0;0.08;0.7;0.86;1" dur="4s" begin=".35s" repeatCount="indefinite"></animate></circle>
+          
+</svg>
