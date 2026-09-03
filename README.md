@@ -6,6 +6,29 @@ IDKMesh is an open-source research and engineering project exploring how humans,
 
 The project is intentionally ambitious, but the repository is not claiming a finished planetary-scale system. Today it is a **GitHub-native research laboratory with an executable coordination/evidence foundation** and a reference-product target: the Git-native Verified Swarm Runner.
 
+## See it work in sixty seconds
+
+```bash
+git clone https://github.com/MSKazemi/idkmesh && cd idkmesh
+python -m pip install -r requirements-phase0.txt
+python scripts/demo.py
+```
+
+The demo walks one bounded task through the acceptance contract using the real
+schemas in [`schemas/`](schemas/) and the real fixtures in [`examples/`](examples/).
+Three objects are accepted. Three are rejected — **even though every one of them
+reports `passed`**:
+
+| The object | What happens | Why |
+| --- | --- | --- |
+| A worker that accepts its own output | rejected | worker completion is not acceptance |
+| A "verifier" that is the worker under another name | rejected | correlated verification adds volume, not evidence |
+| A verification whose provenance does not bind to what ran | rejected | evidence must reference the exact artifact it checked |
+
+That is the part of IDKMesh that exists and runs today. If you disagree with
+where those lines are drawn, that disagreement is the most useful thing you can
+bring to this project — open an issue and argue it.
+
 ## The central question
 
 > **Can a large open community of humans and AI agents discover goals, decompose work, execute bounded tasks, verify results independently, and maintain complex systems better than isolated developers or agents can?**
