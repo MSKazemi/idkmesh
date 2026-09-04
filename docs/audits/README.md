@@ -39,6 +39,11 @@ Whole-repository snapshots, ordered by date.
 
 Each answers one bounded question rather than surveying the repository.
 
+- [Do the gates check what they claim?](2026-09-02-gate-fidelity-audit.md)
+  — 2026-09-02; baseline `31b8f18`. Mutation-tests each Phase 0 gate by
+  introducing the defect it claims to catch. Five of six caught it; the schema
+  gate reported `OK: schemas valid` while covering 5 of 32 schemas.
+
 - [Continuous Branch-Creation Audit](2026-08-29-continuous-branch-creation-audit.md)
   — 2026-08-29; no declared baseline revision. Answers whether any in-repository
   automation continuously creates branches. Negative result, with the read-only
