@@ -18,7 +18,7 @@ permissions:
 
 concurrency:
   group: pr-gate-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   gate:
@@ -84,21 +84,7 @@ jobs:
       - name: Check deterministic Markdown link integrity
         env:
           PYTHONPATH: .
-        run: |
-          # Seeded negative fixtures under tests/fixtures/ are intentional, so this
-          # asserts no NEW broken link is introduced outside those fixtures.
-          python - <<'PY'
-          import json, subprocess, sys
-          raw = subprocess.run(
-              [sys.executable, "tools/idkgraph_link_check.py"],
-              capture_output=True, text=True, check=True,
-          ).stdout
-          findings = [
-              f for f in json.loads(raw)["findings"]
-              if "tests/fixtures/" not in f["source_path"]
-          ]
-          for f in findings:
-              print(f"{f['severity']}: {f['source_path']}:{f['line']} {f['message']}")
-          print(f"non-fixture link findings: {len(findings)}")
-          sys.exit(1 if findings else 0)
-          PY
+        # The same script `make integration` runs locally. It previously lived
+        # here as an inline heredoc, which no developer could execute before
+        # pushing and which was free to drift from whatever was checked by hand.
+        run: python scripts/check_links.py

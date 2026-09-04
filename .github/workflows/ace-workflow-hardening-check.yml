@@ -26,6 +26,15 @@ on:
 permissions:
   contents: read
 
+# One run per ref at a time. A superseded pull-request run is cancelled: nobody
+# reads the result for a commit that has already been replaced. Runs on a
+# branch or a schedule are queued instead, never cancelled -- several of these
+# workflows upload the evidence artifact for their commit, and cancelling such
+# a run destroys that record with nothing left to re-read it from.
+concurrency:
+  group: ace-workflow-hardening-check-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   invariants:
     runs-on: ubuntu-latest
