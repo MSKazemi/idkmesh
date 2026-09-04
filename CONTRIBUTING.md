@@ -6,7 +6,18 @@ The goal of this guide is to make a successful first contribution possible witho
 
 ## Start here
 
-Before contributing, read:
+Run this first. It takes under a minute and needs one dependency:
+
+```bash
+python -m pip install -r requirements-phase0.txt
+python scripts/demo.py
+```
+
+It walks one bounded task through the acceptance contract and shows you the three
+rules the whole project is built on, using the real schemas and fixtures. Almost
+everything else in this repository is downstream of what that demo prints.
+
+Then read:
 
 1. [`README.md`](README.md) — what IDKMesh is.
 2. [`COMMUNITY.md`](COMMUNITY.md) — how the community works.

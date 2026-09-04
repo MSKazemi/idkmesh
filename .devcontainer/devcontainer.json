@@ -1,0 +1,18 @@
+{
+  "name": "IDKMesh",
+  "image": "python:3.13-bookworm",
+  "postCreateCommand": "python -m pip install --disable-pip-version-check pytest -r requirements-phase0.txt",
+  "postAttachCommand": "python scripts/demo.py",
+  "customizations": {
+    "vscode": {
+      "extensions": ["ms-python.python"],
+      "settings": {
+        "python.testing.pytestEnabled": true,
+        "python.testing.pytestArgs": ["tests"]
+      }
+    }
+  },
+  "remoteEnv": {
+    "PYTHONPATH": "${containerWorkspaceFolder}"
+  }
+}
