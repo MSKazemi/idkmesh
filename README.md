@@ -65,7 +65,13 @@ sizing rule in [E015](experiments/E015-verification-phase-diagram.md). The
 contract is specified in
 [`docs/specifications/GATE_AUDIT_V0_1.md`](docs/specifications/GATE_AUDIT_V0_1.md).
 The audit is diagnostic only: it consumes verdicts you collected and grants no
-acceptance or merge authority.
+acceptance or merge authority. In CI, the same audit runs as a GitHub Action:
+
+```yaml
+- uses: MSKazemi/idkmesh/actions/gate-audit@main
+  with:
+    votes-file: path/to/panel-votes.json
+```
 
 ## Start here
 

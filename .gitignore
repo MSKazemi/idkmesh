@@ -2,6 +2,11 @@ __pycache__/
 *.py[cod]
 .venv/
 results/
+
+# Python packaging byproducts of `pip install .` from the source tree
+build/
+dist/
+*.egg-info/
 .claude/
 
 # E015 worker output written to the repo root during sweeps
