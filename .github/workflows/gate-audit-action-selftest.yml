@@ -1,0 +1,60 @@
+name: Gate Audit Action Self-Test
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "actions/gate-audit/**"
+      - "idkmesh/**"
+      - "pyproject.toml"
+      - "examples/gate-audit/**"
+      - ".github/workflows/gate-audit-action-selftest.yml"
+  pull_request:
+    paths:
+      - "actions/gate-audit/**"
+      - "idkmesh/**"
+      - "pyproject.toml"
+      - "examples/gate-audit/**"
+      - ".github/workflows/gate-audit-action-selftest.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gate-audit-action-selftest-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  selftest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Run the gate-audit action on the committed example
+        id: audit
+        uses: ./actions/gate-audit
+        with:
+          votes-file: examples/gate-audit/panel-votes.example.json
+          report-file: selftest-report.json
+          markdown-file: selftest-report.md
+
+      - name: Assert the action reproduces the committed report example
+        run: |
+          python - <<'EOF'
+          import json
+
+          produced = json.load(open("selftest-report.json"))
+          committed = json.load(
+              open("examples/gate-audit/gate-audit-report.example.json"))
+          assert produced == committed, (
+              "action output diverged from the committed example report")
+          summary = open("selftest-report.md", encoding="utf-8").read()
+          assert "effective independent votes" in summary
+          assert "not acceptance authority" in summary
+          print("action output matches the committed example report")
+          EOF
