@@ -1,0 +1,152 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idkmesh.org/schemas/gate-audit-report-v0.1.schema.json",
+  "title": "IDKMesh Gate Audit Report v0.1",
+  "description": "Diagnostic report on a verifier panel produced by `idkmesh gate-audit`: per-verifier accuracy, pairwise error correlation, measured effective independent votes, the accuracy-dependent effective-vote ceiling, and the breach rate of seeded known-bad probes. It is decision support about the review layer itself and grants no acceptance or merge authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "gate_id",
+    "evidence_class",
+    "inputs",
+    "verifiers",
+    "panel",
+    "probes",
+    "warnings",
+    "provenance"
+  ],
+  "properties": {
+    "schema": {"const": "gate-audit-report-v0.1"},
+    "gate_id": {"type": "string", "minLength": 1},
+    "evidence_class": {
+      "description": "Copied verbatim from the input declaration. A report can never upgrade synthetic fixture data into an observed claim.",
+      "enum": ["synthetic", "observed"]
+    },
+    "inputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "candidates",
+        "non_probe_candidates",
+        "probe_candidates",
+        "verifiers",
+        "known_good",
+        "known_bad"
+      ],
+      "properties": {
+        "candidates": {"type": "integer", "minimum": 1},
+        "non_probe_candidates": {"type": "integer", "minimum": 2},
+        "probe_candidates": {"type": "integer", "minimum": 0},
+        "verifiers": {"type": "integer", "minimum": 1},
+        "known_good": {"type": "integer", "minimum": 0},
+        "known_bad": {"type": "integer", "minimum": 0}
+      }
+    },
+    "verifiers": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "accuracy", "errors"],
+        "properties": {
+          "id": {"type": "string", "minLength": 1},
+          "accuracy": {"type": "number", "minimum": 0, "maximum": 1},
+          "errors": {"type": "integer", "minimum": 0}
+        }
+      }
+    },
+    "panel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "quorum",
+        "nominal_votes",
+        "mean_verifier_accuracy",
+        "mean_pairwise_error_correlation",
+        "skipped_correlation_pairs",
+        "error",
+        "false_accept_rate",
+        "false_reject_rate",
+        "effective_votes",
+        "heuristic_n_eff",
+        "effective_votes_ceiling"
+      ],
+      "properties": {
+        "quorum": {"type": "number", "minimum": 0, "exclusiveMaximum": 1},
+        "nominal_votes": {"type": "integer", "minimum": 1},
+        "mean_verifier_accuracy": {"type": "number", "minimum": 0, "maximum": 1},
+        "mean_pairwise_error_correlation": {
+          "description": "Mean pairwise phi of verifier error vectors over non-probe candidates; null when no pair had measurable variance.",
+          "type": ["number", "null"],
+          "minimum": -1,
+          "maximum": 1
+        },
+        "skipped_correlation_pairs": {"type": "integer", "minimum": 0},
+        "error": {"type": "number", "minimum": 0, "maximum": 1},
+        "false_accept_rate": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+        "false_reject_rate": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+        "effective_votes": {
+          "description": "Smallest independent panel size reproducing the measured panel error at the measured mean accuracy; null when the panel does not discriminate (mean accuracy <= 0.5).",
+          "type": ["number", "null"],
+          "minimum": 1
+        },
+        "heuristic_n_eff": {
+          "description": "The classic N/(1+(N-1)rho) value, reported only for contrast; E015 falsified it as a sizing rule.",
+          "type": ["number", "null"],
+          "minimum": 0
+        },
+        "effective_votes_ceiling": {
+          "description": "Largest effective size any panel at this accuracy/correlation can reach; the string 'unbounded' when measured correlation is <= 0.",
+          "anyOf": [
+            {"type": "number", "minimum": 1},
+            {"const": "unbounded"},
+            {"type": "null"}
+          ]
+        }
+      }
+    },
+    "probes": {
+      "description": "Seeded known-bad candidates pushed through the same panel rule; null when the input contained no probes.",
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["total", "breached", "breach_rate", "by_kind"],
+      "properties": {
+        "total": {"type": "integer", "minimum": 1},
+        "breached": {"type": "integer", "minimum": 0},
+        "breach_rate": {"type": "number", "minimum": 0, "maximum": 1},
+        "by_kind": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["total", "breached"],
+            "properties": {
+              "total": {"type": "integer", "minimum": 1},
+              "breached": {"type": "integer", "minimum": 0}
+            }
+          }
+        }
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1}
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tool", "tool_version", "input_digest_sha256"],
+      "properties": {
+        "tool": {"const": "idkmesh gate-audit"},
+        "tool_version": {"type": "string", "minLength": 1},
+        "input_digest_sha256": {
+          "description": "SHA-256 of the canonicalized (sorted-key, compact) input document, binding the report to the exact verdict matrix it was computed from.",
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    }
+  }
+}
