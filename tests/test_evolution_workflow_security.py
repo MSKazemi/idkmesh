@@ -98,10 +98,38 @@ class EvolutionWorkflowSecurityTests(unittest.TestCase):
             self.assertNotIn("pull-requests: write", workflow)
 
     def test_advisory_pr_metadata_cannot_cancel_canonical_observer(self) -> None:
-        self.assertIn(
-            "group: evolution-observer-${{ github.event_name == 'pull_request_target' && 'advisory' || 'canonical' }}",
-            self.evolution,
-        )
+        # Asserted as a property, not as a literal. This used to pin the exact
+        # group expression, which made the string unchangeable rather than the
+        # guarantee -- the same trap tests/test_security_automation.py hit with a
+        # hard-coded action SHA. The guarantee is that an advisory
+        # pull_request_target observation and the canonical observation can never
+        # land in the same concurrency group, so untrusted pull-request metadata
+        # cannot cancel the canonical checkpoint lineage.
+        #
+        # Text-based, not YAML-parsed: the PR Gate installs jsonschema alone, so
+        # `import yaml` passes locally and fails in the gate.
+        groups = [
+            line.split("group:", 1)[1].strip()
+            for line in self.evolution.splitlines()
+            if line.strip().startswith("group:") and "evolution-observer" in line
+        ]
+        self.assertEqual(len(groups), 1, groups)
+        group = groups[0]
+        self.assertIn("pull_request_target", group)
+
+        advisory, canonical = group.split("||", 1)
+        self.assertIn("advisory", advisory)
+        self.assertIn("canonical", canonical)
+        self.assertNotIn("advisory", canonical)
+        self.assertNotIn("canonical", advisory)
+
+        # The canonical side must stay a single lineage: keying it per ref or per
+        # run would let two canonical observations fork the checkpoint chain.
+        for key in ("github.ref", "github.sha", "github.run_id",
+                    "github.event.pull_request.number", "github.head_ref"):
+            with self.subTest(key=key):
+                self.assertNotIn(key, canonical)
+
         self.assertIn("cancel-in-progress: true", self.evolution)
 
     def test_external_actions_are_immutable_sha_pinned(self) -> None:
