@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-14 -14 828 428" width="828" height="428" role="img" aria-labelledby="ti de">
+  <title id="ti">IDKMesh two-attempt orchestrator state machine</title>
+  <desc id="de">State machine: an attempt enters collect, which either fails as worker error or proceeds to load; load either fails as result manifest error or proceeds to verify; verify either fails as verification error or reaches the verified state. Three attempts traverse different branches at the same time.</desc>
+  <style>
+  .bg{fill:#ffffff;stroke:#d1dae1;stroke-width:1}
+  text{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"DejaVu Sans Mono",monospace}
+  .box{fill:#ffffff;stroke:#b3c1cc;stroke-width:1.4}
+  .box.claim{fill:#fbf2e2;stroke:#a76a12}
+  .box.evidence{fill:#e3f2f3;stroke:#0e7c86}
+  .box.authority{fill:#eceaf7;stroke:#4a4396}
+  .box.deny{fill:#fbeae7;stroke:#b3392e}
+  .stripe{stroke:none}
+  .stripe.claim{fill:#a76a12} .stripe.evidence{fill:#0e7c86}
+  .stripe.authority{fill:#4a4396} .stripe.deny{fill:#b3392e}
+  .t{fill:#16232e;font-size:13px}
+  .t.sm{fill:#4b6272;font-size:10.5px}
+  .t.tag{font-size:10px;letter-spacing:.1em}
+  .t.tag.claim{fill:#a76a12} .t.tag.evidence{fill:#0e7c86} .t.tag.authority{fill:#4a4396}
+  .t.bound,.t.lane{fill:#4b6272;font-size:10.5px}
+  .edge{stroke:#b3c1cc;stroke-width:1.6;fill:none}
+  .edge.deny{stroke:#b3392e}
+  .boundary{stroke:#b3c1cc;stroke-width:1;stroke-dasharray:3 5;fill:none}
+  .ah{fill:#b3c1cc} .ah-d{fill:#b3392e}
+  .flowline{stroke:#0e7c86;stroke-width:2;fill:none;stroke-dasharray:5 11}
+  .flowline.deny{stroke:#b3392e}
+  .halo{fill:none;stroke:#0e7c86;stroke-width:2.4}
+  .token{fill:#0e7c86} .token.deny{fill:#b3392e}
+  @media (prefers-reduced-motion:reduce){
+    .flowline,.halo,.token{visibility:hidden}
+  }
+  </style>
+  <rect class="bg" x="-14" y="-14" width="828" height="428" rx="10"/>
+
+            <defs>
+              <marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" class="ah"></path>
+              </marker>
+              <marker id="a2d" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" class="ah-d"></path>
+              </marker>
+            </defs>
+
+            <g>
+              <line class="edge" x1="40" y1="210" x2="113" y2="210" marker-end="url(#a2)"></line>
+              <line class="edge" x1="225" y1="210" x2="283" y2="210" marker-end="url(#a2)"></line>
+              <line class="edge" x1="395" y1="210" x2="453" y2="210" marker-end="url(#a2)"></line>
+              <line class="edge" x1="565" y1="210" x2="633" y2="210" marker-end="url(#a2)"></line>
+            </g>
+            <g>
+              <line class="flowline" x1="40" y1="210" x2="111" y2="210"><animate attributeName="stroke-dashoffset" values="0;-32" dur="1.1s" repeatCount="indefinite"></animate></line>
+              <line class="flowline" x1="225" y1="210" x2="281" y2="210"><animate attributeName="stroke-dashoffset" values="0;-32" dur="1.1s" repeatCount="indefinite"></animate></line>
+              <line class="flowline" x1="395" y1="210" x2="451" y2="210"><animate attributeName="stroke-dashoffset" values="0;-32" dur="1.1s" repeatCount="indefinite"></animate></line>
+              <line class="flowline" x1="565" y1="210" x2="631" y2="210"><animate attributeName="stroke-dashoffset" values="0;-32" dur="1.1s" repeatCount="indefinite"></animate></line>
+            </g>
+
+            <g>
+              <path class="edge deny" d="M 170 234 L 170 250 Q 170 300 232 313" marker-end="url(#a2d)"></path>
+              <path class="edge deny" d="M 340 186 L 340 170 Q 340 118 402 106" marker-end="url(#a2d)"></path>
+              <path class="edge deny" d="M 510 234 L 510 250 Q 510 300 572 313" marker-end="url(#a2d)"></path>
+            </g>
+
+            <rect class="box" x="113" y="186" width="112" height="48" rx="8"></rect>
+            <text class="t" x="169" y="209" text-anchor="middle">collect</text>
+            <text class="t sm" x="169" y="224" text-anchor="middle">adapter</text>
+
+            <rect class="box" x="283" y="186" width="112" height="48" rx="8"></rect>
+            <text class="t" x="339" y="209" text-anchor="middle">load</text>
+            <text class="t sm" x="339" y="224" text-anchor="middle">manifest</text>
+
+            <rect class="box" x="453" y="186" width="112" height="48" rx="8"></rect>
+            <text class="t" x="509" y="209" text-anchor="middle">verify</text>
+            <text class="t sm" x="509" y="224" text-anchor="middle">plan / policy</text>
+
+            <rect class="box evidence" x="633" y="186" width="130" height="48" rx="8"></rect>
+            <rect class="stripe evidence" x="633" y="186" width="5" height="48"></rect>
+            <text class="t" x="700" y="205" text-anchor="middle">verified</text>
+            <text class="t sm" x="700" y="221" text-anchor="middle">accept / reject</text>
+
+            <rect class="box deny" x="232" y="313" width="150" height="42" rx="8"></rect>
+            <rect class="stripe deny" x="232" y="313" width="5" height="42"></rect>
+            <text class="t sm" x="311" y="339" text-anchor="middle">worker_error</text>
+
+            <rect class="box deny" x="402" y="66" width="188" height="42" rx="8"></rect>
+            <rect class="stripe deny" x="402" y="66" width="5" height="42"></rect>
+            <text class="t sm" x="500" y="92" text-anchor="middle">result_manifest_error</text>
+
+            <rect class="box deny" x="572" y="313" width="176" height="42" rx="8"></rect>
+            <rect class="stripe deny" x="572" y="313" width="5" height="42"></rect>
+            <text class="t sm" x="663" y="339" text-anchor="middle">verification_error</text>
+
+            <text class="t sm" x="4" y="205">attempt</text>
+
+            <circle class="token" r="5.5" opacity="0"><animateMotion dur="4s" begin="0s" repeatCount="indefinite" path="M 40 210 L 635 210" calcMode="linear" keyPoints="0;1;1" keyTimes="0;0.7;1"></animateMotion><animate attributeName="opacity" values="0;1;1;0;0" keyTimes="0;0.08;0.7;0.86;1" dur="4s" begin="0s" repeatCount="indefinite"></animate></circle>
+            <circle class="token deny" r="5.5" opacity="0"><animateMotion dur="4s" begin=".5s" repeatCount="indefinite" path="M 40 210 L 170 210 L 170 250 Q 170 300 230 312" calcMode="linear" keyPoints="0;1;1" keyTimes="0;0.7;1"></animateMotion><animate attributeName="opacity" values="0;1;1;0;0" keyTimes="0;0.08;0.7;0.86;1" dur="4s" begin=".5s" repeatCount="indefinite"></animate></circle>
+            <circle class="token deny" r="5.5" opacity="0"><animateMotion dur="4s" begin="1s" repeatCount="indefinite" path="M 40 210 L 510 210 L 510 250 Q 510 300 570 312" calcMode="linear" keyPoints="0;1;1" keyTimes="0;0.7;1"></animateMotion><animate attributeName="opacity" values="0;1;1;0;0" keyTimes="0;0.08;0.7;0.86;1" dur="4s" begin="1s" repeatCount="indefinite"></animate></circle>
+
+            <text class="t bound" x="4" y="384">three of the four terminal states are counted as control_failures</text>
+          
+</svg>

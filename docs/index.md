@@ -35,7 +35,10 @@ IDKMesh is not just a proposal. The repository already contains executable exper
 - repository graph/health observability;
 - guarded mathematical self-evolution experiments;
 - a zero-project-cost Free Resource Mesh;
-- an experimental community reproduction controller (ACE).
+- an experimental community reproduction controller (ACE);
+- a pip-installable `idkmesh` CLI whose `gate-audit` command measures a
+  verifier panel's effective independent votes, error-correlation structure,
+  and seeded-probe breach rate.
 
 The repository also preserves negative results and failed experiments. A mechanism that fails under a frozen test is evidence, not something to hide.
 
@@ -52,6 +55,12 @@ bounded Git task
 ```
 
 Workers do not get merge authority just because they produced a plausible result.
+
+The first installable slice of that trust path already ships: clone the
+repository, `pip install .`, and run
+`idkmesh gate-audit examples/gate-audit/panel-votes.example.json --pretty` to
+see a five-verifier panel measured at about 1.69 effective independent votes.
+The contract is [Gate Audit v0.1](specifications/GATE_AUDIT_V0_1.md).
 
 ## What success means
 

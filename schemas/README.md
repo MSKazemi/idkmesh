@@ -15,6 +15,7 @@ This directory contains the machine-readable contracts used by the executable re
 - `ci-plan-v0.1.schema.json` — exact-revision shadow CI recommendation with risk, mandatory dependency closure, optional-budget decisions, and no execution/skip/merge authority.
 - `ci-receipt-v0.1.schema.json` — planning-only receipt proving that a shadow plan was emitted; it contains no executed checks or integration verdict.
 - `ci-observation-v0.1.schema.json` — normalized exact-SHA GitHub check snapshot with required-baseline completeness and no authority.
+- `gate-audit-report-v0.1.schema.json` — diagnostic report emitted by `idkmesh gate-audit`: per-verifier accuracy, pairwise error correlation, measured effective votes vs the accuracy-dependent ceiling, and seeded-probe breach rate. Decision support about the review layer itself; it grants no acceptance or merge authority.
 - `ci-evaluation-v0.1.schema.json` — shadow plan/outcome comparison recording mapped misses, attribution gaps, modeled savings, and permanent v0.1 promotion ineligibility.
 
 All current schemas use JSON Schema Draft 2020-12.

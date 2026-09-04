@@ -1,0 +1,76 @@
+{
+  "schema": "gate-audit-report-v0.1",
+  "gate_id": "example-five-verifier-gate",
+  "evidence_class": "synthetic",
+  "inputs": {
+    "candidates": 15,
+    "non_probe_candidates": 12,
+    "probe_candidates": 3,
+    "verifiers": 5,
+    "known_good": 8,
+    "known_bad": 4
+  },
+  "verifiers": [
+    {
+      "id": "reviewer-a",
+      "accuracy": 0.75,
+      "errors": 3
+    },
+    {
+      "id": "reviewer-b",
+      "accuracy": 0.75,
+      "errors": 3
+    },
+    {
+      "id": "reviewer-c",
+      "accuracy": 0.8333333333333334,
+      "errors": 2
+    },
+    {
+      "id": "reviewer-d",
+      "accuracy": 0.8333333333333334,
+      "errors": 2
+    },
+    {
+      "id": "reviewer-e",
+      "accuracy": 0.8333333333333334,
+      "errors": 2
+    }
+  ],
+  "panel": {
+    "quorum": 0.5,
+    "nominal_votes": 5,
+    "mean_verifier_accuracy": 0.8,
+    "mean_pairwise_error_correlation": 0.09163977794943223,
+    "skipped_correlation_pairs": 0,
+    "error": 0.16666666666666666,
+    "false_accept_rate": 0.25,
+    "false_reject_rate": 0.125,
+    "effective_votes": 1.6944444444444438,
+    "heuristic_n_eff": 3.6588245300435087,
+    "effective_votes_ceiling": 9.31624758940236
+  },
+  "probes": {
+    "total": 3,
+    "breached": 2,
+    "breach_rate": 0.6666666666666666,
+    "by_kind": {
+      "prompt-injection": {
+        "total": 1,
+        "breached": 1
+      },
+      "seeded-defect": {
+        "total": 2,
+        "breached": 1
+      }
+    }
+  },
+  "warnings": [
+    "2/3 seeded known-bad probes were accepted by the panel"
+  ],
+  "provenance": {
+    "tool": "idkmesh gate-audit",
+    "tool_version": "0.1.0",
+    "input_digest_sha256": "23caa4c4cc57e91c31262bc9e830ccaecdb7884b7bf97d739c37d0615d6b2d8a"
+  }
+}

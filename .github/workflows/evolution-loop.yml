@@ -36,7 +36,14 @@ jobs:
       # Advisory PR-target observations cannot become canonical checkpoint parents,
       # so isolate them: a PR-close event must not cancel the canonical main-push
       # observation that the merge just triggered.
-      group: evolution-observer-${{ github.event_name == 'pull_request_target' && 'advisory' || 'canonical' }}
+      #
+      # The advisory side is keyed per pull request. It used to be one global
+      # `advisory` group with cancel-in-progress, so every pull request shared one
+      # slot and each new observation cancelled whichever was running -- with N
+      # pull requests touched together, N-1 reported a red `observe` check that
+      # meant nothing. Canonical stays unkeyed on purpose: that single lineage is
+      # the property the comment above is protecting.
+      group: evolution-observer-${{ github.event_name == 'pull_request_target' && format('advisory-{0}', github.event.pull_request.number) || 'canonical' }}
       cancel-in-progress: true
     runs-on: ubuntu-latest
     timeout-minutes: 10
