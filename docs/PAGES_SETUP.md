@@ -2,11 +2,31 @@
 
 **Status:** active and verified as of 2026-08-29; retained as the activation/reverification runbook.
 
-The public landing page source is:
+The public site sources are:
 
-`docs/index.html`
+- `docs/index.html` — the landing page;
+- `docs/pipelines.html` — animated flowcharts of the work/evidence path, the
+  two-attempt orchestrator state machine, zero-project-spend compute admission,
+  and the PR gate.
 
-It is intentionally dependency-free: no JavaScript, external fonts, analytics, trackers, package build, or second documentation framework is required.
+Both are intentionally dependency-free: no JavaScript, external fonts, analytics, trackers, package build, or second documentation framework is required.
+
+`pipelines.html` inherits the landing page's palette and system-font stack, and
+its motion toggle is CSS-only (`:has()` on a checkbox) precisely so the
+no-JavaScript constraint holds. Its diagrams are inline SVG animated with CSS,
+so they honour `prefers-reduced-motion` and load no external asset.
+
+The same four flows are maintained in
+[`architecture/PIPELINE_DIAGRAMS.md`](architecture/PIPELINE_DIAGRAMS.md), which
+carries both an animated SVG rendering (for readers browsing the repository,
+where GitHub strips inline SVG and so cannot show this page's version) and the
+Mermaid source underneath it. That document is the in-repository source. The
+Pages rendering is a presentation surface for the same flows and must not
+diverge into a separate contract.
+
+Three renderings of one drawing can drift. Nothing enforces their agreement, so
+a change to any flow means changing this page, the SVG files under
+`architecture/diagrams/`, and the Mermaid block together.
 
 ## Purpose
 
