@@ -11,6 +11,12 @@ and then invokes the existing independent EvaluatorPlan verifier.
 A model rejection or malformed model response is an experiment outcome, not a
 harness failure. Repository mutation, push, merge, and automatic candidate
 selection are outside this tool's authority.
+
+Producer identity is observed, never asserted. The container fingerprints the
+weights it loaded and reports that digest; this host resolves it through
+MODEL_REGISTRY and records the result. An absent, malformed, or unregistered
+digest aborts the attempt, because a ResultManifest naming a model that did not
+run is worse than no manifest at all -- a later reader cannot detect it.
 """
 
 from __future__ import annotations
@@ -28,10 +34,29 @@ import sys
 import time
 from typing import Any
 
-MODEL_NAME = "Qwen/Qwen2.5-Coder-0.5B-Instruct"
-MODEL_REVISION = "bbf27711794f58ebd1796058f4280b53c32e19fc"
 STRUCTURAL_SIGNATURE = "single-worker-baseline-v1"
-PROBE_VERSION = "0.1"
+PROBE_VERSION = "0.2"
+
+# Producer identity is resolved from what the container reports, never asserted
+# by this host. The key is the snapshot digest the generator computes over the
+# baked weights; the value is the human-meaningful name for exactly those bytes.
+#
+# Registering a model is therefore a deliberate act: whoever bakes a new image
+# must record its digest here alongside the name and revision it claims. An
+# unregistered digest is a hard failure, not a silent relabel -- see
+# resolve_model_identity(). Before this table existed, `--image` was a free-form
+# string and swapping the image made every ResultManifest name a model that had
+# never run.
+MODEL_REGISTRY: dict[str, dict[str, str]] = {
+    "sha256:691a11d1082220a1a0296e43b292779d98bbfbda1e136f382e52e9b0d1c41eb9": {
+        "provider": "Qwen",
+        "name": "Qwen/Qwen2.5-Coder-0.5B-Instruct",
+        "revision": "bbf27711794f58ebd1796058f4280b53c32e19fc",
+        "slug": "qwen2.5-coder-0.5b",
+    },
+}
+
+DEFAULT_MODEL_SLUG = "qwen2.5-coder-0.5b"
 
 
 class ProbeError(RuntimeError):
@@ -213,6 +238,40 @@ def extract_candidate_diff(response: str, target_path: str) -> str:
     return patch + "\n"
 
 
+def resolve_model_identity(metadata: dict[str, Any], expected_digest: str | None = None) -> dict[str, Any]:
+    """Turn what the container observed into the identity recorded as evidence.
+
+    Raises ProbeError -- a harness failure, not a ProducerOutcome -- in every
+    case where the identity cannot be established. A malformed candidate is an
+    experiment result worth recording; evidence that names the wrong model is
+    not, because a later reader has no way to detect the substitution.
+    """
+    identity = metadata.get("model_identity")
+    if not isinstance(identity, dict):
+        raise ProbeError(
+            "producer metadata carries no model_identity block; the generator must "
+            "report the snapshot it loaded so this manifest is not an unverified claim"
+        )
+    digest = identity.get("snapshot_digest")
+    if not isinstance(digest, str) or not digest.startswith("sha256:"):
+        raise ProbeError(f"producer reported an unusable snapshot digest: {digest!r}")
+
+    if expected_digest is not None and digest != expected_digest:
+        raise ProbeError(
+            f"producer snapshot digest {digest} does not match the expected "
+            f"{expected_digest}; refusing to emit evidence for an unintended model"
+        )
+
+    known = MODEL_REGISTRY.get(digest)
+    if known is None:
+        raise ProbeError(
+            f"snapshot digest {digest} is not registered in MODEL_REGISTRY. Add it "
+            "with the model name and revision those exact weights correspond to, "
+            "rather than letting this run inherit another model's name."
+        )
+    return {**known, "observed": identity}
+
+
 def write_probe_outcome(output_root: Path, value: dict[str, Any]) -> None:
     write_json(output_root / "probe-evidence.json", value)
     print("IDKMESH_OPEN_MODEL_BENCHMARK_PROBE_BEGIN")
@@ -383,8 +442,12 @@ def run_probe(args: argparse.Namespace) -> int:
         "producer": {
             "adapter": "open-weight-local-text-patch",
             "adapter_version": PROBE_VERSION,
-            "model": MODEL_NAME,
-            "model_revision": MODEL_REVISION,
+            # Left unresolved on purpose. Identity comes from what the container
+            # reports, and at this point the container has not run yet. A
+            # producer_error outcome therefore names no model, because none was
+            # observed.
+            "model": None,
+            "model_revision": None,
             "image_id": model_image_id,
             "base_image_digest": args.base_image_digest,
             "prompt_digest": prompt_digest,
@@ -436,6 +499,12 @@ def run_probe(args: argparse.Namespace) -> int:
 
     response = response_path.read_text(encoding="utf-8")
     metadata = load_json(metadata_path)
+    # Resolve before any outcome is written, so no evidence file -- accepted,
+    # rejected, or malformed -- can carry a model name the run did not observe.
+    model = resolve_model_identity(metadata, args.expect_snapshot_digest)
+    base_evidence["producer"]["model"] = model["name"]
+    base_evidence["producer"]["model_revision"] = model["revision"]
+    base_evidence["producer"]["model_identity"] = model["observed"]
     try:
         proposed_patch = extract_candidate_diff(response, target_path)
     except ProducerOutcome as exc:
@@ -515,8 +584,9 @@ def run_probe(args: argparse.Namespace) -> int:
     worker_config = {
         "adapter": "open-weight-local-text-patch",
         "adapter_version": PROBE_VERSION,
-        "model": MODEL_NAME,
-        "model_revision": MODEL_REVISION,
+        "model": model["name"],
+        "model_revision": model["revision"],
+        "model_identity": model["observed"],
         "generation": metadata["generation"],
         "sandbox": base_evidence["sandbox"],
     }
@@ -524,19 +594,20 @@ def run_probe(args: argparse.Namespace) -> int:
     wall_seconds = time.monotonic() - attempt_started
     result_manifest = {
         "schema_version": "0.1",
-        "id": f"{work_unit['id']}/open-model-qwen25coder05b/attempt-{args.attempt}",
+        "id": f"{work_unit['id']}/open-model-{model['slug']}/attempt-{args.attempt}",
         "work_unit_id": work_unit["id"],
         "work_unit_version": work_unit["version"],
         "attempt": args.attempt,
         "worker": {
-            "id": args.worker_id,
+            "id": args.worker_id or default_worker_id(model["slug"]),
             "type": "agent",
             "adapter": "open-weight-local-text-patch",
             "adapter_version": PROBE_VERSION,
             "model": {
-                "provider": "Qwen",
-                "name": MODEL_NAME,
-                "version": MODEL_REVISION,
+                "provider": model["provider"],
+                "name": model["name"],
+                "version": model["revision"],
+                "snapshot_digest": model["observed"]["snapshot_digest"],
             },
         },
         "status": "succeeded",
@@ -600,7 +671,7 @@ def run_probe(args: argparse.Namespace) -> int:
         "extensions": {
             "org.idkmesh.open_model_probe": {
                 "structural_signature": STRUCTURAL_SIGNATURE,
-                "model_revision": MODEL_REVISION,
+                "model_revision": model["revision"],
                 "prompt_digest": prompt_digest,
                 "raw_response_digest": sha256_bytes(response.encode("utf-8")),
                 "base_image_digest": args.base_image_digest,
@@ -661,15 +732,16 @@ def run_probe(args: argparse.Namespace) -> int:
     return 0
 
 
-def default_worker_id() -> str:
-    """Where this attempt actually ran.
+def default_worker_id(slug: str = DEFAULT_MODEL_SLUG) -> str:
+    """Where this attempt actually ran, and with which model.
 
     A hardcoded `github-actions/...` id would label every local run as a CI run
     in its own ResultManifest, which is a provenance claim the run cannot
-    support.
+    support. The model half is equally a claim, so the caller passes the slug
+    resolved from the observed snapshot rather than a baked-in name.
     """
     context = "github-actions" if os.environ.get("GITHUB_ACTIONS") == "true" else "local"
-    return f"{context}/qwen2.5-coder-0.5b"
+    return f"{context}/{slug}"
 
 
 def self_test() -> int:
@@ -704,12 +776,31 @@ def self_test() -> int:
         raise ProbeError("self-test accepted a malformed diff header")
     if diff_header_names_only(f"diff --git a/{target} b/SECURITY.md", target):
         raise ProbeError("self-test treated a cross-path header as allowed-path-only")
+    known_digest = next(iter(MODEL_REGISTRY))
+    resolved = resolve_model_identity({"model_identity": {"snapshot_digest": known_digest}})
+    if resolved["name"] != MODEL_REGISTRY[known_digest]["name"]:
+        raise ProbeError("self-test failed to resolve a registered snapshot digest")
+    for bad, why in (
+        ({}, "missing model_identity"),
+        ({"model_identity": {}}, "missing snapshot digest"),
+        ({"model_identity": {"snapshot_digest": "sha256:" + "0" * 64}}, "unregistered digest"),
+    ):
+        try:
+            resolve_model_identity(bad)
+        except ProbeError:
+            pass
+        else:
+            raise ProbeError(f"self-test accepted producer metadata with {why}")
+    try:
+        resolve_model_identity({"model_identity": {"snapshot_digest": known_digest}}, "sha256:" + "1" * 64)
+    except ProbeError:
+        pass
+    else:
+        raise ProbeError("self-test accepted a snapshot digest that contradicted --expect-snapshot-digest")
     if diff_header_names_only(f"diff --git a/{target}", target):
         raise ProbeError("self-test treated a one-operand header as allowed-path-only")
-    if default_worker_id() != (
-        "github-actions/qwen2.5-coder-0.5b"
-        if os.environ.get("GITHUB_ACTIONS") == "true"
-        else "local/qwen2.5-coder-0.5b"
+    if default_worker_id("m") != (
+        "github-actions/m" if os.environ.get("GITHUB_ACTIONS") == "true" else "local/m"
     ):
         raise ProbeError("self-test worker id does not match the execution context")
     try:
@@ -732,11 +823,20 @@ def main() -> int:
     parser.add_argument("--output-root", default="results/benchmark/open-model/task-001")
     parser.add_argument("--image", default="idkmesh-open-model-producer:task001")
     parser.add_argument("--base-image-digest", default="unrecorded")
+    parser.add_argument(
+        "--expect-snapshot-digest",
+        default=None,
+        help=(
+            "require the producer to report exactly this snapshot digest. Use it when a "
+            "run must be pinned to one set of weights; a mismatch aborts before any "
+            "evidence is written."
+        ),
+    )
     parser.add_argument("--max-new-tokens", type=int, default=1536)
     parser.add_argument("--attempt", type=int, default=1)
     parser.add_argument(
         "--worker-id",
-        default=default_worker_id(),
+        default=None,
         help="ResultManifest worker id. Defaults to the execution context, so a "
         "local run is not recorded as a CI run.",
     )
