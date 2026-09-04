@@ -10,13 +10,14 @@ From the repository root:
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
-python -m pip install -r requirements-phase0.txt
-python -m unittest discover -s tests -v
-python -m unittest discover -s interop/tests -v
+python -m pip install -r requirements-phase0.txt pytest
+pytest
 python -m randomness_lab --policy thompson --rounds 100 --seed 42
 ```
 
-The commands run both suites. Use a focused module, such as `python -m unittest tests.test_r2 -v`. Some simulations use `pytest`; follow `sim/README.md` and the relevant workflow.
+`pytest` runs both suites: `pytest.ini` sets `testpaths` to `tests` and `interop/tests`, and `pythonpath = .`, so no `PYTHONPATH=` prefix is needed. Run one file with `pytest tests/test_r2.py`, or use the tiered gates — `make smoke`, `make test`, `make integration` — documented in [`docs/TESTING.md`](docs/TESTING.md).
+
+**Do not use `python -m unittest discover` for the suite.** `unittest` collects only `TestCase` methods, so the 162 module-level `def test_*()` functions across 17 files — the e015-e025 experiment and simulation tests, among others — are invisible to it. Measured on this revision, it runs **1393 of 1555** tests and still reports `OK`: a green result covering 90% of the suite, with the research evidence tests among the missing tenth.
 
 ## Coding Style & Naming Conventions
 

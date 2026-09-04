@@ -84,6 +84,9 @@ For a newcomer trying to understand the executable foundation, this order is usu
 
 ### Contribution surface and public front door
 
+- [Testing and CI Practice](TESTING.md) — the four test tiers and their measured
+  CPU-time budgets, how the local gate is automated, and the concurrency and
+  timeout contract every workflow now carries.
 - [Multidisciplinary Collaboration in IDKMesh](CONTRIBUTOR_PERSPECTIVES.md) —
   the contribution tracks a newcomer can enter from, and the rule that different
   perspectives are composed rather than forced into premature agreement.
