@@ -1,0 +1,99 @@
+name: Free Resource Source Audit
+
+# Standing freshness report over examples/resources/free-resource-registry-v0.1.json.
+#
+# scripts/free_resource_planner.py already drops an offer whose evidence has aged
+# past its own max_age_days, but only when a planning run happens to ask. This
+# workflow makes the same arithmetic visible on a schedule, so an offer that is
+# about to expire is seen BEFORE a planning run silently stops selecting it.
+#
+# This job is read-only. It never refreshes checked_at, edits the registry, opens
+# a pull request, or selects a compute offer. Re-dating an offer without a human
+# re-reading its terms is exactly what max_age_days exists to prevent.
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/free_resource_source_audit.py'
+      - 'scripts/free_resource_planner.py'
+      - 'tests/test_free_resource_source_audit.py'
+      - 'examples/resources/free-resource-registry-v0.1.json'
+      - '.github/workflows/free-resource-source-audit.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/free_resource_source_audit.py'
+      - 'scripts/free_resource_planner.py'
+      - 'tests/test_free_resource_source_audit.py'
+      - 'examples/resources/free-resource-registry-v0.1.json'
+      - '.github/workflows/free-resource-source-audit.yml'
+  schedule:
+    - cron: '23 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# One run per ref at a time. A superseded pull-request run is cancelled: nobody
+# reads the result for a commit that has already been replaced. Runs on a branch
+# or a schedule are queued instead, never cancelled -- the scheduled run uploads
+# the freshness record for its day, and cancelling it destroys that record.
+concurrency:
+  group: free-resource-source-audit-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+
+      - name: Compile audit code
+        run: |
+          python -m py_compile \
+            scripts/free_resource_source_audit.py \
+            tests/test_free_resource_source_audit.py
+
+      - name: Run audit self-test
+        run: python scripts/free_resource_source_audit.py --self-test
+
+      - name: Run audit tests
+        run: python -m unittest tests.test_free_resource_source_audit -v
+
+      # Deterministic leg: date arithmetic only, no network. Fails the job when an
+      # offer has actually expired. An offer merely inside the warning window is
+      # reported, not failed -- a warning is a prompt for a human to re-read the
+      # source, not a broken build.
+      - name: Report registry freshness
+        run: |
+          python scripts/free_resource_source_audit.py --format text --fail-on stale
+
+      # Liveness leg: needs network, so it is advisory. An HTTP probe detects a
+      # DEAD link, never a CHANGED free-tier policy -- a page can return 200 while
+      # announcing its own retirement. --fail-on-unreachable is deliberately NOT
+      # set here, so a transient 403 from a docs host cannot red the build.
+      - name: Probe source liveness (advisory)
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        run: |
+          python scripts/free_resource_source_audit.py \
+            --check-sources --format json --fail-on never \
+            > free-resource-source-audit.json
+          python scripts/free_resource_source_audit.py \
+            --check-sources --format text --fail-on never
+
+      - name: Upload freshness record
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: free-resource-source-audit
+          path: free-resource-source-audit.json
+          if-no-files-found: error
