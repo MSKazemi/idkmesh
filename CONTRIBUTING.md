@@ -132,6 +132,26 @@ A useful review can check more than correctness. Consider:
 - Does it increase future maintainer burden?
 - What is the community impact?
 
+### The automated reviewer
+
+Pull requests may receive an automated review from CodeRabbit, configured in
+[`.coderabbit.yaml`](.coderabbit.yaml).
+
+**Its output is advisory and carries no authority.** It cannot approve, block, or
+merge anything, and it is wrong often enough that you should argue with it. If it
+raises a point you disagree with, say so in the thread and leave the disagreement
+visible — that exchange is more useful to the next contributor than a silently
+dismissed comment.
+
+This is deliberate rather than incidental. The same separation runs through the
+WorkUnit contracts: a worker's *claim*, a verifier's *evidence*, and *integration
+authority* are three different things, and no reviewer — human, model, or
+maintainer — collapses them by asserting a change is correct. A pull request is
+merged on evidence, not on who vouched for it.
+
+You are welcome to reply to it directly in the thread. You are equally welcome to
+ignore it.
+
 ## Contribution workflow
 
 1. Find or open an issue for non-trivial work.
