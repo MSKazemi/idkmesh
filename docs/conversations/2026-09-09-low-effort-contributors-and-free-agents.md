@@ -19,7 +19,7 @@ Related guidance: [Project rules](../../PROJECT_RULES.md), [Community growth str
 
 Start with **one free coding agent, one advisory review tool, and one human co-maintainer**. Do not build another growth controller or launch a large agent swarm first.
 
-Delegating implementation is different from delegating technical maintenance. An agent-generated PR still needs a decision about correctness, scope, and integration. To stop being the daily implementer and reviewer, the owner needs to share real, bounded technical responsibility with a trusted human maintainer. An owner-controlled bot is not another independent community member.
+Delegating implementation is different from delegating technical maintenance. An agent-generated PR still needs a decision about correctness, scope, and integration. To stop being the daily implementer and reviewer, the owner should share real, bounded technical responsibility with a trusted human maintainer. An owner-controlled bot is not another independent community member.
 
 The proposed operating model is:
 
@@ -31,7 +31,7 @@ CI and advisory reviewer: automated checks and feedback
 Authorized human: integration decision under existing policy
 ```
 
-Until a co-maintainer joins, the owner still holds the human-review responsibility. Neither free quotas nor passive discovery guarantee a sustainable volunteer team.
+Until a co-maintainer joins, the owner still holds the human-review responsibility. Neither free quotas nor passive discovery guarantee a sustainable volunteer team. The goal is to stop doing routine implementation, not to assume that maintenance responsibility disappears.
 
 ## Repository observations
 
@@ -39,7 +39,7 @@ The inspected default-branch checkpoint was `c35b31e7d76073b8c0597ce56779927f1a5
 
 The repository already has `AGENTS.md`, contribution/community guidance, starter issues, dependency-bot configuration, CI, GitHub Discussions, topics, and ACE observation machinery. Recreating those is not the next useful intervention. [R1][R2]
 
-The ACE bootstrap observer's 2026-09-08 snapshot reports zero distinct external participants and zero claimed seeds in its original five-seed cohort. This is **cohort-specific evidence**, not a census proving that no outsider has ever participated anywhere in the repository. It does show that creating and observing seeds is not itself evidence of successful recruitment. [R3]
+The ACE bootstrap observer's 2026-09-08 snapshot reports zero distinct external participants and zero claimed seeds in its original five-seed cohort. This is **cohort-specific evidence**, not a census proving that no outsider has ever participated anywhere in the repository. Creating and observing seeds is not itself evidence of successful recruitment. [R3]
 
 Two immediate readiness findings:
 
@@ -51,9 +51,9 @@ Two immediate readiness findings:
 | Option | Current access distinction | Proposed use |
 | --- | --- | --- |
 | Google Jules | Free tier: 15 tasks per rolling 24 hours, 3 concurrent; quotas can change. | First bounded implementation agent. |
-| CodeRabbit | OSS access without a paid subscription; usage limits apply. Repositories below 10 stars require manual review triggering. | Advisory review using the existing PR 404 approach. |
+| CodeRabbit | OSS access without a paid subscription; a separate usage tier varies with project community and popularity. | Advisory review using the existing PR 404 approach. |
 | Existing Dependabot configuration | Dependency-maintenance automation, not general feature development. | Keep this existing lane rather than add a duplicate updater. |
-| GitHub Copilot cloud agent | Requires a qualifying paid-plan entitlement; some popular OSS maintainers qualify for free Pro. | Optional when legitimately available, not assumed free for this repository. |
+| GitHub Copilot cloud agent | Requires a qualifying plan entitlement; some popular OSS maintainers qualify for free Pro. | Optional when legitimately available, not assumed free for this repository. |
 | Codex for Open Source | Selected maintainers can receive six months of ChatGPT Pro with Codex; admission is not guaranteed. | Apply for support, but do not make the pilot depend on approval. |
 
 Sources: [S1][S2][S3][S4][S5][S6]. Public-repository status alone does not imply free access to every coding agent. Open-source agent software also does not supply inference, electricity, hardware, or operations for free; volunteer resources must follow the existing zero-project-spend policy. [R2]
@@ -86,7 +86,9 @@ Jules also documents daily/weekly scheduled tasks. Consider one narrow weekly jo
 
 ### CodeRabbit: assistance, not a substitute human
 
-The repository had one star when inspected, so the documented below-ten-stars rule applies: after installation, request review using `@coderabbitai review` or the status-comment control. Keep it advisory. Do not enable paid overage, manipulate stars, or count its comments as the separate human witness required by an existing review gate. [R1][S3]
+CodeRabbit's documented OSS tier provides Pro+ features without a paid subscription, with variable review limits. It is distinct from the ordinary Free plan, which describes PR summarization rather than full PR review. Verify the applicable account/repository tier during setup. [S3]
+
+For a small pilot, use manual or label-based opt-in review to control noise. After app authorization, `@coderabbitai review` can request a review. This is a recommended operating choice, not a claimed star-count eligibility rule. Keep feedback advisory and do not enable paid overage. Do not count bot comments as the separate human witness required by an existing review gate. [S3][R2]
 
 ## Finding people without blogs or Hacker News
 
@@ -120,6 +122,16 @@ Suggested pinned GitHub invitation:
 
 This is a proposal, not a posted recruitment message or evidence that contributors have joined. Directory discovery and a pinned invitation can be delegated, but refusing all discovery, contact, and onboarding would make reliable recruitment an unsupported expectation.
 
+### Recruit for shared responsibility, not just free implementation
+
+Seek a technical co-maintainer with a bounded initial area, such as contributor onboarding or the gate-audit tool, rather than asking a stranger to manage the entire research project immediately. Start with one contribution or review and expand responsibility after demonstrated reliability under existing governance.
+
+A small number of relevant, personalized invitations through channels that welcome collaboration is a proposed supplement to passive discovery. AI may help shortlist public work relevant to Python, agent evaluation, or GitHub automation; a human should verify the fit and approve contact. Do not scrape private contact details, mass-mention developers, spam unrelated issues, or automate unsolicited invitations. No such contact was performed here.
+
+### Make contribution follow actual use
+
+The README already exposes the installable `idkmesh gate-audit` CLI. PR 395 proposes a GitHub Action wrapper but was not merged at inspection. Use the existing narrow tool as a practical entrypoint: someone tries a useful diagnostic, encounters a concrete need, and has a small reason to contribute. Prioritize reviewing existing distribution work over inventing another platform. This is a proposed adoption strategy, not evidence of existing external users or a shipped Action. [R1][R9]
+
 ## Decision sequence and success measures
 
 1. **Repair the entrance.** Align starter tasks with current-main setup/testing instructions and reconcile existing local-gate PRs instead of opening redundant ones.
@@ -134,7 +146,7 @@ No automatic merging, constitutional edits, review-gate bypasses, mass mentions,
 
 ## Preservation and verification
 
-This document preserves the owner's request, the assistant's practical recommendation, material repository findings, and current provider references. It is intentionally a single conversation record rather than another controller or an adopted process rewrite. A future accepted pilot should update the linked community strategy with measured results.
+This document preserves the owner's request, the assistant's practical recommendation, material repository findings, and current provider references. It is intentionally a conversation proposal rather than another controller or an adopted process rewrite. A future accepted pilot should update the linked community strategy with measured results.
 
 Verification in this session consisted of reading repository files/issues/PRs through the connected GitHub tools and checking provider-owned documentation. No agent task was executed, no volunteers were contacted, and no test-suite performance claim was independently reproduced. Provider offers and open-PR state are time-sensitive.
 
@@ -150,13 +162,14 @@ Verification in this session consisted of reading repository files/issues/PRs th
 - [R6] [Current contribution guide](../../CONTRIBUTING.md).
 - [R7] [Interoperability documentation, issue 402](https://github.com/MSKazemi/idkmesh/issues/402).
 - [R8] [First-run feedback, issue 403](https://github.com/MSKazemi/idkmesh/issues/403), [machine setup reports, issue 401](https://github.com/MSKazemi/idkmesh/issues/401), [independent node review, issue 138](https://github.com/MSKazemi/idkmesh/issues/138), and [independent control-plane audit, issue 151](https://github.com/MSKazemi/idkmesh/issues/151).
+- [R9] [Gate-audit Action proposal, PR 395](https://github.com/MSKazemi/idkmesh/pull/395).
 
 ### External primary sources checked 2026-09-09
 
 - [S1] [Jules limits and plans](https://jules.google/docs/usage-limits/).
 - [S2] [Running tasks with Jules](https://jules.google/docs/running-tasks/).
 - [S3] [CodeRabbit plans, OSS access, and review limits](https://docs.coderabbit.ai/management/plans).
-- [S4] [GitHub Copilot cloud agent](https://docs.github.com/en/copilot/concepts/agents/cloud-agent/about-cloud-agent) and [Copilot plans](https://docs.github.com/copilot/get-started/plans-for-github-copilot).
+- [S4] [GitHub Copilot cloud agent](https://docs.github.com/en/copilot/concepts/agents/cloud-agent/about-cloud-agent) and [Copilot plans](https://docs.github.com/en/copilot/get-started/plans).
 - [S5] [Codex for Open Source application](https://openai.com/form/codex-for-oss/).
 - [S6] [Dependabot version updates](https://docs.github.com/en/code-security/concepts/supply-chain-security/dependabot-version-updates).
 - [S7] [Jules scheduled tasks](https://jules.google/docs/scheduled-tasks/).
