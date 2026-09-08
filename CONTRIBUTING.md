@@ -84,9 +84,44 @@ For materially AI-generated code, research, tests, or documentation, include a s
 
 Do not submit large volumes of unreviewed generated material. Generation must not grow faster than the community's ability to verify and maintain it.
 
+## Running the tests
+
+You do not need to read the architecture to run the gate. Two commands:
+
+```bash
+make setup    # once: creates .venv and installs the test dependencies
+make test     # the pre-commit gate: the full unit suite
+```
+
+`make help` lists every tier. The ones you will use:
+
+| Command | What it runs | When |
+|---|---|---|
+| `make smoke` | only the tests affected by your uncommitted changes | after each edit |
+| `make test` | the full unit suite | before each commit |
+| `make integration` | the unit suite plus the schema and link gates | before each push |
+| `make gate` | whichever tier your current changes actually require | when unsure |
+
+`make integration` is the closest local equivalent of the `PR Gate` check, so
+running it before you push is the cheapest way to avoid a red pull request.
+[`docs/TESTING.md`](docs/TESTING.md) explains why the tiers are drawn where they
+are and what to do when one complains.
+
+Two things that surprise newcomers, neither of which means you broke anything:
+
+- Each tier has a **CPU-time budget** as well as a pass/fail result, so a green
+  suite that runs too slowly still fails the tier. If the budget trips, first
+  re-run it on an otherwise idle machine — heavy load from unrelated processes
+  inflates measured CPU time substantially.
+- Results are cached per tree state, so an unchanged tree reports
+  `cached pass` instead of re-running. `make clean-cache` forces a full re-run.
+
+If you cannot get the gate to run at all, that is a bug worth reporting — open
+an issue describing your OS, Python version, and the failure.
+
 ## Code quality
 
-As implementation grows, exact commands will be documented here. Until then, every code contribution should aim to provide:
+Every code contribution should aim to provide:
 
 - a reproducible way to run or test the change;
 - tests for behavior that can be tested;

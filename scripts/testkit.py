@@ -111,10 +111,21 @@ def changed_files() -> list[Path]:
 
 
 def tree_fingerprint() -> str:
-    """Content hash of every tracked source/test file plus uncommitted changes.
+    """Content hash of every tracked file plus uncommitted changes.
 
     Two trees with the same fingerprint cannot produce different test results,
     which is what makes the result cache sound.
+
+    That soundness claim is why this hashes *everything* rather than a list of
+    source suffixes. The suite is not only Python: guard tests read Markdown,
+    workflow YAML, fixtures and manifests, and the integration tier runs a
+    Markdown link gate. A suffix allowlist omitting `.md` and `.yml` meant a
+    contributor could break a documentation link, get `cached pass` from
+    `make integration`, push, and only then discover CI disagreed.
+
+    Hashing the full tracked tree costs a fraction of a second against a suite
+    measured in tens of seconds, which is the right trade for a cache whose
+    only job is to be correct.
     """
     h = hashlib.sha256()
     code, tracked = run(["git", "ls-files", "-z"])
@@ -122,7 +133,7 @@ def tree_fingerprint() -> str:
     names += [str(p.relative_to(ROOT)) for p in changed_files() if p.exists()]
     for name in sorted(set(n for n in names if n)):
         path = ROOT / name
-        if not path.is_file() or path.suffix not in {".py", ".json", ".ini", ".cfg"}:
+        if not path.is_file():
             continue
         h.update(name.encode())
         try:
@@ -321,6 +332,16 @@ def tail(text: str, lines: int = 12) -> str:
     return "\n".join(kept[-lines:])
 
 
+def tier_passed(ok: bool, cpu: float, budget: float | None) -> bool:
+    """Whether a tier run passes its gate.
+
+    Two independent conditions: the tests were green, and the run stayed inside
+    the tier's CPU budget. Both the exit code and the result cache derive from
+    this single function so they cannot disagree.
+    """
+    return ok and not (budget is not None and cpu > budget)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("tier", choices=[*TIERS, "auto"], nargs="?", default="auto")
@@ -351,10 +372,16 @@ def main() -> int:
     else:
         result = TIERS[tier]()
 
-    cache_write(tier, fingerprint, result.ok, result.seconds, result.cpu)
-
     budget = BUDGETS.get(tier)
     over = budget is not None and result.cpu > budget
+
+    # Cache the *gate* outcome, not merely pytest's. A run that is green but
+    # over budget fails the tier, so caching result.ok here would let the next
+    # invocation short-circuit to "cached pass" and exit 0 — disarming the
+    # budget after a single failure, for as long as the tree is unchanged.
+    passed = tier_passed(result.ok, result.cpu, budget)
+    cache_write(tier, fingerprint, passed, result.seconds, result.cpu)
+
     status = "PASS" if result.ok else "FAIL"
     detail = f"{result.seconds:.1f}s wall / {result.cpu:.1f}s cpu"
     print(
@@ -377,7 +404,7 @@ def main() -> int:
 
     # A blown budget fails the gate: that is the only mechanism that reliably
     # stops a fast suite from decaying into a slow one.
-    return 0 if (result.ok and not over) else 1
+    return 0 if passed else 1
 
 
 if __name__ == "__main__":
