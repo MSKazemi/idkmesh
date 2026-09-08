@@ -84,9 +84,53 @@ For materially AI-generated code, research, tests, or documentation, include a s
 
 Do not submit large volumes of unreviewed generated material. Generation must not grow faster than the community's ability to verify and maintain it.
 
+## Running the tests
+
+You do not need to understand the research side of this repository to run the
+tests. From the repository root:
+
+```bash
+python -m venv .venv && source .venv/bin/activate
+python -m pip install -r requirements-phase0.txt pytest
+PYTHONPATH=. python -m pytest -q
+```
+
+That collects both suites — `tests/` and `interop/tests/` — in a single run. To
+run one file while you work:
+
+```bash
+PYTHONPATH=. python -m pytest -q tests/test_r2.py
+```
+
+If your change touches Markdown, also check that every local link still
+resolves:
+
+```bash
+PYTHONPATH=. python tools/idkgraph_link_check.py
+```
+
+Findings outside `tests/fixtures/` must be zero. Fixtures under that path
+contain deliberately broken links and are expected to be reported. One gotcha:
+links are resolved against the **tracked** file index, so `git add` a new file
+before checking, or a link to it will look broken when it is merely unstaged.
+
+**Do not verify your work with `python -m unittest discover`.** It silently
+under-collects — `unittest` only finds `TestCase` subclasses, so the 162
+module-level `test_*` functions in `tests/` are invisible to it. It runs 1476
+tests and prints `OK`; `pytest` collects 1638. A tenth of the suite is skipped
+with no indication anything was missed.
+
+Two skips are expected and are not a problem with your setup:
+`interop/tests/test_sdk_conformance.py` skips two tests unless the optional
+interoperability SDKs are installed with
+`python -m pip install -r requirements-interoperability.txt`.
+
+If you cannot get the tests to run at all, that is a bug worth reporting — open
+an issue with your OS, your Python version, and the failure.
+
 ## Code quality
 
-As implementation grows, exact commands will be documented here. Until then, every code contribution should aim to provide:
+Every code contribution should aim to provide:
 
 - a reproducible way to run or test the change;
 - tests for behavior that can be tested;
