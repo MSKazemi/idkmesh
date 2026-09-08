@@ -8,9 +8,11 @@ invocation took the cache short-circuit and exited 0.
 
 That made the budget a one-shot gate: it fired once, then reported
 "cached pass" for as long as the tree was unchanged — which is precisely when a
-developer re-runs it. Observed on `main`: the unit tier used 192.45 CPU-seconds
+developer re-runs it. Observed on this branch: the unit tier used 192.45 CPU-seconds
 against a 90-second ceiling, exited 1, and the very next `make test` printed
-"cached pass" and exited 0.
+"cached pass" and exited 0. (That 192.45 was itself inflated by unrelated load on
+the machine -- the same tier measures ~62 CPU-seconds idle -- which is precisely
+why a spurious trip must not then be cached as a pass.)
 
 Both the exit code and the cached verdict now derive from `tier_passed`.
 """
