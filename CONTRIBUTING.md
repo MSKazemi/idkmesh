@@ -143,9 +143,11 @@ Markdown/identity report, not the combined gate. See
 
 **Do not verify your work with `python -m unittest discover`.** It silently
 under-collects — `unittest` only finds `TestCase` subclasses, so the 162
-module-level `test_*` functions in `tests/` are invisible to it. It runs 1476
-tests and prints `OK`; `pytest` collects 1638. A tenth of the suite is skipped
-with no indication anything was missed.
+module-level `test_*` functions spread across 17 files in `tests/` are
+invisible to it. That is roughly a tenth of the suite, skipped while the run
+still prints `OK`, with no indication anything was missed.
+`tests/test_documented_test_counts.py` re-measures both figures and the gap
+they explain, so these numbers cannot go stale unnoticed.
 
 Two skips are expected and are not a problem with your setup:
 `interop/tests/test_sdk_conformance.py` skips two tests unless the optional
