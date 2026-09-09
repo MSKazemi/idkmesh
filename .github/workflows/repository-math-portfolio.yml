@@ -63,7 +63,11 @@ jobs:
       pull-requests: read
       actions: read
     concurrency:
-      group: repository-math-portfolio-observer
+      # PR-target observations are advisory and must not cancel observations for
+      # unrelated pull requests. Canonical events intentionally remain in one
+      # cancellation domain so persistent portfolio state has one successor
+      # lineage rather than concurrent restores producing competing successors.
+      group: repository-math-portfolio-${{ github.event_name == 'pull_request_target' && format('advisory-{0}', github.event.pull_request.number) || 'canonical' }}
       cancel-in-progress: true
     runs-on: ubuntu-latest
     timeout-minutes: 9
@@ -331,16 +335,20 @@ jobs:
           cp /tmp/repository-portfolio.json /tmp/repository-portfolio-checkpoint/repository-portfolio.json
           cp /tmp/REPOSITORY_PORTFOLIO.md /tmp/repository-portfolio-checkpoint/REPOSITORY_PORTFOLIO.md
           cp state/repository-portfolio-policy.json /tmp/repository-portfolio-checkpoint/repository-portfolio-policy.json
-          test ! -e /tmp/repository-portfolio-checkpoint/repository-snapshot.json
+          cp state/evolution-math-policy.json /tmp/repository-portfolio-checkpoint/evolution-math-policy.json
           manifest_args=(
             create
-            --manifest /tmp/repository-portfolio-checkpoint/checkpoint-manifest.json
+            --output /tmp/repository-portfolio-checkpoint/checkpoint-manifest.json
             --repository "$GITHUB_REPOSITORY"
             --workflow repository-math-portfolio.yml
             --run-id "$GITHUB_RUN_ID"
             --head-sha "$GITHUB_SHA"
             --event-name "$GITHUB_EVENT_NAME"
             --file repository-portfolio-state.json=/tmp/repository-portfolio-checkpoint/repository-portfolio-state.json
+            --file repository-portfolio.json=/tmp/repository-portfolio-checkpoint/repository-portfolio.json
+            --file REPOSITORY_PORTFOLIO.md=/tmp/repository-portfolio-checkpoint/REPOSITORY_PORTFOLIO.md
+            --file repository-portfolio-policy.json=/tmp/repository-portfolio-checkpoint/repository-portfolio-policy.json
+            --file evolution-math-policy.json=/tmp/repository-portfolio-checkpoint/evolution-math-policy.json
           )
           if [[ -n "$PARENT_RUN_ID" ]]; then
             manifest_args+=(--parent-run-id "$PARENT_RUN_ID")
@@ -355,7 +363,7 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-      - name: Publish job summary
+      - name: Write job summary
         run: cat /tmp/REPOSITORY_PORTFOLIO.md >> "$GITHUB_STEP_SUMMARY"
 
   verify-pr-head:
@@ -368,7 +376,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 6
     steps:
-      - name: Check out proposed PR code
+      - name: Check out pull request head
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
@@ -379,7 +387,7 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Test deterministic portfolio code without live API authority
+      - name: Compile and test pull request implementation
         run: |
           python -m py_compile scripts/evolution_math.py scripts/checkpoint_manifest.py scripts/repository_portfolio.py tests/test_checkpoint_manifest.py tests/test_evolution_checkpoint_validation.py tests/test_evolution_workflow_security.py
           python -m unittest -v tests.test_repository_portfolio tests.test_checkpoint_manifest tests.test_evolution_checkpoint_validation tests.test_evolution_workflow_security
