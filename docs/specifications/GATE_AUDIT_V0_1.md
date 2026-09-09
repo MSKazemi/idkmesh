@@ -128,6 +128,26 @@ PYTHONPATH=. python -m idkmesh.cli gate-audit examples/gate-audit/panel-votes.ex
 Exit codes: `0` success, `2` contract violation or unreadable input (with the
 violation named on stderr).
 
+### As a GitHub Action
+
+The composite action at [`actions/gate-audit/`](../../actions/gate-audit/action.yml)
+wraps the CLI for CI use: it installs the package from the action's own
+repository checkout, runs the audit, and appends the Markdown summary to the
+job summary page.
+
+```yaml
+- uses: MSKazemi/idkmesh/actions/gate-audit@main
+  with:
+    votes-file: path/to/panel-votes.json
+```
+
+Inputs: `votes-file` (required), `report-file`, `markdown-file`, `job-summary`,
+`python-version` (defaults `gate-audit-report.json`, `gate-audit-report.md`,
+`true`, `3.12`). The workflow
+[`gate-audit-action-selftest.yml`](../../.github/workflows/gate-audit-action-selftest.yml)
+runs the action on the committed example on every relevant change and asserts
+the output is byte-identical to the committed report example.
+
 ## Authority boundary
 
 The report is decision support about the **review layer itself**. It does not
