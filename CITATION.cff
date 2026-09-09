@@ -1,0 +1,36 @@
+cff-version: 1.2.0
+title: >-
+  IDKMesh: verified swarm engineering for humans, AI agents, and
+  heterogeneous compute
+message: >-
+  If you use IDKMesh, or build on its Work Unit, ResultManifest, EvaluatorPlan,
+  or VerificationResult contracts, please cite it using these metadata.
+type: software
+authors:
+  - given-names: Mohsen
+    family-names: Seyedkazemi Ardebili
+    email: mohsen.seyedkazemi@gmail.com
+    alias: MSKazemi
+repository-code: https://github.com/MSKazemi/idkmesh
+url: https://mskazemi.com/idkmesh/
+abstract: >-
+  IDKMesh is an open-source research laboratory studying whether a large open
+  community of humans and AI agents can discover goals, decompose work, execute
+  bounded tasks, verify results independently, and maintain complex systems
+  better than isolated developers or agents can. It provides versioned task and
+  evidence contracts that separate worker claims from independent verification
+  from integration authority, together with simulation and benchmark
+  infrastructure for testing those questions empirically. The repository is an
+  executable research foundation; implemented infrastructure is evidence of the
+  capability to run experiments, not evidence that the research hypotheses are
+  true.
+keywords:
+  - multi-agent systems
+  - agent orchestration
+  - collective intelligence
+  - software verification
+  - distributed systems
+  - reproducible research
+license: Apache-2.0
+version: research-preview-2026-08-29
+date-released: '2026-08-29'
