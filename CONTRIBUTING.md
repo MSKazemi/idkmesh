@@ -14,6 +14,92 @@ Before contributing, read:
 
 Read deeper architecture/research documents only when your contribution requires them.
 
+**Looking for one concrete task or shared technical responsibility?** See the
+[contributor pilot](docs/community/CONTRIBUTOR_PILOT_2026_09.md) and the public
+[co-maintainer / bring-your-own-agent invitation](https://github.com/MSKazemi/idkmesh/issues/407).
+
+## Set up a development environment
+
+Use Git and Python 3.11 or 3.13, the versions exercised by the stable PR gate.
+Start from a current checkout of `main`, not an old experiment branch. From your
+checkout, create an isolated environment:
+
+```bash
+python -m venv .venv
+```
+
+Activate it on Linux/macOS with `source .venv/bin/activate`, or in Windows
+PowerShell with `.\.venv\Scripts\Activate.ps1`. Where activation is restricted,
+invoke `.venv/bin/python` or `.\.venv\Scripts\python.exe` directly in place of
+`python`; changing machine-wide execution policy is not required.
+
+Install the same test dependencies as the stable PR gate:
+
+```bash
+python -m pip install --disable-pip-version-check pytest
+python -m pip install --disable-pip-version-check -r requirements-phase0.txt
+```
+
+## Running the tests
+
+Run from the repository root. On Linux/macOS:
+
+```bash
+PYTHONPATH=. python -m pytest -q
+```
+
+In Windows PowerShell:
+
+```powershell
+$env:PYTHONPATH = "."
+python -m pytest -q
+```
+
+For a focused check, replace the final arguments with the relevant test file.
+For example, `python -m pytest -q -rs interop/tests/test_sdk_conformance.py`
+reports the interoperability tests and any skip reasons after setting
+`PYTHONPATH` as above. Report skipped tests honestly; a green default suite is
+not evidence that optional integrations ran.
+
+These commands mirror [the stable PR gate](.github/workflows/pr-gate.yml).
+They do not depend on an unmerged Makefile or local testkit. Instructions in old
+issues or branches may refer to `make setup`, `make test`, or `make integration`;
+use the current commands here unless that tooling actually exists in your
+checkout. This section supplies the default test path, not proof that every
+contributor operating system has been tested.
+
+### Check Markdown links before submitting
+
+Stage new files with `git add` first: the checker discovers tracked paths.
+The following Bash command reproduces the PR gate's treatment of intentionally
+broken fixtures rather than treating their expected findings as regressions:
+
+```bash
+PYTHONPATH=. python - <<'PY'
+import json
+import subprocess
+import sys
+
+raw = subprocess.run(
+    [sys.executable, "tools/idkgraph_link_check.py"],
+    capture_output=True, text=True, check=True,
+).stdout
+findings = [
+    f for f in json.loads(raw)["findings"]
+    if "tests/fixtures/" not in f["source_path"]
+]
+for f in findings:
+    print(f"{f['severity']}: {f['source_path']}:{f['line']} {f['message']}")
+print(f"non-fixture link findings: {len(findings)}")
+sys.exit(1 if findings else 0)
+PY
+```
+
+The Python body can also be saved to a temporary file and run from PowerShell
+with `PYTHONPATH` set as above. The raw checker is available as
+`python tools/idkgraph_link_check.py`; inspect its findings rather than assuming
+its exit status alone means the PR gate passed.
+
 ## Choose a contribution type
 
 Good contributions include:
@@ -86,7 +172,7 @@ Do not submit large volumes of unreviewed generated material. Generation must no
 
 ## Code quality
 
-As implementation grows, exact commands will be documented here. Until then, every code contribution should aim to provide:
+Use the setup and testing commands above. Every code contribution should aim to provide:
 
 - a reproducible way to run or test the change;
 - tests for behavior that can be tested;
