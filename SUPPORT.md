@@ -6,13 +6,15 @@ IDKMesh is early, and questions are valuable signals about where the project is 
 
 ### I do not understand the project yet
 
-Open a GitHub issue with a title such as `[Question] What does ... mean?` and explain what you already read and what remains unclear.
+Ask in [Discussions -> Q&A](https://github.com/MSKazemi/idkmesh/discussions/categories/q-a). Explain what you already read and what remains unclear.
+
+Running `python scripts/demo.py` first often answers the question faster than any document, and if it does not, saying so is itself a useful report.
 
 A question that reveals confusing documentation is a useful contribution.
 
 ### I have an idea
 
-Use the proposal/community issue templates when available. Describe the problem before prescribing a complete solution.
+Start in [Discussions -> Ideas](https://github.com/MSKazemi/idkmesh/discussions/categories/ideas), or use the proposal/community issue templates when the change is already well defined. Describe the problem before prescribing a complete solution.
 
 ### I found a bug
 
