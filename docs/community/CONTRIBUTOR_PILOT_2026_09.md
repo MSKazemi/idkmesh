@@ -90,11 +90,14 @@ not proof that the project is listed. Up For Grabs asks for a pull request addin
 [listing instructions](https://github.com/up-for-grabs/up-for-grabs.net/blob/gh-pages/docs/list-a-project.md).
 
 Submit only while a real maintainer can guide newcomers and review their work.
-The connected tools used for this pilot do not expose creation of the required
-external fork; no upstream PR or acceptance is claimed. A contributor with an
-authorized GitHub web session can use the prepared entry in the upstream web
-editor. Do not create an unrelated promotional issue instead of following the
-upstream submission process.
+The entry was committed to the owner's existing fork on
+[branch add-idkmesh-2026-09-09](https://github.com/MSKazemi/up-for-grabs.net/tree/add-idkmesh-2026-09-09),
+at `e362e0123dbc6ae492f426260aefe771c87204fa`, based on upstream `gh-pages`.
+The attempt to open the upstream PR returned HTTP 403, `Resource not accessible
+by integration`. The branch is ready, but no upstream submission or acceptance
+is claimed. An authorized GitHub web session can open the PR from that branch.
+Do not create an unrelated promotional issue instead of following the upstream
+submission process. The execution thread on PR 408 records this access limit.
 
 ## Evaluation and stopping rule
 
