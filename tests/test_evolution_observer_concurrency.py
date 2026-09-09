@@ -111,7 +111,18 @@ def observe_group() -> str:
 
 
 def portfolio_group() -> str:
-    return _single_group(PORTFOLIO, "repository-math-portfolio-")
+    text = PORTFOLIO.read_text(encoding="utf-8")
+    groups = [
+        group
+        for group, _ in concurrency_blocks(text)
+        if "repository-math-portfolio-" in group
+        and "repository-math-portfolio-pr-" not in group
+    ]
+    if len(groups) != 1:
+        raise AssertionError(
+            f"expected one portfolio observer group in {PORTFOLIO.name}, got {groups}"
+        )
+    return groups[0]
 
 
 class ParserSelfTests(unittest.TestCase):
