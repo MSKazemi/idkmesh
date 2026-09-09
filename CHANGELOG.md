@@ -1,49 +1,50 @@
 # Changelog
 
-All notable changes to IDKMesh are recorded here.
+Notable changes are summarized here; this is not an exhaustive commit log.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). IDKMesh is
 pre-1.0 research software and does not yet follow semantic versioning: contracts under
 `schemas/` carry their own explicit versions (for example `work-unit-v0.2`), and those
-versions — not the release tag — are what downstream code should depend on.
+versions, not the release tag, are what downstream code should depend on.
 
-This file starts at the first public release. Changes before it are recorded in the git
-history and in the release notes for that tag.
+This file starts at the first public release. Earlier changes remain in git history
+and the release notes for that tag.
 
 ## [Unreleased]
 
 ### Added
 
-- `scripts/demo.py`, a narrated sixty-second tour of the acceptance contract. It walks one
-  bounded task through the real schemas in `schemas/` and fixtures in `examples/`: three
-  objects are accepted and four are rejected, including three that report success. It
-  reuses the validators in `experiments/harness.py` and `experiments/provenance_integrity.py`
-  rather than reimplementing them, and exits non-zero if any rejection stops happening, so
-  it is a regression test as well as a demonstration.
-- `tests/test_demo.py`, guarding the demo, including a red-green case that weakens the
-  self-acceptance fixture and asserts the demo fails.
-- `CITATION.cff`, so the project can be cited.
-- `.devcontainer/devcontainer.json`, so the project can be tried without a local install.
-- This changelog.
+- `scripts/demo.py`, a narrated contract tour using the repository's real validators
+  and committed synthetic fixtures: three positive checks and four rejection checks.
+  It does not run an agent or prove live independence, accepted work, or merge authority.
+- `tests/test_demo.py`, including regression checks that unexpected process/programming
+  failures cannot count as expected contract rejections. Temporary fixtures keep the
+  tests from modifying shared repository evidence.
+- `.devcontainer/devcontainer.json`, including both `tests/` and `interop/tests/` in
+  the editor's pytest discovery and an automatic fixture demo on attach. Hosted
+  environment availability and cost are not guaranteed by this configuration.
+- `CITATION.cff` and this changelog.
+- `actions/gate-audit/`, the composite Action integrated through PR 395, with an
+  exact-head self-test checking report-byte identity and the authority disclaimer.
 
 ### Changed
 
-- `README.md` now opens with a runnable "See it work in sixty seconds" section above the
-  status and scope material.
-- `CONTRIBUTING.md` now opens with the demo rather than three documents to read first.
+- README introduces the synthetic contract demo with virtual-environment setup and
+  links the existing contributor invitation. Installation time is environment-dependent.
+- Support and issue-template entry points route open-ended questions to Discussions.
+- The newer CONTRIBUTING.md instructions from PRs 405 and 408 are preserved rather
+  than replaced by another setup sequence.
 
-## [research-preview-2026-08-29] — 2026-08-29
+## [research-preview-2026-08-29] - 2026-08-29
 
 First public research-preview snapshot, published as a prerelease. See the
 [release notes](https://github.com/MSKazemi/idkmesh/releases/tag/research-preview-2026-08-29)
-for the full contents, which include the Work Unit, ResultManifest, EvaluatorPlan and
-VerificationResult foundations, the repository and branch observatories, bounded
-recommendation layers with no merge authority, synthetic experiments, and the CI security
-surfaces.
+for the Work Unit, ResultManifest, EvaluatorPlan and VerificationResult foundations,
+repository/branch observatories, bounded recommendation layers, synthetic experiments,
+and CI security surfaces.
 
-As stated in those notes, this is research software rather than a production-ready
-distributed agent platform, and the held-out real coding corpus, external independent-review
-gates, and community reproduction experiment were not complete at that point.
+This is research software, not a production-ready distributed agent platform. The
+release notes preserve its evidence and independent-review limitations.
 
 [Unreleased]: https://github.com/MSKazemi/idkmesh/compare/research-preview-2026-08-29...main
 [research-preview-2026-08-29]: https://github.com/MSKazemi/idkmesh/releases/tag/research-preview-2026-08-29

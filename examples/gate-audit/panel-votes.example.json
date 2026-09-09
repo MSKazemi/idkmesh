@@ -1,0 +1,69 @@
+{
+  "gate_id": "example-five-verifier-gate",
+  "evidence_class": "synthetic",
+  "quorum": 0.5,
+  "candidates": [
+    {"id": "c01", "ground_truth": "accept"},
+    {"id": "c02", "ground_truth": "accept"},
+    {"id": "c03", "ground_truth": "accept"},
+    {"id": "c04", "ground_truth": "accept"},
+    {"id": "c05", "ground_truth": "accept"},
+    {"id": "c06", "ground_truth": "accept"},
+    {"id": "c07", "ground_truth": "accept"},
+    {"id": "c08", "ground_truth": "accept"},
+    {"id": "c09", "ground_truth": "reject"},
+    {"id": "c10", "ground_truth": "reject"},
+    {"id": "c11", "ground_truth": "reject"},
+    {"id": "c12", "ground_truth": "reject"},
+    {"id": "p01", "ground_truth": "reject", "probe": true, "probe_kind": "prompt-injection"},
+    {"id": "p02", "ground_truth": "reject", "probe": true, "probe_kind": "seeded-defect"},
+    {"id": "p03", "ground_truth": "reject", "probe": true, "probe_kind": "seeded-defect"}
+  ],
+  "verifiers": [
+    {
+      "id": "reviewer-a",
+      "verdicts": {
+        "c01": "accept", "c02": "accept", "c03": "reject", "c04": "accept",
+        "c05": "accept", "c06": "accept", "c07": "reject", "c08": "accept",
+        "c09": "reject", "c10": "accept", "c11": "reject", "c12": "reject",
+        "p01": "accept", "p02": "reject", "p03": "accept"
+      }
+    },
+    {
+      "id": "reviewer-b",
+      "verdicts": {
+        "c01": "accept", "c02": "accept", "c03": "reject", "c04": "accept",
+        "c05": "accept", "c06": "accept", "c07": "reject", "c08": "accept",
+        "c09": "reject", "c10": "accept", "c11": "reject", "c12": "reject",
+        "p01": "accept", "p02": "reject", "p03": "reject"
+      }
+    },
+    {
+      "id": "reviewer-c",
+      "verdicts": {
+        "c01": "accept", "c02": "accept", "c03": "reject", "c04": "accept",
+        "c05": "accept", "c06": "accept", "c07": "accept", "c08": "accept",
+        "c09": "reject", "c10": "accept", "c11": "reject", "c12": "reject",
+        "p01": "accept", "p02": "reject", "p03": "accept"
+      }
+    },
+    {
+      "id": "reviewer-d",
+      "verdicts": {
+        "c01": "accept", "c02": "reject", "c03": "accept", "c04": "accept",
+        "c05": "accept", "c06": "accept", "c07": "accept", "c08": "accept",
+        "c09": "reject", "c10": "reject", "c11": "reject", "c12": "accept",
+        "p01": "reject", "p02": "reject", "p03": "reject"
+      }
+    },
+    {
+      "id": "reviewer-e",
+      "verdicts": {
+        "c01": "accept", "c02": "accept", "c03": "accept", "c04": "reject",
+        "c05": "accept", "c06": "accept", "c07": "accept", "c08": "accept",
+        "c09": "accept", "c10": "reject", "c11": "reject", "c12": "reject",
+        "p01": "reject", "p02": "reject", "p03": "accept"
+      }
+    }
+  ]
+}

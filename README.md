@@ -6,34 +6,42 @@ IDKMesh is an open-source research and engineering project exploring how humans,
 
 The project is intentionally ambitious, but the repository is not claiming a finished planetary-scale system. Today it is a **GitHub-native research laboratory with an executable coordination/evidence foundation** and a reference-product target: the Git-native Verified Swarm Runner.
 
-## See it work in sixty seconds
+## Try the contract demo
+
+With Git and Python 3.11 or 3.13, use a virtual environment. Linux/macOS example:
 
 ```bash
 git clone https://github.com/MSKazemi/idkmesh && cd idkmesh
+python -m venv .venv
+source .venv/bin/activate
 python -m pip install -r requirements-phase0.txt
 python scripts/demo.py
 ```
 
-The demo walks one bounded task through the acceptance contract using the real
-schemas in [`schemas/`](schemas/) and the real fixtures in [`examples/`](examples/).
-Four objects are rejected — one before any work starts, and three that each report
-success anyway:
+For Windows, use the environment instructions in [CONTRIBUTING.md](CONTRIBUTING.md).
+No model account or API key is needed. Installation time depends on your environment.
 
-| The object | Why it is rejected |
+The demo validates committed **synthetic fixtures** with the real validators and
+schemas in [`schemas/`](schemas/) and inputs in [`examples/`](examples/).
+It performs three positive checks and four deliberate rejection checks:
+
+| Invalid fixture | Why it is rejected |
 | --- | --- |
-| A task with no security contract | the bound is checked before dispatch, not after the work comes back |
-| A worker that accepts its own output | worker completion is not acceptance |
-| A "verifier" that is the worker under another name | correlated verification adds volume, not evidence |
-| A verification whose provenance does not bind to what ran | evidence must reference the exact artifact it checked |
+| A task with no security contract | a dispatchable contract must declare its security bounds |
+| A worker result that accepts itself | worker completion is not acceptance |
+| A verifier using the worker's identity | the worker cannot satisfy the independent-verifier contract itself |
+| A verification with mismatched provenance | evidence must bind to the supplied artifacts |
 
-That is the part of IDKMesh that exists and runs today. If you disagree with
-where those lines are drawn, that disagreement is the most useful thing you can
-bring to this project — argue it in
-[Discussions](https://github.com/MSKazemi/idkmesh/discussions/categories/q-a).
+**No live worker or external verifier is executed.** A fixture passing validation
+is not proof of real-world independence, correct work, or approval to merge.
+Unexpected process or programming errors fail the demo instead of counting as
+successful rejection evidence.
 
 Questions and "why is it done this way" belong in
 [Discussions](https://github.com/MSKazemi/idkmesh/discussions); the issue tracker
-is for defects and bounded pieces of work.
+is for defects and bounded pieces of work. For one concrete task or shared
+technical responsibility, see the
+[contributor invitation](https://github.com/MSKazemi/idkmesh/issues/407).
 
 ## The central question
 
@@ -56,6 +64,9 @@ What is already present on `main`:
 - zero-project-spend compute admission and routing experiments;
 - IDKGraph repository modeling, observability, link-integrity, and warning/review machinery;
 - GitHub-native ACE community-growth experiments and repository-evolution control tooling;
+- a first installable product surface: `pip install .` provides the `idkmesh`
+  CLI, whose `gate-audit` command packages the measured verifier-panel results
+  (E015/E016/E017) as a review-gate diagnostic;
 - protected `main` with the stable PR gate required on Python 3.11 and 3.13.
 
 What is **not** yet a finished capability:
@@ -68,6 +79,36 @@ What is **not** yet a finished capability:
 - benchmark infrastructure is not scientific proof until controlled observed runs exist.
 
 This distinction is important: **implemented infrastructure is evidence of capability to run experiments, not evidence that the research hypotheses are true.**
+
+## Try it in five minutes: audit a review gate
+
+The first installable tool cut from this research is `idkmesh gate-audit`. It
+measures what a panel of reviewers/verifiers is actually worth: effective
+independent votes (not nominal head-count), error-correlation structure, and
+the breach rate of seeded known-bad probe candidates.
+
+```bash
+git clone https://github.com/MSKazemi/idkmesh
+cd idkmesh
+pip install .
+idkmesh gate-audit examples/gate-audit/panel-votes.example.json --pretty
+```
+
+The bundled example reports that a five-verifier panel is worth about **1.69
+effective independent votes**, and that the popular `N/(1+(N-1)ρ)` heuristic
+overstates it — the phenomenon measured on a real 25-verifier panel in
+[E017](experiments/E017-item-difficulty-and-quorum.md) and falsified as a
+sizing rule in [E015](experiments/E015-verification-phase-diagram.md). The
+contract is specified in
+[`docs/specifications/GATE_AUDIT_V0_1.md`](docs/specifications/GATE_AUDIT_V0_1.md).
+The audit is diagnostic only: it consumes verdicts you collected and grants no
+acceptance or merge authority. In CI, the same audit runs as a GitHub Action:
+
+```yaml
+- uses: MSKazemi/idkmesh/actions/gate-audit@main
+  with:
+    votes-file: path/to/panel-votes.json
+```
 
 ## Start here
 

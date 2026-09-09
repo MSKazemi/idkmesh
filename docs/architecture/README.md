@@ -4,6 +4,12 @@ This index maps IDKMesh's active architecture, experimental control primitives,
 and retained design history. Status and authority declarations in each document
 remain authoritative; an index link does not promote a proposal into policy.
 
+## Rendered Pipeline Views
+
+- [Pipeline Diagrams](PIPELINE_DIAGRAMS.md) — the canonical work/evidence path,
+  the two-attempt orchestrator state machine, zero-project-spend compute
+  admission, and the PR gate, rendered from the executable code each one names.
+
 ## System and Compute Fabric
 
 - [Scalability and Agility](SCALABILITY_AND_AGILITY.md) — fractal federation

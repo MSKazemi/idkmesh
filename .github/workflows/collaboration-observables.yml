@@ -35,8 +35,11 @@ jobs:
       # tree only, so it runs before any network collection and cannot be influenced
       # by pull request content.
       - name: Inventory deterministic structural debt
+        # The output directory must sit outside the scanned tree: the observatory
+        # walks the repository, so writing its own artifacts inside would make the
+        # scan observe its own output. The tool enforces this and exits 2.
         run: |
-          python tools/idkgraph_observatory.py --output-dir results/observatory
+          python tools/idkgraph_observatory.py --output-dir "$RUNNER_TEMP/observatory"
 
       - name: Collect bounded public metadata
         env:
@@ -45,7 +48,7 @@ jobs:
           python scripts/collaboration_snapshot.py \
             --repository '${{ github.repository }}' \
             --max-pull-requests 50 \
-            --structural-debt-report results/observatory/observatory.json \
+            --structural-debt-report "$RUNNER_TEMP/observatory/observatory.json" \
             --output results/collaboration/snapshot.json
 
       - name: Derive observational metrics

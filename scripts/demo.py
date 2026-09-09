@@ -1,17 +1,13 @@
 #!/usr/bin/env python3
 """A narrated, sixty-second tour of the IDKMesh acceptance contract.
 
-This is the fastest honest answer to "what does IDKMesh actually do today?".
-It tells one story end to end -- a bounded Work Unit is attempted, the worker
-files a claim, and the contract decides what may be accepted -- using the real
-schemas in ``schemas/`` and the real fixtures in ``examples/``. Nothing here is
-mocked or narrated over a stub.
+Validate committed synthetic fixtures using the real repository validators.
+No worker, model, external verifier, or human reviewer runs in this demo.
+A fixture passing a contract check is not proof of a live actor's identity,
+independence, task correctness, or authority to integrate a change.
 
-Two of the acts are deliberately *failures*: a worker that accepts its own
-output, and a "verifier" that is the worker wearing a different hat. Those are
-the project's central claim, so the demo asserts that they are still rejected
-and exits non-zero if they ever stop being. Running this is therefore both a
-demonstration and a regression test.
+The four deliberately invalid fixtures must be rejected. Only a contract or
+integrity exception counts as that evidence; unrelated failures propagate.
 
 Usage::
 
@@ -101,27 +97,19 @@ class Narrator:
 
 
 def expect_rejection(action: Callable[[], Any]) -> str:
-    """Run something that must fail, and return why it failed.
-
-    Raises if the action unexpectedly succeeds -- that would mean the contract
-    has stopped enforcing one of the project's core claims.
-    """
+    """Return a contract rejection, never mistake an unrelated crash for one."""
     try:
         action()
-    except (HarnessError, IntegrityError, AssertionError, SystemExit) as exc:
+    except (HarnessError, IntegrityError) as exc:
         return str(exc) or exc.__class__.__name__
-    raise SystemExit(
+    raise HarnessError(
         "DEMO FAILED: an input that must be rejected was accepted. "
         "The acceptance contract has regressed."
     )
 
 
 def first_line(text: str, limit: int = 96) -> str:
-    """Pick the most informative line of a validation error.
-
-    Schema errors lead with a "... failed N schema check(s):" header and put the
-    actual problem on the next line, so prefer that detail when it is present.
-    """
+    """Pick the most informative line of a validation error."""
     lines = [line.strip() for line in text.strip().splitlines() if line.strip()]
     if not lines:
         return "rejected"
@@ -134,7 +122,8 @@ def run(quiet: bool) -> int:
     out = Narrator(quiet)
 
     out.banner("IDKMesh in sixty seconds: who is allowed to say the work is done?")
-    out.note("Every object below is a real file in this repository.")
+    out.note("Synthetic fixture validation only: no live worker or verifier is executed.")
+    out.note("ACCEPTED below means contract-valid fixture, not accepted work or merge authority.")
 
     # ---------------------------------------------------------------- act 1
     out.act(1, "A bounded Work Unit")
@@ -160,16 +149,16 @@ def run(quiet: bool) -> int:
     out.say(
         f"Work Unit {unbounded['id']!r} is a {unbounded['kind']} task with no security contract."
     )
-    out.rejected("it is not dispatchable at all", first_line(reason))
-    out.note("The bound is checked before any work happens, not after it comes back.")
+    out.rejected("this fixture is not a dispatchable contract", first_line(reason))
+    out.note("The security contract is required before dispatch; this demo dispatches nothing.")
 
-    # ---------------------------------------------------------------- act 4
-    out.act(3, "A worker attempts the valid task and files a claim")
+    # ---------------------------------------------------------------- act 3
+    out.act(3, "A recorded worker result makes a claim")
     worker_result = validate_worker_result_contract(
         resolve_repo_path(WORKER_RESULT), work_units
     )
     out.say(
-        f"Worker {worker_result['worker']['id']!r} reports status "
+        f"Worker fixture {worker_result['worker']['id']!r} reports status "
         f"{worker_result['status']!r}."
     )
     out.note("This is a claim about the work. It is not yet an acceptance of it.")
@@ -188,26 +177,26 @@ def run(quiet: bool) -> int:
     )
     out.note("Worker completion is never self-acceptance. This is the whole point.")
 
-    # ---------------------------------------------------------------- act 4
-    out.act(5, "An independent verifier looks at the same work")
+    # ---------------------------------------------------------------- act 5
+    out.act(5, "A verification fixture declares a separate actor")
     verification = validate_verification_result_contract(
         resolve_repo_path(VERIFICATION_RESULT), worker_result, work_units
     )
     independence = verification["independence"]
     out.accepted(
-        f"verifier {verification['verifier']['id']!r} returned "
-        f"{verification['status']!r}"
+        f"verification fixture {verification['verifier']['id']!r} is contract-valid; "
+        f"declared status {verification['status']!r}"
     )
     out.say(
-        f"It is a separate actor from the worker "
+        f"The fixture declares independence "
         f"(independent_from_worker={independence['independent_from_worker']}, "
         f"shared_model_family={independence['shared_model_family']})."
     )
     out.note(
-        "Independence is declared and checked as evidence -- not assumed from good intentions."
+        "This checks declaration consistency, not live identity or statistical independence."
     )
 
-    # ---------------------------------------------------------------- act 5
+    # ---------------------------------------------------------------- act 6
     out.act(6, "The worker comes back wearing a verifier badge")
     non_independent = load_json(resolve_repo_path(NON_INDEPENDENT))
     reason = expect_rejection(
@@ -217,12 +206,12 @@ def run(quiet: bool) -> int:
     )
     out.say(
         f"The 'verifier' id is {non_independent['verifier']['id']!r} -- the same actor "
-        f"that did the work."
+        f"named by the worker fixture."
     )
     out.rejected("the verification does not count", first_line(reason))
-    out.note("A verifier correlated with the worker adds volume, not evidence.")
+    out.note("The worker cannot satisfy this independent-verifier contract itself.")
 
-    # ---------------------------------------------------------------- act 6
+    # ---------------------------------------------------------------- act 7
     out.act(7, "Someone edits the provenance to make the story fit")
     bad_provenance = load_json(resolve_repo_path(BAD_PROVENANCE))
     standalone_work_unit = load_json(resolve_repo_path(WORK_UNIT_FILE))
@@ -233,24 +222,23 @@ def run(quiet: bool) -> int:
     reason = expect_rejection(
         lambda: validate_integrity(standalone_work_unit, worker_result, bad_provenance)
     )
-    out.rejected("the verification does not bind to what was actually run", first_line(reason))
+    out.rejected("the verification does not bind to the supplied artifacts", first_line(reason))
     out.note("Evidence must reference the exact artifact it claims to have checked.")
 
     # ---------------------------------------------------------------- close
     out.banner("That is the contract: bounded work, independent verification, bound evidence.")
     if not quiet:
         print(
-            "     Three things were accepted only because they earned it, and four\n"
-            "     were rejected -- one before any work started, three despite\n"
-            "     reporting success.\n"
+            "     Three fixture checks passed and four invalid fixtures were rejected.\n"
+            "     This demonstrates contract validation, not live execution or approval.\n"
         )
         print("     Next steps:")
         print("       python experiments/harness.py validate    the full contract check")
-        print("       PYTHONPATH=. python -m pytest -q          the unit suite")
+        print("       PYTHONPATH=. python -m pytest -q          the full test suite")
         print("       CONTRIBUTING.md                           how to send a change")
         print()
     else:
-        print("demo: ok (3 accepted, 4 rejected as required)")
+        print("demo: ok (3 accepted, 4 rejected as required; synthetic fixtures only)")
     return 0
 
 
@@ -264,7 +252,11 @@ def main() -> int:
     args = parser.parse_args()
     try:
         return run(args.quiet)
-    except (HarnessError, FileNotFoundError, json.JSONDecodeError) as exc:
+    except SystemExit as exc:
+        # Even exit(0) is incomplete evidence when a validator terminates the tour.
+        print(f"demo: FAILED: unexpected validator exit {exc.code!r}", file=sys.stderr)
+        return 1
+    except (HarnessError, IntegrityError, FileNotFoundError, json.JSONDecodeError) as exc:
         print(f"demo: FAILED: {exc}", file=sys.stderr)
         return 1
 

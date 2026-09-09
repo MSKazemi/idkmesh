@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools>=80"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "idkmesh"
+version = "0.1.0"
+description = "Audit the AI review layer: measure a verifier panel's effective independent votes, correlation structure, and seeded-probe breach rate."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "Apache-2.0"
+authors = [
+    { name = "Mohsen Seyedkazemi Ardebili", email = "mohsen.seyedkazemi@gmail.com" },
+]
+keywords = [
+    "verification",
+    "llm-as-judge",
+    "code-review",
+    "verifier-panel",
+    "evidence",
+    "provenance",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Quality Assurance",
+]
+# Deliberately dependency-free: the audit is pure stdlib so it can run inside
+# any CI job without a resolver step.
+dependencies = []
+
+[project.urls]
+Homepage = "https://mskazemi.com/idkmesh/"
+Repository = "https://github.com/MSKazemi/idkmesh"
+Issues = "https://github.com/MSKazemi/idkmesh/issues"
+
+[project.scripts]
+idkmesh = "idkmesh.cli:main"
+
+[tool.setuptools]
+# The repository is a research tree with many top-level directories that are
+# not part of the installable product; only the idkmesh package ships.
+packages = ["idkmesh"]

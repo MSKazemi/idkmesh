@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-14 -14 648 790" width="648" height="790" role="img" aria-labelledby="ti de">
+  <title id="ti">IDKMesh canonical work and evidence path</title>
+  <desc id="de">Vertical pipeline: goal and project policy, WorkUnit v0.2, admitted worker adapter, candidate plus ResultManifest marked as worker claim, verifier-owned EvaluatorPlan, VerificationResult, evidence aggregation, and finally a human or governance decision marked as the only stage that integrates.</desc>
+  <style>
+  .bg{fill:#ffffff;stroke:#d1dae1;stroke-width:1}
+  text{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"DejaVu Sans Mono",monospace}
+  .box{fill:#ffffff;stroke:#b3c1cc;stroke-width:1.4}
+  .box.claim{fill:#fbf2e2;stroke:#a76a12}
+  .box.evidence{fill:#e3f2f3;stroke:#0e7c86}
+  .box.authority{fill:#eceaf7;stroke:#4a4396}
+  .box.deny{fill:#fbeae7;stroke:#b3392e}
+  .stripe{stroke:none}
+  .stripe.claim{fill:#a76a12} .stripe.evidence{fill:#0e7c86}
+  .stripe.authority{fill:#4a4396} .stripe.deny{fill:#b3392e}
+  .t{fill:#16232e;font-size:13px}
+  .t.sm{fill:#4b6272;font-size:10.5px}
+  .t.tag{font-size:10px;letter-spacing:.1em}
+  .t.tag.claim{fill:#a76a12} .t.tag.evidence{fill:#0e7c86} .t.tag.authority{fill:#4a4396}
+  .t.bound,.t.lane{fill:#4b6272;font-size:10.5px}
+  .edge{stroke:#b3c1cc;stroke-width:1.6;fill:none}
+  .edge.deny{stroke:#b3392e}
+  .boundary{stroke:#b3c1cc;stroke-width:1;stroke-dasharray:3 5;fill:none}
+  .ah{fill:#b3c1cc} .ah-d{fill:#b3392e}
+  .flowline{stroke:#0e7c86;stroke-width:2;fill:none;stroke-dasharray:5 11}
+  .flowline.deny{stroke:#b3392e}
+  .halo{fill:none;stroke:#0e7c86;stroke-width:2.4}
+  .token{fill:#0e7c86} .token.deny{fill:#b3392e}
+  @media (prefers-reduced-motion:reduce){
+    .flowline,.halo,.token{visibility:hidden}
+  }
+  </style>
+  <rect class="bg" x="-14" y="-14" width="648" height="790" rx="10"/>
+
+            <defs>
+              <marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" class="ah"></path>
+              </marker>
+            </defs>
+
+            <g>
+              <line class="edge" x1="300" y1="70" x2="300" y2="106" marker-end="url(#a1)"></line>
+              <line class="edge" x1="300" y1="166" x2="300" y2="202" marker-end="url(#a1)"></line>
+              <line class="edge" x1="300" y1="262" x2="300" y2="298" marker-end="url(#a1)"></line>
+              <line class="edge" x1="300" y1="358" x2="300" y2="394" marker-end="url(#a1)"></line>
+              <line class="edge" x1="300" y1="454" x2="300" y2="490" marker-end="url(#a1)"></line>
+              <line class="edge" x1="300" y1="550" x2="300" y2="586" marker-end="url(#a1)"></line>
+              <line class="edge" x1="300" y1="646" x2="300" y2="682" marker-end="url(#a1)"></line>
+            </g>
+            <g>
+              <line class="flowline" x1="300" y1="70" x2="300" y2="104"><animate attributeName="stroke-dashoffset" values="0;-32" dur="1.1s" repeatCount="indefinite"></animate></line>
+              <line class="flowline" x1="300" y1="166" x2="300" y2="200"><animate attributeName="stroke-dashoffset" values="0;-32" dur="1.1s" repeatCount="indefinite"></animate></line>
+              <line class="flowline" x1="300" y1="262" x2="300" y2="296"><animate attributeName="stroke-dashoffset" values="0;-32" dur="1.1s" repeatCount="indefinite"></animate></line>
+              <line class="flowline" x1="300" y1="358" x2="300" y2="392"><animate attributeName="stroke-dashoffset" values="0;-32" dur="1.1s" repeatCount="indefinite"></animate></line>
+              <line class="flowline" x1="300" y1="454" x2="300" y2="488"><animate attributeName="stroke-dashoffset" values="0;-32" dur="1.1s" repeatCount="indefinite"></animate></line>
+              <line class="flowline" x1="300" y1="550" x2="300" y2="584"><animate attributeName="stroke-dashoffset" values="0;-32" dur="1.1s" repeatCount="indefinite"></animate></line>
+              <line class="flowline" x1="300" y1="646" x2="300" y2="680"><animate attributeName="stroke-dashoffset" values="0;-32" dur="1.1s" repeatCount="indefinite"></animate></line>
+            </g>
+
+            <line class="boundary" x1="66" y1="379" x2="554" y2="379"></line>
+            <text class="t bound" x="66" y="373">worker success ≠ acceptance</text>
+            <line class="boundary" x1="66" y1="667" x2="554" y2="667"></line>
+            <text class="t bound" x="66" y="661">verifier recommendation ≠ merge authority</text>
+
+            <rect class="box" x="150" y="16" width="300" height="54" rx="8"></rect>
+            <rect class="halo" x="147" y="13" width="306" height="60" rx="10" opacity="0"><animate attributeName="opacity" values="0;0.85;0.85;0;0" keyTimes="0;0.04;0.11;0.15;1" dur="8s" begin="0s" repeatCount="indefinite"></animate></rect>
+            <text class="t" x="300" y="48" text-anchor="middle">Goal / project policy</text>
+
+            <rect class="box" x="150" y="112" width="300" height="54" rx="8"></rect>
+            <rect class="halo" x="147" y="109" width="306" height="60" rx="10" opacity="0"><animate attributeName="opacity" values="0;0.85;0.85;0;0" keyTimes="0;0.04;0.11;0.15;1" dur="8s" begin="1s" repeatCount="indefinite"></animate></rect>
+            <text class="t" x="300" y="137" text-anchor="middle">WorkUnit v0.2</text>
+            <text class="t sm" x="300" y="153" text-anchor="middle">bounded · capability-typed · spend-capped</text>
+
+            <rect class="box" x="150" y="208" width="300" height="54" rx="8"></rect>
+            <rect class="halo" x="147" y="205" width="306" height="60" rx="10" opacity="0"><animate attributeName="opacity" values="0;0.85;0.85;0;0" keyTimes="0;0.04;0.11;0.15;1" dur="8s" begin="2s" repeatCount="indefinite"></animate></rect>
+            <text class="t" x="300" y="240" text-anchor="middle">Admitted worker adapter</text>
+
+            <rect class="box claim" x="150" y="304" width="300" height="54" rx="8"></rect>
+            <rect class="stripe claim" x="150" y="304" width="5" height="54"></rect>
+            <rect class="halo" x="147" y="301" width="306" height="60" rx="10" opacity="0"><animate attributeName="opacity" values="0;0.85;0.85;0;0" keyTimes="0;0.04;0.11;0.15;1" dur="8s" begin="3s" repeatCount="indefinite"></animate></rect>
+            <text class="t" x="304" y="329" text-anchor="middle">Candidate + ResultManifest v0.1</text>
+            <text class="t sm" x="304" y="345" text-anchor="middle">worker self-report, not a verdict</text>
+            <text class="t tag claim" x="462" y="335">CLAIM</text>
+
+            <rect class="box evidence" x="150" y="400" width="300" height="54" rx="8"></rect>
+            <rect class="stripe evidence" x="150" y="400" width="5" height="54"></rect>
+            <rect class="halo" x="147" y="397" width="306" height="60" rx="10" opacity="0"><animate attributeName="opacity" values="0;0.85;0.85;0;0" keyTimes="0;0.04;0.11;0.15;1" dur="8s" begin="4s" repeatCount="indefinite"></animate></rect>
+            <text class="t" x="304" y="432" text-anchor="middle">Verifier-owned EvaluatorPlan</text>
+
+            <rect class="box evidence" x="150" y="496" width="300" height="54" rx="8"></rect>
+            <rect class="stripe evidence" x="150" y="496" width="5" height="54"></rect>
+            <rect class="halo" x="147" y="493" width="306" height="60" rx="10" opacity="0"><animate attributeName="opacity" values="0;0.85;0.85;0;0" keyTimes="0;0.04;0.11;0.15;1" dur="8s" begin="5s" repeatCount="indefinite"></animate></rect>
+            <text class="t" x="304" y="521" text-anchor="middle">VerificationResult v0.1</text>
+            <text class="t sm" x="304" y="537" text-anchor="middle">checks, findings, independence metadata</text>
+            <text class="t tag evidence" x="462" y="527">EVIDENCE</text>
+
+            <rect class="box evidence" x="150" y="592" width="300" height="54" rx="8"></rect>
+            <rect class="stripe evidence" x="150" y="592" width="5" height="54"></rect>
+            <rect class="halo" x="147" y="589" width="306" height="60" rx="10" opacity="0"><animate attributeName="opacity" values="0;0.85;0.85;0;0" keyTimes="0;0.04;0.11;0.15;1" dur="8s" begin="6s" repeatCount="indefinite"></animate></rect>
+            <text class="t" x="304" y="624" text-anchor="middle">Report / evidence aggregation</text>
+
+            <rect class="box authority" x="150" y="688" width="300" height="54" rx="8"></rect>
+            <rect class="stripe authority" x="150" y="688" width="5" height="54"></rect>
+            <rect class="halo" x="147" y="685" width="306" height="60" rx="10" opacity="0"><animate attributeName="opacity" values="0;0.85;0.85;0;0" keyTimes="0;0.04;0.11;0.15;1" dur="8s" begin="7s" repeatCount="indefinite"></animate></rect>
+            <text class="t" x="304" y="713" text-anchor="middle">Human or governance decision</text>
+            <text class="t sm" x="304" y="729" text-anchor="middle">the only stage that integrates</text>
+            <text class="t tag authority" x="462" y="719">AUTHORITY</text>
+          
+</svg>
