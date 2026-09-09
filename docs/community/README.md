@@ -79,6 +79,8 @@ mode. Each is narrow by design and cites the issues it was built against.
 Dated records measured against the designs above. Each is a snapshot at its
 stated window or revision, not current status.
 
+- [Contributor Pilot — September 2026](CONTRIBUTOR_PILOT_2026_09.md) — bounded
+  human/agent contribution and co-maintainer recruitment pilot; no new authority.
 - [ACE Bootstrap Experiment — Cohort 1](ACE_BOOTSTRAP_EXPERIMENT.md) — active
   bootstrap experiment over the 2026-08-28 to 2026-09-27 window, five Growth
   Seeds; public state tracked in issue #23.
