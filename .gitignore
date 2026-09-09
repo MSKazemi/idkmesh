@@ -9,5 +9,23 @@ dist/
 *.egg-info/
 .claude/
 
+# Private per-agent instruction files. These carry local configuration and
+# personal notes, so in this public repository they must never be committed.
+# AGENTS.md is deliberately NOT ignored: unlike CLAUDE.md it holds no private
+# config, it is the public agents.md contributor standard that coding agents read.
+CLAUDE.md
+GEMINI.md
+.note
+.note.*
+
+# Secrets and machine-local overrides
+.env
+.env.*
+*.local
+
+# Editor and OS byproducts
+.vscode/
+.DS_Store
+
 # E015 worker output written to the repo root during sweeps
 /e015-*.jsonl

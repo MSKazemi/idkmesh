@@ -234,6 +234,22 @@ ignore it.
 7. Update the change until the evidence and maintainability are sufficient.
 8. If the change represents a major durable decision, add/update a decision record.
 
+### Keep private files out of the commit
+
+This repository is public, and coding agents and editors leave local files in the
+working tree. `.gitignore` covers the usual ones — `CLAUDE.md`, `GEMINI.md`,
+`.note*`, `.env*`, `*.local`, `.vscode/` and `.DS_Store` — but the rules only help
+if you stage deliberately. Prefer naming paths over `git add -A`, and read
+`git status` before you commit.
+
+`AGENTS.md` is the exception and stays tracked: it is the public
+[agents.md](https://agents.md) contributor standard, holds no private
+configuration, and is the file coding agents read first.
+
+`tests/test_private_file_ignore_rules.py` asks `git check-ignore` what `git add`
+would actually do, so a regression in these rules fails the suite rather than
+surfacing as a published secret.
+
 ### Linking issues without closing them
 
 Reference an issue on the template's `Refs:` line. Use `Closes on merge:` only
