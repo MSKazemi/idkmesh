@@ -26,6 +26,15 @@ and the release notes for that tag.
 - `CITATION.cff` and this changelog.
 - `actions/gate-audit/`, the composite Action integrated through PR 395, with an
   exact-head self-test checking report-byte identity and the authority disclaimer.
+- Ignore rules for the private files that agents and editors leave in a working
+  tree: `CLAUDE.md`, `GEMINI.md`, `.note*`, `.env*`, `*.local`, `.vscode/` and
+  `.DS_Store`. None of these were ignored before, so a single `git add -A` would
+  have published local configuration or secrets from this public repository.
+  `AGENTS.md` is deliberately excluded from the rule and stays tracked.
+- `tests/test_private_file_ignore_rules.py`, which asks `git check-ignore` itself
+  what `git add` would do rather than parsing `.gitignore`, and asserts the
+  `AGENTS.md` exception so a later tidy-up cannot quietly hide the contributor
+  contract every coding agent reads.
 
 ### Changed
 
