@@ -118,19 +118,28 @@ run one file while you work:
 PYTHONPATH=. python -m pytest -q tests/test_r2.py
 ```
 
-If your change touches Markdown, also check that every local link still
-resolves:
+If your change touches Markdown, run the same local link gate as CI:
 
 ```bash
-PYTHONPATH=. python tools/idkgraph_link_check.py
+python scripts/check_links.py
 ```
 
-Findings outside `tests/fixtures/` must be zero. Fixtures under that path
-contain deliberately broken links and are expected to be reported. One gotcha:
-links are resolved against the **tracked** file index, so `git add` a new file
-before checking, or a link to it will look broken when it is merely unstaged.
-The raw checker's exit status alone is not the gate: inspect the findings or
-use the fixture-aware assertion in [the stable PR gate](.github/workflows/pr-gate.yml).
+The command checks Markdown files/anchors and repository-relative links to
+tracked scripts, schemas, images, and directories, without network access.
+Exit codes are `0` for no findings, `1` for findings, and `2` when inspection
+cannot run. Add `--json` for a deterministic machine-readable report. It needs
+Python and Git, not an API key or extra Python packages.
+
+Sources under `tests/fixtures/` contain deliberately broken links and are
+excluded; findings everywhere else must be zero. Links resolve against the
+**tracked** file index, so `git add` a new file before checking. The command does
+not stage files, repair links, or change the repository. Existing GitHub-route
+exemptions and repository-absolute asset exclusions remain; this is not a
+complete Markdown parser or a check of external website availability.
+
+The lower-level `tools/idkgraph_link_check.py` remains the unchanged T2
+Markdown/identity report, not the combined gate. See
+[the stable PR gate](.github/workflows/pr-gate.yml) for the CI invocation.
 
 **Do not verify your work with `python -m unittest discover`.** It silently
 under-collects — `unittest` only finds `TestCase` subclasses, so the 162
