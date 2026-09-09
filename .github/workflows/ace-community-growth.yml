@@ -18,6 +18,9 @@ permissions:
   pull-requests: read
 
 concurrency:
+  # Keep one serialized writer for the singleton ACE ledger. GitHub may replace a
+  # pending run in this group, so correctness-critical seed work is reconciled
+  # from repository state below rather than depending only on one event payload.
   group: ace-community-growth
   cancel-in-progress: false
 
@@ -94,27 +97,34 @@ jobs:
               type = 'fork:created'; q = 0.10; d = 0.90; r = 0.10;
             }
 
+            // Reconcile from repository state instead of relying on the triggering
+            // payload. A run can be replaced while pending in a constant concurrency
+            // group; a later surviving run must therefore be able to recover its work.
+            const allIssues = await github.paginate(github.rest.issues.listForRepo, {
+              owner, repo, state: 'all', per_page: 100
+            });
+            const labelsOf = item => new Set((item.labels || []).map(label => label.name));
+
             // Marker text is data, not authorization. Only repository-trusted issue
-            // authors may cause the workflow to apply the growth-seed label.
-            if (event === 'issues' && action === 'opened') {
-              const issue = context.payload.issue;
-              const association = issue?.author_association || 'NONE';
-              if (
-                (issue?.body || '').includes('<!-- ACE_SEED') &&
-                trustedIssueAuthors.has(association)
-              ) {
-                const currentLabels = (issue.labels || []).map(label => label.name);
-                if (!currentLabels.includes('growth-seed')) {
-                  await github.rest.issues.addLabels({
-                    owner, repo, issue_number: issue.number, labels: ['growth-seed']
-                  });
-                }
-              }
+            // authors may cause the workflow to apply the growth-seed label. Re-scan all
+            // issues so a dropped `issues: opened` run cannot permanently hide a seed.
+            const unlabelledTrustedSeeds = allIssues
+              .filter(issue =>
+                !issue.pull_request &&
+                (issue.body || '').includes('<!-- ACE_SEED') &&
+                trustedIssueAuthors.has(issue.author_association || 'NONE') &&
+                !labelsOf(issue).has('growth-seed')
+              )
+              .sort((a, b) => a.number - b.number);
+            for (const issue of unlabelledTrustedSeeds) {
+              await github.rest.issues.addLabels({
+                owner, repo, issue_number: issue.number, labels: ['growth-seed']
+              });
+              // Keep this run's review-load snapshot consistent with the write.
+              issue.labels = [...(issue.labels || []), { name: 'growth-seed' }];
             }
 
-            const issues = await github.paginate(github.rest.issues.listForRepo, {
-              owner, repo, state: 'open', per_page: 100
-            });
+            const issues = allIssues.filter(issue => issue.state === 'open');
             const openPullRequests = await github.paginate(github.rest.pulls.list, {
               owner, repo, state: 'open', per_page: 100
             });
@@ -243,7 +253,6 @@ jobs:
             // Carrying capacity represents current recoverable review pressure, not a
             // historical activity accumulator. Completed work can therefore release
             // pressure instead of leaving permanent residual load in controller state.
-            const labelsOf = item => new Set((item.labels || []).map(label => label.name));
             const readyPullRequests = openPullRequests.filter(pr => !pr.draft);
             const draftPullRequests = openPullRequests.filter(pr => Boolean(pr.draft));
             const openGrowthSeeds = issues.filter(item =>
@@ -345,58 +354,68 @@ jobs:
               ledger = created.data;
             }
 
-            // Conservative v0 actuator: only an explicitly labelled merged PR can
-            // reproduce, and only while both safety gates are enabled.
-            if (actuationAllowed && event === 'pull_request_target' && action === 'closed' && context.payload.pull_request?.merged) {
-              const pr = context.payload.pull_request;
-              const labels = (pr.labels || []).map(l => l.name);
-              if (labels.includes('growth:spawn')) {
-                const marker = `spawned-from:pr-${pr.number}`;
-                const existing = await github.paginate(github.rest.issues.listForRepo, {
-                  owner, repo, state: 'all', per_page: 100
+            // Conservative v0 actuator: every run reconciles eligible merged PRs so a
+            // dropped merge event is recoverable. The global concurrency group remains
+            // the single ledger-write serialization boundary. Create at most one missing
+            // descendant per run to preserve the bounded public-write budget.
+            if (actuationAllowed) {
+              const eligibleSpawnParents = allIssues
+                .filter(item =>
+                  item.pull_request?.merged_at &&
+                  labelsOf(item).has('growth:spawn')
+                )
+                .sort((a, b) => {
+                  const mergedOrder =
+                    new Date(a.pull_request.merged_at) - new Date(b.pull_request.merged_at);
+                  return mergedOrder || a.number - b.number;
                 });
-                const alreadySpawned = existing.some(
-                  i => !i.pull_request &&
-                    (i.labels || []).some(label => label.name === 'growth-seed') &&
-                    (i.body || '').includes(marker)
+
+              const missingSpawnParent = eligibleSpawnParents.find(pr => {
+                const marker = `spawned-from:pr-${pr.number}`;
+                return !allIssues.some(
+                  item => !item.pull_request &&
+                    labelsOf(item).has('growth-seed') &&
+                    (item.body || '').includes(marker)
                 );
+              });
 
-                if (!alreadySpawned) {
-                  const seedBody = [
-                    `## Growth Seed: reproduce, challenge, or extend PR #${pr.number}`,
-                    '',
-                    'A useful contribution should make the next useful contribution easier. This seed was created by ACE because the merged PR was explicitly labelled `growth:spawn`.',
-                    '',
-                    'Choose one bounded path:',
-                    '',
-                    '- **Reproduce:** independently verify the result and document what you observe.',
-                    '- **Challenge:** try to falsify an assumption, test an edge case, or find a regression.',
-                    '- **Extend:** propose one small, independently reviewable next step.',
-                    '- **Explain:** turn the result into a newcomer-legible example or tutorial.',
-                    '',
-                    '### Acceptance principle',
-                    '',
-                    'Return evidence, not only an opinion: a test, reproduction log, benchmark, patch, documentation improvement, threat model, or other inspectable artifact.',
-                    '',
-                    '### Parent',
-                    '',
-                    `- PR: #${pr.number}`,
-                    `- ${marker}`,
-                    '',
-                    '### Community impact',
-                    '',
-                    'Keep the task bounded enough that a new contributor can understand what success means without private maintainer guidance.',
-                    '',
-                    '<!-- ACE_SEED type=reproduce cohort=automatic -->'
-                  ].join('\n');
+              if (missingSpawnParent) {
+                const pr = missingSpawnParent;
+                const marker = `spawned-from:pr-${pr.number}`;
+                const seedBody = [
+                  `## Growth Seed: reproduce, challenge, or extend PR #${pr.number}`,
+                  '',
+                  'A useful contribution should make the next useful contribution easier. This seed was created by ACE because the merged PR was explicitly labelled `growth:spawn`.',
+                  '',
+                  'Choose one bounded path:',
+                  '',
+                  '- **Reproduce:** independently verify the result and document what you observe.',
+                  '- **Challenge:** try to falsify an assumption, test an edge case, or find a regression.',
+                  '- **Extend:** propose one small, independently reviewable next step.',
+                  '- **Explain:** turn the result into a newcomer-legible example or tutorial.',
+                  '',
+                  '### Acceptance principle',
+                  '',
+                  'Return evidence, not only an opinion: a test, reproduction log, benchmark, patch, documentation improvement, threat model, or other inspectable artifact.',
+                  '',
+                  '### Parent',
+                  '',
+                  `- PR: #${pr.number}`,
+                  `- ${marker}`,
+                  '',
+                  '### Community impact',
+                  '',
+                  'Keep the task bounded enough that a new contributor can understand what success means without private maintainer guidance.',
+                  '',
+                  '<!-- ACE_SEED type=reproduce cohort=automatic -->'
+                ].join('\n');
 
-                  await github.rest.issues.create({
-                    owner,
-                    repo,
-                    title: `[Growth Seed] Reproduce or extend PR #${pr.number}`,
-                    body: seedBody,
-                    labels: ['growth-seed', 'help wanted']
-                  });
-                }
+                await github.rest.issues.create({
+                  owner,
+                  repo,
+                  title: `[Growth Seed] Reproduce or extend PR #${pr.number}`,
+                  body: seedBody,
+                  labels: ['growth-seed', 'help wanted']
+                });
               }
             }
