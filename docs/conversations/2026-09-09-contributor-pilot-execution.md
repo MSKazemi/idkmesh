@@ -26,19 +26,33 @@ through the GitHub PR API, with an expected-head constraint, as
 `b346281792f96f8997d60331844685a6758a9494`. This does not install a third-party app.
 No separate human witness is claimed from automated inspection.
 
+A later overlap check found the existing newcomer-command
+[PR 405](https://github.com/MSKazemi/idkmesh/pull/405). Its two-file diff was
+inspected at `63d1645b576c145f2ffbe5d80041e04c6a3591b4`; its exact-head
+PR-triggered workflows also reported success. It was squash-merged as
+`80e8d945757e0d17f234f0312f984c6b434d4b69`, adding pytest-based commands and
+under-collection guidance to CONTRIBUTING.md and AGENTS.md. The pilot PR was
+then reconciled with that work rather than retaining a competing test section.
+
 [Issue 407](https://github.com/MSKazemi/idkmesh/issues/407) was published as the
 voluntary technical co-maintainer / bring-your-own-agent recruitment opening.
 The connector has no Discussion-creation action, so the invitation uses an
 ordinary public issue rather than claiming a pinned Discussion was created.
 No unsolicited messages, mass mentions, or collaborator invitations were sent.
 
-This change adds default-branch setup/test instructions to
-[CONTRIBUTING.md](../../CONTRIBUTING.md), using the existing stable PR gate rather
-than importing unmerged Makefile/testkit work. It also adds a discoverable
-[operating pilot](../community/CONTRIBUTOR_PILOT_2026_09.md) and a
+Starter issues 398 and 399 were updated to use existing Python commands instead
+of unmerged Makefile instructions, with bounded scopes and honest verification.
+Issue 402 was narrowed after PR 405 to the remaining interoperability guide,
+discovery link, and before/after SDK-test evidence. Its `jules` label was applied
+once as an execution request. No other open Jules-labelled task was found before
+that request. A label is not confirmation of app authorization or execution.
+
+[PR 408](https://github.com/MSKazemi/idkmesh/pull/408) contains the discoverable
+[operating pilot](../community/CONTRIBUTOR_PILOT_2026_09.md), small additions to
+[CONTRIBUTING.md](../../CONTRIBUTING.md), this record, and a
 [prepared directory entry](../community/up-for-grabs-idkmesh.yml).
-The proposed first coding-agent task remains issue 402; it is not implemented by
-this documentation change. Human-only feedback tasks remain distinct.
+The first coding-agent task remains issue 402; it is not implemented by this
+pilot documentation change. Human-only feedback tasks remain distinct.
 
 ## Activation and external submission limits
 
@@ -57,11 +71,11 @@ mentored contribution path if nobody is actually available to review it.
 
 The local container could not resolve github.com, so it could not clone the
 repository. No local full-suite or newcomer-machine execution is claimed.
-Repository reads and writes used the connected GitHub tools. The added commands
-were compared with `.github/workflows/pr-gate.yml` and
-`requirements-phase0.txt`; the candidate PR's exact-head CI is the runtime check.
-Subsequent check/merge outcomes and agent acknowledgements belong in the linked
-PR and task threads, not invented in this record before they occur.
+Repository reads and writes used the connected GitHub tools. Commands were
+compared with `.github/workflows/pr-gate.yml`, `requirements-phase0.txt`, and
+`interop/tests/test_sdk_conformance.py`; candidate exact-head CI is the runtime
+check. Later check/merge outcomes and agent acknowledgements belong in the
+linked PR and task threads, not invented here before they occur.
 
 Provider-owned documentation was consulted again on 2026-09-09. The earlier
 proposal's below-ten-stars CodeRabbit trigger rule is not established by the

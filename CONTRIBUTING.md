@@ -18,88 +18,6 @@ Read deeper architecture/research documents only when your contribution requires
 [contributor pilot](docs/community/CONTRIBUTOR_PILOT_2026_09.md) and the public
 [co-maintainer / bring-your-own-agent invitation](https://github.com/MSKazemi/idkmesh/issues/407).
 
-## Set up a development environment
-
-Use Git and Python 3.11 or 3.13, the versions exercised by the stable PR gate.
-Start from a current checkout of `main`, not an old experiment branch. From your
-checkout, create an isolated environment:
-
-```bash
-python -m venv .venv
-```
-
-Activate it on Linux/macOS with `source .venv/bin/activate`, or in Windows
-PowerShell with `.\.venv\Scripts\Activate.ps1`. Where activation is restricted,
-invoke `.venv/bin/python` or `.\.venv\Scripts\python.exe` directly in place of
-`python`; changing machine-wide execution policy is not required.
-
-Install the same test dependencies as the stable PR gate:
-
-```bash
-python -m pip install --disable-pip-version-check pytest
-python -m pip install --disable-pip-version-check -r requirements-phase0.txt
-```
-
-## Running the tests
-
-Run from the repository root. On Linux/macOS:
-
-```bash
-PYTHONPATH=. python -m pytest -q
-```
-
-In Windows PowerShell:
-
-```powershell
-$env:PYTHONPATH = "."
-python -m pytest -q
-```
-
-For a focused check, replace the final arguments with the relevant test file.
-For example, `python -m pytest -q -rs interop/tests/test_sdk_conformance.py`
-reports the interoperability tests and any skip reasons after setting
-`PYTHONPATH` as above. Report skipped tests honestly; a green default suite is
-not evidence that optional integrations ran.
-
-These commands mirror [the stable PR gate](.github/workflows/pr-gate.yml).
-They do not depend on an unmerged Makefile or local testkit. Instructions in old
-issues or branches may refer to `make setup`, `make test`, or `make integration`;
-use the current commands here unless that tooling actually exists in your
-checkout. This section supplies the default test path, not proof that every
-contributor operating system has been tested.
-
-### Check Markdown links before submitting
-
-Stage new files with `git add` first: the checker discovers tracked paths.
-The following Bash command reproduces the PR gate's treatment of intentionally
-broken fixtures rather than treating their expected findings as regressions:
-
-```bash
-PYTHONPATH=. python - <<'PY'
-import json
-import subprocess
-import sys
-
-raw = subprocess.run(
-    [sys.executable, "tools/idkgraph_link_check.py"],
-    capture_output=True, text=True, check=True,
-).stdout
-findings = [
-    f for f in json.loads(raw)["findings"]
-    if "tests/fixtures/" not in f["source_path"]
-]
-for f in findings:
-    print(f"{f['severity']}: {f['source_path']}:{f['line']} {f['message']}")
-print(f"non-fixture link findings: {len(findings)}")
-sys.exit(1 if findings else 0)
-PY
-```
-
-The Python body can also be saved to a temporary file and run from PowerShell
-with `PYTHONPATH` set as above. The raw checker is available as
-`python tools/idkgraph_link_check.py`; inspect its findings rather than assuming
-its exit status alone means the PR gate passed.
-
 ## Choose a contribution type
 
 Good contributions include:
@@ -170,9 +88,67 @@ For materially AI-generated code, research, tests, or documentation, include a s
 
 Do not submit large volumes of unreviewed generated material. Generation must not grow faster than the community's ability to verify and maintain it.
 
+## Running the tests
+
+You do not need to understand the research side of this repository to run the
+tests. From the repository root:
+
+```bash
+python -m venv .venv && source .venv/bin/activate
+python -m pip install -r requirements-phase0.txt pytest
+PYTHONPATH=. python -m pytest -q
+```
+
+Use Python 3.11 or 3.13 to match the stable PR gate. The example above is for
+Linux/macOS shells. In Windows PowerShell, create the environment with
+`python -m venv .venv`, then use `.\.venv\Scripts\python.exe` instead of `python`
+for installation and tests, and set `$env:PYTHONPATH = "."` before running tests.
+Activation or a machine-wide execution-policy change is not required.
+These are setup instructions, not evidence that every operating system has
+already been tested by a contributor.
+
+These commands work without an unmerged Makefile or local testkit. If an older
+issue refers to `make setup`, `make test`, or `make integration`, use the current
+instructions here unless that tooling actually exists in your checkout.
+
+That collects both suites — `tests/` and `interop/tests/` — in a single run. To
+run one file while you work:
+
+```bash
+PYTHONPATH=. python -m pytest -q tests/test_r2.py
+```
+
+If your change touches Markdown, also check that every local link still
+resolves:
+
+```bash
+PYTHONPATH=. python tools/idkgraph_link_check.py
+```
+
+Findings outside `tests/fixtures/` must be zero. Fixtures under that path
+contain deliberately broken links and are expected to be reported. One gotcha:
+links are resolved against the **tracked** file index, so `git add` a new file
+before checking, or a link to it will look broken when it is merely unstaged.
+The raw checker's exit status alone is not the gate: inspect the findings or
+use the fixture-aware assertion in [the stable PR gate](.github/workflows/pr-gate.yml).
+
+**Do not verify your work with `python -m unittest discover`.** It silently
+under-collects — `unittest` only finds `TestCase` subclasses, so the 162
+module-level `test_*` functions in `tests/` are invisible to it. It runs 1476
+tests and prints `OK`; `pytest` collects 1638. A tenth of the suite is skipped
+with no indication anything was missed.
+
+Two skips are expected and are not a problem with your setup:
+`interop/tests/test_sdk_conformance.py` skips two tests unless the optional
+interoperability SDKs are installed with
+`python -m pip install -r requirements-interoperability.txt`.
+
+If you cannot get the tests to run at all, that is a bug worth reporting — open
+an issue with your OS, your Python version, and the failure.
+
 ## Code quality
 
-Use the setup and testing commands above. Every code contribution should aim to provide:
+Every code contribution should aim to provide:
 
 - a reproducible way to run or test the change;
 - tests for behavior that can be tested;
