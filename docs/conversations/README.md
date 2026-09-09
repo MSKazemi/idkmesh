@@ -7,9 +7,13 @@ canonical files designated by [`../../PROJECT_RULES.md`](../../PROJECT_RULES.md)
 (decisions, specifications, architecture, findings); this directory keeps the trail
 that produced them.
 
-152 records across 4 dates, newest first.
+153 records across 5 dates, newest first.
 
 ## Index
+
+### 2026-09-10
+
+- [Repository audit and Portfolio concurrency fix](2026-09-10-repository-audit-and-portfolio-concurrency-fix.md)
 
 ### 2026-09-09
 
@@ -60,7 +64,7 @@ that produced them.
 - [Conjunctive evolution governor convergence](2026-08-28-conjunctive-evolution-governor-convergence.md)
 - [Executable ACO continuation](2026-08-28-aco-executable-continuation.md)
 - [ACE security hardening continuation](2026-08-28-ace-security-hardening.md)
-- [ACE safety and evidence convergence](2026-08-28-ace-safety-and-evidence-convergence.md)
+- [ACE safety and evidence convergence](2026-08-28-ace-safety-evidence-convergence.md)
 - [Zero-Project-Spend Compute Router](2026-08-28-zero-project-spend-compute-router.md)
 - [Whole-System Audit and First Contact Mode](2026-08-28-whole-system-audit-and-first-contact.md)
 - [versioned evaluator semantic matching](2026-08-28-versioned-evaluator-semantic-matching.md)
@@ -126,7 +130,7 @@ that produced them.
 - [GitHub Pages Public Front Door](2026-08-28-github-pages-public-front-door.md)
 - [Free Resource Mesh v0](2026-08-28-free-resource-mesh-v0.md)
 - [Free Resource Mesh integration outcome](2026-08-28-free-resource-mesh-integration-outcome.md)
-- [Free Agents and Volunteer Computer Nodes](2026-08-28-free-agents-and-volunteer-node.md)
+- [Free Agents and Volunteer Computer Nodes](2026-08-28-free-agent-volunteer-node.md)
 - [Framework and Multidisciplinary Collaboration](2026-08-28-framework-and-multidisciplinary-collaboration.md)
 - [Final state: professional PR + branch convergence pass](2026-08-28-branch-pr-convergence-final-state.md)
 - [Every Activity Should Improve System and Community](2026-08-28-every-activity-improves-system-and-community.md)
