@@ -1,0 +1,11 @@
+name: IDKMesh
+desc: Python research and tools for bounded human and AI-agent collaboration with independent verification.
+site: https://github.com/MSKazemi/idkmesh
+tags:
+  - python
+  - ai-agents
+  - testing
+  - research
+upforgrabs:
+  name: good first issue
+  link: https://github.com/MSKazemi/idkmesh/labels/good%20first%20issue
