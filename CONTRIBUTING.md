@@ -14,6 +14,10 @@ Before contributing, read:
 
 Read deeper architecture/research documents only when your contribution requires them.
 
+**Looking for one concrete task or shared technical responsibility?** See the
+[contributor pilot](docs/community/CONTRIBUTOR_PILOT_2026_09.md) and the public
+[co-maintainer / bring-your-own-agent invitation](https://github.com/MSKazemi/idkmesh/issues/407).
+
 ## Choose a contribution type
 
 Good contributions include:
@@ -95,6 +99,18 @@ python -m pip install -r requirements-phase0.txt pytest
 PYTHONPATH=. python -m pytest -q
 ```
 
+Use Python 3.11 or 3.13 to match the stable PR gate. The example above is for
+Linux/macOS shells. In Windows PowerShell, create the environment with
+`python -m venv .venv`, then use `.\.venv\Scripts\python.exe` instead of `python`
+for installation and tests, and set `$env:PYTHONPATH = "."` before running tests.
+Activation or a machine-wide execution-policy change is not required.
+These are setup instructions, not evidence that every operating system has
+already been tested by a contributor.
+
+These commands work without an unmerged Makefile or local testkit. If an older
+issue refers to `make setup`, `make test`, or `make integration`, use the current
+instructions here unless that tooling actually exists in your checkout.
+
 That collects both suites — `tests/` and `interop/tests/` — in a single run. To
 run one file while you work:
 
@@ -113,6 +129,8 @@ Findings outside `tests/fixtures/` must be zero. Fixtures under that path
 contain deliberately broken links and are expected to be reported. One gotcha:
 links are resolved against the **tracked** file index, so `git add` a new file
 before checking, or a link to it will look broken when it is merely unstaged.
+The raw checker's exit status alone is not the gate: inspect the findings or
+use the fixture-aware assertion in [the stable PR gate](.github/workflows/pr-gate.yml).
 
 **Do not verify your work with `python -m unittest discover`.** It silently
 under-collects — `unittest` only finds `TestCase` subclasses, so the 162
