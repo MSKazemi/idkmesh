@@ -35,6 +35,14 @@ and the release notes for that tag.
   what `git add` would do rather than parsing `.gitignore`, and asserts the
   `AGENTS.md` exception so a later tidy-up cannot quietly hide the contributor
   contract every coding agent reads.
+- `tests/test_patch_verifier_singularity.py`, holding two invariants in the
+  unfiltered suite rather than in a path-gated workflow: every
+  `experiments/*_patch_verifier.py` is imported by the runner (parsed with `ast`,
+  so a name in a docstring cannot fake dispatch), and every workflow reference to
+  such a module names one that exists and is dispatched, unless the line asserts
+  the module's absence.
+- `docs/audits/2026-09-05-orphaned-v04-patch-verifier.md`, recording the trace and
+  its re-verification against a later base.
 
 ### Changed
 
@@ -43,6 +51,18 @@ and the release notes for that tag.
 - Support and issue-template entry points route open-ended questions to Discussions.
 - The newer CONTRIBUTING.md instructions from PRs 405 and 408 are preserved rather
   than replaced by another setup sequence.
+
+### Removed
+
+- `experiments/transformation_patch_verifier.py`, the pre-#171 spelling of the v0.4
+  patch verifier. It was imported by nothing after #171 rewired dispatch to
+  `transition_patch_verifier.py`, but a later commit restored it, so
+  `Task 001 canonical v0.4 calibration` failed its provenance guard on every pull
+  request touching its paths — seven consecutive runs. No calibration result is
+  retracted: dispatch always reached `transition_patch_verifier`. What was wrong was
+  the evidence trail, since a `py_compile` step named the orphan as "the calibrated
+  evaluator path" and the workflow's `paths:` filter watched it, so editing the
+  module the run actually depends on did not trigger the run.
 
 ## [research-preview-2026-08-29] - 2026-08-29
 
