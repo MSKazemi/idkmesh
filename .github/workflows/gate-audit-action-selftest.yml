@@ -30,9 +30,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Check out repository
+      - name: Check out exact candidate revision
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
 
       - name: Run the gate-audit action on the committed example
@@ -46,15 +47,15 @@ jobs:
       - name: Assert the action reproduces the committed report example
         run: |
           python - <<'EOF'
-          import json
+          from pathlib import Path
 
-          produced = json.load(open("selftest-report.json"))
-          committed = json.load(
-              open("examples/gate-audit/gate-audit-report.example.json"))
+          produced = Path("selftest-report.json").read_bytes()
+          committed = Path(
+              "examples/gate-audit/gate-audit-report.example.json").read_bytes()
           assert produced == committed, (
-              "action output diverged from the committed example report")
-          summary = open("selftest-report.md", encoding="utf-8").read()
+              "action output is not byte-identical to the committed example report")
+          summary = Path("selftest-report.md").read_text(encoding="utf-8")
           assert "effective independent votes" in summary
           assert "not acceptance authority" in summary
-          print("action output matches the committed example report")
+          print("action output is byte-identical to the committed example report")
           EOF
