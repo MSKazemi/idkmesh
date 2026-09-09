@@ -7,9 +7,13 @@ canonical files designated by [`../../PROJECT_RULES.md`](../../PROJECT_RULES.md)
 (decisions, specifications, architecture, findings); this directory keeps the trail
 that produced them.
 
-152 records across 4 dates, newest first.
+153 records across 5 dates, newest first.
 
 ## Index
+
+### 2026-09-10
+
+- [Repository audit and Portfolio concurrency fix](2026-09-10-repository-audit-and-portfolio-concurrency-fix.md)
 
 ### 2026-09-09
 
