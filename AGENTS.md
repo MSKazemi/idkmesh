@@ -17,7 +17,7 @@ python -m randomness_lab --policy thompson --rounds 100 --seed 42
 
 `pytest` collects both suites (`tests/` and `interop/tests/`) in one run. Use a focused module, such as `PYTHONPATH=. python -m pytest -q tests/test_r2.py`.
 
-**Do not use `python -m unittest discover` to check your work.** It silently under-collects: `unittest` only finds `TestCase` subclasses, so the 162 module-level `test_*` functions spread across 17 files in `tests/` are invisible to it. Measured on this tree, `python -m unittest discover -s tests` runs **1476** tests and reports `OK`, while `pytest` collects **1638** — a tenth of the suite skipped, with no warning that anything was missed.
+**Do not use `python -m unittest discover` to check your work.** It silently under-collects: `unittest` only finds `TestCase` subclasses, so the **162** module-level `test_*` functions spread across **17** files in `tests/` are invisible to it — roughly a tenth of the suite, reported as `OK` with no warning that anything was missed. `tests/test_documented_test_counts.py` re-measures both figures and the gap they explain, so this paragraph fails the suite if it drifts.
 
 ## Coding Style & Naming Conventions
 
