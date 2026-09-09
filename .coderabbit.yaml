@@ -1,0 +1,117 @@
+# Automated review assistant for IDKMesh.
+#
+# Its output is ADVISORY. CONTRIBUTING.md is explicit that "a pull request
+# should not be merged simply because an AI model, experienced contributor, or
+# maintainer says it is correct", and that applies to this reviewer above all.
+# It does not gate merges (`request_changes_workflow: false`) and it holds no
+# integration authority — the same separation the WorkUnit contracts draw
+# between a worker's claim, a verifier's evidence, and integration authority.
+#
+# Schema: https://storage.googleapis.com/coderabbit_public_assets/schema.v2.json
+# yaml-language-server: $schema=https://storage.googleapis.com/coderabbit_public_assets/schema.v2.json
+
+language: en-US
+
+tone_instructions: >-
+  Be direct and evidence-focused. Ask what proves a claim, not whether it sounds
+  plausible. Say plainly when you are uncertain. No praise, no filler.
+
+reviews:
+  profile: assertive
+
+  # Never gate a merge. Review here is advisory input to a human decision.
+  request_changes_workflow: false
+
+  high_level_summary: true
+  high_level_summary_instructions: >-
+    Summarise what changed and what evidence is offered for it. NEVER write a
+    GitHub closing keyword (close/closes/closed, fix/fixes/fixed,
+    resolve/resolves/resolved) next to an issue number, in any form: it would
+    close a tracking issue whose review gate must stay open. Write "issue 152",
+    not "#152", when referring to one in prose.
+
+  poem: false
+  abort_on_close: true
+
+  auto_review:
+    enabled: true
+    drafts: false
+
+  path_filters:
+    # Seeded negative fixtures contain deliberately broken links and invalid
+    # documents. They are supposed to be wrong; reporting them is noise.
+    - "!tests/fixtures/**"
+    - "!verification/fixtures/**"
+    # Generated and recorded experiment output, not hand-written code.
+    - "!results/**"
+    - "!state/**"
+
+  path_instructions:
+    - path: "tests/**/*.py"
+      instructions: >-
+        Tests use unittest: files test_*.py, classes ending in Tests, methods
+        beginning with test_. CI installs ONLY jsonschema beyond the standard
+        library, so flag any third-party import (numpy, scipy, yaml, pandas,
+        requests) as a CI-breaking error — it fails collection for the whole
+        file, not just that test. Ask whether a regression test actually fails
+        against the unfixed code; a test that passes either way proves nothing.
+
+    - path: "schemas/*.json"
+      instructions: >-
+        These are versioned public contracts. A change to an existing versioned
+        schema is a compatibility break unless it is purely additive and
+        optional. Ask whether it should be a new version file instead, and
+        whether every example and fixture that validates against it was updated.
+
+    - path: "experiments/**"
+      instructions: >-
+        Research code. Check that runs are deterministically seeded and that a
+        stated result is reproducible from committed inputs. Distinguish an
+        observed measurement from a synthetic or simulated one — conflating them
+        is the most serious error possible here. Flag any claim of a scientific
+        result that rests on synthetic data without saying so.
+
+    - path: "sim/**"
+      instructions: >-
+        Simulation arms must stay comparable to the published baseline. A new
+        arm that extends an existing one has to reuse that arm's RNG offset; a
+        fresh offset silently breaks comparability. Ask which matrix cells a
+        reported effect was measured in — an effect shown in one cell may invert
+        in another.
+
+    - path: ".github/workflows/*.yml"
+      instructions: >-
+        Check that a step failing for an infrastructure reason cannot be read as
+        a substantive pass or failure, and that a job cannot go green while
+        silently skipping its real work. Flag steps under `bash -e` where a
+        non-zero diff or grep aborts the job before its actual assertion runs.
+        Check the concurrency group is not so broad that unrelated runs cancel
+        each other.
+
+    - path: "**/*.md"
+      instructions: >-
+        Check claims against the repository rather than for fluency. Flag any
+        statement that overclaims project maturity — README.md deliberately
+        separates what is on main from what is NOT yet a finished capability,
+        and that honesty is load-bearing. Local links must resolve. A new file
+        must be git-added before its links can resolve.
+
+  labeling_instructions:
+    - label: documentation
+      instructions: Apply when the change is only to Markdown or other docs.
+    - label: research
+      instructions: Apply when experiments/, sim/, or randomness_lab/ change.
+    - label: enhancement
+      instructions: Apply when new behaviour or a new interface is added.
+
+chat:
+  art: false
+  auto_reply: true
+  # External contributors must be able to talk to the reviewer.
+  allow_non_org_members: true
+
+knowledge_base:
+  code_guidelines:
+    enabled: true
+  learnings:
+    scope: local
