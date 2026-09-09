@@ -39,6 +39,13 @@ Whole-repository snapshots, ordered by date.
 
 Each answers one bounded question rather than surveying the repository.
 
+- [Which module does the v0.4 calibration actually verify with?](2026-09-05-orphaned-v04-patch-verifier.md)
+  — 2026-09-05; baseline `c35b31e`. Traces a red canonical-calibration guard to a
+  superseded patch verifier that was restored after #171 and imported by nothing.
+  A workflow step named it as "the calibrated evaluator path" while dispatch went
+  elsewhere, and the path filter guarding that run watched a file the run did not
+  read.
+
 - [Do the gates check what they claim?](2026-09-02-gate-fidelity-audit.md)
   — 2026-09-02; baseline `31b8f18`. Mutation-tests each Phase 0 gate by
   introducing the defect it claims to catch. Five of six caught it; the schema
