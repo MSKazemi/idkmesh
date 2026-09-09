@@ -5,6 +5,7 @@ from __future__ import annotations
 import contextlib
 import io
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -12,7 +13,16 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from scripts import demo
+# The legacy randomness-lab job intentionally has no third-party dependencies.
+# Match the other Phase 0 test modules there, but never skip in the required gate.
+try:
+    from scripts import demo
+except ModuleNotFoundError as exc:
+    if exc.name != "jsonschema" or os.environ.get("GITHUB_WORKFLOW") == "PR Gate":
+        raise
+    raise unittest.SkipTest(
+        "contract demo tests require requirements-phase0.txt; run the full PR Gate"
+    ) from exc
 
 ROOT = Path(__file__).resolve().parents[1]
 DEMO = ROOT / "scripts" / "demo.py"
