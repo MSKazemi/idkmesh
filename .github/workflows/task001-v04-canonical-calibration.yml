@@ -3,6 +3,14 @@ name: Task 001 canonical v0.4 calibration
 on:
   pull_request:
     paths:
+      # Every current-tree file this workflow's own steps name. The calibration
+      # runs against the checked-out PR head, so a change to any of these can
+      # change its verdict; watching only the tools left the modules under
+      # calibration able to change without the calibration running.
+      - "requirements-phase0.txt"
+      - "experiments/evaluator_plan_runner.py"
+      - "experiments/transition_patch_verifier.py"
+      - "tests/test_patch_evaluator_transition_v04.py"
       - "tools/task001_evaluator_calibration_v04.py"
       - "tools/task001_evaluator_calibration_v04_ci.py"
       - "verification/fixtures/task001-transformation-calibration-evaluator-plan-v0.4.json"
