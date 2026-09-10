@@ -2,7 +2,7 @@
 
 **Status:** reviewed current-state synthesis, not controller state  
 **Snapshot date:** 2026-09-10  
-**Baseline before this report update:** `main` at `3da856baadfb045d5d6dc8cfad01951a95ca1093`  
+**Baseline before this report update:** `main` at `bc7910c0ef2ece8961917cda41fafcca198d8bcb`  
 **Audience:** maintainers, contributors, independent reviewers, and researchers
 
 ## Purpose
