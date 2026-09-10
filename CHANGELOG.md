@@ -115,11 +115,23 @@ and the release notes for that tag.
   serializes reports with strict JSON semantics. The bundled happy-path example and
   its documented measured result remain unchanged.
 
-- `scripts/testkit.py` printed `PASS` on a run that exited 1: the summary line derived
-  its status word from the raw test exit code, not from `tier_passed()`, so a run that
-  blew its CPU budget printed a passing headline while exiting non-zero. All three
-  consumers of the verdict — exit code, result cache, and the printed status word — now
-  derive from `tier_passed()` so they cannot disagree.
+- `scripts/testkit.py` no longer prints `PASS` on a run that exits 1. A tier fails for two
+  independent reasons — red tests, or a blown CPU budget — and the previous fix routed the
+  exit code and the result cache through `tier_passed` so they could not disagree. The
+  status word on the summary line was a third consumer and kept reading `result.ok`, so a
+  green suite that overran its ceiling printed
+  `[testkit] unit: PASS in 100.0s wall / 100.0s cpu (budget 90 cpu-s)` and then exited 1.
+  The `BUDGET EXCEEDED` explanation goes to stderr, which a hook capturing the streams
+  separately, a CI log pane, or `--quiet` need not show beside stdout — so the one line a
+  human was guaranteed to read was the wrong one. All three now derive from `tier_passed`,
+  and `tests/test_testkit_budget_cache.py` asserts the printed word against the exit code
+  across all four green/red x under/over-budget combinations.
+
+- The unit tier's budget headroom is recorded honestly in `scripts/testkit.py`. The comment
+  above `BUDGETS` still described a ~36 CPU-second suite with roughly 2.5x headroom; the
+  suite has grown from 870 tests to 1865 and the tier measured 65.0 CPU-s on 2026-09-10,
+  which is 72% of the 90 CPU-s ceiling. Recorded, deliberately not acted on: the documented
+  response to a tight budget is to make the suite cheaper, never to raise the number.
 
 - `docs/TESTING.md` no longer misstates what the gates run. Four claims had drifted, two
   of them wrong on the day the document landed. The unit tier's scope was published as
@@ -132,9 +144,7 @@ and the release notes for that tag.
   measured baseline was re-taken on 2026-09-10: 1865 collected, 1494 passed / 2 skipped /
   369 deselected / 3000 subtests, 65.0 CPU-s against a 90 CPU-s budget, on 4 cores at load
   average 1.02 — recorded because the document's own argument for CPU-seconds is that a
-  figure without its load is not comparable to one taken elsewhere. (The workflow-hardening
-  drift this branch originally also fixed has since been independently rewritten on `main`;
-  see the paragraph in `docs/TESTING.md` under "Workflow hardening" for the current text.)
+  figure without its load is not comparable to one taken elsewhere.
 
 - Seven more guards fail when they inspect nothing. An AST audit of `tests/` found every
   test that asserts inside a loop over a discovered set — a glob, a directory listing, a
