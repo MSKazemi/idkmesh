@@ -24,6 +24,7 @@ on:
       - "examples/idkgraph-p1-review-session.example.json"
       - "schemas/idkgraph.schema.json"
       - ".github/workflows/idkgraph-observatory.yml"
+      - "requirements-phase0.txt"
   push:
     branches: [main]
     paths:
@@ -48,6 +49,7 @@ on:
       - "examples/idkgraph-p1-review-session.example.json"
       - "schemas/idkgraph.schema.json"
       - ".github/workflows/idkgraph-observatory.yml"
+      - "requirements-phase0.txt"
 
 permissions:
   contents: read
