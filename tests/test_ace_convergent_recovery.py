@@ -59,21 +59,28 @@ class AceConvergentRecoveryTests(unittest.TestCase):
         self.assertIn("const eligibleSpawnParents = allIssues", recovery)
         self.assertIn("item.pull_request?.merged_at", recovery)
         self.assertIn("labelsOf(item).has('growth:spawn')", recovery)
-        self.assertIn("const missingSpawnParent = eligibleSpawnParents.find", recovery)
+        self.assertIn(
+            "const missingSpawnParents = eligibleSpawnParents.filter",
+            recovery,
+        )
         self.assertNotIn("event === 'pull_request_target'", recovery)
         self.assertNotIn("context.payload.pull_request", recovery)
 
     def test_spawn_recovery_is_idempotent_and_authoritative(self) -> None:
-        recovery = section("const missingSpawnParent = eligibleSpawnParents.find")
+        recovery = section("const missingSpawnParents = eligibleSpawnParents.filter")
         self.assertIn("labelsOf(item).has('growth-seed')", recovery)
         self.assertIn("(item.body || '').includes(marker)", recovery)
-        self.assertIn("if (missingSpawnParent)", recovery)
         self.assertNotIn("${pr.title}", recovery)
 
-    def test_one_run_creates_at_most_one_missing_spawn(self) -> None:
-        recovery = section("const eligibleSpawnParents = allIssues")
-        self.assertIn("eligibleSpawnParents.find", recovery)
-        self.assertNotIn("for (const pr of eligibleSpawnParents)", recovery)
+    def test_spawn_recovery_batch_is_bounded_and_fails_closed(self) -> None:
+        recovery = section("// Conservative v0 actuator")
+        self.assertIn("const MAX_AUTOMATIC_SPAWN_RECOVERY = 4;", recovery)
+        guard = "if (missingSpawnParents.length > MAX_AUTOMATIC_SPAWN_RECOVERY)"
+        loop = "for (const pr of missingSpawnParents)"
+        self.assertIn(guard, recovery)
+        self.assertIn("refusing partial or mass recovery", recovery)
+        self.assertIn(loop, recovery)
+        self.assertLess(recovery.index(guard), recovery.index(loop))
         self.assertEqual(
             recovery.count("title: `[Growth Seed] Reproduce or extend PR #${pr.number}`"),
             1,
