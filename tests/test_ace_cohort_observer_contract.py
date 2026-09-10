@@ -41,6 +41,33 @@ class AceCohortObserverContractTests(unittest.TestCase):
         self.assertIn("EVALUATE_COHORT_2", TEXT)
         self.assertNotIn("title: '[ACE] Bootstrap Cohort 2", TEXT)
 
+    def test_observatory_selection_does_not_depend_on_listing_order(self):
+        # `openIssues.find(...)` returned the first match in API listing order,
+        # which is creation-descending, so a duplicate created later captured
+        # every write and the original froze while still being linked.
+        self.assertNotIn("openIssues.find(", TEXT)
+        self.assertIn("const statusCandidates = openIssues", TEXT)
+        self.assertIn("let statusIssue = statusCandidates[0];", TEXT)
+
+    def test_selection_sorts_candidates_by_issue_number(self):
+        # The primary selection must sort, like the legacy migration below it.
+        # Assert the sort is chained onto the candidate filter specifically:
+        # counting occurrences would pass on the unfixed file, which already
+        # sorts in two other places.
+        self.assertIn(
+            "const statusCandidates = openIssues\n"
+            "              .filter(issue =>\n"
+            "                !issue.pull_request &&\n"
+            "                (issue.labels || []).some(label => label.name === statusLabel)\n"
+            "              )\n"
+            "              .sort((a, b) => a.number - b.number);",
+            TEXT,
+        )
+
+    def test_duplicate_observatories_are_surfaced_not_silently_ignored(self):
+        self.assertIn("statusCandidates.length > 1", TEXT)
+        self.assertIn("core.warning(", TEXT)
+
     def test_permissions_do_not_include_contents_write(self):
         self.assertIn("contents: read", TEXT)
         self.assertNotIn("contents: write", TEXT)
