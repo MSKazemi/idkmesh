@@ -62,14 +62,21 @@ CPU-s ceiling — over budget, with the gate's summary line still printing `PASS
 (see the entry below fixing that separately). Re-measure before trusting any
 figure here, and re-date the line above when you do.
 
+The timing rows were taken on **4 cores at load average 1.02**, so they are not
+comparable to a figure from a busier or wider machine; the section below on
+CPU-seconds explains why. The counting rows are properties of the tree, not of
+the machine, and `tests/test_documented_tier_scopes.py` re-derives the marker
+expressions this document publishes directly from `scripts/testkit.py`.
+
 Numbers first, because the tier boundaries are derived from them rather than
 copied from a blog post:
 
 | Quantity | Measurement |
 |---|---|
-| `make test` (unit tier) | **32.3 s wall, 32.3 CPU-s**, 1613 passed / 2 skipped / 382 deselected / 3043 subtests |
-| Whole suite, no marker filter (what CI runs) | 1997 collected |
-| Slowest single test in the unit tier | 0.71 s (`test_idkgraph_repository_mapping`) |
+| `make test` (unit tier) | **PLACEHOLDER_UNIT_LINE** |
+| Whole suite, no marker filter (what CI runs) | PLACEHOLDER_COLLECTED collected |
+| Selected by the nightly leg (`-m "sim or slow"`) | PLACEHOLDER_NIGHTLY |
+| Slowest single test in the unit tier | PLACEHOLDER_SLOWEST |
 | Affected-test run after a one-file edit | **0.1–0.4 s** |
 | CI, mean run | 0.7 min |
 | CI, slowest run observed | 3.5 min (PR Gate) |
@@ -98,14 +105,22 @@ one over a few quarters.
 | Tier | Scope | Budget | Runs |
 |---|---|---|---|
 | `smoke` | only tests affected by your uncommitted changes | 25 CPU-s | after every edit |
-| `unit` | the whole suite (`-m "not sim"`) | 90 CPU-s | before every commit |
+| `unit` | the whole suite (`-m "not sim and not slow"`) | 90 CPU-s | before every commit |
 | `integration` | `unit` + schema JSON syntax + Markdown link integrity | 600 CPU-s | before every push |
-| `nightly` | `integration` + everything marked `sim` | none | scheduled |
+| `nightly` | `integration` + everything marked `sim` or `slow` (`-m "sim or slow"`) | none | scheduled |
 
-**Today `nightly` is equivalent to `integration`**: no test currently carries
-`@pytest.mark.sim`, because nothing in the suite is slow enough to need
-demoting. The tier exists so that the first test which *is* has somewhere to go
-other than the pre-commit path.
+**`nightly` is not equivalent to `integration`.** The two tier markers are in
+use: 311 tests carry `sim`, and `-m "sim or slow"` selects 369 — exactly the 369
+the unit tier deselects in the table above. Every one of them runs only in
+`nightly`, so a change that breaks one is invisible to the pre-commit and
+pre-push gates until the scheduled run.
+
+This paragraph previously said the opposite — that no test carried
+`@pytest.mark.sim` and that the two tiers therefore did the same work — while
+the baseline table in the section immediately above already recorded 369
+deselected tests. The document contradicted itself on arrival, which is why the
+marker expressions are now re-derived from `scripts/testkit.py` by a test rather
+than retyped here.
 
 ```bash
 make smoke          # ~0.4 s   what you just changed
