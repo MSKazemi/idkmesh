@@ -46,6 +46,16 @@ and the release notes for that tag.
 
 ### Changed
 
+- `Task 001 canonical v0.4 calibration` now watches the files it actually reads.
+  The calibration runs against the checked-out pull-request head, but its `paths:`
+  filter listed only the two calibration tools — so `requirements-phase0.txt`,
+  `experiments/evaluator_plan_runner.py`, `experiments/transition_patch_verifier.py`
+  and `tests/test_patch_evaluator_transition_v04.py` could all change without the
+  calibration that certifies them ever running.
+- `tests/test_calibration_path_filter.py` derives that dependency set from the
+  workflow's own steps rather than from a second hand-maintained list, and also
+  fails if the filter names a file that no longer exists.
+
 - README introduces the synthetic contract demo with virtual-environment setup and
   links the existing contributor invitation. Installation time is environment-dependent.
 - Support and issue-template entry points route open-ended questions to Discussions.
