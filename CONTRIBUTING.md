@@ -94,28 +94,43 @@ You do not need to understand the research side of this repository to run the
 tests. From the repository root:
 
 ```bash
-python -m venv .venv && source .venv/bin/activate
-python -m pip install -r requirements-phase0.txt pytest
-PYTHONPATH=. python -m pytest -q
+make setup          # once: creates .venv and installs the test dependencies
+make test           # the gate: the whole unit suite, about a minute
 ```
 
-Use Python 3.11 or 3.13 to match the stable PR gate. The example above is for
-Linux/macOS shells. In Windows PowerShell, create the environment with
-`python -m venv .venv`, then use `.\.venv\Scripts\python.exe` instead of `python`
-for installation and tests, and set `$env:PYTHONPATH = "."` before running tests.
-Activation or a machine-wide execution-policy change is not required.
-These are setup instructions, not evidence that every operating system has
-already been tested by a contributor.
+`make setup` needs `python3` on your PATH and nothing else. What each tier runs,
+why the boundaries are drawn where they are, and what to do when one complains
+are documented in [`docs/TESTING.md`](docs/TESTING.md).
 
-These commands work without an unmerged Makefile or local testkit. If an older
-issue refers to `make setup`, `make test`, or `make integration`, use the current
-instructions here unless that tooling actually exists in your checkout.
-
-That collects both suites — `tests/` and `interop/tests/` — in a single run. To
-run one file while you work:
+If you have no `make` — Windows PowerShell, most obviously — run the same suite
+directly:
 
 ```bash
-PYTHONPATH=. python -m pytest -q tests/test_r2.py
+python -m venv .venv && source .venv/bin/activate
+python -m pip install -r requirements-phase0.txt pytest
+python -m pytest -q
+```
+
+`pytest.ini` sets `pythonpath = .`, so the `PYTHONPATH=.` prefix that older
+instructions carry is no longer needed. Either route collects both suites —
+`tests/` and `interop/tests/` — in a single run.
+
+Use Python 3.11 or 3.13 to match the stable PR gate. The examples above are for
+Linux/macOS shells. In Windows PowerShell, create the environment with
+`python -m venv .venv`, then use `.\.venv\Scripts\python.exe` instead of `python`
+for installation and tests. Activation or a machine-wide execution-policy change
+is not required. These are setup instructions, not evidence that every operating
+system has already been tested by a contributor.
+
+Several open issues carry a correction saying that `make setup`, `make test` and
+`make integration` do not exist on `main`. That was true when those notes were
+written; the `Makefile`, `scripts/testkit.py` and `docs/TESTING.md` landed on
+2026-09-10. Trust your checkout over an issue comment.
+
+To run one file while you work:
+
+```bash
+python -m pytest -q tests/test_r2.py
 ```
 
 If your change touches Markdown, run the same local link gate as CI:

@@ -9,13 +9,23 @@ Core prototypes live in `experiments/`, simulations in `randomness_lab/` and `si
 From the repository root:
 
 ```bash
+make setup      # once: creates .venv and installs the test dependencies
+make test       # the gate: the whole unit suite, about a minute
+make gate       # the cheapest tier that covers what you actually changed
+```
+
+Every target delegates to `scripts/testkit.py`, so the Makefile, the git hooks, the Claude Code hooks and CI run the same code path. The tiers, their CPU-second budgets and the measured baseline are in [`docs/TESTING.md`](docs/TESTING.md); read it before changing a budget.
+
+Without `make`, the same suite runs directly:
+
+```bash
 python -m venv .venv && source .venv/bin/activate
 python -m pip install -r requirements-phase0.txt pytest
-PYTHONPATH=. python -m pytest -q
+python -m pytest -q
 python -m randomness_lab --policy thompson --rounds 100 --seed 42
 ```
 
-`pytest` collects both suites (`tests/` and `interop/tests/`) in one run. Use a focused module, such as `PYTHONPATH=. python -m pytest -q tests/test_r2.py`.
+`pytest.ini` sets `pythonpath = .`, so the old `PYTHONPATH=.` prefix is no longer required. `pytest` collects both suites (`tests/` and `interop/tests/`) in one run. Use a focused module, such as `python -m pytest -q tests/test_r2.py`.
 
 **Do not use `python -m unittest discover` to check your work.** It silently under-collects: `unittest` only finds `TestCase` subclasses, so the **162** module-level `test_*` functions spread across **17** files in `tests/` are invisible to it — roughly a tenth of the suite, reported as `OK` with no warning that anything was missed. `tests/test_documented_test_counts.py` re-measures both figures and the gap they explain, so this paragraph fails the suite if it drifts.
 

@@ -87,6 +87,10 @@ stated window or revision, not current status.
 - [Newcomer Path Audit](onboarding-tests/2026-08-29-newcomer-path.md) —
   2026-08-29 first-contact walk from the public README at `63e4acc` to a
   realistic bounded task, with approximate navigation times.
+- [First-run report: the three setup paths disagree](onboarding-tests/2026-09-10-first-run-doc-defects.md)
+  — 2026-09-10 agent run at `5a211bd` recording four documented setup
+  contradictions and the fixes made for them. Explicitly not an independent
+  human newcomer report, and not one of the three issue 403 is waiting for.
 - [Task Decomposition: IDKGraph P0 Repository Observatory](task-decompositions/idkgraph-p0-observatory.md)
   — splits research track #20 into exactly five independently claimable
   microtasks; produced for Growth Seed #28.

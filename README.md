@@ -201,10 +201,23 @@ The current codebase already implements substantial pieces of this trust path, b
 For the repository's Python research/control code:
 
 ```bash
+make setup          # once: creates .venv and installs the test dependencies
+make test           # the gate: the whole unit suite, about a minute
+```
+
+Without `make`, the same suite runs directly — `pytest.ini` sets
+`pythonpath = .`, so no `PYTHONPATH` prefix is needed:
+
+```bash
 python -m pip install --disable-pip-version-check pytest
 python -m pip install --disable-pip-version-check -r requirements-phase0.txt
-PYTHONPATH=. python -m pytest -q
+python -m pytest -q
 ```
+
+[`docs/TESTING.md`](docs/TESTING.md) documents the tiers behind the `make`
+targets, the measured baseline, and what to do when a gate complains.
+[`CONTRIBUTING.md`](CONTRIBUTING.md) has the Windows path and the two expected
+skips.
 
 Validate the core Phase 0 contracts directly with:
 
