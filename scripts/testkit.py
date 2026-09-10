@@ -337,6 +337,16 @@ def tail(text: str, lines: int = 12) -> str:
     return "\n".join(kept[-lines:])
 
 
+def tier_passed(ok: bool, cpu: float, budget: float | None) -> bool:
+    """Whether a tier run passes its gate.
+
+    Two independent conditions: the tests were green, and the run stayed inside
+    the tier's CPU budget. Both the exit code and the result cache derive from
+    this single function so they cannot disagree.
+    """
+    return ok and not (budget is not None and cpu > budget)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("tier", choices=[*TIERS, "auto"], nargs="?", default="auto")
@@ -367,10 +377,15 @@ def main() -> int:
     else:
         result = TIERS[tier]()
 
-    cache_write(tier, fingerprint, result.ok, result.seconds, result.cpu)
-
     budget = BUDGETS.get(tier)
     over = budget is not None and result.cpu > budget
+
+    # Cache the GATE verdict, not merely whether the tests were green. Going
+    # over budget fails the tier, so caching result.ok here would let the next
+    # invocation short-circuit to "cached pass" and exit 0 -- disarming the
+    # budget after a single failure, for as long as the tree is unchanged.
+    passed = tier_passed(result.ok, result.cpu, budget)
+    cache_write(tier, fingerprint, passed, result.seconds, result.cpu)
     status = "PASS" if result.ok else "FAIL"
     detail = f"{result.seconds:.1f}s wall / {result.cpu:.1f}s cpu"
     print(
@@ -393,7 +408,7 @@ def main() -> int:
 
     # A blown budget fails the gate: that is the only mechanism that reliably
     # stops a fast suite from decaying into a slow one.
-    return 0 if (result.ok and not over) else 1
+    return 0 if passed else 1
 
 
 if __name__ == "__main__":

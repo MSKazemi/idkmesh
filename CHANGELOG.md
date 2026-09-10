@@ -56,6 +56,16 @@ and the release notes for that tag.
 
 ### Changed
 
+- `scripts/testkit.py` caches the gate verdict rather than only whether the tests were
+  green. A tier that passed its tests but blew its CPU budget exited non-zero while writing
+  `"ok": true` to the result cache, so the next invocation on an unchanged tree
+  short-circuited to "cached pass" and exited 0 — a failed gate turning green on the second
+  run, which disarms the budget for as long as nothing changes. The exit code and the cache
+  now both derive from one `tier_passed()` helper, so they cannot disagree.
+- `tests/test_testkit_budget_cache.py` guards that: the tier verdict, the cache contents
+  after a budget failure, the second-run short-circuit, the `auto` tier sharing it, and that
+  a Markdown, YAML or Python edit each move the cache fingerprint.
+
 - The scheduled-delay note on the free-resource audit is corrected. It quoted a 12-run
   sample min/max as a predicted window of "10:15–11:30 UTC"; the next scheduled run started
   at 11:31:34, 94 seconds outside it. A sample min/max is not a bound — the chance the next
