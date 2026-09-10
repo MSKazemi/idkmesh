@@ -1,0 +1,478 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Every IDKMesh document and contract by category: architecture, specifications, schemas, research, findings, audits, decisions, community, and project memory.">
+  <meta name="theme-color" content="#0b1020">
+  <title>Documentation library — IDKMesh</title>
+  <link rel="canonical" href="https://mskazemi.com/idkmesh/library.html">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="IDKMesh">
+  <meta property="og:url" content="https://mskazemi.com/idkmesh/library.html">
+  <meta property="og:title" content="Documentation library — IDKMesh">
+  <meta property="og:description" content="Every IDKMesh document and contract by category: architecture, specifications, schemas, research, findings, audits, decisions, community, and project memory.">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Documentation library — IDKMesh">
+  <meta name="twitter:description" content="Every IDKMesh document and contract by category: architecture, specifications, schemas, research, findings, audits, decisions, community, and project memory.">
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"WebPage","name":"Documentation library — IDKMesh","description":"Every IDKMesh document and contract by category: architecture, specifications, schemas, research, findings, audits, decisions, community, and project memory.","url":"https://mskazemi.com/idkmesh/library.html","isPartOf":{"@type":"WebSite","name":"IDKMesh","url":"https://mskazemi.com/idkmesh/"},"license":"https://www.apache.org/licenses/LICENSE-2.0","author":{"@type":"Person","name":"Mohsen Seyedkazemi Ardebili","url":"https://mskazemi.github.io"}}
+  </script>
+  <link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+  <style>
+    .filelist { list-style: none; margin: 0; padding: .4rem 1.1rem; columns: 2; column-gap: 2rem; }
+    .filelist > li { break-inside: avoid; margin: 0 0 .75rem; }
+    .filelist code { background: none; padding: 0; font-size: .88rem; }
+    .filelist .muted { font-size: .86rem; line-height: 1.45; }
+    @media (max-width: 780px) { .filelist { columns: 1; } }
+    .pagehead .actions .button { font-size: .9rem; padding: .5rem .8rem; }
+  </style>
+  <a class="skip" href="#main">Skip to content</a>
+  <nav class="sitenav" aria-label="Site">
+    <div class="wrap">
+      <a class="brand" href="./">
+        <svg viewBox="0 0 32 32" aria-hidden="true">
+          <circle cx="16" cy="6" r="3.1" fill="#8bd3ff"></circle>
+          <circle cx="6" cy="22" r="3.1" fill="#b9ffcf"></circle>
+          <circle cx="26" cy="22" r="3.1" fill="#c9b8ff"></circle>
+          <circle cx="16" cy="16" r="2.2" fill="#edf2ff"></circle>
+          <g stroke="#3d4a6b" stroke-width="1.5" fill="none">
+            <path d="M16 9 L16 14"></path><path d="M8.6 20.5 L14 17.2"></path><path d="M23.4 20.5 L18 17.2"></path>
+          </g>
+        </svg>
+        IDKMesh<span class="tail">&nbsp;docs</span>
+      </a>
+      <div class="navlinks">
+        <a href="./">Home</a>
+        <a href="start.html">Start</a>
+        <a href="concepts.html">How it works</a>
+        <a href="pipelines.html">Pipelines</a>
+        <a href="research.html">Evidence</a>
+        <a href="library.html" aria-current="page">Library</a>
+        <a class="ext" href="https://github.com/MSKazemi/idkmesh">GitHub&nbsp;↗</a>
+      </div>
+    </div>
+  </nav>
+
+  <header class="pagehead">
+    <div class="wrap">
+      <div class="eyebrow">IDKMesh · library</div>
+      <h1>Everything, by category</h1>
+      <p class="lead">204 documents and contracts, grouped by what kind of truth they are. Every entry links to the file in the repository — the canonical source. This page is a map, not a copy: nothing here restates a contract, so it cannot silently disagree with one.</p>
+      <div class="actions">
+        <a class="button" href="#start">Start here <span class="chip count">8</span></a>
+        <a class="button" href="#found">Foundations, vision and principles <span class="chip count">14</span></a>
+        <a class="button" href="#arch">Architecture <span class="chip count">26</span></a>
+        <a class="button" href="#contracts">Contracts and specifications <span class="chip count">16</span></a>
+        <a class="button" href="#schemas">Schemas <span class="chip count">33</span></a>
+        <a class="button" href="#research">Research programmes <span class="chip count">32</span></a>
+        <a class="button" href="#findings">Findings <span class="chip count">20</span></a>
+        <a class="button" href="#audits">Audits <span class="chip count">12</span></a>
+        <a class="button" href="#decisions">Decisions and process <span class="chip count">23</span></a>
+        <a class="button" href="#community">Community and the ACE stack <span class="chip count">13</span></a>
+        <a class="button" href="#interop">Interoperability and security <span class="chip count">7</span></a>
+      </div>
+      <div class="callout" style="margin-top:1.8rem">
+        <div class="kicker">How to read a disagreement</div>
+        <p>When two documents appear to conflict, prefer the more specific <em>current</em> contract over an older plan or a historical record. A conversation, an old roadmap section, or a historical architecture sketch is evidence about how the project evolved — it does not override current schemas, current architecture, or a later accepted decision. The full hierarchy is in <a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/README.md">the documentation map</a>.</p>
+      </div>
+    </div>
+  </header>
+
+  <main id="main" class="wrap">
+
+    <section id="start">
+      <h2>Start here <span class="chip count">8 documents</span></h2>
+      <p class="sub">What a newcomer needs, in roughly the order it becomes useful. None of these assume you have read the others.</p>
+      
+      <div class="tbl-scroll" style="padding:.4rem 0">
+        <ul class="filelist">
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/README.md"><code>README.md</code></a><div class="muted">IDKMesh</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/CONTRIBUTING.md"><code>CONTRIBUTING.md</code></a><div class="muted">Contributing to IDKMesh</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/COMMUNITY.md"><code>COMMUNITY.md</code></a><div class="muted">IDKMesh Community</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/SUPPORT.md"><code>SUPPORT.md</code></a><div class="muted">Getting Help with IDKMesh</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/CODE_OF_CONDUCT.md"><code>CODE_OF_CONDUCT.md</code></a><div class="muted">IDKMesh Code of Conduct</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/SECURITY.md"><code>SECURITY.md</code></a><div class="muted">Security Policy</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/WHAT_IS_IDKMESH.md"><code>WHAT_IS_IDKMESH.md</code></a><div class="muted">What Is IDKMesh?</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/CONTRIBUTOR_PERSPECTIVES.md"><code>CONTRIBUTOR_PERSPECTIVES.md</code></a><div class="muted">Multidisciplinary Collaboration in IDKMesh</div></li>
+        </ul>
+      </div>
+    </section>
+    <section id="found">
+      <h2>Foundations, vision and principles <span class="chip count">14 documents</span></h2>
+      <p class="sub">What the project is for, what it refuses to do, and the mathematical and scientific ground it stands on. These change slowly and deliberately.</p>
+      <p class="muted"><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/foundations/README.md"><strong>Read the curated index for this section ↗</strong></a> — it says which documents are current contracts and which are retained history.</p>
+      <div class="tbl-scroll" style="padding:.4rem 0">
+        <ul class="filelist">
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/foundations/VISION.md"><code>VISION.md</code></a><div class="muted">IDKMesh Vision</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/foundations/GOALS.md"><code>GOALS.md</code></a><div class="muted">IDKMesh Goals</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/foundations/FIELD_DEFINING_QUESTIONS.md"><code>FIELD_DEFINING_QUESTIONS.md</code></a><div class="muted">Ten Field-Defining Questions for IDKMesh</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/CONSTITUTION.md"><code>CONSTITUTION.md</code></a><div class="muted">IDKMesh Constitution — v0.1</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/GOVERNANCE.md"><code>GOVERNANCE.md</code></a><div class="muted">IDKMesh Governance</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/MAINTAINERS.md"><code>MAINTAINERS.md</code></a><div class="muted">IDKMesh Maintainers</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/HUMAN_FLOURISHING.md"><code>HUMAN_FLOURISHING.md</code></a><div class="muted">Human Flourishing as a Design Constraint for IDKMesh</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/MATHEMATICAL_FOUNDATIONS.md"><code>MATHEMATICAL_FOUNDATIONS.md</code></a><div class="muted">Mathematical Foundations for IDKMesh</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/SCIENTIFIC_FOUNDATIONS.md"><code>SCIENTIFIC_FOUNDATIONS.md</code></a><div class="muted">Scientific and Physical Foundations for IDKMesh</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/RANDOMNESS_AND_BIOINSPIRED_ALGORITHMS.md"><code>RANDOMNESS_AND_BIOINSPIRED_ALGORITHMS.md</code></a><div class="muted">Randomness, Mathematics, Physics, and Biology for IDKMesh</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/RESEARCH_QUESTIONS.md"><code>RESEARCH_QUESTIONS.md</code></a><div class="muted">IDKMesh Research Questions</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/protocols/CONSTITUTIONAL_EVOLUTIONARY_MESH.md"><code>CONSTITUTIONAL_EVOLUTIONARY_MESH.md</code></a><div class="muted">Constitutional Evolutionary Mesh (CEM)</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/design/ARTISTIC_INSPIRATION_M_C_ESCHER.md"><code>ARTISTIC_INSPIRATION_M_C_ESCHER.md</code></a><div class="muted">Artistic Inspiration for IDKMesh: M. C. Escher</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/BLOCKCHAIN_STRATEGY.md"><code>BLOCKCHAIN_STRATEGY.md</code></a><div class="muted">Blockchain Strategy for IDKMesh</div></li>
+        </ul>
+      </div>
+    </section>
+    <section id="arch">
+      <h2>Architecture <span class="chip count">26 documents</span></h2>
+      <p class="sub">The as-built system: subsystems, trust boundaries, compute fabric, evidence machinery, and the repository&#8217;s own self-observation. Retained historical designs are kept alongside the active ones and marked as such in the index.</p>
+      <p class="muted"><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/architecture/README.md"><strong>Read the curated index for this section ↗</strong></a> — it says which documents are current contracts and which are retained history.</p>
+      <div class="tbl-scroll" style="padding:.4rem 0">
+        <ul class="filelist">
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/ARCHITECTURE.md"><code>ARCHITECTURE.md</code></a><div class="muted">IDKMesh Architecture</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/ITERATION_MODEL.md"><code>ITERATION_MODEL.md</code></a><div class="muted">IDKMesh Iteration Model</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/architecture/ADVERSARIAL_EVIDENCE_ENVELOPE.md"><code>ADVERSARIAL_EVIDENCE_ENVELOPE.md</code></a><div class="muted">Adversarial Evidence Envelope</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/architecture/AGENT_NETWORK_AND_VOLUNTEER_NODES.md"><code>AGENT_NETWORK_AND_VOLUNTEER_NODES.md</code></a><div class="muted">Agent Network and Volunteer Nodes</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/architecture/ALGORITHM_COLLABORATION_FABRIC.md"><code>ALGORITHM_COLLABORATION_FABRIC.md</code></a><div class="muted">Algorithm Collaboration Fabric</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/architecture/ANYTIME_DRIFT_GUARD.md"><code>ANYTIME_DRIFT_GUARD.md</code></a><div class="muted">Anytime Drift Guard</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/architecture/CI_SHADOW_OUTCOME_EVALUATOR.md"><code>CI_SHADOW_OUTCOME_EVALUATOR.md</code></a><div class="muted">CI Shadow Outcome Evaluator v0.1</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/architecture/CI_SHADOW_PLANNER.md"><code>CI_SHADOW_PLANNER.md</code></a><div class="muted">CI Shadow Planner v0.1</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/architecture/CONJUNCTIVE_EVOLUTION_CONTROL.md"><code>CONJUNCTIVE_EVOLUTION_CONTROL.md</code></a><div class="muted">Conjunctive Evolution Control</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/architecture/EVIDENCE_AGGREGATION_FABRIC.md"><code>EVIDENCE_AGGREGATION_FABRIC.md</code></a><div class="muted">Evidence Aggregation Fabric</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/architecture/EVOLUTION_ARTIFACT_MINIMIZATION.md"><code>EVOLUTION_ARTIFACT_MINIMIZATION.md</code></a><div class="muted">Evolution Artifact Minimization</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/architecture/FREE_RESOURCE_MESH.md"><code>FREE_RESOURCE_MESH.md</code></a><div class="muted">Free Resource Mesh</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/architecture/FREE_RESOURCE_MESH_COMPUTE_BRIDGE.md"><code>FREE_RESOURCE_MESH_COMPUTE_BRIDGE.md</code></a><div class="muted">Free Resource Mesh ↔ Opportunistic Compute Fabric Bridge</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/architecture/IDKGRAPH_TASK_AND_EVOLUTION_MODEL.md"><code>IDKGRAPH_TASK_AND_EVOLUTION_MODEL.md</code></a><div class="muted">IDKGraph: Task, Evidence, Provenance, and Evolution Model</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/architecture/INDEPENDENT_VALIDATOR_RUNNER.md"><code>INDEPENDENT_VALIDATOR_RUNNER.md</code></a><div class="muted">Independent Validator Runner</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/architecture/MATHEMATICAL_EVOLUTION_KERNEL.md"><code>MATHEMATICAL_EVOLUTION_KERNEL.md</code></a><div class="muted">Mathematical Evolution Kernel</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/architecture/ONE_AGENT_ROLES.md"><code>ONE_AGENT_ROLES.md</code></a><div class="muted">ONE Multi-Agent Roles</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/architecture/ONE_CONTINUOUS_EVOLUTION_CONTROLLER.md"><code>ONE_CONTINUOUS_EVOLUTION_CONTROLLER.md</code></a><div class="muted">ONE: Continuous GitHub + ChatGPT Evolution Controller</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/architecture/OPPORTUNISTIC_COMPUTE_FABRIC.md"><code>OPPORTUNISTIC_COMPUTE_FABRIC.md</code></a><div class="muted">Opportunistic Compute Fabric for IDKMesh</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/architecture/PIPELINE_DIAGRAMS.md"><code>PIPELINE_DIAGRAMS.md</code></a><div class="muted">Pipeline Diagrams</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/architecture/REPOSITORY_EVOLUTION_OBSERVATORY.md"><code>REPOSITORY_EVOLUTION_OBSERVATORY.md</code></a><div class="muted">Repository Evolution Observatory v1</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/architecture/REPOSITORY_MATHEMATICAL_PORTFOLIO.md"><code>REPOSITORY_MATHEMATICAL_PORTFOLIO.md</code></a><div class="muted">Repository Mathematical Portfolio</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/architecture/RESOURCE_COMPUTE_ADMISSION.md"><code>RESOURCE_COMPUTE_ADMISSION.md</code></a><div class="muted">Resource → Compute Admission</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/architecture/SCALABILITY_AND_AGILITY.md"><code>SCALABILITY_AND_AGILITY.md</code></a><div class="muted">IDKMesh Scalability and Agility Architecture</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/architecture/SELF_EVOLVING_REPOSITORY.md"><code>SELF_EVOLVING_REPOSITORY.md</code></a><div class="muted">Guarded Self-Evolving Repository Architecture</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/architecture/SEQUENTIAL_EVIDENCE_KERNEL.md"><code>SEQUENTIAL_EVIDENCE_KERNEL.md</code></a><div class="muted">Sequential Evidence Kernel</div></li>
+        </ul>
+      </div>
+    </section>
+    <section id="contracts">
+      <h2>Contracts and specifications <span class="chip count">16 documents</span></h2>
+      <p class="sub">The machine-readable truth. When a written document and a schema disagree, the schema is the contract. Versioning rules are in the schema index.</p>
+      <p class="muted"><a href="https://github.com/MSKazemi/idkmesh/blob/main/schemas/README.md"><strong>Read the curated index for this section ↗</strong></a> — it says which documents are current contracts and which are retained history.</p>
+      <div class="tbl-scroll" style="padding:.4rem 0">
+        <ul class="filelist">
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/specifications/README.md"><code>README.md</code></a><div class="muted">Specifications</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/specifications/BENCHMARK_COHORT_V0_1.md"><code>BENCHMARK_COHORT_V0_1.md</code></a><div class="muted">Benchmark Cohort Index v0.1</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/specifications/EVALUATOR_PLAN_V0_3_SEMANTIC_MATCHING.md"><code>EVALUATOR_PLAN_V0_3_SEMANTIC_MATCHING.md</code></a><div class="muted">EvaluatorPlan v0.3 semantic matching</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/specifications/EVALUATOR_PLAN_V0_4_TRANSFORMATION_CALIBRATION.md"><code>EVALUATOR_PLAN_V0_4_TRANSFORMATION_CALIBRATION.md</code></a><div class="muted">EvaluatorPlan v0.4 calibrated transformation semantics</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/specifications/EVALUATOR_PLAN_V0_4_TRANSITION_SEMANTICS.md"><code>EVALUATOR_PLAN_V0_4_TRANSITION_SEMANTICS.md</code></a><div class="muted">EvaluatorPlan v0.4 — added/removed transition semantics</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/specifications/GATE_AUDIT_V0_1.md"><code>GATE_AUDIT_V0_1.md</code></a><div class="muted">Gate Audit v0.1</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/specifications/GITHUB_IDKGRAPH_PROJECTION_V0_1.md"><code>GITHUB_IDKGRAPH_PROJECTION_V0_1.md</code></a><div class="muted">GitHub to IDKGraph Projection v0.1</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/specifications/IDKGRAPH_OBSERVATORY_V0_1.md"><code>IDKGRAPH_OBSERVATORY_V0_1.md</code></a><div class="muted">IDKGraph P0 Observatory v0.1</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/specifications/IDKGRAPH_P0_RESIDUAL_HEALTH_CHECKS.md"><code>IDKGRAPH_P0_RESIDUAL_HEALTH_CHECKS.md</code></a><div class="muted">IDKGraph P0 Residual Health Checks</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/specifications/IDKGRAPH_REPOSITORY_MAPPING_V0_1.md"><code>IDKGRAPH_REPOSITORY_MAPPING_V0_1.md</code></a><div class="muted">IDKGraph Repository Mapping v0.1</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/specifications/PATCH_EVALUATOR_BACKEND.md"><code>PATCH_EVALUATOR_BACKEND.md</code></a><div class="muted">Bound Unified-Diff Evaluator Backend</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/specifications/PROJECT_DOMAIN_INTERFACES.md"><code>PROJECT_DOMAIN_INTERFACES.md</code></a><div class="muted">ProjectManifest and DomainPack interfaces</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/specifications/RESULT_MANIFEST_V0_1.md"><code>RESULT_MANIFEST_V0_1.md</code></a><div class="muted">Worker ResultManifest v0.1</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/specifications/RUN_EVIDENCE_REPORT_V0_1.md"><code>RUN_EVIDENCE_REPORT_V0_1.md</code></a><div class="muted">Run Evidence Report v0.1</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/specifications/VERIFICATION_PROVENANCE_INTEGRITY.md"><code>VERIFICATION_PROVENANCE_INTEGRITY.md</code></a><div class="muted">Verification Provenance Integrity</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/specifications/WORK_UNIT_COMPOSABILITY_V0_2.md"><code>WORK_UNIT_COMPOSABILITY_V0_2.md</code></a><div class="muted">Work Unit composability profile v0.2</div></li>
+        </ul>
+      </div>
+    </section>
+    <section id="schemas">
+      <h2>Schemas <span class="chip count">33 documents</span></h2>
+      <p class="sub">Every JSON Schema in the tree. These are what the harness validates against, and what an external implementation has to satisfy.</p>
+      <p class="muted"><a href="https://github.com/MSKazemi/idkmesh/blob/main/schemas/README.md"><strong>Read the curated index for this section ↗</strong></a> — it says which documents are current contracts and which are retained history.</p>
+      <div class="tbl-scroll" style="padding:.4rem 0">
+        <ul class="filelist">
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/schemas/ace-lineage-v0.1.schema.json"><code>ace-lineage-v0.1.schema.json</code></a><div class="muted">IDKMesh ACE Lineage Record v0.1</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/schemas/benchmark-cohort-v0.1.schema.json"><code>benchmark-cohort-v0.1.schema.json</code></a><div class="muted">IDKMesh Benchmark Cohort Index v0.1</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/schemas/ci-evaluation-v0.1.schema.json"><code>ci-evaluation-v0.1.schema.json</code></a><div class="muted">IDKMesh CI Shadow Evaluation v0.1</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/schemas/ci-observation-v0.1.schema.json"><code>ci-observation-v0.1.schema.json</code></a><div class="muted">IDKMesh CI Observation v0.1</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/schemas/ci-plan-v0.1.schema.json"><code>ci-plan-v0.1.schema.json</code></a><div class="muted">IDKMesh CI Plan v0.1</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/schemas/ci-receipt-v0.1.schema.json"><code>ci-receipt-v0.1.schema.json</code></a><div class="muted">IDKMesh CI Planning Receipt v0.1</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/schemas/compute-offer-pool-v0.1.schema.json"><code>compute-offer-pool-v0.1.schema.json</code></a><div class="muted">IDKMesh Compute Offer Pool v0.1</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/schemas/compute-policy-v0.1.schema.json"><code>compute-policy-v0.1.schema.json</code></a><div class="muted">IDKMesh Compute Policy v0.1</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/schemas/decomposition-benchmark-v0.1.schema.json"><code>decomposition-benchmark-v0.1.schema.json</code></a><div class="muted">IDKMesh Work Unit Decomposition Benchmark v0.1</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/schemas/domain-pack.schema.json"><code>domain-pack.schema.json</code></a><div class="muted">IDKMesh DomainPack v0.1</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/schemas/e025-learned-verifier-result.schema.json"><code>e025-learned-verifier-result.schema.json</code></a><div class="muted">E025 learned verifier experiment result</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/schemas/evaluator-plan-v0.1.schema.json"><code>evaluator-plan-v0.1.schema.json</code></a><div class="muted">IDKMesh Evaluator Plan v0.1</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/schemas/evaluator-plan-v0.2.schema.json"><code>evaluator-plan-v0.2.schema.json</code></a><div class="muted">IDKMesh Evaluator Plan v0.2</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/schemas/evaluator-plan-v0.3.schema.json"><code>evaluator-plan-v0.3.schema.json</code></a><div class="muted">IDKMesh Evaluator Plan v0.3</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/schemas/evaluator-plan-v0.4.schema.json"><code>evaluator-plan-v0.4.schema.json</code></a><div class="muted">IDKMesh Evaluator Plan v0.4</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/schemas/experiment-manifest-v0.1.schema.json"><code>experiment-manifest-v0.1.schema.json</code></a><div class="muted">IDKMesh Experiment Manifest v0.1</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/schemas/experiment-result-v0.1.schema.json"><code>experiment-result-v0.1.schema.json</code></a><div class="muted">IDKMesh Experiment Result v0.1</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/schemas/experiment-result.schema.json"><code>experiment-result.schema.json</code></a><div class="muted">IDKMesh Experiment Result</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/schemas/gate-audit-report-v0.1.schema.json"><code>gate-audit-report-v0.1.schema.json</code></a><div class="muted">IDKMesh Gate Audit Report v0.1</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/schemas/goal-graph.schema.json"><code>goal-graph.schema.json</code></a><div class="muted">IDKMesh Goal Graph</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/schemas/identity-binding-v0.1.schema.json"><code>identity-binding-v0.1.schema.json</code></a><div class="muted">IDKMesh Identity Binding v0.1</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/schemas/idkgraph.schema.json"><code>idkgraph.schema.json</code></a><div class="muted">IDKGraph</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/schemas/project-manifest.schema.json"><code>project-manifest.schema.json</code></a><div class="muted">IDKMesh ProjectManifest v0.1</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/schemas/resource-compute-bindings-v0.1.schema.json"><code>resource-compute-bindings-v0.1.schema.json</code></a><div class="muted">IDKMesh Resource to Compute Binding v0.1</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/schemas/resource-offer-registry-v0.1.schema.json"><code>resource-offer-registry-v0.1.schema.json</code></a><div class="muted">IDKMesh Zero-Cost Resource Offer Registry v0.1</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/schemas/result-manifest-v0.1.schema.json"><code>result-manifest-v0.1.schema.json</code></a><div class="muted">IDKMesh Worker Result Manifest v0.1</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/schemas/result-manifest.schema.json"><code>result-manifest.schema.json</code></a><div class="muted">IDKMesh Result Manifest</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/schemas/routing-replay-v0.schema.json"><code>routing-replay-v0.schema.json</code></a><div class="muted">IDKMesh Routing Replay Dataset v0</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/schemas/run-evidence-report-v0.1.schema.json"><code>run-evidence-report-v0.1.schema.json</code></a><div class="muted">IDKMesh Run Evidence Report v0.1</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/schemas/verification-result-v0.1.schema.json"><code>verification-result-v0.1.schema.json</code></a><div class="muted">IDKMesh Independent Verification Result v0.1</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/schemas/work-unit-v0.1.schema.json"><code>work-unit-v0.1.schema.json</code></a><div class="muted">IDKMesh Work Unit v0.1</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/schemas/work-unit-v0.2.schema.json"><code>work-unit-v0.2.schema.json</code></a><div class="muted">IDKMesh Work Unit v0.2</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/schemas/work-unit.schema.json"><code>work-unit.schema.json</code></a><div class="muted">IDKMesh Work Unit</div></li>
+        </ul>
+      </div>
+    </section>
+    <section id="research">
+      <h2>Research programmes <span class="chip count">32 documents</span></h2>
+      <p class="sub">Executable research plans, experiment interpretations, calibration evidence, and the preregistrations. Results are evidence for bounded claims — never automatic policy changes.</p>
+      <p class="muted"><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/research/README.md"><strong>Read the curated index for this section ↗</strong></a> — it says which documents are current contracts and which are retained history.</p>
+      <div class="tbl-scroll" style="padding:.4rem 0">
+        <ul class="filelist">
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/research/COLLABORATION_OBSERVABLES_V0_1.md"><code>COLLABORATION_OBSERVABLES_V0_1.md</code></a><div class="muted">Collaboration Observables v0.1</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/research/CRITICALITY_AND_FLUCTUATION_RESPONSE.md"><code>CRITICALITY_AND_FLUCTUATION_RESPONSE.md</code></a><div class="muted">Coordination Criticality and Finite-Difference Response</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/research/EVALUATOR_PLAN_BINDING.md"><code>EVALUATOR_PLAN_BINDING.md</code></a><div class="muted">Evaluator Plan Binding</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/research/EXECUTABLE_VERIFIER_MVP.md"><code>EXECUTABLE_VERIFIER_MVP.md</code></a><div class="muted">Executable Independent Verifier MVP</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/research/FIRST_RESEARCH_PROGRAM.md"><code>FIRST_RESEARCH_PROGRAM.md</code></a><div class="muted">IDKMesh First Research Program</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/research/IDKGRAPH_P1_INDEPENDENT_REVIEW_PROTOCOL.md"><code>IDKGRAPH_P1_INDEPENDENT_REVIEW_PROTOCOL.md</code></a><div class="muted">IDKGraph P1 Independent Review Protocol</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/research/METRIC_UNCERTAINTY_V0_1.md"><code>METRIC_UNCERTAINTY_V0_1.md</code></a><div class="muted">Metric Uncertainty v0.1</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/research/PHASE_0_SPEC.md"><code>PHASE_0_SPEC.md</code></a><div class="muted">Phase 0: Executable Research Foundation</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/research/PHASE_B2_V2_PRE_FREEZE_NOVELTY_AUDIT.md"><code>PHASE_B2_V2_PRE_FREEZE_NOVELTY_AUDIT.md</code></a><div class="muted">Phase B2 successor-v2 pre-freeze novelty audit</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/research/PHASE_B2_V2_TASK001_SYMLINK_CALIBRATION.md"><code>PHASE_B2_V2_TASK001_SYMLINK_CALIBRATION.md</code></a><div class="muted">Task 001 Symlink-Boundary Calibration</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/research/PHASE_B2_V2_TASK002_NONFINITE_ROUTER_CALIBRATION.md"><code>PHASE_B2_V2_TASK002_NONFINITE_ROUTER_CALIBRATION.md</code></a><div class="muted">Phase B2 v2 Task 002 — non-finite free-router calibration</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/research/PHASE_B2_V2_TASK003_UNOBSERVED_HEAD_CALIBRATION.md"><code>PHASE_B2_V2_TASK003_UNOBSERVED_HEAD_CALIBRATION.md</code></a><div class="muted">Phase B2 successor-v2 Task 003 calibration</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/research/PHASE_B2_V2_TASK004_NONFINITE_RWVB_CALIBRATION.md"><code>PHASE_B2_V2_TASK004_NONFINITE_RWVB_CALIBRATION.md</code></a><div class="muted">Task 004 Non-Finite RWVB Calibration</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/research/PHASE_B2_V2_TASK005_OUTPUT_CALIBRATION.md"><code>PHASE_B2_V2_TASK005_OUTPUT_CALIBRATION.md</code></a><div class="muted">Phase B2 successor v2 — Task 005 output-boundary calibration</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/research/PREREG_FIRST_REVIEW_LATENCY_V1.md"><code>PREREG_FIRST_REVIEW_LATENCY_V1.md</code></a><div class="muted">Preregistration v1: First-Review Latency and Contributor Recurrence</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/research/R1_COLLECTIVE_SCALING.md"><code>R1_COLLECTIVE_SCALING.md</code></a><div class="muted">R1 collective-capability scaling</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/research/R1_CORPUS_READINESS.md"><code>R1_CORPUS_READINESS.md</code></a><div class="muted">R1 Real-Corpus Readiness Gate</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/research/R1_HELP_HURT_SWEEP.md"><code>R1_HELP_HURT_SWEEP.md</code></a><div class="muted">R1 Help/Hurt Regime Sweep</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/research/R1_REAL_RESULT_REPLAY.md"><code>R1_REAL_RESULT_REPLAY.md</code></a><div class="muted">R1 Real-Result Replay</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/research/R1_SWARM_DIVERSITY_EXPERIMENT.md"><code>R1_SWARM_DIVERSITY_EXPERIMENT.md</code></a><div class="muted">R1 — Swarm Diversity vs Replication</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/research/R2_CAPABILITY_RARITY_SWEEP.md"><code>R2_CAPABILITY_RARITY_SWEEP.md</code></a><div class="muted">R2 Capability-Rarity Sweep</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/research/R2_SCALE_REGIME_SWEEP.md"><code>R2_SCALE_REGIME_SWEEP.md</code></a><div class="muted">R2 Scale and Regime Sweep</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/research/R2_SCHEDULING_CHURN_EXPERIMENT.md"><code>R2_SCHEDULING_CHURN_EXPERIMENT.md</code></a><div class="muted">R2 — Randomized Scheduling Under Churn</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/research/R3_EVOLUTIONARY_ORCHESTRATION.md"><code>R3_EVOLUTIONARY_ORCHESTRATION.md</code></a><div class="muted">R3 — Evolutionary Orchestration With Verification and Diversity</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/research/R4_STIGMERGIC_ROUTING.md"><code>R4_STIGMERGIC_ROUTING.md</code></a><div class="muted">R4 — Verified Stigmergic Routing</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/research/RANDOMNESS_EXPERIMENT_STATUS.md"><code>RANDOMNESS_EXPERIMENT_STATUS.md</code></a><div class="muted">IDKMesh Randomness / Bio-Inspired Experiment Status</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/research/RANDOMNESS_ROADMAP.md"><code>RANDOMNESS_ROADMAP.md</code></a><div class="muted">IDKMesh Randomness Research Roadmap</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/research/TASK001_REAL_V04_CALIBRATION.md"><code>TASK001_REAL_V04_CALIBRATION.md</code></a><div class="muted">Real Task 001 calibration for canonical EvaluatorPlan v0.4</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/research/TOP_20_QUESTIONS.md"><code>TOP_20_QUESTIONS.md</code></a><div class="muted">IDKMesh: The 20 Most Important Questions</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/research/VERIFICATION_BACKPRESSURE_BENCHMARK.md"><code>VERIFICATION_BACKPRESSURE_BENCHMARK.md</code></a><div class="muted">Verification Backpressure Temporal Benchmark</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/research/VERIFICATION_DEBT_AND_BACKPRESSURE.md"><code>VERIFICATION_DEBT_AND_BACKPRESSURE.md</code></a><div class="muted">Verification Debt and Risk-Weighted Backpressure</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/research/WORK_UNIT_RESEARCH_TRACK_COMPLETION.md"><code>WORK_UNIT_RESEARCH_TRACK_COMPLETION.md</code></a><div class="muted">Work Unit Research Track — protocol status map</div></li>
+        </ul>
+      </div>
+    </section>
+    <section id="findings">
+      <h2>Findings <span class="chip count">20 documents</span></h2>
+      <p class="sub">Research and engineering findings, plus retained source notes. Some are historical support for a later decision rather than current implementation documentation; the index separates the two.</p>
+      <p class="muted"><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/findings/README.md"><strong>Read the curated index for this section ↗</strong></a> — it says which documents are current contracts and which are retained history.</p>
+      <div class="tbl-scroll" style="padding:.4rem 0">
+        <ul class="filelist">
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/findings/2026-08-28-agent-ecosystem-and-idkmesh-evolution.md"><code>2026-08-28-agent-ecosystem-and-idkmesh-evolution.md</code></a><div class="muted">Finding — Current Agent Ecosystem and the IDKMesh Evolution Wedge</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/findings/2026-08-28-emergence-from-vague-goals.md"><code>2026-08-28-emergence-from-vague-goals.md</code></a><div class="muted">Emergence from Vague Goals: Nature-Inspired Design for IDKMesh</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/findings/2026-08-28-fast-growth-and-free-compute-audit.md"><code>2026-08-28-fast-growth-and-free-compute-audit.md</code></a><div class="muted">Fast Growth and Free Compute Audit — 2026-08-28</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/findings/2026-08-28-free-agent-network-landscape.md"><code>2026-08-28-free-agent-network-landscape.md</code></a><div class="muted">Free / Low-Cost Agent Network Landscape for IDKMesh</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/findings/2026-08-28-initial-landscape.md"><code>2026-08-28-initial-landscape.md</code></a><div class="muted">Initial Landscape Findings — 2026-08-28</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/findings/2026-08-28-reference-map-and-crypto-lessons.md"><code>2026-08-28-reference-map-and-crypto-lessons.md</code></a><div class="muted">IDKMesh Reference Map, Next Steps, and Lessons from Bitcoin/Crypto</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/findings/2026-08-28-repository-driven-community-growth.md"><code>2026-08-28-repository-driven-community-growth.md</code></a><div class="muted">Repository-Driven Community Growth and Agent Automation</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/findings/2026-08-29-collaboration-observables-first-snapshot.md"><code>2026-08-29-collaboration-observables-first-snapshot.md</code></a><div class="muted">First production collaboration-observables snapshot</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/findings/2026-08-29-conversation-index-drift.md"><code>2026-08-29-conversation-index-drift.md</code></a><div class="muted">Conversation Index Drift Review</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/findings/2026-08-29-conversation-index-regression.md"><code>2026-08-29-conversation-index-regression.md</code></a><div class="muted">Conversation index regression found during repository-wide audit</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/findings/2026-08-29-idkgraph-architecture-navigation.md"><code>2026-08-29-idkgraph-architecture-navigation.md</code></a><div class="muted">IDKGraph Architecture Navigation Pass</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/findings/2026-08-29-idkgraph-findings-navigation.md"><code>2026-08-29-idkgraph-findings-navigation.md</code></a><div class="muted">IDKGraph Findings Navigation Pass</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/findings/2026-08-29-idkgraph-orphan-warning-triage.md"><code>2026-08-29-idkgraph-orphan-warning-triage.md</code></a><div class="muted">IDKGraph orphan-warning triage — cohort 001</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/findings/2026-08-29-issue-resolution-and-work-unit-track-closure.md"><code>2026-08-29-issue-resolution-and-work-unit-track-closure.md</code></a><div class="muted">Conversation record — issue resolution and Work Unit track closure</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/findings/2026-08-30-executables-nothing-ever-ran.md"><code>2026-08-30-executables-nothing-ever-ran.md</code></a><div class="muted">Five Committed Executables That Nothing Demonstrates Ever Ran</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/findings/2026-08-30-node-evidence-replay-and-digest-reproducibility.md"><code>2026-08-30-node-evidence-replay-and-digest-reproducibility.md</code></a><div class="muted">Replaying the Node Evidence: One Digest Reproduces, Four Cannot</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/findings/2026-08-30-ownership-concentration-first-measurement.md"><code>2026-08-30-ownership-concentration-first-measurement.md</code></a><div class="muted">Ownership Concentration: First Real Measurement, and What Structural Debt Refused to Say</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/findings/distributed-agent-coding.md"><code>distributed-agent-coding.md</code></a><div class="muted">Findings — Distributed agent coding and collective software engineering</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/findings/open-source-community-and-platform.md"><code>open-source-community-and-platform.md</code></a><div class="muted">Findings — Open-source community, collaboration, and platform strategy</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/findings/science-blockchain-sources-2026-08-28.md"><code>science-blockchain-sources-2026-08-28.md</code></a><div class="muted">Science and Blockchain Source Notes — 2026-08-28</div></li>
+        </ul>
+      </div>
+    </section>
+    <section id="audits">
+      <h2>Audits <span class="chip count">12 documents</span></h2>
+      <p class="sub">Bounded review snapshots, each read against the baseline revision it declares. They stay useful after their findings are resolved because they preserve what was inspected and why a decision changed.</p>
+      <p class="muted"><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/audits/README.md"><strong>Read the curated index for this section ↗</strong></a> — it says which documents are current contracts and which are retained history.</p>
+      <div class="tbl-scroll" style="padding:.4rem 0">
+        <ul class="filelist">
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/audits/2026-08-28-full-repository-convergence-audit.md"><code>2026-08-28-full-repository-convergence-audit.md</code></a><div class="muted">Full Repository Convergence Audit — 2026-08-28</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/audits/2026-08-28-idkgraph-p1-adr-linkage-triage.md"><code>2026-08-28-idkgraph-p1-adr-linkage-triage.md</code></a><div class="muted">IDKGraph P1 — Accepted-ADR Linkage Triage</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/audits/2026-08-28-idkgraph-p1-orphan-cohort-1.md"><code>2026-08-28-idkgraph-p1-orphan-cohort-1.md</code></a><div class="muted">IDKGraph P1 — Orphan Warning Cohort 1 Classification</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/audits/2026-08-28-repository-audit.md"><code>2026-08-28-repository-audit.md</code></a><div class="muted">IDKMesh Repository Audit — 2026-08-28</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/audits/2026-08-28-repository-check-current.md"><code>2026-08-28-repository-check-current.md</code></a><div class="muted">Repository Check — Current IDKMesh State</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/audits/2026-08-28-whole-system-first-contact-audit.md"><code>2026-08-28-whole-system-first-contact-audit.md</code></a><div class="muted">Whole-System, Long-Horizon Audit — First Contact Mode</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/audits/2026-08-29-continuous-branch-creation-audit.md"><code>2026-08-29-continuous-branch-creation-audit.md</code></a><div class="muted">Continuous branch-creation audit — 2026-08-29</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/audits/2026-08-29-evolution-control-plane-independent-audit.md"><code>2026-08-29-evolution-control-plane-independent-audit.md</code></a><div class="muted">Evolution control-plane independent audit — 2026-08-29</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/audits/2026-08-29-idkgraph-p1-adr-0011-linkage.md"><code>2026-08-29-idkgraph-p1-adr-0011-linkage.md</code></a><div class="muted">IDKGraph P1 — ADR-0011 Accepted-Decision Linkage Review</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/audits/2026-08-29-repository-wide-code-doc-correctness-audit.md"><code>2026-08-29-repository-wide-code-doc-correctness-audit.md</code></a><div class="muted">Repository-wide code/documentation correctness audit</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/audits/2026-08-30-open-issue-evidence-gates.md"><code>2026-08-30-open-issue-evidence-gates.md</code></a><div class="muted">Open-issue evidence gates — 2026-08-30</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/audits/2026-09-02-gate-fidelity-audit.md"><code>2026-09-02-gate-fidelity-audit.md</code></a><div class="muted">Do the gates check what they claim? — 2026-09-02</div></li>
+        </ul>
+      </div>
+    </section>
+    <section id="decisions">
+      <h2>Decisions and process <span class="chip count">23 documents</span></h2>
+      <p class="sub">Durable decisions and the processes that produce them: architecture decision records, the improvement-proposal process, repository-wide operating rules, and the staged evidence gates.</p>
+      <p class="muted"><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/decisions/README.md"><strong>Read the curated index for this section ↗</strong></a> — it says which documents are current contracts and which are retained history.</p>
+      <div class="tbl-scroll" style="padding:.4rem 0">
+        <ul class="filelist">
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/DECISIONS.md"><code>DECISIONS.md</code></a><div class="muted">IDKMesh Decision Log</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/IDKIPS.md"><code>IDKIPS.md</code></a><div class="muted">IDKMesh Improvement Proposals (IDKIPs)</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/PROJECT_RULES.md"><code>PROJECT_RULES.md</code></a><div class="muted">IDKMesh Project Rules</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/ROADMAP.md"><code>ROADMAP.md</code></a><div class="muted">IDKMesh Roadmap</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/EVOLUTION.md"><code>EVOLUTION.md</code></a><div class="muted">IDKMesh Evolution Strategy</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/EVOLUTION_REPORT.md"><code>EVOLUTION_REPORT.md</code></a><div class="muted">IDKMesh Evolution Report</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/decisions/ADR-0002-fractal-autonomous-cells.md"><code>ADR-0002-fractal-autonomous-cells.md</code></a><div class="muted">ADR-0002: Fractal Autonomous Cells for Scalability</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/decisions/ADR-0003-community-first.md"><code>ADR-0003-community-first.md</code></a><div class="muted">ADR-0003: Community-first development</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/decisions/ADR-0004-verified-swarm-runner-first-product.md"><code>ADR-0004-verified-swarm-runner-first-product.md</code></a><div class="muted">ADR-0004 — Build the Verified Swarm Runner as the first reference product</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/decisions/ADR-0005-idkgraph-and-guarded-self-evolution.md"><code>ADR-0005-idkgraph-and-guarded-self-evolution.md</code></a><div class="muted">ADR-0005: IDKGraph and Guarded Self-Evolution</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/decisions/ADR-0006-zero-project-spend-compute.md"><code>ADR-0006-zero-project-spend-compute.md</code></a><div class="muted">ADR-0006 — Zero-Project-Spend Compute</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/decisions/ADR-0007-verification-debt-backpressure.md"><code>ADR-0007-verification-debt-backpressure.md</code></a><div class="muted">ADR-0007: Treat independent verification and verification debt as control-plane primitives</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/decisions/ADR-0008-evaluator-sovereignty.md"><code>ADR-0008-evaluator-sovereignty.md</code></a><div class="muted">ADR-0008: Evaluator Sovereignty</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/decisions/ADR-0008-independent-evidence-verification.md"><code>ADR-0008-independent-evidence-verification.md</code></a><div class="muted">ADR-0008 — Verification Uses Independent Evidence, Not Raw Vote Count</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/decisions/ADR-0009-evaluator-sovereignty.md"><code>ADR-0009-evaluator-sovereignty.md</code></a><div class="muted">ADR-0009: Evaluator Sovereignty</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/decisions/ADR-0010-external-action-handoff.md"><code>ADR-0010-external-action-handoff.md</code></a><div class="muted">ADR-0010 — External Action Handoff and Witness Boundary</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/decisions/ADR-0011-discovery-surface-completion.md"><code>ADR-0011-discovery-surface-completion.md</code></a><div class="muted">ADR-0011 — Discovery Surface Completion Without a Pinning Gate</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/planning/BRANCH_CONVERGENCE_POLICY.md"><code>BRANCH_CONVERGENCE_POLICY.md</code></a><div class="muted">Branch Convergence and Merge Discipline</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/planning/BRANCH_MERGE_EXECUTION_PLAN.md"><code>BRANCH_MERGE_EXECUTION_PLAN.md</code></a><div class="muted">Branch-to-Main Merge Execution Plan</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/planning/CURRENT_PRIORITIES.md"><code>CURRENT_PRIORITIES.md</code></a><div class="muted">IDKMesh Current Priorities</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/planning/EXECUTION_TARGET_GRAPH.md"><code>EXECUTION_TARGET_GRAPH.md</code></a><div class="muted">IDKMesh Execution Target Graph</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/planning/PR_TRIAGE_2026-08-28.md"><code>PR_TRIAGE_2026-08-28.md</code></a><div class="muted">Pull Request Triage — 2026-08-28</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/planning/REPOSITORY_IMPROVEMENT_LOOP.md"><code>REPOSITORY_IMPROVEMENT_LOOP.md</code></a><div class="muted">IDKMesh Repository Improvement Loop</div></li>
+        </ul>
+      </div>
+    </section>
+    <section id="community">
+      <h2>Community and the ACE stack <span class="chip count">13 documents</span></h2>
+      <p class="sub">Growth strategy, capacity and metabolism models, and the layered ACE control stack with its bounded experiments — measured without Goodharting activity counts.</p>
+      <p class="muted"><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/community/README.md"><strong>Read the curated index for this section ↗</strong></a> — it says which documents are current contracts and which are retained history.</p>
+      <div class="tbl-scroll" style="padding:.4rem 0">
+        <ul class="filelist">
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/COMMUNITY_GROWTH_ENGINE.md"><code>COMMUNITY_GROWTH_ENGINE.md</code></a><div class="muted">IDKMesh Autocatalytic Community Evolution (ACE)</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/community/ACE_ACTIVATION_GATE.md"><code>ACE_ACTIVATION_GATE.md</code></a><div class="muted">ACE Phase-B Activation Gate</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/community/ACE_ACTIVITY_METABOLISM.md"><code>ACE_ACTIVITY_METABOLISM.md</code></a><div class="muted">ACE Activity Metabolism</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/community/ACE_BOOTSTRAP_EXPERIMENT.md"><code>ACE_BOOTSTRAP_EXPERIMENT.md</code></a><div class="muted">ACE Bootstrap Experiment — Cohort 1</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/community/ACE_CAPACITY_MODEL.md"><code>ACE_CAPACITY_MODEL.md</code></a><div class="muted">ACE Live Carrying-Capacity Model</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/community/ACE_COHORT_OBSERVER.md"><code>ACE_COHORT_OBSERVER.md</code></a><div class="muted">ACE Cohort Observer v0</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/community/ACE_GENERATION_EVIDENCE_INTERFACE.md"><code>ACE_GENERATION_EVIDENCE_INTERFACE.md</code></a><div class="muted">ACE Generation Evidence Interface</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/community/ACE_GITHUB_CONSTRAINED_EVOLUTION.md"><code>ACE_GITHUB_CONSTRAINED_EVOLUTION.md</code></a><div class="muted">ACE: GitHub-Constrained Self-Improving Community</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/community/ACE_LINEAGE_PROTOCOL.md"><code>ACE_LINEAGE_PROTOCOL.md</code></a><div class="muted">ACE Lineage Protocol v0.1</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/community/COMMUNITY_GROWTH_DYNAMICS.md"><code>COMMUNITY_GROWTH_DYNAMICS.md</code></a><div class="muted">Community Growth Dynamics for IDKMesh</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/community/COMMUNITY_GROWTH_STRATEGY.md"><code>COMMUNITY_GROWTH_STRATEGY.md</code></a><div class="muted">IDKMesh Community Growth Strategy</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/community/CONTRIBUTOR_PILOT_2026_09.md"><code>CONTRIBUTOR_PILOT_2026_09.md</code></a><div class="muted">Contributor pilot: one useful contribution at a time</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/community/STARTER_TASKS.md"><code>STARTER_TASKS.md</code></a><div class="muted">Starter tasks</div></li>
+        </ul>
+      </div>
+    </section>
+    <section id="interop">
+      <h2>Interoperability and security <span class="chip count">7 documents</span></h2>
+      <p class="sub">The adapter boundary that lets external agent frameworks participate without redefining the WorkUnit semantic core — and the threat model for the privileged workflows.</p>
+      
+      <div class="tbl-scroll" style="padding:.4rem 0">
+        <ul class="filelist">
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/interoperability/A2A_MCP_MAPPING_V0_1.md"><code>A2A_MCP_MAPPING_V0_1.md</code></a><div class="muted">IDKMesh Work Contract interoperability mapping v0.1</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/interoperability/AGENT_INTEROPERABILITY_ARCHITECTURE_2026-08-28.md"><code>AGENT_INTEROPERABILITY_ARCHITECTURE_2026-08-28.md</code></a><div class="muted">Agent interoperability architecture convergence — 2026-08-28</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/security/ACE_THREAT_MODEL.md"><code>ACE_THREAT_MODEL.md</code></a><div class="muted">ACE GitHub Workflow Threat Model</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/algorithms/ACO_STIGMERGIC_TASK_ROUTING.md"><code>ACO_STIGMERGIC_TASK_ROUTING.md</code></a><div class="muted">ACO Stigmergic Task Routing for IDKMesh</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/algorithms/HOMEOSTATIC_STIGMERGY_ROUTING.md"><code>HOMEOSTATIC_STIGMERGY_ROUTING.md</code></a><div class="muted">Homeostatic Stigmergic Routing (HSR)</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/acceptance/PR91_CONTROLLED_DOCKER_GATE.md"><code>PR91_CONTROLLED_DOCKER_GATE.md</code></a><div class="muted">PR #91 controlled Docker acceptance gate</div></li>
+          <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/admin/MAIN_PROTECTION.md"><code>MAIN_PROTECTION.md</code></a><div class="muted">Protected main Integration Boundary</div></li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="code">
+      <h2>Code, simulations and executable surfaces</h2>
+      <p class="sub">The parts you run rather than read. Every experiment is deterministic given its seed, and every result artifact below was produced by a module in this list.</p>
+      <div class="grid">
+        <article class="card accent"><h3><a href="https://github.com/MSKazemi/idkmesh/tree/main/experiments">experiments/</a></h3><p class="muted">Experiment definitions E011–E042, the contract harness, the two-attempt orchestrator, patch verifiers, and the evidence-report tooling.</p></article>
+        <article class="card"><h3><a href="https://github.com/MSKazemi/idkmesh/tree/main/sim">sim/</a></h3><p class="muted">Deterministic simulation and analysis modules — the code behind the matched-budget, goal-geometry and verifier-panel experiments.</p></article>
+        <article class="card"><h3><a href="https://github.com/MSKazemi/idkmesh/tree/main/randomness_lab">randomness_lab/</a></h3><p class="muted">The R1–R4 scheduling, scaling and dependence labs, runnable as <code>python -m randomness_lab</code>.</p></article>
+        <article class="card"><h3><a href="https://github.com/MSKazemi/idkmesh/tree/main/interop">interop/</a></h3><p class="muted">Protocol-neutral worker adapters, A2A/MCP bindings, identity binding, and SDK conformance helpers — with their own test suite.</p></article>
+        <article class="card"><h3><a href="https://github.com/MSKazemi/idkmesh/tree/main/idkmesh">idkmesh/</a></h3><p class="muted">The installable package: the <code>idkmesh</code> CLI and its <code>gate-audit</code> command. The only part of the tree that ships.</p></article>
+        <article class="card"><h3><a href="https://github.com/MSKazemi/idkmesh/tree/main/tools">tools/</a></h3><p class="muted">IDKGraph repository modelling, link integrity, the observatory, the closing-keyword guard, branch-convergence auditing, and the evidence gates.</p></article>
+        <article class="card"><h3><a href="https://github.com/MSKazemi/idkmesh/tree/main/schemas">schemas/</a></h3><p class="muted">The JSON Schemas themselves, versioned. Machine-readable protocol truth.</p></article>
+        <article class="card"><h3><a href="https://github.com/MSKazemi/idkmesh/tree/main/examples">examples/</a></h3><p class="muted">Worked inputs for every contract: work units, evaluator plans, compute offers, domain packs, gate-audit panels, routing replays.</p></article>
+        <article class="card"><h3><a href="https://github.com/MSKazemi/idkmesh/tree/main/tests">tests/</a></h3><p class="muted">The suite the PR gate runs, including the deliberately-broken fixtures that prove the guards actually fail closed.</p></article>
+        <article class="card"><h3><a href="https://github.com/MSKazemi/idkmesh/tree/main/results">results/</a> · <a href="https://github.com/MSKazemi/idkmesh/tree/main/benchmarks">benchmarks/</a></h3><p class="muted">Committed result artifacts and benchmark cohorts, so a published number can be checked against the run that produced it.</p></article>
+        <article class="card"><h3><a href="https://github.com/MSKazemi/idkmesh/tree/main/.github/workflows">.github/workflows/</a></h3><p class="muted">Every gate, observer and shadow evaluator — including the one unfiltered required check, <a href="https://github.com/MSKazemi/idkmesh/blob/main/.github/workflows/pr-gate.yml">pr-gate.yml</a>.</p></article>
+        <article class="card"><h3><a href="https://github.com/MSKazemi/idkmesh/tree/main/config">config/</a> · <a href="https://github.com/MSKazemi/idkmesh/tree/main/state">state/</a></h3><p class="muted">Policies and controller state, kept in the tree so a decision made by a controller is inspectable after the fact.</p></article>
+      </div>
+    </section>
+
+    <section id="memory">
+      <h2>Project memory</h2>
+      <p class="sub">Records kept as evidence about how the project evolved, rather than as navigation destinations. Category-level discoverability is deliberately sufficient here — the project does not manufacture an inbound link per archival record to reduce a warning counter.</p>
+      <div class="grid">
+        <article class="card violet"><h3><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/conversations/README.md">Conversations</a></h3><p class="muted">An append-only, curated index of substantive project conversations, required by <a href="https://github.com/MSKazemi/idkmesh/blob/main/PROJECT_RULES.md">PROJECT_RULES.md</a>. Conclusions that matter are promoted out of here into architecture, decisions, research or governance.</p></article>
+        <article class="card"><h3><a href="https://github.com/MSKazemi/idkmesh/tree/main/docs/evidence">Evidence artifacts</a></h3><p class="muted">Retained evidence where a subsystem needs a durable evidence surface of its own.</p></article>
+        <article class="card"><h3><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/README.md">Documentation map</a></h3><p class="muted">The curated authority map: which source wins for which question, and the evidence ladder every artifact sits on.</p></article>
+      </div>
+    </section>
+
+    <section>
+      <h2>Keep going</h2>
+      <div class="actions">
+        <a class="button primary" href="start.html">Run something in 15 minutes <span class="arr">→</span></a>
+        <a class="button" href="concepts.html">How it works</a>
+        <a class="button" href="research.html">Experiment atlas</a>
+        <a class="button" href="pipelines.html">Four pipelines</a>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="sitefoot">
+    <div class="wrap">
+      <div class="cols">
+        <div>
+          <h4>This site</h4>
+          <ul>
+            <li><a href="start.html">Start in 15 minutes</a></li>
+            <li><a href="concepts.html">How it works</a></li>
+            <li><a href="pipelines.html">Four pipelines</a></li>
+            <li><a href="research.html">Experiment atlas</a></li>
+            <li><a href="library.html">Documentation library</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Repository</h4>
+          <ul>
+            <li><a href="https://github.com/MSKazemi/idkmesh">Source on GitHub</a></li>
+            <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/README.md">README</a></li>
+            <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/ARCHITECTURE.md">Architecture map</a></li>
+            <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/ROADMAP.md">Roadmap</a></li>
+            <li><a href="https://github.com/MSKazemi/idkmesh/issues">Live issues</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Contracts</h4>
+          <ul>
+            <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/schemas/README.md">Schema index</a></li>
+            <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/specifications/README.md">Specifications</a></li>
+            <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/decisions/README.md">Decision records</a></li>
+            <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/IDKIPS.md">Improvement proposals</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Community</h4>
+          <ul>
+            <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/CONTRIBUTING.md">Contributing</a></li>
+            <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/COMMUNITY.md">Community paths</a></li>
+            <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/SUPPORT.md">Getting help</a></li>
+            <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/SECURITY.md">Security policy</a></li>
+            <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/GOVERNANCE.md">Governance</a></li>
+          </ul>
+        </div>
+      </div>
+      <p class="fine">IDKMesh is public, open-source, and evidence-first, under the Apache License 2.0. This site is a presentation surface: the repository remains the canonical source of truth for every contract, result, and decision linked from here. Built with no JavaScript, no external fonts, and no trackers.</p>
+    </div>
+  </footer>
+</body>
+</html>

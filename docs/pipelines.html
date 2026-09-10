@@ -6,6 +6,18 @@
   <meta name="description" content="Animated flowcharts of the IDKMesh work and evidence path, two-attempt orchestrator, zero-project-spend compute admission, and PR gate.">
   <meta name="theme-color" content="#0b1020">
   <title>IDKMesh — Pipelines</title>
+  <link rel="canonical" href="https://mskazemi.com/idkmesh/pipelines.html">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="IDKMesh">
+  <meta property="og:url" content="https://mskazemi.com/idkmesh/pipelines.html">
+  <meta property="og:title" content="IDKMesh — Pipelines">
+  <meta property="og:description" content="Animated flowcharts of the IDKMesh work and evidence path, two-attempt orchestrator, zero-project-spend compute admission, and PR gate.">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="IDKMesh — Pipelines">
+  <meta name="twitter:description" content="Animated flowcharts of the IDKMesh work and evidence path, two-attempt orchestrator, zero-project-spend compute admission, and PR gate.">
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"WebPage","name":"IDKMesh — Pipelines","description":"Animated flowcharts of the IDKMesh work and evidence path, two-attempt orchestrator, zero-project-spend compute admission, and PR gate.","url":"https://mskazemi.com/idkmesh/pipelines.html","isPartOf":{"@type":"WebSite","name":"IDKMesh","url":"https://mskazemi.com/idkmesh/"},"license":"https://www.apache.org/licenses/LICENSE-2.0","author":{"@type":"Person","name":"Mohsen Seyedkazemi Ardebili","url":"https://mskazemi.github.io"}}
+  </script>
   <style>
     :root {
       color-scheme: dark;
@@ -148,9 +160,54 @@
       .motion-controls { display: none; }
       html { scroll-behavior: auto; }
     }
+
+    /* ---------- shared site navigation (matches assets/site.css) ---------- */
+    .skip { position: absolute; left: -9999px; top: 0; z-index: 60; background: var(--text); color: var(--bg); padding: .6rem 1rem; border-radius: 0 0 .5rem 0; font-weight: 700; }
+    .skip:focus { left: 0; }
+    .sitenav { position: sticky; top: 0; z-index: 50; background: rgba(7, 11, 22, .88); backdrop-filter: saturate(140%) blur(8px); border-bottom: 1px solid var(--line); }
+    .sitenav .wrap { display: flex; align-items: center; gap: .35rem 1.1rem; flex-wrap: wrap; padding: .55rem 0; }
+    .brand { display: inline-flex; align-items: center; gap: .55rem; font-weight: 800; letter-spacing: -.01em; color: var(--text); text-decoration: none; margin-right: auto; font-size: 1.05rem; }
+    .brand:hover, .brand:focus-visible { color: var(--text); }
+    .brand svg { width: 26px; height: 26px; display: block; flex: none; }
+    .brand .tail { color: #7d88a3; font-weight: 600; }
+    .navlinks { display: flex; flex-wrap: wrap; gap: .15rem .3rem; align-items: center; }
+    .navlinks a { display: inline-block; padding: .38rem .62rem; border-radius: .5rem; color: var(--muted); text-decoration: none; font-size: .93rem; font-weight: 600; }
+    .navlinks a:hover { background: var(--panel); color: var(--text); }
+    .navlinks a[aria-current="page"] { color: var(--text); background: var(--panel); box-shadow: inset 0 -2px 0 var(--accent); }
+    .navlinks a.ext { color: #7d88a3; }
+    .navlinks a.ext:hover { color: var(--accent); }
+    header { padding-top: 3rem; }
   </style>
 </head>
 <body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <nav class="sitenav" aria-label="Site">
+    <div class="wrap">
+      <a class="brand" href="./">
+        <svg viewBox="0 0 32 32" aria-hidden="true">
+          <circle cx="16" cy="6" r="3.1" fill="#8bd3ff"></circle>
+          <circle cx="6" cy="22" r="3.1" fill="#b9ffcf"></circle>
+          <circle cx="26" cy="22" r="3.1" fill="#c9b8ff"></circle>
+          <circle cx="16" cy="16" r="2.2" fill="#edf2ff"></circle>
+          <g stroke="#3d4a6b" stroke-width="1.5" fill="none">
+            <path d="M16 9 L16 14"></path><path d="M8.6 20.5 L14 17.2"></path><path d="M23.4 20.5 L18 17.2"></path>
+          </g>
+        </svg>
+        IDKMesh<span class="tail">&nbsp;docs</span>
+      </a>
+      <div class="navlinks">
+        <a href="./">Home</a>
+        <a href="start.html">Start</a>
+        <a href="concepts.html">How it works</a>
+        <a href="pipelines.html" aria-current="page">Pipelines</a>
+        <a href="research.html">Evidence</a>
+        <a href="library.html">Library</a>
+        <a class="ext" href="https://github.com/MSKazemi/idkmesh">GitHub&nbsp;↗</a>
+      </div>
+    </div>
+  </nav>
+
   <header>
     <div class="wrap">
       <div class="eyebrow">IDKMesh · architecture</div>
@@ -175,7 +232,7 @@
     </div>
   </header>
 
-  <main class="wrap">
+  <main id="main" class="wrap">
 
     <!-- ============ 1 ============ -->
     <section>

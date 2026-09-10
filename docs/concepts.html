@@ -1,0 +1,523 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Seven animated figures explaining IDKMesh: bounded Work Units, the authority boundary, verification debt, correlated verifiers, effective independent votes, acceptance quorums, and the evidence ladder.">
+  <meta name="theme-color" content="#0b1020">
+  <title>How IDKMesh works — IDKMesh</title>
+  <link rel="canonical" href="https://mskazemi.com/idkmesh/concepts.html">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="IDKMesh">
+  <meta property="og:url" content="https://mskazemi.com/idkmesh/concepts.html">
+  <meta property="og:title" content="How IDKMesh works — IDKMesh">
+  <meta property="og:description" content="Seven animated figures explaining IDKMesh: bounded Work Units, the authority boundary, verification debt, correlated verifiers, effective independent votes, acceptance quorums, and the evidence ladder.">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="How IDKMesh works — IDKMesh">
+  <meta name="twitter:description" content="Seven animated figures explaining IDKMesh: bounded Work Units, the authority boundary, verification debt, correlated verifiers, effective independent votes, acceptance quorums, and the evidence ladder.">
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"WebPage","name":"How IDKMesh works — IDKMesh","description":"Seven animated figures explaining IDKMesh: bounded Work Units, the authority boundary, verification debt, correlated verifiers, effective independent votes, acceptance quorums, and the evidence ladder.","url":"https://mskazemi.com/idkmesh/concepts.html","isPartOf":{"@type":"WebSite","name":"IDKMesh","url":"https://mskazemi.com/idkmesh/"},"license":"https://www.apache.org/licenses/LICENSE-2.0","author":{"@type":"Person","name":"Mohsen Seyedkazemi Ardebili","url":"https://mskazemi.github.io"}}
+  </script>
+  <link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <nav class="sitenav" aria-label="Site">
+    <div class="wrap">
+      <a class="brand" href="./">
+        <svg viewBox="0 0 32 32" aria-hidden="true">
+          <circle cx="16" cy="6" r="3.1" fill="#8bd3ff"></circle>
+          <circle cx="6" cy="22" r="3.1" fill="#b9ffcf"></circle>
+          <circle cx="26" cy="22" r="3.1" fill="#c9b8ff"></circle>
+          <circle cx="16" cy="16" r="2.2" fill="#edf2ff"></circle>
+          <g stroke="#3d4a6b" stroke-width="1.5" fill="none">
+            <path d="M16 9 L16 14"></path><path d="M8.6 20.5 L14 17.2"></path><path d="M23.4 20.5 L18 17.2"></path>
+          </g>
+        </svg>
+        IDKMesh<span class="tail">&nbsp;docs</span>
+      </a>
+      <div class="navlinks">
+        <a href="./">Home</a>
+        <a href="start.html">Start</a>
+        <a href="concepts.html" aria-current="page">How it works</a>
+        <a href="pipelines.html">Pipelines</a>
+        <a href="research.html">Evidence</a>
+        <a href="library.html">Library</a>
+        <a class="ext" href="https://github.com/MSKazemi/idkmesh">GitHub&nbsp;↗</a>
+      </div>
+    </div>
+  </nav>
+
+  <header class="pagehead">
+    <div class="wrap">
+      <div class="eyebrow">IDKMesh · explained</div>
+      <h1>Seven ideas, and the pictures that carry them</h1>
+      <p class="lead">No prior knowledge assumed. Each figure below states one idea, and names the experiment or contract in the repository that it came from. Where a number appears, it was produced by code you can re-run.</p>
+      <div class="actions">
+        <a class="button primary" href="start.html">Run it yourself <span class="arr">→</span></a>
+        <a class="button" href="pipelines.html">The four pipelines</a>
+        <a class="button" href="research.html">Experiment atlas</a>
+      </div>
+      <div class="actions toggle-wrap">
+        <input type="checkbox" id="pausemotion">
+        <label class="button toggle" for="pausemotion"><span class="off">Pause motion</span><span class="on">Resume motion</span></label>
+      </div>
+      <div class="legend">
+        <span class="key k-claim"><span class="swatch"></span> claim — what a worker says about its own output</span>
+        <span class="key k-evidence"><span class="swatch"></span> evidence — produced independently</span>
+        <span class="key k-authority"><span class="swatch"></span> authority — the stage that may integrate</span>
+        <span class="key k-deny"><span class="swatch"></span> denied — fail-closed</span>
+      </div>
+    </div>
+  </header>
+
+  <main id="main" class="wrap">
+
+    <section id="bounded">
+      <span class="status">01</span>
+      <h2>A worker gets a bounded task, never the project</h2>
+      <p class="sub">The unit of work is a <strong>Work Unit</strong>: an explicit scope, explicit inputs, and acceptance criteria written down before anyone starts. Everything outside that boundary — repository write access, the merge button, the acceptance decision — is deliberately not delegated, no matter how well the work went.</p>
+
+      <figure>
+        <div class="frame">
+          <svg class="svg-root" viewBox="0 0 880 300" role="img"
+               aria-label="An uncertain goal fans out into three bounded Work Units. A dashed boundary separates what a worker receives — scope, inputs, acceptance criteria — from what it never receives: repository write access, merge authority, and the acceptance decision.">
+            <defs>
+              <marker id="c-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#3d4a6b"></path>
+              </marker>
+            </defs>
+
+            <g>
+              <rect class="box" x="16" y="108" width="150" height="84" rx="9"></rect>
+              <text class="t mid" x="91" y="142">uncertain goal</text>
+              <text class="t sm mid" x="91" y="162">incomplete, contested,</text>
+              <text class="t sm mid" x="91" y="176">possibly wrong</text>
+            </g>
+
+            <path class="edge" d="M 166 150 L 200 150 L 200 62 L 236 62" marker-end="url(#c-arr)"></path>
+            <path class="edge" d="M 166 150 L 236 150" marker-end="url(#c-arr)"></path>
+            <path class="edge" d="M 166 150 L 200 150 L 200 238 L 236 238" marker-end="url(#c-arr)"></path>
+
+            <g>
+              <rect class="box" x="240" y="34" width="230" height="56" rx="8"></rect>
+              <text class="t sm" x="256" y="58">WorkUnit v0.2</text>
+              <text class="t sm" x="256" y="76" fill="#a9b4ce">bounded · reviewable</text>
+            </g>
+            <g>
+              <rect class="box evidence" x="240" y="112" width="230" height="76" rx="8"></rect>
+              <text class="t sm" x="256" y="134" fill="#8bd3ff">WorkUnit v0.2</text>
+              <text class="t sm" x="256" y="152">scope · inputs</text>
+              <text class="t sm" x="256" y="168">acceptance criteria, fixed first</text>
+              <rect class="halo" x="236" y="108" width="238" height="84" rx="10"></rect>
+            </g>
+            <g>
+              <rect class="box" x="240" y="210" width="230" height="56" rx="8"></rect>
+              <text class="t sm" x="256" y="234">WorkUnit v0.2</text>
+              <text class="t sm" x="256" y="252" fill="#a9b4ce">bounded · reviewable</text>
+            </g>
+
+            <line class="boundary" x1="486" y1="24" x2="486" y2="278"></line>
+            <text class="t tag deny" x="500" y="42">NEVER DELEGATED WITH THE TASK</text>
+
+            <g>
+              <rect class="box deny" x="500" y="58" width="360" height="52" rx="8"></rect>
+              <text class="t" x="518" y="90" fill="#ff9b8b">write access to canonical history</text>
+            </g>
+            <g>
+              <rect class="box deny" x="500" y="122" width="360" height="52" rx="8"></rect>
+              <text class="t" x="518" y="154" fill="#ff9b8b">the merge decision</text>
+            </g>
+            <g>
+              <rect class="box deny" x="500" y="186" width="360" height="52" rx="8"></rect>
+              <text class="t" x="518" y="218" fill="#ff9b8b">the right to declare its own work accepted</text>
+            </g>
+            <text class="t sm" x="500" y="266">a good result does not enlarge a worker&#8217;s authority</text>
+          </svg>
+        </div>
+        <figcaption><strong>Contract:</strong> <a href="https://github.com/MSKazemi/idkmesh/blob/main/schemas/work-unit-v0.2.schema.json"><code>work-unit-v0.2.schema.json</code></a> is the machine-readable version of the left-hand box, and <a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/specifications/WORK_UNIT_COMPOSABILITY_V0_2.md">WorkUnit composability v0.2</a> defines how units decompose without losing the evidence boundary.</figcaption>
+      </figure>
+    </section>
+
+    <section id="authority">
+      <span class="status">02</span>
+      <h2>Three arrows that do not exist</h2>
+      <p class="sub">Most of the design follows from refusing three tempting shortcuts. Each row below shows a stage trying to speak for the next one, and the barrier that stops it. These are not policy preferences — they are where the system fails closed.</p>
+
+      <figure>
+        <div class="frame">
+          <svg class="svg-root" viewBox="0 0 880 288" role="img"
+               aria-label="Three rows. In each, a token leaves a left-hand box, is stopped at a dashed barrier, and never reaches the right-hand box. Worker success does not reach acceptance; a verifier recommendation does not reach merge authority; CI success does not reach independent human review.">
+            <g>
+              <rect class="box claim" x="16" y="30" width="220" height="56" rx="8"></rect>
+              <text class="t mid" x="126" y="56" fill="#ffcf8b">worker success</text>
+              <text class="t sm mid" x="126" y="74">a self-report</text>
+              <line class="boundary" x1="320" y1="22" x2="320" y2="94" stroke="#ff9b8b"></line>
+              <text class="t big mid" x="320" y="64" fill="#ff9b8b">&#8800;</text>
+              <path class="flowline deny" d="M 236 58 L 312 58"></path>
+              <circle class="token deny sm" style="offset-path: path('M 236 58 L 312 58'); animation-duration:2.6s"></circle>
+              <rect class="box evidence" x="404" y="30" width="220" height="56" rx="8"></rect>
+              <text class="t mid" x="514" y="56" fill="#8bd3ff">acceptance</text>
+              <text class="t sm mid" x="514" y="74">independent evidence</text>
+              <text class="t sm" x="640" y="54">only a verifier that did not</text>
+              <text class="t sm" x="640" y="70">do the work may say this</text>
+            </g>
+            <g>
+              <rect class="box evidence" x="16" y="118" width="220" height="56" rx="8"></rect>
+              <text class="t mid" x="126" y="144" fill="#8bd3ff">verification result</text>
+              <text class="t sm mid" x="126" y="162">a recommendation</text>
+              <line class="boundary" x1="320" y1="110" x2="320" y2="182" stroke="#ff9b8b"></line>
+              <text class="t big mid" x="320" y="152" fill="#ff9b8b">&#8800;</text>
+              <path class="flowline deny" d="M 236 146 L 312 146" style="animation-delay:-.4s"></path>
+              <circle class="token deny sm" style="offset-path: path('M 236 146 L 312 146'); animation-duration:2.6s; animation-delay:-.9s"></circle>
+              <rect class="box authority" x="404" y="118" width="220" height="56" rx="8"></rect>
+              <text class="t mid" x="514" y="144" fill="#c9b8ff">merge authority</text>
+              <text class="t sm mid" x="514" y="162">an explicit human decision</text>
+              <text class="t sm" x="640" y="142">evidence informs the decision;</text>
+              <text class="t sm" x="640" y="158">it does not make it</text>
+            </g>
+            <g>
+              <rect class="box" x="16" y="206" width="220" height="56" rx="8"></rect>
+              <text class="t mid" x="126" y="232">CI success</text>
+              <text class="t sm mid" x="126" y="250">the checks it was given</text>
+              <line class="boundary" x1="320" y1="198" x2="320" y2="270" stroke="#ff9b8b"></line>
+              <text class="t big mid" x="320" y="240" fill="#ff9b8b">&#8800;</text>
+              <path class="flowline deny" d="M 236 234 L 312 234" style="animation-delay:-.8s"></path>
+              <circle class="token deny sm" style="offset-path: path('M 236 234 L 312 234'); animation-duration:2.6s; animation-delay:-1.7s"></circle>
+              <rect class="box authority" x="404" y="206" width="220" height="56" rx="8"></rect>
+              <text class="t mid" x="514" y="232" fill="#c9b8ff">independent human review</text>
+              <text class="t sm mid" x="514" y="250">a green tick proves the tick</text>
+              <text class="t sm" x="640" y="230">a passing gate is a floor,</text>
+              <text class="t sm" x="640" y="246">never a verdict</text>
+            </g>
+          </svg>
+        </div>
+        <figcaption><strong>Where this lives:</strong> the boundary is enforced in the pipelines themselves — see <a href="pipelines.html">the four flowcharts</a> — and recorded as <a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/decisions/ADR-0009-evaluator-sovereignty.md">ADR-0009, evaluator sovereignty</a> and <a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/decisions/ADR-0008-independent-evidence-verification.md">ADR-0008, independent evidence verification</a>.</figcaption>
+      </figure>
+    </section>
+
+    <section id="debt">
+      <span class="status">03</span>
+      <h2>Generation outruns verification, and the gap has a name</h2>
+      <p class="sub">If candidates arrive faster than anyone can check them, the backlog is not a queue-management annoyance — it is <strong>verification debt</strong>, and unverified work carries risk that compounds. IDKMesh models it as a control problem: admission is throttled when the debt grows, rather than letting the queue absorb it silently.</p>
+
+      <figure>
+        <div class="frame">
+          <svg class="svg-root" viewBox="0 0 880 300" role="img"
+               aria-label="Candidates arrive at a fast rate into a queue whose backlog bar grows. Verification drains the queue at a slower rate. A risk-weighted backpressure controller watches the backlog and closes admission when the debt crosses its threshold.">
+            <defs>
+              <marker id="d-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#3d4a6b"></path>
+              </marker>
+            </defs>
+
+            <text class="t tag claim" x="16" y="26">ARRIVES FAST</text>
+            <g>
+              <path class="flowline" d="M 16 92 L 230 92" style="stroke:#ffcf8b"></path>
+              <path class="flowline" d="M 16 116 L 230 116" style="stroke:#ffcf8b; animation-delay:-.25s"></path>
+              <path class="flowline" d="M 16 140 L 230 140" style="stroke:#ffcf8b; animation-delay:-.5s"></path>
+              <path class="flowline" d="M 16 164 L 230 164" style="stroke:#ffcf8b; animation-delay:-.75s"></path>
+              <circle class="token sm" style="offset-path: path('M 16 92 L 230 92'); fill:#ffcf8b; animation-duration:1.5s"></circle>
+              <circle class="token sm" style="offset-path: path('M 16 140 L 230 140'); fill:#ffcf8b; animation-duration:1.5s; animation-delay:-.7s"></circle>
+              <circle class="token sm" style="offset-path: path('M 16 164 L 230 164'); fill:#ffcf8b; animation-duration:1.5s; animation-delay:-1.1s"></circle>
+            </g>
+            <text class="t sm" x="16" y="252">agents, humans, tools</text>
+
+            <g>
+              <rect class="box claim" x="236" y="60" width="150" height="136" rx="9"></rect>
+              <text class="t sm mid" x="311" y="84" fill="#ffcf8b">UNVERIFIED QUEUE</text>
+              <rect x="252" y="98" width="118" height="12" rx="3" fill="#0b1020" stroke="#3d4a6b" stroke-width=".8"></rect>
+              <rect class="grow" x="253" y="99" width="116" height="10" rx="3" fill="#ffcf8b"></rect>
+              <rect x="252" y="120" width="118" height="12" rx="3" fill="#0b1020" stroke="#3d4a6b" stroke-width=".8"></rect>
+              <rect class="grow" x="253" y="121" width="116" height="10" rx="3" fill="#ffcf8b" style="animation-delay:-.6s"></rect>
+              <rect x="252" y="142" width="118" height="12" rx="3" fill="#0b1020" stroke="#3d4a6b" stroke-width=".8"></rect>
+              <rect class="grow" x="253" y="143" width="116" height="10" rx="3" fill="#ffcf8b" style="animation-delay:-1.2s"></rect>
+              <text class="t sm mid" x="311" y="176">risk, not just latency</text>
+            </g>
+
+            <path class="edge" d="M 386 128 L 428 128" marker-end="url(#d-arr)"></path>
+
+            <g>
+              <rect class="box evidence" x="432" y="76" width="170" height="104" rx="9"></rect>
+              <text class="t sm mid" x="517" y="106" fill="#8bd3ff">INDEPENDENT</text>
+              <text class="t sm mid" x="517" y="122" fill="#8bd3ff">VERIFICATION</text>
+              <text class="t sm mid" x="517" y="148">drains slowly</text>
+              <text class="t sm mid" x="517" y="164">— scarce human attention</text>
+            </g>
+
+            <path class="flowline mint" d="M 602 128 L 706 128"></path>
+            <circle class="token mint sm" style="offset-path: path('M 602 128 L 706 128'); animation-duration:5s"></circle>
+            <g>
+              <rect class="box" x="710" y="98" width="150" height="60" rx="8" stroke="#b9ffcf" fill="#0f2419"></rect>
+              <text class="t sm mid" x="785" y="126" fill="#b9ffcf">verified work</text>
+              <text class="t sm mid" x="785" y="144">the real throughput</text>
+            </g>
+
+            <g>
+              <rect class="box authority" x="236" y="222" width="366" height="58" rx="9"></rect>
+              <text class="t sm" x="252" y="246" fill="#c9b8ff">RISK-WEIGHTED BACKPRESSURE CONTROLLER</text>
+              <text class="t sm" x="252" y="266">reads the debt, then throttles admission instead of hiding the queue</text>
+              <path class="edge deny" d="M 311 222 L 311 200" marker-end="url(#d-arr)" stroke="#c9b8ff"></path>
+              <path class="edge deny" d="M 560 222 L 560 208 L 40 208 L 40 176" marker-end="url(#d-arr)" stroke="#ff9b8b"></path>
+              <text class="t sm blink" x="52" y="200" fill="#ff9b8b">admission closed</text>
+            </g>
+          </svg>
+        </div>
+        <figcaption><strong>Where this lives:</strong> <a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/decisions/ADR-0007-verification-debt-backpressure.md">ADR-0007</a> records the decision, <a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/research/VERIFICATION_DEBT_AND_BACKPRESSURE.md">the controller model</a> specifies it, and <a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/research/VERIFICATION_BACKPRESSURE_BENCHMARK.md">a multi-window temporal benchmark</a> measures it. <a href="https://github.com/MSKazemi/idkmesh/blob/main/experiments/E022-verification-scaling-matrix.md">E022</a> compares seven verification modes under a matched budget.</figcaption>
+      </figure>
+    </section>
+
+    <section id="correlation">
+      <span class="status">04</span>
+      <h2>Verifiers fail together, and that is the whole problem</h2>
+      <p class="sub">A panel of verifiers is only worth what its <em>independence</em> is worth. If they share a blind spot, adding members adds cost and confidence without adding evidence. This is the project&#8217;s central verification claim, and it stopped being a simulation the day it was measured — on <strong>programs</strong>, not people. Each verifier below is a partial test oracle covering one region of a problem&#8217;s input domain, and ground truth comes from executing hidden tests.</p>
+
+      <figure>
+        <div class="frame">
+            <svg class="svg-root" viewBox="0 0 880 330" role="img"
+                 aria-label="Two panels of twenty-five verifier dots. On the left the dots stay spread apart, the assumption of twenty-five independent votes. On the right the same twenty-five dots drift together into a single cluster, the measured behaviour: a mean pairwise error correlation of 0.587 and an effective panel size of 1.00.">
+              <text class="t tag evidence" x="20" y="26">THE ASSUMPTION</text>
+              <text class="t sm" x="20" y="46">25 verifiers = 25 independent votes</text>
+              <rect class="boundary" x="14" y="60" width="332" height="230" rx="10"></rect>
+              <g>
+                <circle cx="40" cy="96" r="6" fill="#8bd3ff" opacity=".85"></circle>
+                <circle cx="105" cy="96" r="6" fill="#8bd3ff" opacity=".85"></circle>
+                <circle cx="170" cy="96" r="6" fill="#8bd3ff" opacity=".85"></circle>
+                <circle cx="235" cy="96" r="6" fill="#8bd3ff" opacity=".85"></circle>
+                <circle cx="300" cy="96" r="6" fill="#8bd3ff" opacity=".85"></circle>
+                <circle cx="40" cy="136" r="6" fill="#8bd3ff" opacity=".85"></circle>
+                <circle cx="105" cy="136" r="6" fill="#8bd3ff" opacity=".85"></circle>
+                <circle cx="170" cy="136" r="6" fill="#8bd3ff" opacity=".85"></circle>
+                <circle cx="235" cy="136" r="6" fill="#8bd3ff" opacity=".85"></circle>
+                <circle cx="300" cy="136" r="6" fill="#8bd3ff" opacity=".85"></circle>
+                <circle cx="40" cy="176" r="6" fill="#8bd3ff" opacity=".85"></circle>
+                <circle cx="105" cy="176" r="6" fill="#8bd3ff" opacity=".85"></circle>
+                <circle cx="170" cy="176" r="6" fill="#8bd3ff" opacity=".85"></circle>
+                <circle cx="235" cy="176" r="6" fill="#8bd3ff" opacity=".85"></circle>
+                <circle cx="300" cy="176" r="6" fill="#8bd3ff" opacity=".85"></circle>
+                <circle cx="40" cy="216" r="6" fill="#8bd3ff" opacity=".85"></circle>
+                <circle cx="105" cy="216" r="6" fill="#8bd3ff" opacity=".85"></circle>
+                <circle cx="170" cy="216" r="6" fill="#8bd3ff" opacity=".85"></circle>
+                <circle cx="235" cy="216" r="6" fill="#8bd3ff" opacity=".85"></circle>
+                <circle cx="300" cy="216" r="6" fill="#8bd3ff" opacity=".85"></circle>
+                <circle cx="40" cy="256" r="6" fill="#8bd3ff" opacity=".85"></circle>
+                <circle cx="105" cy="256" r="6" fill="#8bd3ff" opacity=".85"></circle>
+                <circle cx="170" cy="256" r="6" fill="#8bd3ff" opacity=".85"></circle>
+                <circle cx="235" cy="256" r="6" fill="#8bd3ff" opacity=".85"></circle>
+                <circle cx="300" cy="256" r="6" fill="#8bd3ff" opacity=".85"></circle>
+              </g>
+              <text class="t sm mid" x="180" y="312">nominal panel size 25</text>
+
+              <line class="boundary" x1="412" y1="60" x2="412" y2="290"></line>
+
+              <text class="t tag claim" x="454" y="26">WHAT WAS MEASURED</text>
+              <text class="t sm" x="454" y="46">the same 25, on a real corpus (E017)</text>
+              <rect class="boundary" x="448" y="60" width="418" height="230" rx="10"></rect>
+              <g>
+                <circle class="drift" cx="480" cy="96" r="6" fill="#ffcf8b" style="--dx:153px; --dy:66px; animation-delay:0.0s"></circle>
+                <circle class="drift" cx="545" cy="96" r="6" fill="#ffcf8b" style="--dx:102px; --dy:90px; animation-delay:-0.22s"></circle>
+                <circle class="drift" cx="610" cy="96" r="6" fill="#ffcf8b" style="--dx:59px; --dy:60px; animation-delay:-0.44s"></circle>
+                <circle class="drift" cx="675" cy="96" r="6" fill="#ffcf8b" style="--dx:6px; --dy:88px; animation-delay:-0.66s"></circle>
+                <circle class="drift" cx="740" cy="96" r="6" fill="#ffcf8b" style="--dx:-83px; --dy:76px; animation-delay:-0.88s"></circle>
+                <circle class="drift" cx="480" cy="136" r="6" fill="#ffcf8b" style="--dx:145px; --dy:46px; animation-delay:-1.1s"></circle>
+                <circle class="drift" cx="545" cy="136" r="6" fill="#ffcf8b" style="--dx:96px; --dy:18px; animation-delay:-1.32s"></circle>
+                <circle class="drift" cx="610" cy="136" r="6" fill="#ffcf8b" style="--dx:51px; --dy:58px; animation-delay:0.0s"></circle>
+                <circle class="drift" cx="675" cy="136" r="6" fill="#ffcf8b" style="--dx:2px; --dy:32px; animation-delay:-0.22s"></circle>
+                <circle class="drift" cx="740" cy="136" r="6" fill="#ffcf8b" style="--dx:-51px; --dy:54px; animation-delay:-0.44s"></circle>
+                <circle class="drift" cx="480" cy="176" r="6" fill="#ffcf8b" style="--dx:149px; --dy:18px; animation-delay:-0.66s"></circle>
+                <circle class="drift" cx="545" cy="176" r="6" fill="#ffcf8b" style="--dx:104px; --dy:-12px; animation-delay:-0.88s"></circle>
+                <circle class="drift" cx="610" cy="176" r="6" fill="#ffcf8b" style="--dx:57px; --dy:6px; animation-delay:-1.1s"></circle>
+                <circle class="drift" cx="675" cy="176" r="6" fill="#ffcf8b" style="--dx:8px; --dy:-18px; animation-delay:-1.32s"></circle>
+                <circle class="drift" cx="740" cy="176" r="6" fill="#ffcf8b" style="--dx:-103px; --dy:-2px; animation-delay:0.0s"></circle>
+                <circle class="drift" cx="480" cy="216" r="6" fill="#ffcf8b" style="--dx:175px; --dy:-18px; animation-delay:-0.22s"></circle>
+                <circle class="drift" cx="545" cy="216" r="6" fill="#ffcf8b" style="--dx:128px; --dy:-24px; animation-delay:-0.44s"></circle>
+                <circle class="drift" cx="610" cy="216" r="6" fill="#ffcf8b" style="--dx:11px; --dy:-48px; animation-delay:-0.66s"></circle>
+                <circle class="drift" cx="675" cy="216" r="6" fill="#ffcf8b" style="--dx:-12px; --dy:-56px; animation-delay:-0.88s"></circle>
+                <circle class="drift" cx="740" cy="216" r="6" fill="#ffcf8b" style="--dx:-55px; --dy:-38px; animation-delay:-1.1s"></circle>
+                <circle class="drift" cx="480" cy="256" r="6" fill="#ffcf8b" style="--dx:163px; --dy:-68px; animation-delay:-1.32s"></circle>
+                <circle class="drift" cx="545" cy="256" r="6" fill="#ffcf8b" style="--dx:114px; --dy:-72px; animation-delay:0.0s"></circle>
+                <circle class="drift" cx="610" cy="256" r="6" fill="#ffcf8b" style="--dx:65px; --dy:-82px; animation-delay:-0.22s"></circle>
+                <circle class="drift" cx="675" cy="256" r="6" fill="#ffcf8b" style="--dx:-44px; --dy:-98px; animation-delay:-0.44s"></circle>
+                <circle class="drift" cx="740" cy="256" r="6" fill="#ffcf8b" style="--dx:-49px; --dy:-92px; animation-delay:-0.66s"></circle>
+              </g>
+              <text class="t sm mid" x="655" y="312">effective panel size 1.00 · mean pairwise error correlation 0.587</text>
+            </svg>
+        </div>
+        <figcaption><strong>Observed, not assumed.</strong> <a href="https://github.com/MSKazemi/idkmesh/blob/main/experiments/E017-item-difficulty-and-quorum.md">E017</a> ran 25 independently seeded partial test oracles — 5 input regions × 5 seeds — over a shared 72-candidate corpus, and found a mean pairwise error correlation of <code>0.5873</code> across 300 pairs. Under majority vote the panel&#8217;s error was <code>0.2083</code> against a single verifier&#8217;s <code>0.2044</code>: an effective panel size of <strong>1.00 of 25 nominal</strong>. The panel was no better than one of its members. All 25 passed a discrimination screen first, which is what makes the correlation interpretable. Its predecessor <a href="https://github.com/MSKazemi/idkmesh/blob/main/experiments/E016-live-verifier-correlation.md">E016</a> did not: 20 LLM verifiers averaged a Youden <code>J</code> of <code>+0.0487</code>, and their majority vote scored <code>0.514</code> accuracy against <code>0.639</code> for a trivial &#8220;always reject&#8221;. Its own status line is &#8220;the verifiers it deployed do not verify&#8221;. So <strong>no AI review panel has been measured in this repository</strong> — these 25 are programs.</figcaption>
+      </figure>
+
+      <div class="callout">
+        <div class="kicker">And the standard correction is optimistic</div>
+        <p>The textbook discount <code>N/(1+(N−1)ρ)</code> put that panel at <strong>1.66</strong> effective votes against a measured <strong>1.00</strong>. Worse, <a href="https://github.com/MSKazemi/idkmesh/blob/main/experiments/E018-dependence-model-shape.md">E018</a> and E017 showed the usual shared-shock model is the wrong <em>shape</em>: real panels fail <em>partially</em> — 11 of about 15 real panel failures had some verifiers right and some wrong, a case the shared-shock model predicts essentially never. An item-difficulty (beta-binomial) model reproduces it, and lands within <code>0.016</code> of the independently measured correlation.</p>
+      </div>
+    </section>
+
+    <section id="effective-votes">
+      <span class="status">05</span>
+      <h2>&#8220;How many independent votes do I have?&#8221; has three different answers</h2>
+      <p class="sub">Same five verifiers. Same votes on the same candidates. Three ways of counting, and a factor of three between the extremes. <strong>These numbers are synthetic</strong> — the bundled example is a small hand-authored input that declares <code>"evidence_class": "synthetic"</code> in its own output. The gap between the three counts is the point, not the values; the observed version of this effect is <a href="#correlation">§4</a> and <a href="#quorum">§6</a>.</p>
+
+      <figure>
+        <div class="frame">
+            <svg class="svg-root" viewBox="0 0 880 232" role="img" aria-label="Bar chart of the synthetic bundled example: nominal head-count 5 votes, the N over one plus N minus one rho heuristic 3.66 votes, and gate-audit effective votes 1.69.">
+                <text class="t sm end" x="286" y="58">nominal head-count</text>
+                <text class="t sm end" x="286" y="74" fill="#7d88a3">what a five-person panel looks like</text>
+                <rect x="300" y="46" width="480.0" height="22" rx="4" fill="#ff9b8b" opacity=".22"></rect>
+                <rect class="grow" x="300" y="46" width="480.0" height="22" rx="4" fill="#ff9b8b"></rect>
+                <text class="t" x="792.0" y="62" fill="#ff9b8b">5</text>
+                <text class="t sm end" x="286" y="110">N/(1+(N−1)ρ) heuristic</text>
+                <text class="t sm end" x="286" y="126" fill="#7d88a3">the usual correlation discount</text>
+                <rect x="300" y="98" width="351.2" height="22" rx="4" fill="#ffcf8b" opacity=".22"></rect>
+                <rect class="grow" x="300" y="98" width="351.2" height="22" rx="4" fill="#ffcf8b"></rect>
+                <text class="t" x="663.2" y="114" fill="#ffcf8b">3.6588</text>
+                <text class="t sm end" x="286" y="162">gate-audit effective votes</text>
+                <text class="t sm end" x="286" y="178" fill="#7d88a3">what these votes actually support</text>
+                <rect x="300" y="150" width="162.7" height="22" rx="4" fill="#8bd3ff" opacity=".22"></rect>
+                <rect class="grow" x="300" y="150" width="162.7" height="22" rx="4" fill="#8bd3ff"></rect>
+                <text class="t" x="474.7" y="166" fill="#8bd3ff">1.6944</text>
+                <text class="t sm" x="300" y="216">synthetic bundled example — the same votes, counted three ways</text>
+            </svg>
+        </div>
+        <figcaption><strong>Reproduce it:</strong> <code>idkmesh gate-audit examples/gate-audit/panel-votes.example.json --pretty</code>. The same report also counts how many seeded known-bad probe candidates the panel let through — two of three here, including the prompt-injection probe. Point the tool at verdicts you actually collected and the same three counts become an observed measurement of <em>your</em> panel. The contract is <a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/specifications/GATE_AUDIT_V0_1.md">Gate Audit v0.1</a>; the audit is diagnostic only and grants no acceptance or merge authority. <a href="start.html">Run it in 15 minutes →</a></figcaption>
+      </figure>
+    </section>
+
+    <section id="quorum">
+      <span class="status">06</span>
+      <h2>Fix the rule, not the head-count</h2>
+      <p class="sub">If a bigger panel buys nothing, what does? On the same 25 test oracles and the same observed votes, changing only <em>how the votes are combined</em> cut panel error 3.7×. And then it stopped: four defects were missed by every single one of the 25, a floor no quorum can reach.</p>
+
+      <figure>
+        <div class="frame">
+            <svg class="svg-root" viewBox="0 0 880 336" role="img" aria-label="Bar chart of observed panel error by acceptance rule: accept on any one vote 0.4167, majority 0.2083, need at least 19 votes 0.0972, need at least 24 votes 0.0556, unanimous 0.0556.">
+                <text class="t sm end" x="286" y="58">accept on any 1 vote</text>
+                <rect x="300" y="46" width="479.2" height="22" rx="4" fill="#ff9b8b" opacity=".22"></rect>
+                <rect class="grow" x="300" y="46" width="479.2" height="22" rx="4" fill="#ff9b8b"></rect>
+                <text class="t" x="791.2" y="62" fill="#ff9b8b">0.4167</text>
+                <text class="t sm end" x="286" y="110">majority (13 of 25)</text>
+                <text class="t sm end" x="286" y="126" fill="#7d88a3">the default nobody questions</text>
+                <rect x="300" y="98" width="239.5" height="22" rx="4" fill="#ffcf8b" opacity=".22"></rect>
+                <rect class="grow" x="300" y="98" width="239.5" height="22" rx="4" fill="#ffcf8b"></rect>
+                <text class="t" x="551.5" y="114" fill="#ffcf8b">0.2083</text>
+                <text class="t sm end" x="286" y="162">need ≥ 19</text>
+                <rect x="300" y="150" width="111.8" height="22" rx="4" fill="#8bd3ff" opacity=".22"></rect>
+                <rect class="grow" x="300" y="150" width="111.8" height="22" rx="4" fill="#8bd3ff"></rect>
+                <text class="t" x="423.8" y="166" fill="#8bd3ff">0.0972</text>
+                <text class="t sm end" x="286" y="214">need ≥ 24</text>
+                <rect x="300" y="202" width="63.9" height="22" rx="4" fill="#b9ffcf" opacity=".22"></rect>
+                <rect class="grow" x="300" y="202" width="63.9" height="22" rx="4" fill="#b9ffcf"></rect>
+                <text class="t" x="375.9" y="218" fill="#b9ffcf">0.0556</text>
+                <text class="t sm end" x="286" y="266">unanimous (25 of 25)</text>
+                <text class="t sm end" x="286" y="282" fill="#7d88a3">3.7× better than majority</text>
+                <rect x="300" y="254" width="63.9" height="22" rx="4" fill="#b9ffcf" opacity=".22"></rect>
+                <rect class="grow" x="300" y="254" width="63.9" height="22" rx="4" fill="#b9ffcf"></rect>
+                <text class="t" x="375.9" y="270" fill="#b9ffcf">0.0556</text>
+                <text class="t sm" x="300" y="320">panel error · lower is better · the last two are identical because 4 defects are missed by all 25</text>
+            </svg>
+        </div>
+        <figcaption><strong>The practical rule:</strong> measure whether your verifiers&#8217; errors are one-sided <em>before</em> choosing how to aggregate them. Source: <a href="https://github.com/MSKazemi/idkmesh/blob/main/experiments/E017-item-difficulty-and-quorum.md">E017 §6</a>, extended to the full frontier with the corpus base rate in <a href="https://github.com/MSKazemi/idkmesh/blob/main/experiments/E020-quorum-frontier-under-measured-shape.md">E020</a> — which also qualifies E017 by showing the recommended beta-binomial under-predicts the unanimity floor by 1.77×.</figcaption>
+      </figure>
+
+      <div class="callout">
+        <div class="kicker">The result that reframed the threat</div>
+        <p>Two panels with <em>identical</em> accuracy, differing only in verifier correlation, behaved completely differently against contributors optimising to pass the gate: one was immune, the other was not (<a href="https://github.com/MSKazemi/idkmesh/blob/main/experiments/E036-adversarial-contributors.md">E036</a>). Correlation, not accuracy, is the attack surface.</p>
+      </div>
+    </section>
+
+    <section id="ladder">
+      <span class="status">07</span>
+      <h2>Not every artifact is the same kind of truth</h2>
+      <p class="sub">A large share of documentation confusion comes from treating a sketch, a passing test, and a measured result as interchangeable. IDKMesh keeps them on an explicit ladder and stops on whichever rung the evidence actually reaches — often deliberately early.</p>
+
+      <figure>
+        <div class="frame">
+          <svg class="svg-root" viewBox="0 0 880 320" role="img"
+               aria-label="A five-rung ladder from proposal or hypothesis, to implemented mechanism, to synthetic fixture or simulation, to observed controlled evidence, to scoped accepted conclusion. Most repository artifacts stop on the middle rungs.">
+            <g>
+                <rect class="box" x="40" y="246" width="640" height="44" rx="7" stroke="#7d88a3" fill="#121a2f"></rect>
+                <text class="t" x="60" y="266" fill="#7d88a3">proposal / hypothesis</text>
+                <text class="t sm" x="60" y="282">someone thinks this is true</text>
+                <rect class="box" x="48" y="194" width="640" height="44" rx="7" stroke="#a9b4ce" fill="#121a2f"></rect>
+                <text class="t" x="68" y="214" fill="#a9b4ce">implemented mechanism</text>
+                <text class="t sm" x="68" y="230">code, schema or workflow exists</text>
+                <rect class="box" x="56" y="142" width="640" height="44" rx="7" stroke="#ffcf8b" fill="#121a2f"></rect>
+                <text class="t" x="76" y="162" fill="#ffcf8b">synthetic fixture or simulation</text>
+                <text class="t sm" x="76" y="178">deterministic fixtures test the mechanics</text>
+                <rect class="box" x="64" y="90" width="640" height="44" rx="7" stroke="#8bd3ff" fill="#121a2f"></rect>
+                <text class="t" x="84" y="110" fill="#8bd3ff">observed controlled evidence</text>
+                <text class="t sm" x="84" y="126">a controlled run measured real behaviour</text>
+                <rect class="box" x="72" y="38" width="640" height="44" rx="7" stroke="#b9ffcf" fill="#121a2f"></rect>
+                <text class="t" x="92" y="58" fill="#b9ffcf">scoped accepted conclusion</text>
+                <text class="t sm" x="92" y="74">strong enough for one bounded decision</text>
+            </g>
+            <path class="edge" d="M 726 262 L 726 40" stroke="#3d4a6b" stroke-dasharray="4 6"></path>
+            <text class="t sm" x="736" y="44" fill="#b9ffcf">enough to decide</text>
+            <text class="t sm" x="736" y="264" fill="#7d88a3">a claim, nothing more</text>
+            <circle class="token" style="offset-path: path('M 720 268 L 720 46'); animation-duration:7s"></circle>
+            <text class="t sm" x="40" y="308">a benchmark contract plus a synthetic fixture means the experiment is runnable — never that a strategy has been shown superior</text>
+          </svg>
+        </div>
+        <figcaption><strong>Where this lives:</strong> the ladder is stated in <a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/README.md">the documentation map</a> and applied throughout <a href="research.html">the experiment atlas</a>, where each experiment carries its own honest status — including the negative ones.</figcaption>
+      </figure>
+    </section>
+
+    <section>
+      <h2>Where to go next</h2>
+      <div class="grid">
+        <a class="card" href="start.html"><div class="kicker">Hands on</div><h3>Reproduce a number</h3><p class="muted">Install the CLI, re-derive the example&#8217;s three counts yourself, then run the repository&#8217;s own test suite.</p><p class="more">Quickstart <span class="arr">→</span></p></a>
+        <a class="card" href="pipelines.html"><div class="kicker">Deeper</div><h3>The four pipelines</h3><p class="muted">Animated flowcharts of the work/evidence path, the two-attempt orchestrator, compute admission, and the PR gate.</p><p class="more">Read <span class="arr">→</span></p></a>
+        <a class="card" href="research.html"><div class="kicker">All of it</div><h3>Experiment atlas</h3><p class="muted">E011 to E042, each with its real status and what it changed — including the results that falsified earlier ones.</p><p class="more">Read <span class="arr">→</span></p></a>
+        <a class="card" href="library.html"><div class="kicker">Reference</div><h3>Documentation library</h3><p class="muted">Every contract, specification, architecture document, finding, audit, and decision record in the repository.</p><p class="more">Browse <span class="arr">→</span></p></a>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="sitefoot">
+    <div class="wrap">
+      <div class="cols">
+        <div>
+          <h4>This site</h4>
+          <ul>
+            <li><a href="start.html">Start in 15 minutes</a></li>
+            <li><a href="concepts.html">How it works</a></li>
+            <li><a href="pipelines.html">Four pipelines</a></li>
+            <li><a href="research.html">Experiment atlas</a></li>
+            <li><a href="library.html">Documentation library</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Repository</h4>
+          <ul>
+            <li><a href="https://github.com/MSKazemi/idkmesh">Source on GitHub</a></li>
+            <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/README.md">README</a></li>
+            <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/ARCHITECTURE.md">Architecture map</a></li>
+            <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/ROADMAP.md">Roadmap</a></li>
+            <li><a href="https://github.com/MSKazemi/idkmesh/issues">Live issues</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Contracts</h4>
+          <ul>
+            <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/schemas/README.md">Schema index</a></li>
+            <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/specifications/README.md">Specifications</a></li>
+            <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/decisions/README.md">Decision records</a></li>
+            <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/IDKIPS.md">Improvement proposals</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Community</h4>
+          <ul>
+            <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/CONTRIBUTING.md">Contributing</a></li>
+            <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/COMMUNITY.md">Community paths</a></li>
+            <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/SUPPORT.md">Getting help</a></li>
+            <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/SECURITY.md">Security policy</a></li>
+            <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/GOVERNANCE.md">Governance</a></li>
+          </ul>
+        </div>
+      </div>
+      <p class="fine">IDKMesh is public, open-source, and evidence-first, under the Apache License 2.0. This site is a presentation surface: the repository remains the canonical source of truth for every contract, result, and decision linked from here. Built with no JavaScript, no external fonts, and no trackers.</p>
+    </div>
+  </footer>
+</body>
+</html>
