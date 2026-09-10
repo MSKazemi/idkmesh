@@ -95,6 +95,13 @@ jobs:
               type = 'watch:star'; q = 0; d = 0.35; r = 0;
             } else if (event === 'fork') {
               type = 'fork:created'; q = 0.10; d = 0.90; r = 0.10;
+            } else {
+              // An event this chain does not name is a reconciliation trigger, not
+              // community activity. Without this branch it kept the q/d/r seed values
+              // above, so `workflow_dispatch` -- and any `schedule:` added later --
+              // would add credit and open its own row in the published counts table.
+              // Credit selects the controller's mode, so an unnamed event would vote.
+              type = `${event}:reconcile`; q = 0; d = 0; r = 0;
             }
 
             // Reconcile from repository state instead of relying on the triggering
