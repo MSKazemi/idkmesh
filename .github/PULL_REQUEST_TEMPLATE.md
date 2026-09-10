@@ -1,3 +1,13 @@
+<!--
+SMALL CHANGE? A typo, a wording fix, a translation, a broken link, a one-line
+correction: fill in Summary and the Checklist, then delete the sections you do
+not need. They will not be held against you.
+
+The longer sections below exist for changes that carry a claim -- new code, an
+experiment, a contract change, anything a reviewer has to take on trust. They
+are not a toll on a first contribution.
+-->
+
 ## Summary
 
 What does this change do?
