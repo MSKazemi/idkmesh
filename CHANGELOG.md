@@ -56,6 +56,12 @@ and the release notes for that tag.
 
 ### Changed
 
+- The workflow-hygiene guard's `cancel-in-progress` check fails when it inspects nothing.
+  It iterated whatever its pattern matched, so a reformat as small as a space before the
+  colon dropped it from 49 inspected values to 0 while the file still reported "4 passed" —
+  only the subtest count moved, from 154 to 105, and nobody reads subtest counts. The
+  sibling timeout check already counted its work; this one now does too.
+
 - `scripts/testkit.py` caches the gate verdict rather than only whether the tests were
   green. A tier that passed its tests but blew its CPU budget exited non-zero while writing
   `"ok": true` to the result cache, so the next invocation on an unchanged tree
