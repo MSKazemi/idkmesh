@@ -309,10 +309,10 @@ Several monitoring passes found no additional architecture-changing mini-SWE-age
 
 This update extends rather than replaces:
 
-- [`AGENT_INTEROPERABILITY_ARCHITECTURE_2026-08-28.md`](AGENT_INTEROPERABILITY_ARCHITECTURE_2026-08-28.md)
-- [`A2A_MCP_MAPPING_V0_1.md`](A2A_MCP_MAPPING_V0_1.md)
-- [`../../idkips/0001-interoperability-first-work-contract.md`](../../idkips/0001-interoperability-first-work-contract.md)
-- [`../../interop/`](../../interop/)
+- [`AGENT_INTEROPERABILITY_ARCHITECTURE_2026-08-28.md`](../docs/interoperability/AGENT_INTEROPERABILITY_ARCHITECTURE_2026-08-28.md)
+- [`A2A_MCP_MAPPING_V0_1.md`](../docs/interoperability/A2A_MCP_MAPPING_V0_1.md)
+- [`../idkips/0001-interoperability-first-work-contract.md`](../idkips/0001-interoperability-first-work-contract.md)
+- [`interop/`](./)
 
 Historical issue #17 established and exercised the original A2A/MCP Work Contract direction. This monitoring record is a post-completion architecture/evidence update; it does not reopen or retroactively change that issue's acceptance criteria.
 
