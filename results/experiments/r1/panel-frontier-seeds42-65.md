@@ -7,7 +7,7 @@ Swarm size 5, 250 tasks, seeds (42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 
 
 ## Does the billing change the verdict?
 
-Of 80 (panel size, need, shape, correlation) cells, **36** reverse whether the panel beats a single verifier when the billing changes.
+Of 80 (panel size, need, shape, correlation) cells, **41** reverse whether the panel beats a single verifier when the billing changes.
 
 | k | need | shape | rho | per_verifier | per_candidate |
 | ---: | ---: | --- | ---: | --- | --- |
@@ -34,8 +34,8 @@ Never averaged over shape: the two move in opposite directions in parts of this 
 | 3 | 1 | 0.5875 | per_verifier | 0.4563 | 0.4633 | +0.0071 |
 | 3 | 1 | 0.75 | per_candidate | 0.5453 | 0.5470 | +0.0017 |
 | 3 | 1 | 0.75 | per_verifier | 0.4614 | 0.4628 | +0.0014 |
-| 3 | 1 | 1.0 | per_candidate | 0.5420 | 0.5418 | -0.0002 |
-| 3 | 1 | 1.0 | per_verifier | 0.4586 | 0.4585 | -0.0001 |
+| 3 | 1 | 1.0 | per_candidate | 0.5388 | 0.5388 | +0.0000 |
+| 3 | 1 | 1.0 | per_verifier | 0.4559 | 0.4559 | +0.0000 |
 | 3 | 2 | 0.0 | per_candidate | 0.5523 | 0.5523 | +0.0000 |
 | 3 | 2 | 0.0 | per_verifier | 0.4673 | 0.4673 | +0.0000 |
 | 3 | 2 | 0.25 | per_candidate | 0.5514 | 0.5485 | -0.0029 |
@@ -44,8 +44,8 @@ Never averaged over shape: the two move in opposite directions in parts of this 
 | 3 | 2 | 0.5875 | per_verifier | 0.4562 | 0.4569 | +0.0008 |
 | 3 | 2 | 0.75 | per_candidate | 0.5450 | 0.5430 | -0.0020 |
 | 3 | 2 | 0.75 | per_verifier | 0.4612 | 0.4595 | -0.0017 |
-| 3 | 2 | 1.0 | per_candidate | 0.5420 | 0.5418 | -0.0002 |
-| 3 | 2 | 1.0 | per_verifier | 0.4586 | 0.4585 | -0.0001 |
+| 3 | 2 | 1.0 | per_candidate | 0.5388 | 0.5388 | +0.0000 |
+| 3 | 2 | 1.0 | per_verifier | 0.4559 | 0.4559 | +0.0000 |
 | 3 | 3 | 0.0 | per_candidate | 0.5053 | 0.5053 | +0.0000 |
 | 3 | 3 | 0.0 | per_verifier | 0.4276 | 0.4276 | +0.0000 |
 | 3 | 3 | 0.25 | per_candidate | 0.5135 | 0.5185 | +0.0050 |
