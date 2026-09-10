@@ -80,7 +80,7 @@ T6  Evidence-earned scaling / federation decisions
 
 | Target | Status | Evidence now | Next gate |
 | --- | --- | --- | --- |
-| **T0 Protected integration** | **BLOCKED / ADMIN** | `main` remains unprotected; #35 defines the desired external boundary | Configure and verify GitHub ruleset / branch protection |
+| **T0 Protected integration** | **LANDED / PARTIAL** | `main` requires `gate (3.11)` and `gate (3.13)`; force-pushes and branch deletion are blocked; #35 closed | Decide whether to bind administrators and to require a branch to be current with `main` before merging |
 | **T1 Canonical real worker** | **RUNTIME ACCEPTED / INTEGRATION REVIEW** | PR #91 exact head `520ad2c9aa5825476de4957da4702d6823f4edb3`; Node CI `33185901079` PASS; Phase 0 `33185901058` PASS; controlled Docker run `33186029790` PASS | Independent integration review without changing the accepted worker head |
 | **T2 Evaluator/verifier** | **FOUNDATION LANDED; REAL E2E ACTIVE** | #72/#81/#103/#107 merged; #108 binds the accepted real worker to the independent metadata-only verifier | Require a real node bundle -> VerificationResult pass before calling the chain complete |
 | **T3 Orchestration/reporting** | **FOUNDATION LANDED** | #78 and #88 merged; both preserve non-selection / human decision authority | Feed real verified node attempts through these landed layers |
