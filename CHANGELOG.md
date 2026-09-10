@@ -56,6 +56,13 @@ and the release notes for that tag.
 
 ### Changed
 
+- The scheduled-delay note on the free-resource audit is corrected. It quoted a 12-run
+  sample min/max as a predicted window of "10:15–11:30 UTC"; the next scheduled run started
+  at 11:31:34, 94 seconds outside it. A sample min/max is not a bound — the chance the next
+  observation falls outside n prior ones is roughly 2/(n+1) — so the note now gives the mean
+  (4.6 h over 21 runs of three workflows) as the expectation and says plainly that a run
+  later than any yet seen is not a fault either.
+
 - The free-resource audit's `schedule:` block records that its cron time is nominal.
   Measured over 12 scheduled runs of two unrelated workflows on 2026-09-10, GitHub started
   them 3.85–5.15 h after their cron expression (mean 4.49 h), so this job is expected around
