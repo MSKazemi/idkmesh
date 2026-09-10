@@ -159,6 +159,7 @@ section { margin: 0 0 3.6rem; scroll-margin-top: 4.5rem; }
 section > h2 { font-size: clamp(1.55rem, 3.6vw, 2.25rem); margin: 0 0 .55rem; letter-spacing: -.018em; }
 section > h2 + .sub { color: var(--muted); max-width: var(--narrow); margin-bottom: 1.5rem; }
 h3 { font-size: 1.12rem; margin: 0 0 .45rem; }
+.sitefoot .cols h3 { font-size: 1rem; margin: 0 0 .5rem; }
 
 .actions { display: flex; flex-wrap: wrap; gap: .7rem; margin-top: 1.7rem; align-items: center; }
 .button {
