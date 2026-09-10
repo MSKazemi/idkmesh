@@ -7,8 +7,12 @@ parameters as the reference point.
 
 That test cannot be run against this lab, and the reason is the finding this
 runner exists to record. A joint-failure shape describes how the errors of a
-*panel* co-occur. ``randomness_lab/r1.py`` has no panel: ``run_r1_condition``
-picks exactly one verifier per candidate — ``condition.verifiers[0]`` under
+*panel* co-occur. ``randomness_lab/r1.py`` now has one, but it is off by
+default: ``R1Condition.panel_size`` is ``1``, and every arm
+``build_r1_conditions`` returns keeps it, so the runs this module produces are
+still single-verifier and the conclusion below is unaffected. Until that
+parameter arrived, ``run_r1_condition``
+picked exactly one verifier per candidate — ``condition.verifiers[0]`` under
 ``fixed`` assignment, ``rng.choice`` under ``random`` — and no quorum, vote, or
 aggregation rule appears anywhere in ``randomness_lab``. Five of the six arms
 in ``build_r1_conditions`` are constructed with a single verifier. There is no

@@ -55,6 +55,7 @@ WORKER_DEPENDENCE_SHAPES = {
     "shared_shock": CorrelatedBernoulliEnvironment,
     "item_difficulty": ItemDifficultyEnvironment,
 }
+PANEL_ATTENTION_BILLING_MODES = {"per_verifier", "per_candidate"}
 
 
 @dataclass(frozen=True)
@@ -67,6 +68,30 @@ class R1Condition:
     verifier_assignment: str = "fixed"
     verifiers: tuple[Verifier, ...] = (Verifier("verifier-1"),)
     verifier_error_correlation: float = 0.50
+    # Panel of distinct verifiers reading each candidate. `panel_size = 1` is
+    # the single-verifier behaviour every committed R1 artifact was generated
+    # under, and is reproduced draw-for-draw, not merely equivalently.
+    #
+    # `verifier_error_correlation` above is NOT dependence between panellists:
+    # `shared_draws` is keyed per verifier name and drawn once per task, so it
+    # couples one verifier's decisions across candidates within a task -- a
+    # within-task strictness shock. E041 records two readings that went wrong by
+    # assuming otherwise. Inter-panellist dependence, when it arrives, takes a
+    # deliberately distinct name so the two can never be conflated.
+    panel_size: int = 1
+    # Fraction of the panel that must accept, in the sense
+    # `sim/e018_dependence_models.py` uses: `need = floor(quorum * k) + 1`.
+    # 0.5 is the symmetric majority, and is the only value E018 sweeps, so
+    # keeping it as the default is what makes these numbers comparable to
+    # E017/E018 at all. Sweeping it moves `need` across the whole `[1, k]`
+    # range, which matters: at least one prior result here survives only on a
+    # sub-range of `need` and dissolves once the full range is opened.
+    panel_quorum: float = 0.5
+    # The default bills every actual panel read. `per_candidate` is the explicit
+    # counterfactual required by #380: one average-equivalent verifier read per
+    # candidate, so heterogeneous verifier costs do not make the accounting
+    # depend on panel ordering. Billing is accounting only and consumes no RNG.
+    panel_attention_billing: str = "per_verifier"
     # Shape of the worker joint-failure distribution. "shared_shock" is the
     # historical behaviour and stays the default so every committed artifact
     # keeps reproducing; "item_difficulty" is the beta-binomial E017 measured
@@ -86,8 +111,26 @@ class R1Condition:
             raise ValueError("verifier_assignment must be 'fixed' or 'random'")
         if not self.verifiers:
             raise ValueError("verifiers must not be empty")
+        verifier_names = [verifier.name for verifier in self.verifiers]
+        if len(set(verifier_names)) != len(verifier_names):
+            raise ValueError("verifier names must be unique within a panel pool")
         if not 0.0 <= self.verifier_error_correlation <= 1.0:
             raise ValueError("verifier_error_correlation must be in [0, 1]")
+        if (
+            isinstance(self.panel_size, bool)
+            or not isinstance(self.panel_size, int)
+            or self.panel_size < 1
+        ):
+            raise ValueError("panel_size must be a positive integer")
+        if self.panel_size > len(self.verifiers):
+            raise ValueError("panel_size must not exceed the verifier pool size")
+        if not 0.0 <= self.panel_quorum < 1.0:
+            raise ValueError("panel_quorum must be in [0, 1)")
+        if self.panel_attention_billing not in PANEL_ATTENTION_BILLING_MODES:
+            raise ValueError(
+                "panel_attention_billing must be one of "
+                f"{sorted(PANEL_ATTENTION_BILLING_MODES)}"
+            )
         if self.worker_dependence_shape not in WORKER_DEPENDENCE_SHAPES:
             raise ValueError(
                 "worker_dependence_shape must be one of "
@@ -335,6 +378,49 @@ def _verifier_accepts(
     return draw < threshold
 
 
+def _select_panel(
+    condition: R1Condition, rng: random.Random
+) -> tuple[Verifier, ...]:
+    """Choose distinct verifiers that read one candidate.
+
+    At ``panel_size == 1`` this makes exactly the draws the historical
+    single-verifier implementation made -- none under ``fixed``, one
+    ``rng.choice`` under ``random``. Multi-verifier random panels sample without
+    replacement so repeating one verifier cannot be mistaken for evidence about
+    dependence between distinct panellists.
+    """
+
+    if condition.verifier_assignment == "fixed":
+        return condition.verifiers[: condition.panel_size]
+    if condition.panel_size == 1:
+        return (rng.choice(condition.verifiers),)
+    return tuple(rng.sample(condition.verifiers, condition.panel_size))
+
+
+def _panel_accepts(votes: Sequence[bool], quorum: float) -> bool:
+    """Aggregate panel votes, using E018's ``need = floor(quorum * k) + 1``."""
+
+    need = math.floor(quorum * len(votes)) + 1
+    return sum(1 for vote in votes if vote) >= need
+
+
+def _panel_attention_cost(
+    panel: Sequence[Verifier], billing: str
+) -> float:
+    """Return panel attention under the explicit #380 billing counterfactual.
+
+    ``per_verifier`` charges every actual read. ``per_candidate`` charges one
+    average-equivalent verifier read for the candidate, which is order-invariant
+    when verifier attention costs differ. The helper is deterministic and must
+    not consume RNG state.
+    """
+
+    total = sum(verifier.attention_cost for verifier in panel)
+    if billing == "per_candidate":
+        return total / len(panel)
+    return total
+
+
 def run_r1_condition(
     condition: R1Condition,
     *,
@@ -406,20 +492,28 @@ def run_r1_condition(
 
         shared_draws = {verifier.name: rng.random() for verifier in condition.verifiers}
         for candidate in candidate_records:
-            if condition.verifier_assignment == "fixed":
-                verifier = condition.verifiers[0]
-            else:
-                verifier = rng.choice(condition.verifiers)
-            accepted = _verifier_accepts(
-                bool(candidate["is_good"]),
-                verifier,
-                rng,
-                shared_draws[verifier.name],
-                condition.verifier_error_correlation,
-            )
-            candidate["verifier"] = verifier.name
+            panel = _select_panel(condition, rng)
+            votes = [
+                _verifier_accepts(
+                    bool(candidate["is_good"]),
+                    verifier,
+                    rng,
+                    shared_draws[verifier.name],
+                    condition.verifier_error_correlation,
+                )
+                for verifier in panel
+            ]
+            accepted = _panel_accepts(votes, condition.panel_quorum)
+            candidate["verifier"] = panel[0].name
             candidate["accepted"] = accepted
-            totals["human_attention"] += verifier.attention_cost
+            if len(panel) > 1:
+                # Only emitted for a real panel, so single-verifier payloads
+                # stay byte-identical to the committed artifacts.
+                candidate["verifier_panel"] = [verifier.name for verifier in panel]
+                candidate["verifier_votes"] = votes
+            totals["human_attention"] += _panel_attention_cost(
+                panel, condition.panel_attention_billing
+            )
 
         accepted_candidates = [
             candidate for candidate in candidate_records if bool(candidate["accepted"])
@@ -487,20 +581,34 @@ def run_r1_condition(
         ),
     }
 
+    condition_record: dict[str, object] = {
+        "name": condition.name,
+        "attempts_per_task": condition.attempts_per_task,
+        "worker_error_correlation": condition.worker_error_correlation,
+        "scheduler": condition.scheduler,
+        "verifier_assignment": condition.verifier_assignment,
+        "verifier_error_correlation": condition.verifier_error_correlation,
+        "worker_dependence_shape": condition.worker_dependence_shape,
+        "profiles": [asdict(profile) for profile in condition.profiles],
+        "verifiers": [asdict(verifier) for verifier in condition.verifiers],
+    }
+    if (
+        condition.panel_size != 1
+        or condition.panel_quorum != 0.5
+        or condition.panel_attention_billing != "per_verifier"
+    ):
+        condition_record.update(
+            {
+                "panel_size": condition.panel_size,
+                "panel_quorum": condition.panel_quorum,
+                "panel_attention_billing": condition.panel_attention_billing,
+            }
+        )
+
     return {
         "schema_version": 1,
         "experiment": "R1-swarm-diversity",
-        "condition": {
-            "name": condition.name,
-            "attempts_per_task": condition.attempts_per_task,
-            "worker_error_correlation": condition.worker_error_correlation,
-            "scheduler": condition.scheduler,
-            "verifier_assignment": condition.verifier_assignment,
-            "verifier_error_correlation": condition.verifier_error_correlation,
-            "worker_dependence_shape": condition.worker_dependence_shape,
-            "profiles": [asdict(profile) for profile in condition.profiles],
-            "verifiers": [asdict(verifier) for verifier in condition.verifiers],
-        },
+        "condition": condition_record,
         "tasks": tasks,
         "seed": seed,
         "metrics": metrics,
