@@ -56,6 +56,15 @@ and the release notes for that tag.
 
 ### Changed
 
+- The free-resource freshness report is written to the GitHub job summary, not only to the
+  step log. `--fail-on stale` turns the run red once evidence has *already* aged out, but
+  the warning window — the state this audit exists to catch — lands on a run that is green,
+  and nobody opens the log of a green run. The report now appears on the run page itself,
+  with a note that a WARN line means our recorded reading is ageing, not that anything
+  expires at the provider. The step captures the report before re-raising the tool's exit
+  status, because the tool prints in full and then exits non-zero; summarising only on
+  success would drop the report exactly when it matters most.
+
 - The free-resource audit's per-offer date fields are named for whose clock they are on:
   `expires_on` and `days_until_expiry` become `evidence_stale_on` and
   `days_until_evidence_stale`. Both are `source.checked_at + source.max_age_days` — the day
