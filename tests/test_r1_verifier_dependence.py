@@ -104,30 +104,69 @@ class LabStructureTests(unittest.TestCase):
             len({(v.sensitivity, v.false_positive_rate) for v in arm.verifiers}), 1
         )
 
-    def test_no_quorum_or_vote_aggregation_exists_in_the_lab(self) -> None:
-        # Identifiers only. The words appear in prose here and in
-        # r1_correlation_threshold.py, which cite E017's title; what would
-        # matter is a quorum the code actually computes.
-        banned = ("quorum", "vote", "majority", "consensus")
-        for module in sorted((ROOT / "randomness_lab").glob("*.py")):
-            tree = ast.parse(module.read_text(encoding="utf-8"))
-            names: set[str] = set()
-            for node in ast.walk(tree):
-                if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
-                    names.add(node.name)
-                elif isinstance(node, ast.Name):
-                    names.add(node.id)
-                elif isinstance(node, ast.Attribute):
-                    names.add(node.attr)
-                elif isinstance(node, ast.arg):
-                    names.add(node.arg)
-                elif isinstance(node, ast.keyword) and node.arg:
-                    names.add(node.arg)
-            offenders = sorted(
-                name for name in names if any(word in name.lower() for word in banned)
-            )
-            with self.subTest(module=module.name):
-                self.assertEqual(offenders, [])
+    def test_the_lab_now_has_a_panel_and_this_supersedes_e041(self) -> None:
+        """E041's premise no longer holds, and that is deliberate.
+
+        This test used to assert the opposite -- that no quorum, vote or
+        consensus identifier existed in the lab -- as a tripwire, so that a
+        panel could not appear without E041's finding being revisited. The
+        panel has now arrived, so the tripwire is inverted rather than deleted:
+        it now fails if the aggregation disappears again, which would silently
+        restore a finding whose basis had gone.
+        """
+
+        source = (ROOT / "randomness_lab" / "r1.py").read_text(encoding="utf-8")
+        tree = ast.parse(source)
+        names = {
+            node.name
+            for node in ast.walk(tree)
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))
+        }
+        self.assertIn(
+            "_panel_accepts",
+            names,
+            "the panel aggregation E041 was written against has disappeared; "
+            "E041's conclusion depends on its absence, so revisit the experiment "
+            "rather than restoring this assertion.",
+        )
+
+    def test_the_default_panel_is_one_verifier(self) -> None:
+        """Every committed R1 artifact was generated at a panel of one."""
+
+        for condition in build_r1_conditions(R1ExperimentConfig(swarm_size=5)):
+            with self.subTest(arm=condition.name):
+                self.assertEqual(condition.panel_size, 1)
+
+    def test_verifier_error_correlation_is_still_a_within_task_strictness_shock(
+        self,
+    ) -> None:
+        """The part of E041 that survives the panel.
+
+        E041's durable finding is not "there is no panel" -- that was the
+        evidence. It is that ``verifier_error_correlation`` does not mean
+        dependence between verifiers: ``shared_draws`` is keyed per verifier
+        *name* and drawn once per task, so it couples one verifier's decisions
+        across candidates within a task. A panel does not change that, and the
+        name remains a trap until a distinctly-named panel parameter exists.
+        """
+
+        source = (ROOT / "randomness_lab" / "r1.py").read_text(encoding="utf-8")
+        self.assertIn(
+            "shared_draws = {verifier.name: rng.random() for verifier in condition.verifiers}",
+            source,
+            "shared_draws is no longer one draw per verifier per task. If it has "
+            "become a joint draw over the panel, verifier_error_correlation has "
+            "changed meaning and E041 must be superseded again, not edited.",
+        )
+        tree = ast.parse(source)
+        accepts = next(
+            node
+            for node in ast.walk(tree)
+            if isinstance(node, ast.FunctionDef) and node.name == "_verifier_accepts"
+        )
+        # A scalar `shared_draw`, not a panel-joint structure: one verifier's
+        # shock, applied to one verifier.
+        self.assertIn("shared_draw", [arg.arg for arg in accepts.args.args])
 
 
 class CommittedPayloadTests(unittest.TestCase):
