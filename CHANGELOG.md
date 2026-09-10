@@ -56,6 +56,12 @@ and the release notes for that tag.
 
 ### Changed
 
+- The free-resource audit's `schedule:` block records that its cron time is nominal.
+  Measured over 12 scheduled runs of two unrelated workflows on 2026-09-10, GitHub started
+  them 3.85–5.15 h after their cron expression (mean 4.49 h), so this job is expected around
+  10:15–11:30 UTC rather than 06:23, and its absence at the nominal minute is not a fault.
+  Re-tuning the expression cannot move the start; the delay is on GitHub's side.
+
 - The free-resource freshness report is written to the GitHub job summary, not only to the
   step log. `--fail-on stale` turns the run red once evidence has *already* aged out, but
   the warning window — the state this audit exists to catch — lands on a run that is green,
