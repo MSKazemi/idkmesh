@@ -84,7 +84,14 @@ class SitemapTests(unittest.TestCase):
     def test_lastmod_values_are_real_dates_that_are_not_in_the_future(self) -> None:
         tree = ElementTree.parse(SITEMAP)
         today = date.today()
-        for element in tree.findall("sm:url", NAMESPACE):
+        entries = tree.findall("sm:url", NAMESPACE)
+        self.assertGreater(
+            len(entries),
+            0,
+            "the sitemap yielded no <url> entries; this test would pass over an "
+            "empty or wrongly-namespaced sitemap without checking a single date",
+        )
+        for element in entries:
             location = element.findtext("sm:loc", default="", namespaces=NAMESPACE)
             stamp = element.findtext("sm:lastmod", default="", namespaces=NAMESPACE)
             with self.subTest(url=location):
@@ -100,7 +107,14 @@ class SitemapTests(unittest.TestCase):
 
     def test_priorities_are_within_the_sitemap_protocol_range(self) -> None:
         tree = ElementTree.parse(SITEMAP)
-        for element in tree.findall("sm:url", NAMESPACE):
+        entries = tree.findall("sm:url", NAMESPACE)
+        self.assertGreater(
+            len(entries),
+            0,
+            "the sitemap yielded no <url> entries; this test would pass over an "
+            "empty or wrongly-namespaced sitemap without checking a single priority",
+        )
+        for element in entries:
             location = element.findtext("sm:loc", default="", namespaces=NAMESPACE)
             raw = element.findtext("sm:priority", default="", namespaces=NAMESPACE)
             with self.subTest(url=location):

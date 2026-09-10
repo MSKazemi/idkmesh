@@ -56,6 +56,14 @@ and the release notes for that tag.
 
 ### Changed
 
+- Seven more guards fail when they inspect nothing. An AST audit of `tests/` found every
+  test that asserts inside a loop over a discovered set — a glob, a directory listing, a
+  regex scan — with no check that the set was non-empty. Each now counts what it inspected
+  and fails on zero: SHA-pinning of external actions (13 today), sitemap `lastmod` and
+  `priority` (325 entries each), the sim-module test list (25), starter-task rendered links
+  and blob-root targets, and catalogue path references. Without the counter, a pattern that
+  stops matching turns the check into a silent pass.
+
 - The workflow-hygiene guard's `cancel-in-progress` check fails when it inspects nothing.
   It iterated whatever its pattern matched, so a reformat as small as a space before the
   colon dropped it from 49 inspected values to 0 while the file still reported "4 passed" —

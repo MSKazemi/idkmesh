@@ -108,14 +108,23 @@ class CatalogueAccuracyTest(unittest.TestCase):
         )
 
     def test_referenced_paths_exist(self):
+        checked = 0
         for target in re.findall(r"\]\(([^)#]+\.md)\)", self.text):
             if target.startswith("http"):
                 continue
+            checked += 1
             with self.subTest(target=target):
                 self.assertTrue(
                     (CATALOGUE.parent / target).resolve().exists(),
                     f"{target} does not exist",
                 )
+        self.assertGreater(
+            checked,
+            0,
+            "no catalogue links were inspected; the Markdown link pattern no "
+            "longer matches, so this test is passing without checking that a "
+            "single referenced path exists",
+        )
 
 
 if __name__ == "__main__":  # pragma: no cover

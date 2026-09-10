@@ -58,25 +58,42 @@ class LinkTests(unittest.TestCase):
         # A relative target resolves against the file's directory in the
         # catalogue and against the repository root in an issue body. Shipping
         # one would file an issue with a broken link in it.
+        checked = 0
         for task in TASKS:
             for match in LINK.finditer(task.issue_body):
+                checked += 1
                 with self.subTest(task=task.identifier, target=match.group("target")):
                     self.assertTrue(
                         match.group("target").startswith(("http://", "https://", "#"))
                     )
+        self.assertGreater(
+            checked,
+            0,
+            "no links were inspected; TASKS is empty or LINK no longer matches, "
+            "so this test is passing without checking a single rendered link",
+        )
 
     def test_every_rewritten_link_points_at_a_file_that_exists(self) -> None:
+        checked = 0
         for task in TASKS:
             for match in LINK.finditer(task.issue_body):
                 target = match.group("target")
                 if not target.startswith(BLOB_ROOT):
                     continue
+                checked += 1
                 relative = target[len(BLOB_ROOT) + 1 :].split("#", 1)[0]
                 with self.subTest(task=task.identifier, path=relative):
                     self.assertTrue(
                         (ROOT / relative).exists(),
                         msg=f"{task.identifier} links to missing {relative}",
                     )
+        self.assertGreater(
+            checked,
+            0,
+            "no rewritten links were inspected; none of the issue bodies carry a "
+            "blob-root link any more, so this test is passing without checking "
+            "that a single target exists",
+        )
 
     def test_parent_segments_collapse_rather_than_leaking(self) -> None:
         rewritten = absolutise_links("[c](../../CONTRIBUTING.md)")
