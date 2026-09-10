@@ -188,5 +188,39 @@ class FieldNamingTests(unittest.TestCase):
             f"arithmetic over our own checked_at: {offending}",
         )
 
+
+class WorkflowSurfacingTests(unittest.TestCase):
+    """The warning window must be visible without opening a green run's log.
+
+    ``--fail-on stale`` turns the run red only once evidence has ALREADY aged
+    out. The state this audit exists to catch -- evidence about to age out -- is
+    reported on a run that is green, and nobody reads the log of a green run. So
+    the freshness report is written to the job summary, where it shows on the run
+    page itself.
+    """
+
+    WORKFLOW = ROOT / ".github/workflows/free-resource-source-audit.yml"
+
+    def _freshness_step(self) -> str:
+        text = self.WORKFLOW.read_text(encoding="utf-8")
+        start = text.index("name: Report registry freshness")
+        end = text.find("\n      - name:", start)
+        return text[start : end if end != -1 else len(text)]
+
+    def test_the_freshness_report_reaches_the_job_summary(self) -> None:
+        self.assertIn("GITHUB_STEP_SUMMARY", self._freshness_step())
+
+    def test_a_failing_audit_still_re_raises_its_status(self) -> None:
+        """Capturing stdout must not swallow the red build.
+
+        The tool prints its whole report and *then* exits non-zero, so the step
+        captures first and re-raises afterwards. Losing the re-raise would make
+        a stale registry report itself green.
+        """
+        step = self._freshness_step()
+
+        self.assertIn("--fail-on stale", step)
+        self.assertIn('exit "$status"', step)
+
 if __name__ == "__main__":
     unittest.main()
