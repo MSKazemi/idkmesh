@@ -58,6 +58,9 @@ WORKER_DEPENDENCE_SHAPES = {
 PANEL_ATTENTION_BILLING_MODES = {"per_verifier", "per_candidate"}
 
 
+PANEL_DEPENDENCE_SHAPES = ("shared_shock", "item_difficulty")
+
+
 @dataclass(frozen=True)
 class R1Condition:
     name: str
@@ -87,6 +90,19 @@ class R1Condition:
     # range, which matters: at least one prior result here survives only on a
     # sub-range of `need` and dissolves once the full range is opened.
     panel_quorum: float = 0.5
+    # Dependence BETWEEN panellists, which is what hypothesis 2's "independent
+    # verification" half is about. Distinct from `verifier_error_correlation`
+    # above on purpose -- that one is a within-task strictness shock on a single
+    # verifier, and reusing its name here would rebuild the trap E041 records.
+    #
+    # 0.0 is independence and is the default, so every arm reproduces the
+    # single-verifier and independent-panel behaviour draw for draw.
+    panel_dependence_correlation: float = 0.0
+    # `shared_shock` puts the mass on unanimity; `item_difficulty` is the
+    # beta-binomial, which spreads it across partial panel failures. Both are
+    # `sim/e018_dependence_models.py`'s, and they agree exactly at correlation
+    # 0 and 1, so any difference between them is attributable to shape alone.
+    panel_dependence_shape: str = "shared_shock"
     # The default bills every actual panel read. `per_candidate` is the explicit
     # counterfactual required by #380: one average-equivalent verifier read per
     # candidate, so heterogeneous verifier costs do not make the accounting
@@ -126,6 +142,13 @@ class R1Condition:
             raise ValueError("panel_size must not exceed the verifier pool size")
         if not 0.0 <= self.panel_quorum < 1.0:
             raise ValueError("panel_quorum must be in [0, 1)")
+        if not 0.0 <= self.panel_dependence_correlation <= 1.0:
+            raise ValueError("panel_dependence_correlation must be in [0, 1]")
+        if self.panel_dependence_shape not in PANEL_DEPENDENCE_SHAPES:
+            raise ValueError(
+                "panel_dependence_shape must be one of "
+                f"{sorted(PANEL_DEPENDENCE_SHAPES)}"
+            )
         if self.panel_attention_billing not in PANEL_ATTENTION_BILLING_MODES:
             raise ValueError(
                 "panel_attention_billing must be one of "
@@ -378,6 +401,72 @@ def _verifier_accepts(
     return draw < threshold
 
 
+def _verifier_accuracy(verifier: Verifier, is_good: bool) -> float:
+    """Probability this verifier judges this candidate *correctly*.
+
+    E018's models carry one ``accuracy``; ``_verifier_accepts`` carries two
+    thresholds. Correct means accept for a good candidate and reject for a bad
+    one, so panel dependence must be applied to the **error** event. Applying
+    it to the accept event instead inverts the shape for bad candidates, which
+    is the one way this can look right and be wrong.
+    """
+
+    return verifier.sensitivity if is_good else 1.0 - verifier.false_positive_rate
+
+
+def _dependent_panel_votes(
+    is_good: bool,
+    panel: Sequence[Verifier],
+    rng: random.Random,
+    correlation: float,
+    shape: str,
+) -> list[bool]:
+    """Accept/reject votes whose *errors* co-occur with ``correlation``.
+
+    Reproduces `sim/e018_dependence_models.py` by construction, verified
+    against its closed form rather than assumed: see
+    ``tests/test_r1_panel_dependence.py``.
+    """
+
+    accuracies = [_verifier_accuracy(verifier, is_good) for verifier in panel]
+
+    if shape == "shared_shock":
+        # With probability `correlation` the panel is judged on one draw.
+        if rng.random() < correlation:
+            draw = rng.random()
+            correct = [draw < accuracy for accuracy in accuracies]
+        else:
+            correct = [rng.random() < accuracy for accuracy in accuracies]
+    else:
+        # Item difficulty: the candidate draws a difficulty, then panellists err
+        # independently at that rate. Beta(mu*s, (1-mu)*s) with s = (1-rho)/rho
+        # has mean mu and intra-class correlation 1/(alpha+beta+1) = rho, so the
+        # parameter means what it says.
+        # E018's beta-binomial carries a single accuracy. A heterogeneous panel
+        # would need a copula to keep each marginal correct, and guessing one
+        # here would produce a plausible number with no stated meaning -- so
+        # refuse instead. `shared_shock` has no such restriction: a shared draw
+        # compared against each verifier's own threshold is well defined.
+        if len(set(accuracies)) > 1:
+            raise ValueError(
+                "panel_dependence_shape='item_difficulty' needs an identically "
+                "parameterised panel; this panel has accuracies "
+                f"{sorted(set(accuracies))}. Use 'shared_shock' for a "
+                "heterogeneous panel."
+            )
+        mu = 1.0 - accuracies[0]
+        if correlation >= 1.0:
+            wrong = rng.random() < mu
+            correct = [not wrong] * len(panel)
+        else:
+            scale = (1.0 - correlation) / correlation
+            difficulty = rng.betavariate(mu * scale, (1.0 - mu) * scale)
+            correct = [rng.random() >= difficulty for _ in panel]
+
+    # A correct vote accepts a good candidate and rejects a bad one.
+    return [vote if is_good else not vote for vote in correct]
+
+
 def _select_panel(
     condition: R1Condition, rng: random.Random
 ) -> tuple[Verifier, ...]:
@@ -493,16 +582,26 @@ def run_r1_condition(
         shared_draws = {verifier.name: rng.random() for verifier in condition.verifiers}
         for candidate in candidate_records:
             panel = _select_panel(condition, rng)
-            votes = [
-                _verifier_accepts(
+            if condition.panel_dependence_correlation <= 0.0:
+                # Independent panellists: the original path, draw for draw.
+                votes = [
+                    _verifier_accepts(
+                        bool(candidate["is_good"]),
+                        verifier,
+                        rng,
+                        shared_draws[verifier.name],
+                        condition.verifier_error_correlation,
+                    )
+                    for verifier in panel
+                ]
+            else:
+                votes = _dependent_panel_votes(
                     bool(candidate["is_good"]),
-                    verifier,
+                    panel,
                     rng,
-                    shared_draws[verifier.name],
-                    condition.verifier_error_correlation,
+                    condition.panel_dependence_correlation,
+                    condition.panel_dependence_shape,
                 )
-                for verifier in panel
-            ]
             accepted = _panel_accepts(votes, condition.panel_quorum)
             candidate["verifier"] = panel[0].name
             candidate["accepted"] = accepted
