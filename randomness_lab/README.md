@@ -82,6 +82,24 @@ python -m unittest discover -s tests -v
 
 The tests check seeded reproducibility, repeated-trial reproducibility and uncertainty output, policy interchangeability, environment interchangeability, the correlation control, Thompson-sampling adaptation, and the power-of-d helper.
 
+## R1 verifier panels and dependence
+
+R1 keeps two verifier-correlation concepts deliberately separate:
+
+- `verifier_error_correlation` is the historical **within-task strictness shock** for one named verifier across candidates in the same task;
+- `panel_dependence_correlation` is dependence **between distinct panel members judging one candidate**.
+
+The panel-dependence axis is opt-in and defaults to zero. At zero, R1 stays on the historical verifier path so existing single-verifier and phase-(a) panel RNG calls remain unchanged. Positive panel dependence currently requires a real panel, zero within-task strictness correlation, and homogeneous verifier sensitivity/false-positive rate. These restrictions keep the two axes identifiable and make the correlation parameter comparable with E018's common-marginal analytic model instead of silently composing unlike mechanisms.
+
+`randomness_lab/verifier_dependence.py` provides two synthetic dependence shapes:
+
+- `shared_shock`: with probability rho, all panelists share one correctness draw; otherwise their correctness draws are independent;
+- `item_difficulty`: a beta-binomial latent error probability parameterized so marginal accuracy is preserved and pairwise correctness/error correlation is rho.
+
+Both shapes use exactly the same sampler at rho `0` (independent Bernoulli decisions) and rho `1` (one shared decision). Tests require exact sampled-vector and RNG-state equality at those endpoints, compare intermediate simulated panel error with the closed-form models in `sim/e018_dependence_models.py`, and check that realized pairwise correlation tracks the requested rho. E018 is an **analytic oracle only**; R1 does not reuse its implementation as a sampler.
+
+This is infrastructure for issue #380, not a result for hypothesis 2. New panel arms, dependence sweeps, both attention-billing regimes, and the final interpretation belong to later experiment increments.
+
 ## R2 factor-isolation benchmark
 
 The final issue #84 follow-up separates availability lag, load lag, regional
