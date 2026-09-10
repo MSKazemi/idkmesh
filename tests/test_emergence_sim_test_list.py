@@ -75,10 +75,12 @@ class TestListParityTest(unittest.TestCase):
         # that made the README's claim false for E030.
         listed = _workflow_pytest_list()
         sim_dir = os.path.join(REPO_ROOT, "sim")
+        checked = 0
         for entry in sorted(os.listdir(sim_dir)):
             match = re.fullmatch(r"(e\d{3})_[a-z0-9_]+\.py", entry)
             if not match:
                 continue
+            checked += 1
             prefix = f"tests/test_{match.group(1)}_"
             with self.subTest(module=entry):
                 self.assertTrue(
@@ -89,6 +91,13 @@ class TestListParityTest(unittest.TestCase):
                     ),
                     f"{entry} has a test file that the emergence-sim list omits",
                 )
+        self.assertGreater(
+            checked,
+            0,
+            "no sim experiment modules were inspected; sim/ is empty or the "
+            "eNNN_ naming changed, so this test is passing without checking "
+            "a single module",
+        )
 
 
 if __name__ == "__main__":
