@@ -46,6 +46,17 @@ and the release notes for that tag.
 
 ### Changed
 
+- The ACE growth controller no longer lets an unnamed event vote. Its dispatch chain
+  seeded `q`/`d`/`r` at 0.05 before branching and had no terminal `else`, so any event
+  it does not name — `workflow_dispatch` today, and any `schedule:` added later — fell
+  through carrying those seeds. Since `credit` selects the controller's mode (EXPLORE
+  at 2, GROW at 8), such an event both scored and opened its own row in the published
+  counts table. Unnamed events are now typed `<event>:reconcile` and score zero;
+  scoring for every named event is unchanged.
+- `tests/test_ace_unnamed_event_credit.py`, which fails if the terminal `else` is
+  removed, if it awards any credit, or if the pre-branch seed becomes zero and leaves
+  the guard proving nothing.
+
 - `Task 001 canonical v0.4 calibration` now watches the files it actually reads.
   The calibration runs against the checked-out pull-request head, but its `paths:`
   filter listed only the two calibration tools — so `requirements-phase0.txt`,
