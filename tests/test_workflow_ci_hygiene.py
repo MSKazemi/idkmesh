@@ -117,10 +117,21 @@ class WorkflowCiHygieneTests(unittest.TestCase):
                 )
 
     def test_no_workflow_cancels_runs_outside_pull_requests(self) -> None:
-        """Workflow-level only; job-level scoping is the author's to choose."""
+        """Workflow-level only; job-level scoping is the author's to choose.
+
+        The counter is the point. This test inspects whatever ``CANCEL`` happens
+        to match, so if the pattern ever stops matching -- a reformat putting a
+        space before the colon is enough -- the loop body never runs and the test
+        reports success over nothing. Measured: 49 values across 51 workflows
+        today, and 0 after such a reformat, with the file still reporting
+        "4 passed" and only the subtest count dropping from 154 to 105. Nobody
+        reads subtest counts, so the emptiness has to fail on its own.
+        """
+        checked = 0
         for wf in workflows():
             text = wf.read_text(encoding="utf-8")
             for value in CANCEL.findall(text):
+                checked += 1
                 with self.subTest(workflow=wf.name, value=value):
                     self.assertNotEqual(
                         value,
@@ -131,6 +142,14 @@ class WorkflowCiHygieneTests(unittest.TestCase):
                         f"evidence artifact for a commit. Use `false`, or gate "
                         f"it: ${{{{ github.event_name == 'pull_request' }}}}.",
                     )
+
+        self.assertGreater(
+            checked,
+            0,
+            "no workflow-level `cancel-in-progress` values were inspected; the "
+            "CANCEL pattern no longer matches this repository's formatting, so "
+            "this test is passing without checking anything",
+        )
 
     def test_every_job_declares_a_timeout(self) -> None:
         checked = 0
