@@ -81,7 +81,7 @@ class ClassifyLinkTests(unittest.TestCase):
             )
 
     def test_repository_root_is_a_valid_target(self) -> None:
-        """docs/index.md carries `[Main repository](..)`; the root has no index entry."""
+        """Docs link to the repository root as `..`; the root has no index entry."""
 
         known = frozenset({"docs", "docs/a.md"})
         self.assertEqual(classify_link(Path("/repo"), "docs/a.md", "..", known), "exists")
