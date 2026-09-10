@@ -7,12 +7,13 @@ canonical files designated by [`../../PROJECT_RULES.md`](../../PROJECT_RULES.md)
 (decisions, specifications, architecture, findings); this directory keeps the trail
 that produced them.
 
-153 records across 5 dates, newest first.
+154 records across 5 dates, newest first.
 
 ## Index
 
 ### 2026-09-10
 
+- [Continued development — ACE recovery and auditable evolution report](2026-09-10-continued-development-ace-recovery-and-evolution-report.md)
 - [Repository audit and Portfolio concurrency fix](2026-09-10-repository-audit-and-portfolio-concurrency-fix.md)
 
 ### 2026-09-09
@@ -71,7 +72,7 @@ that produced them.
 - [Verification and Orchestration Collaboration](2026-08-28-verification-orchestration-collaboration.md)
 - [Top 20 Questions, Scalability, and Agility](2026-08-28-top-20-scalability-agility.md)
 - [Task Graph, Growth Dynamics, and Self-Evolving Repository](2026-08-28-task-graph-growth-and-self-evolution.md)
-- [Target Execution Convergence Follow-up](2026-08-28-target-execution-convergence-followup.md)
+- [Target Execution Convergence Follow-up](2026-08-28-execution-targets-goals-and-tasks.md)
 - [Sequential evidence reproducibility hardening](2026-08-28-sequential-evidence-reproducibility.md)
 - [Science, Physics, Blockchain, and Next Steps](2026-08-28-science-physics-blockchain-roadmap.md)
 - [Run Evidence and Replay Continuation](2026-08-28-run-evidence-and-replay-continuation.md)
