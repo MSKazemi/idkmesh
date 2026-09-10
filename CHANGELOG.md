@@ -14,6 +14,17 @@ and the release notes for that tag.
 
 ### Added
 
+- `tests/test_documented_tier_scopes.py`, comparing the tier scopes `docs/TESTING.md`
+  publishes against the marker expressions `scripts/testkit.py` actually passes to pytest.
+  The expressions are read out of the script with `ast`, so a marker named only in one of
+  that file's many comments cannot be mistaken for one that runs. The comparison is
+  asymmetric on purpose: every expression a tier runs must appear somewhere in the
+  document, and every expression the tier *table* publishes must be one a tier runs, while
+  prose elsewhere stays free to show teaching examples. Absolute test counts are
+  deliberately not pinned — those rot on a third of commits, the failure
+  `tests/test_documented_test_counts.py` records at length; a marker expression changes
+  only when someone moves a tier boundary on purpose.
+
 - `tests/test_nightly_tier_has_something_to_run.py`, guarding the precondition that makes
   `scripts/testkit.py`'s nightly tier meaningful. That tier treats pytest's exit 5 — "no
   tests matched the marker" — as a pass, which is right for a repository with no simulation
@@ -63,6 +74,22 @@ and the release notes for that tag.
   its re-verification against a later base.
 
 ### Changed
+
+- `docs/TESTING.md` no longer misstates what the gates run. Four claims had drifted, two
+  of them wrong on the day the document landed. The unit tier's scope was published as
+  `-m "not sim"` while the code it describes has always run `-m "not sim and not slow"`,
+  so the column a contributor reads to learn what their pre-commit gate covers named a
+  filter no tier uses. The prose asserted that `nightly` is equivalent to `integration`
+  because no test carried `@pytest.mark.sim` — while the baseline table one section above
+  it already recorded 369 deselected tests. 311 tests carry `sim` today and
+  `-m "sim or slow"` selects 369, every one of which runs only in the scheduled tier. The
+  workflow-hardening section still said that work was "**not** on `main` yet"; all 51
+  workflows now carry a `concurrency` group, a `cancel-in-progress` value and
+  `timeout-minutes`, pinned by `tests/test_workflow_ci_hygiene.py`. The measured baseline
+  was re-taken: 1865 collected, 1494 passed / 2 skipped / 369 deselected / 3000 subtests,
+  65.0 CPU-s against a 90 CPU-s budget, on 4 cores at load average 1.02 — recorded because
+  the document's own argument for CPU-seconds is that a figure without its load is not
+  comparable to one taken elsewhere.
 
 - Seven more guards fail when they inspect nothing. An AST audit of `tests/` found every
   test that asserts inside a loop over a discovered set — a glob, a directory listing, a

@@ -8,7 +8,7 @@ re-measure before treating any of them as current.
 
 ```bash
 make setup          # once: create .venv and install test dependencies
-make test           # the gate: full suite, ~35 seconds
+make test           # the gate: full suite, ~64 seconds
 ```
 
 Everything else is automation around those two commands.
@@ -16,20 +16,27 @@ Everything else is automation around those two commands.
 ## Measured baseline
 
 Every number in this section is **a measurement with a date attached, not a
-constant**. The suite moved from 1792 to 1805 collected tests inside one hour on
+constant**. The suite moved from 1792 to 1865 collected tests inside one day on
 2026-09-10, and the budgets below were originally calibrated against 870 tests —
 which is how `make test` came to exceed its own ceiling by 4.2x before this was
 re-derived. Re-measure before trusting any figure here, and re-date the line
 above when you do.
+
+The timing rows were taken on **4 cores at load average 1.02**, so they are not
+comparable to a figure from a busier or wider machine; the section below on
+CPU-seconds explains why. The counting rows are properties of the tree, not of
+the machine, and `tests/test_documented_tier_scopes.py` re-derives the marker
+expressions this document publishes directly from `scripts/testkit.py`.
 
 Numbers first, because the tier boundaries are derived from them rather than
 copied from a blog post:
 
 | Quantity | Measurement |
 |---|---|
-| `make test` (unit tier) | **52.4 s wall, 52.3 CPU-s**, 1424 passed / 2 skipped / 369 deselected / 2192 subtests |
-| Whole suite, no marker filter (what CI runs) | 1795 collected |
-| Slowest single test in the unit tier | 2.96 s (`test_benchmark_publication`, now `slow`) |
+| `make test` (unit tier) | **65.0 s wall, 65.0 CPU-s**, 1494 passed / 2 skipped / 369 deselected / 3000 subtests |
+| Whole suite, no marker filter (what CI runs) | 1865 collected |
+| Selected by the nightly leg (`-m "sim or slow"`) | 369 |
+| Slowest single test in the unit tier | 2.20 s (`test_flat_arm_still_regenerates_the_committed_payload`) |
 | Affected-test run after a one-file edit | **0.1–0.4 s** |
 | CI, mean run | 0.7 min |
 | CI, slowest run observed | 3.5 min (PR Gate) |
@@ -38,8 +45,8 @@ copied from a blog post:
 The important consequence: **this suite is not slow.** A full run costs about as
 much as reading the diff you just wrote. Test *selection* is therefore a
 convenience for sub-second feedback, never a substitute for running everything
-before a commit — skipping a test you should have run costs far more than the 34
-seconds it would have taken.
+before a commit — skipping a test you should have run costs far more than the
+minute it would have taken.
 
 ## The tiers
 
@@ -52,18 +59,26 @@ one over a few quarters.
 | Tier | Scope | Budget | Runs |
 |---|---|---|---|
 | `smoke` | only tests affected by your uncommitted changes | 25 CPU-s | after every edit |
-| `unit` | the whole suite (`-m "not sim"`) | 90 CPU-s | before every commit |
+| `unit` | the whole suite (`-m "not sim and not slow"`) | 90 CPU-s | before every commit |
 | `integration` | `unit` + schema JSON syntax + Markdown link integrity | 600 CPU-s | before every push |
-| `nightly` | `integration` + everything marked `sim` | none | scheduled |
+| `nightly` | `integration` + everything marked `sim` or `slow` (`-m "sim or slow"`) | none | scheduled |
 
-**Today `nightly` is equivalent to `integration`**: no test currently carries
-`@pytest.mark.sim`, because nothing in the suite is slow enough to need
-demoting. The tier exists so that the first test which *is* has somewhere to go
-other than the pre-commit path.
+**`nightly` is not equivalent to `integration`.** The two tier markers are in
+use: 311 tests carry `sim`, and `-m "sim or slow"` selects 369 — exactly the 369
+the unit tier deselects in the table above. Every one of them runs only in
+`nightly`, so a change that breaks one is invisible to the pre-commit and
+pre-push gates until the scheduled run.
+
+This paragraph previously said the opposite — that no test carried
+`@pytest.mark.sim` and that the two tiers therefore did the same work — while
+the baseline table in the section immediately above already recorded 369
+deselected tests. The document contradicted itself on arrival, which is why the
+marker expressions are now re-derived from `scripts/testkit.py` by a test rather
+than retyped here.
 
 ```bash
 make smoke          # ~0.4 s   what you just changed
-make test           # ~34 s    the real gate
+make test           # ~64 s    the real gate
 make integration    #          what the PR Gate enforces, locally
 make nightly        #          the long tail
 make gate           #          picks the cheapest tier that covers your changes
@@ -130,7 +145,7 @@ Two properties make this cheap enough to run constantly:
 
 * **Result caching.** `scripts/testkit.py` fingerprints the content of every
   tracked file plus uncommitted changes. Re-running a tier that already passed
-  on an identical tree costs ~0.05 s instead of 34 s, so a conversational turn
+  on an identical tree costs ~0.05 s instead of 64 s, so a conversational turn
   that touched no code is not taxed.
 
   The fingerprint deliberately has **no extension allowlist**. Hashing only
@@ -170,11 +185,18 @@ still under-collects; prefer pytest).
 
 ### Workflow hardening
 
-The concurrency-group and cancellation work that accompanied these tiers is a
-separate concern and is **not** on `main` yet. It is described in the pull
-request that carries it, together with the workflow edits it asserts; this
-document does not restate its claims, because a claim about workflow state is
-only true alongside the edits that make it so.
+The concurrency-group and cancellation work that accompanied these tiers has
+since landed. All 51 workflows carry a `concurrency` group, a
+`cancel-in-progress` value, and `timeout-minutes`, and
+`tests/test_workflow_ci_hygiene.py` pins all three so the property is asserted
+by the suite rather than restated here. That test is deliberately text-based:
+the PR Gate installs only `pytest` and `requirements-phase0.txt`, so a
+YAML-parsing guard would pass locally and fail in the gate it describes.
+
+`cancel-in-progress` is not a bare `true`. A superseded pull-request run should
+be cancelled, but a branch or scheduled run must not be — several of these
+workflows are the only uploader of their commit's evidence artifact, and
+cancelling one destroys a record nothing can re-derive.
 
 ## Adding tests
 
