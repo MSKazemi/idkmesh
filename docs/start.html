@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Install the idkmesh CLI, reproduce a measured verifier-panel result, run the repository test suite and contract harness, and pick a bounded task.">
+  <meta name="theme-color" content="#0b1020">
+  <title>Start in 15 minutes — IDKMesh</title>
+  <link rel="canonical" href="https://mskazemi.com/idkmesh/start.html">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="IDKMesh">
+  <meta property="og:url" content="https://mskazemi.com/idkmesh/start.html">
+  <meta property="og:title" content="Start in 15 minutes — IDKMesh">
+  <meta property="og:description" content="Install the idkmesh CLI, reproduce a measured verifier-panel result, run the repository test suite and contract harness, and pick a bounded task.">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Start in 15 minutes — IDKMesh">
+  <meta name="twitter:description" content="Install the idkmesh CLI, reproduce a measured verifier-panel result, run the repository test suite and contract harness, and pick a bounded task.">
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"WebPage","name":"Start in 15 minutes — IDKMesh","description":"Install the idkmesh CLI, reproduce a measured verifier-panel result, run the repository test suite and contract harness, and pick a bounded task.","url":"https://mskazemi.com/idkmesh/start.html","isPartOf":{"@type":"WebSite","name":"IDKMesh","url":"https://mskazemi.com/idkmesh/"},"license":"https://www.apache.org/licenses/LICENSE-2.0","author":{"@type":"Person","name":"Mohsen Seyedkazemi Ardebili","url":"https://mskazemi.github.io"}}
+  </script>
+  <link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <nav class="sitenav" aria-label="Site">
+    <div class="wrap">
+      <a class="brand" href="./">
+        <svg viewBox="0 0 32 32" aria-hidden="true">
+          <circle cx="16" cy="6" r="3.1" fill="#8bd3ff"></circle>
+          <circle cx="6" cy="22" r="3.1" fill="#b9ffcf"></circle>
+          <circle cx="26" cy="22" r="3.1" fill="#c9b8ff"></circle>
+          <circle cx="16" cy="16" r="2.2" fill="#edf2ff"></circle>
+          <g stroke="#3d4a6b" stroke-width="1.5" fill="none">
+            <path d="M16 9 L16 14"></path><path d="M8.6 20.5 L14 17.2"></path><path d="M23.4 20.5 L18 17.2"></path>
+          </g>
+        </svg>
+        IDKMesh<span class="tail">&nbsp;docs</span>
+      </a>
+      <div class="navlinks">
+        <a href="./">Home</a>
+        <a href="start.html" aria-current="page">Start</a>
+        <a href="concepts.html">How it works</a>
+        <a href="pipelines.html">Pipelines</a>
+        <a href="research.html">Evidence</a>
+        <a href="library.html">Library</a>
+        <a class="ext" href="https://github.com/MSKazemi/idkmesh">GitHub&nbsp;↗</a>
+      </div>
+    </div>
+  </nav>
+
+  <header class="pagehead">
+    <div class="wrap">
+      <div class="eyebrow">IDKMesh · quickstart</div>
+      <h1>Do something real in fifteen minutes</h1>
+      <p class="lead">You do not need to understand the architecture first. Five steps: install the tool, reproduce a measured result, run the repository&#8217;s own checks, run a simulation, then pick a bounded task. Every command below was run against the current tree before being written here.</p>
+      <div class="actions">
+        <a class="button primary" href="https://github.com/MSKazemi/idkmesh">Open the repository <span class="arr">↗</span></a>
+        <a class="button" href="concepts.html">What the numbers mean</a>
+        <a class="button" href="https://github.com/MSKazemi/idkmesh/issues?q=is%3Aissue+state%3Aopen+label%3A%22good+first+issue%22">Live good-first issues ↗</a>
+      </div>
+      <p class="muted" style="margin-top:1.4rem"><strong>You need:</strong> Python <code>3.11</code> or newer (<code>requires-python = "&gt;=3.11"</code>; the required PR gate runs on 3.11 and 3.13) and <code>git</code>. Nothing else — no account, no API key, no paid service.</p>
+    </div>
+  </header>
+
+  <main id="main" class="wrap">
+
+    <section>
+      <ol class="steps">
+
+        <li>
+          <h3>Get the repository</h3>
+          <p class="muted">One clone, one editable-free install. The installable surface is deliberately small: only the <code>idkmesh</code> package ships, not the whole research tree.</p>
+<pre><code><span class="c"># about 2 minutes</span>
+git clone https://github.com/MSKazemi/idkmesh
+cd idkmesh
+python -m venv .venv &amp;&amp; source .venv/bin/activate
+pip install .</code></pre>
+        </li>
+
+        <li>
+          <h3>Audit a review gate</h3>
+          <p class="muted">This is the first installable tool cut from the research. It takes verdicts you already collected and reports what the panel is actually worth: effective independent votes rather than head-count, the error-correlation structure behind that number, and how many seeded known-bad candidates got through.</p>
+<pre><code>idkmesh gate-audit examples/gate-audit/panel-votes.example.json --pretty</code></pre>
+          <p class="muted">The interesting part of the report — note what the report says about its own evidence class:</p>
+<pre class="plain"><code><b>"evidence_class": "synthetic",</b>
+"panel": {
+  "nominal_votes": 5,
+  "mean_verifier_accuracy": 0.8,
+  "mean_pairwise_error_correlation": 0.0916...,
+  "error": 0.1666...,
+  <b>"effective_votes": 1.6944444444444438,</b>
+  <b>"heuristic_n_eff": 3.6588245300435087,</b>
+  "effective_votes_ceiling": 9.31624758940236
+},
+"probes": {
+  "total": 3,
+  <b>"breached": 2,</b>
+  "by_kind": {
+    "prompt-injection": { "total": 1, "breached": 1 },
+    "seeded-defect":    { "total": 2, "breached": 1 }
+  }
+},
+"warnings": [
+  "2/3 seeded known-bad probes were accepted by the panel"
+]</code></pre>
+          <p><strong>Read it like this.</strong> Five reviewers voted. The popular <code>N/(1+(N−1)ρ)</code> correction says that is worth 3.66 independent votes; counting what the votes actually support gives <strong>1.69</strong>. And two of the three deliberately-bad probe candidates were accepted anyway — including the prompt-injection probe. <a href="concepts.html#effective-votes">Why the three numbers differ →</a></p>
+          <p><strong>These particular numbers are synthetic, and the report says so.</strong> Its first fields are <code>"evidence_class": "synthetic"</code>, because the bundled input is fifteen hand-authored candidates judged by five invented reviewers. It exists to show you the shape of the answer in one command. Replace the verdicts with ones you collected and the same fields become an observed measurement of your own panel. For an observed result the project already has, see <a href="research.html">E017</a>: 25 independently seeded test oracles over a real corpus, measured at an effective panel size of 1.00.</p>
+          <div class="callout">
+            <div class="kicker">What this tool is not</div>
+            <p>The audit is <strong>diagnostic only</strong>. It consumes verdicts you collected and grants no acceptance or merge authority to anything. The contract is <a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/specifications/GATE_AUDIT_V0_1.md">Gate Audit v0.1</a>; the report shape is <a href="https://github.com/MSKazemi/idkmesh/blob/main/schemas/gate-audit-report-v0.1.schema.json"><code>gate-audit-report-v0.1.schema.json</code></a>. To point it at your own panel, copy <a href="https://github.com/MSKazemi/idkmesh/blob/main/examples/gate-audit/panel-votes.example.json">the example input</a> and replace the verdicts.</p>
+          </div>
+        </li>
+
+        <li>
+          <h3>Run the repository&#8217;s own checks</h3>
+          <p class="muted">The research tree runs from the repository root with <code>PYTHONPATH=.</code>. One <code>pytest</code> invocation collects both suites — <code>tests/</code> and <code>interop/tests/</code>.</p>
+<pre><code>python -m pip install -r requirements-phase0.txt pytest
+PYTHONPATH=. python -m pytest -q
+
+<span class="c"># or just one module</span>
+PYTHONPATH=. python -m pytest -q tests/test_r2.py</code></pre>
+          <div class="callout">
+            <div class="kicker">Do not check your work with <code>unittest discover</code></div>
+            <p>It silently under-collects. <code>unittest</code> only finds <code>TestCase</code> subclasses, so the module-level <code>test_*</code> functions spread across <code>tests/</code> are invisible to it — it reports <code>OK</code> while skipping about a tenth of the suite, with no warning that anything was missed. Use <code>pytest</code>. This is written down in <a href="https://github.com/MSKazemi/idkmesh/blob/main/AGENTS.md">AGENTS.md</a>, which every coding agent working in this repository is expected to read first.</p>
+          </div>
+        </li>
+
+        <li>
+          <h3>Validate the Phase 0 contracts directly</h3>
+          <p class="muted">This exercises the trust path end to end on fixtures: schemas, a Work Unit, a worker&#8217;s <code>ResultManifest</code>, an independent <code>VerificationResult</code> — and it checks that the deliberately-bad fixtures are <em>rejected</em>.</p>
+<pre><code>python experiments/harness.py validate</code></pre>
+<pre class="plain"><code>OK: schemas valid; WorkUnit v0.2 contract coverage enforced;
+manifest phase0/smoke, 1 Work Unit(s), worker ResultManifest, and
+independent VerificationResult validated; <b>negative security /
+self-acceptance / non-independent fixtures rejected as expected</b></code></pre>
+          <p class="muted">That last clause is the point. A self-accepting result and a non-independent verification are supposed to fail, and the harness proves they do.</p>
+        </li>
+
+        <li>
+          <h3>Run a simulation, seeded and reproducible</h3>
+          <p class="muted">Every experiment in this repository is deterministic given its seed. Run the randomised-scheduling lab and you get the same JSON anyone else gets from the same command.</p>
+<pre><code>python -m randomness_lab --policy thompson --rounds 100 --seed 42</code></pre>
+          <p class="muted">Then read what the lab is for in <a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/research/R2_SCHEDULING_CHURN_EXPERIMENT.md">R2 — randomised scheduling under churn</a>, or browse <a href="research.html">the whole experiment atlas</a>.</p>
+        </li>
+
+        <li>
+          <h3>Pick one bounded thing and do it</h3>
+          <p class="muted">Before claiming a task, check its assignees, recent comments, and linked pull requests, then say what bounded change you intend to make. Confusion you hit on the way in is itself useful evidence — reporting it is real project work.</p>
+          <div class="grid tight">
+            <a class="card" href="https://github.com/MSKazemi/idkmesh/issues?q=is%3Aissue+state%3Aopen+label%3A%22good+first+issue%22"><h3>Good first issues</h3><p class="muted">The live queue, filtered.</p><p class="more">Browse ↗</p></a>
+            <a class="card" href="https://github.com/MSKazemi/idkmesh/issues?q=is%3Aissue+state%3Aopen+label%3A%22help+wanted%22"><h3>Help wanted</h3><p class="muted">Bounded work that needs a second pair of hands.</p><p class="more">Browse ↗</p></a>
+            <a class="card" href="https://github.com/MSKazemi/idkmesh/issues/151"><h3>Audit the control plane</h3><p class="muted">Higher-skill security and control-systems review: the checkpoint trust boundary and the non-compensation guards.</p><p class="more">Issue #151 ↗</p></a>
+          </div>
+        </li>
+
+      </ol>
+    </section>
+
+    <section>
+      <h2>Before you open a pull request</h2>
+      <p class="sub">The one required check is the PR gate. It runs three things, in this order, and you can reproduce all of them locally.</p>
+      <div class="tbl-scroll">
+        <table>
+          <thead><tr><th>Leg</th><th>What it checks</th><th>Run it locally</th></tr></thead>
+          <tbody>
+            <tr><td>Closing-keyword guard</td><td>That neither the pull-request text nor <em>any</em> commit message in the range silently auto-closes an issue</td><td><code>python tools/closing_keyword_guard.py --text "pull-request-body=&hellip;" --file "commit=msg.txt"</code></td></tr>
+            <tr><td>Test suite</td><td>Both suites, on Python 3.11 and 3.13</td><td><code>PYTHONPATH=. python -m pytest -q</code></td></tr>
+            <tr><td>Link integrity</td><td>Deterministic Markdown link resolution across the tree; findings outside <code>tests/fixtures/</code> must be zero</td><td><code>PYTHONPATH=. python tools/idkgraph_link_check.py</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="muted" style="margin-top:1.2rem">Use <code>Refs: #N</code> rather than a closing keyword unless the merge really should close the issue. Full contribution rules are in <a href="https://github.com/MSKazemi/idkmesh/blob/main/CONTRIBUTING.md">CONTRIBUTING.md</a>, and the merge-safety policy — never bulk-merge stale branches, always a bounded PR reviewed against its exact diff — is in <a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/planning/BRANCH_CONVERGENCE_POLICY.md">the branch convergence policy</a>.</p>
+    </section>
+
+    <section>
+      <h2>If something is confusing, that is a finding</h2>
+      <div class="quote">A proposal is not true because it came from a strong model, many models, an expert human, or a popular repository. Evidence must survive independent scrutiny.</div>
+      <p class="prose muted">Stale, contradictory, or hard-to-discover material is a real defect in a project whose thesis is verifiable evidence — and reporting or fixing it counts. Well-supported disagreement is a contribution here, not an inconvenience.</p>
+      <div class="actions">
+        <a class="button primary" href="https://github.com/MSKazemi/idkmesh/issues/new/choose">Open an issue ↗</a>
+        <a class="button" href="https://github.com/MSKazemi/idkmesh/blob/main/SUPPORT.md">How to ask for help ↗</a>
+        <a class="button" href="https://github.com/MSKazemi/idkmesh/blob/main/CODE_OF_CONDUCT.md">Code of conduct ↗</a>
+        <a class="button" href="https://github.com/MSKazemi/idkmesh/blob/main/SECURITY.md">Report a vulnerability ↗</a>
+      </div>
+      <p class="muted" style="margin-top:1.2rem">Never report a vulnerability in a public issue — <a href="https://github.com/MSKazemi/idkmesh/blob/main/SECURITY.md">SECURITY.md</a> has the private route.</p>
+    </section>
+
+  </main>
+
+  <footer class="sitefoot">
+    <div class="wrap">
+      <div class="cols">
+        <div>
+          <h4>This site</h4>
+          <ul>
+            <li><a href="start.html">Start in 15 minutes</a></li>
+            <li><a href="concepts.html">How it works</a></li>
+            <li><a href="pipelines.html">Four pipelines</a></li>
+            <li><a href="research.html">Experiment atlas</a></li>
+            <li><a href="library.html">Documentation library</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Repository</h4>
+          <ul>
+            <li><a href="https://github.com/MSKazemi/idkmesh">Source on GitHub</a></li>
+            <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/README.md">README</a></li>
+            <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/ARCHITECTURE.md">Architecture map</a></li>
+            <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/ROADMAP.md">Roadmap</a></li>
+            <li><a href="https://github.com/MSKazemi/idkmesh/issues">Live issues</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Contracts</h4>
+          <ul>
+            <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/schemas/README.md">Schema index</a></li>
+            <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/specifications/README.md">Specifications</a></li>
+            <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/decisions/README.md">Decision records</a></li>
+            <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/IDKIPS.md">Improvement proposals</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Community</h4>
+          <ul>
+            <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/CONTRIBUTING.md">Contributing</a></li>
+            <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/COMMUNITY.md">Community paths</a></li>
+            <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/SUPPORT.md">Getting help</a></li>
+            <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/SECURITY.md">Security policy</a></li>
+            <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/GOVERNANCE.md">Governance</a></li>
+          </ul>
+        </div>
+      </div>
+      <p class="fine">IDKMesh is public, open-source, and evidence-first, under the Apache License 2.0. This site is a presentation surface: the repository remains the canonical source of truth for every contract, result, and decision linked from here. Built with no JavaScript, no external fonts, and no trackers.</p>
+    </div>
+  </footer>
+</body>
+</html>
