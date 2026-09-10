@@ -56,6 +56,30 @@ and the release notes for that tag.
 
 ### Changed
 
+- The free-resource audit's `schedule:` block records that its cron time is nominal.
+  Measured over 12 scheduled runs of two unrelated workflows on 2026-09-10, GitHub started
+  them 3.85–5.15 h after their cron expression (mean 4.49 h), so this job is expected around
+  10:15–11:30 UTC rather than 06:23, and its absence at the nominal minute is not a fault.
+  Re-tuning the expression cannot move the start; the delay is on GitHub's side.
+
+- The free-resource freshness report is written to the GitHub job summary, not only to the
+  step log. `--fail-on stale` turns the run red once evidence has *already* aged out, but
+  the warning window — the state this audit exists to catch — lands on a run that is green,
+  and nobody opens the log of a green run. The report now appears on the run page itself,
+  with a note that a WARN line means our recorded reading is ageing, not that anything
+  expires at the provider. The step captures the report before re-raising the tool's exit
+  status, because the tool prints in full and then exits non-zero; summarising only on
+  success would drop the report exactly when it matters most.
+
+- The free-resource audit's per-offer date fields are named for whose clock they are on:
+  `expires_on` and `days_until_expiry` become `evidence_stale_on` and
+  `days_until_evidence_stale`. Both are `source.checked_at + source.max_age_days` — the day
+  *our* recorded reading of an offer's terms ages out — and neither says anything about the
+  provider; this registry holds no expiry date for any offer. The old name was read as a
+  provider deadline within an hour of shipping, and a reviewer nearly reported a free tier
+  as lapsing the next day. Renamed now because the only consumer is the tool's own tests
+  and no schema pins the output, so the cost will never be lower.
+
 - The open-model benchmark probe reports the model it actually ran, instead of naming one
   from constants in its own source. Identity is now resolved from the producer image's
   recorded digest: an unregistered digest is rejected rather than relabelled, a missing

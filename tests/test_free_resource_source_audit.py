@@ -61,8 +61,8 @@ class AuditTests(unittest.TestCase):
         report = audit_tool.audit(registry, as_of=dt.date(2026, 9, 4), warn_days=7)
         record = report["offers"][0]
         self.assertEqual(record["age_days"], 7)
-        self.assertEqual(record["days_until_expiry"], 7)
-        self.assertEqual(record["expires_on"], "2026-09-11")
+        self.assertEqual(record["days_until_evidence_stale"], 7)
+        self.assertEqual(record["evidence_stale_on"], "2026-09-11")
 
     def test_audit_never_probes_the_network_by_default(self):
         registry = synthetic_registry([offer("x", "2026-01-01", 30)])
@@ -152,6 +152,75 @@ class SelfTestTests(unittest.TestCase):
     def test_self_test_passes(self):
         self.assertEqual(audit_tool._self_test(), 0)
 
+
+
+class FieldNamingTests(unittest.TestCase):
+    """A per-offer date field must say whose clock it is on.
+
+    ``evidence_stale_on`` is ``checked_at + max_age_days`` -- the day our own
+    recorded reading of the offer's terms ages out. It says nothing about the
+    provider. The earlier name, ``expires_on``, was read as a provider deadline
+    within an hour of shipping: a reviewer reported it as a free-tier credential
+    lapsing the next day, which would have been a false statement about a third
+    party. This registry holds no expiry date for any offer.
+    """
+
+    def _offer_records(self):
+        registry = json.loads(REGISTRY_PATH.read_text(encoding="utf-8"))
+        report = audit_tool.audit(registry, as_of=dt.date(2026, 9, 4), warn_days=7)
+        self.assertTrue(report["offers"], "no offers; this guard would be vacuous")
+        return report["offers"]
+
+    def test_offer_records_carry_the_evidence_named_fields(self) -> None:
+        for record in self._offer_records():
+            self.assertIn("evidence_stale_on", record)
+            self.assertIn("days_until_evidence_stale", record)
+
+    def test_no_offer_field_claims_the_offer_itself_expires(self) -> None:
+        offending = sorted(
+            {key for record in self._offer_records() for key in record if "expir" in key}
+        )
+
+        self.assertEqual(
+            offending,
+            [],
+            "these per-offer keys read as a claim about the provider, but hold "
+            f"arithmetic over our own checked_at: {offending}",
+        )
+
+
+class WorkflowSurfacingTests(unittest.TestCase):
+    """The warning window must be visible without opening a green run's log.
+
+    ``--fail-on stale`` turns the run red only once evidence has ALREADY aged
+    out. The state this audit exists to catch -- evidence about to age out -- is
+    reported on a run that is green, and nobody reads the log of a green run. So
+    the freshness report is written to the job summary, where it shows on the run
+    page itself.
+    """
+
+    WORKFLOW = ROOT / ".github/workflows/free-resource-source-audit.yml"
+
+    def _freshness_step(self) -> str:
+        text = self.WORKFLOW.read_text(encoding="utf-8")
+        start = text.index("name: Report registry freshness")
+        end = text.find("\n      - name:", start)
+        return text[start : end if end != -1 else len(text)]
+
+    def test_the_freshness_report_reaches_the_job_summary(self) -> None:
+        self.assertIn("GITHUB_STEP_SUMMARY", self._freshness_step())
+
+    def test_a_failing_audit_still_re_raises_its_status(self) -> None:
+        """Capturing stdout must not swallow the red build.
+
+        The tool prints its whole report and *then* exits non-zero, so the step
+        captures first and re-raises afterwards. Losing the re-raise would make
+        a stale registry report itself green.
+        """
+        step = self._freshness_step()
+
+        self.assertIn("--fail-on stale", step)
+        self.assertIn('exit "$status"', step)
 
 if __name__ == "__main__":
     unittest.main()
