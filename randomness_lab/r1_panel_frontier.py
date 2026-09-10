@@ -434,7 +434,25 @@ def main(argv: list[str] | None = None) -> int:
         else:
             args.output.write_text(rendered, encoding="utf-8")
     else:
-        print(rendered, end="")
+        # Deliberately NOT the payload. The other R1 runners print their full
+        # JSON here, and CodeQL's security-extended set reads a value named
+        # `seed` as a private cryptographic seed and flags the write as
+        # clear-text logging of sensitive data. Those instances are
+        # grandfathered; a new one is a new high-severity alert.
+        #
+        # The seeds are genuinely public -- they are in the artifact filename --
+        # so this is a false positive, and it could be silenced with an inline
+        # suppression. Not doing that: a 157 KB grid was never a useful thing to
+        # dump to a terminal, every real invocation writes a file, and printing
+        # a scalar summary is better behaviour independently of the alert.
+        # Silencing a warning to keep a default nobody wants is the wrong trade.
+        disagreement = result["billing_disagreement"]
+        print(f"cells: {len(result['cells'])}")
+        print(f"billing reversals: {disagreement['cells_that_change_verdict']}"
+              f" of {disagreement['cells_compared']} compared")
+        print(f"decisive reversals: "
+              f"{disagreement['cells_that_change_verdict_decisively']}")
+        print("pass --output to write the payload, --report for the summary")
     if args.report:
         args.report.parent.mkdir(parents=True, exist_ok=True)
         args.report.write_text(render_markdown(result), encoding="utf-8")
