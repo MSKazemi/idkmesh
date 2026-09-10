@@ -276,10 +276,28 @@ jobs:
               state: 'open',
               per_page: 100
             });
-            let statusIssue = openIssues.find(issue =>
-              !issue.pull_request &&
-              (issue.labels || []).some(label => label.name === statusLabel)
-            );
+            // Selection must not depend on the order the REST API happens to
+            // return. `find` took the first match in listing order, which is
+            // creation-descending, so a newly created duplicate captured every
+            // write while the original silently froze and kept being linked.
+            // Sort by issue number and take the oldest, which is the same
+            // oldest-wins rule the legacy migration below already applies.
+            const statusCandidates = openIssues
+              .filter(issue =>
+                !issue.pull_request &&
+                (issue.labels || []).some(label => label.name === statusLabel)
+              )
+              .sort((a, b) => a.number - b.number);
+            if (statusCandidates.length > 1) {
+              core.warning(
+                'More than one open issue carries ' + statusLabel + ': ' +
+                statusCandidates.map(issue => '#' + issue.number).join(', ') +
+                '. Writing to #' + statusCandidates[0].number +
+                ' and leaving the others stale. Close the duplicates so that ' +
+                'exactly one observatory remains.'
+              );
+            }
+            let statusIssue = statusCandidates[0];
 
             // Migrate the oldest legitimate legacy observatory only when it already
             // contains the machine state marker. A matching title alone is not identity.
