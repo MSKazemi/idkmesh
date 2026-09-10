@@ -1,3 +1,4 @@
+import importlib.util
 import ast
 import gzip
 import hashlib
@@ -15,6 +16,26 @@ from randomness_lab.r1_verifier_dependence import (
     render_markdown,
     run_verifier_dependence,
 )
+
+# Marked `sim`: this module replays a committed experiment artifact or runs a
+# parameter sweep, so it costs seconds rather than milliseconds. `make test`
+# (the pre-commit tier) runs `-m "not sim"` and skips it; `make nightly` runs
+# `-m sim`. CI is unaffected -- the PR gate runs a plain `pytest` with no marker
+# filter, so coverage there is unchanged.
+#
+# The import is guarded the way tests/test_schema_validity.py guards
+# `jsonschema`. Narrow workflow jobs run this module through
+# `python -m unittest` on a bare interpreter, and a module-scope
+# `import pytest` there makes the job fail to collect the file at all rather
+# than run it. The marker is a tier hint for pytest, never a precondition for
+# the assertions, so without pytest it degrades to no marker.
+if importlib.util.find_spec("pytest") is not None:
+    import pytest
+
+    pytestmark = pytest.mark.sim
+else:  # pragma: no cover - the bare-interpreter CI jobs take this path
+    pytestmark = ()
+
 
 
 ROOT = Path(__file__).resolve().parents[1]

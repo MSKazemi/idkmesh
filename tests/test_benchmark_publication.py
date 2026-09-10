@@ -9,11 +9,32 @@ statements must appear when — and only when — the evidence warrants them.
 
 from __future__ import annotations
 
+import importlib.util
 import json
 import pathlib
 import unittest
 
 import tools.benchmark_publication as bp
+
+# Marked `slow`: a correctness check on a shipped tool that shells out per test,
+# so it costs seconds rather than milliseconds. `pytest.ini` defines `slow` as
+# "excluded from the pre-commit tier"; `make test` now honours that, and
+# `make nightly` runs it. CI is unaffected -- the PR gate applies no marker
+# filter.
+#
+# The import is guarded the way tests/test_schema_validity.py guards
+# `jsonschema`. Narrow workflow jobs run this module through
+# `python -m unittest` on a bare interpreter, and a module-scope
+# `import pytest` there makes the job fail to collect the file at all rather
+# than run it. The marker is a tier hint for pytest, never a precondition for
+# the assertions, so without pytest it degrades to no marker.
+if importlib.util.find_spec("pytest") is not None:
+    import pytest
+
+    pytestmark = pytest.mark.slow
+else:  # pragma: no cover - the bare-interpreter CI jobs take this path
+    pytestmark = ()
+
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 
