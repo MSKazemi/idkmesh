@@ -18,6 +18,105 @@ IDKMesh has five coupled roles:
 
 These roles share one authority rule: **proposal, execution, verification, and canonical integration are distinct stages.**
 
+### What those five roles are, as code on `main`
+
+The prose here and in the sections below describes the system IDKMesh is
+becoming. This diagram is narrower on purpose: it is the map of what is
+**executable in this repository today**, read off the tree rather than off the
+design. Three arrow styles carry three different claims:
+
+| Arrow | Means |
+| --- | --- |
+| solid | a dependency that exists in the code — one module imports or reads the other |
+| thick | produces evidence that reaches the integration decision; **no authority travels along it** |
+| dashed | a relationship the prose asserts that has **no import path on `main`** |
+
+```mermaid
+flowchart LR
+    SCH["schemas/<br/>33 versioned JSON contracts<br/><i>authoritative wherever a diagram disagrees</i>"]
+
+    subgraph SPINE["Contract spine — executable, run from a checkout"]
+        ORCH["two_attempt_orchestrator.py<br/><i>control plane; runs no candidate code</i>"]
+        VER["local_verifier.py<br/>+ evaluator_plan_runner.py<br/><i>independent, schema-validating</i>"]
+        PROV["provenance_integrity.py<br/><i>canonical digests</i>"]
+        REP["run_evidence_report.py<br/><i>non-selecting evidence report</i>"]
+    end
+
+    subgraph PROD["Ships as a package — pyproject packages = idkmesh"]
+        CLI["idkmesh console script<br/>cli.py → gate_audit.py<br/><i>verifier-panel independence audit</i>"]
+        ACT["actions/gate-audit/action.yml<br/><i>the same CLI, as an Action</i>"]
+    end
+
+    subgraph SIDE["Decision support — proposes, never integrates"]
+        RES["sim/ (35 simulators)<br/>experiments/E011-E043 (32 records)<br/>results/ (committed evidence)"]
+        OPS["tools/ (45), scripts/ (27)<br/>.github/workflows/ (51)<br/><i>scripts/testkit.py is the one path the<br/>Makefile, hooks and PR Gate share</i>"]
+    end
+
+    IOP["interop/<br/>adapters, bindings, identity<br/><i>A2A and MCP WorkUnit mappings;<br/>transport success maps to pending_verification</i>"]
+    ADM["free_compute_router.py<br/>+ config/compute-policy.json<br/><i>fail-closed at project_spend_usd_max = 0</i>"]
+
+    HUMAN["Explicit human or governance integration decision<br/><i>the only stage that integrates</i>"]
+
+    SCH --> VER
+    ORCH --> VER
+    ORCH --> PROV
+    VER --> PROV
+    REP --> ORCH
+    ACT --> CLI
+
+    REP ==> HUMAN
+    CLI ==> HUMAN
+    RES ==> HUMAN
+    OPS ==> HUMAN
+
+    IOP -. "nothing outside interop/ imports it;<br/>a second WorkerAdapter protocol" .-> ORCH
+    ADM -. "invoked from scripts/, not from the work path" .-> ORCH
+
+    classDef claim fill:#fde8e8,stroke:#c53030,color:#742a2a
+    classDef evidence fill:#e6f0fb,stroke:#2b6cb0,color:#1a365d
+    classDef authority fill:#e6f4ea,stroke:#2f855a,color:#22543d
+    classDef research fill:#fef3c7,stroke:#b45309,color:#78350f
+    class ORCH claim
+    class VER,PROV,REP,CLI evidence
+    class HUMAN authority
+    class RES,OPS research
+```
+
+**Source:** the tree itself — `pyproject.toml`, `idkmesh/`, `experiments/`,
+`interop/`, `schemas/`, `sim/`, `tools/`, `scripts/`,
+[`config/compute-policy.json`](config/compute-policy.json) and
+`.github/workflows/`. Every count is a measurement of one revision, not a
+constant; re-derive rather than trust them.
+
+The two dashed edges, and two more bindings the diagram cannot show, are the
+honest part. Each was established by looking for the import, not by reading the
+prose:
+
+* **Only `idkmesh/` ships.** `pyproject.toml` sets `packages = ["idkmesh"]` and
+  exposes one console script. Everything else above is research and
+  repository-operations code that runs from a checkout. §10's "not a finished
+  end-user product" is a packaging fact before it is a judgement.
+* **`interop/` is not wired into the orchestrator.** No module outside
+  `interop/` and `interop/tests/` imports it, and `WorkerAdapter` is defined
+  twice — once in `interop/adapters.py`, once in
+  `experiments/two_attempt_orchestrator.py`. That is what §4 means by
+  "interoperability infrastructure, not production worker integrations": two
+  implementations of one boundary that do not yet meet.
+* **Compute admission is a separate entry point.** `free_compute_router.py` is
+  imported by `scripts/resource_compute_admission.py`,
+  `scripts/free_resource_planner.py` and `experiments/local_compute_offer.py` —
+  not by the orchestrator. The §5 rule binds wherever admission is invoked; it
+  is not enforced *inside* the work path.
+* **Two schema bindings are test-time, not runtime.** `interop/` checks WorkUnit
+  shape with hand-written validation, and `idkmesh/gate_audit.py` stamps
+  `gate-audit-report-v0.1` on its output without loading the schema. Both are
+  validated against `schemas/` in the suite, so drift fails a test rather than a
+  run.
+
+The contract chain these pieces implement, and who is authoritative at each
+step, is §2.
+
+
 ## 2. Canonical work/evidence path
 
 The current semantic boundary is:
