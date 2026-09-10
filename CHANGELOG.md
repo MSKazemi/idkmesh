@@ -14,6 +14,16 @@ and the release notes for that tag.
 
 ### Added
 
+- `scripts/free_resource_source_audit.py` and a scheduled workflow reporting freshness of
+  every offer in the free-resource registry. `free_resource_planner.py` already drops an
+  offer whose evidence has aged past its own `source.max_age_days`, but only when a planning
+  run happens to ask; the audit makes the same arithmetic visible on a schedule, so an offer
+  about to expire is seen before a planning run silently stops selecting it. It is read-only
+  by construction — `permissions: contents: read`, and it never refreshes `checked_at`,
+  edits the registry, opens a pull request, or selects an offer, because re-dating an offer
+  without a human re-reading its terms is the failure `max_age_days` exists to prevent.
+  `--fail-on {never,stale,expiring}` chooses whether freshness gates the run.
+
 - `scripts/demo.py`, a narrated contract tour using the repository's real validators
   and committed synthetic fixtures: three positive checks and four rejection checks.
   It does not run an agent or prove live independence, accepted work, or merge authority.
