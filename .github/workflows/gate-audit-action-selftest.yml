@@ -23,7 +23,7 @@ permissions:
 
 concurrency:
   group: gate-audit-action-selftest-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   selftest:
