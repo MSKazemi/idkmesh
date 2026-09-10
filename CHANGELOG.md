@@ -14,6 +14,14 @@ and the release notes for that tag.
 
 ### Added
 
+- `tests/test_nightly_tier_has_something_to_run.py`, guarding the precondition that makes
+  `scripts/testkit.py`'s nightly tier meaningful. That tier treats pytest's exit 5 — "no
+  tests matched the marker" — as a pass, which is right for a repository with no simulation
+  tests and wrong for this one, where `-m "sim or slow"` selects 369. If the tier markers
+  were ever deleted or renamed, nightly would report success having run none of them. The
+  scan reads `pytestmark` assignments with `ast`, so a marker named only inside a string
+  literal is not mistaken for one that is applied.
+
 - `scripts/free_resource_source_audit.py` and a scheduled workflow reporting freshness of
   every offer in the free-resource registry. `free_resource_planner.py` already drops an
   offer whose evidence has aged past its own `source.max_age_days`, but only when a planning
