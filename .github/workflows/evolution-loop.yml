@@ -74,14 +74,16 @@ jobs:
             tests/test_conjunctive_evolution_control.py \
             tests/test_checkpoint_manifest.py \
             tests/test_evolution_checkpoint_validation.py \
-            tests/test_evolution_workflow_security.py
+            tests/test_evolution_workflow_security.py \
+            tests/test_evolution_report_contract.py
           python -m unittest -v \
             tests.test_evolution_math \
             tests.test_evolution_observer \
             tests.test_conjunctive_evolution_control \
             tests.test_checkpoint_manifest \
             tests.test_evolution_checkpoint_validation \
-            tests.test_evolution_workflow_security
+            tests.test_evolution_workflow_security \
+            tests.test_evolution_report_contract
 
       - name: Normalize event kind
         id: event
@@ -204,6 +206,7 @@ jobs:
 
       - name: Update persistent Bayesian history
         run: |
+          mkdir -p results/evolution
           python scripts/evolution_score.py \
             --kind '${{ steps.event.outputs.kind }}' \
             --actor '${{ github.actor }}' \
@@ -211,6 +214,7 @@ jobs:
             --ref '${{ github.ref }}' \
             --run-id '${{ github.run_id }}' \
             --source '${{ github.event_name }}' \
+            --report results/evolution/PERSISTENT_EVOLUTION_REPORT.md \
             --checkpoint-source '${{ steps.checkpoint.outputs.source }}'
 
       - name: Collect bounded live repository evidence
@@ -263,6 +267,7 @@ jobs:
       - name: Validate generated evidence and state
         if: steps.observation.outputs.available == 'true'
         run: |
+          test -s results/evolution/PERSISTENT_EVOLUTION_REPORT.md
           python -m json.tool state/evolution-state.json >/dev/null
           python -m json.tool state/evolution-math-policy.json >/dev/null
           python -m json.tool config/evolution-policy-v1.json >/dev/null
@@ -305,7 +310,6 @@ jobs:
         with:
           name: evolution-checkpoint-v2-${{ github.run_id }}
           path: |
-            EVOLUTION_REPORT.md
             state/evolution-state.json
             state/evolution-events.jsonl
             state/evolution-checkpoint-manifest.json
@@ -319,7 +323,7 @@ jobs:
         if: steps.observation.outputs.available == 'true'
         run: |
           echo "# Persistent Bayesian history" >> "$GITHUB_STEP_SUMMARY"
-          cat EVOLUTION_REPORT.md >> "$GITHUB_STEP_SUMMARY"
+          cat results/evolution/PERSISTENT_EVOLUTION_REPORT.md >> "$GITHUB_STEP_SUMMARY"
           echo >> "$GITHUB_STEP_SUMMARY"
           echo "# Recomputed live repository observatory" >> "$GITHUB_STEP_SUMMARY"
           cat results/evolution/EVOLUTION_REPORT.md >> "$GITHUB_STEP_SUMMARY"
@@ -368,13 +372,15 @@ jobs:
             scripts/conjunctive_evolution_control.py \
             tests/test_checkpoint_manifest.py \
             tests/test_evolution_checkpoint_validation.py \
-            tests/test_evolution_workflow_security.py
+            tests/test_evolution_workflow_security.py \
+            tests/test_evolution_report_contract.py
           python -m unittest -v \
             tests.test_evolution_math \
             tests.test_evolution_observer \
             tests.test_conjunctive_evolution_control \
             tests.test_checkpoint_manifest \
             tests.test_evolution_checkpoint_validation \
-            tests.test_evolution_workflow_security
+            tests.test_evolution_workflow_security \
+            tests.test_evolution_report_contract
           python -m json.tool state/evolution-math-policy.json >/dev/null
           python -m json.tool config/evolution-policy-v1.json >/dev/null

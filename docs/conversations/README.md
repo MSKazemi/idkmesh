@@ -7,12 +7,13 @@ canonical files designated by [`../../PROJECT_RULES.md`](../../PROJECT_RULES.md)
 (decisions, specifications, architecture, findings); this directory keeps the trail
 that produced them.
 
-153 records across 5 dates, newest first.
+154 records across 5 dates, newest first.
 
 ## Index
 
 ### 2026-09-10
 
+- [Continued development — ACE recovery and auditable evolution report](2026-09-10-continued-development-ace-recovery-and-evolution-report.md)
 - [Repository audit and Portfolio concurrency fix](2026-09-10-repository-audit-and-portfolio-concurrency-fix.md)
 
 ### 2026-09-09
