@@ -163,7 +163,7 @@ Then benchmark whether blockchain settlement materially improves the actual trus
 | UTXO/accounting model | auditable contribution/credit accounting | potentially useful later |
 | BIP process | IDKMesh protocol evolution | highly recommended now |
 
-### Key distinction
+## Key distinction
 
 Bitcoin solves a narrow but very hard problem: maintaining a shared monetary history among mutually distrustful participants without a central authority.
 
