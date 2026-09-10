@@ -46,6 +46,14 @@ and the release notes for that tag.
 
 ### Changed
 
+- `tests/test_calibration_path_filter.py` reads a `paths:` filter written in any valid
+  YAML spelling. Its first parser matched only double-quoted sequence entries, so a
+  single-quoted or bare block parsed to nothing and every watched file was then reported
+  as unwatched — a purely cosmetic reformat produced a failure that blamed the workflow.
+  The same flaw in a one-off script over-counted a repository-wide survey threefold, so
+  the parser now also fails loudly if a filter parses to zero entries rather than
+  treating an empty result as a finding.
+
 - The GitHub Pages build works again. `docs/architecture/REPOSITORY_MATHEMATICAL_PORTFOLIO_CONCURRENCY.md`
   documented a GitHub Actions concurrency expression inside a `yaml` code fence.
   Jekyll expands Liquid delimiters before Markdown runs, so the fence did not
