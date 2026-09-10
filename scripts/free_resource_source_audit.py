@@ -6,9 +6,17 @@ aged past its own ``source.max_age_days``. That check only runs when somebody
 asks the planner to plan a task, and it is purely arithmetic on
 ``source.checked_at``. This tool adds the two things that arithmetic cannot do:
 
-1. a standing report, so an offer that is about to expire is visible BEFORE a
-   planning run silently drops it;
+1. a standing report, so an offer whose EVIDENCE is about to go stale is visible
+   BEFORE a planning run silently drops it;
 2. an opt-in liveness probe of each ``source.url``.
+
+What the dates mean. ``evidence_stale_on`` is ``source.checked_at`` plus
+``source.max_age_days``: the day OUR recorded reading of the offer's terms ages
+out. It is not an expiry date for the offer, and this registry holds no such
+date. Nothing external happens on that day; what happens is that the planner
+stops selecting a possibly still-valid offer because nobody re-read its page.
+The fields are named for whose clock they are on, because an earlier name --
+``expires_on`` -- was read as a provider deadline within an hour of shipping.
 
 Contract boundary. This tool is read-only. It never rewrites the registry,
 refreshes ``checked_at``, dispatches work, grants worker authority, or selects a
@@ -105,8 +113,8 @@ def audit(
             "checked_at": source["checked_at"],
             "max_age_days": max_age_days,
             "age_days": age_days,
-            "days_until_expiry": max_age_days - age_days,
-            "expires_on": (checked_at + dt.timedelta(days=max_age_days)).isoformat(),
+            "days_until_evidence_stale": max_age_days - age_days,
+            "evidence_stale_on": (checked_at + dt.timedelta(days=max_age_days)).isoformat(),
             "freshness": classify(age_days, max_age_days, warn_days),
             "url": source["url"],
             "liveness": UNCHECKED,
@@ -129,7 +137,7 @@ def audit(
         "offer_count": len(offers),
         "counts": counts,
         "unreachable_ids": sorted(unreachable),
-        "offers": sorted(offers, key=lambda o: (o["days_until_expiry"], o["id"])),
+        "offers": sorted(offers, key=lambda o: (o["days_until_evidence_stale"], o["id"])),
     }
 
 
@@ -147,8 +155,8 @@ def render_text(report: dict[str, Any]) -> str:
         if offer["error"]:
             liveness += f" ({offer['error']})"
         lines.append(
-            f"{marker:5s} {offer['id']:38s} expires {offer['expires_on']} "
-            f"({offer['days_until_expiry']:+d}d){liveness}"
+            f"{marker:5s} {offer['id']:38s} evidence stale {offer['evidence_stale_on']} "
+            f"({offer['days_until_evidence_stale']:+d}d){liveness}"
         )
     return "\n".join(lines)
 
@@ -180,7 +188,7 @@ def _self_test() -> int:
     report = audit(registry, as_of=dt.date(2026, 2, 1), warn_days=7)
     assert report["counts"] == {FRESH: 1, EXPIRING: 0, STALE: 1}, report["counts"]
     assert report["offers"][0]["id"] == "synthetic-stale", "stalest offer must sort first"
-    assert report["offers"][0]["days_until_expiry"] == -21, report["offers"][0]
+    assert report["offers"][0]["days_until_evidence_stale"] == -21, report["offers"][0]
     assert report["sources_checked"] is False
     assert all(o["liveness"] == UNCHECKED for o in report["offers"])
     print("OK: free_resource_source_audit self-test passed")

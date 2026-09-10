@@ -56,6 +56,15 @@ and the release notes for that tag.
 
 ### Changed
 
+- The free-resource audit's per-offer date fields are named for whose clock they are on:
+  `expires_on` and `days_until_expiry` become `evidence_stale_on` and
+  `days_until_evidence_stale`. Both are `source.checked_at + source.max_age_days` — the day
+  *our* recorded reading of an offer's terms ages out — and neither says anything about the
+  provider; this registry holds no expiry date for any offer. The old name was read as a
+  provider deadline within an hour of shipping, and a reviewer nearly reported a free tier
+  as lapsing the next day. Renamed now because the only consumer is the tool's own tests
+  and no schema pins the output, so the cost will never be lower.
+
 - The open-model benchmark probe reports the model it actually ran, instead of naming one
   from constants in its own source. Identity is now resolved from the producer image's
   recorded digest: an unregistered digest is rejected rather than relabelled, a missing
