@@ -9,6 +9,7 @@ on:
       - 'tests/test_ace_lineage_schema.py'
       - 'tests/test_ace_lineage_parser.py'
       - '.github/workflows/ace-lineage-check.yml'
+      - 'requirements-phase0.txt'
   push:
     branches: [main]
     paths:
@@ -18,6 +19,7 @@ on:
       - 'tests/test_ace_lineage_schema.py'
       - 'tests/test_ace_lineage_parser.py'
       - '.github/workflows/ace-lineage-check.yml'
+      - 'requirements-phase0.txt'
   workflow_dispatch:
 
 permissions:

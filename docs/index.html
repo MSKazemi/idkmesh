@@ -6,129 +6,347 @@
   <meta name="description" content="IDKMesh is an open-source verification-first coordination fabric for humans, AI agents, and heterogeneous compute working on uncertain goals.">
   <meta name="theme-color" content="#0b1020">
   <title>IDKMesh — Verified swarm engineering</title>
-  <style>
-    :root {
-      color-scheme: dark;
-      --bg: #0b1020;
-      --panel: #121a2f;
-      --text: #edf2ff;
-      --muted: #a9b4ce;
-      --line: #26314f;
-      --accent: #8bd3ff;
-      --accent-2: #b9ffcf;
-      --max: 1080px;
-    }
-    * { box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
-    body {
-      margin: 0;
-      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      line-height: 1.6;
-    }
-    a { color: var(--accent); }
-    a:hover, a:focus-visible { color: var(--accent-2); }
-    .wrap { width: min(calc(100% - 2rem), var(--max)); margin: 0 auto; }
-    header { padding: 5.5rem 0 3rem; border-bottom: 1px solid var(--line); }
-    .eyebrow { color: var(--accent-2); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-size: .8rem; }
-    h1 { font-size: clamp(2.5rem, 8vw, 5.8rem); line-height: .98; margin: .5rem 0 1.25rem; max-width: 11ch; }
-    .lead { font-size: clamp(1.1rem, 2vw, 1.35rem); color: var(--muted); max-width: 720px; }
-    .actions { display: flex; flex-wrap: wrap; gap: .8rem; margin-top: 1.8rem; }
-    .button { display: inline-block; border: 1px solid var(--line); border-radius: .7rem; padding: .7rem 1rem; text-decoration: none; font-weight: 700; background: var(--panel); }
-    .button.primary { background: var(--text); color: var(--bg); border-color: var(--text); }
-    main { padding: 3rem 0 5rem; }
-    section { margin: 0 0 3.25rem; }
-    h2 { font-size: clamp(1.7rem, 4vw, 2.4rem); margin-bottom: .65rem; }
-    .muted { color: var(--muted); }
-    .grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
-    .card { border: 1px solid var(--line); background: var(--panel); padding: 1.15rem; border-radius: .9rem; }
-    .card h3 { margin-top: 0; }
-    .card p:last-child { margin-bottom: 0; }
-    code { background: #0a0f1c; padding: .15rem .35rem; border-radius: .3rem; }
-    .flow { border-left: 3px solid var(--accent); padding-left: 1rem; font-size: 1.05rem; }
-    .status { display: inline-block; border: 1px solid var(--line); border-radius: 999px; padding: .25rem .65rem; color: var(--accent-2); font-size: .9rem; }
-    footer { border-top: 1px solid var(--line); color: var(--muted); padding: 2rem 0 3rem; }
-  </style>
+  <link rel="canonical" href="https://mskazemi.com/idkmesh/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="IDKMesh">
+  <meta property="og:url" content="https://mskazemi.com/idkmesh/">
+  <meta property="og:title" content="IDKMesh — Verified swarm engineering">
+  <meta property="og:description" content="IDKMesh is an open-source verification-first coordination fabric for humans, AI agents, and heterogeneous compute working on uncertain goals.">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="IDKMesh — Verified swarm engineering">
+  <meta name="twitter:description" content="IDKMesh is an open-source verification-first coordination fabric for humans, AI agents, and heterogeneous compute working on uncertain goals.">
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"WebPage","name":"IDKMesh — Verified swarm engineering","description":"IDKMesh is an open-source verification-first coordination fabric for humans, AI agents, and heterogeneous compute working on uncertain goals.","url":"https://mskazemi.com/idkmesh/","isPartOf":{"@type":"WebSite","name":"IDKMesh","url":"https://mskazemi.com/idkmesh/"},"license":"https://www.apache.org/licenses/LICENSE-2.0","author":{"@type":"Person","name":"Mohsen Seyedkazemi Ardebili","url":"https://mskazemi.github.io"}}
+  </script>
+  <link rel="stylesheet" href="assets/site.css">
 </head>
 <body>
-  <header>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <nav class="sitenav" aria-label="Site">
     <div class="wrap">
-      <div class="eyebrow">Open-source research & engineering</div>
-      <h1>IDKMesh</h1>
-      <p class="lead"><strong>Verified swarm engineering:</strong> humans, AI agents, and heterogeneous compute collaborate through bounded tasks, independent verification, and reproducible evidence.</p>
-      <div class="actions">
-        <a class="button primary" href="https://github.com/MSKazemi/idkmesh">Explore the repository</a>
-        <a class="button" href="#start">Contribute in 15 minutes</a>
-        <a class="button" href="pipelines.html">See how it works</a>
-        <a class="button" href="https://github.com/MSKazemi/idkmesh/issues">See live work</a>
+      <a class="brand" href="./">
+        <svg viewBox="0 0 32 32" aria-hidden="true">
+          <circle cx="16" cy="6" r="3.1" fill="#8bd3ff"></circle>
+          <circle cx="6" cy="22" r="3.1" fill="#b9ffcf"></circle>
+          <circle cx="26" cy="22" r="3.1" fill="#c9b8ff"></circle>
+          <circle cx="16" cy="16" r="2.2" fill="#edf2ff"></circle>
+          <g stroke="#3d4a6b" stroke-width="1.5" fill="none">
+            <path d="M16 9 L16 14"></path><path d="M8.6 20.5 L14 17.2"></path><path d="M23.4 20.5 L18 17.2"></path>
+          </g>
+        </svg>
+        IDKMesh<span class="tail">&nbsp;docs</span>
+      </a>
+      <div class="navlinks">
+        <a href="./" aria-current="page">Home</a>
+        <a href="start.html">Start</a>
+        <a href="concepts.html">How it works</a>
+        <a href="pipelines.html">Pipelines</a>
+        <a href="research.html">Evidence</a>
+        <a href="library.html">Library</a>
+        <a class="ext" href="https://github.com/MSKazemi/idkmesh">GitHub&nbsp;↗</a>
+      </div>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="wrap">
+      <div class="hero-grid">
+        <div>
+          <div class="eyebrow">Open-source research &amp; engineering</div>
+          <h1 class="display">Verified<br><span class="grad">swarm engineering</span></h1>
+          <p class="lead"><strong>Humans, AI agents, and heterogeneous compute</strong> collaborate through bounded tasks, independent verification, and reproducible evidence — because generation is now cheap and trustworthy review is not.</p>
+          <div class="actions">
+            <a class="button primary" href="start.html">Start in 15 minutes <span class="arr">→</span></a>
+            <a class="button" href="#try">Try it in five minutes</a>
+            <a class="button" href="concepts.html">How it works</a>
+            <a class="button" href="research.html">See the evidence</a>
+            <a class="button" href="https://github.com/MSKazemi/idkmesh">Repository ↗</a>
+          </div>
+          <div class="actions toggle-wrap">
+            <input type="checkbox" id="pausemotion">
+            <label class="button toggle" for="pausemotion"><span class="off">Pause motion</span><span class="on">Resume motion</span></label>
+          </div>
+        </div>
+
+        <figure style="margin:0">
+          <div class="frame">
+            <svg class="svg-root" viewBox="0 0 620 400" role="img"
+                 aria-label="Diagram: many cheap candidate proposals stream in from the left, a narrow independent-verification gate admits only a few, a queue of unverified work builds up in front of the gate, and the outputs are a small amount of evidence-backed accepted work plus rejected candidates that are retained as evidence.">
+              <defs>
+                <linearGradient id="h-gate" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#10243a"></stop>
+                  <stop offset="100%" stop-color="#121a2f"></stop>
+                </linearGradient>
+              </defs>
+
+              <text class="t tag claim" x="20" y="24">GENERATION — CHEAP</text>
+              <text class="t tag evidence" x="262" y="24">GATE</text>
+              <text class="t tag" x="372" y="24" fill="#b9ffcf">OUTCOME</text>
+
+              <!-- four inbound lanes: volume arrives faster than the gate drains -->
+              <g>
+                <path class="flowline" d="M 20 86 L 246 156" style="stroke:#ffcf8b"></path>
+                <path class="flowline" d="M 20 142 L 246 178" style="stroke:#ffcf8b; animation-delay:-.3s"></path>
+                <path class="flowline" d="M 20 200 L 246 206" style="stroke:#ffcf8b; animation-delay:-.6s"></path>
+                <path class="flowline" d="M 20 258 L 246 230" style="stroke:#ffcf8b; animation-delay:-.9s"></path>
+              </g>
+              <circle class="token sm" style="offset-path: path('M 20 86 L 246 156'); fill:#ffcf8b; animation-duration:2.1s"></circle>
+              <circle class="token sm" style="offset-path: path('M 20 142 L 246 178'); fill:#ffcf8b; animation-duration:1.7s; animation-delay:-.4s"></circle>
+              <circle class="token sm" style="offset-path: path('M 20 200 L 246 206'); fill:#ffcf8b; animation-duration:1.9s; animation-delay:-.8s"></circle>
+              <circle class="token sm" style="offset-path: path('M 20 258 L 246 230'); fill:#ffcf8b; animation-duration:2.4s; animation-delay:-1.2s"></circle>
+              <circle class="token sm" style="offset-path: path('M 20 142 L 246 178'); fill:#ffcf8b; animation-duration:1.7s; animation-delay:-1.1s"></circle>
+              <circle class="token sm" style="offset-path: path('M 20 258 L 246 230'); fill:#ffcf8b; animation-duration:2.4s; animation-delay:-2s"></circle>
+
+              <text class="t sm" x="20" y="318">candidates · patches</text>
+              <text class="t sm" x="20" y="334">claims · proposals</text>
+
+              <!-- the queue that builds in front of the gate -->
+              <g>
+                <rect x="132" y="278" width="86" height="10" rx="3" fill="#2a2214" stroke="#ffcf8b" stroke-width=".9"></rect>
+                <rect class="grow" x="133" y="279" width="84" height="8" rx="2" fill="#ffcf8b" opacity=".8"></rect>
+                <text class="t sm" x="132" y="304" fill="#ffcf8b">verification debt</text>
+              </g>
+
+              <!-- the gate -->
+              <g>
+                <rect class="box evidence" x="250" y="60" width="92" height="280" rx="10" fill="url(#h-gate)"></rect>
+                <rect x="250" y="178" width="92" height="28" fill="#0b1020"></rect>
+                <line class="edge" x1="252" y1="178" x2="340" y2="178" stroke="#8bd3ff"></line>
+                <line class="edge" x1="252" y1="206" x2="340" y2="206" stroke="#8bd3ff"></line>
+                <text class="t sm mid" x="296" y="120" fill="#8bd3ff">INDEPENDENT</text>
+                <text class="t sm mid" x="296" y="136" fill="#8bd3ff">VERIFICATION</text>
+                <text class="t sm mid" x="296" y="262">narrow</text>
+                <text class="t sm mid" x="296" y="278">by design</text>
+                <rect class="halo mint" x="246" y="56" width="100" height="288" rx="12"></rect>
+              </g>
+
+              <!-- accepted -->
+              <path class="flowline mint" d="M 342 186 L 372 152"></path>
+              <circle class="token mint" style="offset-path: path('M 342 186 L 372 152'); animation-duration:4.4s"></circle>
+              <g>
+                <rect class="box" x="372" y="106" width="228" height="86" rx="8" stroke="#b9ffcf" fill="#0f2419"></rect>
+                <text class="t mid" x="486" y="140" fill="#b9ffcf">verified useful work</text>
+                <text class="t sm mid" x="486" y="162">the only output that counts</text>
+                <text class="t sm mid" x="486" y="178">never the worker’s own word for it</text>
+              </g>
+
+              <!-- rejected, retained -->
+              <path class="flowline deny" d="M 342 210 L 372 258"></path>
+              <circle class="token deny" style="offset-path: path('M 342 210 L 372 258'); animation-duration:3.2s; animation-delay:-1s"></circle>
+              <g>
+                <rect class="box deny" x="372" y="228" width="228" height="78" rx="8"></rect>
+                <text class="t mid" x="486" y="258" fill="#ff9b8b">rejected</text>
+                <text class="t sm mid" x="486" y="278">retained as evidence, never hidden</text>
+                <text class="t sm mid" x="486" y="294">a negative result is a result</text>
+              </g>
+
+              <text class="t sm" x="372" y="336">a proposal is not proof</text>
+            </svg>
+          </div>
+          <figcaption><strong>The whole project in one picture.</strong> Output volume is not the scarce resource. Trustworthy review is — so IDKMesh treats verification capacity, verifier independence, and evidence quality as the constraints to engineer.</figcaption>
+        </figure>
       </div>
     </div>
   </header>
 
-  <main class="wrap">
-    <section>
-      <span class="status">Research preview — not production software</span>
-      <h2>What is IDKMesh?</h2>
-      <p>IDKMesh asks whether many humans and AI agents can turn uncertain goals into trustworthy software and research without pretending that raw output is knowledge.</p>
-      <p class="flow"><strong>Goal → bounded Work Unit → isolated attempts → independent verification → evidence → explicit integration decision.</strong></p>
-      <p class="muted">The project deliberately separates generation from acceptance. A successful worker, popular proposal, or large swarm does not automatically become canonical truth.</p>
-      <p><a href="pipelines.html">Watch that path, and three other pipelines, as animated flowcharts →</a></p>
-    </section>
+  <main id="main" class="wrap">
 
     <section>
-      <h2>Why now?</h2>
-      <div class="grid">
-        <article class="card"><h3>Agents can generate quickly</h3><p>Generation capacity is growing faster than trustworthy review capacity. IDKMesh treats verification debt and evidence quality as first-class constraints.</p></article>
-        <article class="card"><h3>Different agents fail together</h3><p>More votes are not automatically more independent evidence. The project measures verifier reliability, dependence, and failure correlation.</p></article>
-        <article class="card"><h3>Open source needs coordination</h3><p>The repository itself is an experiment in bounded work, public evidence, reproducible decisions, and community growth without activity-count Goodharting.</p></article>
+      <span class="status warn">Research preview — not production software</span>
+      <h2>What IDKMesh is</h2>
+      <p class="sub">An open-source research and engineering project asking whether a large open community of humans and AI agents can discover goals, decompose work, execute bounded tasks, verify results independently, and maintain complex systems better than isolated developers or agents can. It treats that as an empirical question.</p>
+
+      <div class="quote"><strong>Goal → bounded Work Unit → isolated attempts → independent verification → evidence → explicit integration decision.</strong></div>
+
+      <p class="prose muted">The project deliberately separates generation from acceptance. A successful worker, a popular proposal, or a large swarm does not automatically become canonical truth. <a href="concepts.html">See the six ideas that follow from that →</a></p>
+    </section>
+
+    <section id="try">
+      <span class="status">Five minutes, no account</span>
+      <h2>Try it: audit a review gate</h2>
+      <p class="sub">The first installable tool cut from this research measures what a panel of verifiers is actually worth. The finding it packages is an observed one: <strong>twenty-five independently seeded test oracles, run over a real 72-candidate corpus, were measured to be worth about one</strong> — and the standard <code>N/(1+(N−1)ρ)</code> correction overstated even that by 1.66×. Growing the panel bought nothing; changing how the votes were combined cut error 3.7×. Source: <a href="https://github.com/MSKazemi/idkmesh/blob/main/experiments/E017-item-difficulty-and-quorum.md">E017</a>.</p>
+<pre><code>git clone https://github.com/MSKazemi/idkmesh &amp;&amp; cd idkmesh
+pip install .
+idkmesh gate-audit examples/gate-audit/panel-votes.example.json --pretty</code></pre>
+      <p class="muted"><strong>What that command prints is not the E017 measurement.</strong> The bundled example is a small hand-authored input that labels itself <code>"evidence_class": "synthetic"</code> in its own output: fifteen candidates, five invented reviewers, 1.69 effective votes from a nominal five against a heuristic 3.66, and two of three seeded known-bad probes accepted. It shows you the shape of the answer. Point the tool at verdicts you actually collected to get an observed one. The contract is <a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/specifications/GATE_AUDIT_V0_1.md">Gate Audit v0.1</a>, and the audit is diagnostic only — it grants no acceptance or merge authority. <a href="start.html">Full quickstart, with the output explained →</a></p>
+    </section>
+
+    <section id="measured">
+      <h2>What has actually been measured</h2>
+      <p class="sub">Every number below is an <strong>observed</strong> measurement from <a href="https://github.com/MSKazemi/idkmesh/blob/main/experiments/E017-item-difficulty-and-quorum.md">E017</a>, produced by code in this repository that you can re-run. A verifier there is a partial test oracle — a program, not a person and not a language model — and ground truth comes from executing hidden tests. Most results elsewhere on this site are synthetic mechanism tests, and are labelled as such.</p>
+
+      <div class="stats">
+        <div class="stat">
+          <div class="num cyan">1.66×</div>
+          <div class="lbl">how much the standard <code>N/(1+(N−1)ρ)</code> correction <em>overstated</em> that same panel — it said 1.66 effective verifiers where the measurement said 1.00.</div>
+        </div>
+        <div class="stat">
+          <div class="num amber">0.587</div>
+          <div class="lbl">mean pairwise error correlation across 300 pairs of 25 independently seeded test oracles — programs, graded on real defects (E017). Not a knob set by hand.</div>
+        </div>
+        <div class="stat">
+          <div class="num red">1.00</div>
+          <div class="lbl">effective panel size of those 25 oracles under majority vote — panel error 0.2083 against a single verifier's 0.2044. Growing the panel bought nothing (E017).</div>
+        </div>
+        <div class="stat">
+          <div class="num mint">3.7×</div>
+          <div class="lbl">error reduction from fixing the <em>aggregation rule</em> instead — 0.2083 → 0.0556, with an irreducible floor no quorum reaches (E017).</div>
+        </div>
+      </div>
+
+      <div class="callout">
+        <div class="kicker">Read this honestly</div>
+        <p>Implemented infrastructure is evidence of a capability to <em>run experiments</em> — not evidence that the research hypotheses are true. Most results on this site are synthetic mechanism tests, clearly labelled as such, and the negative ones are kept. <a href="research.html">The full experiment atlas, with each result's status →</a></p>
       </div>
     </section>
 
-    <section id="start">
-      <h2>Do something useful in 15 minutes</h2>
+    <section>
+      <h2>Why now</h2>
       <div class="grid">
-        <article class="card">
-          <h3>New to the project</h3>
-          <p>Choose a currently open, bounded task. Check its recent activity before claiming it.</p>
-          <p><a href="https://github.com/MSKazemi/idkmesh/issues?q=is%3Aissue+state%3Aopen+label%3A%22good+first+issue%22">Browse live good-first issues →</a></p>
+        <article class="card amber">
+          <div class="kicker">Pressure</div>
+          <h3>Agents generate faster than anyone can review</h3>
+          <p>Generation capacity is growing faster than trustworthy review capacity. IDKMesh treats verification debt and evidence quality as first-class constraints rather than an afterthought.</p>
         </article>
-        <article class="card">
-          <h3>Independent reviewer</h3>
-          <p>Review a frozen 15-document IDKGraph warning cohort and record real reviewer minutes.</p>
-          <p><a href="https://github.com/MSKazemi/idkmesh/issues/167">Review cohort #167 →</a></p>
+        <article class="card accent">
+          <div class="kicker">Failure mode</div>
+          <h3>Different agents fail together</h3>
+          <p>More votes are not automatically more independent evidence. The project measures verifier reliability, dependence, and failure correlation — and has found the standard correction optimistic exactly where it matters.</p>
         </article>
-        <article class="card">
-          <h3>Control-systems / security expert</h3>
-          <p>Audit the merged evolution control plane, its checkpoint trust boundary, and its non-compensation guards.</p>
-          <p><a href="https://github.com/MSKazemi/idkmesh/issues/151">Independent control-plane audit #151 →</a></p>
+        <article class="card mint">
+          <div class="kicker">Method</div>
+          <h3>The repository is the laboratory</h3>
+          <p>Bounded work, public evidence, reproducible decisions, and community growth measured without Goodharting activity counts. Negative results stay in the tree.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="paths">
+      <h2>Pick a path</h2>
+      <p class="sub">You do not need to understand the whole repository to do something useful in it. Check a task's assignees and recent comments before claiming it.</p>
+      <div class="grid">
+        <a class="card" href="start.html">
+          <div class="kicker">15 minutes</div>
+          <h3>Run the first installable tool</h3>
+          <p class="muted">Clone, <code>pip install .</code>, and audit a review gate — effective votes, correlation structure, seeded-probe breach rate.</p>
+          <p class="more">Quickstart <span class="arr">→</span></p>
+        </a>
+        <a class="card" href="https://github.com/MSKazemi/idkmesh/issues?q=is%3Aissue+state%3Aopen+label%3A%22good+first+issue%22">
+          <div class="kicker">Build or research</div>
+          <h3>Take a bounded open task</h3>
+          <p class="muted">Live <code>good first issue</code> and <code>help wanted</code> queues. Confusion you hit on the way in is itself useful evidence.</p>
+          <p class="more">Browse live issues ↗</p>
+        </a>
+        <a class="card" href="https://github.com/MSKazemi/idkmesh/issues/151">
+          <div class="kicker">Expert reviewer</div>
+          <h3>Try to falsify one claim</h3>
+          <p class="muted">Independent review is first-class work here. Audit the evolution control plane, its checkpoint trust boundary, and its non-compensation guards.</p>
+          <p class="more">Control-plane audit #151 ↗</p>
+        </a>
+      </div>
+    </section>
+
+    <section>
+      <h2>What exists, and what does not</h2>
+      <p class="sub">The project keeps these two lists apart on purpose. Both are maintained in the repository <a href="https://github.com/MSKazemi/idkmesh/blob/main/README.md">README</a>.</p>
+      <div class="grid two">
+        <article class="card mint">
+          <h3>On <code>main</code> today</h3>
+          <ul class="muted">
+            <li>versioned WorkUnit contracts, with <code>work-unit-v0.2</code> as the current semantic task contract;</li>
+            <li>ResultManifest, EvaluatorPlan and VerificationResult contracts that separate worker claims, verifier evidence and integration authority;</li>
+            <li>cross-object provenance and integrity validation;</li>
+            <li>protocol-neutral worker adapters plus A2A/MCP bindings and conformance helpers;</li>
+            <li>zero-project-spend compute admission and routing experiments;</li>
+            <li>IDKGraph repository modelling, observability and link-integrity machinery;</li>
+            <li>an installable <code>idkmesh</code> CLI whose <code>gate-audit</code> command packages the measured verifier-panel results as a review-gate diagnostic;</li>
+            <li>protected <code>main</code> with the PR gate required on Python 3.11 and 3.13.</li>
+          </ul>
+        </article>
+        <article class="card amber">
+          <h3>Not yet a finished capability</h3>
+          <ul class="muted">
+            <li>no claim that IDKMesh can safely coordinate thousands or millions of real machines;</li>
+            <li>the reference Verified Swarm Runner is not a polished install-and-run product with multiple production worker adapters;</li>
+            <li>canonical real-node integration remains behind its independent-review and evidence gates;</li>
+            <li>A2A/MCP support is an interoperability layer, not a claim that every external agent framework is production-integrated;</li>
+            <li>autonomous repository and community actuation stays policy- and authority-gated;</li>
+            <li>benchmark infrastructure is not scientific proof until controlled observed runs exist.</li>
+          </ul>
         </article>
       </div>
     </section>
 
     <section>
-      <h2>What evidence exists already?</h2>
+      <h2>Explore</h2>
       <div class="grid">
-        <article class="card"><h3>Verified Swarm Runner</h3><p>Real local worker attempts, independent verification, mixed success/failure isolation, non-selecting evidence reports, and exact replay have been demonstrated experimentally.</p><p><a href="https://github.com/MSKazemi/idkmesh/issues/16">Track v0.1 evidence →</a></p></article>
-        <article class="card"><h3>Verifier research</h3><p>Current synthetic experiments test when quorum rules, reliability, and correlated errors help or hurt. Negative results are retained.</p><p><a href="https://github.com/MSKazemi/idkmesh/issues/79">Verifier-learning research →</a></p></article>
-        <article class="card"><h3>Repository self-observation</h3><p>IDKGraph detects deterministic repository-health signals, samples warning cohorts reproducibly, and keeps automatic repair authority disabled.</p><p><a href="https://github.com/MSKazemi/idkmesh/issues/152">IDKGraph warning triage →</a></p></article>
+        <a class="card" href="concepts.html"><div class="kicker">Explained simply</div><h3>How it works</h3><p class="muted">Six animated figures: bounded work, correlated verifiers, effective votes, the authority ladder, verification debt, and the evidence ladder.</p><p class="more">Read <span class="arr">→</span></p></a>
+        <a class="card" href="pipelines.html"><div class="kicker">Architecture</div><h3>Four pipelines</h3><p class="muted">Animated flowcharts of the work/evidence path, the two-attempt orchestrator, zero-spend compute admission, and the PR gate — read off the executable code.</p><p class="more">Read <span class="arr">→</span></p></a>
+        <a class="card" href="research.html"><div class="kicker">Evidence</div><h3>Experiment atlas</h3><p class="muted">Every experiment from E011 to E042 with its real status — positive, negative, or prototype — and what it changed.</p><p class="more">Read <span class="arr">→</span></p></a>
+        <a class="card" href="library.html"><div class="kicker">Everything</div><h3>Documentation library</h3><p class="muted">The full material index: contracts and schemas, architecture, specifications, research, findings, audits, governance, and project memory.</p><p class="more">Browse <span class="arr">→</span></p></a>
       </div>
     </section>
 
     <section>
       <h2>The operating principle</h2>
-      <p class="flow"><strong>Optimize verified useful work per unit of scarce human attention and compute—not commits, agent count, stars, or activity volume.</strong></p>
-      <p class="muted">IDKMesh is intentionally unfinished. The repository is the public laboratory, and well-supported disagreement is a contribution.</p>
+      <div class="quote"><strong>Optimise verified useful work per unit of scarce human attention and compute — not commits, agent count, stars, or activity volume.</strong></div>
+      <div class="quote"><strong>A proposal is not true because it came from a strong model, many models, an expert human, or a popular repository. Evidence must survive independent scrutiny.</strong></div>
+      <p class="prose muted">IDKMesh is intentionally unfinished. The repository is the public laboratory, and well-supported disagreement is a contribution. If you can improve a question, falsify an assumption, reproduce an experiment, write a test, find a security problem, make a contract clearer, or reduce reviewer burden, you can contribute.</p>
       <div class="actions">
-        <a class="button" href="https://github.com/MSKazemi/idkmesh/blob/main/README.md">Read the full README</a>
-        <a class="button" href="https://github.com/MSKazemi/idkmesh/blob/main/CONTRIBUTING.md">Contribution guide</a>
-        <a class="button" href="https://github.com/MSKazemi/idkmesh/blob/main/docs/README.md">Documentation map</a>
+        <a class="button primary" href="https://github.com/MSKazemi/idkmesh/blob/main/CONTRIBUTING.md">Contribution guide ↗</a>
+        <a class="button" href="https://github.com/MSKazemi/idkmesh/blob/main/COMMUNITY.md">Participation paths ↗</a>
+        <a class="button" href="https://github.com/MSKazemi/idkmesh/blob/main/CODE_OF_CONDUCT.md">Code of conduct ↗</a>
       </div>
     </section>
+
   </main>
 
-  <footer>
-    <div class="wrap">IDKMesh is public, open-source, and evidence-first. Repository: <a href="https://github.com/MSKazemi/idkmesh">github.com/MSKazemi/idkmesh</a>.</div>
+  <footer class="sitefoot">
+    <div class="wrap">
+      <div class="cols">
+        <div>
+          <h4>This site</h4>
+          <ul>
+            <li><a href="start.html">Start in 15 minutes</a></li>
+            <li><a href="concepts.html">How it works</a></li>
+            <li><a href="pipelines.html">Four pipelines</a></li>
+            <li><a href="research.html">Experiment atlas</a></li>
+            <li><a href="library.html">Documentation library</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Repository</h4>
+          <ul>
+            <li><a href="https://github.com/MSKazemi/idkmesh">Source on GitHub</a></li>
+            <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/README.md">README</a></li>
+            <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/ARCHITECTURE.md">Architecture map</a></li>
+            <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/ROADMAP.md">Roadmap</a></li>
+            <li><a href="https://github.com/MSKazemi/idkmesh/issues">Live issues</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Contracts</h4>
+          <ul>
+            <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/schemas/README.md">Schema index</a></li>
+            <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/specifications/README.md">Specifications</a></li>
+            <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/decisions/README.md">Decision records</a></li>
+            <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/IDKIPS.md">Improvement proposals</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Community</h4>
+          <ul>
+            <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/CONTRIBUTING.md">Contributing</a></li>
+            <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/COMMUNITY.md">Community paths</a></li>
+            <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/SUPPORT.md">Getting help</a></li>
+            <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/SECURITY.md">Security policy</a></li>
+            <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/GOVERNANCE.md">Governance</a></li>
+          </ul>
+        </div>
+      </div>
+      <p class="fine"><strong>Last updated: 2026-09-10.</strong> IDKMesh is public, open-source, and evidence-first, under the Apache License 2.0. This site is a presentation surface: the repository remains the canonical source of truth for every contract, result, and decision linked from here. Built with no JavaScript, no external fonts, and no trackers.</p>
+    </div>
   </footer>
 </body>
 </html>

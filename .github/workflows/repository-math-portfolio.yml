@@ -63,7 +63,11 @@ jobs:
       pull-requests: read
       actions: read
     concurrency:
-      group: repository-math-portfolio-observer
+      # PR-target observations are advisory and must not cancel observations for
+      # unrelated pull requests. Canonical events intentionally remain in one
+      # cancellation domain so persistent portfolio state has one successor
+      # lineage rather than concurrent restores producing competing successors.
+      group: repository-math-portfolio-${{ github.event_name == 'pull_request_target' && format('advisory-{0}', github.event.pull_request.number) || 'canonical' }}
       cancel-in-progress: true
     runs-on: ubuntu-latest
     timeout-minutes: 9

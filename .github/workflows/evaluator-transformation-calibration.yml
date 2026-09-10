@@ -6,26 +6,28 @@ on:
       - "schemas/evaluator-plan-v0.4.schema.json"
       - "experiments/evaluator_plan_runner.py"
       - "experiments/substring_patch_verifier.py"
-      - "experiments/transformation_patch_verifier.py"
+      - "experiments/transition_patch_verifier.py"
       - "tools/task001_evaluator_calibration_v04.py"
       - "tools/task001_evaluator_calibration_v04_ci.py"
       - "verification/fixtures/task001-transformation-calibration-evaluator-plan-v0.4.json"
       - "benchmarks/phase-b2-first-five/work-units/task-001-cohort-path-boundary.work-unit.json"
       - "benchmarks/phase-b2-first-five/cohort.json"
       - ".github/workflows/evaluator-transformation-calibration.yml"
+      - "requirements-phase0.txt"
   push:
     branches: [main]
     paths:
       - "schemas/evaluator-plan-v0.4.schema.json"
       - "experiments/evaluator_plan_runner.py"
       - "experiments/substring_patch_verifier.py"
-      - "experiments/transformation_patch_verifier.py"
+      - "experiments/transition_patch_verifier.py"
       - "tools/task001_evaluator_calibration_v04.py"
       - "tools/task001_evaluator_calibration_v04_ci.py"
       - "verification/fixtures/task001-transformation-calibration-evaluator-plan-v0.4.json"
       - "benchmarks/phase-b2-first-five/work-units/task-001-cohort-path-boundary.work-unit.json"
       - "benchmarks/phase-b2-first-five/cohort.json"
       - ".github/workflows/evaluator-transformation-calibration.yml"
+      - "requirements-phase0.txt"
 
 permissions:
   contents: read
@@ -69,7 +71,7 @@ jobs:
         run: |
           python -m py_compile \
             experiments/evaluator_plan_runner.py \
-            experiments/transformation_patch_verifier.py \
+            experiments/transition_patch_verifier.py \
             tools/task001_evaluator_calibration_v04.py \
             tools/task001_evaluator_calibration_v04_ci.py
 

@@ -15,7 +15,7 @@ over the same period.
 The rule enforced here is narrow on purpose: a group that cancels must contain
 something that varies per run. It deliberately does *not* require every group to
 be keyed -- an unkeyed group that only queues is a legitimate way to serialise
-writers, which is what the canonical observer lineage needs.
+writers, which is what canonical persistent-state lineages need.
 
 Deliberately text-based rather than YAML-parsed: the PR Gate installs only
 `pytest` and `requirements-phase0.txt` (jsonschema alone), so `import yaml` would
@@ -34,6 +34,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOWS = ROOT / ".github/workflows"
 EVOLUTION_LOOP = WORKFLOWS / "evolution-loop.yml"
+PORTFOLIO = WORKFLOWS / "repository-math-portfolio.yml"
 
 # Anything that differs between two concurrent runs.
 PER_RUN_KEYS = (
@@ -46,18 +47,14 @@ PER_RUN_KEYS = (
     "github.head_ref",
 )
 
-# Groups that cancel and are not keyed, as of the fix for #387. These are real
-# instances of the same defect, left for a separate change rather than widened
-# into this one; the point of listing them is that the set cannot grow silently.
+# Groups that cancel and are not keyed, as of the portfolio fix for #413. The
+# remaining instance is dispatch/schedule only, so it cannot create cross-PR
+# false-red checks. Keep it explicit so the set cannot grow silently.
 # Remove an entry when it is fixed -- a stale entry fails the test below.
 KNOWN_UNKEYED_CANCELLING = {
-    # workflow_dispatch + schedule only, so no pull request is affected: a manual
-    # dispatch can cancel a running scheduled observation.
+    # workflow_dispatch + schedule only: a manual dispatch can cancel a running
+    # scheduled observation, but unrelated pull requests are not involved.
     ("collaboration-observables.yml", "collaboration-observables"),
-    # push, pull_request_target, pull_request, issues, schedule. This is the same
-    # defect as the one fixed here, and the same file already keys its other job
-    # per pull request, so the pattern is known to its author.
-    ("repository-math-portfolio.yml", "repository-math-portfolio-observer"),
 }
 
 _BLOCK = re.compile(
@@ -101,11 +98,30 @@ def unkeyed_cancelling() -> set[tuple[str, str]]:
     return found
 
 
-def observe_group() -> str:
-    text = EVOLUTION_LOOP.read_text(encoding="utf-8")
-    groups = [g for g, _ in concurrency_blocks(text) if "evolution-observer" in g]
+def _single_group(path: Path, marker: str) -> str:
+    text = path.read_text(encoding="utf-8")
+    groups = [g for g, _ in concurrency_blocks(text) if marker in g]
     if len(groups) != 1:
-        raise AssertionError(f"expected one evolution-observer group, got {groups}")
+        raise AssertionError(f"expected one {marker} group in {path.name}, got {groups}")
+    return groups[0]
+
+
+def observe_group() -> str:
+    return _single_group(EVOLUTION_LOOP, "evolution-observer")
+
+
+def portfolio_group() -> str:
+    text = PORTFOLIO.read_text(encoding="utf-8")
+    groups = [
+        group
+        for group, _ in concurrency_blocks(text)
+        if "repository-math-portfolio-" in group
+        and "repository-math-portfolio-pr-" not in group
+    ]
+    if len(groups) != 1:
+        raise AssertionError(
+            f"expected one portfolio observer group in {PORTFOLIO.name}, got {groups}"
+        )
     return groups[0]
 
 
@@ -159,8 +175,45 @@ class AdvisoryObserverConcurrencyTests(unittest.TestCase):
                 self.assertNotIn(key, canonical)
 
 
+class PortfolioObserverConcurrencyTests(unittest.TestCase):
+    """The portfolio persistent-state fix for #413."""
+
+    def test_the_portfolio_group_cancels(self) -> None:
+        text = PORTFOLIO.read_text(encoding="utf-8")
+        cancels = [
+            c
+            for g, c in concurrency_blocks(text)
+            if "repository-math-portfolio-" in g
+            and "repository-math-portfolio-pr-" not in g
+        ]
+        self.assertEqual(len(cancels), 1)
+        self.assertTrue(_cancels(cancels[0]))
+
+    def test_portfolio_advisory_runs_are_isolated_per_pull_request(self) -> None:
+        group = portfolio_group()
+        self.assertIn("github.event_name == 'pull_request_target'", group)
+        self.assertIn("advisory", group)
+        self.assertIn("github.event.pull_request.number", group)
+
+    def test_portfolio_canonical_events_share_one_lineage(self) -> None:
+        canonical = portfolio_group().split("||", 1)[1]
+        self.assertIn("canonical", canonical)
+        for key in PER_RUN_KEYS:
+            with self.subTest(key=key):
+                self.assertNotIn(key, canonical)
+
+    def test_portfolio_trusted_parent_selection_excludes_pr_target(self) -> None:
+        text = PORTFOLIO.read_text(encoding="utf-8")
+        selector = (
+            '.workflow_runs[] | select(.event == "issues" or .event == "push" '
+            'or .event == "workflow_dispatch" or .event == "schedule")'
+        )
+        self.assertIn(selector, text)
+        self.assertNotIn('.event == "pull_request_target"', selector)
+
+
 class CancellingGroupsAreKeyedTests(unittest.TestCase):
-    """The general rule, with the pre-existing instances pinned."""
+    """The general rule, with the remaining pre-existing instance pinned."""
 
     def test_no_new_unkeyed_cancelling_group_appears(self) -> None:
         unexpected = unkeyed_cancelling() - KNOWN_UNKEYED_CANCELLING
@@ -168,7 +221,7 @@ class CancellingGroupsAreKeyedTests(unittest.TestCase):
             unexpected,
             set(),
             "a concurrency group that cancels must contain something that varies "
-            "per run, or it cancels unrelated runs; see issue #387",
+            "per run, or it cancels unrelated runs; see issues #387 and #413",
         )
 
     def test_the_known_list_has_no_stale_entries(self) -> None:
@@ -176,9 +229,10 @@ class CancellingGroupsAreKeyedTests(unittest.TestCase):
         # meaning what it says rather than decaying into folklore.
         self.assertEqual(KNOWN_UNKEYED_CANCELLING - unkeyed_cancelling(), set())
 
-    def test_the_evolution_observer_is_no_longer_among_them(self) -> None:
-        offenders = {group for name, group in unkeyed_cancelling()}
+    def test_fixed_persistent_observers_are_no_longer_among_them(self) -> None:
+        offenders = {group for _, group in unkeyed_cancelling()}
         self.assertNotIn(observe_group(), offenders)
+        self.assertNotIn(portfolio_group(), offenders)
 
 
 if __name__ == "__main__":

@@ -10,13 +10,14 @@ From the repository root:
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
-python -m pip install -r requirements-phase0.txt
-python -m unittest discover -s tests -v
-python -m unittest discover -s interop/tests -v
+python -m pip install -r requirements-phase0.txt pytest
+PYTHONPATH=. python -m pytest -q
 python -m randomness_lab --policy thompson --rounds 100 --seed 42
 ```
 
-The commands run both suites. Use a focused module, such as `python -m unittest tests.test_r2 -v`. Some simulations use `pytest`; follow `sim/README.md` and the relevant workflow.
+`pytest` collects both suites (`tests/` and `interop/tests/`) in one run. Use a focused module, such as `PYTHONPATH=. python -m pytest -q tests/test_r2.py`.
+
+**Do not use `python -m unittest discover` to check your work.** It silently under-collects: `unittest` only finds `TestCase` subclasses, so the **162** module-level `test_*` functions spread across **17** files in `tests/` are invisible to it — roughly a tenth of the suite, reported as `OK` with no warning that anything was missed. `tests/test_documented_test_counts.py` re-measures both figures and the gap they explain, so this paragraph fails the suite if it drifts.
 
 ## Coding Style & Naming Conventions
 

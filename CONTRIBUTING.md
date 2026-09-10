@@ -14,6 +14,10 @@ Before contributing, read:
 
 Read deeper architecture/research documents only when your contribution requires them.
 
+**Looking for one concrete task or shared technical responsibility?** See the
+[contributor pilot](docs/community/CONTRIBUTOR_PILOT_2026_09.md) and the public
+[co-maintainer / bring-your-own-agent invitation](https://github.com/MSKazemi/idkmesh/issues/407).
+
 ## Choose a contribution type
 
 Good contributions include:
@@ -84,9 +88,78 @@ For materially AI-generated code, research, tests, or documentation, include a s
 
 Do not submit large volumes of unreviewed generated material. Generation must not grow faster than the community's ability to verify and maintain it.
 
+## Running the tests
+
+You do not need to understand the research side of this repository to run the
+tests. From the repository root:
+
+```bash
+python -m venv .venv && source .venv/bin/activate
+python -m pip install -r requirements-phase0.txt pytest
+PYTHONPATH=. python -m pytest -q
+```
+
+Use Python 3.11 or 3.13 to match the stable PR gate. The example above is for
+Linux/macOS shells. In Windows PowerShell, create the environment with
+`python -m venv .venv`, then use `.\.venv\Scripts\python.exe` instead of `python`
+for installation and tests, and set `$env:PYTHONPATH = "."` before running tests.
+Activation or a machine-wide execution-policy change is not required.
+These are setup instructions, not evidence that every operating system has
+already been tested by a contributor.
+
+These commands work without an unmerged Makefile or local testkit. If an older
+issue refers to `make setup`, `make test`, or `make integration`, use the current
+instructions here unless that tooling actually exists in your checkout.
+
+That collects both suites — `tests/` and `interop/tests/` — in a single run. To
+run one file while you work:
+
+```bash
+PYTHONPATH=. python -m pytest -q tests/test_r2.py
+```
+
+If your change touches Markdown, run the same local link gate as CI:
+
+```bash
+python scripts/check_links.py
+```
+
+The command checks Markdown files/anchors and repository-relative links to
+tracked scripts, schemas, images, and directories, without network access.
+Exit codes are `0` for no findings, `1` for findings, and `2` when inspection
+cannot run. Add `--json` for a deterministic machine-readable report. It needs
+Python and Git, not an API key or extra Python packages.
+
+Sources under `tests/fixtures/` contain deliberately broken links and are
+excluded; findings everywhere else must be zero. Links resolve against the
+**tracked** file index, so `git add` a new file before checking. The command does
+not stage files, repair links, or change the repository. Existing GitHub-route
+exemptions and repository-absolute asset exclusions remain; this is not a
+complete Markdown parser or a check of external website availability.
+
+The lower-level `tools/idkgraph_link_check.py` remains the unchanged T2
+Markdown/identity report, not the combined gate. See
+[the stable PR gate](.github/workflows/pr-gate.yml) for the CI invocation.
+
+**Do not verify your work with `python -m unittest discover`.** It silently
+under-collects — `unittest` only finds `TestCase` subclasses, so the 162
+module-level `test_*` functions spread across 17 files in `tests/` are
+invisible to it. That is roughly a tenth of the suite, skipped while the run
+still prints `OK`, with no indication anything was missed.
+`tests/test_documented_test_counts.py` re-measures both figures and the gap
+they explain, so these numbers cannot go stale unnoticed.
+
+Two skips are expected and are not a problem with your setup:
+`interop/tests/test_sdk_conformance.py` skips two tests unless the optional
+interoperability SDKs are installed with
+`python -m pip install -r requirements-interoperability.txt`.
+
+If you cannot get the tests to run at all, that is a bug worth reporting — open
+an issue with your OS, your Python version, and the failure.
+
 ## Code quality
 
-As implementation grows, exact commands will be documented here. Until then, every code contribution should aim to provide:
+Every code contribution should aim to provide:
 
 - a reproducible way to run or test the change;
 - tests for behavior that can be tested;
@@ -132,6 +205,26 @@ A useful review can check more than correctness. Consider:
 - Does it increase future maintainer burden?
 - What is the community impact?
 
+### The automated reviewer
+
+Pull requests may receive an automated review from CodeRabbit, configured in
+[`.coderabbit.yaml`](.coderabbit.yaml).
+
+**Its output is advisory and carries no authority.** It cannot approve, block, or
+merge anything, and it is wrong often enough that you should argue with it. If it
+raises a point you disagree with, say so in the thread and leave the disagreement
+visible — that exchange is more useful to the next contributor than a silently
+dismissed comment.
+
+This is deliberate rather than incidental. The same separation runs through the
+WorkUnit contracts: a worker's *claim*, a verifier's *evidence*, and *integration
+authority* are three different things, and no reviewer — human, model, or
+maintainer — collapses them by asserting a change is correct. A pull request is
+merged on evidence, not on who vouched for it.
+
+You are welcome to reply to it directly in the thread. You are equally welcome to
+ignore it.
+
 ## Contribution workflow
 
 1. Find or open an issue for non-trivial work.
@@ -142,6 +235,22 @@ A useful review can check more than correctness. Consider:
 6. Respond to review in public where possible.
 7. Update the change until the evidence and maintainability are sufficient.
 8. If the change represents a major durable decision, add/update a decision record.
+
+### Keep private files out of the commit
+
+This repository is public, and coding agents and editors leave local files in the
+working tree. `.gitignore` covers the usual ones — `CLAUDE.md`, `GEMINI.md`,
+`.note*`, `.env*`, `*.local`, `.vscode/` and `.DS_Store` — but the rules only help
+if you stage deliberately. Prefer naming paths over `git add -A`, and read
+`git status` before you commit.
+
+`AGENTS.md` is the exception and stays tracked: it is the public
+[agents.md](https://agents.md) contributor standard, holds no private
+configuration, and is the file coding agents read first.
+
+`tests/test_private_file_ignore_rules.py` asks `git check-ignore` what `git add`
+would actually do, so a regression in these rules fails the suite rather than
+surfacing as a published secret.
 
 ### Linking issues without closing them
 

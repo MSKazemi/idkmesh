@@ -150,6 +150,31 @@ class EvolutionWorkflowSecurityTests(unittest.TestCase):
         )[1].split("- name: Publish replayable portfolio evidence", 1)[0]
         self.assertNotIn("cp /tmp/repository-snapshot.json", checkpoint_block)
 
+    def test_authored_evolution_report_is_not_runtime_output(self) -> None:
+        update_block = self.evolution.split(
+            "- name: Update persistent Bayesian history", 1
+        )[1].split("- name: Collect bounded live repository evidence", 1)[0]
+        self.assertIn("mkdir -p results/evolution", update_block)
+        self.assertIn(
+            "--report results/evolution/PERSISTENT_EVOLUTION_REPORT.md",
+            update_block,
+        )
+
+        upload_block = self.evolution.split(
+            "- name: Publish persistent checkpoint and live evidence", 1
+        )[1].split("- name: Job summary", 1)[0]
+        self.assertNotIn("\n            EVOLUTION_REPORT.md\n", upload_block)
+        self.assertIn("results/evolution/", upload_block)
+
+        summary_block = self.evolution.split("- name: Job summary", 1)[1].split(
+            "- name: Record fail-closed unavailable observation", 1
+        )[0]
+        self.assertIn(
+            "cat results/evolution/PERSISTENT_EVOLUTION_REPORT.md",
+            summary_block,
+        )
+        self.assertNotIn("cat EVOLUTION_REPORT.md", summary_block)
+
 
 if __name__ == "__main__":
     unittest.main()
