@@ -39,7 +39,7 @@ permissions:
 
 concurrency:
   group: evidence-aggregation-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   evidence-lattice:

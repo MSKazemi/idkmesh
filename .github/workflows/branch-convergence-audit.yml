@@ -39,7 +39,7 @@ concurrency:
   # separate groups. Repeated events within one class may supersede stale work,
   # but a cheap invalidation cannot cancel a canonical full scan after it starts.
   group: branch-convergence-${{ github.event_name }}-${{ github.event.number || 'canonical' }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   invalidate:
