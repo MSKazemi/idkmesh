@@ -403,9 +403,18 @@ def render_markdown(result: dict[str, object]) -> str:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Sweep the R1 verifier panel frontier.")
-    parser.add_argument("--swarm-size", type=int, default=5)
-    parser.add_argument("--tasks", type=int, default=250)
-    parser.add_argument("--seeds", type=str, default="42,43,44")
+    defaults = PanelFrontierConfig()
+    parser.add_argument("--swarm-size", type=int, default=defaults.swarm_size)
+    parser.add_argument("--tasks", type=int, default=defaults.tasks)
+    # Derived from DEFAULT_SEEDS, never restated. Restating it is how the
+    # committed artifact came to be generated at three seeds while the
+    # dataclass said twenty-four: the CLI always passes seeds explicitly,
+    # so its own default silently won.
+    parser.add_argument(
+        "--seeds",
+        type=str,
+        default=",".join(str(seed) for seed in DEFAULT_SEEDS),
+    )
     # `--output` / `--report` rather than `--json` / `--markdown`, matching
     # r1_verifier_dependence, r1_dependence_shape and r1_scaling. One CLI shape
     # across the R1 runners is worth more than a locally nicer name.
