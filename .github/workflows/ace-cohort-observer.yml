@@ -299,19 +299,27 @@ jobs:
             const statusCandidates = labelledObservatories
               .filter(issue => !issue.pull_request)
               .sort((a, b) => a.number - b.number);
-            const openStatusCandidates = statusCandidates.filter(
-              issue => issue.state === 'open'
+            let statusIssue = statusCandidates[0];
+
+            // Warn about every observatory that will be open once this pass
+            // finishes: the ones already open, plus the canonical one if the
+            // reopen below is about to restore it. Counting only the
+            // already-open set would stay silent in precisely the case that
+            // leaves two open -- the canonical observatory archived while a
+            // fork of it is open -- which is the situation most in need of a
+            // human.
+            const observatoriesLeftOpen = statusCandidates.filter(
+              issue => issue.state === 'open' || issue === statusIssue
             );
-            if (openStatusCandidates.length > 1) {
+            if (observatoriesLeftOpen.length > 1) {
               core.warning(
                 'More than one open issue carries ' + statusLabel + ': ' +
-                openStatusCandidates.map(issue => '#' + issue.number).join(', ') +
-                '. Writing to #' + statusCandidates[0].number +
+                observatoriesLeftOpen.map(issue => '#' + issue.number).join(', ') +
+                '. Writing to #' + statusIssue.number +
                 ' and leaving the others stale. Close the duplicates so that ' +
                 'exactly one observatory remains.'
               );
             }
-            let statusIssue = statusCandidates[0];
 
             // Migrate the oldest legitimate legacy observatory only when it already
             // contains the machine state marker. A matching title alone is not identity.

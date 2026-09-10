@@ -68,7 +68,14 @@ class AceCohortObserverContractTests(unittest.TestCase):
         )
 
     def test_duplicate_observatories_are_surfaced_not_silently_ignored(self):
-        self.assertIn("openStatusCandidates.length > 1", TEXT)
+        # The warning counts what will be open when the pass finishes, not what
+        # was open when it started: the canonical observatory archived while a
+        # fork of it is open is the case that leaves two open, and counting only
+        # the already-open set is silent on exactly that one.
+        self.assertIn("observatoriesLeftOpen.length > 1", TEXT)
+        self.assertIn(
+            "issue => issue.state === 'open' || issue === statusIssue", TEXT
+        )
         self.assertIn("core.warning(", TEXT)
 
     # --- The duplicate-creation path -------------------------------------
