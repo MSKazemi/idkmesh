@@ -22,6 +22,7 @@ import unittest
 from pathlib import Path
 
 from randomness_lab.r1_panel_frontier import (
+    DEFAULT_SEEDS,
     SAMPLE_SIZE_SENSITIVITY,
     PanelFrontierConfig,
     count_billing_disagreements,
@@ -149,6 +150,30 @@ class CommittedPayloadTests(unittest.TestCase):
         self.assertEqual(payload["schema_version"], 1)
         self.assertIn("sample_size_sensitivity", payload)
         self.assertIn("simulator", payload["interpretation_guardrail"].lower())
+
+    def test_the_payload_is_not_underpowered(self) -> None:
+        """The artifact must be generated at the sample size the module documents.
+
+        This exists because it was not. The committed payload was generated at
+        three seeds while the dataclass default said twenty-four: `main` builds
+        its config from argparse, whose own `--seeds` default had been left
+        behind, so the CLI silently won. The headline assertion below still
+        passed, because it happens to hold at three seeds too -- a green test
+        over an artifact measured at the exact sample size this module warns
+        reports double the effect.
+        """
+
+        payload = json.loads(gzip.decompress(RESULT.read_bytes()).decode("utf-8"))
+        seeds = payload["config"]["seeds"]
+        self.assertGreaterEqual(
+            len(seeds),
+            len(DEFAULT_SEEDS),
+            f"the committed payload was generated with {len(seeds)} seeds, "
+            f"fewer than the documented default of {len(DEFAULT_SEEDS)}. Its "
+            f"numbers are not the ones this module claims to report -- "
+            f"regenerate it with the defaults.",
+        )
+        self.assertGreaterEqual(payload["config"]["tasks"], 250)
 
     def test_the_headline_negative_result_holds_in_the_payload(self) -> None:
         """Charging per read, no cell in the grid pays for its panel.
