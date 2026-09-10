@@ -29,12 +29,20 @@ on:
       - '.github/workflows/free-resource-source-audit.yml'
   schedule:
     # Nominal time only. GitHub does not honour cron minute-for-minute on this
-    # repository: measured 2026-09-10 over 12 scheduled runs of two unrelated
-    # workflows (branch-convergence-audit, cron 04:17, and evolution-loop, cron
-    # 05:17), the delay was 3.85-5.15 h with a mean of 4.49 h. So this job is
-    # expected to start around 10:15-11:30 UTC, not 06:23, and its absence at
-    # 06:23 is not a fault. Do not "fix" the cron to chase a start time; the
-    # delay is on GitHub's side and re-tuning the expression cannot move it.
+    # repository. Measured over 21 scheduled runs of three workflows to
+    # 2026-09-10, the delay is 3.85-5.15 h, MEAN 4.6 h, so this job typically
+    # starts mid-morning UTC rather than at 06:23, and its absence at 06:23 is
+    # not a fault.
+    #
+    # Treat 4.6 h as the expectation and NOT 5.15 h as a ceiling. An earlier
+    # version of this comment quoted the 12-run sample min/max as a predicted
+    # window of "10:15-11:30 UTC"; the very next run started at 11:31:34, 94
+    # seconds outside it. A sample min/max is not a bound -- the chance the next
+    # observation falls outside n prior ones is about 2/(n+1), still ~9% here --
+    # so a run later than any yet seen is expected behaviour, not a fault either.
+    #
+    # Do not "fix" the cron to chase a start time: the delay is on GitHub's side
+    # and re-tuning the expression cannot move it.
     - cron: '23 6 * * *'
   workflow_dispatch:
 
