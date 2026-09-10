@@ -46,6 +46,15 @@ and the release notes for that tag.
 
 ### Changed
 
+- `tests/test_example_contract_coverage.py` checks that every file named in a
+  `NO_SCHEMA_CONTRACT` exemption reason still exists. Those reasons are prose —
+  "validated in code by X", "consumed by X" — and prose is not checked, so renaming
+  or deleting X silently turned the justification false and left the example with no
+  coverage and no record of having lost it. The assertion stops at existence on
+  purpose: `idkmesh/gate_audit.py` validates the panel-votes example without naming
+  it, because the test is what loads the file and passes it in, so requiring the
+  mention would fail a true claim.
+
 - `tests/test_calibration_path_filter.py` reads a `paths:` filter written in any valid
   YAML spelling. Its first parser matched only double-quoted sequence entries, so a
   single-quoted or bare block parsed to nothing and every watched file was then reported
