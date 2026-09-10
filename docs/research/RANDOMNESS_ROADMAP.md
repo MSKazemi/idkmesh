@@ -117,7 +117,7 @@ Q_{swarm}=VerifiedUtility-\lambda Compute-\mu HumanAttention-\nu ErrorCorrelatio
 
 Do not freeze the coefficients prematurely; preserve the raw metrics.
 
-### Done when
+## Done when
 
 A deterministic baseline and a stochastic policy can emit exactly the same experiment/result schema.
 
@@ -166,7 +166,7 @@ Requirements:
 - machine-readable result output;
 - plots/tables generated from saved experiment data, not manually entered results.
 
-### Done when
+## Done when
 
 At least two selection policies and one deterministic baseline can be compared over many seeded trials with confidence intervals or equivalent uncertainty reporting.
 
