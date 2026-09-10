@@ -21,11 +21,18 @@ At the same time, canonical portfolio state is artifact-backed and intentionally
 
 The `portfolio` job therefore uses an event-sensitive concurrency key:
 
+<!-- The expression below is GitHub Actions syntax, not Liquid. Jekyll expands
+     Liquid variable and tag delimiters before Markdown runs, so a code fence does
+     not protect them; unwrapped, this block fails the Pages build for the whole
+     site. Keep the raw wrapper, and do not write Liquid delimiters in this
+     comment either -- Liquid parses HTML comments too. -->
+{% raw %}
 ```yaml
 concurrency:
   group: repository-math-portfolio-${{ github.event_name == 'pull_request_target' && format('advisory-{0}', github.event.pull_request.number) || 'canonical' }}
   cancel-in-progress: true
 ```
+{% endraw %}
 
 Semantics:
 

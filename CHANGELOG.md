@@ -46,6 +46,17 @@ and the release notes for that tag.
 
 ### Changed
 
+- The GitHub Pages build works again. `docs/architecture/REPOSITORY_MATHEMATICAL_PORTFOLIO_CONCURRENCY.md`
+  documented a GitHub Actions concurrency expression inside a `yaml` code fence.
+  Jekyll expands Liquid delimiters before Markdown runs, so the fence did not
+  protect it: Liquid read the Actions interpolation as one of its own variables,
+  found no terminator, and failed the deployment for the entire site. Six
+  consecutive Pages builds failed from 2026-09-09T23:53Z, 7307b41 through
+  c798726, while every repository test stayed green.
+- `tests/test_pages_liquid_safety.py` fails on any unwrapped Liquid delimiter in
+  published Markdown, on an unbalanced raw region, and on the scan finding almost
+  no files — the last so the check cannot pass vacuously.
+
 - The ACE growth controller no longer lets an unnamed event vote. Its dispatch chain
   seeded `q`/`d`/`r` at 0.05 before branching and had no terminal `else`, so any event
   it does not name — `workflow_dispatch` today, and any `schedule:` added later — fell
