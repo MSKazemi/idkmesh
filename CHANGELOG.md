@@ -75,6 +75,24 @@ and the release notes for that tag.
 
 ### Changed
 
+- `scripts/testkit.py` no longer prints `PASS` on a run that exits 1. A tier fails for two
+  independent reasons — red tests, or a blown CPU budget — and the previous fix routed the
+  exit code and the result cache through `tier_passed` so they could not disagree. The
+  status word on the summary line was a third consumer and kept reading `result.ok`, so a
+  green suite that overran its ceiling printed
+  `[testkit] unit: PASS in 100.0s wall / 100.0s cpu (budget 90 cpu-s)` and then exited 1.
+  The `BUDGET EXCEEDED` explanation goes to stderr, which a hook capturing the streams
+  separately, a CI log pane, or `--quiet` need not show beside stdout — so the one line a
+  human was guaranteed to read was the wrong one. All three now derive from `tier_passed`,
+  and `tests/test_testkit_budget_cache.py` asserts the printed word against the exit code
+  across all four green/red x under/over-budget combinations.
+
+- The unit tier's budget headroom is recorded honestly in `scripts/testkit.py`. The comment
+  above `BUDGETS` still described a ~36 CPU-second suite with roughly 2.5x headroom; the
+  suite has grown from 870 tests to 1865 and the tier measured 65.0 CPU-s on 2026-09-10,
+  which is 72% of the 90 CPU-s ceiling. Recorded, deliberately not acted on: the documented
+  response to a tight budget is to make the suite cheaper, never to raise the number.
+
 - `docs/TESTING.md` no longer misstates what the gates run. Four claims had drifted, two
   of them wrong on the day the document landed. The unit tier's scope was published as
   `-m "not sim"` while the code it describes has always run `-m "not sim and not slow"`,

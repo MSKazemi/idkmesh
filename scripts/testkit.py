@@ -20,7 +20,7 @@ Design notes
 * Selection is advisory, never load-bearing: `smoke` narrows to affected tests
   for fast feedback, but `unit` — which is what actually gates a commit — always
   runs everything. Skipping a test you should have run is a far more expensive
-  failure than running 870 of them in 34 seconds.
+  failure than running the whole suite for about a minute.
 * Results are cached against the tree hash, so re-running a tier that has
   already passed on identical content is free. This is what makes it safe to
   wire into an editor or agent hook that fires constantly.
@@ -47,8 +47,15 @@ CACHE = ROOT / ".claude" / "state" / "testkit-cache.json"
 # is a defect in the test suite, reported as such. Measured in CPU time so a
 # busy shared machine cannot fail the gate (see child_cpu).
 #
-# Calibrated against the measured baseline of ~36 CPU-seconds for the full
-# suite, leaving roughly 2.5x headroom before the ceiling bites.
+# The 90 CPU-s unit ceiling was calibrated against a ~36 CPU-second suite,
+# which left roughly 2.5x headroom. That headroom is largely spent: the suite
+# has grown from 870 tests to 1865, and the unit tier measured 65.0 CPU-s on
+# 2026-09-10 (4 cores, load 1.02) — 72% of the ceiling, about 1.4x headroom.
+#
+# Recorded rather than acted on, because the documented response to a tight
+# budget is to make the suite cheaper, never to raise the number: see the
+# BUDGET EXCEEDED message below and docs/TESTING.md. Re-measure before trusting
+# this comment; it is a dated observation, not an invariant.
 BUDGETS = {"smoke": 25.0, "unit": 90.0, "integration": 600.0, "nightly": None}
 
 
@@ -341,8 +348,11 @@ def tier_passed(ok: bool, cpu: float, budget: float | None) -> bool:
     """Whether a tier run passes its gate.
 
     Two independent conditions: the tests were green, and the run stayed inside
-    the tier's CPU budget. Both the exit code and the result cache derive from
-    this single function so they cannot disagree.
+    the tier's CPU budget. All three things that report a verdict -- the exit
+    code, the result cache, and the status word printed on the summary line --
+    derive from this single function so they cannot disagree. The cache and the
+    headline were each fixed after being found reporting a pass on a run that
+    exited 1; anything else that grows a fourth opinion belongs here too.
     """
     return ok and not (budget is not None and cpu > budget)
 
@@ -386,7 +396,11 @@ def main() -> int:
     # budget after a single failure, for as long as the tree is unchanged.
     passed = tier_passed(result.ok, result.cpu, budget)
     cache_write(tier, fingerprint, passed, result.seconds, result.cpu)
-    status = "PASS" if result.ok else "FAIL"
+    # The headline is the third consumer of the verdict, and the only one a
+    # human reads. Deriving it from `result.ok` printed "PASS" on a run that
+    # exited 1 for blowing its budget: the reason was on stderr, which `--quiet`
+    # callers and split log streams do not necessarily show next to this line.
+    status = "PASS" if passed else "FAIL"
     detail = f"{result.seconds:.1f}s wall / {result.cpu:.1f}s cpu"
     print(
         f"[testkit] {tier}: {status} in {detail}"
