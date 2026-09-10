@@ -15,6 +15,7 @@ on:
       - "tests/fixtures/github_idkgraph_snapshot.json"
       - "docs/specifications/GITHUB_IDKGRAPH_PROJECTION_V0_1.md"
       - ".github/workflows/idkgraph-repository-mapping.yml"
+      - "requirements-phase0.txt"
   push:
     branches: [main]
     paths:
@@ -30,6 +31,7 @@ on:
       - "tests/fixtures/github_idkgraph_snapshot.json"
       - "docs/specifications/GITHUB_IDKGRAPH_PROJECTION_V0_1.md"
       - ".github/workflows/idkgraph-repository-mapping.yml"
+      - "requirements-phase0.txt"
 
 permissions:
   contents: read

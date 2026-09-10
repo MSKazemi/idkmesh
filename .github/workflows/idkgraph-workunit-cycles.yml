@@ -8,6 +8,7 @@ on:
       - "tests/fixtures/idkgraph_workunit_cycles/**"
       - "schemas/idkgraph.schema.json"
       - ".github/workflows/idkgraph-workunit-cycles.yml"
+      - "requirements-phase0.txt"
   push:
     branches: [main]
     paths:
@@ -16,6 +17,7 @@ on:
       - "tests/fixtures/idkgraph_workunit_cycles/**"
       - "schemas/idkgraph.schema.json"
       - ".github/workflows/idkgraph-workunit-cycles.yml"
+      - "requirements-phase0.txt"
 
 permissions:
   contents: read

@@ -11,6 +11,7 @@ on:
       - 'tests/test_project_contracts.py'
       - 'docs/specifications/PROJECT_DOMAIN_INTERFACES.md'
       - '.github/workflows/project-domain-contracts-check.yml'
+      - 'requirements-phase0.txt'
   push:
     branches: [main]
     paths:
@@ -22,6 +23,7 @@ on:
       - 'tests/test_project_contracts.py'
       - 'docs/specifications/PROJECT_DOMAIN_INTERFACES.md'
       - '.github/workflows/project-domain-contracts-check.yml'
+      - 'requirements-phase0.txt'
 
 permissions:
   contents: read

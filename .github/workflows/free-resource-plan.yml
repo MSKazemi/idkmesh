@@ -19,6 +19,7 @@ on:
       - 'docs/architecture/FREE_RESOURCE_MESH_COMPUTE_BRIDGE.md'
       - 'docs/architecture/RESOURCE_COMPUTE_ADMISSION.md'
       - '.github/workflows/free-resource-plan.yml'
+      - 'requirements-phase0.txt'
   push:
     branches: [main]
     paths:
@@ -38,6 +39,7 @@ on:
       - 'docs/architecture/FREE_RESOURCE_MESH_COMPUTE_BRIDGE.md'
       - 'docs/architecture/RESOURCE_COMPUTE_ADMISSION.md'
       - '.github/workflows/free-resource-plan.yml'
+      - 'requirements-phase0.txt'
   workflow_dispatch:
 
 permissions:

@@ -6,11 +6,13 @@ on:
       - "randomness_lab/**"
       - "tests/**"
       - ".github/workflows/randomness-lab.yml"
+      - "requirements-phase0.txt"
   pull_request:
     paths:
       - "randomness_lab/**"
       - "tests/**"
       - ".github/workflows/randomness-lab.yml"
+      - "requirements-phase0.txt"
 
 permissions:
   contents: read

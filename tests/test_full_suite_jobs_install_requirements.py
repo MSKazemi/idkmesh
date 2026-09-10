@@ -191,6 +191,89 @@ def _required_distributions():
     return required
 
 
+
+
+# ---------------------------------------------------------------------------
+# A workflow that installs a requirements file must also watch it.
+#
+# Installing a dependency the workflow does not watch means changing that pin
+# does not re-run the job that installs it: the job keeps certifying against a
+# dependency set it was never re-tested with.
+#
+# The exemption is the case that is easy to get wrong, so it is a named branch
+# rather than an implicit skip. A workflow with NO `paths:` filter runs on every
+# change already, so the requirement is vacuous for it -- `pr-gate.yml`,
+# `ci-shadow-outcome.yml` and `ci-shadow-planner.yml` are in exactly that
+# position. Counting them as defects inflates the finding, which is how a survey
+# of this same class came in at 15 when the answer is 12.
+# ---------------------------------------------------------------------------
+
+PATHS_KEY_RE = re.compile(r"^(?P<indent>\s*)paths:\s*$")
+LIST_ITEM_RE = re.compile(r"^\s*-\s+(?P<value>\S.*?)\s*$")
+REQUIREMENTS_INSTALL_RE = re.compile(
+    r"pip\s+install[^\n]*?(?P<file>requirements[A-Za-z0-9._-]*\.txt)"
+)
+
+
+def _strip_yaml_scalar(value):
+    """Unquote a YAML list entry written with either quote style, or none.
+
+    Matching only double quotes is a real bug this repository has hit twice: a
+    workflow written with single quotes parses to zero watched paths, and every
+    file it names then reads as unwatched.
+    """
+
+    value = value.split(" #", 1)[0].strip()
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in "\"'":
+        return value[1:-1]
+    return value
+
+
+def _paths_filters(text):
+    """Each ``paths:`` block in one workflow, as a separate list of entries.
+
+    Blocks are kept separate rather than unioned. A workflow commonly filters
+    `push` and `pull_request` independently, and a file watched by one but not
+    the other is still skipped by the other -- unioning them hides exactly that,
+    which mutation testing caught this guard doing.
+
+    Returns ``None`` when the workflow declares no ``paths:`` key at all, which
+    is a different state from declaring one that is empty: the first means
+    "runs on everything", the second means the parser failed.
+    """
+
+    lines = text.splitlines()
+    found_key = False
+    blocks = []
+    for index, line in enumerate(lines):
+        match = PATHS_KEY_RE.match(line)
+        if not match:
+            continue
+        found_key = True
+        entries = []
+        indent = len(match.group("indent"))
+        for follow in lines[index + 1:]:
+            stripped = follow.strip()
+            if not stripped or stripped.startswith("#"):
+                # A comment must not terminate the block. Terminating on the
+                # first comment is the second parser bug this class has produced
+                # -- an explanatory comment added by a fix defeated the tool that
+                # measured the fix.
+                continue
+            if len(follow) - len(follow.lstrip()) <= indent:
+                break
+            item = LIST_ITEM_RE.match(follow)
+            if item is None:
+                break
+            entries.append(_strip_yaml_scalar(item.group("value")))
+        blocks.append(entries)
+    return blocks if found_key else None
+
+
+def _requirements_installed(text):
+    return {match.group("file") for match in REQUIREMENTS_INSTALL_RE.finditer(text)}
+
+
 class FullSuiteJobsInstallRequirementsTest(unittest.TestCase):
     def test_there_is_something_to_check(self):
         """Guard against the assertion below passing vacuously."""
@@ -235,3 +318,79 @@ class FullSuiteJobsInstallRequirementsTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class WorkflowsWatchWhatTheyInstallTests(unittest.TestCase):
+    """Changing a dependency pin must re-run the jobs that install it."""
+
+    def test_a_paths_block_never_parses_to_nothing(self) -> None:
+        """The shared precondition of both parser bugs this class has produced.
+
+        A workflow that declares ``paths:`` and yields zero entries is a parser
+        failure, not a workflow with no filter. Failing closed on it would blame
+        the workflow for the parser's gap, so it raises instead.
+        """
+
+        for path in sorted(WORKFLOWS.glob("*.yml")):
+            blocks = _paths_filters(path.read_text(encoding="utf-8"))
+            if blocks is None:
+                continue
+            for number, entries in enumerate(blocks, start=1):
+                with self.subTest(workflow=path.name, block=number):
+                    self.assertTrue(
+                        entries,
+                        f"{path.name} block {number} declares a paths: filter "
+                        f"that parsed to zero entries. That is this test's "
+                        f"parser failing, not the workflow being unfiltered -- "
+                        f"fix _paths_filters rather than the workflow.",
+                    )
+
+    def test_both_quote_styles_and_bare_entries_parse_alike(self) -> None:
+        """Matching only double quotes is the bug that over-counted by 3x."""
+
+        double = 'on:\n  push:\n    paths:\n      - "a/b.txt"\n      - "c.py"\n'
+        single = "on:\n  push:\n    paths:\n      - 'a/b.txt'\n      - 'c.py'\n"
+        bare = "on:\n  push:\n    paths:\n      - a/b.txt\n      - c.py\n"
+        expected = [["a/b.txt", "c.py"]]
+        for label, text in (("double", double), ("single", single), ("bare", bare)):
+            with self.subTest(style=label):
+                self.assertEqual(_paths_filters(text), expected)
+
+    def test_a_comment_does_not_terminate_a_paths_block(self) -> None:
+        """A fix's own explanatory comment must not defeat the measurement."""
+
+        text = (
+            "on:\n  push:\n    paths:\n"
+            "      - a/b.txt\n"
+            "      # why the next entry is watched\n"
+            "      - c.py\n"
+        )
+        self.assertEqual(_paths_filters(text), [["a/b.txt", "c.py"]])
+
+    def test_a_workflow_without_a_paths_filter_is_exempt(self) -> None:
+        """It runs on everything, so it cannot miss a change."""
+
+        self.assertIsNone(_paths_filters("on:\n  push:\n    branches: [main]\n"))
+
+    def test_every_filtered_workflow_watches_what_it_installs(self) -> None:
+        offenders = {}
+        for path in sorted(WORKFLOWS.glob("*.yml")):
+            text = path.read_text(encoding="utf-8")
+            installed = _requirements_installed(text)
+            if not installed:
+                continue
+            blocks = _paths_filters(text)
+            if blocks is None:
+                continue  # unfiltered: runs on every change already
+            for number, watched in enumerate(blocks, start=1):
+                missing = sorted(n for n in installed if n not in watched)
+                if missing:
+                    offenders[f"{path.name} (paths block {number})"] = missing
+        self.assertEqual(
+            offenders,
+            {},
+            "these workflows install a requirements file they do not watch, so "
+            "changing that pin does not re-run the job that installs it: "
+            f"{offenders}. Add the file to the workflow's paths: filter, or "
+            "remove the filter if the workflow should always run.",
+        )

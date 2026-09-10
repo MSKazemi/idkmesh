@@ -11,6 +11,7 @@ on:
       - "docs/specifications/EVALUATOR_PLAN_V0_3_SEMANTIC_MATCHING.md"
       - "docs/conversations/2026-08-28-versioned-semantic-matching-after-burned-cohort.md"
       - ".github/workflows/evaluator-plan-v03-semantics.yml"
+      - "requirements-phase0.txt"
   push:
     branches: [main]
     paths:
@@ -20,6 +21,7 @@ on:
       - "verification/fixtures/patch-smoke-evaluator-plan-v0.3.json"
       - "tests/test_evaluator_plan_v03_semantics.py"
       - ".github/workflows/evaluator-plan-v03-semantics.yml"
+      - "requirements-phase0.txt"
 
 permissions:
   contents: read

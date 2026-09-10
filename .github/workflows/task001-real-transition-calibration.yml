@@ -11,6 +11,7 @@ on:
       - "benchmarks/phase-b2-first-five/work-units/task-001-cohort-path-boundary.work-unit.json"
       - "benchmarks/phase-b2-first-five/cohort.json"
       - ".github/workflows/task001-real-transition-calibration.yml"
+      - "requirements-phase0.txt"
   push:
     branches: [main]
     paths:
@@ -22,6 +23,7 @@ on:
       - "benchmarks/phase-b2-first-five/work-units/task-001-cohort-path-boundary.work-unit.json"
       - "benchmarks/phase-b2-first-five/cohort.json"
       - ".github/workflows/task001-real-transition-calibration.yml"
+      - "requirements-phase0.txt"
 
 permissions:
   contents: read

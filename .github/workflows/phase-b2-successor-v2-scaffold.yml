@@ -5,11 +5,13 @@ on:
     paths:
       - "benchmarks/phase-b2-successor-v2/**"
       - ".github/workflows/phase-b2-successor-v2-scaffold.yml"
+      - "requirements-phase0.txt"
   push:
     branches: [main]
     paths:
       - "benchmarks/phase-b2-successor-v2/**"
       - ".github/workflows/phase-b2-successor-v2-scaffold.yml"
+      - "requirements-phase0.txt"
 
 permissions:
   contents: read
