@@ -49,6 +49,8 @@ remain authoritative; an index link does not promote a proposal into policy.
   observation, attention allocation, and non-compensating guard composition.
 - [Mathematical Portfolio Concurrency](REPOSITORY_MATHEMATICAL_PORTFOLIO_CONCURRENCY.md) —
   advisory-per-PR cancellation isolation with one canonical persistent-state lineage.
+- [ACE Convergent Recovery](ACE_CONVERGENT_RECOVERY.md) — keep the singleton ACE
+  ledger serialized while recovering dropped pending seed work from repository state.
 - [Evolution Artifact Minimization](EVOLUTION_ARTIFACT_MINIMIZATION.md) — retain
   reproducible evidence without persisting unnecessary untrusted content.
 

@@ -31,12 +31,16 @@ class AceSafetyContractTests(unittest.TestCase):
             "if (!actuationAllowed || state.review_load > K) mode = 'CONSOLIDATE';",
             TEXT,
         )
-        self.assertIn("if (actuationAllowed && event === 'pull_request_target'", TEXT)
+        self.assertIn("if (actuationAllowed)", TEXT)
 
     def test_untrusted_seed_marker_is_not_authorization(self):
         self.assertIn("trustedIssueAuthors", TEXT)
-        self.assertIn("issue?.author_association", TEXT)
-        self.assertIn("trustedIssueAuthors.has(association)", TEXT)
+        self.assertIn("issue.author_association || 'NONE'", TEXT)
+        self.assertIn(
+            "trustedIssueAuthors.has(issue.author_association || 'NONE')",
+            TEXT,
+        )
+        self.assertIn("const unlabelledTrustedSeeds = allIssues", TEXT)
 
     def test_ledger_identity_is_unique_and_legacy_adoption_requires_trust(self):
         self.assertIn("ace:ledger", TEXT)
@@ -68,7 +72,7 @@ class AceSafetyContractTests(unittest.TestCase):
         self.assertRegex(
             TEXT,
             re.compile(
-                r"some\(label => label\.name === 'growth-seed'\).*?includes\(marker\)",
+                r"labelsOf\(item\)\.has\('growth-seed'\).*?includes\(marker\)",
                 re.DOTALL,
             ),
         )
