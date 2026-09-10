@@ -217,3 +217,43 @@ gives for its own artifacts. The whole run takes about eighteen seconds.
    single bad day costs a flat, unamortizable share of throughput, and a second
    reviewer removes almost all of it. That is a statement about the simulator's
    structure, and it is the kind of structure real review queues also have.
+
+---
+
+## Supersession note — 2026-09-10
+
+**The structural premise of this experiment no longer holds, deliberately.**
+`randomness_lab/r1.py` now has a verifier panel: `R1Condition.panel_size`,
+aggregated by `_panel_accepts` using E018's `need = floor(quorum * k) + 1`.
+Issue #380 asked for this, and required the change to fail E041's
+`LabStructureTests` rather than quietly pass them, so that the supersession is
+recorded here instead of being discovered later. It did fail them, and this is
+that record.
+
+**What is superseded.** The *evidence* in this document — that no quorum, vote,
+or consensus identifier existed anywhere in `randomness_lab/`, checked by AST —
+was true when measured and is now false by construction. Do not re-run that
+check expecting the original result.
+
+**What survives, and is the actual finding.** `verifier_error_correlation` is
+still not dependence between verifiers. `shared_draws` remains keyed per
+verifier *name* and drawn once per task, and `_verifier_accepts` still takes a
+scalar `shared_draw`, so the parameter still couples one verifier's decisions
+across candidates within a task: a within-task strictness shock. The panel does
+not change what that parameter means, and the name remains a trap until a
+distinctly-named panel-dependence parameter exists. Both properties are now
+asserted directly by
+`tests/test_r1_verifier_dependence.py::LabStructureTests`.
+
+**What is unaffected.** `panel_size` defaults to `1`, every arm
+`build_r1_conditions` returns keeps that default, and the single-verifier
+behaviour is reproduced draw-for-draw — verified by the committed-payload replay
+tests, which detect a single extra RNG draw in the candidate loop. So every
+number in this document, and every committed R1 artifact, still reproduces.
+
+**What is still open.** E040's decision item 3 asked for a beta-binomial reshape
+of the verifier joint-failure distribution. This experiment closed it as *not
+executable* because there was no joint distribution to reshape. A panel creates
+one, so that item becomes executable — but it is not executed here: this change
+adds the panel and its aggregation only. The dependence shapes, and the arms
+that sweep them, are the next increment of #380.

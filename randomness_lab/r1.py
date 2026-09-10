@@ -67,6 +67,25 @@ class R1Condition:
     verifier_assignment: str = "fixed"
     verifiers: tuple[Verifier, ...] = (Verifier("verifier-1"),)
     verifier_error_correlation: float = 0.50
+    # Panel of verifiers reading each candidate. `panel_size = 1` is the
+    # single-verifier behaviour every committed R1 artifact was generated
+    # under, and is reproduced draw-for-draw, not merely equivalently.
+    #
+    # `verifier_error_correlation` above is NOT dependence between panellists:
+    # `shared_draws` is keyed per verifier name and drawn once per task, so it
+    # couples one verifier's decisions across candidates within a task -- a
+    # within-task strictness shock. E041 records two readings that went wrong by
+    # assuming otherwise. Inter-panellist dependence, when it arrives, takes a
+    # deliberately distinct name so the two can never be conflated.
+    panel_size: int = 1
+    # Fraction of the panel that must accept, in the sense
+    # `sim/e018_dependence_models.py` uses: `need = floor(quorum * k) + 1`.
+    # 0.5 is the symmetric majority, and is the only value E018 sweeps, so
+    # keeping it as the default is what makes these numbers comparable to
+    # E017/E018 at all. Sweeping it moves `need` across the whole `[1, k]`
+    # range, which matters: at least one prior result here survives only on a
+    # sub-range of `need` and dissolves once the full range is opened.
+    panel_quorum: float = 0.5
     # Shape of the worker joint-failure distribution. "shared_shock" is the
     # historical behaviour and stays the default so every committed artifact
     # keeps reproducing; "item_difficulty" is the beta-binomial E017 measured
@@ -88,6 +107,10 @@ class R1Condition:
             raise ValueError("verifiers must not be empty")
         if not 0.0 <= self.verifier_error_correlation <= 1.0:
             raise ValueError("verifier_error_correlation must be in [0, 1]")
+        if self.panel_size < 1:
+            raise ValueError("panel_size must be >= 1")
+        if not 0.0 <= self.panel_quorum < 1.0:
+            raise ValueError("panel_quorum must be in [0, 1)")
         if self.worker_dependence_shape not in WORKER_DEPENDENCE_SHAPES:
             raise ValueError(
                 "worker_dependence_shape must be one of "
@@ -335,6 +358,30 @@ def _verifier_accepts(
     return draw < threshold
 
 
+def _select_panel(
+    condition: R1Condition, rng: random.Random
+) -> tuple[Verifier, ...]:
+    """Choose the verifiers that read one candidate.
+
+    At ``panel_size == 1`` this makes exactly the draws the single-verifier
+    implementation made -- none under ``fixed``, one ``rng.choice`` under
+    ``random`` -- because any extra or reordered draw re-phases every
+    subsequent draw and silently changes every committed artifact.
+    """
+
+    if condition.verifier_assignment == "fixed":
+        pool = condition.verifiers
+        return tuple(pool[index % len(pool)] for index in range(condition.panel_size))
+    return tuple(rng.choice(condition.verifiers) for _ in range(condition.panel_size))
+
+
+def _panel_accepts(votes: Sequence[bool], quorum: float) -> bool:
+    """Aggregate panel votes, using E018's ``need = floor(quorum * k) + 1``."""
+
+    need = math.floor(quorum * len(votes)) + 1
+    return sum(1 for vote in votes if vote) >= need
+
+
 def run_r1_condition(
     condition: R1Condition,
     *,
@@ -406,20 +453,33 @@ def run_r1_condition(
 
         shared_draws = {verifier.name: rng.random() for verifier in condition.verifiers}
         for candidate in candidate_records:
-            if condition.verifier_assignment == "fixed":
-                verifier = condition.verifiers[0]
-            else:
-                verifier = rng.choice(condition.verifiers)
-            accepted = _verifier_accepts(
-                bool(candidate["is_good"]),
-                verifier,
-                rng,
-                shared_draws[verifier.name],
-                condition.verifier_error_correlation,
-            )
-            candidate["verifier"] = verifier.name
+            panel = _select_panel(condition, rng)
+            votes = [
+                _verifier_accepts(
+                    bool(candidate["is_good"]),
+                    verifier,
+                    rng,
+                    shared_draws[verifier.name],
+                    condition.verifier_error_correlation,
+                )
+                for verifier in panel
+            ]
+            accepted = _panel_accepts(votes, condition.panel_quorum)
+            candidate["verifier"] = panel[0].name
             candidate["accepted"] = accepted
-            totals["human_attention"] += verifier.attention_cost
+            if len(panel) > 1:
+                # Only emitted for a real panel, so single-verifier payloads
+                # stay byte-identical to the committed artifacts.
+                candidate["verifier_panel"] = [verifier.name for verifier in panel]
+                candidate["verifier_votes"] = votes
+            # A panel of k costs k. `human_attention` feeds `resource_cost`,
+            # which feeds `verified_utility_per_unit_cost` -- the equal-budget
+            # metric hypothesis 2 is stated in. Leaving panellists unbilled
+            # would let a panel buy accuracy with unbilled human attention and
+            # then win a comparison it was never subjected to.
+            totals["human_attention"] += sum(
+                verifier.attention_cost for verifier in panel
+            )
 
         accepted_candidates = [
             candidate for candidate in candidate_records if bool(candidate["accepted"])
