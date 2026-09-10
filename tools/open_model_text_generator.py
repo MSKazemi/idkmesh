@@ -10,11 +10,52 @@ output directory.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 from pathlib import Path
 import platform
 import time
+
+
+def snapshot_identity(model_dir: Path) -> dict[str, object]:
+    """Fingerprint the weights that are actually about to run.
+
+    The host cannot see inside this container, so anything it says about which
+    model produced a candidate is an assertion unless the container reports it.
+    A content digest over the snapshot is the one identity claim that cannot be
+    wrong: swap the image and the digest changes.
+
+    The digest is taken over ``{relative path: sha256}`` rather than a
+    concatenation of bytes, so a renamed or added file changes it too.
+    """
+    files: dict[str, str] = {}
+    for path in sorted(model_dir.rglob("*")):
+        if not path.is_file():
+            continue
+        digest = hashlib.sha256()
+        with path.open("rb") as handle:
+            for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                digest.update(chunk)
+        files[str(path.relative_to(model_dir))] = "sha256:" + digest.hexdigest()
+    payload = json.dumps(files, sort_keys=True, separators=(",", ":")).encode("utf-8")
+
+    config: dict[str, object] = {}
+    config_path = model_dir / "config.json"
+    if config_path.is_file():
+        try:
+            config = json.loads(config_path.read_text(encoding="utf-8"))
+        except ValueError:
+            config = {}
+
+    return {
+        "snapshot_digest": "sha256:" + hashlib.sha256(payload).hexdigest(),
+        "file_count": len(files),
+        "architectures": config.get("architectures"),
+        "model_type": config.get("model_type"),
+        "hidden_size": config.get("hidden_size"),
+        "num_hidden_layers": config.get("num_hidden_layers"),
+    }
 
 
 def main() -> int:
@@ -98,8 +139,16 @@ def main() -> int:
 
     args.response.parent.mkdir(parents=True, exist_ok=True)
     args.response.write_text(response + "\n", encoding="utf-8")
+    # Parameter count is read off the loaded weights, not the config, so it
+    # reflects what ran. It is the cheapest observable that separates a 0.5B
+    # producer from a 30B one.
+    identity = snapshot_identity(Path(args.model))
+    identity["parameter_count"] = int(sum(p.numel() for p in model.parameters()))
+    identity["torch_dtype"] = str(next(model.parameters()).dtype)
+
     metadata = {
-        "schema_version": "0.1",
+        "schema_version": "0.2",
+        "model_identity": identity,
         "input_tokens": input_tokens,
         "output_tokens": int(generated_ids.shape[-1]),
         "inference_seconds": inference_seconds,

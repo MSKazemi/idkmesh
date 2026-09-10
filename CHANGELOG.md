@@ -46,6 +46,15 @@ and the release notes for that tag.
 
 ### Changed
 
+- The open-model benchmark probe reports the model it actually ran, instead of naming one
+  from constants in its own source. Identity is now resolved from the producer image's
+  recorded digest: an unregistered digest is rejected rather than relabelled, a missing
+  identity block is a harness failure, and an expected-digest mismatch aborts. The
+  fingerprint covers file names as well as bytes, so swapping two weight files changes it.
+- `tests/test_open_model_provenance_binding.py`, including a regression guard asserting the
+  probe's source carries no `MODEL_NAME`, `MODEL_REVISION` or written-in manifest id — the
+  host cannot observe those, so it may not assert them.
+
 - `tests/test_example_contract_coverage.py` checks that every file named in a
   `NO_SCHEMA_CONTRACT` exemption reason still exists. Those reasons are prose —
   "validated in code by X", "consumed by X" — and prose is not checked, so renaming
