@@ -22,13 +22,13 @@ def _binary_correlation(xs: list[int], ys: list[int]) -> float:
 def _base_condition(**overrides):
     base = build_r1_conditions(R1ExperimentConfig(swarm_size=5))[0]
     verifiers = tuple(Verifier(f"panel-{i}") for i in range(1, 6))
-    return dataclasses.replace(
-        base,
-        verifiers=verifiers,
-        panel_size=5,
-        verifier_error_correlation=0.0,
-        **overrides,
-    )
+    changes = {
+        "verifiers": verifiers,
+        "panel_size": 5,
+        "verifier_error_correlation": 0.0,
+    }
+    changes.update(overrides)
+    return dataclasses.replace(base, **changes)
 
 
 class PanelDependenceSamplerTests(unittest.TestCase):
