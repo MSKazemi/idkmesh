@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Thirty-two IDKMesh experiments from E011 to E042, each with its actual result: positive, corrective, negative, or prototype.">
+  <meta name="theme-color" content="#0b1020">
+  <title>Experiment atlas — IDKMesh</title>
+  <link rel="canonical" href="https://mskazemi.com/idkmesh/research.html">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="IDKMesh">
+  <meta property="og:url" content="https://mskazemi.com/idkmesh/research.html">
+  <meta property="og:title" content="Experiment atlas — IDKMesh">
+  <meta property="og:description" content="Thirty-two IDKMesh experiments from E011 to E042, each with its actual result: positive, corrective, negative, or prototype.">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Experiment atlas — IDKMesh">
+  <meta name="twitter:description" content="Thirty-two IDKMesh experiments from E011 to E042, each with its actual result: positive, corrective, negative, or prototype.">
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"WebPage","name":"Experiment atlas — IDKMesh","description":"Thirty-two IDKMesh experiments from E011 to E042, each with its actual result: positive, corrective, negative, or prototype.","url":"https://mskazemi.com/idkmesh/research.html","isPartOf":{"@type":"WebSite","name":"IDKMesh","url":"https://mskazemi.com/idkmesh/"},"license":"https://www.apache.org/licenses/LICENSE-2.0","author":{"@type":"Person","name":"Mohsen Seyedkazemi Ardebili","url":"https://mskazemi.github.io"}}
+  </script>
+  <link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+  <style>
+    /* CSS-only atlas filter: no JavaScript anywhere on this site. */
+    body:has(#f-pos:checked)   .exp:not(.pos),
+    body:has(#f-mix:checked)   .exp:not(.mix),
+    body:has(#f-neg:checked)   .exp:not(.neg),
+    body:has(#f-proto:checked) .exp:not(.proto) { display: none; }
+    .card.exp.pos { border-left: 3px solid var(--accent-2); }
+    .card.exp.mix { border-left: 3px solid var(--warn); }
+    .card.exp.neg { border-left: 3px solid var(--deny); }
+    .card.exp.proto { border-left: 3px solid var(--accent-3); }
+    .card.exp .kicker { display: flex; align-items: center; gap: .5rem; margin-bottom: .3rem; }
+  </style>
+  <a class="skip" href="#main">Skip to content</a>
+  <nav class="sitenav" aria-label="Site">
+    <div class="wrap">
+      <a class="brand" href="./">
+        <svg viewBox="0 0 32 32" aria-hidden="true">
+          <circle cx="16" cy="6" r="3.1" fill="#8bd3ff"></circle>
+          <circle cx="6" cy="22" r="3.1" fill="#b9ffcf"></circle>
+          <circle cx="26" cy="22" r="3.1" fill="#c9b8ff"></circle>
+          <circle cx="16" cy="16" r="2.2" fill="#edf2ff"></circle>
+          <g stroke="#3d4a6b" stroke-width="1.5" fill="none">
+            <path d="M16 9 L16 14"></path><path d="M8.6 20.5 L14 17.2"></path><path d="M23.4 20.5 L18 17.2"></path>
+          </g>
+        </svg>
+        IDKMesh<span class="tail">&nbsp;docs</span>
+      </a>
+      <div class="navlinks">
+        <a href="./">Home</a>
+        <a href="start.html">Start</a>
+        <a href="concepts.html">How it works</a>
+        <a href="pipelines.html">Pipelines</a>
+        <a href="research.html" aria-current="page">Evidence</a>
+        <a href="library.html">Library</a>
+        <a class="ext" href="https://github.com/MSKazemi/idkmesh">GitHub&nbsp;↗</a>
+      </div>
+    </div>
+  </nav>
+
+  <header class="pagehead">
+    <div class="wrap">
+      <div class="eyebrow">IDKMesh · evidence</div>
+      <h1>Every experiment, with the result it actually got</h1>
+      <p class="lead">Thirty-two numbered experiments, each linked to the record in the repository that produced it. The negative ones are here because they are here in the tree: a mechanism that fails under a frozen test is evidence, not something to hide — and several of the entries below exist only to falsify an earlier one.</p>
+      <div class="stats">
+        <div class="stat"><div class="num">32</div><div class="lbl">numbered experiments, E011 to E042</div></div>
+        <div class="stat"><div class="num mint">8</div><div class="lbl">reached a positive result at their stated scope</div></div>
+        <div class="stat"><div class="num amber">15</div><div class="lbl">corrected, qualified or falsified an earlier experiment</div></div>
+        <div class="stat"><div class="num red">4</div><div class="lbl">negative results, kept in the tree</div></div>
+      </div>
+    </div>
+  </header>
+
+  <main id="main" class="wrap">
+
+    <section>
+      <h2>Read the status before the claim</h2>
+      <p class="sub">Every artifact in this repository sits on an explicit evidence ladder, and most of these experiments deliberately stop short of the top rung. A benchmark contract plus a synthetic fixture means the experiment is <em>runnable</em> — never that a strategy has been shown superior.</p>
+      <div class="grid tight">
+        <article class="card mint"><div class="kicker"><span class="chip pos">positive</span></div><p class="muted">Reached the result it set out to test, at its own stated scope and no wider.</p></article>
+        <article class="card amber"><div class="kicker"><span class="chip mix">corrective</span></div><p class="muted">Qualified, narrowed or falsified an earlier experiment — including several of this project&#8217;s own headline claims.</p></article>
+        <article class="card" style="border-left:3px solid var(--deny)"><div class="kicker"><span class="chip neg">negative</span></div><p class="muted">The mechanism did not work, or could not be measured at all. Retained in full.</p></article>
+        <article class="card violet"><div class="kicker"><span class="chip proto">prototype</span></div><p class="muted">Synthetic mechanism test or preregistration. Tests the mechanics; proves nothing about real collaboration.</p></article>
+      </div>
+      <p class="muted" style="margin-top:1.4rem"><a href="concepts.html#ladder">The full evidence ladder, as a figure →</a></p>
+    </section>
+
+    <section id="atlas">
+      <h2>The atlas</h2>
+      <p class="sub">Filter by what the experiment actually concluded. Each card links to its record in the repository, which carries the module that produced it, the machine-readable artifact, and the tests that pin it.</p>
+
+      <div class="filter">
+        <input type="radio" name="expfilter" id="f-all" checked><label for="f-all">All 32</label>
+        <input type="radio" name="expfilter" id="f-pos"><label for="f-pos">Positive 8</label>
+        <input type="radio" name="expfilter" id="f-mix"><label for="f-mix">Corrective 15</label>
+        <input type="radio" name="expfilter" id="f-neg"><label for="f-neg">Negative 4</label>
+        <input type="radio" name="expfilter" id="f-proto"><label for="f-proto">Prototype 5</label>
+        <span class="hint">CSS only — this site runs no JavaScript.</span>
+      </div>
+
+      <div class="grid two" id="explist">
+        <a class="card exp proto" href="https://github.com/MSKazemi/idkmesh/blob/main/experiments/E011-emergence-vague-goals.md">
+          <div class="kicker">E011 <span class="chip proto">prototype</span></div>
+          <h3>Emergence from vague goals</h3>
+          <p class="muted">Can exploratory agents move toward a coherent system when the objective is incomplete, given hard constraints, diversity preservation, evidence-driven selection and shared memory? Deliberately synthetic — mechanisms tested before any real engineering task.</p>
+          <p class="more">Read the record ↗</p>
+        </a>
+        <a class="card exp proto" href="https://github.com/MSKazemi/idkmesh/blob/main/experiments/E012-correlated-verification.md">
+          <div class="kicker">E012 <span class="chip proto">prototype</span></div>
+          <h3>Correlated verification failure</h3>
+          <p class="muted">Replaces the perfect viability oracle with an imperfect panel. As verifier errors correlate, majority-vote error rises while panel disagreement falls — so the panel looks more confident exactly as it becomes less reliable.</p>
+          <p class="more">Read the record ↗</p>
+        </a>
+        <a class="card exp proto" href="https://github.com/MSKazemi/idkmesh/blob/main/experiments/E013-independence-aware-aggregation.md">
+          <div class="kicker">E013 <span class="chip proto">prototype</span></div>
+          <h3>Independence-aware aggregation</h3>
+          <p class="muted">At the same nominal review cost and the same votes, when should a large correlated verifier cluster be discounted rather than counted vote-by-vote? The rule should help when a cluster shares failure modes — and must not be assumed to help when reviewers are genuinely independent.</p>
+          <p class="more">Read the record ↗</p>
+        </a>
+        <a class="card exp proto" href="https://github.com/MSKazemi/idkmesh/blob/main/experiments/E014-aco-stigmergic-task-routing.md">
+          <div class="kicker">E014 <span class="chip proto">prototype</span></div>
+          <h3>ACO stigmergic task routing</h3>
+          <p class="muted">Proposed, with an executable synthetic baseline: can evidence-backed pheromone routing allocate tasks better than simpler rules without causing herding, duplication or review concentration?</p>
+          <p class="more">Read the record ↗</p>
+        </a>
+        <a class="card exp pos" href="https://github.com/MSKazemi/idkmesh/blob/main/experiments/E015-verification-phase-diagram.md">
+          <div class="kicker">E015 <span class="chip pos">positive</span></div>
+          <h3>Verification phase diagram</h3>
+          <p class="muted">Sweeps E012's single operating point into a phase diagram: given panel size, accuracy, correlation and quorum, how many statistically independent verifiers is a panel actually worth? Cost-asymmetric quorums help, and the N_eff heuristic is optimistic.</p>
+          <p class="more">Read the record ↗</p>
+        </a>
+        <a class="card exp neg" href="https://github.com/MSKazemi/idkmesh/blob/main/experiments/E016-live-verifier-correlation.md">
+          <div class="kicker">E016 <span class="chip neg">negative</span></div>
+          <h3>Live verifier correlation</h3>
+          <p class="muted">Negative result, and an honest one — its own status line reads &#8220;the verifiers it deployed do not verify&#8221;. The 20 LLM verifiers averaged Youden J = +0.0487, and their majority vote scored 0.514 accuracy against 0.639 for a trivial &#8220;always reject&#8221;. Correlation could not be estimated from votes that carry almost no signal. Screen a panel for discrimination before trusting anything it votes on — and note what this leaves open: no AI review panel has been measured in this repository.</p>
+          <p class="more">Read the record ↗</p>
+        </a>
+        <a class="card exp pos" href="https://github.com/MSKazemi/idkmesh/blob/main/experiments/E017-item-difficulty-and-quorum.md">
+          <div class="kicker">E017 <span class="chip pos">positive</span></div>
+          <h3>Item difficulty and quorum</h3>
+          <p class="muted">The first observed measurement of verifier error correlation here, on 25 independently seeded partial test oracles — programs, graded on real defects — over a 72-candidate corpus: ρ = 0.5873 across 300 pairs, an effective panel size of 1.00 of 25 under majority vote, and the shared-shock model shown to be the wrong shape. Fixing the aggregation rule cut error 3.7×; growing the panel bought nothing.</p>
+          <p class="more">Read the record ↗</p>
+        </a>
+        <a class="card exp mix" href="https://github.com/MSKazemi/idkmesh/blob/main/experiments/E018-dependence-model-shape.md">
+          <div class="kicker">E018 <span class="chip mix">corrective</span></div>
+          <h3>Dependence model shape</h3>
+          <p class="muted">Which E015 conclusions depend on the shape of the dependence model? One correction to E015 and one strengthening of it — the direction of the N_eff result survives, the magnitude does not.</p>
+          <p class="more">Read the record ↗</p>
+        </a>
+        <a class="card exp mix" href="https://github.com/MSKazemi/idkmesh/blob/main/experiments/E019-group-independence-under-item-difficulty.md">
+          <div class="kicker">E019 <span class="chip mix">corrective</span></div>
+          <h3>Group independence under item difficulty</h3>
+          <p class="muted">E013's crossover is robust to the model's shape — it sits at ρ = 0.25 under both — and disappears entirely when the declared independence groups are not actually independent. Declared structure is not measured structure.</p>
+          <p class="more">Read the record ↗</p>
+        </a>
+        <a class="card exp mix" href="https://github.com/MSKazemi/idkmesh/blob/main/experiments/E020-quorum-frontier-under-measured-shape.md">
+          <div class="kicker">E020 <span class="chip mix">corrective</span></div>
+          <h3>Quorum frontier under the measured shape</h3>
+          <p class="muted">Extends E017 §6 to the full frontier with the corpus base rate, and qualifies it twice: the recommended beta-binomial under-predicts the unanimity floor by 1.77×, and the shared-shock model reports that no quorum beats majority — getting the highest-leverage decision on that panel exactly backwards.</p>
+          <p class="more">Read the record ↗</p>
+        </a>
+        <a class="card exp mix" href="https://github.com/MSKazemi/idkmesh/blob/main/experiments/E021-coordination-criticality.md">
+          <div class="kicker">E021 <span class="chip mix">corrective</span></div>
+          <h3>Coordination criticality</h3>
+          <p class="muted">Matched small-load susceptibility probes give earlier overload warning at a measurable false-alarm cost — but no evidence that susceptibility dominates an ordinary utilisation threshold.</p>
+          <p class="more">Read the record ↗</p>
+        </a>
+        <a class="card exp pos" href="https://github.com/MSKazemi/idkmesh/blob/main/experiments/E022-verification-scaling-matrix.md">
+          <div class="kicker">E022 <span class="chip pos">positive</span></div>
+          <h3>Seven-mode verification scaling matrix</h3>
+          <p class="muted">A matched comparison of every verification condition issue #14 names: can candidate generation and independent verification scale together without collapsing into unchecked acceptance or an unbounded review queue?</p>
+          <p class="more">Read the record ↗</p>
+        </a>
+        <a class="card exp proto" href="https://github.com/MSKazemi/idkmesh/blob/main/docs/research/PREREG_FIRST_REVIEW_LATENCY_V1.md">
+          <div class="kicker">E023 <span class="chip proto">prototype</span></div>
+          <h3>First-review latency and contributor recurrence</h3>
+          <p class="muted">Preregistered against zero observations: the specification, the randomised design it would take to earn a causal claim, and the threats to validity — written before any data, precisely so the analysis cannot be chosen after seeing it.</p>
+          <p class="more">Read the record ↗</p>
+        </a>
+        <a class="card exp pos" href="https://github.com/MSKazemi/idkmesh/blob/main/experiments/E024-matched-budget-emergence.md">
+          <div class="kicker">E024 <span class="chip pos">positive</span></div>
+          <h3>Matched-budget emergence</h3>
+          <p class="muted">Every strategy issue #22 names gets exactly the same proposal and verification-attempt budget. The Quality-Diversity archive's surviving advantage is reliability: it never fails catastrophically, where the majority-vote swarm fails in 44 of 100 seeds. Its own stated limitation drove E030 and E031.</p>
+          <p class="more">Read the record ↗</p>
+        </a>
+        <a class="card exp mix" href="https://github.com/MSKazemi/idkmesh/blob/main/experiments/E025-learned-verifier-reliability.md">
+          <div class="kicker">E025 <span class="chip mix">corrective</span></div>
+          <h3>Learned verifier reliability</h3>
+          <p class="muted">Learned weighting helps in stable regimes and fails materially under plausible shift. Explicitly not production-ready reputation — the failure mode is recorded rather than smoothed over.</p>
+          <p class="more">Read the record ↗</p>
+        </a>
+        <a class="card exp pos" href="https://github.com/MSKazemi/idkmesh/blob/main/experiments/E026-imperfect-verifier-panel.md">
+          <div class="kicker">E026 <span class="chip pos">positive</span></div>
+          <h3>Imperfect verifier panel</h3>
+          <p class="muted">E024 rerun with E017/E020's measured correlated panel and blind-spot floor. Nothing moved: sweeping the panel to 45% wrong in both directions changed the archive's post-change AUC by 1.5% and left catastrophes at 0/100. A null result, kept.</p>
+          <p class="more">Read the record ↗</p>
+        </a>
+        <a class="card exp pos" href="https://github.com/MSKazemi/idkmesh/blob/main/experiments/E027-defect-propagation.md">
+          <div class="kicker">E027 <span class="chip pos">positive</span></div>
+          <h3>Defect propagation</h3>
+          <p class="muted">Gives an accepted defect an actual cost, so verifier error can finally reach the outcome metric, and sweeps that cost across its whole range. The constraint-guided archive holds at 0/100 in all twenty cells while unconstrained random search goes 0/100 to 94/100.</p>
+          <p class="more">Read the record ↗</p>
+        </a>
+        <a class="card exp mix" href="https://github.com/MSKazemi/idkmesh/blob/main/experiments/E028-latent-defect-dimension.md">
+          <div class="kicker">E028 <span class="chip mix">corrective</span></div>
+          <h3>Latent defect dimension</h3>
+          <p class="muted">Removes E027's confound by moving viability into a dimension the goals cannot see. The archive's survival holds in 18 of 20 cells and breaks only under the stress panel at full defect cost.</p>
+          <p class="more">Read the record ↗</p>
+        </a>
+        <a class="card exp neg" href="https://github.com/MSKazemi/idkmesh/blob/main/experiments/E029-first-real-model-attempts.md">
+          <div class="kicker">E029 <span class="chip neg">negative</span></div>
+          <h3>First real model attempts</h3>
+          <p class="muted">The first negative result this repository was entitled to: 60 sandboxed attempts by a pinned 0.5B open-weight producer on the frozen benchmark produced 0 accepted candidates, and 56 of the 60 failures were failures of the unified-diff protocol before any repository content was consulted.</p>
+          <p class="more">Read the record ↗</p>
+        </a>
+        <a class="card exp pos" href="https://github.com/MSKazemi/idkmesh/blob/main/experiments/E030-supplied-goal-membership.md">
+          <div class="kicker">E030 <span class="chip pos">positive</span></div>
+          <h3>Supplied-goal membership</h3>
+          <p class="muted">Removes E024's supplied-oracle confound by switching to a parity-matched goal the arms do not hold. The archive keeps all but 1.6–4.4% of its lead and stays 0/100 catastrophic; the majority-vote swarm loses its whole lead in every panel.</p>
+          <p class="more">Read the record ↗</p>
+        </a>
+        <a class="card exp mix" href="https://github.com/MSKazemi/idkmesh/blob/main/experiments/E031-learned-goal-filter.md">
+          <div class="kicker">E031 <span class="chip mix">corrective</span></div>
+          <h3>Learned goal filter</h3>
+          <p class="muted">Gives the consensus swarm a particle filter that learns the goal from ordinal evidence. Learning from generation 0 roughly doubles its catastrophic seeds; learning from post-change evidence alone is the best variant in all eight cells. An evidence-free rescue takes 38/100 catastrophic seeds to 0/100 — and to 71/100 once the new goal is outside the supplied set.</p>
+          <p class="more">Read the record ↗</p>
+        </a>
+        <a class="card exp mix" href="https://github.com/MSKazemi/idkmesh/blob/main/experiments/E032-population-scaling.md">
+          <div class="kicker">E032 <span class="chip mix">corrective</span></div>
+          <h3>Population scaling</h3>
+          <p class="muted">Answers issue #13's question — at a fixed budget, when is another agent worth adding? — by running the sweep with the budget held and with it free. The two disagree: the archive gains on every doubling with a free budget and gains nothing at all when it is held.</p>
+          <p class="more">Read the record ↗</p>
+        </a>
+        <a class="card exp mix" href="https://github.com/MSKazemi/idkmesh/blob/main/experiments/E033-goal-distance.md">
+          <div class="kicker">E033 <span class="chip mix">corrective</span></div>
+          <h3>Goal distance</h3>
+          <p class="muted">Turns E030's single substitute goal into a ladder of rings at a matched change size. The archive's lead decays smoothly and is gone by 0.35 from the supplied set. E030's published point ranks second of seven at its own distance — retention there averages 78.3%, not the 95.6% one goal reported.</p>
+          <p class="more">Read the record ↗</p>
+        </a>
+        <a class="card exp mix" href="https://github.com/MSKazemi/idkmesh/blob/main/experiments/E034-goal-direction.md">
+          <div class="kicker">E034 <span class="chip mix">corrective</span></div>
+          <h3>Goal direction</h3>
+          <p class="muted">At a fixed distance, direction matters as much as distance: on a single shell the archive's lead runs from −4.894 to +4.471 and is negative for 24.2% of directions. The mechanism E033 proposed for that spread is falsified by its own preregistered test.</p>
+          <p class="more">Read the record ↗</p>
+        </a>
+        <a class="card exp mix" href="https://github.com/MSKazemi/idkmesh/blob/main/experiments/E035-direction-across-shells.md">
+          <div class="kicker">E035 <span class="chip mix">corrective</span></div>
+          <h3>Direction across shells</h3>
+          <p class="muted">Re-runs E034's ladder at further distances. The spread does not grow with distance as conjectured, only one ladder in five replicates, and the geometry admits very few valid shells at all — a resolved effect on one shell is not a general one.</p>
+          <p class="more">Read the record ↗</p>
+        </a>
+        <a class="card exp mix" href="https://github.com/MSKazemi/idkmesh/blob/main/experiments/E036-adversarial-contributors.md">
+          <div class="kicker">E036 <span class="chip mix">corrective</span></div>
+          <h3>Adversarial contributors</h3>
+          <p class="muted">No adversary made the constraint-guided archive worse than another arm in any of 48 cells — but the preregistered reason for expecting failure was wrong. Two panels with identical accuracy, differing only in verifier correlation, behaved completely differently: one immune, one not. Correlation, not accuracy, is the attack surface.</p>
+          <p class="more">Read the record ↗</p>
+        </a>
+        <a class="card exp mix" href="https://github.com/MSKazemi/idkmesh/blob/main/experiments/E037-ladder-under-panels.md">
+          <div class="kicker">E037 <span class="chip mix">corrective</span></div>
+          <h3>The ladder under imperfect panels</h3>
+          <p class="muted">E030–E035 all shared one unvaried setting: verification was perfect. Running the ladder on real panels produced a result E037 could not explain — weakening the panel made the archive's lead go up — with the two obvious explanations ruled out and the question recorded as open.</p>
+          <p class="more">Read the record ↗</p>
+        </a>
+        <a class="card exp pos" href="https://github.com/MSKazemi/idkmesh/blob/main/experiments/E038-symmetric-gate.md">
+          <div class="kicker">E038 <span class="chip pos">positive</span></div>
+          <h3>A symmetric gate is not a symmetric burden</h3>
+          <p class="muted">Explains E037's anomaly. The panel errs at the same rate for every arm, but base viability decides the direction of a review error, so an arm-blind gate is not an arm-neutral gate: it charges the reference arm most and inflates every other arm's lead.</p>
+          <p class="more">Read the record ↗</p>
+        </a>
+        <a class="card exp mix" href="https://github.com/MSKazemi/idkmesh/blob/main/experiments/E039-content-addressed-blind-spot.md">
+          <div class="kicker">E039 <span class="chip mix">corrective</span></div>
+          <h3>Content-addressed blind spot</h3>
+          <p class="muted">The blind spot has no address, and giving it one baits the optimiser rather than the attacker. Panel errors here are content-independent, which makes 'can an attacker learn to pass the gate?' unanswerable in this arena — a limitation of the benchmark, stated rather than papered over.</p>
+          <p class="more">Read the record ↗</p>
+        </a>
+        <a class="card exp neg" href="https://github.com/MSKazemi/idkmesh/blob/main/experiments/E040-diversity-correlation-threshold.md">
+          <div class="kicker">E040 <span class="chip neg">negative</span></div>
+          <h3>Diversity–correlation threshold</h3>
+          <p class="muted">Issue #13's hypothesis 2 has no threshold to find, and its verification half is worth nothing: the equal-budget scaling grid never charges for diversity, so correlation cannot flip its sign there.</p>
+          <p class="more">Read the record ↗</p>
+        </a>
+        <a class="card exp neg" href="https://github.com/MSKazemi/idkmesh/blob/main/experiments/E041-verifier-strictness-shock.md">
+          <div class="kicker">E041 <span class="chip neg">negative</span></div>
+          <h3>Verifier strictness shock</h3>
+          <p class="muted">The R1 lab's 'verifier error correlation' is not verifier correlation at all — it is a within-task strictness shock on a single verifier. It is flat in N and disappears entirely once a second verifier exists.</p>
+          <p class="more">Read the record ↗</p>
+        </a>
+        <a class="card exp mix" href="https://github.com/MSKazemi/idkmesh/blob/main/experiments/E042-worker-dependence-shape.md">
+          <div class="kicker">E042 <span class="chip mix">corrective</span></div>
+          <h3>Worker dependence shape</h3>
+          <p class="muted">E040's hedge points the wrong way: the beta-binomial puts less mass on total failure than the shared shock, not more. Slopes rise in 16 of 18 cells and proportionality falls from 17 of 18 to 8 of 18 — the conclusion was a property of the assumed shape.</p>
+          <p class="more">Read the record ↗</p>
+        </a>
+      </div>
+    </section>
+
+    <section>
+      <h2>The programmes behind the numbers</h2>
+      <p class="sub">Individual experiments sit inside longer research tracks. These are the specifications and sweeps they answer to.</p>
+      <div class="grid">
+        <a class="card accent" href="https://github.com/MSKazemi/idkmesh/blob/main/docs/research/README.md"><div class="kicker">Index</div><h3>Research index</h3><p class="muted">Every programme, experiment interpretation and calibration record, with what each one is and is not allowed to claim.</p><p class="more">Open ↗</p></a>
+        <article class="card"><div class="kicker">R1</div><h3><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/research/R1_SWARM_DIVERSITY_EXPERIMENT.md">Swarm diversity vs replication ↗</a></h3><p class="muted">When do diverse attempts help and when do they hurt? With a <a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/research/R1_HELP_HURT_SWEEP.md">help/hurt sweep</a>, a <a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/research/R1_COLLECTIVE_SCALING.md">collective-scaling extension</a> and a <a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/research/R1_CORPUS_READINESS.md">real-corpus readiness gate</a>.</p></article>
+        <article class="card"><div class="kicker">R2</div><h3><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/research/R2_SCHEDULING_CHURN_EXPERIMENT.md">Randomised scheduling under churn ↗</a></h3><p class="muted">Capability, staleness, failure and scale effects, with a <a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/research/R2_SCALE_REGIME_SWEEP.md">scale/regime sweep</a> and a <a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/research/R2_CAPABILITY_RARITY_SWEEP.md">capability-rarity sweep</a>.</p></article>
+        <article class="card"><div class="kicker">R3 · R4</div><h3><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/research/R3_EVOLUTIONARY_ORCHESTRATION.md">Evolutionary and stigmergic routing ↗</a></h3><p class="muted">Evolve policies on training tasks and confirm on held-out work; and <a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/research/R4_STIGMERGIC_ROUTING.md">route from verified outcomes</a> with evaporation and newcomer exploration.</p></article>
+        <article class="card"><div class="kicker">Verification</div><h3><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/research/VERIFICATION_DEBT_AND_BACKPRESSURE.md">Debt and backpressure ↗</a></h3><p class="muted">The controller model for limiting unverified work, plus its <a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/research/VERIFICATION_BACKPRESSURE_BENCHMARK.md">multi-window temporal benchmark</a>.</p></article>
+        <a class="card" href="https://github.com/MSKazemi/idkmesh/blob/main/docs/research/METRIC_UNCERTAINTY_V0_1.md"><div class="kicker">Discipline</div><h3>Metric uncertainty</h3><p class="muted">The reporting rules for repository metrics — how much a number is allowed to say, and how uncertainty must travel with it.</p><p class="more">Open ↗</p></a>
+        <a class="card" href="https://github.com/MSKazemi/idkmesh/blob/main/docs/research/TOP_20_QUESTIONS.md"><div class="kicker">Open</div><h3>Top 20 questions</h3><p class="muted">Prioritised open questions about scaling, verification, governance and community growth. The falsifiable ones are the invitation.</p><p class="more">Open ↗</p></a>
+        <a class="card" href="https://github.com/MSKazemi/idkmesh/blob/main/RESEARCH_QUESTIONS.md"><div class="kicker">Frame</div><h3>Research questions</h3><p class="muted">The project-level questions the whole programme is organised around, and the flagship matched-budget comparison family.</p><p class="more">Open ↗</p></a>
+      </div>
+    </section>
+
+    <section>
+      <h2>Reproduce any of it</h2>
+      <p class="sub">Every experiment is deterministic given its seed, and each record names the module that produced it, the committed artifact, and the tests that pin the result.</p>
+<pre><code><span class="c"># the simulations behind E024-E039</span>
+ls sim/
+
+<span class="c"># the R1/R2 scaling and dependence labs behind E040-E042</span>
+ls randomness_lab/
+
+<span class="c"># committed artifacts</span>
+ls experiments/results/ results/experiments/</code></pre>
+      <div class="callout">
+        <div class="kicker">One caveat worth stating plainly</div>
+        <p>Implemented infrastructure is evidence of a capability to run experiments — not evidence that the research hypotheses are true. A simulator can validate an algorithm&#8217;s implementation without proving that the algorithm improves real collaboration. E029 is the reminder: the first attempt at real model attempts on the frozen benchmark produced zero accepted candidates.</p>
+      </div>
+      <div class="actions">
+        <a class="button primary" href="start.html">Run something yourself <span class="arr">→</span></a>
+        <a class="button" href="concepts.html">What the results mean</a>
+        <a class="button" href="library.html">Full documentation library</a>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="sitefoot">
+    <div class="wrap">
+      <div class="cols">
+        <div>
+          <h4>This site</h4>
+          <ul>
+            <li><a href="start.html">Start in 15 minutes</a></li>
+            <li><a href="concepts.html">How it works</a></li>
+            <li><a href="pipelines.html">Four pipelines</a></li>
+            <li><a href="research.html">Experiment atlas</a></li>
+            <li><a href="library.html">Documentation library</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Repository</h4>
+          <ul>
+            <li><a href="https://github.com/MSKazemi/idkmesh">Source on GitHub</a></li>
+            <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/README.md">README</a></li>
+            <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/ARCHITECTURE.md">Architecture map</a></li>
+            <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/ROADMAP.md">Roadmap</a></li>
+            <li><a href="https://github.com/MSKazemi/idkmesh/issues">Live issues</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Contracts</h4>
+          <ul>
+            <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/schemas/README.md">Schema index</a></li>
+            <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/specifications/README.md">Specifications</a></li>
+            <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/decisions/README.md">Decision records</a></li>
+            <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/IDKIPS.md">Improvement proposals</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Community</h4>
+          <ul>
+            <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/CONTRIBUTING.md">Contributing</a></li>
+            <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/COMMUNITY.md">Community paths</a></li>
+            <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/SUPPORT.md">Getting help</a></li>
+            <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/SECURITY.md">Security policy</a></li>
+            <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/GOVERNANCE.md">Governance</a></li>
+          </ul>
+        </div>
+      </div>
+      <p class="fine">IDKMesh is public, open-source, and evidence-first, under the Apache License 2.0. This site is a presentation surface: the repository remains the canonical source of truth for every contract, result, and decision linked from here. Built with no JavaScript, no external fonts, and no trackers.</p>
+    </div>
+  </footer>
+</body>
+</html>

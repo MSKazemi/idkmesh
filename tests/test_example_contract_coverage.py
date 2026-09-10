@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import re
 from pathlib import Path
 import subprocess
 import unittest
@@ -182,6 +183,39 @@ class ExampleContractCoverageTests(unittest.TestCase):
         for schema_name in sorted(named):
             with self.subTest(schema=schema_name):
                 self.assertTrue((SCHEMAS / schema_name).is_file(), schema_name)
+
+    def test_every_path_named_in_an_exemption_reason_exists(self) -> None:
+        """An exemption's justification must not outlive the file it names.
+
+        Each `NO_SCHEMA_CONTRACT` reason is prose, and prose is not checked.
+        When a reason says an example is "validated in code by X" or "consumed
+        by X", deleting or renaming X silently turns that sentence false and
+        leaves the example with no coverage and no record that it lost any.
+
+        The assertion is deliberately only that X *exists*. A stronger check --
+        that X textually mentions the example -- looks reasonable and is wrong:
+        `idkmesh/gate_audit.py` validates the panel-votes example without ever
+        naming it, because `tests/test_gate_audit.py` is what loads the file and
+        passes it in. Requiring the mention would fail that true claim, so the
+        guard stops at the strongest thing the reason actually supports.
+        """
+        named = sorted(
+            {
+                candidate
+                for reason in NO_SCHEMA_CONTRACT.values()
+                for candidate in re.findall(r"\b[\w./-]+\.py\b", reason)
+            }
+        )
+        self.assertTrue(named, "no reason names a consumer; this guard is vacuous")
+
+        missing = [c for c in named if not (REPO_ROOT / c).is_file()]
+
+        self.assertEqual(
+            missing,
+            [],
+            "these exemption reasons name a file that no longer exists, so the "
+            f"justification for skipping schema validation is stale: {missing}",
+        )
 
     def test_scan_is_not_vacuous(self) -> None:
         # 40 examples were tracked at 31b8f18; the floor guards against an

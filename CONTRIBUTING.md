@@ -143,9 +143,11 @@ Markdown/identity report, not the combined gate. See
 
 **Do not verify your work with `python -m unittest discover`.** It silently
 under-collects — `unittest` only finds `TestCase` subclasses, so the 162
-module-level `test_*` functions in `tests/` are invisible to it. It runs 1476
-tests and prints `OK`; `pytest` collects 1638. A tenth of the suite is skipped
-with no indication anything was missed.
+module-level `test_*` functions spread across 17 files in `tests/` are
+invisible to it. That is roughly a tenth of the suite, skipped while the run
+still prints `OK`, with no indication anything was missed.
+`tests/test_documented_test_counts.py` re-measures both figures and the gap
+they explain, so these numbers cannot go stale unnoticed.
 
 Two skips are expected and are not a problem with your setup:
 `interop/tests/test_sdk_conformance.py` skips two tests unless the optional
@@ -233,6 +235,22 @@ ignore it.
 6. Respond to review in public where possible.
 7. Update the change until the evidence and maintainability are sufficient.
 8. If the change represents a major durable decision, add/update a decision record.
+
+### Keep private files out of the commit
+
+This repository is public, and coding agents and editors leave local files in the
+working tree. `.gitignore` covers the usual ones — `CLAUDE.md`, `GEMINI.md`,
+`.note*`, `.env*`, `*.local`, `.vscode/` and `.DS_Store` — but the rules only help
+if you stage deliberately. Prefer naming paths over `git add -A`, and read
+`git status` before you commit.
+
+`AGENTS.md` is the exception and stays tracked: it is the public
+[agents.md](https://agents.md) contributor standard, holds no private
+configuration, and is the file coding agents read first.
+
+`tests/test_private_file_ignore_rules.py` asks `git check-ignore` what `git add`
+would actually do, so a regression in these rules fails the suite rather than
+surfacing as a published secret.
 
 ### Linking issues without closing them
 
