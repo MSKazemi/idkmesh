@@ -15,6 +15,16 @@ import unittest
 
 import tools.benchmark_publication as bp
 
+import pytest
+
+# Marked `slow`: a correctness check on a shipped tool that shells out per test,
+# so it costs seconds rather than milliseconds. `pytest.ini` defines `slow` as
+# "excluded from the pre-commit tier"; `make test` now honours that, and
+# `make nightly` runs it. CI is unaffected -- the PR gate applies no marker
+# filter.
+pytestmark = pytest.mark.slow
+
+
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 
 

@@ -15,6 +15,16 @@ from randomness_lab.r1_correlation_threshold import (
 from randomness_lab.r1_scaling import R1ScalingConfig
 from randomness_lab.r1_sweep import R1SweepConfig, run_r1_sweep
 
+import pytest
+
+# Marked `sim`: this module replays a committed experiment artifact or runs a
+# parameter sweep, so it costs seconds rather than milliseconds. `make test`
+# (the pre-commit tier) runs `-m "not sim"` and skips it; `make nightly` runs
+# `-m sim`. CI is unaffected -- the PR gate runs a plain `pytest` with no marker
+# filter, so coverage there is unchanged.
+pytestmark = pytest.mark.sim
+
+
 
 ROOT = Path(__file__).resolve().parents[1]
 RESULT = ROOT / "results/experiments/r1/diversity-correlation-threshold-seeds42-51.json.gz"

@@ -12,6 +12,16 @@ import sim.emergence_sim as sim
 import sim.matched_budget_emergence as mbe
 import sim.e032_population_scaling as e032
 
+import pytest
+
+# Marked `sim`: this module replays a committed experiment artifact or runs a
+# parameter sweep, so it costs seconds rather than milliseconds. `make test`
+# (the pre-commit tier) runs `-m "not sim"` and skips it; `make nightly` runs
+# `-m sim`. CI is unaffected -- the PR gate runs a plain `pytest` with no marker
+# filter, so coverage there is unchanged.
+pytestmark = pytest.mark.sim
+
+
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RESULTS = os.path.join(REPO_ROOT, "experiments", "results")
 
