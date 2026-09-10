@@ -385,8 +385,11 @@ REGISTRY: Dict[int, Dict[str, Any]] = {
     },
     109: {
         "preconditions": ["not_a_state_store"],
-        "note": "the bootstrap cohort observatory is located by scanning open "
-                "issues and its ledger body is rewritten in place.",
+        "note": "the bootstrap cohort observatory is located by its "
+                "workflow-owned label in any state and its ledger body is "
+                "rewritten in place. Closing it no longer forks a duplicate "
+                "-- the observer reopens and reuses it -- but the issue is "
+                "still a running workflow's storage, not a task.",
     },
     138: {
         "preconditions": ["independent_review"],
