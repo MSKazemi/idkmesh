@@ -78,11 +78,11 @@ any cell near a tie flips on noise. It never converged:
 | seeds × tasks | raw reversals of 80 |
 | --- | ---: |
 | 2 × 60 | 68 (85%) |
-| 4 × 60 | 50 (62%) |
-| 8 × 120 | 47 (59%) |
-| 16 × 250 | 36 (45%) |
-| 24 × 250 | 36 (45%) |
-| 32 × 250 | 42 (52%) |
+| 4 × 60 | 55 (69%) |
+| 8 × 120 | 52 (65%) |
+| 16 × 250 | 41 (51%) |
+| 24 × 250 | 41 (51%) |
+| 32 × 250 | 47 (59%) |
 
 Every cell now carries its across-seed standard error and a reversal counts only
 when both sides clear two standard errors of their difference. Under
