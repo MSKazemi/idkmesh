@@ -52,10 +52,13 @@ came from (human reviewers, LLM judges, test oracles, CI checks).
 
 The document is read as UTF-8. A leading byte-order mark is tolerated, because
 Windows editors and PowerShell redirection add one; any other encoding
-(UTF-16 included) is refused. Only standard JSON is accepted: Python's `NaN`,
-`Infinity` and `-Infinity` extensions are refused, since
+(UTF-16 included) is refused. Only standard JSON is accepted, because
 `provenance.input_digest_sha256` promises a canonicalization another
-implementation can recompute.
+implementation can recompute: Python's `NaN`, `Infinity` and `-Infinity`
+extensions are refused, and so are duplicate keys within one object, on which
+implementations disagree (last wins, first wins, or a hard error). A repeated
+candidate id inside a `verdicts` object is the case that matters — kept
+silently, it rewrites the verifier accuracy the audit is there to measure.
 
 Rules, enforced in code (`idkmesh/gate_audit.py`, `validate_input` — every rule
 below, so the function is usable as a pre-flight check):
@@ -97,10 +100,31 @@ inflate or deflate the accuracy/correlation it is supposed to stress-test.
 | `verifiers[].accuracy` | Per-verifier accuracy against ground truth. Verifiers at or below 0.5 are flagged: their votes add no evidence (the E016 screen). |
 | `panel.mean_pairwise_error_correlation` | Mean pairwise φ (phi coefficient) of verifier error vectors. Pairs where a verifier made zero or all errors are skipped and counted in `skipped_correlation_pairs`. |
 | `panel.error`, `panel.false_accept_rate`, `panel.false_reject_rate` | Measured panel performance under the quorum rule. |
-| `panel.effective_votes` | The smallest **independent** panel size that reproduces the measured panel error at the measured mean accuracy — the number the gate's "N approvals" claim should be compared against. `null` when the panel does not discriminate. |
+| `panel.effective_votes` | The smallest **independent** panel size that reproduces the measured panel error at the measured mean accuracy — the number the gate's "N approvals" claim should be compared against. `null` when the panel does not discriminate. Capped at `panel.nominal_votes`: a panel is never worth more independent votes than it cast, and the comparison runs out of resolution before that (see below). |
 | `panel.effective_votes_ceiling` | The largest effective size *any* panel at this accuracy/correlation can reach. Under shared-shock dependence, panel error floors at `ρ(1−acc)` however many verifiers are added; if the ceiling is below your target, adding reviewers is wasted spend and the only moves are raising accuracy or lowering correlation. The string `"unbounded"` when measured correlation is at or below zero, and `null` when the panel does not discriminate (mean accuracy ≤ 0.5) or correlation was unmeasurable — the same undefined case as `effective_votes`. |
 | `panel.heuristic_n_eff` | The classic `N/(1+(N-1)ρ)` value, reported **only for contrast** with a warning when it exceeds the ceiling. |
 | `probes` | Breach accounting: how many seeded known-bad candidates the panel accepted, in total and per `probe_kind`. |
+
+### Resolution limits
+
+`effective_votes` is obtained by comparing measured panel error against a table
+of independent panel sizes up to 199. Two limits follow, and both are reported
+in `warnings` rather than hidden:
+
+- A measured panel error at or below what 199 independent verifiers achieve
+  pins the answer only as *at least* that, so the value is a lower bound rather
+  than a measurement. An accurate, genuinely uncorrelated panel that made no
+  errors on the audited set reaches this quickly — it is the regime the research
+  is trying to get gates into, not a pathological input.
+- The raw estimate can exceed the number of verifiers that actually voted. It is
+  then reported as `nominal_votes` and the raw value named in a warning, because
+  "50 verifiers ≈ 199 effective independent votes" is a table edge, not a
+  finding.
+
+`effective_votes_ceiling` saturates at the same table edge for a small positive
+correlation. Unlike `effective_votes` it is *not* capped at the panel size: it
+describes what any panel in this accuracy/correlation regime could reach, which
+is a property of the regime and not of the audited head-count.
 
 The mathematical definitions are identical to the research record:
 `effective_n`, `effective_n_ceiling` and `heuristic_effective_n` follow

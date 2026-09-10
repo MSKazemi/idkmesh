@@ -164,6 +164,33 @@ def effective_n_ceiling(acc: float, correlation: float,
     return effective_n(correlation * (1.0 - acc), acc, 0.5, nmax=nmax)
 
 
+def effective_n_table_max(nmax: int = 201) -> int:
+    """Largest panel size ``effective_n`` compares against.
+
+    ``effective_n`` interpolates within a table of odd sizes below ``nmax``.
+    A measured error at or below the table's smallest entry pins the answer
+    only as "at least this", so reports have to say which of the two they are
+    carrying.
+    """
+    return max(n for n in range(1, nmax, 2))
+
+
+def resolved_effective_votes(measured: float, nominal: int) -> float | None:
+    """Clamp an effective-vote estimate to the votes actually cast.
+
+    ``effective_n`` answers "what independent panel size reproduces this
+    error". For a near-independent panel that made no errors on the audited
+    set the answer runs off the top of its table, and a 50-verifier panel
+    came back as 199 effective independent votes -- a table edge presented as
+    a measurement, in the one sentence the report exists to say. A panel is
+    never worth more independent votes than it cast, so the headline is capped
+    at the nominal count and the raw estimate is described in a warning.
+    """
+    if not math.isfinite(measured):
+        return None
+    return min(measured, float(nominal))
+
+
 # ---------------------------------------------------------------------------
 # Input contract.
 # ---------------------------------------------------------------------------
@@ -334,10 +361,6 @@ def _panel_accepts(accept_votes: int, total: int, quorum: float) -> bool:
     return accept_votes > quorum * total
 
 
-def _finite_or_none(value: float) -> float | None:
-    return value if math.isfinite(value) else None
-
-
 def _ceiling_field(ceiling: float | None) -> float | str | None:
     """Render the effective-vote ceiling for JSON, never as a bare ``NaN``.
 
@@ -431,6 +454,20 @@ def audit(data: dict[str, Any]) -> dict[str, Any]:
         warnings.append(
             "mean verifier accuracy is at or below 0.5; effective votes are "
             "undefined because the panel does not discriminate")
+    table_max = effective_n_table_max()
+    if math.isfinite(measured_eff) and measured_eff >= table_max:
+        warnings.append(
+            f"measured panel error ({panel_error:.4g}) is at or below what "
+            f"{table_max} independent verifiers would achieve, so effective "
+            "votes are a lower bound, not a measurement; this candidate set "
+            "cannot resolve the panel's independence any further")
+    effective_votes = resolved_effective_votes(measured_eff, n_verifiers)
+    if effective_votes is not None and measured_eff > effective_votes:
+        warnings.append(
+            f"the effective-vote estimate ({measured_eff:.2f}) exceeded the "
+            f"{n_verifiers} votes actually cast and is reported as "
+            f"{n_verifiers}: a panel is never worth more independent votes "
+            "than it has verifiers")
     heuristic = (heuristic_effective_n(n_verifiers, mean_rho)
                  if mean_rho is not None and mean_rho > 0.0 else None)
     ceiling = (effective_n_ceiling(mean_accuracy, mean_rho)
@@ -491,7 +528,7 @@ def audit(data: dict[str, Any]) -> dict[str, Any]:
             "error": panel_error,
             "false_accept_rate": (false_accepts / n_bad) if n_bad else None,
             "false_reject_rate": (false_rejects / n_good) if n_good else None,
-            "effective_votes": _finite_or_none(measured_eff),
+            "effective_votes": effective_votes,
             "heuristic_n_eff": heuristic,
             "effective_votes_ceiling": _ceiling_field(ceiling),
         },
@@ -597,6 +634,26 @@ def render_markdown(report: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def _reject_duplicate_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    """Refuse duplicate object keys instead of silently keeping the last.
+
+    Implementations disagree on duplicates -- last wins, first wins, or a hard
+    error -- so a document carrying them has no single meaning, and the input
+    digest cannot promise what it says it promises. It is not a cosmetic
+    problem: a repeated candidate id inside one ``verdicts`` object silently
+    rewrote the verifier accuracy the audit exists to measure.
+    """
+    seen: dict[str, Any] = {}
+    for key, value in pairs:
+        if key in seen:
+            raise GateAuditInputError(
+                f"duplicate JSON key {key!r} in one object; implementations "
+                "disagree on which value wins, so the document has no single "
+                "meaning")
+        seen[key] = value
+    return seen
+
+
 def _reject_json_constant(token: str) -> Any:
     """Refuse Python's JSON extensions (``NaN``, ``Infinity``, ``-Infinity``).
 
@@ -633,7 +690,9 @@ def audit_file(input_path: str | Path) -> dict[str, Any]:
             "the verdict matrix as UTF-8. UTF-16, the default for PowerShell "
             "output redirection, is not readable as JSON") from exc
     try:
-        data = json.loads(text, parse_constant=_reject_json_constant)
+        data = json.loads(
+            text, parse_constant=_reject_json_constant,
+            object_pairs_hook=_reject_duplicate_keys)
     except json.JSONDecodeError as exc:
         raise GateAuditInputError(f"{path}: not valid JSON ({exc})") from exc
     except GateAuditInputError as exc:

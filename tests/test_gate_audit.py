@@ -465,6 +465,85 @@ class MalformedInputDiagnosticsTests(unittest.TestCase):
         self.assertIn("at least two non-probe", str(ctx.exception))
 
 
+class EffectiveVoteResolutionTests(unittest.TestCase):
+    """The headline number must never be a table edge or exceed the votes cast."""
+
+    @staticmethod
+    def _near_independent_panel(verifiers: int = 50, candidates: int = 400):
+        """Accurate, uncorrelated verifiers: majority error underflows the table.
+
+        This is not a contrived shape — it is what a panel of genuinely
+        independent reviewers looks like, which is the regime the whole
+        research line is about reaching.
+        """
+        import random
+
+        rng = random.Random(7)
+        cands = [
+            {"id": f"c{i:04d}",
+             "ground_truth": rng.choice(["accept", "reject"])}
+            for i in range(candidates)
+        ]
+        vers = []
+        for j in range(verifiers):
+            verdicts = {}
+            for cand in cands:
+                truth = cand["ground_truth"]
+                wrong = "reject" if truth == "accept" else "accept"
+                verdicts[cand["id"]] = truth if rng.random() < 0.8 else wrong
+            vers.append({"id": f"v{j:02d}", "verdicts": verdicts})
+        return {
+            "gate_id": "near-independent",
+            "evidence_class": "synthetic",
+            "candidates": cands,
+            "verifiers": vers,
+        }
+
+    def test_effective_votes_never_exceed_the_votes_cast(self):
+        # Uncapped, this reported 199 effective independent votes for a
+        # 50-verifier panel: effective_n's table edge (nmax=201) printed as a
+        # measurement, in the one sentence the report exists to say.
+        report = gate_audit.audit(self._near_independent_panel())
+        panel = report["panel"]
+        self.assertLessEqual(panel["effective_votes"], panel["nominal_votes"])
+        self.assertEqual(panel["effective_votes"], 50.0)
+
+    def test_saturation_and_the_cap_are_both_named_in_warnings(self):
+        report = gate_audit.audit(self._near_independent_panel())
+        self.assertTrue(
+            any("lower bound, not a measurement" in w
+                for w in report["warnings"]),
+            report["warnings"])
+        self.assertTrue(
+            any("exceeded the 50 votes actually cast" in w
+                for w in report["warnings"]),
+            report["warnings"])
+
+    def test_the_markdown_headline_carries_the_capped_number(self):
+        text = gate_audit.render_markdown(
+            gate_audit.audit(self._near_independent_panel()))
+        self.assertIn("50 verifiers ≈ 50.00 effective independent votes", text)
+
+    def test_an_unsaturated_panel_is_left_alone(self):
+        # The committed example resolves well inside the table: neither the
+        # cap nor the saturation warning may touch a panel that measured a
+        # real number.
+        report = gate_audit.audit_file(EXAMPLE_INPUT)
+        self.assertAlmostEqual(
+            report["panel"]["effective_votes"], 1.6944444, places=6)
+        for warning in report["warnings"]:
+            self.assertNotIn("lower bound", warning)
+            self.assertNotIn("votes actually cast", warning)
+
+    def test_resolved_effective_votes_passes_nan_through_as_none(self):
+        self.assertIsNone(
+            gate_audit.resolved_effective_votes(float("nan"), 5))
+
+    def test_table_max_is_the_largest_odd_size_below_nmax(self):
+        self.assertEqual(gate_audit.effective_n_table_max(), 199)
+        self.assertEqual(gate_audit.effective_n_table_max(nmax=11), 9)
+
+
 class InputFileHandlingTests(unittest.TestCase):
     """Reading the file is where a newcomer's first failure actually happens."""
 
@@ -519,6 +598,29 @@ class InputFileHandlingTests(unittest.TestCase):
             with self.assertRaises(gate_audit.GateAuditInputError) as ctx:
                 gate_audit.audit_file(path)
             self.assertIn(token, str(ctx.exception))
+
+    def test_duplicate_object_keys_are_refused(self):
+        # json.loads keeps the last value; other implementations keep the
+        # first or refuse the document, so the input digest cannot mean what
+        # it claims. Worse, a repeated candidate id inside one `verdicts`
+        # object silently rewrote the verifier accuracy being measured.
+        raw = json.dumps(minimal_input())
+        duplicated = raw.replace(
+            '"gate_id": "test-gate"',
+            '"gate_id": "first", "gate_id": "second"', 1)
+        path = self.write("dup.json", duplicated.encode("utf-8"))
+        with self.assertRaises(gate_audit.GateAuditInputError) as ctx:
+            gate_audit.audit_file(path)
+        self.assertIn("duplicate JSON key 'gate_id'", str(ctx.exception))
+
+    def test_duplicate_verdict_keys_are_refused(self):
+        raw = json.dumps(minimal_input()).replace(
+            '"c1": "accept", "c2": "accept"',
+            '"c1": "accept", "c1": "reject", "c2": "accept"', 1)
+        path = self.write("dupverdict.json", raw.encode("utf-8"))
+        with self.assertRaises(gate_audit.GateAuditInputError) as ctx:
+            gate_audit.audit_file(path)
+        self.assertIn("duplicate JSON key 'c1'", str(ctx.exception))
 
     def test_contract_violation_names_the_file(self):
         data = minimal_input()
