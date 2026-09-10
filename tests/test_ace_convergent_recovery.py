@@ -78,7 +78,8 @@ class AceConvergentRecoveryTests(unittest.TestCase):
         guard = "if (missingSpawnParents.length > MAX_AUTOMATIC_SPAWN_RECOVERY)"
         loop = "for (const pr of missingSpawnParents)"
         self.assertIn(guard, recovery)
-        self.assertIn("refusing partial or mass recovery", recovery)
+        self.assertIn("automatic safety cap ${MAX_AUTOMATIC_SPAWN_RECOVERY}", recovery)
+        self.assertIn("'partial or mass recovery.", recovery)
         self.assertIn(loop, recovery)
         self.assertLess(recovery.index(guard), recovery.index(loop))
         self.assertEqual(
