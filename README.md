@@ -1,10 +1,24 @@
 # IDKMesh
 
+[![PR Gate](https://github.com/MSKazemi/idkmesh/actions/workflows/pr-gate.yml/badge.svg?branch=main)](https://github.com/MSKazemi/idkmesh/actions/workflows/pr-gate.yml)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+[![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-blue.svg)](pyproject.toml)
+[![good first issues](https://img.shields.io/github/issues/MSKazemi/idkmesh/good%20first%20issue?label=good%20first%20issues&color=7057ff)](https://github.com/MSKazemi/idkmesh/issues?q=is%3Aissue+state%3Aopen+label%3A%22good+first+issue%22)
+
 > **I don't know. You don't know. Together, the mesh can discover, build, verify, and learn.**
 
 IDKMesh is an open-source research and engineering project exploring how humans, AI agents, software tools, and heterogeneous compute can coordinate on uncertain goals and turn proposals into **verified useful work**.
 
 The project is intentionally ambitious, but the repository is not claiming a finished planetary-scale system. Today it is a **GitHub-native research laboratory with an executable coordination/evidence foundation** and a reference-product target: the Git-native Verified Swarm Runner.
+
+**A concrete question this repository can already answer:** *how many independent votes is
+your review panel actually worth?* Often far fewer than the number of reviewers on it. In
+[E017](experiments/E017-item-difficulty-and-quorum.md) a 25-verifier panel — every verifier a
+program, every error an observed missed defect — measured an effective size of **1.00 of 25**:
+under majority vote the panel was worth no more than a single member, while the widely used
+`N/(1+(N-1)rho)` correction predicted 1.66. [`idkmesh gate-audit`](#try-it-in-five-minutes-audit-a-review-gate)
+runs that measurement on verdicts you have already collected, and reports the seeded
+known-bad candidates your panel let through.
 
 ## Try the contract demo
 
