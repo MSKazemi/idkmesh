@@ -406,8 +406,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--swarm-size", type=int, default=5)
     parser.add_argument("--tasks", type=int, default=250)
     parser.add_argument("--seeds", type=str, default="42,43,44")
-    parser.add_argument("--json", type=Path, default=None)
-    parser.add_argument("--markdown", type=Path, default=None)
+    # `--output` / `--report` rather than `--json` / `--markdown`, matching
+    # r1_verifier_dependence, r1_dependence_shape and r1_scaling. One CLI shape
+    # across the R1 runners is worth more than a locally nicer name.
+    parser.add_argument("--output", type=Path, default=None)
+    parser.add_argument("--report", type=Path, default=None)
     return parser
 
 
@@ -419,21 +422,22 @@ def main(argv: list[str] | None = None) -> int:
         seeds=tuple(int(part) for part in args.seeds.split(",") if part.strip()),
     )
     result = run_panel_frontier(config)
-    if args.json:
-        args.json.parent.mkdir(parents=True, exist_ok=True)
-        payload = json.dumps(result, indent=2, sort_keys=True)
-        if args.json.suffix == ".gz":
-            # Matches the other committed R1 payloads, and keeps a 157 KB grid
-            # out of the tree uncompressed. mtime=0 so the bytes are stable.
-            with gzip.GzipFile(args.json, "wb", mtime=0) as handle:
-                handle.write(payload.encode("utf-8"))
+    rendered = json.dumps(result, indent=2, sort_keys=True)
+    if args.output:
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        if args.output.suffix == ".gz":
+            # Compressed like the other committed R1 payloads; mtime=0 keeps the
+            # bytes stable so the artifact is byte-reproducible.
+            args.output.write_bytes(
+                gzip.compress(rendered.encode("utf-8"), compresslevel=9, mtime=0)
+            )
         else:
-            args.json.write_text(payload, encoding="utf-8")
-    if args.markdown:
-        args.markdown.parent.mkdir(parents=True, exist_ok=True)
-        args.markdown.write_text(render_markdown(result), encoding="utf-8")
-    if not args.json and not args.markdown:
-        print(render_markdown(result))
+            args.output.write_text(rendered, encoding="utf-8")
+    else:
+        print(rendered, end="")
+    if args.report:
+        args.report.parent.mkdir(parents=True, exist_ok=True)
+        args.report.write_text(render_markdown(result), encoding="utf-8")
     return 0
 
 
