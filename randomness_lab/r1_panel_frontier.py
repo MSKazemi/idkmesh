@@ -70,17 +70,17 @@ INTERPRETATION_GUARDRAIL = (
 # Measured sample-size sensitivity of the raw reversal count, recorded so an
 # underpowered run cannot be mistaken for a finding. Raw flips, of 80 cells:
 #   2 seeds / 60 tasks   68 (85%)
-#   4 seeds / 60 tasks   50 (62%)
-#   8 seeds / 120 tasks  47 (59%)
-#  16 seeds / 250 tasks  36 (45%)
-#  24 seeds / 250 tasks  36 (45%)
-#  32 seeds / 250 tasks  42 (52%)
+#   4 seeds / 60 tasks   55 (69%)
+#   8 seeds / 120 tasks  52 (65%)
+#  16 seeds / 250 tasks  41 (51%)
+#  24 seeds / 250 tasks  41 (51%)
+#  32 seeds / 250 tasks  47 (59%)
 # The decisive count is far steadier (0-10% over the same range) but is itself
 # bounded by how few `per_candidate` cells separate from noise at all.
 SAMPLE_SIZE_SENSITIVITY = {
     "raw_reversals_of_80": {
-        "2x60": 68, "4x60": 50, "8x120": 47,
-        "16x250": 36, "24x250": 36, "32x250": 42,
+        "2x60": 68, "4x60": 55, "8x120": 52,
+        "16x250": 41, "24x250": 41, "32x250": 47,
     },
     "note": (
         "Anything below roughly 16 seeds reports about double the effect. "

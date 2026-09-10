@@ -430,7 +430,28 @@ def _dependent_panel_votes(
 
     accuracies = [_verifier_accuracy(verifier, is_good) for verifier in panel]
 
-    if shape == "shared_shock":
+    # Degenerate accuracies first: a Beta with a zero parameter is undefined,
+    # and `rng.betavariate` raises from inside `gammavariate` rather than
+    # saying so. A verifier that is never wrong, or always wrong, has no
+    # dependence structure to model.
+    if min(accuracies) <= 0.0 or max(accuracies) >= 1.0:
+        correct = [rng.random() < accuracy for accuracy in accuracies]
+    # The two endpoints are ONE implementation shared by both shapes, not two
+    # that happen to coincide. At rho 0 and rho 1 the shapes are the same
+    # distribution, so they should also consume the same RNG and return the
+    # same vector for a seed -- otherwise "the shapes agree at the endpoints"
+    # is only true on average, and cannot be asserted exactly.
+    #
+    # Sharing them also removes a whole class of edge case: `item_difficulty`
+    # computes `(1 - rho) / rho`, which divides by zero at rho = 0, and its
+    # rho = 1 branch was a separate special case that could drift from the
+    # shared-shock one.
+    elif correlation <= 0.0:
+        correct = [rng.random() < accuracy for accuracy in accuracies]
+    elif correlation >= 1.0:
+        draw = rng.random()
+        correct = [draw < accuracy for accuracy in accuracies]
+    elif shape == "shared_shock":
         # With probability `correlation` the panel is judged on one draw.
         if rng.random() < correlation:
             draw = rng.random()
@@ -442,6 +463,7 @@ def _dependent_panel_votes(
         # independently at that rate. Beta(mu*s, (1-mu)*s) with s = (1-rho)/rho
         # has mean mu and intra-class correlation 1/(alpha+beta+1) = rho, so the
         # parameter means what it says.
+        #
         # E018's beta-binomial carries a single accuracy. A heterogeneous panel
         # would need a copula to keep each marginal correct, and guessing one
         # here would produce a plausible number with no stated meaning -- so
@@ -455,13 +477,9 @@ def _dependent_panel_votes(
                 "heterogeneous panel."
             )
         mu = 1.0 - accuracies[0]
-        if correlation >= 1.0:
-            wrong = rng.random() < mu
-            correct = [not wrong] * len(panel)
-        else:
-            scale = (1.0 - correlation) / correlation
-            difficulty = rng.betavariate(mu * scale, (1.0 - mu) * scale)
-            correct = [rng.random() >= difficulty for _ in panel]
+        scale = (1.0 - correlation) / correlation
+        difficulty = rng.betavariate(mu * scale, (1.0 - mu) * scale)
+        correct = [rng.random() >= difficulty for _ in panel]
 
     # A correct vote accepts a good candidate and rejects a bad one.
     return [vote if is_good else not vote for vote in correct]

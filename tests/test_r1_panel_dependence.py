@@ -127,6 +127,65 @@ class ShapesAgreeAtTheEndpointsTests(unittest.TestCase):
                     )
 
 
+class EndpointsAreOneImplementationTests(unittest.TestCase):
+    """At rho 0 and rho 1 the shapes must be the same code, not merely close.
+
+    Every assertion here failed before the endpoints were shared. They were
+    reachable only by calling the sampler directly -- `run_r1_condition` guards
+    `correlation <= 0.0` and never enters this function at rho 0 -- so the
+    defects sat behind a green suite. Surfaced by the parallel implementation in
+    PR #424, which had shared endpoints from the start.
+    """
+
+    PANEL = tuple(Verifier(f"panelist-{i}", sensitivity=0.8) for i in range(1, 4))
+
+    def test_the_shapes_return_the_same_vector_at_both_endpoints(self) -> None:
+        for correlation in (0.0, 1.0):
+            with self.subTest(correlation=correlation):
+                shock = _dependent_panel_votes(
+                    True, self.PANEL, random.Random(7), correlation, "shared_shock"
+                )
+                item = _dependent_panel_votes(
+                    True, self.PANEL, random.Random(7), correlation, "item_difficulty"
+                )
+                self.assertEqual(shock, item)
+
+    def test_the_shapes_consume_the_same_rng_at_both_endpoints(self) -> None:
+        """Equal output from unequal draws would re-phase everything after it."""
+
+        for correlation in (0.0, 1.0):
+            with self.subTest(correlation=correlation):
+                left, right = random.Random(7), random.Random(7)
+                _dependent_panel_votes(
+                    True, self.PANEL, left, correlation, "shared_shock"
+                )
+                _dependent_panel_votes(
+                    True, self.PANEL, right, correlation, "item_difficulty"
+                )
+                self.assertEqual(left.getstate(), right.getstate())
+
+    def test_zero_correlation_does_not_divide_by_zero(self) -> None:
+        """`item_difficulty` computes (1 - rho) / rho."""
+
+        votes = _dependent_panel_votes(
+            True, self.PANEL, random.Random(3), 0.0, "item_difficulty"
+        )
+        self.assertEqual(len(votes), len(self.PANEL))
+
+    def test_a_degenerate_accuracy_does_not_raise_from_inside_betavariate(self) -> None:
+        """A Beta with a zero parameter is undefined; gammavariate says so obscurely."""
+
+        for sensitivity in (0.0, 1.0):
+            panel = tuple(
+                Verifier(f"p{i}", sensitivity=sensitivity) for i in range(1, 4)
+            )
+            with self.subTest(sensitivity=sensitivity):
+                votes = _dependent_panel_votes(
+                    True, panel, random.Random(1), 0.5, "item_difficulty"
+                )
+                self.assertEqual(votes, [bool(sensitivity)] * 3)
+
+
 class ShapeSeparationTests(unittest.TestCase):
     def test_the_beta_binomial_tail_is_heavier_between_the_endpoints(self) -> None:
         """The direction E017 reports: a flat shock understates joint failure.
