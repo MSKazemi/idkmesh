@@ -38,6 +38,7 @@ whose names differ needs an entry in ``DISTRIBUTION_ALIASES``.
 from __future__ import annotations
 
 import ast
+import fnmatch
 import pathlib
 import re
 import sys
@@ -393,4 +394,174 @@ class WorkflowsWatchWhatTheyInstallTests(unittest.TestCase):
             "changing that pin does not re-run the job that installs it: "
             f"{offenders}. Add the file to the workflow's paths: filter, or "
             "remove the filter if the workflow should always run.",
+        )
+
+
+# ---------------------------------------------------------------------------
+# A job that names test modules must be able to import them.
+#
+# The guard above covers jobs that discover the *whole* tree. The narrow jobs it
+# deliberately exempts have the mirror-image failure: `python -m unittest
+# tests.test_thing` on a bare interpreter does not skip a module whose
+# module-scope import is missing, it errors out and fails the job.
+#
+# This is not hypothetical. A branch adding pytest tier markers wrote a bare
+# `import pytest` into twelve test modules; eleven were harmless, and the
+# twelfth -- tests/test_issue_evidence_gate.py -- is named by
+# idkgraph-observatory.yml, which installs requirements-phase0.txt (jsonschema
+# alone). Its `test` job went from 74 passing tests to a collection error, while
+# every other check on the pull request stayed green.
+#
+# The rule is the module-scope contract the module docstring above already
+# states: a test module named by a job may only import, at module scope, what
+# that job installs. Anything optional goes behind `find_spec`, exactly as
+# tests/test_schema_validity.py guards `jsonschema`.
+# ---------------------------------------------------------------------------
+
+NAMED_MODULE_RE = re.compile(r"tests\.(?P<module>\w+)")
+DISCOVER_TESTS_RE = re.compile(
+    r"unittest\s+discover\s+-s\s+tests/?(?:\s+-p\s+'(?P<pattern>[^']+)')?"
+)
+UNITTEST_INVOCATION_RE = re.compile(
+    r"python -m unittest(?P<rest>[^\n]*(?:\n\s+\S[^\n]*)*)"
+)
+
+
+def _repo_module_names():
+    """Top-level names that resolve inside this repository rather than to PyPI.
+
+    Tests reach sibling code both as packages (`from tools import x`) and as
+    bare modules after a `sys.path.insert` of a subdirectory (`import
+    local_verifier`). Both forms have to count as local, or this guard reports
+    a dozen findings that are only its own path model being wrong.
+    """
+
+    names = set()
+    for path in ROOT.rglob("*.py"):
+        parts = set(path.parts)
+        if parts & {".git", ".venv", "venv", "node_modules"}:
+            continue
+        names.add(path.stem)
+        names.update(path.relative_to(ROOT).parts[:-1])
+    return names
+
+
+def _module_scope_third_party_imports(path, local_names):
+    """Distributions `path` imports at module scope, unguarded.
+
+    Only direct children of the module body count. An import nested inside
+    `if find_spec(...)`, `try:`, or a function is exactly the guarded form this
+    check is asking for, so it must not be reported.
+    """
+
+    tree = ast.parse(path.read_text(encoding="utf-8"), str(path))
+    imported = set()
+    for node in tree.body:
+        if isinstance(node, ast.Import):
+            imported.update(alias.name.split(".")[0] for alias in node.names)
+        elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
+            imported.add(node.module.split(".")[0])
+    return {
+        name
+        for name in imported
+        if name not in sys.stdlib_module_names and name not in local_names
+    }
+
+
+def _named_test_modules(body):
+    """Test modules a job runs by name, including a `discover -p` pattern."""
+
+    modules = set()
+    for match in UNITTEST_INVOCATION_RE.finditer(body):
+        rest = match.group("rest")
+        modules.update(NAMED_MODULE_RE.findall(rest))
+        discover = DISCOVER_TESTS_RE.search(rest)
+        if discover:
+            pattern = discover.group("pattern")
+            for path in (ROOT / "tests").glob("*.py"):
+                if pattern is None or fnmatch.fnmatch(path.name, pattern):
+                    modules.add(path.stem)
+    return modules
+
+
+def _unittest_jobs():
+    """Yield ``(path, job_name, body)`` for jobs invoking ``python -m unittest``."""
+
+    for path in sorted(WORKFLOWS.glob("*.yml")) + sorted(WORKFLOWS.glob("*.yaml")):
+        for name, body in _jobs(path.read_text(encoding="utf-8")):
+            if "python -m unittest" in body:
+                yield path, name, body
+
+
+class NamedTestModulesImportCleanlyTests(unittest.TestCase):
+    def test_there_is_something_to_check(self):
+        """Guard against the assertion below passing vacuously."""
+
+        pairs = [
+            (path, job, module)
+            for path, job, body in _unittest_jobs()
+            for module in _named_test_modules(body)
+            if (ROOT / "tests" / f"{module}.py").is_file()
+        ]
+        self.assertGreater(
+            len(pairs),
+            50,
+            "almost no (job, module) pair was resolved, so the assertion below "
+            f"would pass no matter what the modules import: {len(pairs)} found. "
+            "The workflow or invocation matcher is probably broken.",
+        )
+
+    def test_a_module_scope_third_party_import_is_reported(self):
+        """Positive control: the exact shape that broke idkgraph-observatory."""
+
+        source = "import json\nimport pytest\n\npytestmark = pytest.mark.slow\n"
+        path = ROOT / "tests" / "_positive_control.py"
+        try:
+            path.write_text(source, encoding="utf-8")
+            found = _module_scope_third_party_imports(path, _repo_module_names())
+        finally:
+            path.unlink(missing_ok=True)
+        self.assertIn("pytest", found)
+
+    def test_a_guarded_import_is_not_reported(self):
+        """Negative control: `find_spec` is the accepted way to stay optional."""
+
+        source = (
+            "import importlib.util\n\n"
+            'if importlib.util.find_spec("pytest") is not None:\n'
+            "    import pytest\n\n"
+            "    pytestmark = pytest.mark.slow\n"
+            "else:\n"
+            "    pytestmark = ()\n"
+        )
+        path = ROOT / "tests" / "_negative_control.py"
+        try:
+            path.write_text(source, encoding="utf-8")
+            found = _module_scope_third_party_imports(path, _repo_module_names())
+        finally:
+            path.unlink(missing_ok=True)
+        self.assertEqual(found, set())
+
+    def test_every_named_module_imports_under_its_jobs_interpreter(self):
+        local_names = _repo_module_names()
+        offenders = {}
+        for path, job, body in _unittest_jobs():
+            installed = _installed_distributions(body)
+            for module in sorted(_named_test_modules(body)):
+                source = ROOT / "tests" / f"{module}.py"
+                if not source.is_file():
+                    continue
+                missing = sorted(
+                    _module_scope_third_party_imports(source, local_names) - installed
+                )
+                if missing:
+                    offenders.setdefault(f"{path.name}:{job}", {})[module] = missing
+        self.assertEqual(
+            offenders,
+            {},
+            "these jobs run a test module that imports, at module scope, a "
+            "distribution the job never installs. `python -m unittest` does not "
+            "skip such a module -- it fails the job with a collection error: "
+            f"{offenders}. Put the import behind `importlib.util.find_spec`, as "
+            "tests/test_schema_validity.py does, or install it in that job.",
         )

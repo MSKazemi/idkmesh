@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import importlib.util
 import json
 import os
 import random
@@ -12,14 +13,24 @@ import sim.emergence_sim as sim
 import sim.matched_budget_emergence as mbe
 import sim.e032_population_scaling as e032
 
-import pytest
-
 # Marked `sim`: this module replays a committed experiment artifact or runs a
 # parameter sweep, so it costs seconds rather than milliseconds. `make test`
 # (the pre-commit tier) runs `-m "not sim"` and skips it; `make nightly` runs
 # `-m sim`. CI is unaffected -- the PR gate runs a plain `pytest` with no marker
 # filter, so coverage there is unchanged.
-pytestmark = pytest.mark.sim
+#
+# The import is guarded the way tests/test_schema_validity.py guards
+# `jsonschema`. Narrow workflow jobs run this module through
+# `python -m unittest` on a bare interpreter, and a module-scope
+# `import pytest` there makes the job fail to collect the file at all rather
+# than run it. The marker is a tier hint for pytest, never a precondition for
+# the assertions, so without pytest it degrades to no marker.
+if importlib.util.find_spec("pytest") is not None:
+    import pytest
+
+    pytestmark = pytest.mark.sim
+else:  # pragma: no cover - the bare-interpreter CI jobs take this path
+    pytestmark = ()
 
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
