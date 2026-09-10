@@ -58,6 +58,7 @@ For a newcomer trying to understand the executable foundation, this order is usu
 - [WorkUnit composability](specifications/WORK_UNIT_COMPOSABILITY_V0_2.md) — decomposition benchmark and evidence boundary.
 - [A2A/MCP mapping](interoperability/A2A_MCP_MAPPING_V0_1.md) — external protocol bindings without redefining the WorkUnit semantic core.
 - [Agent interoperability architecture](interoperability/AGENT_INTEROPERABILITY_ARCHITECTURE_2026-08-28.md) — identity/provenance and adapter boundary.
+- [Agent interoperability monitoring update — 2026-09-10](../interop/AGENT_INTEROPERABILITY_UPDATE_2026-09-10.md) — material A2A/ARD, MCP Skills/security, OpenHands/ACP, provenance, sandbox, and information-flow developments with maturity labels and implementation priorities.
 
 ### Community / ACE
 
