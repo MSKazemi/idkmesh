@@ -15,6 +15,7 @@ from .model import (
     Worker,
 )
 from .policies import History, ThompsonSamplingPolicy
+from .verifier_dependence import PANEL_DEPENDENCE_SHAPES, sample_panel_correctness
 
 
 @dataclass(frozen=True)
@@ -76,8 +77,8 @@ class R1Condition:
     # `shared_draws` is keyed per verifier name and drawn once per task, so it
     # couples one verifier's decisions across candidates within a task -- a
     # within-task strictness shock. E041 records two readings that went wrong by
-    # assuming otherwise. Inter-panellist dependence, when it arrives, takes a
-    # deliberately distinct name so the two can never be conflated.
+    # assuming otherwise. The inter-panellist axis below is deliberately named
+    # separately so the two mechanisms cannot be conflated.
     panel_size: int = 1
     # Fraction of the panel that must accept, in the sense
     # `sim/e018_dependence_models.py` uses: `need = floor(quorum * k) + 1`.
@@ -92,6 +93,12 @@ class R1Condition:
     # candidate, so heterogeneous verifier costs do not make the accounting
     # depend on panel ordering. Billing is accounting only and consumes no RNG.
     panel_attention_billing: str = "per_verifier"
+    # Dependence *between distinct panel members on one candidate*. This is a
+    # separate axis from `verifier_error_correlation`. At correlation zero R1
+    # intentionally stays on the existing verifier path, preserving every
+    # legacy and phase-(a) RNG call. Positive dependence is therefore opt-in.
+    panel_dependence_shape: str = "shared_shock"
+    panel_dependence_correlation: float = 0.0
     # Shape of the worker joint-failure distribution. "shared_shock" is the
     # historical behaviour and stays the default so every committed artifact
     # keeps reproducing; "item_difficulty" is the beta-binomial E017 measured
@@ -131,6 +138,34 @@ class R1Condition:
                 "panel_attention_billing must be one of "
                 f"{sorted(PANEL_ATTENTION_BILLING_MODES)}"
             )
+        if self.panel_dependence_shape not in PANEL_DEPENDENCE_SHAPES:
+            raise ValueError(
+                "panel_dependence_shape must be one of "
+                f"{sorted(PANEL_DEPENDENCE_SHAPES)}"
+            )
+        if not 0.0 <= self.panel_dependence_correlation <= 1.0:
+            raise ValueError("panel_dependence_correlation must be in [0, 1]")
+        if self.panel_dependence_correlation > 0.0:
+            if self.panel_size < 2:
+                raise ValueError(
+                    "positive panel dependence requires panel_size >= 2"
+                )
+            if self.verifier_error_correlation > 0.0:
+                raise ValueError(
+                    "positive panel dependence cannot be composed implicitly with "
+                    "verifier_error_correlation; set the within-task strictness "
+                    "shock to zero so the two axes remain identifiable"
+                )
+            sensitivities = {verifier.sensitivity for verifier in self.verifiers}
+            false_positive_rates = {
+                verifier.false_positive_rate for verifier in self.verifiers
+            }
+            if len(sensitivities) != 1 or len(false_positive_rates) != 1:
+                raise ValueError(
+                    "positive panel dependence requires common verifier sensitivity "
+                    "and false_positive_rate; E018's correlation parameterisation "
+                    "assumes one common marginal accuracy"
+                )
         if self.worker_dependence_shape not in WORKER_DEPENDENCE_SHAPES:
             raise ValueError(
                 "worker_dependence_shape must be one of "
@@ -421,6 +456,49 @@ def _panel_attention_cost(
     return total
 
 
+def _panel_votes(
+    is_good: bool,
+    panel: Sequence[Verifier],
+    rng: random.Random,
+    shared_draws: dict[str, float],
+    condition: R1Condition,
+) -> list[bool]:
+    """Return accept/reject votes without conflating two dependence axes.
+
+    Correlation zero is intentionally the historical implementation, including
+    each call to ``_verifier_accepts``. That is what preserves every existing
+    replay and the phase-(a) panel path exactly.
+
+    Positive ``panel_dependence_correlation`` is a distinct experiment. Its
+    condition validation requires the old within-task strictness shock to be
+    zero and panel members to share one sensitivity/FPR, so E018's common
+    marginal accuracy has an unambiguous sampling counterpart.
+    """
+
+    if condition.panel_dependence_correlation <= 0.0:
+        return [
+            _verifier_accepts(
+                is_good,
+                verifier,
+                rng,
+                shared_draws[verifier.name],
+                condition.verifier_error_correlation,
+            )
+            for verifier in panel
+        ]
+
+    first = panel[0]
+    accuracy = first.sensitivity if is_good else 1.0 - first.false_positive_rate
+    correctness = sample_panel_correctness(
+        len(panel),
+        accuracy,
+        condition.panel_dependence_correlation,
+        condition.panel_dependence_shape,
+        rng,
+    )
+    return [correct if is_good else not correct for correct in correctness]
+
+
 def run_r1_condition(
     condition: R1Condition,
     *,
@@ -438,7 +516,6 @@ def run_r1_condition(
         condition.worker_error_correlation
     )
     workers = [profile.worker for profile in condition.profiles]
-    profile_by_name = {profile.worker.name: profile for profile in condition.profiles}
     latent_outcomes = {worker.name: [] for worker in workers}
 
     totals = {
@@ -493,16 +570,13 @@ def run_r1_condition(
         shared_draws = {verifier.name: rng.random() for verifier in condition.verifiers}
         for candidate in candidate_records:
             panel = _select_panel(condition, rng)
-            votes = [
-                _verifier_accepts(
-                    bool(candidate["is_good"]),
-                    verifier,
-                    rng,
-                    shared_draws[verifier.name],
-                    condition.verifier_error_correlation,
-                )
-                for verifier in panel
-            ]
+            votes = _panel_votes(
+                bool(candidate["is_good"]),
+                panel,
+                rng,
+                shared_draws,
+                condition,
+            )
             accepted = _panel_accepts(votes, condition.panel_quorum)
             candidate["verifier"] = panel[0].name
             candidate["accepted"] = accepted
@@ -596,12 +670,16 @@ def run_r1_condition(
         condition.panel_size != 1
         or condition.panel_quorum != 0.5
         or condition.panel_attention_billing != "per_verifier"
+        or condition.panel_dependence_shape != "shared_shock"
+        or condition.panel_dependence_correlation != 0.0
     ):
         condition_record.update(
             {
                 "panel_size": condition.panel_size,
                 "panel_quorum": condition.panel_quorum,
                 "panel_attention_billing": condition.panel_attention_billing,
+                "panel_dependence_shape": condition.panel_dependence_shape,
+                "panel_dependence_correlation": condition.panel_dependence_correlation,
             }
         )
 
