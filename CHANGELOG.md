@@ -30,6 +30,15 @@ and the release notes for that tag.
   LLM-capable registry entries are agent-class, so widening that constant is the quickest
   way to make them routable, and it would hand an external data processor an execution path.
 
+- `tests/test_documented_hook_snippets.py`, holding the copy-pasteable hook setup in
+  `docs/TESTING.md` to what a reader can actually run: the settings block must parse as
+  JSON and declare `hooks`, each shell block must parse under `bash -n`, each must go
+  through `scripts/testkit.py` rather than calling pytest directly, and every script the
+  settings block registers must be one the section shows the reader how to create. That
+  last check is made against the section's prose with the fenced blocks stripped — run
+  against the whole section it passed a renamed command happily, because the path it was
+  looking for was still there, in the very block under test.
+
 - `tests/test_documented_tier_scopes.py`, comparing the tier scopes `docs/TESTING.md`
   publishes against the marker expressions `scripts/testkit.py` actually passes to pytest.
   The expressions are read out of the script with `ast`, so a marker named only in one of
@@ -114,6 +123,19 @@ and the release notes for that tag.
   tolerates a UTF-8 BOM; reports encoding/path failures as actionable CLI errors; and
   serializes reports with strict JSON semantics. The bundled happy-path example and
   its documented measured result remain unchanged.
+
+- `docs/TESTING.md` stops presenting a local setup as repository content. Its automation
+  section described `.claude/settings.json` and two hook scripts as though a contributor
+  could open them; `.gitignore` excludes `.claude/`, deliberately, because it holds
+  per-agent configuration and personal notes, so those files are in nobody's checkout and
+  no `git pull` will bring them. The section now says so and reproduces all three files in
+  full, which is the only way the page can hand them over. Its verification claim is scoped
+  to match: the snippets were checked against a deliberately failing test — green tree exit
+  0, red tree exit 2 with the failure on stderr, `"stop_hook_active":true` exit 0 so an
+  unfixable failure blocks once instead of looping — in the checkout where they were
+  authored, which the suite cannot re-check for a file it does not contain. The section's
+  counts were re-measured too: 418 tracked `.md` files, not 398, and 1320 tracked files
+  (~29 MB), not 1232.
 
 - `scripts/testkit.py` no longer prints `PASS` on a run that exits 1. A tier fails for two
   independent reasons — red tests, or a blown CPU budget — and the previous fix routed the

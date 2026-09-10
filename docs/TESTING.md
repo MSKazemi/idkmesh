@@ -73,10 +73,10 @@ copied from a blog post:
 
 | Quantity | Measurement |
 |---|---|
-| `make test` (unit tier) | **PLACEHOLDER_UNIT_LINE** |
-| Whole suite, no marker filter (what CI runs) | PLACEHOLDER_COLLECTED collected |
-| Selected by the nightly leg (`-m "sim or slow"`) | PLACEHOLDER_NIGHTLY |
-| Slowest single test in the unit tier | PLACEHOLDER_SLOWEST |
+| `make test` (unit tier) | **50.2 s wall, 50.2 CPU-s**, 1638 passed / 2 skipped / 382 deselected / 3066 subtests |
+| Whole suite, no marker filter (what CI runs) | 2022 collected |
+| Selected by the nightly leg (`-m "sim or slow"`) | 382 |
+| Slowest single test in the unit tier | 1.15 s (`test_idkgraph_repository_mapping`) |
 | Affected-test run after a one-file edit | **0.1–0.4 s** |
 | CI, mean run | 0.7 min |
 | CI, slowest run observed | 3.5 min (PR Gate) |
@@ -110,10 +110,10 @@ one over a few quarters.
 | `nightly` | `integration` + everything marked `sim` or `slow` (`-m "sim or slow"`) | none | scheduled |
 
 **`nightly` is not equivalent to `integration`.** The two tier markers are in
-use: 311 tests carry `sim`, and `-m "sim or slow"` selects 369 — exactly the 369
-the unit tier deselects in the table above. Every one of them runs only in
-`nightly`, so a change that breaks one is invisible to the pre-commit and
-pre-push gates until the scheduled run.
+use: 311 tests carry `sim`, and `-m "sim or slow"` selects 382 (the rest carry
+`slow`) — exactly the 382 the unit tier deselects in the table above. Every one
+of them runs only in `nightly`, so a change that breaks one is invisible to the
+pre-commit and pre-push gates until the scheduled run.
 
 This paragraph previously said the opposite — that no test carried
 `@pytest.mark.sim` and that the two tiers therefore did the same work — while
@@ -176,40 +176,98 @@ fix it or mark it for a later tier:
 Raising a budget converts a one-time cost into a permanent one, and there is no
 natural point at which anyone ever lowers it again.
 
-## Automation: tests without typing test commands
+## Automation: running the tiers without typing test commands
 
-Two Claude Code hooks in `.claude/settings.json` run the tiers automatically.
-This is the agent equivalent of a continuous test runner (NCrunch, Wallaby,
-Infinitest): feedback arrives while the change is still in working memory.
+**This is a local, opt-in setup, not repository content.** `.gitignore` excludes
+`.claude/` — it holds per-agent configuration and personal notes that must never
+be committed to a public repository — so the hook files described here are *not*
+in your checkout and `git pull` will never bring them. They are reproduced in
+full below, because that is the only way this page can hand them over.
+
+Set up this way, the tiers behave like a continuous test runner (NCrunch,
+Wallaby, Infinitest): feedback arrives while the change is still in working
+memory.
 
 | Hook | Event | Tier | Behaviour |
 |---|---|---|---|
-| `.claude/hooks/test-on-edit.sh` | `PostToolUse` on any edit | `smoke` | `asyncRewake` — runs in the background, interrupts only on failure |
-| `.claude/hooks/test-on-stop.sh` | `Stop` | `auto` | blocking — a turn does not end on a red tree |
+| `test-on-edit.sh` | `PostToolUse` on any edit | `smoke` | silent on success; exit 2 hands the failure back |
+| `test-on-stop.sh` | `Stop` | `auto` | blocking — a turn does not end on a red tree |
 
-Two properties make this cheap enough to run constantly:
+`.claude/settings.json`:
 
-* **Result caching.** `scripts/testkit.py` fingerprints the content of every
-  tracked file plus uncommitted changes. Re-running a tier that already passed
-  on an identical tree costs ~0.05 s instead of 32 s, so a conversational turn
-  that touched no code is not taxed.
+```json
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|NotebookEdit",
+        "hooks": [{ "type": "command", "command": ".claude/hooks/test-on-edit.sh" }]
+      }
+    ],
+    "Stop": [
+      { "hooks": [{ "type": "command", "command": ".claude/hooks/test-on-stop.sh" }] }
+    ]
+  }
+}
+```
 
-  The fingerprint deliberately has **no extension allowlist**. Hashing only
-  `.py`/`.json`/`.ini` looks like a cheap optimisation and is actually unsound
-  here: the integration tier link-checks 398 tracked `.md` files and the workflow
-  guards read 51 `.yml` files, so a real workflow violation reported
-  `cached pass -- tree unchanged` while the guard, run directly, failed. Hashing
-  all 1232 tracked files (~28 MB) costs 0.1 s. A cache that can hide a genuine
-  failure is worth less than the time it saves.
-* **`asyncRewake` on the edit hook.** On the happy path it costs nothing; it
-  only surfaces when a test the edit actually affects has broken.
+`.claude/hooks/test-on-edit.sh`:
 
-The Stop hook honours `stop_hook_active`, so a genuinely unfixable failure
-blocks once and then lets the turn end rather than looping forever.
+```bash
+#!/usr/bin/env bash
+# Tier 1 after every edit. Silent on success; exit 2 hands the failure back.
+set -uo pipefail
+cd "$(git rev-parse --show-toplevel)" || exit 0
+if ! output=$(python3 scripts/testkit.py smoke --quiet 2>&1); then
+  printf '%s\n' "$output" >&2
+  exit 2
+fi
+```
 
-Both were verified against a deliberately failing test: the edit hook exits 2
-with the failure text, the Stop hook exits 2 and returns to 0 once the failure is
-removed.
+`.claude/hooks/test-on-stop.sh`:
+
+```bash
+#!/usr/bin/env bash
+# Whichever tier the change requires, before the turn ends.
+set -uo pipefail
+payload=$(cat)
+# Claude Code sets stop_hook_active once this hook has already blocked in this
+# turn. Blocking again would loop forever on a failure nobody can fix.
+case "$payload" in *'"stop_hook_active":true'*) exit 0 ;; esac
+cd "$(git rev-parse --show-toplevel)" || exit 0
+if ! output=$(python3 scripts/testkit.py auto --quiet 2>&1); then
+  printf '%s\n' "$output" >&2
+  exit 2
+fi
+```
+
+`chmod +x` both. What makes this cheap enough to run constantly is the result
+cache: `scripts/testkit.py` fingerprints the content of every tracked file plus
+uncommitted changes, so re-running a tier that already passed on an identical
+tree costs ~0.1 s instead of 32 s, and a conversational turn that touched no
+code is not taxed.
+
+The fingerprint deliberately has **no extension allowlist**. Hashing only
+`.py`/`.json`/`.ini` looks like a cheap optimisation and is actually unsound
+here: the integration tier link-checks 418 tracked `.md` files and the workflow
+guards read 51 `.yml` files, so a real workflow violation reported
+`cached pass -- tree unchanged` while the guard, run directly, failed. Hashing
+all 1320 tracked files (~29 MB) costs ~0.1 s warm, against tiers that run for
+tens of seconds. A cache that can hide a genuine failure is worth less than the
+time it saves.
+
+To make the edit hook cost nothing on the happy path, run it in the background
+and let it interrupt only on failure; the Claude Code hooks reference documents
+the key for that (`asyncRewake`). The scripts above are correct either way, and
+the blocking form is what the measurements below were taken against.
+
+Verified on 2026-09-10 against a deliberately failing test added to `tests/`,
+in the checkout where they were authored: on a green tree both exit 0; on a red
+tree both exit 2 with the failure text on stderr; and with
+`"stop_hook_active":true` the Stop hook exits 0, so an unfixable failure blocks
+once and then lets the turn end rather than looping. Nothing in the suite can
+re-check that for you — these files are not in the repository — so treat it as a
+report, not a guarantee, and re-run the same probe after editing them.
 
 ### Test selection, and its limits
 
