@@ -6,7 +6,7 @@
 
 ## Problem
 
-ACE maintains a singleton public Growth Ledger and also performs bounded community-growth writes such as applying `growth-seed` and creating one descendant Growth Seed from an opted-in merged pull request.
+ACE maintains a singleton public Growth Ledger and also performs bounded community-growth writes such as applying `growth-seed` and creating descendant Growth Seeds from explicitly opted-in merged pull requests.
 
 The workflow intentionally uses one global GitHub Actions concurrency group with:
 
@@ -60,9 +60,17 @@ A parent is outstanding only when no issue exists that has both:
 - the `growth-seed` label; and
 - the matching parent marker.
 
-The workflow selects the oldest outstanding eligible parent deterministically and creates **at most one** descendant issue in a run.
+Outstanding parents are ordered deterministically by merge time and pull-request number. Ordinary replacement bursts are repaired as a batch so the surviving run does not recover an older dropped event while silently omitting its own eligible event.
 
-That preserves the deliberately bounded public-write rate while ensuring a dropped merged-PR event is recoverable by the next surviving serialized run.
+Automatic recovery is bounded by:
+
+```text
+MAX_AUTOMATIC_SPAWN_RECOVERY = 4
+```
+
+If more than four descendants are simultaneously missing, the workflow creates **none** of them and fails loudly with the observed backlog size. That is intentional: a large backlog can indicate stale `growth:spawn` labels or a wider controller problem, and ACE must not convert that anomaly into mass issue creation. A maintainer must inspect the labels/descendants and reduce or otherwise resolve the backlog before automatic recovery proceeds.
+
+This gives the controller three useful properties at once: serialized ledger state, automatic convergence for ordinary pending-run replacement bursts, and fail-closed behavior for anomalously large public-write demand.
 
 ## Safety invariants
 
@@ -74,12 +82,14 @@ That preserves the deliberately bounded public-write rate while ensuring a dropp
 6. A `growth:spawn` label remains an explicit opt-in; the workflow does not infer parent eligibility from PR text.
 7. Dedupe requires both the workflow-owned `growth-seed` label and the parent marker.
 8. PR titles are never interpolated into generated issue content.
-9. A single run creates at most one missing descendant Growth Seed.
+9. Automatic descendant recovery is capped at four issues per run; a larger backlog fails before creating any descendant issue.
 10. No worker, PR author, or ACE output gains merge or repository-integration authority.
 
 ## Failure behavior
 
-If several eligible parent events are replaced while pending, the serialized reconciler drains at most one missing descendant per later run. This favors bounded public writes over burst recovery. Because the newest event that displaced a pending run itself remains queued to run, the mechanism has a natural recovery opportunity without introducing parallel ledger writers.
+A replaced pending event is no longer a silent one-shot dependency. The next surviving serialized run recomputes missing work from current GitHub state.
+
+For one to four missing opted-in descendants, that run repairs the complete observed backlog. For more than four, it reports an explicit failure and creates no descendant issues, preserving the repository's anti-spam boundary rather than partially draining a suspicious backlog and leaving the remainder implicit.
 
 If actuation is disabled, descendant creation remains fail-closed. Trusted `ACE_SEED` classification may still be repaired because applying the workflow-owned classification label is separate from autonomous reproduction.
 
@@ -92,10 +102,11 @@ If actuation is disabled, descendant creation remains fail-closed. Trusted `ACE_
 - descendant recovery reads merged, opted-in parents rather than the current PR payload;
 - the existing actuation gate remains required;
 - marker-plus-label dedupe remains in place;
-- no loop can create multiple descendant issues in one run.
+- the four-descendant safety cap is checked before the creation loop;
+- an oversized backlog is a loud fail-closed condition rather than partial recovery.
 
 The older ACE safety/hardening tests remain responsible for immutable Action pinning, permission boundaries, trusted legacy-ledger adoption, state validation, and the no-checkout/no-PR-code-execution contract.
 
 ## Community impact
 
-This change reduces the chance that a contributor-facing Growth Seed silently disappears because of workflow scheduling behavior, without increasing concurrency risk in the controller state. It also makes the recovery model explicit for future maintainers: **serialize shared state, reconcile externally visible effects.**
+This change reduces the chance that a contributor-facing Growth Seed silently disappears because of workflow scheduling behavior, without increasing concurrency risk in the controller state or permitting an anomalous backlog to become a mass issue burst. It also makes the recovery model explicit for future maintainers: **serialize shared state, reconcile externally visible effects, and fail loudly when the requested actuation exceeds its safety envelope.**
