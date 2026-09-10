@@ -72,7 +72,7 @@ that produced them.
 - [Verification and Orchestration Collaboration](2026-08-28-verification-orchestration-collaboration.md)
 - [Top 20 Questions, Scalability, and Agility](2026-08-28-top-20-scalability-agility.md)
 - [Task Graph, Growth Dynamics, and Self-Evolving Repository](2026-08-28-task-graph-growth-and-self-evolution.md)
-- [Target Execution Convergence Follow-up](2026-08-28-execution-targets-goals-and-tasks.md)
+- [Target Execution Convergence Follow-up](2026-08-28-target-execution-convergence-followup.md)
 - [Sequential evidence reproducibility hardening](2026-08-28-sequential-evidence-reproducibility.md)
 - [Science, Physics, Blockchain, and Next Steps](2026-08-28-science-physics-blockchain-roadmap.md)
 - [Run Evidence and Replay Continuation](2026-08-28-run-evidence-and-replay-continuation.md)
