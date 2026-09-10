@@ -7,7 +7,7 @@ canonical files designated by [`../../PROJECT_RULES.md`](../../PROJECT_RULES.md)
 (decisions, specifications, architecture, findings); this directory keeps the trail
 that produced them.
 
-155 records across 5 dates, newest first.
+156 records across 5 dates, newest first.
 
 ## Index
 
@@ -20,6 +20,7 @@ that produced them.
 
 - [Contributor and free-agent pilot: execution record](2026-09-09-contributor-pilot-execution.md)
 - [Teaching overview: implemented mechanisms versus research ambitions](2026-09-09-teaching-idkmesh-overview.md)
+- [Low-effort contributors and free agents: what to try first](2026-09-09-low-effort-contributors-and-free-agents.md)
 
 ### 2026-09-02
 
