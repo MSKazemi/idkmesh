@@ -40,6 +40,38 @@ class GateAuditInputError(ValueError):
     """The verdict-matrix input violates the documented contract."""
 
 
+_JSON_TYPE_NAMES = {
+    dict: "an object", list: "an array", str: "a string", bool: "a boolean",
+    int: "a number", float: "a number", type(None): "null",
+}
+
+
+def _type_name(value: Any) -> str:
+    """Name a value's JSON type, so an error can say what arrived instead.
+
+    An empty string gets its own wording: "must be a non-empty string, got a
+    string" is a riddle rather than a diagnosis.
+    """
+    if isinstance(value, str) and not value:
+        return "an empty string"
+    return _JSON_TYPE_NAMES.get(type(value), type(value).__name__)
+
+
+def _required(container: dict[str, Any], key: str, hint: str,
+              where: str = "") -> Any:
+    """Fetch a required key, distinguishing "absent" from "present but wrong".
+
+    A first malformed matrix is almost always a missing or misspelled key, and
+    a bare "'gate_id' must be a non-empty string" does not say which of the
+    two happened.
+    """
+    if key not in container:
+        prefix = f"{where}: " if where else ""
+        raise GateAuditInputError(
+            f"{prefix}missing required key {key!r}; {hint}")
+    return container[key]
+
+
 # ---------------------------------------------------------------------------
 # Panel mathematics (parity-tested against sim/e015_analyze.py and
 # sim/e016_analyze.py).
@@ -142,69 +174,138 @@ def validate_input(data: Any) -> dict[str, Any]:
 
     The contract is strict on purpose: a missing verdict is refused rather
     than imputed, because every imputation rule silently changes the measured
-    correlation structure the audit exists to report.
+    correlation structure the audit exists to report. Every rule the
+    specification lists is checked here, so a caller using this function as a
+    pre-flight check sees exactly what the audit would refuse.
     """
     if not isinstance(data, dict):
-        raise GateAuditInputError("input must be a JSON object")
+        raise GateAuditInputError(
+            f"input must be a JSON object, got {_type_name(data)}")
 
-    gate_id = data.get("gate_id")
+    gate_id = _required(
+        data, "gate_id", "a non-empty string naming the audited gate")
     if not isinstance(gate_id, str) or not gate_id:
-        raise GateAuditInputError("'gate_id' must be a non-empty string")
+        raise GateAuditInputError(
+            f"'gate_id' must be a non-empty string, got {_type_name(gate_id)}")
 
-    evidence_class = data.get("evidence_class")
-    if evidence_class not in EVIDENCE_CLASSES:
+    if "evidence_class" not in data:
+        raise GateAuditInputError(
+            "missing required key 'evidence_class'; declare 'synthetic' or "
+            "'observed' - an audit report must never guess its own evidence "
+            "status")
+    if data["evidence_class"] not in EVIDENCE_CLASSES:
         raise GateAuditInputError(
             "'evidence_class' must be declared as 'synthetic' or 'observed'; "
             "an audit report must never guess its own evidence status")
 
     quorum = data.get("quorum", 0.5)
-    if not isinstance(quorum, (int, float)) or not (0.0 <= quorum < 1.0):
-        raise GateAuditInputError("'quorum' must be a number in [0, 1)")
+    # ``bool`` is a subclass of ``int``, so an unguarded isinstance check let
+    # ``"quorum": false`` through as the quorum 0.0 - a rule under which one
+    # accept vote carries the panel.
+    if isinstance(quorum, bool) or not isinstance(quorum, (int, float)):
+        raise GateAuditInputError(
+            f"'quorum' must be a number in [0, 1), got {_type_name(quorum)}")
+    if not math.isfinite(quorum) or not (0.0 <= quorum < 1.0):
+        raise GateAuditInputError(
+            f"'quorum' must be a number in [0, 1), got {quorum!r}")
 
-    candidates = data.get("candidates")
+    candidates = _required(
+        data, "candidates",
+        "a non-empty list of candidate objects, each with 'id' and "
+        "'ground_truth'")
     if not isinstance(candidates, list) or not candidates:
-        raise GateAuditInputError("'candidates' must be a non-empty list")
+        raise GateAuditInputError(
+            f"'candidates' must be a non-empty list, got "
+            f"{_type_name(candidates)}")
     seen_c: set[str] = set()
-    for cand in candidates:
+    non_probe_count = 0
+    for index, cand in enumerate(candidates):
+        # Positional labels matter: in a matrix with hundreds of rows, an error
+        # about an absent 'id' has no id to name itself with.
+        where = f"candidate #{index + 1}"
         if not isinstance(cand, dict):
-            raise GateAuditInputError("each candidate must be an object")
-        cid = cand.get("id")
+            raise GateAuditInputError(
+                f"{where} must be a JSON object, got {_type_name(cand)}")
+        cid = _required(
+            cand, "id", "a non-empty string identifying the candidate", where)
         if not isinstance(cid, str) or not cid:
-            raise GateAuditInputError("candidate 'id' must be a non-empty string")
+            raise GateAuditInputError(
+                f"{where}: 'id' must be a non-empty string, got "
+                f"{_type_name(cid)}")
         if cid in seen_c:
             raise GateAuditInputError(f"duplicate candidate id: {cid!r}")
         seen_c.add(cid)
-        if cand.get("ground_truth") not in VERDICTS:
+        ground_truth = _required(
+            cand, "ground_truth",
+            "it must be 'accept' or 'reject' - the audit measures a panel "
+            "against known answers, so a candidate with no ground truth "
+            "cannot be audited",
+            f"candidate {cid!r}")
+        if ground_truth not in VERDICTS:
             raise GateAuditInputError(
-                f"candidate {cid!r}: 'ground_truth' must be 'accept' or 'reject'")
+                f"candidate {cid!r}: 'ground_truth' must be 'accept' or "
+                "'reject'")
         probe = cand.get("probe", False)
         if not isinstance(probe, bool):
-            raise GateAuditInputError(f"candidate {cid!r}: 'probe' must be boolean")
-        if probe and cand.get("ground_truth") != "reject":
+            raise GateAuditInputError(
+                f"candidate {cid!r}: 'probe' must be boolean, got "
+                f"{_type_name(probe)}")
+        if probe and ground_truth != "reject":
             raise GateAuditInputError(
                 f"candidate {cid!r}: probes are seeded KNOWN-BAD candidates and "
                 "must carry ground_truth 'reject'")
-        if probe and "probe_kind" in cand and (
-                not isinstance(cand["probe_kind"], str) or not cand["probe_kind"]):
-            raise GateAuditInputError(
-                f"candidate {cid!r}: 'probe_kind' must be a non-empty string")
+        if "probe_kind" in cand:
+            if not probe:
+                # Refusing this is the point: accepted silently, the candidate
+                # joined the headline statistics and the breach report came
+                # back empty, which reads as "no probes breached".
+                raise GateAuditInputError(
+                    f"candidate {cid!r}: 'probe_kind' labels a probe, but this "
+                    'candidate is not one; add "probe": true or drop '
+                    "'probe_kind'")
+            if not isinstance(cand["probe_kind"], str) or not cand["probe_kind"]:
+                raise GateAuditInputError(
+                    f"candidate {cid!r}: 'probe_kind' must be a non-empty "
+                    "string")
+        if not probe:
+            non_probe_count += 1
 
-    verifiers = data.get("verifiers")
+    if non_probe_count < 2:
+        raise GateAuditInputError(
+            "at least two non-probe candidates are required; panel statistics "
+            f"from fewer are not meaningful (got {non_probe_count} of "
+            f"{len(candidates)} candidates)")
+
+    verifiers = _required(
+        data, "verifiers",
+        "a non-empty list of verifier objects, each with 'id' and 'verdicts'")
     if not isinstance(verifiers, list) or not verifiers:
-        raise GateAuditInputError("'verifiers' must be a non-empty list")
+        raise GateAuditInputError(
+            f"'verifiers' must be a non-empty list, got "
+            f"{_type_name(verifiers)}")
     seen_v: set[str] = set()
-    for ver in verifiers:
+    for index, ver in enumerate(verifiers):
+        where = f"verifier #{index + 1}"
         if not isinstance(ver, dict):
-            raise GateAuditInputError("each verifier must be an object")
-        vid = ver.get("id")
+            raise GateAuditInputError(
+                f"{where} must be a JSON object, got {_type_name(ver)}")
+        vid = _required(
+            ver, "id", "a non-empty string identifying the verifier", where)
         if not isinstance(vid, str) or not vid:
-            raise GateAuditInputError("verifier 'id' must be a non-empty string")
+            raise GateAuditInputError(
+                f"{where}: 'id' must be a non-empty string, got "
+                f"{_type_name(vid)}")
         if vid in seen_v:
             raise GateAuditInputError(f"duplicate verifier id: {vid!r}")
         seen_v.add(vid)
-        verdicts = ver.get("verdicts")
+        verdicts = _required(
+            ver, "verdicts",
+            "an object mapping every candidate id to 'accept' or 'reject'",
+            f"verifier {vid!r}")
         if not isinstance(verdicts, dict):
-            raise GateAuditInputError(f"verifier {vid!r}: 'verdicts' must be an object")
+            raise GateAuditInputError(
+                f"verifier {vid!r}: 'verdicts' must be an object, got "
+                f"{_type_name(verdicts)}")
         missing = seen_c - set(verdicts)
         if missing:
             raise GateAuditInputError(
@@ -237,6 +338,22 @@ def _finite_or_none(value: float) -> float | None:
     return value if math.isfinite(value) else None
 
 
+def _ceiling_field(ceiling: float | None) -> float | str | None:
+    """Render the effective-vote ceiling for JSON, never as a bare ``NaN``.
+
+    ``effective_n_ceiling`` returns NaN for a panel that does not discriminate
+    (mean accuracy <= 0.5). Passing that straight into the report produced a
+    document containing the bare token ``NaN``: not JSON at all outside
+    Python's own permissive parser, and invalid against
+    ``gate-audit-report-v0.1``, which admits only a number, ``"unbounded"`` or
+    ``null``. ``null`` is the honest value - the same one ``effective_votes``
+    already carries for such a panel.
+    """
+    if ceiling is None or math.isnan(ceiling):
+        return None
+    return "unbounded" if math.isinf(ceiling) else ceiling
+
+
 def audit(data: dict[str, Any]) -> dict[str, Any]:
     """Compute a gate-audit report from a validated verdict matrix.
 
@@ -254,10 +371,6 @@ def audit(data: dict[str, Any]) -> dict[str, Any]:
     truth = {c["id"]: c["ground_truth"] for c in candidates}
 
     warnings: list[str] = []
-    if len(non_probe) < 2:
-        raise GateAuditInputError(
-            "at least two non-probe candidates are required; panel statistics "
-            "from fewer are not meaningful")
 
     # Per-verifier accuracy and error vectors over non-probe candidates.
     verifier_rows = []
@@ -380,9 +493,7 @@ def audit(data: dict[str, Any]) -> dict[str, Any]:
             "false_reject_rate": (false_rejects / n_good) if n_good else None,
             "effective_votes": _finite_or_none(measured_eff),
             "heuristic_n_eff": heuristic,
-            "effective_votes_ceiling": (
-                None if ceiling is None else
-                ("unbounded" if math.isinf(ceiling) else ceiling)),
+            "effective_votes_ceiling": _ceiling_field(ceiling),
         },
         "probes": probe_section,
         "warnings": warnings,
@@ -415,6 +526,19 @@ def _fmt(value: Any, digits: int = 4) -> str:
     if isinstance(value, float):
         return f"{value:.{digits}f}"
     return str(value)
+
+
+def render_json(report: dict[str, Any], pretty: bool = False) -> str:
+    """Serialize a report as strict JSON.
+
+    ``allow_nan=False`` is deliberate. Python's default emits bare ``NaN`` and
+    ``Infinity`` tokens that no other JSON parser accepts, so any non-finite
+    number that ever reached a report would produce a file the rest of the
+    world cannot read. Failing loudly beats shipping that silently.
+    """
+    return json.dumps(
+        report, indent=2 if pretty else None, sort_keys=False,
+        allow_nan=False)
 
 
 def render_markdown(report: dict[str, Any]) -> str:
@@ -473,11 +597,48 @@ def render_markdown(report: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def _reject_json_constant(token: str) -> Any:
+    """Refuse Python's JSON extensions (``NaN``, ``Infinity``, ``-Infinity``).
+
+    ``json.loads`` accepts them by default, but no other implementation does.
+    Since ``provenance.input_digest_sha256`` promises that a report is bound to
+    a reproducible canonicalization of its input, an input only Python can read
+    is a digest nobody else can recompute.
+    """
+    raise GateAuditInputError(
+        f"input uses {token}, which is a Python extension and not valid JSON; "
+        "a verdict matrix must be standard JSON so its digest is reproducible "
+        "by other implementations")
+
+
 def audit_file(input_path: str | Path) -> dict[str, Any]:
-    """Load, validate, and audit one verdict-matrix JSON file."""
+    """Load, validate, and audit one verdict-matrix JSON file.
+
+    Raises ``GateAuditInputError`` for anything wrong with the document's
+    encoding, syntax or contract, with the path named so a CI log says which
+    file was rejected. Failures to *reach* the file (missing, a directory, not
+    readable) stay ``OSError``, which is what they are.
+
+    The text is decoded as ``utf-8-sig`` so a byte-order mark is tolerated:
+    Windows editors and PowerShell redirection add one, and the previous
+    behaviour was to reject the file with Python's own advice to "decode using
+    utf-8-sig" - a remark about the reader, not about the caller's file.
+    """
     path = Path(input_path)
     try:
-        data = json.loads(path.read_text(encoding="utf-8"))
+        text = path.read_text(encoding="utf-8-sig")
+    except UnicodeDecodeError as exc:
+        raise GateAuditInputError(
+            f"{path}: not UTF-8 text ({exc.reason} at byte {exc.start}); save "
+            "the verdict matrix as UTF-8. UTF-16, the default for PowerShell "
+            "output redirection, is not readable as JSON") from exc
+    try:
+        data = json.loads(text, parse_constant=_reject_json_constant)
     except json.JSONDecodeError as exc:
         raise GateAuditInputError(f"{path}: not valid JSON ({exc})") from exc
-    return audit(data)
+    except GateAuditInputError as exc:
+        raise GateAuditInputError(f"{path}: {exc}") from exc
+    try:
+        return audit(data)
+    except GateAuditInputError as exc:
+        raise GateAuditInputError(f"{path}: {exc}") from exc

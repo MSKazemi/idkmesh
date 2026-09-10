@@ -314,5 +314,315 @@ class CliTests(unittest.TestCase):
         self.assertEqual(proc.returncode, 2)
 
 
+class ReportSerializationTests(unittest.TestCase):
+    """A report must be readable by a JSON parser that is not Python's."""
+
+    @staticmethod
+    def _non_discriminating_panel():
+        """A panel below chance whose error vectors still correlate.
+
+        Both conditions matter: mean accuracy <= 0.5 makes the effective-vote
+        ceiling undefined, and a measurable correlation is what causes the
+        ceiling to be computed at all.
+        """
+        candidates = [
+            {"id": f"c{i}", "ground_truth": "accept" if i % 2 else "reject"}
+            for i in range(8)
+        ]
+
+        def verdicts(flipped):
+            return {
+                cand["id"]: (
+                    cand["ground_truth"] if i not in flipped
+                    else ("reject" if cand["ground_truth"] == "accept"
+                          else "accept"))
+                for i, cand in enumerate(candidates)
+            }
+
+        return {
+            "gate_id": "below-chance-panel",
+            "evidence_class": "synthetic",
+            "candidates": candidates,
+            "verifiers": [
+                {"id": "v1", "verdicts": verdicts({0, 1, 2, 3, 4})},
+                {"id": "v2", "verdicts": verdicts({0, 1, 2, 3, 5})},
+            ],
+        }
+
+    def test_undefined_ceiling_is_null_not_nan(self):
+        # effective_n_ceiling returns NaN for a panel that does not
+        # discriminate. Emitted verbatim it produced a bare NaN token: not JSON
+        # anywhere outside Python, and invalid against the v0.1 schema.
+        report = gate_audit.audit(self._non_discriminating_panel())
+        self.assertLessEqual(report["panel"]["mean_verifier_accuracy"], 0.5)
+        self.assertIsNotNone(
+            report["panel"]["mean_pairwise_error_correlation"])
+        self.assertIsNone(report["panel"]["effective_votes_ceiling"])
+
+    def test_report_of_non_discriminating_panel_is_strict_json(self):
+        rendered = gate_audit.render_json(
+            gate_audit.audit(self._non_discriminating_panel()))
+
+        def reject(token):
+            raise AssertionError(f"report contains the non-JSON token {token}")
+
+        json.loads(rendered, parse_constant=reject)
+
+    @unittest.skipUnless(HAS_JSONSCHEMA, "jsonschema not installed")
+    def test_non_discriminating_report_validates_against_schema(self):
+        schema = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
+        jsonschema.validate(
+            gate_audit.audit(self._non_discriminating_panel()), schema)
+
+    def test_render_json_refuses_non_finite_numbers(self):
+        # The guard is what keeps a future non-finite value from silently
+        # becoming a report nothing else can parse.
+        with self.assertRaises(ValueError):
+            gate_audit.render_json({"panel": {"effective_votes": math.nan}})
+
+
+class MalformedInputDiagnosticsTests(unittest.TestCase):
+    """Every refusal must name what is wrong and where, not just that it is."""
+
+    def assert_refused(self, data, fragment):
+        with self.assertRaises(gate_audit.GateAuditInputError) as ctx:
+            gate_audit.audit(copy.deepcopy(data))
+        self.assertIn(fragment, str(ctx.exception))
+
+    def test_absent_key_is_reported_as_missing(self):
+        data = minimal_input()
+        del data["gate_id"]
+        self.assert_refused(data, "missing required key 'gate_id'")
+
+    def test_wrong_type_names_the_type_that_arrived(self):
+        self.assert_refused(minimal_input(gate_id=7), "got a number")
+
+    def test_empty_string_is_not_reported_as_a_string(self):
+        self.assert_refused(minimal_input(gate_id=""), "got an empty string")
+
+    def test_boolean_quorum_is_refused(self):
+        # bool subclasses int, so an unguarded isinstance check accepted
+        # "quorum": false as the quorum 0.0 - one accept vote carries the
+        # panel, silently changing every number in the report.
+        self.assert_refused(minimal_input(quorum=False), "got a boolean")
+        self.assert_refused(minimal_input(quorum=True), "got a boolean")
+
+    def test_out_of_range_quorum_is_refused(self):
+        self.assert_refused(minimal_input(quorum=1.0), "[0, 1)")
+        self.assert_refused(minimal_input(quorum=-0.5), "[0, 1)")
+
+    def test_non_finite_quorum_is_refused(self):
+        self.assert_refused(minimal_input(quorum=float("nan")), "[0, 1)")
+        self.assert_refused(minimal_input(quorum=float("inf")), "[0, 1)")
+
+    def test_candidate_without_id_is_located_by_position(self):
+        data = minimal_input()
+        del data["candidates"][1]["id"]
+        self.assert_refused(data, "candidate #2")
+
+    def test_verifier_without_id_is_located_by_position(self):
+        data = minimal_input()
+        del data["verifiers"][2]["id"]
+        self.assert_refused(data, "verifier #3")
+
+    def test_missing_ground_truth_is_reported_as_missing(self):
+        data = minimal_input()
+        del data["candidates"][0]["ground_truth"]
+        self.assert_refused(data, "missing required key 'ground_truth'")
+
+    def test_probe_kind_without_probe_flag_is_refused(self):
+        # Accepted silently, this candidate joined the headline statistics and
+        # the report carried no probe section at all - which reads as "no
+        # probes breached" to anyone who asked for a breach rate.
+        data = minimal_input()
+        data["candidates"][2]["probe_kind"] = "seeded-defect"
+        self.assert_refused(data, "probe_kind")
+
+    def test_probe_kind_with_probe_flag_is_accepted(self):
+        data = minimal_input()
+        data["candidates"].append({
+            "id": "p1", "ground_truth": "reject", "probe": True,
+            "probe_kind": "prompt-injection"})
+        for ver in data["verifiers"]:
+            ver["verdicts"]["p1"] = "reject"
+        report = gate_audit.audit(data)
+        self.assertEqual(report["probes"]["by_kind"]["prompt-injection"],
+                         {"total": 1, "breached": 0})
+
+    def test_validate_input_enforces_the_two_candidate_minimum(self):
+        # The specification documents this rule as enforced by validate_input,
+        # so a caller using it as a pre-flight check must see it there and not
+        # only when audit() runs.
+        data = minimal_input()
+        for cand in data["candidates"][1:]:
+            cand["probe"] = True
+            cand["ground_truth"] = "reject"
+        for ver in data["verifiers"]:
+            for cid in ("c2", "c3", "c4"):
+                ver["verdicts"][cid] = "reject"
+        with self.assertRaises(gate_audit.GateAuditInputError) as ctx:
+            gate_audit.validate_input(data)
+        self.assertIn("at least two non-probe", str(ctx.exception))
+
+
+class InputFileHandlingTests(unittest.TestCase):
+    """Reading the file is where a newcomer's first failure actually happens."""
+
+    def setUp(self):
+        import tempfile
+
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.dir = Path(self.tmp.name)
+
+    def write(self, name: str, payload: bytes) -> Path:
+        path = self.dir / name
+        path.write_bytes(payload)
+        return path
+
+    def test_utf8_bom_is_tolerated(self):
+        # Windows Notepad and PowerShell add a BOM. The old failure quoted
+        # Python's "decode using utf-8-sig", which is advice about the reader.
+        path = self.write(
+            "bom.json",
+            b"\xef\xbb\xbf" + json.dumps(minimal_input()).encode("utf-8"))
+        report = gate_audit.audit_file(path)
+        self.assertEqual(report["gate_id"], "test-gate")
+
+    def test_bom_does_not_change_the_input_digest(self):
+        plain = self.write(
+            "plain.json", json.dumps(minimal_input()).encode("utf-8"))
+        with_bom = self.write(
+            "bom2.json",
+            b"\xef\xbb\xbf" + json.dumps(minimal_input()).encode("utf-8"))
+        self.assertEqual(
+            gate_audit.audit_file(plain)["provenance"]["input_digest_sha256"],
+            gate_audit.audit_file(with_bom)["provenance"][
+                "input_digest_sha256"])
+
+    def test_non_utf8_input_is_refused_with_an_actionable_message(self):
+        path = self.write(
+            "utf16.json", json.dumps(minimal_input()).encode("utf-16"))
+        with self.assertRaises(gate_audit.GateAuditInputError) as ctx:
+            gate_audit.audit_file(path)
+        self.assertIn("UTF-8", str(ctx.exception))
+
+    def test_python_only_json_extensions_are_refused(self):
+        # json.loads accepts NaN/Infinity; nothing else does. The report's
+        # input digest promises a canonicalization other implementations can
+        # recompute, which an input only Python can read would break.
+        for token in ("NaN", "Infinity", "-Infinity"):
+            data = json.dumps(minimal_input())
+            path = self.write(
+                "ext.json",
+                data[:-1].encode("utf-8") + f', "note": {token}}}'.encode())
+            with self.assertRaises(gate_audit.GateAuditInputError) as ctx:
+                gate_audit.audit_file(path)
+            self.assertIn(token, str(ctx.exception))
+
+    def test_contract_violation_names_the_file(self):
+        data = minimal_input()
+        del data["evidence_class"]
+        path = self.write("bad.json", json.dumps(data).encode("utf-8"))
+        with self.assertRaises(gate_audit.GateAuditInputError) as ctx:
+            gate_audit.audit_file(path)
+        self.assertIn(path.name, str(ctx.exception))
+
+    def test_unreachable_input_stays_an_oserror(self):
+        # Failing to reach the file is not a contract violation, and the CLI
+        # relies on the distinction to word its message.
+        with self.assertRaises(OSError):
+            gate_audit.audit_file(self.dir)
+
+
+class CliFailureModeTests(unittest.TestCase):
+    """No caller-fixable failure may reach a traceback or an exit code of 1.
+
+    The specification promises exit 0 or exit 2 with the violation named on
+    stderr. Every case below previously printed a traceback and exited 1.
+    """
+
+    def setUp(self):
+        import tempfile
+
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.dir = Path(self.tmp.name)
+
+    def run_cli(self, *args):
+        return subprocess.run(
+            [sys.executable, "-m", "idkmesh.cli", *args],
+            capture_output=True, text=True, cwd=REPO_ROOT,
+            env={"PYTHONPATH": str(REPO_ROOT), "PATH": "/usr/bin:/bin"},
+        )
+
+    def assert_clean_failure(self, proc, fragment):
+        self.assertEqual(proc.returncode, 2, proc.stderr)
+        self.assertNotIn("Traceback", proc.stderr)
+        self.assertIn(fragment, proc.stderr)
+
+    def test_directory_as_input(self):
+        self.assert_clean_failure(
+            self.run_cli("gate-audit", str(REPO_ROOT / "examples")),
+            "is a directory")
+
+    def test_out_into_a_missing_directory(self):
+        proc = self.run_cli(
+            "gate-audit", str(EXAMPLE_INPUT),
+            "--out", str(self.dir / "missing" / "report.json"))
+        self.assert_clean_failure(proc, "cannot write the JSON report")
+
+    def test_markdown_into_a_missing_directory(self):
+        proc = self.run_cli(
+            "gate-audit", str(EXAMPLE_INPUT), "--out", str(self.dir / "r.json"),
+            "--markdown", str(self.dir / "missing" / "report.md"))
+        self.assert_clean_failure(proc, "cannot write the Markdown summary")
+
+    def test_out_and_markdown_on_one_path_is_refused(self):
+        # This exited 0 and left only the Markdown file, discarding the JSON
+        # evidence that the report's input digest exists to bind.
+        collision = self.dir / "report"
+        proc = self.run_cli(
+            "gate-audit", str(EXAMPLE_INPUT),
+            "--out", str(collision), "--markdown", str(collision))
+        self.assert_clean_failure(proc, "one report would overwrite the other")
+        self.assertFalse(collision.exists())
+
+    def test_out_onto_the_input_file_is_refused(self):
+        votes = self.dir / "votes.json"
+        votes.write_text(json.dumps(minimal_input()), encoding="utf-8")
+        original = votes.read_bytes()
+        proc = self.run_cli(
+            "gate-audit", str(votes), "--out", str(votes))
+        self.assert_clean_failure(proc, "is the input file")
+        self.assertEqual(votes.read_bytes(), original)
+
+    def test_non_utf8_input(self):
+        path = self.dir / "utf16.json"
+        path.write_bytes(json.dumps(minimal_input()).encode("utf-16"))
+        self.assert_clean_failure(
+            self.run_cli("gate-audit", str(path)), "UTF-8")
+
+    def test_bom_input_succeeds(self):
+        path = self.dir / "bom.json"
+        path.write_bytes(
+            b"\xef\xbb\xbf" + json.dumps(minimal_input()).encode("utf-8"))
+        proc = self.run_cli("gate-audit", str(path))
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertEqual(
+            json.loads(proc.stdout)["schema"], "gate-audit-report-v0.1")
+
+    def test_successful_run_writes_both_files_and_says_nothing(self):
+        out = self.dir / "report.json"
+        md = self.dir / "report.md"
+        proc = self.run_cli(
+            "gate-audit", str(EXAMPLE_INPUT), "--out", str(out),
+            "--markdown", str(md))
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertEqual(proc.stdout, "")
+        self.assertEqual(proc.stderr, "")
+        self.assertTrue(out.exists() and md.exists())
+
+
 if __name__ == "__main__":
     unittest.main()
