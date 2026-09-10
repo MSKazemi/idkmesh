@@ -133,12 +133,20 @@ class EvolutionWorkflowSecurityTests(unittest.TestCase):
         self.assertIn("cancel-in-progress: true", self.evolution)
 
     def test_external_actions_are_immutable_sha_pinned(self) -> None:
+        pinned = 0
         for path in (EVOLUTION, PORTFOLIO):
             workflow = path.read_text(encoding="utf-8")
             for action in re.findall(r"^\s*uses:\s*([^\s#]+)", workflow, re.MULTILINE):
                 if action.startswith("./"):
                     continue
+                pinned += 1
                 self.assertRegex(action, r"@[0-9a-f]{40}$", action)
+        self.assertGreater(
+            pinned,
+            0,
+            "no external actions were inspected; the `uses:` pattern no longer "
+            "matches, so this test is passing without checking any pin",
+        )
 
     def test_raw_repository_text_is_not_retained(self) -> None:
         self.assertIn(
