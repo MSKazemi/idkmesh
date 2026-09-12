@@ -18,7 +18,7 @@ listed here fails the suite rather than becoming quietly undiscoverable.
 | **E015** | [Verification Phase Diagram and Effective Independent Panel Size](E015-verification-phase-diagram.md) |
 | **E016** | [Measuring verifier error correlation with live LLM verifiers](E016-live-verifier-correlation.md) |
 | **E017** | [Measured verifier correlation, and why the shared-shock model is the wrong shape](E017-item-difficulty-and-quorum.md) |
-| **E018** | [Which E015 conclusions depend on the shape of the dependence model E017 measured?](E018-dependence-model-shape.md) |
+| **E018** | [Which E015 conclusions depend on the shape of the dependence model?](E018-dependence-model-shape.md) |
 | **E019** | [E013's aggregation rule under the dependence model E017 measured](E019-group-independence-under-item-difficulty.md) |
 | **E020** | [The Acceptance-Quorum Frontier Under the Measured Dependence Shape](E020-quorum-frontier-under-measured-shape.md) |
 | **E021** | [Coordination criticality with matched susceptibility probes](E021-coordination-criticality.md) |
