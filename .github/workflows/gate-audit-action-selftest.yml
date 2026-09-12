@@ -59,3 +59,27 @@ jobs:
           assert "not acceptance authority" in summary
           print("action output is byte-identical to the committed example report")
           EOF
+
+      - name: Run the action in JSON-only mode
+        id: audit-json-only
+        uses: ./actions/gate-audit
+        with:
+          votes-file: examples/gate-audit/panel-votes.example.json
+          report-file: selftest-json-only-report.json
+          markdown-file: ""
+          job-summary: "false"
+
+      - name: Assert JSON-only mode emits no Markdown artifact
+        run: |
+          python - <<'EOF'
+          from pathlib import Path
+
+          produced = Path("selftest-json-only-report.json").read_bytes()
+          committed = Path(
+              "examples/gate-audit/gate-audit-report.example.json").read_bytes()
+          assert produced == committed, (
+              "JSON-only action output is not byte-identical to the committed report")
+          assert not Path("selftest-json-only-report.md").exists(), (
+              "JSON-only mode unexpectedly emitted a Markdown artifact")
+          print("JSON-only mode emitted the canonical JSON report and no Markdown file")
+          EOF
