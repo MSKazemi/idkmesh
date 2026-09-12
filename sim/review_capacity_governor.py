@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""E040: review capacity as a carrying-capacity feedback loop.
+"""E044: review capacity as a carrying-capacity feedback loop.
 
 IDKMesh's ACE design uses a logistic capacity governor to reduce reproduction
-pressure when review load rises.  This module isolates that mechanism in a tiny,
+pressure when review load rises. This module isolates that mechanism in a tiny,
 deterministic queue model so the feedback can be falsified before it is treated
 as an operational policy.
 
@@ -18,7 +18,7 @@ The model is deliberately narrow:
       Capacity(load) = 1 / (1 + exp((load - K) / tau)).
 
 No random number generator, network access, GitHub mutation, or production ACE
-state is used.  The output is research evidence only and grants no authority to
+state is used. The output is research evidence only and grants no authority to
 change admission, merge, or community policy.
 """
 
@@ -30,7 +30,7 @@ import math
 from statistics import mean
 from typing import Dict, Iterable, List, Sequence
 
-EXPERIMENT_ID = "E040"
+EXPERIMENT_ID = "E044"
 EXPERIMENT = "review-capacity-carrying-capacity-v1"
 
 DEFAULT_K = 8.0
@@ -80,7 +80,7 @@ def equilibrium_load(
     ``potential_arrivals * Capacity(load) = service``.
 
     If reviewer service can already absorb the gated arrivals at zero backlog,
-    the queue equilibrium is the boundary value ``0``.  With zero service and
+    the queue equilibrium is the boundary value ``0``. With zero service and
     positive potential arrivals, the equilibrium is unbounded.
     """
 

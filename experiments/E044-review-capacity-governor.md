@@ -1,4 +1,4 @@
-# E040 — Review capacity as a carrying-capacity governor
+# E044 — Review capacity as a carrying-capacity governor
 
 ## Question
 
@@ -41,7 +41,7 @@ These claims are about the mathematical feedback mechanism, not human/community 
 
 ## Model
 
-`sim/e040_review_capacity.py` is deterministic and dependency-free. Each discrete step has:
+`sim/review_capacity_governor.py` is deterministic and dependency-free. Each discrete step has:
 
 - `potential_arrivals`: review work that could be admitted;
 - `service`: work reviewers can finish;
@@ -54,13 +54,13 @@ Metrics include final/peak/mean load, total admitted/reviewed/throttled work, qu
 The default ladder keeps the current ACE bootstrap shape (`K=8`, `tau=2`) visible without pretending it is calibrated:
 
 ```bash
-PYTHONPATH=. python3 sim/e040_review_capacity.py --pretty
+PYTHONPATH=. python3 sim/review_capacity_governor.py --pretty
 ```
 
 A focused overload case is:
 
 ```bash
-PYTHONPATH=. python3 sim/e040_review_capacity.py \
+PYTHONPATH=. python3 sim/review_capacity_governor.py \
   --potential-arrivals 3 \
   --service 1 \
   --steps 400 \
@@ -88,7 +88,7 @@ This experiment fails its stated mechanism if any of the following occurs:
 - results depend on hidden randomness;
 - the artifact claims policy activation authority.
 
-The tests in `tests/test_e040_review_capacity.py` pin those invariants.
+The tests in `tests/test_review_capacity_governor.py` pin those invariants.
 
 ## What this does **not** establish
 
