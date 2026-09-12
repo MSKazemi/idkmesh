@@ -80,7 +80,8 @@ def equilibrium_load(
     ``potential_arrivals * Capacity(load) = service``.
 
     If reviewer service can already absorb the gated arrivals at zero backlog,
-    the queue equilibrium is the boundary value ``0``.
+    the queue equilibrium is the boundary value ``0``.  With zero service and
+    positive potential arrivals, the equilibrium is unbounded.
     """
 
     potential_arrivals = _nonnegative("potential_arrivals", potential_arrivals)
@@ -101,6 +102,14 @@ def equilibrium_load(
     if ratio_minus_one <= 0:
         return 0.0
     return max(0.0, k + tau * math.log(ratio_minus_one))
+
+
+def _render_equilibrium(value: float | None) -> object:
+    if value is None:
+        return None
+    if math.isinf(value):
+        return "unbounded"
+    return round(value, 9)
 
 
 def simulate(
@@ -172,9 +181,7 @@ def simulate(
         "total_reviewed": round(total_reviewed, 9),
         "queue_area": round(queue_area, 9),
         "delay_proxy_steps_per_reviewed_unit": round(delay_proxy, 9),
-        "predicted_equilibrium_load": (
-            None if predicted is None else round(predicted, 9)
-        ),
+        "predicted_equilibrium_load": _render_equilibrium(predicted),
     }
 
 
