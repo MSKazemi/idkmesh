@@ -43,6 +43,7 @@ listed here fails the suite rather than becoming quietly undiscoverable.
 | **E041** | [The R1 lab's "verifier correlation" is not verifier correlation](E041-verifier-strictness-shock.md) |
 | **E042** | [E040's hedge points the wrong way, and its proportionality is a property of the shape](E042-worker-dependence-shape.md) |
 | **E043** | [A verifier panel does not pay for itself, and its one advantage needs real independence](E043-panel-frontier.md) |
+| **E044** | [Review capacity as a carrying-capacity governor](E044-review-capacity-governor.md) |
 
 E014's sweeps publish their own result documents:
 [reference sweep](results/E014-reference-sweep.md),
