@@ -3,8 +3,8 @@ description: >-
   Measure what a verifier panel is actually worth: effective independent votes
   (not nominal head-count), error-correlation structure, and the breach rate of
   seeded known-bad probes, from a verdict matrix with ground truth. Emits a
-  gate-audit-report-v0.1 JSON document and a Markdown summary. Diagnostic only:
-  it grants no acceptance or merge authority.
+  gate-audit-report-v0.1 JSON document and, by default, a Markdown summary.
+  Diagnostic only: it grants no acceptance or merge authority.
 author: "Mohsen Seyedkazemi Ardebili"
 branding:
   icon: "shield"
@@ -21,7 +21,9 @@ inputs:
     required: false
     default: gate-audit-report.json
   markdown-file:
-    description: Where to write the Markdown summary.
+    description: >-
+      Where to write the Markdown summary. Set to an empty string to disable
+      Markdown output.
     required: false
     default: gate-audit-report.md
   job-summary:
@@ -38,7 +40,7 @@ outputs:
     description: Path of the emitted JSON report.
     value: ${{ inputs.report-file }}
   markdown-file:
-    description: Path of the emitted Markdown summary.
+    description: Path of the emitted Markdown summary, or empty when disabled.
     value: ${{ inputs.markdown-file }}
 
 runs:
@@ -61,11 +63,14 @@ runs:
         REPORT_FILE: ${{ inputs.report-file }}
         MARKDOWN_FILE: ${{ inputs.markdown-file }}
       run: |
-        idkmesh gate-audit "${VOTES_FILE}" --pretty \
-          --out "${REPORT_FILE}" --markdown "${MARKDOWN_FILE}"
+        args=(gate-audit "${VOTES_FILE}" --pretty --out "${REPORT_FILE}")
+        if [[ -n "${MARKDOWN_FILE}" ]]; then
+          args+=(--markdown "${MARKDOWN_FILE}")
+        fi
+        idkmesh "${args[@]}"
 
     - name: Publish job summary
-      if: ${{ inputs.job-summary == 'true' }}
+      if: ${{ inputs.job-summary == 'true' && inputs.markdown-file != '' }}
       shell: bash
       env:
         MARKDOWN_FILE: ${{ inputs.markdown-file }}
