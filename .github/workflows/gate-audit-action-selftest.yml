@@ -60,14 +60,13 @@ jobs:
           print("action output is byte-identical to the committed example report")
           EOF
 
-      - name: Run the action in JSON-only mode
+      - name: Run the action in JSON-only mode with default job-summary behavior
         id: audit-json-only
         uses: ./actions/gate-audit
         with:
           votes-file: examples/gate-audit/panel-votes.example.json
           report-file: selftest-json-only-report.json
           markdown-file: ""
-          job-summary: "false"
 
       - name: Assert JSON-only mode emits no Markdown artifact
         run: |
