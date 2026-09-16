@@ -153,7 +153,6 @@ class SelfTestTests(unittest.TestCase):
         self.assertEqual(audit_tool._self_test(), 0)
 
 
-
 class FieldNamingTests(unittest.TestCase):
     """A per-offer date field must say whose clock it is on.
 
@@ -190,37 +189,53 @@ class FieldNamingTests(unittest.TestCase):
 
 
 class WorkflowSurfacingTests(unittest.TestCase):
-    """The warning window must be visible without opening a green run's log.
+    """The audit must surface evidence even when stale evidence makes it red.
 
-    ``--fail-on stale`` turns the run red only once evidence has ALREADY aged
-    out. The state this audit exists to catch -- evidence about to age out -- is
-    reported on a run that is green, and nobody reads the log of a green run. So
-    the freshness report is written to the job summary, where it shows on the run
-    page itself.
+    The 2026-09-12 scheduled run produced the first real stale finding. The
+    deterministic freshness step failed as intended, but that failure also made
+    GitHub skip the advisory liveness probe and artifact upload through the
+    implicit ``success()`` condition. A red audit is exactly when those
+    diagnostics are most useful, so the workflow must preserve them and only
+    re-raise the stale gate afterwards.
     """
 
     WORKFLOW = ROOT / ".github/workflows/free-resource-source-audit.yml"
 
-    def _freshness_step(self) -> str:
+    def _step(self, name: str) -> str:
         text = self.WORKFLOW.read_text(encoding="utf-8")
-        start = text.index("name: Report registry freshness")
+        start = text.index(f"name: {name}")
         end = text.find("\n      - name:", start)
         return text[start : end if end != -1 else len(text)]
+
+    def _freshness_step(self) -> str:
+        return self._step("Report registry freshness")
 
     def test_the_freshness_report_reaches_the_job_summary(self) -> None:
         self.assertIn("GITHUB_STEP_SUMMARY", self._freshness_step())
 
-    def test_a_failing_audit_still_re_raises_its_status(self) -> None:
-        """Capturing stdout must not swallow the red build.
-
-        The tool prints its whole report and *then* exits non-zero, so the step
-        captures first and re-raises afterwards. Losing the re-raise would make
-        a stale registry report itself green.
-        """
+    def test_stale_step_is_deferred_without_weakening_its_outcome(self) -> None:
         step = self._freshness_step()
 
+        self.assertIn("id: freshness", step)
+        self.assertIn("continue-on-error: true", step)
         self.assertIn("--fail-on stale", step)
         self.assertIn('exit "$status"', step)
+
+    def test_scheduled_diagnostics_run_even_after_a_stale_finding(self) -> None:
+        always_condition = (
+            "if: ${{ always() && (github.event_name == 'schedule' || "
+            "github.event_name == 'workflow_dispatch') }}"
+        )
+
+        self.assertIn(always_condition, self._step("Probe source liveness (advisory)"))
+        self.assertIn(always_condition, self._step("Upload freshness record"))
+
+    def test_final_gate_re_raises_the_freshness_failure(self) -> None:
+        step = self._step("Enforce freshness gate")
+
+        self.assertIn("steps.freshness.outcome == 'failure'", step)
+        self.assertIn("exit 1", step)
+
 
 if __name__ == "__main__":
     unittest.main()
