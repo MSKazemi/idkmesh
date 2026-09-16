@@ -34,8 +34,11 @@ policy changes or merge decisions.
   mechanism extension for issue #13: verified-success increment, compute, and
   verifier attention as N moves through 1, 2, 5, and 10 under controlled task
   difficulty, plus budget-matched flat, role-specialized, and task-DAG
-  coordination topologies and their fitted scaling exponents. Not real
-  coding-agent performance.
+  coordination topologies and their fitted scaling exponents. The downstream
+  `r1_low_diversity_threshold` analyzer pairs seeds in the homogeneous arm and
+  reports descriptive diminishing/negative marginal-return thresholds per
+  added worker without changing the frozen R1 generator. Not real coding-agent
+  performance.
 - [R1 Real-Corpus Readiness Gate](R1_CORPUS_READINESS.md) — the contract that
   must hold before `randomness_lab.r1_replay` may be run on a real held-out
   corpus. Readiness tooling only; no real R1 outcome. Issues #30 and #70.
