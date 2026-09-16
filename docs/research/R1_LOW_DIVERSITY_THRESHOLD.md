@@ -44,6 +44,11 @@ This is the paired verified-success-rate gain per additional worker. Pairing is 
 only when every compared cell contains the same ordered seed set; the analyzer fails
 closed if that condition is violated.
 
+The configured intervals need not have equal width (the reference grid is 1, 2, 5,
+10). Dividing by `N_b - N_a` makes each value an average discrete slope per added
+worker over that interval. It does **not** identify a continuous point derivative or
+a threshold between unobserved population sizes.
+
 For every transition after the first, the change in marginal gain is
 
 ```text
