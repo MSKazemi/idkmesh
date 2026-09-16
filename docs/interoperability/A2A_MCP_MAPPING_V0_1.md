@@ -69,6 +69,15 @@ It advertises:
 - the complete Work Unit plus canonical digest in tool arguments;
 - modern routing headers: `MCP-Protocol-Version`, `Mcp-Method`, and `Mcp-Name`.
 
+MCP `2026-07-28` is stateless, so each request is self-describing. The IDKMesh
+decoder therefore treats version and routing metadata as one request identity and
+fails closed on disagreement: top-level `protocolVersion`, the
+`MCP-Protocol-Version` header, and
+`_meta.io.modelcontextprotocol/protocolVersion` must all equal `2026-07-28`;
+`Mcp-Method` must mirror the JSON-RPC `method`; `Mcp-Name` must mirror
+`tools/call.params.name`; and the request must use JSON-RPC 2.0. Missing or
+conflicting values are rejected before the canonical Work Unit is accepted.
+
 Official `mcp` SDK 2.1.1 identifies `2026-07-28` as its latest protocol but
 marks `TaskMetadata` and `ClientTasksCapability` as `2025-11-25 only`. The
 current binding therefore makes a synchronous `tools/call`, omits `params.task`,
