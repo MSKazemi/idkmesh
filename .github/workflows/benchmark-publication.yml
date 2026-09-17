@@ -90,6 +90,7 @@ jobs:
             "benchmarks/publication.json#benchmark-publication.json" \
             --repo "${GITHUB_REPOSITORY}" \
             "${target_args[@]}" \
+            --latest=false \
             --title "Benchmark cohort snapshot ${expected_sha:0:12}" \
             --notes-file benchmarks/PUBLICATION.md
 
