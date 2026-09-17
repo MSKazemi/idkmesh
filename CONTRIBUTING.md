@@ -172,10 +172,14 @@ still prints `OK`, with no indication anything was missed.
 `tests/test_documented_test_counts.py` re-measures both figures and the gap
 they explain, so these numbers cannot go stale unnoticed.
 
-Two skips are expected and are not a problem with your setup:
-`interop/tests/test_sdk_conformance.py` skips two tests unless the optional
-interoperability SDKs are installed with
-`python -m pip install -r requirements-interoperability.txt`.
+The SDK-backed interoperability conformance tests are optional in the default
+environment. See [`interop/README.md`](interop/README.md) for the current SDK
+availability gate and focused commands. Installing the pinned interoperability
+dependencies uses:
+
+```bash
+python -m pip install -r requirements-interoperability.txt
+```
 
 If you cannot get the tests to run at all, that is a bug worth reporting — open
 an issue with your OS, your Python version, and the failure.
