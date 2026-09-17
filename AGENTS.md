@@ -2,22 +2,46 @@
 
 ## Project Structure & Module Organization
 
-Core prototypes live in `experiments/`, simulations in `randomness_lab/` and `sim/`, bindings in `interop/`, and utilities in `tools/` and `scripts/`. Put tests in `tests/` (or `interop/tests/`) and fixtures under `tests/fixtures/` or `verification/fixtures/`. JSON contracts belong in `schemas/`, samples in `examples/`, outputs in `results/`, policies/state in `config/` and `state/`, and rationale in `docs/`. Read `README.md`, `CONTRIBUTING.md`, and `PROJECT_RULES.md` first.
+Core prototypes live in `experiments/`, simulations in `randomness_lab/` and `sim/`, bindings in `interop/`, and utilities in `tools/` and `scripts/`. Put tests in `tests/` (or `interop/tests/`) and fixtures under `tests/fixtures/` or `verification/fixtures/`. JSON contracts belong in `schemas/`, samples in `examples/`, outputs in `results/`, policies/state in `config/` and `state/`, and rationale in `docs/`. Read `README.md`, `CONTRIBUTING.md`, and `PROJECT_RULES.md` first. Use `ARCHITECTURE.md` for the current system map, `ROADMAP.md` for evidence-gated future work, and `docs/README.md` for deeper subsystem/research indexes.
 
 ## Build, Test, and Development Commands
 
-From the repository root:
+The supported local entry points now live in the repository and delegate to the same `scripts/testkit.py` tiers used by the documented development workflow:
+
+```bash
+make setup          # create .venv and install core test dependencies
+make smoke          # tests affected by the current working-tree change
+make gate           # cheapest complete tier for the current change
+make test           # full non-simulation/unit tier
+make integration    # unit + schema/link integration gates
+```
+
+`make setup` and the Makefile targets are intended for POSIX-style development environments. The direct Python path remains supported and is the portable fallback:
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
 python -m pip install -r requirements-phase0.txt pytest
-PYTHONPATH=. python -m pytest -q
+python -m pytest -q
 python -m randomness_lab --policy thompson --rounds 100 --seed 42
 ```
 
-`pytest` collects both suites (`tests/` and `interop/tests/`) in one run. Use a focused module, such as `PYTHONPATH=. python -m pytest -q tests/test_r2.py`.
+`pytest.ini` sets the repository root on `pythonpath`, so `PYTHONPATH=.` is no longer required for pytest on current `main`. See `docs/TESTING.md` for tier budgets, caching, hooks, CI parity, and Windows-specific guidance. Use a focused module, such as `python -m pytest -q tests/test_r2.py`, while iterating.
 
 **Do not use `python -m unittest discover` to check your work.** It silently under-collects: `unittest` only finds `TestCase` subclasses, so the **162** module-level `test_*` functions spread across **17** files in `tests/` are invisible to it — roughly a tenth of the suite, reported as `OK` with no warning that anything was missed. `tests/test_documented_test_counts.py` re-measures both figures and the gap they explain, so this paragraph fails the suite if it drifts.
+
+## Agent Contribution Loop
+
+Autonomous agents should treat current repository state as evidence, not memory. Before changing code or docs:
+
+1. refresh from current `main` and note the exact base revision;
+2. inspect relevant open issues and pull requests so work is not duplicated;
+3. distinguish code already on `main` from PR-only, proposed, historical, or experimental behavior;
+4. keep public documentation in the same bounded change when commands, interfaces, architecture, or evidence boundaries change;
+5. run the smallest useful feedback loop while editing, then the repository gate appropriate to the final diff;
+6. report the commands actually run, their actual result, remaining uncertainty, and AI/tool provenance;
+7. never represent owner-controlled automation as independent human or external-agent review.
+
+Prefer one reviewable outcome per branch/PR over broad speculative rewrites. If a requested feature depends on a human-only evidence gate or missing authority, document the blocker instead of manufacturing evidence.
 
 ## Coding Style & Naming Conventions
 
@@ -25,7 +49,7 @@ Follow existing Python conventions: four-space indentation, type hints for publi
 
 ## Testing Guidelines
 
-Tests primarily use `unittest`: files are `test_*.py`, classes end in `Tests`, and methods begin with `test_`. Add regression tests and deterministic fixtures. There is no numeric coverage threshold; run the relevant suite plus schema, self-test, and CLI checks mirrored in `.github/workflows/`.
+`pytest` is the canonical runner. The suite intentionally contains both `unittest.TestCase`-style tests and module-level pytest `test_*` functions, so do not infer collection from one style alone. Add regression tests and deterministic fixtures. There is no numeric coverage threshold; run the relevant focused tests while editing and the appropriate `scripts/testkit.py`/Makefile tier before proposing integration. Schema, link, workflow, self-test, CLI, and simulation checks are mirrored by repository workflows as documented in `docs/TESTING.md` and `.github/workflows/`.
 
 ## Branch Integration & Merge Safety
 

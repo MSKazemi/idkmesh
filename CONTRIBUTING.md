@@ -91,31 +91,54 @@ Do not submit large volumes of unreviewed generated material. Generation must no
 ## Running the tests
 
 You do not need to understand the research side of this repository to run the
-tests. From the repository root:
+tests. On Linux/macOS or another POSIX-style development environment, the
+shortest supported path from the repository root is now:
+
+```bash
+make setup
+make test
+```
+
+For a final code/documentation change, use the repository's integration gate as
+appropriate:
+
+```bash
+make integration
+```
+
+The Makefile delegates to `scripts/testkit.py`, which is also the documented
+local/agent test-tier implementation. `make smoke` gives fast affected-test
+feedback while editing, and `make gate` selects the cheapest complete tier for
+the current change. See [`docs/TESTING.md`](docs/TESTING.md) for tier scope,
+budgets, caching, hooks, and CI parity.
+
+The direct Python path remains supported and is the portable fallback, including
+for Windows environments where the POSIX-oriented Makefile is inconvenient:
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
 python -m pip install -r requirements-phase0.txt pytest
-PYTHONPATH=. python -m pytest -q
+python -m pytest -q
 ```
 
-Use Python 3.11 or 3.13 to match the stable PR gate. The example above is for
-Linux/macOS shells. In Windows PowerShell, create the environment with
+Use Python 3.11 or 3.13 to match the stable PR gate. The shell example above is
+for Linux/macOS. In Windows PowerShell, create the environment with
 `python -m venv .venv`, then use `.\.venv\Scripts\python.exe` instead of `python`
-for installation and tests, and set `$env:PYTHONPATH = "."` before running tests.
-Activation or a machine-wide execution-policy change is not required.
+for installation and tests. Activation or a machine-wide execution-policy change
+is not required. `pytest.ini` sets the repository root on `pythonpath`, so the
+old `$env:PYTHONPATH = "."` / `PYTHONPATH=.` prefix is no longer needed for
+pytest on current `main`.
+
 These are setup instructions, not evidence that every operating system has
-already been tested by a contributor.
+already been tested by a contributor. If an older issue says the Makefile or
+`make setup` / `make test` / `make integration` are unmerged, treat that as a
+historical snapshot and follow the current repository files and this guide.
 
-These commands work without an unmerged Makefile or local testkit. If an older
-issue refers to `make setup`, `make test`, or `make integration`, use the current
-instructions here unless that tooling actually exists in your checkout.
-
-That collects both suites — `tests/` and `interop/tests/` — in a single run. To
-run one file while you work:
+The full pytest run collects both suites — `tests/` and `interop/tests/`. To run
+one file while you work:
 
 ```bash
-PYTHONPATH=. python -m pytest -q tests/test_r2.py
+python -m pytest -q tests/test_r2.py
 ```
 
 If your change touches Markdown, run the same local link gate as CI:
@@ -227,8 +250,8 @@ ignore it.
 
 ## Contribution workflow
 
-1. Find or open an issue for non-trivial work.
-2. State what you plan to change.
+1. Refresh from current `main`; check relevant open issues and pull requests before starting so you do not duplicate active work.
+2. Find or open an issue for non-trivial work and state what you plan to change.
 3. Fork/branch and make a focused change.
 4. Add tests, evidence, or documentation.
 5. Open a pull request using the template.
