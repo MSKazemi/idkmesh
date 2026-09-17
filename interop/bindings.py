@@ -98,6 +98,23 @@ def _mcp_request_id(digest: str) -> str:
     return "idkmesh-" + digest.split(":", 1)[1][:24]
 
 
+def _require_mcp_request_id(request: dict[str, Any]) -> None:
+    """Require the JSON-RPC request identifier shape mandated by MCP.
+
+    MCP treats the identifier as transport correlation rather than Work Unit
+    identity, so callers and gateways may choose their own value. The protocol
+    still requires every request to carry a non-null string or integer ID. Python
+    ``bool`` is a subclass of ``int`` but serializes as a JSON boolean, so reject it
+    explicitly rather than accidentally accepting a non-conforming identifier.
+    """
+
+    if "id" not in request:
+        raise BindingError("MCP JSON-RPC request id must be a string or integer")
+    request_id = request["id"]
+    if isinstance(request_id, bool) or not isinstance(request_id, (str, int)):
+        raise BindingError("MCP JSON-RPC request id must be a string or integer")
+
+
 def _a2a_service_parameters() -> dict[str, str]:
     """Return transport-neutral A2A service parameters for this request.
 
@@ -388,6 +405,7 @@ def _require_mcp_request_identity(
 
     if request.get("jsonrpc") != "2.0":
         raise BindingError("MCP binding envelope must use JSON-RPC 2.0")
+    _require_mcp_request_id(request)
     if headers.get("Mcp-Method") != request.get("method"):
         raise BindingError("Mcp-Method header does not match JSON-RPC method")
     if headers.get("Mcp-Name") != params.get("name"):
