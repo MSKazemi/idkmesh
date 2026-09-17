@@ -5,7 +5,7 @@ and the repository evidence that can support them.
 
 ## Current manuscript status
 
-As of the stewardship audit against `main@89722e621aa4f8d1e992fc0eb0267de06b5bb0df`
+As of the stewardship audit against `main@dc4ee8dbd4c22d549e9b1f48375fa11b58e41eb2`
 on 2026-09-17, this repository does **not** contain a discoverable canonical
 editable manuscript source (`.tex`, Markdown manuscript, or equivalent) or a
 committed paper PDF. Issue [#478](https://github.com/MSKazemi/idkmesh/issues/478)
@@ -67,7 +67,9 @@ When a change can affect a paper claim:
    specific boundaries; they do not by themselves establish remote trust,
    execution correctness, scientific validity, or independent review. Keep
    transport/correlation identifiers separate from Work Unit semantic identity
-   when the upstream protocol owns those identifiers.
+   when the upstream protocol owns those identifiers, while still validating the
+   protocol-mandated identifier shape (for example A2A's non-empty string
+   `messageId` and MCP's non-null string-or-integer JSON-RPC request `id`).
 7. Update the canonical manuscript in the same bounded PR **only after** its
    source is available. Otherwise record the paper-impact note here or on #478.
 8. Run the repository Markdown/link gate and any experiment-specific
@@ -82,9 +84,9 @@ A paper-facing review should explicitly check:
 
 - architecture names and interfaces against [`../ARCHITECTURE.md`](../ARCHITECTURE.md);
 - implemented versus planned capability against [`../ROADMAP.md`](../ROADMAP.md);
-- protocol mappings, semantic-identity rules, transport/correlation identity,
-  strict-JSON/digest boundaries, and optional SDK conformance against
-  [`../interop/README.md`](../interop/README.md);
+- protocol mappings, semantic-identity rules, transport/correlation identity and
+  identifier shape, strict-JSON/digest boundaries, and optional SDK conformance
+  against [`../interop/README.md`](../interop/README.md);
 - experiment status and evidence boundaries through
   [`../docs/research/README.md`](../docs/research/README.md) and
   [`../experiments/README.md`](../experiments/README.md);
