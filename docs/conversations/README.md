@@ -7,13 +7,9 @@ canonical files designated by [`../../PROJECT_RULES.md`](../../PROJECT_RULES.md)
 (decisions, specifications, architecture, findings); this directory keeps the trail
 that produced them.
 
-157 records across 6 dates, newest first.
+156 records across 5 dates, newest first.
 
 ## Index
-
-### 2026-09-17
-
-- [Hourly Steward: Exact Beta Posterior Intervals](2026-09-17-hourly-steward-exact-beta-intervals.md)
 
 ### 2026-09-10
 

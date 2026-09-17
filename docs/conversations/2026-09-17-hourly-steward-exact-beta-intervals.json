@@ -1,0 +1,31 @@
+{
+  "record_type": "idkmesh_conversation_record",
+  "date": "2026-09-17",
+  "issue": 86,
+  "title": "Hourly Steward: Exact Beta Posterior Intervals",
+  "project_owner_request": "Work on the public GitHub repository https://github.com/MSKazemi/idkmesh. On each run, select exactly one open issue that is valuable, well-scoped, and not already being actively solved by another open PR. Read the relevant code, tests, architecture, and documentation before changing anything. Implement the issue on a dedicated branch with production-quality code that is coherent with the existing architecture and integrated with related modules instead of adding an isolated feature. For scientific, mathematical, biological, economic, or algorithmic claims, use defensible reasoning, established methods where applicable, tests or reproducible evidence, and document assumptions and limitations; do not invent unsupported claims. Add or update automated tests for the behavior changed. Run the repository's applicable test, lint, type-check, build, and validation commands. Update README/docs/API/configuration/architecture documentation whenever the change affects behavior, interfaces, workflows, concepts, or usage. Review the diff for correctness, maintainability, security, backwards compatibility, duplication, naming, and consistency with the rest of IDKmesh. Create or update a pull request that clearly links the issue and explains the design, tests, documentation, scientific rationale where relevant, integration points, risks, and validation performed. If the PR has required checks, review requirements, or merge conflicts, fix them where appropriate. Merge the PR into the main branch only when all available required checks pass, the implementation and documentation are complete, there are no unresolved substantive review comments or conflicts, and merging is permitted; otherwise leave the PR open with a precise status/update and do not lower quality gates. After merging, close the linked issue when appropriate. Avoid overlapping with other active work and do not make unrelated changes. Summarize what issue was handled, files changed, validation run, documentation updated, PR/merge status, and any remaining risk.",
+  "assistant_work_record": {
+    "selection": "Selected one bounded slice of open issue #86: replace the clipped normal approximation used as Beta-posterior uncertainty evidence with a deterministic exact equal-tail 95% posterior credible interval. No active pull request overlapped scripts/metric_uncertainty.py when the work was selected.",
+    "implementation": [
+      "Introduced beta-binomial-v3 with a dependency-free regularized incomplete-beta CDF and deterministic bisection quantiles.",
+      "Made credible_interval_95 the authoritative equal-tail Beta-posterior interval while retaining the historical normal approximation under explicit legacy compatibility fields.",
+      "Prevented custom z values from being mislabeled as approx_interval_95 unless z is the historical 1.96 compatibility value.",
+      "Changed conservative_lower_bound() to prefer the exact interval and retain v2 fallback compatibility.",
+      "Versioned collaboration-observables from v0.3 to v0.4 so its serialized nested evidence contract is explicit."
+    ],
+    "tests": [
+      "Added analytic closed-form coverage using Beta(2,1), whose CDF is x^2 and quantile is sqrt(p).",
+      "Covered the exact Beta(1,1) prior-only interval [0.025, 0.975], observed/prior separation, interval narrowing, boundedness, legacy compatibility, custom-z labeling, and invalid parameters.",
+      "Updated collaboration-observables regression tests for beta-binomial-v3 and v0.4 integration."
+    ],
+    "scientific_limits": [
+      "The interval is Bayesian and conditional on the declared prior and Beta-Binomial observation model; it is not a frequentist confidence interval.",
+      "The change does not establish independence, exchangeability, causal effects, or correctness of upstream observations.",
+      "CI checks and contributor recurrence observations may be correlated; narrower model-conditional intervals are not automatically stronger real-world evidence.",
+      "The dependency-free numerical routine uses finite-precision floating point and should be cross-checked against a mature special-functions library before any future high-stakes authority expansion."
+    ],
+    "documentation": "Updated docs/research/COLLABORATION_OBSERVABLES_V0_1.md with the v0.4/v3 contract, exact equal-tail semantics, compatibility behavior, assumptions, limitations, and authority boundaries.",
+    "repository_state": "The useful change was transplanted onto current main after unrelated A2A work advanced the base. Replacement PR #499 is the integration candidate. The first exact-head CI pass exposed publication-metadata drift caused by a Markdown conversation record; the record was converted to this non-published structured JSON form under docs/conversations so conversation preservation remains public without creating an unintended GitHub Pages surface. Exact-head CI after this correction is the merge authority.",
+    "authority": "Owner-controlled AI work is not independent review and grants no merge, moderation, policy, or scientific causal authority by itself."
+  }
+}
