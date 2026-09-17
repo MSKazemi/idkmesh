@@ -13,6 +13,7 @@ sys.path.insert(0, str(ROOT))
 from interop.bindings import (  # noqa: E402
     A2A_PROTOCOL_VERSION,
     A2A_WORK_CONTRACT_EXTENSION,
+    MCP_PROTOCOL_VERSION,
     MCP_TASKS_EXTENSION,
     MCP_WORK_CONTRACT_EXTENSION,
     BindingError,
@@ -81,6 +82,90 @@ class BindingTests(unittest.TestCase):
         )
         self.assertNotIn("task", envelope["request"]["params"])
         self.assertEqual(from_mcp_tool_call(envelope), self.work_unit)
+
+    def test_mcp_protocol_revision_must_match_every_request_surface(self) -> None:
+        mutations = (
+            (
+                "envelope",
+                lambda item: item.__setitem__("protocolVersion", "2025-11-25"),
+                "protocolVersion",
+            ),
+            (
+                "header",
+                lambda item: item["headers"].__setitem__(
+                    "MCP-Protocol-Version", "2025-11-25"
+                ),
+                "MCP-Protocol-Version",
+            ),
+            (
+                "meta",
+                lambda item: item["request"]["params"]["_meta"].__setitem__(
+                    "io.modelcontextprotocol/protocolVersion", "2025-11-25"
+                ),
+                "_meta protocol version",
+            ),
+        )
+        for surface, mutate, expected_error in mutations:
+            with self.subTest(surface=surface):
+                envelope = to_mcp_tool_call(self.work_unit)
+                mutate(envelope)
+                with self.assertRaisesRegex(BindingError, expected_error):
+                    from_mcp_tool_call(envelope)
+
+    def test_mcp_routing_headers_must_match_the_jsonrpc_body(self) -> None:
+        mutations = (
+            (
+                "method",
+                lambda item: item["headers"].__setitem__(
+                    "Mcp-Method", "resources/read"
+                ),
+                "Mcp-Method",
+            ),
+            (
+                "name",
+                lambda item: item["headers"].__setitem__(
+                    "Mcp-Name", "idkmesh.other_tool"
+                ),
+                "Mcp-Name",
+            ),
+        )
+        for surface, mutate, expected_error in mutations:
+            with self.subTest(surface=surface):
+                envelope = to_mcp_tool_call(self.work_unit)
+                mutate(envelope)
+                with self.assertRaisesRegex(BindingError, expected_error):
+                    from_mcp_tool_call(envelope)
+
+    def test_mcp_requires_jsonrpc_2_and_routing_headers(self) -> None:
+        envelope = to_mcp_tool_call(self.work_unit)
+        envelope["request"]["jsonrpc"] = "1.0"
+        with self.assertRaisesRegex(BindingError, "JSON-RPC 2.0"):
+            from_mcp_tool_call(envelope)
+
+        missing_headers = to_mcp_tool_call(self.work_unit)
+        del missing_headers["headers"]
+        with self.assertRaisesRegex(BindingError, "routing headers"):
+            from_mcp_tool_call(missing_headers)
+
+    def test_mcp_request_identity_matches_the_emitted_revision(self) -> None:
+        envelope = to_mcp_tool_call(self.work_unit)
+        self.assertEqual(MCP_PROTOCOL_VERSION, "2026-07-28")
+        self.assertEqual(envelope["protocolVersion"], MCP_PROTOCOL_VERSION)
+        self.assertEqual(
+            envelope["headers"]["MCP-Protocol-Version"], MCP_PROTOCOL_VERSION
+        )
+        self.assertEqual(
+            envelope["request"]["params"]["_meta"][
+                "io.modelcontextprotocol/protocolVersion"
+            ],
+            MCP_PROTOCOL_VERSION,
+        )
+        self.assertEqual(
+            envelope["headers"]["Mcp-Method"], envelope["request"]["method"]
+        )
+        self.assertEqual(
+            envelope["headers"]["Mcp-Name"], envelope["request"]["params"]["name"]
+        )
 
     def test_a2a_tampering_is_detected(self) -> None:
         envelope = to_a2a_send_message(self.work_unit)
