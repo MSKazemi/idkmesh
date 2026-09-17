@@ -153,6 +153,30 @@ class AceGenerationControllerTests(unittest.TestCase):
         self.assertEqual(result["verified_descendants"], 0)
         self.assertEqual(result["eligible_matured_verified_parents"], 1)
         self.assertEqual(result["R_community"], 0.0)
+        self.assertEqual(result["R_community_status"], "observed_ratio")
+
+    def test_reproduction_ratio_is_undefined_without_eligible_parent_denominator(self):
+        snapshot = copy.deepcopy(self.fixture)
+        for parent in snapshot["parents"]:
+            parent["matured"] = False
+
+        result = MODULE.evaluate(snapshot)
+
+        self.assertEqual(result["version"], 2)
+        self.assertEqual(result["eligible_matured_verified_parents"], 0)
+        self.assertEqual(result["verified_descendants"], 0)
+        self.assertIsNone(result["R_community"])
+        self.assertEqual(result["R_community_status"], "undefined_no_eligible_parents")
+        self.assertEqual(result["mode"], "DORMANT")
+        self.assertIsNone(result["recommendation"])
+        self.assertIsNone(result["public_action"])
+
+    def test_reproduction_ratio_remains_observed_when_denominator_exists(self):
+        result = MODULE.evaluate(copy.deepcopy(self.fixture))
+        self.assertEqual(result["version"], 2)
+        self.assertEqual(result["eligible_matured_verified_parents"], 2)
+        self.assertEqual(result["R_community"], 0.5)
+        self.assertEqual(result["R_community_status"], "observed_ratio")
 
     def test_fixed_state_fixture_matrix_is_deterministic(self):
         self.assertEqual(self.scenarios["version"], 1)
