@@ -1,5 +1,7 @@
 # Benchmark publication
 
+Tracker: #10
+
 IDKMesh keeps benchmark definitions, attached evidence, and the derived public
 summary in this directory. The publication path is deliberately deterministic:
 readers should be able to reproduce the public snapshot from the same commit
