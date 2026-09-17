@@ -82,6 +82,16 @@ python -m unittest discover -s tests -v
 
 The tests check seeded reproducibility, repeated-trial reproducibility and uncertainty output, policy interchangeability, environment interchangeability, the correlation control, Thompson-sampling adaptation, and the power-of-d helper.
 
+## R1 threshold robustness audit
+
+[`R1_THRESHOLD_ROBUSTNESS.md`](R1_THRESHOLD_ROBUSTNESS.md) documents a downstream
+sensitivity audit for issue #13's synthetic low-diversity marginal thresholds.
+`randomness_lab.r1_threshold_robustness` keeps the existing paired-seed estimand and
+compares its normal-approximation directional labels with a deterministic
+percentile bootstrap. A threshold is called robust only when both interval
+constructions agree; disagreement remains explicit uncertainty. This is synthetic
+mechanism evidence, not a real coding-agent scaling result.
+
 ## R2 factor-isolation benchmark
 
 The final issue #84 follow-up separates availability lag, load lag, regional
