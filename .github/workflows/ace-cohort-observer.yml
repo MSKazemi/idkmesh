@@ -271,10 +271,23 @@ jobs:
               'ACE_COHORT_STATE -->'
             ].join('\n');
 
-            const openIssues = await github.paginate(github.rest.issues.listForRepo, {
+            // Observatory identity is resolved over every state, not just
+            // `open`. The lookup used to list `state: 'open'` and fall straight
+            // through to `issues.create` whenever that listing came back empty,
+            // so closing the observatory never archived it: the next scheduled
+            // pass found nothing, forked a duplicate at a new number, and the
+            // series that README.md and
+            // examples/community/ace-activation-gate-current.example.json cite
+            // by number silently split in two. #410 is that fork of #109.
+            //
+            // The label filter is applied by the API instead of by scanning a
+            // whole-repository listing, so identity also cannot be lost to a
+            // page boundary shifting under a multi-request pagination walk.
+            const labelledObservatories = await github.paginate(github.rest.issues.listForRepo, {
               owner,
               repo,
-              state: 'open',
+              state: 'all',
+              labels: statusLabel,
               per_page: 100
             });
             // Selection must not depend on the order the REST API happens to
@@ -283,27 +296,43 @@ jobs:
             // write while the original silently froze and kept being linked.
             // Sort by issue number and take the oldest, which is the same
             // oldest-wins rule the legacy migration below already applies.
-            const statusCandidates = openIssues
-              .filter(issue =>
-                !issue.pull_request &&
-                (issue.labels || []).some(label => label.name === statusLabel)
-              )
+            const statusCandidates = labelledObservatories
+              .filter(issue => !issue.pull_request)
               .sort((a, b) => a.number - b.number);
-            if (statusCandidates.length > 1) {
+            let statusIssue = statusCandidates[0];
+
+            // Warn about every observatory that will be open once this pass
+            // finishes: the ones already open, plus the canonical one if the
+            // reopen below is about to restore it. Counting only the
+            // already-open set would stay silent in precisely the case that
+            // leaves two open -- the canonical observatory archived while a
+            // fork of it is open -- which is the situation most in need of a
+            // human.
+            const observatoriesLeftOpen = statusCandidates.filter(
+              issue => issue.state === 'open' || issue === statusIssue
+            );
+            if (observatoriesLeftOpen.length > 1) {
               core.warning(
                 'More than one open issue carries ' + statusLabel + ': ' +
-                statusCandidates.map(issue => '#' + issue.number).join(', ') +
-                '. Writing to #' + statusCandidates[0].number +
+                observatoriesLeftOpen.map(issue => '#' + issue.number).join(', ') +
+                '. Writing to #' + statusIssue.number +
                 ' and leaving the others stale. Close the duplicates so that ' +
                 'exactly one observatory remains.'
               );
             }
-            let statusIssue = statusCandidates[0];
 
             // Migrate the oldest legitimate legacy observatory only when it already
             // contains the machine state marker. A matching title alone is not identity.
+            // Reached only while no labelled observatory exists anywhere, so the
+            // whole-repository listing it needs is not paid for on ordinary passes.
             if (!statusIssue) {
-              const legacy = openIssues
+              const allIssues = await github.paginate(github.rest.issues.listForRepo, {
+                owner,
+                repo,
+                state: 'all',
+                per_page: 100
+              });
+              const legacy = allIssues
                 .filter(issue =>
                   !issue.pull_request &&
                   issue.title === statusTitle &&
@@ -318,12 +347,28 @@ jobs:
               }
             }
 
+            // Reuse in every state; create only when no observatory has ever
+            // existed. Closing this issue is an issue-tidying mistake rather
+            // than an instruction to start a second series -- docs/community
+            // records that constraint -- so a closed observatory is reopened in
+            // the same call that rewrites its body instead of being replaced.
             if (statusIssue) {
+              if (statusIssue.state === 'closed') {
+                core.warning(
+                  'Observatory #' + statusIssue.number + ' was closed. Reopening and ' +
+                  'reusing it rather than creating a replacement: this issue is ' +
+                  'workflow-owned state, and a replacement would split the recorded ' +
+                  'series across two issue numbers.'
+                );
+              }
               await github.rest.issues.update({
                 owner,
                 repo,
                 issue_number: statusIssue.number,
-                body
+                body,
+                // Idempotent while the observatory is open; repairs it when a
+                // tidying pass closed it. Never fall through to creation here.
+                state: 'open'
               });
             } else {
               await github.rest.issues.create({
