@@ -5,7 +5,7 @@ and the repository evidence that can support them.
 
 ## Current manuscript status
 
-As of the stewardship audit against `main@1698e1fa535b940c20bf35f4ab0e12916a46b690`
+As of the stewardship audit against `main@0ef464d93e5c8d9118a788972ba5f98bb71bd938`
 on 2026-09-17, this repository does **not** contain a discoverable canonical
 editable manuscript source (`.tex`, Markdown manuscript, or equivalent) or a
 committed paper PDF. Issue [#478](https://github.com/MSKazemi/idkmesh/issues/478)
@@ -62,12 +62,16 @@ When a change can affect a paper claim:
 5. Pin quantitative statements to the exact committed evidence/revision that
    produced them. A current code path is not automatically the producer of a
    historical result.
-6. Update the canonical manuscript in the same bounded PR **only after** its
+6. Treat protocol hardening as a scoped implementation claim. Identity checks,
+   strict serialization, SDK conformance, and immutable publication strengthen
+   specific boundaries; they do not by themselves establish remote trust,
+   execution correctness, scientific validity, or independent review.
+7. Update the canonical manuscript in the same bounded PR **only after** its
    source is available. Otherwise record the paper-impact note here or on #478.
-7. Run the repository Markdown/link gate and any experiment-specific
+8. Run the repository Markdown/link gate and any experiment-specific
    reproduction checks that actually apply. Report only commands that really ran
    and their actual result.
-8. Disclose AI/tool assistance. Owner-controlled automation is not independent
+9. Disclose AI/tool assistance. Owner-controlled automation is not independent
    human or external scientific review.
 
 ## Paper review checklist
@@ -76,6 +80,8 @@ A paper-facing review should explicitly check:
 
 - architecture names and interfaces against [`../ARCHITECTURE.md`](../ARCHITECTURE.md);
 - implemented versus planned capability against [`../ROADMAP.md`](../ROADMAP.md);
+- protocol mappings, semantic-identity rules, strict-JSON/digest boundaries, and
+  optional SDK conformance against [`../interop/README.md`](../interop/README.md);
 - experiment status and evidence boundaries through
   [`../docs/research/README.md`](../docs/research/README.md) and
   [`../experiments/README.md`](../experiments/README.md);
