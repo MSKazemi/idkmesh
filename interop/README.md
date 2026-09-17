@@ -72,6 +72,12 @@ These are integrity checks, not claims that IDKMesh has production integrations 
 
 The tests also require the SDK protocol-version constants to remain consistent with the IDKMesh binding. An SDK bump that changes those semantics should fail loudly and be reviewed rather than silently drifting.
 
+## Canonical JSON boundary
+
+The Work Contract binding uses **strict JSON** before computing a canonical digest or producing either an A2A or MCP envelope. Python objects containing `NaN`, positive infinity, or negative infinity are rejected with `BindingError`; they are never coerced to `null`, strings, zero, or protocol-specific representations.
+
+This is a portability invariant rather than a new wire version. JSON does not define non-finite numeric tokens, even though Python's default encoder can emit them. Rejecting those values at the protocol-neutral boundary keeps the same Work Unit digest meaningful to strict JSON implementations and non-Python agents. Finite JSON numbers and existing supported Work Unit versions are unchanged.
+
 ## Result-bundle artifact identity
 
 Artifact IDs are a semantic reference namespace across worker output and independent verification. `run_with_adapter()` already refuses to create a ResultManifest with duplicate produced-artifact IDs. `verify_result_bundle()` independently enforces the same uniqueness rule on the manifest it receives instead of assuming that every bundle came directly from the local normalizer.
