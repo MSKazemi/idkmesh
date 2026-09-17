@@ -43,6 +43,28 @@ class MCPWorkUnitIdentityTests(unittest.TestCase):
                 envelope["request"]["id"] = request_id
                 self.assertEqual(from_mcp_tool_call(envelope), self.work_unit)
 
+    def test_invalid_jsonrpc_request_ids_fail_closed(self) -> None:
+        invalid_ids = (None, True, 42.0, [], {})
+
+        for request_id in invalid_ids:
+            with self.subTest(request_id=request_id):
+                envelope = to_mcp_tool_call(self.work_unit)
+                envelope["request"]["id"] = request_id
+
+                with self.assertRaisesRegex(
+                    BindingError, "request id must be a string or integer"
+                ):
+                    from_mcp_tool_call(envelope)
+
+    def test_missing_jsonrpc_request_id_fails_closed(self) -> None:
+        envelope = to_mcp_tool_call(self.work_unit)
+        del envelope["request"]["id"]
+
+        with self.assertRaisesRegex(
+            BindingError, "request id must be a string or integer"
+        ):
+            from_mcp_tool_call(envelope)
+
     def test_namespaced_work_unit_identity_drift_fails_closed(self) -> None:
         mutations = (
             (
