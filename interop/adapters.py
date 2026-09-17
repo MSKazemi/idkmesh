@@ -297,7 +297,20 @@ def verify_result_bundle(
         and manifest.get("work_unit_version") == work_unit.get("version")
         and manifest.get("provenance", {}).get("work_unit_digest") == expected_work_unit_digest
     )
-    declared = {item["id"]: item for item in manifest.get("produced_artifacts", [])}
+    produced_artifacts = manifest.get("produced_artifacts", [])
+    seen_artifact_ids: set[str] = set()
+    duplicate_artifact_ids: set[str] = set()
+    for item in produced_artifacts:
+        artifact_id = item["id"]
+        if artifact_id in seen_artifact_ids:
+            duplicate_artifact_ids.add(artifact_id)
+        seen_artifact_ids.add(artifact_id)
+    if duplicate_artifact_ids:
+        raise BindingError(
+            "ResultManifest contains duplicate produced artifact ids: "
+            + ", ".join(sorted(duplicate_artifact_ids))
+        )
+    declared = {item["id"]: item for item in produced_artifacts}
     actual_ids = set(bundle.artifact_bytes)
     declared_ids = set(declared)
     expected_ids = set(expected_artifacts)
