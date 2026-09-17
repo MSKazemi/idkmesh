@@ -1,0 +1,100 @@
+{
+  "version": 1,
+  "challenge_id": "byo-agent-001-result-manifest-conformance",
+  "source_revision": "1db0aa0cc525e3179f179661ba1623381d889c89",
+  "schema": "schemas/result-manifest.schema.json",
+  "schema_git_blob_sha": "e2cd2f55cff59bb306ba74bfc63ff8f4c6ffd934",
+  "purpose": "Public onboarding/conformance challenge for the canonical ResultManifest v0.1 contract; not a hidden model benchmark.",
+  "cases": [
+    {
+      "case_id": "minimal-completed",
+      "manifest": {
+        "schema_version": "0.1.0",
+        "work_unit_id": "byo-agent-001",
+        "attempt_id": "attempt-minimal",
+        "status": "completed",
+        "worker": {"id": "worker-a"},
+        "environment": {"repository_commit": "1db0aa0cc525e3179f179661ba1623381d889c89"},
+        "artifacts": [],
+        "evidence": [],
+        "confidence": 0.8
+      }
+    },
+    {
+      "case_id": "missing-confidence",
+      "manifest": {
+        "schema_version": "0.1.0",
+        "work_unit_id": "byo-agent-001",
+        "attempt_id": "attempt-no-confidence",
+        "status": "completed",
+        "worker": {"id": "worker-b"},
+        "environment": {},
+        "artifacts": [],
+        "evidence": []
+      }
+    },
+    {
+      "case_id": "bad-artifact-digest",
+      "manifest": {
+        "schema_version": "0.1.0",
+        "work_unit_id": "byo-agent-001",
+        "status": "completed",
+        "worker": {"id": "worker-c"},
+        "environment": {},
+        "artifacts": [
+          {"name": "candidate.patch", "kind": "patch", "sha256": "abc123"}
+        ],
+        "evidence": [],
+        "confidence": 0.7
+      }
+    },
+    {
+      "case_id": "unknown-status",
+      "manifest": {
+        "schema_version": "0.1.0",
+        "work_unit_id": "byo-agent-001",
+        "status": "succeeded",
+        "worker": {"id": "worker-d"},
+        "environment": {},
+        "artifacts": [],
+        "evidence": [],
+        "confidence": 0.9
+      }
+    },
+    {
+      "case_id": "evidence-pass",
+      "manifest": {
+        "schema_version": "0.1.0",
+        "work_unit_id": "byo-agent-001",
+        "attempt_id": "attempt-evidence",
+        "status": "partial",
+        "worker": {"id": "worker-e", "agent_role": "implementer"},
+        "environment": {"os": "linux"},
+        "artifacts": [
+          {
+            "name": "stdout.txt",
+            "kind": "log",
+            "sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+          }
+        ],
+        "evidence": [
+          {"kind": "unit-test", "outcome": "pass", "summary": "Focused test passed."}
+        ],
+        "confidence": 0.55
+      }
+    },
+    {
+      "case_id": "confidence-out-of-range",
+      "manifest": {
+        "schema_version": "0.1.0",
+        "work_unit_id": "byo-agent-001",
+        "status": "completed",
+        "worker": {"id": "worker-f"},
+        "environment": {},
+        "artifacts": [],
+        "evidence": [],
+        "confidence": 1.2
+      }
+    }
+  ]
+}
