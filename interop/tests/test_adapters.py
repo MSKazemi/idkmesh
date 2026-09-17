@@ -154,6 +154,25 @@ class AdapterRoundTripTests(unittest.TestCase):
         failed = {item["id"] for item in verification["checks"] if item["status"] == "failed"}
         self.assertEqual(failed, {"artifact-digests", "expected-output"})
 
+    def test_verifier_rejects_duplicate_manifest_artifact_ids(self) -> None:
+        bundle = run_with_adapter(LocalAdapter(harmless_handler), self.work_unit, RUN)
+        altered = copy.deepcopy(bundle.result_manifest)
+        duplicate = copy.deepcopy(altered["produced_artifacts"][0])
+        duplicate["locator"] = "memory://interop/ambiguous-result.json"
+        altered["produced_artifacts"].append(duplicate)
+
+        Draft202012Validator(self.result_schema).validate(altered)
+        with self.assertRaisesRegex(
+            BindingError,
+            r"duplicate produced artifact ids: result$",
+        ):
+            verify_result_bundle(
+                self.work_unit,
+                ResultBundle(altered, bundle.artifact_bytes),
+                {"result": expected_bytes(self.work_unit)},
+                VERIFY,
+            )
+
     def test_adapter_handler_cannot_mutate_canonical_work_unit(self) -> None:
         original = copy.deepcopy(self.work_unit)
 

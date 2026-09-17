@@ -72,6 +72,12 @@ These are integrity checks, not claims that IDKMesh has production integrations 
 
 The tests also require the SDK protocol-version constants to remain consistent with the IDKMesh binding. An SDK bump that changes those semantics should fail loudly and be reviewed rather than silently drifting.
 
+## Result-bundle artifact identity
+
+Artifact IDs are a semantic reference namespace across worker output and independent verification. `run_with_adapter()` already refuses to create a ResultManifest with duplicate produced-artifact IDs. `verify_result_bundle()` independently enforces the same uniqueness rule on the manifest it receives instead of assuming that every bundle came directly from the local normalizer.
+
+This matters for stored, externally supplied, or protocol-carried ResultBundles: two artifacts with the same logical ID but different locators must not be silently collapsed by a dictionary/set conversion. The verifier fails closed before resolving digests or evidence when duplicate produced-artifact IDs are present. This is a semantic integrity check; it does not change the ResultManifest JSON Schema version, and passing it does not grant acceptance or integration authority.
+
 ## If this path is broken
 
 If installation fails, a conformance test errors instead of passing, or an SDK release changes a protocol contract, open an issue with your OS, Python version, exact command, and output. Pinned-SDK drift is useful project data.
