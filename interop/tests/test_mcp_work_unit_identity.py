@@ -36,12 +36,12 @@ class MCPWorkUnitIdentityTests(unittest.TestCase):
         self.assertTrue(envelope["request"]["id"].startswith("idkmesh-"))
         self.assertEqual(from_mcp_tool_call(envelope), self.work_unit)
 
-    def test_request_id_drift_fails_closed(self) -> None:
-        envelope = to_mcp_tool_call(self.work_unit)
-        envelope["request"]["id"] = "idkmesh-tampered"
-
-        with self.assertRaisesRegex(BindingError, "request id"):
-            from_mcp_tool_call(envelope)
+    def test_jsonrpc_request_id_remains_transport_correlation_only(self) -> None:
+        for request_id in ("gateway-request-42", 42):
+            with self.subTest(request_id=request_id):
+                envelope = to_mcp_tool_call(self.work_unit)
+                envelope["request"]["id"] = request_id
+                self.assertEqual(from_mcp_tool_call(envelope), self.work_unit)
 
     def test_namespaced_work_unit_identity_drift_fails_closed(self) -> None:
         mutations = (
