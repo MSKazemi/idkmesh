@@ -15,26 +15,25 @@ The layers are separate on purpose: causal evidence, denominator inventory, and
 value/cost measurement must not collapse into one object. The ordering below is
 the one the documents themselves describe.
 
-## Two tracking issues must stay open
+## Workflow-owned tracking issues
 
-Two workflows locate their state container by scanning **open** issues for a
-label, and create a new one when the scan finds nothing:
+Two workflows persist state in GitHub issues, but they do not currently recover
+from closure in the same way:
 
 - `ace-community-growth.yml` finds the ledger by label `ace:ledger` among
-  `state: 'open'` issues (issue 23);
-- `ace-cohort-observer.yml` finds the observatory by label
-  `ace:cohort-observer` among `state: 'open'` issues (issue 109).
+  `state: 'open'` issues (issue 23). Closing it can still make the workflow fall
+  back to seed state and create a duplicate ledger; reopening the original after
+  that can trigger the explicit multiple-open-ledger guard.
+- `ace-cohort-observer.yml` identifies the observatory by label
+  `ace:cohort-observer` across **all** issue states (issue 109). A closed canonical
+  observatory is reopened and reused instead of replaced, so closure no longer
+  forks the observation series into a new issue number.
 
-Closing either issue does not fail loudly. The workflow falls through to its
-default seed state and **creates a duplicate issue**, discarding the accumulated
-controller state in the original. Reopening the closed one afterwards is worse:
-`ace-community-growth.yml` throws `Multiple open ACE ledgers carry ace:ledger;
-refusing ambiguous controller state.` on every run until a human removes one
-label.
-
-Both issues are workflow-owned state containers whose bodies are rewritten on
-each run. They are not tasks, they have no acceptance criteria, and they must not
-be closed as part of any issue-tidying pass.
+Both issues remain workflow-owned state containers whose bodies are rewritten on
+each run. They are not ordinary tasks and should not be closed as part of an
+issue-tidying pass. The observer is now resilient to accidental closure; the
+community-growth ledger still depends on staying open until its own lookup is
+hardened.
 
 ## Strategy and measurement models
 
