@@ -32,7 +32,27 @@ class BindingError(ValueError):
 
 
 def canonical_json(value: Any) -> str:
-    return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    """Serialize canonical interoperability data as strict, portable JSON.
+
+    Python's JSON encoder accepts NaN and infinities by default even though JSON
+    does not define those numeric tokens. Reject them at the protocol-neutral
+    boundary so every digest and transport mapping has the same cross-language
+    meaning.
+    """
+
+    try:
+        return json.dumps(
+            value,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=False,
+            allow_nan=False,
+        )
+    except ValueError as exc:
+        raise BindingError(
+            "canonical interoperability payload contains a non-finite number; "
+            "strict JSON requires finite numbers"
+        ) from exc
 
 
 # Work Unit v0.2 is additive over v0.1 -- it introduced `requirements`, `security`
