@@ -84,7 +84,9 @@ Protocol-level correlation identifiers are not IDKMesh semantic identity. The A2
 
 For A2A, a decoded message must still carry a non-empty string `messageId`, but the ID may differ from the one IDKMesh originally emitted. The canonical Work Unit identity is instead enforced by the `idkmeshWorkUnitId` and `idkmeshWorkUnitDigest` request metadata plus the canonical payload digest. For MCP, the equivalent semantic identity lives in the namespaced `org.idkmesh/work-contract` metadata and canonical payload digest.
 
-This separation prevents transport ownership from becoming an accidental compatibility constraint while preserving fail-closed semantic checks. Changing a transport identifier cannot make payload or Work Contract metadata tampering valid.
+MCP caller ownership does **not** mean that any JSON value is a valid request identifier. For the supported MCP `2026-07-28` request shape, the decoder requires `id` to be present, non-null, and either a JSON string or integer. JSON booleans are rejected even though Python represents `bool` as an `int` subclass; floats, arrays, objects, missing IDs, and `null` are rejected as well. The in-process decoder validates this request shape only: it does not maintain transport state or prove uniqueness among outstanding request IDs.
+
+This separation prevents transport ownership from becoming an accidental compatibility constraint while preserving fail-closed semantic and protocol-shape checks. Changing a transport identifier cannot make payload or Work Contract metadata tampering valid, and a caller-owned identifier still has to satisfy the supported protocol shape.
 
 ## Result-bundle artifact identity
 
