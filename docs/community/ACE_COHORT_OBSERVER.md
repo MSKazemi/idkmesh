@@ -105,6 +105,33 @@ The workflow maintains one observatory issue using workflow-owned label:
 
 The title `[ACE] Bootstrap Cohort Observatory` is for humans, not authority. During migration, an old title-matching issue is adopted only when it already contains an `ACE_COHORT_STATE` block.
 
+### One observatory, in every state
+
+Identity is resolved by asking the API for issues carrying the label in **any**
+state, oldest issue number wins, and creation is the last resort:
+
+1. the oldest issue labelled `ace:cohort-observer`, open **or closed**;
+2. otherwise the oldest legacy title match that already carries an
+   `ACE_COHORT_STATE` block, which is then labelled;
+3. otherwise, and only then, a new observatory.
+
+A closed observatory is reopened in the same call that rewrites its body. The
+observatory is workflow-owned state rather than a task, so closing it is an
+issue-tidying mistake, not an instruction to start a second series.
+
+Resolving identity over open issues only is what produced #410 as a fork of
+#109: the observatory was invisible to the lookup, step 3 fired, and the
+evidence series that `README.md` and
+`examples/community/ace-activation-gate-current.example.json` cite by issue
+number split across two numbers. Selecting the *newest* labelled match then
+kept every later write on the fork while every document still linked the
+original. Both selection rules are pinned by
+`tests/test_ace_cohort_observer_contract.py`.
+
+When more than one labelled observatory is open at once the run still writes to
+the oldest and emits `core.warning` naming all of them, because only a human can
+decide which duplicate to close.
+
 The machine snapshot includes:
 
 - `metric_scope: bootstrap_growth_seed_exposure`;
