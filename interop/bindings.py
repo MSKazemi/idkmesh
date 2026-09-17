@@ -204,7 +204,7 @@ def from_a2a_send_message(envelope: dict[str, Any]) -> dict[str, Any]:
 def to_mcp_tool_call(work_unit: dict[str, Any]) -> dict[str, Any]:
     """Create a synchronous MCP 2026-07-28 tools/call request.
 
-    Official SDK 2.1.1 marks Tasks request metadata and capabilities as
+    Official SDK 2.2.0 marks Tasks request metadata and capabilities as
     2025-11-25-only. This newer protocol binding therefore fails closed to a
     synchronous call and declares Tasks unsupported instead of advertising a
     capability that the selected revision does not define.
