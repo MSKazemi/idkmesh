@@ -56,10 +56,10 @@ def validate_mcp_sdk_round_trip(envelope: dict[str, Any]) -> dict[str, Any]:
 
     The official ``CallToolRequest`` model represents the MCP method/params payload,
     not the outer JSON-RPC version or request-id fields. Conformance therefore
-    round-trips the typed payload through the SDK while preserving those already-
-    validated transport identity fields from the original envelope. Dropping them
-    would make the reconstructed object less complete than the wire request and
-    would incorrectly trip the binding's fail-closed JSON-RPC identity checks.
+    round-trips the typed payload through the SDK while preserving the already-
+    validated JSON-RPC version and the caller-selected request correlation id from
+    the original envelope. Dropping either would make the reconstructed object less
+    complete than the wire request; neither is treated as IDKMesh Work Unit identity.
     """
 
     try:
