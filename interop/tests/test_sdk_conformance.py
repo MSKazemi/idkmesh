@@ -28,7 +28,9 @@ from interop.sdk_conformance import (  # noqa: E402
 )
 
 
-@unittest.skipUnless(OFFICIAL_SDKS_AVAILABLE, "official interoperability SDKs not installed")
+@unittest.skipUnless(
+    OFFICIAL_SDKS_AVAILABLE, "official interoperability SDKs not installed"
+)
 class OfficialSdkConformanceTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -48,6 +50,7 @@ class OfficialSdkConformanceTests(unittest.TestCase):
         report = validate_mcp_sdk_round_trip(envelope)
         self.assertEqual(report["distribution"], "mcp")
         self.assertEqual(report["protocol_version"], "2026-07-28")
+        self.assertEqual(report["jsonrpc_version"], "2.0")
         self.assertEqual(report["tasks_mode"], "unsupported-for-2026-07-28")
         self.assertEqual(report["work_unit_digest"], canonical_digest(self.work_unit))
         extensions = envelope["request"]["params"]["_meta"][

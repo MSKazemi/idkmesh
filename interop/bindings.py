@@ -204,7 +204,7 @@ def from_a2a_send_message(envelope: dict[str, Any]) -> dict[str, Any]:
 def to_mcp_tool_call(work_unit: dict[str, Any]) -> dict[str, Any]:
     """Create a synchronous MCP 2026-07-28 tools/call request.
 
-    Official SDK 2.1.1 marks Tasks request metadata and capabilities as
+    Official SDK 2.2.0 marks Tasks request metadata and capabilities as
     2025-11-25-only. This newer protocol binding therefore fails closed to a
     synchronous call and declares Tasks unsupported instead of advertising a
     capability that the selected revision does not define.
@@ -252,12 +252,55 @@ def to_mcp_tool_call(work_unit: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _require_mcp_request_identity(
+    envelope: dict[str, Any],
+    request: dict[str, Any],
+    params: dict[str, Any],
+) -> dict[str, Any]:
+    """Fail closed when MCP 2026-07-28 request identity disagrees across layers.
+
+    The 2026-07-28 protocol is stateless: protocol revision, caller metadata, and
+    routing information travel with each request. Accepting one representation
+    while ignoring a conflicting header or ``_meta`` value would let the same
+    envelope mean different things to a transport, SDK, and IDKMesh.
+    """
+
+    if envelope.get("protocolVersion") != MCP_PROTOCOL_VERSION:
+        raise BindingError(
+            "unsupported MCP protocolVersion; expected " + MCP_PROTOCOL_VERSION
+        )
+
+    headers = envelope.get("headers")
+    if not isinstance(headers, dict):
+        raise BindingError("MCP binding envelope is missing routing headers")
+    if headers.get("MCP-Protocol-Version") != MCP_PROTOCOL_VERSION:
+        raise BindingError(
+            "unsupported MCP-Protocol-Version; expected " + MCP_PROTOCOL_VERSION
+        )
+
+    if request.get("jsonrpc") != "2.0":
+        raise BindingError("MCP binding envelope must use JSON-RPC 2.0")
+    if headers.get("Mcp-Method") != request.get("method"):
+        raise BindingError("Mcp-Method header does not match JSON-RPC method")
+    if headers.get("Mcp-Name") != params.get("name"):
+        raise BindingError("Mcp-Name header does not match tools/call name")
+
+    meta = params.get("_meta")
+    if not isinstance(meta, dict):
+        raise BindingError("MCP binding envelope is missing request _meta")
+    if meta.get("io.modelcontextprotocol/protocolVersion") != MCP_PROTOCOL_VERSION:
+        raise BindingError(
+            "MCP request _meta protocol version does not match "
+            + MCP_PROTOCOL_VERSION
+        )
+    return meta
+
+
 def from_mcp_tool_call(envelope: dict[str, Any]) -> dict[str, Any]:
     try:
         request = envelope["request"]
         params = request["params"]
         arguments = params["arguments"]
-        capabilities = params["_meta"]["io.modelcontextprotocol/clientCapabilities"]
     except (KeyError, TypeError) as exc:
         raise BindingError("invalid MCP binding envelope") from exc
 
@@ -265,8 +308,13 @@ def from_mcp_tool_call(envelope: dict[str, Any]) -> dict[str, Any]:
         raise BindingError("not an MCP tools/call binding envelope")
     if params.get("name") != MCP_EXECUTE_TOOL:
         raise BindingError("unexpected MCP tool name")
+
+    meta = _require_mcp_request_identity(envelope, request, params)
+    capabilities = meta.get("io.modelcontextprotocol/clientCapabilities")
+    if not isinstance(capabilities, dict):
+        raise BindingError("MCP binding envelope is missing client capabilities")
     extensions = capabilities.get("extensions", {})
-    if MCP_WORK_CONTRACT_EXTENSION not in extensions:
+    if not isinstance(extensions, dict) or MCP_WORK_CONTRACT_EXTENSION not in extensions:
         raise BindingError("MCP client did not advertise the IDKMesh Work Contract extension")
 
     try:
