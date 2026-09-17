@@ -20,6 +20,26 @@ class PlannerTests(unittest.TestCase):
     def test_registry_validates(self):
         planner.validate_registry(self.registry)
 
+    def test_registry_rejects_out_of_contract_ranking_inputs(self):
+        cases = (
+            ("availability_weight", 1.01),
+            ("human_setup_cost", True),
+            ("scarcity", float("nan")),
+            ("security_risk", -0.01),
+        )
+        for field, value in cases:
+            with self.subTest(field=field, value=value):
+                registry = json.loads(json.dumps(self.registry))
+                registry["offers"][0][field] = value
+                with self.assertRaisesRegex(ValueError, field):
+                    planner.validate_registry(registry)
+
+    def test_planner_rejects_missing_ranking_input_instead_of_defaulting(self):
+        registry = json.loads(json.dumps(self.registry))
+        del registry["offers"][0]["availability_weight"]
+        with self.assertRaisesRegex(ValueError, "availability_weight"):
+            planner.plan(registry, self.task, 5, dt.date(2026, 8, 28))
+
     def test_no_resource_has_write_or_merge_authority(self):
         for offer in self.registry["offers"]:
             self.assertFalse(offer["security"]["repo_write_authority"])
