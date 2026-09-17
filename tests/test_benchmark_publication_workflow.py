@@ -61,6 +61,7 @@ class BenchmarkPublicationWorkflowTest(unittest.TestCase):
             '"benchmarks/publication.json#benchmark-publication.json"', self.workflow
         )
         self.assertIn("--notes-file benchmarks/PUBLICATION.md", self.workflow)
+        self.assertIn("--latest=false", self.workflow)
 
     def test_contract_workflow_revalidates_publication_workflow_changes(self):
         self.assertIn(
