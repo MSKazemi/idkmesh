@@ -1,4 +1,4 @@
-# Collaboration Observables v0.1
+# Collaboration Observables (current analyzer v0.2; historical evidence v0.1)
 
 Status: experimental, offline, observational
 
@@ -6,6 +6,11 @@ This layer turns a frozen normalized GitHub history into deterministic review,
 ownership, recurrence, CI, queue, and structural-debt evidence. It does not
 collect private data, interpret natural-language content, assert causality, or
 write to GitHub.
+
+The document keeps its historical `V0_1` path because committed production
+evidence and findings already refer to that artifact. The executable analyzer is
+now `collaboration-observables-v0.2`; v0.2 changes only the HHI output contract
+for empty observed populations and leaves the committed v0.1 evidence immutable.
 
 ## Input and replay
 
@@ -57,12 +62,41 @@ classified verified-useful outcomes; merged status and green CI are not enough.
 | --- | --- | --- | --- | --- |
 | First independent review latency | Hours from ready/open timestamp to first independent review | Deterministic 1,000-replicate bootstrap interval for the observed median; still-open items are right-censored and closed-without-review items are reported separately | Lower latency may predict recurrence; compare the preregistered 72-hour groups | Bots/self-review must be removed upstream; censoring and workload confounding |
 | Cycle latency | Hours from creation to closure | Same observed-median bootstrap plus open-item count | Review concentration may predict longer cycles | Closure is not necessarily acceptance; right censoring |
-| Review HHI | Share-squared over distinct independent reviewer–pull-request pairs | Descriptive snapshot only | Compare with equal-share baseline and future cycle latency | Reviewer–PR pairs are not effort or quality; identity aliases |
-| Ownership HHI | Share-squared over changed-file owner attributions | Descriptive snapshot only | High concentration may identify bus-factor risk | CODEOWNERS/attribution quality and multi-owner files |
+| Review HHI | Share-squared over distinct independent reviewer–pull-request pairs; `null` when there are no eligible pairs | Descriptive snapshot only when observed; undefined for an empty population | Compare only observed populations; never treat an empty population as an equal-share baseline | Reviewer–PR pairs are not effort or quality; identity aliases; zero eligible observations |
+| Ownership HHI | Share-squared over changed-file owner attributions; `null` when there are no owner attributions | Descriptive snapshot only when observed; undefined for an empty population | High observed concentration may identify bus-factor risk; no statement is made when no attribution exists | CODEOWNERS/attribution quality, multi-owner files, zero eligible observations |
 | Contributor recurrence | Contributors with at least two meaningful contributions / observed contributors | Beta-binomial posterior with explicit evidence mass | Compare cohorts, never raw activity volume | Eligibility and meaningful-contribution definitions |
 | CI evidence | Passing / observed checks | Beta-binomial posterior | Compare like-for-like check suites | Check dependence and heterogeneous coverage |
 | Review queue | Count and age of open review-ready PRs at cutoff | Point-in-time state; no sampling interval | Rising age/queue indicates capacity pressure | Snapshot timing and draft-state quality |
 | Structural debt | Stable finding IDs attached to observed PRs | Deduplicated bounded inventory count with completeness flag | Track changes only under stable detector definitions | Detector drift and incomplete inventory |
+
+### HHI empty-population semantics (analyzer v0.2)
+
+For a non-empty observed population, the analyzer reports the standard
+Herfindahl-Hirschman concentration statistic
+`HHI = sum_i s_i^2`, where `s_i` is actor `i`'s share of the observed
+attributions. For example, one observed actor has HHI `1.0`, while two actors
+with equal observed shares have HHI `0.5`.
+
+There is no share vector when the observation count is zero, so HHI is not
+mathematically defined for that snapshot. Analyzer v0.2 therefore emits:
+
+```json
+{
+  "model": "observed-share-hhi-v2",
+  "observations": 0,
+  "distinct_actors": 0,
+  "hhi": null,
+  "status": "undefined_empty_population",
+  "counts": {},
+  "uncertainty": "undefined_without_observations"
+}
+```
+
+For non-empty populations, `status` is `observed` and `uncertainty` remains
+`descriptive_snapshot_no_population_inference`. This is a semantic correctness
+change, not a new estimator or a health threshold. In particular, the analyzer
+does not convert HHI into contributor rankings, causal claims, or policy
+authority.
 
 The output also derives provisional strategy weights only from independently
 classified verified-useful outcomes, using the same explicit Beta evidence
@@ -77,11 +111,18 @@ artifact expires. The first successful production run
 therefore committed under `results/collaboration/`, and read in
 [First Production Collaboration-Observables Snapshot](../findings/2026-08-29-collaboration-observables-first-snapshot.md).
 
-That note is worth reading before interpreting any zero in this pipeline: three
-of the run's zero-valued observables are real measurements of a repository with
-no independent review, one is a point-in-time queue reading, and two are
-observables the collector declares it does not collect at all. The output format
-does not distinguish those cases on its own.
+That historical v0.1 artifact encoded an empty reviewer population with review
+HHI `0.0`. Under the corrected v0.2 contract, the same absence of eligible
+reviewer–pull-request pairs is represented as `null` with
+`status: undefined_empty_population`. The old `0.0` must not be interpreted as
+evidence of perfectly distributed review: there were no eligible review
+observations from which to estimate concentration. The committed artifact is
+left unchanged so historical evidence remains reproducible.
+
+The first production note is still worth reading before interpreting any zero
+in this pipeline: some zero-valued observables are real counts, one is a
+point-in-time queue reading, and some observables are absent from the collector.
+A numeric zero is only meaningful under the metric's declared contract.
 
 ## Preregistered community analysis
 
