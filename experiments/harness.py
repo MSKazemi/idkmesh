@@ -159,7 +159,20 @@ def validate_worker_result_contract(
             f"Work Unit has {expected_version}"
         )
 
-    artifact_ids = {artifact["id"] for artifact in worker_result["produced_artifacts"]}
+    artifact_ids: set[str] = set()
+    duplicate_artifact_ids: set[str] = set()
+    for artifact in worker_result["produced_artifacts"]:
+        artifact_id = artifact["id"]
+        if artifact_id in artifact_ids:
+            duplicate_artifact_ids.add(artifact_id)
+        artifact_ids.add(artifact_id)
+
+    if duplicate_artifact_ids:
+        raise HarnessError(
+            "worker ResultManifest contains duplicate produced artifact id(s): "
+            + ", ".join(sorted(duplicate_artifact_ids))
+        )
+
     requested_ids = set(worker_result["verification_request"]["evidence_artifact_ids"])
     missing = sorted(requested_ids - artifact_ids)
     if missing:
