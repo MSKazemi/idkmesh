@@ -70,6 +70,10 @@ def _contract_payload(work_unit: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _a2a_message_id(digest: str) -> str:
+    return "idkmesh-" + digest.split(":", 1)[1][:24]
+
+
 def _a2a_service_parameters() -> dict[str, str]:
     """Return transport-neutral A2A service parameters for this request.
 
@@ -106,6 +110,64 @@ def _require_a2a_service_parameters(envelope: dict[str, Any]) -> None:
         )
 
 
+def _require_a2a_request_identity(
+    envelope: dict[str, Any],
+    request: dict[str, Any],
+    message: dict[str, Any],
+    parts: list[Any],
+    work_unit: dict[str, Any],
+    digest: str,
+) -> None:
+    """Require every IDKMesh-emitted A2A view to name the same Work Unit.
+
+    A2A intentionally permits native message content plus request metadata and
+    extension payloads. IDKMesh emits the objective natively for agent usability
+    while carrying the canonical Work Unit in its extension. Those duplicated
+    views must not be allowed to disagree: a remote agent may act on the native
+    text while IDKMesh later verifies the canonical payload.
+    """
+
+    envelope_extensions = envelope.get("extensions")
+    if (
+        not isinstance(envelope_extensions, list)
+        or A2A_WORK_CONTRACT_EXTENSION not in envelope_extensions
+    ):
+        raise BindingError(
+            "A2A binding envelope did not declare the IDKMesh Work Contract extension"
+        )
+
+    message_extensions = message.get("extensions")
+    if (
+        not isinstance(message_extensions, list)
+        or A2A_WORK_CONTRACT_EXTENSION not in message_extensions
+    ):
+        raise BindingError("A2A message did not carry the IDKMesh Work Contract extension")
+    if message.get("role") != "ROLE_USER":
+        raise BindingError("A2A Work Contract message must use ROLE_USER")
+    if message.get("messageId") != _a2a_message_id(digest):
+        raise BindingError("A2A messageId does not match the canonical Work Unit digest")
+
+    metadata = request.get("metadata")
+    if not isinstance(metadata, dict):
+        raise BindingError("A2A binding envelope is missing request metadata")
+    if metadata.get("idkmeshWorkUnitId") != work_unit["id"]:
+        raise BindingError("A2A request metadata Work Unit id mismatch")
+    if metadata.get("idkmeshWorkUnitDigest") != digest:
+        raise BindingError("A2A request metadata Work Unit digest mismatch")
+    if metadata.get("idkmeshExtension") != A2A_WORK_CONTRACT_EXTENSION:
+        raise BindingError("A2A request metadata Work Contract extension mismatch")
+
+    text_parts = [
+        part.get("text")
+        for part in parts
+        if isinstance(part, dict) and "text" in part
+    ]
+    if text_parts != [work_unit["objective"]]:
+        raise BindingError(
+            "A2A native objective does not match the canonical Work Unit objective"
+        )
+
+
 def to_a2a_send_message(work_unit: dict[str, Any]) -> dict[str, Any]:
     """Create an A2A 1.0 SendMessage request payload.
 
@@ -118,7 +180,7 @@ def to_a2a_send_message(work_unit: dict[str, Any]) -> dict[str, Any]:
 
     payload = _contract_payload(work_unit)
     digest = payload["workUnitDigest"]
-    message_id = "idkmesh-" + digest.split(":", 1)[1][:24]
+    message_id = _a2a_message_id(digest)
     return {
         "protocol": "a2a",
         "protocolVersion": A2A_PROTOCOL_VERSION,
@@ -166,6 +228,12 @@ def from_a2a_send_message(envelope: dict[str, Any]) -> dict[str, Any]:
     except (KeyError, TypeError) as exc:
         raise BindingError("invalid A2A binding envelope") from exc
 
+    if (
+        not isinstance(request, dict)
+        or not isinstance(message, dict)
+        or not isinstance(parts, list)
+    ):
+        raise BindingError("invalid A2A binding envelope")
     if envelope.get("protocol") != "a2a":
         raise BindingError("not an A2A binding envelope")
     if envelope.get("protocolVersion") != A2A_PROTOCOL_VERSION:
@@ -173,9 +241,8 @@ def from_a2a_send_message(envelope: dict[str, Any]) -> dict[str, Any]:
             "unsupported A2A protocolVersion; expected " + A2A_PROTOCOL_VERSION
         )
     _require_a2a_service_parameters(envelope)
-    if A2A_WORK_CONTRACT_EXTENSION not in message.get("extensions", []):
-        raise BindingError("A2A message did not carry the IDKMesh Work Contract extension")
 
+    contract_payloads: list[dict[str, Any]] = []
     for part in parts:
         if not isinstance(part, dict):
             continue
@@ -189,16 +256,27 @@ def from_a2a_send_message(envelope: dict[str, Any]) -> dict[str, Any]:
         elif "data" in part:
             # Backward-compatible decoder for pre-SDK-conformance envelopes.
             data = part["data"]
-        if not isinstance(data, dict) or "workUnit" not in data:
-            continue
-        work_unit = data["workUnit"]
-        expected = data.get("workUnitDigest")
-        actual = canonical_digest(work_unit)
-        if expected != actual:
-            raise BindingError("A2A Work Contract digest mismatch")
-        _require_work_unit(work_unit)
-        return work_unit
-    raise BindingError("A2A envelope contains no IDKMesh Work Contract payload part")
+        if isinstance(data, dict) and "workUnit" in data:
+            contract_payloads.append(data)
+
+    if not contract_payloads:
+        raise BindingError("A2A envelope contains no IDKMesh Work Contract payload part")
+    if len(contract_payloads) != 1:
+        raise BindingError(
+            "A2A envelope contains multiple IDKMesh Work Contract payload parts"
+        )
+
+    data = contract_payloads[0]
+    if data.get("schemaVersion") != "0.1":
+        raise BindingError("unsupported A2A Work Contract payload schemaVersion")
+    work_unit = data["workUnit"]
+    expected = data.get("workUnitDigest")
+    actual = canonical_digest(work_unit)
+    if expected != actual:
+        raise BindingError("A2A Work Contract digest mismatch")
+    _require_work_unit(work_unit)
+    _require_a2a_request_identity(envelope, request, message, parts, work_unit, actual)
+    return work_unit
 
 
 def to_mcp_tool_call(work_unit: dict[str, Any]) -> dict[str, Any]:
