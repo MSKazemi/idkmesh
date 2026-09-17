@@ -11,28 +11,36 @@ This directory holds the protocol-neutral boundary between the canonical IDKMesh
 
 Background: [`docs/interoperability/A2A_MCP_MAPPING_V0_1.md`](../docs/interoperability/A2A_MCP_MAPPING_V0_1.md) and [`docs/interoperability/AGENT_INTEROPERABILITY_ARCHITECTURE_2026-08-28.md`](../docs/interoperability/AGENT_INTEROPERABILITY_ARCHITECTURE_2026-08-28.md).
 
-## Two test tiers
+## Default tests versus SDK conformance
 
-Most tests under `interop/tests/` run in the default development environment. The two tests in `test_sdk_conformance.py` additionally need the optional official protocol SDKs. Without the relevant SDK, that individual conformance test skips; the A2A and MCP gates are independent, so a partial install still runs the test it can run.
+Most tests under `interop/tests/` run in the default development environment. The two tests in `test_sdk_conformance.py` additionally require the optional official A2A and MCP SDKs.
+
+The current test class has one combined availability gate: **both** `import a2a` and `import mcp` must succeed before either SDK-backed conformance test runs. If either import is missing, both tests skip. This is intentionally documented as the behavior on current `main`; a future code change may make the gates independent, but this guide does not claim that change has already happened.
 
 A skipped test is not conformance evidence. Use `pytest -rs` when you specifically need to confirm whether these SDK-backed checks executed.
 
-## What each skippable test needs
+## What the conformance tests need
 
-Neither conformance test needs generated fixtures, credentials, environment variables, a running service, or network access at test time. The only network access is the one-off dependency installation.
+Neither test needs generated fixtures, credentials, environment variables, a running service, or network access at test time. The only network access is the one-off dependency installation.
 
-| Test | Runs when | Current pin |
-| --- | --- | --- |
-| `OfficialA2aSdkConformanceTests::test_a2a_v1_protobuf_preserves_exact_work_unit` | `import a2a` succeeds | `a2a-sdk==1.1.2` |
-| `OfficialMcpSdkConformanceTests::test_mcp_current_types_preserve_exact_work_unit_and_fail_closed_on_tasks` | `import mcp` succeeds | `mcp==2.2.0` |
+Current pins are defined in [`requirements-interoperability.txt`](../requirements-interoperability.txt):
 
-The canonical dependency source is [`requirements-interoperability.txt`](../requirements-interoperability.txt). If this table ever disagrees with that file, the requirements file wins and this page should be corrected.
+- `a2a-sdk==1.1.2`
+- `mcp==2.2.0`
+
+That requirements file is canonical. If this page ever disagrees with it, the requirements file wins and this page should be corrected.
 
 Both tests share the tracked fixture [`examples/work-units/phase0-smoke.work-unit.json`](../examples/work-units/phase0-smoke.work-unit.json).
 
 ## Running the conformance tests
 
-From the repository root:
+From the repository root, first observe the default environment if useful:
+
+```bash
+python -m pytest -q -rs interop/tests/test_sdk_conformance.py
+```
+
+Then install the pinned interoperability dependencies and rerun:
 
 ```bash
 python -m pip install -r requirements-interoperability.txt
@@ -58,7 +66,7 @@ The protocol SDKs bring dependencies that contributors working on unrelated part
 These are integrity checks, not claims that IDKMesh has production integrations with every external agent framework.
 
 - The A2A case parses the IDKMesh envelope into `lf.a2a.v1.SendMessageRequest`, serializes and reads it back, and requires the canonical Work Unit digest and protocol version `1.0` to survive unchanged.
-- The MCP case validates against the pinned SDK's `CallToolRequest`, requires protocol version `2026-07-28`, and fails closed if the binding advertises the `io.modelcontextprotocol/tasks` extension where the supported revision does not justify that capability claim.
+- The MCP case validates against the pinned SDK's `CallToolRequest`, requires protocol version `2026-07-28` and JSON-RPC `2.0`, and fails closed if the binding advertises the `io.modelcontextprotocol/tasks` extension where the supported revision does not justify that capability claim.
 
 The tests also require the SDK protocol-version constants to remain consistent with the IDKMesh binding. An SDK bump that changes those semantics should fail loudly and be reviewed rather than silently drifting.
 
