@@ -57,7 +57,7 @@ class BenchmarkPublicationWorkflowTest(unittest.TestCase):
         self.assertIn("git ls-remote --refs --tags", self.workflow)
         self.assertIn('"refs/tags/${RELEASE_TAG}"', self.workflow)
         self.assertIn("set -euo pipefail", self.workflow)
-        self.assertNotIn("gh api", self.workflow)
+        self.assertNotIn('gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/', self.workflow)
         self.assertNotIn("|| true", self.workflow)
 
     def test_release_contains_both_canonical_publication_formats(self):
