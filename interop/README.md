@@ -78,6 +78,14 @@ The Work Contract binding uses **strict JSON** before computing a canonical dige
 
 This is a portability invariant rather than a new wire version. JSON does not define non-finite numeric tokens, even though Python's default encoder can emit them. Rejecting those values at the protocol-neutral boundary keeps the same Work Unit digest meaningful to strict JSON implementations and non-Python agents. Finite JSON numbers and existing supported Work Unit versions are unchanged.
 
+## Transport identifiers versus Work Unit identity
+
+Protocol-level correlation identifiers are not IDKMesh semantic identity. The A2A `messageId` belongs to the message sender, while MCP's JSON-RPC `id` belongs to the request/correlation layer. IDKMesh may generate deterministic values for both when it creates an envelope, but decoders do not require those generated values to survive a conforming client, relay, gateway, or SDK round trip.
+
+For A2A, a decoded message must still carry a non-empty string `messageId`, but the ID may differ from the one IDKMesh originally emitted. The canonical Work Unit identity is instead enforced by the `idkmeshWorkUnitId` and `idkmeshWorkUnitDigest` request metadata plus the canonical payload digest. For MCP, the equivalent semantic identity lives in the namespaced `org.idkmesh/work-contract` metadata and canonical payload digest.
+
+This separation prevents transport ownership from becoming an accidental compatibility constraint while preserving fail-closed semantic checks. Changing a transport identifier cannot make payload or Work Contract metadata tampering valid.
+
 ## Result-bundle artifact identity
 
 Artifact IDs are a semantic reference namespace across worker output and independent verification. `run_with_adapter()` already refuses to create a ResultManifest with duplicate produced-artifact IDs. `verify_result_bundle()` independently enforces the same uniqueness rule on the manifest it receives instead of assuming that every bundle came directly from the local normalizer.
