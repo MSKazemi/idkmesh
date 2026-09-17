@@ -44,7 +44,10 @@ commit-bound and fail-closed:
 4. only then does it create `benchmark-cohort-<full-main-sha>`;
 5. the release contains the committed Markdown and JSON files byte-for-byte;
 6. an existing tag is accepted only when it already points at that exact commit;
-   tags are never force-moved or reused for a different revision.
+   tags are never force-moved or reused for a different revision;
+7. benchmark snapshots are explicitly not marked as the repository's "Latest"
+   release, so benchmark publication cannot displace normal software-release
+   discovery semantics.
 
 Pull-request events cannot invoke the write-capable publication workflow. PRs
 are validated by the separate read-only benchmark contract workflow instead.
