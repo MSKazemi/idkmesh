@@ -399,21 +399,17 @@ def _require_mcp_request_identity(
 
 
 def _require_mcp_work_unit_identity(
-    request: dict[str, Any],
     meta: dict[str, Any],
     work_unit: dict[str, Any],
     digest: str,
 ) -> None:
-    """Require every IDKMesh-emitted MCP identity surface to agree.
+    """Require IDKMesh Work Contract metadata to name the canonical Work Unit.
 
-    The canonical Work Contract already carries a digest, while IDKMesh also
-    emits a deterministic JSON-RPC request id and namespaced request metadata for
-    routing and observability. A decoder must not accept an envelope where those
-    redundant identity views disagree with the canonical Work Unit.
+    MCP's JSON-RPC ``id`` is a transport correlation identifier, not a Work Unit
+    identifier, so it is intentionally not part of this semantic check. The
+    namespaced Work Contract metadata is IDKMesh's semantic identity surface and
+    must agree with the canonical payload and digest.
     """
-
-    if request.get("id") != _mcp_request_id(digest):
-        raise BindingError("MCP request id does not match the canonical Work Unit digest")
 
     identity = meta.get(MCP_WORK_CONTRACT_EXTENSION)
     if not isinstance(identity, dict):
@@ -454,7 +450,7 @@ def from_mcp_tool_call(envelope: dict[str, Any]) -> dict[str, Any]:
     if expected != actual:
         raise BindingError("MCP Work Contract digest mismatch")
     _require_work_unit(work_unit)
-    _require_mcp_work_unit_identity(request, meta, work_unit, actual)
+    _require_mcp_work_unit_identity(meta, work_unit, actual)
     return work_unit
 
 
