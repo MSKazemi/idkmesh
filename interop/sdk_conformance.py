@@ -55,11 +55,11 @@ def validate_mcp_sdk_round_trip(envelope: dict[str, Any]) -> dict[str, Any]:
     """Round-trip tools/call through current official Pydantic request types.
 
     The official ``CallToolRequest`` model represents the MCP method/params payload,
-    not the outer JSON-RPC version marker. Conformance therefore round-trips the
-    typed payload through the SDK while preserving the already-validated transport
-    marker from the original envelope. Dropping it would make the reconstructed
-    object less complete than the wire request and would incorrectly trip the
-    binding's fail-closed JSON-RPC identity check.
+    not the outer JSON-RPC version or request-id fields. Conformance therefore
+    round-trips the typed payload through the SDK while preserving those already-
+    validated transport identity fields from the original envelope. Dropping them
+    would make the reconstructed object less complete than the wire request and
+    would incorrectly trip the binding's fail-closed JSON-RPC identity checks.
     """
 
     try:
@@ -80,10 +80,15 @@ def validate_mcp_sdk_round_trip(envelope: dict[str, Any]) -> dict[str, Any]:
         raise BindingError("MCP 2026-07-28 binding advertised unsupported Tasks")
 
     request_dict = request.model_dump(by_alias=True, exclude_none=True, mode="json")
-    jsonrpc_version = envelope.get("request", {}).get("jsonrpc")
+    original_request = envelope.get("request", {})
+    jsonrpc_version = original_request.get("jsonrpc")
     if jsonrpc_version != "2.0":
         raise BindingError("MCP conformance input must use JSON-RPC 2.0")
+    request_id = original_request.get("id")
+    if not isinstance(request_id, (str, int)):
+        raise BindingError("MCP conformance input must include a JSON-RPC request id")
     request_dict["jsonrpc"] = jsonrpc_version
+    request_dict["id"] = request_id
 
     reconstructed_envelope = copy.deepcopy(envelope)
     reconstructed_envelope["request"] = request_dict
