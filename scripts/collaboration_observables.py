@@ -19,7 +19,7 @@ try:
 except ModuleNotFoundError:  # Direct execution places scripts/ on sys.path.
     from metric_uncertainty import beta_binomial_summary
 
-VERSION = "collaboration-observables-v0.1"
+VERSION = "collaboration-observables-v0.3"
 
 
 def _require(value: bool, message: str) -> None:
@@ -81,15 +81,23 @@ def _bootstrap_median(values: list[float], seed_material: str) -> dict[str, Any]
 def _hhi(values: list[str], population: str) -> dict[str, Any]:
     counts = Counter(values)
     total = sum(counts.values())
-    score = 0.0 if total == 0 else sum((count / total) ** 2 for count in counts.values())
+    if total == 0:
+        score = None
+        status = "undefined_empty_population"
+        uncertainty = "undefined_without_observations"
+    else:
+        score = round(sum((count / total) ** 2 for count in counts.values()), 6)
+        status = "observed"
+        uncertainty = "descriptive_snapshot_no_population_inference"
     return {
-        "model": "observed-share-hhi-v1",
+        "model": "observed-share-hhi-v2",
         "population": population,
         "observations": total,
         "distinct_actors": len(counts),
-        "hhi": round(score, 6),
+        "hhi": score,
+        "status": status,
         "counts": dict(sorted(counts.items())),
-        "uncertainty": "descriptive_snapshot_no_population_inference",
+        "uncertainty": uncertainty,
     }
 
 

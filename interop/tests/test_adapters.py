@@ -109,6 +109,36 @@ class AdapterRoundTripTests(unittest.TestCase):
             verification["extensions"]["org.idkmesh.interop"]["integration_authority"]
         )
 
+    def test_worker_identity_cannot_satisfy_independent_verifier_policy(self) -> None:
+        adapter = LocalAdapter(harmless_handler)
+        bundle = run_with_adapter(adapter, self.work_unit, RUN)
+        same_identity = VerificationContext(
+            source_revision=VERIFY.source_revision,
+            started_at=VERIFY.started_at,
+            finished_at=VERIFY.finished_at,
+            wall_seconds=VERIFY.wall_seconds,
+            verifier_id=adapter.worker_id,
+        )
+        verification = verify_result_bundle(
+            self.work_unit,
+            bundle,
+            {"result": expected_bytes(self.work_unit)},
+            same_identity,
+        )
+        Draft202012Validator(self.verification_schema).validate(verification)
+        self.assertEqual(verification["status"], "failed")
+        self.assertEqual(
+            verification["decision_support"]["recommendation"],
+            "reject_candidate",
+        )
+        self.assertFalse(verification["independence"]["independent_from_worker"])
+        failed = {
+            item["id"]
+            for item in verification["checks"]
+            if item["status"] == "failed"
+        }
+        self.assertEqual(failed, {"verifier-independence"})
+
     def test_tampered_artifact_is_rejected_by_separate_verifier(self) -> None:
         bundle = run_with_adapter(LocalAdapter(harmless_handler), self.work_unit, RUN)
         tampered = ResultBundle(bundle.result_manifest, {"result": b"tampered\n"})
@@ -123,6 +153,25 @@ class AdapterRoundTripTests(unittest.TestCase):
         self.assertEqual(verification["decision_support"]["recommendation"], "reject_candidate")
         failed = {item["id"] for item in verification["checks"] if item["status"] == "failed"}
         self.assertEqual(failed, {"artifact-digests", "expected-output"})
+
+    def test_verifier_rejects_duplicate_manifest_artifact_ids(self) -> None:
+        bundle = run_with_adapter(LocalAdapter(harmless_handler), self.work_unit, RUN)
+        altered = copy.deepcopy(bundle.result_manifest)
+        duplicate = copy.deepcopy(altered["produced_artifacts"][0])
+        duplicate["locator"] = "memory://interop/ambiguous-result.json"
+        altered["produced_artifacts"].append(duplicate)
+
+        Draft202012Validator(self.result_schema).validate(altered)
+        with self.assertRaisesRegex(
+            BindingError,
+            r"duplicate produced artifact ids: result$",
+        ):
+            verify_result_bundle(
+                self.work_unit,
+                ResultBundle(altered, bundle.artifact_bytes),
+                {"result": expected_bytes(self.work_unit)},
+                VERIFY,
+            )
 
     def test_adapter_handler_cannot_mutate_canonical_work_unit(self) -> None:
         original = copy.deepcopy(self.work_unit)

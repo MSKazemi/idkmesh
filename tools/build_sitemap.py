@@ -7,8 +7,9 @@ Markdown document under `docs/` is rendered to an HTML page whose own
 sitemap that declares those pages, using the canonical form so the two agree.
 
 The URL set is derived entirely from the filesystem -- there is no curated list
-to fall out of date. `tests/test_sitemap.py` recomputes the same set and fails
-when `docs/sitemap.xml` disagrees, which is the drift this file exists to stop.
+to fall out of date. `tests/test_pages_front_door.py` recomputes the same set and
+fails in both directions -- a published page the sitemap omits, and a declared URL
+that is not published -- which is the drift this file exists to stop.
 
 `lastmod` comes from each source file's last commit date, not from the build
 clock. A sitemap whose every URL claims to have changed today is a trust

@@ -297,7 +297,20 @@ def verify_result_bundle(
         and manifest.get("work_unit_version") == work_unit.get("version")
         and manifest.get("provenance", {}).get("work_unit_digest") == expected_work_unit_digest
     )
-    declared = {item["id"]: item for item in manifest.get("produced_artifacts", [])}
+    produced_artifacts = manifest.get("produced_artifacts", [])
+    seen_artifact_ids: set[str] = set()
+    duplicate_artifact_ids: set[str] = set()
+    for item in produced_artifacts:
+        artifact_id = item["id"]
+        if artifact_id in seen_artifact_ids:
+            duplicate_artifact_ids.add(artifact_id)
+        seen_artifact_ids.add(artifact_id)
+    if duplicate_artifact_ids:
+        raise BindingError(
+            "ResultManifest contains duplicate produced artifact ids: "
+            + ", ".join(sorted(duplicate_artifact_ids))
+        )
+    declared = {item["id"]: item for item in produced_artifacts}
     actual_ids = set(bundle.artifact_bytes)
     declared_ids = set(declared)
     expected_ids = set(expected_artifacts)
@@ -317,6 +330,12 @@ def verify_result_bundle(
         manifest.get("status") == "succeeded"
         and interop.get("execution_status") == "succeeded"
     )
+    worker_id = manifest.get("worker", {}).get("id")
+    verifier_identity_distinct = context.verifier_id != worker_id
+    independence_required = (
+        work_unit.get("verification_policy", {}).get("independent_from_worker") is True
+    )
+    verifier_independence_ok = not independence_required or verifier_identity_distinct
     required_validator_ids = sorted(
         item["id"] for item in work_unit.get("validators", []) if item.get("required") is True
     )
@@ -330,6 +349,12 @@ def verify_result_bundle(
     check_values = [
         ("work-unit-binding", "other", binding_ok, "Manifest binds to the exact Work Unit."),
         ("execution-completion", "other", execution_ok, "Worker execution completed successfully."),
+        (
+            "verifier-independence",
+            "policy",
+            verifier_independence_ok,
+            "Verifier identity satisfies the Work Unit independence policy.",
+        ),
         ("validator-requirements", "policy", validators_ok, "All required validator identities were preserved."),
         ("output-contract", "policy", output_contract_ok, "Candidate artifact identities match the Work Unit outputs."),
         ("artifact-digests", "other", digests_ok, "Declared artifact digests match returned bytes."),
@@ -371,11 +396,15 @@ def verify_result_bundle(
             "adapter_version": "0.1",
         },
         "independence": {
-            "independent_from_worker": True,
+            "independent_from_worker": verifier_identity_distinct,
             "worker_id_observed": manifest["worker"]["id"],
             "shared_model_family": False,
             "shared_runtime": True,
-            "correlation_notes": "Verifier is a separate component but this bounded mock runs in one process.",
+            "correlation_notes": (
+                "Verifier has a distinct identity but this bounded mock runs in one process."
+                if verifier_identity_distinct
+                else "Verifier identity matches the worker identity; independence is not established."
+            ),
         },
         "status": "passed" if passed else "failed",
         "started_at": context.started_at,

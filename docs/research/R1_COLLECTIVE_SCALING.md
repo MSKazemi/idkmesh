@@ -18,6 +18,11 @@ all:
 > At an identical attempt and verification budget, does the *coordination
 > topology* of the group change the scaling exponent?
 
+A downstream analyzer now also makes the first issue #13 hypothesis explicit:
+
+> Under the low-diversity `homogeneous` proxy, where do paired per-added-worker
+> verified-success gains begin to diminish or become negative?
+
 It is designed to retain saturation and negative marginal returns. It does not
 fit a real-world scaling law from invented worker probabilities.
 
@@ -86,6 +91,7 @@ verification before execution.
 - [machine-readable seeded results, correlation sweep](../../results/experiments/r1/diversity-correlation-threshold-seeds42-51.json.gz)
 - [compact generated table, correlation sweep](../../results/experiments/r1/diversity-correlation-threshold-seeds42-51.md)
 - [runner](../../randomness_lab/r1_scaling.py)
+- [low-diversity threshold analyzer](../../randomness_lab/r1_low_diversity_threshold.py)
 - [correlation-sweep runner](../../randomness_lab/r1_correlation_threshold.py)
 
 Reproduce from the repository root:
@@ -108,6 +114,10 @@ Reproduce from the repository root:
       --topologies flat,role_specialized,task_dag \
       --output /tmp/r1-topology.json.gz \
       --report /tmp/r1-topology.md
+
+    python -m randomness_lab.r1_low_diversity_threshold \
+      --output /tmp/r1-low-diversity-threshold.json \
+      --report /tmp/r1-low-diversity-threshold.md
 
 The default invocation stays flat-only and reproduces the committed
 `collective-scaling-seeds42-51` payload; a test replays it and compares every
@@ -144,6 +154,60 @@ family, and topology:
 
 The intervals are descriptive normal approximations over 10 seeds. They are not
 a power calculation or a substitute for task-level hierarchical analysis.
+
+## Low-diversity marginal-threshold analyzer
+
+`randomness_lab.r1_low_diversity_threshold` consumes the seeded R1 output rather
+than changing the frozen R1 generator. It uses the existing `homogeneous` family
+as a deliberately strong **synthetic low-diversity proxy** and selects only the
+`flat` topology. The proxy means same strategy family inside this simulator; it
+is not a measurement of contributor diversity, demographic diversity, model
+family diversity, or real coding-agent diversity.
+
+For adjacent configured sizes `N_a < N_b`, seed `s`, and verified-success rate
+`V(N, s)`, the analyzer defines the paired average marginal slope
+
+```text
+g(N_a -> N_b, s) = [V(N_b, s) - V(N_a, s)] / (N_b - N_a)
+```
+
+and, after the first interval,
+
+```text
+delta_g(t, s) = g(t, s) - g(t - 1, s)
+```
+
+Pairing is accepted only when every compared cell contains the same ordered seed
+set; missing, duplicate, malformed, or reordered cells fail closed. The
+reference population grid has unequal interval widths (1, 2, 5, 10), so `g` is
+an average discrete slope per added worker over each observed interval. It is
+not a point derivative and does not locate a threshold between unobserved N
+values.
+
+Each `g` and `delta_g` is summarized across seeds with its sample mean, sample
+standard deviation, min/max, and a descriptive normal-approximation 95%
+interval. The machine-readable labels are:
+
+- **supported diminishing return** — the interval for `delta_g` is entirely
+  below zero;
+- **supported negative return** — the interval for `g` is entirely below zero;
+- **interval not strictly positive** — the interval for `g` overlaps or falls
+  below zero. This is an uncertainty marker, not evidence that the underlying
+  effect is exactly zero.
+
+These labels are deliberately descriptive. They are not multiplicity-adjusted
+hypothesis tests and are not confidence statements about a population of real
+software tasks or agents. A missing threshold means only that this configured
+synthetic run did not resolve one at the observed population sizes. Conversely,
+a threshold in the simulator cannot establish a real-world scaling law.
+
+The analyzer integrates with schema-v2 R1 results by ignoring role-specialized
+and task-DAG cells for this particular question. That prevents a topology change
+from being mistaken for a diversity effect. The broader evidence record remains
+separate: E032 changes population and budget behavior, while E040 isolates
+retained worker independence through error correlation. Population size,
+resource budget, strategy diversity, error correlation, and coordination
+topology are distinct factors and should not be collapsed into one claim.
 
 ## Reference observations
 
@@ -281,7 +345,7 @@ improvement without checking.
 | real compute, wall time, reviewer minutes | missing; proxies only |
 | messages, bytes, duplicated work | missing |
 | pairwise error correlation | configured/mechanism-level; real measurement missing |
-| marginal value of N+1 | implemented for synthetic R1 curves |
+| marginal value of N+1 | implemented for synthetic R1 curves, with paired per-added-worker threshold analysis |
 
 The repository has adjacent scheduling, evolutionary-orchestration,
 verification-correlation, and benchmark-contract work. Those artifacts answer
@@ -294,11 +358,15 @@ coding-agent scaling curve.
 Issue #13 remains open. The minimum real experiment still needs a prospectively
 frozen held-out software-task corpus, all seven configurations, fixed and fully
 recorded budgets, independent verification, retained failures, and analysis of
-the requested real metrics. This runner supplies analysis mechanics and a
-machine-readable gap ledger; it does not manufacture the missing observations.
+the requested real metrics. The runner and threshold analyzer supply analysis
+mechanics and a machine-readable gap ledger; they do not manufacture the missing
+observations. The threshold rule should be frozen before real outcomes are
+inspected so a real run can confirm, fail to resolve, or falsify it without
+post-hoc threshold selection.
 
 ## Community impact
 
-Contributors now have one deterministic command and one explicit gap table to
-extend. A future real run can challenge the synthetic assumptions rather than
-reverse-engineering which N comparisons and cost questions were intended.
+Contributors now have deterministic commands, an explicit threshold definition,
+and one explicit gap table to extend. A future real run can challenge the
+synthetic assumptions rather than reverse-engineering which N comparisons, cost
+questions, and low-diversity threshold semantics were intended.

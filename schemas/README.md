@@ -87,6 +87,7 @@ Likewise, a `VerificationResult` may recommend `accept_candidate`, but that reco
 
 The harness validates cross-object invariants in addition to JSON structure:
 
+- produced artifact IDs within one ResultManifest must be unique before verification evidence references are resolved;
 - VerificationResult must reference the exact ResultManifest/WorkUnit attempt;
 - evidence IDs referenced by checks must exist;
 - required WorkUnit validator IDs must appear as verification checks;

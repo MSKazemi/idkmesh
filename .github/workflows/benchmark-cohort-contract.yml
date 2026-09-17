@@ -13,6 +13,8 @@ on:
       - "benchmarks/**"
       - "tools/benchmark_publication.py"
       - "tests/test_benchmark_publication.py"
+      - "tests/test_benchmark_publication_workflow.py"
+      - ".github/workflows/benchmark-publication.yml"
       - ".github/workflows/benchmark-cohort-contract.yml"
       - "requirements-phase0.txt"
   push:
@@ -28,6 +30,8 @@ on:
       - "benchmarks/**"
       - "tools/benchmark_publication.py"
       - "tests/test_benchmark_publication.py"
+      - "tests/test_benchmark_publication_workflow.py"
+      - ".github/workflows/benchmark-publication.yml"
       - ".github/workflows/benchmark-cohort-contract.yml"
       - "requirements-phase0.txt"
 
@@ -95,6 +99,9 @@ jobs:
 
       - name: Publish benchmark cohort state and fail on drift
         run: PYTHONPATH=. python tools/benchmark_publication.py --check
+
+      - name: Validate benchmark publication workflow safety contract
+        run: python -m unittest tests.test_benchmark_publication_workflow -v
 
 
 # Contract-only safety boundary:

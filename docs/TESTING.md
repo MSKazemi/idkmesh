@@ -13,6 +13,46 @@ make test           # the gate: full suite, ~35 seconds
 
 Everything else is automation around those two commands.
 
+## Contributor command source of truth
+
+For contributor setup and testing, use the **current repository state** rather
+than historical issue or pull-request prose. The maintained source of truth is
+the combination of [`CONTRIBUTING.md`](../CONTRIBUTING.md), this document, the
+executable `Makefile` targets, `scripts/testkit.py`, and `pytest.ini`. If an older
+issue says a Makefile target is unmerged or should not be assumed, keep that text
+as provenance but follow the current files above.
+
+On Linux/macOS and other POSIX-style development environments, the supported
+convenience path is:
+
+```bash
+make setup
+make test
+make integration
+```
+
+The Makefile is not the only supported path. A direct-Python workflow remains
+available when `make` is inconvenient. After creating the virtual environment,
+Linux/macOS can run without shell activation:
+
+```bash
+python -m venv .venv
+.venv/bin/python -m pip install -r requirements-phase0.txt pytest
+.venv/bin/python -m pytest -q
+```
+
+On Windows PowerShell, use the virtual environment's interpreter directly:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements-phase0.txt pytest
+.\.venv\Scripts\python.exe -m pytest -q
+```
+
+Neither path needs a `PYTHONPATH=.` prefix for pytest: `pytest.ini` sets the
+repository root on `pythonpath`. These commands define supported entry points;
+they are not evidence that every platform has been independently exercised.
+
 ## Measured baseline
 
 Every number in this section is **a measurement with a date attached, not a
@@ -147,8 +187,8 @@ The Stop hook honours `stop_hook_active`, so a genuinely unfixable failure
 blocks once and then lets the turn end rather than looping forever.
 
 Both were verified against a deliberately failing test: the edit hook exits 2
-with the failure text, the Stop hook exits 2 and returns to 0 once the failure
-is removed.
+with the failure text, the Stop hook exits 2 and returns to 0 once the failure is
+removed.
 
 ### Test selection, and its limits
 
@@ -170,11 +210,23 @@ still under-collects; prefer pytest).
 
 ### Workflow hardening
 
-The concurrency-group and cancellation work that accompanied these tiers is a
-separate concern and is **not** on `main` yet. It is described in the pull
-request that carries it, together with the workflow edits it asserts; this
-document does not restate its claims, because a claim about workflow state is
-only true alongside the edits that make it so.
+Repository-wide workflow hygiene is now part of current `main` and has an
+executable regression contract in `tests/test_workflow_ci_hygiene.py`. The guard
+requires every workflow to declare a concurrency group, rejects a bare
+workflow-level `cancel-in-progress: true` that could destroy branch/scheduled
+evidence, and requires explicit timeouts for ordinary jobs. Workflow-level
+cancellation may instead be disabled or gated to pull-request events.
+
+Job-level concurrency remains a deliberate exception surface: workflows such as
+the evolution controller can use separately keyed advisory/canonical groups when
+the group expression itself preserves the required isolation. The tests pin
+those repository-specific cases rather than flattening every workflow into one
+concurrency policy.
+
+When changing `.github/workflows/`, run the focused workflow/security tests in
+addition to the normal repository gate and treat the current workflow files plus
+their regression tests as the source of truth; do not rely on an older issue or
+PR description of CI behavior.
 
 ## Adding tests
 

@@ -52,7 +52,15 @@ def validate_a2a_sdk_round_trip(envelope: dict[str, Any]) -> dict[str, Any]:
 
 
 def validate_mcp_sdk_round_trip(envelope: dict[str, Any]) -> dict[str, Any]:
-    """Round-trip tools/call through current official Pydantic request types."""
+    """Round-trip tools/call through current official Pydantic request types.
+
+    The official ``CallToolRequest`` model represents the MCP method/params payload,
+    not the outer JSON-RPC version or request-id fields. Conformance therefore
+    round-trips the typed payload through the SDK while preserving the already-
+    validated JSON-RPC version and the caller-selected request correlation id from
+    the original envelope. Dropping either would make the reconstructed object less
+    complete than the wire request; neither is treated as IDKMesh Work Unit identity.
+    """
 
     try:
         from mcp.types import CallToolRequest, LATEST_PROTOCOL_VERSION, TaskMetadata
@@ -70,7 +78,18 @@ def validate_mcp_sdk_round_trip(envelope: dict[str, Any]) -> dict[str, Any]:
     ).get("extensions", {})
     if MCP_TASKS_EXTENSION in advertised:
         raise BindingError("MCP 2026-07-28 binding advertised unsupported Tasks")
+
     request_dict = request.model_dump(by_alias=True, exclude_none=True, mode="json")
+    original_request = envelope.get("request", {})
+    jsonrpc_version = original_request.get("jsonrpc")
+    if jsonrpc_version != "2.0":
+        raise BindingError("MCP conformance input must use JSON-RPC 2.0")
+    request_id = original_request.get("id")
+    if not isinstance(request_id, (str, int)):
+        raise BindingError("MCP conformance input must include a JSON-RPC request id")
+    request_dict["jsonrpc"] = jsonrpc_version
+    request_dict["id"] = request_id
+
     reconstructed_envelope = copy.deepcopy(envelope)
     reconstructed_envelope["request"] = request_dict
     reconstructed = from_mcp_tool_call(reconstructed_envelope)
@@ -83,6 +102,7 @@ def validate_mcp_sdk_round_trip(envelope: dict[str, Any]) -> dict[str, Any]:
         "distribution": "mcp",
         "distribution_version": metadata.version("mcp"),
         "protocol_version": LATEST_PROTOCOL_VERSION,
+        "jsonrpc_version": jsonrpc_version,
         "request_type": type(request).__name__,
         "tasks_mode": "unsupported-for-2026-07-28",
         "work_unit_digest": canonical_digest(reconstructed),
