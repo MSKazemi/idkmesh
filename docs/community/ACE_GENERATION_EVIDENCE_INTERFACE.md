@@ -127,7 +127,39 @@ f_i =
 
 The exact utility/value definition is experimental and must remain versioned and challengeable.
 
-## 4. Reproduction and fitness are different questions
+## 4. Reproduction ratio semantics
+
+The empirical reproduction ratio is defined only when at least one eligible matured, verified parent exists:
+
+```text
+R_community = verified descendants / eligible matured verified parents
+```
+
+When the eligible-parent denominator is zero, the empirical ratio is **undefined**. It is not evidence for `R_community = 0`, and it must not be manufactured by substituting a denominator of one.
+
+Controller result version 2 therefore emits:
+
+```json
+{
+  "R_community": null,
+  "R_community_status": "undefined_no_eligible_parents",
+  "eligible_matured_verified_parents": 0
+}
+```
+
+and remains in `DORMANT` mode unless an independent overload condition requires `CONSOLIDATE`. When the denominator is positive, the controller emits a numeric ratio and:
+
+```json
+{
+  "R_community_status": "observed_ratio"
+}
+```
+
+This distinction is methodological rather than cosmetic. A zero measured numerator over a positive denominator is a valid observed ratio of `0.0`; absence of an eligible denominator is missing evidence for that ratio.
+
+Older design prose may use `D / max(1, P)` as a programming guard. That expression must not be interpreted as the empirical measurement contract. The Phase-A evidence interface and controller output preserve the undefined state explicitly.
+
+## 5. Reproduction and fitness are different questions
 
 A verified receipt with no strategy outcome:
 
@@ -142,7 +174,7 @@ An outcome with a large value linked to an unverified receipt:
 
 This is intentional.
 
-## 5. Full controller flow
+## 6. Full controller flow
 
 ```text
 #40 / other observer
@@ -155,7 +187,7 @@ measurement layer
  -> strategy outcomes / attention / latency / noise
 
 #68 shadow controller
- -> R_community
+ -> R_community (nullable when no eligible denominator exists)
  -> strategy fitness
  -> replicator-mutator update
  -> carrying-capacity homeostasis
@@ -165,19 +197,21 @@ measurement layer
 
 No step above grants merge authority.
 
-## 6. Current result contract
+## 7. Current result contract
 
-The Phase-A controller reports:
+The Phase-A controller accepts the existing snapshot input format and continues to report:
 
 ```text
 evidence_format = ace-lineage-receipts+strategy-outcomes-v1
 ```
 
-and preserves the rule:
+The serialized controller result is now `version = 2` because `R_community` is nullable when there is no eligible denominator and `R_community_status` makes that evidence state explicit.
+
+It preserves the rule:
 
 > **Causal reproduction comes only from verified lineage receipts; positive strategy value comes only from measured outcomes linked to a verified receipt.**
 
-## 7. Activation boundary
+## 8. Activation boundary
 
 The controller remains shadow-only by default:
 
@@ -190,7 +224,7 @@ Even when a recommendation exists, no modeled public action is emitted unless bo
 
 Actual GitHub actuation remains a separate, independently reviewed integration step and is additionally gated on the merged safety/protection controls from PR #98 plus the fail-closed activation contract.
 
-## 8. Deterministic state fixtures
+## 9. Deterministic state fixtures
 
 `tests/fixtures/ace_generation_scenarios_v1.json` fixes the three Phase-A states requested by #57 against the canonical example snapshot:
 
@@ -199,3 +233,5 @@ Actual GitHub actuation remains a separate, independently reviewed integration s
 - overload: healthy reproduction evidence plus excessive review load -> `CONSOLIDATE`.
 
 Every fixture runs in shadow mode, emits zero public actions, and must reproduce equivalent result objects across repeated evaluations.
+
+The regression suite additionally covers the zero-denominator state separately: no eligible matured, verified parent produces `R_community=null`, `R_community_status=undefined_no_eligible_parents`, and a dormant/no-action result rather than a fabricated empirical zero.
