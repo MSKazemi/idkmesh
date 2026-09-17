@@ -13,6 +13,46 @@ make test           # the gate: full suite, ~35 seconds
 
 Everything else is automation around those two commands.
 
+## Contributor command source of truth
+
+For contributor setup and testing, use the **current repository state** rather
+than historical issue or pull-request prose. The maintained source of truth is
+the combination of [`CONTRIBUTING.md`](../CONTRIBUTING.md), this document, the
+executable `Makefile` targets, `scripts/testkit.py`, and `pytest.ini`. If an older
+issue says a Makefile target is unmerged or should not be assumed, keep that text
+as provenance but follow the current files above.
+
+On Linux/macOS and other POSIX-style development environments, the supported
+convenience path is:
+
+```bash
+make setup
+make test
+make integration
+```
+
+The Makefile is not the only supported path. A direct-Python workflow remains
+available when `make` is inconvenient. After creating the virtual environment,
+Linux/macOS can run without shell activation:
+
+```bash
+python -m venv .venv
+.venv/bin/python -m pip install -r requirements-phase0.txt pytest
+.venv/bin/python -m pytest -q
+```
+
+On Windows PowerShell, use the virtual environment's interpreter directly:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements-phase0.txt pytest
+.\.venv\Scripts\python.exe -m pytest -q
+```
+
+Neither path needs a `PYTHONPATH=.` prefix for pytest: `pytest.ini` sets the
+repository root on `pythonpath`. These commands define supported entry points;
+they are not evidence that every platform has been independently exercised.
+
 ## Measured baseline
 
 Every number in this section is **a measurement with a date attached, not a
