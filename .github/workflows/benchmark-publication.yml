@@ -57,9 +57,18 @@ jobs:
           set -euo pipefail
 
           expected_sha="${GITHUB_SHA}"
+
+          # `gh api` writes the JSON body of a 404 to stdout on the hosted
+          # runner, so `... || true` can accidentally turn a missing tag into
+          # a non-empty "tag SHA". Query the public Git remote instead:
+          # - an absent tag is a successful lookup with empty output;
+          # - a network/protocol failure is non-zero and, with pipefail, stops
+          #   publication rather than being mistaken for absence.
           tag_ref="$(
-            gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${RELEASE_TAG}" \
-              --jq '.object.sha' 2>/dev/null || true
+            git ls-remote --refs --tags \
+              "https://github.com/${GITHUB_REPOSITORY}.git" \
+              "refs/tags/${RELEASE_TAG}" |
+              awk '{print $1}'
           )"
 
           # Never move or reuse a release tag. A collision means the public

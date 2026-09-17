@@ -53,6 +53,13 @@ class BenchmarkPublicationWorkflowTest(unittest.TestCase):
         self.assertNotIn("--clobber", self.workflow)
         self.assertNotIn("git tag -f", self.workflow)
 
+    def test_missing_tag_probe_is_empty_and_transport_failures_are_not_masked(self):
+        self.assertIn("git ls-remote --refs --tags", self.workflow)
+        self.assertIn('"refs/tags/${RELEASE_TAG}"', self.workflow)
+        self.assertIn("set -euo pipefail", self.workflow)
+        self.assertNotIn('gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/', self.workflow)
+        self.assertNotIn("2>/dev/null || true", self.workflow)
+
     def test_release_contains_both_canonical_publication_formats(self):
         self.assertIn(
             '"benchmarks/PUBLICATION.md#benchmark-publication.md"', self.workflow
