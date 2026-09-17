@@ -94,6 +94,10 @@ def _a2a_message_id(digest: str) -> str:
     return "idkmesh-" + digest.split(":", 1)[1][:24]
 
 
+def _mcp_request_id(digest: str) -> str:
+    return "idkmesh-" + digest.split(":", 1)[1][:24]
+
+
 def _a2a_service_parameters() -> dict[str, str]:
     """Return transport-neutral A2A service parameters for this request.
 
@@ -310,7 +314,7 @@ def to_mcp_tool_call(work_unit: dict[str, Any]) -> dict[str, Any]:
 
     payload = _contract_payload(work_unit)
     digest = payload["workUnitDigest"]
-    request_id = "idkmesh-" + digest.split(":", 1)[1][:24]
+    request_id = _mcp_request_id(digest)
     return {
         "protocol": "mcp",
         "protocolVersion": MCP_PROTOCOL_VERSION,
@@ -394,6 +398,32 @@ def _require_mcp_request_identity(
     return meta
 
 
+def _require_mcp_work_unit_identity(
+    request: dict[str, Any],
+    meta: dict[str, Any],
+    work_unit: dict[str, Any],
+    digest: str,
+) -> None:
+    """Require every IDKMesh-emitted MCP identity surface to agree.
+
+    The canonical Work Contract already carries a digest, while IDKMesh also
+    emits a deterministic JSON-RPC request id and namespaced request metadata for
+    routing and observability. A decoder must not accept an envelope where those
+    redundant identity views disagree with the canonical Work Unit.
+    """
+
+    if request.get("id") != _mcp_request_id(digest):
+        raise BindingError("MCP request id does not match the canonical Work Unit digest")
+
+    identity = meta.get(MCP_WORK_CONTRACT_EXTENSION)
+    if not isinstance(identity, dict):
+        raise BindingError("MCP request _meta is missing Work Contract identity")
+    if identity.get("workUnitId") != work_unit["id"]:
+        raise BindingError("MCP request _meta Work Unit id mismatch")
+    if identity.get("workUnitDigest") != digest:
+        raise BindingError("MCP request _meta Work Unit digest mismatch")
+
+
 def from_mcp_tool_call(envelope: dict[str, Any]) -> dict[str, Any]:
     try:
         request = envelope["request"]
@@ -424,6 +454,7 @@ def from_mcp_tool_call(envelope: dict[str, Any]) -> dict[str, Any]:
     if expected != actual:
         raise BindingError("MCP Work Contract digest mismatch")
     _require_work_unit(work_unit)
+    _require_mcp_work_unit_identity(request, meta, work_unit, actual)
     return work_unit
 
 
