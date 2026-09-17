@@ -19,7 +19,7 @@ try:
 except ModuleNotFoundError:  # Direct execution places scripts/ on sys.path.
     from metric_uncertainty import beta_binomial_summary
 
-VERSION = "collaboration-observables-v0.2"
+VERSION = "collaboration-observables-v0.3"
 
 
 def _require(value: bool, message: str) -> None:
