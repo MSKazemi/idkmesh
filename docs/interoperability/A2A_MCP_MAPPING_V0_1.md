@@ -78,12 +78,13 @@ fails closed on disagreement: top-level `protocolVersion`, the
 `tools/call.params.name`; and the request must use JSON-RPC 2.0. Missing or
 conflicting values are rejected before the canonical Work Unit is accepted.
 
-Official `mcp` SDK 2.1.1 identifies `2026-07-28` as its latest protocol but
-marks `TaskMetadata` and `ClientTasksCapability` as `2025-11-25 only`. The
-current binding therefore makes a synchronous `tools/call`, omits `params.task`,
-does not advertise `io.modelcontextprotocol/tasks`, and records
+Official `mcp` SDK 2.2.0 identifies `2026-07-28` as its latest protocol but
+marks `TaskMetadata` and related legacy task types as `2025-11-25 only`; the
+2.2.0 release also lists the redesigned Tasks extension as not yet implemented.
+The current binding therefore makes a synchronous `tools/call`, omits
+`params.task`, does not advertise `io.modelcontextprotocol/tasks`, and records
 `asyncTaskMode=unsupported-for-2026-07-28`. A future revision may add the
-current asynchronous mechanism only after its lifecycle is type-checked.
+current asynchronous extension only after its lifecycle is type-checked.
 
 ## Round-trip invariant
 
