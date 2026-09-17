@@ -48,6 +48,19 @@ def _parse_date(raw: str) -> dt.date:
     return dt.date.fromisoformat(raw)
 
 
+def _validate_unit_interval(offer_id: str, name: str, value: Any) -> None:
+    """Keep executable ranking inputs aligned with the registry schema."""
+    _require(
+        isinstance(value, (int, float)) and not isinstance(value, bool),
+        f"{offer_id}: {name} must be a number",
+    )
+    numeric = float(value)
+    _require(
+        math.isfinite(numeric) and 0.0 <= numeric <= 1.0,
+        f"{offer_id}: {name} must be finite and between 0 and 1",
+    )
+
+
 def validate_registry(registry: dict[str, Any]) -> None:
     _require(registry.get("version") == REGISTRY_VERSION, "registry version must be 1")
     observed = registry.get("observed_at")
@@ -69,6 +82,8 @@ def validate_registry(registry: dict[str, Any]) -> None:
         _require(all(isinstance(x, str) and x for x in roles), f"{oid}: invalid task_classes")
         caps = offer.get("capabilities")
         _require(isinstance(caps, list), f"{oid}: capabilities must be a list")
+        for name in ("availability_weight", "human_setup_cost", "scarcity", "security_risk"):
+            _validate_unit_interval(oid, name, offer.get(name))
         source = offer.get("source")
         _require(isinstance(source, dict), f"{oid}: source required")
         _require(isinstance(source.get("url"), str) and source["url"].startswith("https://"), f"{oid}: HTTPS source URL required")
@@ -129,13 +144,13 @@ def _score(offer: dict[str, Any], task: dict[str, Any]) -> float:
     preferred = set(task.get("preferred_capabilities", []))
     caps = set(offer.get("capabilities", []))
     fit = 1.0 + 0.12 * len(preferred & caps)
-    availability = float(offer.get("availability_weight", 0.5))
+    availability = float(offer["availability_weight"])
     independence = 1.12 if "independent_verification" in caps else 1.0
     no_secret = 1.08 if not offer.get("requires_repository_secret") else 0.92
     no_external = 1.05 if not offer.get("external_data_processor") else 0.95
-    human_cost = float(offer.get("human_setup_cost", 0.5))
-    scarcity = float(offer.get("scarcity", 0.5))
-    risk = float(offer.get("security_risk", 0.5))
+    human_cost = float(offer["human_setup_cost"])
+    scarcity = float(offer["scarcity"])
+    risk = float(offer["security_risk"])
     raw = availability * fit * independence * no_secret * no_external / (1.0 + human_cost + scarcity + 2.0 * risk)
     _require(math.isfinite(raw) and raw >= 0, f"invalid score for {offer['id']}")
     return round(raw, 6)
