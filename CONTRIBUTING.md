@@ -173,9 +173,9 @@ still prints `OK`, with no indication anything was missed.
 they explain, so these numbers cannot go stale unnoticed.
 
 The SDK-backed interoperability conformance tests are optional in the default
-environment. See [`interop/README.md`](interop/README.md) for the per-SDK skip
-behavior and focused commands. Installing the pinned interoperability dependencies
-uses:
+environment. See [`interop/README.md`](interop/README.md) for the current SDK
+availability gate and focused commands. Installing the pinned interoperability
+dependencies uses:
 
 ```bash
 python -m pip install -r requirements-interoperability.txt
