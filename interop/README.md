@@ -13,11 +13,11 @@ Background: [`docs/interoperability/A2A_MCP_MAPPING_V0_1.md`](../docs/interopera
 
 ## Default tests versus SDK conformance
 
-Most tests under `interop/tests/` run in the default development environment. The two tests in `test_sdk_conformance.py` additionally require the optional official A2A and MCP SDKs.
+Most tests under `interop/tests/` run in the default development environment. The two tests in `test_sdk_conformance.py` additionally exercise the optional official A2A and MCP SDKs.
 
-The current test class has one combined availability gate: **both** `import a2a` and `import mcp` must succeed before either SDK-backed conformance test runs. If either import is missing, both tests skip. This is intentionally documented as the behavior on current `main`; a future code change may make the gates independent, but this guide does not claim that change has already happened.
+The availability gates are **independent**: the A2A conformance test runs whenever `a2a-sdk` is installed, and the MCP conformance test runs whenever `mcp` is installed. Installing or working on one protocol no longer requires the unrelated SDK merely to preserve the conformance evidence that is available. If neither SDK is installed, both protocol-specific tests skip independently.
 
-A skipped test is not conformance evidence. Use `pytest -rs` when you specifically need to confirm whether these SDK-backed checks executed.
+A skipped test is not conformance evidence. Use `pytest -rs` when you specifically need to confirm which SDK-backed checks executed.
 
 ## What the conformance tests need
 
@@ -46,6 +46,8 @@ Then install the pinned interoperability dependencies and rerun:
 python -m pip install -r requirements-interoperability.txt
 python -m pytest -q -rs interop/tests/test_sdk_conformance.py
 ```
+
+A contributor working on only one protocol may also install that pinned SDK alongside the Phase 0 requirements and run the same test module. The installed protocol's conformance test executes while the unrelated protocol's test reports an explicit skip reason.
 
 To run the whole interoperability test directory with skip reasons visible:
 
