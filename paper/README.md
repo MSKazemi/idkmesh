@@ -5,8 +5,8 @@ and the repository evidence that can support them.
 
 ## Current manuscript status
 
-As of the stewardship audit against `main@dc4ee8dbd4c22d549e9b1f48375fa11b58e41eb2`
-on 2026-09-17, this repository does **not** contain a discoverable canonical
+As of the stewardship audit against `main@141b57fc9596d156daa8ab41ce06ba47c04c884f`
+on 2026-09-18, this repository does **not** contain a discoverable canonical
 editable manuscript source (`.tex`, Markdown manuscript, or equivalent) or a
 committed paper PDF. Issue [#478](https://github.com/MSKazemi/idkmesh/issues/478)
 tracks that missing source-of-truth.
@@ -70,13 +70,18 @@ When a change can affect a paper claim:
    when the upstream protocol owns those identifiers, while still validating the
    protocol-mandated identifier shape (for example A2A's non-empty string
    `messageId` and MCP's non-null string-or-integer JSON-RPC request `id`).
-7. Update the canonical manuscript in the same bounded PR **only after** its
+7. Treat statistical robustness layers as bounded evidence transformations, not as
+   automatic evidence-class upgrades. For example, the R1 threshold audit's
+   bootstrap/sign/Holm familywise layer can make a synthetic directional claim more
+   conservative without turning deterministic simulator seeds into a real task
+   population or making the sign estimand identical to the paired mean estimand.
+8. Update the canonical manuscript in the same bounded PR **only after** its
    source is available. Otherwise record the paper-impact note here or on #478.
-8. Run the repository Markdown/link gate and any experiment-specific
+9. Run the repository Markdown/link gate and any experiment-specific
    reproduction checks that actually apply. Report only commands that really ran
    and their actual result.
-9. Disclose AI/tool assistance. Owner-controlled automation is not independent
-   human or external scientific review.
+10. Disclose AI/tool assistance. Owner-controlled automation is not independent
+    human or external scientific review.
 
 ## Paper review checklist
 
@@ -90,6 +95,10 @@ A paper-facing review should explicitly check:
 - experiment status and evidence boundaries through
   [`../docs/research/README.md`](../docs/research/README.md) and
   [`../experiments/README.md`](../experiments/README.md);
+- R1 threshold language, when used, against
+  [`../randomness_lab/R1_THRESHOLD_ROBUSTNESS.md`](../randomness_lab/R1_THRESHOLD_ROBUSTNESS.md),
+  including the distinction between the paired mean intervals, sign-direction
+  corroboration, multiplicity correction, and real-world external validity;
 - negative/inconclusive evidence relevant to the narrative;
 - real-run provenance, model/workload identity, and exact source revision for
   quantitative claims;
