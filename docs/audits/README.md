@@ -65,6 +65,10 @@ Each answers one bounded question rather than surveying the repository.
   precondition currently measures. Backed by `tools/issue_evidence_gate.py`,
   which fails when a registered precondition becomes met rather than when one
   stays unmet.
+- [ChatGPT scheduled-agent branch audit](2026-09-18-chatgpt-scheduled-agent-branch-audit.md)
+  — 2026-09-18; `141b57f`. Records whether ChatGPT scheduled tasks connected to
+  GitHub can create branches, and what the current IDKmesh scheduled-task set is
+  actually permitted to do.
 
 ## IDKGraph P1 warning-triage records
 
