@@ -100,31 +100,41 @@ inflate or deflate the accuracy/correlation it is supposed to stress-test.
 | `verifiers[].accuracy` | Per-verifier accuracy against ground truth. Verifiers at or below 0.5 are flagged: their votes add no evidence (the E016 screen). |
 | `panel.mean_pairwise_error_correlation` | Mean pairwise φ (phi coefficient) of verifier error vectors. Pairs where a verifier made zero or all errors are skipped and counted in `skipped_correlation_pairs`. |
 | `panel.error`, `panel.false_accept_rate`, `panel.false_reject_rate` | Measured panel performance under the quorum rule. |
-| `panel.effective_votes` | The smallest **independent** panel size that reproduces the measured panel error at the measured mean accuracy — the number the gate's "N approvals" claim should be compared against. `null` when the panel does not discriminate. Capped at `panel.nominal_votes`: a panel is never worth more independent votes than it cast, and the comparison runs out of resolution before that (see below). |
+| `panel.effective_votes` | The smallest **independent** panel size that reproduces the measured panel error at the measured mean accuracy — the number the gate's "N approvals" claim should be compared against. `null` when the panel does not discriminate. Reported raw: this is a property of the measured error rate, not of the head-count, so it may exceed `panel.nominal_votes` (see below). |
 | `panel.effective_votes_ceiling` | The largest effective size *any* panel at this accuracy/correlation can reach. Under shared-shock dependence, panel error floors at `ρ(1−acc)` however many verifiers are added; if the ceiling is below your target, adding reviewers is wasted spend and the only moves are raising accuracy or lowering correlation. The string `"unbounded"` when measured correlation is at or below zero, and `null` when the panel does not discriminate (mean accuracy ≤ 0.5) or correlation was unmeasurable — the same undefined case as `effective_votes`. |
 | `panel.heuristic_n_eff` | The classic `N/(1+(N-1)ρ)` value, reported **only for contrast** with a warning when it exceeds the ceiling. |
 | `probes` | Breach accounting: how many seeded known-bad candidates the panel accepted, in total and per `probe_kind`. |
 
-### Resolution limits
+### Resolution limits: censoring, not a cap
 
 `effective_votes` is obtained by comparing measured panel error against a table
-of independent panel sizes up to 199. Two limits follow, and both are reported
-in `warnings` rather than hidden:
+of independent panel sizes up to **199**. A measured error at or below what 199
+independent verifiers achieve is therefore **censored**: the comparison has run
+out of resolution and the value is a *lower bound*, not a resolved measurement.
+An accurate, genuinely uncorrelated panel that made no errors on the audited set
+reaches this quickly — it is the regime the research is trying to get gates
+into, not a pathological input.
 
-- A measured panel error at or below what 199 independent verifiers achieve
-  pins the answer only as *at least* that, so the value is a lower bound rather
-  than a measurement. An accurate, genuinely uncorrelated panel that made no
-  errors on the audited set reaches this quickly — it is the regime the research
-  is trying to get gates into, not a pathological input.
-- The raw estimate can exceed the number of verifiers that actually voted. It is
-  then reported as `nominal_votes` and the raw value named in a warning, because
-  "50 verifiers ≈ 199 effective independent votes" is a table edge, not a
-  finding.
+Two consequences, and neither is repaired by changing the number:
+
+- **A value at the table maximum means "at least 199".** It is reported raw in
+  the JSON, the condition is named in `warnings`, and the Markdown summary
+  renders it as a bound — `**50 verifiers ≈ ≥199 effective independent votes on
+  this candidate set.**` — so a censored result does not read as a precise one.
+- **The value may exceed `nominal_votes`, and that is not an error.** The
+  estimand is the independent-panel size whose *expected* error matches the
+  error actually measured; on a finite candidate set a panel can outperform the
+  expectation for an equal-size independent panel, so an equivalent size above
+  the head-count is possible. Clamping it to `nominal_votes` would substitute a
+  different statistic for a published v0.1 field, and would turn a censored
+  bound into an apparently exact `50.00`. A capped display quantity, if one is
+  ever wanted, belongs in a deliberately named and versioned field rather than
+  in this one.
 
 `effective_votes_ceiling` saturates at the same table edge for a small positive
-correlation. Unlike `effective_votes` it is *not* capped at the panel size: it
-describes what any panel in this accuracy/correlation regime could reach, which
-is a property of the regime and not of the audited head-count.
+correlation. It too is uncapped, and for a further reason: it describes what any
+panel in this accuracy/correlation regime could reach, which is a property of
+the regime and not of the audited head-count.
 
 The mathematical definitions are identical to the research record:
 `effective_n`, `effective_n_ceiling` and `heuristic_effective_n` follow

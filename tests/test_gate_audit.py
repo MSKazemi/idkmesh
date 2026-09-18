@@ -465,16 +465,25 @@ class MalformedInputDiagnosticsTests(unittest.TestCase):
         self.assertIn("at least two non-probe", str(ctx.exception))
 
 
-class EffectiveVoteResolutionTests(unittest.TestCase):
-    """The headline number must never be a table edge or exceed the votes cast."""
+class EffectiveVoteCensoringTests(unittest.TestCase):
+    """A censored estimate must stay raw in JSON and look unresolved to a reader.
+
+    ``panel.effective_votes`` is defined by v0.1 as the independent-panel size
+    whose expected error matches the measured error. That is a property of the
+    error rate, not of the head-count: on a finite candidate set a panel can
+    beat the expected error of an equal-size independent panel, so a value
+    above ``nominal_votes`` is not impossible and must not be clamped. The real
+    defect is presentational — ``effective_n`` runs out of table and 199 is a
+    lower bound printed as a measurement.
+    """
 
     @staticmethod
     def _near_independent_panel(verifiers: int = 50, candidates: int = 400):
         """Accurate, uncorrelated verifiers: majority error underflows the table.
 
-        This is not a contrived shape — it is what a panel of genuinely
-        independent reviewers looks like, which is the regime the whole
-        research line is about reaching.
+        Not a contrived shape — it is what a panel of genuinely independent
+        reviewers looks like, which is the regime the research line is about
+        reaching.
         """
         import random
 
@@ -499,45 +508,58 @@ class EffectiveVoteResolutionTests(unittest.TestCase):
             "verifiers": vers,
         }
 
-    def test_effective_votes_never_exceed_the_votes_cast(self):
-        # Uncapped, this reported 199 effective independent votes for a
-        # 50-verifier panel: effective_n's table edge (nmax=201) printed as a
-        # measurement, in the one sentence the report exists to say.
-        report = gate_audit.audit(self._near_independent_panel())
-        panel = report["panel"]
-        self.assertLessEqual(panel["effective_votes"], panel["nominal_votes"])
-        self.assertEqual(panel["effective_votes"], 50.0)
+    def test_raw_v0_1_semantics_are_preserved_above_nominal(self):
+        # An earlier revision clamped this to nominal_votes, which silently
+        # substituted a different statistic for a published v0.1 field.
+        panel = gate_audit.audit(self._near_independent_panel())["panel"]
+        self.assertEqual(panel["nominal_votes"], 50)
+        self.assertEqual(panel["effective_votes"], 199.0)
+        self.assertGreater(panel["effective_votes"], panel["nominal_votes"])
 
-    def test_saturation_and_the_cap_are_both_named_in_warnings(self):
-        report = gate_audit.audit(self._near_independent_panel())
+    def test_saturation_is_named_as_censoring_in_warnings(self):
+        warnings = gate_audit.audit(self._near_independent_panel())["warnings"]
         self.assertTrue(
-            any("lower bound, not a measurement" in w
-                for w in report["warnings"]),
-            report["warnings"])
-        self.assertTrue(
-            any("exceeded the 50 votes actually cast" in w
-                for w in report["warnings"]),
-            report["warnings"])
+            any("censored" in w and "at least 199" in w for w in warnings),
+            warnings)
 
-    def test_the_markdown_headline_carries_the_capped_number(self):
+    def test_no_warning_claims_a_cap_on_effective_votes(self):
+        warnings = gate_audit.audit(self._near_independent_panel())["warnings"]
+        for warning in warnings:
+            self.assertNotIn("votes actually cast", warning)
+            self.assertNotIn("never worth more", warning)
+
+    def test_markdown_headline_presents_a_censored_value_as_a_bound(self):
         text = gate_audit.render_markdown(
             gate_audit.audit(self._near_independent_panel()))
-        self.assertIn("50 verifiers ≈ 50.00 effective independent votes", text)
+        self.assertIn(
+            "**50 verifiers ≈ ≥199 effective independent votes on this "
+            "candidate set.**", text)
+        self.assertNotIn("≈ 199.00 effective", text)
+        self.assertNotIn("≈ 50.00 effective", text)
 
-    def test_an_unsaturated_panel_is_left_alone(self):
-        # The committed example resolves well inside the table: neither the
-        # cap nor the saturation warning may touch a panel that measured a
-        # real number.
+    def test_markdown_table_row_also_marks_the_bound(self):
+        text = gate_audit.render_markdown(
+            gate_audit.audit(self._near_independent_panel()))
+        self.assertIn("| Effective votes (measured) | ≥199 |", text)
+
+    def test_an_unsaturated_panel_is_presented_as_a_measurement(self):
+        # The committed example resolves well inside the table: it must keep
+        # the plain headline the README and the specification quote.
         report = gate_audit.audit_file(EXAMPLE_INPUT)
         self.assertAlmostEqual(
             report["panel"]["effective_votes"], 1.6944444, places=6)
+        self.assertIn(
+            "**5 verifiers ≈ 1.69 effective independent votes.**",
+            gate_audit.render_markdown(report))
         for warning in report["warnings"]:
-            self.assertNotIn("lower bound", warning)
-            self.assertNotIn("votes actually cast", warning)
+            self.assertNotIn("censored", warning)
 
-    def test_resolved_effective_votes_passes_nan_through_as_none(self):
-        self.assertIsNone(
-            gate_audit.resolved_effective_votes(float("nan"), 5))
+    def test_is_saturated_only_fires_at_the_table_edge(self):
+        self.assertTrue(gate_audit.is_saturated(199.0))
+        self.assertTrue(gate_audit.is_saturated(199.5))
+        self.assertFalse(gate_audit.is_saturated(198.5))
+        self.assertFalse(gate_audit.is_saturated(1.69))
+        self.assertFalse(gate_audit.is_saturated(None))
 
     def test_table_max_is_the_largest_odd_size_below_nmax(self):
         self.assertEqual(gate_audit.effective_n_table_max(), 199)

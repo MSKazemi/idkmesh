@@ -168,27 +168,21 @@ def effective_n_table_max(nmax: int = 201) -> int:
     """Largest panel size ``effective_n`` compares against.
 
     ``effective_n`` interpolates within a table of odd sizes below ``nmax``.
-    A measured error at or below the table's smallest entry pins the answer
-    only as "at least this", so reports have to say which of the two they are
-    carrying.
+    A measured error at or below the table's smallest entry is *censored*: the
+    comparison has run out of resolution, so the answer is pinned only as "at
+    least this much". Reports must say which of the two they carry, because
+    the number looks identical either way.
     """
     return max(n for n in range(1, nmax, 2))
 
 
-def resolved_effective_votes(measured: float, nominal: int) -> float | None:
-    """Clamp an effective-vote estimate to the votes actually cast.
+def is_saturated(effective_votes: float | None, nmax: int = 201) -> bool:
+    """Whether an effective-vote value is a censored lower bound.
 
-    ``effective_n`` answers "what independent panel size reproduces this
-    error". For a near-independent panel that made no errors on the audited
-    set the answer runs off the top of its table, and a 50-verifier panel
-    came back as 199 effective independent votes -- a table edge presented as
-    a measurement, in the one sentence the report exists to say. A panel is
-    never worth more independent votes than it cast, so the headline is capped
-    at the nominal count and the raw estimate is described in a warning.
+    Derived rather than stored, so a report keeps exactly the v0.1 fields.
     """
-    if not math.isfinite(measured):
-        return None
-    return min(measured, float(nominal))
+    return (effective_votes is not None
+            and effective_votes >= effective_n_table_max(nmax))
 
 
 # ---------------------------------------------------------------------------
@@ -454,20 +448,22 @@ def audit(data: dict[str, Any]) -> dict[str, Any]:
         warnings.append(
             "mean verifier accuracy is at or below 0.5; effective votes are "
             "undefined because the panel does not discriminate")
+    # The v0.1 estimand is the equivalent independent-panel size implied by
+    # the measured error. That is a property of the error rate, not of the
+    # head-count, so it is reported raw: on a finite candidate set a panel can
+    # beat the expected error of an equal-size independent panel, and clamping
+    # to the nominal count would substitute a different statistic while making
+    # a censored result look precise.
+    effective_votes = measured_eff if math.isfinite(measured_eff) else None
     table_max = effective_n_table_max()
-    if math.isfinite(measured_eff) and measured_eff >= table_max:
+    if is_saturated(effective_votes):
         warnings.append(
             f"measured panel error ({panel_error:.4g}) is at or below what "
-            f"{table_max} independent verifiers would achieve, so effective "
-            "votes are a lower bound, not a measurement; this candidate set "
-            "cannot resolve the panel's independence any further")
-    effective_votes = resolved_effective_votes(measured_eff, n_verifiers)
-    if effective_votes is not None and measured_eff > effective_votes:
-        warnings.append(
-            f"the effective-vote estimate ({measured_eff:.2f}) exceeded the "
-            f"{n_verifiers} votes actually cast and is reported as "
-            f"{n_verifiers}: a panel is never worth more independent votes "
-            "than it has verifiers")
+            f"{table_max} independent verifiers would achieve, so "
+            "effective_votes is censored at the comparison table's maximum: "
+            f"read it as at least {table_max}, not as a resolved measurement. "
+            "This candidate set cannot resolve the panel's independence any "
+            "further")
     heuristic = (heuristic_effective_n(n_verifiers, mean_rho)
                  if mean_rho is not None and mean_rho > 0.0 else None)
     ceiling = (effective_n_ceiling(mean_accuracy, mean_rho)
@@ -578,9 +574,22 @@ def render_json(report: dict[str, Any], pretty: bool = False) -> str:
         allow_nan=False)
 
 
+def _fmt_effective(effective_votes: float | None) -> str:
+    """Format effective votes, marking a censored value as a lower bound.
+
+    ``199.00`` and ``>=199`` are the same number and different claims. The
+    headline is the one sentence of the report anybody reads, so a value the
+    comparison could not resolve has to look unresolved.
+    """
+    if is_saturated(effective_votes):
+        return f"\u2265{effective_votes:.0f}"
+    return _fmt(effective_votes, 2)
+
+
 def render_markdown(report: dict[str, Any]) -> str:
     """Render a report as the human summary posted next to the JSON evidence."""
     panel = report["panel"]
+    saturated = is_saturated(panel["effective_votes"])
     lines = [
         f"# Gate audit: {report['gate_id']}",
         "",
@@ -589,7 +598,8 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"idkmesh {report['provenance']['tool_version']}",
         "",
         f"**{panel['nominal_votes']} verifiers ≈ "
-        f"{_fmt(panel['effective_votes'], 2)} effective independent votes.**",
+        f"{_fmt_effective(panel['effective_votes'])} effective independent "
+        f"votes{' on this candidate set' if saturated else ''}.**",
         "",
         "| Panel metric | Value |",
         "|---|---|",
@@ -599,7 +609,8 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"| Panel error (quorum {panel['quorum']}) | {_fmt(panel['error'])} |",
         f"| False-accept rate | {_fmt(panel['false_accept_rate'])} |",
         f"| False-reject rate | {_fmt(panel['false_reject_rate'])} |",
-        f"| Effective votes (measured) | {_fmt(panel['effective_votes'], 2)} |",
+        f"| Effective votes (measured) | "
+        f"{_fmt_effective(panel['effective_votes'])} |",
         f"| Effective-vote ceiling at this accuracy/correlation | "
         f"{_fmt(panel['effective_votes_ceiling'], 2)} |",
         f"| N/(1+(N-1)ρ) heuristic (for contrast; unreliable) | "
