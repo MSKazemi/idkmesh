@@ -50,7 +50,18 @@ came from (human reviewers, LLM judges, test oracles, CI checks).
 }
 ```
 
-Rules, enforced in code (`idkmesh/gate_audit.py`, `validate_input`):
+The document is read as UTF-8. A leading byte-order mark is tolerated, because
+Windows editors and PowerShell redirection add one; any other encoding
+(UTF-16 included) is refused. Only standard JSON is accepted, because
+`provenance.input_digest_sha256` promises a canonicalization another
+implementation can recompute: Python's `NaN`, `Infinity` and `-Infinity`
+extensions are refused, and so are duplicate keys within one object, on which
+implementations disagree (last wins, first wins, or a hard error). A repeated
+candidate id inside a `verdicts` object is the case that matters — kept
+silently, it rewrites the verifier accuracy the audit is there to measure.
+
+Rules, enforced in code (`idkmesh/gate_audit.py`, `validate_input` — every rule
+below, so the function is usable as a pre-flight check):
 
 - `evidence_class` is **mandatory** and must be `synthetic` or `observed`. The
   report copies it verbatim; a report can never upgrade fixture data into an
@@ -64,12 +75,20 @@ Rules, enforced in code (`idkmesh/gate_audit.py`, `validate_input`):
   silently changes the correlation structure the audit exists to measure.
 - Probes (`"probe": true`) are **seeded known-bad candidates** and must carry
   `ground_truth: "reject"`. An optional `probe_kind` (for example
-  `prompt-injection`, `seeded-defect`) buckets the breach report.
+  `prompt-injection`, `seeded-defect`) buckets the breach report. `probe_kind`
+  without `"probe": true` is refused rather than ignored: as an ordinary
+  candidate it would join the headline statistics and leave the breach report
+  absent, which reads as "no probes breached".
 - At least two non-probe candidates and one verifier are required. Panel
-  statistics from less are not meaningful.
+  statistics from fewer are not meaningful.
 - `quorum` (default `0.5`) sets the acceptance rule: the panel accepts when
   `accept_votes > quorum × verifiers`. At the default this is strict majority;
-  ties reject.
+  ties reject. It must be a real number in `[0, 1)`; a JSON boolean is refused
+  even though `false` would otherwise pass as `0.0`, a rule under which one
+  accept vote carries the panel.
+
+Refusals name the offending key and, where an `id` is absent, the candidate's
+or verifier's position in the list.
 
 ## What is computed
 
@@ -81,10 +100,41 @@ inflate or deflate the accuracy/correlation it is supposed to stress-test.
 | `verifiers[].accuracy` | Per-verifier accuracy against ground truth. Verifiers at or below 0.5 are flagged: their votes add no evidence (the E016 screen). |
 | `panel.mean_pairwise_error_correlation` | Mean pairwise φ (phi coefficient) of verifier error vectors. Pairs where a verifier made zero or all errors are skipped and counted in `skipped_correlation_pairs`. |
 | `panel.error`, `panel.false_accept_rate`, `panel.false_reject_rate` | Measured panel performance under the quorum rule. |
-| `panel.effective_votes` | The smallest **independent** panel size that reproduces the measured panel error at the measured mean accuracy — the number the gate's "N approvals" claim should be compared against. `null` when the panel does not discriminate. |
-| `panel.effective_votes_ceiling` | The largest effective size *any* panel at this accuracy/correlation can reach. Under shared-shock dependence, panel error floors at `ρ(1−acc)` however many verifiers are added; if the ceiling is below your target, adding reviewers is wasted spend and the only moves are raising accuracy or lowering correlation. |
+| `panel.effective_votes` | The smallest **independent** panel size that reproduces the measured panel error at the measured mean accuracy — the number the gate's "N approvals" claim should be compared against. `null` when the panel does not discriminate. Reported raw: this is a property of the measured error rate, not of the head-count, so it may exceed `panel.nominal_votes` (see below). |
+| `panel.effective_votes_ceiling` | The largest effective size *any* panel at this accuracy/correlation can reach. Under shared-shock dependence, panel error floors at `ρ(1−acc)` however many verifiers are added; if the ceiling is below your target, adding reviewers is wasted spend and the only moves are raising accuracy or lowering correlation. The string `"unbounded"` when measured correlation is at or below zero, and `null` when the panel does not discriminate (mean accuracy ≤ 0.5) or correlation was unmeasurable — the same undefined case as `effective_votes`. |
 | `panel.heuristic_n_eff` | The classic `N/(1+(N-1)ρ)` value, reported **only for contrast** with a warning when it exceeds the ceiling. |
 | `probes` | Breach accounting: how many seeded known-bad candidates the panel accepted, in total and per `probe_kind`. |
+
+### Resolution limits: censoring, not a cap
+
+`effective_votes` is obtained by comparing measured panel error against a table
+of independent panel sizes up to **199**. A measured error at or below what 199
+independent verifiers achieve is therefore **censored**: the comparison has run
+out of resolution and the value is a *lower bound*, not a resolved measurement.
+An accurate, genuinely uncorrelated panel that made no errors on the audited set
+reaches this quickly — it is the regime the research is trying to get gates
+into, not a pathological input.
+
+Two consequences, and neither is repaired by changing the number:
+
+- **A value at the table maximum means "at least 199".** It is reported raw in
+  the JSON, the condition is named in `warnings`, and the Markdown summary
+  renders it as a bound — `**50 verifiers ≈ ≥199 effective independent votes on
+  this candidate set.**` — so a censored result does not read as a precise one.
+- **The value may exceed `nominal_votes`, and that is not an error.** The
+  estimand is the independent-panel size whose *expected* error matches the
+  error actually measured; on a finite candidate set a panel can outperform the
+  expectation for an equal-size independent panel, so an equivalent size above
+  the head-count is possible. Clamping it to `nominal_votes` would substitute a
+  different statistic for a published v0.1 field, and would turn a censored
+  bound into an apparently exact `50.00`. A capped display quantity, if one is
+  ever wanted, belongs in a deliberately named and versioned field rather than
+  in this one.
+
+`effective_votes_ceiling` saturates at the same table edge for a small positive
+correlation. It too is uncapped, and for a further reason: it describes what any
+panel in this accuracy/correlation regime could reach, which is a property of
+the regime and not of the audited head-count.
 
 The mathematical definitions are identical to the research record:
 `effective_n`, `effective_n_ceiling` and `heuristic_effective_n` follow
@@ -103,7 +153,11 @@ apart.
 
 `provenance.input_digest_sha256` binds every report to the exact canonicalized
 input it was computed from. The report contains no timestamp by design: the
-same input must produce byte-identical output.
+same input must produce byte-identical output. A byte-order mark on the input
+does not change the digest.
+
+The report is always standard JSON: a non-finite number is a serialization
+failure, never a bare `NaN` token that only Python can read back.
 
 `--markdown` additionally renders a human summary whose headline is the number
 the audit exists to surface:
@@ -125,8 +179,15 @@ From the repository without installing:
 PYTHONPATH=. python -m idkmesh.cli gate-audit examples/gate-audit/panel-votes.example.json --pretty
 ```
 
-Exit codes: `0` success, `2` contract violation or unreadable input (with the
-violation named on stderr).
+`--out` and `--markdown` must name different paths, and neither may name the
+input file; both are refused before the audit runs rather than silently
+overwriting evidence.
+
+Exit codes: `0` success, `2` anything else — a contract violation, an input
+that cannot be read or decoded, an output that cannot be written, or a usage
+error from the argument parser. The reason is always named on stderr, on one
+line, without a traceback. On success the command writes nothing to stderr,
+and nothing to stdout either when `--out` is given.
 
 ### As a GitHub Action
 
@@ -164,3 +225,9 @@ count is acceptable is a human/governance decision outside this tool.
   planned to reuse existing attestation standards rather than invent one.
 - Prescribing panel composition. The report says what a panel is worth, not
   what to buy.
+- Failing a build on a threshold. There is deliberately no `--max-breach-rate`
+  or `--min-effective-votes`: whether a measured number is acceptable is the
+  governance decision named under **Authority boundary**, and an exit code
+  would move it into the tool.
+- Reading the verdict matrix from stdin. The audit takes a path so the report
+  can name the file it rejected.
