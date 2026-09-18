@@ -1,14 +1,17 @@
-"""Bootstrap sensitivity audit for the synthetic R1 low-diversity threshold analysis.
+"""Bootstrap and familywise sensitivity audit for synthetic R1 thresholds.
 
 The canonical :mod:`randomness_lab.r1_low_diversity_threshold` analysis reports
-normal-approximation intervals over paired deterministic seed replications.  This
+normal-approximation intervals over paired deterministic seed replications. This
 module is a deliberately separate downstream audit: it recomputes the same paired
-seed-level marginal effects and asks whether a deterministic percentile bootstrap
-supports the same directional interpretation.
+seed-level marginal effects, asks whether a deterministic percentile bootstrap
+supports the same directional interpretation, and then applies an exact sign test
+with Holm-Bonferroni correction across the emitted threshold questions.
 
-The bootstrap is a robustness diagnostic over a finite synthetic seed sample.  It
-is not a population confidence guarantee, is not multiplicity adjusted, and is not
-real coding-agent evidence.
+The bootstrap and sign tests are robustness diagnostics over a finite synthetic
+seed sample. They are not population guarantees and are not real coding-agent
+evidence. The exact sign test also targets directional/median consistency rather
+than the magnitude of the mean effect, so it is corroborating evidence rather than
+a replacement for the paired mean estimand.
 """
 
 from __future__ import annotations
@@ -16,6 +19,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import random
 from pathlib import Path
 from statistics import mean
@@ -34,6 +38,9 @@ from .r1_scaling import R1ScalingConfig, run_r1_scaling
 
 BOOTSTRAP_RESAMPLES = 5000
 METHOD = "paired-deterministic-percentile-bootstrap-v1"
+SIGN_TEST_METHOD = "two-sided-exact-binomial-sign-v1"
+MULTIPLICITY_METHOD = "holm-bonferroni-familywise-v1"
+FAMILYWISE_ALPHA = 0.05
 
 
 def _percentile(values: Sequence[float], probability: float) -> float:
@@ -66,7 +73,7 @@ def _bootstrap_mean_summary(
     """Return a deterministic percentile-bootstrap interval for a sample mean.
 
     Pseudorandom resampling is seeded from the semantic transition identity and
-    observed values.  Replaying the same input therefore produces exactly the same
+    observed values. Replaying the same input therefore produces exactly the same
     audit, while different transitions do not accidentally share a random stream.
     """
 
@@ -96,17 +103,116 @@ def _bootstrap_mean_summary(
     }
 
 
+def _exact_two_sided_sign_test(values: Sequence[float]) -> dict[str, object]:
+    """Return an exact two-sided sign test for directional seed consistency.
+
+    Zero effects are omitted, as in the classical sign test. Conditional on the
+    number of non-zero effects, the null treats positive/negative signs as equally
+    likely. The two-sided p-value is the doubled smaller binomial tail, capped at 1.
+
+    This tests a median/directional null, not the paired mean estimand summarized by
+    the normal and bootstrap intervals. It therefore acts only as corroboration.
+    """
+
+    numeric = [float(value) for value in values]
+    if not numeric:
+        raise ValueError("sign tests require observations")
+    if any(not math.isfinite(value) for value in numeric):
+        raise ValueError("sign-test observations must be finite")
+
+    positive = sum(value > 0.0 for value in numeric)
+    negative = sum(value < 0.0 for value in numeric)
+    zero = len(numeric) - positive - negative
+    nonzero = positive + negative
+
+    if positive > negative:
+        direction = "positive"
+    elif negative > positive:
+        direction = "negative"
+    else:
+        direction = "uncertain"
+
+    if nonzero == 0:
+        raw_p_value = 1.0
+    else:
+        extreme = min(positive, negative)
+        denominator = 2**nonzero
+        one_sided_tail = sum(
+            math.comb(nonzero, successes) for successes in range(extreme + 1)
+        ) / denominator
+        raw_p_value = min(1.0, 2.0 * one_sided_tail)
+
+    return {
+        "method": SIGN_TEST_METHOD,
+        "n_total": len(numeric),
+        "n_nonzero": nonzero,
+        "positive": positive,
+        "negative": negative,
+        "zero": zero,
+        "direction": direction,
+        "raw_p_value": raw_p_value,
+    }
+
+
+def _apply_holm_bonferroni(
+    tests: Sequence[dict[str, object]],
+    *,
+    alpha: float = FAMILYWISE_ALPHA,
+) -> None:
+    """Annotate sign-test records with Holm-adjusted p-values in place."""
+
+    if not 0.0 < alpha < 1.0:
+        raise ValueError("familywise alpha must be in (0, 1)")
+    family_size = len(tests)
+    if family_size == 0:
+        return
+
+    indexed: list[tuple[int, dict[str, object]]] = list(enumerate(tests))
+    try:
+        ordered = sorted(
+            indexed,
+            key=lambda item: (float(item[1]["raw_p_value"]), item[0]),
+        )
+    except (KeyError, TypeError, ValueError) as exc:
+        raise ValueError("Holm correction requires numeric raw_p_value entries") from exc
+
+    running_adjusted = 0.0
+    for rank, (_, record) in enumerate(ordered):
+        raw_p_value = float(record["raw_p_value"])
+        if not 0.0 <= raw_p_value <= 1.0 or not math.isfinite(raw_p_value):
+            raise ValueError("raw p-values must be finite and in [0, 1]")
+        candidate = min(1.0, (family_size - rank) * raw_p_value)
+        running_adjusted = max(running_adjusted, candidate)
+        record["holm_adjusted_p_value"] = running_adjusted
+        record["family_size"] = family_size
+        record["familywise_alpha"] = alpha
+        record["holm_reject"] = running_adjusted <= alpha
+
+
 def _robust_direction(normal: str, bootstrap: str) -> str:
     if normal == bootstrap and normal in {"positive", "negative"}:
         return normal
     return "uncertain"
 
 
+def _familywise_direction(
+    interval_robust: str,
+    sign_test: dict[str, object],
+) -> str:
+    if (
+        interval_robust in {"positive", "negative"}
+        and sign_test.get("direction") == interval_robust
+        and sign_test.get("holm_reject") is True
+    ):
+        return interval_robust
+    return "uncertain"
+
+
 def audit_threshold_robustness(result: dict[str, object]) -> dict[str, object]:
-    """Audit whether R1 threshold labels survive a second interval construction.
+    """Audit whether R1 threshold labels survive method and multiplicity checks.
 
     The existing low-diversity analyzer remains authoritative for the base
-    definitions and fail-closed payload validation.  This function reuses its
+    definitions and fail-closed payload validation. This function reuses its
     extraction helpers so the sensitivity audit cannot silently invent a second
     interpretation of the R1 result structure.
     """
@@ -125,6 +231,7 @@ def audit_threshold_robustness(result: dict[str, object]) -> dict[str, object]:
         indexed[(difficulty, swarm_size)] = cell
 
     audits: list[dict[str, object]] = []
+    sign_test_family: list[dict[str, object]] = []
     disagreement_count = 0
     for difficulty_index, difficulty in enumerate(difficulties):
         rates_by_size: dict[int, dict[int, float]] = {}
@@ -155,6 +262,8 @@ def audit_threshold_robustness(result: dict[str, object]) -> dict[str, object]:
                 marginal_values,
                 seed_material=f"{difficulty}:{lower_n}->{upper_n}:marginal",
             )
+            marginal_sign_test = _exact_two_sided_sign_test(marginal_values)
+            sign_test_family.append(marginal_sign_test)
 
             base_transition = base_difficulty["transitions"][transition_index]
             normal_marginal = base_transition[
@@ -177,6 +286,8 @@ def audit_threshold_robustness(result: dict[str, object]) -> dict[str, object]:
                     change_values,
                     seed_material=f"{difficulty}:{lower_n}->{upper_n}:delta-marginal",
                 )
+                change_sign_test = _exact_two_sided_sign_test(change_values)
+                sign_test_family.append(change_sign_test)
                 normal_change = base_transition["change_from_previous_marginal"]
                 normal_change_class = normal_change["classification"]
                 bootstrap_change_class = change_bootstrap["classification"]
@@ -194,6 +305,7 @@ def audit_threshold_robustness(result: dict[str, object]) -> dict[str, object]:
                     "bootstrap_classification": bootstrap_change_class,
                     "classification_agrees": change_agrees,
                     "robust_classification": robust_change,
+                    "sign_test": change_sign_test,
                 }
 
             robust_marginal = _robust_direction(normal_class, bootstrap_class)
@@ -213,6 +325,7 @@ def audit_threshold_robustness(result: dict[str, object]) -> dict[str, object]:
                         "bootstrap_classification": bootstrap_class,
                         "classification_agrees": marginal_agrees,
                         "robust_classification": robust_marginal,
+                        "sign_test": marginal_sign_test,
                     },
                     "change_from_previous_marginal": change_audit,
                     "supported_negative_return_robust": robust_marginal == "negative",
@@ -245,8 +358,51 @@ def audit_threshold_robustness(result: dict[str, object]) -> dict[str, object]:
             }
         )
 
+    _apply_holm_bonferroni(sign_test_family)
+
+    for difficulty in audits:
+        transitions = difficulty["transitions"]
+        for row in transitions:
+            marginal = row["marginal"]
+            marginal_familywise = _familywise_direction(
+                marginal["robust_classification"], marginal["sign_test"]
+            )
+            marginal["familywise_robust_classification"] = marginal_familywise
+            row["supported_negative_return_familywise"] = (
+                marginal_familywise == "negative"
+            )
+
+            change = row["change_from_previous_marginal"]
+            if change is None:
+                row["supported_diminishing_return_familywise"] = False
+                continue
+            change_familywise = _familywise_direction(
+                change["robust_classification"], change["sign_test"]
+            )
+            change["familywise_robust_classification"] = change_familywise
+            row["supported_diminishing_return_familywise"] = (
+                change_familywise == "negative"
+            )
+
+        difficulty["first_familywise_diminishing_to_n"] = next(
+            (
+                row["to_n"]
+                for row in transitions
+                if row["supported_diminishing_return_familywise"]
+            ),
+            None,
+        )
+        difficulty["first_familywise_negative_to_n"] = next(
+            (
+                row["to_n"]
+                for row in transitions
+                if row["supported_negative_return_familywise"]
+            ),
+            None,
+        )
+
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "analysis": "R1-low-diversity-threshold-robustness",
         "base_analysis": base["analysis"],
         "source_experiment": base["source_experiment"],
@@ -260,17 +416,34 @@ def audit_threshold_robustness(result: dict[str, object]) -> dict[str, object]:
             "resamples": BOOTSTRAP_RESAMPLES,
             "estimand": "mean paired seed-level marginal effect",
         },
+        "multiplicity": {
+            "method": MULTIPLICITY_METHOD,
+            "alpha": FAMILYWISE_ALPHA,
+            "sign_test_method": SIGN_TEST_METHOD,
+            "tests_in_family": len(sign_test_family),
+            "family_definition": (
+                "all marginal and change-from-previous-marginal sign tests emitted "
+                "across every difficulty and adjacent swarm-size transition"
+            ),
+            "sign_test_estimand": (
+                "directional/median consistency of non-zero paired seed-level effects"
+            ),
+        },
         "classification_disagreements": disagreement_count,
         "difficulties": audits,
         "interpretation_guardrail": (
-            "A robust directional label requires the existing normal-approximation "
-            "interval and this deterministic percentile bootstrap to agree on a "
-            "strictly positive or negative direction. Disagreement is reported as "
-            "uncertain rather than resolved in favor of either method. The bootstrap "
-            "resamples only the finite deterministic synthetic seed replications; "
-            "with small n its percentile coverage is approximate, it is not "
-            "multiplicity adjusted, and it does not represent a population sample "
-            "of real software tasks, contributors, or coding agents."
+            "The existing robust label still requires the normal-approximation "
+            "interval and deterministic percentile bootstrap to agree on a strictly "
+            "positive or negative direction. The stricter familywise label also "
+            "requires an exact two-sided sign test to point in the same direction "
+            "after Holm-Bonferroni correction over every emitted marginal and "
+            "change-from-previous-marginal question. The sign test targets directional "
+            "or median consistency, not mean effect magnitude, and its exact p-value "
+            "assumes independent/exchangeable signs under the null; zero effects are "
+            "omitted. Holm control is conditional on those test assumptions and the "
+            "declared family. None of these layers turns deterministic synthetic seed "
+            "replications into a population sample of real software tasks, "
+            "contributors, or coding agents."
         ),
     }
 
@@ -285,40 +458,50 @@ def render_markdown(audit: dict[str, object]) -> str:
         "",
         "Evidence level: **synthetic mechanism sensitivity only**.",
         "",
-        "A directional threshold is called robust here only when the existing ",
-        "normal-approximation interval and the deterministic percentile bootstrap ",
-        "agree. Method disagreement is kept as `uncertain`.",
+        "A directional threshold is interval-robust only when the existing ",
+        "normal-approximation interval and deterministic percentile bootstrap agree. ",
+        "A familywise-robust label additionally requires a same-direction exact sign ",
+        "test after Holm-Bonferroni correction across the full emitted test family.",
         "",
-        "| Difficulty | N | Normal 95% interval | Bootstrap 95% interval | Normal | Bootstrap | Robust | Diminishing robust |",
-        "| --- | --- | --- | --- | --- | --- | --- | --- |",
+        "| Difficulty | N | Normal 95% interval | Bootstrap 95% interval | Interval robust | Holm-adjusted sign p | Familywise robust | Diminishing familywise |",
+        "| --- | --- | --- | --- | --- | ---: | --- | --- |",
     ]
     for difficulty in audit["difficulties"]:
         for row in difficulty["transitions"]:
             marginal = row["marginal"]
+            sign_test = marginal["sign_test"]
             lines.append(
                 f"| {difficulty['difficulty']} | {row['from_n']}→{row['to_n']} "
                 f"| {_format_interval(marginal['normal_approx_95_ci'])} "
                 f"| {_format_interval(marginal['bootstrap_95_ci'])} "
-                f"| {marginal['normal_classification']} "
-                f"| {marginal['bootstrap_classification']} "
                 f"| {marginal['robust_classification']} "
-                f"| {'yes' if row['supported_diminishing_return_robust'] else 'no'} |"
+                f"| {sign_test['holm_adjusted_p_value']:.4g} "
+                f"| {marginal['familywise_robust_classification']} "
+                f"| {'yes' if row['supported_diminishing_return_familywise'] else 'no'} |"
             )
 
-    lines.extend(["", "## First robust thresholds", ""])
+    lines.extend(["", "## First thresholds", ""])
     for difficulty in audit["difficulties"]:
-        diminishing = difficulty["first_robust_diminishing_to_n"]
-        negative = difficulty["first_robust_negative_to_n"]
+        robust_diminishing = difficulty["first_robust_diminishing_to_n"]
+        robust_negative = difficulty["first_robust_negative_to_n"]
+        familywise_diminishing = difficulty["first_familywise_diminishing_to_n"]
+        familywise_negative = difficulty["first_familywise_negative_to_n"]
         lines.append(
-            f"- **{difficulty['difficulty']}** — diminishing to N: "
-            f"{'none' if diminishing is None else diminishing}; negative to N: "
-            f"{'none' if negative is None else negative}."
+            f"- **{difficulty['difficulty']}** — interval-robust diminishing to N: "
+            f"{'none' if robust_diminishing is None else robust_diminishing}; "
+            f"interval-robust negative to N: "
+            f"{'none' if robust_negative is None else robust_negative}; "
+            f"familywise diminishing to N: "
+            f"{'none' if familywise_diminishing is None else familywise_diminishing}; "
+            f"familywise negative to N: "
+            f"{'none' if familywise_negative is None else familywise_negative}."
         )
 
     lines.extend(
         [
             "",
             f"Interval-classification disagreements: **{audit['classification_disagreements']}**.",
+            f"Holm family size: **{audit['multiplicity']['tests_in_family']}** tests at alpha={audit['multiplicity']['alpha']}.",
             "",
             "## Scope boundary",
             "",
