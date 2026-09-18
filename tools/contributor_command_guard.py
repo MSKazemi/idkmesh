@@ -181,7 +181,6 @@ def inspect_document(
                     detail=f"does not expose the canonical `{command}` entry point",
                 )
             )
-        )
 
     if DIRECT_PYTEST_RE.search(text) is None:
         findings.append(
