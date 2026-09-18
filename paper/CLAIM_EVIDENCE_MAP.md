@@ -2,8 +2,8 @@
 
 Status: paper-maintenance artifact, not a manuscript
 
-Last repository audit: 2026-09-18 against
-`main@a713535bbcf2e254f956aa98c1dd02c728def614`.
+Last repository audit: 2026-09-19 against
+`main@52c4f6cdb63d4f32215bbaed7dfd0b0bd2cca12a`.
 
 This map prevents paper-facing statements from becoming detached from the code,
 experiments, and limitations that support them. Wording below is deliberately
@@ -28,6 +28,7 @@ Evidence classes follow [`README.md`](README.md).
 | `P-COLLAB-002` | Analyzer v0.3 separates observed bounded proportions from prior-only Beta-Binomial posterior values: with zero trials, `observed_sample_size` is `0`, `empirical_rate` is `null`, and the posterior is explicitly labeled `prior_only_no_observations`. | `implemented` | [`../docs/research/COLLABORATION_OBSERVABLES_V0_1.md`](../docs/research/COLLABORATION_OBSERVABLES_V0_1.md), [`../scripts/metric_uncertainty.py`](../scripts/metric_uncertainty.py), [`../scripts/collaboration_observables.py`](../scripts/collaboration_observables.py) | A mathematically defined posterior mean with zero observations is not an observed recurrence/pass rate. Current `main` still reports the v2 normal-approximation posterior interval; stronger interval methods proposed in unmerged work are not current evidence. |
 | `P-REPRO-001` | The benchmark publication path can publish the committed human- and machine-readable benchmark snapshots as an immutable release bound to the exact protected-main SHA after deterministic drift/tests pass. | `implemented` | [`../benchmarks/README.md`](../benchmarks/README.md), [`../.github/workflows/benchmark-publication.yml`](../.github/workflows/benchmark-publication.yml) | Publication is a provenance/distribution mechanism, not new experimental evidence: it does not execute candidates, choose outcomes, strengthen scores, or establish generalization. |
 | `P-REPRO-002` | The Phase 0 experiment harness rejects duplicate `configurations[].id` values after JSON Schema validation and before Work Unit I/O, because configuration IDs participate in emitted run identity and deterministic smoke-score keys. | `implemented` | [`../experiments/harness.py`](../experiments/harness.py), [`../tests/test_experiment_manifest_configuration_ids.py`](../tests/test_experiment_manifest_configuration_ids.py), [`../schemas/README.md`](../schemas/README.md) | This is a semantic reproducibility/identity invariant, not evidence that an experiment design is scientifically valid, that execution was correct, or that any measured outcome generalizes. ExperimentManifest v0.1 remains structurally unchanged; executable semantics are narrowed by harness v0.4. |
+| `P-GATE-001` | The packaged `idkmesh gate-audit` v0.1 path fails closed on malformed or ambiguous verdict matrices (including duplicate JSON keys, non-finite JSON constants, boolean/non-finite quorum values, incomplete matrices, and inconsistent probe labeling), emits strict JSON, prevents destructive output-path collisions, and renders comparison-table saturation in `effective_votes` as a censored lower bound instead of a resolved point estimate while preserving the v0.1 estimand. | `implemented` | [`../idkmesh/gate_audit.py`](../idkmesh/gate_audit.py), [`../idkmesh/cli.py`](../idkmesh/cli.py), [`../docs/specifications/GATE_AUDIT_V0_1.md`](../docs/specifications/GATE_AUDIT_V0_1.md), [`../tests/test_gate_audit.py`](../tests/test_gate_audit.py) | This is input/output and measurement-interpretation hardening for a supplied verdict matrix. It does not prove verifier independence, estimate population/sampling uncertainty, validate the ground truth, establish external generalization, or grant acceptance/integration authority. A censored lower bound such as `>=199` is a comparison-table resolution statement, not a confidence or credible interval. |
 | `P-GOV-001` | Project-operated or owner-controlled AI automation does not count as independent human/external review. | `implemented` | [`../PROJECT_RULES.md`](../PROJECT_RULES.md), [`../CONTRIBUTING.md`](../CONTRIBUTING.md) | Do not use agent count, bot activity, or owner-controlled automated review as evidence of independent community validation. |
 | `P-SCALE-001` | Internet-scale, multi-organization production behavior remains unresolved/staged rather than demonstrated by the repository evidence. | `unresolved` | [`../ROADMAP.md`](../ROADMAP.md), [`../docs/research/FIRST_RESEARCH_PROGRAM.md`](../docs/research/FIRST_RESEARCH_PROGRAM.md) | Present this as a limitation/future-work boundary, not as achieved scale. |
 | `P-PAPER-001` | No canonical editable manuscript source is currently versioned in this repository. | `unresolved` | [`README.md`](README.md), [issue #478](https://github.com/MSKazemi/idkmesh/issues/478) | Until the real source is imported or an external canonical source is documented, a steward cannot truthfully claim an in-place manuscript review. |
@@ -63,6 +64,10 @@ Use this when code, documentation, or experiments move:
 - **Experiment manifest/harness identity change:** review `P-REPRO-*` and record
   whether run/configuration identifiers can become ambiguous before execution.
   Treat identity hardening as reproducibility infrastructure, not outcome evidence.
+- **Gate-audit/verification metric change:** review `P-GATE-*`; distinguish a raw
+  estimand from presentation bounds, comparison-table censoring from inferential
+  uncertainty, and parser/output hardening from evidence that the verifier panel is
+  actually independent or representative.
 - **Experiment rerun/new result:** add or revise a claim only after preserving the
   old artifact and classifying the new evidence. Negative or null results remain
   part of the record.
