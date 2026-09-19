@@ -252,6 +252,11 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://mskazemi.com/idkmesh/audits/2026-09-18-chatgpt-scheduled-agent-branch-audit.html</loc>
+    <lastmod>2026-09-18</lastmod>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://mskazemi.com/idkmesh/community/</loc>
     <lastmod>2026-09-09</lastmod>
     <priority>0.6</priority>
@@ -1329,6 +1334,16 @@
   <url>
     <loc>https://mskazemi.com/idkmesh/planning/</loc>
     <lastmod>2026-08-28</lastmod>
+    <priority>0.4</priority>
+  </url>
+  <url>
+    <loc>https://mskazemi.com/idkmesh/planning/AUTOMATION_JOBS_INVENTORY_2026-09-17.html</loc>
+    <lastmod>2026-09-17</lastmod>
+    <priority>0.4</priority>
+  </url>
+  <url>
+    <loc>https://mskazemi.com/idkmesh/planning/AUTONOMOUS_SWARM_V2_2026-09-17.html</loc>
+    <lastmod>2026-09-17</lastmod>
     <priority>0.4</priority>
   </url>
   <url>

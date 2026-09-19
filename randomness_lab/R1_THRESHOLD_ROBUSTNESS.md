@@ -12,13 +12,23 @@ verified-success slope with a normal-approximation 95% interval and uses that
 interval to describe positive, negative, or unresolved directions.
 
 That construction is transparent, but the reference run has only ten deterministic
-seed replications. A directional label that exists only because of one interval
-approximation should not be treated as stronger evidence than it is. This audit
-adds a second, independently constructed interval over the **same paired seed-level
-estimand** and reports where the directional interpretation agrees or disagrees.
+seed replications and emits several directional questions across difficulties and
+swarm-size transitions. A directional label should therefore not become stronger
+merely because one interval approximation or one member of a multiple-comparison
+family happens to exclude zero.
+
+This audit keeps the original mean-effect analysis intact and adds two conservative
+checks:
+
+1. a deterministic percentile bootstrap over the **same paired seed-level mean
+   estimand**;
+2. an exact sign test for directional consistency, with Holm-Bonferroni correction
+   across every marginal and change-from-previous-marginal question emitted by the
+   audit.
+
 It does not modify the frozen R1 generator or replace the original analysis.
 
-## Estimand
+## Mean-effect estimand
 
 For adjacent configured sizes `N_a < N_b`, seed `s`, and verified-success rate
 `V(N, s)`, the existing analyzer defines
@@ -46,8 +56,8 @@ percentiles of the resampled means.
 
 The pseudorandom stream is deterministically seeded from the transition identity and
 observed values. The same repository input therefore replays to the same audit. The
-bootstrap is deliberately dependency-free and does not affect the simulation RNG or
-the committed R1 reference artifacts.
+bootstrap is dependency-free and does not affect the simulation RNG or the committed
+R1 reference artifacts.
 
 The directional classifications use the same sign convention as the base analyzer:
 
@@ -55,33 +65,78 @@ The directional classifications use the same sign convention as the base analyze
 - `negative` when the whole interval is below zero;
 - `uncertain` when the interval includes zero.
 
-A **robust directional label** is emitted only when the original normal interval and
-the bootstrap interval agree on `positive` or `negative`. Any disagreement, including
-one method being directional while the other includes zero, is retained as
-`uncertain`.
+The existing `robust_classification` remains intentionally backward-compatible: it
+is directional only when the original normal interval and the bootstrap interval
+agree on `positive` or `negative`. Any disagreement remains `uncertain`.
 
-For issue #13's low-diversity hypothesis this yields two conservative markers:
+## Exact sign corroboration
 
-- `supported_diminishing_return_robust`: the normal and bootstrap intervals for
-  `delta_g` are both strictly negative;
-- `supported_negative_return_robust`: the normal and bootstrap intervals for `g`
-  are both strictly negative.
+The v2 audit additionally computes a classical two-sided exact binomial sign test for
+each paired vector.
 
-This is a sensitivity rule, not a new hypothesis test or an acceptance threshold for
-IDKMesh policy.
+- zero-valued seed effects are omitted from the sign count;
+- positive and negative non-zero effects are counted separately;
+- under the null, positive/negative signs are treated as equally likely;
+- the reported two-sided p-value is twice the smaller exact binomial tail, capped at
+  `1.0`.
 
-## Why disagreement is useful
+This is **not the same estimand as the mean interval**. The sign test asks whether the
+non-zero seed-level effects show consistent direction (a median/sign-balance
+question); it deliberately ignores effect magnitude. It is therefore used only as
+corroboration, never as a replacement for the paired mean analysis.
 
-With a very small finite sample, a symmetric normal approximation can exclude zero
-while a bootstrap interval still reaches zero. For example, paired marginal effects
-`[0.0, 0.1, 0.1]` have a normal-approximation lower bound slightly above zero, while
-the empirical bootstrap can resample the zero observation often enough for its
-lower percentile to be exactly zero. The regression suite fixes this example so the
-audit must preserve the disagreement rather than silently choosing the more
-confident method.
+Its exactness is conditional on the sign-test assumptions. In particular, the seed
+signs must be independently/exchangeably distributed under the null for the usual
+p-value interpretation to hold. Deterministic simulator seeds are not automatically
+an empirical sample from a real task population.
 
-The point is not that the bootstrap is automatically more correct. The point is that
-method sensitivity is evidence about uncertainty and should stay visible.
+## Multiplicity control
+
+The audit defines one explicit family containing **all** sign tests emitted across:
+
+- every configured difficulty;
+- every adjacent swarm-size marginal `g`;
+- every available change-from-previous-marginal `delta_g`.
+
+Raw sign-test p-values are adjusted with the Holm-Bonferroni step-down procedure at
+familywise `alpha = 0.05`. This controls family-wise error under valid individual
+p-values without requiring independence among the tests themselves.
+
+A `familywise_robust_classification` is directional only when all three conditions
+hold:
+
+1. normal and bootstrap intervals agree on a strict direction;
+2. the exact sign test points in the same direction;
+3. the Holm-adjusted sign-test p-value is at most `0.05`.
+
+The corresponding threshold markers are:
+
+- `supported_diminishing_return_familywise` for a familywise-negative `delta_g`;
+- `supported_negative_return_familywise` for a familywise-negative `g`.
+
+The previous interval-only robust fields remain in the payload. The machine-readable
+audit version is bumped to `schema_version = 2` so downstream consumers can detect
+the added multiplicity semantics.
+
+## Why the stricter layer is useful
+
+Two different uncertainty problems are now visible instead of being collapsed:
+
+- **method sensitivity:** a normal approximation may exclude zero while the
+  bootstrap reaches zero;
+- **multiple questioning:** even a raw directional sign test can become
+  insufficient once several thresholds are inspected together.
+
+For example, six identical positive non-zero seed effects yield a raw two-sided sign
+p-value of `0.03125`. If that test sits in a three-question family with another
+comparably small p-value, Holm adjustment raises the adjusted value above `0.05`.
+The interval direction is retained, but the stronger familywise label stays
+`uncertain`. The regression suite fixes this case so future changes cannot silently
+turn raw significance into familywise evidence.
+
+Conversely, ten same-direction non-zero effects in a one-question family produce an
+exact two-sided sign p-value of `0.001953125`, allowing the familywise layer to
+corroborate an interval-robust direction when the other requirements also hold.
 
 ## Reproduction
 
@@ -98,7 +153,7 @@ python -m randomness_lab.r1_threshold_robustness \
 ```
 
 The CLI regenerates the seeded R1 mechanism input and runs the robustness audit
-downstream. The focused regression coverage is in
+downstream. Focused regression coverage is in
 [`tests/test_r1_threshold_robustness.py`](../tests/test_r1_threshold_robustness.py).
 
 ## Interpretation limits
@@ -113,14 +168,17 @@ law.
 - The percentile bootstrap has approximate finite-sample coverage and can itself be
   unstable at small `n`; 5,000 resamples reduce Monte Carlo noise but do not create
   information absent from the underlying seed sample.
-- Neither interval family is multiplicity adjusted across difficulties, swarm-size
-  transitions, or the several reported threshold questions.
-- Agreement between two interval constructions is a robustness signal, not proof of
-  external validity. Disagreement is a reason to weaken the directional wording,
-  not evidence for the opposite direction.
+- The exact sign test ignores magnitudes and tests directional/median consistency,
+  not the mean effect summarized by the intervals. Zero effects are omitted.
+- Holm-Bonferroni controls the declared family only if the underlying sign-test
+  p-values are valid. It does not repair dependence or exchangeability violations in
+  the simulator seeds, and it does not establish external validity.
+- Agreement across all three layers is a robustness signal, not proof of a real
+  population effect. Disagreement is a reason to weaken the wording, not evidence
+  for the opposite direction.
 - Real confirmation still requires the prospectively frozen, independently verified
   software-task evidence described by issues #13, #30, and #70.
 
-The scientific value of this layer is therefore narrow: it makes one existing
-synthetic conclusion more falsifiable by exposing whether its direction depends on
-the interval approximation used to summarize the same paired seeds.
+The scientific value of this layer is narrow but concrete: it makes one existing
+synthetic threshold analysis less vulnerable to both interval-method sensitivity and
+unadjusted multiple questioning while preserving every underlying seed-level result.

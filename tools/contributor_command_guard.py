@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """Guard current contributor documentation against executable-command drift.
 
-The guard intentionally inspects only the repository's canonical contributor
-surfaces: ``AGENTS.md``, ``CONTRIBUTING.md``, ``docs/TESTING.md``, ``Makefile``,
-and ``pytest.ini``. Historical GitHub issues and pull-request prose are evidence,
-not live configuration, so they are deliberately outside this tool's scope.
+The guard intentionally inspects the repository's canonical contributor and
+first-contact surfaces: ``README.md``, ``AGENTS.md``, ``CONTRIBUTING.md``,
+``docs/TESTING.md``, ``Makefile``, and ``pytest.ini``. Historical GitHub issues
+and pull-request prose are evidence, not live configuration, so they are
+deliberately outside this tool's scope.
 
 The checks are narrow and deterministic:
 
@@ -33,7 +34,7 @@ import sys
 from typing import Iterable
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-CANONICAL_DOCS = ("AGENTS.md", "CONTRIBUTING.md", "docs/TESTING.md")
+CANONICAL_DOCS = ("README.md", "AGENTS.md", "CONTRIBUTING.md", "docs/TESTING.md")
 REQUIRED_COMMANDS = ("make setup", "make test", "make integration")
 
 MAKE_TARGET_RE = re.compile(

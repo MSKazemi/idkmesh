@@ -64,6 +64,14 @@ and the release notes for that tag.
 
 ### Changed
 
+- `idkmesh gate-audit` now fails closed on malformed or ambiguous input and output
+  boundaries instead of emitting tracebacks, unreadable JSON, or silently losing
+  evidence. The hardening rejects duplicate JSON keys, non-finite JSON numbers,
+  boolean quorums, malformed probe metadata, and unsafe input/output path collisions;
+  tolerates a UTF-8 BOM; reports encoding/path failures as actionable CLI errors; and
+  serializes reports with strict JSON semantics. The bundled happy-path example and
+  its documented measured result remain unchanged.
+
 - Seven more guards fail when they inspect nothing. An AST audit of `tests/` found every
   test that asserts inside a loop over a discovered set — a glob, a directory listing, a
   regex scan — with no check that the set was non-empty. Each now counts what it inspected
