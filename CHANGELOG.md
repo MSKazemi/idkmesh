@@ -80,6 +80,22 @@ and the release notes for that tag.
 
 ### Changed
 
+- The unit tier's CPU budget is back under its 90 CPU-s ceiling with real headroom. The
+  suite kept growing since the tier was last calibrated, and on 2026-09-19 it measured
+  99.5 CPU-s — over budget, though the gate's own summary line printed `PASS` (a separate,
+  pre-existing bug: see `fix: stop the local gate printing PASS on a run that exits 1`).
+  20 tests across 8 files that were individually the most expensive in the tier — mostly
+  simulation-adjacent evidence/parity/sweep checks in `tests/test_e020_quorum_frontier.py`,
+  `tests/test_e027_defect_propagation.py`, `tests/test_e028_latent_defect_dimension.py`,
+  `tests/test_e031_learned_goal_filter.py`, `tests/test_e036_adversarial_contributors.py`,
+  `tests/test_r1_scaling_reference.py`, `tests/test_r2_factor_sweep.py`, and two
+  meta-tests in `tests/test_documented_test_counts.py` that shell out to `unittest`
+  discovery and pytest collection as subprocesses — are now marked `@pytest.mark.slow`
+  and run in the `nightly` tier instead. Marked per test method, not per file or class:
+  every one of these files carries dozens of other tests that were already fast and stay
+  in the unit tier. Measured after the change: 32.3 CPU-s, 36% of the ceiling. Per
+  `docs/TESTING.md`, the budget itself was not raised.
+
 - `idkmesh gate-audit` now fails closed on malformed or ambiguous input and output
   boundaries instead of emitting tracebacks, unreadable JSON, or silently losing
   evidence. The hardening rejects duplicate JSON keys, non-finite JSON numbers,

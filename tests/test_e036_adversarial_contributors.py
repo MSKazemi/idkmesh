@@ -31,6 +31,8 @@ import re
 import statistics
 import unittest
 
+import pytest
+
 import sim.emergence_sim as sim
 import sim.matched_budget_emergence as mbe
 import sim.e027_defect_propagation as e027
@@ -77,6 +79,7 @@ class AdversaryMechanicsTest(unittest.TestCase):
                 sum(candidate.traits[: e028.LATENT_INDEX]), sim.BUDGET + 1e-9
             )
 
+    @pytest.mark.slow
     def test_effort_one_is_indistinguishable_from_an_honest_contributor(self):
         """A faulty contributor ships junk but does not try to look good."""
         hostile = _bound(1.0, 1)
@@ -94,6 +97,7 @@ class AdversaryMechanicsTest(unittest.TestCase):
         # adversary nothing that shows.
         self.assertAlmostEqual(hostile_quality, honest_quality, delta=0.005)
 
+    @pytest.mark.slow
     def test_effort_makes_a_hostile_artifact_look_better_than_an_honest_one(self):
         """This is the mechanism. Without it 'strategic' means nothing."""
         honest = statistics.fmean(
@@ -114,6 +118,7 @@ class AdversaryMechanicsTest(unittest.TestCase):
                 previous = quality
         self.assertGreater(previous, honest)
 
+    @pytest.mark.slow
     def test_the_realised_hostile_share_is_the_requested_fraction(self):
         for fraction in (0.05, 0.2, 0.4):
             cls = _bound(fraction, 2)
@@ -127,6 +132,7 @@ class AdversaryMechanicsTest(unittest.TestCase):
             with self.subTest(fraction=fraction):
                 self.assertAlmostEqual(realised, fraction, delta=0.015)
 
+    @pytest.mark.slow
     def test_mutation_is_hostile_at_the_same_rate(self):
         """Measured from a healthy parent, so clamping cannot inflate the count."""
         healthy = self._healthy_parent()
@@ -227,6 +233,7 @@ class ControlTest(unittest.TestCase):
             )
         self.assertEqual(adversarial.random(), baseline.random())
 
+    @pytest.mark.slow
     def test_a_zero_fraction_sweep_is_bit_identical_to_e028(self):
         report = e036.identity_check(
             seeds=4, seed_start=1, agents=16, generations=12, change_at=6, bins=8
