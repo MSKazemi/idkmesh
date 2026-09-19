@@ -3,7 +3,7 @@
 Status: paper-maintenance artifact, not a manuscript
 
 Last repository audit: 2026-09-19 against
-`main@52c4f6cdb63d4f32215bbaed7dfd0b0bd2cca12a`.
+`main@4a9503bc4f88efdfb58a604d5c515b66ad3a482d`.
 
 This map prevents paper-facing statements from becoming detached from the code,
 experiments, and limitations that support them. Wording below is deliberately
@@ -31,7 +31,7 @@ Evidence classes follow [`README.md`](README.md).
 | `P-GATE-001` | The packaged `idkmesh gate-audit` v0.1 path fails closed on malformed or ambiguous verdict matrices (including duplicate JSON keys, non-finite JSON constants, boolean/non-finite quorum values, incomplete matrices, and inconsistent probe labeling), emits strict JSON, prevents destructive output-path collisions, and renders comparison-table saturation in `effective_votes` as a censored lower bound instead of a resolved point estimate while preserving the v0.1 estimand. | `implemented` | [`../idkmesh/gate_audit.py`](../idkmesh/gate_audit.py), [`../idkmesh/cli.py`](../idkmesh/cli.py), [`../docs/specifications/GATE_AUDIT_V0_1.md`](../docs/specifications/GATE_AUDIT_V0_1.md), [`../tests/test_gate_audit.py`](../tests/test_gate_audit.py) | This is input/output and measurement-interpretation hardening for a supplied verdict matrix. It does not prove verifier independence, estimate population/sampling uncertainty, validate the ground truth, establish external generalization, or grant acceptance/integration authority. A censored lower bound such as `>=199` is a comparison-table resolution statement, not a confidence or credible interval. |
 | `P-GOV-001` | Project-operated or owner-controlled AI automation does not count as independent human/external review. | `implemented` | [`../PROJECT_RULES.md`](../PROJECT_RULES.md), [`../CONTRIBUTING.md`](../CONTRIBUTING.md) | Do not use agent count, bot activity, or owner-controlled automated review as evidence of independent community validation. |
 | `P-SCALE-001` | Internet-scale, multi-organization production behavior remains unresolved/staged rather than demonstrated by the repository evidence. | `unresolved` | [`../ROADMAP.md`](../ROADMAP.md), [`../docs/research/FIRST_RESEARCH_PROGRAM.md`](../docs/research/FIRST_RESEARCH_PROGRAM.md) | Present this as a limitation/future-work boundary, not as achieved scale. |
-| `P-PAPER-001` | No canonical editable manuscript source is currently versioned in this repository. | `unresolved` | [`README.md`](README.md), [issue #478](https://github.com/MSKazemi/idkmesh/issues/478) | Until the real source is imported or an external canonical source is documented, a steward cannot truthfully claim an in-place manuscript review. |
+| `P-PAPER-001` | A canonical editable manuscript source ([`main.tex`](main.tex), "Reviewer Count Is Not Evidence Count") is versioned in this repository at `paper/main.tex`, revised against a prior adversarial review whose findings were independently re-verified against the current text and underlying artifacts. | `implemented` | [`main.tex`](main.tex), [`README.md`](README.md), [`review_reviewer-count-is-not-evidence-count_2026-09-09.md`](review_reviewer-count-is-not-evidence-count_2026-09-09.md), [issue #478](https://github.com/MSKazemi/idkmesh/issues/478) | This resolves the manuscript-source gap issue #478 tracked; it does not by itself constitute independent venue peer review, which the manuscript's own AI/tool provenance paragraph states has not occurred. |
 
 ## Quantitative-claim rule
 

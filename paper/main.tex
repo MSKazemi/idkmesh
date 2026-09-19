@@ -1,0 +1,995 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=2.4cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{caption}
+\usepackage{graphicx}
+\usepackage{pgfplots}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage[hidelinks]{hyperref}
+\usepackage{orcidlink}
+
+\pgfplotsset{compat=1.18}
+\definecolor{cReal}{HTML}{1B4965}
+\definecolor{cBeta}{HTML}{C1666B}
+\definecolor{cShock}{HTML}{7C9885}
+\definecolor{cOne}{HTML}{D08C34}
+
+\captionsetup{font=small,labelfont=bf}
+\newcommand{\neff}{n_{\mathrm{eff}}}
+\newcommand{\code}[1]{\texttt{#1}}
+
+\title{\bfseries Reviewer Count Is Not Evidence Count:\\
+Measured Error Dependence in an Executable Verification Panel}
+
+\author{Mohsen Seyedkazemi Ardebili\\
+  \small\href{https://mskazemi.github.io}{mskazemi.github.io}\\
+  \small\texttt{mohsen.seyedkazemi@gmail.com}}
+
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent
+Panels of automated verifiers --- test oracles, static analysers, and increasingly
+LLM reviewers --- are routinely sized by head count, on the implicit assumption
+that adding a verifier adds evidence. We measure that assumption on a panel whose
+ground truth is decided by execution rather than by judgement: 25 partial test
+oracles voting on 72 program candidates drawn from 24 problems, where a
+candidate's viability is the exit status of a hidden test suite. Every verifier
+discriminates significantly above chance (mean accuracy $p = 0.7956$, 25/25
+significant Youden's $J$ after Bonferroni correction), so the panel's dependence
+structure is interpretable rather than an artifact of incompetent members.
+
+Three results follow. First, the panel buys nothing over its own members:
+majority-vote error is $0.2083$ (95\% CI $[0.131, 0.316]$) against a mean
+member's $0.2044$ and a \emph{best} member's $0.1389$ --- so the panel is not
+worth one verifier, it is worse than one, and its effective independent size
+falls below the metric's floor of 1 rather than landing on it. On 72 items that
+ordering is directional, not significant (panel vs.\ best member, exact McNemar
+$p = 0.18$), and we report it as such. The design-effect heuristic
+$N/(1+(N-1)\rho)$, widely reused to discount correlated voters, reports $1.66$
+for this panel; under the dependence shape our data support it overstates
+available independence in $441/441$ cells of a $63{,}000$-run simulation grid,
+though a contemporaneous LLM-judge panel finds the same heuristic accurate at a
+lower correlation, so the failure is regime-specific rather than universal. Second, that shape is not the shared-shock
+mixture that recent multi-agent work assumes. Real panels fail \emph{partially}
+--- 11 of the 15 observed panel failures had a majority wrong while a
+minority was still right --- an outcome shared shock assigns essentially zero
+probability. A per-item difficulty model in the family proposed by
+Eckhardt and Lee in 1985, at identical parameter count, reproduces the partial
+failures ($11.1$ predicted against $11$ observed) and lands $3.7\times$ closer on
+panel error. Third, neither two-parameter model gets the high-quorum limit right,
+because the real panel has an \emph{irreducible blind spot}: four of 72
+candidates are missed by all 25 verifiers, a floor of $\lambda = 0.0556$
+(95\% CI $[0.022, 0.134]$) that no acceptance threshold and no panel size can
+cross. Shared shock over-predicts
+that floor by $2.13\times$ and per-item difficulty promises it away entirely.
+
+The practical consequence is that a verification panel must be characterised by
+measurement, not by declared diversity: verifiers sharing no declared attribute
+in our panel still shared $53\%$ of their errors, and weighting votes by
+declared independence groups --- an intuitively safe defence --- never wins when
+that declared structure is not real. Every finding rests on one constructed
+panel of 25 oracles over 72 items; all code, artifacts, and the analysis
+pipeline are public.
+\end{abstract}
+
+\section{Introduction}
+
+Software increasingly arrives faster than people can review it. The response,
+across code review, CI, benchmark scoring, and agentic coding pipelines, has been
+to add reviewers: more static analysers, more test oracles, more model instances
+voting on the same artifact, aggregated by majority or by quorum. The reasoning
+is the Condorcet jury theorem's: individually fallible voters, combined, are
+reliably right.
+
+That theorem's premise is independence, which both its classical statement and
+its generalisations call unrealistic --- Condorcet's assumptions of independence
+and homogeneity are ``seldom realistic'' \citep{boland1989}, and the theorem
+``is known to hold only under the unrealistic assumption that votes are
+independent'' \citep{ladha1992}. Both papers relax that premise rather than
+abandon it, deriving conditions under which majority voting survives dependence. Software engineering learned this the hard
+way once already. N-version programming \citep{avizienis1977} runs multiple
+independently developed implementations of one specification and votes on their
+outputs; in the words of the experiment that tested it, the method ``depends for
+its reliability improvement on the assumption that programs that have been
+developed independently will fail independently'' \citep{knight1986}.
+\citet{knight1986} then tested exactly that with 27 versions written by different
+people from the same specification, and found the coincident failure rate far
+above what independence predicts. The theoretical accounts that followed
+\citep{eckhardt1985,littlewood1989} replaced the independence assumption with a
+per-input difficulty function: some inputs are simply hard, and every version
+tends to fail on them together.
+
+The panels being assembled today are not independently written programs by
+different teams, but they inherit the same question and answer it less carefully.
+A modern verification panel is often five prompts against one model family, or
+five analysers sharing a parser, or five test oracles sampling one input domain.
+Its head count is reported; its independence is assumed. Where a discount is
+applied at all, it is the survey-sampling design effect
+$\neff = N/(1 + (N-1)\rho)$ \citep{kish1965}, carried over from cluster sampling
+and evaluated at some estimate of inter-rater agreement ---
+\citet{kohli2026} apply it to an LLM-judge panel in exactly this way.
+
+This paper asks the quantitative version of the question on a panel where the
+answer can be checked:
+
+\begin{quote}
+Given $n$ verifiers with per-verifier accuracy $p$ and measured error
+correlation $\rho$, how many statistically independent verifiers is that panel
+actually worth --- and does any standard model of verifier dependence predict
+what a real panel does?
+\end{quote}
+
+\paragraph{Contributions.}
+\begin{enumerate}
+\item \textbf{An instrument where dependence is measurable} (\S\ref{sec:instrument}).
+  A 25-verifier panel of partial test oracles over 72 candidates with
+  execution-decided ground truth. We first report the negative result that
+  motivated it: a 20-member panel of four small open-weight LLMs across five
+  prompt templates produced no member that discriminated above chance, making
+  its correlation structure uninterpretable.
+\item \textbf{A panel that loses to its own members} (\S\ref{sec:measure}).
+  Majority vote errs on $0.2083$ of items against the best member's $0.1389$, so
+  the panel's effective independent size falls \emph{below} the metric's floor of
+  1. Declared independence labels carry real but partial signal ($\rho = 0.892$
+  within group against $0.526$ across). \citet{kohli2026} reported the same
+  headline on an LLM-judge panel while this work was in preparation, and has
+  priority on that framing; \S\ref{sec:related-panels} reconciles the two,
+  including where they disagree.
+\item \textbf{A model-shape result} (\S\ref{sec:shape}). The shared-shock mixture
+  is not merely mis-parameterised but structurally wrong: it cannot produce
+  partial panel failure, which is the dominant real failure mode. A per-item
+  difficulty (beta-binomial) model at equal parameter count fits.
+\item \textbf{An irreducible blind spot} (\S\ref{sec:quorum}). The real quorum
+  frontier bottoms out at $\lambda = 0.0556$ and stops. Neither two-parameter
+  model expresses this; a one-inflated extension does. Escaping a correlation and
+  escaping a blind spot require different interventions.
+\item \textbf{Design consequences} (\S\ref{sec:consequences}): a negative result
+  on group-balanced aggregation, and a single-factor decomposition showing that
+  panel \emph{correlation} --- not accuracy, and not the blind spot --- carries
+  $53$ of the $58$ catastrophic outcomes an optimising adversary induces.
+\end{enumerate}
+
+Everything reported here is reproducible from committed artifacts in the IDKMesh
+repository \citep{idkmesh}; \S\ref{sec:repro} gives the commands.
+
+\section{Background and related work}
+\label{sec:related}
+
+\paragraph{Correlated failure in redundant software.}
+The closest prior work is the multiversion programming literature.
+\citet{knight1986} is the empirical anchor: independence, assumed as a design
+property, did not hold. \citet{eckhardt1985} give the model we find fits ---
+inputs carry a difficulty $\theta(x)$, versions fail independently
+\emph{conditional} on $x$, and the resulting marginal failures are positively
+correlated. \citet{littlewood1989} extend it to versions built by deliberately
+different methodologies.
+
+Two of \citet{eckhardt1985}'s consequences deserve to be stated here, because
+this paper's headline results are empirical instances of both. First, they show
+(\S V, Fig.~5) that \emph{certain intensity distributions make an $N$-version
+system, on average, more prone to failure than a single component} --- redundancy
+reducing reliability. \S\ref{sec:measure} reports a measured panel that does
+exactly this. Second, they show that ``any error region for which a majority of
+software components fail will limit the effectiveness of redundancy regardless of
+the magnitude of the average component failure probability'', with the limiting
+failure probability governed only by intensity mass at $\theta \geq 0.5$
+(their Eq.~15). \S\ref{sec:quorum}'s irreducible floor $\lambda$ is a measured
+instance of that region.
+
+Our contribution here is therefore not the model, and not the phenomena --- both
+were derived in 1985. It is that this model, proposed for human-written program
+versions and rarely tested since, is the one that fits an automated verification
+panel; that the alternative used in recent multi-agent and ensemble work does
+not; and that the two predicted pathologies are observable on a real panel of
+programs. We use ``difficulty'' where Eckhardt and Lee write ``intensity''; the
+quantity is the same.
+
+\paragraph{Aggregation and the independence discount.}
+The Condorcet jury theorem under correlated votes has a substantial literature
+\citep{ladha1992,boland1989}; the discount applied in practice is Kish's design
+effect \citep{kish1965}, imported from cluster sampling and used on a judge panel
+by \citet{kohli2026}. Beta-binomial
+models for over-dispersed binary data are standard \citep{williams1975}; agreement
+statistics such as Fleiss' $\kappa$ \citep{fleiss1971} summarise rater
+concordance but do not, by themselves, answer how much independent evidence a
+panel holds. Ensemble learning inherited this model rather than reinventing it, and the chain
+matters because it ends at the diagnostic we use. \citet{hansen1990} carried
+\citet{eckhardt1985} into classifier ensembles explicitly --- ``Eckhardt and Lee
+have proposed a model incorporating such input specific difficulty within a study
+of $N$-version programming'' --- and named the distribution over $\theta$ the
+\emph{classification difficulty distribution}, which is Eckhardt and Lee's
+intensity distribution $G$ under another name. \citet{kuncheva2003} then reduce
+that distribution to a scalar diversity index, its variance, alongside nine
+others. Closest of those to our setting is \citet{partridge1997}'s
+\emph{coincident-failure diversity}, which is defined on software versions and
+built directly on the failure-count distribution --- the same histogram as our
+Figure~\ref{fig:kerr}. Their $\mathrm{CFD} = \sum_{n=1}^{N}\frac{N-n}{N-1}f_n$
+weights a failure by how \emph{few} versions share it: it is $1$ when every
+failure is unique to one version and $0$ when all $N$ fail together. Our
+\S\ref{sec:quorum} floor is the mass they assign zero.
+
+The distribution-of-errors diagnostic of \S\ref{sec:shape} is therefore
+well-established. What this literature does with it is score a set on a scalar;
+what we do is fit competing generative models to it and ask which reproduces a
+measured panel. \citet{kuncheva2003} also report a finding we
+echo: such measures track ensemble gain less reliably than intuition suggests ---
+in their controlled simulations all ten relate similarly to majority-vote
+improvement, but they close with doubts about the measures' usefulness for
+building ensembles on real problems.
+
+\paragraph{Review panels in practice.}
+In three large open-source projects, review \emph{coverage} and
+\emph{participation} were found to relate to post-release defect counts
+\citep{mcintosh2014}; qualitative study of industrial review finds its benefits
+extend well beyond defect-finding, to knowledge transfer and team awareness
+\citep{bacchelli2013}. Neither measures reviewer \emph{head count} --- McIntosh
+et al.'s participation metrics are self-approval, review speed, and discussion.
+Head count is the cruder proxy practice has adopted, and what it is worth is the
+subject of this paper. Automated judging with language models
+\citep{zheng2023} made evaluation cheap enough to run at scale, and
+execution-based benchmarks \citep{chen2021} supply exactly the kind of decidable
+ground truth this study needs. What this paper adds to
+\S\ref{sec:related-panels}'s contemporaneous measurement is a panel whose ground
+truth is decided by execution, and a test of which dependence \emph{model}
+reproduces it.
+
+\section{The instrument}
+\label{sec:instrument}
+
+\subsection{A negative result first: LLM panels we could not measure}
+\label{sec:e016}
+
+Our first attempt deployed live LLM verifiers, because that is the panel
+practitioners are actually building. Twenty verifiers --- four open-weight models
+(\code{qwen2.5-1.5b}, \code{llama3.2-1b}, \code{gemma2-2b}, \code{smollm2-1.7b})
+crossed with five prompt templates --- voted on all 72 candidates, 1440 votes
+total.
+
+The experiment failed, informatively. Of the 20 verifiers, six emitted a single
+constant verdict across all 72 tasks and three more were $\geq 95\%$ one verdict.
+Accuracy hid this: on a corpus that is $36.1\%$ viable, ``always reject'' scores
+$0.639$. Youden's $J = \text{sensitivity} + \text{specificity} - 1$
+\citep{youden1950} does not hide it. \citet{youden1950} states the relevant
+property directly: $J$ ``has the value zero whenever a diagnostic test gives the
+same proportion of positives for both diseased and control groups regardless of
+what that proportion is'' --- so a rule that ignores the artifact scores zero
+whichever way it is biased. Mean $J$ was $+0.0487$, and \textbf{zero of 20
+verifiers had $J$ significantly above zero after Bonferroni correction}. The
+20-member majority scored accuracy $0.514$ against $0.639$ for a constant
+rejector, with a permutation test on panel $J$ giving $p = 0.13$.
+
+What the votes \emph{did} respond to was the prompt: mean accept rate moved from
+$0.251$ to $0.731$ across templates and $0.137$ to $0.799$ across models, while
+carrying no task-level signal. The panel measured its own prompts.
+
+We report this because it constrains the paper's scope and because it is a
+methodological warning: \textbf{a correlation estimated over verifiers that do not
+discriminate is a correlation between constants.} Any panel study must pass a
+discrimination screen before its dependence structure means anything, and
+accuracy on an unbalanced corpus is not that screen.
+
+\subsection{A panel of partial oracles}
+
+We therefore built verifiers that demonstrably verify. A verifier is a
+\emph{partial test oracle}: it draws inputs from one named \emph{region} of a
+problem's input domain --- \code{tiny}, \code{small}, \code{large},
+\code{extreme}, \code{duplicate} --- and accepts a candidate only if it matches a
+reference implementation on all drawn inputs. Five regions $\times$ five random
+seeds gives $n = 25$ verifiers.
+
+The corpus is 24 problems $\times$ 3 variants $=$ 72 candidate solutions. Ground
+truth is not a judgement: each candidate is executed against hidden tests in a
+subprocess and \code{viable} is the exit status. 26 are viable, 46 are not, a
+base rate of $0.639$ non-viable. Labels reproduce exactly on regeneration
+($72/72$).
+
+\paragraph{Are the labels independent of the verifiers?}
+They come from different artifacts. Ground truth is decided by executing
+\emph{hand-written hidden tests} --- literal input/expected pairs such as
+\code{("solve([1,2,3,4])", 2.5)} --- authored per problem from the specification.
+The verifiers never see those tests: a partial oracle compares the candidate's
+output against the executed output of the problem's \emph{reference
+implementation} on inputs it draws itself. So the two sides are independent
+encodings of one specification, and neither is derived from the other; expected
+outputs are never hand-written for the oracles, and the hidden tests are never
+generated from the reference. Two further guards matter. The variant labels
+(``ok'', ``off\_by\_one'') are \emph{not} used as ground truth --- a mutant that
+happens to pass every hidden test is recorded viable --- and inputs on which the
+reference itself raises are treated as out of contract rather than as defects.
+The residual shared dependency is the specification itself: a misconception
+present in both the reference and the hand-written expectations would corrupt
+both, and this design cannot detect that.
+
+This panel has three properties that make it a usable instrument. Every verifier
+is a program, so every error is a genuine missed defect rather than a
+disagreement about taste. Every error vector is observed rather than assumed. And
+region membership is a \emph{declared independence label} of exactly the kind
+panel designers rely on --- ``these reviewers look at different things'' --- which
+makes the label itself testable. \S\ref{sec:measure} tests it and finds it
+wanting.
+
+The panel passes the screen \S\ref{sec:e016} failed: \textbf{25 of 25 verifiers
+discriminate above chance}, every Youden's $J$ significantly positive after
+Bonferroni correction, at mean accuracy $p = 0.7956$.
+
+\subsection{Effective independent panel size}
+\label{sec:neff}
+
+For independent verifiers, the probability that a panel's decision is wrong is a
+binomial tail. With $\mathit{need} = \lfloor qn \rfloor + 1$ votes required to
+accept at quorum $q$,
+\begin{equation}
+E_{\mathrm{indep}}(n, p, q) \;=\; \sum_{k=0}^{\mathit{need}-1} \binom{n}{k}\, p^{k}\,(1-p)^{n-k},
+\end{equation}
+which is strictly decreasing in $n$. We define the \textbf{effective independent
+panel size} of a measured correlated panel as the size an \emph{independent}
+panel would need to reproduce the same measured error rate,
+\begin{equation}
+\neff(n, p, \rho, q) \;=\; E_{\mathrm{indep}}^{-1}\!\left( \text{measured error rate} \right),
+\end{equation}
+interpolated linearly between bracketing odd panel sizes. The ratio $\neff/n$ is
+the panel's \textbf{evidence efficiency}: the fraction of nominal reviewers that
+survives as independent evidence.
+
+\paragraph{The metric saturates at both ends, and this matters.}
+$E_{\mathrm{indep}}$ is evaluated over odd panel sizes $1, 3, \dots, 201$, so
+$\neff$ is \emph{clamped}: it returns $1$ for any measured error at or above the
+single-verifier error, and $201$ for any error at or below the largest panel's.
+The lower clamp is not cosmetic. A panel that performs \emph{worse} than one of
+its members is not thereby ``worth one member'' --- it is worth less, and the
+metric cannot say how much less. We therefore report $\neff$ only where it is
+unclamped, and elsewhere report the error rates directly. Of the 315 grid cells
+at $q=0.5$, 28 ($8.9\%$) sit on the lower clamp.
+
+The metric is anchored where it is unclamped. On a simulated independent 5-panel
+at $p = 0.75, q = 0.5$ the analytic error is $0.103516$ and the simulator
+measures $0.103521$. Across the grid of \S\ref{sec:grid} the $\rho = 0$ column
+recovers nominal panel size over a sevenfold range ($2.98$ to $20.99$) without
+having been fitted (Figure~\ref{fig:neff}). The $\rho = 1$ column reads $1.00$
+at every panel size, but that is the lower clamp firing rather than a
+measurement, and we do not claim it as validation.
+
+\section{How much independent evidence does the panel hold?}
+\label{sec:measure}
+
+\subsection{The declared label is real, and not nearly enough}
+
+Pairwise error correlations, over all $\binom{25}{2} = 300$ pairs:
+
+\begin{center}
+\begin{tabular}{lrr}
+\toprule
+pair type & pairs & mean $\rho$ \\
+\midrule
+same region (declared dependent)   & 50  & $+0.8924$ \\
+different region (declared independent) & 250 & $+0.5263$ \\
+\midrule
+all pairs & 300 & $+0.5873$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The declared label carries genuine signal: $+0.892$ within a region against
+$+0.526$ across. But \textbf{verifiers that share no declared attribute still
+share $53\%$ of their errors}. Treating a metadata boundary as an independence
+boundary would overstate the panel's independent evidence by a wide margin. The
+practical form of this is a measurement instruction, not a policy: before
+weighting votes by declared groups, check whether cross-group error correlation
+is actually lower than within-group correlation, and by how much.
+
+\subsection{Headline: the panel is worse than its own members}
+
+\begin{center}
+\begin{tabular}{lrl}
+\toprule
+& error on 72 items & 95\% CI \\
+\midrule
+25-verifier majority              & $0.2083$ \;(15/72) & $[0.131, 0.316]$ \\
+mean member                       & $0.2044$           & --- \\
+\textbf{best member} (\code{large-s0}) & $\mathbf{0.1389}$ \;(10/72) & $[0.077, 0.237]$ \\
+\midrule
+\multicolumn{3}{l}{panel vs.\ best member: exact McNemar $p = 0.18$ \;($b=2$, $c=7$)} \\
+\multicolumn{3}{l}{effective size $\neff$: \emph{below} the metric's floor of 1 (clamped)} \\
+\multicolumn{3}{l}{design-effect heuristic $N/(1+(N-1)\rho)$: $1.66$} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Under majority vote this panel does not merely fail to beat its members --- it
+loses to them. \citet{eckhardt1985} predicted that this is possible for
+sufficiently coincident intensity distributions (their Fig.~5, ``an intensity
+distribution for which redundancy reduces reliability''); what follows is a
+measurement of it on a panel of real programs. Aggregating 25 verifiers produces \emph{more} error than the mean
+member and half again the error of the best one. Because the panel error exceeds
+the single-verifier error, $\neff$ sits on its lower clamp
+(\S\ref{sec:neff}): the honest statement is that the panel's effective
+independent size is below $1$, not equal to it.
+
+Two cautions belong with this number rather than in a later section. First, 72
+items is a small sample: the panel--best-member gap is directional but not
+significant ($p = 0.18$), and we claim the \emph{ordering}, not the magnitude.
+Second, the design-effect heuristic reports $1.66$ where the measured value is
+below $1$, so it overstates independence \emph{here}; \S\ref{sec:grid} shows when
+that generalises and \S\ref{sec:related-panels} shows a measured panel where it
+does not.
+
+\subsection{When the heuristic is optimistic, and under what condition}
+\label{sec:grid}
+
+To separate ``this panel'' from ``panels'', we ran a full factorial simulation:
+$n \in \{3,5,7,9,11,15,21\}$, $p \in \{0.60,0.70,0.75,0.80,0.90\}$,
+$\rho \in \{0, 0.125, \dots, 1.0\}$, $q \in \{0.5, 0.7\}$, 100 seeds per cell ---
+630 cells, $63{,}000$ runs. Figure~\ref{fig:neff} plots the resulting $\neff$
+surface at $p = 0.75, q = 0.5$.
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=0.62\linewidth, height=6.0cm,
+  xlabel={verifier error correlation $\rho$},
+  ylabel={effective panel size $\neff$},
+  xmin=0, xmax=1, ymin=0, ymax=22,
+  legend style={font=\scriptsize, at={(1.03,1)}, anchor=north west, draw=none},
+  grid=major, grid style={gray!18},
+  tick label style={font=\scriptsize}, label style={font=\small},
+]
+\addplot[thick, cReal, mark=*, mark size=1.2] table[x=rho,y=n21] {figures/neff-grid.dat};
+\addlegendentry{$n=21$}
+\addplot[thick, cBeta, mark=square*, mark size=1.2] table[x=rho,y=n15] {figures/neff-grid.dat};
+\addlegendentry{$n=15$}
+\addplot[thick, cShock, mark=triangle*, mark size=1.4] table[x=rho,y=n11] {figures/neff-grid.dat};
+\addlegendentry{$n=11$}
+\addplot[thick, cOne, mark=diamond*, mark size=1.4] table[x=rho,y=n7] {figures/neff-grid.dat};
+\addlegendentry{$n=7$}
+\addplot[thick, gray, mark=o, mark size=1.2] table[x=rho,y=n3] {figures/neff-grid.dat};
+\addlegendentry{$n=3$}
+\end{axis}
+\end{tikzpicture}
+\caption{Effective independent panel size against error correlation, at
+$p=0.75$, $q=0.5$, from $63{,}000$ simulation runs. At $\rho = 0$ the metric
+recovers nominal size across a sevenfold range ($2.98$ to $20.99$) without having
+been fitted. The $\rho = 1$ column reads $1.00$ everywhere, but that is the
+metric's lower clamp (\S\ref{sec:neff}), not a measurement. The curves converge
+from $\rho \approx 0.5$ upward, where the spread across $n = 3 \dots 21$ falls
+below $2.0$ effective verifiers; below that panel size still matters
+substantially (spread $7.9$ at $\rho = 0.125$, $18.0$ at $\rho = 0$).}
+\label{fig:neff}
+\end{figure}
+
+Two readings of this grid matter. The first is a ceiling: even $12.5\%$ error
+correlation caps a 21-member panel at $10.6$ effective verifiers, and at
+$\rho = 0.5, p = 0.75$ going from 15 to 21 reviewers buys $+0.05$ effective
+verifiers. The second concerns the heuristic. Re-deriving each cell under the two
+competing dependence models of \S\ref{sec:shape} gives:
+
+\begin{center}
+\begin{tabular}{lr}
+\toprule
+cells where $N/(1+(N-1)\rho)$ overstates independence & \\
+\midrule
+under the shared-shock model & $17/441$ \; ($4\%$) \\
+under the per-item difficulty model & $\mathbf{441/441}$ \; ($100\%$) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Under the item-difficulty shape the design-effect heuristic overstates available
+independence in \emph{every} cell. The rule this licenses is a conditional one,
+and the condition matters: \textbf{under item-difficulty dependence,
+$N/(1+(N-1)\rho)$ overstates a panel's independent evidence --- so establish the
+dependence shape before using it to size a panel.} We deliberately do not state
+this unconditionally. The $441/441$ figure is computed \emph{under} the
+item-difficulty model; comparing it against a heuristic derived under different
+assumptions demonstrates that two models disagree, not that the heuristic is
+false in general. \S\ref{sec:related-panels} describes a measured panel where it
+is in fact accurate.
+
+This also corrects a conclusion we had drawn ourselves. Under shared shock,
+$\neff$ saturates as the panel grows and does so most sharply for accurate
+verifiers, suggesting that high accuracy is a reason to stop adding reviewers.
+Under per-item difficulty the regimes invert. Extending past the grid at
+$p = 0.90, \rho = 0.125$:
+
+\begin{center}
+\begin{tabular}{lrrrrrr}
+\toprule
+$n$ & 5 & 11 & 21 & 41 & 81 & 151 \\
+\midrule
+shared shock        & $3.82$ & $4.57$ & $4.59$ & $4.59$ & $4.59$ & $4.59$ \\
+per-item difficulty & $2.82$ & $3.93$ & $4.56$ & $4.89$ & $5.16$ & $5.40$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Shared shock pins at $4.59$ and never moves; per-item difficulty crosses it near
+$n = 21$ and keeps climbing. Conversely at $p = 0.75, \rho = 0.5$ the per-item
+model flattens almost immediately, at $\neff \approx 1.6$ rather than the $4.1$
+shared shock reports. \textbf{High correlation is what caps a panel, and it caps
+it harder and sooner than the shared-shock model says; high accuracy is not
+itself a reason to stop adding verifiers.}
+
+\subsection{A contemporaneous panel where the heuristic holds}
+\label{sec:related-panels}
+
+While this work was in preparation, \citet{kohli2026} reported the same headline
+on a very different panel: nine frontier LLM judges from seven model families, on
+three natural-language-inference benchmarks with 100 human annotations per item.
+That panel is worth $\neff = 2.18$ of 9 (bootstrap CI $[2.07, 2.31]$), the best
+single judge matches or beats the full panel, and the conclusion --- that
+correlated judges, not the aggregation rule, are the binding constraint --- is
+ours as well. Agreement between two independent instruments, one on code with
+executable ground truth and one on natural language with human labels, is the
+strongest evidence either paper offers that the effect is real rather than an
+artifact of one construction. That work has priority on the effective-votes
+framing for judge panels, and we make no first-measurement claim.
+
+The two panels disagree on exactly two points, and the disagreement is
+informative.
+
+\textbf{The heuristic.} \citet{kohli2026} finds $N/(1+(N-1)\rho)$ \emph{accurate}
+on their panel: the empirical $\neff(k)$ curve tracks $k/(1+(k-1)\cdot 0.391)$,
+and an independent eigenvalue estimate ($2.16$) matches the Kish value ($2.18$).
+We find it optimistic on ours. The panels differ in measured correlation
+($0.391$ against $0.5873$) and, more consequentially, in dependence shape.
+
+\textbf{The shape.} Their permutation test rejects shared item difficulty as the
+explanation of their inter-judge correlation ($p < 10^{-4}$; only $6.8$--$13.5\%$
+of the gap is attributable to it). We find item difficulty is the shape that fits
+ours. The honest reading favours their result as a constraint on ours rather than
+the reverse, because \emph{our panel's item-difficulty structure is
+manufactured}: five input regions $\times$ five seeds induces per-item difficulty
+almost by construction, since a candidate that fails on \code{extreme} inputs
+fails for every verifier drawing from that region. Their panel's diversity is not
+designed at all --- it is whatever seven model families happen to share.
+
+The defensible summary is therefore not that one paper is right, but that
+\textbf{dependence shape is a property of how a panel was assembled and must be
+measured per panel rather than assumed}. That is a weaker claim than either paper
+makes alone, and better supported than either.
+
+\section{The shape of verifier dependence}
+\label{sec:shape}
+
+\subsection{A single $\rho$ does not reproduce the panel}
+
+Feeding the panel's own measured correlation back into the shared-shock mixture
+--- with probability $\rho$ all verifiers share one correctness state, otherwise
+they are independent --- under-predicts what the panel does:
+
+\begin{center}
+\begin{tabular}{lrr}
+\toprule
+model & panel error & vs.\ real \\
+\midrule
+real 25-verifier majority        & $0.2083$ & --- \\
+independent ($\rho = 0$)         & $0.0005$ & $417\times$ too low \\
+flat shared shock at $\rho=0.587$ & $0.1216$ & $1.71\times$ too low \\
+nested shared shock ($g=0.526$, $b=0.773$) & $0.1290$ & $1.62\times$ too low \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+A nested variant matching \emph{both} the within-region and cross-region
+correlations barely improves on the flat one, and heterogeneous accuracy does not
+close the gap either: re-simulating with each verifier's own measured accuracy
+gives $0.1228$, still $0.086$ short. The problem is not the parameter value.
+
+\subsection{Real panels fail partially; shared shock cannot}
+
+The diagnosis is visible in the distribution of how many verifiers err per task
+(Figure~\ref{fig:kerr}). That diagnostic is not new --- it is the empirical form
+of \citet{eckhardt1985}'s intensity distribution, called the classification
+difficulty distribution by \citet{hansen1990} and reduced to a scalar index by
+\citet{kuncheva2003}. What has not been done, and is what
+follows, is to treat the distribution as something to be \emph{explained}: to fit
+competing generative models to it at matched parameter count and ask which one
+reproduces a real panel.
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  name=full,
+  width=0.92\linewidth, height=4.4cm,
+  xlabel={}, ylabel={tasks (of 72)},
+  xmin=-0.7, xmax=25.7, ymin=0, ymax=46,
+  xtick={0,5,10,15,20,25},
+  ybar=0pt, bar width=2.4pt,
+  legend style={font=\scriptsize, at={(0.5,1.02)}, anchor=south,
+                legend columns=3, draw=none, column sep=6pt},
+  grid=major, grid style={gray!18},
+  tick label style={font=\scriptsize}, label style={font=\small},
+]
+\addplot[fill=cReal, draw=cReal] table[x=k,y=observed] {figures/kerr-distribution.dat};
+\addlegendentry{observed}
+\addplot[fill=cBeta!70, draw=cBeta] table[x=k,y=betabinom] {figures/kerr-distribution.dat};
+\addlegendentry{per-item difficulty}
+\addplot[fill=cShock!60, draw=cShock] table[x=k,y=sharedshock] {figures/kerr-distribution.dat};
+\addlegendentry{shared shock}
+\node[font=\scriptsize\itshape, anchor=north east] at (axis cs:25.4,44) {full scale};
+\end{axis}
+
+\begin{axis}[
+  at={(full.below south west)}, anchor=north west, yshift=-0.9cm,
+  width=0.92\linewidth, height=4.0cm,
+  xlabel={number of the 25 verifiers wrong on a task},
+  ylabel={tasks (of 72)},
+  xmin=12.3, xmax=24.7, ymin=0, ymax=6.2,
+  xtick={13,15,17,19,21,23,24},
+  ybar=0pt, bar width=3.4pt,
+  grid=major, grid style={gray!18},
+  tick label style={font=\scriptsize}, label style={font=\small},
+]
+\addplot[fill=cReal, draw=cReal] table[x=k,y=observed] {figures/kerr-distribution.dat};
+\addplot[fill=cBeta!70, draw=cBeta] table[x=k,y=betabinom] {figures/kerr-distribution.dat};
+\addplot[fill=cShock!60, draw=cShock] table[x=k,y=sharedshock] {figures/kerr-distribution.dat};
+\node[font=\scriptsize\itshape, anchor=north east] at (axis cs:24.5,5.9)
+      {partial panel failures ($13 \le k \le 24$), magnified};
+\end{axis}
+\end{tikzpicture}
+\caption{Where each model puts its mass, at full scale (top) and magnified over
+the partial-failure region (bottom). A 25-verifier majority fails when
+$k \ge 13$; it fails \emph{partially} when $13 \le k \le 24$, a majority wrong
+while a minority is still right. That is how 11 of the panel's 15 real failures
+happen, and shared shock is flat against zero across the whole region
+($0.01$ tasks expected) --- conditional on the shock it produces unanimity,
+conditional on no shock a tight binomial spike near $k = 5$ that dies well
+before 13. It compensates by over-predicting unanimous failure ($8.5$ against
+$4$ observed). The per-item difficulty model reproduces the region at the same
+parameter count ($11.1$ predicted against $11$ observed).}
+\label{fig:kerr}
+\end{figure}
+
+Replacing ``with probability $\rho$ everyone shares one correctness state'' with
+``each task has a difficulty $d \sim \mathrm{Beta}(\alpha,\beta)$ and each
+verifier errs independently with probability $d$'' gives a beta-binomial
+\citep{williams1975}. This is \citet{eckhardt1985}'s model with a Beta mixing
+distribution: their Corollary writes system failure as
+$p_N = \int h(y;N)\,dG(y)$, a binomial mixed over the \emph{intensity
+distribution} $G$, and they deliberately leave $G$ unspecified. Choosing
+$G = \mathrm{Beta}$ is our parametric commitment, not theirs --- a point
+\S\ref{sec:threats} already concedes. It has the same two free parameters as flat shared
+shock --- a mean and a correlation --- so the comparison is of \emph{shape}, not
+of freedom:
+
+\begin{center}
+\begin{tabular}{lrrr}
+\toprule
+ & real & per-item difficulty & shared shock \\
+\midrule
+panel error at majority & $0.2083$ & $0.1847$ & $0.1216$ \\
+partial failures ($13 \le k \le 24$) & $11$ & $11.1$ & $\mathbf{0.01}$ \\
+unanimous failures ($k = 25$) & $4$ & $2.3$ & $8.5$ \\
+implied pairwise $\rho$ & $0.5873$ & $0.5713$ & --- \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The fitted correlation lands on the independently measured $\rho$, the partial
+failure count is reproduced almost exactly, and the panel error is $3.7\times$
+closer. Generalising over the $441$-cell grid, the per-item model predicts more
+error than shared shock in $438/441$ cells, by a median factor of $1.27\times$ and
+up to $2.71\times$. \textbf{Recommendation: parameterise verifier dependence by an
+item-difficulty distribution, not by a shared-shock probability. $\rho$ remains a
+useful summary of a panel; it is not a sufficient statistic for its error.}
+
+\section{The quorum frontier and the irreducible blind spot}
+\label{sec:quorum}
+
+Majority vote is one point on a curve. Sweeping the acceptance threshold from 1
+to 25 votes gives the panel's full frontier (Figure~\ref{fig:quorum}).
+
+Before reading anything off that curve, it must clear the screen
+\S\ref{sec:e016} demanded of the LLM panel: a verification panel must beat a rule
+that ignores the code. On this corpus ``reject everything unread'' errs on the 26
+viable candidates, a rate of $0.3611$. \textbf{The panel does not beat that
+baseline until $\mathit{need} = 6$}, and at $\mathit{need} = 5$ it exactly ties it.
+Majority ($0.2083$) and the whole high-quorum region clear it comfortably, but the
+left third of the frontier does not, and nothing should be concluded from that
+region. We apply the test to ourselves because \S\ref{sec:e016} applies it to
+others.
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=0.92\linewidth, height=6.2cm,
+  xlabel={votes required to accept ($\mathit{need}$, of 25)},
+  ylabel={panel error rate},
+  xmin=1, xmax=25, ymin=0, ymax=0.58,
+  legend style={font=\scriptsize, at={(0.98,0.97)}, anchor=north east, draw=none},
+  grid=major, grid style={gray!18},
+  tick label style={font=\scriptsize}, label style={font=\small},
+]
+\addplot[very thick, cReal] table[x=need,y=real] {figures/quorum-frontier.dat};
+\addlegendentry{measured panel}
+\addplot[thick, cShock, dashed] table[x=need,y=sharedshock] {figures/quorum-frontier.dat};
+\addlegendentry{shared shock (2 params)}
+\addplot[thick, cBeta, dotted] table[x=need,y=betabinom] {figures/quorum-frontier.dat};
+\addlegendentry{per-item difficulty (2 params)}
+\addplot[thick, cOne, dashdotted] table[x=need,y=oneinflated] {figures/quorum-frontier.dat};
+\addlegendentry{one-inflated (3 params)}
+\addplot[black!60, thick, dashed, domain=1:25, samples=2] {0.3611};
+\addlegendentry{``reject everything unread''}
+\addplot[gray, thin, domain=1:25, samples=2, forget plot] {0.0556};
+\node[font=\scriptsize, gray, anchor=south west] at (axis cs:1.4,0.062) {blind-spot floor $\lambda = 0.0556$};
+\end{axis}
+\end{tikzpicture}
+\caption{The real quorum frontier against three models, with the trivial
+baseline. RMSE over all 25 thresholds: shared shock $0.0766$, per-item difficulty
+$0.0251$, one-inflated $0.0328$. From $\mathit{need} = 17$ upward shared shock is
+frozen at $0.1186$ while reality keeps falling; past $\mathit{need} = 22$ reality
+stops at $0.0556$ while the per-item model keeps promising improvement. Note the
+left of the plot: the panel does not beat ``reject everything unread'' until
+$\mathit{need} = 6$, and nothing should be concluded from that region.}
+\label{fig:quorum}
+\end{figure}
+
+At unanimity the three numbers separate cleanly, and neither two-parameter model
+lands on the truth:
+\[
+\text{real} = 0.0556, \qquad
+\text{shared shock} = 0.1186 \;(2.13\times\text{ high}), \qquad
+\text{per-item} = 0.0313 \;(1.77\times\text{ low}).
+\]
+
+The disagreement is structural rather than a fitting artifact.
+
+\begin{itemize}
+\item \textbf{Shared shock} puts $P(\text{all } n \text{ wrong}) = \rho\mu + (1-\rho)\mu^{n}$,
+  tending to a hard floor $\rho\mu = 0.1186$ at \emph{every} panel size. The model
+  asserts that past some threshold, raising the quorum cannot help at all.
+\item \textbf{Per-item difficulty} puts $P(\text{all } n \text{ wrong}) = \mathbb{E}[d^{n}] = B(\alpha+n,\beta)/B(\alpha,\beta)$,
+  which decays as $n^{-\beta}$ with $\beta = 0.5762$ --- slowly, but to zero. The
+  model asserts there is no floor, and that enough verifiers will eventually
+  verify anything.
+\item \textbf{Reality has a floor, but not shared shock's.} It sits at
+  $\lambda = 0.0556$: four defects that \emph{every one} of the 25 verifiers
+  misses. That is a shared blind spot of the panel, not a correlated shock. It is
+  also the region \citet{eckhardt1985} identified as the binding constraint ---
+  intensity mass at $\theta \geq 0.5$, which caps achievable reliability
+  ``regardless of the magnitude of the average component failure probability''.
+\end{itemize}
+
+The distinction is operationally important. A shared shock is a property of the
+\emph{correlation}; a blind spot is a property of \emph{which verifiers you
+chose}. You escape the first by decorrelating an existing panel, and the second
+only by adding a verifier of a different kind. Adding one-inflation --- a
+$\lambda$-atom on ``all wrong'' plus a beta-binomial over the rest --- captures
+both, at the cost of a third parameter. Once the blind spot is represented
+explicitly, the correlation remaining in the reducible units is $0.4513$ rather
+than the marginal $0.5873$; feeding the marginal value \emph{and} arming the atom
+would double-count the same shared failures.
+
+Finally, the assumed shape --- not the correlation --- decides the aggregation
+rule. Sweeping the cost-optimal threshold $q^{*}$ over correlation, base rate and
+false-accept/false-reject cost ratio, at $n = 25$ the optimum spans $12$--$14$
+under shared shock but $1$--$25$ under per-item difficulty, with shifts as large
+as $\pm 11$ votes in the same cell. Under shared shock, tuning the quorum on this
+panel appears to buy nothing ($1.00\times$); on the real panel it is the single
+largest available error reduction ($3.75\times$, from $0.2083$ at majority to
+$0.0556$).
+
+\section{Consequences for panel design}
+\label{sec:consequences}
+
+\subsection{Group balancing is not a safe default}
+
+If declared groups are the problem, weighting by them looks like the fix: give
+each declared independence group one vote instead of counting every verifier
+equally. Under shared shock this crosses over from harmful to helpful at
+$\rho = 0.25$ for a reference $[7,1,1,1,1]$ panel at $p = 0.75$, and that
+crossover survives the change of shape --- it sits at $\rho = 0.25$ under both
+models, a robustness result.
+
+It does not survive the groups being fake. When task difficulty is shared across
+groups rather than within them --- the regime the measured panel's
+$0.526$ cross-group correlation points toward --- group balancing \textbf{never
+wins at any correlation}, and loses by up to 3 percentage points:
+
+\begin{center}
+\begin{tabular}{lrrl}
+\toprule
+$\rho$ & naive majority & group-balanced & winner \\
+\midrule
+$0.000$ & $\mathbf{0.0345}$ & $0.0659$ & naive \\
+$0.125$ & $\mathbf{0.1200}$ & $0.1366$ & naive \\
+$0.250$ & $\mathbf{0.1719}$ & $0.1809$ & naive \\
+$0.500$ & $\mathbf{0.2232}$ & $0.2255$ & naive \\
+$0.750$ & $\mathbf{0.2448}$ & $0.2449$ & naive \\
+$1.000$ & $0.2492$ & $0.2492$ & tie \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The mechanism is straightforward: balancing pays a real cost, discarding the
+extra votes inside the large group, and that cost is only worth paying when the
+small groups supply evidence the large group lacks. When every group errs on the
+same hard items, the discarded votes are pure loss. At $\rho = 1$ both rules
+report $\approx 1 - p$: the panel has collapsed to a single verifier and no
+aggregation rule can recover anything.
+
+\subsection{Correlation, not accuracy, is the exploitable surface}
+\label{sec:adversarial}
+
+A last consequence concerns adversarial pressure, and we state its status
+plainly: this is a simulation result built on the measured panel's parameters,
+not a second measurement. In a matched-budget search benchmark, contributors
+optimise to pass the gate --- drawing $k$ candidates and submitting the one that
+looks best on exactly the quantity the gate ranks. Holding per-verifier accuracy
+fixed at the measured $p = 0.7956$ and the head count fixed at 25, we vary only
+the \emph{dependence structure}. Because a panel's dependence has two components
+that our own \S\ref{sec:quorum} insists are different mechanisms, we run each
+alone rather than moving both together:
+
+\begin{center}
+\begin{tabular}{lrrr}
+\toprule
+panel ($n=25$, $p=0.7956$) & correlation & blind spot & catastrophic seeds \\
+\midrule
+\code{independent}      & $0.0$    & $0.0$    & $0$ \\
+\code{blindspot\_only}  & $0.0$    & $0.0556$ & $14$ \\
+\code{correlated\_only} & $0.4513$ & $0.0$    & $\mathbf{53}$ \\
+\code{measured}         & $0.4513$ & $0.0556$ & $58$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Catastrophic seeds are out of 100, for the best-performing search strategy, at
+the highest adversary fraction ($0.2$) and effort ($k=8$). The two end rows
+reproduce the published matrix exactly; the two middle rows are the
+single-factor cells this paper adds.
+
+\textbf{Correlation carries the effect.} Correlation alone reproduces $53$ of the
+$58$ catastrophic seeds --- $91\%$ --- while the blind spot alone reproduces
+$14$. The same head count and the same per-verifier accuracy separate immunity
+from near-coin-flip failure, and it is the correlation component that does it.
+Two honest caveats: the components are \emph{sub-additive} ($53 + 14 = 67$
+against a joint $58$), so they overlap rather than compose, and a blind spot of
+$0.0556$ is a much smaller perturbation than a correlation of $0.4513$, so this
+compares the two effects \emph{as measured on our panel} rather than at matched
+intensity. What the decomposition rules out is the alternative reading --- that
+the gap is really the blind spot, with correlation along for the ride.
+
+A second observation from the same benchmark is worth recording because it is a
+measurement trap. A panel that errs at the same rate for everyone is not a panel
+that harms everyone equally: an error only hurts in the direction a producer is
+exposed to. Strategies whose proposals are almost always viable (base viability
+$\geq 0.89$) can essentially only suffer false \emph{rejects}; a strategy
+proposing viable work $40\%$ of the time is mainly exposed to false
+\emph{accepts}. Across five strategies spanning a base-viability range of
+$0.588$, the least viable one took nine times the utility damage of the next
+worst. Its \emph{accept rate went up} as the gate degraded, from $0.398$ to
+$0.488$, while every healthy strategy's fell. \textbf{Reading accept rate as gate
+health inverts the ranking: the strategy whose throughput improved was the one
+being destroyed.}
+
+\section{Threats to validity}
+\label{sec:threats}
+
+\paragraph{The panel's diversity is constructed.} This is the primary threat. Our
+25 verifiers are 5 input regions $\times$ 5 seeds, a diversity structure we
+designed so that the declared independence label would be testable. It is not a
+sample of the diversity structures found in deployed review panels, and the
+measured $\rho = 0.5873$ should be read as one real value, not as an estimate of
+a population parameter. The qualitative findings --- that a declared label
+under-predicts dependence, that failures are partial, that a blind spot exists ---
+are the transferable claims; the specific numbers are not.
+
+\paragraph{The per-item difficulty model is validated against one panel.} It fits
+far better than shared shock, which is a low bar. A Beta difficulty distribution
+is a modelling choice --- the natural two-parameter conjugate form --- and not a
+shape we measured. Both models also treat verifiers as exchangeable, with
+identical accuracy and one common correlation; real panels are heterogeneous, and
+while we showed heterogeneity does not by itself explain the shared-shock gap,
+neither model represents it.
+
+\paragraph{Corpus scale and domain.} 72 candidates from 24 problems, all
+self-contained algorithmic programs with executable hidden tests. The blind-spot
+floor rests on four candidates. The corpus supports a base rate ($0.639$
+non-viable) that would differ in a repository where most submitted work is
+roughly correct, and \S\ref{sec:quorum}'s cost-optimal thresholds are explicitly
+base-rate dependent.
+
+\paragraph{The LLM result is about small models.} \S\ref{sec:e016}'s panel used
+four open-weight models in the 1--2B parameter range. It establishes that
+verifier competence must be screened before dependence is estimated; it does not
+establish that larger models fail the screen, and we expect they do not.
+
+\paragraph{The adversarial results are simulated.}
+\S\ref{sec:adversarial}'s decomposition is generated by a search benchmark whose
+verification panel is parameterised from our measurements, not observed in a live
+system. The single-factor cells separate correlation from blind spot
+\emph{within that simulator}; they do not establish which component an attacker
+on a real review gate would exploit. In that
+simulator the panel reads each candidate through a single viability bit, so
+questions of the form ``can an attacker learn what the panel cannot see'' are
+unanswerable within the instrument: the blind spot has no address in artifact
+space. We report the contrast as a consequence of the measured parameters, not as
+evidence about real attackers.
+
+\paragraph{Quorum restriction in the grid.} The $441$-cell comparison of
+\S\ref{sec:grid} is restricted to $q = 0.5$, where ``the panel is wrong'' and
+``the panel wrongly accepts'' coincide. Above $0.5$ they diverge, and separating
+false accepts from false rejects requires the corpus base rate --- which is why
+the quorum analysis of \S\ref{sec:quorum} is done directly on the measured panel
+rather than on the grid.
+
+\section{Reproduction}
+\label{sec:repro}
+
+All artifacts are committed in the IDKMesh repository \citep{idkmesh}. The panel
+votes, the corpus with its execution-decided labels, and the simulation grid are
+under \code{experiments/results/}; the analyses are pure standard-library Python.
+
+\begin{quote}\small
+\begin{verbatim}
+python3 sim/e017_verify.py --seeds 5 --out e017-votes.jsonl   # regenerate votes
+python3 sim/e017_analyze.py experiments/results/E017-partial-oracle-votes.jsonl.gz
+python3 sim/e018_dependence_models.py    # the 441-cell model comparison
+python3 sim/e020_quorum_frontier.py      # the quorum frontier, deterministic
+python3 paper/make_figures.py            # regenerate every figure in this paper
+PYTHONPATH=. python3 paper/deconfound_panel.py \
+    --seeds 100 --agents 64 --generations 50 --change-at 25 --jobs 4
+\end{verbatim}
+\end{quote}
+
+The figures are generated by importing the same analysis modules the experiment
+records use, so no number in this paper can drift from the artifact it came from.
+The last command runs \S\ref{sec:adversarial}'s single-factor cells; it registers
+the two extra panels on the benchmark's own panel table at run time, so it adds
+cells without modifying any committed experiment module.
+Full experiment records, including the preregistered predictions that were
+falsified, are in \code{experiments/E015}--\code{E020}.
+
+\section{Conclusion}
+
+A verification panel's head count is a budget, not a measurement. On a panel
+where every member demonstrably works and every error is a genuine missed defect,
+25 verifiers delivered less evidence than the best one of them, the standard
+independence discount overstated what was available \emph{on this panel}, and the
+dependence model in common use was wrong in shape rather than in parameter --- unable to produce the partial failures that
+are how real panels actually fail. Beneath all of that sat a floor no aggregation
+rule could reach: defects invisible to every verifier in the panel, escapable
+only by adding a verifier of a different kind.
+
+The operational summary is short. Screen your verifiers for discrimination before
+you trust any statistic about them. Estimate independence from observed error
+vectors, never from declared diversity. Establish the dependence \emph{shape}
+before applying $N/(1+(N-1)\rho)$, which overstates independence when difficulty
+is shared across items. Check your panel against a rule that ignores the
+artifact. Measure your quorum, since it is likely a larger lever than your panel
+size. And treat the dependence structure, not accuracy, as the property an
+adversary will find. Every one of these is a measurement instruction, which is
+the paper's real conclusion: a panel's evidentiary value is not a property you
+can assume from its size, its members' accuracy, or its declared diversity.
+
+\paragraph{Data availability.} Code, artifacts, and experiment records:
+\url{https://github.com/MSKazemi/idkmesh}.
+
+\paragraph{AI/tool provenance.} Drafting and revision of this manuscript, and the
+analysis and figure-generation code in \S\ref{sec:repro}, were materially
+assisted by an AI coding assistant (Claude Code). Every quantitative claim
+reported here was independently re-derived from the committed artifacts by
+re-running the cited scripts rather than accepted from prose, and the
+manuscript was revised against a prior adversarial review
+(\S\ref{sec:repro}'s repository carries that review alongside this source).
+AI assistance is not represented as independent human or external scientific
+review, and this manuscript has not undergone peer review at a venue as of
+this revision.
+
+\bibliographystyle{plainnat}
+\bibliography{refs}
+
+\end{document}
