@@ -1,4 +1,4 @@
-# Collaboration Observables (current analyzer v0.3; historical evidence v0.1)
+# Collaboration Observables (current analyzer v0.4; historical evidence v0.1)
 
 Status: experimental, offline, observational
 
@@ -9,11 +9,12 @@ write to GitHub.
 
 The document keeps its historical `V0_1` path because committed production
 evidence and findings already refer to that artifact. The executable analyzer is
-now `collaboration-observables-v0.3`. v0.2 corrected HHI output for empty
-observed populations. v0.3 preserves the numerical Beta posterior calculations
-for recurrence, CI, and strategy evidence while making the zero-observation
-boundary explicit: a prior-derived posterior is no longer easy to mistake for an
-observed empirical rate.
+now `collaboration-observables-v0.4`. v0.2 corrected HHI output for empty
+observed populations. v0.3 separated empirical observations from prior-only
+Beta posterior values. v0.4 replaces the normal approximation as the primary
+Beta-posterior uncertainty interval with a deterministic equal-tail 95% credible
+interval while retaining the old normal approximation as explicit compatibility
+output.
 
 ## Input and replay
 
@@ -29,7 +30,7 @@ observations fail closed instead of changing recurrence or completeness.
 Run:
 
     python scripts/collaboration_observables.py tests/fixtures/collaboration_observables_snapshot.json
-    python -m unittest tests.test_collaboration_observables -v
+    python -m pytest -q tests/test_collaboration_observables.py tests/test_metric_uncertainty.py
 
 ## Live bounded collection
 
@@ -67,8 +68,8 @@ merged status and green CI are not enough.
 | Cycle latency | Hours from creation to closure | Same observed-median bootstrap plus open-item count | Review concentration may predict longer cycles | Closure is not necessarily acceptance; right censoring |
 | Review HHI | Share-squared over distinct independent reviewer–pull-request pairs; `null` when there are no eligible pairs | Descriptive snapshot only when observed; undefined for an empty population | Compare only observed populations; never treat an empty population as an equal-share baseline | Reviewer–PR pairs are not effort or quality; identity aliases; zero eligible observations |
 | Ownership HHI | Share-squared over changed-file owner attributions; `null` when there are no owner attributions | Descriptive snapshot only when observed; undefined for an empty population | High observed concentration may identify bus-factor risk; no statement is made when no attribution exists | CODEOWNERS/attribution quality, multi-owner files, zero eligible observations |
-| Contributor recurrence | Contributors with at least two meaningful contributions / observed contributors | Beta-Binomial posterior with explicit observed sample size and prior-only status when the cohort is empty | Compare bounded observed cohorts, never raw activity volume | Eligibility and meaningful-contribution definitions; time-to-return requires a richer survival/cohort model |
-| CI evidence | Passing / observed checks | Beta-Binomial posterior with empirical rate separated from prior-derived posterior; zero checks remain prior-only | Compare like-for-like check suites | Check dependence and heterogeneous coverage |
+| Contributor recurrence | Contributors with at least two meaningful contributions / observed contributors | Beta-Binomial posterior with exact equal-tail 95% posterior credible interval, explicit observed sample size, and prior-only status when the cohort is empty | Compare bounded observed cohorts, never raw activity volume | Eligibility and meaningful-contribution definitions; time-to-return requires a richer survival/cohort model; Beta-Binomial exchangeability assumptions |
+| CI evidence | Passing / observed checks | Beta-Binomial posterior with exact equal-tail 95% posterior credible interval; empirical rate remains separate from the prior-derived posterior and zero checks remain prior-only | Compare like-for-like check suites | Check dependence, heterogeneous coverage, and violated exchangeability assumptions |
 | Review queue | Count and age of open review-ready PRs at cutoff | Point-in-time state; no sampling interval | Rising age/queue indicates capacity pressure | Snapshot timing and draft-state quality |
 | Structural debt | Stable finding IDs attached to observed PRs | Deduplicated bounded inventory count with completeness flag | Track changes only under stable detector definitions | Detector drift and incomplete inventory |
 
@@ -101,7 +102,7 @@ change, not a new estimator or a health threshold. In particular, the analyzer
 does not convert HHI into contributor rankings, causal claims, or policy
 authority.
 
-### Beta evidence with zero observations (analyzer v0.3)
+### Beta evidence and exact posterior intervals (analyzer v0.4)
 
 Contributor recurrence and CI evidence use a declared Beta-Binomial observation
 model. A posterior distribution is mathematically defined even with zero
@@ -109,19 +110,26 @@ trials, but its value then comes entirely from the prior. Under the default
 `Beta(1, 1)` prior, a zero-trial posterior mean is `0.5`; that is **not** an
 observed 50% recurrence or CI pass rate.
 
-Analyzer v0.3 consumes `beta-binomial-v2`, which preserves the posterior while
-separating it from empirical evidence. A zero-trial summary includes:
+Analyzer v0.4 consumes `beta-binomial-v3`, which preserves that empirical/prior
+boundary and makes the primary interval the exact equal-tail posterior interval.
+For posterior `Beta(alpha, beta)`, the 95% interval is the pair of posterior
+quantiles `q(0.025)` and `q(0.975)`. The dependency-free implementation computes
+those quantiles by deterministic bisection over the regularized incomplete beta
+CDF. A zero-trial default-prior summary therefore includes:
 
 ```json
 {
-  "model": "beta-binomial-v2",
+  "model": "beta-binomial-v3",
   "trials": 0,
   "observed_sample_size": 0,
   "empirical_rate": null,
   "evidence_status": "prior_only_no_observations",
   "posterior_mean": 0.5,
   "prior_pseudocount_mass": 2.0,
-  "posterior_concentration": 2.0
+  "posterior_concentration": 2.0,
+  "credible_interval_95": [0.025, 0.975],
+  "interval_method": "equal-tail-beta-posterior",
+  "interval_mass": 0.95
 }
 ```
 
@@ -130,6 +138,28 @@ reports the raw bounded proportion separately from the prior-regularized
 posterior mean. The compatibility field `effective_sample_size` remains the Beta
 posterior concentration, not the empirical observation count; consumers should
 use `observed_sample_size` for the latter.
+
+The v1/v2 normal approximation is retained as compatibility evidence rather than
+silently disappearing. With the historical default `z = 1.96`,
+`approx_interval_95` retains the old rounded interval and
+`legacy_normal_interval` carries the same value. For a caller that supplies a
+custom `z`, the generic legacy interval remains available but
+`approx_interval_95` becomes `null`; a custom normal interval is not mislabeled
+as a 95% interval. `conservative_lower_bound()` prefers
+`credible_interval_95` and falls back to the historical approximation only when
+reading an older v2-style summary.
+
+This corrects an important sparse-data failure mode of the normal approximation:
+clipping `mean +/- 1.96 * sd` to `[0, 1]` is not the same as computing posterior
+quantiles and can distort uncertainty near the boundaries. The exact interval is
+still **Bayesian and model-conditional**. It is not a frequentist confidence
+interval, does not guarantee repeated-sampling coverage, does not establish that
+observations are independent or exchangeable, and does not turn an observational
+metric into a causal result. CI checks in particular can be strongly dependent.
+For very high-stakes or extreme-parameter use, the dependency-free numerical
+routine should be cross-checked against a dedicated numerical-statistics library;
+its repository contract is protected by analytic closed-form regression cases and
+the normal exact-head test gates.
 
 The output also derives provisional strategy weights only from independently
 classified verified-useful outcomes, using the same explicit Beta evidence
@@ -157,8 +187,10 @@ The first production note is still worth reading before interpreting any zero
 in this pipeline: some zero-valued observables are real counts, one is a
 point-in-time queue reading, and some observables are absent from the collector.
 A numeric zero is only meaningful under the metric's declared contract. The same
-principle now applies to prior-only Bayesian values: a posterior number may be
-well-defined while the empirical sample size is still zero.
+principle applies to Bayesian values: a posterior can be mathematically
+well-defined while the empirical sample size is still zero, and a posterior
+credible interval describes uncertainty under the chosen probabilistic model
+rather than proving that model's assumptions.
 
 ## Preregistered community analysis
 
