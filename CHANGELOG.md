@@ -61,6 +61,8 @@ and the release notes for that tag.
   the module's absence.
 - `docs/audits/2026-09-05-orphaned-v04-patch-verifier.md`, recording the trace and
   its re-verification against a later base.
+- `README.vi.md`, a Vietnamese translation of the canonical `README.md`, and the
+  language switcher linking to it, contributed by @lui01212 (PR #502).
 
 ### Changed
 
