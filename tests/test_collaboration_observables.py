@@ -18,6 +18,7 @@ class CollaborationObservablesTests(unittest.TestCase):
 
     def test_metrics_match_frozen_observations(self):
         result = analyze(self.snapshot)
+        self.assertEqual("collaboration-observables-v0.3", result["method"])
         metrics = result["metrics"]
         self.assertEqual(36.0, metrics["first_independent_review_latency"]["median_hours"])
         self.assertEqual(1, metrics["first_independent_review_latency"]["right_censored"])
@@ -25,15 +26,57 @@ class CollaborationObservablesTests(unittest.TestCase):
         self.assertEqual(2, metrics["review_queue"]["open_review_ready"])
         self.assertEqual(60.0, metrics["review_queue"]["median_age_hours"])
         self.assertEqual(0.555556, metrics["review_concentration"]["hhi"])
+        self.assertEqual("observed", metrics["review_concentration"]["status"])
         self.assertEqual(
             "independent_reviewer_pull_request_pairs",
             metrics["review_concentration"]["population"],
         )
         self.assertEqual(0.625, metrics["ownership_concentration"]["hhi"])
+        self.assertEqual("observed", metrics["ownership_concentration"]["status"])
         self.assertEqual(2, metrics["structural_debt"]["observed_findings"])
         self.assertEqual(6, metrics["ci_evidence"]["successes"])
         self.assertEqual(8, metrics["ci_evidence"]["trials"])
+        self.assertEqual("observed", metrics["ci_evidence"]["evidence_status"])
         self.assertEqual(2, metrics["contributor_recurrence"]["successes"])
+        self.assertEqual("observed", metrics["contributor_recurrence"]["evidence_status"])
+
+    def test_empty_hhi_populations_are_undefined_not_zero(self):
+        changed = copy.deepcopy(self.snapshot)
+        for pull_request in changed["pull_requests"]:
+            pull_request["independent_reviewers"] = []
+            pull_request["first_independent_review_at"] = None
+            pull_request["changed_file_owners"] = []
+
+        metrics = analyze(changed)["metrics"]
+        for name in ("review_concentration", "ownership_concentration"):
+            concentration = metrics[name]
+            self.assertEqual("observed-share-hhi-v2", concentration["model"])
+            self.assertEqual(0, concentration["observations"])
+            self.assertEqual(0, concentration["distinct_actors"])
+            self.assertEqual({}, concentration["counts"])
+            self.assertIsNone(concentration["hhi"])
+            self.assertEqual("undefined_empty_population", concentration["status"])
+            self.assertEqual("undefined_without_observations", concentration["uncertainty"])
+
+    def test_empty_binomial_populations_are_prior_only_not_observed_half(self):
+        changed = copy.deepcopy(self.snapshot)
+        changed["contributors"] = []
+        for pull_request in changed["pull_requests"]:
+            pull_request["ci_checks"] = {"passed": 0, "total": 0}
+            pull_request.pop("strategy", None)
+            pull_request.pop("verified_useful", None)
+            pull_request.pop("verification_independent", None)
+
+        result = analyze(changed)
+        metrics = result["metrics"]
+        for name in ("contributor_recurrence", "ci_evidence"):
+            summary = metrics[name]
+            self.assertEqual("beta-binomial-v2", summary["model"])
+            self.assertEqual(0, summary["observed_sample_size"])
+            self.assertIsNone(summary["empirical_rate"])
+            self.assertEqual("prior_only_no_observations", summary["evidence_status"])
+            self.assertEqual(0.5, summary["posterior_mean"])
+        self.assertEqual([], result["evidence_derived_strategy_priors"])
 
     def test_replay_is_invariant_to_record_order(self):
         expected = serialize(analyze(self.snapshot))
@@ -47,6 +90,7 @@ class CollaborationObservablesTests(unittest.TestCase):
         self.assertEqual(["documentation", "verification"], [row["strategy"] for row in rows])
         self.assertAlmostEqual(1.0, sum(row["normalized_weight"] for row in rows), places=5)
         self.assertEqual(2, rows[1]["evidence"]["trials"])
+        self.assertEqual("observed", rows[1]["evidence"]["evidence_status"])
 
     def test_invalid_ci_counts_fail_closed(self):
         changed = copy.deepcopy(self.snapshot)

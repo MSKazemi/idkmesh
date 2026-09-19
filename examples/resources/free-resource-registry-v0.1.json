@@ -34,9 +34,9 @@
       "human_setup_cost": 0.30,
       "scarcity": 0.45,
       "security_risk": 0.35,
-      "activation": "Optional repository secret GEMINI_API_KEY; use only bounded advisory workflows",
+      "activation": "Optional repository secret GEMINI_API_KEY; free-tier access is model-dependent and submitted free-tier content may be used to improve Google products; use only bounded public-data advisory workflows",
       "security": {"repo_write_authority": false, "merge_authority": false},
-      "source": {"url": "https://ai.google.dev/gemini-api/docs/pricing", "checked_at": "2026-08-28", "max_age_days": 14}
+      "source": {"url": "https://ai.google.dev/gemini-api/docs/pricing", "checked_at": "2026-09-18", "max_age_days": 14}
     },
     {
       "id": "google-jules-free",
@@ -52,9 +52,9 @@
       "human_setup_cost": 0.50,
       "scarcity": 0.45,
       "security_risk": 0.35,
-      "activation": "Repository owner connects Jules to GitHub and delegates bounded tasks; current free plan: 15 daily tasks, 3 concurrent",
+      "activation": "Repository owner connects Jules to GitHub and delegates bounded tasks; current free plan: 15 tasks per rolling 24 hours, 3 concurrent",
       "security": {"repo_write_authority": false, "merge_authority": false},
-      "source": {"url": "https://jules.google/docs/usage-limits", "checked_at": "2026-08-28", "max_age_days": 14}
+      "source": {"url": "https://jules.google/docs/usage-limits", "checked_at": "2026-09-18", "max_age_days": 14}
     },
     {
       "id": "volunteer-goose-ollama",

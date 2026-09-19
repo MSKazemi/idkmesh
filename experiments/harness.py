@@ -19,7 +19,7 @@ from typing import Any
 
 from jsonschema import Draft202012Validator, FormatChecker
 
-HARNESS_VERSION = "0.3"
+HARNESS_VERSION = "0.4"
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_DIR = ROOT / "schemas"
 WORK_UNIT_SCHEMA = SCHEMA_DIR / "work-unit-v0.2.schema.json"
@@ -115,11 +115,30 @@ def resolve_repo_path(raw: str) -> Path:
     return candidate
 
 
+def validate_experiment_manifest_contract(manifest: dict[str, Any]) -> None:
+    """Validate semantic identities that JSON Schema cannot express by object key."""
+
+    seen_configuration_ids: set[str] = set()
+    duplicate_configuration_ids: set[str] = set()
+    for configuration in manifest["configurations"]:
+        configuration_id = configuration["id"]
+        if configuration_id in seen_configuration_ids:
+            duplicate_configuration_ids.add(configuration_id)
+        seen_configuration_ids.add(configuration_id)
+
+    if duplicate_configuration_ids:
+        raise HarnessError(
+            "ExperimentManifest contains duplicate configuration id(s): "
+            + ", ".join(sorted(duplicate_configuration_ids))
+        )
+
+
 def validate_manifest_and_work_units(
     manifest_path: Path,
 ) -> tuple[dict[str, Any], dict[str, dict[str, Any]]]:
     manifest = load_json(manifest_path)
     validate_instance(manifest, MANIFEST_SCHEMA, str(manifest_path))
+    validate_experiment_manifest_contract(manifest)
 
     work_units: dict[str, dict[str, Any]] = {}
     for ref in manifest["work_units"]:
@@ -159,7 +178,20 @@ def validate_worker_result_contract(
             f"Work Unit has {expected_version}"
         )
 
-    artifact_ids = {artifact["id"] for artifact in worker_result["produced_artifacts"]}
+    artifact_ids: set[str] = set()
+    duplicate_artifact_ids: set[str] = set()
+    for artifact in worker_result["produced_artifacts"]:
+        artifact_id = artifact["id"]
+        if artifact_id in artifact_ids:
+            duplicate_artifact_ids.add(artifact_id)
+        artifact_ids.add(artifact_id)
+
+    if duplicate_artifact_ids:
+        raise HarnessError(
+            "worker ResultManifest contains duplicate produced artifact id(s): "
+            + ", ".join(sorted(duplicate_artifact_ids))
+        )
+
     requested_ids = set(worker_result["verification_request"]["evidence_artifact_ids"])
     missing = sorted(requested_ids - artifact_ids)
     if missing:

@@ -85,6 +85,7 @@ For a newcomer trying to understand the executable foundation, this order is usu
 
 ### Contribution surface and public front door
 
+- [Gate Audit v0.1 specification](specifications/GATE_AUDIT_V0_1.md) — the user-facing contract for the dependency-free `idkmesh gate-audit` CLI installed by `pip install .`, including accepted input, exit/error behavior, JSON/Markdown outputs, and the diagnostic-only authority boundary.
 - [Multidisciplinary Collaboration in IDKMesh](CONTRIBUTOR_PERSPECTIVES.md) —
   the contribution tracks a newcomer can enter from, and the rule that different
   perspectives are composed rather than forced into premature agreement.

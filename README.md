@@ -198,13 +198,23 @@ The current codebase already implements substantial pieces of this trust path, b
 
 ## Run the repository checks
 
-For the repository's Python research/control code:
+For the repository's Python research/control code, the maintained POSIX convenience path is:
+
+```bash
+make setup
+make test
+make integration
+```
+
+If `make` is inconvenient, the portable direct-Python path is:
 
 ```bash
 python -m pip install --disable-pip-version-check pytest
 python -m pip install --disable-pip-version-check -r requirements-phase0.txt
-PYTHONPATH=. python -m pytest -q
+python -m pytest -q
 ```
+
+`pytest.ini` supplies the repository root on `pythonpath`, so pytest does not require a `PYTHONPATH=.` prefix. Windows/PowerShell commands are documented in [CONTRIBUTING.md](CONTRIBUTING.md) and [`docs/TESTING.md`](docs/TESTING.md).
 
 Validate the core Phase 0 contracts directly with:
 

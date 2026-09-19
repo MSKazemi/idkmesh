@@ -2,6 +2,7 @@ import datetime as dt
 import importlib.util
 import json
 from pathlib import Path
+import tempfile
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -123,6 +124,20 @@ class ExitCodeTests(unittest.TestCase):
             cwd=ROOT,
         )
 
+    def run_cli_with_expiring_fixture(self, *args):
+        """Exercise exit policy without depending on mutable provider-check dates."""
+        registry = json.loads(REGISTRY_PATH.read_text(encoding="utf-8"))
+        for resource in registry["offers"]:
+            resource["source"]["checked_at"] = "2026-09-04"
+            resource["source"]["max_age_days"] = 90
+        registry["offers"][0]["source"]["checked_at"] = "2026-08-28"
+        registry["offers"][0]["source"]["max_age_days"] = 14
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "registry.json"
+            path.write_text(json.dumps(registry), encoding="utf-8")
+            return self.run_cli(str(path), *args)
+
     def test_stale_offer_fails_by_default(self):
         result = self.run_cli("--as-of", "2027-01-01", "--format", "text")
         self.assertEqual(result.returncode, 1, result.stdout)
@@ -133,13 +148,15 @@ class ExitCodeTests(unittest.TestCase):
         self.assertIn("STALE", result.stdout)
 
     def test_expiring_does_not_fail_under_default_policy(self):
-        # 2026-09-04 has two offers inside the 7-day warning window and none stale.
-        result = self.run_cli("--as-of", "2026-09-04", "--format", "text")
+        # The controlled fixture has one offer exactly at the 7-day warning boundary.
+        result = self.run_cli_with_expiring_fixture("--as-of", "2026-09-04", "--format", "text")
         self.assertEqual(result.returncode, 0, result.stdout)
         self.assertIn("WARN", result.stdout)
 
     def test_expiring_fails_when_explicitly_requested(self):
-        result = self.run_cli("--as-of", "2026-09-04", "--format", "text", "--fail-on", "expiring")
+        result = self.run_cli_with_expiring_fixture(
+            "--as-of", "2026-09-04", "--format", "text", "--fail-on", "expiring"
+        )
         self.assertEqual(result.returncode, 1, result.stdout)
 
     def test_unreachable_does_not_fail_unless_opted_in(self):

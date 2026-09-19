@@ -42,6 +42,7 @@ import fnmatch
 import pathlib
 import re
 import sys
+import shutil
 import unittest
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -427,6 +428,22 @@ UNITTEST_INVOCATION_RE = re.compile(
 )
 
 
+def _virtualenv_roots():
+    """Directories under ROOT that are virtualenvs, found by marker not by name.
+
+    A venv created inside the working tree puts every installed distribution on
+    `rglob`'s path, so `pytest` and `jsonschema` are indexed as repository
+    modules and this guard stops reporting the third-party imports it exists to
+    catch. Matching `.venv`/`venv` by name misses `.v`, `env`, `.venv311` and
+    every other spelling an agent worktree invents, and the failure is silent:
+    the guard keeps passing while inspecting the wrong universe.
+
+    Every virtualenv, whatever it is called, has a `pyvenv.cfg` beside `bin/`.
+    """
+
+    return {path.parent for path in ROOT.rglob("pyvenv.cfg")}
+
+
 def _repo_module_names():
     """Top-level names that resolve inside this repository rather than to PyPI.
 
@@ -436,10 +453,13 @@ def _repo_module_names():
     a dozen findings that are only its own path model being wrong.
     """
 
+    skip_roots = _virtualenv_roots()
     names = set()
     for path in ROOT.rglob("*.py"):
         parts = set(path.parts)
-        if parts & {".git", ".venv", "venv", "node_modules"}:
+        if parts & {".git", "node_modules"}:
+            continue
+        if any(root in path.parents for root in skip_roots):
             continue
         names.add(path.stem)
         names.update(path.relative_to(ROOT).parts[:-1])
@@ -522,6 +542,28 @@ class NamedTestModulesImportCleanlyTests(unittest.TestCase):
         finally:
             path.unlink(missing_ok=True)
         self.assertIn("pytest", found)
+
+    def test_an_oddly_named_in_tree_virtualenv_does_not_blind_the_guard(self):
+        """A venv inside the tree must not be indexed as repository code.
+
+        The skip list matched `.venv` and `venv` by name, so a venv called
+        `.v`, `env` or `.venv311` put every installed distribution into the
+        local-name set. The guard then classified real third-party imports as
+        repo-local and reported nothing, while its own positive control failed.
+        Detection is by `pyvenv.cfg`, so the name no longer matters.
+        """
+
+        fake = ROOT / ".probe_venv_oddly_named"
+        site = fake / "lib" / "python3.99" / "site-packages" / "adistribution"
+        try:
+            site.mkdir(parents=True)
+            (fake / "pyvenv.cfg").write_text("home = /usr\n", encoding="utf-8")
+            (site / "__init__.py").write_text("", encoding="utf-8")
+            names = _repo_module_names()
+            self.assertNotIn("adistribution", names)
+            self.assertNotIn("site-packages", names)
+        finally:
+            shutil.rmtree(fake, ignore_errors=True)
 
     def test_a_guarded_import_is_not_reported(self):
         """Negative control: `find_spec` is the accepted way to stay optional."""

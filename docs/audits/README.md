@@ -11,7 +11,7 @@ because its situational claims are still true. Current authority lives in
 [`../architecture/README.md`](../architecture/README.md), and
 [`../../PROJECT_RULES.md`](../../PROJECT_RULES.md).
 
-Each entry below carries the baseline the record itself declares. Four records
+Each entry below carries the baseline the record itself declares. Five records
 declare no explicit baseline revision; that is noted rather than invented.
 
 ## Repository-wide state audits
@@ -55,6 +55,10 @@ Each answers one bounded question rather than surveying the repository.
   — 2026-08-29; no declared baseline revision. Answers whether any in-repository
   automation continuously creates branches. Negative result, with the read-only
   permissions of the nearest workflows recorded as the evidence.
+- [ChatGPT Scheduled-Agent Branch Audit](2026-09-18-chatgpt-scheduled-agent-branch-audit.md)
+  — 2026-09-18; no declared baseline revision. Distinguishes branch creation by
+  authorized external ChatGPT scheduled tasks from in-repository GitHub Actions
+  and records bounded branch/PR hygiene recommendations for agent-operated work.
 - [Evolution Control-Plane Independent Audit](2026-08-29-evolution-control-plane-independent-audit.md)
   — 2026-08-29; initial pass against `origin/main` at `566bee13`. Read-only
   review for issue #151. Explicitly AI-assisted independence, not human or

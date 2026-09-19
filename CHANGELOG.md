@@ -14,6 +14,47 @@ and the release notes for that tag.
 
 ### Added
 
+- `.github/workflows/nightly-full-suite.yml`, running the complete suite — the `nightly`
+  tier, everything `unit` excludes included — on a daily schedule (plus `workflow_dispatch`),
+  matrixed across Python 3.11/3.13 to match PR Gate. A failure here means the research
+  content regressed, not that a specific pull request is unsafe to merge.
+
+- `tests/test_resource_compute_bindings_live.py`, evaluating the checked-in compute
+  authorization against the current date. `config/resource-compute-bindings.json` carries
+  `reviewed_at` plus `max_age_days` so an unreviewed authorization stops authorizing, and
+  `scripts/resource_compute_admission.py` enforces it — but the only surface that ran the
+  real files, `.github/workflows/free-resource-plan.yml`, pins `--today` to keep its example
+  assertion reproducible, and the existing unit tests use synthetic fixtures. A frozen clock
+  never reaches an expiry date, so the project could have arrived at a day where admission
+  admitted zero concrete offers with every check still green. Measured on this tree: the sole
+  binding and its supporting evidence both age out on 2026-09-27, after which real admission
+  returns `admitted=0` while the pinned workflow continues to pass. The test also pins the
+  structural invariants — every binding resolves to a registry resource, no enabled binding
+  points outside `DIRECT_COMPUTE_KINDS`, and none names a resource holding repository-write
+  or merge authority. That last one guards a specific temptation: four of the five
+  LLM-capable registry entries are agent-class, so widening that constant is the quickest
+  way to make them routable, and it would hand an external data processor an execution path.
+
+- `tests/test_documented_hook_snippets.py`, holding the copy-pasteable hook setup in
+  `docs/TESTING.md` to what a reader can actually run: the settings block must parse as
+  JSON and declare `hooks`, each shell block must parse under `bash -n`, each must go
+  through `scripts/testkit.py` rather than calling pytest directly, and every script the
+  settings block registers must be one the section shows the reader how to create. That
+  last check is made against the section's prose with the fenced blocks stripped — run
+  against the whole section it passed a renamed command happily, because the path it was
+  looking for was still there, in the very block under test.
+
+- `tests/test_documented_tier_scopes.py`, comparing the tier scopes `docs/TESTING.md`
+  publishes against the marker expressions `scripts/testkit.py` actually passes to pytest.
+  The expressions are read out of the script with `ast`, so a marker named only in one of
+  that file's many comments cannot be mistaken for one that runs. The comparison is
+  asymmetric on purpose: every expression a tier runs must appear somewhere in the
+  document, and every expression the tier *table* publishes must be one a tier runs, while
+  prose elsewhere stays free to show teaching examples. Absolute test counts are
+  deliberately not pinned — those rot on a third of commits, the failure
+  `tests/test_documented_test_counts.py` records at length; a marker expression changes
+  only when someone moves a tier boundary on purpose.
+
 - `tests/test_nightly_tier_has_something_to_run.py`, guarding the precondition that makes
   `scripts/testkit.py`'s nightly tier meaningful. That tier treats pytest's exit 5 — "no
   tests matched the marker" — as a pass, which is right for a repository with no simulation
@@ -63,6 +104,92 @@ and the release notes for that tag.
   its re-verification against a later base.
 
 ### Changed
+
+- `.github/workflows/pr-gate.yml` no longer runs the complete, unfiltered suite as its
+  required check. It ran `python -m pytest -q` directly — every `sim`/`slow` simulation
+  and sweep test included, synchronously, blocking every merge, on two Python versions —
+  contradicting `docs/TESTING.md`'s own stated size-and-budget model (unit tests gate the
+  commit; the long tail runs elsewhere) and the claim that "CI executes the same code
+  path" as the local tiers, which was false: nothing in CI ever called
+  `scripts/testkit.py`. It now runs `scripts/testkit.py unit`, the same fast tier a
+  contributor runs locally with `make test`, plus the same explicit
+  `scripts/check_links.py` step as before (`tests/test_ci_local_gate_parity.py` requires
+  that step stay separate and stdlib-only, so it isn't folded into the tier call). The
+  complete suite still runs, on a schedule, in the new `nightly-full-suite.yml` above.
+
+- 27 workflows that install Python dependencies now cache pip's download cache via
+  `actions/setup-python`'s built-in `cache: pip`, keyed on `requirements-phase0.txt`
+  (`requirements-interoperability.txt` too, for the one workflow that installs it). None
+  of the 53 workflows in this repository cached anything before; every run reinstalled
+  every package from PyPI from cold.
+
+- The unit tier's CPU budget is back under its 90 CPU-s ceiling with real headroom. The
+  suite kept growing since the tier was last calibrated, and on 2026-09-19 it measured
+  99.5 CPU-s — over budget, though the gate's own summary line printed `PASS` (a separate,
+  pre-existing bug: see `fix: stop the local gate printing PASS on a run that exits 1`).
+  20 tests across 8 files that were individually the most expensive in the tier — mostly
+  simulation-adjacent evidence/parity/sweep checks in `tests/test_e020_quorum_frontier.py`,
+  `tests/test_e027_defect_propagation.py`, `tests/test_e028_latent_defect_dimension.py`,
+  `tests/test_e031_learned_goal_filter.py`, `tests/test_e036_adversarial_contributors.py`,
+  `tests/test_r1_scaling_reference.py`, `tests/test_r2_factor_sweep.py`, and two
+  meta-tests in `tests/test_documented_test_counts.py` that shell out to `unittest`
+  discovery and pytest collection as subprocesses — are now marked `@pytest.mark.slow`
+  and run in the `nightly` tier instead. Marked per test method, not per file or class:
+  every one of these files carries dozens of other tests that were already fast and stay
+  in the unit tier. Measured after the change: 32.3 CPU-s, 36% of the ceiling. Per
+  `docs/TESTING.md`, the budget itself was not raised.
+
+- `idkmesh gate-audit` now fails closed on malformed or ambiguous input and output
+  boundaries instead of emitting tracebacks, unreadable JSON, or silently losing
+  evidence. The hardening rejects duplicate JSON keys, non-finite JSON numbers,
+  boolean quorums, malformed probe metadata, and unsafe input/output path collisions;
+  tolerates a UTF-8 BOM; reports encoding/path failures as actionable CLI errors; and
+  serializes reports with strict JSON semantics. The bundled happy-path example and
+  its documented measured result remain unchanged.
+
+- `docs/TESTING.md` stops presenting a local setup as repository content. Its automation
+  section described `.claude/settings.json` and two hook scripts as though a contributor
+  could open them; `.gitignore` excludes `.claude/`, deliberately, because it holds
+  per-agent configuration and personal notes, so those files are in nobody's checkout and
+  no `git pull` will bring them. The section now says so and reproduces all three files in
+  full, which is the only way the page can hand them over. Its verification claim is scoped
+  to match: the snippets were checked against a deliberately failing test — green tree exit
+  0, red tree exit 2 with the failure on stderr, `"stop_hook_active":true` exit 0 so an
+  unfixable failure blocks once instead of looping — in the checkout where they were
+  authored, which the suite cannot re-check for a file it does not contain. The section's
+  counts were re-measured too: 418 tracked `.md` files, not 398, and 1320 tracked files
+  (~29 MB), not 1232.
+
+- `scripts/testkit.py` no longer prints `PASS` on a run that exits 1. A tier fails for two
+  independent reasons — red tests, or a blown CPU budget — and the previous fix routed the
+  exit code and the result cache through `tier_passed` so they could not disagree. The
+  status word on the summary line was a third consumer and kept reading `result.ok`, so a
+  green suite that overran its ceiling printed
+  `[testkit] unit: PASS in 100.0s wall / 100.0s cpu (budget 90 cpu-s)` and then exited 1.
+  The `BUDGET EXCEEDED` explanation goes to stderr, which a hook capturing the streams
+  separately, a CI log pane, or `--quiet` need not show beside stdout — so the one line a
+  human was guaranteed to read was the wrong one. All three now derive from `tier_passed`,
+  and `tests/test_testkit_budget_cache.py` asserts the printed word against the exit code
+  across all four green/red x under/over-budget combinations.
+
+- The unit tier's budget headroom is recorded honestly in `scripts/testkit.py`. The comment
+  above `BUDGETS` still described a ~36 CPU-second suite with roughly 2.5x headroom; the
+  suite has grown from 870 tests to 1865 and the tier measured 65.0 CPU-s on 2026-09-10,
+  which is 72% of the 90 CPU-s ceiling. Recorded, deliberately not acted on: the documented
+  response to a tight budget is to make the suite cheaper, never to raise the number.
+
+- `docs/TESTING.md` no longer misstates what the gates run. Four claims had drifted, two
+  of them wrong on the day the document landed. The unit tier's scope was published as
+  `-m "not sim"` while the code it describes has always run `-m "not sim and not slow"`,
+  so the column a contributor reads to learn what their pre-commit gate covers named a
+  filter no tier uses. The prose asserted that `nightly` is equivalent to `integration`
+  because no test carried `@pytest.mark.sim` — while the baseline table one section above
+  it already recorded 369 deselected tests. 311 tests carry `sim` today and
+  `-m "sim or slow"` selects 369, every one of which runs only in the scheduled tier. The
+  measured baseline was re-taken on 2026-09-10: 1865 collected, 1494 passed / 2 skipped /
+  369 deselected / 3000 subtests, 65.0 CPU-s against a 90 CPU-s budget, on 4 cores at load
+  average 1.02 — recorded because the document's own argument for CPU-seconds is that a
+  figure without its load is not comparable to one taken elsewhere.
 
 - Seven more guards fail when they inspect nothing. An AST audit of `tests/` found every
   test that asserts inside a loop over a discovered set — a glob, a directory listing, a
