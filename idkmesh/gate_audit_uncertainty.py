@@ -18,6 +18,15 @@ false independence result. Confidence intervals are percentile intervals
 using linear interpolation between order statistics (NumPy's ``"linear"``
 method, R's type 7).
 
+A fixed seed reproduces the identical interval on a fixed Python
+interpreter. Across interpreter versions, ``mean_pairwise_error_correlation``
+can differ in the last representable bit: it is computed through
+``gate_audit.phi`` (unchanged v0.1 code, called thousands of times per
+audit), whose float summation inherits whatever the ``sum()`` builtin does —
+and that algorithm changed in Python 3.12 (compensated summation replaced
+naive addition). This module's own averaging uses ``math.fsum``, stable
+across versions, so the effect is confined to that one field.
+
 **What this interval is conditional on.** A bootstrap interval describes
 resampling stability of the *observed* candidate set, nothing more. It is a
 valid inferential interval only under the assumption that the audited
@@ -218,7 +227,13 @@ def compute(data: dict[str, Any], *, quorum: float, point_estimates: dict[str, A
             errs = [bits[i] for i in draw]
             vectors.append(errs)
             accuracies.append(1.0 - sum(errs) / n)
-        mean_accuracy_rep = sum(accuracies) / n_verifiers
+        # math.fsum, not the sum() builtin: sum() started using compensated
+        # (Neumaier) summation for floats in Python 3.12, so the same
+        # replicate can round to a different last bit on 3.11 vs 3.12/3.13 —
+        # a real cross-version determinism break this project's protected
+        # gate would actually hit (it runs both). math.fsum's algorithm has
+        # been stable across all supported versions.
+        mean_accuracy_rep = math.fsum(accuracies) / n_verifiers
         accuracy_values.append(mean_accuracy_rep)
 
         pair_values = []
@@ -227,7 +242,7 @@ def compute(data: dict[str, Any], *, quorum: float, point_estimates: dict[str, A
             if not math.isnan(value):
                 pair_values.append(value)
         if pair_values:
-            correlation_values.append(sum(pair_values) / len(pair_values))
+            correlation_values.append(math.fsum(pair_values) / len(pair_values))
 
         panel_error_rep = sum(panel_wrong[i] for i in draw) / n
         panel_error_values.append(panel_error_rep)

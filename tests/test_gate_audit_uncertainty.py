@@ -468,8 +468,40 @@ class MarkdownRenderingTests(unittest.TestCase):
         self.assertIn("below the minimum", text)
 
 
+def assert_close(case: unittest.TestCase, actual, expected, path: str = "$"):
+    """Recursively compare, tolerating a last-bit float difference.
+
+    `phi()` (unchanged v0.1 code this module calls thousands of times per
+    audit) sums floats with the plain `sum()` builtin, whose summation
+    algorithm for floats changed in Python 3.12 (compensated/Neumaier
+    summation replaced naive left-to-right addition). The same seeded
+    bootstrap can therefore round a correlation value to a different last
+    representable bit on 3.11 versus 3.12+, even though the resampling
+    itself (and every integer-valued computation in this module) is exactly
+    reproducible. Structural fields (strings, ints, bools, keys) are still
+    compared exactly; only floats get a tolerance, and it is tight enough
+    (1e-9) that it could not hide a real regression.
+    """
+    if isinstance(expected, float) and isinstance(actual, float):
+        case.assertAlmostEqual(actual, expected, places=9, msg=path)
+    elif isinstance(expected, dict) and isinstance(actual, dict):
+        case.assertEqual(set(actual), set(expected), path)
+        for key in expected:
+            assert_close(case, actual[key], expected[key], f"{path}.{key}")
+    elif isinstance(expected, list) and isinstance(actual, list):
+        case.assertEqual(len(actual), len(expected), path)
+        for i, (a, e) in enumerate(zip(actual, expected)):
+            assert_close(case, a, e, f"{path}[{i}]")
+    else:
+        case.assertEqual(actual, expected, path)
+
+
 class CommittedV02ExampleTests(unittest.TestCase):
-    """The committed v0.2 example regenerates exactly with the CLI defaults."""
+    """The committed v0.2 example regenerates with the CLI defaults.
+
+    Compared by value, not by byte-for-byte JSON equality — see
+    ``assert_close``.
+    """
 
     EXAMPLE_REPORT_V02 = (
         REPO_ROOT / "examples" / "gate-audit"
@@ -485,7 +517,7 @@ class CommittedV02ExampleTests(unittest.TestCase):
             })
         committed = json.loads(
             self.EXAMPLE_REPORT_V02.read_text(encoding="utf-8"))
-        self.assertEqual(report, committed)
+        assert_close(self, report, committed)
 
     @unittest.skipUnless(HAS_JSONSCHEMA, "jsonschema not installed")
     def test_committed_v0_2_example_validates_against_its_schema(self):
