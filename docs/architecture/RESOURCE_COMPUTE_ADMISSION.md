@@ -243,10 +243,44 @@ bounded public task
 
 They must not be disguised as CPU/GPU offers merely to reuse the compute router.
 
+## Authorizations expire, and something has to notice
+
+Every binding carries `reviewed_at` and `max_age_days`, and admission enforces both: an
+authorization nobody re-reviews becomes *unauthorized*, and the offers it covered stop
+being admitted. That is the intended behaviour. The hazard is that it can happen quietly.
+
+`.github/workflows/free-resource-plan.yml` runs the real registry and the real binding
+file, but pins `--today` so its example assertion stays reproducible. Pinning is right for
+a determinism check and wrong for an expiry check — a frozen clock never reaches an expiry
+date. Between the pinned workflow and the synthetic fixtures in
+`tests/test_resource_compute_admission.py`, nothing evaluated the checked-in authorization
+against the date the project is actually living in, so v0 could have reached a day where
+admission admitted **zero** offers with every check still green.
+
+`tests/test_resource_compute_bindings_live.py` closes that gap. It loads the real binding,
+registry, pool, and policy files, and asserts against the current date that at least one
+concrete compute path still survives admission. It also pins the structural invariants
+that are not time-dependent: every binding resolves to a registry resource, no enabled
+binding points at a resource whose kind is outside `DIRECT_COMPUTE_KINDS`, and no enabled
+binding names a resource holding repository-write or merge authority.
+
+Those freshness assertions fail on a date change with no code change. That is the mechanism
+working rather than a flaky test. The correct response when one fires is to re-read the
+provider's terms and move the date on real evidence — never to widen `max_age_days` until
+the failure disappears, which would discard exactly the guarantee the field exists to give.
+
+The `DIRECT_COMPUTE_KINDS` assertion is aimed at a specific, tempting mistake: the five
+LLM-capable registry entries are not routable, and four of them are agent-class, so the
+quickest way to "make the LLM offers usable" is to widen that constant. Doing so would give
+an external data processor a routable execution path. The test makes that a red build
+instead of a silent capability grant.
+
 ## Machine-readable surfaces
 
 - `scripts/resource_compute_admission.py` — deterministic subtractive bridge;
 - `tests/test_resource_compute_admission.py` — fail-closed policy tests;
+- `tests/test_resource_compute_bindings_live.py` — the checked-in authorization against
+  today's date, plus the structural invariants the pinned workflow cannot check;
 - `schemas/resource-compute-bindings-v0.1.schema.json` — binding schema;
 - `config/resource-compute-bindings.json` — current project authorization;
 - `.github/workflows/free-resource-plan.yml` — end-to-end proof against the existing router.

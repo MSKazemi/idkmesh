@@ -14,6 +14,22 @@ and the release notes for that tag.
 
 ### Added
 
+- `tests/test_resource_compute_bindings_live.py`, evaluating the checked-in compute
+  authorization against the current date. `config/resource-compute-bindings.json` carries
+  `reviewed_at` plus `max_age_days` so an unreviewed authorization stops authorizing, and
+  `scripts/resource_compute_admission.py` enforces it — but the only surface that ran the
+  real files, `.github/workflows/free-resource-plan.yml`, pins `--today` to keep its example
+  assertion reproducible, and the existing unit tests use synthetic fixtures. A frozen clock
+  never reaches an expiry date, so the project could have arrived at a day where admission
+  admitted zero concrete offers with every check still green. Measured on this tree: the sole
+  binding and its supporting evidence both age out on 2026-09-27, after which real admission
+  returns `admitted=0` while the pinned workflow continues to pass. The test also pins the
+  structural invariants — every binding resolves to a registry resource, no enabled binding
+  points outside `DIRECT_COMPUTE_KINDS`, and none names a resource holding repository-write
+  or merge authority. That last one guards a specific temptation: four of the five
+  LLM-capable registry entries are agent-class, so widening that constant is the quickest
+  way to make them routable, and it would hand an external data processor an execution path.
+
 - `tests/test_nightly_tier_has_something_to_run.py`, guarding the precondition that makes
   `scripts/testkit.py`'s nightly tier meaningful. That tier treats pytest's exit 5 — "no
   tests matched the marker" — as a pass, which is right for a repository with no simulation
