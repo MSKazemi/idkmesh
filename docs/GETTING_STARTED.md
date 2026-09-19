@@ -75,7 +75,7 @@ This is the fastest way to understand the core trust model.
 You need:
 
 - Git;
-- Python 3.11 or 3.13.
+- Python 3.11+ (the package currently lists Python 3.11, 3.12, and 3.13).
 
 No model account or API key is required for the demo.
 
