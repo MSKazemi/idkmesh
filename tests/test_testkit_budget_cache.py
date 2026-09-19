@@ -14,12 +14,16 @@ against a 90-second ceiling, exited 1, and the very next `make test` printed
 the machine -- the same tier measures ~62 CPU-seconds idle -- which is precisely
 why a spurious trip must not then be cached as a pass.)
 
-Both the exit code and the cached verdict now derive from `tier_passed`.
+The exit code, the cached verdict and the printed status word now all derive
+from `tier_passed`. The third was found later, reporting PASS on a run that
+exited 1; `PrintedStatusMatchesTheExitCodeTests` below covers it.
 """
 
 from __future__ import annotations
 
+import contextlib
 import importlib.util
+import io
 import json
 import sys
 import tempfile
@@ -119,6 +123,88 @@ class BudgetFailureIsNotCachedAsPassTests(unittest.TestCase):
         self.testkit.tier_auto = lambda: ("unit", self.testkit.TIERS["unit"]())
         sys.argv = ["testkit.py", "auto", "--quiet"]
         self.assertEqual(self.testkit.main(), 1)
+
+
+class PrintedStatusMatchesTheExitCodeTests(unittest.TestCase):
+    """The summary line must not say PASS on a run that exits 1.
+
+    The cache fix above gave `tier_passed` two callers, the exit code and the
+    cached verdict. The status word printed on the summary line stayed on
+    `result.ok` and so kept its own opinion:
+
+        [testkit] unit: PASS in 100.0s wall / 100.0s cpu (budget 90 cpu-s)
+
+    followed by exit 1. The BUDGET EXCEEDED explanation goes to stderr, which is
+    not necessarily displayed beside stdout -- a hook capturing the streams
+    separately, a CI log pane, or `--quiet` -- so the only line a human is
+    guaranteed to read was the one that was wrong.
+
+    These tests assert on the rendered output rather than on `tier_passed`,
+    because the existing tests call `main()` with `--quiet` and a correct
+    verdict function is exactly what the bug already had.
+    """
+
+    def setUp(self) -> None:
+        self.testkit = load_testkit()
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.testkit.CACHE = Path(self.tmp.name) / "testkit-cache.json"
+        self.testkit.tree_fingerprint = lambda: "fixed-fingerprint"
+        self._argv = sys.argv
+        self.addCleanup(lambda: setattr(sys, "argv", self._argv))
+
+    def run_unit(self, cpu: float, ok: bool = True) -> tuple[int, str]:
+        self.testkit.TIERS["unit"] = lambda: self.testkit.Result(
+            ok, cpu, cpu, "stub tier"
+        )
+        sys.argv = ["testkit.py", "unit", "--quiet", "--no-cache"]
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(io.StringIO()):
+            code = self.testkit.main()
+        return code, stdout.getvalue()
+
+    def test_over_budget_prints_fail(self) -> None:
+        budget = self.testkit.BUDGETS["unit"]
+        code, output = self.run_unit(cpu=budget * 2)
+
+        self.assertEqual(code, 1, "precondition: an over-budget tier exits 1")
+        self.assertIn(
+            "unit: FAIL",
+            output,
+            f"the tier exited {code} but its summary line reads: {output.strip()!r}",
+        )
+        self.assertNotIn("unit: PASS", output)
+
+    def test_inside_budget_still_prints_pass(self) -> None:
+        code, output = self.run_unit(cpu=1.0)
+
+        self.assertEqual(code, 0)
+        self.assertIn("unit: PASS", output)
+
+    def test_red_tests_print_fail(self) -> None:
+        code, output = self.run_unit(cpu=1.0, ok=False)
+
+        self.assertEqual(code, 1)
+        self.assertIn("unit: FAIL", output)
+
+    def test_the_status_word_agrees_with_the_exit_code_in_every_case(self) -> None:
+        budget = self.testkit.BUDGETS["unit"]
+        cases = [
+            (True, 1.0),
+            (True, budget * 2),
+            (False, 1.0),
+            (False, budget * 2),
+        ]
+        for ok, cpu in cases:
+            with self.subTest(tests_green=ok, cpu=cpu):
+                code, output = self.run_unit(cpu=cpu, ok=ok)
+                printed_pass = "unit: PASS" in output
+                self.assertEqual(
+                    printed_pass,
+                    code == 0,
+                    f"exit code {code} disagrees with the printed status: "
+                    f"{output.strip()!r}",
+                )
 
 
 class FingerprintCoversEveryTrackedFileTests(unittest.TestCase):
