@@ -3,6 +3,8 @@ import math
 import sys
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).parents[1]
 
 
@@ -96,6 +98,7 @@ def test_beta_binomial_unanimity_error_has_no_floor():
     assert values[-1] < mu * icc / 10
 
 
+@pytest.mark.slow
 def test_unanimity_decay_exponent_matches_the_measured_decade_ratio():
     """P(all wrong) ~ n^-beta.  Checked against the actual ratio, not asserted."""
     mu, icc = 0.2044, 0.5713

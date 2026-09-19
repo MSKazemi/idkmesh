@@ -29,6 +29,8 @@ import sys
 import unittest
 from pathlib import Path
 
+import pytest
+
 import sim.emergence_sim as sim
 from sim.e027_defect_propagation import (
     COSTS,
@@ -220,6 +222,7 @@ class DefectsPersistAndDoHarm(unittest.TestCase):
             armed["peak_defects_in_archive"], disarmed["peak_defects_in_archive"]
         )
 
+    @pytest.mark.slow
     def test_an_arm_is_measurably_hurt_by_the_channel(self):
         # The teeth check. Without this the "QD survives" reading would be
         # indistinguishable from E026's null.

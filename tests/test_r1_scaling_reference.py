@@ -5,6 +5,8 @@ import math
 from pathlib import Path
 import unittest
 
+import pytest
+
 from randomness_lab.r1_scaling import (
     R1ScalingConfig,
     render_markdown,
@@ -40,6 +42,7 @@ class R1ScalingReferenceTests(unittest.TestCase):
                 [trial["seed"] for trial in cell["raw_trials"]], expected_seeds
             )
 
+    @pytest.mark.slow
     def test_flat_arm_still_regenerates_the_committed_payload(self) -> None:
         # The coordination-topology arms must not perturb the frozen flat run.
         #
