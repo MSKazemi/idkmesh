@@ -35,6 +35,8 @@ import sys
 import unittest
 from pathlib import Path
 
+import pytest
+
 import sim.e027_defect_propagation as e027
 import sim.emergence_sim as sim
 from sim.e028_latent_defect_dimension import (
@@ -246,6 +248,7 @@ class TheConstructionMatchesTheClaim(unittest.TestCase):
 
 
 class ParityReport(unittest.TestCase):
+    @pytest.mark.slow
     def test_parity_measures_both_landscapes_and_only_the_auroc_moves(self):
         report = parity(samples=30000, seed=99)
         self.assertEqual(report["experiment_id"], EXPERIMENT_ID)
