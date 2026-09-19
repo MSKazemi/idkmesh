@@ -12,18 +12,27 @@ change or report without relying on old issue or conversation text.
 > file. Treat the live automation configuration as the execution source of truth;
 > treat this file as the public responsibility/provenance map.
 
-## Active role
+## Active roles
 
-| Role | Repository-facing responsibility |
-| --- | --- |
-| **IDKmesh Weekly Steward** | Review current code, tests, architecture, human/agent documentation, roadmap/future work, issue/PR overlap, and paper claim-to-evidence alignment; make bounded repository improvements; validate exact integration candidates; and record substantive outcomes publicly. |
+The live ChatGPT-side swarm is intentionally staggered in the `Europe/Rome` timezone so the repository gets frequent independent attention without several mutating workers racing the same files.
 
-The historical name does not imply that this file is a scheduling contract. The
-role's cadence may change without changing its repository responsibilities.
+| Role | Cadence | Repository-facing responsibility |
+| --- | --- | --- |
+| **IDKMesh Git Watch** | Hourly | Read-only monitoring for new commits, PR/issue activity, CI failures, review blockers, conflicts, and workflow changes; notifies only on meaningful changes. |
+| **IDKmesh Swarm Governor** | Hourly at `:00` | Choose FREEZE / CONSOLIDATE / BUILD, enforce global concurrency and deduplication, and identify the highest-leverage next action. |
+| **IDKmesh PR Integrator** | Hourly at `:10` | Recover, refresh, validate, converge, and when policy permits merge one exact-head eligible PR. |
+| **IDKmesh Backend API Agent** | Every 2 hours at `:20` | Backend/core Python, APIs, interoperability, schemas, configuration, SDK/client boundaries, and related tests/docs. |
+| **IDKmesh Frontend DX Agent** | Every 2 hours at `:30` | Pages/product surfaces, CLI UX, packaging, examples, onboarding, accessibility, and developer experience. |
+| **IDKmesh Reliability Agent** | Hourly at `:40` | CI/CD, tests, errors, reproducibility, security, observability, performance, and regression prevention. |
+| **IDKmesh Docs Sync** | Every 4 hours at `:50` | README/contributor docs, architecture, roadmap, API/config references, CHANGELOG, and paper/evidence synchronization. |
+| **IDKmesh Research Scout** | Daily at `08:30` | Current standards, ecosystem, architecture, scientific-method, and relevant dependency/security research. |
+| **IDKmesh Growth Release** | Daily at `18:30` | Release readiness, demos, Pages/front door, packaging, reusable integrations, and contributor conversion. |
+
+The scheduler cannot run any one task more frequently than hourly. The staggered specialist design therefore creates a faster project-level heartbeat while preserving independent per-role safety boundaries.
 
 ## Operating contract
 
-The active steward should:
+The active automation set should:
 
 1. start from current `main` and inspect open PRs/issues before changing anything;
 2. prefer repairing, integrating, documenting, or closing a concrete gap over
