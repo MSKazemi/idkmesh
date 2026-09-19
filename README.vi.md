@@ -174,13 +174,23 @@ Mã nguồn hiện tại đã triển khai các phần quan trọng của quy tr
 
 ## Chạy các kiểm tra repository
 
-Đối với mã nguồn nghiên cứu/điều khiển bằng Python của repository:
+Đối với mã nguồn nghiên cứu/điều khiển bằng Python của repository, lộ trình thuận tiện trên POSIX được duy trì chính thức là:
+
+```bash
+make setup
+make test
+make integration
+```
+
+Nếu `make` không thuận tiện, lộ trình Python trực tiếp và có thể mang theo (portable) là:
 
 ```bash
 python -m pip install --disable-pip-version-check pytest
 python -m pip install --disable-pip-version-check -r requirements-phase0.txt
-PYTHONPATH=. python -m pytest -q
+python -m pytest -q
 ```
+
+`pytest.ini` đã cung cấp sẵn thư mục gốc của repository cho `pythonpath`, nên pytest không còn yêu cầu tiền tố `PYTHONPATH=.`. Các lệnh dành cho Windows/PowerShell được ghi trong [CONTRIBUTING.md](CONTRIBUTING.md) và [`docs/TESTING.md`](docs/TESTING.md).
 
 Xác thực trực tiếp các hợp đồng Giai đoạn 0 cốt lõi bằng:
 
