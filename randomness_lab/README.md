@@ -76,21 +76,39 @@ The current worker model is deliberately synthetic. `error_correlation` uses a t
 
 ## Tests
 
+Use the repository's canonical pytest path rather than `unittest discover`, which under-collects this repository's mixed pytest/unittest suite:
+
 ```bash
-python -m unittest discover -s tests -v
+python -m pytest -q
 ```
 
-The tests check seeded reproducibility, repeated-trial reproducibility and uncertainty output, policy interchangeability, environment interchangeability, the correlation control, Thompson-sampling adaptation, and the power-of-d helper.
+For the R1 threshold robustness layer specifically:
+
+```bash
+python -m pytest -q tests/test_r1_threshold_robustness.py
+```
+
+The suite checks seeded reproducibility, repeated-trial reproducibility and uncertainty output, policy interchangeability, environment interchangeability, the correlation control, Thompson-sampling adaptation, the power-of-d helper, and the experiment-specific contracts added by the R1/R2 research modules.
 
 ## R1 threshold robustness audit
 
 [`R1_THRESHOLD_ROBUSTNESS.md`](R1_THRESHOLD_ROBUSTNESS.md) documents a downstream
 sensitivity audit for issue #13's synthetic low-diversity marginal thresholds.
-`randomness_lab.r1_threshold_robustness` keeps the existing paired-seed estimand and
-compares its normal-approximation directional labels with a deterministic
-percentile bootstrap. A threshold is called robust only when both interval
-constructions agree; disagreement remains explicit uncertainty. This is synthetic
-mechanism evidence, not a real coding-agent scaling result.
+`randomness_lab.r1_threshold_robustness` keeps the existing paired-seed mean
+estimand and preserves the interval-only `robust_classification`: it is directional
+only when the normal-approximation and deterministic percentile-bootstrap intervals
+agree.
+
+Audit schema v2 adds a stricter, separately named
+`familywise_robust_classification`. That label is directional only when the two mean
+intervals agree, an exact two-sided sign test points in the same direction, and the
+Holm-Bonferroni-adjusted sign-test p-value for the declared family is at most 0.05.
+The sign test is corroboration over seed-effect direction, not another estimator of
+the mean effect. Exact-zero effects are omitted from its sign count.
+
+This remains synthetic mechanism sensitivity evidence. Deterministic simulator
+seeds are not a real software-task population, and familywise correction does not
+establish external validity, production scaling, or real coding-agent performance.
 
 ## R2 factor-isolation benchmark
 

@@ -38,6 +38,8 @@ import unittest
 from importlib.util import find_spec
 from pathlib import Path
 
+import pytest
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 TESTS_DIR = REPO_ROOT / "tests"
 
@@ -191,6 +193,7 @@ class DocumentedUnderCollectionTests(unittest.TestCase):
             )
 
     @unittest.skipUnless(find_spec("pytest"), "pytest is not installed")
+    @pytest.mark.slow
     def test_unittest_misses_exactly_the_module_level_functions(self) -> None:
         """The claim itself: the gap between the runners *is* those functions.
 
@@ -211,6 +214,7 @@ class DocumentedUnderCollectionTests(unittest.TestCase):
         )
 
     @unittest.skipUnless(find_spec("pytest"), "pytest is not installed")
+    @pytest.mark.slow
     def test_the_missed_share_is_still_roughly_a_tenth(self) -> None:
         functions, _ = _count_module_level_test_functions()
         by_pytest = _measure_pytest_collection("tests")

@@ -85,8 +85,9 @@ A worker may report that it completed successfully and may report confidence, bu
 
 Likewise, a `VerificationResult` may recommend `accept_candidate`, but that recommendation does not authorize a merge or mutate canonical state. Integration policy remains a separate layer.
 
-The harness validates cross-object invariants in addition to JSON structure:
+The harness validates semantic and cross-object invariants in addition to JSON structure:
 
+- configuration IDs within one ExperimentManifest must be unique before WorkUnit loading or experiment execution; configuration identity is part of both emitted run identity and the deterministic smoke-score key, so duplicates would make distinct experimental arms ambiguous;
 - produced artifact IDs within one ResultManifest must be unique before verification evidence references are resolved;
 - VerificationResult must reference the exact ResultManifest/WorkUnit attempt;
 - evidence IDs referenced by checks must exist;
@@ -120,6 +121,7 @@ Additive research-specific data should normally go in the `extensions` object, u
 - ResultManifest v0.1 remains compatible with the v0.2 smoke fixture because it references the WorkUnit by stable `id` plus document `version`; the fixture references WorkUnit version `2`.
 - VerificationResult v0.1 binds to a ResultManifest plus the same WorkUnit id/version/attempt and adds independent evidence without redefining worker output semantics.
 - Future ResultManifest or VerificationResult revisions should only be created when their own semantics require a breaking change.
+- ExperimentManifest v0.1 remains structurally unchanged. The harness enforces unique `configurations[].id` values as a semantic preflight invariant because JSON Schema `uniqueItems` would only compare complete configuration objects, not their logical IDs. This narrows executable manifests without rewriting historical schema files.
 
 ## Design principles
 

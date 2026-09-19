@@ -41,6 +41,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
+import pytest
+
 import sim.e027_defect_propagation as e027
 import sim.e030_supplied_goal_membership as e030
 import sim.emergence_sim as sim
@@ -443,6 +445,7 @@ class BeliefTrackingTest(unittest.TestCase):
         for step in self.report["trajectory"]:
             self.assertLessEqual(step["effective_sample_size"], SMALL["agents"] + 1e-6)
 
+    @pytest.mark.slow
     def test_the_filter_learns_the_pre_change_goal(self) -> None:
         # At full scale this is the 2.7x improvement the record quotes. Here it
         # only has to beat the un-updated control, or the arm is not learning.

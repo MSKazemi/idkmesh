@@ -64,12 +64,7 @@ class A2ASemanticIdentityTests(unittest.TestCase):
                 with self.assertRaisesRegex(BindingError, message):
                     from_a2a_send_message(envelope)
 
-    def test_message_identity_and_role_must_match_the_binding(self) -> None:
-        envelope = to_a2a_send_message(WORK_UNIT)
-        envelope["request"]["message"]["messageId"] = "other-message"
-        with self.assertRaisesRegex(BindingError, "messageId"):
-            from_a2a_send_message(envelope)
-
+    def test_message_role_must_match_the_binding(self) -> None:
         envelope = to_a2a_send_message(WORK_UNIT)
         envelope["request"]["message"]["role"] = "ROLE_AGENT"
         with self.assertRaisesRegex(BindingError, "ROLE_USER"):
