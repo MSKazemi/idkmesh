@@ -18,6 +18,9 @@ remain authoritative; an index link does not promote a proposal into policy.
   bounded worker participation without project authority.
 - [Opportunistic Compute Fabric](OPPORTUNISTIC_COMPUTE_FABRIC.md) —
   provider-neutral, zero-project-spend compute scheduling.
+- [Execution Substrate Abstraction](EXECUTION_SUBSTRATE_ABSTRACTION.md) —
+  separates logical WorkUnit-attempt identity from transient sandbox, actor,
+  worker, pod, VM, node, and HPC placement while preserving lifecycle provenance.
 - [Free Resource Mesh](FREE_RESOURCE_MESH.md) and its
   [Compute Bridge](FREE_RESOURCE_MESH_COMPUTE_BRIDGE.md) — discovery, planning,
   and the boundary to admitted execution.
