@@ -8,7 +8,7 @@ re-measure before treating any of them as current.
 
 ```bash
 make setup          # once: create .venv and install test dependencies
-make test           # the gate: full suite, ~32 seconds
+make test           # the gate: unit tier, ~50 seconds
 ```
 
 Everything else is automation around those two commands.
@@ -74,13 +74,11 @@ copied from a blog post:
 | Quantity | Measurement |
 |---|---|
 | `make test` (unit tier) | **50.2 s wall, 50.2 CPU-s**, 1638 passed / 2 skipped / 382 deselected / 3066 subtests |
-| Whole suite, no marker filter (what CI runs) | 2022 collected |
+| Whole suite, no marker filter (PR Gate no longer runs this; `nightly-full-suite.yml` does) | 2022 collected |
 | Selected by the nightly leg (`-m "sim or slow"`) | 382 |
 | Slowest single test in the unit tier | 1.15 s (`test_idkgraph_repository_mapping`) |
 | Affected-test run after a one-file edit | **0.1–0.4 s** |
-| CI, mean run | 0.7 min |
-| CI, slowest run observed | 3.5 min (PR Gate) |
-| CI, daily volume | ~122 runs/day, ~90 wall-minutes/day |
+| CI, mean run / slowest run / daily volume | not re-measured since PR Gate moved from the full suite to the `unit` tier — the figures that stood here predate that change and would understate PR Gate's new speed and overstate its old one |
 
 The unit-tier row above is measured *after* moving 20 tests across 8 files to
 `slow` (see the entry below): before that change the same tier measured 99.5
@@ -91,7 +89,7 @@ cheaper, never to raise the ceiling.
 The important consequence: **this suite is not slow.** A full run costs about as
 much as reading the diff you just wrote. Test *selection* is therefore a
 convenience for sub-second feedback, never a substitute for running everything
-before a commit — skipping a test you should have run costs far more than the 32
+before a commit — skipping a test you should have run costs far more than the 50
 seconds it would have taken.
 
 ## The tiers
@@ -105,15 +103,17 @@ one over a few quarters.
 | Tier | Scope | Budget | Runs |
 |---|---|---|---|
 | `smoke` | only tests affected by your uncommitted changes | 25 CPU-s | after every edit |
-| `unit` | the whole suite (`-m "not sim and not slow"`) | 90 CPU-s | before every commit |
+| `unit` | the whole suite except what's marked `sim` or `slow` (`-m "not sim and not slow"`) | 90 CPU-s | before every commit, and the PR Gate's required check |
 | `integration` | `unit` + schema JSON syntax + Markdown link integrity | 600 CPU-s | before every push |
-| `nightly` | `integration` + everything marked `sim` or `slow` (`-m "sim or slow"`) | none | scheduled |
+| `nightly` | `integration` + everything marked `sim` or `slow` (`-m "sim or slow"`) | none | scheduled — see `.github/workflows/nightly-full-suite.yml` |
 
 **`nightly` is not equivalent to `integration`.** The two tier markers are in
 use: 311 tests carry `sim`, and `-m "sim or slow"` selects 382 (the rest carry
-`slow`) — exactly the 382 the unit tier deselects in the table above. Every one
-of them runs only in `nightly`, so a change that breaks one is invisible to the
-pre-commit and pre-push gates until the scheduled run.
+`slow` — mostly meta-tests that shell out to `unittest` discovery or pytest
+collection as subprocesses, where the subprocess spawn rather than the
+assertion is what's slow) — exactly the 382 the unit tier deselects in the
+table above. Every one of them runs only in `nightly`, so a change that breaks
+one is invisible to the pre-commit and pre-push gates until the scheduled run.
 
 This paragraph previously said the opposite — that no test carried
 `@pytest.mark.sim` and that the two tiers therefore did the same work — while
@@ -124,8 +124,8 @@ than retyped here.
 
 ```bash
 make smoke          # ~0.4 s   what you just changed
-make test           # ~32 s    the real gate
-make integration    #          what the PR Gate enforces, locally
+make test           # ~50 s    the real gate
+make integration    #          unit + link/schema checks
 make nightly        #          the long tail
 make gate           #          picks the cheapest tier that covers your changes
 make profile        #          the 25 slowest tests, when a budget is exceeded
@@ -133,6 +133,19 @@ make profile        #          the 25 slowest tests, when a budget is exceeded
 
 All of them delegate to `scripts/testkit.py`, so the Makefile, the Claude Code
 hooks, and CI execute the same code path and cannot drift apart.
+
+**PR Gate runs `unit` (`scripts/testkit.py unit`) plus the same Markdown-link
+check (`scripts/check_links.py`) as its one required, always-on check** —
+seconds, not minutes, so a documentation fix isn't held up by the health of an
+unrelated simulation. It does not run `integration` as a single delegated call:
+the link check stays its own explicit, stdlib-only step
+(`tests/test_ci_local_gate_parity.py` pins that shape) so it can run before
+`pip install` and cannot silently diverge into a second, inline copy.
+
+**The complete suite — `nightly`, everything `unit` excludes included — runs
+on a schedule** in `.github/workflows/nightly-full-suite.yml`, decoupled from
+the merge path. A failure there means the research content regressed, not
+that a specific pull request is unsafe to merge.
 
 ### Budgets are CPU-seconds, not wall-clock
 
@@ -244,7 +257,7 @@ fi
 `chmod +x` both. What makes this cheap enough to run constantly is the result
 cache: `scripts/testkit.py` fingerprints the content of every tracked file plus
 uncommitted changes, so re-running a tier that already passed on an identical
-tree costs ~0.1 s instead of 32 s, and a conversational turn that touched no
+tree costs ~0.1 s instead of 50 s, and a conversational turn that touched no
 code is not taxed.
 
 The fingerprint deliberately has **no extension allowlist**. Hashing only
