@@ -5,6 +5,8 @@
 [![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-blue.svg)](pyproject.toml)
 [![good first issues](https://img.shields.io/github/issues/MSKazemi/idkmesh/good%20first%20issue?label=good%20first%20issues&color=7057ff)](https://github.com/MSKazemi/idkmesh/issues?q=is%3Aissue+state%3Aopen+label%3A%22good+first+issue%22)
 
+**Languages:** English · [Deutsch](README.de.md)
+
 > **I don't know. You don't know. Together, the mesh can discover, build, verify, and learn.**
 
 IDKMesh is an open-source research and engineering project exploring how humans, AI agents, software tools, and heterogeneous compute can coordinate on uncertain goals and turn proposals into **verified useful work**.
