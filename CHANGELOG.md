@@ -14,6 +14,11 @@ and the release notes for that tag.
 
 ### Added
 
+- `.github/workflows/nightly-full-suite.yml`, running the complete suite — the `nightly`
+  tier, everything `unit` excludes included — on a daily schedule (plus `workflow_dispatch`),
+  matrixed across Python 3.11/3.13 to match PR Gate. A failure here means the research
+  content regressed, not that a specific pull request is unsafe to merge.
+
 - `tests/test_nightly_tier_has_something_to_run.py`, guarding the precondition that makes
   `scripts/testkit.py`'s nightly tier meaningful. That tier treats pytest's exit 5 — "no
   tests matched the marker" — as a pass, which is right for a repository with no simulation
@@ -63,6 +68,24 @@ and the release notes for that tag.
   its re-verification against a later base.
 
 ### Changed
+
+- `.github/workflows/pr-gate.yml` no longer runs the complete, unfiltered suite as its
+  required check. It ran `python -m pytest -q` directly — every `sim`/`slow` simulation
+  and sweep test included, synchronously, blocking every merge, on two Python versions —
+  contradicting `docs/TESTING.md`'s own stated size-and-budget model (unit tests gate the
+  commit; the long tail runs elsewhere) and the claim that "CI executes the same code
+  path" as the local tiers, which was false: nothing in CI ever called
+  `scripts/testkit.py`. It now runs `scripts/testkit.py unit`, the same fast tier a
+  contributor runs locally with `make test`, plus the same explicit
+  `scripts/check_links.py` step as before (`tests/test_ci_local_gate_parity.py` requires
+  that step stay separate and stdlib-only, so it isn't folded into the tier call). The
+  complete suite still runs, on a schedule, in the new `nightly-full-suite.yml` above.
+
+- 27 workflows that install Python dependencies now cache pip's download cache via
+  `actions/setup-python`'s built-in `cache: pip`, keyed on `requirements-phase0.txt`
+  (`requirements-interoperability.txt` too, for the one workflow that installs it). None
+  of the 53 workflows in this repository cached anything before; every run reinstalled
+  every package from PyPI from cold.
 
 - `idkmesh gate-audit` now fails closed on malformed or ambiguous input and output
   boundaries instead of emitting tracebacks, unreadable JSON, or silently losing

@@ -25,7 +25,7 @@ setup: ## Create .venv and install test dependencies
 smoke: ## Tier 1 - only the tests affected by your uncommitted changes (~1s)
 	@$(PY) scripts/testkit.py smoke
 
-test: ## Tier 2 - the full unit suite; the pre-commit gate (~35s)
+test: ## Tier 2 - the full unit suite; the pre-commit gate (~62s)
 	@$(PY) scripts/testkit.py unit
 
 integration: ## Tier 3 - unit suite plus schema and link gates; the pre-push gate
