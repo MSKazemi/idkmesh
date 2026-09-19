@@ -8,7 +8,7 @@ re-measure before treating any of them as current.
 
 ```bash
 make setup          # once: create .venv and install test dependencies
-make test           # the gate: unit tier, ~32 seconds
+make test           # the gate: unit tier, ~50 seconds
 ```
 
 Everything else is automation around those two commands.
@@ -89,7 +89,7 @@ cheaper, never to raise the ceiling.
 The important consequence: **this suite is not slow.** A full run costs about as
 much as reading the diff you just wrote. Test *selection* is therefore a
 convenience for sub-second feedback, never a substitute for running everything
-before a commit — skipping a test you should have run costs far more than the 32
+before a commit — skipping a test you should have run costs far more than the 50
 seconds it would have taken.
 
 ## The tiers
@@ -124,7 +124,7 @@ than retyped here.
 
 ```bash
 make smoke          # ~0.4 s   what you just changed
-make test           # ~32 s    the real gate
+make test           # ~50 s    the real gate
 make integration    #          unit + link/schema checks
 make nightly        #          the long tail
 make gate           #          picks the cheapest tier that covers your changes
@@ -257,7 +257,7 @@ fi
 `chmod +x` both. What makes this cheap enough to run constantly is the result
 cache: `scripts/testkit.py` fingerprints the content of every tracked file plus
 uncommitted changes, so re-running a tier that already passed on an identical
-tree costs ~0.1 s instead of 32 s, and a conversational turn that touched no
+tree costs ~0.1 s instead of 50 s, and a conversational turn that touched no
 code is not taxed.
 
 The fingerprint deliberately has **no extension allowlist**. Hashing only
