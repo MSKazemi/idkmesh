@@ -8,7 +8,7 @@ re-measure before treating any of them as current.
 
 ```bash
 make setup          # once: create .venv and install test dependencies
-make test           # the gate: unit tier, ~62 seconds
+make test           # the gate: unit tier, ~32 seconds
 ```
 
 Everything else is automation around those two commands.
@@ -56,27 +56,33 @@ they are not evidence that every platform has been independently exercised.
 ## Measured baseline
 
 Every number in this section is **a measurement with a date attached, not a
-constant**. The suite moved from 1792 to 1805 collected tests inside one hour on
-2026-09-10, and the budgets below were originally calibrated against 870 tests —
-which is how `make test` came to exceed its own ceiling by 4.2x before this was
-re-derived. Re-measure before trusting any figure here, and re-date the line
-above when you do.
+constant**. The suite has kept growing since the tiers were last calibrated, and
+on 2026-09-19 the unit tier itself was measured at 99.5 CPU-s against its own 90
+CPU-s ceiling — over budget, with the gate's summary line still printing `PASS`
+(see the entry below fixing that separately). Re-measure before trusting any
+figure here, and re-date the line above when you do.
 
 Numbers first, because the tier boundaries are derived from them rather than
 copied from a blog post:
 
 | Quantity | Measurement |
 |---|---|
-| `make test` (unit tier) | **62.4 s wall, 61.9 CPU-s**, 1626 passed / 2 skipped / 369 deselected / 3056 subtests |
+| `make test` (unit tier) | **32.3 s wall, 32.3 CPU-s**, 1613 passed / 2 skipped / 382 deselected / 3043 subtests |
 | Whole suite, no marker filter (PR Gate no longer runs this; `nightly-full-suite.yml` does) | 1997 collected |
-| Slowest single test in the unit tier | 2.49 s (`test_r1_scaling_reference`) |
+| Slowest single test in the unit tier | 0.71 s (`test_idkgraph_repository_mapping`) |
 | Affected-test run after a one-file edit | **0.1–0.4 s** |
 | CI, mean run / slowest run / daily volume | not re-measured since PR Gate moved from the full suite to the `unit` tier — the figures that stood here predate that change and would understate PR Gate's new speed and overstate its old one |
+
+The unit-tier row above is measured *after* moving 20 tests across 8 files to
+`slow` (see the entry below): before that change the same tier measured 99.5
+CPU-s, over its 90 CPU-s ceiling. This is not a one-time cleanup — the suite
+keeps growing, and the response to a tight budget is always to make the tier
+cheaper, never to raise the ceiling.
 
 The important consequence: **this suite is not slow.** A full run costs about as
 much as reading the diff you just wrote. Test *selection* is therefore a
 convenience for sub-second feedback, never a substitute for running everything
-before a commit — skipping a test you should have run costs far more than the 62
+before a commit — skipping a test you should have run costs far more than the 32
 seconds it would have taken.
 
 ## The tiers
@@ -103,7 +109,7 @@ excluded from `unit`, not where it runs.
 
 ```bash
 make smoke          # ~0.4 s   what you just changed
-make test           # ~62 s    the real gate
+make test           # ~32 s    the real gate
 make integration    #          unit + link/schema checks
 make nightly        #          the long tail
 make gate           #          picks the cheapest tier that covers your changes
@@ -183,7 +189,7 @@ Two properties make this cheap enough to run constantly:
 
 * **Result caching.** `scripts/testkit.py` fingerprints the content of every
   tracked file plus uncommitted changes. Re-running a tier that already passed
-  on an identical tree costs ~0.05 s instead of 62 s, so a conversational turn
+  on an identical tree costs ~0.05 s instead of 32 s, so a conversational turn
   that touched no code is not taxed.
 
   The fingerprint deliberately has **no extension allowlist**. Hashing only

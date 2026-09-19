@@ -19,6 +19,22 @@ and the release notes for that tag.
   matrixed across Python 3.11/3.13 to match PR Gate. A failure here means the research
   content regressed, not that a specific pull request is unsafe to merge.
 
+- `tests/test_resource_compute_bindings_live.py`, evaluating the checked-in compute
+  authorization against the current date. `config/resource-compute-bindings.json` carries
+  `reviewed_at` plus `max_age_days` so an unreviewed authorization stops authorizing, and
+  `scripts/resource_compute_admission.py` enforces it — but the only surface that ran the
+  real files, `.github/workflows/free-resource-plan.yml`, pins `--today` to keep its example
+  assertion reproducible, and the existing unit tests use synthetic fixtures. A frozen clock
+  never reaches an expiry date, so the project could have arrived at a day where admission
+  admitted zero concrete offers with every check still green. Measured on this tree: the sole
+  binding and its supporting evidence both age out on 2026-09-27, after which real admission
+  returns `admitted=0` while the pinned workflow continues to pass. The test also pins the
+  structural invariants — every binding resolves to a registry resource, no enabled binding
+  points outside `DIRECT_COMPUTE_KINDS`, and none names a resource holding repository-write
+  or merge authority. That last one guards a specific temptation: four of the five
+  LLM-capable registry entries are agent-class, so widening that constant is the quickest
+  way to make them routable, and it would hand an external data processor an execution path.
+
 - `tests/test_nightly_tier_has_something_to_run.py`, guarding the precondition that makes
   `scripts/testkit.py`'s nightly tier meaningful. That tier treats pytest's exit 5 — "no
   tests matched the marker" — as a pass, which is right for a repository with no simulation
@@ -86,6 +102,22 @@ and the release notes for that tag.
   (`requirements-interoperability.txt` too, for the one workflow that installs it). None
   of the 53 workflows in this repository cached anything before; every run reinstalled
   every package from PyPI from cold.
+
+- The unit tier's CPU budget is back under its 90 CPU-s ceiling with real headroom. The
+  suite kept growing since the tier was last calibrated, and on 2026-09-19 it measured
+  99.5 CPU-s — over budget, though the gate's own summary line printed `PASS` (a separate,
+  pre-existing bug: see `fix: stop the local gate printing PASS on a run that exits 1`).
+  20 tests across 8 files that were individually the most expensive in the tier — mostly
+  simulation-adjacent evidence/parity/sweep checks in `tests/test_e020_quorum_frontier.py`,
+  `tests/test_e027_defect_propagation.py`, `tests/test_e028_latent_defect_dimension.py`,
+  `tests/test_e031_learned_goal_filter.py`, `tests/test_e036_adversarial_contributors.py`,
+  `tests/test_r1_scaling_reference.py`, `tests/test_r2_factor_sweep.py`, and two
+  meta-tests in `tests/test_documented_test_counts.py` that shell out to `unittest`
+  discovery and pytest collection as subprocesses — are now marked `@pytest.mark.slow`
+  and run in the `nightly` tier instead. Marked per test method, not per file or class:
+  every one of these files carries dozens of other tests that were already fast and stay
+  in the unit tier. Measured after the change: 32.3 CPU-s, 36% of the ceiling. Per
+  `docs/TESTING.md`, the budget itself was not raised.
 
 - `idkmesh gate-audit` now fails closed on malformed or ambiguous input and output
   boundaries instead of emitting tracebacks, unreadable JSON, or silently losing

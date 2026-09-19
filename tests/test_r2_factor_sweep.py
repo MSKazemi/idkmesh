@@ -3,6 +3,8 @@ import json
 from pathlib import Path
 import unittest
 
+import pytest
+
 from randomness_lab.r2_factor_sweep import (
     OBSERVATION_LAGS,
     OFFERED_LOAD_TARGETS,
@@ -78,6 +80,7 @@ class R2FactorSweepTests(unittest.TestCase):
         high_work = sum(task.work_units for task in high.tasks)
         self.assertLess(low_work, high_work)
 
+    @pytest.mark.slow
     def test_benchmark_is_reproducible_and_retains_every_seed(self):
         config = R2FactorSweepConfig(
             trace_seeds=(3, 4),
