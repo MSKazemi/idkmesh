@@ -43,6 +43,8 @@ jobs:
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: requirements-phase0.txt
 
       # Runs before the dependency install so an accidental auto-closure fails
       # fast. The guard is pure standard library and needs no packages.
@@ -76,10 +78,17 @@ jobs:
           python -m pip install --disable-pip-version-check pytest
           python -m pip install --disable-pip-version-check -r requirements-phase0.txt
 
-      - name: Run the full test suite
+      # The `unit` tier (-m "not sim and not slow") is the same one a
+      # contributor runs locally with `make test`, so this cannot drift from
+      # what's documented. The full suite, including every `sim`/`slow`
+      # simulation and sweep test, runs separately on a schedule (see
+      # nightly-full-suite.yml) rather than blocking every PR on it: those
+      # tests can take minutes and are about the health of the research
+      # content, not about whether this specific change is safe to merge.
+      - name: Run the unit test tier
         env:
           PYTHONPATH: .
-        run: python -m pytest -q
+        run: python scripts/testkit.py unit
 
       - name: Check deterministic Markdown link integrity
         env:
