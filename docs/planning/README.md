@@ -10,6 +10,7 @@ This directory translates the long-range vision into current execution choices.
 - [`PR_TRIAGE_2026-08-28.md`](PR_TRIAGE_2026-08-28.md) — evidence-oriented PR triage principles and canonical integration queue discipline.
 - [`BRANCH_CONVERGENCE_POLICY.md`](BRANCH_CONVERGENCE_POLICY.md) — branch lifecycle, cleanup, exact-SHA evidence, stale-work extraction, and safe merge-boundary rules.
 - [`BRANCH_MERGE_EXECUTION_PLAN.md`](BRANCH_MERGE_EXECUTION_PLAN.md) — transactional branch-to-main algorithm: classification lanes, dependency DAG, conjunctive merge gates, exact-head integration, recomputation after every merge, and retirement waves.
+- [`AUTOMATION_OPERATING_MODEL_2026-09-19.md`](AUTOMATION_OPERATING_MODEL_2026-09-19.md) — current two-layer automation model: repository-native scheduled workflows, ChatGPT agent ownership, recommended cadences, work-mode gates, activation order, and output contract.
 
 ## Relationship to other project artifacts
 
