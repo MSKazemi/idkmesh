@@ -18,7 +18,7 @@ class CollaborationObservablesTests(unittest.TestCase):
 
     def test_metrics_match_frozen_observations(self):
         result = analyze(self.snapshot)
-        self.assertEqual("collaboration-observables-v0.3", result["method"])
+        self.assertEqual("collaboration-observables-v0.4", result["method"])
         metrics = result["metrics"]
         self.assertEqual(36.0, metrics["first_independent_review_latency"]["median_hours"])
         self.assertEqual(1, metrics["first_independent_review_latency"]["right_censored"])
@@ -37,8 +37,11 @@ class CollaborationObservablesTests(unittest.TestCase):
         self.assertEqual(6, metrics["ci_evidence"]["successes"])
         self.assertEqual(8, metrics["ci_evidence"]["trials"])
         self.assertEqual("observed", metrics["ci_evidence"]["evidence_status"])
+        self.assertEqual("beta-binomial-v3", metrics["ci_evidence"]["model"])
+        self.assertEqual("equal-tail-beta-posterior", metrics["ci_evidence"]["interval_method"])
         self.assertEqual(2, metrics["contributor_recurrence"]["successes"])
         self.assertEqual("observed", metrics["contributor_recurrence"]["evidence_status"])
+        self.assertEqual("beta-binomial-v3", metrics["contributor_recurrence"]["model"])
 
     def test_empty_hhi_populations_are_undefined_not_zero(self):
         changed = copy.deepcopy(self.snapshot)
@@ -71,11 +74,13 @@ class CollaborationObservablesTests(unittest.TestCase):
         metrics = result["metrics"]
         for name in ("contributor_recurrence", "ci_evidence"):
             summary = metrics[name]
-            self.assertEqual("beta-binomial-v2", summary["model"])
+            self.assertEqual("beta-binomial-v3", summary["model"])
             self.assertEqual(0, summary["observed_sample_size"])
             self.assertIsNone(summary["empirical_rate"])
             self.assertEqual("prior_only_no_observations", summary["evidence_status"])
             self.assertEqual(0.5, summary["posterior_mean"])
+            self.assertEqual([0.025, 0.975], summary["credible_interval_95"])
+            self.assertEqual("equal-tail-beta-posterior", summary["interval_method"])
         self.assertEqual([], result["evidence_derived_strategy_priors"])
 
     def test_replay_is_invariant_to_record_order(self):
@@ -91,6 +96,7 @@ class CollaborationObservablesTests(unittest.TestCase):
         self.assertAlmostEqual(1.0, sum(row["normalized_weight"] for row in rows), places=5)
         self.assertEqual(2, rows[1]["evidence"]["trials"])
         self.assertEqual("observed", rows[1]["evidence"]["evidence_status"])
+        self.assertEqual("beta-binomial-v3", rows[1]["evidence"]["model"])
 
     def test_invalid_ci_counts_fail_closed(self):
         changed = copy.deepcopy(self.snapshot)
