@@ -255,7 +255,7 @@ def apply_capacity_homeostasis(weights: dict[str, float], capacity: float) -> di
     return normalize_weights(gated)
 
 
-def reproduction_number(snapshot: dict[str, Any]) -> tuple[float, int, int]:
+def reproduction_number(snapshot: dict[str, Any]) -> tuple[float | None, int, int]:
     parents = [p for p in snapshot.get("parents", []) if p.get("verified") and p.get("matured")]
     eligible_parent_ids = {parent["id"] for parent in parents}
     verified_receipts = [
@@ -269,11 +269,17 @@ def reproduction_number(snapshot: dict[str, Any]) -> tuple[float, int, int]:
     denominator = len(parents)
     numerator = len(verified_receipts)
     if denominator == 0:
-        return 0.0, numerator, denominator
+        return None, numerator, denominator
     return numerator / denominator, numerator, denominator
 
 
-def select_mode(snapshot: dict[str, Any], capacity: float, r_c: float, verified_descendants: int, matured_parents: int) -> str:
+def select_mode(
+    snapshot: dict[str, Any],
+    capacity: float,
+    r_c: float | None,
+    verified_descendants: int,
+    matured_parents: int,
+) -> str:
     review_load = float(snapshot["review_load"])
     K = float(snapshot["capacity"]["K"])
 
@@ -281,6 +287,8 @@ def select_mode(snapshot: dict[str, Any], capacity: float, r_c: float, verified_
         return "CONSOLIDATE"
     if matured_parents == 0:
         return "DORMANT"
+    if r_c is None:
+        raise ValueError("R_community must be defined when eligible matured verified parents exist")
     if verified_descendants == 0:
         return "EXPLORE"
     if r_c < 1.0 and capacity >= 0.65:
@@ -333,13 +341,14 @@ def evaluate(snapshot: dict[str, Any]) -> dict[str, Any]:
         }
 
     return {
-        "version": 1,
+        "version": 2,
         "evidence_format": EVIDENCE_FORMAT,
         "mode": mode,
         "capacity": round(capacity, 8),
         "review_load": review_load,
         "carrying_capacity_K": K,
-        "R_community": round(r_c, 8),
+        "R_community": None if r_c is None else round(r_c, 8),
+        "R_community_status": "undefined_no_eligible_parents" if r_c is None else "observed_ratio",
         "verified_descendants": verified_descendants,
         "eligible_matured_verified_parents": matured_parents,
         "strategy_fitness": {s: round(fitness[s], 10) for s in STRATEGIES},
