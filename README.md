@@ -115,6 +115,9 @@ overstates it — the phenomenon measured on a real 25-verifier panel in
 sizing rule in [E015](experiments/E015-verification-phase-diagram.md). The
 contract is specified in
 [`docs/specifications/GATE_AUDIT_V0_1.md`](docs/specifications/GATE_AUDIT_V0_1.md).
+Add `--bootstrap` for a deterministic finite-sample confidence interval on
+those panel metrics ([issue #520](https://github.com/MSKazemi/idkmesh/issues/520);
+documented in the same specification's "Finite-sample uncertainty" section).
 The audit is diagnostic only: it consumes verdicts you collected and grants no
 acceptance or merge authority. In CI, the same audit runs as a GitHub Action:
 

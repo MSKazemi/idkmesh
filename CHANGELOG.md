@@ -14,6 +14,20 @@ and the release notes for that tag.
 
 ### Added
 
+- `idkmesh gate-audit --bootstrap` (issue #520): a deterministic candidate-level
+  nonparametric bootstrap confidence interval for panel error, mean verifier
+  accuracy, mean pairwise error correlation and effective votes. Resamples whole
+  candidate rows, never verifier cells, so cross-verifier dependence survives
+  resampling. Opt-in only — the default report stays byte-identical
+  `gate-audit-report-v0.1`; `--bootstrap` switches the emitted schema to the new
+  `gate-audit-report-v0.2` (`schemas/gate-audit-report-v0.2.schema.json`,
+  `idkmesh/gate_audit_uncertainty.py`). Documented in
+  `docs/specifications/GATE_AUDIT_V0_1.md` under "Finite-sample uncertainty",
+  with a committed, test-regenerated example at
+  `examples/gate-audit/gate-audit-report-v0.2.example.json`. Not wired into the
+  composite GitHub Action yet — deliberately deferred, not bundled into a
+  statistics change.
+
 - `.github/workflows/nightly-full-suite.yml`, running the complete suite — the `nightly`
   tier, everything `unit` excludes included — on a daily schedule (plus `workflow_dispatch`),
   matrixed across Python 3.11/3.13 to match PR Gate. A failure here means the research

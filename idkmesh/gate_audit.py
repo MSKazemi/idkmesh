@@ -371,12 +371,21 @@ def _ceiling_field(ceiling: float | None) -> float | str | None:
     return "unbounded" if math.isinf(ceiling) else ceiling
 
 
-def audit(data: dict[str, Any]) -> dict[str, Any]:
+def audit(data: dict[str, Any], *, bootstrap: dict[str, Any] | None = None
+          ) -> dict[str, Any]:
     """Compute a gate-audit report from a validated verdict matrix.
 
     Headline panel statistics use only non-probe candidates so that the seeded
     probe set cannot inflate or deflate the measured accuracy/correlation it
     is supposed to stress-test. Probes get their own section.
+
+    ``bootstrap``, when not ``None``, adds a finite-sample uncertainty section
+    (issue #520): a dict with optional ``replicates``, ``confidence_level``
+    keys and a required ``seed`` key. This is the only thing that changes the
+    emitted ``schema`` from ``gate-audit-report-v0.1`` to
+    ``gate-audit-report-v0.2`` — omitting it (the default) reproduces exactly
+    today's v0.1 report, byte for byte. See
+    ``idkmesh.gate_audit_uncertainty`` for the method.
     """
     validate_input(data)
 
@@ -501,9 +510,34 @@ def audit(data: dict[str, Any]) -> dict[str, Any]:
                 f"{breached}/{len(probes)} seeded known-bad probes were "
                 "accepted by the panel")
 
+    schema_id = SCHEMA_ID
+    uncertainty_section = None
+    if bootstrap is not None:
+        # Local import: gate_audit_uncertainty imports names from this module
+        # at its own top level, so importing it back at module scope here
+        # would be a real import cycle, not just an unused one.
+        from idkmesh import gate_audit_uncertainty
+
+        uncertainty_section, extra_warnings = gate_audit_uncertainty.compute(
+            data, quorum=quorum,
+            point_estimates={
+                "panel_error": panel_error,
+                "mean_verifier_accuracy": mean_accuracy,
+                "mean_pairwise_error_correlation": mean_rho,
+                "effective_votes": effective_votes,
+            },
+            replicates=bootstrap.get(
+                "replicates", gate_audit_uncertainty.DEFAULT_REPLICATES),
+            seed=bootstrap["seed"],
+            confidence_level=bootstrap.get(
+                "confidence_level",
+                gate_audit_uncertainty.DEFAULT_CONFIDENCE_LEVEL))
+        warnings.extend(extra_warnings)
+        schema_id = gate_audit_uncertainty.SCHEMA_ID_V02
+
     canonical = json.dumps(data, sort_keys=True, separators=(",", ":"))
     report = {
-        "schema": SCHEMA_ID,
+        "schema": schema_id,
         "gate_id": data["gate_id"],
         "evidence_class": data["evidence_class"],
         "inputs": {
@@ -528,14 +562,16 @@ def audit(data: dict[str, Any]) -> dict[str, Any]:
             "heuristic_n_eff": heuristic,
             "effective_votes_ceiling": _ceiling_field(ceiling),
         },
-        "probes": probe_section,
-        "warnings": warnings,
-        "provenance": {
-            "tool": "idkmesh gate-audit",
-            "tool_version": _tool_version(),
-            "input_digest_sha256": hashlib.sha256(
-                canonical.encode("utf-8")).hexdigest(),
-        },
+    }
+    if uncertainty_section is not None:
+        report["uncertainty"] = uncertainty_section
+    report["probes"] = probe_section
+    report["warnings"] = warnings
+    report["provenance"] = {
+        "tool": "idkmesh gate-audit",
+        "tool_version": _tool_version(),
+        "input_digest_sha256": hashlib.sha256(
+            canonical.encode("utf-8")).hexdigest(),
     }
     return report
 
@@ -586,6 +622,24 @@ def _fmt_effective(effective_votes: float | None) -> str:
     return _fmt(effective_votes, 2)
 
 
+def _fmt_ci_row(label: str, section: dict[str, Any], digits: int = 4,
+                 effective: bool = False) -> str:
+    """One row of a finite-sample-uncertainty table: point, CI low, CI high.
+
+    ``effective`` renders the point using the same censoring-aware format as
+    the headline, and marks a censored upper bound the same way.
+    """
+    point_txt = _fmt_effective(section["point"]) if effective else _fmt(
+        section["point"], digits)
+    low_txt = _fmt(section["ci_low"], digits)
+    ci_high = section["ci_high"]
+    if effective and ci_high is not None and section.get("ci_high_censored"):
+        high_txt = f"≥{ci_high:.0f}"
+    else:
+        high_txt = _fmt(ci_high, digits)
+    return f"| {label} | {point_txt} | {low_txt} | {high_txt} |"
+
+
 def render_markdown(report: dict[str, Any]) -> str:
     """Render a report as the human summary posted next to the JSON evidence."""
     panel = report["panel"]
@@ -616,6 +670,37 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"| N/(1+(N-1)ρ) heuristic (for contrast; unreliable) | "
         f"{_fmt(panel['heuristic_n_eff'], 2)} |",
     ]
+    uncertainty = report.get("uncertainty")
+    if uncertainty is not None:
+        lines += ["", "## Finite-sample uncertainty", ""]
+        if not uncertainty["sufficient_for_inference"]:
+            lines.append(
+                f"Skipped: {uncertainty['non_probe_candidates']} non-probe "
+                "candidate(s) is below the minimum of "
+                f"{uncertainty['min_candidates_for_inference']} needed for a "
+                "resampling distribution to mean anything.")
+        else:
+            lines += [
+                f"{uncertainty['confidence_level'] * 100:.0f}% "
+                f"candidate-level bootstrap interval "
+                f"({uncertainty['replicates']} replicates, seed "
+                f"{uncertainty['seed']}). Conditional on this candidate set "
+                "being an exchangeable sample from the population the claim "
+                "is about; not evidence that the verifiers are independent.",
+                "",
+                "| Metric | Point | CI low | CI high |",
+                "|---|---|---|---|",
+                _fmt_ci_row("Panel error", uncertainty["panel_error"]),
+                _fmt_ci_row(
+                    "Mean verifier accuracy",
+                    uncertainty["mean_verifier_accuracy"]),
+                _fmt_ci_row(
+                    "Mean pairwise error correlation",
+                    uncertainty["mean_pairwise_error_correlation"]),
+                _fmt_ci_row(
+                    "Effective votes", uncertainty["effective_votes"],
+                    digits=2, effective=True),
+            ]
     probes = report["probes"]
     if probes is not None:
         lines += [
@@ -679,7 +764,8 @@ def _reject_json_constant(token: str) -> Any:
         "by other implementations")
 
 
-def audit_file(input_path: str | Path) -> dict[str, Any]:
+def audit_file(input_path: str | Path, *,
+                bootstrap: dict[str, Any] | None = None) -> dict[str, Any]:
     """Load, validate, and audit one verdict-matrix JSON file.
 
     Raises ``GateAuditInputError`` for anything wrong with the document's
@@ -709,6 +795,6 @@ def audit_file(input_path: str | Path) -> dict[str, Any]:
     except GateAuditInputError as exc:
         raise GateAuditInputError(f"{path}: {exc}") from exc
     try:
-        return audit(data)
+        return audit(data, bootstrap=bootstrap)
     except GateAuditInputError as exc:
         raise GateAuditInputError(f"{path}: {exc}") from exc
