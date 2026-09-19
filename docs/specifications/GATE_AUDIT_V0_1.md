@@ -170,6 +170,17 @@ using linear interpolation between order statistics (NumPy's `"linear"`
 method, R's type 7). Probes are never part of the resampled population, the
 same boundary the headline statistics already observe.
 
+A fixed seed reproduces the identical interval on a fixed Python
+interpreter. Across interpreter versions the correlation interval's bound can
+differ in the last representable bit, because it is computed through `phi()`
+(unchanged v0.1 code, thousands of calls per audit), whose float summation
+inherits whatever `sum()` does on that interpreter — and `sum()`'s algorithm
+for floats changed in Python 3.12 (compensated summation replaced naive
+addition). This module's own averaging uses `math.fsum`, which has been
+stable across versions, so the effect is small and confined to
+`mean_pairwise_error_correlation`; it is not a claim that resampling itself
+is version-dependent.
+
 **What the interval is conditional on.** It describes resampling stability of
 the *observed* candidate set only. It is a valid inferential interval solely
 under the assumption that the audited candidates are exchangeable draws from
