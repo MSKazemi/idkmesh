@@ -8,8 +8,11 @@ This directory holds the protocol-neutral boundary between the canonical IDKMesh
 | [`adapters.py`](adapters.py) | The `WorkerAdapter` boundary and canonical result normalization. Local execution and an A2A-style lifecycle cross the same interface. |
 | [`identity.py`](identity.py) | Optional, namespaced identity evidence on a ResultManifest. Identity never confers verification or integration authority. |
 | [`sdk_conformance.py`](sdk_conformance.py) | Round-trips those envelopes through the real pinned A2A and MCP Python types, so the bindings are checked against the SDKs rather than only against our own reading of the specs. |
+| [`PROTOCOL_SCOPE.md`](PROTOCOL_SCOPE.md) | Protocol-layer decision record, including the required disambiguation between the legacy IBM/BeeAI Agent Communication Protocol and the active Agent Client Protocol that share the acronym `ACP`. |
 
 Background: [`docs/interoperability/A2A_MCP_MAPPING_V0_1.md`](../docs/interoperability/A2A_MCP_MAPPING_V0_1.md) and [`docs/interoperability/AGENT_INTEROPERABILITY_ARCHITECTURE_2026-08-28.md`](../docs/interoperability/AGENT_INTEROPERABILITY_ARCHITECTURE_2026-08-28.md).
+
+Before proposing another protocol adapter, read [`PROTOCOL_SCOPE.md`](PROTOCOL_SCOPE.md). In particular, new work should not use unqualified `ACP`: the archived IBM/BeeAI Agent Communication Protocol is a legacy compatibility concern now folded into A2A, while Agent Client Protocol is an active editor-to-coding-agent protocol and belongs at a different layer.
 
 ## Default tests versus SDK conformance
 
