@@ -1,28 +1,11 @@
-# Ethical Contributor Psychology
+# Contributor Experience Guidelines
 
-**Status:** practical community-design guidance.  
+**Status:** practical community-design guidance.
 **Authority:** none by itself; this document does not authorize outreach, automated messaging, or contributor decisions.
 
-IDKMesh can use well-established human-motivation principles to make useful participation easier and more rewarding **without manipulating people**.
+These are the norms IDKMesh tries to follow so that a curious visitor can become a capable, recurring contributor without being nudged, pressured, or gamified into it.
 
-The goal is not to maximize attention. It is to help a curious visitor become a capable, autonomous, recurring contributor.
-
-## The behavioral loop
-
-```text
-curiosity
-  -> low-risk choice
-  -> small successful action
-  -> fast useful feedback
-  -> visible impact
-  -> belonging / recognition
-  -> slightly deeper next task
-  -> reviewer / steward identity
-```
-
-## 1. Autonomy: offer real choices
-
-People engage more readily when they can choose a path that fits their interests.
+## 1. Offer real choices
 
 The contributor front door should always expose several different lanes, for example:
 
@@ -37,7 +20,7 @@ Do not funnel every newcomer into the same task.
 
 **Repository rule:** keep multiple live starter tasks with different skill profiles.
 
-## 2. Competence: engineer an early win
+## 2. Make first tasks winnable
 
 A first task should make it possible to know "I did this correctly."
 
@@ -51,7 +34,7 @@ Good first tasks therefore need:
 
 This reduces uncertainty and lets the contributor build confidence from evidence rather than praise alone.
 
-## 3. Relatedness: make a real person visible
+## 3. Make the review path visible
 
 A contributor should know that someone will notice useful work.
 
@@ -59,7 +42,7 @@ Every newcomer-facing task should make the review path clear. Where practical, i
 
 Do not promise instant responses or pretend an automated queue is human mentorship.
 
-## 4. Progress: make the path legible
+## 4. Show a legible path forward
 
 The project should show a visible progression:
 
@@ -76,7 +59,7 @@ The next step should be close enough to feel achievable, not a jump from typo fi
 
 After a verified first contribution, prefer one personalized follow-up task related to what the person already demonstrated.
 
-## 5. Recognition: reward useful identity, not volume
+## 5. Recognize craftsmanship, not volume
 
 Recognition should reinforce craftsmanship and responsibility.
 
@@ -89,7 +72,7 @@ Useful examples:
 
 Avoid leaderboards for raw commits, comments, PR count, or AI-generated volume.
 
-## 6. Reciprocity: contribute before recruiting
+## 6. Give before you ask
 
 The strongest contributor-acquisition mechanism is value-first interaction.
 
@@ -97,19 +80,17 @@ When IDKMesh engages an adjacent open-source project:
 
 1. find a genuine problem IDKMesh can help with;
 2. contribute useful work under that project's rules;
-3. only after a legitimate technical interaction, expose a relevant IDKMesh task when appropriate.
+3. only after a legitimate technical interaction, mention a relevant IDKMesh task when appropriate.
 
 Do not submit promotional-only PRs or mass invitations.
 
-## 7. Commitment and continuity
+## 7. Coordinate scope openly
 
-A small public commitment can reduce accidental duplicated effort and make follow-through easier.
+For a bounded issue, asking a contributor to comment with the scope they intend to take reduces accidental duplicated effort when the task is not explicitly parallel.
 
-For a bounded issue, asking a contributor to comment with the scope they intend to take is useful when the task is not explicitly parallel.
+This is coordination, not a commitment device. A contributor can stop at any time without penalty.
 
-This is coordination, not pressure. A contributor can stop at any time without penalty.
-
-## 8. Curiosity: expose real unanswered questions
+## 8. Frame tasks around real open questions
 
 Concrete unresolved questions are more motivating than abstract slogans.
 
@@ -124,9 +105,9 @@ over:
 
 - "Help build the future of AI."
 
-Curiosity should come from a real technical uncertainty, not manufactured mystery.
+Tasks should come from a real technical uncertainty, not manufactured mystery.
 
-## 9. Belonging through contribution, not branding
+## 9. Belonging is earned by contribution, not branding
 
 The project should communicate:
 
@@ -134,7 +115,7 @@ The project should communicate:
 
 Belonging must not depend on prestige, follower count, geography, employer, or ability to donate compute.
 
-## 10. Anti-manipulation constraints
+## 10. Practices we do not use
 
 Do not use:
 
@@ -142,14 +123,13 @@ Do not use:
 - deceptive social proof;
 - repeated unsolicited mentions or DMs;
 - guilt for not contributing;
-- hidden behavioral targeting;
+- profiling individuals to target persuasion;
 - dark patterns that make opting out difficult;
-- exaggerated claims that IDKMesh is more mature or popular than it is;
-- personal psychological profiling for persuasion.
+- exaggerated claims that IDKMesh is more mature or popular than it is.
 
 Use aggregate funnel measurements to improve the repository, not to pressure individuals.
 
-## Metrics
+## How we know onboarding is working
 
 Useful measurements include:
 
@@ -163,10 +143,4 @@ Useful measurements include:
 
 Stars, forks, impressions, comments, and raw PR volume are discovery/activity signals, not the objective.
 
-## Current experiment
-
-The immediate hypothesis is:
-
-> A choice-rich, low-risk first task plus fast useful feedback and one skill-matched follow-up will produce more recurring external contributors per maintainer-review minute than a generic "please contribute" invitation.
-
-The current live front door is [Contributor Quickstart](CONTRIBUTOR_QUICKSTART.md), and the value-first acquisition experiment is tracked in issue #412.
+The current live front door for newcomers is the [Contributor Quickstart](CONTRIBUTOR_QUICKSTART.md).

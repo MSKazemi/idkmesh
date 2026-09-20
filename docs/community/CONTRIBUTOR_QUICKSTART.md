@@ -69,7 +69,7 @@ reviewer / steward
 ```
 
 The repository should therefore keep several live newcomer tasks across
-different contribution styles and refresh links when tasks close. The behavioral design behind this funnel is documented in [Ethical Contributor Psychology](CONTRIBUTOR_PSYCHOLOGY.md): autonomy, early competence, relatedness, visible progress, real recognition, and one skill-matched next step after a verified contribution.
+different contribution styles and refresh links when tasks close. The norms behind this funnel are documented in [Contributor Experience Guidelines](CONTRIBUTOR_EXPERIENCE.md): real choice of task, an early winnable task, a visible review path, visible progress, real recognition, and one skill-matched next step after a verified contribution.
 
 ## Where to go next
 
