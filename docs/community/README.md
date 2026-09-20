@@ -37,6 +37,7 @@ hardened.
 
 ## Strategy and measurement models
 
+- [Contributor Quickstart](CONTRIBUTOR_QUICKSTART.md) — the shortest path from visitor to a bounded first contribution, with live newcomer issues across documentation, testing, reproducibility, and external-machine validation.
 - [Community Growth Strategy](COMMUNITY_GROWTH_STRATEGY.md) — why community
   growth is a parallel product/systems problem rather than a post-engineering
   marketing phase, and the contribution forms it needs.
