@@ -191,6 +191,139 @@ h3 { font-size: 1.12rem; margin: 0 0 .45rem; }
 .chip.proto { color: var(--accent-3); }
 .chip.count { color: var(--faint); text-transform: none; letter-spacing: 0; font-weight: 600; }
 
+/* ---------------------------------------------------------- responsive UX */
+
+.path-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.path-card {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.path-card .more {
+  margin-top: auto;
+  padding-top: .55rem;
+}
+.path-topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .8rem;
+  margin-bottom: .8rem;
+}
+.path-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  flex: 0 0 auto;
+  border: 1px solid var(--line-2);
+  border-radius: .55rem;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: .75rem;
+  font-weight: 800;
+  letter-spacing: .04em;
+  background: var(--bg-deep);
+}
+
+@media (max-width: 760px) {
+  .sitenav .wrap {
+    display: block;
+    padding: .5rem 0 .35rem;
+  }
+  .brand {
+    width: max-content;
+    margin-bottom: .35rem;
+  }
+  .navlinks {
+    width: 100%;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scrollbar-width: thin;
+    scroll-snap-type: x proximity;
+    padding: 0 0 .25rem;
+    -webkit-overflow-scrolling: touch;
+  }
+  .navlinks a {
+    flex: 0 0 auto;
+    scroll-snap-align: start;
+  }
+  .hero .wrap {
+    padding: 2.5rem 0 2.25rem;
+  }
+  .pagehead .wrap {
+    padding: 2.35rem 0 2rem;
+  }
+  main {
+    padding: 2.35rem 0 3.6rem;
+  }
+  section {
+    margin-bottom: 3rem;
+    scroll-margin-top: 6.5rem;
+  }
+  .path-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .wrap {
+    width: min(calc(100% - 1.25rem), var(--max));
+  }
+  h1.display {
+    font-size: clamp(2.35rem, 14vw, 3.4rem);
+  }
+  .hero-grid {
+    gap: 1.6rem;
+  }
+  .actions:not(.toggle-wrap) {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: .55rem;
+  }
+  .actions:not(.toggle-wrap) .button {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .frame {
+    padding: .8rem;
+    border-radius: .7rem;
+  }
+  pre {
+    padding: .8rem .85rem;
+    font-size: .82rem;
+  }
+  .card, .stat {
+    padding: 1rem;
+  }
+  .grid.two {
+    grid-template-columns: 1fr;
+  }
+  .sitefoot .cols {
+    grid-template-columns: 1fr 1fr;
+    gap: 1.4rem 1rem;
+  }
+}
+
+@media (max-width: 390px) {
+  .brand .tail {
+    display: none;
+  }
+  .sitefoot .cols {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (hover: none) {
+  .button:hover,
+  a.card:hover {
+    transform: none;
+  }
+}
+
 /* ------------------------------------------------------------------- cards */
 
 .grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
