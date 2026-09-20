@@ -38,7 +38,7 @@ hardened.
 ## Strategy and measurement models
 
 - [Contributor Quickstart](CONTRIBUTOR_QUICKSTART.md) — the shortest path from visitor to a bounded first contribution, with live newcomer issues across documentation, testing, reproducibility, and external-machine validation.
-- [Ethical Contributor Psychology](CONTRIBUTOR_PSYCHOLOGY.md) — behavioral design principles for turning curiosity into autonomous, repeat participation without dark patterns, spam, fake urgency, or deceptive social proof.
+- [Contributor Experience Guidelines](CONTRIBUTOR_EXPERIENCE.md) — practical norms for turning curiosity into autonomous, repeat participation without dark patterns, spam, fake urgency, or deceptive social proof.
 - [Community Growth Strategy](COMMUNITY_GROWTH_STRATEGY.md) — why community
   growth is a parallel product/systems problem rather than a post-engineering
   marketing phase, and the contribution forms it needs.
