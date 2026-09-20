@@ -337,6 +337,7 @@ See [`RESEARCH_QUESTIONS.md`](RESEARCH_QUESTIONS.md), [`docs/research/`](docs/re
 - [`SUPPORT.md`](SUPPORT.md) — how to ask for help.
 - [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) — community expectations.
 - [`SECURITY.md`](SECURITY.md) — vulnerability reporting.
+- [`CONTRIBUTORS.md`](CONTRIBUTORS.md) — the contributors wall; every real contribution earns a place, not only merged code.
 
 ### Understand the system
 
