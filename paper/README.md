@@ -5,26 +5,46 @@ and the repository evidence that can support them.
 
 ## Current manuscript status
 
-As of the stewardship audit against `main@514925af524018d06fc3406bb087dd3c784913b2`
-on 2026-09-19, this repository does **not** contain a discoverable canonical
-editable manuscript source (`.tex`, Markdown manuscript, or equivalent) or a
-committed paper PDF. Issue [#478](https://github.com/MSKazemi/idkmesh/issues/478)
-tracks that missing source-of-truth.
+The canonical manuscript source is [`main.tex`](main.tex) ("Reviewer Count Is
+Not Evidence Count: Measured Error Dependence in an Executable Verification
+Panel"), built with [`Makefile`](Makefile) against [`refs.bib`](refs.bib) and
+the figures [`make_figures.py`](make_figures.py) regenerates from committed
+experiment artifacts under `experiments/results/`. The built PDF is committed
+alongside it for reader convenience; LaTeX build byproducts (`.aux`/`.bbl`/
+`.blg`/`.log`/`.out`) and the regenerated `figures/` directory are derived, not
+source, and are gitignored.
 
-That absence is a maintenance limitation, not permission to reconstruct a paper
-from README or architecture prose. Until the actual manuscript is imported or an
-external canonical source is documented, repository stewards should improve the
-evidence map and paper-facing constraints here, but should not claim that the
-paper text itself was reviewed or updated.
+This addresses issue [#478](https://github.com/MSKazemi/idkmesh/issues/478)'s
+request for a discoverable canonical manuscript source. The manuscript was
+revised against a prior adversarial review,
+[`review_reviewer-count-is-not-evidence-count_2026-09-09.md`](review_reviewer-count-is-not-evidence-count_2026-09-09.md)
+(Weak Reject, 14 findings), which is kept alongside the source as a
+transparency record: every Critical/Major finding in it (the `n_eff` clamp
+misrepresented as a measurement, missing confidence intervals, the missing
+best-member comparison, the unconditional heuristic claim, the uncited
+concurrent work, and the two-factor correlation/blind-spot confound) was
+independently re-verified against the current text and the underlying
+artifacts before this manuscript status was updated — not merely re-read.
+The manuscript's own "AI/tool provenance" paragraph discloses assistance and
+states plainly that it has not undergone venue peer review.
+
+Reviewers of *this repository* (as opposed to the manuscript) should still
+verify the manuscript matches current evidence before relying on it: research
+code and experiment records change faster than this file does. If a change to
+`sim/`, `experiments/`, or `docs/research/` affects a claim in `main.tex`,
+update the manuscript and [`CLAIM_EVIDENCE_MAP.md`](CLAIM_EVIDENCE_MAP.md) in
+the same bounded change, per the rules below.
 
 ## What belongs here
 
 - [`CLAIM_EVIDENCE_MAP.md`](CLAIM_EVIDENCE_MAP.md) records paper-relevant claims,
   their evidence class, repository sources, and the limitation that must travel
   with each claim.
-- A future canonical manuscript should live under a stable path such as
-  `paper/manuscript/`, **or** this file should point to the intentionally external
-  canonical source and describe how a repository revision is synchronized to it.
+- [`main.tex`](main.tex) is that canonical manuscript, at this stable path. If a
+  second manuscript is ever added, give it its own named path rather than
+  overloading `main.tex`; if the canonical source ever moves external to this
+  repository, this file must document the synchronization procedure before that
+  happens, not after.
 - Reproduction instructions for figures/tables should name the exact command,
   input artifact, output artifact, and source revision used. Do not add a command
   merely because it appears plausible from nearby code.
