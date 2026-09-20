@@ -1,14 +1,14 @@
 # Testing and CI Practice
 
 How tests run in IDKMesh, why the tiers are drawn where they are, and what to do
-when a gate complains. The measurements quoted here were taken on 2026-09-19;
+when a gate complains. The measurements quoted here were taken on 2026-09-20;
 re-measure before treating any of them as current.
 
 ## The short version
 
 ```bash
 make setup          # once: create .venv and install test dependencies
-make test           # the gate: unit tier, ~50 seconds
+make test           # the gate: unit tier (see dated baseline below)
 ```
 
 Everything else is automation around those two commands.
@@ -56,41 +56,38 @@ they are not evidence that every platform has been independently exercised.
 ## Measured baseline
 
 Every number in this section is **a measurement with a date attached, not a
-constant**. The suite has kept growing since the tiers were last calibrated, and
-on 2026-09-19 the unit tier itself was measured at 99.5 CPU-s against its own 90
-CPU-s ceiling — over budget, with the gate's summary line still printing `PASS`
-(see the entry below fixing that separately). Re-measure before trusting any
-figure here, and re-date the line above when you do.
+constant**. Re-measure before trusting any figure here, and re-date the line
+above when you do.
 
-The timing rows were taken on **4 cores at load average 1.02**, so they are not
-comparable to a figure from a busier or wider machine; the section below on
-CPU-seconds explains why. The counting rows are properties of the tree, not of
-the machine, and `tests/test_documented_tier_scopes.py` re-derives the marker
-expressions this document publishes directly from `scripts/testkit.py`.
+The timing rows were measured on 2026-09-20 on **4 cores at an idle load average
+of 0.12** on commit `3afa01100c687772f04cd2391c650a9340f36288`, so they are not
+directly comparable to a figure from a busier or wider machine; the section
+below on CPU-seconds explains why. The counting rows are properties of the
+tree, not of the machine, and `tests/test_documented_tier_scopes.py` re-derives
+the marker expressions this document publishes directly from
+`scripts/testkit.py`.
 
 Numbers first, because the tier boundaries are derived from them rather than
 copied from a blog post:
 
 | Quantity | Measurement |
 |---|---|
-| `make test` (unit tier) | **50.2 s wall, 50.2 CPU-s**, 1638 passed / 2 skipped / 382 deselected / 3066 subtests |
-| Whole suite, no marker filter (PR Gate no longer runs this; `nightly-full-suite.yml` does) | 2022 collected |
+| `make test` (unit tier) | **88.8 s wall, 88.8 CPU-s**, 1643 passed / 2 skipped / 382 deselected / 3077 subtests |
+| Whole suite, no marker filter (`python -m pytest -q`) | 2027 collected |
 | Selected by the nightly leg (`-m "sim or slow"`) | 382 |
-| Slowest single test in the unit tier | 1.15 s (`test_idkgraph_repository_mapping`) |
+| Slowest single test in the unit tier | 2.01 s (`test_e030_supplied_goal_membership`) |
 | Affected-test run after a one-file edit | **0.1–0.4 s** |
 | CI, mean run / slowest run / daily volume | not re-measured since PR Gate moved from the full suite to the `unit` tier — the figures that stood here predate that change and would understate PR Gate's new speed and overstate its old one |
 
-The unit-tier row above is measured *after* moving 20 tests across 8 files to
-`slow` (see the entry below): before that change the same tier measured 99.5
-CPU-s, over its 90 CPU-s ceiling. This is not a one-time cleanup — the suite
-keeps growing, and the response to a tight budget is always to make the tier
-cheaper, never to raise the ceiling.
+This is not a static state — the suite keeps growing, and the response to a
+tight budget is always to make the tier cheaper by marking slow tests, never to
+raise the ceiling.
 
 The important consequence: **this suite is not slow.** A full run costs about as
 much as reading the diff you just wrote. Test *selection* is therefore a
 convenience for sub-second feedback, never a substitute for running everything
-before a commit — skipping a test you should have run costs far more than the 50
-seconds it would have taken.
+before a commit — skipping a test you should have run costs far more than the time
+it would have taken.
 
 ## The tiers
 
@@ -124,7 +121,7 @@ than retyped here.
 
 ```bash
 make smoke          # ~0.4 s   what you just changed
-make test           # ~50 s    the real gate
+make test           #          the real gate (unit tier)
 make integration    #          unit + link/schema checks
 make nightly        #          the long tail
 make gate           #          picks the cheapest tier that covers your changes
