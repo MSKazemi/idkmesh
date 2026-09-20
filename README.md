@@ -130,14 +130,16 @@ You do not need to understand the entire repository before contributing.
 
 1. Read this README.
 2. Read [`CONTRIBUTING.md`](CONTRIBUTING.md).
-3. Choose a contribution path in [`COMMUNITY.md`](COMMUNITY.md).
+3. Pick a live task from the [Contributor Quickstart](docs/community/CONTRIBUTOR_QUICKSTART.md).
 4. Browse the live [`good first issue`](https://github.com/MSKazemi/idkmesh/issues?q=is%3Aissue+state%3Aopen+label%3A%22good+first+issue%22) and [`help wanted`](https://github.com/MSKazemi/idkmesh/issues?q=is%3Aissue+state%3Aopen+label%3A%22help+wanted%22) views.
 5. Before starting, check assignees, recent comments, and linked pull requests, then state the bounded change you intend to make.
 
-Two live examples at the time of this audit:
+Current newcomer-sized examples:
 
-- [#167 — independently review IDKGraph orphan cohort 1](https://github.com/MSKazemi/idkmesh/issues/167), a bounded newcomer-friendly evidence/review task;
-- [#151 — independently audit the mathematical evolution control plane](https://github.com/MSKazemi/idkmesh/issues/151), a higher-skill security/control-systems review task.
+- [#542 — walk the newcomer path and record where it breaks](https://github.com/MSKazemi/idkmesh/issues/542), no code required;
+- [#540 — add a smoke test that every argparse tool supports `--help`](https://github.com/MSKazemi/idkmesh/issues/540), a focused Python testing task;
+- [#541 — independently verify the benchmark publication counts](https://github.com/MSKazemi/idkmesh/issues/541), a reproducibility/research task;
+- [#401 — install `gate-audit` and report setup/test results](https://github.com/MSKazemi/idkmesh/issues/401), especially useful on external platforms.
 
 The [ACE Bootstrap Cohort Observatory](https://github.com/MSKazemi/idkmesh/issues/109) is the live evidence source for the original growth-seed cohort. It intentionally distinguishes activity from verified external participation.
 
