@@ -1,6 +1,6 @@
 # ChatGPT Automation Jobs for IDKmesh
 
-_Last reviewed: 2026-09-19_
+_Last reviewed: 2026-09-20_
 
 This document records the **currently active repository-facing ChatGPT automation
 roles** for the public `MSKazemi/idkmesh` repository. It exists so maintainers,
@@ -27,6 +27,9 @@ The live ChatGPT-side swarm is intentionally staggered in the `Europe/Rome` time
 | **IDKmesh Docs Sync** | Every 4 hours at `:50` | README/contributor docs, architecture, roadmap, API/config references, CHANGELOG, and paper/evidence synchronization. |
 | **IDKmesh Research Scout** | Daily at `08:30` | Current standards, ecosystem, architecture, scientific-method, and relevant dependency/security research. |
 | **IDKmesh Growth Release** | Daily at `18:30` | Release readiness, demos, Pages/front door, packaging, reusable integrations, and contributor conversion. |
+| **Contributor PR Watch** | Hourly | Detect genuine external-human PR activity quickly and surface review blockers without automatically commenting or merging. |
+| **Contributor Retention Watch** | Every 6 hours | After a verified first external contribution, identify one closely related next task that fits demonstrated skills; no automated outreach. |
+| **Starter Funnel Health** | Every 6 hours | Check that newcomer tasks remain live, varied, discoverable, and promptly supported; alerts only when a concrete maintenance action is needed. |
 
 The scheduler cannot run any one task more frequently than hourly. The staggered specialist design therefore creates a faster project-level heartbeat while preserving independent per-role safety boundaries.
 
