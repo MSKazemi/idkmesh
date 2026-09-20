@@ -39,6 +39,14 @@ Whole-repository snapshots, ordered by date.
 
 Each answers one bounded question rather than surveying the repository.
 
+- [SEO + AI-Visibility Audit](2026-09-20-seo-ai-visibility-audit.md) —
+  2026-09-20; baseline `999bc26d`. Is `mskazemi.com/idkmesh/` visible to search
+  engines and AI answer engines, and if not, why? Zero P0 blockers found; robots
+  access, crawl rendering, and edge/WAF are all clean. The limiting dimension is
+  off-site authority (65/100), an accumulation problem rather than a
+  configuration one. Two P1s (Core Web Vitals, live index status) need a
+  browser/console check not run in this pass.
+
 - [Which module does the v0.4 calibration actually verify with?](2026-09-05-orphaned-v04-patch-verifier.md)
   — 2026-09-05; baseline `c35b31e`. Traces a red canonical-calibration guard to a
   superseded patch verifier that was restored after #171 and imported by nothing.
