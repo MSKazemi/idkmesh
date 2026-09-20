@@ -229,26 +229,33 @@ idkmesh gate-audit examples/gate-audit/panel-votes.example.json --pretty</code><
     </section>
 
     <section id="paths">
-      <h2>Pick a path</h2>
-      <p class="sub">You do not need to understand the whole repository to do something useful in it. Check a task's assignees and recent comments before claiming it.</p>
-      <div class="grid">
-        <a class="card" href="start.html">
-          <div class="kicker">15 minutes</div>
-          <h3>Run the first installable tool</h3>
-          <p class="muted">Clone, <code>pip install .</code>, and audit a review gate — effective votes, correlation structure, seeded-probe breach rate.</p>
-          <p class="more">Quickstart <span class="arr">→</span></p>
+      <span class="status">Choose by intent</span>
+      <h2>What do you want to do?</h2>
+      <p class="sub">Start with the smallest surface that matches your goal. You can use the shipped diagnostic without understanding the research stack, and you can contribute without learning every subsystem first.</p>
+      <div class="grid path-grid">
+        <a class="card mint path-card" href="start.html">
+          <div class="path-topline"><span class="path-icon" aria-hidden="true">01</span><span class="chip pos">Use it now</span></div>
+          <h3>Audit a review gate</h3>
+          <p class="muted">Install the dependency-free CLI, run the bundled example, then point <code>gate-audit</code> at verdicts your human or AI reviewers already produced.</p>
+          <p class="more">Start in 15 minutes <span class="arr">→</span></p>
         </a>
-        <a class="card" href="https://github.com/MSKazemi/idkmesh/issues?q=is%3Aissue+state%3Aopen+label%3A%22good+first+issue%22">
-          <div class="kicker">Build or research</div>
+        <a class="card accent path-card" href="concepts.html">
+          <div class="path-topline"><span class="path-icon" aria-hidden="true">02</span><span class="chip">Understand it</span></div>
+          <h3>Learn the trust model visually</h3>
+          <p class="muted">See bounded Work Units, verifier independence, verification debt, evidence, and integration authority before reading the deeper architecture.</p>
+          <p class="more">How IDKMesh works <span class="arr">→</span></p>
+        </a>
+        <a class="card violet path-card" href="research.html">
+          <div class="path-topline"><span class="path-icon" aria-hidden="true">03</span><span class="chip proto">Research it</span></div>
+          <h3>Reproduce or challenge the evidence</h3>
+          <p class="muted">Open the experiment atlas, follow results back to their retained records, rerun the code, and try to falsify the claims that matter.</p>
+          <p class="more">Explore the evidence <span class="arr">→</span></p>
+        </a>
+        <a class="card amber path-card" href="https://github.com/MSKazemi/idkmesh/issues?q=is%3Aissue+state%3Aopen+label%3A%22good+first+issue%22">
+          <div class="path-topline"><span class="path-icon" aria-hidden="true">04</span><span class="chip mix">Build it</span></div>
           <h3>Take a bounded open task</h3>
-          <p class="muted">Live <code>good first issue</code> and <code>help wanted</code> queues. Confusion you hit on the way in is itself useful evidence.</p>
-          <p class="more">Browse live issues ↗</p>
-        </a>
-        <a class="card" href="https://github.com/MSKazemi/idkmesh/issues/151">
-          <div class="kicker">Expert reviewer</div>
-          <h3>Try to falsify one claim</h3>
-          <p class="muted">Independent review is first-class work here. Audit the evolution control plane, its checkpoint trust boundary, and its non-compensation guards.</p>
-          <p class="more">Control-plane audit #151 ↗</p>
+          <p class="muted">Code, tests, review, documentation, security, research, and community work all count. Check assignees and recent comments before claiming a task.</p>
+          <p class="more">Browse good first issues ↗</p>
         </a>
       </div>
     </section>
@@ -351,7 +358,7 @@ idkmesh gate-audit examples/gate-audit/panel-votes.example.json --pretty</code><
           </ul>
         </div>
       </div>
-      <p class="fine"><strong>Last updated: 2026-09-10.</strong> IDKMesh is public, open-source, and evidence-first, under the Apache License 2.0. This site is a presentation surface: the repository remains the canonical source of truth for every contract, result, and decision linked from here. Built with no JavaScript, no external fonts, and no trackers.</p>
+      <p class="fine"><strong>Last updated: 2026-09-20.</strong> IDKMesh is public, open-source, and evidence-first, under the Apache License 2.0. This site is a presentation surface: the repository remains the canonical source of truth for every contract, result, and decision linked from here. Built with no JavaScript, no external fonts, and no trackers.</p>
     </div>
   </footer>
 </body>
