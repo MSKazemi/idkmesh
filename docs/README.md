@@ -4,7 +4,7 @@ This directory contains current architecture/specifications, research programs, 
 
 This page is a **curated navigation and authority map, not an exhaustive catalog**. IDKMesh intentionally retains substantially more evidence than a newcomer should need to read.
 
-For the public front door, start with [`../README.md`](../README.md), [`../CONTRIBUTING.md`](../CONTRIBUTING.md), and [`../COMMUNITY.md`](../COMMUNITY.md).
+For the public front door, start with [`../README.md`](../README.md), [`GETTING_STARTED.md`](GETTING_STARTED.md), [`../CONTRIBUTING.md`](../CONTRIBUTING.md), and [`../COMMUNITY.md`](../COMMUNITY.md).
 
 ## How to read the documentation
 
@@ -34,12 +34,13 @@ A conversation, old roadmap section, experiment note, or historical architecture
 For a newcomer trying to understand the executable foundation, this order is usually enough:
 
 1. [`../README.md`](../README.md) — what exists and what does not;
-2. [`../ARCHITECTURE.md`](../ARCHITECTURE.md) — end-to-end work/evidence/authority path;
-3. [`../schemas/README.md`](../schemas/README.md) — canonical machine-readable contracts;
-4. [`specifications/README.md`](specifications/README.md) — written contract index;
-5. [`architecture/README.md`](architecture/README.md) — subsystem architecture;
-6. [`research/README.md`](research/README.md) — experiment/evidence program;
-7. [`../ROADMAP.md`](../ROADMAP.md) — current evidence gates and next progression.
+2. [`GETTING_STARTED.md`](GETTING_STARTED.md) — the shortest current paths to run the contract demo, use `idkmesh gate-audit`, integrate the Action, or start contributing;
+3. [`../ARCHITECTURE.md`](../ARCHITECTURE.md) — end-to-end work/evidence/authority path;
+4. [`../schemas/README.md`](../schemas/README.md) — canonical machine-readable contracts;
+5. [`specifications/README.md`](specifications/README.md) — written contract index;
+6. [`architecture/README.md`](architecture/README.md) — subsystem architecture;
+7. [`research/README.md`](research/README.md) — experiment/evidence program;
+8. [`../ROADMAP.md`](../ROADMAP.md) — current evidence gates and next progression.
 
 ## Documentation indexes
 
@@ -85,6 +86,7 @@ For a newcomer trying to understand the executable foundation, this order is usu
 
 ### Contribution surface and public front door
 
+- [Getting Started: Using IDKMesh](GETTING_STARTED.md) — practical newcomer paths for the contract demo, the `idkmesh gate-audit` CLI, GitHub Actions integration, contribution setup, and the implemented-vs-planned product boundary.
 - [Gate Audit v0.1 specification](specifications/GATE_AUDIT_V0_1.md) — the user-facing contract for the dependency-free `idkmesh gate-audit` CLI installed by `pip install .`, including accepted input, exit/error behavior, JSON/Markdown outputs, and the diagnostic-only authority boundary.
 - [Multidisciplinary Collaboration in IDKMesh](CONTRIBUTOR_PERSPECTIVES.md) —
   the contribution tracks a newcomer can enter from, and the rule that different
