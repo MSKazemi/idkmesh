@@ -1,0 +1,111 @@
+{
+  "attempt_order": [
+    "attempt-001",
+    "attempt-002"
+  ],
+  "attempts": [
+    {
+      "attempt_id": "attempt-001",
+      "candidate_root": "examples/verifier/patch/good",
+      "error": null,
+      "order": 1,
+      "result_manifest": {
+        "attempt": 1,
+        "digest": "sha256:bad853c0d3d41d79f4596315fdaf402ed3c3a073a3b76af38ce62e73fc9ce67b",
+        "id": "verification/patch-smoke/good-attempt-1",
+        "worker_id": "fixture/patch-worker",
+        "worker_status": "succeeded"
+      },
+      "state": "verified",
+      "verification": {
+        "checks": [
+          {
+            "id": "result-manifest-schema",
+            "required": true,
+            "status": "passed"
+          },
+          {
+            "id": "independent-review",
+            "required": true,
+            "status": "passed"
+          }
+        ],
+        "id": "verification/patch-smoke/good-attempt-1/patch-verification",
+        "recommendation": "accept_candidate",
+        "result_manifest_digest": "sha256:bad853c0d3d41d79f4596315fdaf402ed3c3a073a3b76af38ce62e73fc9ce67b",
+        "semantic_digest": "sha256:04d9361f9302a165611586832a654c7b2033bb36202d4194a1b441cbc0f38e62",
+        "status": "passed",
+        "verifier_id": "idkmesh-local-verifier",
+        "work_unit_digest": "sha256:3f8b78df3f43329fe72223018ab42300fcb19523a82769e47ba31098861c24fd"
+      },
+      "worker_adapter": "result-bundle"
+    },
+    {
+      "attempt_id": "attempt-002",
+      "candidate_root": "examples/verifier/patch/wrong-semantic",
+      "error": null,
+      "order": 2,
+      "result_manifest": {
+        "attempt": 1,
+        "digest": "sha256:505aaffee492a969c8ea6ff01b759d18937c4636a50136deac1b9e491cd2583b",
+        "id": "verification/patch-smoke/wrong-semantic-attempt-1",
+        "worker_id": "fixture/patch-worker",
+        "worker_status": "succeeded"
+      },
+      "state": "verified",
+      "verification": {
+        "checks": [
+          {
+            "id": "result-manifest-schema",
+            "required": true,
+            "status": "passed"
+          },
+          {
+            "id": "independent-review",
+            "required": true,
+            "status": "failed"
+          }
+        ],
+        "id": "verification/patch-smoke/wrong-semantic-attempt-1/patch-verification",
+        "recommendation": "reject_candidate",
+        "result_manifest_digest": "sha256:505aaffee492a969c8ea6ff01b759d18937c4636a50136deac1b9e491cd2583b",
+        "semantic_digest": "sha256:ae08b88556d6bd1805079df4946ebb62e4f615143bd2ab6db1f19f5b80730ecb",
+        "status": "failed",
+        "verifier_id": "idkmesh-local-verifier",
+        "work_unit_digest": "sha256:3f8b78df3f43329fe72223018ab42300fcb19523a82769e47ba31098861c24fd"
+      },
+      "worker_adapter": "result-bundle"
+    }
+  ],
+  "authority": {
+    "automatic_candidate_selection": false,
+    "canonical_state_write": false,
+    "git_push": false,
+    "merge": false
+  },
+  "config_digest": "sha256:df509d2670c2fe73c98299c6863424f0fff0629dcd03cfea3688f922c0056748",
+  "kind": "idkmesh-two-attempt-run",
+  "orchestrator_version": "0.2",
+  "run_id": "two-attempt-evaluator-plan-good-vs-bad",
+  "run_state": "completed",
+  "schema_version": "0.1",
+  "summary": {
+    "attempt_count": 2,
+    "candidates_rejected": 1,
+    "candidates_supported": 1,
+    "control_failures": 0
+  },
+  "verification_control": {
+    "backend": "unified_diff",
+    "digest": "sha256:e73b61280f1d52cd119da2f3b56ca4749859c823863e82d88eb84a7c63533f2a",
+    "id": "verification/patch-smoke-plan",
+    "kind": "evaluator_plan",
+    "schema_version": "0.2"
+  },
+  "verifier_policy_digest": "sha256:e73b61280f1d52cd119da2f3b56ca4749859c823863e82d88eb84a7c63533f2a",
+  "work_unit": {
+    "digest": "sha256:3f8b78df3f43329fe72223018ab42300fcb19523a82769e47ba31098861c24fd",
+    "id": "verification/patch-smoke",
+    "version": 1
+  }
+}
