@@ -124,6 +124,14 @@ acceptance or merge authority. In CI, the same audit runs as a GitHub Action:
     votes-file: path/to/panel-votes.json
 ```
 
+`idkmesh` itself stays dependency-free (`pip install .` pulls in nothing
+beyond the standard library). Real, schema-based independent verification of
+`ResultManifest`/`VerificationResult` documents
+(`experiments/local_verifier.py`) needs the optional `jsonschema` dependency;
+install it explicitly with `pip install -e '.[verify]'` when you need that
+capability. See
+[`docs/decisions/ADR-0012-optional-verification-dependency.md`](docs/decisions/ADR-0012-optional-verification-dependency.md).
+
 ## Start here
 
 You do not need to understand the entire repository before contributing.

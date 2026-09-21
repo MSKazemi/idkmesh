@@ -184,6 +184,22 @@ python -m pip install -r requirements-interoperability.txt
 If you cannot get the tests to run at all, that is a bug worth reporting — open
 an issue with your OS, your Python version, and the failure.
 
+The installable `idkmesh` package stays dependency-free (`dependencies = []`
+in `pyproject.toml`); real schema-based verification
+(`experiments/local_verifier.py`) needs the optional `jsonschema` dependency,
+available as the `verify` extra:
+
+```bash
+pip install -e '.[verify]'
+```
+
+This is equivalent to installing `requirements-phase0.txt`'s `jsonschema` pin
+for a repository checkout; either satisfies the guarded import in
+`experiments/local_verifier.py`, which fails with an actionable message (not
+a bare traceback) when neither is installed. See
+[`docs/decisions/ADR-0012-optional-verification-dependency.md`](docs/decisions/ADR-0012-optional-verification-dependency.md)
+for why this is an extra rather than a base dependency.
+
 ## Code quality
 
 Every code contribution should aim to provide:

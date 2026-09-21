@@ -49,6 +49,11 @@ some unrelated page but missing from its own index stays invisible.
   — supersedes the pinned-welcome-discussion requirement as a P0 completion gate
   for issue #173, without weakening any gate that carries real authority or
   evidence requirements. *(2026-08-29.)*
+- [ADR-0012 — Real Schema Verification Is an Optional Extra, Not a Base Dependency](ADR-0012-optional-verification-dependency.md)
+  — `jsonschema` becomes a `pip install idkmesh[verify]` optional extra rather
+  than a base dependency; `dependencies = []` stays unchanged, and
+  `experiments/local_verifier.py` fails with an actionable message when the
+  extra is missing. *(2026-09-21.)*
 
 ## Proposed and experimental
 

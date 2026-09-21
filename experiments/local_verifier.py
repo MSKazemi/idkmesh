@@ -5,6 +5,14 @@ This module is deliberately safe and small. It does not execute candidate code,
 call a network service, use secrets, or grant merge authority. It currently
 supports verifier-owned deterministic checks for JSON fixtures and unified-diff
 candidate bundles, and emits the canonical VerificationResult v0.1 contract.
+
+Unlike the installable ``idkmesh`` CLI package (stdlib-only by design), this
+module performs real JSON Schema validation and therefore needs the optional
+``jsonschema`` dependency -- install it with the ``verify`` extra
+(``pip install -e '.[verify]'`` from a repository checkout, or
+``pip install idkmesh[verify]``). See
+``docs/decisions/ADR-0012-optional-verification-dependency.md`` for why this
+is an extra rather than a base dependency.
 """
 
 from __future__ import annotations
@@ -23,7 +31,25 @@ import time
 from datetime import datetime, timezone
 from typing import Any
 
-from jsonschema import Draft202012Validator, FormatChecker
+try:
+    from jsonschema import Draft202012Validator, FormatChecker
+except ImportError as exc:  # pragma: no cover - exercised by
+    # tests/test_local_verifier_missing_jsonschema.py, which simulates the
+    # missing dependency instead of uninstalling it from the dev environment.
+    raise ImportError(
+        "local_verifier.py performs real JSON Schema validation and needs "
+        "the optional 'jsonschema' package, which is not installed. Install "
+        "it with one of:\n"
+        "  pip install -e '.[verify]'          # repository checkout\n"
+        "  pip install idkmesh[verify]          # released idkmesh package\n"
+        "  pip install -r requirements-phase0.txt  # matches CI's Phase 0 "
+        "pin\n"
+        "jsonschema is deliberately NOT a base dependency of the idkmesh "
+        "package (see docs/decisions/"
+        "ADR-0012-optional-verification-dependency.md): the installable "
+        "'idkmesh' CLI and its 'gate-audit' command stay stdlib-only for "
+        "every install."
+    ) from exc
 
 from provenance_integrity import canonical_digest, validate_integrity
 
