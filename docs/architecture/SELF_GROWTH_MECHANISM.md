@@ -28,6 +28,8 @@ observe repository/community state
 The loop is intentionally asymmetric: **many observations, few public writes, and no
 self-approval**.
 
+Self-growth is also **multi-axis**. Repository correctness and verification are only two dimensions; the controller must also observe discoverability, SEO/AEO, community acquisition, contributor retention, reviewer/leader capacity, and real adoption. See [`docs/community/VISIBILITY_AND_COMMUNITY_GROWTH_LOOP.md`](../community/VISIBILITY_AND_COMMUNITY_GROWTH_LOOP.md) for the external-growth control surface and the read-only visibility observatory.
+
 ## 1. Observe
 
 GitHub and repository state are treated as the environment.
