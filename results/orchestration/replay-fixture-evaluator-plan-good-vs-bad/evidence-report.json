@@ -1,0 +1,105 @@
+{
+  "attempts": [
+    {
+      "attempt_id": "attempt-001",
+      "error": null,
+      "evidence_state": "supported",
+      "order": 1,
+      "state": "verified",
+      "verifier": {
+        "checks": [
+          {
+            "id": "result-manifest-schema",
+            "required": true,
+            "status": "passed"
+          },
+          {
+            "id": "independent-review",
+            "required": true,
+            "status": "passed"
+          }
+        ],
+        "id": "idkmesh-local-verifier",
+        "recommendation": "accept_candidate",
+        "status": "passed",
+        "verification_semantic_digest": "sha256:04d9361f9302a165611586832a654c7b2033bb36202d4194a1b441cbc0f38e62"
+      },
+      "worker": {
+        "id": "fixture/patch-worker",
+        "result_manifest_digest": "sha256:bad853c0d3d41d79f4596315fdaf402ed3c3a073a3b76af38ce62e73fc9ce67b",
+        "result_manifest_id": "verification/patch-smoke/good-attempt-1",
+        "status": "succeeded"
+      },
+      "worker_adapter": "result-bundle"
+    },
+    {
+      "attempt_id": "attempt-002",
+      "error": null,
+      "evidence_state": "rejected",
+      "order": 2,
+      "state": "verified",
+      "verifier": {
+        "checks": [
+          {
+            "id": "result-manifest-schema",
+            "required": true,
+            "status": "passed"
+          },
+          {
+            "id": "independent-review",
+            "required": true,
+            "status": "failed"
+          }
+        ],
+        "id": "idkmesh-local-verifier",
+        "recommendation": "reject_candidate",
+        "status": "failed",
+        "verification_semantic_digest": "sha256:ae08b88556d6bd1805079df4946ebb62e4f615143bd2ab6db1f19f5b80730ecb"
+      },
+      "worker": {
+        "id": "fixture/patch-worker",
+        "result_manifest_digest": "sha256:505aaffee492a969c8ea6ff01b759d18937c4636a50136deac1b9e491cd2583b",
+        "result_manifest_id": "verification/patch-smoke/wrong-semantic-attempt-1",
+        "status": "succeeded"
+      },
+      "worker_adapter": "result-bundle"
+    }
+  ],
+  "authority": {
+    "automatic_candidate_selection": false,
+    "canonical_state_write": false,
+    "git_push": false,
+    "merge": false
+  },
+  "human_decision": {
+    "integration_authority": "external_human_or_governance",
+    "selected_attempt_id": null,
+    "status": "pending"
+  },
+  "kind": "idkmesh-run-evidence-report",
+  "orchestrator_version": "0.2",
+  "run_id": "two-attempt-evaluator-plan-good-vs-bad",
+  "schema_version": "0.1",
+  "source_config_digest": "sha256:df509d2670c2fe73c98299c6863424f0fff0629dcd03cfea3688f922c0056748",
+  "source_run_digest": "sha256:41ecefda10fe809fcec0acbb0d39d39d4044f26b127eb83e64d1a8c94a3bec3d",
+  "source_run_kind": "idkmesh-two-attempt-run",
+  "summary": {
+    "attempt_count": 2,
+    "control_errors": 0,
+    "control_failure_present": false,
+    "inconclusive": 0,
+    "rejected": 1,
+    "supported": 1,
+    "verification_disagreement": true
+  },
+  "verifier_policy_digest": "sha256:e73b61280f1d52cd119da2f3b56ca4749859c823863e82d88eb84a7c63533f2a",
+  "warnings": [
+    "Generated evidence is decision support only; this report does not select, accept, merge, or integrate a candidate.",
+    "Independent verification recommendations disagree; preserve the disagreement for human/governance review."
+  ],
+  "work_unit": {
+    "digest": "sha256:3f8b78df3f43329fe72223018ab42300fcb19523a82769e47ba31098861c24fd",
+    "id": "verification/patch-smoke",
+    "version": 1
+  }
+}

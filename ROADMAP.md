@@ -180,6 +180,20 @@ bounded repository task
 
 The result should be runnable and explainable without reading research-history documents.
 
+The `-> exact replay ->` stage now has a concrete tool for the
+`experiments/two_attempt_orchestrator.py` + `experiments/run_evidence_report.py`
+slice of this pipeline: `experiments/replay_run.py` captures a real run's
+saved orchestration record, evidence report, and raw per-attempt
+`VerificationResult`s, then re-runs the same bounded task and compares the
+result field by field against what was saved, distinguishing fields that must
+match exactly from fields (wall-clock timestamps, elapsed time,
+interpreter/platform strings) that are expected to vary run to run. See
+`results/orchestration/replay-fixture-evaluator-plan-good-vs-bad/README.md`
+for a captured example and `tests/test_replay_run.py` for the positive and
+negative regression coverage. This does not by itself close R1 or R4 — it
+covers only the replay of an already-produced local orchestration run, not
+corpus collection, worker interchangeability, or a packaged release.
+
 ### R2 — Demonstrate heterogeneous worker interchangeability
 
 Route at least two materially different worker implementations through the same coordinator-facing contract without coordinator-core rewrites.
