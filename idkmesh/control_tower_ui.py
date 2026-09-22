@@ -830,6 +830,9 @@ def _handler(initial_text: str | None, token: str):
             path, _query = parsed
             if self._unknown_api_version(path):
                 return
+            if path.startswith(f"/api/{API_VERSION}/"):
+                if not self._token_allowed() or not self._accept_allowed():
+                    return
             if path in (
                 "/",
                 "/index.html",
@@ -844,8 +847,6 @@ def _handler(initial_text: str | None, token: str):
                     404,
                     error_document("not_found", "endpoint not found"),
                 )
-                return
-            if not self._token_allowed() or not self._accept_allowed():
                 return
             body = self._read_json_text()
             if body is None:
@@ -894,6 +895,7 @@ def _handler(initial_text: str | None, token: str):
         do_PATCH = _unsupported_write_method
         do_DELETE = _unsupported_write_method
         do_TRACE = _unsupported_write_method
+        do_CONNECT = _unsupported_write_method
 
     return Handler
 
