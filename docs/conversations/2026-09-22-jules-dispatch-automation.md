@@ -13,7 +13,7 @@ The repository already had a `jules` label and a root `AGENTS.md`. A bounded
 pilot was run on issue #540. The Google Labs Jules GitHub App acknowledged the
 issue and created PR #561, which later merged. Two additional bounded starter
 tasks (#563 and #564) were created with the `jules` label and were acknowledged
-by Jules.
+by Jules; they subsequently produced PRs #566 and #565 respectively.
 
 This demonstrated that the provider's issue-label integration works, but the
 selection/dispatch decision was still manual.
@@ -36,9 +36,10 @@ protected-branch CI/review.
 ## Throughput policy
 
 The initial repository-side concurrency cap is four open dispatched issues.
-Newly approved issues are dispatched event-first when capacity exists. A
-30-minute scheduled sweep repairs missed/waiting dispatches and can fill up to
-two slots per sweep.
+Newly approved issues are dispatched event-first when capacity exists. Closing
+a dispatched issue immediately refills freed capacity from the queue. A
+30-minute best-effort scheduled sweep repairs missed/waiting dispatches and can
+fill up to two slots per sweep.
 
 This is intentionally optimized for a queue of small, reviewable tasks rather
 than maximum generated PR volume.
