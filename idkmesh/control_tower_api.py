@@ -733,11 +733,20 @@ def status_document() -> dict[str, Any]:
             "merge": False,
             "automatic_candidate_selection": False,
         },
+        "operations": {
+            "request_id_header": "X-Request-ID",
+            "liveness": "GET /healthz",
+            "readiness": "GET /readyz",
+            "access_log_env": "IDKMESH_HTTP_ACCESS_LOG",
+            "access_logs_include_bodies": False,
+            "access_logs_include_authentication": False,
+        },
         "endpoints": {
             "status": "GET /api/v1/status",
             "openapi": "GET /api/v1/openapi.json",
             "inspect_run_evidence": "POST /api/v1/run-evidence/inspect",
             "health": "GET /healthz",
+            "readiness": "GET /readyz",
         },
     }
 
@@ -756,6 +765,74 @@ def openapi_document() -> dict[str, Any]:
         },
         "servers": [{"url": "/"}],
         "paths": {
+            "/healthz": {
+                "get": {
+                    "summary": "Process liveness probe",
+                    "description": (
+                        "Returns a minimal liveness response and no project state."
+                    ),
+                    "security": [],
+                    "responses": {
+                        "200": {
+                            "description": "Process is alive",
+                            "content": {
+                                "text/plain": {
+                                    "schema": {
+                                        "type": "string",
+                                        "example": "ok\\n",
+                                    }
+                                }
+                            },
+                        }
+                    },
+                }
+            },
+            "/readyz": {
+                "get": {
+                    "summary": "Service readiness probe",
+                    "description": (
+                        "Returns minimal service/API readiness metadata and no "
+                        "project, run, evidence, secret, or identity state."
+                    ),
+                    "security": [],
+                    "responses": {
+                        "200": {
+                            "description": "Service is ready",
+                            "content": {
+                                JSON_MEDIA_TYPE: {
+                                    "schema": {
+                                        "type": "object",
+                                        "required": [
+                                            "status",
+                                            "service",
+                                            "service_version",
+                                            "mode",
+                                            "api_version",
+                                        ],
+                                        "properties": {
+                                            "status": {"const": "ready"},
+                                            "service": {
+                                                "const": "idkmesh-control-tower"
+                                            },
+                                            "service_version": {
+                                                "type": "string",
+                                                "minLength": 1,
+                                            },
+                                            "mode": {
+                                                "const": "local-read-only"
+                                            },
+                                            "api_version": {
+                                                "const": API_VERSION
+                                            },
+                                        },
+                                        "additionalProperties": False,
+                                    }
+                                }
+                            },
+                        }
+                    },
+                }
+            },
             "/api/v1/status": {
                 "get": {
                     "summary": "Discover API capabilities and authority limits",
@@ -890,6 +967,27 @@ def openapi_document() -> dict[str, Any]:
             },
         },
         "components": {
+            "headers": {
+                "RequestId": {
+                    "description": (
+                        "Opaque request correlation identifier. A safe incoming "
+                        "X-Request-ID is echoed; invalid values are replaced."
+                    ),
+                    "schema": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 128,
+                    },
+                },
+                "Service": {
+                    "description": "IDKMesh service identity",
+                    "schema": {"const": "idkmesh-control-tower"},
+                },
+                "ReadOnly": {
+                    "description": "Whether this service grants write authority",
+                    "schema": {"const": "true"},
+                },
+            },
             "securitySchemes": {
                 "LocalSessionToken": {
                     "type": "apiKey",
