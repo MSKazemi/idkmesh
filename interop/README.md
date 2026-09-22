@@ -28,7 +28,7 @@ Neither test needs generated fixtures, credentials, environment variables, a run
 
 Current pins are defined in [`requirements-interoperability.txt`](../requirements-interoperability.txt):
 
-- `a2a-sdk==1.1.2`
+- `a2a-sdk==1.1.5`
 - `mcp==2.2.0`
 
 That requirements file is canonical. If this page ever disagrees with it, the requirements file wins and this page should be corrected.
