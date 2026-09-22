@@ -117,6 +117,13 @@ class ConnectorRegistry:
             raise ConnectorRegistryError(
                 "invalid_driver_version", kind, driver_id, "driver version must be non-empty"
             )
+        if not callable(getattr(driver, "declared_capabilities", None)):
+            raise ConnectorRegistryError(
+                "invalid_driver_interface",
+                kind,
+                driver_id,
+                "driver must implement declared_capabilities(config)",
+            )
 
         key = (kind, driver_id)
         if key in self._drivers:
