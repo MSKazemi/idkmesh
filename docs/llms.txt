@@ -1,0 +1,47 @@
+# IDKMesh
+
+> Open-source verification-first coordination fabric for humans, AI agents, and heterogeneous compute working on uncertain goals.
+
+Canonical site: https://mskazemi.com/idkmesh/
+Canonical repository: https://github.com/MSKazemi/idkmesh
+License: Apache-2.0
+Status: research preview; not production software.
+
+## Start
+
+- [Home](https://mskazemi.com/idkmesh/) — what IDKMesh is, why verification is the bottleneck, and the shortest path into the project.
+- [Start in 15 minutes](https://mskazemi.com/idkmesh/start.html) — install the CLI, run the bundled diagnostic, reproduce checks, and choose a bounded task.
+- [How IDKMesh works](https://mskazemi.com/idkmesh/concepts.html) — bounded Work Units, authority boundaries, verification debt, correlated verifiers, and the evidence ladder.
+- [Pipelines](https://mskazemi.com/idkmesh/pipelines.html) — work/evidence, orchestration, compute-admission, and PR-gate flows.
+- [Documentation library](https://mskazemi.com/idkmesh/library.html) — published documentation by category.
+
+## Core technical sources
+
+- [What is IDKMesh?](https://mskazemi.com/idkmesh/WHAT_IS_IDKMESH.html)
+- [Architecture source](https://github.com/MSKazemi/idkmesh/blob/main/ARCHITECTURE.md)
+- [Canonical schemas](https://github.com/MSKazemi/idkmesh/tree/main/schemas)
+- [Specifications](https://mskazemi.com/idkmesh/specifications/)
+- [Decisions](https://mskazemi.com/idkmesh/decisions/)
+- [Project adoption guide](https://mskazemi.com/idkmesh/PROJECT_ADOPTION_GUIDE.html)
+
+## Evidence
+
+- [Experiment atlas](https://mskazemi.com/idkmesh/research.html) — published experiment summaries with their actual result status.
+- [Research documentation](https://mskazemi.com/idkmesh/research/)
+- [E017 verifier-panel measurement](https://github.com/MSKazemi/idkmesh/blob/main/experiments/E017-item-difficulty-and-quorum.md)
+- [Audits](https://mskazemi.com/idkmesh/audits/)
+- [Findings](https://mskazemi.com/idkmesh/findings/)
+
+## Trust, contribution, and safety
+
+- [Contributing](https://github.com/MSKazemi/idkmesh/blob/main/CONTRIBUTING.md)
+- [Governance](https://github.com/MSKazemi/idkmesh/blob/main/GOVERNANCE.md)
+- [Security policy](https://github.com/MSKazemi/idkmesh/blob/main/SECURITY.md)
+- [Support](https://github.com/MSKazemi/idkmesh/blob/main/SUPPORT.md)
+
+## Reading rules
+
+- The GitHub repository is the canonical source of truth for contracts, code, evidence, and decisions; this website is a discovery and presentation surface.
+- Implemented mechanism, synthetic validation, observed evidence, and accepted conclusions are different evidence states and should not be collapsed.
+- Worker success is not acceptance, verifier recommendation is not merge authority, and CI success is not independent human review.
+- Claims about scale, safety, or effectiveness should be read at the evidence level stated by the linked source.
