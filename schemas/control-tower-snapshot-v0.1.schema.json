@@ -676,7 +676,7 @@
           "type": "array",
           "minItems": 1,
           "items": {
-            "$ref": "#/$defs/provenance_attempt"
+            "$ref": "#/$defs/provenanceAttempt"
           }
         },
         "authority": {
@@ -710,6 +710,153 @@
               "const": "external_human_or_governance"
             }
           }
+        }
+      }
+    },
+    "provenanceRequiredCheck": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "status"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "provenanceResultManifest": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "required": [
+        "worker_id",
+        "worker_status",
+        "result_manifest_id",
+        "result_manifest_digest"
+      ],
+      "properties": {
+        "worker_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "worker_status": {
+          "type": "string",
+          "minLength": 1
+        },
+        "result_manifest_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "result_manifest_digest": {
+          "$ref": "#/$defs/digest"
+        }
+      }
+    },
+    "provenanceVerification": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "required": [
+        "verifier_id",
+        "verifier_status",
+        "recommendation",
+        "verification_semantic_digest",
+        "required_checks",
+        "identity_distinct_from_worker",
+        "independence_claim"
+      ],
+      "properties": {
+        "verifier_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "verifier_status": {
+          "type": "string",
+          "minLength": 1
+        },
+        "recommendation": {
+          "enum": [
+            "accept_candidate",
+            "reject_candidate",
+            "escalate",
+            "insufficient_evidence"
+          ]
+        },
+        "verification_semantic_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "required_checks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/provenanceRequiredCheck"
+          }
+        },
+        "identity_distinct_from_worker": {
+          "type": "boolean"
+        },
+        "independence_claim": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "provenanceAttempt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "attempt_id",
+        "order",
+        "worker_adapter",
+        "result_manifest",
+        "verification",
+        "evidence_state",
+        "error"
+      ],
+      "properties": {
+        "attempt_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "order": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "worker_adapter": {
+          "type": "string",
+          "minLength": 1
+        },
+        "result_manifest": {
+          "$ref": "#/$defs/provenanceResultManifest"
+        },
+        "verification": {
+          "$ref": "#/$defs/provenanceVerification"
+        },
+        "evidence_state": {
+          "enum": [
+            "supported",
+            "rejected",
+            "inconclusive",
+            "worker_error",
+            "result_manifest_error",
+            "verification_error"
+          ]
+        },
+        "error": {
+          "type": [
+            "string",
+            "null"
+          ]
         }
       }
     }
