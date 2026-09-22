@@ -43,6 +43,10 @@ Autonomous agents should treat current repository state as evidence, not memory.
 
 Prefer one reviewable outcome per branch/PR over broad speculative rewrites. If a requested feature depends on a human-only evidence gate or missing authority, document the blocker instead of manufacturing evidence.
 
+## Jules Dispatch Boundary
+
+For repository-operated Google Jules work, `agent-ready` is the maintainer/trusted-triager approval boundary and `jules` is the execution signal. The Jules Dispatcher normally adds `jules`; do not treat `good first issue` or `help wanted` alone as approval to execute. Never mark work `agent-ready` when it requires genuine human observation, independent research/evidence, security approval, governance judgment, secret handling, or broad decomposition. Keep agent-ready issues bounded, testable, and explicit about allowed scope and stop conditions. See `docs/operations/JULES_AUTOMATION.md` and `config/jules-dispatch.json` for the queue, veto labels, concurrency, recovery sweep, and failure runbook.
+
 ## Coding Style & Naming Conventions
 
 Follow existing Python conventions: four-space indentation, type hints for public interfaces, and deterministic seeded experiments. Use `snake_case` for files/functions, `PascalCase` for classes, and uppercase constants. Keep CLI scripts runnable from the repository root. No formatter or linter is mandated; match nearby code and avoid unnecessary dependencies.
