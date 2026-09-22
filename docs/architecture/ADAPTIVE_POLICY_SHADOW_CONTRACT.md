@@ -287,3 +287,44 @@ The first value of an N3 cohort is therefore to learn:
 
 A low disagreement rate is itself useful evidence: it may show that the new
 policy adds complexity without changing decisions enough to justify promotion.
+
+
+## Temporal anti-hindsight binding
+
+Exact revision/input binding is necessary but not sufficient for N3 evidence.
+The contract also records explicit observation time.
+
+Every shadow plan requires:
+
+```text
+binding.captured_at
+```
+
+Every later outcome requires:
+
+```text
+observed_process.observed_at
+```
+
+Both timestamps are normalized to UTC. The outcome joiner rejects:
+
+```text
+observed_at < captured_at
+```
+
+This catches an important class of accidental hindsight errors.
+
+A timestamp field by itself is not cryptographic proof that a plan existed
+before an outcome. Real N3 collection should therefore persist the frozen plan
+to an append-only or reviewable repository/evidence location before execution
+finishes. Git history, CI artifacts, or another independently timestamped
+evidence store can provide that external ordering evidence.
+
+The machine rule and the persistence rule work together:
+
+```text
+explicit temporal binding
++ immutable plan digest
++ external persistence before outcome
+-> auditable anti-hindsight evidence
+```
