@@ -115,11 +115,13 @@ _BUILTIN_PRESETS = {
         execution_connection_ref="execution:bounded-local",
         network_policy="model_only",
     ),
-    "gemini-cli-free": AgentPreset(
-        preset_id="gemini-cli-free",
-        agent_family="gemini-cli",
-        executable="gemini",
-        model_connection_ref="model:gemini-free",
+    "antigravity-cli-free": AgentPreset(
+        preset_id="antigravity-cli-free",
+        agent_family="antigravity-cli",
+        executable="agy",
+        prompt_transport="argument",
+        prompt_arg="-p",
+        model_connection_ref="model:antigravity-personal",
         execution_connection_ref="execution:bounded-local",
         network_policy="model_only",
     ),
