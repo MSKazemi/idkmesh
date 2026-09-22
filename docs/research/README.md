@@ -50,6 +50,7 @@ policy changes or merge decisions.
   policies on training tasks and confirm on held-out work.
 - [R4 Verified Stigmergic Routing](R4_STIGMERGIC_ROUTING.md) — route from
   verified outcomes with evaporation and newcomer exploration.
+- [Adaptive Verification Ecology](../algorithms/ADAPTIVE_VERIFICATION_ECOLOGY.md) — experimental cross-disciplinary control policy joining niche-aware routing, verifier-memory/probes, correlation-aware verifier portfolios, entropy exploration, and review-capacity shadow-price backpressure. The retained AVE-0 result is synthetic and the matched-budget ablation gate is tracked by [#621](https://github.com/MSKazemi/idkmesh/issues/621).
 
 - [Work Unit Research Track — protocol status map](WORK_UNIT_RESEARCH_TRACK_COMPLETION.md)
   — maps the formal Work Unit research questions onto current executable
