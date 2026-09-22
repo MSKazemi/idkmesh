@@ -475,6 +475,87 @@ def build_timeline(report: dict[str, Any]) -> list[dict[str, Any]]:
     return events
 
 
+def build_provenance(report: dict[str, Any]) -> dict[str, Any]:
+    """Project explicit evidence bindings without inferring trust or independence."""
+    validate_run_evidence_report(report)
+
+    attempts: list[dict[str, Any]] = []
+    for attempt in sorted(report["attempts"], key=lambda item: item["order"]):
+        worker = attempt["worker"]
+        verifier = attempt["verifier"]
+
+        result_manifest = None
+        if worker is not None:
+            result_manifest = {
+                "worker_id": worker["id"],
+                "worker_status": worker["status"],
+                "result_manifest_id": worker["result_manifest_id"],
+                "result_manifest_digest": worker["result_manifest_digest"],
+            }
+
+        verification = None
+        if verifier is not None:
+            required_checks = [
+                {
+                    "id": check["id"],
+                    "status": check["status"],
+                }
+                for check in verifier["checks"]
+                if check["required"]
+            ]
+            verification = {
+                "verifier_id": verifier["id"],
+                "verifier_status": verifier["status"],
+                "recommendation": verifier["recommendation"],
+                "verification_semantic_digest": verifier[
+                    "verification_semantic_digest"
+                ],
+                "required_checks": required_checks,
+                "identity_distinct_from_worker": (
+                    worker is not None and verifier["id"] != worker["id"]
+                ),
+                "independence_claim": (
+                    "identity distinction is visible; statistical or "
+                    "organizational independence is not inferred by this view"
+                ),
+            }
+
+        attempts.append(
+            {
+                "attempt_id": attempt["attempt_id"],
+                "order": attempt["order"],
+                "worker_adapter": attempt["worker_adapter"],
+                "result_manifest": result_manifest,
+                "verification": verification,
+                "evidence_state": attempt["evidence_state"],
+                "error": attempt["error"],
+            }
+        )
+
+    return {
+        "work_unit": {
+            "id": report["work_unit"]["id"],
+            "version": report["work_unit"]["version"],
+            "digest": report["work_unit"]["digest"],
+        },
+        "run": {
+            "run_id": report["run_id"],
+            "source_run_digest": report["source_run_digest"],
+            "source_config_digest": report["source_config_digest"],
+            "verifier_policy_digest": report["verifier_policy_digest"],
+            "orchestrator_version": report["orchestrator_version"],
+        },
+        "attempts": attempts,
+        "authority": {
+            **dict(report["authority"]),
+            "human_decision_status": report["human_decision"]["status"],
+            "integration_authority": report["human_decision"][
+                "integration_authority"
+            ],
+        },
+    }
+
+
 def build_snapshot(report: dict[str, Any]) -> dict[str, Any]:
     """Build the UI/API view over one validated run evidence report."""
     validate_run_evidence_report(report)
@@ -584,6 +665,7 @@ def build_snapshot(report: dict[str, Any]) -> dict[str, Any]:
         "summary": dict(summary),
         "attention": attention,
         "attempts": attempts,
+        "provenance": build_provenance(report),
         "timeline": build_timeline(report),
         "warnings": list(report["warnings"]),
         "human_decision": dict(report["human_decision"]),
@@ -613,6 +695,7 @@ def status_document() -> dict[str, Any]:
         "capabilities": {
             "run_evidence_inspection": True,
             "semantic_timeline": True,
+            "provenance_chain": True,
             "human_decision_recording": False,
             "worker_execution": False,
             "canonical_state_write": False,
