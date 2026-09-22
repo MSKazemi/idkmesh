@@ -165,6 +165,76 @@ If something is confusing, stale, contradictory, or difficult to discover, repor
 - A2A and MCP are integration surfaces; IDKMesh should not invent commodity transport protocols unnecessarily.
 - The public repository is also project memory: durable decisions, findings, evidence, and important collaboration history should remain inspectable.
 
+## Develop with IDKMesh: agent/model connector control plane
+
+IDKMesh is being productized in two deliberate loops:
+
+```text
+Loop A — build IDKMesh
+GitHub issue
+ -> bounded WorkUnit
+ -> Jules / OpenHands / local agent
+ -> candidate PR/artifacts
+ -> independent verification
+ -> human integration
+
+Loop B — use IDKMesh
+new application specification
+ -> GitHub project + IDKMesh profile
+ -> backlog + WorkUnits
+ -> heterogeneous agents/models
+ -> verified candidate PRs
+ -> human product decisions
+ -> release
+```
+
+The product direction is a **Connector Control Plane** that separates four
+replaceable integration layers:
+
+| Layer | Initial targets |
+| --- | --- |
+| SCM/project | GitHub |
+| coding agents | Jules REST, GitHub-native agents such as OpenHands, bounded local agents such as goose/Gemini CLI, A2A/MCP workers |
+| model providers | one OpenAI-compatible baseline covering compatible Gemini/Ollama/vLLM/OpenRouter/LiteLLM deployments, with native drivers only when required |
+| execution | hosted agent sandboxes, local Docker/`idkmesh-node`, appropriate GitHub Actions compute |
+
+The coordinator should not contain a separate branch for every model or agent.
+Every worker still terminates in the same IDKMesh trust path:
+
+```text
+configured connection
+ -> admitted WorkUnit
+ -> untrusted candidate
+ -> ResultManifest
+ -> independent VerificationResult
+ -> evidence/report
+ -> explicit human/governance integration
+```
+
+**This connector product is under implementation, not a finished public API.**
+Do not copy the planned CLI/API examples and assume they exist on `main` yet.
+
+Current source of truth:
+
+- [connector-control-plane architecture](docs/architecture/AGENT_MODEL_CONNECTOR_CONTROL_PLANE.md);
+- [Connector Control API v0.1 design](docs/specifications/CONNECTOR_CONTROL_API_V0_1.md);
+- [implementation + self-hosting plan](docs/planning/AGENT_MODEL_INTEGRATION_SELF_HOSTING_PLAN_2026-09-22.md);
+- [live umbrella tracker #570](https://github.com/MSKazemi/idkmesh/issues/570).
+
+The immediate implementation queue is deliberately bounded:
+
+1. [#574 — connector kernel, profile validation, probes, routing](https://github.com/MSKazemi/idkmesh/issues/574);
+2. [#575 — Jules REST agent connector](https://github.com/MSKazemi/idkmesh/issues/575);
+3. [#576 — OpenAI-compatible model-provider connector](https://github.com/MSKazemi/idkmesh/issues/576);
+4. [#577 — bounded local agent runner](https://github.com/MSKazemi/idkmesh/issues/577);
+5. [#578 — GitHub issue/webhook dispatch bridge](https://github.com/MSKazemi/idkmesh/issues/578);
+6. [#579 — canonical candidate/result normalization](https://github.com/MSKazemi/idkmesh/issues/579);
+7. [#580 — CLI and optional HTTP control API](https://github.com/MSKazemi/idkmesh/issues/580).
+
+The first coding priority is **#574**. Jules and model-provider work should start
+only against the shared connector contract rather than creating provider-specific
+coordinator paths.
+
 ## The reference product
 
 The first reference application is a **Git-native Verified Swarm Runner**.
