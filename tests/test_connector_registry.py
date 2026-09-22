@@ -116,6 +116,12 @@ class ConnectorRegistryTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "unknown max_risk"):
             DriverCapabilities(max_risk="impossible")
 
+    def test_capability_collections_reject_strings_and_non_string_items(self):
+        with self.assertRaisesRegex(ValueError, "not a string"):
+            DriverCapabilities(task_classes="coder")
+        with self.assertRaisesRegex(ValueError, "non-empty strings"):
+            DriverCapabilities(tools={"git", 7})
+
     def test_registry_has_no_routing_or_execution_methods(self):
         registry = build_fake_registry()
         for forbidden in ("route", "execute", "dispatch", "probe"):
@@ -157,6 +163,32 @@ class ConnectorRegistryTests(unittest.TestCase):
         with self.assertRaises(ConnectorRegistryError) as caught:
             registry.register(BrokenDriver())
         self.assertEqual(caught.exception.code, "invalid_driver_interface")
+
+    def test_malformed_driver_metadata_fails_with_registry_errors(self):
+        class BadKind:
+            kind = []
+            driver_id = "broken"
+            driver_version = "0.1"
+
+            def declared_capabilities(self, config):
+                return DriverCapabilities()
+
+        class BlankVersion:
+            kind = "agent"
+            driver_id = "broken"
+            driver_version = "   "
+
+            def declared_capabilities(self, config):
+                return DriverCapabilities()
+
+        registry = ConnectorRegistry()
+        with self.assertRaises(ConnectorRegistryError) as bad_kind:
+            registry.register(BadKind())
+        self.assertEqual(bad_kind.exception.code, "unknown_connector_kind")
+
+        with self.assertRaises(ConnectorRegistryError) as blank_version:
+            registry.register(BlankVersion())
+        self.assertEqual(blank_version.exception.code, "invalid_driver_version")
 
     def test_custom_driver_can_register_without_registry_code_change(self):
         registry = ConnectorRegistry()
