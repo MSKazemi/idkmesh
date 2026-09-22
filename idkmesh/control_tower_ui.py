@@ -600,17 +600,24 @@ def _handler(initial_text: str | None, token: str):
                 started = getattr(
                     self, "_request_started", time.monotonic()
                 )
-                write_access_log(
-                    build_access_log_event(
-                        service=SERVICE_NAME,
-                        request_id=self._request_id(),
-                        method=self.command,
-                        path=self._access_path(),
-                        status=status,
-                        response_bytes=length,
-                        duration_ms=(time.monotonic() - started) * 1000.0,
+                try:
+                    write_access_log(
+                        build_access_log_event(
+                            service=SERVICE_NAME,
+                            request_id=self._request_id(),
+                            method=self.command,
+                            path=self._access_path(),
+                            status=status,
+                            response_bytes=length,
+                            duration_ms=(
+                                time.monotonic() - started
+                            ) * 1000.0,
+                        )
                     )
-                )
+                except OSError:
+                    # Observability failure must not turn a valid read-only
+                    # response into an application failure.
+                    pass
 
         def _response_media_type(self) -> str:
             accept = self.headers.get("Accept", "")
