@@ -243,3 +243,47 @@ Those claims require either additional independently observable evidence or a
 later bounded live experiment designed to identify the counterfactual.
 
 This anti-counterfactual rule prevents dry-run evidence from being overstated.
+
+
+## Cohort evaluator
+
+A set of frozen plans and later outcome records can be summarized with:
+
+- `schemas/adaptive-policy-cohort-summary-v0.1.schema.json`
+- `tools/adaptive_policy_cohort.py`
+
+The cohort evaluator verifies every outcome's exact plan digest before joining.
+
+It reports:
+
+- plan/outcome counts and missing outcomes;
+- shadow-vs-baseline disagreement rate;
+- how often the real process happened to match the shadow choice or baseline;
+- descriptive observed success/escape rates;
+- verified-utility mean when measured;
+- measurement coverage for utility, defects, project spend, compute, review,
+  and human attention.
+
+It deliberately does **not** calculate a policy treatment effect:
+
+```text
+descriptive_only = true
+shadow_counterfactual_observed = false
+causal_effect_estimate = null
+promotion_decision_automatic = false
+```
+
+This distinction matters because N3 shadow mode usually leaves the real process
+unchanged. When shadow and baseline disagree, only the actually executed choice
+has an observed outcome.
+
+The first value of an N3 cohort is therefore to learn:
+
+- whether the adaptive policy makes materially different recommendations;
+- where it abstains;
+- whether its inputs/costs are measurable;
+- which disagreements deserve a future controlled N4 test;
+- whether its assumptions fail on real repository state.
+
+A low disagreement rate is itself useful evidence: it may show that the new
+policy adds complexity without changing decisions enough to justify promotion.
