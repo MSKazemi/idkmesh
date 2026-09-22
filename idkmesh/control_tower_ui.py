@@ -548,6 +548,14 @@ def _handler(initial_text: str | None, token: str):
             send_security_headers(self)
             self.end_headers()
 
+        def _response_media_type(self) -> str:
+            accept = self.headers.get("Accept", "")
+            for part in accept.split(","):
+                media_type = part.split(";", 1)[0].strip().lower()
+                if media_type == V1_MEDIA_TYPE:
+                    return V1_MEDIA_TYPE
+            return JSON_MEDIA_TYPE
+
         def _send_json(
             self,
             status: int,
@@ -560,6 +568,7 @@ def _handler(initial_text: str | None, token: str):
             digest = canonical_digest(payload)
             headers = {
                 "ETag": f'"{digest[7:]}"',
+                "Vary": "Accept",
                 "X-IDKMesh-API-Version": API_VERSION,
                 "X-IDKMesh-Content-Digest": digest,
                 "X-IDKMesh-Read-Only": "true",
@@ -568,7 +577,7 @@ def _handler(initial_text: str | None, token: str):
                 headers.update(extra_headers)
             self._headers(
                 status,
-                "application/json; charset=utf-8",
+                self._response_media_type() + "; charset=utf-8",
                 len(body),
                 extra_headers=headers,
             )
@@ -737,10 +746,12 @@ def _handler(initial_text: str | None, token: str):
             *,
             code: str = "method_not_allowed",
             message: str = "method not allowed for this endpoint",
+            head_only: bool = False,
         ) -> None:
             self._send_json(
                 405,
                 error_document(code, message),
+                head_only=head_only,
                 extra_headers={"Allow": allow},
             )
 
@@ -791,7 +802,7 @@ def _handler(initial_text: str | None, token: str):
                 )
                 return
             if path == f"/api/{API_VERSION}/run-evidence/inspect":
-                self._method_not_allowed("POST")
+                self._method_not_allowed("POST", head_only=head_only)
                 return
             self._send_json(
                 404,
@@ -874,6 +885,9 @@ def _handler(initial_text: str | None, token: str):
             path, _query = parsed
             if self._unknown_api_version(path):
                 return
+            if path.startswith(f"/api/{API_VERSION}/"):
+                if not self._token_allowed() or not self._accept_allowed():
+                    return
             if path == f"/api/{API_VERSION}/run-evidence/inspect":
                 self._method_not_allowed("POST")
                 return
