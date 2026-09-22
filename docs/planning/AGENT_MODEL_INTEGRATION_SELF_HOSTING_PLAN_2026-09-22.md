@@ -3,6 +3,13 @@
 **Date:** 2026-09-22  
 **Status:** execution plan for the Connector Control Plane  
 **Primary architecture:** [Agent and Model Connector Control Plane](../architecture/AGENT_MODEL_CONNECTOR_CONTROL_PLANE.md)
+**Routing/dispatcher plan:** [Model-Tier Dispatcher and Connector Routing](MODEL_TIER_DISPATCHER_EXECUTION_PLAN_2026-09-22.md)
+
+### Routing convergence gate
+
+Before live provider connectors widen, #574 must establish one shared routing contract that separates model capability from repository authority. Jules, OpenAI-compatible models, local agents, GitHub Actions, the optional HTTP service, and the GUI must consume that same route decision.
+
+The route must fail closed on human-required work, security/governance gates, insufficient capability, forbidden external processing, spend limits, missing secrets, unhealthy connectors, and duplicate/idempotent dispatch.
 
 ## 1. Outcome
 
