@@ -13,6 +13,9 @@ meaning of an existing version.
   artifacts and claims without granting acceptance authority.
 - [Run Evidence Report v0.1](RUN_EVIDENCE_REPORT_V0_1.md) — aggregates attempt
   and independent-verification evidence for human inspection.
+- [Control Tower Local API v0.1](CONTROL_TOWER_LOCAL_API_V0_1.md) — versioned,
+  loopback-only read API and presentation contract for Human Control Tower run
+  evidence inspection.
 - [Verification Provenance Integrity](VERIFICATION_PROVENANCE_INTEGRITY.md) —
   binds WorkUnit, result, and verification objects with canonical digests.
 
