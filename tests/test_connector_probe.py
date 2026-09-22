@@ -160,6 +160,39 @@ class ConnectorProbeTests(unittest.TestCase):
         self.assertEqual(result.failure.kind, "driver_error")
         self.assertEqual(result.failure.code, "probe_interface_missing")
 
+    def test_probe_exception_is_normalized_without_raw_provider_text(self):
+        class ExplodingDriver(FakeProbeDriver):
+            def probe(self, config):
+                raise RuntimeError("Authorization: bearer super-secret-value")
+
+        driver = ExplodingDriver()
+        result = probe_connector(
+            _config(),
+            _registry(driver),
+            checked_at=CHECKED_AT,
+        )
+        rendered = json.dumps(result.to_dict(), sort_keys=True)
+        self.assertEqual(result.failure.code, "probe_exception")
+        self.assertNotIn("super-secret-value", rendered)
+        self.assertNotIn("Authorization", rendered)
+
+    def test_capability_exception_is_normalized_without_raw_provider_text(self):
+        class ExplodingCapabilities(FakeProbeDriver):
+            def declared_capabilities(self, config):
+                raise RuntimeError("X-Api-Key: another-secret-value")
+
+        driver = ExplodingCapabilities()
+        result = probe_connector(
+            _config(),
+            _registry(driver),
+            checked_at=CHECKED_AT,
+        )
+        rendered = json.dumps(result.to_dict(), sort_keys=True)
+        self.assertEqual(result.failure.code, "capability_declaration_failed")
+        self.assertEqual(result.observed_capabilities.to_dict()["tiers"], [])
+        self.assertNotIn("another-secret-value", rendered)
+        self.assertNotIn("X-Api-Key", rendered)
+
     def test_invalid_probe_outcome_fails_closed(self):
         class BadProbeDriver(FakeProbeDriver):
             def probe(self, config):
