@@ -814,7 +814,12 @@ def serve_gate_audit_ui(
     print("IDKMesh gate-audit UI: {}".format(url))
     print("Verdict data stays in this local process. Press Ctrl+C to stop.")
     if open_browser:
-        webbrowser.open(url)
+        try:
+            opened = webbrowser.open(url)
+        except webbrowser.Error:
+            opened = False
+        if not opened:
+            print("Browser did not open automatically; open the URL above.")
     try:
         server.serve_forever()
     except KeyboardInterrupt:
