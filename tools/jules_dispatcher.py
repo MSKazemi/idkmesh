@@ -1,15 +1,25 @@
 #!/usr/bin/env python3
 """Safely dispatch bounded GitHub issues to Google Jules.
 
-The repository separates trusted approval from execution state:
+The repository separates trusted approval from execution state. agent-ready is
+the maintainer/triager approval boundary. agent:jules-dispatched is repository
+status owned by this API-backed dispatcher. The legacy jules label remains a
+manual/native-App trigger and is never added by automatic dispatch.
 
-- ``agent-ready`` is the maintainer/triager approval boundary.
-- ``agent:jules-dispatched`` is repository-owned status for API-backed work.
-- ``jules`` is retained only as a legacy/manual native-App trigger.
+This tool never decides from issue prose whether work is safe. It acts only on
+explicit labels, applies deny-labels as a fail-closed veto, caps in-flight work,
+and sends already-approved issue text to the official Jules REST API.
+"""Safely dispatch bounded GitHub issues to Google Jules.
 
-The dispatcher never infers safety from issue prose. It acts on explicit labels,
-applies fail-closed vetoes and capacity controls, and sends only already-approved
-bounded issue text to the official Jules REST API.
+The repository uses two labels with different meanings:
+
+- ``agent-ready`` is a maintainer/triager approval that the issue is bounded,
+  suitable for a coding agent, and contains no human-only evidence requirement.
+- ``jules`` is the execution signal consumed by the Google Labs Jules GitHub App.
+
+This tool never decides from issue prose whether work is safe. It only acts on
+explicit labels, applies deny-labels as a fail-closed veto, and caps the number
+of open Jules issues so generation cannot outrun review capacity.
 """
 
 from __future__ import annotations
@@ -33,10 +43,6 @@ class DispatchError(RuntimeError):
     """Raised when the dispatcher cannot safely inspect or mutate state."""
 
 
-class GitHubRateLimitError(DispatchError):
-    """Transient GitHub API quota exhaustion; dispatch must defer safely."""
-
-
 class JulesAPIError(DispatchError):
     """Jules API failure, with an HTTP status when one was returned."""
 
@@ -49,13 +55,10 @@ def load_policy(path: pathlib.Path = DEFAULT_POLICY) -> dict[str, Any]:
     policy = json.loads(path.read_text(encoding="utf-8"))
     required = {
         "queue_label",
-        "automatic_queue_label",
-        "trusted_author_associations",
         "dispatch_label",
         "legacy_dispatch_labels",
         "max_in_flight",
         "max_dispatch_per_sweep",
-        "ci_backpressure",
         "blocked_labels",
         "priority_weights",
         "size_weights",
@@ -69,16 +72,6 @@ def load_policy(path: pathlib.Path = DEFAULT_POLICY) -> dict[str, Any]:
         raise DispatchError("max_in_flight must be at least 1")
     if int(policy["max_dispatch_per_sweep"]) < 1:
         raise DispatchError("max_dispatch_per_sweep must be at least 1")
-
-    backpressure = policy["ci_backpressure"]
-    if not isinstance(backpressure, dict):
-        raise DispatchError("ci_backpressure must be an object")
-    if type(backpressure.get("enabled")) is not bool:
-        raise DispatchError("ci_backpressure.enabled must be a boolean")
-    for field in ("max_queued_runs", "max_in_progress_runs"):
-        value = backpressure.get(field)
-        if isinstance(value, bool) or not isinstance(value, int) or value < 0:
-            raise DispatchError(f"ci_backpressure.{field} must be an integer >= 0")
     return policy
 
 
@@ -104,22 +97,14 @@ def is_dispatchable(issue: dict[str, Any], policy: dict[str, Any]) -> bool:
         return False
 
     labels = label_names(issue)
-    manual_queue_label = str(policy["queue_label"]).casefold()
-    automatic_queue_label = str(policy["automatic_queue_label"]).casefold()
+    queue_label = str(policy["queue_label"]).casefold()
     blocked = {str(name).casefold() for name in policy["blocked_labels"]}
-    if labels.intersection(active_dispatch_labels(policy)) or labels.intersection(blocked):
-        return False
 
-    if manual_queue_label in labels:
-        return True
-    if automatic_queue_label not in labels:
-        return False
-
-    trusted = {
-        str(value).upper() for value in policy["trusted_author_associations"]
-    }
-    association = str(issue.get("author_association") or "").upper()
-    return association in trusted
+    return (
+        queue_label in labels
+        and not labels.intersection(active_dispatch_labels(policy))
+        and not labels.intersection(blocked)
+    )
 
 
 def score_issue(issue: dict[str, Any], policy: dict[str, Any]) -> int:
@@ -232,16 +217,6 @@ class GitHubAPI:
                 return json.loads(raw.decode("utf-8")) if raw else None
         except urllib.error.HTTPError as exc:
             detail = exc.read().decode("utf-8", errors="replace")
-            remaining = str(exc.headers.get("X-RateLimit-Remaining", ""))
-            if exc.code in {403, 429} and (
-                remaining == "0" or "rate limit" in detail.casefold()
-            ):
-                reset = str(exc.headers.get("X-RateLimit-Reset", "")).strip()
-                suffix = f" reset={reset}" if reset else ""
-                raise GitHubRateLimitError(
-                    f"GitHub API quota exhausted while calling {method} {path};"
-                    f"{suffix or ' retry on the next recovery sweep'}"
-                ) from exc
             raise DispatchError(
                 f"GitHub API {method} {path} failed with {exc.code}: {detail}"
             ) from exc
@@ -273,11 +248,11 @@ class GitHubAPI:
             {"name": name, "color": color.lstrip("#"), "description": description},
         )
 
-    def list_open_issues(self, label: str | None = None) -> list[dict[str, Any]]:
-        params: dict[str, Any] = {"state": "open"}
-        if label:
-            params["labels"] = label
-        return self.paginate(f"{self.repo_path}/issues", params)
+    def list_open_issues(self, label: str) -> list[dict[str, Any]]:
+        return self.paginate(
+            f"{self.repo_path}/issues",
+            {"state": "open", "labels": label},
+        )
 
     def add_labels(self, issue_number: int, labels: list[str]) -> None:
         self.request(
@@ -299,21 +274,6 @@ class GitHubAPI:
             f"{self.repo_path}/issues/{issue_number}/comments",
             {"body": body},
         )
-
-    def count_workflow_runs(self, status: str) -> int:
-        if status not in {"queued", "in_progress"}:
-            raise DispatchError(f"unsupported Actions run status: {status}")
-        encoded = urllib.parse.urlencode({"status": status, "per_page": 1})
-        result = self.request(
-            "GET",
-            f"{self.repo_path}/actions/runs?{encoded}",
-        )
-        if not isinstance(result, dict):
-            raise DispatchError("expected object response from Actions runs API")
-        value = result.get("total_count")
-        if isinstance(value, bool) or not isinstance(value, int) or value < 0:
-            raise DispatchError("Actions runs API returned invalid total_count")
-        return value
 
 
 class JulesAPI:
@@ -448,38 +408,6 @@ class JulesAPI:
         return result
 
 
-def actions_backpressure_status(
-    api: GitHubAPI,
-    policy: dict[str, Any],
-) -> dict[str, Any]:
-    """Return current Actions capacity without granting dispatch authority."""
-    config = policy["ci_backpressure"]
-    if not config["enabled"]:
-        return {
-            "enabled": False,
-            "blocked": False,
-            "queued_runs": None,
-            "in_progress_runs": None,
-            "max_queued_runs": config["max_queued_runs"],
-            "max_in_progress_runs": config["max_in_progress_runs"],
-        }
-
-    queued = api.count_workflow_runs("queued")
-    in_progress = api.count_workflow_runs("in_progress")
-    blocked = (
-        queued > int(config["max_queued_runs"])
-        or in_progress > int(config["max_in_progress_runs"])
-    )
-    return {
-        "enabled": True,
-        "blocked": blocked,
-        "queued_runs": queued,
-        "in_progress_runs": in_progress,
-        "max_queued_runs": int(config["max_queued_runs"]),
-        "max_in_progress_runs": int(config["max_in_progress_runs"]),
-    }
-
-
 def ensure_labels(
     api: GitHubAPI,
     policy: dict[str, Any],
@@ -504,6 +432,19 @@ def ensure_labels(
             )
 
     return created
+
+
+def list_active_issues(
+    api: GitHubAPI,
+    policy: dict[str, Any],
+) -> list[dict[str, Any]]:
+    by_number: dict[int, dict[str, Any]] = {}
+    for label in active_dispatch_labels(policy):
+        for issue in api.list_open_issues(label):
+            if issue.get("pull_request"):
+                continue
+            by_number[int(issue["number"])] = issue
+    return list(by_number.values())
 
 
 def session_comment(session: dict[str, Any]) -> str:
@@ -531,21 +472,9 @@ def dispatch(
 ) -> list[int]:
     """Fill available Jules capacity from the explicit agent-ready queue."""
     dispatch_label = str(policy["dispatch_label"])
+    queue_label = str(policy["queue_label"])
 
-    # One repository issue snapshot feeds both active-capacity accounting and
-    # queue selection. This avoids separate list calls per label and materially
-    # reduces GITHUB_TOKEN quota pressure in high-fanout repositories.
-    open_issues = [
-        issue
-        for issue in api.list_open_issues()
-        if not issue.get("pull_request")
-    ]
-    active_labels = active_dispatch_labels(policy)
-    active = [
-        issue
-        for issue in open_issues
-        if label_names(issue).intersection(active_labels)
-    ]
+    active = list_active_issues(api, policy)
     slots = max(0, int(policy["max_in_flight"]) - len(active))
     if slots == 0:
         print(
@@ -554,26 +483,16 @@ def dispatch(
         )
         return []
 
-    backpressure = actions_backpressure_status(api, policy)
-    if backpressure["blocked"]:
-        print(
-            "jules dispatcher: paused for Actions backpressure "
-            f"queued={backpressure['queued_runs']}/"
-            f"{backpressure['max_queued_runs']} "
-            f"in_progress={backpressure['in_progress_runs']}/"
-            f"{backpressure['max_in_progress_runs']}"
-        )
-        return []
-
+    queued = api.list_open_issues(queue_label)
     selected = select_candidates(
-        open_issues,
+        queued,
         policy,
         slots=slots,
         event_issue_number=event_issue_number,
         max_dispatch=max_dispatch,
     )
     if not selected:
-        print("jules dispatcher: no eligible Jules queue issues")
+        print("jules dispatcher: no eligible agent-ready issues")
         return []
 
     if not dry_run and jules_api is None:
@@ -681,15 +600,13 @@ def main(argv: list[str] | None = None) -> int:
     try:
         jules_api = None
         if args.dispatch and not args.dry_run:
-            api_key = os.environ.get("JULES_API_KEY", "").strip()
-            if api_key:
-                jules_api = JulesAPI(
-                    api_key=api_key,
-                    api_url=os.environ.get(
-                        "JULES_API_URL",
-                        DEFAULT_JULES_API_URL,
-                    ),
-                )
+            jules_api = JulesAPI(
+                api_key=os.environ.get("JULES_API_KEY", ""),
+                api_url=os.environ.get(
+                    "JULES_API_URL",
+                    DEFAULT_JULES_API_URL,
+                ),
+            )
 
         if args.init_labels:
             created = ensure_labels(api, policy, dry_run=args.dry_run)
@@ -710,11 +627,6 @@ def main(argv: list[str] | None = None) -> int:
                 max_dispatch=args.max_dispatch,
                 dry_run=args.dry_run,
             )
-    except GitHubRateLimitError as exc:
-        # Quota exhaustion is transient. Fail closed (no new provider work) but
-        # keep the workflow green so the scheduled recovery sweep can retry.
-        print(f"jules dispatcher: deferred: {exc}", file=sys.stderr)
-        return 0
     except DispatchError as exc:
         print(f"jules dispatcher: {exc}", file=sys.stderr)
         return 2
