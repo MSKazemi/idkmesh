@@ -31,7 +31,11 @@ READ_ONLY_HEADER = "X-IDKMesh-Read-Only"
 ACCESS_LOG_ENV = "IDKMESH_HTTP_ACCESS_LOG"
 
 _REQUEST_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
+_HEADER_VALUE_RE = re.compile(r"^[!-~]{1,128}$")
 _TRUE_VALUES = frozenset({"1", "true", "yes", "on"})
+_MAX_LOG_PATH = 2048
+_MAX_LOG_METHOD = 32
+_MAX_LOG_SERVICE = 128
 
 
 def new_request_id() -> str:
@@ -53,6 +57,22 @@ def access_logging_enabled(
     return env.get(ACCESS_LOG_ENV, "").strip().lower() in _TRUE_VALUES
 
 
+def _header_value(value: str, field: str) -> str:
+    if not isinstance(value, str) or not _HEADER_VALUE_RE.fullmatch(value):
+        raise ValueError(
+            f"{field} must be 1-128 visible ASCII characters without spaces"
+        )
+    return value
+
+
+def _bounded_log_text(value: str, max_length: int) -> str:
+    text = "".join(
+        char if char.isprintable() and char not in "\r\n" else "?"
+        for char in str(value)
+    )
+    return text[:max_length]
+
+
 def service_headers(
     *,
     service: str,
@@ -63,13 +83,21 @@ def service_headers(
 ) -> dict[str, str]:
     """Build stable cross-service response metadata headers."""
     headers = {
-        REQUEST_ID_HEADER: request_id,
-        SERVICE_HEADER: service,
-        SERVICE_VERSION_HEADER: service_version,
+        REQUEST_ID_HEADER: (
+            request_id
+            if _REQUEST_ID_RE.fullmatch(request_id)
+            else resolve_request_id(None)
+        ),
+        SERVICE_HEADER: _header_value(service, "service"),
+        SERVICE_VERSION_HEADER: _header_value(
+            service_version, "service_version"
+        ),
         READ_ONLY_HEADER: "true" if read_only else "false",
     }
     if api_version is not None:
-        headers["X-IDKMesh-API-Version"] = api_version
+        headers["X-IDKMesh-API-Version"] = _header_value(
+            api_version, "api_version"
+        )
     return headers
 
 
@@ -83,12 +111,16 @@ def readiness_document(
     """Return a minimal readiness document with no project/evidence state."""
     result: dict[str, Any] = {
         "status": "ready",
-        "service": service,
-        "service_version": service_version,
-        "mode": mode,
+        "service": _header_value(service, "service"),
+        "service_version": _header_value(
+            service_version, "service_version"
+        ),
+        "mode": _header_value(mode, "mode"),
     }
     if api_version is not None:
-        result["api_version"] = api_version
+        result["api_version"] = _header_value(
+            api_version, "api_version"
+        )
     return result
 
 
@@ -105,8 +137,9 @@ def build_access_log_event(
 ) -> dict[str, Any]:
     """Create a bounded access-log event.
 
-    Callers must provide a URL path only, with query strings already removed.
-    Headers and request/response bodies are intentionally not accepted.
+    Query strings are stripped defensively and text fields are bounded before
+    serialization. Headers and request/response bodies are intentionally not
+    accepted.
     """
     if occurred_at is None:
         occurred_at = (
@@ -114,14 +147,26 @@ def build_access_log_event(
             .isoformat(timespec="milliseconds")
             .replace("+00:00", "Z")
         )
+    status_value = int(status)
+    response_size = int(response_bytes)
+    if not 100 <= status_value <= 599:
+        raise ValueError("status must be an HTTP status code")
+    if response_size < 0:
+        raise ValueError("response_bytes must be >= 0")
+
+    safe_path = str(path).split("?", 1)[0]
     return {
         "event": "http_request",
-        "service": service,
-        "request_id": request_id,
-        "method": method,
-        "path": path,
-        "status": int(status),
-        "response_bytes": int(response_bytes),
+        "service": _bounded_log_text(service, _MAX_LOG_SERVICE),
+        "request_id": (
+            request_id
+            if _REQUEST_ID_RE.fullmatch(request_id)
+            else resolve_request_id(None)
+        ),
+        "method": _bounded_log_text(method, _MAX_LOG_METHOD),
+        "path": _bounded_log_text(safe_path, _MAX_LOG_PATH),
+        "status": status_value,
+        "response_bytes": response_size,
         "duration_ms": round(max(0.0, float(duration_ms)), 3),
         "occurred_at": occurred_at,
     }
