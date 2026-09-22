@@ -1,0 +1,13 @@
+{
+  "config": "examples/orchestration/two-attempt-evaluator-plan-good-vs-bad.json",
+  "config_digest": "sha256:df509d2670c2fe73c98299c6863424f0fff0629dcd03cfea3688f922c0056748",
+  "evidence_report_json": "evidence-report.json",
+  "evidence_report_markdown": "evidence-report.md",
+  "kind": "idkmesh-replay-source",
+  "run_record": "run-record.json",
+  "schema_version": "0.1",
+  "verification_results": {
+    "attempt-001": "verification-result-attempt-001.json",
+    "attempt-002": "verification-result-attempt-002.json"
+  }
+}
