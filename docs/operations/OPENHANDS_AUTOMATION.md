@@ -26,6 +26,9 @@ manual "OpenHands Manual Pilot" workflow
 validate open issue + veto labels
         |
         v
+IDKMesh stdlib client -> OpenHands API
+        |
+        v
 OpenHands conversation at protected default branch
         |
         v
@@ -45,6 +48,8 @@ The existing automatic `agent-ready` path belongs to Jules. The OpenHands pilot 
 
 The workflow itself receives only `contents: read` and `issues: read`. Repository mutation is not granted through the workflow token.
 
+The pilot does **not** execute the OpenHands GitHub composite Action. Instead, the checked-in stdlib client calls the documented conversation API directly. This avoids a transitive third-party Action dependency and makes the exact HTTP surface reviewable in this repository.
+
 ## Running the first pilot
 
 Choose a low-risk, bounded issue that already has `agent-ready` and none of:
@@ -58,14 +63,14 @@ Choose a low-risk, bounded issue that already has `agent-ready` and none of:
 
 Then run **Actions → OpenHands Manual Pilot → Run workflow** and enter the numeric issue number.
 
-The preparation step fetches the issue through the GitHub API, validates the approval/veto labels, and writes a bounded prompt. The third-party OpenHands action is pinned to an immutable commit SHA rather than a floating tag.
+The preparation step fetches the issue through the GitHub API, validates the approval/veto labels, and writes a bounded prompt. A second checked-in step creates the OpenHands conversation against the exact repository/default branch and polls its status.
 
 ## Evidence and authority
 
 The workflow summary retains:
 
 - selected issue number;
-- source/default branch;
+- exact default/source branch supplied to OpenHands;
 - OpenHands conversation ID;
 - provider status;
 - conversation URL when available.
@@ -105,7 +110,7 @@ Tracked by issue #641:
 ## Implementation surfaces
 
 - workflow: `.github/workflows/openhands-pilot.yml`
-- validator/prompt builder: `tools/openhands_pilot.py`
+- validator/API client: `tools/openhands_pilot.py`
 - tests: `tests/test_openhands_pilot.py`
 - tracker: issue #641
 
