@@ -81,6 +81,8 @@ IDKMesh Core
 
 The final item is not merely future intent: this repository already runs bounded self-observation, CI/evolution, IDKGraph, and community-growth experiments against itself.
 
+For a practical walkthrough of applying these layers to a **different software repository**, see [Use IDKMesh to Build Another Software Project](PROJECT_ADOPTION_GUIDE.md).
+
 ## What exists today
 
 Current `main` includes, among other things:
