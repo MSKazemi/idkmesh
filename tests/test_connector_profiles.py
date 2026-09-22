@@ -103,6 +103,19 @@ class ConnectorProfileValidationTests(unittest.TestCase):
             parse_connector_profile_document(raw)
         self.assertEqual(caught.exception.code, "unknown_field")
 
+    def test_non_string_field_name_fails_closed(self):
+        raw = {
+            "api_version": "idkmesh.io/v1alpha1",
+            "id": "example",
+            "kind": "agent",
+            "driver": "fake",
+            "enabled": True,
+            7: "invalid-json-object-key",
+        }
+        with self.assertRaises(ConnectorProfileError) as caught:
+            parse_connector_profile_document(raw)
+        self.assertEqual(caught.exception.code, "invalid_field_name")
+
     def test_conflicting_task_class_declarations_fail(self):
         raw = {
             "api_version": "idkmesh.io/v1alpha1",
@@ -166,6 +179,15 @@ class ConnectorProfileValidationTests(unittest.TestCase):
                 load_connector_profile_document(path)
         self.assertEqual(caught.exception.code, "invalid_json")
         self.assertIn("line 1", str(caught.exception))
+
+    def test_invalid_utf8_fails_closed_without_raw_decode_error(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "invalid-utf8.json"
+            path.write_bytes(b'{"api_version":"idkmesh.io/v1alpha1","id":"x"}\xff')
+            with self.assertRaises(ConnectorProfileError) as caught:
+                load_connector_profile_document(path)
+        self.assertEqual(caught.exception.code, "invalid_utf8")
+        self.assertIn("byte", str(caught.exception))
 
 
 if __name__ == "__main__":
