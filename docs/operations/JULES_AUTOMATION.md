@@ -7,6 +7,8 @@ human-governance boundaries.
 
 ## One-sentence operating model
 
+**Single-dispatcher invariant:** the native Google Labs Jules GitHub App path described here is the only project-operated Jules dispatcher. Do not run a second REST-API dispatcher, a second queue label, or another workflow that creates Jules sessions for the same repository at the same time. A second lane must first replace this one through an explicit migration, not coexist with it.
+
 A maintainer or trusted triager marks a reviewed issue `agent-ready`; GitHub
 Actions immediately adds `jules` when capacity is available; the Google Labs
 Jules GitHub App starts the coding task; Jules opens a pull request; normal
