@@ -124,6 +124,24 @@ worker claim -> independent evidence -> human authority
 This is an inspection surface over existing evidence, not a second source of
 canonical truth.
 
+For local automation, provide a caller-known ephemeral token without putting it
+on the command line:
+
+```bash
+export IDKMESH_CONTROL_TOWER_TOKEN='replace-with-at-least-32-random-characters'
+idkmesh control-tower --no-browser --port 8770
+
+curl \
+  -H "X-IDKMesh-UI-Token: $IDKMESH_CONTROL_TOWER_TOKEN" \
+  http://127.0.0.1:8770/api/v1/status
+```
+
+Machine-readable discovery is available at
+`/api/v1/openapi.json`, and successful inspection snapshots are frozen by
+[`control-tower-snapshot-v0.1.schema.json`](schemas/control-tower-snapshot-v0.1.schema.json).
+See the [Control Tower Local API v0.1](docs/specifications/CONTROL_TOWER_LOCAL_API_V0_1.md)
+for media types, deterministic digests, error codes, and authority guarantees.
+
 ## Try it in five minutes: audit a review gate
 
 The first installable tool cut from this research is `idkmesh gate-audit`. It
