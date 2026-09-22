@@ -10,18 +10,22 @@ from __future__ import annotations
 
 import html
 import json
-import secrets
 import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any
 
 from idkmesh import __version__
 from idkmesh.gate_audit import GateAuditInputError, audit_text, render_markdown
+from idkmesh.local_ui_security import (
+    HOST,
+    MAX_BODY_BYTES,
+    TOKEN_HEADER,
+    is_loopback_host,
+    new_session_token,
+    send_security_headers,
+)
 
-HOST = "127.0.0.1"
 DEFAULT_PORT = 8765
-MAX_BODY_BYTES = 2 * 1024 * 1024
-TOKEN_HEADER = "X-IDKMesh-UI-Token"
 
 _SAMPLE = {
     "gate_id": "local-demo",
@@ -616,16 +620,6 @@ def _json_bytes(payload: dict[str, Any]) -> bytes:
     return json.dumps(payload, allow_nan=False, separators=(",", ":")).encode("utf-8")
 
 
-def _loopback_host(host_header: str | None) -> bool:
-    if not host_header:
-        return False
-    host = host_header.strip().lower()
-    if host.startswith("["):
-        return False
-    hostname = host.split(":", 1)[0]
-    return hostname in {HOST, "localhost"}
-
-
 def _handler(initial_text: str | None, token: str):
     page = _app_html(initial_text, token).encode("utf-8")
 
@@ -639,23 +633,7 @@ def _handler(initial_text: str | None, token: str):
             self.send_response(status)
             self.send_header("Content-Type", content_type)
             self.send_header("Content-Length", str(length))
-            self.send_header("Cache-Control", "no-store")
-            self.send_header("X-Content-Type-Options", "nosniff")
-            self.send_header("X-Frame-Options", "DENY")
-            self.send_header("Referrer-Policy", "no-referrer")
-            self.send_header("Cross-Origin-Resource-Policy", "same-origin")
-            self.send_header("Cross-Origin-Opener-Policy", "same-origin")
-            self.send_header(
-                "Permissions-Policy",
-                "camera=(), microphone=(), geolocation=(), payment=()",
-            )
-            self.send_header(
-                "Content-Security-Policy",
-                "default-src 'none'; style-src 'unsafe-inline'; "
-                "script-src 'unsafe-inline'; connect-src 'self'; "
-                "img-src 'self' data: blob:; base-uri 'none'; "
-                "form-action 'none'; frame-ancestors 'none'",
-            )
+            send_security_headers(self)
             self.end_headers()
 
         def _send_json(self, status: int, payload: dict[str, Any]) -> None:
@@ -664,7 +642,7 @@ def _handler(initial_text: str | None, token: str):
             self.wfile.write(body)
 
         def _host_allowed(self) -> bool:
-            if _loopback_host(self.headers.get("Host")):
+            if is_loopback_host(self.headers.get("Host")):
                 return True
             self._send_json(
                 403,
@@ -796,7 +774,7 @@ def create_server(
     port=0 is supported for tests and library callers that want the kernel to
     choose an unused local port.
     """
-    token = secrets.token_urlsafe(24)
+    token = new_session_token()
     server = GateAuditUIServer((HOST, port), _handler(initial_text, token))
     server.ui_token = token
     return server
