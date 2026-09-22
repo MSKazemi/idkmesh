@@ -10,15 +10,24 @@ import threading
 import unittest
 from unittest import mock
 
+from jsonschema import Draft202012Validator
+
 from idkmesh import cli
 from idkmesh.control_tower_api import (
     ControlTowerInputError,
     build_snapshot,
+    canonical_digest,
+    openapi_document,
     parse_report_text,
     status_document,
+    success_document,
     validate_run_evidence_report,
 )
-from idkmesh.control_tower_ui import SAMPLE_REPORT, create_server
+from idkmesh.control_tower_ui import (
+    SAMPLE_REPORT,
+    TOKEN_ENV,
+    create_server,
+)
 from idkmesh.local_ui_security import TOKEN_HEADER
 
 
@@ -149,6 +158,56 @@ class ControlTowerModelTests(unittest.TestCase):
         self.assertIn("duplicate JSON key", str(ctx.exception))
         self.assertIn("test report", str(ctx.exception))
 
+    def test_snapshot_binds_exact_evidence_report_digest(self) -> None:
+        report = sample_report()
+        snapshot = build_snapshot(report)
+        self.assertEqual(
+            snapshot["source"]["evidence_report_digest"],
+            canonical_digest(report),
+        )
+
+    def test_snapshot_matches_published_json_schema(self) -> None:
+        root = Path(__file__).resolve().parents[1]
+        schema = json.loads(
+            (
+                root
+                / "schemas"
+                / "control-tower-snapshot-v0.1.schema.json"
+            ).read_text(encoding="utf-8")
+        )
+        Draft202012Validator.check_schema(schema)
+        Draft202012Validator(schema).validate(
+            build_snapshot(sample_report())
+        )
+
+    def test_success_envelope_is_deterministic_and_digest_bound(self) -> None:
+        snapshot = build_snapshot(sample_report())
+        first = success_document(snapshot)
+        second = success_document(snapshot)
+        self.assertEqual(first, second)
+        self.assertEqual(
+            first["snapshot_digest"],
+            canonical_digest(snapshot),
+        )
+        self.assertEqual(
+            first["kind"],
+            "idkmesh-control-tower-inspection-response",
+        )
+
+    def test_openapi_document_advertises_read_only_v1_contract(self) -> None:
+        document = openapi_document()
+        self.assertEqual(document["openapi"], "3.1.0")
+        self.assertIn("/api/v1/status", document["paths"])
+        self.assertIn(
+            "/api/v1/run-evidence/inspect",
+            document["paths"],
+        )
+        self.assertEqual(
+            document["components"]["securitySchemes"]
+            ["LocalSessionToken"]["name"],
+            "X-IDKMesh-UI-Token",
+        )
+
     def test_status_document_is_explicitly_non_actuating(self) -> None:
         status = status_document()
         self.assertEqual(status["api_version"], "v1")
@@ -182,13 +241,14 @@ class ControlTowerServerTests(unittest.TestCase):
         *,
         token: bool = False,
         content_type: str = "application/json; charset=utf-8",
+        extra_headers: dict[str, str] | None = None,
     ):
         conn = http.client.HTTPConnection(
             "127.0.0.1",
             self.server.server_port,
             timeout=3,
         )
-        headers: dict[str, str] = {}
+        headers: dict[str, str] = dict(extra_headers or {})
         encoded = None
         if body is not None:
             encoded = body.encode("utf-8")
@@ -237,6 +297,125 @@ class ControlTowerServerTests(unittest.TestCase):
             "POST /api/v1/run-evidence/inspect",
         )
         self.assertFalse(payload["capabilities"]["merge"])
+
+    def test_openapi_endpoint_is_machine_readable(self) -> None:
+        status, headers, body = self.request(
+            "GET",
+            "/api/v1/openapi.json",
+            token=True,
+        )
+        payload = json.loads(body)
+        self.assertEqual(status, 200)
+        self.assertEqual(payload["openapi"], "3.1.0")
+        self.assertEqual(headers["X-IDKMesh-API-Version"], "v1")
+        self.assertEqual(headers["X-IDKMesh-Read-Only"], "true")
+        self.assertTrue(headers["ETag"].startswith('"'))
+        self.assertTrue(
+            headers["X-IDKMesh-Content-Digest"].startswith("sha256:")
+        )
+
+    def test_head_status_returns_headers_without_body(self) -> None:
+        status, headers, body = self.request(
+            "HEAD",
+            "/api/v1/status",
+            token=True,
+        )
+        self.assertEqual(status, 200)
+        self.assertEqual(body, b"")
+        self.assertGreater(int(headers["Content-Length"]), 0)
+        self.assertEqual(headers["X-IDKMesh-Read-Only"], "true")
+
+    def test_api_honors_json_accept_negotiation(self) -> None:
+        status, _, body = self.request(
+            "GET",
+            "/api/v1/status",
+            token=True,
+            extra_headers={"Accept": "text/html"},
+        )
+        payload = json.loads(body)
+        self.assertEqual(status, 406)
+        self.assertEqual(payload["error"]["code"], "not_acceptable")
+
+    def test_vendor_json_media_type_is_accepted(self) -> None:
+        status, _, body = self.request(
+            "POST",
+            "/api/v1/run-evidence/inspect",
+            SAMPLE_REPORT,
+            token=True,
+            content_type=(
+                "application/vnd.idkmesh.control-tower.v1+json"
+            ),
+            extra_headers={
+                "Accept": (
+                    "application/vnd.idkmesh.control-tower.v1+json"
+                )
+            },
+        )
+        payload = json.loads(body)
+        self.assertEqual(status, 200)
+        self.assertTrue(payload["ok"])
+
+    def test_wrong_method_returns_405_and_allow(self) -> None:
+        status, headers, body = self.request(
+            "GET",
+            "/api/v1/run-evidence/inspect",
+            token=True,
+        )
+        payload = json.loads(body)
+        self.assertEqual(status, 405)
+        self.assertEqual(headers["Allow"], "POST")
+        self.assertEqual(
+            payload["error"]["code"], "method_not_allowed")
+
+    def test_unsupported_api_version_is_explicit(self) -> None:
+        status, _, body = self.request(
+            "GET",
+            "/api/v2/status",
+            token=True,
+        )
+        payload = json.loads(body)
+        self.assertEqual(status, 404)
+        self.assertEqual(
+            payload["error"]["code"], "unsupported_api_version")
+        self.assertEqual(
+            payload["error"]["details"]["supported_versions"],
+            ["v1"],
+        )
+
+    def test_api_rejects_query_parameters_in_v1(self) -> None:
+        status, _, body = self.request(
+            "GET",
+            "/api/v1/status?expand=all",
+            token=True,
+        )
+        payload = json.loads(body)
+        self.assertEqual(status, 400)
+        self.assertEqual(
+            payload["error"]["code"],
+            "unexpected_query_parameters",
+        )
+
+    def test_repeated_inspection_is_byte_deterministic(self) -> None:
+        first_status, first_headers, first_body = self.request(
+            "POST",
+            "/api/v1/run-evidence/inspect",
+            SAMPLE_REPORT,
+            token=True,
+        )
+        second_status, second_headers, second_body = self.request(
+            "POST",
+            "/api/v1/run-evidence/inspect",
+            SAMPLE_REPORT,
+            token=True,
+        )
+        self.assertEqual(first_status, 200)
+        self.assertEqual(second_status, 200)
+        self.assertEqual(first_body, second_body)
+        self.assertEqual(first_headers["ETag"], second_headers["ETag"])
+        self.assertEqual(
+            first_headers["X-IDKMesh-Content-Digest"],
+            second_headers["X-IDKMesh-Content-Digest"],
+        )
 
     def test_inspect_api_returns_snapshot_not_selection(self) -> None:
         status, _, body = self.request(
@@ -311,6 +490,31 @@ class ControlTowerServerTests(unittest.TestCase):
         self.assertEqual(status, 405)
         self.assertEqual(
             payload["error"]["code"], "preflight_not_supported")
+
+
+class ControlTowerTokenTests(unittest.TestCase):
+    def test_headless_client_can_supply_stable_token_via_environment(self) -> None:
+        token = "a" * 32
+        with mock.patch.dict(
+            "os.environ",
+            {TOKEN_ENV: token},
+            clear=False,
+        ):
+            server = create_server(port=0)
+        try:
+            self.assertEqual(server.ui_token, token)
+        finally:
+            server.server_close()
+
+    def test_short_environment_token_is_rejected(self) -> None:
+        with mock.patch.dict(
+            "os.environ",
+            {TOKEN_ENV: "too-short"},
+            clear=False,
+        ):
+            with self.assertRaises(ValueError) as ctx:
+                create_server(port=0)
+        self.assertIn(TOKEN_ENV, str(ctx.exception))
 
 
 class ControlTowerCliTests(unittest.TestCase):
