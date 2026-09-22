@@ -1,7 +1,7 @@
 # Run Evidence Report v0.1
 
 **Status:** Experimental product-facing aggregation layer  
-**Related:** #4, #5, #16, PR #72, PR #78, `schemas/result-manifest-v0.1.schema.json`, `schemas/verification-result-v0.1.schema.json`
+**Related:** #4, #5, #16, PR #72, PR #78, `schemas/result-manifest-v0.1.schema.json`, `schemas/verification-result-v0.1.schema.json`, `schemas/human-decision-record-v0.1.schema.json`
 
 ## Purpose
 
@@ -194,6 +194,48 @@ See:
 `schemas/run-evidence-report-v0.1.schema.json`
 
 The schema is intentionally an aggregation schema. It references digests and summaries of canonical worker/verifier evidence; it is not a second verifier protocol.
+
+## Recording the human decision
+
+The generated report's `human_decision` object is advisory data a human *reads*: it carries the machine-suggested `selected_attempt_id` and a `recommendation` from `{accept_candidate, reject_candidate, escalate, insufficient_evidence}`, and it is required to stay `{"status": "pending", "selected_attempt_id": null, ...}` on every generated report (see Invariants above). Nothing above records that a human actually looked at the evidence and decided.
+
+`experiments/record_human_decision.py` closes that recording gap without granting the report itself, or the decision record, any new authority:
+
+```text
+run evidence report (read-only aggregation, human_decision always pending)
+ -> experiments/record_human_decision.py record
+ -> idkmesh-human-decision-record (schemas/human-decision-record-v0.1.schema.json)
+```
+
+The recorded decision:
+
+- names the exact evidence report it decides on by `kind` + `schema_version` + `run_id` + a `canonical_digest` of the full report document, not by filename -- a decision record verified against a swapped, edited, or regenerated report at that same path fails closed;
+- requires an explicit human choice from `{accept, reject, escalate}`, a distinct vocabulary from the report's own `recommendation` values, so a decision record can never be produced by simply echoing the machine-suggested recommendation;
+- carries a free-text `rationale` and a `decider` identity, and is timestamped;
+- is written as a new companion file under `results/`; it never mutates the evidence report it decides on.
+
+CLI:
+
+```bash
+python experiments/record_human_decision.py record \
+  --evidence-report results/orchestration/demo.evidence.json \
+  --output results/orchestration/demo.decision.json \
+  --decision-id orchestration/demo.decision.001 \
+  --decision accept \
+  --rationale "attempt-001 passed independent verification with all required checks." \
+  --decider-id you@example.com \
+  --selected-attempt-id attempt-001
+
+python experiments/record_human_decision.py verify \
+  --decision-record results/orchestration/demo.decision.json \
+  --evidence-report results/orchestration/demo.evidence.json
+
+python experiments/record_human_decision.py self-test
+```
+
+`record` refuses (non-zero exit) a malformed/nonexistent evidence report, a decision value outside `{accept, reject, escalate}`, or a `--selected-attempt-id` that does not appear in the referenced report's attempts. `verify` re-derives the report's digest and fails closed the moment it no longer matches the digest recorded in the decision.
+
+Like the report itself, a decision record carries `authority: {canonical_state_write: false, git_push: false, merge: false}`: it documents that a decision was made, it does not execute it. Acting on the decision (a merge, a push, a state change) remains a separate, out-of-band step.
 
 ## Self-test coverage
 
