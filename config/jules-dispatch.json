@@ -1,7 +1,13 @@
 {
-  "version": 1,
+  "version": 2,
   "queue_label": "agent-ready",
-  "dispatch_label": "jules",
+  "reservation_label": "jules-dispatching",
+  "dispatch_label": "jules-dispatched",
+  "active_labels": [
+    "jules-dispatching",
+    "jules-dispatched",
+    "jules"
+  ],
   "max_in_flight": 4,
   "max_dispatch_per_sweep": 2,
   "blocked_labels": [
@@ -34,7 +40,15 @@
     },
     "jules": {
       "color": "EDEDED",
-      "description": "Execution signal consumed by Google Labs Jules"
+      "description": "Manual execution signal consumed by the Google Labs Jules GitHub App"
+    },
+    "jules-dispatching": {
+      "color": "C2E0C6",
+      "description": "Jules API submission reserved/in progress; reconcile before retrying"
+    },
+    "jules-dispatched": {
+      "color": "5319E7",
+      "description": "Jules API accepted an automatic coding session for this issue"
     },
     "blocked": {
       "color": "D93F0B",
