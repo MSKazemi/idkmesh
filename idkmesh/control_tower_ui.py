@@ -4,16 +4,23 @@ from __future__ import annotations
 
 import html
 import json
+import os
+import secrets
 import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any
+from urllib.parse import urlsplit
 
 from idkmesh import __version__
 from idkmesh.control_tower_api import (
     API_VERSION,
+    JSON_MEDIA_TYPE,
+    V1_MEDIA_TYPE,
     ControlTowerInputError,
     build_snapshot,
+    canonical_digest,
     error_document,
+    openapi_document,
     parse_report_text,
     status_document,
     success_document,
@@ -28,6 +35,7 @@ from idkmesh.local_ui_security import (
 )
 
 DEFAULT_PORT = 8770
+TOKEN_ENV = "IDKMESH_CONTROL_TOWER_TOKEN"
 
 _SAMPLE_REPORT = {
     "attempts": [
@@ -438,8 +446,22 @@ loadStatus();inspect();
 
 def _json_bytes(payload: dict[str, Any]) -> bytes:
     return json.dumps(
-        payload, allow_nan=False, separators=(",", ":")
+        payload,
+        allow_nan=False,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
     ).encode("utf-8")
+
+
+def _resolve_token() -> str:
+    configured = os.environ.get(TOKEN_ENV)
+    if configured is None:
+        return new_session_token()
+    if len(configured) < 32 or any(ch.isspace() for ch in configured):
+        raise ValueError(
+            f"{TOKEN_ENV} must contain at least 32 non-whitespace characters")
+    return configured
 
 
 def _handler(initial_text: str | None, token: str):
@@ -447,6 +469,9 @@ def _handler(initial_text: str | None, token: str):
 
     class Handler(BaseHTTPRequestHandler):
         server_version = "IDKMeshControlTower/0.1"
+
+        def version_string(self) -> str:
+            return self.server_version
 
         def log_message(self, format: str, *args: Any) -> None:
             return
@@ -456,10 +481,15 @@ def _handler(initial_text: str | None, token: str):
             status: int,
             content_type: str,
             length: int,
+            *,
+            extra_headers: dict[str, str] | None = None,
         ) -> None:
             self.send_response(status)
             self.send_header("Content-Type", content_type)
             self.send_header("Content-Length", str(length))
+            if extra_headers:
+                for name, value in extra_headers.items():
+                    self.send_header(name, value)
             send_security_headers(self)
             self.end_headers()
 
@@ -467,14 +497,28 @@ def _handler(initial_text: str | None, token: str):
             self,
             status: int,
             payload: dict[str, Any],
+            *,
+            head_only: bool = False,
+            extra_headers: dict[str, str] | None = None,
         ) -> None:
             body = _json_bytes(payload)
+            digest = canonical_digest(payload)
+            headers = {
+                "ETag": f'"{digest[7:]}"',
+                "X-IDKMesh-API-Version": API_VERSION,
+                "X-IDKMesh-Content-Digest": digest,
+                "X-IDKMesh-Read-Only": "true",
+            }
+            if extra_headers:
+                headers.update(extra_headers)
             self._headers(
                 status,
                 "application/json; charset=utf-8",
                 len(body),
+                extra_headers=headers,
             )
-            self.wfile.write(body)
+            if not head_only:
+                self.wfile.write(body)
 
         def _host_allowed(self) -> bool:
             if is_loopback_host(self.headers.get("Host")):
@@ -489,7 +533,8 @@ def _handler(initial_text: str | None, token: str):
             return False
 
         def _token_allowed(self) -> bool:
-            if self.headers.get(TOKEN_HEADER) == token:
+            provided = self.headers.get(TOKEN_HEADER) or ""
+            if secrets.compare_digest(provided, token):
                 return True
             self._send_json(
                 403,
@@ -500,15 +545,82 @@ def _handler(initial_text: str | None, token: str):
             )
             return False
 
+        def _accept_allowed(self) -> bool:
+            accept = self.headers.get("Accept", "")
+            if not accept:
+                return True
+            accepted = {
+                "*/*",
+                "application/*",
+                JSON_MEDIA_TYPE,
+                V1_MEDIA_TYPE,
+            }
+            for part in accept.split(","):
+                media_type = part.split(";", 1)[0].strip().lower()
+                if media_type in accepted:
+                    return True
+            self._send_json(
+                406,
+                error_document(
+                    "not_acceptable",
+                    (
+                        "response must be accepted as application/json or "
+                        f"{V1_MEDIA_TYPE}"
+                    ),
+                ),
+            )
+            return False
+
+        def _path(self) -> tuple[str, str] | None:
+            parsed = urlsplit(self.path)
+            if parsed.query and parsed.path.startswith("/api/"):
+                self._send_json(
+                    400,
+                    error_document(
+                        "unexpected_query_parameters",
+                        "Control Tower v1 endpoints do not accept query parameters",
+                    ),
+                )
+                return None
+            return parsed.path, parsed.query
+
+        def _unknown_api_version(self, path: str) -> bool:
+            if not path.startswith("/api/"):
+                return False
+            prefix = f"/api/{API_VERSION}/"
+            if path.startswith(prefix):
+                return False
+            self._send_json(
+                404,
+                error_document(
+                    "unsupported_api_version",
+                    "unsupported Control Tower API version",
+                    details={"supported_versions": [API_VERSION]},
+                ),
+            )
+            return True
+
         def _read_json_text(self) -> str | None:
+            if self.headers.get("Transfer-Encoding"):
+                self._send_json(
+                    400,
+                    error_document(
+                        "unsupported_transfer_encoding",
+                        "chunked/transfer-encoded request bodies are not supported",
+                    ),
+                )
+                return None
             content_type = self.headers.get("Content-Type", "")
             media_type = content_type.split(";", 1)[0].strip().lower()
-            if media_type != "application/json":
+            if media_type not in {JSON_MEDIA_TYPE, V1_MEDIA_TYPE}:
                 self._send_json(
                     415,
                     error_document(
                         "unsupported_media_type",
-                        "API requests must use application/json",
+                        (
+                            "API requests must use application/json or "
+                            f"{V1_MEDIA_TYPE}"
+                        ),
                     ),
                 )
                 return None
@@ -533,7 +645,16 @@ def _handler(initial_text: str | None, token: str):
                     ),
                 )
                 return None
-            if length < 0 or length > MAX_BODY_BYTES:
+            if length < 0:
+                self._send_json(
+                    400,
+                    error_document(
+                        "invalid_content_length",
+                        "Content-Length cannot be negative",
+                    ),
+                )
+                return None
+            if length > MAX_BODY_BYTES:
                 self._send_json(
                     413,
                     error_document(
@@ -555,55 +676,121 @@ def _handler(initial_text: str | None, token: str):
                 )
                 return None
 
-        def do_GET(self) -> None:
+        def _method_not_allowed(
+            self,
+            allow: str,
+            *,
+            code: str = "method_not_allowed",
+            message: str = "method not allowed for this endpoint",
+        ) -> None:
+            self._send_json(
+                405,
+                error_document(code, message),
+                extra_headers={"Allow": allow},
+            )
+
+        def _handle_get(self, *, head_only: bool) -> None:
             if not self._host_allowed():
                 return
-            if self.path in ("/", "/index.html"):
+            parsed = self._path()
+            if parsed is None:
+                return
+            path, _query = parsed
+            if path in ("/", "/index.html"):
                 self._headers(
                     200,
                     "text/html; charset=utf-8",
                     len(page),
                 )
-                self.wfile.write(page)
+                if not head_only:
+                    self.wfile.write(page)
                 return
-            if self.path == "/healthz":
+            if path == "/healthz":
                 body = b"ok\n"
                 self._headers(
                     200,
                     "text/plain; charset=utf-8",
                     len(body),
+                    extra_headers={"X-IDKMesh-Read-Only": "true"},
                 )
-                self.wfile.write(body)
+                if not head_only:
+                    self.wfile.write(body)
                 return
-            if self.path == f"/api/{API_VERSION}/status":
-                if not self._token_allowed():
+            if self._unknown_api_version(path):
+                return
+            if path.startswith(f"/api/{API_VERSION}/"):
+                if not self._token_allowed() or not self._accept_allowed():
                     return
-                self._send_json(200, status_document())
+            if path == f"/api/{API_VERSION}/status":
+                self._send_json(
+                    200,
+                    status_document(),
+                    head_only=head_only,
+                )
+                return
+            if path == f"/api/{API_VERSION}/openapi.json":
+                self._send_json(
+                    200,
+                    openapi_document(),
+                    head_only=head_only,
+                )
+                return
+            if path == f"/api/{API_VERSION}/run-evidence/inspect":
+                self._method_not_allowed("POST")
                 return
             self._send_json(
                 404,
                 error_document("not_found", "endpoint not found"),
+                head_only=head_only,
             )
+
+        def do_GET(self) -> None:
+            self._handle_get(head_only=False)
+
+        def do_HEAD(self) -> None:
+            self._handle_get(head_only=True)
 
         def do_OPTIONS(self) -> None:
             if not self._host_allowed():
                 return
-            self._send_json(
-                405,
-                error_document(
-                    "preflight_not_supported",
-                    "cross-origin preflight is not supported",
-                ),
+            parsed = self._path()
+            if parsed is None:
+                return
+            path, _query = parsed
+            allow = "GET, HEAD"
+            if path == f"/api/{API_VERSION}/run-evidence/inspect":
+                allow = "POST"
+            self._method_not_allowed(
+                allow,
+                code="preflight_not_supported",
+                message="cross-origin preflight is not supported",
             )
 
         def do_POST(self) -> None:
-            if not self._host_allowed() or not self._token_allowed():
+            if not self._host_allowed():
                 return
-            if self.path != f"/api/{API_VERSION}/run-evidence/inspect":
+            parsed = self._path()
+            if parsed is None:
+                return
+            path, _query = parsed
+            if self._unknown_api_version(path):
+                return
+            if path in (
+                "/",
+                "/index.html",
+                "/healthz",
+                f"/api/{API_VERSION}/status",
+                f"/api/{API_VERSION}/openapi.json",
+            ):
+                self._method_not_allowed("GET, HEAD")
+                return
+            if path != f"/api/{API_VERSION}/run-evidence/inspect":
                 self._send_json(
                     404,
                     error_document("not_found", "endpoint not found"),
                 )
+                return
+            if not self._token_allowed() or not self._accept_allowed():
                 return
             body = self._read_json_text()
             if body is None:
@@ -622,8 +809,38 @@ def _handler(initial_text: str | None, token: str):
                 return
             self._send_json(200, success_document(snapshot))
 
-    return Handler
+        def _unsupported_write_method(self) -> None:
+            if not self._host_allowed():
+                return
+            parsed = self._path()
+            if parsed is None:
+                return
+            path, _query = parsed
+            if self._unknown_api_version(path):
+                return
+            if path == f"/api/{API_VERSION}/run-evidence/inspect":
+                self._method_not_allowed("POST")
+                return
+            if path in (
+                "/",
+                "/index.html",
+                "/healthz",
+                f"/api/{API_VERSION}/status",
+                f"/api/{API_VERSION}/openapi.json",
+            ):
+                self._method_not_allowed("GET, HEAD")
+                return
+            self._send_json(
+                404,
+                error_document("not_found", "endpoint not found"),
+            )
 
+        do_PUT = _unsupported_write_method
+        do_PATCH = _unsupported_write_method
+        do_DELETE = _unsupported_write_method
+        do_TRACE = _unsupported_write_method
+
+    return Handler
 
 class ControlTowerServer(ThreadingHTTPServer):
     daemon_threads = True
@@ -638,7 +855,7 @@ def create_server(
     port: int = DEFAULT_PORT,
 ) -> ControlTowerServer:
     """Create, but do not start, the loopback-only Control Tower server."""
-    token = new_session_token()
+    token = _resolve_token()
     server = ControlTowerServer(
         (HOST, port),
         _handler(initial_text, token),
