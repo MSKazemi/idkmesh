@@ -168,6 +168,14 @@ Recommended operating rhythm:
 
 This gives parallel development while keeping review backpressure explicit.
 
+### Branch-update backpressure
+
+Review capacity is not the only scarce resource: every new Jules PR head can also restart exact-head CI. Prefer provider settings/prompts that let Jules finish a coherent repair batch before pushing another head revision. Do not intentionally request one commit per file or continuously stream cosmetic intermediate commits.
+
+Jules is provider-owned and may not be able to call the repository's `tools/github_atomic_commit.py` helper directly. The policy is therefore behavioral rather than a fake guarantee: **minimize PR-head updates while preserving a reviewable history**. Repository-owned/local agents should use the atomic writer when practical; Jules tasks should be kept small enough that provider-side repair does not turn into a long synchronize storm.
+
+If one task repeatedly updates the same PR while Actions is already backlogged, stop dispatching more work and treat CI/review capacity as saturated until the queue recovers.
+
 ## What happens after Jules starts
 
 The native Jules GitHub integration comments on the issue when it accepts a

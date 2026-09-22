@@ -43,6 +43,24 @@ Autonomous agents should treat current repository state as evidence, not memory.
 
 Prefer one reviewable outcome per branch/PR over broad speculative rewrites. If a requested feature depends on a human-only evidence gate or missing authority, document the blocker instead of manufacturing evidence.
 
+### Agent publication backpressure
+
+When an agent or automation writes several files through the GitHub API, batch the finished candidate into **one branch commit / one ref update** whenever practical. Do not use one Contents-API mutation per file on an open PR: every branch-head change can create a new `synchronize` event, invalidate exact-head evidence, and start another Actions wave.
+
+After `tools/github_atomic_commit.py` is available on the branch, prefer:
+
+```bash
+python tools/github_atomic_commit.py plan \
+  --branch agent/my-work \
+  --expected-head <sha> \
+  --write path/in/repo=/tmp/file \
+  --json
+```
+
+and publish only after the bounded change and focused checks are ready. The tool binds to an exact expected head, rechecks before publication, uses one Git tree/commit, and moves the branch with a non-force ref update. A changed branch head is a stop/replan condition, not permission to force-push. Direct writes to `main` remain forbidden by the normal contribution path.
+
+Provider-owned agents that cannot use this tool should still follow the same behavioral rule: accumulate a coherent candidate locally/provider-side, then minimize branch-head updates rather than streaming a commit for every file edit or repair step.
+
 ## Jules Dispatch Boundary
 
 For repository-operated Google Jules work, `agent-ready` is the maintainer/trusted-triager approval boundary and `jules` is the execution signal. The Jules Dispatcher normally adds `jules`; do not treat `good first issue` or `help wanted` alone as approval to execute. Never mark work `agent-ready` when it requires genuine human observation, independent research/evidence, security approval, governance judgment, secret handling, or broad decomposition. Keep agent-ready issues bounded, testable, and explicit about allowed scope and stop conditions. See `docs/operations/JULES_AUTOMATION.md` and `config/jules-dispatch.json` for the queue, veto labels, concurrency, recovery sweep, and failure runbook.

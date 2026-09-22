@@ -88,6 +88,8 @@ For materially AI-generated code, research, tests, or documentation, include a s
 
 Do not submit large volumes of unreviewed generated material. Generation must not grow faster than the community's ability to verify and maintain it.
 
+For multi-file AI/automation changes, also avoid publishing one GitHub commit per file edit. Each new PR head can restart CI and invalidate exact-head review evidence. Repository-operated agents should batch a ready candidate into one branch update where practical; `tools/github_atomic_commit.py` provides a race-safe Git Data API path once that tool is present on the working branch. Provider-owned agents should follow the same principle even when they cannot call the helper directly.
+
 Maintainers and trusted triagers using the repository's Google Jules automation should follow [`docs/operations/JULES_AUTOMATION.md`](docs/operations/JULES_AUTOMATION.md). In that flow, `agent-ready` means a bounded issue has been reviewed as suitable for an implementation agent; the dispatcher adds `jules` when review capacity is available. Human-only evidence, independent research, security approval, and governance work stay outside that automatic lane.
 
 ## Running the tests
