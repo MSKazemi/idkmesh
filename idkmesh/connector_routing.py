@@ -17,6 +17,7 @@ human-required task into an automatically dispatchable one.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+import math
 from typing import Iterable
 
 
@@ -84,8 +85,8 @@ class ConnectorProfile:
             )
         if self.max_risk not in RISK_ORDER:
             raise ValueError(f"unknown max_risk: {self.max_risk}")
-        if self.project_cost_usd < 0:
-            raise ValueError("project_cost_usd must be >= 0")
+        if not math.isfinite(self.project_cost_usd) or self.project_cost_usd < 0:
+            raise ValueError("project_cost_usd must be finite and >= 0")
 
 
 @dataclass(frozen=True)
@@ -105,7 +106,7 @@ class RoutingDecision:
         default_factory=lambda: frozenset({"agent"})
     )
     external_processing_allowed: bool = True
-    project_spend_usd_max: float | None = None
+    project_spend_usd_max: float = 0.0
     human_gate_satisfied: bool = True
     prefer_zero_cost: bool = True
     avoid_provider_families: frozenset[str] = field(default_factory=frozenset)
@@ -149,8 +150,11 @@ class RoutingDecision:
             raise ValueError(
                 "unknown allowed connector kind(s): " + ", ".join(unknown_kinds)
             )
-        if self.project_spend_usd_max is not None and self.project_spend_usd_max < 0:
-            raise ValueError("project_spend_usd_max must be >= 0 when set")
+        if (
+            not math.isfinite(self.project_spend_usd_max)
+            or self.project_spend_usd_max < 0
+        ):
+            raise ValueError("project_spend_usd_max must be finite and >= 0")
 
 
 @dataclass(frozen=True)
@@ -239,10 +243,7 @@ def _rejection_reasons(
     if profile.external_processing and not decision.external_processing_allowed:
         reasons.append("external_processing_forbidden")
 
-    if (
-        decision.project_spend_usd_max is not None
-        and profile.project_cost_usd > decision.project_spend_usd_max
-    ):
+    if profile.project_cost_usd > decision.project_spend_usd_max:
         reasons.append("project_spend_exceeded")
 
     if profile.secret_required and not profile.secret_available:
