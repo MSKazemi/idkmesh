@@ -47,12 +47,12 @@ No mechanism should skip levels merely because its scientific source is well est
 | Verified stigmergy / ACO | ant-colony pheromone trails | task / WorkUnit routing | **N2** | `docs/algorithms/ACO_STIGMERGIC_TASK_ROUTING.md`, E014 | does verified trace memory beat simpler routing after charging for diversity and review? |
 | Homeostatic stigmergy | density-dependent biological regulation + feedback control | task routing / duplication control | **N2** | `docs/algorithms/HOMEOSTATIC_STIGMERGY_ROUTING.md` + simulator/tests | does adaptive diversity pressure improve the Pareto frontier over fixed ACO/capability routing? |
 | Quality-Diversity / MAP-Elites | evolution/ecological niches | architecture / worker-policy archive | **N0/N1** | issue #22 and research design | can multiple verified specialists be preserved without keeping inferior variants for diversity alone? |
-| Adaptive Verification Ecology (AVE) | immunity + ecology + congestion economics + entropy | worker/verifier allocation and generation backpressure | **N1/N2 research branch** | PR #622, issues #621, AVE-0/1/2 | which smallest subset reduces correlated/high-risk escape under matched review budgets? |
+| Adaptive Verification Ecology (AVE) | immunity + ecology + congestion economics + entropy | worker/verifier allocation and generation backpressure | **N2; N3 shadow adapter ready** | PR #622/#645, issues #621/#644, AVE-0/1/2 | does AVE-core make useful pre-outcome recommendations on real canonical WorkUnits without weakening EvaluatorPlan gates? |
 | Verifier-family diversity | ecological niche separation / portfolio diversification | verifier selection | **N1/N2 research branch** | AVE ablations + E017 motivation | does family diversity add independent evidence rather than nominal variety? |
 | Known-bad verifier probes | artificial immunity / adversarial testing | gate audit and verifier diagnostics | **N2 diagnostic; not trust authority** | gate-audit direction, AVE probe tests | do probe results predict live verifier failures on representative tasks? |
 | Review shadow price | congestion pricing / network utility | verification queue and optional fan-out | **N1/N2** | AVE + verification-debt/backpressure work | does a scarcity signal control verification debt without starving important work? |
 | Entropy / temperature exploration | statistical mechanics / entropy regularization | routing exploration | **N1** | AVE and scientific foundations | does adaptive exploration improve recovery from shift enough to pay its cost? |
-| Physarum conductance routing | slime-mold adaptive transport networks | admitted multi-node compute/federation paths | **N1/N2 research branch** | PR #631, issue #630, PHY-0/1 | does adaptive conductance outperform strong change-aware/failover baselines across varied failure regimes? |
+| Physarum conductance routing | slime-mold adaptive transport networks | admitted multi-node compute/federation paths | **N2; N3 blocked on topology evidence** | PR #631, issues #630/#649, PHY-0/1 | is multi-hop/federated path routing a real IDKMesh need, and can real admitted topology/telemetry exist without inventing edges? |
 | Replicator-mutator policy weights | evolutionary dynamics | ACE community-growth strategy controller | **N1 offline** | issue #57 / ACE controller design | do strategy weights improve verified descendants per reviewer/maintainer attention? |
 | Carrying-capacity governor | population ecology / logistic regulation | community/reviewer growth | **N1** | ACE design | does growth stop before reviewer load becomes the bottleneck? |
 | Verification backpressure | queueing/control theory | generation vs verification capacity | **N2** | roadmap, ADR-0007 and verification-scaling research | can verification debt be bounded while preserving high-value throughput? |
@@ -212,9 +212,9 @@ No learning/routing algorithm may let a worker satisfy the verifier independence
 
 ## Current priorities
 
-1. Complete AVE matched-budget/adversarial ablations (#621).
-2. Complete Physarum stationary/failure/attribution stress matrix (#630).
-3. Move neither mechanism into live routing until it earns **N3 real dry-run** evidence through the common shadow contract (#636 / PR #637).
+1. Review AVE matched-budget/adversarial evidence (#621) and begin only pre-outcome N3 shadow collection through #644 / PR #645.
+2. Complete Physarum stationary/failure/attribution stress work (#630), but block N3 until real admitted topology/telemetry exists (#649).
+3. Keep the common shadow contract (#636 / PR #637) as the only N2 -> N3 evidence envelope for adaptive policies.
 4. Treat a low shadow-vs-baseline disagreement rate as evidence that a new mechanism may not justify its complexity.
-5. Prefer removing unnecessary mechanisms over adding new ones.
+5. Prefer explicit blockers and mechanism removal over inventing missing state merely to advance maturity.
 5. At the 3-10 node stage, evaluate spectral/percolation diagnostics before inventing another scheduler.
