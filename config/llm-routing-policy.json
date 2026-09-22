@@ -1,0 +1,138 @@
+{
+  "schema_version": "0.1",
+  "checked_at": "2026-09-22",
+  "principles": [
+    "Choose capability tier before provider.",
+    "Authority is independent from model capability.",
+    "Deterministic floors and human gates can only escalate, never silently de-escalate.",
+    "Jules eligibility is advisory and never auto-dispatches the jules label.",
+    "No routed agent receives merge authority."
+  ],
+  "tiers": {
+    "T0": {
+      "name": "deterministic",
+      "description": "No LLM should be required; use CI, scripts, or a human observation protocol."
+    },
+    "T1": {
+      "name": "small",
+      "description": "Bounded, local, low-risk change with explicit acceptance tests and little ambiguity."
+    },
+    "T2": {
+      "name": "standard",
+      "description": "Moderate multi-file implementation or tooling change with clear boundaries."
+    },
+    "T3": {
+      "name": "strong",
+      "description": "Cross-cutting implementation, architecture-aware work, or substantial reasoning."
+    },
+    "T4": {
+      "name": "peak",
+      "description": "Core architecture, research methodology, high-impact control plane, release/security/governance, or ambiguous long-horizon work."
+    }
+  },
+  "provider_examples": {
+    "openai": {
+      "source": "https://developers.openai.com/api/docs/models",
+      "T1": "gpt-5.6-luna",
+      "T2": "gpt-5.6-terra",
+      "T3": "gpt-5.6-sol",
+      "T4": "gpt-6-astra"
+    },
+    "anthropic": {
+      "source": "https://docs.anthropic.com/en/docs/about-claude/model-deprecations",
+      "T1": "claude-haiku-4-5",
+      "T2": "claude-sonnet-5",
+      "T3": "claude-opus-5",
+      "T4": "claude-fable-5"
+    },
+    "google": {
+      "source": "https://ai.google.dev/gemini-api/docs/models",
+      "T1": "gemini-3.5-flash-lite",
+      "T2": "gemini-3.8-flash",
+      "T3": "gemini-3.1-pro-preview",
+      "T4": "gemini-3.1-pro-preview + independent second-model review"
+    },
+    "jules": {
+      "source": "https://jules.google/docs/running-tasks/",
+      "eligible_tiers": ["T1", "T2"],
+      "dispatch_label": "jules",
+      "note": "Treat Jules as a managed coding lane. The router only adds agent:jules-eligible; a separate human/dispatcher may add jules after duplicate-work and capacity checks."
+    }
+  },
+  "phrases": {
+    "human_required": [
+      "genuinely separate human",
+      "independent human review",
+      "external tester",
+      "another person's machine",
+      "what confused you",
+      "newcomer path",
+      "technical co-maintainer",
+      "recurring external contributors",
+      "independently review",
+      "manual check",
+      "by hand"
+    ],
+    "deterministic": [
+      "maintained by `.github/workflows",
+      "maintained by .github/workflows",
+      "community growth ledger",
+      "bootstrap cohort observatory"
+    ],
+    "T4": [
+      "research question",
+      "scaling law",
+      "orchestrator",
+      "control plane",
+      "policy controller",
+      "release gate",
+      "verified swarm runner",
+      "canonical node",
+      "volunteer compute",
+      "held-out corpus",
+      "finite-sample uncertainty",
+      "statistical",
+      "governance"
+    ],
+    "T3": [
+      "architecture",
+      "cross-cutting",
+      "github workflow",
+      "github actions",
+      "schema",
+      "protocol",
+      "migration",
+      "generated publication",
+      "paper",
+      "manuscript"
+    ],
+    "T2": [
+      "multi-file",
+      "generator",
+      "tooling",
+      "regression tests",
+      "documentation"
+    ],
+    "reasoning_heavy": [
+      "hypothesis",
+      "causal",
+      "bootstrap interval",
+      "pairwise error correlation",
+      "uncertainty",
+      "mathematical",
+      "falsifiable",
+      "sampling unit"
+    ],
+    "sensitive": [
+      "security",
+      "secret",
+      "permissions",
+      "merge authority",
+      "release",
+      "governance",
+      "public claim",
+      "scientific claim",
+      "production"
+    ]
+  }
+}

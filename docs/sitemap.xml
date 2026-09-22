@@ -142,6 +142,11 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://mskazemi.com/idkmesh/architecture/ISSUE_MODEL_ROUTING.html</loc>
+    <lastmod>2026-09-22</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://mskazemi.com/idkmesh/architecture/MATHEMATICAL_EVOLUTION_KERNEL.html</loc>
     <lastmod>2026-08-29</lastmod>
     <priority>0.8</priority>
@@ -283,7 +288,7 @@
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/community/</loc>
-    <lastmod>2026-09-20</lastmod>
+    <lastmod>2026-09-22</lastmod>
     <priority>0.6</priority>
   </url>
   <url>
