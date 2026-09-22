@@ -56,6 +56,10 @@ meaning of an existing version.
 - [ProjectManifest and DomainPack Interfaces](PROJECT_DOMAIN_INTERFACES.md) —
   separates reusable coordination core from declarative domain and project
   policy.
+- [Connector Control API v0.1](CONNECTOR_CONTROL_API_V0_1.md) — experimental
+  project-facing connection, dispatch, run-state, webhook, secret-reference,
+  agent/model-provider, and error contract above the canonical WorkUnit and
+  verification semantics.
 
 When modifying a contract, update its schema, fixtures, implementation, and
 tests together. Introduce a new explicit version when behavior changes; keep
