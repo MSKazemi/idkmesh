@@ -748,7 +748,7 @@ def build_ave_shadow_plan(
                     choices.append(
                         _portfolio_choice(
                             combo,
-                            verifier_pool,
+                            normalized_pool,
                             required_validators,
                         )
                     )
