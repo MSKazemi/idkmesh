@@ -23,6 +23,13 @@ from idkmesh.tenant_scope import (
 
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_PATH = ROOT / "schemas" / "enterprise-resource-ref-v0.1.schema.json"
+ADVERSARIAL_PATH = (
+    ROOT
+    / "tests"
+    / "fixtures"
+    / "enterprise_scope"
+    / "cross-tenant-reference.json"
+)
 DIGEST_A = "sha256:" + "a" * 64
 DIGEST_B = "sha256:" + "b" * 64
 
@@ -114,6 +121,16 @@ class TenantScopeTests(unittest.TestCase):
             store.get_ref(self.tenant_a, ref),
             {"sha": "abc"},
         )
+
+    def test_retained_cross_tenant_substitution_fixture_fails_closed(self) -> None:
+        fixture = json.loads(ADVERSARIAL_PATH.read_text(encoding="utf-8"))
+        caller = TenantScope(**fixture["caller_scope"])
+        ref = parse_resource_ref(fixture["resource_ref"])
+
+        with self.assertRaises(TenantIsolationError) as caught:
+            assert_same_scope(caller, ref.scope, path="resource.scope")
+
+        self.assertEqual(caught.exception.code, fixture["expected_error"])
 
     def test_cross_tenant_delete_cannot_remove_resource(self) -> None:
         store = ScopedMemoryStore()
