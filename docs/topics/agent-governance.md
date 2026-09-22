@@ -37,7 +37,7 @@ Low-risk deterministic work can remain automated while these boundaries stay pro
 
 A useful AI-agent audit trail records the task contract, worker identity, candidate revision, outputs, verifier plan, verification result, and integration decision. Chat transcripts can be supporting evidence, but they should not be the only durable record of what happened.
 
-See [provenance and evidence](provenance-evidence.html).
+See [provenance and evidence](https://mskazemi.com/idkmesh/topics/provenance-evidence.html).
 
 ## Common questions
 
