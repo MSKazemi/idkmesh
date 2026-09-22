@@ -86,6 +86,20 @@ Example:
 
 Unknown top-level fields should be rejected in the first implementation unless the schema explicitly provides an extension namespace.
 
+### Profile file loading
+
+The first loader treats one JSON file as one Connection object. Multiple profile
+files may be loaded together and connection IDs must be unique across the set.
+
+Loading and validation do not count as a successful probe. A newly loaded
+enabled connection remains unavailable for routing until the registry/probe
+layers supply observed capability, health and capacity state.
+
+The loader preserves `auth.secret_ref` as a reference string only. It does not
+resolve or materialize the referenced secret. Credential-shaped inline fields
+such as `api_key`, `password`, or `access_token` are rejected.
+
+
 ## 4. Secret references
 
 Initial schemes:
