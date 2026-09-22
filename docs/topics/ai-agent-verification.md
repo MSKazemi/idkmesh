@@ -39,7 +39,7 @@ The evidence needed should scale with risk. A documentation typo and a workflow 
 
 Calling a second model does not automatically create independent evidence. Two agents can share prompts, training data, tools, failure modes, or the same mistaken assumption. IDKMesh therefore treats **verifier independence as something to measure**, not something inferred from the number of reviewers.
 
-See [verifier panels and independent review](verifier-panels.html) for the panel-reliability problem and [provenance and evidence](provenance-evidence.html) for artifact binding.
+See [verifier panels and independent review](https://mskazemi.com/idkmesh/topics/verifier-panels.html) for the panel-reliability problem and [provenance and evidence](https://mskazemi.com/idkmesh/topics/provenance-evidence.html) for artifact binding.
 
 ## Common questions
 
