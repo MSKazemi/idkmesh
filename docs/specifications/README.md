@@ -58,6 +58,10 @@ meaning of an existing version.
 
 ## Project Configuration
 
+- [Enterprise Control Profile v0.1](ENTERPRISE_CONTROL_PROFILE_V0_1.md) —
+  experimental machine-readable enterprise posture and deterministic
+  declaration-preflight contract for tenancy, identity/SoD, data/egress,
+  secrets, audit, recovery, supply chain, and emergency change.
 - [ProjectManifest and DomainPack Interfaces](PROJECT_DOMAIN_INTERFACES.md) —
   separates reusable coordination core from declarative domain and project
   policy.
