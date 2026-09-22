@@ -124,6 +124,26 @@ ENVIRONMENTS: Tuple[Environment, ...] = (
         "misleading-probes",
         probe_alignment=0.20,
     ),
+    Environment(
+        "dominant-worker-family",
+        worker_quality_imbalance=0.18,
+    ),
+    Environment(
+        "workload-shift",
+        workload_shift=True,
+    ),
+    Environment(
+        "worker-family-outage",
+        worker_outage=True,
+    ),
+    Environment(
+        "verifier-family-outage",
+        verifier_outage=True,
+    ),
+    Environment(
+        "selective-adversarial-verifier",
+        selective_adversary=True,
+    ),
 )
 
 
