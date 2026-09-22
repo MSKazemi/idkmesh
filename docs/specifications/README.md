@@ -70,6 +70,9 @@ meaning of an existing version.
   agent/model-provider, and error contract above the canonical WorkUnit and
   verification semantics.
 - [Product Spine Service v0.1](PRODUCT_SPINE_SERVICE_V0_1.md) — provider-neutral application-service contract that composes WorkUnit, routing, dispatch, candidate normalization, verification, evidence, and Human Decision Record without creating a new correctness or merge authority.
+- [Enterprise Tenant Scope v0.1](ENTERPRISE_TENANT_SCOPE_V0_1.md) —
+  tenant/project-scoped resource, storage-key, and idempotency foundation with
+  fail-closed cross-scope reference checks.
 
 When modifying a contract, update its schema, fixtures, implementation, and
 tests together. Introduce a new explicit version when behavior changes; keep
