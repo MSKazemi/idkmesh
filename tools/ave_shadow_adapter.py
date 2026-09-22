@@ -818,6 +818,7 @@ def build_ave_shadow_plan(
     return build_shadow_plan(
         repository=repository,
         source_revision_sha=str(normalized_pool["source_revision"]),
+        captured_at=str(normalized_pool["captured_at"]),
         subsystem="verification-allocation",
         policy_id=POLICY_ID,
         policy_version=POLICY_VERSION,
