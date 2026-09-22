@@ -12,11 +12,11 @@ class AgentPresetTests(unittest.TestCase):
     def test_three_heterogeneous_builtin_workers_exist(self):
         self.assertEqual(
             set(BUILTIN_AGENT_PRESETS),
-            {"goose-local", "gemini-cli-free", "mini-swe-agent-local"},
+            {"goose-local", "antigravity-cli-free", "mini-swe-agent-local"},
         )
         self.assertEqual(
             {preset.agent_family for preset in BUILTIN_AGENT_PRESETS.values()},
-            {"goose", "gemini-cli", "mini-swe-agent"},
+            {"goose", "antigravity-cli", "mini-swe-agent"},
         )
 
     def test_task_text_cannot_enter_invocation_prefix(self):
@@ -84,12 +84,12 @@ class AgentPresetTests(unittest.TestCase):
             )
 
     def test_serialization_is_deterministic_and_json_safe(self):
-        preset = get_builtin_preset("gemini-cli-free")
+        preset = get_builtin_preset("antigravity-cli-free")
         first = preset.to_json()
         second = preset.to_json()
         self.assertEqual(first, second)
         decoded = json.loads(first)
-        self.assertEqual(decoded["preset_id"], "gemini-cli-free")
+        self.assertEqual(decoded["preset_id"], "antigravity-cli-free")
         self.assertTrue(decoded["sandbox_required"])
         self.assertTrue(decoded["candidate_only"])
 
