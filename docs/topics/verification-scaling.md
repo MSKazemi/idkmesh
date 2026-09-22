@@ -37,6 +37,8 @@ This is not merely performance tuning. It prevents unverified volume from becomi
 
 The same control loop should observe more than queue length. Useful signals include verifier latency, repeated retries, candidate duplication, correlation between reviewer failures, merge conflicts, and the fraction of work that reaches a reproducible evidence state. Those measurements help distinguish healthy scaling from a system that is simply producing a larger unreviewed backlog. See [verifier panels](https://mskazemi.com/idkmesh/topics/verifier-panels.html) and [AI provenance](https://mskazemi.com/idkmesh/topics/provenance-evidence.html).
 
+The same control loop should observe more than queue length. Useful signals include verifier latency, repeated retries, candidate duplication, correlation between reviewer failures, merge conflicts, and the fraction of work that reaches a reproducible evidence state. Those measurements help distinguish healthy scaling from a system that is simply producing a larger unreviewed backlog. See [verifier panels](https://mskazemi.com/idkmesh/topics/verifier-panels.html) and [AI provenance](https://mskazemi.com/idkmesh/topics/provenance-evidence.html).
+
 ## Scaling should optimize verified useful work
 
 IDKMesh's operating principle is to optimize **verified useful work per unit of scarce attention and compute**, not raw agent count, commits, votes, or activity.
