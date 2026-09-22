@@ -82,8 +82,8 @@ for f in tools/*.py; do grep -q argparse "$f" && PYTHONPATH=. python "$f" --help
 **Parallel welcome** — take one module and say which in the pull request title.
 ~1–2 hours per module.
 
-Nine modules under `sim/` have no `tests/test_<name>.py`:
-`e015_worker`, `e016_agent`, `e016_corpus`, `e017_analyze`,
+Eight modules under `sim/` have no `tests/test_<name>.py`:
+`e015_worker`, `e016_agent`, `e017_analyze`,
 `e017_verify`, `run_aco_parameter_sweep`, `run_aco_sweep`,
 `run_emergence_sweep`, `run_verifier_correlation_sweep`.
 
