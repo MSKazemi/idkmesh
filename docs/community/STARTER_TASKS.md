@@ -61,12 +61,12 @@ already carries, and never creates a label.
 
 **Parallel welcome.** ~45 minutes.
 
-`tools/` contains 43 modules that build an `argparse` parser. Nothing asserts
+`tools/` contains 44 modules that build an `argparse` parser. Nothing asserts
 that they still start. A tool can be broken by an import error, a bad default,
 or a renamed helper, and no test in the suite would notice until someone ran it
 by hand.
 
-All 43 currently pass, so this task adds a guard rather than fixing a bug.
+All 44 currently pass, so this task adds a guard rather than fixing a bug.
 
 **Acceptance:** a test that discovers the tools rather than hard-coding a list,
 runs each with `--help` in a subprocess, and asserts a zero exit status and
