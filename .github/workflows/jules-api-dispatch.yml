@@ -27,6 +27,7 @@ on:
 permissions:
   contents: read
   issues: write
+  pull-requests: read
 
 concurrency:
   group: jules-api-dispatch
@@ -95,7 +96,23 @@ jobs:
             exit 0
           fi
 
-          # Keep at most one unresolved project-operated Jules task in flight.
+          # The native Jules integration and the API both create `jules-*`
+          # branches. Do not start another task while any Jules PR is awaiting
+          # review, regardless of which dispatcher created it.
+          open_jules_pr="$(
+            gh pr list \
+              --repo "${REPOSITORY}" \
+              --state open \
+              --limit 100 \
+              --json number,headRefName \
+              --jq '[.[] | select(.headRefName | startswith("jules-"))][0] | if . == null then empty else "\(.number) \(.headRefName)" end'
+          )"
+          if [[ -n "${open_jules_pr}" ]]; then
+            echo "A Jules pull request is already open (${open_jules_pr}); leaving #${issue_number} queued."
+            exit 0
+          fi
+
+          # Keep at most one unresolved project-operated Jules API session in flight.
           active_numbers="$(
             gh issue list \
               --repo "${REPOSITORY}" \
@@ -169,7 +186,8 @@ Repository authority and safety rules:
 - Do not weaken tests, security controls, or required checks merely to obtain green CI.
 - Run the smallest useful tests while editing and the repository-appropriate final gate before proposing the PR.
 - In the PR, report exact commands/results, risks/remaining uncertainty, Community Impact when applicable, and AI/tool provenance.
-- Reference issue #${issue_number} without claiming independent human review.
+- Follow the repository PR template. Put issue #${issue_number} on the `Refs:` line unless merging the PR should fully complete the issue; only then use the template's `Closes on merge:` field. Do not use an ad-hoc `Fixes #...` closing phrase.
+- Never claim this owner-controlled Jules run is independent human review.
 
 Issue title:
 ${issue_title}
