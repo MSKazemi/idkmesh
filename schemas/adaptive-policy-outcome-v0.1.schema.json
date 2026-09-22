@@ -48,6 +48,7 @@
       "additionalProperties": false,
       "required": [
         "actual_choice_id",
+        "observed_at",
         "outcome",
         "verified_utility",
         "escaped_defect",
@@ -56,6 +57,7 @@
       ],
       "properties": {
         "actual_choice_id": {"type": ["string", "null"]},
+        "observed_at": {"type": "string", "format": "date-time"},
         "outcome": {
           "enum": [
             "succeeded",
