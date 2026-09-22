@@ -4,6 +4,7 @@ This directory translates the long-range vision into current execution choices.
 
 ## Planning artifacts
 
+- [`MODEL_TIER_DISPATCHER_EXECUTION_PLAN_2026-09-22.md`](MODEL_TIER_DISPATCHER_EXECUTION_PLAN_2026-09-22.md) — capability-tier, authority, connector-admission, escalation, GitHub-only state, and #574 implementation plan.
 - [`AGENT_MODEL_INTEGRATION_SELF_HOSTING_PLAN_2026-09-22.md`](AGENT_MODEL_INTEGRATION_SELF_HOSTING_PLAN_2026-09-22.md) — staged connector-control-plane roadmap: first use external agents/models to finish IDKMesh, then self-host repository development, then use the same product interfaces to build a second application.
 - [`CURRENT_PRIORITIES.md`](CURRENT_PRIORITIES.md) — current narrative priority assessment and sequencing rationale.
 - [`EXECUTION_TARGET_GRAPH.md`](EXECUTION_TARGET_GRAPH.md) — dependency-oriented goal -> target -> task -> evidence view for the current product critical path and parallel capacity-gated tracks.
