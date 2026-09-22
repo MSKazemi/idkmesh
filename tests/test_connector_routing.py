@@ -233,6 +233,36 @@ class ConnectorRoutingTests(unittest.TestCase):
         )
         self.assertEqual(result.selected_connection_id, "b")
 
+    def test_deterministic_t0_does_not_select_llm_connector(self):
+        decision = RoutingDecision(
+            required_capability_tier="T0",
+            authority_mode="deterministic",
+            allowed_connector_kinds=frozenset({"agent", "execution"}),
+        )
+        deterministic_runner = ConnectorProfile(
+            connection_id="ci",
+            kind="execution",
+            driver="github-actions",
+            capability_tiers=frozenset({"T0"}),
+            max_risk="low",
+        )
+        result = resolve_routes(
+            decision,
+            [_agent("llm", tiers=("T1",)), deterministic_runner],
+        )
+        self.assertEqual(result.selected_connection_id, "ci")
+        rejected = {item.connection_id: item.reasons for item in result.ineligible}
+        self.assertIn("deterministic_no_llm", rejected["llm"])
+
+    def test_duplicate_connection_ids_fail_closed(self):
+        decision = RoutingDecision(
+            required_capability_tier="T1",
+            authority_mode="agent_candidate",
+            task_classes=frozenset({"coder"}),
+        )
+        with self.assertRaisesRegex(ValueError, "duplicate connection_id"):
+            resolve_routes(decision, [_agent("same"), _agent("same")])
+
     def test_auto_select_false_returns_ranked_eligibility_without_dispatch_choice(self):
         decision = RoutingDecision(
             required_capability_tier="T1",
