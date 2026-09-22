@@ -14,6 +14,14 @@ and the release notes for that tag.
 
 ### Added
 
+- `idkmesh control-tower [evidence-report.json]`, a dependency-free local
+  Human Control Tower for Run Evidence Report v0.1. It shows human-attention
+  conditions, claim/evidence/authority layers, attempt details, and a semantic
+  background timeline through a versioned read-only `/api/v1/` surface.
+  Summary/disagreement values are recomputed before display, reports that grant
+  write/push/merge/automatic-selection authority fail closed, and both local
+  browser UIs now share one loopback/security-header boundary.
+
 - A dependency-free local browser GUI for the installable gate-audit diagnostic,
   launched with `idkmesh gate-audit-ui [input.json]`. It binds only to
   `127.0.0.1`, reuses the CLI audit engine, shows panel and verifier metrics,
