@@ -1,0 +1,82 @@
+name: Visibility and Community Observatory
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "11 6 * * 1"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: visibility-community-observatory
+  cancel-in-progress: false
+
+jobs:
+  observe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out trusted main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+
+      - name: Test visibility observatory
+        run: python -m unittest tests.test_visibility_observatory -v
+
+      - name: Collect visibility and acquisition evidence
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python scripts/visibility_observatory.py \
+            --repository '${{ github.repository }}' \
+            --docs-dir docs \
+            --output results/visibility/observatory.json
+
+      - name: Publish bounded summary
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          result = json.loads(Path("results/visibility/observatory.json").read_text())
+          discovery = result["github"]["discovery"]
+          acquisition = result["github"]["community_acquisition"]
+          site = result["site"]
+          lines = [
+              "# Visibility and Community Observatory",
+              "",
+              "> Discovery/acquisition diagnostics only. Popularity is not correctness or integration evidence.",
+              "",
+              f"- Stars: {discovery['stars']}",
+              f"- Forks: {discovery['forks']}",
+              f"- Subscribers: {discovery['subscribers']}",
+              f"- External commit contributors observed: {acquisition['external_commit_contributors_observed']}",
+              f"- Contributor page truncated: {acquisition['contributors_page_truncated']}",
+              f"- HTML pages audited: {site['html_pages']}",
+              f"- Technical SEO/AEO coverage: {site['technical_coverage']}",
+              f"- Sitemap URLs: {site['sitemap']['url_count']}",
+              "",
+              "## Known measurement gaps",
+              "",
+              *[f"- {gap}" for gap in result["gaps"]],
+          ]
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as stream:
+              stream.write("\n".join(lines) + "\n")
+          PY
+
+      - name: Upload visibility evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: visibility-observatory-${{ github.run_id }}
+          path: results/visibility/
+          retention-days: 30
+          if-no-files-found: error
