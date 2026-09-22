@@ -195,5 +195,28 @@ class AdaptivePolicyCohortTests(unittest.TestCase):
         Draft202012Validator(schema).validate(summary)
 
 
+    def test_cohort_rejects_outcome_that_predates_plan(self):
+        p = plan(8, "b", "a")
+        outcome = build_outcome_record(
+            plan=p,
+            actual_choice_id="a",
+            observed_at="2026-09-22T12:05:00Z",
+            outcome="succeeded",
+            limitations=["test"],
+        )
+        outcome["observed_process"]["observed_at"] = (
+            "2026-09-22T11:59:59Z"
+        )
+        with self.assertRaisesRegex(
+            AdaptivePolicyCohortError,
+            "predates frozen plan",
+        ):
+            summarize_cohort(
+                plans=[p],
+                outcomes=[outcome],
+                limitations=["test"],
+            )
+
+
 if __name__ == "__main__":
     unittest.main()
