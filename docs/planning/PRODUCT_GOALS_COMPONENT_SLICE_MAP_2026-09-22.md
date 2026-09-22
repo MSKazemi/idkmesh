@@ -688,6 +688,8 @@ Only after common contracts stabilize:
 
 # 10. Definition of done for any slice
 
+Use `.github/ISSUE_TEMPLATE/05-development-slice.md` when promoting a catalogued slice into a GitHub issue. The template mirrors the fields below so boundedness is enforced at issue creation time rather than discovered during review.
+
 Every slice issue/PR should include:
 
 - **Goal:** one sentence;
