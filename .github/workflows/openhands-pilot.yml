@@ -1,0 +1,79 @@
+name: OpenHands Manual Pilot
+
+# Manual bootstrap only. The existing agent-ready event path belongs to Jules.
+# A maintainer explicitly chooses an already-approved issue for this second
+# worker so the same issue is not automatically fanned out to both agents.
+on:
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: 'Open agent-ready issue number to send to OpenHands'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  issues: read
+
+concurrency:
+  group: openhands-pilot-${{ inputs.issue_number }}
+  cancel-in-progress: false
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out trusted default branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Validate issue approval and build bounded prompt
+        id: prepare
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_API_URL: ${{ github.api_url }}
+          ISSUE_NUMBER: ${{ inputs.issue_number }}
+        run: |
+          python tools/openhands_pilot.py \
+            --issue "${ISSUE_NUMBER}" \
+            --prompt-file "${RUNNER_TEMP}/openhands-prompt.md"
+          echo "prompt_file=${RUNNER_TEMP}/openhands-prompt.md" >> "${GITHUB_OUTPUT}"
+
+      - name: Start OpenHands conversation
+        id: openhands
+        uses: OpenHands/openhands-github-action@299f19e5122ec18b2b6ede744cbf51801096dc80
+        with:
+          prompt: ${{ steps.prepare.outputs.prompt_file }}
+          repository: ${{ github.repository }}
+          selected-branch: ${{ github.event.repository.default_branch }}
+          poll: 'true'
+          timeout-seconds: '1200'
+          poll-interval-seconds: '30'
+          openhands-api-key: ${{ secrets.OPENHANDS_API_KEY }}
+
+      - name: Record run evidence
+        if: always()
+        env:
+          ISSUE_NUMBER: ${{ inputs.issue_number }}
+          CONVERSATION_ID: ${{ steps.openhands.outputs.conversation-id }}
+          CONVERSATION_STATUS: ${{ steps.openhands.outputs.status }}
+          CONVERSATION_URL: ${{ steps.openhands.outputs.conversation-url }}
+        run: |
+          {
+            echo "## OpenHands pilot"
+            echo
+            echo "- issue: #${ISSUE_NUMBER}"
+            echo "- source branch: ${GITHUB_REF_NAME}"
+            echo "- OpenHands conversation: ${CONVERSATION_ID:-not-created}"
+            echo "- status: ${CONVERSATION_STATUS:-unknown}"
+            if [ -n "${CONVERSATION_URL}" ]; then
+              echo "- conversation URL: ${CONVERSATION_URL}"
+            fi
+            echo
+            echo "Agent completion is candidate evidence only; normal IDKMesh verification and human integration still apply."
+          } >> "${GITHUB_STEP_SUMMARY}"
