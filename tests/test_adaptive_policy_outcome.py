@@ -21,6 +21,7 @@ def sample_plan():
     return build_shadow_plan(
         repository="MSKazemi/idkmesh",
         source_revision_sha="b" * 40,
+        captured_at="2026-09-22T12:00:00Z",
         subsystem="compute-path-routing",
         policy_id="physarum",
         policy_version="0.1",
@@ -63,6 +64,7 @@ class AdaptivePolicyOutcomeTests(unittest.TestCase):
         record = build_outcome_record(
             plan=plan,
             actual_choice_id="route-a",
+            observed_at="2026-09-22T12:05:00Z",
             outcome="succeeded",
             compute_units=2.0,
             evidence_refs=["run:123"],
@@ -78,6 +80,7 @@ class AdaptivePolicyOutcomeTests(unittest.TestCase):
         record = build_outcome_record(
             plan=sample_plan(),
             actual_choice_id="route-a",
+            observed_at="2026-09-22T12:05:00Z",
             outcome="succeeded",
             limitations=["shadow route was not executed"],
         )
@@ -97,6 +100,7 @@ class AdaptivePolicyOutcomeTests(unittest.TestCase):
             build_outcome_record(
                 plan=sample_plan(),
                 actual_choice_id="route-c",
+                observed_at="2026-09-22T12:05:00Z",
                 outcome="succeeded",
                 limitations=["test"],
             )
@@ -109,6 +113,7 @@ class AdaptivePolicyOutcomeTests(unittest.TestCase):
             build_outcome_record(
                 plan=sample_plan(),
                 actual_choice_id="route-a",
+                observed_at="2026-09-22T12:05:00Z",
                 outcome="succeeded",
                 escaped_defect=False,
                 high_risk_escape=True,
@@ -125,6 +130,7 @@ class AdaptivePolicyOutcomeTests(unittest.TestCase):
             build_outcome_record(
                 plan=plan,
                 actual_choice_id="route-a",
+                observed_at="2026-09-22T12:05:00Z",
                 outcome="succeeded",
                 limitations=["test"],
             )
@@ -137,6 +143,7 @@ class AdaptivePolicyOutcomeTests(unittest.TestCase):
         record = build_outcome_record(
             plan=sample_plan(),
             actual_choice_id="route-a",
+            observed_at="2026-09-22T12:05:00Z",
             outcome="succeeded",
             verified_utility=0.8,
             escaped_defect=False,
@@ -154,6 +161,20 @@ class AdaptivePolicyOutcomeTests(unittest.TestCase):
             ).read_text(encoding="utf-8")
         )
         Draft202012Validator(schema).validate(record)
+
+
+    def test_outcome_cannot_predate_shadow_plan(self):
+        with self.assertRaisesRegex(
+            AdaptivePolicyOutcomeError,
+            "earlier than plan captured_at",
+        ):
+            build_outcome_record(
+                plan=sample_plan(),
+                actual_choice_id="route-a",
+                observed_at="2026-09-22T11:59:59Z",
+                outcome="succeeded",
+                limitations=["test"],
+            )
 
 
 if __name__ == "__main__":
