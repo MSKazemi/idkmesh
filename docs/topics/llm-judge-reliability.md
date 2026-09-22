@@ -16,7 +16,7 @@ A panel can contain many judges and still behave like far fewer independent judg
 
 The project's E017 experiment measured this effect using independently seeded partial **test oracles—programs, not language models**—on a real defect corpus. It is evidence about correlated verification errors and quorum design, not a claim that the same numeric result applies to LLM judges.
 
-See [verifier panels](verifier-panels.html) and the retained [E017 record](https://github.com/MSKazemi/idkmesh/blob/main/experiments/E017-item-difficulty-and-quorum.md).
+See [verifier panels](https://mskazemi.com/idkmesh/topics/verifier-panels.html) and the retained [E017 record](https://github.com/MSKazemi/idkmesh/blob/main/experiments/E017-item-difficulty-and-quorum.md).
 
 ## What to measure in an LLM evaluator
 
