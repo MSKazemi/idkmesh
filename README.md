@@ -142,6 +142,14 @@ install it explicitly with `pip install -e '.[verify]'` when you need that
 capability. See
 [`docs/decisions/ADR-0012-optional-verification-dependency.md`](docs/decisions/ADR-0012-optional-verification-dependency.md).
 
+## Use IDKMesh to develop another project
+
+If your goal is not to contribute to IDKMesh itself, but to use the framework while building a different application, start with the [Project Adoption Guide](docs/PROJECT_ADOPTION_GUIDE.md).
+
+It walks from an empty directory and new GitHub repository through project policy, bounded Work Units, human/agent/model connection patterns, capability/risk routing, candidate branches, independent verification, protected integration, and outcome feedback.
+
+**Current boundary:** this is usable today as a GitHub-native operating model plus contracts and validation components. The polished one-command external-project bootstrap and fully automated Verified Swarm Runner are still being built.
+
 ## Start here
 
 You do not need to understand the entire repository before contributing.
