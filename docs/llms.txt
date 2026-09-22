@@ -15,6 +15,20 @@ Status: research preview; not production software.
 - [Pipelines](https://mskazemi.com/idkmesh/pipelines.html) — work/evidence, orchestration, compute-admission, and PR-gate flows.
 - [Documentation library](https://mskazemi.com/idkmesh/library.html) — published documentation by category.
 
+## Topic guides for common search questions
+
+- [AI agent verification](https://mskazemi.com/idkmesh/topics/ai-agent-verification.html)
+- [Multi-agent orchestration](https://mskazemi.com/idkmesh/topics/multi-agent-orchestration.html)
+- [AI code review](https://mskazemi.com/idkmesh/topics/ai-code-review.html)
+- [LLM-as-a-judge reliability](https://mskazemi.com/idkmesh/topics/llm-judge-reliability.html)
+- [Verifier panels and independent review](https://mskazemi.com/idkmesh/topics/verifier-panels.html)
+- [Human oversight and AI agent governance](https://mskazemi.com/idkmesh/topics/agent-governance.html)
+- [AI provenance and reproducible evidence](https://mskazemi.com/idkmesh/topics/provenance-evidence.html)
+- [MCP and A2A interoperability](https://mskazemi.com/idkmesh/topics/mcp-a2a-interoperability.html)
+- [Verification debt and agent scaling](https://mskazemi.com/idkmesh/topics/verification-scaling.html)
+- [Verified swarm engineering](https://mskazemi.com/idkmesh/topics/verified-swarm-engineering.html)
+- [All topic guides](https://mskazemi.com/idkmesh/topics/)
+
 ## Core technical sources
 
 - [What is IDKMesh?](https://mskazemi.com/idkmesh/WHAT_IS_IDKMESH.html)
