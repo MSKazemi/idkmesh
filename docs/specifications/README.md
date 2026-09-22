@@ -13,6 +13,9 @@ meaning of an existing version.
   artifacts and claims without granting acceptance authority.
 - [Run Evidence Report v0.1](RUN_EVIDENCE_REPORT_V0_1.md) — aggregates attempt
   and independent-verification evidence for human inspection.
+- [HTTP Service Runtime Baseline v0.1](HTTP_SERVICE_RUNTIME_V0_1.md) —
+  dependency-free request correlation, liveness/readiness, service metadata,
+  and payload-free structured access logging for IDKMesh HTTP surfaces.
 - [Verification Provenance Integrity](VERIFICATION_PROVENANCE_INTEGRITY.md) —
   binds WorkUnit, result, and verification objects with canonical digests.
 
