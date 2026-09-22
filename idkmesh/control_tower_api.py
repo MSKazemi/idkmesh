@@ -11,15 +11,22 @@ humans and future UI clients without inventing a second source of truth.
 from __future__ import annotations
 
 from collections import Counter
+import hashlib
 import json
 import re
 from typing import Any
 
 API_VERSION = "v1"
+API_SCHEMA_VERSION = "0.1"
 SNAPSHOT_KIND = "idkmesh-control-tower-snapshot"
+STATUS_KIND = "idkmesh-control-tower-status"
+INSPECTION_KIND = "idkmesh-control-tower-inspection-response"
+ERROR_KIND = "idkmesh-api-error"
 REPORT_KIND = "idkmesh-run-evidence-report"
 REPORT_VERSION = "0.1"
 SOURCE_RUN_KIND = "idkmesh-two-attempt-run"
+JSON_MEDIA_TYPE = "application/json"
+V1_MEDIA_TYPE = "application/vnd.idkmesh.control-tower.v1+json"
 
 ATTEMPT_STATES = {
     "verified",
@@ -60,6 +67,17 @@ _DIGEST_RE = re.compile(r"^sha256:[0-9a-f]{64}$")
 
 class ControlTowerInputError(ValueError):
     """Run evidence cannot be safely represented by the read-only UI."""
+
+
+def canonical_digest(value: Any) -> str:
+    """Return the repository-standard digest for one JSON-compatible value."""
+    payload = json.dumps(
+        value,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+    ).encode("utf-8")
+    return "sha256:" + hashlib.sha256(payload).hexdigest()
 
 
 def _reject_json_constant(token: str) -> Any:
@@ -551,9 +569,11 @@ def build_snapshot(report: dict[str, Any]) -> dict[str, Any]:
 
     return {
         "api_version": API_VERSION,
+        "schema_version": API_SCHEMA_VERSION,
         "kind": SNAPSHOT_KIND,
         "source": {
             "kind": report["kind"],
+            "evidence_report_digest": canonical_digest(report),
             "schema_version": report["schema_version"],
             "run_id": report["run_id"],
             "source_run_digest": report["source_run_digest"],
@@ -581,8 +601,12 @@ def status_document() -> dict[str, Any]:
     """Return the stable discovery/status document for API clients."""
     return {
         "api_version": API_VERSION,
+        "schema_version": API_SCHEMA_VERSION,
+        "kind": STATUS_KIND,
+        "ok": True,
         "service": "idkmesh-control-tower",
         "mode": "local-read-only",
+        "media_types": [JSON_MEDIA_TYPE, V1_MEDIA_TYPE],
         "source_contracts": [
             f"{REPORT_KIND}/{REPORT_VERSION}",
         ],
@@ -598,26 +622,163 @@ def status_document() -> dict[str, Any]:
         },
         "endpoints": {
             "status": "GET /api/v1/status",
+            "openapi": "GET /api/v1/openapi.json",
             "inspect_run_evidence": "POST /api/v1/run-evidence/inspect",
             "health": "GET /healthz",
         },
     }
 
 
-def error_document(code: str, message: str) -> dict[str, Any]:
+def openapi_document() -> dict[str, Any]:
+    """Return a dependency-free OpenAPI description for local API clients."""
     return {
-        "api_version": API_VERSION,
-        "ok": False,
-        "error": {
-            "code": code,
-            "message": message,
+        "openapi": "3.1.0",
+        "info": {
+            "title": "IDKMesh Control Tower Local API",
+            "version": API_SCHEMA_VERSION,
+            "description": (
+                "Loopback-only, read-only evidence inspection API. "
+                "It cannot execute workers, select candidates, push, or merge."
+            ),
+        },
+        "servers": [{"url": "/"}],
+        "paths": {
+            "/api/v1/status": {
+                "get": {
+                    "summary": "Discover API capabilities and authority limits",
+                    "security": [{"LocalSessionToken": []}],
+                    "responses": {
+                        "200": {
+                            "description": "Control Tower status",
+                            "content": {
+                                JSON_MEDIA_TYPE: {
+                                    "schema": {
+                                        "type": "object",
+                                        "required": [
+                                            "api_version", "schema_version",
+                                            "kind", "ok", "capabilities",
+                                        ],
+                                    }
+                                }
+                            },
+                        }
+                    },
+                }
+            },
+            "/api/v1/openapi.json": {
+                "get": {
+                    "summary": "Read this OpenAPI contract",
+                    "security": [{"LocalSessionToken": []}],
+                    "responses": {
+                        "200": {
+                            "description": "OpenAPI 3.1 document",
+                            "content": {
+                                JSON_MEDIA_TYPE: {
+                                    "schema": {"type": "object"}
+                                }
+                            },
+                        }
+                    },
+                }
+            },
+            "/api/v1/run-evidence/inspect": {
+                "post": {
+                    "summary": (
+                        "Validate and render one Run Evidence Report v0.1"
+                    ),
+                    "description": (
+                        "Pure read-only inspection. The same valid input "
+                        "produces the same response body and content digest."
+                    ),
+                    "security": [{"LocalSessionToken": []}],
+                    "requestBody": {
+                        "required": True,
+                        "content": {
+                            JSON_MEDIA_TYPE: {
+                                "schema": {
+                                    "$ref": (
+                                        "https://idkmesh.org/schemas/"
+                                        "run-evidence-report-v0.1.schema.json"
+                                    )
+                                }
+                            },
+                            V1_MEDIA_TYPE: {
+                                "schema": {
+                                    "$ref": (
+                                        "https://idkmesh.org/schemas/"
+                                        "run-evidence-report-v0.1.schema.json"
+                                    )
+                                }
+                            },
+                        },
+                    },
+                    "responses": {
+                        "200": {
+                            "description": "Validated read-only snapshot",
+                            "content": {
+                                JSON_MEDIA_TYPE: {
+                                    "schema": {
+                                        "type": "object",
+                                        "required": [
+                                            "api_version", "schema_version",
+                                            "kind", "ok", "snapshot",
+                                            "snapshot_digest",
+                                        ],
+                                    }
+                                }
+                            },
+                        },
+                        "400": {"description": "Invalid run evidence"},
+                        "403": {"description": "Invalid local session token"},
+                        "406": {"description": "Requested response type unsupported"},
+                        "413": {"description": "Request body too large"},
+                        "415": {"description": "Request content type unsupported"},
+                    },
+                }
+            },
+        },
+        "components": {
+            "securitySchemes": {
+                "LocalSessionToken": {
+                    "type": "apiKey",
+                    "in": "header",
+                    "name": "X-IDKMesh-UI-Token",
+                }
+            }
         },
     }
 
 
-def success_document(snapshot: dict[str, Any]) -> dict[str, Any]:
+def error_document(
+    code: str,
+    message: str,
+    *,
+    retryable: bool = False,
+    details: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    error: dict[str, Any] = {
+        "code": code,
+        "message": message,
+        "retryable": retryable,
+    }
+    if details is not None:
+        error["details"] = details
     return {
         "api_version": API_VERSION,
+        "schema_version": API_SCHEMA_VERSION,
+        "kind": ERROR_KIND,
+        "ok": False,
+        "error": error,
+    }
+
+
+def success_document(snapshot: dict[str, Any]) -> dict[str, Any]:
+    """Wrap one immutable inspection snapshot in the stable success envelope."""
+    return {
+        "api_version": API_VERSION,
+        "schema_version": API_SCHEMA_VERSION,
+        "kind": INSPECTION_KIND,
         "ok": True,
+        "snapshot_digest": canonical_digest(snapshot),
         "snapshot": snapshot,
     }
