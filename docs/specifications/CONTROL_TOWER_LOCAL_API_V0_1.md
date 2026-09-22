@@ -76,9 +76,11 @@ through:
 IDKMESH_CONTROL_TOWER_TOKEN
 ```
 
-The value must contain at least 32 non-whitespace characters. It is never
-printed by the server. Environment injection exists so a local client can know
-the token without weakening the browser default.
+The value must contain 32–4096 characters drawn only from ASCII letters,
+digits, `-`, `.`, `_`, and `~`. Restricting the alphabet keeps the token safe
+for both HTTP-header use and embedding into the locally generated HTML/JS. It
+is never printed by the server. Environment injection exists so a local client
+can know the token without weakening the browser default.
 
 The server also:
 
