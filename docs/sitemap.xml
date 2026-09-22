@@ -1697,12 +1697,12 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://mskazemi.com/idkmesh/specifications/CONTROL_TOWER_LOCAL_API_V0_1.html</loc>
+    <loc>https://mskazemi.com/idkmesh/specifications/CONNECTOR_CONTROL_API_V0_1.html</loc>
     <lastmod>2026-09-22</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://mskazemi.com/idkmesh/specifications/CONNECTOR_CONTROL_API_V0_1.html</loc>
+    <loc>https://mskazemi.com/idkmesh/specifications/CONTROL_TOWER_LOCAL_API_V0_1.html</loc>
     <lastmod>2026-09-22</lastmod>
     <priority>0.8</priority>
   </url>
