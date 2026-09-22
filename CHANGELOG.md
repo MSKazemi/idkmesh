@@ -14,6 +14,14 @@ and the release notes for that tag.
 
 ### Added
 
+- A dependency-free local browser GUI for the installable gate-audit diagnostic,
+  launched with `idkmesh gate-audit-ui [input.json]`. It binds only to
+  `127.0.0.1`, reuses the CLI audit engine, shows panel and verifier metrics,
+  seeded-probe breaches and provenance, and exports both JSON evidence and a
+  Markdown summary. The local API requires a per-session token and JSON content
+  type and rejects non-loopback Host headers; verdict data is not uploaded to a
+  hosted IDKMesh service.
+
 - `.github/workflows/nightly-full-suite.yml`, running the complete suite — the `nightly`
   tier, everything `unit` excludes included — on a daily schedule (plus `workflow_dispatch`),
   matrixed across Python 3.11/3.13 to match PR Gate. A failure here means the research

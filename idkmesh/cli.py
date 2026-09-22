@@ -54,6 +54,24 @@ def build_parser() -> argparse.ArgumentParser:
     ga.add_argument(
         "--pretty", action="store_true",
         help="pretty-print the JSON report")
+
+    gui = sub.add_parser(
+        "gate-audit-ui",
+        help="open the local browser interface for gate-audit",
+        description=(
+            "Serve a local browser interface for the gate-audit diagnostic. "
+            "The server binds only to 127.0.0.1 and uses the same audit engine "
+            "as the CLI; verdict data is not uploaded to a hosted service."),
+    )
+    gui.add_argument(
+        "input", nargs="?",
+        help="optional verdict-matrix JSON file to preload in the editor")
+    gui.add_argument(
+        "--port", type=int, default=8765, metavar="PORT",
+        help="loopback TCP port (default: 8765)")
+    gui.add_argument(
+        "--no-browser", action="store_true",
+        help="serve the UI without opening the default browser")
     return parser
 
 
@@ -108,6 +126,38 @@ def _write(path: str, text: str, what: str) -> int | None:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    if args.command == "gate-audit-ui":
+        if not (0 <= args.port <= 65535):
+            return _fail("--port must be between 0 and 65535")
+        initial_text = None
+        if args.input:
+            path = Path(args.input)
+            try:
+                initial_text = path.read_text(encoding="utf-8-sig")
+            except FileNotFoundError:
+                return _fail(f"input file not found: {args.input}")
+            except IsADirectoryError:
+                return _fail(
+                    f"input path is a directory, not a verdict-matrix file: "
+                    f"{args.input}")
+            except UnicodeDecodeError as exc:
+                return _fail(
+                    f"{args.input}: not UTF-8 text ({exc.reason} at byte "
+                    f"{exc.start}); save the verdict matrix as UTF-8")
+            except OSError as exc:
+                return _fail(
+                    f"cannot read input file {args.input}: {_reason(exc)}")
+        from idkmesh.gate_audit_ui import serve_gate_audit_ui
+        try:
+            serve_gate_audit_ui(
+                initial_text, port=args.port,
+                open_browser=not args.no_browser)
+        except OSError as exc:
+            return _fail(
+                f"cannot start local UI on 127.0.0.1:{args.port}: "
+                f"{_reason(exc)}")
+        return 0
+
     if args.command != "gate-audit":  # pragma: no cover - argparse enforces it
         return 2
 
