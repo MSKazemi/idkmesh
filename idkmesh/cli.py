@@ -174,6 +174,8 @@ def main(argv: list[str] | None = None) -> int:
                 port=args.port,
                 open_browser=not args.no_browser,
             )
+        except ValueError as exc:
+            return _fail(str(exc))
         except OSError as exc:
             return _fail(
                 f"cannot start Control Tower on 127.0.0.1:{args.port}: "
