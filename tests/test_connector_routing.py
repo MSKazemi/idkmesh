@@ -112,6 +112,34 @@ class ConnectorRoutingTests(unittest.TestCase):
         self.assertIsNone(result.selected_connection_id)
         self.assertIn("human_gate_pending", result.ineligible[0].reasons)
 
+    def test_human_gate_is_pending_by_default(self):
+        decision = RoutingDecision(
+            required_capability_tier="T3",
+            authority_mode="human_gate_then_agent",
+            task_classes=frozenset({"coder"}),
+            risk_class="medium",
+        )
+        result = resolve_routes(
+            decision,
+            [_agent("strong", tiers=("T3",), max_risk="medium")],
+        )
+        self.assertIsNone(result.selected_connection_id)
+        self.assertIn("human_gate_pending", result.ineligible[0].reasons)
+
+    def test_explicitly_satisfied_human_gate_can_route(self):
+        decision = RoutingDecision(
+            required_capability_tier="T3",
+            authority_mode="human_gate_then_agent",
+            human_gate_satisfied=True,
+            task_classes=frozenset({"coder"}),
+            risk_class="medium",
+        )
+        result = resolve_routes(
+            decision,
+            [_agent("strong", tiers=("T3",), max_risk="medium")],
+        )
+        self.assertEqual(result.selected_connection_id, "strong")
+
     def test_external_processing_policy_prefers_local_when_external_forbidden(self):
         decision = RoutingDecision(
             required_capability_tier="T1",
