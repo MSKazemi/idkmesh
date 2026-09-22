@@ -60,6 +60,9 @@ meaning of an existing version.
   project-facing connection, dispatch, run-state, webhook, secret-reference,
   agent/model-provider, and error contract above the canonical WorkUnit and
   verification semantics.
+- [Enterprise Tenant Scope v0.1](ENTERPRISE_TENANT_SCOPE_V0_1.md) —
+  tenant/project-scoped resource, storage-key, and idempotency foundation with
+  fail-closed cross-scope reference checks.
 
 When modifying a contract, update its schema, fixtures, implementation, and
 tests together. Introduce a new explicit version when behavior changes; keep
