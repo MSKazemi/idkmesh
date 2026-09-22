@@ -218,6 +218,7 @@ def build_outcome_record(
         },
         "observed_process": {
             "actual_choice_id": actual_choice_id,
+            "observed_at": observed_at,
             "outcome": outcome,
             "verified_utility": _non_negative_or_none(
                 verified_utility,
