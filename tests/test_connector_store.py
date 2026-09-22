@@ -156,6 +156,7 @@ class LocalMetadataStoreTests(unittest.TestCase):
             )
 
     def test_concurrent_duplicate_admission_creates_exactly_one_run(self):
+        self._store()  # initialize/migrate before racing admission transactions
         barrier = threading.Barrier(2)
         outcomes = []
         failures = []
@@ -209,6 +210,13 @@ class LocalMetadataStoreTests(unittest.TestCase):
             updated_at="2026-09-22T14:33:00Z",
         )
 
+        with self.assertRaises(UnsafeMetadataError):
+            store.record_connection(
+                "unsafe-ref",
+                metadata={"secret_ref": "raw-provider-secret-value"},
+                updated_at="2026-09-22T14:33:30Z",
+            )
+
         class SecretValue:
             pass
 
@@ -220,7 +228,8 @@ class LocalMetadataStoreTests(unittest.TestCase):
             )
 
     def test_schema_version_newer_than_supported_fails_closed(self):
-        sqlite3.connect(self.db).execute("PRAGMA user_version = 999").connection.commit()
+        with sqlite3.connect(self.db) as conn:
+            conn.execute("PRAGMA user_version = 999")
         with self.assertRaises(LocalStoreError):
             self._store()
 
