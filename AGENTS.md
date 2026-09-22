@@ -45,7 +45,7 @@ Prefer one reviewable outcome per branch/PR over broad speculative rewrites. If 
 
 ## Jules Dispatch Boundary
 
-For repository-operated Google Jules work, `agent-ready` is the maintainer/trusted-triager approval boundary and `jules` is the execution signal. The Jules Dispatcher normally adds `jules`; do not treat `good first issue` or `help wanted` alone as approval to execute. Never mark work `agent-ready` when it requires genuine human observation, independent research/evidence, security approval, governance judgment, secret handling, or broad decomposition. Keep agent-ready issues bounded, testable, and explicit about allowed scope and stop conditions. See `docs/operations/JULES_AUTOMATION.md` and `config/jules-dispatch.json` for the queue, veto labels, concurrency, recovery sweep, and failure runbook.
+For repository-operated Google Jules work, `agent-ready` is the maintainer/trusted-triager approval boundary. Automatic execution goes through the official Jules REST API and records `agent:jules-dispatched`; the legacy `jules` label is manual/native-App fallback only and must not be added by the automatic dispatcher. Do not treat `good first issue`, `help wanted`, or `agent:jules-eligible` alone as approval to execute. Never mark work `agent-ready` when it requires genuine human observation, independent research/evidence, security approval, governance judgment, secret handling, or broad decomposition. Keep agent-ready issues bounded, testable, and explicit about allowed scope and stop conditions. See `docs/operations/JULES_AUTOMATION.md` and `config/jules-dispatch.json` for the API-key setup, queue, veto labels, concurrency, recovery sweep, and failure runbook.
 
 ## Coding Style & Naming Conventions
 
