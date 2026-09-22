@@ -103,6 +103,7 @@ Example shape:
   "capabilities": {
     "run_evidence_inspection": true,
     "semantic_timeline": true,
+    "provenance_chain": true,
     "human_decision_recording": false,
     "worker_execution": false,
     "canonical_state_write": false,
@@ -178,6 +179,30 @@ worker claim
 
 The UI deliberately avoids one green/red status that would collapse those
 different meanings.
+
+### Provenance chain
+
+The snapshot includes a deterministic `provenance` projection so a human can
+trace each attempt without opening raw JSON:
+
+```text
+WorkUnit digest
+ -> worker identity + ResultManifest id/digest
+ -> verifier identity + VerificationResult semantic digest
+ -> required check outcomes
+ -> pending human/governance authority
+```
+
+The projection also retains the source-run, source-configuration, and
+verifier-policy digests.
+
+This view deliberately separates **identity distinction** from
+**independence**. If worker and verifier IDs are equal, the Control Tower raises
+a human-attention condition. Different IDs are shown as identity-distinct, but
+the UI does not infer statistical, organizational, model-family, or execution
+independence from names alone.
+
+The provenance view is read-only and makes no candidate selection.
 
 ### Semantic timeline
 
