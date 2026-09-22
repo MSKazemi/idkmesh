@@ -50,10 +50,17 @@ There are two paths.
 available and no veto label exists, it adds `jules` in that run. There is no
 polling delay in the normal path.
 
+**Capacity-release path — event driven.** When an open dispatched issue closes
+(for example after its Jules PR merges with an issue-closing reference), the
+workflow runs again and immediately fills newly available capacity from the
+remaining `agent-ready` queue. Development therefore does not normally wait
+for the recovery schedule after a completed task.
+
 **Recovery path — every 30 minutes.** At minutes 17 and 47 UTC, the same
 workflow rescans the queue. This catches an issue that was left waiting because
-capacity was full or an earlier workflow run was interrupted. The scheduled
-sweep is a reliability mechanism, not the primary dispatch mechanism.
+capacity was full or an earlier workflow run was interrupted. GitHub Actions
+scheduled runs are best-effort and can be delayed by the platform, so the
+scheduled sweep is a reliability mechanism, not the primary dispatch mechanism.
 
 The workflow also runs after its own policy/implementation files land on
 `main`, and it supports manual `workflow_dispatch` for maintainers.
@@ -68,6 +75,7 @@ Current defaults:
 - maximum open dispatched issues: **4**;
 - maximum dispatches per recovery sweep: **2**;
 - an `agent-ready` label event dispatches at most **1** issue immediately;
+- closing a dispatched issue immediately triggers a capacity refill;
 - open issues already carrying `jules` consume capacity until they close or the
   label is deliberately removed.
 
