@@ -163,9 +163,20 @@ def _validate_attempt(attempt: Any, seen_ids: set[str]) -> str | None:
                 f"attempt {attempt_id}: worker_error state/evidence mismatch")
         return None
 
+    if state == "result_manifest_error":
+        if worker is not None or verifier is not None:
+            raise ControlTowerInputError(
+                f"attempt {attempt_id}: result_manifest_error cannot claim "
+                "parsed worker or verification evidence")
+        if evidence_state != "result_manifest_error":
+            raise ControlTowerInputError(
+                f"attempt {attempt_id}: result_manifest_error state/evidence "
+                "mismatch")
+        return None
+
     if worker is None:
         raise ControlTowerInputError(
-            f"attempt {attempt_id}: non-worker-error state requires a worker "
+            f"attempt {attempt_id}: this state requires a worker "
             "ResultManifest summary")
     if not isinstance(worker, dict):
         raise ControlTowerInputError(
@@ -182,11 +193,6 @@ def _validate_attempt(attempt: Any, seen_ids: set[str]) -> str | None:
         worker.get("result_manifest_digest"),
         f"attempt {attempt_id}: worker.result_manifest_digest",
     )
-
-    if state == "result_manifest_error":
-        raise ControlTowerInputError(
-            f"attempt {attempt_id}: result_manifest_error cannot include a "
-            "parsed worker ResultManifest summary")
 
     if state == "verification_error":
         if verifier is not None or evidence_state != "verification_error":
