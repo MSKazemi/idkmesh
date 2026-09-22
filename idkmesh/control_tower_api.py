@@ -62,6 +62,11 @@ class ControlTowerInputError(ValueError):
     """Run evidence cannot be safely represented by the read-only UI."""
 
 
+def _reject_json_constant(token: str) -> Any:
+    raise ControlTowerInputError(
+        f"non-finite JSON constant {token!r} is not permitted")
+
+
 def _reject_duplicate_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
     result: dict[str, Any] = {}
     for key, value in pairs:
@@ -79,7 +84,11 @@ def parse_report_text(
     """Parse one Run Evidence Report document with strict JSON semantics."""
     text = text.removeprefix("\ufeff")
     try:
-        value = json.loads(text, object_pairs_hook=_reject_duplicate_keys)
+        value = json.loads(
+            text,
+            parse_constant=_reject_json_constant,
+            object_pairs_hook=_reject_duplicate_keys,
+        )
     except json.JSONDecodeError as exc:
         raise ControlTowerInputError(
             f"{source}: not valid JSON ({exc})") from exc
