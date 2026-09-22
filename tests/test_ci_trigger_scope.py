@@ -89,6 +89,14 @@ class WorkflowTriggerScopeTests(unittest.TestCase):
         self.assertTrue(_matches("tests/test_r3.py", patterns))
         self.assertTrue(_matches("randomness_lab/r1.py", patterns))
 
+    def test_randomness_lab_push_validation_is_main_only(self):
+        push_block = _event_block(self.read("randomness-lab.yml"), "push")
+        self.assertIn(
+            "branches: [main]",
+            push_block,
+            "feature branches already receive PR validation; do not duplicate the matrix",
+        )
+
     def test_randomness_lab_no_longer_rediscovers_whole_test_tree(self):
         text = self.read("randomness-lab.yml")
         self.assertNotIn("python -m unittest discover -s tests -v", text)
