@@ -252,12 +252,13 @@ def _exact(value: Any, expected: Any, path: str) -> None:
 
 def _profile_id(value: Any) -> str:
     text = _string(value, "$.profile_id")
-    allowed = set(
+    alphanumeric = set(
         "abcdefghijklmnopqrstuvwxyz"
         "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-        "0123456789._-"
+        "0123456789"
     )
-    if len(text) > 128 or text[0] not in allowed or any(
+    allowed = alphanumeric | set("._-")
+    if len(text) > 128 or text[0] not in alphanumeric or any(
         char not in allowed for char in text
     ):
         raise _fail(
