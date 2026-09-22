@@ -10,6 +10,7 @@ It does **not** execute recommendations.
 Prepare a JSON request that contains:
 
 - exact repository revision;
+- explicit pre-outcome `captured_at` timestamp;
 - policy ID/version/maturity;
 - the complete input state used by the policy;
 - hard-gate results;
@@ -36,6 +37,7 @@ After the real process completes unchanged, prepare an observation JSON:
 ```json
 {
   "actual_choice_id": "baseline-choice",
+  "observed_at": "2026-09-22T12:05:00Z",
   "outcome": "succeeded",
   "verified_utility": 0.7,
   "escaped_defect": false,
@@ -124,3 +126,17 @@ N3 can establish:
 
 N3 shadow mode generally cannot establish the causal performance of an
 unexecuted alternative. That requires a later controlled experiment.
+
+
+## Temporal ordering
+
+The plan request must include `captured_at`, and the later observation must
+include `observed_at`.
+
+The joiner rejects an observation timestamp earlier than the frozen plan's
+capture time.
+
+For real N3 evidence, persist the plan before the outcome is known. The explicit
+timestamps support audit/replay, while repository/CI artifact history provides
+the stronger external evidence that the plan actually existed before the
+outcome.
