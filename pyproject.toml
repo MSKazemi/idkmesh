@@ -33,6 +33,13 @@ classifiers = [
 # any CI job without a resolver step.
 dependencies = []
 
+[project.optional-dependencies]
+# Real schema-based verification (experiments/local_verifier.py) needs
+# jsonschema. It is an *optional* extra, not a base dependency, so
+# `idkmesh gate-audit` stays stdlib-only for every install. See
+# docs/decisions/ADR-0012-optional-verification-dependency.md.
+verify = ["jsonschema>=4.26,<5"]
+
 [project.urls]
 Homepage = "https://mskazemi.com/idkmesh/"
 Repository = "https://github.com/MSKazemi/idkmesh"
