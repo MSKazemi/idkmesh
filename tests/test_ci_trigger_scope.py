@@ -97,11 +97,14 @@ class WorkflowTriggerScopeTests(unittest.TestCase):
             "feature branches already receive PR validation; do not duplicate the matrix",
         )
 
-    def test_randomness_lab_no_longer_rediscovers_whole_test_tree(self):
+    def test_randomness_lab_uses_pytest_for_focused_scope(self):
         text = self.read("randomness-lab.yml")
-        self.assertNotIn("python -m unittest discover -s tests -v", text)
-        self.assertIn("-p 'test_r1_*.py'", text)
-        self.assertIn("-p 'test_r2*.py'", text)
+        self.assertNotIn("python -m unittest discover", text)
+        self.assertIn("python -m pytest -q", text)
+        self.assertIn("tests/test_randomness_lab.py", text)
+        self.assertIn("tests/test_r1_*.py", text)
+        self.assertIn("tests/test_r2*.py", text)
+        self.assertIn("tests/test_r3*.py", text)
 
     def test_gate_audit_selftest_ignores_connector_core_files(self):
         block = _event_block(
