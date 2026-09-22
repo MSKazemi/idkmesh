@@ -127,6 +127,8 @@ Next evidence should show:
 
 See issue #17 and the interoperability docs.
 
+Productizing this boundary into configured, routable agent/model/execution/SCM connectors — and the default GitHub-first, server-optional deployment profile for running them — is proposed in [`docs/architecture/AGENT_MODEL_CONNECTOR_CONTROL_PLANE.md`](docs/architecture/AGENT_MODEL_CONNECTOR_CONTROL_PLANE.md) and [`docs/architecture/GITHUB_FIRST_DEPLOYMENT_AND_MULTIUSER.md`](docs/architecture/GITHUB_FIRST_DEPLOYMENT_AND_MULTIUSER.md), tracked by issue #570 and its C1-C11 sub-issues (#574-#580, #596-#599).
+
 ### Gate D — independent review capacity
 
 Several important subsystems deliberately require genuinely separate review. Automation must not manufacture this evidence.

@@ -84,6 +84,8 @@ The architectural rule is:
 
 > Use A2A/MCP and existing agent/tool ecosystems for transport and execution integration; keep IDKMesh-specific semantics in bounded work, evidence, verification, provenance, scheduling, and governance.
 
+Productizing this boundary — configured agent runners, model providers, execution backends, and SCM connectors behind one broker that never gains merge authority — is proposed in [`docs/architecture/AGENT_MODEL_CONNECTOR_CONTROL_PLANE.md`](docs/architecture/AGENT_MODEL_CONNECTOR_CONTROL_PLANE.md).
+
 ## 5. Execution and resource admission
 
 Execution authority is constrained before work reaches a worker.
@@ -185,6 +187,8 @@ bounded Git task
 Substantial contracts, verification machinery, replay/evidence work, and interoperability code exist. However, the repository should not describe the runner as a finished end-user product until the current real worker/adapter gates are integrated and the documented acceptance criteria are satisfied.
 
 That distinction replaces the older architecture statement that the project merely needed to “start with a single-machine simulation”; the repository has already progressed beyond that stage.
+
+The recommended default deployment for this reference product is GitHub-first and server-optional — repository, Issues/Projects, labels, Actions, checks, and a durable Git-native ledger stand in for a permanent service until measured requirements (event volume, scheduling frequency, long-lived sessions, multi-tenant scale, private enterprise data, GUI, or ledger size) justify one. See [`docs/architecture/GITHUB_FIRST_DEPLOYMENT_AND_MULTIUSER.md`](docs/architecture/GITHUB_FIRST_DEPLOYMENT_AND_MULTIUSER.md).
 
 ## 11. Scaling principle
 
