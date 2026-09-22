@@ -212,6 +212,7 @@ class ControlTowerModelTests(unittest.TestCase):
         status = status_document()
         self.assertEqual(status["api_version"], "v1")
         self.assertTrue(status["capabilities"]["run_evidence_inspection"])
+        self.assertTrue(status["capabilities"]["provenance_chain"])
         self.assertFalse(status["capabilities"]["worker_execution"])
         self.assertFalse(status["capabilities"]["canonical_state_write"])
         self.assertFalse(status["capabilities"]["merge"])
