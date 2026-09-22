@@ -50,6 +50,53 @@ class ControlTowerModelTests(unittest.TestCase):
         self.assertIn("recommendation", event_types)
         self.assertIn("authority", event_types)
 
+    def test_snapshot_exposes_explicit_provenance_chain(self) -> None:
+        snapshot = build_snapshot(sample_report())
+        provenance = snapshot["provenance"]
+
+        self.assertEqual(
+            provenance["work_unit"]["digest"],
+            snapshot["work_unit"]["digest"],
+        )
+        self.assertEqual(
+            provenance["run"]["source_run_digest"],
+            snapshot["source"]["source_run_digest"],
+        )
+        first = provenance["attempts"][0]
+        self.assertEqual(first["attempt_id"], "attempt-001")
+        self.assertEqual(
+            first["result_manifest"]["result_manifest_id"],
+            "verification/patch-smoke/good-attempt-1",
+        )
+        self.assertEqual(
+            first["verification"]["verifier_id"],
+            "idkmesh-local-verifier",
+        )
+        self.assertTrue(
+            first["verification"]["identity_distinct_from_worker"]
+        )
+        self.assertIn(
+            "not inferred",
+            first["verification"]["independence_claim"],
+        )
+        self.assertFalse(
+            provenance["authority"]["automatic_candidate_selection"]
+        )
+        self.assertFalse(provenance["authority"]["merge"])
+
+    def test_worker_verifier_identity_overlap_is_attention_not_independence(self) -> None:
+        report = sample_report()
+        report["attempts"][0]["verifier"]["id"] = report["attempts"][0][
+            "worker"
+        ]["id"]
+
+        snapshot = build_snapshot(report)
+
+        first = snapshot["provenance"]["attempts"][0]["verification"]
+        self.assertFalse(first["identity_distinct_from_worker"])
+        codes = {item["code"] for item in snapshot["attention"]}
+        self.assertIn("worker_verifier_identity_overlap", codes)
+
     def test_report_that_grants_merge_authority_is_rejected(self) -> None:
         report = sample_report()
         report["authority"]["merge"] = True
@@ -163,6 +210,8 @@ class ControlTowerServerTests(unittest.TestCase):
         self.assertIn("IDKMesh Control Tower", text)
         self.assertIn("Human attention", text)
         self.assertIn("Run Evidence", text)
+        self.assertIn("Provenance", text)
+        self.assertIn("Attempt provenance chains", text)
         self.assertIn("Audit Timeline", text)
         self.assertIn("Claim ≠ evidence", text)
         self.assertNotIn("<script src=", text)
@@ -206,6 +255,11 @@ class ControlTowerServerTests(unittest.TestCase):
         self.assertIsNone(
             snapshot["human_decision"]["selected_attempt_id"])
         self.assertFalse(snapshot["authority"]["automatic_candidate_selection"])
+        self.assertIn("provenance", snapshot)
+        self.assertEqual(
+            snapshot["provenance"]["attempts"][0]["attempt_id"],
+            "attempt-001",
+        )
 
     def test_invalid_report_returns_structured_error(self) -> None:
         report = sample_report()
