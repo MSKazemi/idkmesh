@@ -1,0 +1,7 @@
+{
+  "api_version": "idkmesh.io/v9",
+  "id": "future-agent",
+  "kind": "agent",
+  "driver": "future",
+  "enabled": true
+}
