@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from pathlib import Path
 
 from tools import jules_dispatcher as jd
 
@@ -143,3 +144,38 @@ def test_ensure_labels_creates_only_missing_policy_labels():
 
     assert created == ["jules"]
     assert api.created == [("jules", "EDEDED", "dispatch")]
+
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+
+
+def test_repository_policy_keeps_speed_and_hard_vetoes_explicit():
+    policy = jd.load_policy(REPO_ROOT / "config" / "jules-dispatch.json")
+
+    assert policy["max_in_flight"] == 4
+    assert policy["max_dispatch_per_sweep"] == 2
+    assert {
+        "human-required",
+        "research-evidence",
+        "security-sensitive",
+        "needs-decomposition",
+        "do-not-automate",
+    }.issubset(set(policy["blocked_labels"]))
+
+
+def test_workflow_preserves_dispatch_trust_boundary_and_fast_recovery():
+    workflow = (REPO_ROOT / ".github" / "workflows" / "jules-dispatch.yml").read_text(
+        encoding="utf-8"
+    )
+
+    assert "types: [labeled, closed]" in workflow
+    assert "cron: '17,47 * * * *'" in workflow
+    assert "contents: read" in workflow
+    assert "issues: write" in workflow
+    assert "pull-requests: write" not in workflow
+    assert "pull_request_target:" not in workflow
+    assert "pull_request:" not in workflow
+    assert "ref: ${{ github.event.repository.default_branch }}" in workflow
+    assert "persist-credentials: false" in workflow
+    assert "github.event.issue.body" not in workflow
+    assert "github.event.issue.title" not in workflow
