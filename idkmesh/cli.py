@@ -1,11 +1,4 @@
-"""``idkmesh`` command-line interface.
-
-One subcommand for now — ``gate-audit`` — kept deliberately thin: all logic
-lives in ``idkmesh.gate_audit`` so it can be tested and reused without a
-process boundary.
-"""
-
-from __future__ import annotations
+"""``idkmesh`` command-line interface.\n\nCommands stay deliberately thin: reusable logic lives in product modules so it\ncan be tested without a process boundary. Connector inspection is read-only;\ngate-audit keeps its existing diagnostic behavior.\n"""\n\nfrom __future__ import annotations
 
 import argparse
 import json
@@ -26,7 +19,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="idkmesh",
         description=(
-            "IDKMesh verification tooling. 'gate-audit' measures how many "
+            "IDKMesh verification and connector tooling. 'gate-audit' measures how many "
             "effective independent votes a verifier panel really has, and how "
             "often seeded known-bad probes get through it."),
     )
