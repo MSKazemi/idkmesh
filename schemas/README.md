@@ -4,6 +4,7 @@ This directory contains the machine-readable contracts used by the executable re
 
 ## Current versions
 
+- `enterprise-control-profile-v0.1.schema.json` — experimental enterprise deployment/control posture: deployment/tenant mode, identity and separation of duties, data/egress, secret/workload identity, audit, reliability/DR, supply-chain, and change-management declarations. A valid/declaration-ready profile is not proof of observed enforcement or compliance certification.
 - `work-unit-v0.2.schema.json` — current bounded unit of independently executable/verifiable work. It adds vendor-neutral capability/resource requirements, explicit security/trust classification, independent-verification policy, the `benchmarking` work kind required by issue #3, and an explicit project-spend budget.
 - `compute-policy-v0.1.schema.json` — repository-level financial/eligibility guard for compute. The current project policy sets project compute spend to `$0` and disables paid providers.
 - `compute-offer-pool-v0.1.schema.json` — provider-neutral capacity offers used by the selector: availability, cost class, project monetary cost, trust, capabilities, resources, expected wait, success probability, and independence group.
@@ -16,6 +17,7 @@ This directory contains the machine-readable contracts used by the executable re
 - `ci-receipt-v0.1.schema.json` — planning-only receipt proving that a shadow plan was emitted; it contains no executed checks or integration verdict.
 - `ci-observation-v0.1.schema.json` — normalized exact-SHA GitHub check snapshot with required-baseline completeness and no authority.
 - `gate-audit-report-v0.1.schema.json` — diagnostic report emitted by `idkmesh gate-audit`: per-verifier accuracy, pairwise error correlation, measured effective votes vs the accuracy-dependent ceiling, and seeded-probe breach rate. Decision support about the review layer itself; it grants no acceptance or merge authority.
+- `gate-audit-report-v0.2.schema.json` — `gate-audit-report-v0.1` plus an optional finite-sample bootstrap uncertainty section (issue #520), emitted only when `idkmesh gate-audit` is run with `--bootstrap`. Every v0.1 field keeps its v0.1 meaning; nothing about v0.1 changed to add this.
 - `ci-evaluation-v0.1.schema.json` — shadow plan/outcome comparison recording mapped misses, attribution gaps, modeled savings, and permanent v0.1 promotion ineligibility.
 - `human-decision-record-v0.1.schema.json` — a recorded, accountable human integration decision (`accept`/`reject`/`escalate`) against one Run Evidence Report: who decided, what they decided, when, and why, bound to the exact report by content digest. It is deliberately a record of a decision, not an executor of one: it carries no canonical-state-write, git-push, or merge authority. Produced by `experiments/record_human_decision.py`.
 
