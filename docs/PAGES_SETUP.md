@@ -39,11 +39,15 @@ honours `prefers-reduced-motion`.
 Measured against the live site on 2026-09-10, not assumed:
 
 - the hand-written HTML pages above load no script and no external asset;
-- **every other page on the site does.** There is no `_config.yml` in the tree,
-  but GitHub Pages still runs legacy Jekyll v3.10.0 with the default theme, so
-  each `docs/**/*.md` file is *also* rendered into a themed HTML page — and that
-  rendering loads `anchor-js` from `cdnjs.cloudflare.com`. Verified:
-  `https://mskazemi.com/idkmesh/WHAT_IS_IDKMESH.html` returns
+- **every other page on the site does.** GitHub Pages runs legacy Jekyll v3.10.0
+  with the Primer theme, so each `docs/**/*.md` file is *also* rendered into a
+  themed HTML page — and that rendering loads `anchor-js` from
+  `cdnjs.cloudflare.com`. `docs/_config.yml` now pins the shared site identity
+  used by those generated pages (IDKMesh title/description, canonical site URL,
+  repository identity, language, author, and social image) so the long-tail
+  documentation no longer inherits only the lowercase repository name. Verified
+  live before this configuration was added:
+  `https://mskazemi.com/idkmesh/WHAT_IS_IDKMESH.html` returned
   `<meta name="generator" content="Jekyll v3.10.0" />` and a `cdnjs` script tag.
 
 So the constraint is a property of the pages this runbook owns, not of the whole
@@ -143,7 +147,7 @@ tags, or not writing the delimiters at all. The guard for Markdown lives in `tes
 one for the hand-written `.html` pages and `assets/site.css` is a test in
 `tests/test_pages_site_links.py`, because the Markdown scan does not reach them.
 
-There is no build step and no template engine, so the navigation bar is copied
+There is no repository-owned HTML build step or template engine for the hand-written pages, so the navigation bar is copied
 into each page by hand. That is the honest cost of the no-framework constraint,
 and it is only safe because divergence is a test failure.
 
