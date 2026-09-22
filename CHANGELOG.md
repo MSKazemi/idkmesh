@@ -20,7 +20,12 @@ and the release notes for that tag.
   background timeline through a versioned read-only `/api/v1/` surface.
   Summary/disagreement values are recomputed before display, reports that grant
   write/push/merge/automatic-selection authority fail closed, and both local
-  browser UIs now share one loopback/security-header boundary.
+  browser UIs now share one loopback/security-header boundary. The API now
+  also publishes OpenAPI 3.1 discovery and a frozen snapshot JSON Schema,
+  supports generic/vendor JSON negotiation and headless token injection,
+  emits deterministic content digests/ETags and read-only/version headers, and
+  returns explicit method/version/query/media-type errors instead of relying on
+  the base HTTP server's implicit behavior.
 
 - A dependency-free local browser GUI for the installable gate-audit diagnostic,
   launched with `idkmesh gate-audit-ui [input.json]`. It binds only to
