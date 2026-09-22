@@ -32,7 +32,7 @@ That is why IDKMesh treats verifier diversity as an empirical property rather th
 
 Raising a quorum can help only when the panel contains useful discriminating evidence. If reviewers systematically miss the same defect, requiring more of the same votes does not create new information.
 
-The right response may be to change the evaluator, add a different kind of evidence, improve hidden tests, or route difficult cases to a human specialist.
+The right response may be to change the evaluator, add a different kind of evidence, improve hidden tests, or route difficult cases to a human specialist. For automated judges, see [LLM-as-a-judge reliability](https://mskazemi.com/idkmesh/topics/llm-judge-reliability.html).
 
 ## Common questions
 
