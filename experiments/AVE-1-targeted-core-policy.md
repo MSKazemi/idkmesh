@@ -54,13 +54,20 @@ Known-bad probes remain diagnostic only in this candidate.
 
 ## Environments
 
-The current targeted runner uses the same synthetic environments as the ablation harness:
+The targeted runner uses the same synthetic environments as the ablation harness:
 
 - one-sided partial-test-like verifier error;
 - two-sided verifier error;
 - high worker/verifier correlation;
 - scarce review capacity;
-- misleading/easy probes.
+- misleading/easy probes;
+- a dominant high-quality worker family;
+- a mid-run workload/task-mix shift;
+- a worker-family outage;
+- a verifier-family outage;
+- a selective adversarial verifier that behaves well on probes but accepts most live defects.
+
+The last scenario is especially important for the probe-memory question: passing known probes must not be treated as sufficient evidence that a verifier is safe on live candidates.
 
 ## Primary questions
 
