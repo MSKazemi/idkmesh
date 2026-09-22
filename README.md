@@ -237,6 +237,7 @@ Current source of truth:
 - [connector-control-plane architecture](docs/architecture/AGENT_MODEL_CONNECTOR_CONTROL_PLANE.md);
 - [Connector Control API v0.1 design](docs/specifications/CONNECTOR_CONTROL_API_V0_1.md);
 - [implementation + self-hosting plan](docs/planning/AGENT_MODEL_INTEGRATION_SELF_HOSTING_PLAN_2026-09-22.md);
+- [model-tier dispatcher execution plan](docs/planning/MODEL_TIER_DISPATCHER_EXECUTION_PLAN_2026-09-22.md);
 - [live umbrella tracker #570](https://github.com/MSKazemi/idkmesh/issues/570).
 
 The immediate implementation queue is deliberately bounded:
