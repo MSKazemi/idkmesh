@@ -211,6 +211,10 @@ class ControlTowerModelTests(unittest.TestCase):
     def test_status_document_is_explicitly_non_actuating(self) -> None:
         status = status_document()
         self.assertEqual(status["api_version"], "v1")
+        self.assertEqual(status["schema_version"], "0.1")
+        self.assertTrue(status["ok"])
+        self.assertIn("openapi", status["endpoints"])
+        self.assertIn("control_tower_snapshot", status["schemas"])
         self.assertTrue(status["capabilities"]["run_evidence_inspection"])
         self.assertTrue(status["capabilities"]["provenance_chain"])
         self.assertFalse(status["capabilities"]["worker_execution"])
@@ -338,7 +342,7 @@ class ControlTowerServerTests(unittest.TestCase):
         self.assertEqual(payload["error"]["code"], "not_acceptable")
 
     def test_vendor_json_media_type_is_accepted(self) -> None:
-        status, _, body = self.request(
+        status, headers, body = self.request(
             "POST",
             "/api/v1/run-evidence/inspect",
             SAMPLE_REPORT,
@@ -355,6 +359,34 @@ class ControlTowerServerTests(unittest.TestCase):
         payload = json.loads(body)
         self.assertEqual(status, 200)
         self.assertTrue(payload["ok"])
+        self.assertTrue(
+            headers["Content-Type"].startswith(
+                "application/vnd.idkmesh.control-tower.v1+json"
+            )
+        )
+        self.assertEqual(headers["Vary"], "Accept")
+
+    def test_unknown_v1_route_requires_token_before_routing(self) -> None:
+        status, _, body = self.request(
+            "GET",
+            "/api/v1/not-a-real-endpoint",
+        )
+        payload = json.loads(body)
+        self.assertEqual(status, 403)
+        self.assertEqual(
+            payload["error"]["code"],
+            "invalid_session_token",
+        )
+
+    def test_head_on_post_only_endpoint_has_no_body(self) -> None:
+        status, headers, body = self.request(
+            "HEAD",
+            "/api/v1/run-evidence/inspect",
+            token=True,
+        )
+        self.assertEqual(status, 405)
+        self.assertEqual(headers["Allow"], "POST")
+        self.assertEqual(body, b"")
 
     def test_wrong_method_returns_405_and_allow(self) -> None:
         status, headers, body = self.request(
