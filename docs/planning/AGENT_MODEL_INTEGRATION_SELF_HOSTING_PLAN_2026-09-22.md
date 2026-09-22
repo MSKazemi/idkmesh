@@ -65,6 +65,47 @@ Relevant live work:
 
 The plan below should converge those efforts into one product surface instead of introducing parallel schedulers.
 
+## 2.1 Current execution status
+
+Live umbrella tracker: [#570](https://github.com/MSKazemi/idkmesh/issues/570).
+
+The architecture/API design is being reviewed in PR #571. Implementation should
+proceed as small PRs against the shared connector contract, in this order:
+
+| Order | Issue | Deliverable | Dependency |
+| --- | --- | --- | --- |
+| 1 | [#574](https://github.com/MSKazemi/idkmesh/issues/574) | connector kernel, profiles, probes, policy, routing | design contract |
+| 2 | [#575](https://github.com/MSKazemi/idkmesh/issues/575) | Jules REST agent connector | #574 |
+| 2 | [#576](https://github.com/MSKazemi/idkmesh/issues/576) | OpenAI-compatible model connector | #574 |
+| 3 | [#577](https://github.com/MSKazemi/idkmesh/issues/577) | bounded local agent runner | #574 + model path as needed |
+| 3 | [#578](https://github.com/MSKazemi/idkmesh/issues/578) | GitHub issue/webhook dispatch | #574 |
+| 4 | [#579](https://github.com/MSKazemi/idkmesh/issues/579) | candidate/PR -> canonical result evidence | remote/local candidate path |
+| 5 | [#580](https://github.com/MSKazemi/idkmesh/issues/580) | user-facing CLI + optional HTTP API | shared service/run state |
+
+### Now
+
+1. Review/merge the design contract in PR #571.
+2. Implement #574 with fake/offline connectors and no live-provider dependency.
+3. Once #574's interfaces are stable, develop #575 and #576 in parallel.
+
+### Next
+
+4. Add one bounded local-agent path (#577) and explicit GitHub dispatch (#578).
+5. Normalize both remote PRs and local artifacts through the same canonical
+   ResultManifest/verification path (#579).
+6. Expose the stable service layer through CLI and then an optional HTTP API
+   (#580).
+
+### Then
+
+7. Run the 10-task IDKMesh self-hosting cohort.
+8. Only after self-hosting evidence is retained, bootstrap a second repository
+   with the same connector/configuration model and produce a reproducible release.
+
+Do not begin by building a large frontend or adding many vendor-native drivers.
+The highest-leverage proof is one shared connector kernel supporting two
+materially different workers through the existing verification path.
+
 ## 3. Architecture decision
 
 Create one **Connector Control Plane** with four plugin boundaries:
