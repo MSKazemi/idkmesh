@@ -148,3 +148,33 @@ def test_sweep_reports_requested_policy_and_environment():
             assert 0.0 <= row["escaped_defect_rate"] <= 1.0
             assert 0.0 <= row["false_reject_rate"] <= 1.0
             assert 0.0 <= row["duplicate_rate"] <= 1.0
+
+
+def test_extended_environment_matrix_is_exposed():
+    names = {environment.name for environment in ablation.ENVIRONMENTS}
+    assert {
+        "dominant-worker-family",
+        "workload-shift",
+        "worker-family-outage",
+        "verifier-family-outage",
+        "selective-adversarial-verifier",
+    }.issubset(names)
+
+
+def test_outage_and_adversarial_scenarios_execute_under_budget():
+    for name in (
+        "worker-family-outage",
+        "verifier-family-outage",
+        "selective-adversarial-verifier",
+    ):
+        result = ablation.run_policy(
+            ablation.policy_by_name("full-ave"),
+            ablation.environment_by_name(name),
+            seed=5,
+            workers=12,
+            epochs=8,
+            verifier_count=8,
+        )
+        assert result["review_cost"] <= result["review_budget"] + 1e-6
+        assert result["compute_cost"] <= result["compute_budget"] + 1e-6
+        assert 0.0 <= result["escaped_defect_rate"] <= 1.0
