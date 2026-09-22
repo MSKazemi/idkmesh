@@ -91,6 +91,10 @@ def build_parser() -> argparse.ArgumentParser:
     probe = connection_sub.add_parser(
         "probe",
         help="probe connector profiles through offline fake drivers",
+        description=(
+            "Read-only probe using offline fake drivers only. This command "
+            "does not contact live providers, materialize secrets, or dispatch work."
+        ),
     )
     probe.add_argument("profile", help="path to connector-profile JSON")
     probe.add_argument(
@@ -133,6 +137,10 @@ def build_parser() -> argparse.ArgumentParser:
     explain = route_sub.add_parser(
         "explain",
         help="explain eligible/rejected connectors for a routing decision",
+        description=(
+            "Explain eligible/rejected connectors without external work or "
+            "repository mutation. Selection is applied only with --auto-select."
+        ),
     )
     explain.add_argument("profile", help="path to connector-profile JSON")
     explain.add_argument("decision", help="path to routing-decision JSON")
@@ -408,12 +416,16 @@ def _run_route(args: argparse.Namespace) -> int:
         return _connections_error(exc, json_output=args.json_output)
 
     checked_at = _observation_time(args.checked_at)
-    report = explain_route(
-        decision,
-        inspect_connectors(configs, checked_at=checked_at),
-        connector_costs=costs,
-        auto_select=args.auto_select,
-    )
+    try:
+        report = explain_route(
+            decision,
+            inspect_connectors(configs, checked_at=checked_at),
+            connector_costs=costs,
+            auto_select=args.auto_select,
+        )
+    except ConnectorInspectionError as exc:
+        return _connections_error(exc, json_output=args.json_output)
+
     payload = {"checked_at": checked_at, **report}
     if args.json_output:
         print(json.dumps(payload, sort_keys=True, separators=(",", ":")))
