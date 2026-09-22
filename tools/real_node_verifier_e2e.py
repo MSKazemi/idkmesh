@@ -152,7 +152,12 @@ def main() -> int:
     evaluator_root = Path(__file__).resolve().parents[1]
     candidate = args.candidate.resolve()
     actual_sha = run(["git", "rev-parse", "HEAD"], cwd=candidate).stdout.strip()
-    require(actual_sha == CANDIDATE_SHA, f"candidate SHA drift: {actual_sha}")
+    require(
+        actual_sha == CANDIDATE_SHA,
+        f"candidate SHA drift: {actual_sha}; expected {CANDIDATE_SHA} -- see "
+        "docs/acceptance/REAL_NODE_TWO_ATTEMPT_E2E_LOCAL_RUN.md for how to check "
+        "out the exact candidate",
+    )
 
     output_root = (evaluator_root / args.output_root).resolve()
     try:
