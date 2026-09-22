@@ -11,7 +11,9 @@ from __future__ import annotations
 import argparse
 from dataclasses import dataclass
 import json
+import math
 from pathlib import Path
+import re
 import sys
 from typing import Any, Mapping
 
@@ -128,6 +130,13 @@ ENUMS = {
 }
 
 DATA_CLASSES = {"public", "internal", "confidential", "restricted"}
+NAME_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}\Z")
+BREAK_GLASS_FIELDS = {
+    "enabled",
+    "time_bound_minutes",
+    "reason_required",
+    "audit_required",
+}
 
 
 class EnterpriseProfileError(ValueError):
@@ -176,6 +185,8 @@ def _number(value: Any, path: str, *, minimum: float, maximum: float) -> float:
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise EnterpriseProfileError(f"{path} must be a number")
     result = float(value)
+    if not math.isfinite(result):
+        raise EnterpriseProfileError(f"{path} must be finite")
     if result < minimum or result > maximum:
         raise EnterpriseProfileError(
             f"{path} must be between {minimum} and {maximum}"
@@ -215,11 +226,21 @@ def validate_structure(profile: Any) -> dict[str, Mapping[str, Any]]:
             raise EnterpriseProfileError(
                 f"{section} missing required field(s): {', '.join(missing)}"
             )
+        unknown_section = sorted(set(value) - required)
+        if unknown_section:
+            raise EnterpriseProfileError(
+                f"{section} has unknown field(s): {', '.join(unknown_section)}"
+            )
         sections[section] = value
 
     metadata = sections["metadata"]
-    if not isinstance(metadata["name"], str) or not metadata["name"]:
-        raise EnterpriseProfileError("metadata.name must be non-empty")
+    if (
+        not isinstance(metadata["name"], str)
+        or NAME_RE.fullmatch(metadata["name"]) is None
+    ):
+        raise EnterpriseProfileError(
+            "metadata.name must match [A-Za-z0-9][A-Za-z0-9._-]{0,127}"
+        )
     _enum("metadata", "environment", metadata["environment"])
     _enum("metadata", "enforcement_mode", metadata["enforcement_mode"])
 
@@ -243,6 +264,10 @@ def validate_structure(profile: Any) -> dict[str, Mapping[str, Any]]:
     if not isinstance(classes, list):
         raise EnterpriseProfileError(
             "data.external_processing_allowed_classes must be an array"
+        )
+    if any(not isinstance(item, str) for item in classes):
+        raise EnterpriseProfileError(
+            "data.external_processing_allowed_classes must contain strings"
         )
     if len(classes) != len(set(classes)):
         raise EnterpriseProfileError(
@@ -313,17 +338,17 @@ def validate_structure(profile: Any) -> dict[str, Mapping[str, Any]]:
         "change_management.high_risk_two_person_rule",
     )
     break_glass = _mapping(change["break_glass"], "change_management.break_glass")
-    required_break_glass = {
-        "enabled",
-        "time_bound_minutes",
-        "reason_required",
-        "audit_required",
-    }
-    missing = sorted(required_break_glass - set(break_glass))
+    missing = sorted(BREAK_GLASS_FIELDS - set(break_glass))
     if missing:
         raise EnterpriseProfileError(
             "change_management.break_glass missing required field(s): "
             + ", ".join(missing)
+        )
+    unknown_break_glass = sorted(set(break_glass) - BREAK_GLASS_FIELDS)
+    if unknown_break_glass:
+        raise EnterpriseProfileError(
+            "change_management.break_glass has unknown field(s): "
+            + ", ".join(unknown_break_glass)
         )
     _bool(break_glass["enabled"], "change_management.break_glass.enabled")
     _int(
