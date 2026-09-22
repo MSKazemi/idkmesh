@@ -21,6 +21,7 @@ class AdaptivePolicyShadowTests(unittest.TestCase):
         values = {
             "repository": "MSKazemi/idkmesh",
             "source_revision_sha": "a" * 40,
+            "captured_at": "2026-09-22T12:00:00Z",
             "subsystem": "verification-allocation",
             "policy_id": "ave-core",
             "policy_version": "0.1",
@@ -190,6 +191,23 @@ class AdaptivePolicyShadowTests(unittest.TestCase):
             ).read_text(encoding="utf-8")
         )
         Draft202012Validator(schema).validate(plan)
+
+
+    def test_capture_time_requires_timezone(self):
+        with self.assertRaisesRegex(
+            AdaptivePolicyPlanError,
+            "captured_at",
+        ):
+            self.build(captured_at="2026-09-22T12:00:00")
+
+    def test_capture_time_is_normalized_to_utc(self):
+        plan = self.build(
+            captured_at="2026-09-22T14:00:00+02:00"
+        )
+        self.assertEqual(
+            plan["binding"]["captured_at"],
+            "2026-09-22T12:00:00Z",
+        )
 
 
 if __name__ == "__main__":

@@ -1,6 +1,7 @@
 {
   "repository": "MSKazemi/idkmesh",
   "source_revision_sha": "1111111111111111111111111111111111111111",
+  "captured_at": "2026-09-22T12:00:00Z",
   "subsystem": "verification-allocation",
   "policy": {
     "id": "ave-core",

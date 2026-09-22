@@ -2,6 +2,7 @@
 """Summarize an adaptive-policy shadow cohort without causal overclaiming."""
 from __future__ import annotations
 
+from datetime import datetime, timezone
 import hashlib
 import json
 from typing import Any, Iterable, Mapping, Sequence
@@ -26,6 +27,25 @@ def canonical_json(value: Any) -> bytes:
         separators=(",", ":"),
         ensure_ascii=True,
     ).encode("utf-8")
+
+
+def _parse_time(value: Any, field: str) -> datetime:
+    if not isinstance(value, str) or not value:
+        raise AdaptivePolicyCohortError(
+            f"{field} must be a non-empty ISO-8601 timestamp"
+        )
+    raw = value[:-1] + "+00:00" if value.endswith("Z") else value
+    try:
+        parsed = datetime.fromisoformat(raw)
+    except ValueError as exc:
+        raise AdaptivePolicyCohortError(
+            f"{field} must be ISO-8601"
+        ) from exc
+    if parsed.tzinfo is None:
+        raise AdaptivePolicyCohortError(
+            f"{field} must include a timezone"
+        )
+    return parsed.astimezone(timezone.utc)
 
 
 def _rate(numerator: int, denominator: int) -> float | None:
@@ -91,6 +111,18 @@ def summarize_cohort(
         if outcome.get("plan_digest") != expected_digest:
             raise AdaptivePolicyCohortError(
                 f"plan digest mismatch: {plan_id}"
+            )
+        captured_at = _parse_time(
+            plan_map[plan_id].get("binding", {}).get("captured_at"),
+            f"{plan_id}.binding.captured_at",
+        )
+        observed_at = _parse_time(
+            outcome.get("observed_process", {}).get("observed_at"),
+            f"{plan_id}.observed_process.observed_at",
+        )
+        if observed_at < captured_at:
+            raise AdaptivePolicyCohortError(
+                f"outcome predates frozen plan: {plan_id}"
             )
         if outcome.get("comparison", {}).get(
             "shadow_counterfactual_observed"

@@ -10,6 +10,7 @@ def plan_request():
     return {
         "repository": "MSKazemi/idkmesh",
         "source_revision_sha": "c" * 40,
+        "captured_at": "2026-09-22T12:00:00Z",
         "subsystem": "verification-allocation",
         "policy": {
             "id": "ave-core",
@@ -99,6 +100,7 @@ class AdaptivePolicyEvidenceCLITests(unittest.TestCase):
                 json.dumps(
                     {
                         "actual_choice_id": "a",
+                        "observed_at": "2026-09-22T12:05:00Z",
                         "outcome": "succeeded",
                         "verified_utility": 0.7,
                         "escaped_defect": False,

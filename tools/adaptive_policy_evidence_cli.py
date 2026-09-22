@@ -78,6 +78,7 @@ def build_plan_from_request(request: dict[str, Any]) -> dict[str, Any]:
     return build_shadow_plan(
         repository=request["repository"],
         source_revision_sha=request["source_revision_sha"],
+        captured_at=request["captured_at"],
         subsystem=request["subsystem"],
         policy_id=policy["id"],
         policy_version=policy["version"],
@@ -109,6 +110,7 @@ def build_outcome_from_request(
     return build_outcome_record(
         plan=plan,
         actual_choice_id=observation.get("actual_choice_id"),
+        observed_at=observation["observed_at"],
         outcome=observation["outcome"],
         verified_utility=observation.get("verified_utility"),
         escaped_defect=observation.get("escaped_defect"),

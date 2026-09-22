@@ -6,6 +6,7 @@ what actually happened and whether the shadow/baseline choices matched it.
 """
 from __future__ import annotations
 
+from datetime import datetime, timezone
 import hashlib
 import json
 import math
@@ -31,6 +32,29 @@ def canonical_json(value: Any) -> bytes:
 
 def sha256_digest(value: Any) -> str:
     return "sha256:" + hashlib.sha256(canonical_json(value)).hexdigest()
+
+
+def _timestamp(value: str, field: str) -> tuple[str, datetime]:
+    if not isinstance(value, str) or not value:
+        raise AdaptivePolicyOutcomeError(
+            f"{field} must be a non-empty ISO-8601 timestamp"
+        )
+    raw = value[:-1] + "+00:00" if value.endswith("Z") else value
+    try:
+        parsed = datetime.fromisoformat(raw)
+    except ValueError as exc:
+        raise AdaptivePolicyOutcomeError(
+            f"{field} must be ISO-8601"
+        ) from exc
+    if parsed.tzinfo is None:
+        raise AdaptivePolicyOutcomeError(
+            f"{field} must include a timezone"
+        )
+    utc = parsed.astimezone(timezone.utc)
+    return (
+        utc.isoformat().replace("+00:00", "Z"),
+        utc,
+    )
 
 
 def _nonempty(value: str, field: str) -> str:
@@ -61,6 +85,7 @@ def build_outcome_record(
     *,
     plan: dict[str, Any],
     actual_choice_id: str | None,
+    observed_at: str,
     outcome: str,
     verified_utility: float | None = None,
     escaped_defect: bool | None = None,
@@ -101,6 +126,20 @@ def build_outcome_record(
 
     if outcome not in OUTCOMES:
         raise AdaptivePolicyOutcomeError(f"unknown outcome: {outcome}")
+
+    observed_at, observed_dt = _timestamp(
+        observed_at,
+        "observed_at",
+    )
+    captured_raw = plan.get("binding", {}).get("captured_at")
+    captured_at, captured_dt = _timestamp(
+        captured_raw,
+        "plan.binding.captured_at",
+    )
+    if observed_dt < captured_dt:
+        raise AdaptivePolicyOutcomeError(
+            "observed_at cannot be earlier than plan captured_at"
+        )
 
     selected = plan["recommendation"]["selected_choice_id"]
     baseline = plan["recommendation"]["baseline_choice_id"]
@@ -151,6 +190,7 @@ def build_outcome_record(
         {
             "plan_digest": plan_digest,
             "actual_choice_id": actual_choice_id,
+            "observed_at": observed_at,
             "outcome": outcome,
             "evidence_refs": evidence,
         }
@@ -178,6 +218,7 @@ def build_outcome_record(
         },
         "observed_process": {
             "actual_choice_id": actual_choice_id,
+            "observed_at": observed_at,
             "outcome": outcome,
             "verified_utility": _non_negative_or_none(
                 verified_utility,
