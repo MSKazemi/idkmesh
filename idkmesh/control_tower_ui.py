@@ -244,6 +244,7 @@ textarea{width:100%;min-height:310px;resize:vertical;background:#050912;color:#d
 .event strong{display:block;font-size:.82rem}.event p{margin:.13rem 0 0;color:var(--muted);font-size:.75rem}
 .digest{margin-top:.2rem;font-family:var(--mono);font-size:.67rem;color:var(--faint);word-break:break-all}
 .api-list{display:grid;gap:.5rem}.endpoint{border:1px solid var(--line);border-radius:9px;padding:.7rem}.method{color:var(--mint);font-family:var(--mono);font-size:.75rem;font-weight:850}.path{font-family:var(--mono);font-size:.78rem}
+.chain{display:grid;gap:.7rem}.chain-card{border:1px solid var(--line);border-radius:11px;padding:.8rem;background:rgba(255,255,255,.012)}.chain-step{display:grid;grid-template-columns:125px 1fr;gap:.7rem;padding:.45rem 0;border-bottom:1px solid var(--line)}.chain-step:last-child{border-bottom:0}.chain-step .name{color:var(--faint);font-size:.69rem;font-weight:850;text-transform:uppercase;letter-spacing:.07em}.chain-step strong{font-size:.8rem}.chain-note{margin:.35rem 0 0;color:var(--muted);font-size:.72rem}.chain-arrow{color:var(--cyan);font-weight:850}
 .empty{color:var(--muted);text-align:center;padding:2rem}
 .callout{border-left:3px solid var(--cyan);background:rgba(139,211,255,.04);padding:.7rem .8rem;border-radius:8px;color:var(--muted);font-size:.8rem}
 .hidden{display:none!important}
@@ -259,6 +260,7 @@ textarea{width:100%;min-height:310px;resize:vertical;background:#050912;color:#d
   <nav class="nav" aria-label="Control Tower">
     <button class="active" data-view="overview">Overview</button>
     <button data-view="run">Run Evidence</button>
+    <button data-view="provenance">Provenance</button>
     <button data-view="timeline">Audit Timeline</button>
     <button data-view="api">Local API</button>
     <button class="tool" data-view="verification">Verification tools</button>
@@ -304,6 +306,21 @@ textarea{width:100%;min-height:310px;resize:vertical;background:#050912;color:#d
       <h2>Evidence summary</h2>
       <div id="run-summary" class="empty">Inspect a report to render the run.</div>
       <div id="run-attempts" class="attempts"></div>
+    </article>
+  </div>
+</section>
+
+<section id="view-provenance" class="view">
+  <div class="grid">
+    <article class="card span5">
+      <h2>Evidence roots</h2>
+      <p class="small">These identifiers and digests come directly from the validated Run Evidence Report. They show binding, not correctness.</p>
+      <div id="provenance-root" class="chain"><div class="empty">Inspect a run to show provenance roots.</div></div>
+    </article>
+    <article class="card span7">
+      <h2>Attempt provenance chains</h2>
+      <p class="small">WorkUnit → ResultManifest → verification evidence → human authority. Identity distinction is visible; statistical or organizational independence is not inferred.</p>
+      <div id="provenance-attempts" class="chain"><div class="empty">Inspect a run to show attempt chains.</div></div>
     </article>
   </div>
 </section>
@@ -387,6 +404,43 @@ function checks(items){
    return '<li><span class="'+cls+'">'+(c.status==="passed"?"✓":"✕")+'</span> '+esc(c.id)+(c.required?" · required":"")+'</li>';
  }).join("")+"</ul>";
 }
+function chainStep(name,title,digest,note){
+ var detail='<strong>'+esc(title)+'</strong>';
+ if(digest){detail+='<div class="digest">'+esc(digest)+'</div>';}
+ if(note){detail+='<p class="chain-note">'+esc(note)+'</p>';}
+ return '<div class="chain-step"><div class="name">'+esc(name)+'</div><div>'+detail+'</div></div>';
+}
+function renderProvenance(p){
+ var root=document.getElementById("provenance-root");
+ var attempts=document.getElementById("provenance-attempts");
+ if(!p){root.innerHTML='<div class="empty">No provenance projection.</div>';attempts.innerHTML='<div class="empty">No provenance projection.</div>';return;}
+ root.innerHTML='<div class="chain-card">'+
+   chainStep("WorkUnit",p.work_unit.id+" v"+p.work_unit.version,p.work_unit.digest,"Bounded task contract")+
+   chainStep("Run",p.run.run_id,p.run.source_run_digest,"Orchestrator "+p.run.orchestrator_version)+
+   chainStep("Config","source configuration",p.run.source_config_digest,"Exact run configuration binding")+
+   chainStep("Verifier policy","verification policy",p.run.verifier_policy_digest,"Policy binding; not a correctness claim")+
+   '</div>';
+ attempts.innerHTML=p.attempts.map(function(a){
+   var html='<div class="chain-card"><div class="attempt-head"><strong>'+esc(a.attempt_id)+'</strong><span class="badge '+esc(a.evidence_state)+'">'+esc(a.evidence_state)+'</span></div>';
+   html+=chainStep("WorkUnit",p.work_unit.id,p.work_unit.digest,"shared task root");
+   if(a.result_manifest){
+     html+=chainStep("Worker / result",a.result_manifest.worker_id+" · "+a.result_manifest.result_manifest_id,a.result_manifest.result_manifest_digest,"adapter "+a.worker_adapter+" · worker status "+a.result_manifest.worker_status);
+   }else{
+     html+=chainStep("Worker / result","No usable ResultManifest",null,a.error||"control-path failure");
+   }
+   html+='<div class="chain-step"><div class="name">Binding</div><div class="chain-arrow">↓</div></div>';
+   if(a.verification){
+     html+=chainStep("Verifier",a.verification.verifier_id,a.verification.verification_semantic_digest,"recommendation "+a.verification.recommendation+" · status "+a.verification.verifier_status);
+     html+=chainStep("Identity relation",a.verification.identity_distinct_from_worker?"worker/verifier IDs differ":"worker/verifier identity not distinct",null,a.verification.independence_claim);
+     html+='<div class="chain-step"><div class="name">Required checks</div><div>'+checks(a.verification.required_checks.map(function(x){return {id:x.id,status:x.status,required:true};}))+'</div></div>';
+   }else{
+     html+=chainStep("Verifier","No usable VerificationResult",null,a.error||"verification unavailable");
+   }
+   html+='<div class="chain-step"><div class="name">Authority</div><div><strong>Human decision '+esc(p.authority.human_decision_status)+'</strong><p class="chain-note">Integration authority: '+esc(p.authority.integration_authority)+' · auto-select '+(p.authority.automatic_candidate_selection?"YES":"NO")+' · merge '+(p.authority.merge?"YES":"NO")+'</p></div></div>';
+   return html+'</div>';
+ }).join("");
+}
+
 function attemptCard(a){
  var claim=a.claim?'<div class="layer"><div class="tag">Worker claim</div><strong>'+esc(a.claim.worker_id)+'</strong><p>Status: '+esc(a.claim.worker_status)+'</p><p>'+esc(a.claim.result_manifest_id)+'</p><div class="digest">'+esc(a.claim.result_manifest_digest)+'</div></div>':'<div class="layer"><div class="tag">Worker claim</div><strong>Unavailable</strong><p>'+esc(a.error||"No usable ResultManifest.")+'</p></div>';
  var evidence=a.evidence?'<div class="layer"><div class="tag">Independent evidence</div><strong>'+esc(a.evidence.verifier_id)+'</strong><p>'+esc(a.evidence.recommendation)+'</p>'+checks(a.evidence.checks)+'<div class="digest">'+esc(a.evidence.verification_digest)+'</div></div>':'<div class="layer"><div class="tag">Independent evidence</div><strong>Unavailable</strong><p>'+esc(a.error||"No usable VerificationResult.")+'</p></div>';
@@ -404,6 +458,7 @@ function render(s){
  document.getElementById("attempt-preview").innerHTML=s.attempts.map(attemptCard).join("");
  document.getElementById("run-summary").innerHTML='<div class="summary-grid">'+metric(s.summary.attempt_count,"attempts")+metric(s.summary.supported,"supported")+metric(s.summary.rejected,"rejected")+metric(s.summary.inconclusive,"inconclusive")+metric(s.summary.control_errors,"control errors")+metric(s.summary.verification_disagreement?"YES":"NO","disagreement")+'</div><p class="small mono">'+esc(s.source.source_run_digest)+'</p>';
  document.getElementById("run-attempts").innerHTML=s.attempts.map(attemptCard).join("");
+ renderProvenance(s.provenance);
  document.getElementById("timeline").innerHTML=s.timeline.map(function(e){return '<div class="event"><div class="seq">#'+esc(e.sequence)+'</div><div class="etype">'+esc(e.type)+'</div><div><strong>'+esc(e.title)+'</strong><p>'+esc(e.detail)+(e.actor?' · '+esc(e.actor):'')+'</p>'+(e.evidence_ref?'<div class="digest">'+esc(e.evidence_ref)+'</div>':'')+'</div></div>';}).join("");
 }
 async function inspect(){
