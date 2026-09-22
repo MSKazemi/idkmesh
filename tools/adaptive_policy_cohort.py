@@ -6,7 +6,10 @@ import hashlib
 import json
 from typing import Any, Iterable, Mapping, Sequence
 
-from tools.adaptive_policy_outcome import sha256_digest
+try:
+    from tools.adaptive_policy_outcome import sha256_digest
+except ModuleNotFoundError:  # direct: python tools/adaptive_policy_cohort.py
+    from adaptive_policy_outcome import sha256_digest
 
 
 EVALUATOR_VERSION = "0.1"
