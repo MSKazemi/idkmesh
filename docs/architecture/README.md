@@ -61,6 +61,9 @@ remain authoritative; an index link does not promote a proposal into policy.
 
 - [Algorithm Collaboration Fabric](ALGORITHM_COLLABORATION_FABRIC.md) — typed
   blackboard boundaries between specialized algorithms.
+- [Issue-to-Model Routing Policy](ISSUE_MODEL_ROUTING.md) — provider-neutral
+  capability tiers, human-authority gates, cheap-first escalation, and
+  GitHub-native issue routing labels.
 - [CI Shadow Planner](CI_SHADOW_PLANNER.md) and
   [CI Shadow Outcome Evaluator](CI_SHADOW_OUTCOME_EVALUATOR.md) — advisory
   test-impact planning and exact-head outcome measurement without skip authority.
