@@ -168,7 +168,7 @@ Markdown/identity report, not the combined gate. See
 
 **Do not verify your work with `python -m unittest discover`.** It silently
 under-collects — `unittest` only finds `TestCase` subclasses, so the 168
-module-level `test_*` functions spread across 18 files in `tests/` are
+module-level `test_*` functions spread across 19 files in `tests/` are
 invisible to it. That is roughly a tenth of the suite, skipped while the run
 still prints `OK`, with no indication anything was missed.
 `tests/test_documented_test_counts.py` re-measures both figures and the gap
