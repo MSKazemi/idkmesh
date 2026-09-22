@@ -151,6 +151,18 @@ Requires real project data or a controlled real node/candidate corpus.
 
 The policy remains advisory/dry-run.
 
+Use the common shadow-evidence protocol introduced by PR #637 / issue #636:
+
+- freeze a pre-outcome `adaptive-policy-plan-v0.1` against an exact revision/input digest;
+- keep all hard gates outside adaptive authority;
+- name the existing baseline beside the shadow recommendation;
+- join the later real-process result with `adaptive-policy-outcome-v0.1`;
+- never rewrite the frozen plan after the outcome is known;
+- summarize cohorts descriptively with the adaptive-policy cohort evaluator;
+- keep `shadow_counterfactual_observed=false` and `causal_effect_estimate=null`.
+
+N3 should answer whether a policy makes useful, measurable, materially different recommendations on real state. It does not establish that an unexecuted recommendation would have caused a better result.
+
 ### N3 -> N4
 
 Requires:
@@ -202,6 +214,7 @@ No learning/routing algorithm may let a worker satisfy the verifier independence
 
 1. Complete AVE matched-budget/adversarial ablations (#621).
 2. Complete Physarum stationary/failure/attribution stress matrix (#630).
-3. Move neither mechanism into live routing until it earns **N3 real dry-run** evidence.
-4. Prefer removing unnecessary mechanisms over adding new ones.
+3. Move neither mechanism into live routing until it earns **N3 real dry-run** evidence through the common shadow contract (#636 / PR #637).
+4. Treat a low shadow-vs-baseline disagreement rate as evidence that a new mechanism may not justify its complexity.
+5. Prefer removing unnecessary mechanisms over adding new ones.
 5. At the 3-10 node stage, evaluate spectral/percolation diagnostics before inventing another scheduler.
