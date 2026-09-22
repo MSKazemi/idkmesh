@@ -57,6 +57,10 @@ some unrelated page but missing from its own index stays invisible.
 
 ## Proposed and experimental
 
+- [ADR-0013 — GitHub-First, Server-Optional Deployment](ADR-0013-github-first-server-optional-deployment.md)
+  — makes the target GitHub repository the default control plane for the first external-project product profile, with a durable Git-native run ledger and an evidence-gated path to an optional service only when scale/latency/tenancy requires it. *(Proposed for adoption, 2026-09-22.)*
+
+
 These record a default hypothesis the project builds on, not a settled contract.
 
 - [ADR-0002 — Fractal Autonomous Cells for Scalability](ADR-0002-fractal-autonomous-cells.md)
