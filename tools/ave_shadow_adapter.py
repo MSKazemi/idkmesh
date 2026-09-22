@@ -66,6 +66,31 @@ def _parse_time(value: str, field: str) -> datetime:
     return result.astimezone(timezone.utc)
 
 
+def _normalized_pool(pool: Mapping[str, Any]) -> dict[str, Any]:
+    """Canonicalize set-like pool arrays before policy hashing/replay."""
+    result = dict(pool)
+    normalized_candidates: list[dict[str, Any]] = []
+    for raw in pool.get("verifier_candidates", []):
+        candidate = dict(raw)
+        candidate["supported_validator_ids"] = sorted(
+            set(candidate.get("supported_validator_ids", []))
+        )
+        reliability = dict(candidate.get("reliability", {}))
+        reliability["source_refs"] = sorted(
+            set(reliability.get("source_refs", []))
+        )
+        candidate["reliability"] = reliability
+        normalized_candidates.append(candidate)
+    result["verifier_candidates"] = sorted(
+        normalized_candidates,
+        key=lambda candidate: str(candidate.get("id", "")),
+    )
+    result["limitations"] = sorted(
+        set(str(value) for value in pool.get("limitations", []))
+    )
+    return result
+
+
 def validate_verifier_pool(pool: Mapping[str, Any]) -> None:
     if pool.get("schema_version") != "0.1":
         raise AVEShadowAdapterError(
@@ -279,8 +304,12 @@ def _hard_gates(
         plan_policy.get("require_verifier_distinct_from_worker") is True
     )
     budget = work_unit.get("budget", {})
+    project_spend = budget.get("project_spend_usd_max")
     zero_spend_ok = (
-        budget.get("project_spend_usd_max") == 0
+        not isinstance(project_spend, bool)
+        and isinstance(project_spend, (int, float))
+        and math.isfinite(float(project_spend))
+        and float(project_spend) == 0.0
         and budget.get("paid_fallback_allowed") is False
     )
     verification = work_unit.get("verification_policy", {})
@@ -629,11 +658,12 @@ def build_ave_shadow_plan(
     evidence_refs: Sequence[str] = (),
 ) -> dict[str, Any]:
     validate_verifier_pool(verifier_pool)
+    normalized_pool = _normalized_pool(verifier_pool)
     gates, required_validators = _hard_gates(
         repository=repository,
         work_unit=work_unit,
         evaluator_plan=evaluator_plan,
-        pool=verifier_pool,
+        pool=normalized_pool,
     )
     hard_pass = all(gate["status"] == "pass" for gate in gates)
 
@@ -645,7 +675,7 @@ def build_ave_shadow_plan(
     )
     candidates = [
         candidate
-        for candidate in verifier_pool["verifier_candidates"]
+        for candidate in normalized_pool["verifier_candidates"]
         if _is_hard_eligible(candidate, independent_required)
     ]
     candidate_by_id = {
@@ -654,7 +684,7 @@ def build_ave_shadow_plan(
     baseline = _baseline_choice(
         evaluator_plan,
         candidate_by_id,
-        verifier_pool,
+        normalized_pool,
     )
     choices: list[dict[str, Any]] = [baseline]
 
@@ -689,7 +719,7 @@ def build_ave_shadow_plan(
             for combo in itertools.combinations(selection_candidates, target):
                 metrics = _portfolio_metrics(
                     combo,
-                    verifier_pool,
+                    normalized_pool,
                     required_validators,
                 )
                 if not metrics["covers_all_required_validators"]:
@@ -709,7 +739,7 @@ def build_ave_shadow_plan(
                 viable.sort(
                     key=lambda combo: _portfolio_selection_key(
                         combo,
-                        verifier_pool,
+                        normalized_pool,
                         required_validators,
                     )
                 )
@@ -725,13 +755,13 @@ def build_ave_shadow_plan(
                 best = viable[0]
                 best_choice = _portfolio_choice(
                     best,
-                    verifier_pool,
+                    normalized_pool,
                     required_validators,
                 )
                 selected_choice_id = best_choice["id"]
                 selected_metrics = _portfolio_metrics(
                     best,
-                    verifier_pool,
+                    normalized_pool,
                     required_validators,
                 )
                 selection_reasons.extend(
@@ -761,7 +791,7 @@ def build_ave_shadow_plan(
             "experiments/AVE-2-adversarial-matrix.md",
         ]
     )
-    limitations = list(verifier_pool.get("limitations", []))
+    limitations = list(normalized_pool.get("limitations", []))
     limitations.extend(
         [
             "Verifier family labels are routing heuristics, not proof of statistical independence.",
@@ -774,13 +804,13 @@ def build_ave_shadow_plan(
     input_state = {
         "work_unit": work_unit,
         "evaluator_plan": evaluator_plan,
-        "verifier_observation_pool": verifier_pool,
+        "verifier_observation_pool": normalized_pool,
         "ave_policy_version": POLICY_VERSION,
     }
 
     return build_shadow_plan(
         repository=repository,
-        source_revision_sha=str(verifier_pool["source_revision"]),
+        source_revision_sha=str(normalized_pool["source_revision"]),
         subsystem="verification-allocation",
         policy_id=POLICY_ID,
         policy_version=POLICY_VERSION,
