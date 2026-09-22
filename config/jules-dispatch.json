@@ -1,0 +1,88 @@
+{
+  "version": 1,
+  "queue_label": "agent-ready",
+  "dispatch_label": "jules",
+  "max_in_flight": 4,
+  "max_dispatch_per_sweep": 2,
+  "blocked_labels": [
+    "blocked",
+    "do-not-automate",
+    "human-required",
+    "needs-decomposition",
+    "research-evidence",
+    "security-sensitive"
+  ],
+  "priority_weights": {
+    "priority:p0": 300,
+    "priority:p1": 200,
+    "priority:p2": 100
+  },
+  "size_weights": {
+    "size:xs": 40,
+    "size:s": 30,
+    "size:m": 10
+  },
+  "bonus_weights": {
+    "bug": 15,
+    "good first issue": 10,
+    "documentation": 5
+  },
+  "label_definitions": {
+    "agent-ready": {
+      "color": "0E8A16",
+      "description": "Maintainer-approved for bounded coding-agent execution"
+    },
+    "jules": {
+      "color": "EDEDED",
+      "description": "Execution signal consumed by Google Labs Jules"
+    },
+    "blocked": {
+      "color": "D93F0B",
+      "description": "Cannot proceed until a named blocker is resolved"
+    },
+    "do-not-automate": {
+      "color": "B60205",
+      "description": "Explicitly excluded from coding-agent auto-dispatch"
+    },
+    "human-required": {
+      "color": "C5DEF5",
+      "description": "Requires genuine human observation, judgment, or evidence"
+    },
+    "research-evidence": {
+      "color": "D4C5F9",
+      "description": "Requires independent research or measurement evidence"
+    },
+    "security-sensitive": {
+      "color": "B60205",
+      "description": "Security-sensitive task requiring explicit review"
+    },
+    "needs-decomposition": {
+      "color": "FBCA04",
+      "description": "Too broad for automatic dispatch; split into bounded tasks first"
+    },
+    "priority:p0": {
+      "color": "B60205",
+      "description": "Highest implementation priority"
+    },
+    "priority:p1": {
+      "color": "D93F0B",
+      "description": "High implementation priority"
+    },
+    "priority:p2": {
+      "color": "FBCA04",
+      "description": "Normal implementation priority"
+    },
+    "size:xs": {
+      "color": "0E8A16",
+      "description": "Very small bounded change"
+    },
+    "size:s": {
+      "color": "0E8A16",
+      "description": "Small bounded change"
+    },
+    "size:m": {
+      "color": "FBCA04",
+      "description": "Medium bounded change"
+    }
+  }
+}
