@@ -99,7 +99,7 @@ class SEOTopicCoverageTests(unittest.TestCase):
         for cluster in self.clusters:
             text = (ROOT / cluster["path"]).read_text(encoding="utf-8").lower()
             self.assertNotIn("meta name=\"keywords\"", text)
-            self.assertNotIn("keywords:", _frontmatter(text))
+            self.assertNotIn("keywords", _frontmatter(text))
 
 
 if __name__ == "__main__":  # pragma: no cover
