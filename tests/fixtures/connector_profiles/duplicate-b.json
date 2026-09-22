@@ -1,0 +1,7 @@
+{
+  "api_version": "idkmesh.io/v1alpha1",
+  "id": "duplicate",
+  "kind": "model",
+  "driver": "fake-b",
+  "enabled": true
+}
