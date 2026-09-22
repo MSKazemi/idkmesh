@@ -131,6 +131,33 @@ class ConnectorRegistryTests(unittest.TestCase):
             {"fake-scm", "fake-agent", "fake-model", "fake-execution"},
         )
 
+    def test_profile_claim_cannot_upgrade_driver_capability(self):
+        registry = build_fake_registry()
+        raw = {
+            "api_version": "idkmesh.io/v1alpha1",
+            "id": "overclaiming-agent",
+            "kind": "agent",
+            "driver": "fake-agent",
+            "enabled": True,
+            "capabilities": {"tiers": ["T4"]},
+        }
+        config = parse_connector_profile_document(raw)[0]
+        driver = registry.resolve_config(config)
+        declared = driver.declared_capabilities(config)
+        self.assertEqual(declared.capability_tiers, frozenset({"T1", "T2"}))
+        self.assertNotIn("T4", declared.capability_tiers)
+
+    def test_driver_without_capability_interface_is_rejected(self):
+        class BrokenDriver:
+            kind = "agent"
+            driver_id = "broken"
+            driver_version = "0.1"
+
+        registry = ConnectorRegistry()
+        with self.assertRaises(ConnectorRegistryError) as caught:
+            registry.register(BrokenDriver())
+        self.assertEqual(caught.exception.code, "invalid_driver_interface")
+
     def test_custom_driver_can_register_without_registry_code_change(self):
         registry = ConnectorRegistry()
         custom = StaticFakeDriver(
