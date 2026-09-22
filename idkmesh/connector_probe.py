@@ -99,6 +99,12 @@ class ConnectorProbeResult:
             _require_code(warning, "probe warning")
         if type(self.auth_configured) is not bool:
             raise ValueError("auth_configured must be a boolean")
+        if self.status == "healthy" and self.failure is not None:
+            raise ValueError("healthy result cannot include a failure")
+        if self.status == "unavailable" and self.failure is None:
+            raise ValueError("unavailable result requires a failure")
+        if self.status == "disabled" and self.failure is not None:
+            raise ValueError("disabled result cannot include a probe failure")
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -136,7 +142,6 @@ def probe_connector(
         raise ValueError("secret_available must be a boolean or None")
 
     driver = registry.resolve_config(config)
-    capabilities = driver.declared_capabilities(config)
     descriptor = DriverDescriptor(
         kind=driver.kind,
         driver_id=driver.driver_id,
@@ -144,6 +149,20 @@ def probe_connector(
     )
 
     auth_configured = config.secret_ref is None or secret_available is True
+
+    try:
+        capabilities = driver.declared_capabilities(config)
+    except Exception:
+        return ConnectorProbeResult(
+            connection_id=config.id,
+            status="unavailable",
+            checked_at=checked_at,
+            driver=descriptor,
+            observed_capabilities=DriverCapabilities(),
+            auth_configured=auth_configured,
+            warnings=(),
+            failure=ProbeFailure("driver_error", "capability_declaration_failed"),
+        )
 
     if not config.enabled:
         return ConnectorProbeResult(
@@ -182,7 +201,20 @@ def probe_connector(
             failure=ProbeFailure("driver_error", "probe_interface_missing"),
         )
 
-    outcome = probe(config)
+    try:
+        outcome = probe(config)
+    except Exception:
+        return ConnectorProbeResult(
+            connection_id=config.id,
+            status="unavailable",
+            checked_at=checked_at,
+            driver=descriptor,
+            observed_capabilities=capabilities,
+            auth_configured=auth_configured,
+            warnings=(),
+            failure=ProbeFailure("driver_error", "probe_exception"),
+        )
+
     if not isinstance(outcome, DriverProbeOutcome):
         return ConnectorProbeResult(
             connection_id=config.id,
