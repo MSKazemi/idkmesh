@@ -539,6 +539,16 @@ class ControlTowerTokenTests(unittest.TestCase):
         finally:
             server.server_close()
 
+    def test_environment_token_rejects_html_or_header_unsafe_characters(self) -> None:
+        with mock.patch.dict(
+            "os.environ",
+            {TOKEN_ENV: "a" * 32 + "</script>"},
+            clear=False,
+        ):
+            with self.assertRaises(ValueError) as ctx:
+                create_server(port=0)
+        self.assertIn("ASCII letters", str(ctx.exception))
+
     def test_short_environment_token_is_rejected(self) -> None:
         with mock.patch.dict(
             "os.environ",
@@ -579,6 +589,17 @@ class ControlTowerCliTests(unittest.TestCase):
             port=8770,
             open_browser=False,
         )
+
+    def test_control_tower_reports_invalid_environment_token_cleanly(self) -> None:
+        with mock.patch.dict(
+            "os.environ",
+            {TOKEN_ENV: "bad-token"},
+            clear=False,
+        ), mock.patch("idkmesh.cli._fail", return_value=2) as fail:
+            rc = cli.main(
+                ["control-tower", "--no-browser", "--port", "0"])
+        self.assertEqual(rc, 2)
+        self.assertIn(TOKEN_ENV, fail.call_args.args[0])
 
     def test_control_tower_rejects_invalid_port(self) -> None:
         with mock.patch("idkmesh.cli._fail", return_value=2) as fail:
