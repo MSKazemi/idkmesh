@@ -14,16 +14,16 @@ The repository remains the canonical source of truth. These topic pages are disc
 
 | Topic | Use it when you are asking... |
 | --- | --- |
-| [AI agent verification](ai-agent-verification.html) | How do I verify an AI agent's output instead of trusting its own success claim? |
-| [Multi-agent orchestration](multi-agent-orchestration.html) | How should multiple agents decompose, coordinate, and hand off bounded work? |
-| [AI code review](ai-code-review.html) | How do coding agents create pull requests without becoming their own reviewers or merge authority? |
-| [LLM-as-a-judge reliability](llm-judge-reliability.html) | When is an LLM evaluator reliable, and what should be measured before using one as a judge? |
-| [Verifier panels](verifier-panels.html) | Why can a panel of many reviewers contain far fewer independent votes than its head-count suggests? |
-| [Agent governance](agent-governance.html) | Where should human approval, permissions, and integration authority sit in an agentic workflow? |
-| [Provenance and evidence](provenance-evidence.html) | How do I bind claims to artifacts, identities, checks, and reproducible evidence? |
-| [MCP and A2A interoperability](mcp-a2a-interoperability.html) | What roles do MCP and A2A play, and where does IDKMesh add coordination/evidence semantics? |
-| [Verification scaling](verification-scaling.html) | What happens when generation grows faster than review and verification capacity? |
-| [Verified swarm engineering](verified-swarm-engineering.html) | What would an open, Git-native, verification-first framework for collaborative agents look like? |
+| [AI agent verification](https://mskazemi.com/idkmesh/topics/ai-agent-verification.html) | How do I verify an AI agent's output instead of trusting its own success claim? |
+| [Multi-agent orchestration](https://mskazemi.com/idkmesh/topics/multi-agent-orchestration.html) | How should multiple agents decompose, coordinate, and hand off bounded work? |
+| [AI code review](https://mskazemi.com/idkmesh/topics/ai-code-review.html) | How do coding agents create pull requests without becoming their own reviewers or merge authority? |
+| [LLM-as-a-judge reliability](https://mskazemi.com/idkmesh/topics/llm-judge-reliability.html) | When is an LLM evaluator reliable, and what should be measured before using one as a judge? |
+| [Verifier panels](https://mskazemi.com/idkmesh/topics/verifier-panels.html) | Why can a panel of many reviewers contain far fewer independent votes than its head-count suggests? |
+| [Agent governance](https://mskazemi.com/idkmesh/topics/agent-governance.html) | Where should human approval, permissions, and integration authority sit in an agentic workflow? |
+| [Provenance and evidence](https://mskazemi.com/idkmesh/topics/provenance-evidence.html) | How do I bind claims to artifacts, identities, checks, and reproducible evidence? |
+| [MCP and A2A interoperability](https://mskazemi.com/idkmesh/topics/mcp-a2a-interoperability.html) | What roles do MCP and A2A play, and where does IDKMesh add coordination/evidence semantics? |
+| [Verification scaling](https://mskazemi.com/idkmesh/topics/verification-scaling.html) | What happens when generation grows faster than review and verification capacity? |
+| [Verified swarm engineering](https://mskazemi.com/idkmesh/topics/verified-swarm-engineering.html) | What would an open, Git-native, verification-first framework for collaborative agents look like? |
 
 ## The shared trust path
 
