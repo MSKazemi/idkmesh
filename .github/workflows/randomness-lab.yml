@@ -2,6 +2,7 @@ name: randomness-lab
 
 on:
   push:
+    branches: [main]
     paths:
       - "randomness_lab/**"
       - "tests/test_randomness_lab.py"
