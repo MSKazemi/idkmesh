@@ -889,16 +889,25 @@ risk-adaptive verifier fan-out/quorum, anti-monoculture routing pressure,
 entropy-regularised exploration, and review-capacity backpressure
 \citep{idkmesh}.
 
-AVE is deliberately outside this paper's empirical claims. Its current evidence
-is a deterministic synthetic mechanism test, not a deployment study, and its
-first reference sweep exposes a cost/safety trade-off rather than a universal
-win: stronger diversity and risk control can reduce synthetic defect escape
-while consuming more verification budget. We therefore treat AVE as future
-work whose components must be ablated under matched budgets and then tested on
-held-out real WorkUnits before any production routing claim is warranted. The
-connection to this paper is narrower: any such controller should optimize for
-\emph{independent evidence gained per scarce review resource}, because nominal
-reviewer count is not a sufficient state variable.
+AVE is deliberately outside this paper's empirical claims. Its evidence is
+still synthetic, not a deployment study. A subsequent common-budget-ceiling
+component ablation across five simulated environments narrows the design:
+verifier-family diversity is the strongest general defect-escape lever in that
+model; risk-adaptive quorum concentrates the largest reduction on high-risk
+escapes; and shadow-price backpressure reduces overload and redundant generation.
+The same ablation also supplies negative evidence: ecological spreading and
+entropy exploration do not by themselves guarantee safety, and known-bad probe
+success is not yet robust enough to create positive verifier trust
+\citep{idkmesh}. A targeted follow-up therefore keeps probe evidence diagnostic
+while comparing a smaller AVE-core against the original full controller.
+
+These results remain future-work/control-policy evidence rather than support for
+this paper's measured-panel claims. They use synthetic workers, verifiers, and
+resource models and must still survive the remaining correlation/outage/shift
+sweeps and then held-out real WorkUnits before any production routing claim is
+warranted. The connection to this paper is narrower: any such controller should
+optimize for \emph{independent evidence gained per scarce review resource},
+because nominal reviewer count is not a sufficient state variable.
 
 \section{Threats to validity}
 \label{sec:threats}
