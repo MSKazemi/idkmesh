@@ -88,6 +88,8 @@ For materially AI-generated code, research, tests, or documentation, include a s
 
 Do not submit large volumes of unreviewed generated material. Generation must not grow faster than the community's ability to verify and maintain it.
 
+Maintainers and trusted triagers using the repository's Google Jules automation should follow [`docs/operations/JULES_AUTOMATION.md`](docs/operations/JULES_AUTOMATION.md). In that flow, `agent-ready` means a bounded issue has been reviewed as suitable for an implementation agent; the dispatcher adds `jules` when review capacity is available. Human-only evidence, independent research, security approval, and governance work stay outside that automatic lane.
+
 ## Running the tests
 
 You do not need to understand the research side of this repository to run the
