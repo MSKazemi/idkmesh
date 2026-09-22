@@ -45,12 +45,14 @@
       "required": [
         "repository",
         "source_revision_sha",
+        "captured_at",
         "input_digest",
         "input_refs"
       ],
       "properties": {
         "repository": {"type": "string", "minLength": 1},
         "source_revision_sha": {"$ref": "#/$defs/sha"},
+        "captured_at": {"type": "string", "format": "date-time"},
         "input_digest": {"$ref": "#/$defs/digest"},
         "input_refs": {
           "type": "array",
