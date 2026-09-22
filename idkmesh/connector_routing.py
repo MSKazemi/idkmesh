@@ -133,6 +133,13 @@ class RoutingDecision:
             )
         if self.authority_mode not in AUTHORITY_MODES:
             raise ValueError(f"unknown authority mode: {self.authority_mode}")
+        if (
+            self.authority_mode == "deterministic"
+            and self.required_capability_tier != "T0"
+        ):
+            raise ValueError(
+                "deterministic authority requires capability tier T0"
+            )
         if self.risk_class not in RISK_ORDER:
             raise ValueError(f"unknown risk class: {self.risk_class}")
         unknown_kinds = sorted(
@@ -195,6 +202,11 @@ def _rejection_reasons(
         and not decision.human_gate_satisfied
     ):
         reasons.append("human_gate_pending")
+    elif (
+        decision.authority_mode == "deterministic"
+        and profile.kind in {"agent", "model"}
+    ):
+        reasons.append("deterministic_no_llm")
 
     if not profile.enabled or profile.health == "disabled":
         reasons.append("connector_disabled")
@@ -287,7 +299,19 @@ def resolve_routes(
     eligible: list[EligibleConnector] = []
     ineligible: list[RejectedConnector] = []
 
-    for profile in sorted(connectors, key=lambda item: item.connection_id):
+    connector_list = list(connectors)
+    ids = [profile.connection_id for profile in connector_list]
+    duplicate_ids = sorted(
+        connection_id
+        for connection_id in set(ids)
+        if ids.count(connection_id) > 1
+    )
+    if duplicate_ids:
+        raise ValueError(
+            "duplicate connection_id(s): " + ", ".join(duplicate_ids)
+        )
+
+    for profile in sorted(connector_list, key=lambda item: item.connection_id):
         reasons = _rejection_reasons(decision, profile)
         if reasons:
             ineligible.append(
