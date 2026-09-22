@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idkmesh.org/schemas/human-decision-record-v0.1.schema.json",
+  "title": "IDKMesh Human Decision Record v0.1",
+  "description": "A recorded, accountable human integration decision against one immutable Run Evidence Report. It captures who decided, what was decided, when, and why, bound to the report by content digest so a swapped or corrupted report is detectable. It is a record of a decision that was made, not an executor of that decision: it carries no canonical-state-write, git-push, or merge authority of its own.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "kind",
+    "decision_id",
+    "evidence_report",
+    "selected_attempt_id",
+    "decision",
+    "rationale",
+    "decider",
+    "decided_at",
+    "authority"
+  ],
+  "properties": {
+    "schema_version": {"const": "0.1"},
+    "kind": {"const": "idkmesh-human-decision-record"},
+    "decision_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._/-]{2,127}$"},
+    "evidence_report": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "schema_version", "run_id", "digest"],
+      "properties": {
+        "kind": {"const": "idkmesh-run-evidence-report"},
+        "schema_version": {"const": "0.1"},
+        "run_id": {"type": "string", "minLength": 1},
+        "digest": {
+          "$ref": "#/$defs/digest",
+          "description": "canonical_digest() of the exact evidence-report document this decision was made against. A decision record whose digest no longer matches the referenced report's current content is stale/tampered evidence, not a valid decision."
+        }
+      }
+    },
+    "selected_attempt_id": {
+      "type": ["string", "null"],
+      "description": "The attempt_id (from the referenced evidence report's attempts[]) this decision applies to, or null when the decision concerns the run as a whole rather than one attempt."
+    },
+    "decision": {
+      "enum": ["accept", "reject", "escalate"],
+      "description": "The human's own explicit choice. This is deliberately a distinct vocabulary from the machine-suggested decision_support.recommendation values (accept_candidate/reject_candidate/escalate/insufficient_evidence) carried by the evidence report: recording a decision here is never satisfied by echoing that recommendation."
+    },
+    "rationale": {"type": "string", "minLength": 1},
+    "decider": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "type": {"enum": ["human", "governance_body"]},
+        "display_name": {"type": "string"}
+      }
+    },
+    "decided_at": {"type": "string", "format": "date-time"},
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["canonical_state_write", "git_push", "merge"],
+      "properties": {
+        "canonical_state_write": {"const": false},
+        "git_push": {"const": false},
+        "merge": {"const": false}
+      }
+    }
+  },
+  "$defs": {
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    }
+  }
+}

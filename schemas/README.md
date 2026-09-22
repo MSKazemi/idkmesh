@@ -17,6 +17,7 @@ This directory contains the machine-readable contracts used by the executable re
 - `ci-observation-v0.1.schema.json` — normalized exact-SHA GitHub check snapshot with required-baseline completeness and no authority.
 - `gate-audit-report-v0.1.schema.json` — diagnostic report emitted by `idkmesh gate-audit`: per-verifier accuracy, pairwise error correlation, measured effective votes vs the accuracy-dependent ceiling, and seeded-probe breach rate. Decision support about the review layer itself; it grants no acceptance or merge authority.
 - `ci-evaluation-v0.1.schema.json` — shadow plan/outcome comparison recording mapped misses, attribution gaps, modeled savings, and permanent v0.1 promotion ineligibility.
+- `human-decision-record-v0.1.schema.json` — a recorded, accountable human integration decision (`accept`/`reject`/`escalate`) against one Run Evidence Report: who decided, what they decided, when, and why, bound to the exact report by content digest. It is deliberately a record of a decision, not an executor of one: it carries no canonical-state-write, git-push, or merge authority. Produced by `experiments/record_human_decision.py`.
 
 All current schemas use JSON Schema Draft 2020-12.
 
