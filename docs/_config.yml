@@ -4,8 +4,8 @@ theme: jekyll-theme-primer
 
 title: IDKMesh
 description: >-
-  IDKMesh is an open-source verification-first coordination fabric for humans,
-  AI agents, and heterogeneous compute working on uncertain goals.
+  Open-source framework for AI agent verification, multi-agent orchestration,
+  independent review, provenance, and evidence-first agentic software engineering.
 url: "https://mskazemi.com"
 baseurl: "/idkmesh"
 repository: MSKazemi/idkmesh
