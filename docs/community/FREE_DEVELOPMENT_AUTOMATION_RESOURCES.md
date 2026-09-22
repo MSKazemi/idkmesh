@@ -44,16 +44,33 @@ These are not Jules replacements, but they make automated development safer and 
 - **Qodo**: current pricing documentation says there is no permanent free tier after the trial, so it is not counted here.
 - **Paid-only hosted agents**: tools can still be useful later, but they should not be part of a zero-project-spend automation baseline.
 
+## Implementation status in IDKMesh
+
+The repository now separates **agent identity/configuration** from execution authority:
+
+- Jules: existing GitHub issue-dispatch worker.
+- OpenHands: guarded manual pilot in PR #642 / issue #641.
+- goose, Gemini CLI, mini-SWE-agent: represented by the provider-neutral `AgentPreset` contract in issue #647. This is configuration only; it does not execute the tools yet.
+- next local-runner slices: disposable exact-SHA workspace, process/resource limits, sandbox/network enforcement, artifact capture, then one pinned/versioned live preset.
+
+The preset contract intentionally stores structured executable/argv metadata rather than shell command strings. Issue text cannot select an executable, inject fixed arguments, expose host/repository credentials, disable the sandbox, or grant candidate acceptance authority.
+
+### Additional free/open-source worker candidates
+
+After the first three presets are proven, the same contract can be extended to **Aider** and **Cline CLI** as heterogeneous supervised/headless workers. They should be added only after their exact non-interactive invocation and credential boundary are pinned and smoke-tested. Do not add a new scheduler per agent.
+
 ## Recommended IDKMesh stack
 
 A practical next step is to keep **Jules** as one worker and add diversity instead of replacing it.
 
 1. **Jules** — bounded implementation tasks already routed from issues.
 2. **OpenHands** — second issue-to-PR implementation worker for a separate task class.
-3. **Gemini CLI** — local/manual agent for diagnostics, documentation, refactoring, and experiments.
-4. **mini-SWE-agent** or **goose** — experimental/local worker identities, ideally with a local model when testing zero-spend execution.
-5. **GitHub Actions** — the orchestrator that routes labels/tasks and always runs the repository's required gates.
-6. **CodeRabbit + CodeQL + Dependabot + Semgrep + coverage tooling** — review and deterministic evidence layers, never merge authority.
+3. **goose** — first local bounded-runner target because issue #577 already selects it as preferred C4-F worker.
+4. **Gemini CLI** — free-quota alternate local worker behind the same AgentPreset/runner boundary.
+5. **mini-SWE-agent** — research/benchmark worker behind the same boundary after the runner is proven.
+6. **Aider / Cline CLI** — later heterogeneous presets for supervised/headless experiments.
+7. **GitHub Actions** — the orchestrator that routes labels/tasks and always runs the repository's required gates.
+8. **CodeRabbit + CodeQL + Dependabot + Semgrep + coverage tooling** — review and deterministic evidence layers, never merge authority.
 
 Suggested routing labels:
 
