@@ -127,6 +127,7 @@ A paper-facing review should explicitly check:
   [`../experiments/README.md`](../experiments/README.md), and
   [`../schemas/README.md`](../schemas/README.md);
 - gate-audit claims against [`../docs/specifications/GATE_AUDIT_V0_1.md`](../docs/specifications/GATE_AUDIT_V0_1.md),
+- any Adaptive Verification Ecology (AVE) mention against [`../docs/algorithms/ADAPTIVE_VERIFICATION_ECOLOGY.md`](../docs/algorithms/ADAPTIVE_VERIFICATION_ECOLOGY.md), [`../experiments/AVE-0-adaptive-verification-ecology.md`](../experiments/AVE-0-adaptive-verification-ecology.md), and claim `P-AVE-001`; keep it explicitly synthetic/future-work until matched-budget ablation and real WorkUnit evidence exist;
   including the declared evidence class, strict-JSON/input contract, the distinction
   between a resolved effective-vote estimate and a comparison-table lower bound,
   and the fact that a point estimate is not a sampling-uncertainty interval;
