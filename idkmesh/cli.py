@@ -54,6 +54,27 @@ def build_parser() -> argparse.ArgumentParser:
     ga.add_argument(
         "--pretty", action="store_true",
         help="pretty-print the JSON report")
+    ga.add_argument(
+        "--bootstrap", action="store_true",
+        help=(
+            "add a deterministic candidate-level bootstrap confidence "
+            "interval for panel error, mean verifier accuracy, mean "
+            "pairwise correlation and effective votes (issue #520); emits "
+            "gate-audit-report-v0.2 instead of v0.1"))
+    ga.add_argument(
+        "--bootstrap-replicates", type=int, default=2000, metavar="N",
+        help="bootstrap resample count; requires --bootstrap (default: 2000)")
+    ga.add_argument(
+        "--bootstrap-seed", type=int, default=0, metavar="N",
+        help=(
+            "seed for the bootstrap's deterministic PRNG; requires "
+            "--bootstrap (default: 0)"))
+    ga.add_argument(
+        "--bootstrap-confidence-level", type=float, default=0.95,
+        metavar="X",
+        help=(
+            "confidence level in (0, 1) for the bootstrap interval; "
+            "requires --bootstrap (default: 0.95)"))
 
     gui = sub.add_parser(
         "gate-audit-ui",
@@ -168,8 +189,21 @@ def main(argv: list[str] | None = None) -> int:
     if conflict is not None:
         return conflict
 
+    bootstrap: dict[str, object] | None = None
+    if args.bootstrap:
+        bootstrap = {
+            "replicates": args.bootstrap_replicates,
+            "seed": args.bootstrap_seed,
+            "confidence_level": args.bootstrap_confidence_level,
+        }
+    elif (args.bootstrap_replicates != 2000 or args.bootstrap_seed != 0
+            or args.bootstrap_confidence_level != 0.95):
+        return _fail(
+            "--bootstrap-replicates/--bootstrap-seed/"
+            "--bootstrap-confidence-level require --bootstrap")
+
     try:
-        report = audit_file(args.input)
+        report = audit_file(args.input, bootstrap=bootstrap)
     except FileNotFoundError:
         return _fail(f"input file not found: {args.input}")
     except IsADirectoryError:
