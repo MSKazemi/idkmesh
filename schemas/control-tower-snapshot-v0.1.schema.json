@@ -14,6 +14,7 @@
     "summary",
     "attention",
     "attempts",
+    "provenance",
     "timeline",
     "warnings",
     "human_decision",
@@ -210,6 +211,9 @@
         "type": "string",
         "minLength": 1
       }
+    },
+    "provenance": {
+      "$ref": "#/$defs/provenance"
     }
   },
   "$defs": {
@@ -456,6 +460,256 @@
               "type": "null"
             }
           ]
+        }
+      }
+    },
+    "provenance_required_check": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "status"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "provenance_result_manifest": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "required": [
+        "worker_id",
+        "worker_status",
+        "result_manifest_id",
+        "result_manifest_digest"
+      ],
+      "properties": {
+        "worker_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "worker_status": {
+          "type": "string",
+          "minLength": 1
+        },
+        "result_manifest_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "result_manifest_digest": {
+          "$ref": "#/$defs/digest"
+        }
+      }
+    },
+    "provenance_verification": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "required": [
+        "verifier_id",
+        "verifier_status",
+        "recommendation",
+        "verification_semantic_digest",
+        "required_checks",
+        "identity_distinct_from_worker",
+        "independence_claim"
+      ],
+      "properties": {
+        "verifier_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "verifier_status": {
+          "type": "string",
+          "minLength": 1
+        },
+        "recommendation": {
+          "enum": [
+            "accept_candidate",
+            "reject_candidate",
+            "escalate",
+            "insufficient_evidence"
+          ]
+        },
+        "verification_semantic_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "required_checks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/provenance_required_check"
+          }
+        },
+        "identity_distinct_from_worker": {
+          "type": "boolean"
+        },
+        "independence_claim": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "provenance_attempt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "attempt_id",
+        "order",
+        "worker_adapter",
+        "result_manifest",
+        "verification",
+        "evidence_state",
+        "error"
+      ],
+      "properties": {
+        "attempt_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "order": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "worker_adapter": {
+          "type": "string",
+          "minLength": 1
+        },
+        "result_manifest": {
+          "$ref": "#/$defs/provenance_result_manifest"
+        },
+        "verification": {
+          "$ref": "#/$defs/provenance_verification"
+        },
+        "evidence_state": {
+          "enum": [
+            "supported",
+            "rejected",
+            "inconclusive",
+            "worker_error",
+            "result_manifest_error",
+            "verification_error"
+          ]
+        },
+        "error": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "work_unit",
+        "run",
+        "attempts",
+        "authority"
+      ],
+      "properties": {
+        "work_unit": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "version",
+            "digest"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "version": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "digest": {
+              "$ref": "#/$defs/digest"
+            }
+          }
+        },
+        "run": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "run_id",
+            "source_run_digest",
+            "source_config_digest",
+            "verifier_policy_digest",
+            "orchestrator_version"
+          ],
+          "properties": {
+            "run_id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "source_run_digest": {
+              "$ref": "#/$defs/digest"
+            },
+            "source_config_digest": {
+              "$ref": "#/$defs/digest"
+            },
+            "verifier_policy_digest": {
+              "$ref": "#/$defs/digest"
+            },
+            "orchestrator_version": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "attempts": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/provenance_attempt"
+          }
+        },
+        "authority": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "canonical_state_write",
+            "git_push",
+            "merge",
+            "automatic_candidate_selection",
+            "human_decision_status",
+            "integration_authority"
+          ],
+          "properties": {
+            "canonical_state_write": {
+              "const": false
+            },
+            "git_push": {
+              "const": false
+            },
+            "merge": {
+              "const": false
+            },
+            "automatic_candidate_selection": {
+              "const": false
+            },
+            "human_decision_status": {
+              "const": "pending"
+            },
+            "integration_authority": {
+              "const": "external_human_or_governance"
+            }
+          }
         }
       }
     }
