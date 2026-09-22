@@ -103,6 +103,14 @@ def _string_set(value: Any, path: str) -> frozenset[str]:
 
 
 def _fields(mapping: Mapping[str, Any], allowed: set[str], path: str) -> None:
+    non_string = next((key for key in mapping if not isinstance(key, str)), None)
+    if non_string is not None:
+        raise _error(
+            "invalid_field_name",
+            path,
+            "object field names must be strings",
+        )
+
     unknown = sorted(set(mapping) - allowed)
     if not unknown:
         return
@@ -391,6 +399,12 @@ def load_connector_profile_document(path: str | Path) -> tuple[ConnectorConfig, 
     source = Path(path)
     try:
         data = json.loads(source.read_text(encoding="utf-8"))
+    except UnicodeDecodeError as exc:
+        raise _error(
+            "invalid_utf8",
+            str(source),
+            f"invalid UTF-8 at byte {exc.start}",
+        ) from exc
     except OSError as exc:
         raise _error("profile_read_error", str(source), exc.__class__.__name__) from exc
     except json.JSONDecodeError as exc:
