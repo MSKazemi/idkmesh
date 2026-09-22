@@ -14,6 +14,17 @@ and the release notes for that tag.
 
 ### Added
 
+- `idkmesh/connector_routing.py` (issue #574, C1): a pure-stdlib, deterministic
+  routing kernel that separates task requirements (`RoutingDecision`) from
+  connector capabilities (`ConnectorProfile`) and resolves eligible connectors
+  with non-compensating hard filters — human-required gate, capability tier,
+  risk ceiling, external-processing policy, spend ceiling, secret
+  availability, capacity — plus transparent lexicographic selection with
+  stable tie-breaking. No live provider calls, GitHub mutation, secret
+  materialization, persistence, or merge authority yet; this is the first
+  bounded implementation slice of the Connector Control Plane
+  (`docs/architecture/AGENT_MODEL_CONNECTOR_CONTROL_PLANE.md`).
+
 - A dependency-free local browser GUI for the installable gate-audit diagnostic,
   launched with `idkmesh gate-audit-ui [input.json]`. It binds only to
   `127.0.0.1`, reuses the CLI audit engine, shows panel and verifier metrics,
