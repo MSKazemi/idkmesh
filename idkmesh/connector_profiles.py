@@ -26,7 +26,7 @@ from idkmesh.connector_routing import (
 )
 
 SUPPORTED_API_VERSION = "idkmesh.io/v1alpha1"
-_ID_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}\\Z")
+_ID_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}\Z")
 
 _TOP = {
     "api_version", "id", "kind", "driver", "enabled",
