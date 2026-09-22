@@ -17,6 +17,7 @@ Read in this order:
 1. [Agent and Model Connector Control Plane](architecture/AGENT_MODEL_CONNECTOR_CONTROL_PLANE.md) — system boundaries and connector architecture.
 2. [Connector Control API v0.1](specifications/CONNECTOR_CONTROL_API_V0_1.md) — configuration, run, webhook, secret-reference, and error contract.
 3. [Agent/Model Integration and Self-Hosting Plan](planning/AGENT_MODEL_INTEGRATION_SELF_HOSTING_PLAN_2026-09-22.md) — implementation sequence and Loop A/Loop B graduation gates.
+4. [Model-Tier Dispatcher and Connector Routing](planning/MODEL_TIER_DISPATCHER_EXECUTION_PLAN_2026-09-22.md) — capability/authority routing, connector admission, escalation, and the exact #574 implementation breakdown.
 4. [Live GitHub tracker #570](https://github.com/MSKazemi/idkmesh/issues/570) — current implementation state and bounded work queue.
 
 The planned connector API is **not yet a finished capability on `main`**. Keep
