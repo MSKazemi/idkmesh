@@ -57,6 +57,10 @@ meaning of an existing version.
   separates reusable coordination core from declarative domain and project
   policy.
 
+## Connector and Project Control Contracts
+
+- [Connector Control API v0.1](CONNECTOR_CONTROL_API_V0_1.md) — experimental project-facing connection, routing, dispatch, run-state, webhook, secret-reference, agent/model-provider, and error contract above the canonical WorkUnit and verification semantics.
+
 When modifying a contract, update its schema, fixtures, implementation, and
 tests together. Introduce a new explicit version when behavior changes; keep
 old frozen evidence interpretable under its original meaning.
