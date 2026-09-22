@@ -150,6 +150,33 @@ class EnterpriseProfileTests(unittest.TestCase):
         ):
             validate_structure(profile)
 
+    def test_unknown_nested_field_fails_structure(self):
+        profile = load_example()
+        profile["identity"]["super_admin"] = True
+        with self.assertRaisesRegex(
+            EnterpriseProfileError,
+            "identity has unknown field",
+        ):
+            validate_structure(profile)
+
+    def test_non_string_external_processing_class_fails_cleanly(self):
+        profile = load_example()
+        profile["data"]["external_processing_allowed_classes"] = [
+            "public",
+            {"class": "internal"},
+        ]
+        with self.assertRaisesRegex(
+            EnterpriseProfileError,
+            "must contain strings",
+        ):
+            validate_structure(profile)
+
+    def test_non_finite_availability_target_fails_structure(self):
+        profile = load_example()
+        profile["reliability"]["availability_target_percent"] = float("nan")
+        with self.assertRaisesRegex(EnterpriseProfileError, "must be finite"):
+            validate_structure(profile)
+
     def test_duplicate_external_processing_class_fails_structure(self):
         profile = load_example()
         profile["data"]["external_processing_allowed_classes"] = [
