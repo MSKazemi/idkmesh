@@ -4,7 +4,7 @@ name: Jules Dispatcher
 # Google Labs Jules GitHub App treats as the execution signal.
 on:
   issues:
-    types: [labeled]
+    types: [labeled, closed]
   schedule:
     # Recovery sweep only. Normal dispatch is event-driven and immediate.
     - cron: '17,47 * * * *'
@@ -26,7 +26,10 @@ concurrency:
 
 jobs:
   dispatch:
-    if: github.event_name != 'issues' || github.event.label.name == 'agent-ready'
+    if: >-
+      github.event_name != 'issues' ||
+      github.event.action == 'closed' ||
+      (github.event.action == 'labeled' && github.event.label.name == 'agent-ready')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -48,7 +51,7 @@ jobs:
         run: python tools/jules_dispatcher.py --init-labels
 
       - name: Dispatch newly approved issue immediately
-        if: github.event_name == 'issues'
+        if: github.event_name == 'issues' && github.event.action == 'labeled'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
@@ -59,7 +62,7 @@ jobs:
           --max-dispatch 1
 
       - name: Fill available Jules capacity
-        if: github.event_name != 'issues'
+        if: github.event_name != 'issues' || github.event.action == 'closed'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python tools/jules_dispatcher.py --dispatch
