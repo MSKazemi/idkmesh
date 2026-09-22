@@ -361,7 +361,10 @@ def parse_connector_profile(
         profile["id"], source=source, field="id"
     )
     kind = profile["kind"]
-    if kind not in {"scm", "agent", "model", "execution"}:
+    if (
+        not isinstance(kind, str)
+        or kind not in {"scm", "agent", "model", "execution"}
+    ):
         raise _fail(source, f"kind has unsupported value {kind!r}")
 
     driver = _validate_identifier(
