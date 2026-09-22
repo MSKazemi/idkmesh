@@ -16,6 +16,10 @@ remain authoritative; an index link does not promote a proposal into policy.
   direction for nodes, cells, and regions.
 - [Agent Network and Volunteer Nodes](AGENT_NETWORK_AND_VOLUNTEER_NODES.md) —
   bounded worker participation without project authority.
+- [Agent and Model Connector Control Plane](AGENT_MODEL_CONNECTOR_CONTROL_PLANE.md) —
+  productizes GitHub, agent, model-provider, execution, configuration, routing,
+  secret-reference, and self-hosting boundaries above the existing WorkUnit and
+  verification contracts.
 - [Opportunistic Compute Fabric](OPPORTUNISTIC_COMPUTE_FABRIC.md) —
   provider-neutral, zero-project-spend compute scheduling.
 - [Execution Substrate Abstraction](EXECUTION_SUBSTRATE_ABSTRACTION.md) —
