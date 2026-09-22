@@ -1,6 +1,6 @@
 ---
 title: "Multi-Agent Orchestration and Coordination — IDKMesh"
-description: "A verification-first approach to multi-agent orchestration: bounded work decomposition, capability routing, candidate isolation, independent verification, and protected integration."
+description: "A verification-first approach to multi-agent orchestration: bounded decomposition, capability routing, candidate isolation, independent verification, and protected integration."
 image: "/idkmesh/assets/idkmesh-social.png"
 ---
 
@@ -36,7 +36,7 @@ See the [connector control plane](https://github.com/MSKazemi/idkmesh/blob/main/
 
 A multi-agent system can become worse when it adds workers faster than it adds review capacity. Parallel candidates create conflicts, duplicated work, stale context, and verification debt. IDKMesh therefore treats reviewer capacity, queue growth, and evidence quality as orchestration constraints rather than downstream cleanup.
 
-See [verification debt and agent scaling](verification-scaling.html).
+See [verification debt and agent scaling](https://mskazemi.com/idkmesh/topics/verification-scaling.html).
 
 ## Common questions
 
