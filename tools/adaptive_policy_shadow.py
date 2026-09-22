@@ -6,6 +6,7 @@ normalizes their recommendations into one fail-closed contract.
 """
 from __future__ import annotations
 
+from datetime import datetime, timezone
 import hashlib
 import json
 import math
@@ -38,6 +39,29 @@ def canonical_json(value: Any) -> bytes:
 
 def sha256_digest(value: Any) -> str:
     return "sha256:" + hashlib.sha256(canonical_json(value)).hexdigest()
+
+
+def _timestamp(value: str, field: str) -> str:
+    if not isinstance(value, str) or not value:
+        raise AdaptivePolicyPlanError(
+            f"{field} must be a non-empty ISO-8601 timestamp"
+        )
+    raw = value[:-1] + "+00:00" if value.endswith("Z") else value
+    try:
+        parsed = datetime.fromisoformat(raw)
+    except ValueError as exc:
+        raise AdaptivePolicyPlanError(
+            f"{field} must be ISO-8601"
+        ) from exc
+    if parsed.tzinfo is None:
+        raise AdaptivePolicyPlanError(
+            f"{field} must include a timezone"
+        )
+    return (
+        parsed.astimezone(timezone.utc)
+        .isoformat()
+        .replace("+00:00", "Z")
+    )
 
 
 def _sha(value: str, field: str) -> str:
@@ -157,6 +181,7 @@ def build_shadow_plan(
     *,
     repository: str,
     source_revision_sha: str,
+    captured_at: str,
     subsystem: str,
     policy_id: str,
     policy_version: str,
@@ -178,6 +203,7 @@ def build_shadow_plan(
 ) -> dict[str, Any]:
     repository = _nonempty(repository, "repository")
     source_revision_sha = _sha(source_revision_sha, "source_revision_sha")
+    captured_at = _timestamp(captured_at, "captured_at")
     if subsystem not in SUBSYSTEMS:
         raise AdaptivePolicyPlanError(f"unknown subsystem: {subsystem}")
     policy_id = _nonempty(policy_id, "policy_id")
@@ -249,6 +275,7 @@ def build_shadow_plan(
         {
             "repository": repository,
             "source_revision_sha": source_revision_sha,
+            "captured_at": captured_at,
             "subsystem": subsystem,
             "policy_id": policy_id,
             "policy_version": policy_version,
@@ -275,6 +302,7 @@ def build_shadow_plan(
         "binding": {
             "repository": repository,
             "source_revision_sha": source_revision_sha,
+            "captured_at": captured_at,
             "input_digest": input_digest,
             "input_refs": refs,
         },
