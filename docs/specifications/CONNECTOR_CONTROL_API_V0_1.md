@@ -215,6 +215,28 @@ Response:
 
 The endpoint should not select a connector unless the caller explicitly asks for the project's deterministic auto-routing policy to be applied.
 
+### Required routing-decision fields
+
+The route response should carry or reference one canonical RoutingDecision with at least:
+
+- policy version;
+- WorkUnit/source revision binding;
+- required capability tier;
+- authority mode;
+- risk class;
+- normalized task/runtime/tool requirements;
+- external-processing and spend constraints;
+- independence/reviewer requirement;
+- eligible connectors and stable rejection reasons;
+- deterministic selected connector only when auto-route policy is explicitly enabled;
+- escalation policy.
+
+A connector is never eligible merely because its provider/model is powerful. It must satisfy task class, risk, runtime/tool, secret, external-processing, spend, source-binding, capacity, and authority gates.
+
+GitHub labels and GUI badges are projections of this object, not independent routing authorities.
+
+See [Model-Tier Dispatcher and Connector Routing](../planning/MODEL_TIER_DISPATCHER_EXECUTION_PLAN_2026-09-22.md).
+
 ## 8. Run creation
 
 `POST /v1/runs`

@@ -93,6 +93,22 @@ The SCM connector maps project events and candidate changes:
 
 This separation lets IDKMesh replace any one part without rewriting the coordinator.
 
+## Capability routing is part of the connector control plane
+
+Routing is a first-class control-plane decision, not provider-specific glue:
+
+```text
+task facts
+ -> capability tier + authority + risk
+ -> connector admission
+ -> deterministic selection / explicit choice
+ -> dispatch
+```
+
+GitHub Actions, CLI, HTTP/API, Jules, model providers, local agents, and the GUI should consume one canonical RoutingDecision. Provider-specific connectors must not redefine capability or authority policy.
+
+The implementation-grade routing plan is [Model-Tier Dispatcher and Connector Routing](../planning/MODEL_TIER_DISPATCHER_EXECUTION_PLAN_2026-09-22.md).
+
 ## 3. Target architecture
 
 ```text
