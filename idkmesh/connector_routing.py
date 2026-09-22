@@ -107,7 +107,7 @@ class RoutingDecision:
     )
     external_processing_allowed: bool = True
     project_spend_usd_max: float = 0.0
-    human_gate_satisfied: bool = True
+    human_gate_satisfied: bool = False
     prefer_zero_cost: bool = True
     avoid_provider_families: frozenset[str] = field(default_factory=frozenset)
     independent_reviewer_required: bool = False
