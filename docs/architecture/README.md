@@ -26,6 +26,8 @@ remain authoritative; an index link does not promote a proposal into policy.
   and the boundary to admitted execution.
 - [Resource to Compute Admission](RESOURCE_COMPUTE_ADMISSION.md) — fail-closed
   conversion of external resource evidence into eligible offers.
+- [Agent and Model Connector Control Plane](AGENT_MODEL_CONNECTOR_CONTROL_PLANE.md) —
+  provider-neutral project, agent, model, execution, routing, and authority boundaries.
 
 ## Work and Evidence
 
