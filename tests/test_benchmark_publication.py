@@ -95,6 +95,62 @@ def _measured(outcome="support", signature="single-worker-baseline-v1", n=2):
     bp.JSONSCHEMA_AVAILABLE,
     "benchmark publication tests require requirements-phase0.txt",
 )
+class FamilyCoverageTest(unittest.TestCase):
+    def test_family_coverage_derivation_with_temp_cohort(self):
+        import tempfile
+
+        # Load a valid cohort from disk to serve as base structure
+        valid_cohort = json.loads((ROOT / "benchmarks" / "phase-b2-successor-five" / "cohort.json").read_text(encoding="utf-8"))
+        cohort = json.loads(json.dumps(valid_cohort))
+        cohort["required_families"] = ["bug_fix", "test_failure"]
+        # Set all tasks to pending evidence
+        for t in cohort["tasks"]:
+            t["evidence"] = {"status": "pending", "attempts": []}
+        benchmarks_tmp = ROOT / "benchmarks" / "_tmp_test_cohort"
+        benchmarks_tmp.mkdir(parents=True, exist_ok=True)
+        cohort_path = benchmarks_tmp / "cohort.json"
+        try:
+            cohort_path.write_text(json.dumps(cohort), encoding="utf-8")
+            summary = bp.summarize_cohort(cohort_path)
+            self.assertEqual(summary["verified_families"], [])
+            self.assertEqual(summary["unverified_required_families"], ["bug_fix", "test_failure"])
+
+            # Find task with family "bug_fix" and set to verified
+            for t in cohort["tasks"]:
+                if t["family"] == "bug_fix":
+                    t["evidence"] = {"status": "verified", "attempts": []}
+            cohort_path.write_text(json.dumps(cohort), encoding="utf-8")
+            summary_part = bp.summarize_cohort(cohort_path)
+            self.assertEqual(summary_part["verified_families"], ["bug_fix"])
+            self.assertEqual(summary_part["unverified_required_families"], ["test_failure"])
+
+            # Render markdown and verify output formatting
+            md = bp.render_markdown({"totals": {"cohorts": 1, "tasks": 2, "measured_tasks": 1, "attempts": 0}, "statements": [], "cohorts": [summary_part]})
+            self.assertIn("- Verified families: `bug_fix`", md)
+            self.assertIn("- Unverified required families: `test_failure`", md)
+        finally:
+            if cohort_path.exists():
+                cohort_path.unlink()
+            if benchmarks_tmp.exists():
+                benchmarks_tmp.rmdir()
+
+    def test_family_coverage_fields_in_summarize(self):
+        path = bp.discover()[0]
+        summary = bp.summarize_cohort(path)
+        self.assertIn("verified_families", summary)
+        self.assertIn("unverified_required_families", summary)
+        self.assertIn("family_coverage", summary)
+        fc = summary["family_coverage"]
+        self.assertEqual(fc["families_present"], summary["families_present"])
+        self.assertEqual(fc["required_families"], summary["required_families"])
+        self.assertEqual(fc["verified_families"], summary["verified_families"])
+        self.assertEqual(fc["unverified_required_families"], summary["unverified_required_families"])
+
+
+@unittest.skipUnless(
+    bp.JSONSCHEMA_AVAILABLE,
+    "benchmark publication tests require requirements-phase0.txt",
+)
 class DiscoveryTest(unittest.TestCase):
     def test_every_committed_cohort_is_discovered(self):
         found = {p.parent.name for p in bp.discover()}
