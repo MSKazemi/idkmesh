@@ -43,8 +43,15 @@ class DriverCapabilities:
     def __post_init__(self) -> None:
         for name in ("capability_tiers", "task_classes", "tools", "candidate_types"):
             value = getattr(self, name)
-            if not isinstance(value, frozenset):
-                object.__setattr__(self, name, frozenset(value))
+            if isinstance(value, str):
+                raise ValueError(f"{name} must be a collection of strings, not a string")
+            try:
+                items = frozenset(value)
+            except TypeError as exc:
+                raise ValueError(f"{name} must be a collection of strings") from exc
+            if any(not isinstance(item, str) or not item for item in items):
+                raise ValueError(f"{name} must contain only non-empty strings")
+            object.__setattr__(self, name, items)
 
         unknown_tiers = sorted(set(self.capability_tiers) - set(TIER_ORDER))
         if unknown_tiers:
@@ -105,15 +112,15 @@ class ConnectorRegistry:
         driver_id = getattr(driver, "driver_id", "")
         version = getattr(driver, "driver_version", "")
 
-        if kind not in CONNECTOR_KINDS:
+        if not isinstance(kind, str) or kind not in CONNECTOR_KINDS:
             raise ConnectorRegistryError(
                 "unknown_connector_kind", str(kind), str(driver_id), "unsupported kind"
             )
-        if not isinstance(driver_id, str) or not driver_id:
+        if not isinstance(driver_id, str) or not driver_id.strip():
             raise ConnectorRegistryError(
                 "invalid_driver_id", kind, str(driver_id), "driver id must be non-empty"
             )
-        if not isinstance(version, str) or not version:
+        if not isinstance(version, str) or not version.strip():
             raise ConnectorRegistryError(
                 "invalid_driver_version", kind, driver_id, "driver version must be non-empty"
             )
