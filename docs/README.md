@@ -6,6 +6,20 @@ This page is a **curated navigation and authority map, not an exhaustive catalog
 
 For the public front door, start with [`BEGINNER_GUIDE.md`](BEGINNER_GUIDE.md) if you want a plain-language explanation, then continue with [`../README.md`](../README.md), [`GETTING_STARTED.md`](GETTING_STARTED.md), [`PROJECT_ADOPTION_GUIDE.md`](PROJECT_ADOPTION_GUIDE.md) if you want to use IDKMesh with another repository, [`../CONTRIBUTING.md`](../CONTRIBUTING.md), and [`../COMMUNITY.md`](../COMMUNITY.md).
 
+## Current connector-control productization
+
+The current productization track turns the existing WorkUnit/worker/verification foundation into an easy-to-connect GitHub + agent + model platform, first for IDKMesh itself and then for a second application.
+
+Read in this order:
+
+1. [Agent and Model Connector Control Plane](architecture/AGENT_MODEL_CONNECTOR_CONTROL_PLANE.md) — system boundaries and connector architecture.
+2. [Connector Control API v0.1](specifications/CONNECTOR_CONTROL_API_V0_1.md) — configuration, routing, run-state, webhook, and error contract.
+3. [Agent/Model Integration and Self-Hosting Plan](planning/AGENT_MODEL_INTEGRATION_SELF_HOSTING_PLAN_2026-09-22.md) — staged two-loop implementation program.
+4. [Model-Tier Dispatcher and Connector Routing Plan](planning/MODEL_TIER_DISPATCHER_EXECUTION_PLAN_2026-09-22.md) — exact capability/authority routing algorithm and #574 implementation breakdown.
+5. [Live tracker #570](https://github.com/MSKazemi/idkmesh/issues/570) — bounded implementation queue.
+
+These are implementation targets, not claims that every connector/API surface already exists on `main`.
+
 ## How to read the documentation
 
 Different documents serve different roles. When two files appear to disagree, prefer the more specific current contract over older plans/history.
