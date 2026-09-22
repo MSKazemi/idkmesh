@@ -258,7 +258,31 @@ A repository can run the audit in CI:
 Treat the output as diagnostic evidence unless your own repository policy
 explicitly defines how that evidence is used.
 
-## Path D: Contribute to IDKMesh itself
+## Path D: Use IDKMesh to develop another application
+
+If you already have (or are creating) a separate software project, the practical
+IDKMesh adoption path today is GitHub-native and verification-first:
+
+1. create the application repository and a reproducible baseline test/CI path;
+2. protect the canonical branch and keep merge authority separate from workers;
+3. define project policy using the ProjectManifest/DomainPack model;
+4. turn one small issue into a bounded Work Unit;
+5. route it to a human or agent by required capability and risk;
+6. require a candidate branch/PR plus exact test/provenance evidence;
+7. verify the exact candidate revision independently;
+8. integrate only through the protected human/governance path;
+9. record the observed outcome and use it to shape the next Work Unit.
+
+The full step-by-step workflow, role model, LLM/agent routing guidance, directory
+layout, state machine, scenarios, and machine-friendly checklist are in
+[Use IDKMesh to Build Another Software Project](PROJECT_ADOPTION_GUIDE.md).
+
+This path does **not** claim that IDKMesh already provides a one-command external
+repository bootstrap or a production dispatcher for every model provider. The
+guide separates the parts that work today from the reference-product automation
+that is still being built.
+
+## Path E: Contribute to IDKMesh itself
 
 ### Step 1 — Read the public front door
 
@@ -357,6 +381,8 @@ not yet packaged as a polished general-purpose swarm application.
 - **I have reviewer/LLM-judge verdicts:** use `idkmesh gate-audit`.
 - **I maintain a project and want continuous diagnostics:** integrate the
   Gate Audit GitHub Action.
+- **I want to use IDKMesh while building a different application:** follow the
+  [Project Adoption Guide](PROJECT_ADOPTION_GUIDE.md).
 - **I want to study multi-agent verification or coordination:** use the schemas,
   simulations, experiments, and interop layers.
 - **I want a finished autonomous swarm product:** follow or contribute to the
