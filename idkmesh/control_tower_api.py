@@ -772,7 +772,16 @@ def openapi_document() -> dict[str, Any]:
                                             "kind", "ok", "capabilities",
                                         ],
                                     }
-                                }
+                                },
+                                V1_MEDIA_TYPE: {
+                                    "schema": {
+                                        "type": "object",
+                                        "required": [
+                                            "api_version", "schema_version",
+                                            "kind", "ok", "capabilities",
+                                        ],
+                                    }
+                                },
                             },
                         }
                     },
@@ -848,7 +857,27 @@ def openapi_document() -> dict[str, Any]:
                                             }
                                         },
                                     }
-                                }
+                                },
+                                V1_MEDIA_TYPE: {
+                                    "schema": {
+                                        "type": "object",
+                                        "required": [
+                                            "api_version", "schema_version",
+                                            "kind", "ok", "snapshot",
+                                            "snapshot_digest",
+                                        ],
+                                        "properties": {
+                                            "snapshot": {
+                                                "$ref": (
+                                                    "https://idkmesh.org/"
+                                                    "schemas/"
+                                                    "control-tower-snapshot-"
+                                                    "v0.1.schema.json"
+                                                )
+                                            }
+                                        },
+                                    }
+                                },
                             },
                         },
                         "400": {"description": "Invalid run evidence"},
