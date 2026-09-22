@@ -64,6 +64,30 @@ class ControlTowerModelTests(unittest.TestCase):
             validate_run_evidence_report(report)
         self.assertIn("recomputed value", str(ctx.exception))
 
+    def test_non_finite_json_constants_are_rejected(self) -> None:
+        text = SAMPLE_REPORT.replace(
+            '"version": 1',
+            '"version": NaN',
+            1,
+        )
+        with self.assertRaises(ControlTowerInputError) as ctx:
+            parse_report_text(text, source="test report")
+        self.assertIn("non-finite JSON constant", str(ctx.exception))
+
+    def test_builtin_sample_matches_committed_replay_fixture(self) -> None:
+        root = Path(__file__).resolve().parents[1]
+        fixture = (
+            root
+            / "results"
+            / "orchestration"
+            / "replay-fixture-evaluator-plan-good-vs-bad"
+            / "evidence-report.json"
+        )
+        self.assertEqual(
+            json.loads(SAMPLE_REPORT),
+            json.loads(fixture.read_text(encoding="utf-8")),
+        )
+
     def test_duplicate_json_keys_are_rejected(self) -> None:
         text = SAMPLE_REPORT.replace(
             '"run_id": "two-attempt-evaluator-plan-good-vs-bad"',
