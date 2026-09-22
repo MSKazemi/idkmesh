@@ -18,18 +18,32 @@ from pathlib import Path
 import sys
 from typing import Any, Sequence
 
-from tools.adaptive_policy_cohort import (
-    AdaptivePolicyCohortError,
-    summarize_cohort,
-)
-from tools.adaptive_policy_outcome import (
-    AdaptivePolicyOutcomeError,
-    build_outcome_record,
-)
-from tools.adaptive_policy_shadow import (
-    AdaptivePolicyPlanError,
-    build_shadow_plan,
-)
+try:
+    from tools.adaptive_policy_cohort import (
+        AdaptivePolicyCohortError,
+        summarize_cohort,
+    )
+    from tools.adaptive_policy_outcome import (
+        AdaptivePolicyOutcomeError,
+        build_outcome_record,
+    )
+    from tools.adaptive_policy_shadow import (
+        AdaptivePolicyPlanError,
+        build_shadow_plan,
+    )
+except ModuleNotFoundError:  # direct: python tools/adaptive_policy_evidence_cli.py
+    from adaptive_policy_cohort import (
+        AdaptivePolicyCohortError,
+        summarize_cohort,
+    )
+    from adaptive_policy_outcome import (
+        AdaptivePolicyOutcomeError,
+        build_outcome_record,
+    )
+    from adaptive_policy_shadow import (
+        AdaptivePolicyPlanError,
+        build_shadow_plan,
+    )
 
 
 class EvidenceCLIError(RuntimeError):
