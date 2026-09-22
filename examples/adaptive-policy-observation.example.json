@@ -1,0 +1,19 @@
+{
+  "actual_choice_id": "baseline-single-verifier",
+  "outcome": "succeeded",
+  "verified_utility": 0.7,
+  "escaped_defect": false,
+  "high_risk_escape": false,
+  "actual_cost": {
+    "project_spend_usd": 0,
+    "compute_units": 0,
+    "review_units": 1,
+    "human_attention_units": null
+  },
+  "evidence_refs": [
+    "illustrative-verification-result"
+  ],
+  "limitations": [
+    "Illustrative observation; the shadow verifier portfolio was not executed."
+  ]
+}
