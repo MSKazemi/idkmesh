@@ -18,6 +18,8 @@ by Jules; they subsequently produced PRs #566 and #565 respectively.
 This demonstrated that the provider's issue-label integration works, but the
 selection/dispatch decision was still manual.
 
+A separate open PR (#562) proposed a direct Jules REST-API dispatcher with a second queue label and an additional provider secret. During convergence it was found to be both deeply diverged from current `main` and operationally overlapping. It was retired in favor of the native-App dispatcher so the repository has one queue and one execution path rather than duplicate session creation.
+
 ## Durable design decision
 
 Separate **eligibility** from **execution**:
