@@ -560,7 +560,27 @@ def build_snapshot(report: dict[str, Any]) -> dict[str, Any]:
     """Build the UI/API view over one validated run evidence report."""
     validate_run_evidence_report(report)
     summary = report["summary"]
+    provenance = build_provenance(report)
     attention: list[dict[str, str]] = []
+
+    identity_overlap = any(
+        attempt["verification"] is not None
+        and not attempt["verification"]["identity_distinct_from_worker"]
+        for attempt in provenance["attempts"]
+    )
+    if identity_overlap:
+        attention.append(
+            {
+                "severity": "high",
+                "code": "worker_verifier_identity_overlap",
+                "title": "Worker/verifier identity overlap is visible",
+                "why": (
+                    "At least one attempt records the same worker and verifier "
+                    "identity. The Control Tower does not treat that as "
+                    "independent verification."
+                ),
+            }
+        )
 
     if summary["verification_disagreement"]:
         attention.append(
@@ -665,7 +685,7 @@ def build_snapshot(report: dict[str, Any]) -> dict[str, Any]:
         "summary": dict(summary),
         "attention": attention,
         "attempts": attempts,
-        "provenance": build_provenance(report),
+        "provenance": provenance,
         "timeline": build_timeline(report),
         "warnings": list(report["warnings"]),
         "human_decision": dict(report["human_decision"]),
