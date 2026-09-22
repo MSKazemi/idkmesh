@@ -31,6 +31,9 @@ referenced by open research issues.
 - [Current Agent Ecosystem and the IDKMesh Evolution Wedge](2026-08-28-agent-ecosystem-and-idkmesh-evolution.md)
   — external-ecosystem review concluding that IDKMesh should integrate rather
   than recreate generic agent infrastructure.
+- [Goose, Google ADK, and the IDKMesh Coordination Wedge](2026-09-22-goose-adk-idkmesh-positioning.md)
+  — current comparison of the ready-to-use Goose agent, Google's ADK agent
+  application framework, and IDKMesh's verification-first control-plane wedge.
 - [Open-Source Community, Collaboration, and Platform Strategy](open-source-community-and-platform.md)
   — how an open contribution surface coexists with a tightly verified canonical
   product.
