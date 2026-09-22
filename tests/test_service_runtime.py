@@ -56,6 +56,22 @@ class ServiceRuntimeTests(unittest.TestCase):
         self.assertEqual(headers["X-IDKMesh-Read-Only"], "true")
         self.assertEqual(headers["X-IDKMesh-API-Version"], "v1")
 
+    def test_service_headers_reject_control_or_oversized_metadata(self) -> None:
+        with self.assertRaises(ValueError):
+            service_headers(
+                service="bad\nservice",
+                service_version="1.0",
+                request_id="req-1",
+                read_only=True,
+            )
+        with self.assertRaises(ValueError):
+            service_headers(
+                service="idkmesh-test",
+                service_version="v" * 129,
+                request_id="req-1",
+                read_only=True,
+            )
+
     def test_readiness_document_contains_no_project_state(self) -> None:
         document = readiness_document(
             service="idkmesh-control-tower",
@@ -82,7 +98,7 @@ class ServiceRuntimeTests(unittest.TestCase):
             service="idkmesh-control-tower",
             request_id="req-123",
             method="POST",
-            path="/api/v1/run-evidence/inspect",
+            path="/api/v1/run-evidence/inspect?token=must-not-log",
             status=200,
             response_bytes=1234,
             duration_ms=12.34567,
