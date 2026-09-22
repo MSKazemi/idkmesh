@@ -34,7 +34,7 @@ It answers a question that teams using multiple reviewers, test oracles, or AI j
 
 > **How many independent votes is my review panel actually worth?**
 
-The E017 experiment measured a nominal 25-verifier panel whose majority vote had an effective size of about **1 verifier**, because the verifier errors were highly correlated.
+The E017 experiment measured a nominal 25-verifier panel whose majority vote had an effective size of about **1 verifier**, because the verifier errors were highly correlated. Those 25 verifiers are partial test oracles — each checks one named region of a problem's input domain against the reference implementation, 5 regions x 5 seeds, over E016's 72-candidate corpus — not an AI review panel. No AI review panel has been measured well enough in this repository to estimate its correlation: E016's 20-agent LLM panel had near-chance individual discrimination (mean Youden J = +0.0487) and its majority vote scored 0.514 accuracy against 0.639 for the trivial "always reject" baseline, i.e. worse than the dumbest possible verifier. The claim below generalizes the *mechanism* E017 measured — correlated errors silently shrink a nominal panel's effective size — to AI review panels as a testable hypothesis, not as a second measured result.
 
 That is a surprising, concrete, useful result. It turns "we have many reviewers" into a measurable trust question.
 
