@@ -45,7 +45,7 @@ hardened.
 - [Visibility + Community Self-Growth Loop](VISIBILITY_AND_COMMUNITY_GROWTH_LOOP.md) — makes discoverability, SEO/AEO, GitHub interest, contributor acquisition, retention, and reviewer/leader growth explicit self-improvement axes while keeping popularity separate from correctness authority.
 - [Community Growth Dynamics](COMMUNITY_GROWTH_DYNAMICS.md) — research model and
   measurement specification; turns growth into a dynamical-system problem over an
-  explicit community state, rather than stars or raw contributor count.
+  explicit community state, without treating stars or raw contributor count as fitness.
 - [ACE: GitHub-Constrained Self-Improving Community](ACE_GITHUB_CONSTRAINED_EVOLUTION.md)
   — working design for the next ACE iteration under real GitHub constraints
   (issues, PRs, labels, Actions, API limits), explicitly not publicity
