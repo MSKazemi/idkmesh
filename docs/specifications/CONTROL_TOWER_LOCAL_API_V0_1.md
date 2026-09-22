@@ -60,7 +60,7 @@ The service binds only to:
 This is a local process boundary, not a claim that localhost is a complete
 sandbox against a compromised machine.
 
-Every API request except `GET /healthz` and the HTML document itself requires:
+Every API request except `GET /healthz`, `GET /readyz`, and the HTML document itself requires:
 
 ```http
 X-IDKMesh-UI-Token: <session-token>
@@ -91,6 +91,37 @@ The server also:
 - caps request bodies at 2 MiB;
 - emits no-store, frame, referrer, content-type, cross-origin, permissions and
   CSP protection headers.
+
+### Enterprise service-runtime metadata
+
+The Control Tower consumes the shared HTTP Service Runtime Baseline v0.1.
+
+Every response carries bounded operational metadata:
+
+```text
+X-Request-ID
+X-IDKMesh-Service
+X-IDKMesh-Service-Version
+X-IDKMesh-API-Version
+X-IDKMesh-Read-Only
+```
+
+A safe caller-provided `X-Request-ID` is echoed for correlation. Invalid or
+oversized values are replaced rather than reflected. Request IDs are not user
+identity, authorization, or evidence.
+
+Optional access logging is enabled with:
+
+```text
+IDKMESH_HTTP_ACCESS_LOG=1
+```
+
+Each log line is compact JSON containing request ID, method, path, response
+status/size, duration, service, and event time. Query strings are stripped and
+the logging API does not accept request bodies, authorization/session headers,
+prompts, or secret material. Logging failure does not turn an otherwise valid
+read-only response into an application failure.
+
 
 ## Authority invariant
 
@@ -202,6 +233,33 @@ Supported methods:
 GET, HEAD
 ```
 
+### `GET /readyz`
+
+Unauthenticated service-readiness check. It returns only service/API runtime
+metadata and no project, WorkUnit, run, evidence, secret, prompt, or identity
+state.
+
+Representative shape:
+
+```json
+{
+  "status": "ready",
+  "service": "idkmesh-control-tower",
+  "service_version": "...",
+  "mode": "local-read-only",
+  "api_version": "v1"
+}
+```
+
+Liveness and readiness are intentionally separate: a future service may be alive
+while a required runtime dependency is not ready.
+
+Supported methods:
+
+```text
+GET, HEAD
+```
+
 ### `GET /api/v1/status`
 
 Authenticated discovery document.
@@ -259,6 +317,7 @@ Authenticated OpenAPI 3.1 discovery document.
 It describes:
 
 - the local-session-token security scheme;
+- liveness and readiness endpoints;
 - status endpoint;
 - OpenAPI endpoint;
 - run-evidence inspection endpoint;
