@@ -232,6 +232,18 @@ class ConnectorInspectionTests(unittest.TestCase):
             ["connector_spend_policy_exceeded"],
         )
 
+    def test_unknown_runtime_cost_connection_fails_closed(self):
+        inspected = inspect_connectors([_config()], checked_at=CHECKED_AT)
+
+        with self.assertRaises(ConnectorInspectionError) as caught:
+            explain_route(
+                _decision(),
+                inspected,
+                connector_costs={"missing": 1.0},
+            )
+
+        self.assertEqual(caught.exception.code, "unknown_connection_cost")
+
     def test_auto_select_is_explicit(self):
         inspected = inspect_connectors([_config()], checked_at=CHECKED_AT)
 
