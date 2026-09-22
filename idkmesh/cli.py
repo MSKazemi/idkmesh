@@ -1,8 +1,8 @@
 """``idkmesh`` command-line interface.
 
-One subcommand for now — ``gate-audit`` — kept deliberately thin: all logic
-lives in ``idkmesh.gate_audit`` so it can be tested and reused without a
-process boundary.
+The CLI exposes evidence-first product surfaces. Business logic stays in
+reusable modules so browser and process boundaries do not become second
+implementations of IDKMesh contracts.
 """
 
 from __future__ import annotations
@@ -25,9 +25,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="idkmesh",
         description=(
-            "IDKMesh verification tooling. 'gate-audit' measures how many "
-            "effective independent votes a verifier panel really has, and how "
-            "often seeded known-bad probes get through it."),
+            "IDKMesh evidence and verification tooling. Use 'control-tower' "
+            "to inspect swarm run evidence and 'gate-audit' to measure the "
+            "independence of a verifier panel."),
     )
     parser.add_argument(
         "--version", action="version", version=f"idkmesh {__version__}")
@@ -72,6 +72,25 @@ def build_parser() -> argparse.ArgumentParser:
     gui.add_argument(
         "--no-browser", action="store_true",
         help="serve the UI without opening the default browser")
+
+    tower = sub.add_parser(
+        "control-tower",
+        help="open the local read-only Human Control Tower",
+        description=(
+            "Serve the IDKMesh Human Control Tower on 127.0.0.1. It renders "
+            "existing Run Evidence Report v0.1 documents, recomputes their "
+            "human-facing summary, and never runs workers, selects candidates, "
+            "pushes Git, or merges."),
+    )
+    tower.add_argument(
+        "report", nargs="?",
+        help="optional Run Evidence Report v0.1 JSON file to preload")
+    tower.add_argument(
+        "--port", type=int, default=8770, metavar="PORT",
+        help="loopback TCP port (default: 8770)")
+    tower.add_argument(
+        "--no-browser", action="store_true",
+        help="serve the Control Tower without opening the default browser")
     return parser
 
 
@@ -126,6 +145,41 @@ def _write(path: str, text: str, what: str) -> int | None:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    if args.command == "control-tower":
+        if not (0 <= args.port <= 65535):
+            return _fail("--port must be between 0 and 65535")
+        initial_text = None
+        if args.report:
+            path = Path(args.report)
+            try:
+                initial_text = path.read_text(encoding="utf-8-sig")
+            except FileNotFoundError:
+                return _fail(f"run evidence report not found: {args.report}")
+            except IsADirectoryError:
+                return _fail(
+                    f"run evidence path is a directory, not a JSON report: "
+                    f"{args.report}")
+            except UnicodeDecodeError as exc:
+                return _fail(
+                    f"{args.report}: not UTF-8 text ({exc.reason} at byte "
+                    f"{exc.start}); save the report as UTF-8")
+            except OSError as exc:
+                return _fail(
+                    f"cannot read run evidence report {args.report}: "
+                    f"{_reason(exc)}")
+        from idkmesh.control_tower_ui import serve_control_tower
+        try:
+            serve_control_tower(
+                initial_text,
+                port=args.port,
+                open_browser=not args.no_browser,
+            )
+        except OSError as exc:
+            return _fail(
+                f"cannot start Control Tower on 127.0.0.1:{args.port}: "
+                f"{_reason(exc)}")
+        return 0
+
     if args.command == "gate-audit-ui":
         if not (0 <= args.port <= 65535):
             return _fail("--port must be between 0 and 65535")
