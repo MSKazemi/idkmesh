@@ -600,50 +600,46 @@ def _baseline_choice(
     evaluator_plan: Mapping[str, Any],
     candidate_by_id: Mapping[str, Mapping[str, Any]],
     pool: Mapping[str, Any],
+    required_validators: set[str],
 ) -> dict[str, Any]:
     verifier = evaluator_plan.get("verifier", {})
     verifier_id = str(verifier.get("id") or "unknown-verifier")
     candidate = candidate_by_id.get(verifier_id)
-    reasons = [
+    baseline_reasons = [
         "current-evaluator-plan-baseline",
         f"evaluator-plan:{evaluator_plan.get('id', 'unknown-plan')}",
         f"verifier:{verifier_id}",
     ]
-    metrics: dict[str, Any] = {
-        "verifier_count": 1,
-        "family_count": 1 if candidate is not None else 0,
-        "review_units": (
-            round(float(candidate["review_units"]), 9)
-            if candidate is not None
-            else None
-        ),
-        "queue_load": (
-            round(float(candidate["queue_load"]), 9)
-            if candidate is not None
-            else None
-        ),
-        "reliability_basis": (
-            candidate["reliability"]["basis"]
-            if candidate is not None
-            else "unobserved"
-        ),
-    }
+
     if candidate is not None:
-        reasons.extend(
-            _candidate_reason(
-                candidate,
-                _reliability_evidence(candidate, pool),
-            )
+        # Identity is the verifier set, not the policy that named it. If AVE
+        # recommends the same singleton verifier as the existing EvaluatorPlan,
+        # shadow and baseline must share one choice ID so N3 disagreement is not
+        # inflated artificially.
+        choice = _portfolio_choice(
+            [candidate],
+            pool,
+            required_validators,
         )
-    else:
-        reasons.append("baseline-verifier-not-present-in-observation-pool")
+        choice["reasons"] = baseline_reasons + choice["reasons"]
+        return choice
+
+    baseline_reasons.append(
+        "baseline-verifier-not-present-in-observation-pool"
+    )
     return {
         "id": "baseline:evaluator-plan:" + str(
             evaluator_plan.get("id", "unknown-plan")
         ),
         "class": "current-evaluator-plan",
-        "reasons": reasons,
-        "metrics": metrics,
+        "reasons": baseline_reasons,
+        "metrics": {
+            "verifier_count": 1,
+            "family_count": 0,
+            "review_units": None,
+            "queue_load": None,
+            "reliability_basis": "unobserved",
+        },
     }
 
 
@@ -685,8 +681,11 @@ def build_ave_shadow_plan(
         evaluator_plan,
         candidate_by_id,
         normalized_pool,
+        required_validators,
     )
-    choices: list[dict[str, Any]] = [baseline]
+    choice_by_id: dict[str, dict[str, Any]] = {
+        baseline["id"]: baseline
+    }
 
     target = _risk_target(work_unit)
     selection_candidates = [
@@ -745,13 +744,21 @@ def build_ave_shadow_plan(
                 )
                 # Keep the full viable choice set for audit when small enough.
                 for combo in viable:
-                    choices.append(
-                        _portfolio_choice(
-                            combo,
-                            normalized_pool,
-                            required_validators,
-                        )
+                    choice = _portfolio_choice(
+                        combo,
+                        normalized_pool,
+                        required_validators,
                     )
+                    existing = choice_by_id.get(choice["id"])
+                    if existing is None:
+                        choice_by_id[choice["id"]] = choice
+                    else:
+                        existing["reasons"] = list(
+                            dict.fromkeys(
+                                existing["reasons"] + choice["reasons"]
+                            )
+                        )
+                        existing["metrics"] = choice["metrics"]
                 best = viable[0]
                 best_choice = _portfolio_choice(
                     best,
@@ -818,7 +825,7 @@ def build_ave_shadow_plan(
         input_state=input_state,
         input_refs=list(input_refs),
         hard_gates=gates,
-        eligible_choices=choices,
+        eligible_choices=list(choice_by_id.values()),
         selected_choice_id=selected_choice_id,
         baseline_choice_id=baseline["id"],
         selection_reasons=selection_reasons,
