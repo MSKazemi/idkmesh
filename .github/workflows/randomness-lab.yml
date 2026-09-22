@@ -55,10 +55,11 @@ jobs:
         run: python -m pip install -r requirements-phase0.txt pytest
       - name: Run focused randomness-lab tests
         run: |
-          python -m unittest discover -s tests -p 'test_randomness_lab.py' -v
-          python -m unittest discover -s tests -p 'test_r1_*.py' -v
-          python -m unittest discover -s tests -p 'test_r2*.py' -v
-          python -m unittest discover -s tests -p 'test_r3*.py' -v
+          python -m pytest -q \
+            tests/test_randomness_lab.py \
+            tests/test_r1_*.py \
+            tests/test_r2*.py \
+            tests/test_r3*.py
       - name: Smoke-test base CLI and JSON output
         run: |
           python -m randomness_lab --policy thompson --rounds 100 --seed 42 --output /tmp/result.json
