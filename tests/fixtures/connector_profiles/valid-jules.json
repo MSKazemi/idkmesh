@@ -1,0 +1,22 @@
+{
+  "api_version": "idkmesh.io/v1alpha1",
+  "id": "jules-main",
+  "kind": "agent",
+  "driver": "jules",
+  "enabled": true,
+  "auth": {
+    "secret_ref": "env:JULES_API_KEY"
+  },
+  "settings": {
+    "source": "sources/github/MSKazemi/idkmesh",
+    "starting_branch": "main",
+    "require_plan_approval": true
+  },
+  "policy": {
+    "task_classes": ["coder"],
+    "allowed_risk": ["low"],
+    "max_concurrency": 1,
+    "external_processing": true,
+    "project_spend_usd_max": 0
+  }
+}
