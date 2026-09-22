@@ -20,6 +20,9 @@ remain authoritative; an index link does not promote a proposal into policy.
   productizes GitHub, agent, model-provider, execution, configuration, routing,
   secret-reference, and self-hosting boundaries above the existing WorkUnit and
   verification contracts.
+- [GitHub-First Deployment and Multi-User Operation](GITHUB_FIRST_DEPLOYMENT_AND_MULTIUSER.md) —
+  default server-optional deployment profile, durable GitHub-native state,
+  team roles/claims, optional nodes, and evidence-based triggers for adding a service.
 - [Opportunistic Compute Fabric](OPPORTUNISTIC_COMPUTE_FABRIC.md) —
   provider-neutral, zero-project-spend compute scheduling.
 - [Execution Substrate Abstraction](EXECUTION_SUBSTRATE_ABSTRACTION.md) —
