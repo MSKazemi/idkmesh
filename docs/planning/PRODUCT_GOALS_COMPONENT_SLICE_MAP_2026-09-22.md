@@ -157,6 +157,7 @@ Each component owns one primary responsibility.
 | C12 Governance baseline | GitHub rules/permissions/secret preflight | silent repository admin |
 | C13 Work intake UX | structured issue/project planning | execution authority |
 | C14 GitHub evidence surfaces | readable GitHub-native status/evidence/release views | mutation authority |
+| C15 OpenHands worker | second heterogeneous bounded coding-agent path | verification or merge authority |
 | UI Control Tower (#572) | human understanding/decision views | canonical state or autonomous merge |
 
 ## 5. Slice-sizing rule
@@ -383,6 +384,13 @@ Acceptance:
 - **C4-F — first preset:** goose or Gemini CLI adapter behind AgentPreset.
 - **C4-G — end-to-end harmless WorkUnit smoke:** local candidate -> normalizer boundary.
 
+### Promoted implementation slices
+
+- [#647](https://github.com/MSKazemi/idkmesh/issues/647) / PR #648 — C4-A AgentPreset contract and free-agent catalog.
+- [#652](https://github.com/MSKazemi/idkmesh/issues/652) / PR #653 — C4-B/C exact-SHA disposable workspace and bounded local process result.
+
+These remain reviewable foundations only: no real coding agent is executed by either slice.
+
 **C4 exit gate:** same WorkUnit semantics as remote agent, different execution path.
 
 ---
@@ -577,6 +585,32 @@ Acceptance:
 
 ---
 
+## C15 — OpenHands heterogeneous coding worker (#641)
+
+**Goal:** add a second materially different issue-to-candidate coding worker without giving it verification or integration authority.
+
+### Slices
+
+- **C15-A — guarded manual pilot:** workflow_dispatch only; maintainer supplies an already `agent-ready` low-risk issue; no automatic competition with Jules.
+- **C15-B — immutable integration boundary:** pin third-party integration/revision and record exact OpenHands run/conversation identity.
+- **C15-C — candidate observation:** resulting branch/PR/head SHA -> provider-neutral candidate reference.
+- **C15-D — provider-neutral connector adapter:** move OpenHands behind the common `agent` connector once C1 contracts are integrated.
+- **C15-E — hosted/self-hosted execution choice:** preserve WorkUnit semantics across deployment modes.
+- **C15-F — heterogeneous comparison smoke:** same bounded task class can be attempted by Jules/OpenHands without duplicate automatic dispatch.
+- **C15-G — zero-project-spend experiment:** only claim $0 when the actual OpenHands runtime/model route is measured at $0.
+
+### Safety rules
+
+- `agent-ready` approval remains separate from worker selection;
+- OpenHands never counts as independent verification of its own candidate;
+- no autonomous merge/approval/settings authority;
+- no automatic fan-out to Jules and OpenHands from one issue signal;
+- hosted inference is not labeled free unless measured.
+
+**C15 exit gate:** one low-risk issue can follow `issue -> OpenHands run -> candidate PR -> normal IDKMesh CI -> human decision` with exact run/source provenance and no authority widening.
+
+---
+
 ## UI — Human Control Tower (#572)
 
 **Goal:** make system state understandable to a human without creating a second source of truth.
@@ -609,7 +643,9 @@ C1 kernel
  |
  +--> C2 Jules -----------+
  |                        |
- +--> C3 model --> C4 ----+--> C6 normalization --> verification/evidence
+ +--> C15 OpenHands ------+--> C6 normalization --> verification/evidence
+ |                        |
+ +--> C3 model --> C4 ----+
  |                        |
  +--> C5 GitHub dispatch -+
  |          |
@@ -625,10 +661,10 @@ C1 kernel
                                        |
                                        +--> UI Control Tower
 
-C1/C2/C4/C5/C6/C7/C8/C9/C10/C12/C13/C14
-                         |
-                         v
-                     C11 pilot
+C1/C2/C4/C5/C6/C7/C8/C9/C10/C12/C13/C14/C15
+                              |
+                              v
+                          C11 pilot
 ```
 
 ## Parallel work that is safe
@@ -650,24 +686,27 @@ Avoid parallel edits to the same central routing/profile contract until each ver
 
 The repository should now focus on a small wave rather than opening every future slice.
 
-## Wave 1 — finish C1 foundation
+## Wave 1 — converge the C1 implementation stack
 
-Ready immediately:
+All C1 micro-slices now have implementation candidates. Do **not** create more C1 feature branches until this stack is reviewed, integrated in dependency order, retargeted to current `main`, and the exact-head gates are green.
 
-1. [#611 — C1-B profile loader/validator](https://github.com/MSKazemi/idkmesh/issues/611);
-2. [#613 — C1-C registry + fake drivers](https://github.com/MSKazemi/idkmesh/issues/613);
-3. [#614 — C1-D normalized probes](https://github.com/MSKazemi/idkmesh/issues/614);
-4. [#615 — C1-E secret refs/redaction](https://github.com/MSKazemi/idkmesh/issues/615);
-5. [#616 — C1-F local SQLite/idempotency](https://github.com/MSKazemi/idkmesh/issues/616);
-6. [#617 — C1-G validate/list CLI](https://github.com/MSKazemi/idkmesh/issues/617);
-7. [#618 — C1-H probe/doctor/route-explain CLI](https://github.com/MSKazemi/idkmesh/issues/618);
-8. [#619 — C1-I adversarial fixtures](https://github.com/MSKazemi/idkmesh/issues/619).
+- #611 -> PR #624 — profile loader/validator;
+- #613 -> PR #625 — registry/fake drivers;
+- #614 -> PR #626 — normalized probes;
+- #615 -> PR #627 — secret refs/redaction;
+- #616 -> PR #628 — SQLite/idempotency;
+- #617 -> PR #629 — validate/list CLI;
+- #618 -> PR #656 — probe/doctor/route-explain CLI;
+- #619 -> PR #657 — adversarial fixtures/tests.
+
+The stacked review order is `#624 -> #625 -> #626 -> #629 -> #656 -> #657`, with #627/#628 converged from the C1-B base at the appropriate points. Queued CI is not passing evidence.
 
 ## Wave 2 — can begin once C1-B/C/D contracts are merged
 
 Parallel:
 
 - C2-A/B Jules client + Source lookup;
+- C15-A/B guarded OpenHands pilot/integration boundary;
 - C3-A/B model config + fake-server probe;
 - C9-A/B ledger schema/local append fixture;
 - C10-A/B role vocabulary + actor context;
@@ -681,6 +720,7 @@ Parallel:
 Only after common contracts stabilize:
 
 - Jules Session creation/observation;
+- OpenHands provider-neutral connector/candidate observation;
 - local agent preset/sandbox;
 - explicit GitHub dispatch;
 - candidate normalization;
@@ -709,7 +749,7 @@ If those fields cannot be written clearly, the slice is probably still too large
 The umbrella tracker (#570) should show only:
 
 - north-star gates G0-G7;
-- component status C1-C14;
+- component status C1-C15;
 - current executable wave;
 - evidence links;
 - blockers.
@@ -725,6 +765,9 @@ As of this document:
 - connector-control-plane architecture/specification is on `main`;
 - model-tier dispatcher execution plan is on `main`;
 - the pure C1 routing kernel and focused tests are on `main`;
-- C1 profile/registry/probe/secret/persistence/CLI work remains;
-- C2-C14 remain open component trackers;
-- the repository is ready to promote the first Wave 1 micro-slices into separate GitHub issues.
+- C1 implementation candidates exist through the adversarial exit-gate slice (#624-#629, #656, #657); integration/CI evidence remains pending;
+- C4-A and C4-B/C have concrete implementation PRs (#648, #653);
+- C15 OpenHands is now tracked explicitly by #641;
+- CI/Jules generation backpressure is tracked by #651 with implementation PR #655, because verification capacity must bound new agent generation;
+- C2-C15 remain product components until their exit gates are demonstrated;
+- the next C1 action is convergence/review, not additional feature slicing.
