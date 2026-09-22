@@ -6,6 +6,7 @@ import html
 import json
 import os
 import secrets
+import time
 import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any
@@ -33,9 +34,20 @@ from idkmesh.local_ui_security import (
     new_session_token,
     send_security_headers,
 )
+from idkmesh.service_runtime import (
+    REQUEST_ID_HEADER,
+    access_logging_enabled,
+    build_access_log_event,
+    readiness_document,
+    resolve_request_id,
+    service_headers,
+    write_access_log,
+)
 
 DEFAULT_PORT = 8770
 TOKEN_ENV = "IDKMESH_CONTROL_TOWER_TOKEN"
+SERVICE_NAME = "idkmesh-control-tower"
+SERVICE_MODE = "local-read-only"
 _TOKEN_SAFE_CHARS = frozenset(
     "abcdefghijklmnopqrstuvwxyz"
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -534,11 +546,31 @@ def _handler(initial_text: str | None, token: str):
     class Handler(BaseHTTPRequestHandler):
         server_version = "IDKMeshControlTower/0.1"
 
+        def handle_one_request(self) -> None:
+            self._request_started = time.monotonic()
+            self._request_id_value = None
+            super().handle_one_request()
+
         def version_string(self) -> str:
             return self.server_version
 
         def log_message(self, format: str, *args: Any) -> None:
             return
+
+        def _request_id(self) -> str:
+            value = getattr(self, "_request_id_value", None)
+            if value is None:
+                value = resolve_request_id(
+                    self.headers.get(REQUEST_ID_HEADER)
+                )
+                self._request_id_value = value
+            return value
+
+        def _access_path(self) -> str:
+            try:
+                return urlsplit(self.path).path
+            except ValueError:
+                return "<invalid-path>"
 
         def _headers(
             self,
@@ -551,11 +583,34 @@ def _handler(initial_text: str | None, token: str):
             self.send_response(status)
             self.send_header("Content-Type", content_type)
             self.send_header("Content-Length", str(length))
+            headers = service_headers(
+                service=SERVICE_NAME,
+                service_version=__version__,
+                request_id=self._request_id(),
+                read_only=True,
+                api_version=API_VERSION,
+            )
             if extra_headers:
-                for name, value in extra_headers.items():
-                    self.send_header(name, value)
+                headers.update(extra_headers)
+            for name, value in headers.items():
+                self.send_header(name, value)
             send_security_headers(self)
             self.end_headers()
+            if access_logging_enabled():
+                started = getattr(
+                    self, "_request_started", time.monotonic()
+                )
+                write_access_log(
+                    build_access_log_event(
+                        service=SERVICE_NAME,
+                        request_id=self._request_id(),
+                        method=self.command,
+                        path=self._access_path(),
+                        status=status,
+                        response_bytes=length,
+                        duration_ms=(time.monotonic() - started) * 1000.0,
+                    )
+                )
 
         def _response_media_type(self) -> str:
             accept = self.headers.get("Accept", "")
@@ -578,9 +633,7 @@ def _handler(initial_text: str | None, token: str):
             headers = {
                 "ETag": f'"{digest[7:]}"',
                 "Vary": "Accept",
-                "X-IDKMesh-API-Version": API_VERSION,
                 "X-IDKMesh-Content-Digest": digest,
-                "X-IDKMesh-Read-Only": "true",
             }
             if extra_headers:
                 headers.update(extra_headers)
@@ -786,10 +839,21 @@ def _handler(initial_text: str | None, token: str):
                     200,
                     "text/plain; charset=utf-8",
                     len(body),
-                    extra_headers={"X-IDKMesh-Read-Only": "true"},
                 )
                 if not head_only:
                     self.wfile.write(body)
+                return
+            if path == "/readyz":
+                self._send_json(
+                    200,
+                    readiness_document(
+                        service=SERVICE_NAME,
+                        service_version=__version__,
+                        mode=SERVICE_MODE,
+                        api_version=API_VERSION,
+                    ),
+                    head_only=head_only,
+                )
                 return
             if self._unknown_api_version(path):
                 return
@@ -857,6 +921,7 @@ def _handler(initial_text: str | None, token: str):
                 "/",
                 "/index.html",
                 "/healthz",
+                "/readyz",
                 f"/api/{API_VERSION}/status",
                 f"/api/{API_VERSION}/openapi.json",
             ):
