@@ -353,7 +353,7 @@
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/community/STARTER_TASKS.html</loc>
-    <lastmod>2026-09-17</lastmod>
+    <lastmod>2026-09-22</lastmod>
     <priority>0.6</priority>
   </url>
   <url>
@@ -373,7 +373,7 @@
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/conversations/</loc>
-    <lastmod>2026-09-10</lastmod>
+    <lastmod>2026-09-22</lastmod>
     <priority>0.3</priority>
   </url>
   <url>
@@ -1157,7 +1157,17 @@
     <priority>0.3</priority>
   </url>
   <url>
+    <loc>https://mskazemi.com/idkmesh/conversations/2026-09-21-interface-and-gui.html</loc>
+    <lastmod>2026-09-22</lastmod>
+    <priority>0.3</priority>
+  </url>
+  <url>
     <loc>https://mskazemi.com/idkmesh/conversations/2026-09-21-readiness-assessment-claude-review.html</loc>
+    <lastmod>2026-09-22</lastmod>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://mskazemi.com/idkmesh/conversations/2026-09-22-complete-gate-audit-gui.html</loc>
     <lastmod>2026-09-22</lastmod>
     <priority>0.3</priority>
   </url>
@@ -1377,14 +1387,14 @@
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://mskazemi.com/idkmesh/pipelines.html</loc>
-    <lastmod>2026-09-10</lastmod>
-    <priority>0.9</priority>
-  </url>
-  <url>
     <loc>https://mskazemi.com/idkmesh/operations/JULES_AUTOMATION.html</loc>
     <lastmod>2026-09-22</lastmod>
     <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://mskazemi.com/idkmesh/pipelines.html</loc>
+    <lastmod>2026-09-10</lastmod>
+    <priority>0.9</priority>
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/planning/</loc>
@@ -1708,7 +1718,7 @@
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/start.html</loc>
-    <lastmod>2026-09-10</lastmod>
+    <lastmod>2026-09-22</lastmod>
     <priority>0.9</priority>
   </url>
 </urlset>
