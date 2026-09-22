@@ -88,6 +88,8 @@ For materially AI-generated code, research, tests, or documentation, include a s
 
 Do not submit large volumes of unreviewed generated material. Generation must not grow faster than the community's ability to verify and maintain it.
 
+Maintainers and trusted triagers using the repository's Google Jules automation should follow [`docs/operations/JULES_AUTOMATION.md`](docs/operations/JULES_AUTOMATION.md). In that flow, `agent-ready` means a bounded issue has been reviewed as suitable for an implementation agent; the dispatcher adds `jules` when review capacity is available. Human-only evidence, independent research, security approval, and governance work stay outside that automatic lane.
+
 ## Running the tests
 
 You do not need to understand the research side of this repository to run the
@@ -165,8 +167,8 @@ Markdown/identity report, not the combined gate. See
 [the stable PR gate](.github/workflows/pr-gate.yml) for the CI invocation.
 
 **Do not verify your work with `python -m unittest discover`.** It silently
-under-collects — `unittest` only finds `TestCase` subclasses, so the 168
-module-level `test_*` functions spread across 18 files in `tests/` are
+under-collects — `unittest` only finds `TestCase` subclasses, so the 176
+module-level `test_*` functions spread across 19 files in `tests/` are
 invisible to it. That is roughly a tenth of the suite, skipped while the run
 still prints `OK`, with no indication anything was missed.
 `tests/test_documented_test_counts.py` re-measures both figures and the gap

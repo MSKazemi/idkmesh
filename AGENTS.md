@@ -27,7 +27,7 @@ python -m randomness_lab --policy thompson --rounds 100 --seed 42
 
 `pytest.ini` sets the repository root on `pythonpath`, so `PYTHONPATH=.` is no longer required for pytest on current `main`. See `docs/TESTING.md` for tier budgets, caching, hooks, CI parity, and Windows-specific guidance. Use a focused module, such as `python -m pytest -q tests/test_r2.py`, while iterating.
 
-**Do not use `python -m unittest discover` to check your work.** It silently under-collects: `unittest` only finds `TestCase` subclasses, so the **168** module-level `test_*` functions spread across **18** files in `tests/` are invisible to it — roughly a tenth of the suite, reported as `OK` with no warning that anything was missed. `tests/test_documented_test_counts.py` re-measures both figures and the gap they explain, so this paragraph fails the suite if it drifts.
+**Do not use `python -m unittest discover` to check your work.** It silently under-collects: `unittest` only finds `TestCase` subclasses, so the **176** module-level `test_*` functions spread across **19** files in `tests/` are invisible to it — roughly a tenth of the suite, reported as `OK` with no warning that anything was missed. `tests/test_documented_test_counts.py` re-measures both figures and the gap they explain, so this paragraph fails the suite if it drifts.
 
 ## Agent Contribution Loop
 
@@ -42,6 +42,10 @@ Autonomous agents should treat current repository state as evidence, not memory.
 7. never represent owner-controlled automation as independent human or external-agent review.
 
 Prefer one reviewable outcome per branch/PR over broad speculative rewrites. If a requested feature depends on a human-only evidence gate or missing authority, document the blocker instead of manufacturing evidence.
+
+## Jules Dispatch Boundary
+
+For repository-operated Google Jules work, `agent-ready` is the maintainer/trusted-triager approval boundary and `jules` is the execution signal. The Jules Dispatcher normally adds `jules`; do not treat `good first issue` or `help wanted` alone as approval to execute. Never mark work `agent-ready` when it requires genuine human observation, independent research/evidence, security approval, governance judgment, secret handling, or broad decomposition. Keep agent-ready issues bounded, testable, and explicit about allowed scope and stop conditions. See `docs/operations/JULES_AUTOMATION.md` and `config/jules-dispatch.json` for the queue, veto labels, concurrency, recovery sweep, and failure runbook.
 
 ## Coding Style & Naming Conventions
 
