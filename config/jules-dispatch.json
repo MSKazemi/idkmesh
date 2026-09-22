@@ -2,13 +2,11 @@
   "version": 2,
   "queue_label": "agent-ready",
   "dispatch_label": "agent:jules-dispatched",
+  "legacy_dispatch_labels": [
+    "jules"
+  ],
   "max_in_flight": 4,
   "max_dispatch_per_sweep": 2,
-  "ci_backpressure": {
-    "enabled": true,
-    "max_queued_runs": 96,
-    "max_in_progress_runs": 24
-  },
   "blocked_labels": [
     "blocked",
     "do-not-automate",
@@ -92,19 +90,6 @@
     "agent:jules-dispatched": {
       "color": "5319E7",
       "description": "Reserved/started by the API-backed Jules dispatcher"
-    },
-    "agent:jules-eligible": {
-      "color": "BFDADC",
-      "description": "Deterministically routed low-risk task eligible for automatic Jules REST dispatch"
     }
-  },
-  "legacy_dispatch_labels": [
-    "jules"
-  ],
-  "automatic_queue_label": "agent:jules-eligible",
-  "trusted_author_associations": [
-    "OWNER",
-    "MEMBER",
-    "COLLABORATOR"
-  ]
+  }
 }
