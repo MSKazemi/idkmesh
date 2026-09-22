@@ -189,3 +189,57 @@ The contract enables a common N3 cohort:
 
 This is the intended bridge from synthetic research to real observational
 evidence without granting autonomy.
+
+
+## Retrospective outcome record
+
+Shadow plans are joined to later real outcomes through:
+
+- `schemas/adaptive-policy-outcome-v0.1.schema.json`
+- `tools/adaptive_policy_outcome.py`
+
+The join is immutable with respect to the original plan. It records:
+
+- exact plan digest;
+- exact revision/input binding copied from the frozen plan;
+- the choice the real process actually used;
+- the observed real-process outcome;
+- measured cost where available;
+- whether the shadow recommendation matched the actual choice;
+- whether the named baseline matched the actual choice.
+
+The contract deliberately fixes:
+
+```text
+shadow_counterfactual_observed = false
+causal_claim_allowed = false
+```
+
+for N3 shadow outcomes.
+
+That matters when:
+
+```text
+baseline route A actually ran and succeeded
+shadow policy recommended route B
+```
+
+The evidence supports:
+
+```text
+shadow disagreed with baseline
+route A's real outcome is observed
+```
+
+It does **not** support:
+
+```text
+route B would have succeeded
+route B would have been faster
+the shadow policy would have improved the outcome
+```
+
+Those claims require either additional independently observable evidence or a
+later bounded live experiment designed to identify the counterfactual.
+
+This anti-counterfactual rule prevents dry-run evidence from being overstated.
