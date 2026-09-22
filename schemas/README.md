@@ -19,6 +19,7 @@ This directory contains the machine-readable contracts used by the executable re
 - `gate-audit-report-v0.2.schema.json` — `gate-audit-report-v0.1` plus an optional finite-sample bootstrap uncertainty section (issue #520), emitted only when `idkmesh gate-audit` is run with `--bootstrap`. Every v0.1 field keeps its v0.1 meaning; nothing about v0.1 changed to add this.
 - `ci-evaluation-v0.1.schema.json` — shadow plan/outcome comparison recording mapped misses, attribution gaps, modeled savings, and permanent v0.1 promotion ineligibility.
 - `human-decision-record-v0.1.schema.json` — a recorded, accountable human integration decision (`accept`/`reject`/`escalate`) against one Run Evidence Report: who decided, what they decided, when, and why, bound to the exact report by content digest. It is deliberately a record of a decision, not an executor of one: it carries no canonical-state-write, git-push, or merge authority. Produced by `experiments/record_human_decision.py`.
+- `enterprise-resource-ref-v0.1.schema.json` — tenant/project-scoped enterprise resource reference. Scope is part of resource identity and is not inferred from an unscoped resource id.
 
 All current schemas use JSON Schema Draft 2020-12.
 
