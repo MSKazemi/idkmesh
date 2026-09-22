@@ -258,7 +258,15 @@ A repository can run the audit in CI:
 Treat the output as diagnostic evidence unless your own repository policy
 explicitly defines how that evidence is used.
 
-## Path D: Contribute to IDKMesh itself
+## Path D: Use IDKMesh to develop another application
+
+For a separate software project, use the GitHub-native verification-first path: protect the canonical branch, define project policy, express one small issue as a bounded Work Unit, route it by capability and risk, require a candidate PR with evidence, verify the exact candidate revision independently, and integrate only through the protected human/governance path.
+
+See [Use IDKMesh to Build Another Software Project](PROJECT_ADOPTION_GUIDE.md) for the full workflow, role model, routing guidance, directory layout, state machine, scenarios, and machine-friendly checklist.
+
+This does **not** claim that IDKMesh already provides a one-command external repository bootstrap or a production dispatcher for every model provider.
+
+## Path E: Contribute to IDKMesh itself
 
 ### Step 1 — Read the public front door
 
@@ -357,6 +365,8 @@ not yet packaged as a polished general-purpose swarm application.
 - **I have reviewer/LLM-judge verdicts:** use `idkmesh gate-audit`.
 - **I maintain a project and want continuous diagnostics:** integrate the
   Gate Audit GitHub Action.
+- **I want to use IDKMesh while building a different application:** follow the
+  [Project Adoption Guide](PROJECT_ADOPTION_GUIDE.md).
 - **I want to study multi-agent verification or coordination:** use the schemas,
   simulations, experiments, and interop layers.
 - **I want a finished autonomous swarm product:** follow or contribute to the
