@@ -661,3 +661,45 @@ Repository evidence and foundations:
 - issue #22 — coherent systems from vague goals
 - issue #30 — stochastic diversity / correlated errors
 - issue #97 — stigmergic verified-outcome routing
+
+
+## 16. Design refinement after first ablation
+
+The first cumulative matched-budget ablation adds an important caution to the original AVE proposal.
+
+The strongest synthetic safety effect currently comes from **verifier-family diversity**. In contrast, using known-bad probes as a positive verifier-ranking signal is not yet justified: when probe coverage is unrepresentative, posterior updates can steer selection toward a misleading estimate of real verification quality.
+
+Therefore the next candidate policy for product dry-run is deliberately smaller:
+
+```text
+AVE-core =
+  ecological task anti-monoculture
+  + posterior task-family learning
+  + bounded entropy exploration
+  + verifier-family diversity
+  + risk-adaptive verifier floor/quorum
+  + verification shadow-price backpressure
+  + price-aware routing
+```
+
+Known-bad probes remain valuable, but for now their supported roles are:
+
+- **diagnostic evidence** in `gate-audit`;
+- detection of obvious verifier breach;
+- research into probe representativeness;
+- future negative/veto evidence after calibration.
+
+They should **not** yet create positive production trust or automatically promote a verifier.
+
+The targeted experiment is:
+
+- `sim/adaptive_verification_ecology_targeted.py`
+
+It compares:
+
+1. verifier-family diversity alone;
+2. diversity + risk adaptation with no probe memory;
+3. `ave-core`;
+4. the original full AVE including probe memory.
+
+This is a design correction, not a claim that immune-style memory is useless. The claim under test is narrower: **probe-derived routing trust must be earned by representative-outcome evidence rather than assumed from synthetic probe success.**
