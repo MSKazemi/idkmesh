@@ -36,6 +36,11 @@ from idkmesh.local_ui_security import (
 
 DEFAULT_PORT = 8770
 TOKEN_ENV = "IDKMESH_CONTROL_TOWER_TOKEN"
+_TOKEN_SAFE_CHARS = frozenset(
+    "abcdefghijklmnopqrstuvwxyz"
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    "0123456789-._~"
+)
 
 _SAMPLE_REPORT = {
     "attempts": [
@@ -513,9 +518,13 @@ def _resolve_token() -> str:
     configured = os.environ.get(TOKEN_ENV)
     if configured is None:
         return new_session_token()
-    if len(configured) < 32 or any(ch.isspace() for ch in configured):
+    if not (32 <= len(configured) <= 4096):
         raise ValueError(
-            f"{TOKEN_ENV} must contain at least 32 non-whitespace characters")
+            f"{TOKEN_ENV} must contain between 32 and 4096 characters")
+    if any(ch not in _TOKEN_SAFE_CHARS for ch in configured):
+        raise ValueError(
+            f"{TOKEN_ENV} may contain only ASCII letters, digits, '-', '.', "
+            "'_', and '~'")
     return configured
 
 
