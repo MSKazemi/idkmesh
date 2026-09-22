@@ -52,6 +52,16 @@ class EnterpriseProfileTests(unittest.TestCase):
                 profile["semantics"]["grants_runtime_authority"]
             )
 
+    def test_profile_id_matches_schema_boundary(self) -> None:
+        profile = deepcopy(self.g1)
+        profile["profile_id"] = ".hidden"
+
+        with self.assertRaises(EnterpriseProfileError) as caught:
+            validate_enterprise_profile(profile)
+
+        self.assertEqual(caught.exception.code, "invalid_value")
+        self.assertEqual(caught.exception.path, "$.profile_id")
+
     def test_unknown_fields_fail_closed(self) -> None:
         profile = deepcopy(self.g1)
         profile["deployment"]["magic_admin_mode"] = True
