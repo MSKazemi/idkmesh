@@ -298,7 +298,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
-    args = build_parser().parse_args(arvy)
+    args = build_parser().parse_args(argv)
     if not args.init_labels and not args.dispatch:
         raise SystemExit("choose --init-labels and/or --dispatch")
     if args.max_dispatch is not None and args.max_dispatch < 1:
