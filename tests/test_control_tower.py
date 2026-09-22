@@ -207,6 +207,15 @@ class ControlTowerModelTests(unittest.TestCase):
             ["LocalSessionToken"]["name"],
             "X-IDKMesh-UI-Token",
         )
+        inspect_content = (
+            document["paths"]["/api/v1/run-evidence/inspect"]
+            ["post"]["responses"]["200"]["content"]
+        )
+        self.assertIn("application/json", inspect_content)
+        self.assertIn(
+            "application/vnd.idkmesh.control-tower.v1+json",
+            inspect_content,
+        )
 
     def test_status_document_is_explicitly_non_actuating(self) -> None:
         status = status_document()
