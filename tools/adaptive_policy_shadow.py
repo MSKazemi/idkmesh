@@ -34,6 +34,7 @@ def canonical_json(value: Any) -> bytes:
         sort_keys=True,
         separators=(",", ":"),
         ensure_ascii=True,
+        allow_nan=False,
     ).encode("utf-8")
 
 
@@ -270,7 +271,12 @@ def build_shadow_plan(
         }
     )
 
-    input_digest = sha256_digest(input_state)
+    try:
+        input_digest = sha256_digest(input_state)
+    except (TypeError, ValueError) as exc:
+        raise AdaptivePolicyPlanError(
+            "input_state must be strict JSON with finite numbers"
+        ) from exc
     fingerprint = sha256_digest(
         {
             "repository": repository,
