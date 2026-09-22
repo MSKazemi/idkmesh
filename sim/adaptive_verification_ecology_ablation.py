@@ -39,6 +39,12 @@ class Environment:
     verifier_corr_scale: float = 1.0
     review_capacity_scale: float = 1.0
     probe_alignment: float = 1.0
+    worker_quality_imbalance: float = 0.0
+    workload_shift: bool = False
+    worker_outage: bool = False
+    verifier_outage: bool = False
+    selective_adversary: bool = False
+    outage_epoch_fraction: float = 0.50
 
 
 POLICIES: Tuple[Policy, ...] = (
@@ -157,6 +163,7 @@ def route_task(
     config: ave.Config,
     policy: Policy,
     rng: random.Random,
+    task_weights: Mapping[str, float] | None = None,
 ) -> ave.Task:
     def score(task: ave.Task, learned: float) -> float:
         skill = ave.clamp(float(worker.skills[task.skill]), 0.02, 1.0)
@@ -176,9 +183,10 @@ def route_task(
             if policy.price_aware_routing
             else 1.0
         )
+        demand = float((task_weights or {}).get(task.name, 1.0))
         return max(
             ave.EPS,
-            task.value * skill * learned * niche * congestion / scarcity,
+            task.value * demand * skill * learned * niche * congestion / scarcity,
         )
 
     if not policy.posterior_routing:
@@ -204,6 +212,51 @@ def route_task(
 
     logits = [math.log(max(ave.EPS, value)) for value in sampled_scores]
     return ave.choose(ave.TASKS, ave.softmax(logits, temp), rng)
+
+
+def apply_worker_quality_imbalance(
+    workers: Sequence[ave.Worker],
+    amount: float,
+) -> List[ave.Worker]:
+    """Create a dominant family without changing worker count or identities."""
+    if amount <= 0.0:
+        return list(workers)
+    adjusted: List[ave.Worker] = []
+    for worker in workers:
+        delta = amount if worker.family == "worker-family-0" else -0.5 * amount
+        skills = {
+            skill: ave.clamp(float(value) + delta, 0.02, 1.0)
+            for skill, value in worker.skills.items()
+        }
+        adjusted.append(ave.Worker(worker.name, worker.family, skills))
+    return adjusted
+
+
+def workload_weights(
+    epoch: int,
+    epochs: int,
+    environment: Environment,
+) -> Dict[str, float]:
+    """Model an exogenous mid-run change in task demand."""
+    if not environment.workload_shift:
+        return {}
+    shifted = epoch >= max(1, epochs // 2)
+    if not shifted:
+        return {
+            "docs": 1.8,
+            "onboarding": 1.8,
+            "reproduction": 1.35,
+            "security": 0.60,
+            "integration": 0.70,
+        }
+    return {
+        "docs": 0.60,
+        "onboarding": 0.60,
+        "reproduction": 0.80,
+        "security": 1.9,
+        "integration": 1.65,
+        "validator": 1.30,
+    }
 
 
 def candidate(
@@ -249,7 +302,15 @@ def verifier_verdicts(
     out: Dict[str, bool] = {}
     for verifier in selected:
         shocked = shocks[verifier.family]
-        if truth_good:
+        if environment.selective_adversary and verifier.family == "verifier-family-0":
+            if probe:
+                accuracy = 0.99
+            elif truth_good:
+                accuracy = 0.96
+            else:
+                # Looks excellent on probes but accepts most live defects.
+                accuracy = 0.08
+        elif truth_good:
             if environment.error_mode == "one-sided":
                 accuracy = ave.clamp(
                     0.985
@@ -401,7 +462,10 @@ def run_policy(
 
     config = config or ave.Config()
     rng = random.Random(seed)
-    worker_pool = ave.make_workers(workers, rng)
+    worker_pool = apply_worker_quality_imbalance(
+        ave.make_workers(workers, rng),
+        environment.worker_quality_imbalance,
+    )
     verifiers = ave.make_verifiers(verifier_count, rng)
     route_posteriors: Dict[Tuple[str, str], List[float]] = {
         (worker.family, task.name): [2.0, 2.0]
@@ -436,11 +500,24 @@ def run_policy(
     for epoch in range(epochs):
         counts = {task.name: 0 for task in ave.TASKS}
         family_counts: Dict[Tuple[str, str], int] = {}
+        outage_start = max(1, int(epochs * environment.outage_epoch_fraction))
+        outage_active = epoch >= outage_start
+        active_workers = (
+            [worker for worker in worker_pool if worker.family != "worker-family-0"]
+            if environment.worker_outage and outage_active
+            else list(worker_pool)
+        )
+        active_verifiers = (
+            [verifier for verifier in verifiers if verifier.family != "verifier-family-0"]
+            if environment.verifier_outage and outage_active
+            else list(verifiers)
+        )
         worker_shocks = {
             worker.family: rng.random() < environment.worker_shock_rate
-            for worker in worker_pool
+            for worker in active_workers
         }
         epoch_review = 0.0
+        task_weights = workload_weights(epoch, epochs, environment)
 
         if (
             policy.probe_memory
@@ -448,11 +525,11 @@ def run_policy(
         ):
             expected_probe_cost = sum(
                 config.probe_cost * verifier.cost
-                for verifier in verifiers
+                for verifier in active_verifiers
             )
             if review_cost + expected_probe_cost <= review_budget:
                 breach_count, probe_count, probe_cost = probe_verifiers(
-                    verifiers,
+                    active_verifiers,
                     verifier_posteriors,
                     environment,
                     config,
@@ -471,7 +548,7 @@ def run_policy(
         )
         temperatures.append(temperature)
 
-        order = list(worker_pool)
+        order = list(active_workers)
         rng.shuffle(order)
         for worker in order:
             if policy.shadow_backpressure:
@@ -492,6 +569,7 @@ def run_policy(
                 config,
                 policy,
                 rng,
+                task_weights,
             )
             same_family = family_counts.get(
                 (task.name, worker.family),
@@ -513,10 +591,10 @@ def run_policy(
                 verifier_count_for_task = 1
 
             selected = select_verifiers(
-                verifiers,
+                active_verifiers,
                 verifier_posteriors,
                 verifier_loads,
-                min(len(verifiers), verifier_count_for_task),
+                min(len(active_verifiers), verifier_count_for_task),
                 price,
                 config,
                 policy,
