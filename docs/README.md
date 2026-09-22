@@ -108,6 +108,7 @@ For a newcomer trying to understand the executable foundation, this order is usu
 
 ### Contribution surface and public front door
 
+- [AI Agent Verification, Orchestration, and Trust Topics](topics/README.md) — search-oriented, evidence-linked guides for agent verification, multi-agent orchestration, AI code review, evaluator reliability, provenance, governance, MCP/A2A interoperability, verification scaling, and verified swarm engineering.
 - [IDKMesh for Absolute Beginners](BEGINNER_GUIDE.md) — plain-language explanation of what IDKMesh is, what problem it solves, what is usable today, and the first commands to try.
 - [Getting Started: Using IDKMesh](GETTING_STARTED.md) — practical newcomer paths for the contract demo, the `idkmesh gate-audit` CLI, GitHub Actions integration, contribution setup, and the implemented-vs-planned product boundary.
 - [Use IDKMesh to Build Another Software Project](PROJECT_ADOPTION_GUIDE.md) — external-project adoption flow: repository setup, ProjectManifest/DomainPack policy, bounded Work Units, human/agent/model connection patterns, verification, and protected integration.
