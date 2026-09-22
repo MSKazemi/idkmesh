@@ -46,6 +46,8 @@ A2A/MCP support is an interoperability layer; it is not a claim that every exter
 
 Interoperability also does not remove the need for verification. A remote agent can communicate perfectly over A2A and still return a wrong candidate; an MCP tool can be invoked correctly and still expose more authority than a task requires. The protocol layer and the trust layer solve different problems. See [AI agent verification](https://mskazemi.com/idkmesh/topics/ai-agent-verification.html) and [agent governance](https://mskazemi.com/idkmesh/topics/agent-governance.html) for those boundaries.
 
+Interoperability also does not remove the need for verification. A remote agent can communicate perfectly over A2A and still return a wrong candidate; an MCP tool can be invoked correctly and still expose more authority than a task requires. The protocol layer and the trust layer solve different problems. See [AI agent verification](https://mskazemi.com/idkmesh/topics/ai-agent-verification.html) and [agent governance](https://mskazemi.com/idkmesh/topics/agent-governance.html) for those boundaries.
+
 ## Common questions
 
 ### Is MCP the same as A2A?
