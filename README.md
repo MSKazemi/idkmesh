@@ -94,6 +94,36 @@ What is **not** yet a finished capability:
 
 This distinction is important: **implemented infrastructure is evidence of capability to run experiments, not evidence that the research hypotheses are true.**
 
+## Inspect a swarm run in the Human Control Tower
+
+The local Control Tower is the first system-level GUI for the Verified Swarm
+Runner. It renders existing Run Evidence Report v0.1 documents as human
+attention items, attempt-by-attempt claim/evidence layers, authority boundaries,
+and a semantic background timeline.
+
+```bash
+git clone https://github.com/MSKazemi/idkmesh
+cd idkmesh
+pip install .
+idkmesh control-tower \
+  results/orchestration/replay-fixture-evaluator-plan-good-vs-bad/evidence-report.json
+```
+
+With no path, `idkmesh control-tower` opens the same committed two-attempt demo.
+The local API is versioned at `/api/v1/`, binds only to `127.0.0.1`, and is
+read-only: it cannot execute workers, record a human decision, select a
+candidate, push Git, or merge. See
+[`Control Tower Local API v0.1`](docs/specifications/CONTROL_TOWER_LOCAL_API_V0_1.md).
+
+The UI deliberately keeps three different ideas visually separate:
+
+```text
+worker claim -> independent evidence -> human authority
+```
+
+This is an inspection surface over existing evidence, not a second source of
+canonical truth.
+
 ## Try it in five minutes: audit a review gate
 
 The first installable tool cut from this research is `idkmesh gate-audit`. It
