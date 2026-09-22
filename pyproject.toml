@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "idkmesh"
 version = "0.1.0"
-description = "Audit the AI review layer: measure a verifier panel's effective independent votes, correlation structure, and seeded-probe breach rate."
+description = "Evidence-first coordination tooling: inspect verified swarm runs, provenance, authority boundaries, and verifier-panel independence."
 readme = "README.md"
 requires-python = ">=3.11"
 license = "Apache-2.0"
@@ -29,8 +29,9 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
     "Topic :: Software Development :: Quality Assurance",
 ]
-# Deliberately dependency-free: the audit is pure stdlib so it can run inside
-# any CI job without a resolver step.
+# Deliberately dependency-free: the installable Control Tower and gate-audit
+# surfaces use only the standard library, so local inspection and CI diagnostics
+# do not require a runtime dependency resolver.
 dependencies = []
 
 [project.optional-dependencies]
