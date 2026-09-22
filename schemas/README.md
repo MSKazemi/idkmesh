@@ -24,6 +24,7 @@ This directory contains the machine-readable contracts used by the executable re
 - `ci-evaluation-v0.1.schema.json` — shadow plan/outcome comparison recording mapped misses, attribution gaps, modeled savings, and permanent v0.1 promotion ineligibility.
 - `human-decision-record-v0.1.schema.json` — a recorded, accountable human integration decision (`accept`/`reject`/`escalate`) against one Run Evidence Report: who decided, what they decided, when, and why, bound to the exact report by content digest. It is deliberately a record of a decision, not an executor of one: it carries no canonical-state-write, git-push, or merge authority. Produced by `experiments/record_human_decision.py`.
 - `search-visibility-observation-v0.1.schema.json` — evidence contract for dated Google/Bing/ChatGPT/Gemini/Claude/Perplexity/Copilot/Yahoo visibility observations. It records surface, query, mapped intent, target URL, whether IDKMesh surfaced, and optional citation/position evidence without manufacturing a cross-engine ranking score.
+- `enterprise-resource-ref-v0.1.schema.json` — tenant/project-scoped enterprise resource reference. Scope is part of resource identity and is not inferred from an unscoped resource id.
 
 All current schemas use JSON Schema Draft 2020-12.
 
