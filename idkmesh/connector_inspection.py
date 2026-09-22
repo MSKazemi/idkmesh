@@ -378,10 +378,20 @@ def explain_route(
     """Explain routing with stable reasons and zero external work."""
 
     connector_costs = connector_costs or {}
+    inspected_items = tuple(inspected)
+    known_ids = {item.config.id for item in inspected_items}
+    unknown_cost_ids = sorted(set(connector_costs) - known_ids)
+    if unknown_cost_ids:
+        raise _error(
+            "unknown_connection_cost",
+            "connector_costs",
+            ", ".join(unknown_cost_ids),
+        )
+
     profiles: list[ConnectorProfile] = []
     pre_rejected: list[dict[str, object]] = []
 
-    for item in inspected:
+    for item in inspected_items:
         cost = connector_costs.get(item.config.id, 0.0)
         profile = _routing_profile_from_inspection(
             item, project_cost_usd=cost
