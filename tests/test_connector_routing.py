@@ -148,6 +148,34 @@ class ConnectorRoutingTests(unittest.TestCase):
         rejected = {item.connection_id: item.reasons for item in result.ineligible}
         self.assertIn("project_spend_exceeded", rejected["paid"])
 
+    def test_default_zero_spend_rejects_paid_connector(self):
+        decision = RoutingDecision(
+            required_capability_tier="T1",
+            authority_mode="agent_candidate",
+            task_classes=frozenset({"coder"}),
+        )
+        result = resolve_routes(
+            decision,
+            [_agent("paid-only", project_cost_usd=0.01)],
+        )
+        self.assertIsNone(result.selected_connection_id)
+        self.assertEqual(result.eligible, ())
+        self.assertIn("project_spend_exceeded", result.ineligible[0].reasons)
+
+    def test_non_finite_spend_values_fail_closed(self):
+        for value in (float("nan"), float("inf"), float("-inf")):
+            with self.subTest(connector_cost=value):
+                with self.assertRaisesRegex(ValueError, "project_cost_usd"):
+                    _agent("bad-cost", project_cost_usd=value)
+
+            with self.subTest(spend_ceiling=value):
+                with self.assertRaisesRegex(ValueError, "project_spend_usd_max"):
+                    RoutingDecision(
+                        required_capability_tier="T1",
+                        authority_mode="agent_candidate",
+                        project_spend_usd_max=value,
+                    )
+
     def test_task_tool_and_risk_rejections_are_explicit_and_stable(self):
         decision = RoutingDecision(
             required_capability_tier="T2",
