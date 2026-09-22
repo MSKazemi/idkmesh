@@ -1,6 +1,15 @@
+import json
+from io import BytesIO
+
 import pytest
 
-from tools.openhands_pilot import PilotError, build_prompt, validate_issue
+from tools.openhands_pilot import (
+    PilotError,
+    build_prompt,
+    conversation_identity,
+    create_conversation,
+    validate_issue,
+)
 
 
 def issue(*labels: str, state: str = "open", pull_request: bool = False):
@@ -48,9 +57,7 @@ def test_closed_issue_is_rejected():
 
 def test_pull_request_is_rejected():
     with pytest.raises(PilotError, match="pull requests"):
-        validate_issue("agent-ready") if False else validate_issue(
-            issue("agent-ready", pull_request=True)
-        )
+        validate_issue(issue("agent-ready", pull_request=True))
 
 
 def test_prompt_preserves_authority_boundary():
@@ -60,3 +67,51 @@ def test_prompt_preserves_authority_boundary():
     assert "Do not claim your own output is independent verification" in prompt
     assert "Repository: MSKazemi/idkmesh" in prompt
     assert "Base branch: main" in prompt
+
+
+def test_conversation_identity_requires_id():
+    with pytest.raises(PilotError, match="conversation id"):
+        conversation_identity({"status": "RUNNING"})
+
+
+def test_create_conversation_sends_bounded_repository_context(monkeypatch):
+    observed = {}
+
+    class Response:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+        def read(self):
+            return json.dumps(
+                {"conversation_id": "conv-1", "status": "RUNNING"}
+            ).encode()
+
+    def fake_urlopen(request, timeout):
+        observed["url"] = request.full_url
+        observed["body"] = json.loads(request.data.decode())
+        observed["authorization"] = request.headers["Authorization"]
+        observed["timeout"] = timeout
+        return Response()
+
+    monkeypatch.setattr("urllib.request.urlopen", fake_urlopen)
+
+    response = create_conversation(
+        "secret-value",
+        "https://app.all-hands.dev",
+        "bounded prompt",
+        "MSKazemi/idkmesh",
+        "main",
+    )
+
+    assert response["conversation_id"] == "conv-1"
+    assert observed["url"] == "https://app.all-hands.dev/api/conversations"
+    assert observed["body"] == {
+        "initial_user_msg": "bounded prompt",
+        "repository": "MSKazemi/idkmesh",
+        "selected_branch": "main",
+    }
+    assert observed["authorization"] == "Bearer secret-value"
+    assert observed["timeout"] == 30
