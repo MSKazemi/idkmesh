@@ -22,31 +22,6 @@
         "refactor",
         "test_failure"
       ],
-      "family_coverage": {
-        "families_present": [
-          "bounded_feature",
-          "bug_fix",
-          "other",
-          "refactor",
-          "test_failure"
-        ],
-        "missing_families": [],
-        "required_families": [
-          "bounded_feature",
-          "bug_fix",
-          "other",
-          "refactor",
-          "test_failure"
-        ],
-        "unverified_required_families": [
-          "bounded_feature",
-          "bug_fix",
-          "other",
-          "refactor",
-          "test_failure"
-        ],
-        "verified_families": []
-      },
       "id": "benchmark/phase-b2-successor-v2",
       "measured_tasks": 0,
       "meets_minimum": true,
@@ -73,15 +48,7 @@
       "stage": "scaffold",
       "tasks": 5,
       "taxonomy_frozen_before_outcomes": true,
-      "title": "IDKMesh Phase B2 calibrated successor scaffold v2",
-      "unverified_required_families": [
-        "bounded_feature",
-        "bug_fix",
-        "other",
-        "refactor",
-        "test_failure"
-      ],
-      "verified_families": []
+      "title": "IDKMesh Phase B2 calibrated successor scaffold v2"
     },
     {
       "authority": {
@@ -105,31 +72,6 @@
         "refactor",
         "test_failure"
       ],
-      "family_coverage": {
-        "families_present": [
-          "bounded_feature",
-          "bug_fix",
-          "documentation_contract",
-          "refactor",
-          "test_failure"
-        ],
-        "missing_families": [],
-        "required_families": [
-          "bounded_feature",
-          "bug_fix",
-          "documentation_contract",
-          "refactor",
-          "test_failure"
-        ],
-        "unverified_required_families": [
-          "bounded_feature",
-          "bug_fix",
-          "documentation_contract",
-          "refactor",
-          "test_failure"
-        ],
-        "verified_families": []
-      },
       "id": "benchmark/phase-b2-first-five-v2",
       "measured_tasks": 0,
       "meets_minimum": true,
@@ -156,15 +98,7 @@
       "stage": "frozen",
       "tasks": 5,
       "taxonomy_frozen_before_outcomes": true,
-      "title": "IDKMesh Phase B2 first-five repository benchmark v2",
-      "unverified_required_families": [
-        "bounded_feature",
-        "bug_fix",
-        "documentation_contract",
-        "refactor",
-        "test_failure"
-      ],
-      "verified_families": []
+      "title": "IDKMesh Phase B2 first-five repository benchmark v2"
     },
     {
       "authority": {
@@ -188,31 +122,6 @@
         "refactor",
         "test_failure"
       ],
-      "family_coverage": {
-        "families_present": [
-          "bounded_feature",
-          "bug_fix",
-          "documentation_contract",
-          "refactor",
-          "test_failure"
-        ],
-        "missing_families": [],
-        "required_families": [
-          "bounded_feature",
-          "bug_fix",
-          "documentation_contract",
-          "refactor",
-          "test_failure"
-        ],
-        "unverified_required_families": [],
-        "verified_families": [
-          "bounded_feature",
-          "bug_fix",
-          "documentation_contract",
-          "refactor",
-          "test_failure"
-        ]
-      },
       "id": "benchmark/phase-b2-successor-five",
       "measured_tasks": 5,
       "meets_minimum": true,
@@ -243,15 +152,7 @@
       "stage": "frozen",
       "tasks": 5,
       "taxonomy_frozen_before_outcomes": true,
-      "title": "IDKMesh Phase B2 successor five-task repository benchmark",
-      "unverified_required_families": [],
-      "verified_families": [
-        "bounded_feature",
-        "bug_fix",
-        "documentation_contract",
-        "refactor",
-        "test_failure"
-      ]
+      "title": "IDKMesh Phase B2 successor five-task repository benchmark"
     },
     {
       "authority": {
@@ -275,31 +176,6 @@
         "refactor",
         "test_failure"
       ],
-      "family_coverage": {
-        "families_present": [
-          "bounded_feature",
-          "bug_fix",
-          "documentation_contract",
-          "refactor",
-          "test_failure"
-        ],
-        "missing_families": [],
-        "required_families": [
-          "bounded_feature",
-          "bug_fix",
-          "documentation_contract",
-          "refactor",
-          "test_failure"
-        ],
-        "unverified_required_families": [
-          "bounded_feature",
-          "bug_fix",
-          "documentation_contract",
-          "refactor",
-          "test_failure"
-        ],
-        "verified_families": []
-      },
       "id": "benchmark/phase-b2-first-five",
       "measured_tasks": 0,
       "meets_minimum": true,
@@ -326,15 +202,7 @@
       "stage": "burned",
       "tasks": 5,
       "taxonomy_frozen_before_outcomes": true,
-      "title": "IDKMesh Phase B2 first-five repository benchmark",
-      "unverified_required_families": [
-        "bounded_feature",
-        "bug_fix",
-        "documentation_contract",
-        "refactor",
-        "test_failure"
-      ],
-      "verified_families": []
+      "title": "IDKMesh Phase B2 first-five repository benchmark"
     }
   ],
   "generator": "tools/benchmark_publication.py",

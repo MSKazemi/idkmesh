@@ -96,11 +96,6 @@ stated window or revision, not current status.
   tooling, each checked against the tree at `2ce141a` and carrying its own
   acceptance test. Written because every newcomer-labelled issue at that
   revision was an independent-review request.
-- [Free Development Automation Resources](FREE_DEVELOPMENT_AUTOMATION_RESOURCES.md)
-  — zero/low-cost agent tooling comparable to the repository's Jules
-  automation (OpenHands, Gemini CLI, mini-SWE-agent, goose, and others),
-  verified against vendor documentation on 2026-09-22. Agent output remains a
-  candidate change, never acceptance evidence or merge authority.
 
 ## Adding a document
 

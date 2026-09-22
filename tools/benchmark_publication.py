@@ -99,14 +99,6 @@ def summarize_cohort(path: pathlib.Path) -> Dict[str, Any]:
     statuses = collections.Counter(
         task.get("evidence", {}).get("status") for task in tasks
     )
-    verified_families = sorted(
-        {
-            task["family"]
-            for task in tasks
-            if task.get("evidence", {}).get("status") == MEASURED
-        }
-    )
-    unverified_required = sorted(set(required) - set(verified_families))
 
     try:
         bc.validate_cohort(cohort)
@@ -127,15 +119,6 @@ def summarize_cohort(path: pathlib.Path) -> Dict[str, Any]:
         "required_families": required,
         "families_present": families,
         "missing_families": sorted(set(required) - set(families)),
-        "verified_families": verified_families,
-        "unverified_required_families": unverified_required,
-        "family_coverage": {
-            "families_present": families,
-            "missing_families": sorted(set(required) - set(families)),
-            "required_families": required,
-            "unverified_required_families": unverified_required,
-            "verified_families": verified_families,
-        },
         "splits": sorted({task.get("split") for task in tasks if task.get("split")}),
         "evidence_status": dict(sorted(statuses.items())),
         "measured_tasks": statuses.get(MEASURED, 0),
@@ -255,18 +238,6 @@ def render_markdown(report: Dict[str, Any]) -> str:
             f"- Tasks: {cohort['tasks']} (minimum {cohort['minimum_final_tasks']}, "
             f"met: {str(cohort['meets_minimum']).lower()})",
             f"- Families: {', '.join(f'`{f}`' for f in cohort['families_present'])}",
-        ]
-        if cohort["verified_families"]:
-            lines.append(
-                "- Verified families: "
-                + ", ".join(f"`{f}`" for f in cohort["verified_families"])
-            )
-        if cohort["unverified_required_families"]:
-            lines.append(
-                "- Unverified required families: "
-                + ", ".join(f"`{f}`" for f in cohort["unverified_required_families"])
-            )
-        lines += [
             f"- Evidence status: "
             + ", ".join(f"{k} {v}" for k, v in cohort["evidence_status"].items()),
         ]

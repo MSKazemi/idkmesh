@@ -7,18 +7,16 @@ canonical files designated by [`../../PROJECT_RULES.md`](../../PROJECT_RULES.md)
 (decisions, specifications, architecture, findings); this directory keeps the trail
 that produced them.
 
-160 records across 7 dates, newest first.
+158 records across 7 dates, newest first.
 
 ## Index
 
 ### 2026-09-22
 
 - [Jules issue dispatch automation and development-speed hardening](2026-09-22-jules-dispatch-automation.md)
-- [Completing the gate-audit GUI](2026-09-22-complete-gate-audit-gui.md)
 
 ### 2026-09-21
 
-- [Local gate-audit interface and GUI](2026-09-21-interface-and-gui.md)
 - [IDKMesh readiness assessment](2026-09-21-readiness-assessment-claude-review.md)
 
 ### 2026-09-10

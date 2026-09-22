@@ -88,11 +88,6 @@ pip install .</code></pre>
           <h3>Audit a review gate</h3>
           <p class="muted">This is the first installable tool cut from the research. It takes verdicts you already collected and reports what the panel is actually worth: effective independent votes rather than head-count, the error-correlation structure behind that number, and how many seeded known-bad candidates got through.</p>
 <pre><code>idkmesh gate-audit examples/gate-audit/panel-votes.example.json --pretty</code></pre>
-          <div class="callout">
-            <div class="kicker">Prefer a GUI?</div>
-            <p>Launch the same audit engine in a local browser interface. It binds only to <code>127.0.0.1</code>, adds no dependency, and keeps the verdict matrix between your browser and the local Python process.</p>
-<pre><code>idkmesh gate-audit-ui examples/gate-audit/panel-votes.example.json</code></pre>
-          </div>
           <p class="muted">The interesting part of the report — note what the report says about its own evidence class:</p>
 <pre class="plain"><code><b>"evidence_class": "synthetic",</b>
 "panel": {

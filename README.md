@@ -108,16 +108,6 @@ pip install .
 idkmesh gate-audit examples/gate-audit/panel-votes.example.json --pretty
 ```
 
-Prefer a visual interface? The same install includes a local browser GUI:
-
-```bash
-idkmesh gate-audit-ui examples/gate-audit/panel-votes.example.json
-```
-
-It binds only to `127.0.0.1`, uses the same audit engine as the CLI, and adds
-no runtime dependency. Your verdict matrix is sent only between your browser
-and the local Python process; IDKMesh does not upload it to a hosted service.
-
 The bundled example reports that a five-verifier panel is worth about **1.69
 effective independent votes**, and that the popular `N/(1+(N-1)ρ)` heuristic
 overstates it — the phenomenon measured on a real 25-verifier panel in

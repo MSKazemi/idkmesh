@@ -30,7 +30,6 @@ IDKMesh Phase B2 calibrated successor scaffold v2
 - Definition digest: `sha256:58f0f690c482204be2ac3481b91af05953f543a7f0998863c93c69fb2dab7f41`
 - Tasks: 5 (minimum 5, met: true)
 - Families: `bounded_feature`, `bug_fix`, `other`, `refactor`, `test_failure`
-- Unverified required families: `bounded_feature`, `bug_fix`, `other`, `refactor`, `test_failure`
 - Evidence status: pending 5
 
 ### benchmark/phase-b2-first-five-v2
@@ -41,7 +40,6 @@ IDKMesh Phase B2 first-five repository benchmark v2
 - Definition digest: `sha256:7ecb58c72a5819151c98c3916f810f22313e2fd0981cfa09ff6158a6e7103f8c`
 - Tasks: 5 (minimum 5, met: true)
 - Families: `bounded_feature`, `bug_fix`, `documentation_contract`, `refactor`, `test_failure`
-- Unverified required families: `bounded_feature`, `bug_fix`, `documentation_contract`, `refactor`, `test_failure`
 - Evidence status: pending 5
 
 ### benchmark/phase-b2-successor-five
@@ -52,7 +50,6 @@ IDKMesh Phase B2 successor five-task repository benchmark
 - Definition digest: `sha256:3182d8710e1239c19cb95daddd0677241c0cd9123614786fd919b036922dbdd9`
 - Tasks: 5 (minimum 5, met: true)
 - Families: `bounded_feature`, `bug_fix`, `documentation_contract`, `refactor`, `test_failure`
-- Verified families: `bounded_feature`, `bug_fix`, `documentation_contract`, `refactor`, `test_failure`
 - Evidence status: verified 5
 - Structural signatures: `single-worker-baseline-v1` ×5
 - Outcomes: support 5
@@ -65,5 +62,4 @@ IDKMesh Phase B2 first-five repository benchmark
 - Definition digest: `sha256:4fdec8a2768e32dc223b218ed70aec3a67aefcd87c64b72c5675c9921a4eab5c`
 - Tasks: 5 (minimum 5, met: true)
 - Families: `bounded_feature`, `bug_fix`, `documentation_contract`, `refactor`, `test_failure`
-- Unverified required families: `bounded_feature`, `bug_fix`, `documentation_contract`, `refactor`, `test_failure`
 - Evidence status: excluded 5
