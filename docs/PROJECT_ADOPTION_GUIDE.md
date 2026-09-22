@@ -15,6 +15,10 @@ Today, IDKMesh can support this as a **GitHub-native operating model plus execut
 
 That distinction matters throughout this guide.
 
+### Deployment default: GitHub-first, server-optional
+
+For a normal new software project, IDKMesh should not require a permanent server. The target GitHub repository is the default control plane; Actions wakes on events, hosted agents run on provider infrastructure, and optional `idkmesh-node` workers supply local/special compute. See [GitHub-First Deployment and Multi-User Operation](architecture/GITHUB_FIRST_DEPLOYMENT_AND_MULTIUSER.md), [ADR-0013](decisions/ADR-0013-github-first-server-optional-deployment.md), [GitHub-First Operations v0.1](specifications/GITHUB_FIRST_OPERATIONS_V0_1.md), and the [developer execution plan](planning/GITHUB_FIRST_PRODUCT_EXECUTION_PLAN_2026-09-22.md).
+
 ### Where does IDKMesh run?
 
 For a normal new software project, the recommended deployment is **GitHub-first and server-optional**.
