@@ -21,6 +21,7 @@ def plan(index: int, shadow: str, baseline: str):
     return build_shadow_plan(
         repository="MSKazemi/idkmesh",
         source_revision_sha=(hex(index + 1)[2:] * 40)[:40],
+        captured_at="2026-09-22T12:00:00Z",
         subsystem="verification-allocation",
         policy_id="ave-core",
         policy_version="0.1",
@@ -62,6 +63,7 @@ class AdaptivePolicyCohortTests(unittest.TestCase):
         o1 = build_outcome_record(
             plan=p1,
             actual_choice_id="a",
+            observed_at="2026-09-22T12:05:00Z",
             outcome="succeeded",
             verified_utility=0.8,
             escaped_defect=False,
@@ -72,6 +74,7 @@ class AdaptivePolicyCohortTests(unittest.TestCase):
         o2 = build_outcome_record(
             plan=p2,
             actual_choice_id="a",
+            observed_at="2026-09-22T12:05:00Z",
             outcome="failed",
             verified_utility=0.0,
             escaped_defect=True,
@@ -110,6 +113,7 @@ class AdaptivePolicyCohortTests(unittest.TestCase):
         outcome = build_outcome_record(
             plan=p,
             actual_choice_id="a",
+            observed_at="2026-09-22T12:05:00Z",
             outcome="succeeded",
             limitations=["test"],
         )
@@ -129,6 +133,7 @@ class AdaptivePolicyCohortTests(unittest.TestCase):
         outcome = build_outcome_record(
             plan=p,
             actual_choice_id="a",
+            observed_at="2026-09-22T12:05:00Z",
             outcome="succeeded",
             limitations=["test"],
         )
@@ -148,6 +153,7 @@ class AdaptivePolicyCohortTests(unittest.TestCase):
         outcome = build_outcome_record(
             plan=p1,
             actual_choice_id="a",
+            observed_at="2026-09-22T12:05:00Z",
             outcome="succeeded",
             limitations=["test"],
         )
@@ -169,6 +175,7 @@ class AdaptivePolicyCohortTests(unittest.TestCase):
         outcome = build_outcome_record(
             plan=p,
             actual_choice_id="a",
+            observed_at="2026-09-22T12:05:00Z",
             outcome="succeeded",
             escaped_defect=False,
             high_risk_escape=False,
