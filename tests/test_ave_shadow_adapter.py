@@ -1,10 +1,15 @@
 import copy
 import importlib.util
+import json
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-TOOLS = Path(__file__).parents[1] / "tools"
+ROOT = Path(__file__).parents[1]
+TOOLS = ROOT / "tools"
+HAS_JSONSCHEMA = importlib.util.find_spec("jsonschema") is not None
+if HAS_JSONSCHEMA:
+    from jsonschema import Draft202012Validator
 
 shadow_spec = importlib.util.spec_from_file_location(
     "adaptive_policy_shadow",
@@ -503,3 +508,32 @@ def test_baseline_is_named_even_when_not_in_observation_pool():
         if choice["id"] == baseline_id
     )
     assert "baseline-verifier-not-present-in-observation-pool" in baseline["reasons"]
+
+
+def test_verifier_pool_fixture_matches_published_schema():
+    if not HAS_JSONSCHEMA:
+        return
+    wu = work_unit()
+    value = pool(
+        wu,
+        [
+            candidate("v1", "family-a"),
+            candidate(
+                "v2",
+                "family-b",
+                basis="known_bad_probes",
+                alpha=5,
+                beta=2,
+                samples=5,
+                probe_trials=5,
+                probe_breaches=0,
+            ),
+        ],
+    )
+    schema = json.loads(
+        (
+            ROOT
+            / "schemas/verifier-observation-pool-v0.1.schema.json"
+        ).read_text(encoding="utf-8")
+    )
+    Draft202012Validator(schema).validate(value)
