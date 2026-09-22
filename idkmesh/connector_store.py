@@ -14,11 +14,14 @@ from dataclasses import dataclass
 import json
 import math
 from pathlib import Path
+import re
 import sqlite3
 from typing import Any, Mapping
 
 
 SCHEMA_VERSION = 1
+
+_ENV_SECRET_REF = re.compile(r"env:[A-Za-z_][A-Za-z0-9_]{0,127}\Z")
 
 _SENSITIVE_KEY_FRAGMENTS = (
     "api_key",
@@ -97,6 +100,15 @@ def _validate_json_safe(value: Any, path: str = "$") -> Any:
         result: dict[str, Any] = {}
         for key, child in value.items():
             safe_key = _safe_key(key)
+            normalized = safe_key.lower().replace("-", "_")
+            if normalized == "secret_ref" or normalized.endswith("_secret_ref"):
+                if (
+                    not isinstance(child, str)
+                    or _ENV_SECRET_REF.fullmatch(child) is None
+                ):
+                    raise UnsafeMetadataError(
+                        f"secret reference at {path}.{safe_key} must use env:NAME"
+                    )
             result[safe_key] = _validate_json_safe(child, f"{path}.{safe_key}")
         return result
     if isinstance(value, (list, tuple)):
