@@ -183,6 +183,22 @@ If something is confusing, stale, contradictory, or difficult to discover, repor
 - A2A and MCP are integration surfaces; IDKMesh should not invent commodity transport protocols unnecessarily.
 - The public repository is also project memory: durable decisions, findings, evidence, and important collaboration history should remain inspectable.
 
+## Develop with IDKMesh: agent/model connector control plane
+
+IDKMesh is being productized in two loops: first use bounded external/local agents to help finish IDKMesh, then use the same connector/control interfaces to develop a separate application.
+
+The control plane keeps four things separate: **GitHub/project**, **coding agent**, **model provider**, and **execution backend**. Model capability is also separate from repository authority: a stronger model can produce a stronger candidate, but it cannot replace a required human review or gain merge authority.
+
+Current implementation sources:
+
+- [connector-control-plane architecture](docs/architecture/AGENT_MODEL_CONNECTOR_CONTROL_PLANE.md);
+- [Connector Control API v0.1](docs/specifications/CONNECTOR_CONTROL_API_V0_1.md);
+- [agent/model integration and self-hosting plan](docs/planning/AGENT_MODEL_INTEGRATION_SELF_HOSTING_PLAN_2026-09-22.md);
+- [model-tier dispatcher execution plan](docs/planning/MODEL_TIER_DISPATCHER_EXECUTION_PLAN_2026-09-22.md);
+- [live umbrella tracker #570](https://github.com/MSKazemi/idkmesh/issues/570).
+
+The immediate coding priority is [#574](https://github.com/MSKazemi/idkmesh/issues/574): implement the provider-neutral connector kernel and deterministic routing contract before adding provider-specific coordinator logic.
+
 ## The reference product
 
 The first reference application is a **Git-native Verified Swarm Runner**.
