@@ -15,6 +15,14 @@ Today, IDKMesh can support this as a **GitHub-native operating model plus execut
 
 That distinction matters throughout this guide.
 
+### Where does IDKMesh run?
+
+For a normal new software project, the recommended deployment is **GitHub-first and server-optional**.
+
+You should not need to operate a permanent IDKMesh server just to use the collaboration model. The target repository holds project/policy state, GitHub Actions runs event-driven coordination, hosted agents run on their providers, and optional `idkmesh-node` workers run on contributor/project machines only when local models or special compute are needed.
+
+See [GitHub-First Deployment and Multi-User Operation](architecture/GITHUB_FIRST_DEPLOYMENT_AND_MULTIUSER.md) for the exact deployment profiles, durable-state plan, multi-user role model, and criteria for when a separate control service becomes justified.
+
 ## 1. What IDKMesh adds to an ordinary GitHub project
 
 An ordinary development loop often looks like this:
