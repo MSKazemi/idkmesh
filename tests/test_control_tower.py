@@ -197,11 +197,14 @@ class ControlTowerModelTests(unittest.TestCase):
     def test_openapi_document_advertises_read_only_v1_contract(self) -> None:
         document = openapi_document()
         self.assertEqual(document["openapi"], "3.1.0")
+        self.assertIn("/healthz", document["paths"])
+        self.assertIn("/readyz", document["paths"])
         self.assertIn("/api/v1/status", document["paths"])
         self.assertIn(
             "/api/v1/run-evidence/inspect",
             document["paths"],
         )
+        self.assertIn("RequestId", document["components"]["headers"])
         self.assertEqual(
             document["components"]["securitySchemes"]
             ["LocalSessionToken"]["name"],
@@ -223,6 +226,17 @@ class ControlTowerModelTests(unittest.TestCase):
         self.assertEqual(status["schema_version"], "0.1")
         self.assertTrue(status["ok"])
         self.assertIn("openapi", status["endpoints"])
+        self.assertEqual(status["endpoints"]["readiness"], "GET /readyz")
+        self.assertEqual(
+            status["operations"]["request_id_header"],
+            "X-Request-ID",
+        )
+        self.assertFalse(
+            status["operations"]["access_logs_include_bodies"]
+        )
+        self.assertFalse(
+            status["operations"]["access_logs_include_authentication"]
+        )
         self.assertIn("control_tower_snapshot", status["schemas"])
         self.assertTrue(status["capabilities"]["run_evidence_inspection"])
         self.assertTrue(status["capabilities"]["provenance_chain"])
@@ -292,6 +306,62 @@ class ControlTowerServerTests(unittest.TestCase):
         self.assertEqual(headers["Cache-Control"], "no-store")
         self.assertEqual(headers["X-Frame-Options"], "DENY")
         self.assertIn("Content-Security-Policy", headers)
+
+    def test_readiness_is_tokenless_minimal_and_correlated(self) -> None:
+        status, headers, body = self.request(
+            "GET",
+            "/readyz",
+            extra_headers={"X-Request-ID": "probe-123"},
+        )
+        payload = json.loads(body)
+
+        self.assertEqual(status, 200)
+        self.assertEqual(payload["status"], "ready")
+        self.assertEqual(payload["service"], "idkmesh-control-tower")
+        self.assertEqual(payload["mode"], "local-read-only")
+        self.assertEqual(payload["api_version"], "v1")
+        self.assertNotIn("run_id", payload)
+        self.assertNotIn("work_unit", payload)
+        self.assertEqual(headers["X-Request-ID"], "probe-123")
+        self.assertEqual(
+            headers["X-IDKMesh-Service"],
+            "idkmesh-control-tower",
+        )
+        self.assertTrue(headers["X-IDKMesh-Service-Version"])
+        self.assertEqual(headers["X-IDKMesh-Read-Only"], "true")
+
+    def test_invalid_request_id_is_not_reflected(self) -> None:
+        supplied = "x" * 129
+        status, headers, _body = self.request(
+            "GET",
+            "/readyz",
+            extra_headers={"X-Request-ID": supplied},
+        )
+
+        self.assertEqual(status, 200)
+        self.assertNotEqual(headers["X-Request-ID"], supplied)
+        self.assertTrue(headers["X-Request-ID"].startswith("req_"))
+        self.assertLessEqual(len(headers["X-Request-ID"]), 128)
+
+    def test_request_id_does_not_change_deterministic_body(self) -> None:
+        first_status, _first_headers, first_body = self.request(
+            "POST",
+            "/api/v1/run-evidence/inspect",
+            SAMPLE_REPORT,
+            token=True,
+            extra_headers={"X-Request-ID": "request-a"},
+        )
+        second_status, _second_headers, second_body = self.request(
+            "POST",
+            "/api/v1/run-evidence/inspect",
+            SAMPLE_REPORT,
+            token=True,
+            extra_headers={"X-Request-ID": "request-b"},
+        )
+
+        self.assertEqual(first_status, 200)
+        self.assertEqual(second_status, 200)
+        self.assertEqual(first_body, second_body)
 
     def test_status_api_requires_session_token(self) -> None:
         status, _, body = self.request("GET", "/api/v1/status")
