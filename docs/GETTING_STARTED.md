@@ -383,6 +383,8 @@ not yet packaged as a polished general-purpose swarm application.
   Gate Audit GitHub Action.
 - **I want to use IDKMesh while building a different application:** follow the
   [Project Adoption Guide](PROJECT_ADOPTION_GUIDE.md).
+- **I want to use IDKMesh while building a different application:** follow the
+  [Project Adoption Guide](PROJECT_ADOPTION_GUIDE.md).
 - **I want to study multi-agent verification or coordination:** use the schemas,
   simulations, experiments, and interop layers.
 - **I want a finished autonomous swarm product:** follow or contribute to the
