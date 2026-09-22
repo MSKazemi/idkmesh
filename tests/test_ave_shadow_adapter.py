@@ -537,3 +537,30 @@ def test_verifier_pool_fixture_matches_published_schema():
         ).read_text(encoding="utf-8")
     )
     Draft202012Validator(schema).validate(value)
+
+
+def test_same_verifier_as_baseline_uses_same_choice_identity():
+    wu = work_unit()
+    baseline_candidate = candidate(
+        "baseline-verifier",
+        "family-a",
+        alpha=8,
+        beta=2,
+    )
+    result = build(
+        wu,
+        [baseline_candidate],
+        plan=evaluator_plan(wu, verifier_id="baseline-verifier"),
+    )
+    assert (
+        result["recommendation"]["selected_choice_id"]
+        == result["recommendation"]["baseline_choice_id"]
+        == "portfolio:baseline-verifier"
+    )
+    matching = [
+        choice
+        for choice in result["eligible_choices"]
+        if choice["id"] == "portfolio:baseline-verifier"
+    ]
+    assert len(matching) == 1
+    assert "current-evaluator-plan-baseline" in matching[0]["reasons"]
