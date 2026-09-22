@@ -1197,6 +1197,11 @@
     <priority>0.3</priority>
   </url>
   <url>
+    <loc>https://mskazemi.com/idkmesh/conversations/2026-09-22-control-tower-gui-api.html</loc>
+    <lastmod>2026-09-22</lastmod>
+    <priority>0.3</priority>
+  </url>
+  <url>
     <loc>https://mskazemi.com/idkmesh/conversations/2026-09-22-external-project-adoption-guide.html</loc>
     <lastmod>2026-09-22</lastmod>
     <priority>0.3</priority>
@@ -1689,6 +1694,11 @@
   <url>
     <loc>https://mskazemi.com/idkmesh/specifications/BENCHMARK_COHORT_V0_1.html</loc>
     <lastmod>2026-08-29</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://mskazemi.com/idkmesh/specifications/CONTROL_TOWER_LOCAL_API_V0_1.html</loc>
+    <lastmod>2026-09-22</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
