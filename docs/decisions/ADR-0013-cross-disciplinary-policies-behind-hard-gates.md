@@ -80,6 +80,8 @@ Every adaptive mechanism must progress through explicit maturity stages document
 
 Promotion requires stronger evidence at each stage.
 
+For the N2 -> N3 transition, adaptive mechanisms should use the common shadow-evidence contract from PR #637 / issue #636 so recommendations are frozen before outcomes, exact-revision/input-bound, and retrospectively joined without inventing the unexecuted counterfactual.
+
 A mechanism must be removable if a simpler baseline matches its result.
 
 ## Interpretability rule
@@ -146,3 +148,5 @@ These costs are intentional.
 - issue #621 AVE ablation
 - PR #631 Physarum compute routing
 - issue #630 Physarum stress testing
+- PR #637 adaptive policy shadow contract
+- issue #636 N3 real shadow cohort
