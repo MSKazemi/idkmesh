@@ -712,6 +712,16 @@ def status_document() -> dict[str, Any]:
         "source_contracts": [
             f"{REPORT_KIND}/{REPORT_VERSION}",
         ],
+        "schemas": {
+            "run_evidence_report": (
+                "https://idkmesh.org/schemas/"
+                "run-evidence-report-v0.1.schema.json"
+            ),
+            "control_tower_snapshot": (
+                "https://idkmesh.org/schemas/"
+                "control-tower-snapshot-v0.1.schema.json"
+            ),
+        },
         "capabilities": {
             "run_evidence_inspection": True,
             "semantic_timeline": True,
@@ -827,6 +837,16 @@ def openapi_document() -> dict[str, Any]:
                                             "kind", "ok", "snapshot",
                                             "snapshot_digest",
                                         ],
+                                        "properties": {
+                                            "snapshot": {
+                                                "$ref": (
+                                                    "https://idkmesh.org/"
+                                                    "schemas/"
+                                                    "control-tower-snapshot-"
+                                                    "v0.1.schema.json"
+                                                )
+                                            }
+                                        },
                                     }
                                 }
                             },
