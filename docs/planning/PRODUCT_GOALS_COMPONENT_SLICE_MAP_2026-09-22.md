@@ -654,13 +654,14 @@ The repository should now focus on a small wave rather than opening every future
 
 Ready immediately:
 
-1. C1-B profile loader/validator;
-2. C1-C registry + fake drivers;
-3. C1-D normalized probes;
-4. C1-E secret refs/redaction;
-5. C1-F local SQLite/idempotency;
-6. C1-G/H CLI slices;
-7. C1-I adversarial fixtures.
+1. [#611 — C1-B profile loader/validator](https://github.com/MSKazemi/idkmesh/issues/611);
+2. [#613 — C1-C registry + fake drivers](https://github.com/MSKazemi/idkmesh/issues/613);
+3. [#614 — C1-D normalized probes](https://github.com/MSKazemi/idkmesh/issues/614);
+4. [#615 — C1-E secret refs/redaction](https://github.com/MSKazemi/idkmesh/issues/615);
+5. [#616 — C1-F local SQLite/idempotency](https://github.com/MSKazemi/idkmesh/issues/616);
+6. [#617 — C1-G validate/list CLI](https://github.com/MSKazemi/idkmesh/issues/617);
+7. [#618 — C1-H probe/doctor/route-explain CLI](https://github.com/MSKazemi/idkmesh/issues/618);
+8. [#619 — C1-I adversarial fixtures](https://github.com/MSKazemi/idkmesh/issues/619).
 
 ## Wave 2 — can begin once C1-B/C/D contracts are merged
 
