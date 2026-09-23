@@ -470,18 +470,154 @@ def ensure_labels(
     return created
 
 
-def list_active_issues(
+def _parse_rfc3339(value: Any) -> datetime | None:
+    text_value = str(value or "").strip()
+    if not text_value:
+        return None
+    try:
+        parsed = datetime.fromisoformat(text_value.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
+def _age_minutes(value: Any, now: datetime) -> float | None:
+    parsed = _parse_rfc3339(value)
+    if parsed is None:
+        return None
+    return max(0.0, (now - parsed).total_seconds() / 60.0)
+
+
+def session_attention_reason(
+    session: dict[str, Any],
+    policy: dict[str, Any],
+    *,
+    now: datetime,
+) -> str | None:
+    """Return why an unattended session needs maintainer attention, if any."""
+    state = str(session.get("state") or "STATE_UNSPECIFIED").upper()
+    attention_states = {
+        str(value).upper() for value in policy["attention_session_states"]
+    }
+    if state in attention_states:
+        return f"provider session entered {state}"
+
+    threshold = policy["stale_session_minutes"].get(state)
+    if threshold is None:
+        return None
+    age = _age_minutes(
+        session.get("updateTime") or session.get("createTime"),
+        now,
+    )
+    if age is not None and age >= int(threshold):
+        return (
+            f"provider session remained {state} without an update for "
+            f"{int(age)} minutes (threshold {threshold})"
+        )
+    return None
+
+
+def _replace_local_label(issue: dict[str, Any], old: str, new: str) -> None:
+    labels = [
+        label
+        for label in issue.get("labels", [])
+        if str(label.get("name", "")).casefold() != old.casefold()
+    ]
+    if all(
+        str(label.get("name", "")).casefold() != new.casefold()
+        for label in labels
+    ):
+        labels.append({"name": new})
+    issue["labels"] = labels
+
+
+def reconcile_active_sessions(
     api: GitHubAPI,
     policy: dict[str, Any],
-) -> list[dict[str, Any]]:
-    by_number: dict[int, dict[str, Any]] = {}
-    for label in active_dispatch_labels(policy):
-        for issue in api.list_open_issues(label):
-            if issue.get("pull_request"):
-                continue
-            by_number[int(issue["number"])] = issue
-    return list(by_number.values())
+    *,
+    jules_api: JulesAPI,
+    open_issues: list[dict[str, Any]] | None = None,
+    sessions: list[dict[str, Any]] | None = None,
+    now: datetime | None = None,
+    dry_run: bool = False,
+) -> list[int]:
+    """Move failed or stalled unattended sessions to an explicit attention state."""
+    dispatch_label = str(policy["dispatch_label"])
+    attention_label = str(policy["attention_label"])
+    current_time = now or datetime.now(timezone.utc)
+    issues = open_issues if open_issues is not None else api.list_open_issues()
+    active = [
+        issue
+        for issue in issues
+        if not issue.get("pull_request")
+        and dispatch_label.casefold() in label_names(issue)
+    ]
+    if not active:
+        print("jules dispatcher: no API-dispatched sessions to reconcile")
+        return []
 
+    provider_sessions = sessions if sessions is not None else jules_api.list_sessions()
+    by_title: dict[str, dict[str, Any]] = {}
+    for session in provider_sessions:
+        title = str(session.get("title") or "")
+        if title and title not in by_title:
+            by_title[title] = session
+
+    attention: list[int] = []
+    for issue in active:
+        number = int(issue["number"])
+        title = session_title(api.repository, issue)
+        session = by_title.get(title)
+        reason: str | None = None
+
+        if session is None:
+            age = _age_minutes(issue.get("updated_at"), current_time)
+            threshold = int(policy["stale_missing_session_minutes"])
+            if age is not None and age >= threshold:
+                reason = (
+                    "no matching Jules session is visible after "
+                    f"{int(age)} minutes (threshold {threshold})"
+                )
+        else:
+            reason = session_attention_reason(
+                session,
+                policy,
+                now=current_time,
+            )
+
+        if reason is None:
+            continue
+
+        attention.append(number)
+        state = str((session or {}).get("state") or "MISSING")
+        location = str(
+            (session or {}).get("url")
+            or (session or {}).get("name")
+            or "no matching session"
+        )
+        if dry_run:
+            print(
+                f"jules dispatcher: would mark #{number} needs-attention: {reason}"
+            )
+            continue
+
+        # Block redispatch before releasing the active reservation.
+        api.add_labels(number, [attention_label])
+        api.remove_label(number, dispatch_label)
+        api.add_comment(
+            number,
+            "IDKMesh Jules reconciliation moved this task out of the active "
+            f"dispatch pool. Session: {location} (state: {state}). Reason: "
+            f"{reason}. Automatic redispatch is blocked by {attention_label}. "
+            "Inspect the provider session and issue before removing that label. "
+            "Reconciliation never creates a replacement session.",
+        )
+        _replace_local_label(issue, dispatch_label, attention_label)
+        print(f"jules dispatcher: #{number} needs attention: {reason}")
+
+    return attention
 
 def session_comment(session: dict[str, Any]) -> str:
     name = str(session.get("name") or "unknown session")
