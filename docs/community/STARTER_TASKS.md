@@ -100,9 +100,9 @@ functions, or a short written finding showing where it is already exercised.
 
 ### S1 — Check every workflow's `permissions:` block is least-privilege
 
-**Parallel welcome** — split the 49 workflows into batches. ~2 hours per batch.
+**Parallel welcome** — split the 51 workflows into batches. ~2 hours per batch.
 
-All 49 workflows in `.github/workflows/` declare an explicit top-level
+All 51 workflows in `.github/workflows/` declare an explicit top-level
 `permissions:` block, so none of them silently inherits the default token
 scope. The remaining question is whether each block is *minimal*: a workflow
 that only reads the tree should not hold `contents: write`.
