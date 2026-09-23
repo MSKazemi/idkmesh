@@ -115,6 +115,7 @@ class GitHubRestPullRequestSourceTests(unittest.TestCase):
         source = GitHubRestPullRequestSource(
             token="super-secret-token",
             opener=opener,
+            connection_id="github-main",
         )
 
         result = source.get_pull_request(
@@ -300,6 +301,7 @@ class GitHubRestPullRequestSourceTests(unittest.TestCase):
             {"opener": "not-callable"},
             {"user_agent": ""},
             {"user_agent": "bad\nagent"},
+            {"connection_id": ""},
         ]
         for config in bad_configs:
             with self.subTest(config=config):
