@@ -56,6 +56,26 @@ A quorum is the threshold or rule used to turn individual verification results i
 
 Run the [gate-audit quickstart](https://mskazemi.com/idkmesh/start.html) and read the [Gate Audit v0.1 specification](https://github.com/MSKazemi/idkmesh/blob/main/docs/specifications/GATE_AUDIT_V0_1.md).
 
+### How do I choose diverse verifiers?
+
+Choose evaluators that differ in evidence source, implementation, model family, tests, or expertise where those differences are relevant to likely failure modes. Diversity is valuable when it reduces shared blind spots, not when it is only cosmetic.
+
+### What is correlated verifier error?
+
+It means multiple reviewers are wrong on the same items more often than independent reviewers would be. Correlation reduces how much new information each additional vote contributes.
+
+### How should I set a verification quorum?
+
+Set it from measured reviewer performance, risk tolerance, and the cost of false acceptance versus false rejection. A quorum should be validated on representative cases rather than copied from panel size alone.
+
+### When should a verifier panel abstain?
+
+Abstention is appropriate when required evidence is missing, reviewers disagree beyond the calibrated decision boundary, or the case is outside the evaluators' demonstrated competence.
+
+### How do I detect fake diversity in a review panel?
+
+Compare item-level error patterns, prompts, tools, data sources, model/provider lineage, and evaluator design. Nominally different reviewers that fail on the same cases are not providing much independent protection.
+
 [Browse all AI-agent trust topics](https://mskazemi.com/idkmesh/topics/).
 
 **Last reviewed:** 2026-09-22.
