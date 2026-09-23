@@ -267,6 +267,19 @@ class SelectorTests(unittest.TestCase):
             "marginal_ordering_not_interval_separated",
         )
 
+    def test_marginal_selector_stops_without_positive_interval_support(self):
+        rows = [
+            _fake_row("a", delta=0.4, low=-0.1, high=0.9),
+            _fake_row("b", delta=-0.8, low=-1.2, high=-0.4),
+        ]
+        selected = benchmark._select_marginal(rows)
+        self.assertEqual(selected["status"], "unresolved")
+        self.assertIsNone(selected["selected_verifier_id"])
+        self.assertEqual(
+            selected["reason_code"],
+            "marginal_gain_not_positive_with_interval_support",
+        )
+
     def test_marginal_selector_does_not_fallback_from_unresolved_metric(self):
         rows = [
             _fake_row("a", delta=2.0, low=1.5, high=2.5),
@@ -511,6 +524,18 @@ class SchemaTests(unittest.TestCase):
         )
         selectors = report["selection_plan"]["selectors"]
         selectors[0], selectors[1] = selectors[1], selectors[0]
+        with self.assertRaises(jsonschema.ValidationError):
+            jsonschema.validate(report, schema)
+
+    @unittest.skipUnless(HAS_JSONSCHEMA, "jsonschema not installed")
+    def test_schema_rejects_truncated_selector_rows(self):
+        schema = json.loads(REPORT_SCHEMA_PATH.read_text(encoding="utf-8"))
+        report = benchmark.benchmark(
+            make_matrix("design"),
+            make_matrix("holdout"),
+            config=make_config(),
+        )
+        report["selection_plan"]["selectors"].pop()
         with self.assertRaises(jsonschema.ValidationError):
             jsonschema.validate(report, schema)
 
