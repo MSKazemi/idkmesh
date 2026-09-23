@@ -2,19 +2,20 @@
   "version": 1,
   "status": "hypothesis_seed_not_search_demand_evidence",
   "generated_at": null,
-  "purpose": "Versioned non-branded intent hypotheses for measuring topical coverage. Query inclusion is not evidence of demand until authoritative search analytics are attached.",
+  "query_source": "config/seo-topics-v1.json",
+  "purpose": "Analytics companion for the canonical 100-query SEO topic map. Query text and canonical targets must remain identical to config/seo-topics-v1.json; this file adds evidence references and observatory authority metadata only.",
   "rules": {
     "exact_cluster_count": 10,
     "exact_queries_per_cluster": 10,
-    "thin_page_policy": "A query maps to an existing canonical evidence-backed page unless evidence justifies a new page. Do not create one page per keyword.",
+    "thin_page_policy": "A query maps to its existing canonical evidence-backed topic page unless observed evidence justifies a new page. Do not create one page per keyword.",
     "branded_queries_allowed": false,
     "authority": "recommendation_only"
   },
   "clusters": [
     {
-      "id": "ai-agent-verification",
-      "label": "AI agent verification",
-      "canonical_target": "docs/concepts.html",
+      "id": "agent-verification",
+      "label": "AI Agent Verification and Validation",
+      "canonical_target": "docs/topics/ai-agent-verification.md",
       "evidence_refs": [
         "docs/specifications/GATE_AUDIT_V0_1.md",
         "experiments/E015-verification-phase-diagram.md",
@@ -22,213 +23,213 @@
       ],
       "queries": [
         "ai agent verification",
-        "how to verify ai agent output",
-        "verify autonomous agent results",
-        "ai agent output validation",
-        "independent verification for ai agents",
-        "how to validate ai agent work",
-        "ai agent verification framework",
-        "verification layer for ai agents",
-        "trustworthy ai agent workflow",
-        "ai agent acceptance criteria"
+        "ai agent validation",
+        "verify ai agents",
+        "ai agent testing",
+        "ai agent evaluation",
+        "independent ai verification",
+        "autonomous agent verification",
+        "agent output verification",
+        "ai agent quality assurance",
+        "trustworthy ai agents"
       ]
     },
     {
       "id": "multi-agent-orchestration",
-      "label": "Multi-agent orchestration",
-      "canonical_target": "docs/pipelines.html",
+      "label": "Multi-Agent Orchestration and Coordination",
+      "canonical_target": "docs/topics/multi-agent-orchestration.md",
       "evidence_refs": [
         "ARCHITECTURE.md",
         "docs/architecture/AGENT_MODEL_CONNECTOR_CONTROL_PLANE.md",
         "docs/algorithms/ACO_STIGMERGIC_TASK_ROUTING.md"
       ],
       "queries": [
-        "multi agent orchestration",
-        "multi agent orchestration framework",
-        "orchestrate multiple ai agents",
-        "multi agent workflow orchestration",
-        "ai agent task orchestration",
-        "multi agent software development",
-        "coordinate multiple coding agents",
-        "multi agent task decomposition",
-        "multi agent workflow architecture",
-        "agent orchestration with independent verification"
+        "multi-agent orchestration",
+        "ai agent orchestration",
+        "multi-agent coordination",
+        "agent orchestration framework",
+        "ai workflow orchestration",
+        "ai agent coordination framework",
+        "distributed ai agents",
+        "collaborative ai agents",
+        "multi-agent workflow",
+        "agent swarm orchestration"
       ]
     },
     {
-      "id": "coding-agent-evaluation",
-      "label": "Coding-agent evaluation",
-      "canonical_target": "docs/research.html",
+      "id": "ai-code-review",
+      "label": "AI Code Review and Coding-Agent Verification",
+      "canonical_target": "docs/topics/ai-code-review.md",
       "evidence_refs": [
-        "experiments/E015-verification-phase-diagram.md",
+        "docs/specifications/GATE_AUDIT_V0_1.md",
         "experiments/E016-live-verifier-correlation.md",
-        "experiments/E017-item-difficulty-and-quorum.md"
+        ".github/workflows/pr-gate.yml"
       ],
       "queries": [
-        "coding agent evaluation",
-        "evaluate ai coding agents",
-        "coding agent benchmark",
-        "ai coding agent reliability",
-        "how to benchmark coding agents",
-        "coding agent quality measurement",
-        "compare coding agent outputs",
-        "coding agent evaluation framework",
-        "measure coding agent performance",
-        "coding agent verification benchmark"
+        "ai code review",
+        "ai code review agents",
+        "automated code review ai",
+        "llm code review",
+        "ai pull request review",
+        "autonomous coding agents",
+        "coding agent verification",
+        "ai software engineering agents",
+        "github coding agents",
+        "ai generated code verification"
       ]
     },
     {
-      "id": "ai-code-review-reliability",
-      "label": "AI code-review reliability",
-      "canonical_target": "docs/research.html",
+      "id": "llm-judge-reliability",
+      "label": "LLM-as-a-Judge Reliability",
+      "canonical_target": "docs/topics/llm-judge-reliability.md",
+      "evidence_refs": [
+        "experiments/E016-live-verifier-correlation.md",
+        "experiments/E017-item-difficulty-and-quorum.md",
+        "schemas/evaluator-plan-v0.4.schema.json"
+      ],
+      "queries": [
+        "llm as a judge",
+        "llm judge reliability",
+        "llm evaluator",
+        "llm evaluation reliability",
+        "ai evaluator bias",
+        "llm judge bias",
+        "llm judge calibration",
+        "model evaluation panel",
+        "ai judge panel",
+        "correlated llm errors"
+      ]
+    },
+    {
+      "id": "verifier-panels",
+      "label": "Verifier Panels and Independent Review",
+      "canonical_target": "docs/topics/verifier-panels.md",
       "evidence_refs": [
         "experiments/E012-correlated-verification.md",
-        "experiments/E016-live-verifier-correlation.md",
-        "experiments/E017-item-difficulty-and-quorum.md"
+        "experiments/E017-item-difficulty-and-quorum.md",
+        "experiments/E020-quorum-frontier-under-measured-shape.md"
       ],
       "queries": [
-        "ai code review reliability",
-        "can ai code reviewers be trusted",
-        "multiple ai code reviewers",
-        "ai reviewer correlation",
-        "ai code review verification",
-        "how reliable are ai code reviewers",
-        "independent ai code review",
-        "ai reviewer majority vote",
-        "llm code review reliability",
-        "measure ai code review quality"
+        "verifier panel",
+        "effective independent votes",
+        "correlated verifier errors",
+        "review panel reliability",
+        "independent reviewers ai",
+        "ai verification system",
+        "verification quorum",
+        "verifier diversity",
+        "evaluation independence",
+        "reliable ai review"
       ]
     },
     {
-      "id": "agent-reliability-provenance",
-      "label": "Agent reliability and provenance",
-      "canonical_target": "docs/concepts.html",
+      "id": "agent-governance",
+      "label": "Human Oversight and AI Agent Governance",
+      "canonical_target": "docs/topics/agent-governance.md",
+      "evidence_refs": [
+        "GOVERNANCE.md",
+        "CONSTITUTION.md",
+        "PROJECT_RULES.md"
+      ],
+      "queries": [
+        "human in the loop ai agents",
+        "ai agent governance",
+        "ai oversight for agents",
+        "ai approval workflow",
+        "human approval ai",
+        "agent permission boundaries",
+        "ai agent access control",
+        "safe autonomous agents",
+        "ai agent audit trail",
+        "ai agent accountability"
+      ]
+    },
+    {
+      "id": "provenance-evidence",
+      "label": "AI Provenance, Evidence, and Reproducibility",
+      "canonical_target": "docs/topics/provenance-evidence.md",
       "evidence_refs": [
         "docs/specifications/VERIFICATION_PROVENANCE_INTEGRITY.md",
         "schemas/result-manifest-v0.1.schema.json",
         "schemas/verification-result-v0.1.schema.json"
       ],
       "queries": [
-        "ai agent provenance",
-        "agent output provenance",
-        "llm agent reliability",
-        "ai workflow provenance",
-        "verify provenance of ai generated code",
-        "agent result manifest",
-        "trace ai agent changes",
-        "reproducible ai agent workflow",
-        "ai agent audit trail",
-        "provenance for autonomous agents"
+        "ai provenance",
+        "agent provenance",
+        "ai evidence pipeline",
+        "reproducible ai workflows",
+        "ai audit evidence",
+        "ai decision provenance",
+        "model output provenance",
+        "ai workflow traceability",
+        "verifiable ai outputs",
+        "evidence based ai systems"
       ]
     },
     {
-      "id": "verifier-independence",
-      "label": "Verifier independence and correlation",
-      "canonical_target": "docs/research.html",
+      "id": "mcp-a2a-interoperability",
+      "label": "MCP, A2A, and AI Agent Interoperability",
+      "canonical_target": "docs/topics/mcp-a2a-interoperability.md",
       "evidence_refs": [
-        "experiments/E012-correlated-verification.md",
-        "experiments/E016-live-verifier-correlation.md",
-        "experiments/E017-item-difficulty-and-quorum.md"
+        "docs/interoperability/A2A_MCP_MAPPING_V0_1.md",
+        "docs/interoperability/AGENT_INTEROPERABILITY_ARCHITECTURE_2026-08-28.md",
+        "docs/architecture/AGENT_MODEL_CONNECTOR_CONTROL_PLANE.md"
       ],
       "queries": [
-        "independent ai verifier",
-        "verifier independence",
-        "correlated ai reviewers",
-        "effective number of reviewers",
-        "majority vote correlated reviewers",
-        "reviewer correlation measurement",
-        "independent verification quorum",
-        "ai verification quorum",
-        "measure reviewer independence",
-        "why majority voting can fail ai reviewers"
+        "mcp a2a",
+        "mcp vs a2a",
+        "model context protocol a2a",
+        "ai agent interoperability",
+        "agent2agent protocol",
+        "a2a protocol",
+        "mcp agent orchestration",
+        "agent protocol interoperability",
+        "a2a mcp integration",
+        "ai agent connector framework"
       ]
     },
     {
-      "id": "github-agent-automation",
-      "label": "GitHub AI-agent automation",
-      "canonical_target": "docs/start.html",
+      "id": "verification-scaling",
+      "label": "Verification Debt, Backpressure, and Agent Scaling",
+      "canonical_target": "docs/topics/verification-scaling.md",
       "evidence_refs": [
-        "docs/PROJECT_ADOPTION_GUIDE.md",
-        "docs/architecture/AGENT_MODEL_CONNECTOR_CONTROL_PLANE.md",
-        ".github/workflows/pr-gate.yml"
+        "docs/research/VERIFICATION_BACKPRESSURE_BENCHMARK.md",
+        "experiments/E022-verification-scaling-matrix.md",
+        "ARCHITECTURE.md"
       ],
       "queries": [
-        "github ai agent automation",
-        "automate github issues with ai agents",
-        "coding agents github workflow",
-        "github actions ai agents",
-        "route github issues to ai agents",
-        "ai agent pull request workflow",
-        "multi agent github automation",
-        "safe ai coding agent github",
-        "github autonomous coding workflow",
-        "ai agents with protected main branch"
+        "verification debt",
+        "ai review bottleneck",
+        "ai verification bottleneck",
+        "agent scaling verification",
+        "ai agent scaling",
+        "multi-agent reliability",
+        "verification backpressure",
+        "ai evaluation at scale",
+        "scalable ai verification",
+        "ai swarm reliability"
       ]
     },
     {
-      "id": "model-agent-routing",
-      "label": "Model and agent routing",
-      "canonical_target": "docs/pipelines.html",
-      "evidence_refs": [
-        "docs/architecture/ISSUE_MODEL_ROUTING.md",
-        "config/llm-routing-policy.json",
-        "idkmesh/connector_routing.py"
-      ],
-      "queries": [
-        "llm model routing",
-        "ai agent routing",
-        "route tasks to different llms",
-        "route github issues to models",
-        "choose llm by task difficulty",
-        "coding agent model router",
-        "multi model agent routing",
-        "cost aware llm routing",
-        "capability based agent routing",
-        "small model vs large model routing"
-      ]
-    },
-    {
-      "id": "human-ai-software-engineering",
-      "label": "Human + AI collaborative software engineering",
-      "canonical_target": "docs/index.html",
+      "id": "verified-swarm-engineering",
+      "label": "Verified Swarm and Agentic Software Engineering",
+      "canonical_target": "docs/topics/verified-swarm-engineering.md",
       "evidence_refs": [
         "README.md",
-        "docs/PROJECT_ADOPTION_GUIDE.md",
-        "ITERATION_MODEL.md"
+        "ARCHITECTURE.md",
+        "docs/PROJECT_ADOPTION_GUIDE.md"
       ],
       "queries": [
-        "human ai software engineering",
-        "humans and ai agents software development",
-        "collaborative ai software engineering",
-        "human ai coding workflow",
-        "ai agents with human review",
-        "human in the loop coding agents",
-        "verified human ai collaboration",
-        "software development with multiple ai agents",
-        "human ai engineering workflow",
-        "ai assisted software team architecture"
-      ]
-    },
-    {
-      "id": "collective-intelligence-software",
-      "label": "Collective intelligence for software development",
-      "canonical_target": "docs/research.html",
-      "evidence_refs": [
-        "docs/research/R1_COLLECTIVE_SCALING.md",
-        "experiments/E024-matched-budget-emergence.md",
-        "idkips/0002-idk-mosaic-living-collective-intelligence.md"
-      ],
-      "queries": [
-        "collective intelligence software development",
-        "collective intelligence ai agents",
-        "swarm software engineering",
-        "ai swarm coding",
-        "multi agent collective intelligence",
-        "collective coding agents",
-        "emergent multi agent software development",
-        "swarm intelligence for software engineering",
-        "distributed ai agents software engineering",
-        "human ai collective intelligence"
+        "verified swarm engineering",
+        "verified ai swarm",
+        "ai swarm framework",
+        "open source ai agent framework",
+        "github native ai agents",
+        "ai agent development framework",
+        "ai agent collaboration framework",
+        "verification first ai",
+        "trustworthy agentic ai",
+        "agentic software engineering"
       ]
     }
   ]

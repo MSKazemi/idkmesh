@@ -16,7 +16,7 @@ class SearchConsoleSnapshotTests(unittest.TestCase):
     def test_analyze_separates_branded_nonbranded_and_portfolio_queries(self):
         rows = [
             {
-                "keys": ["ai agent verification", "https://mskazemi.com/idkmesh/concepts.html"],
+                "keys": ["ai agent verification", "https://mskazemi.com/idkmesh/topics/ai-agent-verification.html"],
                 "clicks": 4,
                 "impressions": 100,
                 "ctr": 0.04,
@@ -46,7 +46,7 @@ class SearchConsoleSnapshotTests(unittest.TestCase):
         self.assertEqual(100.0, result["summary"]["nonbranded"]["impressions"])
         self.assertEqual(20.0, result["summary"]["branded"]["impressions"])
         self.assertEqual(1, result["summary"]["portfolio_queries_with_observations"])
-        self.assertIn("ai-agent-verification", result["portfolio_clusters"])
+        self.assertIn("agent-verification", result["portfolio_clusters"])
 
     def test_collect_uses_query_and_page_dimensions(self):
         payloads = []
