@@ -58,6 +58,9 @@ jobs:
       - name: Validate router syntax
         run: python -m py_compile scripts/issue_model_router.py
 
+      - name: Validate Jules control-plane contract
+        run: python tools/check_jules_contract.py
+
       - name: Bootstrap managed routing labels
         if: github.event_name == 'workflow_dispatch' && inputs.bootstrap_labels
         env:
@@ -207,4 +210,6 @@ jobs:
     needs: route
     if: github.event_name == 'push' && needs.route.outputs.has_jules_candidate == 'true'
     uses: ./.github/workflows/jules-dispatch.yml
+    with:
+      bootstrap_labels: true
     secrets: inherit
