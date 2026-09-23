@@ -106,7 +106,7 @@ the dispatcher checks provider session state, quarantines failed/stale work,
 and fills free slots. GitHub scheduled runs are best-effort and may be delayed,
 so this is not the primary path.
 
-The Issue Model Router also has a slower backfill schedule for reclassification.
+The Issue Model Router also has a slower backfill schedule for reclassification. A push to the Jules/router control-plane files on `main` triggers an immediate full open-issue reclassification and reusable dispatcher call, so a repaired or changed contract does not wait for the next six-hour backfill window.
 Manual `workflow_dispatch` remains available for operators, including an
 optional `issue_number` and an explicit `bootstrap_labels` control.
 
