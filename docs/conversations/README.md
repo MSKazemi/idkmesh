@@ -7,9 +7,13 @@ canonical files designated by [`../../PROJECT_RULES.md`](../../PROJECT_RULES.md)
 (decisions, specifications, architecture, findings); this directory keeps the trail
 that produced them.
 
-162 records across 7 dates, newest first.
+163 records across 8 dates, newest first.
 
 ## Index
+
+### 2026-09-23
+
+- [API v1 professionalization planning](2026-09-23-api-v1-professionalization-planning.md)
 
 ### 2026-09-22
 
