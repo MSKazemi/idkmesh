@@ -68,6 +68,7 @@ class FakeAPI:
         in_progress_runs=0,
         fail_actions=False,
     ):
+        self.repository = "MSKazemi/idkmesh"
         self.active = list(active or [])
         self.legacy = list(legacy or [])
         self.queued = list(queued or [])
