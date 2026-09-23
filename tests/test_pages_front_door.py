@@ -73,6 +73,14 @@ class SitemapTests(unittest.TestCase):
             f"sitemap pointing at 404s is worse than none: {extra}",
         )
 
+    def test_topic_hub_uses_explicit_index_source(self) -> None:
+        published = dict(published_pages())
+        self.assertEqual(
+            DOCS / "topics" / "index.md",
+            published.get(BASE + "topics/"),
+        )
+        self.assertFalse((DOCS / "topics" / "README.md").exists())
+
     def test_locations_are_absolute_https_urls_under_the_site_root(self) -> None:
         offenders = [url for url in declared_locations() if not url.startswith(BASE)]
         self.assertEqual(
