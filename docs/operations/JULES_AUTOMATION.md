@@ -38,7 +38,7 @@ must be treated as an external compatibility risk.
 | --- | --- | --- |
 | issue author / contributor | describe a bounded problem and acceptance criteria | self-declare human evidence as satisfied |
 | maintainer / trusted triager | decide whether the issue is safe and bounded; add `agent-ready` | add it to human-only, research-evidence, or security-sensitive work |
-| Jules Dispatcher GitHub Action | create policy labels, enforce deny labels/capacity, create one Jules API session, record `agent:jules-dispatched` | infer safety from arbitrary issue prose, expose the API key, or merge code |
+| Jules Dispatcher GitHub Action | enforce deny labels/capacity, create one Jules API session, record `agent:jules-dispatched` | infer safety from arbitrary issue prose, expose the API key, or merge code |
 | Google Jules REST API / worker | execute the approved bounded task and create a PR | act as independent verifier or integration authority |
 | IDKMesh CI | test the exact PR candidate | decide scientific validity or governance approval |
 | maintainer / reviewer | review evidence and decide integration | treat agent output as self-validating |
@@ -66,8 +66,7 @@ The official authentication guide is
 
 There are two paths.
 
-**Fast path — event driven.** When a new/edited/reopened issue is routed to `agent:jules-eligible`, or when `agent-ready` is applied, the
-`.github/workflows/jules-dispatch.yml` workflow runs immediately. If a slot is
+**Fast path — event driven.** When a new/edited/reopened issue is routed to `agent:jules-eligible`, the router explicitly wakes the dispatcher with that issue number. When `agent-ready` is applied manually, the dispatcher runs from the label event. If a slot is
 available and no veto label exists, it resolves the Jules source, checks for an
 existing deterministic session title, reserves the issue with
 `agent:jules-dispatched`, and creates the Jules session. There is no polling
@@ -80,7 +79,7 @@ remaining `agent-ready` queue. Development therefore does not normally wait
 for the recovery schedule after a completed task.
 
 **Recovery path — every 30 minutes.** At minutes 17 and 47 UTC, the same
-workflow rescans the queue. In addition, the issue router backfills all open issues hourly at minute 7 and explicitly wakes the dispatcher after routing. This catches an issue that was left waiting because
+workflow rescans the queue. In addition, the issue router backfills all open issues every six hours at minute 7 without starting a second redundant dispatcher run. This catches an issue that was left waiting because
 capacity was full or an earlier workflow run was interrupted. GitHub Actions
 scheduled runs are best-effort and can be delayed by the platform, so the
 scheduled sweep is a reliability mechanism, not the primary dispatch mechanism.
@@ -97,8 +96,8 @@ Current defaults:
 
 - maximum open dispatched issues: **4**;
 - maximum dispatches per recovery sweep: **2**;
-- automatic dispatch pauses when queued Actions runs exceed **12**;
-- automatic dispatch pauses when in-progress Actions runs exceed **8**;
+- automatic dispatch pauses when queued Actions runs exceed **96**;
+- automatic dispatch pauses when in-progress Actions runs exceed **24**;
 - an `agent-ready` label event dispatches at most **1** issue immediately;
 - closing a dispatched issue immediately triggers a capacity refill;
 - open issues carrying `agent:jules-dispatched` consume capacity until they
@@ -219,6 +218,23 @@ The repository PR gate remains authoritative for automated integration checks:
 No Jules task auto-merges `main`.
 
 ## Failure and recovery runbook
+
+### GitHub API quota is exhausted
+
+The dispatcher treats installation rate-limit exhaustion as a transient,
+fail-closed condition: it starts no provider work, exits cleanly, and leaves the
+issue queued for the next recovery sweep. Routine dispatch no longer lists
+labels on every run, and it loads open issues once for both queue selection and
+capacity accounting. The issue router also avoids per-issue label reads and
+does not run its pytest suite on every issue event.
+
+If quota exhaustion repeats after these reductions, inspect repository-wide
+workflow fan-out separately; Jules should not be given a broad personal token
+just to bypass a CI design problem.
+
+Managed routing/Jules labels are bootstrapped only on an explicit manual
+workflow dispatch using the `bootstrap_labels` input. Normal issue events
+assume the repository setup has already created them.
 
 ### `agent-ready` exists but `agent:jules-dispatched` does not
 
