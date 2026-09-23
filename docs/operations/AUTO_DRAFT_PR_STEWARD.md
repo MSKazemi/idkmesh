@@ -128,12 +128,19 @@ making any additional GitHub API calls. The contract is
 
 The trusted workflow writes:
 
-- `steward-report.json` — machine-readable state for automation, CLI, and future
-  GUI surfaces;
+- `steward-report.json` — machine-readable state for automation, CLI, and
+  local dashboards;
 - `steward-report.md` — human-readable summary of the same result.
 
 Both files are uploaded as a short-retention GitHub Actions artifact named
 `auto-draft-pr-steward-<run-id>` for 14 days.
+
+Fourteen days is an **operational retention window**, not a permanent audit
+archive. The scheduled steward can run up to 96 times per day, so retaining
+every routine snapshot indefinitely would create unbounded artifact inventory.
+Evidence that must survive the operational window should be promoted
+deliberately to a durable repository record, release artifact, or other governed
+archive with its run identity/digest preserved.
 
 The report records:
 
@@ -191,7 +198,118 @@ idkmesh steward-report steward-report.json --details
 ```
 
 The command requires no `GITHUB_TOKEN`, makes no network request, and has no
-mutation path. It rejects malformed or ambiguous evidence before rendering,
+mutation path.
+
+For a visual view of the same validated local evidence:
+
+```bash
+idkmesh steward-report-ui steward-report.json
+idkmesh steward-report-ui steward-report.json --no-browser --port 8766
+```
+
+The dashboard binds only to `127.0.0.1`, contains no JavaScript or external
+assets, performs no live GitHub request, and exposes no POST/PUT/PATCH/DELETE
+mutation endpoint. It shows run status, branch lifecycle outcomes, created Draft
+PRs, the explicit authority boundary, policy digest, workflow provenance, and
+the raw validated JSON. The same `idkmesh.steward_report` validator runs before
+the HTTP server starts, so the CLI and browser surfaces cannot disagree about
+whether a report is valid.
+
+### Aggregate multiple saved runs
+
+To understand behavior over time, pass one or more report files or directories
+to the offline history command:
+
+```bash
+idkmesh steward-history ./downloaded-steward-artifacts
+idkmesh steward-history ./run-a ./run-b --details
+idkmesh steward-history ./downloaded-steward-artifacts --json --pretty
+```
+
+Directory discovery is intentionally conservative: it recursively reads only
+files named `steward-report.json`, so unrelated JSON files are not guessed to
+be stewardship evidence. Explicit file paths may use a renamed artifact.
+
+Offline ingestion is explicitly bounded and fails closed:
+
+- one report file is limited to 2 MiB and must be a regular file;
+- one history invocation accepts at most 128 explicit input paths;
+- one history contains at most 1000 unique reports;
+- directory discovery traverses at most 8 levels and 10,000 directories;
+- directory symlinks are not followed during recursive discovery.
+
+These are resource-safety contracts, not tuning hints. Raising a bound requires
+an explicit reviewed contract change rather than silently accepting
+unbounded local input.
+
+Every discovered report is validated through the same strict
+`idkmesh.steward_report` contract before aggregation. One history must describe
+one repository, and duplicate GitHub workflow run/attempt identities are
+rejected instead of double-counted.
+
+The machine-readable history contract is
+`schemas/auto-draft-pr-steward-history-v0.1.schema.json`. It records:
+
+- the chronological report window;
+- completed, blocked, and disabled run counts;
+- planned, created, skipped, `head_moved`, and `pr_already_exists` totals;
+- minimum/maximum observed API budget;
+- distinct policy digests and chronological policy transitions;
+- one provenance row per validated run.
+
+Each run also carries a semantic `report_sha256`: SHA-256 over the validated
+report serialized as canonical strict JSON. The history carries an
+`input_set_sha256` over the full path-independent run projections, including
+their report digests, state, counts, API observation, policy digest, and workflow
+provenance. Local source paths and JSON key order are excluded from that
+identity, so copied evidence can be compared across machines without treating
+formatting or filesystem layout as changes.
+
+Runs are ordered by timestamp and then semantic run identity/report digest; the
+local source path is only the final presentation tie-breaker for semantically
+identical evidence. This prevents same-timestamp policy transitions from changing
+merely because artifacts were unpacked under different directory names.
+
+Before text, JSON, or browser rendering, the history validator recomputes
+aggregate counts, semantic ordering, API-budget extrema, policy transitions,
+workflow-run uniqueness, state/count consistency, and the input-set digest. A
+document whose summary and run rows disagree—or whose projection was altered
+while aggregate totals were adjusted to match—is rejected rather than displayed.
+
+History aggregation is entirely offline. It downloads no artifacts, polls no
+workflow, uses no GitHub token, and exposes no mutation capability.
+
+For the same history as a visual local dashboard:
+
+```bash
+idkmesh steward-history-ui ./downloaded-steward-artifacts
+idkmesh steward-history-ui ./run-a ./run-b --no-browser --port 8767
+```
+
+The history dashboard reuses the exact same validated aggregation object as the
+CLI. It binds only to `127.0.0.1`, uses no JavaScript or external assets,
+performs no live GitHub calls, and rejects POST/PUT/PATCH/DELETE and
+cross-origin preflight requests. It validates aggregate consistency, semantic
+ordering, and the path-independent input-set digest again before rendering, then
+visualizes the observation window, run-state counts, created/skipped outcomes,
+API-budget range, policy transitions, report digests, and the chronological
+per-run timeline without introducing a control plane.
+
+### Compatibility and schema evolution
+
+The report and history consumers are intentionally fail-closed. They accept only
+their exact published v0.1 contracts and reject unknown fields/versions.
+
+Once a schema version is integrated into `main`, its meaning is immutable.
+Any incompatible shape or semantic change must publish a new schema identifier
+(for example v0.2) and an explicit compatibility path. Existing v0.1 consumers
+must never silently reinterpret newer evidence.
+
+This also means an apparently additive field is a versioned contract change:
+both v0.1 schemas use `additionalProperties: false` so automation cannot depend
+on fields that an older validator would ignore.
+
+The offline readers reject malformed or ambiguous evidence before rendering,
 including:
 
 - duplicate JSON keys and Python-only `NaN` / `Infinity` constants;
@@ -204,8 +322,8 @@ including:
 - created/skipped outcomes that do not correspond to a planned candidate;
 - invalid completed/blocked/disabled state combinations.
 
-This command is the supported local consumer contract for future UI/dashboard
-work; consumers should not scrape GitHub workflow logs.
+The report validator is shared by the CLI, dashboard, and history consumers;
+they should not scrape GitHub workflow logs.
 
 ## Troubleshooting
 
@@ -273,5 +391,17 @@ ref sanitization, title bounds, duplicate-creation races, exact-head movement,
 API-budget blocking, oldest-first ordering, the per-run mutation cap, workflow
 artifact bounds, policy/provenance digests, report rendering, output-path
 collision safety, and instance validation against the published report schema.
+
+The offline history consumer is covered by
+`tests/test_steward_history.py`, including conservative discovery, deduplication,
+mixed-repository rejection, duplicate workflow-run rejection, chronological
+aggregation, policy-transition counts, semantic report/input-set digests,
+bounded file/discovery limits, internal aggregate consistency, schema validation,
+rendering, and CLI mode contracts.
+
+The local history dashboard is covered by `tests/test_steward_history_ui.py`,
+including aggregate-integrity rejection, HTML escaping, loopback binding,
+response security headers, Host validation, mutation/preflight rejection, CLI
+port checks, and validation before server startup.
 
 Use the repository's normal PR gate for integration evidence.

@@ -152,3 +152,25 @@ Issue #788 makes that distinction durable:
 This allows a Jules plan upgrade to be represented as a reviewed policy change
 instead of a code rewrite, while provider-side tasks outside IDKMesh remain safe
 because explicit provider rejection is still handled as backpressure.
+
+
+## Runtime self-check follow-up
+
+A later live observation showed that control-plane changes could start two
+equivalent dispatcher sweeps: one from the dispatcher's own `push` trigger and
+one from the router's reusable-workflow recovery path. The duplicate runs were
+serialized by concurrency, but they still consumed Actions/API budget and made
+the ownership model harder to reason about.
+
+The durable follow-up therefore adds two rules:
+
+1. `tools/check_jules_contract.py` is executed not only by the required PR Gate
+   but also inside both production workflows before mutation/provider work;
+2. the Issue Model Router is the sole owner of control-plane `push` recovery.
+   Its reusable call passes `bootstrap_labels: true`, while Jules Dispatcher has
+   no independent `push` event.
+
+The contract checker guards these properties as well, including the watched
+control-plane paths. This gives three layers of protection: GitHub reusable
+workflow type validation, merge-time contract validation, and fail-closed
+runtime validation after integration.

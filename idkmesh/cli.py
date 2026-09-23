@@ -26,6 +26,12 @@ from idkmesh.steward_report import (
     load_report as load_steward_report,
     render_summary as render_steward_summary,
 )
+from idkmesh.steward_history import (
+    StewardHistoryInputError,
+    load_history as load_steward_history,
+    render_history_json,
+    render_history_text,
+)
 from idkmesh.marginal_evidence import (
     MarginalEvidenceInputError,
     analyze_file as analyze_marginal_file,
@@ -44,9 +50,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="idkmesh",
         description=(
-            "IDKMesh evidence and verification tooling. Inspect swarm runs "
-            "with 'control-tower', steward evidence with 'steward-report', "
-            "and verifier panels with 'gate-audit'."),
+            "IDKMesh local evidence tools. Inspect swarm runs with "
+            "'control-tower', steward runs with 'steward-report' and "
+            "'steward-history', and verifier panels with 'gate-audit'."),
     )
     parser.add_argument(
         "--version", action="version", version=f"idkmesh {__version__}")
@@ -329,6 +335,62 @@ def build_parser() -> argparse.ArgumentParser:
     sr.add_argument(
         "--details", action="store_true",
         help="also list planned, created, and skipped branch records")
+
+    sui = sub.add_parser(
+        "steward-report-ui",
+        help="open a local read-only dashboard for a steward report",
+        description=(
+            "Validate a local Auto Draft PR Steward report and serve a "
+            "self-contained read-only dashboard on 127.0.0.1. The UI makes "
+            "no live GitHub requests and exposes no mutation endpoint."),
+    )
+    sui.add_argument("input", help="path to steward-report.json")
+    sui.add_argument(
+        "--port", type=int, default=8766, metavar="PORT",
+        help="loopback TCP port (default: 8766)")
+    sui.add_argument(
+        "--no-browser", action="store_true",
+        help="serve the dashboard without opening the default browser")
+
+    sh = sub.add_parser(
+        "steward-history",
+        help="aggregate multiple steward reports offline",
+        description=(
+            "Validate local Auto Draft PR Steward reports and aggregate them "
+            "into one deterministic cross-run history. Inputs may be report "
+            "files or directories; directory discovery reads only files named "
+            "steward-report.json. No GitHub token or network access is used."),
+    )
+    sh.add_argument(
+        "inputs", nargs="+", metavar="PATH",
+        help="report file or directory containing steward-report.json files")
+    sh.add_argument(
+        "--details", action="store_true",
+        help="include one human-readable line per run")
+    sh.add_argument(
+        "--json", action="store_true",
+        help="emit the versioned machine-readable history JSON")
+    sh.add_argument(
+        "--pretty", action="store_true",
+        help="pretty-print --json output")
+
+    shi = sub.add_parser(
+        "steward-history-ui",
+        help="open a local read-only dashboard for steward history",
+        description=(
+            "Validate and aggregate local Auto Draft PR Steward reports, then "
+            "serve a self-contained history dashboard on 127.0.0.1. The UI "
+            "makes no live GitHub requests and exposes no mutation endpoint."),
+    )
+    shi.add_argument(
+        "inputs", nargs="+", metavar="PATH",
+        help="report file or directory containing steward-report.json files")
+    shi.add_argument(
+        "--port", type=int, default=8767, metavar="PORT",
+        help="loopback TCP port (default: 8767)")
+    shi.add_argument(
+        "--no-browser", action="store_true",
+        help="serve the dashboard without opening the default browser")
     return parser
 
 
@@ -687,7 +749,9 @@ def main(argv: list[str] | None = None) -> int:
                 f"{_reason(exc)}")
         return 0
 
-    if args.command == "steward-report":
+    if args.command in {"steward-report", "steward-report-ui"}:
+        if args.command == "steward-report-ui" and not (0 <= args.port <= 65535):
+            return _fail("--port must be between 0 and 65535")
         try:
             report = load_steward_report(args.input)
         except FileNotFoundError:
@@ -700,7 +764,59 @@ def main(argv: list[str] | None = None) -> int:
                 f"cannot read steward report {args.input}: {_reason(exc)}")
         except StewardReportInputError as exc:
             return _fail(str(exc))
-        print(render_steward_summary(report, details=args.details), end="")
+
+        if args.command == "steward-report":
+            print(render_steward_summary(report, details=args.details), end="")
+            return 0
+
+        from idkmesh.steward_report_ui import serve_steward_report_ui
+        try:
+            serve_steward_report_ui(
+                report,
+                port=args.port,
+                open_browser=not args.no_browser,
+            )
+        except OSError as exc:
+            return _fail(
+                f"cannot start local steward dashboard on 127.0.0.1:{args.port}: "
+                f"{_reason(exc)}")
+        return 0
+
+    if args.command in {"steward-history", "steward-history-ui"}:
+        if args.command == "steward-history-ui":
+            if not (0 <= args.port <= 65535):
+                return _fail("--port must be between 0 and 65535")
+        else:
+            if args.pretty and not args.json:
+                return _fail("--pretty requires --json")
+            if args.details and args.json:
+                return _fail("--details cannot be combined with --json")
+
+        try:
+            history = load_steward_history(args.inputs)
+        except StewardHistoryInputError as exc:
+            return _fail(str(exc))
+        except OSError as exc:
+            return _fail(f"cannot read steward history input: {_reason(exc)}")
+
+        if args.command == "steward-history":
+            if args.json:
+                print(render_history_json(history, pretty=args.pretty))
+            else:
+                print(render_history_text(history, details=args.details), end="")
+            return 0
+
+        from idkmesh.steward_history_ui import serve_steward_history_ui
+        try:
+            serve_steward_history_ui(
+                history,
+                port=args.port,
+                open_browser=not args.no_browser,
+            )
+        except OSError as exc:
+            return _fail(
+                f"cannot start local steward history dashboard on "
+                f"127.0.0.1:{args.port}: {_reason(exc)}")
         return 0
 
     if args.command == "gate-marginal-benchmark":
