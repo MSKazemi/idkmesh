@@ -537,13 +537,25 @@ def _select_marginal(rows: list[dict[str, Any]]) -> dict[str, Any]:
 
     if len(rows) > 1:
         top_interval = _marginal_interval(top)
-        assert top_interval is not None
+        if top_interval is None:
+            return _selector_result(
+                STRATEGY_MARGINAL,
+                selected_verifier_id=None,
+                reason_code="unresolved_design_effective_vote_metrics",
+                design_score=None,
+            )
         other_highs = []
         for row in rows:
             if row["id"] == top["id"]:
                 continue
             interval = _marginal_interval(row)
-            assert interval is not None
+            if interval is None:
+                return _selector_result(
+                    STRATEGY_MARGINAL,
+                    selected_verifier_id=None,
+                    reason_code="unresolved_design_effective_vote_metrics",
+                    design_score=None,
+                )
             other_highs.append(interval[1])
         if top_interval[0] <= max(other_highs):
             return _selector_result(
