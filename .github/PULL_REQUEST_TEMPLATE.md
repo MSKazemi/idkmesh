@@ -35,6 +35,23 @@ therefore belong on `Refs:`.
 - Closes on merge (leave blank unless the merge should close it):
 - ACE-Seed:
 
+## API contract change (if applicable)
+
+For API changes, identify the owning API issue and complete the applicable checks.
+
+- API issue / domain owner:
+- Method/path or public object:
+- Request/response schema updated:
+- OpenAPI updated:
+- Compatibility class: additive / clarification / deprecation / breaking
+- Authority ceiling unchanged or explicitly reviewed:
+- Authentication/authorization impact:
+- Idempotency/concurrency semantics (mutations):
+- Limits/rate/timeout impact:
+- New stable error codes:
+- Runtime response validated against advertised schema:
+- Backwards-compatibility check:
+
 ## Community Impact
 
 For non-trivial changes, describe the effect on newcomers, contributors, reviewers, maintainers, documentation, accessibility, governance, or participation prerequisites.

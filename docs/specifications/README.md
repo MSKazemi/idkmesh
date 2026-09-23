@@ -67,6 +67,10 @@ meaning of an existing version.
   deterministically joins normalized GitHub activity to the repository graph
   without granting write or execution authority.
 
+## API Conventions
+
+- [API Conventions v0.1](API_CONVENTIONS_V0_1.md) — proposed shared HTTP conventions for namespace/versioning, errors, correlation, pagination, idempotency, concurrency, events, limits, OpenAPI/schema compatibility, deprecation, and deployment security profiles. Issue #736 owns review/freeze.
+
 ## Project Configuration
 
 - [Enterprise Control Profile v0.1](ENTERPRISE_CONTROL_PROFILE_V0_1.md) —
