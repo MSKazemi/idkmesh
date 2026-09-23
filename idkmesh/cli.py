@@ -188,7 +188,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="summarize connector readiness without dispatching work",
         description=(
             "Validate and inspect connector profiles using the offline probe "
-            "contract. FAIL means configuration/driver health blocks routing; "
+            "contract without dispatching work. FAIL means configuration/driver health blocks routing; "
             "WARN means disabled/degraded; PASS means healthy in this offline view."
         ),
     )
