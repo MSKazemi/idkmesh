@@ -83,6 +83,7 @@ USER_AGENTS = {
     "browser": "Mozilla/5.0 (compatible; IDKMesh-Discovery-Monitor/1.0)",
     "google": "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
     "bing": "Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)",
+    "yahoo": "Mozilla/5.0 (compatible; Yahoo! Slurp; http://help.yahoo.com/help/us/ysearch/slurp)",
     "openai": "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko); compatible; OAI-SearchBot/1.0; +https://openai.com/searchbot",
     "claude-search": "Claude-SearchBot",
     "claude-user": "Claude-User",
@@ -93,6 +94,7 @@ USER_AGENTS = {
 ROBOTS_USER_AGENTS = {
     "google": "Googlebot",
     "bing": "bingbot",
+    "yahoo": "Slurp",
     "openai": "OAI-SearchBot",
     "claude-search": "Claude-SearchBot",
     "claude-user": "Claude-User",
