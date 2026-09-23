@@ -135,6 +135,13 @@ def parse_session_observation(
     expected_session_name: str,
     connection_id: str,
 ) -> JulesSessionObservation:
+    if not isinstance(raw, Mapping):
+        raise ConnectorError(
+            code="result_normalization_error",
+            message="Jules returned malformed Session observation metadata.",
+            connection_id=connection_id,
+        )
+
     name = _required_string(
         raw.get("name"),
         field="name",
@@ -257,6 +264,13 @@ def parse_activity_observation(
     session_name: str,
     connection_id: str,
 ) -> JulesActivityObservation:
+    if not isinstance(raw, Mapping):
+        raise ConnectorError(
+            code="result_normalization_error",
+            message="Jules returned malformed Activity observation metadata.",
+            connection_id=connection_id,
+        )
+
     name = _required_string(
         raw.get("name"),
         field="name",
