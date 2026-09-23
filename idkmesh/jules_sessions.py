@@ -99,6 +99,7 @@ class JulesSessionHandle:
     revision_binding: str
     require_plan_approval: bool
     automation_mode: str | None
+    repository: str
     state: str | None = None
     url: str | None = None
 
@@ -207,6 +208,7 @@ def _parse_created_session(
         revision_binding="scm_pinned_branch",
         require_plan_approval=True,
         automation_mode=request.automation_mode,
+        repository=f"{request.binding.github_owner}/{request.binding.github_repo}",
         state=state,
         url=url,
     )
