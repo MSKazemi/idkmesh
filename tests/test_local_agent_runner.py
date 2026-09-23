@@ -172,7 +172,7 @@ class LocalAgentRunnerTests(unittest.TestCase):
         work_unit = {
             "id": "wu-stdin-1",
             "version": 1,
-            "prompt": "Harmless WorkUnit task description",
+            "objective": "Harmless WorkUnit task objective",
             "provenance": {"source_revision": self.sha},
             "validators": [{"id": "pytest", "type": "command"}],
         }
@@ -194,7 +194,7 @@ class LocalAgentRunnerTests(unittest.TestCase):
         self.assertIsInstance(run_res, LocalAgentRunResult)
         self.assertEqual(run_res.manifest["status"], "succeeded")
         self.assertEqual(run_res.manifest["work_unit_id"], "wu-stdin-1")
-        self.assertIn("REC:Harmless WorkUnit task description", run_res.process_result.stdout)
+        self.assertIn("REC:Harmless WorkUnit task objective", run_res.process_result.stdout)
         decoded_json = json.loads(run_res.to_json())
         self.assertEqual(decoded_json["manifest"]["id"], run_res.manifest["id"])
 
@@ -202,7 +202,7 @@ class LocalAgentRunnerTests(unittest.TestCase):
         work_unit = {
             "id": "wu-arg-1",
             "version": 1,
-            "prompt": "Prompt text for argument transport",
+            "objective": "Objective text for argument transport",
             "provenance": {"source_revision": self.sha},
             "validators": [{"id": "pytest", "type": "command"}],
         }
@@ -223,13 +223,13 @@ class LocalAgentRunnerTests(unittest.TestCase):
             repository=self.repo,
         )
         self.assertEqual(run_res.manifest["status"], "succeeded")
-        self.assertIn("ARG:Prompt text for argument transport", run_res.process_result.stdout)
+        self.assertIn("ARG:Objective text for argument transport", run_res.process_result.stdout)
 
     def test_run_local_agent_preset_file_transport(self):
         work_unit = {
             "id": "wu-file-1",
             "version": 1,
-            "prompt": "Prompt text written to file",
+            "objective": "Objective text written to file",
             "provenance": {"source_revision": self.sha},
             "validators": [{"id": "pytest", "type": "command"}],
         }
@@ -249,13 +249,13 @@ class LocalAgentRunnerTests(unittest.TestCase):
             repository=self.repo,
         )
         self.assertEqual(run_res.manifest["status"], "succeeded")
-        self.assertIn("FILE:Prompt text written to file", run_res.process_result.stdout)
+        self.assertIn("FILE:Objective text written to file", run_res.process_result.stdout)
 
     def test_run_local_agent_preset_captures_diff_patch_and_artifacts(self):
         work_unit = {
             "id": "wu-patch-1",
             "version": 1,
-            "prompt": "Modify hello.txt",
+            "objective": "Modify hello.txt",
             "provenance": {"source_revision": self.sha},
             "validators": [{"id": "pytest", "type": "command"}],
         }
@@ -285,7 +285,7 @@ class LocalAgentRunnerTests(unittest.TestCase):
         work_unit = {
             "id": "wu-timeout-1",
             "version": 1,
-            "prompt": "Sleep longer than limit",
+            "objective": "Sleep longer than limit",
             "provenance": {"source_revision": self.sha},
             "validators": [{"id": "pytest", "type": "command"}],
         }
@@ -312,7 +312,7 @@ class LocalAgentRunnerTests(unittest.TestCase):
         work_unit = {
             "id": "wu-env-1",
             "version": 1,
-            "prompt": "Test invalid preset",
+            "objective": "Test invalid preset",
             "provenance": {"source_revision": self.sha},
             "validators": [{"id": "pytest", "type": "command"}],
         }

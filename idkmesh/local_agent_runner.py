@@ -253,11 +253,18 @@ def _terminate_process(process: subprocess.Popen[bytes]) -> None:
         return
     if os.name == "posix":
         try:
-            os.killpg(process.pid, signal.SIGKILL)
+            pgid = os.getpgid(process.pid)
+            os.killpg(pgid, signal.SIGTERM)
+            time.sleep(0.05)
+            if process.poll() is None:
+                os.killpg(pgid, signal.SIGKILL)
             return
         except ProcessLookupError:
             return
-    process.kill()
+    try:
+        process.kill()
+    except OSError:
+        pass
 
 
 def run_bounded_process(
@@ -325,13 +332,16 @@ def run_bounded_process(
 
     timed_out = False
     try:
-        process.wait(timeout=active_limits.timeout_seconds)
-    except subprocess.TimeoutExpired:
-        timed_out = True
+        try:
+            process.wait(timeout=active_limits.timeout_seconds)
+        except subprocess.TimeoutExpired:
+            timed_out = True
+            _terminate_process(process)
+            process.wait()
+    finally:
         _terminate_process(process)
-        process.wait()
-    for reader in readers:
-        reader.join()
+        for reader in readers:
+            reader.join()
 
     duration = time.monotonic() - started
     return ProcessResult(
@@ -392,11 +402,14 @@ def run_local_agent_preset(
             "preset must be an AgentPreset instance or valid preset identifier"
         )
 
+    if not active_preset.sandbox_required:
+        raise LocalRunnerError("local agent preset must require a sandbox")
+
     binding = bind_work_unit_source(work_unit, source_revision=source_revision)
 
     prompt = ""
     if isinstance(work_unit, dict):
-        for field in ("prompt", "description", "goal", "title"):
+        for field in ("objective", "prompt", "description", "goal", "title"):
             val = work_unit.get(field)
             if isinstance(val, str) and val.strip():
                 prompt = val.strip()
@@ -417,7 +430,9 @@ def run_local_agent_preset(
             arg = active_preset.prompt_arg
             argv = (*prefix, arg, prompt) if arg else (*prefix, prompt)
         elif active_preset.prompt_transport == "file":
-            prompt_file = workspace.path / ".idkmesh_prompt.txt"
+            # Write prompt outside workspace.path to avoid leaking into git diff
+            assert workspace._temp_root is not None
+            prompt_file = workspace._temp_root / "prompt.txt"
             prompt_file.write_text(prompt, encoding="utf-8")
             if active_preset.prompt_arg:
                 argv = (*prefix, active_preset.prompt_arg, str(prompt_file))
@@ -431,6 +446,17 @@ def run_local_agent_preset(
         active_env = minimal_environment(
             active_preset.env_allowlist, source=extra_env
         )
+
+        if active_preset.network_policy == "disabled":
+            for proxy_var in (
+                "HTTP_PROXY",
+                "HTTPS_PROXY",
+                "ALL_PROXY",
+                "http_proxy",
+                "https_proxy",
+                "all_proxy",
+            ):
+                active_env.pop(proxy_var, None)
 
         for env_key, env_val in active_env.items():
             if env_key in FORBIDDEN_ENV_NAMES or any(
@@ -458,26 +484,26 @@ def run_local_agent_preset(
         _run_git(workspace.path, "add", "-N", ".")
         patch_text = _run_git(workspace.path, "diff", "HEAD")
         patch_bytes = patch_text.encode("utf-8")
+        if len(patch_bytes) > active_limits.max_output_bytes:
+            patch_bytes = patch_bytes[: active_limits.max_output_bytes]
+            patch_text = patch_bytes.decode("utf-8", errors="replace")
         patch_digest = "sha256:" + hashlib.sha256(patch_bytes).hexdigest()
 
-        if artifact_dir is not None:
-            target_dir = Path(artifact_dir).resolve()
-            target_dir.mkdir(parents=True, exist_ok=True)
-            patch_file = target_dir / f"patch_{patch_digest[7:19]}.diff"
-            patch_file.write_bytes(patch_bytes)
-            reader = LocalArtifactBundleReader(target_dir, max_bytes=10 * 1024 * 1024)
-            resolution = reader.resolve(
-                relative_path=patch_file.name,
-                expected_digest=patch_digest,
-                media_type="text/x-diff",
-            )
-            candidate_ref = resolution.reference
-        else:
-            candidate_ref = ArtifactBundleCandidateReference(
-                locator=f"artifact:bundle:patch:{patch_digest[7:19]}",
-                digest=patch_digest,
-                media_type="text/x-diff",
-            )
+        target_dir = (
+            Path(artifact_dir).resolve()
+            if artifact_dir is not None
+            else (workspace._temp_root / "artifacts")
+        )
+        target_dir.mkdir(parents=True, exist_ok=True)
+        patch_file = target_dir / f"patch_{patch_digest[7:19]}.diff"
+        patch_file.write_bytes(patch_bytes)
+        reader = LocalArtifactBundleReader(target_dir, max_bytes=10 * 1024 * 1024)
+        resolution = reader.resolve(
+            relative_path=patch_file.name,
+            expected_digest=patch_digest,
+            media_type="text/x-diff",
+        )
+        candidate_ref = resolution.reference
 
         if proc_result.timed_out:
             status = "timeout"
@@ -530,7 +556,6 @@ def run_local_agent_preset(
         execution_env = ExecutionEnvironment(
             platform=sys.platform,
             python=f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
-            tool_versions={active_preset.executable: "0.1"},
         )
 
         manifest = build_result_manifest(
