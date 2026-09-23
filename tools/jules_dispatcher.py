@@ -45,6 +45,8 @@ def load_policy(path: pathlib.Path = DEFAULT_POLICY) -> dict[str, Any]:
     policy = json.loads(path.read_text(encoding="utf-8"))
     required = {
         "queue_label",
+        "automatic_queue_label",
+        "trusted_author_associations",
         "dispatch_label",
         "legacy_dispatch_labels",
         "max_in_flight",
@@ -98,14 +100,22 @@ def is_dispatchable(issue: dict[str, Any], policy: dict[str, Any]) -> bool:
         return False
 
     labels = label_names(issue)
-    queue_label = str(policy["queue_label"]).casefold()
+    manual_queue_label = str(policy["queue_label"]).casefold()
+    automatic_queue_label = str(policy["automatic_queue_label"]).casefold()
     blocked = {str(name).casefold() for name in policy["blocked_labels"]}
+    if labels.intersection(active_dispatch_labels(policy)) or labels.intersection(blocked):
+        return False
 
-    return (
-        queue_label in labels
-        and not labels.intersection(active_dispatch_labels(policy))
-        and not labels.intersection(blocked)
-    )
+    if manual_queue_label in labels:
+        return True
+    if automatic_queue_label not in labels:
+        return False
+
+    trusted = {
+        str(value).upper() for value in policy["trusted_author_associations"]
+    }
+    association = str(issue.get("author_association") or "").upper()
+    return association in trusted
 
 
 def score_issue(issue: dict[str, Any], policy: dict[str, Any]) -> int:
@@ -520,7 +530,10 @@ def dispatch(
 ) -> list[int]:
     """Fill available Jules capacity from the explicit agent-ready queue."""
     dispatch_label = str(policy["dispatch_label"])
-    queue_label = str(policy["queue_label"])
+    queue_labels = [
+        str(policy["queue_label"]),
+        str(policy["automatic_queue_label"]),
+    ]
 
     active = list_active_issues(api, policy)
     slots = max(0, int(policy["max_in_flight"]) - len(active))
@@ -542,7 +555,13 @@ def dispatch(
         )
         return []
 
-    queued = api.list_open_issues(queue_label)
+    queued_by_number: dict[int, dict[str, Any]] = {}
+    for queue_label in queue_labels:
+        for issue in api.list_open_issues(queue_label):
+            if issue.get("pull_request"):
+                continue
+            queued_by_number[int(issue["number"])] = issue
+    queued = list(queued_by_number.values())
     selected = select_candidates(
         queued,
         policy,
@@ -551,7 +570,7 @@ def dispatch(
         max_dispatch=max_dispatch,
     )
     if not selected:
-        print("jules dispatcher: no eligible agent-ready issues")
+        print("jules dispatcher: no eligible Jules queue issues")
         return []
 
     if not dry_run and jules_api is None:

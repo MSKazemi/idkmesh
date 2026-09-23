@@ -56,7 +56,7 @@
       "source": "https://jules.google/docs/running-tasks/",
       "eligible_tiers": ["T1", "T2"],
       "dispatch_label": "jules",
-      "note": "Treat Jules as a managed coding lane. The router only adds agent:jules-eligible; a separate human/dispatcher may add jules after duplicate-work and capacity checks."
+      "note": "Treat Jules as a managed coding lane. Deterministically routed T1/T2 agent tasks may enter the automatic Jules queue with agent:jules-eligible; human-gated, human-required, security-sensitive, research, and higher-risk work remains excluded unless explicitly approved."
     }
   },
   "phrases": {
