@@ -101,6 +101,14 @@ artifacts, critical path, and the readiness checklist before coding.
 Inventories intended v1 endpoints and public objects with status, authentication
 profile, mutation/authority class, owner issue, and recommended beta scope.
 
+### Threat model
+
+`docs/security/API_THREAT_MODEL_V0_1.md`
+
+Separates local, GitHub-first, and future network/multi-user trust boundaries
+and maps authority, identity, replay, browser, proxy, webhook, connector,
+storage, telemetry, and denial-of-service threats to owning issues.
+
 ### Contributor templates
 
 Added a dedicated API-change issue template and an API-contract section to the
