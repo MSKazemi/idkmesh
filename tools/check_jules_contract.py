@@ -153,6 +153,30 @@ def main() -> int:
         isinstance(provider, dict) and bool(str(provider.get("checked_at") or "").strip()),
         "provider concurrency must record checked_at",
     )
+    terminal_states = (
+        provider.get("terminal_session_states", [])
+        if isinstance(provider, dict)
+        else []
+    )
+    normalized_terminal = {
+        str(value).upper()
+        for value in terminal_states
+        if str(value).strip()
+    }
+    _require(
+        errors,
+        isinstance(terminal_states, list)
+        and {"COMPLETED", "FAILED"}.issubset(normalized_terminal),
+        "provider terminal_session_states must include COMPLETED and FAILED",
+    )
+    _require(
+        errors,
+        isinstance(provider, dict)
+        and str(provider.get("session_state_source") or "").startswith(
+            "https://jules.google/docs/api/reference/"
+        ),
+        "provider terminal states must cite the official Jules API reference",
+    )
     _require(
         errors,
         max_per_sweep <= effective_cap,
@@ -328,6 +352,26 @@ def main() -> int:
         errors,
         '"requirePlanApproval": False' in dispatcher_code,
         "dispatcher must keep unattended bounded tasks free of a provider plan gate",
+    )
+    _require(
+        errors,
+        "provider_active_session_count" in dispatcher_code,
+        "dispatcher must account provider concurrency from session state",
+    )
+    _require(
+        errors,
+        "available_dispatch_capacity" in dispatcher_code,
+        "dispatcher must compute independent repository/provider slot budgets",
+    )
+    _require(
+        errors,
+        "repository review capacity full" in dispatcher_code,
+        "dispatcher must report repository review capacity separately",
+    )
+    _require(
+        errors,
+        "non-terminal account sessions" in dispatcher_code,
+        "dispatcher must report provider-active session capacity separately",
     )
     _require(
         errors,
