@@ -127,6 +127,31 @@ is the immutable content identity.
 
 A local path without a digest is not a candidate-ready reference.
 
+### Resolution rule for local artifact bundles
+
+For local execution, the reference reader is
+`idkmesh/local_candidate_reader.py`.
+
+It accepts only a **relative file path beneath an explicitly configured
+workspace root** and an explicit maximum byte budget. The reader:
+
+1. rejects absolute paths and parent traversal;
+2. rejects symlink aliases below the trusted root;
+3. resolves the path and proves it remains beneath that root;
+4. requires a regular file;
+5. enforces the byte ceiling before and during reading;
+6. computes SHA-256 itself from the bytes it reads;
+7. detects common replacement/mutation races by comparing file identity and
+   metadata before, after, and at the final path;
+8. optionally compares an expected worker-supplied digest, treating it only as a
+   claim to check;
+9. emits the computed content digest in an `ArtifactBundleCandidateReference`.
+
+The reader does not trust a worker-supplied digest as content identity and does
+not grant candidate acceptance or verification authority. The local `file:`
+locator is an execution/evidence locator; a later durable artifact-store stage
+may replace the storage location while preserving the same content digest.
+
 ## 5. Provider neutrality
 
 CandidateReference contains no Jules, Codex, OpenHands, goose, model-provider,
