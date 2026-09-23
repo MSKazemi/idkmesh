@@ -37,6 +37,22 @@ The public discovery architecture deliberately separates three layers:
 The machine-readable query list is for measurement and maintenance. It is not
 published as a meta-keyword dump.
 
+## Package and software-index discovery
+
+The installable Python package is a separate discovery surface from the full
+research repository. Its metadata in `pyproject.toml` therefore follows a
+narrower truth boundary:
+
+- the package description names the shipped AI review-gate / verifier-audit
+  capability rather than claiming the unfinished Verified Swarm Runner;
+- keywords cover AI-agent verification, AI code review, evaluator reliability,
+  verifier panels, evidence, and provenance;
+- project URLs point package/software indexes back to the canonical docs, topic
+  hub, research atlas, repository, and issue tracker.
+
+This makes package-index discovery reinforce the same semantic graph without
+turning repository ambitions into package capability claims.
+
 ## Crawler health contract
 
 After deployment, `tools/check_public_discovery.py` should be able to verify:
