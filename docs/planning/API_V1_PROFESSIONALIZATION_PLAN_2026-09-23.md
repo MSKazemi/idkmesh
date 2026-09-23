@@ -251,6 +251,7 @@ Every public endpoint must define:
 - #742 — reliability/limits/backpressure/shutdown
 - #743 — network/multi-user API security profile
 - #744 — observability/metrics/tracing/SLO
+- #750 — durable storage profiles, migrations, retention, recovery
 
 ### Qualification / developer experience
 
@@ -316,6 +317,12 @@ Network path:
                   v             v
                 #742          #744
               reliability   observability
+
+#616 local metadata + #597 GitHub ledger + #738 architecture
+                         |
+                         v
+                       #750
+                    storage profiles
 ```
 
 ## 11. Implementation rules
