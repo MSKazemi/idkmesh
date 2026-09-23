@@ -64,43 +64,43 @@ The transferable lesson is narrower and more useful: **measure reviewer competen
 
 ## Common questions
 
-### What is an effective independent vote?
+### What is an effective independent vote? {#q-verifier-panels-01}
 
 It is a way of expressing how much independent information a correlated panel contains relative to an idealized set of independent reviewers.
 
-### How do I measure review panel reliability?
+### How do I measure review panel reliability? {#q-verifier-panels-02}
 
 Collect verdicts on cases with known or externally established outcomes, inspect per-item errors, measure dependence/correlation, and include seeded probes that the gate should reject.
 
-### Are more AI reviewers always better?
+### Are more AI reviewers always better? {#q-verifier-panels-03}
 
 No. More reviewers increase value only when they add sufficiently independent useful evidence relative to their cost and latency.
 
-### What is a verification quorum?
+### What is a verification quorum? {#q-verifier-panels-04}
 
 A quorum is the threshold or rule used to turn individual verification results into a panel-level recommendation. Its usefulness depends on reviewer quality and dependence.
 
-### How can I try this in IDKMesh?
+### How can I try this in IDKMesh? {#q-verifier-panels-05}
 
 Run the [gate-audit quickstart](https://mskazemi.com/idkmesh/start.html) and read the [Gate Audit v0.1 specification](https://github.com/MSKazemi/idkmesh/blob/main/docs/specifications/GATE_AUDIT_V0_1.md).
 
-### How do I choose diverse verifiers?
+### How do I choose diverse verifiers? {#q-verifier-panels-06}
 
 Choose evaluators that differ in evidence source, implementation, model family, tests, or expertise where those differences are relevant to likely failure modes. Diversity is valuable when it reduces shared blind spots, not when it is only cosmetic.
 
-### What is correlated verifier error?
+### What is correlated verifier error? {#q-verifier-panels-07}
 
 It means multiple reviewers are wrong on the same items more often than independent reviewers would be. Correlation reduces how much new information each additional vote contributes.
 
-### How should I set a verification quorum?
+### How should I set a verification quorum? {#q-verifier-panels-08}
 
 Set it from measured reviewer performance, risk tolerance, and the cost of false acceptance versus false rejection. A quorum should be validated on representative cases rather than copied from panel size alone.
 
-### When should a verifier panel abstain?
+### When should a verifier panel abstain? {#q-verifier-panels-09}
 
 Abstention is appropriate when required evidence is missing, reviewers disagree beyond the calibrated decision boundary, or the case is outside the evaluators' demonstrated competence.
 
-### How do I detect fake diversity in a review panel?
+### How do I detect fake diversity in a review panel? {#q-verifier-panels-10}
 
 Compare item-level error patterns, prompts, tools, data sources, model/provider lineage, and evaluator design. Nominally different reviewers that fail on the same cases are not providing much independent protection.
 
