@@ -94,6 +94,16 @@ integration authority.
 Defines execution waves, hard dependencies, parallel tracks, acceptance
 artifacts, critical path, and the readiness checklist before coding.
 
+### Requirements traceability matrix
+
+`docs/planning/API_V1_REQUIREMENTS_TRACEABILITY_MATRIX_2026-09-23.md`
+
+Maps each professional API requirement to the existing subsystem owner, API
+integration issue, and observable release evidence. The matrix explicitly
+composes enterprise owners #669–#676 instead of duplicating tenant isolation,
+audit, data/secret policy, DR/SLO, supply-chain, service-boundary, or destructive
+pilot work.
+
 ### Surface catalog
 
 `docs/planning/API_V1_SURFACE_CATALOG_2026-09-23.md`
