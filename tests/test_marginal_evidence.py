@@ -12,7 +12,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT))
 
-from idkmesh import marginal_evidence  # noqa: E402
+from idkmesh import gate_audit, marginal_evidence  # noqa: E402
 
 HAS_JSONSCHEMA = importlib.util.find_spec("jsonschema") is not None
 if HAS_JSONSCHEMA:
@@ -143,6 +143,17 @@ class InputContractTests(unittest.TestCase):
                 make_matrix(),
                 current_verifier_ids=["v1", "v1"],
             )
+
+    def test_shared_gate_audit_parser_preserves_source_on_audit_time_error(self):
+        text = json.dumps(make_matrix())
+        with self.assertRaises(gate_audit.GateAuditInputError) as ctx:
+            gate_audit.audit_text(
+                text,
+                source="matrix.json",
+                bootstrap={"replicates": 99, "seed": 0},
+            )
+        self.assertIn("matrix.json:", str(ctx.exception))
+        self.assertIn("100", str(ctx.exception))
 
     def test_strict_text_parser_rejects_duplicate_json_keys(self):
         text = (
