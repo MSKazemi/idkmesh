@@ -25,24 +25,26 @@ from idkmesh.local_agent_runner import (
 class FakeSandbox:
     def __init__(self, *, behavior=None, capabilities=None):
         self.capabilities = capabilities or SandboxCapabilities(
-            network_policy="disabled",
+            network_enforcement=True,
             process_tree_isolation=True,
             cpu_limit=True,
             memory_limit=True,
             disk_limit=True,
             process_limit=True,
             filesystem_isolation=True,
+            writable_path_enforcement=True,
             credential_isolation=True,
         )
         self.behavior = behavior
         self.calls = []
 
-    def run(self, argv, *, cwd, limits, env, stdin_text):
+    def run(self, argv, *, cwd, limits, policy, env, stdin_text):
         self.calls.append(
             {
                 "argv": tuple(argv),
                 "cwd": Path(cwd),
                 "limits": limits,
+                "policy": policy,
                 "env": dict(env),
                 "stdin_text": stdin_text,
             }
@@ -400,13 +402,14 @@ class LocalAgentRunnerTests(unittest.TestCase):
 
     def test_local_agent_boundary_fails_closed_on_sandbox_network_and_scope(self):
         weak = SandboxCapabilities(
-            network_policy="disabled",
+            network_enforcement=True,
             process_tree_isolation=True,
             cpu_limit=True,
             memory_limit=False,
             disk_limit=True,
             process_limit=True,
             filesystem_isolation=True,
+            writable_path_enforcement=True,
             credential_isolation=True,
         )
         with self.assertRaisesRegex(LocalRunnerError, "memory_limit"):
@@ -433,6 +436,43 @@ class LocalAgentRunnerTests(unittest.TestCase):
                 limits=self._sandbox_limits(),
                 artifact_dir=Path(self.temp.name) / "network-artifacts",
             )
+
+        model_preset = self._test_preset(network_policy="model_only")
+        with self.assertRaisesRegex(LocalRunnerError, "trusted model network allowlist"):
+            run_local_agent_preset(
+                model_preset,
+                self._canonical_work_unit(
+                    network="allowlist",
+                    network_allowlist=["model.example.invalid"],
+                ),
+                source_revision=self.sha,
+                repository=self.repo,
+                sandbox=FakeSandbox(),
+                limits=self._sandbox_limits(),
+                artifact_dir=Path(self.temp.name) / "model-network-missing",
+            )
+
+        def model_change(workspace, argv, stdin_text):
+            (workspace / "hello.txt").write_text("model candidate\n", encoding="utf-8")
+
+        model_sandbox = FakeSandbox(behavior=model_change)
+        run_local_agent_preset(
+            model_preset,
+            self._canonical_work_unit(
+                network="allowlist",
+                network_allowlist=["model.example.invalid"],
+            ),
+            source_revision=self.sha,
+            repository=self.repo,
+            sandbox=model_sandbox,
+            limits=self._sandbox_limits(),
+            artifact_dir=Path(self.temp.name) / "model-network-ok",
+            trusted_model_network_allowlist=["model.example.invalid"],
+        )
+        self.assertEqual(
+            model_sandbox.calls[0]["policy"].network_allowlist,
+            ("model.example.invalid",),
+        )
 
         def escape(workspace, argv, stdin_text):
             (workspace / "outside.txt").write_text("escape\n", encoding="utf-8")
