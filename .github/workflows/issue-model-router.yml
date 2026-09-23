@@ -6,6 +6,16 @@ on:
   schedule:
     # Backfill is recovery only; normal routing is event-driven.
     - cron: '7 */6 * * *'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/issue-model-router.yml'
+      - '.github/workflows/jules-dispatch.yml'
+      - 'config/llm-routing-policy.json'
+      - 'config/jules-dispatch.json'
+      - 'scripts/issue_model_router.py'
+      - 'tools/jules_dispatcher.py'
+      - 'tools/check_jules_contract.py'
   workflow_dispatch:
     inputs:
       backfill_open_issues:
@@ -20,7 +30,6 @@ on:
         type: boolean
 
 permissions:
-  actions: write
   contents: read
   issues: write
 
@@ -32,6 +41,9 @@ jobs:
   route:
     runs-on: ubuntu-latest
     timeout-minutes: 8
+    outputs:
+      has_jules_candidate: ${{ steps.apply.outputs.has_jules_candidate }}
+      routed_issue_number: ${{ steps.apply.outputs.routed_issue_number }}
     steps:
       - name: Check out trusted default branch
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -53,7 +65,15 @@ jobs:
           GH_REPO: ${{ github.repository }}
         run: |
           python - <<'PY'
+          import json
           import subprocess
+          from pathlib import Path
+
+          dispatch_policy = json.loads(
+              Path("config/jules-dispatch.json").read_text(encoding="utf-8")
+          )
+          automatic_label = dispatch_policy["automatic_queue_label"]
+          automatic_definition = dispatch_policy["label_definitions"][automatic_label]
 
           labels = {
               "model:t0-deterministic": ("d4c5f9", "No LLM required; deterministic CI/script lane"),
@@ -66,7 +86,10 @@ jobs:
               "authority:human-required": ("5319e7", "Human/external evidence is required to satisfy the issue"),
               "authority:human-gate": ("fbca04", "Human gate must pass before or alongside agent implementation"),
               "authority:deterministic": ("1d76db", "Workflow/script-maintained issue; do not dispatch an LLM"),
-              "agent:jules-eligible": ("bfdadc", "Low-risk bounded task routed for automatic Jules dispatch"),
+              automatic_label: (
+                  automatic_definition["color"],
+                  automatic_definition["description"],
+              ),
           }
           for name, (color, description) in labels.items():
               subprocess.run(
@@ -85,7 +108,7 @@ jobs:
             > /tmp/issue-model-routes.json
 
       - name: Classify all open issues
-        if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.backfill_open_issues)
+        if: github.event_name == 'schedule' || github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.backfill_open_issues)
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
@@ -99,7 +122,7 @@ jobs:
 
       - name: Apply managed labels
         id: apply
-        if: github.event_name == 'issues' || github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.backfill_open_issues)
+        if: github.event_name == 'issues' || github.event_name == 'schedule' || github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.backfill_open_issues)
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
@@ -110,17 +133,22 @@ jobs:
           import subprocess
           from pathlib import Path
 
+          dispatch_policy = json.loads(
+              Path("config/jules-dispatch.json").read_text(encoding="utf-8")
+          )
+          automatic_label = dispatch_policy["automatic_queue_label"]
           managed = {
               "model:t0-deterministic", "model:t1-small", "model:t2-standard",
               "model:t3-strong", "model:t4-peak", "model:none",
               "authority:agent-candidate", "authority:human-required",
               "authority:human-gate", "authority:deterministic",
-              "agent:jules-eligible",
+              automatic_label,
           }
           payload = json.loads(Path("/tmp/issue-model-routes.json").read_text(encoding="utf-8"))
           routes = payload.get("routes", [payload])
           rows = []
           has_jules_candidate = False
+          routed_issue_number = ""
 
           for route in routes:
               number = str(route["issue_number"])
@@ -137,8 +165,10 @@ jobs:
                       command.extend(["--add-label", label])
                   subprocess.run(command, check=True)
 
-              if "agent:jules-eligible" in desired:
+              if automatic_label in desired:
                   has_jules_candidate = True
+                  if len(routes) == 1:
+                      routed_issue_number = number
 
               reason = "; ".join(route["reasons"]).replace("|", "/")
               rows.append(
@@ -156,21 +186,25 @@ jobs:
 
           with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as handle:
               handle.write(f"has_jules_candidate={'true' if has_jules_candidate else 'false'}\n")
+              handle.write(f"routed_issue_number={routed_issue_number}\n")
           PY
 
-      - name: Kick Jules for routed issue
-        if: github.event_name == 'issues' && steps.apply.outputs.has_jules_candidate == 'true'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-        run: >-
-          gh workflow run jules-dispatch.yml
-          --ref "${{ github.event.repository.default_branch }}"
-          -f issue_number="${{ github.event.issue.number }}"
+  dispatch-routed-issue:
+    needs: route
+    if: github.event_name == 'issues' && needs.route.outputs.has_jules_candidate == 'true'
+    uses: ./.github/workflows/jules-dispatch.yml
+    with:
+      issue_number: ${{ needs.route.outputs.routed_issue_number }}
+    secrets: inherit
 
-      - name: Kick Jules after manual backfill
-        if: github.event_name == 'workflow_dispatch' && inputs.backfill_open_issues && steps.apply.outputs.has_jules_candidate == 'true'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-        run: gh workflow run jules-dispatch.yml --ref "${{ github.event.repository.default_branch }}"
+  dispatch-after-manual-backfill:
+    needs: route
+    if: github.event_name == 'workflow_dispatch' && inputs.backfill_open_issues && needs.route.outputs.has_jules_candidate == 'true'
+    uses: ./.github/workflows/jules-dispatch.yml
+    secrets: inherit
+
+  dispatch-after-control-plane-change:
+    needs: route
+    if: github.event_name == 'push' && needs.route.outputs.has_jules_candidate == 'true'
+    uses: ./.github/workflows/jules-dispatch.yml
+    secrets: inherit

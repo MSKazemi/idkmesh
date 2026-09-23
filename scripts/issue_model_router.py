@@ -84,6 +84,18 @@ def _score_to_tier(score: int) -> str:
     return "T4"
 
 
+def _jules_queue_label(policy: dict[str, Any]) -> str:
+    """Return the queue label from the provider policy, never a code literal."""
+    value = (
+        policy.get("provider_examples", {})
+        .get("jules", {})
+        .get("queue_label")
+    )
+    if not value:
+        raise ValueError("routing policy is missing provider_examples.jules.queue_label")
+    return str(value)
+
+
 def _recommended_lane(tier: str | None, authority: str, text: str) -> str:
     if authority == "human_required":
         return "human"
@@ -130,7 +142,7 @@ def classify_issue(
         route_labels = [AUTHORITY_LABELS[authority]]
         route_labels.append(TIER_LABELS[tier] if tier else TIER_LABELS["NONE"])
         if override.get("jules_eligible"):
-            route_labels.append("agent:jules-eligible")
+            route_labels.append(_jules_queue_label(policy))
         lane = override.get("recommended_lane") or _recommended_lane(tier, authority, text)
         return Route(number, tier, authority, 0, "high", reasons, lane, route_labels, "override")
 
@@ -240,7 +252,7 @@ def classify_issue(
     lane = _recommended_lane(tier, authority, text)
     route_labels = [TIER_LABELS[tier], AUTHORITY_LABELS[authority]]
     if tier in {"T1", "T2"} and lane == "jules-or-equivalent":
-        route_labels.append("agent:jules-eligible")
+        route_labels.append(_jules_queue_label(policy))
 
     return Route(number, tier, authority, score, confidence, reasons or ["default bounded issue"], lane, route_labels, "rules")
 
