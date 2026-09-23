@@ -214,7 +214,9 @@
               ]
             }
           ],
-          "items": false
+          "items": false,
+          "minItems": 5,
+          "maxItems": 5
         },
         "digest_sha256": {
           "$ref": "#/$defs/sha256"
@@ -318,7 +320,9 @@
           ]
         }
       ],
-      "items": false
+      "items": false,
+      "minItems": 5,
+      "maxItems": 5
     },
     "warnings": {
       "type": "array",
