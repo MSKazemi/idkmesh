@@ -14,7 +14,6 @@ from __future__ import annotations
 import hashlib
 import json
 import math
-import random
 from pathlib import Path
 from typing import Any
 
@@ -390,12 +389,17 @@ def _selector_result(
 def _select_random(
     rows: list[dict[str, Any]], random_seed: int
 ) -> dict[str, Any]:
-    rng = random.Random(random_seed)
-    selected = rows[rng.randrange(len(rows))]
+    material = (
+        str(random_seed)
+        + "\\0"
+        + "\\0".join(row["id"] for row in rows)
+    ).encode("utf-8")
+    index = int.from_bytes(hashlib.sha256(material).digest(), "big") % len(rows)
+    selected = rows[index]
     return _selector_result(
         STRATEGY_RANDOM,
         selected_verifier_id=selected["id"],
-        reason_code="seeded_uniform_choice_over_canonical_candidate_order",
+        reason_code="sha256_seeded_choice_over_canonical_candidate_order",
         design_score=None,
     )
 
