@@ -1,0 +1,166 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idkmesh.org/schemas/auto-draft-pr-steward-history-v0.1.schema.json",
+  "title": "IDKMesh Auto Draft PR Steward History v0.1",
+  "description": "Offline aggregation of validated Auto Draft PR Steward reports. It is evidence only and grants no repository mutation authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "repository",
+    "report_count",
+    "first_generated_at",
+    "last_generated_at",
+    "status_counts",
+    "outcome_totals",
+    "api_budget",
+    "policy",
+    "integrity",
+    "runs"
+  ],
+  "properties": {
+    "schema": {
+      "const": "auto-draft-pr-steward-history-v0.1"
+    },
+    "repository": {
+      "type": "string",
+      "pattern": "^[^/\\s]+/[^/\\s]+$"
+    },
+    "report_count": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "first_generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "status_counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["completed", "blocked", "disabled"],
+      "properties": {
+        "completed": {"type": "integer", "minimum": 0},
+        "blocked": {"type": "integer", "minimum": 0},
+        "disabled": {"type": "integer", "minimum": 0}
+      }
+    },
+    "outcome_totals": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "planned",
+        "created",
+        "skipped",
+        "head_moved",
+        "pr_already_exists"
+      ],
+      "properties": {
+        "planned": {"type": "integer", "minimum": 0},
+        "created": {"type": "integer", "minimum": 0},
+        "skipped": {"type": "integer", "minimum": 0},
+        "head_moved": {"type": "integer", "minimum": 0},
+        "pr_already_exists": {"type": "integer", "minimum": 0}
+      }
+    },
+    "api_budget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["observed_runs", "min_remaining", "max_remaining"],
+      "properties": {
+        "observed_runs": {"type": "integer", "minimum": 0},
+        "min_remaining": {"type": ["integer", "null"], "minimum": 0},
+        "max_remaining": {"type": ["integer", "null"], "minimum": 0}
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["distinct_digests", "changes", "latest_sha256"],
+      "properties": {
+        "distinct_digests": {"type": "integer", "minimum": 1},
+        "changes": {"type": "integer", "minimum": 0},
+        "latest_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    },
+    "integrity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["algorithm", "semantic_normalization", "input_set_sha256"],
+      "properties": {
+        "algorithm": {"const": "sha256"},
+        "semantic_normalization": {
+          "const": "validated-canonical-json-v0.1"
+        },
+        "input_set_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    },
+    "runs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/run"}
+    }
+  },
+  "$defs": {
+    "run": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source",
+        "generated_at",
+        "status",
+        "candidate_count",
+        "planned",
+        "created",
+        "skipped",
+        "head_moved",
+        "pr_already_exists",
+        "rate_limit_remaining",
+        "blocked_reason",
+        "policy_sha256",
+        "report_sha256",
+        "run_id",
+        "run_attempt",
+        "trusted_head_sha"
+      ],
+      "properties": {
+        "source": {"type": "string", "minLength": 1},
+        "generated_at": {"type": "string", "format": "date-time"},
+        "status": {"enum": ["completed", "blocked", "disabled"]},
+        "candidate_count": {"type": ["integer", "null"], "minimum": 0},
+        "planned": {"type": "integer", "minimum": 0},
+        "created": {"type": "integer", "minimum": 0},
+        "skipped": {"type": "integer", "minimum": 0},
+        "head_moved": {"type": "integer", "minimum": 0},
+        "pr_already_exists": {"type": "integer", "minimum": 0},
+        "rate_limit_remaining": {"type": ["integer", "null"], "minimum": 0},
+        "blocked_reason": {"type": ["string", "null"]},
+        "policy_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "report_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "run_id": {"type": ["string", "null"]},
+        "run_attempt": {"type": ["string", "null"]},
+        "trusted_head_sha": {
+          "anyOf": [
+            {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+            {"type": "null"}
+          ]
+        }
+      }
+    }
+  }
+}
