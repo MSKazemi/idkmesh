@@ -59,6 +59,11 @@ some unrelated page but missing from its own index stays invisible.
 
 These record a default hypothesis the project builds on, not a settled contract.
 
+- [ADR-0014 — Enterprise Controls Are an Overlay; G0 Remains the Default](ADR-0014-enterprise-control-plane-baseline.md)
+  — keeps GitHub-first G0/G1 as the normal product path while making enterprise
+  tenancy, identity, audit, recovery, supply-chain, and optional G2/G3 service
+  controls explicit and evidence-gated. *(Proposed for adoption, 2026-09-22.)*
+
 - [ADR-0002 — Fractal Autonomous Cells for Scalability](ADR-0002-fractal-autonomous-cells.md)
   — adopts `node -> cell -> fabric/region -> global federation` as the default
   scaling topology hypothesis. *(Proposed / default hypothesis, 2026-08-28.)*
@@ -74,6 +79,10 @@ These record a default hypothesis the project builds on, not a settled contract.
   — when an action lies outside the current actor's authority, the system must
   fail open in communication but fail closed in authority, rather than treating a
   recommendation as if the external control existed. *(Proposed, 2026-08-28.)*
+- [ADR-0013 — Separate Provider Completion from Candidate Readiness](ADR-0013-provider-completion-candidate-readiness.md)
+  — provider/worker completion is only an execution observation; `candidate_ready`
+  requires a separately normalized, immutable candidate reference. *(Proposed,
+  2026-09-23.)*
 
 ## Numbering integrity
 

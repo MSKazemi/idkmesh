@@ -4,8 +4,11 @@ This directory translates the long-range vision into current execution choices.
 
 ## Planning artifacts
 
+- [`END_TO_END_PRODUCT_SPINE_PLAN_2026-09-22.md`](END_TO_END_PRODUCT_SPINE_PLAN_2026-09-22.md) — P0 integration plan for converging connector/routing, dispatch, candidate normalization, verification, human decision, GitHub durability, bootstrap, and release into one end-to-end product spine.
+- [Enterprise Readiness Execution Plan — 2026-09-22](ENTERPRISE_READINESS_EXECUTION_PLAN_2026-09-22.md) — control-first enterprise program from versioned profile through tenant/identity/audit/data/reliability/supply-chain controls, optional G2/G3 service, and destructive conformance pilot (#667-#676).
 - [`MODEL_TIER_DISPATCHER_EXECUTION_PLAN_2026-09-22.md`](MODEL_TIER_DISPATCHER_EXECUTION_PLAN_2026-09-22.md) — capability-tier, authority, connector-admission, escalation, GitHub-only state, and #574 implementation plan.
 - [`AGENT_MODEL_INTEGRATION_SELF_HOSTING_PLAN_2026-09-22.md`](AGENT_MODEL_INTEGRATION_SELF_HOSTING_PLAN_2026-09-22.md) — staged connector-control-plane roadmap: first use external agents/models to finish IDKMesh, then self-host repository development, then use the same product interfaces to build a second application.
+- [`COMPETITIVE_LANDSCAPE_2026-09-22.md`](COMPETITIVE_LANDSCAPE_2026-09-22.md) — current competitive map against coding agents and multi-agent platforms, IDKMesh differentiation, strategic gaps, and a prioritized product roadmap.
 - [`CURRENT_PRIORITIES.md`](CURRENT_PRIORITIES.md) — current narrative priority assessment and sequencing rationale.
 - [`EXECUTION_TARGET_GRAPH.md`](EXECUTION_TARGET_GRAPH.md) — dependency-oriented goal -> target -> task -> evidence view for the current product critical path and parallel capacity-gated tracks.
 - [`REPOSITORY_IMPROVEMENT_LOOP.md`](REPOSITORY_IMPROVEMENT_LOOP.md) — operating contract for evidence-bearing iterations, convergence before expansion, and review-capacity-aware task selection.
