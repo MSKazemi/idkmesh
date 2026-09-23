@@ -1,7 +1,7 @@
 {
-  "version": 1,
+  "version": 2,
   "queue_label": "agent-ready",
-  "dispatch_label": "jules",
+  "dispatch_label": "agent:jules-dispatched",
   "max_in_flight": 4,
   "max_dispatch_per_sweep": 2,
   "ci_backpressure": {
@@ -39,7 +39,7 @@
     },
     "jules": {
       "color": "EDEDED",
-      "description": "Execution signal consumed by Google Labs Jules"
+      "description": "Legacy/manual Google Jules GitHub App trigger; not added by automation"
     },
     "blocked": {
       "color": "D93F0B",
@@ -88,6 +88,13 @@
     "size:m": {
       "color": "FBCA04",
       "description": "Medium bounded change"
+    },
+    "agent:jules-dispatched": {
+      "color": "5319E7",
+      "description": "Reserved/started by the API-backed Jules dispatcher"
     }
-  }
+  },
+  "legacy_dispatch_labels": [
+    "jules"
+  ]
 }
