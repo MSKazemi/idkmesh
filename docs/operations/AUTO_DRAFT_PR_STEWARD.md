@@ -279,6 +279,22 @@ while aggregate totals were adjusted to match—is rejected rather than displaye
 History aggregation is entirely offline. It downloads no artifacts, polls no
 workflow, uses no GitHub token, and exposes no mutation capability.
 
+For the same history as a visual local dashboard:
+
+```bash
+idkmesh steward-history-ui ./downloaded-steward-artifacts
+idkmesh steward-history-ui ./run-a ./run-b --no-browser --port 8767
+```
+
+The history dashboard reuses the exact same validated aggregation object as the
+CLI. It binds only to `127.0.0.1`, uses no JavaScript or external assets,
+performs no live GitHub calls, and rejects POST/PUT/PATCH/DELETE and
+cross-origin preflight requests. It validates aggregate consistency, semantic
+ordering, and the path-independent input-set digest again before rendering, then
+visualizes the observation window, run-state counts, created/skipped outcomes,
+API-budget range, policy transitions, report digests, and the chronological
+per-run timeline without introducing a control plane.
+
 ### Compatibility and schema evolution
 
 The report and history consumers are intentionally fail-closed. They accept only
@@ -382,5 +398,10 @@ mixed-repository rejection, duplicate workflow-run rejection, chronological
 aggregation, policy-transition counts, semantic report/input-set digests,
 bounded file/discovery limits, internal aggregate consistency, schema validation,
 rendering, and CLI mode contracts.
+
+The local history dashboard is covered by `tests/test_steward_history_ui.py`,
+including aggregate-integrity rejection, HTML escaping, loopback binding,
+response security headers, Host validation, mutation/preflight rejection, CLI
+port checks, and validation before server startup.
 
 Use the repository's normal PR gate for integration evidence.
