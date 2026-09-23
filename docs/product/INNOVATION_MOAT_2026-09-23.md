@@ -591,22 +591,41 @@ Do not:
 - autonomously downgrade human/governance authority;
 - present synthetic simulations as production evidence.
 
-## 14. Next implementation slice
+## 14. Current implementation path
 
 Tracked implementation/research issue: [#693 — measure marginal evidence contribution before adding a verifier](https://github.com/MSKazemi/idkmesh/issues/693).
 
-The smallest useful technical slice is:
+The first measurement slice is implemented as `idkmesh gate-marginal` and
+documented in
+[MARGINAL_EVIDENCE_V0_1.md](../specifications/MARGINAL_EVIDENCE_V0_1.md).
+It measures add-one verifier contribution under the exact gate rule without
+granting routing or integration authority.
 
-> Given a historical verdict matrix, an existing selected verifier panel, and candidate verifier error history, compute the candidate's **marginal effective-vote gain** and reject additions that provide negligible incremental independence.
+The next evidence gate is the held-out benchmark documented in
+[MARGINAL_EVIDENCE_BENCHMARK_V0_1.md](../specifications/MARGINAL_EVIDENCE_BENCHMARK_V0_1.md).
+It freezes the marginal selector plus four simpler baselines from design rows
+only, then evaluates those frozen selections on disjoint holdout rows.
 
-This can be implemented without live LLM calls and can reuse the current gate-audit foundation.
+This progression deliberately moves through:
 
-If this slice works, IDKMesh will have moved from:
+```text
+measure marginal contribution
+        |
+        v
+compare against simple baselines
+        |
+        v
+require held-out stability
+        |
+        v
+only then consider AVE / Connector Control Plane dry-run integration
+```
 
-> "we can measure correlated reviewers"
+The related AVE research remains in #621 / PR #622. The held-out benchmark does
+not duplicate that controller and does not promote any selector to production.
 
-to:
+The product hypothesis remains:
 
-> **"we can use measured reviewer dependence to decide who should review next."**
-
-That is the first innovation in this document that should become executable.
+> **"IDKMesh can use measured reviewer dependence to decide who should review
+> next — but only after the decision rule survives simpler baselines and held-out
+> evidence."**
