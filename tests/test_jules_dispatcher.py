@@ -270,6 +270,29 @@ def test_existing_api_session_is_reused_instead_of_duplicated():
     assert "existing" in api.comments[0][1]
 
 
+def test_newest_matching_session_wins_over_old_failed_history():
+    queued = issue(72, "agent-ready")
+    marker = jd.session_marker("MSKazemi/idkmesh", queued)
+    sessions = [
+        {
+            "name": "sessions/old-failed",
+            "title": f"{marker} old title",
+            "state": "FAILED",
+            "updateTime": "2026-09-23T14:00:00Z",
+        },
+        {
+            "name": "sessions/new-active",
+            "title": f"{marker} new title",
+            "state": "IN_PROGRESS",
+            "updateTime": "2026-09-23T17:00:00Z",
+        },
+    ]
+
+    assert jd.find_issue_session("MSKazemi/idkmesh", queued, sessions)["name"] == (
+        "sessions/new-active"
+    )
+
+
 def test_existing_session_match_survives_issue_title_edit():
     queued = issue(70, "agent-ready")
     old_title = deepcopy(queued)
@@ -615,6 +638,44 @@ def test_resolve_source_matches_connected_github_repository(monkeypatch):
         client.resolve_source("MSKazemi/idkmesh")
         == "sources/github/MSKazemi/idkmesh"
     )
+
+
+def test_list_sessions_paginates_until_complete(monkeypatch):
+    client = jd.JulesAPI("secret")
+    calls = []
+
+    def fake_request(method, path, payload=None):
+        calls.append(path)
+        if "pageToken=" not in path:
+            return {
+                "sessions": [{"name": "sessions/1"}],
+                "nextPageToken": "next",
+            }
+        return {"sessions": [{"name": "sessions/2"}]}
+
+    monkeypatch.setattr(client, "request", fake_request)
+
+    assert [item["name"] for item in client.list_sessions(max_pages=2)] == [
+        "sessions/1",
+        "sessions/2",
+    ]
+    assert len(calls) == 2
+
+
+def test_list_sessions_fails_closed_if_history_scan_is_incomplete(monkeypatch):
+    client = jd.JulesAPI("secret")
+
+    monkeypatch.setattr(
+        client,
+        "request",
+        lambda method, path, payload=None: {
+            "sessions": [{"name": "sessions/1"}],
+            "nextPageToken": "still-more",
+        },
+    )
+
+    with pytest.raises(jd.JulesAPIError, match="safe pagination scan"):
+        client.list_sessions(max_pages=1)
 
 
 def test_resolve_source_fails_closed_when_repo_is_not_connected(monkeypatch):
