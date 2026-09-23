@@ -612,6 +612,7 @@ def build_selection_plan(
     plan_core = {
         "rule_version": SELECTION_RULE_VERSION,
         "source": "design_only",
+        "design_input_digest_sha256": _canonical_digest(design),
         "current_verifier_ids": current_ids,
         "candidate_verifier_ids": canonical_candidate_ids,
         "selectors": selectors,
