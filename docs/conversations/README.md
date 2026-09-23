@@ -13,7 +13,7 @@ that produced them.
 
 ### 2026-09-23
 
-- [Jules automatic-routing reconciliation and throughput hardening](2026-09-23-jules-routing-reconciliation.md)
+- [Held-out marginal evidence benchmark implementation](2026-09-23-heldout-marginal-benchmark-implementation.md)
 - [Evidence-centric innovation and marginal verifier implementation](2026-09-23-evidence-centric-innovation-and-marginal-verifier-implementation.md)
 
 ### 2026-09-22

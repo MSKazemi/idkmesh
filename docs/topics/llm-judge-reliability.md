@@ -1,6 +1,6 @@
 ---
 title: "LLM-as-a-Judge Reliability and Evaluator Bias — IDKMesh"
-description: "How to reason about LLM-as-a-judge reliability: evaluator calibration, correlated errors, panel independence, evidence classes, and authority boundaries."
+description: "LLM-as-a-judge reliability with measured failure evidence: calibration, discrimination, bias, correlated errors, panel independence, and authority boundaries."
 image: "/assets/idkmesh-social.png"
 ---
 
@@ -17,6 +17,33 @@ A panel can contain many judges and still behave like far fewer independent judg
 The project's E017 experiment measured this effect using independently seeded partial **test oracles—programs, not language models**—on a real defect corpus. It is evidence about correlated verification errors and quorum design, not a claim that the same numeric result applies to LLM judges.
 
 See [verifier panels](https://mskazemi.com/idkmesh/topics/verifier-panels.html) and the retained [E017 record](https://github.com/MSKazemi/idkmesh/blob/main/experiments/E017-item-difficulty-and-quorum.md).
+
+## What IDKMesh actually measured with LLM verifiers
+
+IDKMesh attempted to measure live LLM-verifier error correlation in [E016](https://github.com/MSKazemi/idkmesh/blob/main/experiments/E016-live-verifier-correlation.md). The result was negative in a useful way: **the deployed judges were not competent enough for their correlation numbers to mean what we wanted them to mean.**
+
+The experiment used **20 verifiers** built from four open-weight model families and five prompt templates, producing **1,440 votes** over 72 Python candidate solutions with executable hidden-test ground truth.
+
+| Measurement | E016 result |
+| --- | ---: |
+| Mean accuracy | 0.4743 |
+| Mean Youden J | +0.0487 |
+| Judges significantly above J=0 after correction | **0 of 20** |
+| 20-judge majority-vote accuracy | 0.514 |
+| Trivial always-reject accuracy | **0.639** |
+| Unparseable votes | 7.0% |
+
+Six judges emitted one constant verdict for all 72 tasks, three more emitted one verdict at least 95% of the time, and no individual judge showed discrimination above chance after correction.
+
+That means the tempting near-zero pairwise error correlation reported by the analyzer was **not evidence of independence**. Noise and constant decision rules can also produce near-zero correlation. E016 therefore blocks the correlation interpretation rather than publishing a plausible-looking independence number.
+
+## The practical lesson from the failed experiment
+
+Before asking whether LLM judges are independent, first establish that they are actually judging the task. On an imbalanced corpus, raw accuracy can make a constant strategy look competent: in E016, rejecting every candidate without reading it scored 0.639, better than the 20-judge majority.
+
+For a future LLM-judge panel, IDKMesh's preregistered retry gate requires discrimination checks before any correlation analysis: multiple judges significantly above chance, mean panel accuracy above 0.5 on a base-rate-balanced corpus, low parse failure, and no near-constant judges.
+
+The experiment used small 1–2B open models and Python function-level correctness tasks. It does **not** establish that larger current models, commercial models, or LLM judges in other domains are unreliable. It establishes that evaluator competence must be measured before agreement, correlation, or panel size can be interpreted.
 
 ## What to measure in an LLM evaluator
 
@@ -76,4 +103,4 @@ Preserve or expose the uncertainty, request additional evidence, use a different
 
 [Browse all AI-agent trust topics](https://mskazemi.com/idkmesh/topics/).
 
-**Last reviewed:** 2026-09-22.
+**Last reviewed:** 2026-09-23.

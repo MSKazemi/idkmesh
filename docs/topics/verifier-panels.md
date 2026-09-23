@@ -1,6 +1,6 @@
 ---
 title: "Verifier Panels, Effective Independent Votes, and Reliable Review — IDKMesh"
-description: "Why reviewer head-count can overstate independent evidence, how correlated verifier errors weaken quorums, and how IDKMesh audits review panels."
+description: "Measured verifier-panel evidence: why reviewer count can overstate independent votes, how correlated errors weaken quorums, and how to audit review gates."
 image: "/assets/idkmesh-social.png"
 ---
 
@@ -32,7 +32,35 @@ That is why IDKMesh treats verifier diversity as an empirical property rather th
 
 Raising a quorum can help only when the panel contains useful discriminating evidence. If reviewers systematically miss the same defect, requiring more of the same votes does not create new information.
 
-The right response may be to change the evaluator, add a different kind of evidence, improve hidden tests, or route difficult cases to a human specialist. For automated judges, see [LLM-as-a-judge reliability](https://mskazemi.com/idkmesh/topics/llm-judge-reliability.html). For automated judges, see [LLM-as-a-judge reliability](https://mskazemi.com/idkmesh/topics/llm-judge-reliability.html).
+The right response may be to change the evaluator, add a different kind of evidence, improve hidden tests, or route difficult cases to a human specialist. For automated judges, see [LLM-as-a-judge reliability](https://mskazemi.com/idkmesh/topics/llm-judge-reliability.html).
+
+## What IDKMesh measured on an observed verifier panel
+
+[E017](https://github.com/MSKazemi/idkmesh/blob/main/experiments/E017-item-difficulty-and-quorum.md) measured a panel of **25 independently seeded partial test oracles** over a **72-candidate** corpus whose ground truth came from hidden tests. These verifiers were programs, not people or LLM judges, and every recorded error was a genuine missed defect.
+
+The observed panel looked large but carried far less independent evidence:
+
+| Measurement | Observed result |
+| --- | ---: |
+| Mean verifier accuracy | 0.7956 |
+| Mean pairwise error correlation | 0.5873 |
+| Majority-vote panel error | 0.2083 |
+| Single-verifier error | 0.2044 |
+| Measured effective panel size | **1.00 of 25** |
+| Common N/(1+(N-1)rho) heuristic | 1.66 |
+| Error with a 24-of-25 acceptance quorum | 0.0556 |
+
+Under majority vote, the 25-verifier panel was therefore no better than a single member on that corpus. The common effective-size heuristic still overstated the measured panel by 1.66x.
+
+The highest-leverage change was not adding reviewers. Because the test-oracle errors were one-sided missed defects, changing the aggregation rule from majority acceptance to a much stricter quorum cut error from **0.2083 to 0.0556**, about **3.7x**. Four defects remained invisible to every verifier, so no quorum could eliminate the floor.
+
+## What that result does not prove
+
+It is evidence about this measured programmatic panel, not a universal constant for human reviewers or LLM judges. The verifier diversity structure was constructed, the corpus contains 72 candidates from 24 problems, and the one-sided error property comes from partial test oracles.
+
+IDKMesh attempted a live LLM-verifier measurement earlier in [E016](https://github.com/MSKazemi/idkmesh/blob/main/experiments/E016-live-verifier-correlation.md), but the 20 LLM verifiers did not discriminate above chance strongly enough to make their correlation estimate meaningful. The repository therefore does **not** claim that a 25-LLM panel is worth one vote.
+
+The transferable lesson is narrower and more useful: **measure reviewer competence and shared error structure before treating reviewer count as independent evidence.**
 
 ## Common questions
 
@@ -78,4 +106,4 @@ Compare item-level error patterns, prompts, tools, data sources, model/provider 
 
 [Browse all AI-agent trust topics](https://mskazemi.com/idkmesh/topics/).
 
-**Last reviewed:** 2026-09-22.
+**Last reviewed:** 2026-09-23.

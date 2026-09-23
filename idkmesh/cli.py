@@ -25,6 +25,12 @@ from idkmesh.marginal_evidence import (
     analyze_file as analyze_marginal_file,
     render_json as render_marginal_json,
 )
+from idkmesh.marginal_evidence_benchmark import (
+    MarginalEvidenceBenchmarkInputError,
+    benchmark_file as benchmark_marginal_file,
+    referenced_paths as marginal_benchmark_referenced_paths,
+    render_json as render_marginal_benchmark_json,
+)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -125,6 +131,30 @@ def build_parser() -> argparse.ArgumentParser:
         help=(
             "confidence level in (0, 1); requires --bootstrap "
             "(default: 0.95)"))
+
+    gmb = sub.add_parser(
+        "gate-marginal-benchmark",
+        help="compare marginal verifier selection with simple held-out baselines",
+        description=(
+            "Use a versioned benchmark config to select candidate verifiers "
+            "from design rows only, then evaluate the frozen selections on "
+            "disjoint holdout rows. Diagnostic only: no live routing, "
+            "EvaluatorPlan, acceptance, or merge authority."),
+    )
+    gmb.add_argument(
+        "input",
+        help="path to marginal-evidence-benchmark-config-v0.1 JSON",
+    )
+    gmb.add_argument(
+        "--out",
+        metavar="PATH",
+        help="write the benchmark JSON report here (default: stdout)",
+    )
+    gmb.add_argument(
+        "--pretty",
+        action="store_true",
+        help="pretty-print the JSON report",
+    )
     connections = sub.add_parser(
         "connections",
         help="validate, list, or inspect connector configuration",
@@ -571,6 +601,57 @@ def main(argv: list[str] | None = None) -> int:
             return _fail(
                 f"cannot start local UI on 127.0.0.1:{args.port}: "
                 f"{_reason(exc)}")
+        return 0
+
+    if args.command == "gate-marginal-benchmark":
+        try:
+            protected_paths = marginal_benchmark_referenced_paths(args.input)
+        except FileNotFoundError:
+            return _fail(f"input file not found: {args.input}")
+        except IsADirectoryError:
+            return _fail(
+                f"input path is a directory, not a benchmark config file: "
+                f"{args.input}")
+        except OSError as exc:
+            return _fail(
+                f"cannot read benchmark input {args.input}: {_reason(exc)}")
+        except MarginalEvidenceBenchmarkInputError as exc:
+            return _fail(str(exc))
+
+        if args.out:
+            out_key = os.path.realpath(args.out)
+            labels = ("benchmark config", "design matrix", "holdout matrix")
+            for protected, label in zip(protected_paths, labels):
+                if out_key == os.path.realpath(protected):
+                    return _fail(
+                        f"--out {args.out} is the {label}; writing the report "
+                        "there would overwrite benchmark evidence"
+                    )
+
+        try:
+            report = benchmark_marginal_file(args.input)
+        except FileNotFoundError as exc:
+            return _fail(f"benchmark referenced file not found: {exc.filename}")
+        except IsADirectoryError as exc:
+            return _fail(
+                f"benchmark referenced path is a directory: {exc.filename}")
+        except OSError as exc:
+            return _fail(
+                f"cannot read benchmark evidence: {_reason(exc)}")
+        except MarginalEvidenceBenchmarkInputError as exc:
+            return _fail(str(exc))
+
+        rendered = render_marginal_benchmark_json(report, pretty=args.pretty)
+        if args.out:
+            failure = _write(
+                args.out,
+                rendered + "\n",
+                "marginal-evidence benchmark JSON report",
+            )
+            if failure is not None:
+                return failure
+        else:
+            print(rendered)
         return 0
 
     if args.command == "gate-marginal":
