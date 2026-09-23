@@ -536,18 +536,24 @@ def session_attention_reason(
     return None
 
 
+def _add_local_label(issue: dict[str, Any], name: str) -> None:
+    labels = list(issue.get("labels", []))
+    if all(
+        str(label.get("name", "")).casefold() != name.casefold()
+        for label in labels
+    ):
+        labels.append({"name": name})
+    issue["labels"] = labels
+
+
 def _replace_local_label(issue: dict[str, Any], old: str, new: str) -> None:
     labels = [
         label
         for label in issue.get("labels", [])
         if str(label.get("name", "")).casefold() != old.casefold()
     ]
-    if all(
-        str(label.get("name", "")).casefold() != new.casefold()
-        for label in labels
-    ):
-        labels.append({"name": new})
     issue["labels"] = labels
+    _add_local_label(issue, new)
 
 
 def reconcile_active_sessions(
@@ -718,7 +724,7 @@ def dispatch(
         # Reserve before provider creation so concurrent runs cannot create
         # duplicate sessions for the same issue.
         api.add_labels(number, [dispatch_label])
-        _replace_local_label(issue, "", dispatch_label)
+        _add_local_label(issue, dispatch_label)
         if (
             existing is not None
             and str(existing.get("state") or "").upper() != "FAILED"
