@@ -54,7 +54,7 @@ Under majority vote, the 25-verifier panel was therefore no better than a single
 
 The highest-leverage change was not adding reviewers. Because the test-oracle errors were one-sided missed defects, changing the aggregation rule from majority acceptance to a much stricter quorum cut error from **0.2083 to 0.0556**, about **3.7x**. Four defects remained invisible to every verifier, so no quorum could eliminate the floor.
 
-### What that result does not prove
+## What that result does not prove
 
 It is evidence about this measured programmatic panel, not a universal constant for human reviewers or LLM judges. The verifier diversity structure was constructed, the corpus contains 72 candidates from 24 problems, and the one-sided error property comes from partial test oracles.
 
