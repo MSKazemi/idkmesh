@@ -10,14 +10,15 @@ from tools import jules_dispatcher as jd
 
 POLICY = {
     "queue_label": "agent-ready",
+    "automatic_queue_label": "agent:jules-eligible",
     "dispatch_label": "agent:jules-dispatched",
     "legacy_dispatch_labels": ["jules"],
     "max_in_flight": 4,
     "max_dispatch_per_sweep": 2,
     "ci_backpressure": {
         "enabled": True,
-        "max_queued_runs": 12,
-        "max_in_progress_runs": 8,
+        "max_queued_runs": 96,
+        "max_in_progress_runs": 24,
     },
     "blocked_labels": [
         "blocked",
@@ -36,6 +37,7 @@ POLICY = {
     "bonus_weights": {"bug": 15, "good first issue": 10, "documentation": 5},
     "label_definitions": {
         "agent-ready": {"color": "0E8A16", "description": "ready"},
+        "agent:jules-eligible": {"color": "BFDADC", "description": "auto-ready"},
         "agent:jules-dispatched": {"color": "5319E7", "description": "dispatch"},
         "jules": {"color": "EDEDED", "description": "legacy"},
     },
@@ -87,7 +89,7 @@ class FakeAPI:
             return deepcopy(self.active)
         if label == "jules":
             return deepcopy(self.legacy)
-        if label == "agent-ready":
+        if label in {"agent-ready", "agent:jules-eligible"}:
             return deepcopy(self.queued)
         return []
 
@@ -144,15 +146,16 @@ class FakeJules:
 
 def test_dispatchability_requires_explicit_queue_label_and_respects_vetoes():
     assert jd.is_dispatchable(issue(1, "agent-ready"), POLICY)
-    assert not jd.is_dispatchable(issue(2, "good first issue"), POLICY)
+    assert jd.is_dispatchable(issue(2, "agent:jules-eligible"), POLICY)
+    assert not jd.is_dispatchable(issue(3, "good first issue"), POLICY)
     assert not jd.is_dispatchable(
-        issue(3, "agent-ready", "agent:jules-dispatched"), POLICY
+        issue(4, "agent-ready", "agent:jules-dispatched"), POLICY
     )
-    assert not jd.is_dispatchable(issue(4, "agent-ready", "jules"), POLICY)
-    assert not jd.is_dispatchable(issue(5, "agent-ready", "human-required"), POLICY)
-    assert not jd.is_dispatchable(issue(6, "agent-ready", "security-sensitive"), POLICY)
-    assert not jd.is_dispatchable(issue(7, "agent-ready", state="closed"), POLICY)
-    assert not jd.is_dispatchable(issue(8, "agent-ready", pull=True), POLICY)
+    assert not jd.is_dispatchable(issue(5, "agent-ready", "jules"), POLICY)
+    assert not jd.is_dispatchable(issue(6, "agent-ready", "human-required"), POLICY)
+    assert not jd.is_dispatchable(issue(7, "agent-ready", "security-sensitive"), POLICY)
+    assert not jd.is_dispatchable(issue(8, "agent-ready", state="closed"), POLICY)
+    assert not jd.is_dispatchable(issue(9, "agent-ready", pull=True), POLICY)
 
 
 def test_selection_prefers_event_issue_then_priority_and_small_size():
@@ -372,6 +375,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 def test_repository_policy_keeps_speed_and_hard_vetoes_explicit():
     policy = jd.load_policy(REPO_ROOT / "config" / "jules-dispatch.json")
 
+    assert policy["automatic_queue_label"] == "agent:jules-eligible"
     assert policy["dispatch_label"] == "agent:jules-dispatched"
     assert policy["legacy_dispatch_labels"] == ["jules"]
     assert policy["max_in_flight"] == 4
@@ -395,7 +399,7 @@ def test_workflow_preserves_dispatch_trust_boundary_and_fast_recovery():
         encoding="utf-8"
     )
 
-    assert "types: [labeled, closed]" in workflow
+    assert "types: [opened, edited, reopened, labeled, closed]" in workflow
     assert "cron: '17,47 * * * *'" in workflow
     assert "actions: read" in workflow
     assert "JULES_API_KEY: ${{ secrets.JULES_API_KEY }}" in workflow
