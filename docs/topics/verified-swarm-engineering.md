@@ -59,6 +59,26 @@ It is an engineering stance that plans verification capacity, evidence, and auth
 
 Use the [15-minute quickstart](https://mskazemi.com/idkmesh/start.html), read [What Is IDKMesh?](https://github.com/MSKazemi/idkmesh/blob/main/docs/WHAT_IS_IDKMESH.md), or inspect the [repository README](https://github.com/MSKazemi/idkmesh/blob/main/README.md).
 
+### How is verified swarm engineering different from ordinary multi-agent orchestration?
+
+Ordinary orchestration may stop at coordinating tasks and messages. Verified swarm engineering also requires independent evidence, provenance, measured reviewer independence, backpressure, and a separate authority boundary before candidate work becomes canonical.
+
+### Can different AI models work in the same verified swarm?
+
+Yes. Heterogeneity is a design goal. Workers can differ by model, provider, toolchain, hardware, or human expertise as long as they can satisfy shared work and evidence contracts.
+
+### Why does IDKMesh use Git and GitHub?
+
+Git provides immutable revisions, isolated branches, diffs, provenance, and reproducibility; GitHub adds issues, pull requests, CI, protected branches, and public collaboration. Those primitives make candidate-versus-canonical state explicit.
+
+### Does IDKMesh replace frameworks such as LangGraph, CrewAI, or AutoGen?
+
+Not necessarily. IDKMesh focuses on work/evidence/authority boundaries and can sit above or beside other orchestration systems through adapters. The relevant question is whether an external framework can participate without bypassing verification and governance.
+
+### What would make verified swarm engineering enterprise-ready?
+
+It would require hardened identity and tenancy, policy enforcement, secret management, auditability, availability, rollback, stronger security assurance, operational observability, stable APIs, and real-world evidence that the verification model works under production risk.
+
 [Browse all AI-agent trust topics](https://mskazemi.com/idkmesh/topics/).
 
 **Last reviewed:** 2026-09-22.
