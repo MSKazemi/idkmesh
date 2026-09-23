@@ -2,12 +2,17 @@
 
 from __future__ import annotations
 
+import importlib.util
 import json
 import tempfile
 import unittest
 from pathlib import Path
 
 import tools.search_visibility_report as svr
+
+HAS_JSONSCHEMA = importlib.util.find_spec("jsonschema") is not None
+if HAS_JSONSCHEMA:
+    from jsonschema import Draft202012Validator
 
 
 class VisibilityLedgerTests(unittest.TestCase):
@@ -16,6 +21,16 @@ class VisibilityLedgerTests(unittest.TestCase):
 
     def test_committed_ledger_is_semantically_valid(self) -> None:
         self.assertIsInstance(svr.observations(), list)
+
+    @unittest.skipUnless(HAS_JSONSCHEMA, "instance validation requires jsonschema")
+    def test_committed_ledger_matches_published_schema(self) -> None:
+        schema = json.loads(
+            (svr.ROOT / "schemas" / "search-visibility-observation-v0.1.schema.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        payload = json.loads(svr.LEDGER.read_text(encoding="utf-8"))
+        Draft202012Validator(schema).validate(payload)
 
     def test_committed_report_matches_the_ledger(self) -> None:
         expected = svr.render(svr.observations())
