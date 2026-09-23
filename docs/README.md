@@ -73,7 +73,7 @@ For a newcomer trying to understand the executable foundation, this order is usu
 
 ### Agent development automation
 
-- [Jules development automation](operations/JULES_AUTOMATION.md) — who may mark work `agent-ready`, how the dispatcher adds `jules`, event-driven and recovery frequencies, concurrency/backpressure, veto labels, failure recovery, and the no-auto-merge boundary.
+- [Search and Answer-Engine Discovery Matrix](operations/SEARCH_AND_ANSWER_ENGINE_DISCOVERY_MATRIX.md) — crawler/discovery paths for Google/Gemini, Bing/Copilot, ChatGPT, Claude, Perplexity, and open-web search, plus the scheduled live visibility probe.\n- [Jules development automation](operations/JULES_AUTOMATION.md) — who may mark work `agent-ready`, how the dispatcher adds `jules`, event-driven and recovery frequencies, concurrency/backpressure, veto labels, failure recovery, and the no-auto-merge boundary.
 
 ### Work, evidence, and interoperability
 
