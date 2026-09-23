@@ -1487,6 +1487,11 @@
     <priority>0.4</priority>
   </url>
   <url>
+    <loc>https://mskazemi.com/idkmesh/planning/END_TO_END_PRODUCT_SPINE_PLAN_2026-09-22.html</loc>
+    <lastmod>2026-09-22</lastmod>
+    <priority>0.4</priority>
+  </url>
+  <url>
     <loc>https://mskazemi.com/idkmesh/planning/MODEL_TIER_DISPATCHER_EXECUTION_PLAN_2026-09-22.html</loc>
     <lastmod>2026-09-22</lastmod>
     <priority>0.4</priority>
@@ -1759,6 +1764,11 @@
   <url>
     <loc>https://mskazemi.com/idkmesh/specifications/PROJECT_DOMAIN_INTERFACES.html</loc>
     <lastmod>2026-08-28</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://mskazemi.com/idkmesh/specifications/PRODUCT_SPINE_SERVICE_V0_1.html</loc>
+    <lastmod>2026-09-22</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
