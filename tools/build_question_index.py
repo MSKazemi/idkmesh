@@ -11,7 +11,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 CONFIG = ROOT / "config" / "seo-topics-v1.json"
 OUTPUT = ROOT / "docs" / "questions.md"
 
-QUESTION_RE = re.compile(r"^### (.+\\?)$", re.MULTILINE)
+QUESTION_RE = re.compile(r"^### (.+\?)$", re.MULTILINE)
 
 
 class QuestionIndexError(ValueError):
@@ -76,7 +76,7 @@ def render() -> str:
         "",
         "The questions are generated from the actual question headings in the topic",
         "guides. The machine-readable 100-intent map remains",
-        "[\`config/seo-topics-v1.json\`](https://github.com/MSKazemi/idkmesh/blob/main/config/seo-topics-v1.json).",
+        "[`config/seo-topics-v1.json`](https://github.com/MSKazemi/idkmesh/blob/main/config/seo-topics-v1.json).",
         "",
         "Use this page when you know the question you want to ask; use the",
         "[topic hub](https://mskazemi.com/idkmesh/topics/) when you want to browse by",
@@ -104,7 +104,7 @@ def render() -> str:
             "## How this map is maintained",
             "",
             "- The ten topic pages remain the answer sources; this page only indexes them.",
-            "- A question appears here only if it is an actual \`### ...?\` heading on a topic page.",
+            "- A question appears here only if it is an actual `### ...?` heading on a topic page.",
             "- CI requires exactly 100 unique questions across exactly ten topic clusters.",
             "- Exact-match keyword repetition and one-page-per-query doorway patterns are intentionally avoided.",
             "- Search visibility is measured separately from crawlability; see the",
@@ -114,7 +114,7 @@ def render() -> str:
             "",
         ]
     )
-    return "\\n".join(lines)
+    return "\n".join(lines)
 
 
 def main() -> int:
