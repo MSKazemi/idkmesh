@@ -94,6 +94,19 @@ integration authority.
 Defines execution waves, hard dependencies, parallel tracks, acceptance
 artifacts, critical path, and the readiness checklist before coding.
 
+### Surface catalog
+
+`docs/planning/API_V1_SURFACE_CATALOG_2026-09-23.md`
+
+Inventories intended v1 endpoints and public objects with status, authentication
+profile, mutation/authority class, owner issue, and recommended beta scope.
+
+### Contributor templates
+
+Added a dedicated API-change issue template and an API-contract section to the
+pull-request template so future API proposals state schema, authority, identity,
+idempotency, limits, compatibility, and acceptance evidence before coding.
+
 ## New claimable API issues
 
 Created under #713:
