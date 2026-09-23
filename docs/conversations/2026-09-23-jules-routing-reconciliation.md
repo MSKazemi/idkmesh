@@ -199,3 +199,26 @@ account-wide, so work started outside this repository is naturally included.
 This preserves the intentional repository review backpressure: a completed Jules
 task may still occupy an open issue reservation until the issue closes, but it no
 longer falsely occupies a provider-running-task slot.
+
+
+## Typed reusable capacity-fill follow-up
+
+The first post-merge execution of the runtime self-check topology caught an
+event-context edge case. The router correctly called Jules Dispatcher as a
+reusable workflow after a control-plane `push`, but reusable workflows retain
+the caller event context. The dispatcher therefore saw `github.event_name ==
+'push'`; after removing its own direct push trigger, the old event-derived
+capacity-fill condition skipped the actual reconciliation/fill step.
+
+The durable correction is another typed workflow contract:
+
+- `workflow_call.fill_capacity` is an explicit boolean input;
+- router control-plane recovery passes `bootstrap_labels: true` and
+  `fill_capacity: true`;
+- manual router backfill also passes `fill_capacity: true`;
+- event-driven single-issue routing continues to pass only `issue_number`;
+- the contract checker and focused tests require the input, caller wiring, and
+  dispatcher consumption.
+
+This avoids inferring reusable-workflow intent from the inherited event name and
+turns another implicit cross-workflow assumption into a checked interface.
