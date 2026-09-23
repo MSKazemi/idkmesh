@@ -20,6 +20,10 @@ remain authoritative; an index link does not promote a proposal into policy.
   productizes GitHub, agent, model-provider, execution, configuration, routing,
   secret-reference, and self-hosting boundaries above the existing WorkUnit and
   verification contracts.
+- [API Control-Plane Architecture](API_CONTROL_PLANE_ARCHITECTURE.md) —
+  unifies Control Tower, Connector Control, Product Spine, CLI, and future
+  multi-user transports around one domain/application-service model while
+  keeping evidence, human decision, and integration authority separate.
 - [GitHub-First Deployment and Multi-User Operation](GITHUB_FIRST_DEPLOYMENT_AND_MULTIUSER.md) —
   default server-optional deployment profile, durable GitHub-native state,
   team roles/claims, optional nodes, and evidence-based triggers for adding a service.
