@@ -138,15 +138,38 @@ class GitHubBootstrapPlanTests(unittest.TestCase):
                 self.assertEqual(caught.exception.code, "unpinned_idkmesh_ref")
 
     def test_release_tag_and_full_sha_are_valid_pins(self):
-        for ref in ("v0.1.0", "v2.10.3-rc.1", SHA):
+        for ref in ("v0.1.0", "v2.10.3-rc.1", "v2.10.3-0.alpha-1", SHA):
             with self.subTest(ref=ref):
                 self.assertEqual(
                     build_github_bootstrap_plan(idkmesh_ref=ref).idkmesh_ref,
                     ref,
                 )
 
+    def test_release_tag_rejects_non_semantic_versions(self):
+        for ref in (
+            "v01.2.3",
+            "v1.02.3",
+            "v1.2.03",
+            "v1.2.3-01",
+            "v1.2.3-rc.",
+            "v1.2.3-rc..1",
+        ):
+            with self.subTest(ref=ref):
+                with self.assertRaises(BootstrapPlanError) as caught:
+                    build_github_bootstrap_plan(idkmesh_ref=ref)
+                self.assertEqual(caught.exception.code, "unpinned_idkmesh_ref")
+
     def test_unsafe_default_branch_names_fail_closed(self):
-        for branch in ("", "../main", "feature//x", "bad branch", "main.lock", ".main"):
+        for branch in (
+            "",
+            "../main",
+            "feature//x",
+            "feature/.hidden",
+            "feature/main.lock/x",
+            "bad branch",
+            "main.lock",
+            ".main",
+        ):
             with self.subTest(branch=branch):
                 with self.assertRaises(BootstrapPlanError) as caught:
                     build_github_bootstrap_plan(
@@ -172,7 +195,17 @@ class GitHubBootstrapPlanTests(unittest.TestCase):
         self.assertTrue(all(item.automatic is False for item in plan.owner_actions))
 
     def test_unsafe_paths_are_rejected(self):
-        for path in ("/absolute", "../escape", "a//b", "a\\b"):
+        for path in (
+            "/absolute",
+            "../escape",
+            "a//b",
+            "a\\b",
+            ".git/config",
+            ".GIT/config",
+            "safe/.git/config",
+            "line\nbreak",
+            "control\x1fcharacter",
+        ):
             with self.subTest(path=path):
                 with self.assertRaises(BootstrapPlanError) as caught:
                     BootstrapFileSpec(

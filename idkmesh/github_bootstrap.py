@@ -44,8 +44,13 @@ EXECUTION_EFFECTS = frozenset(
 )
 
 _FULL_SHA = re.compile(r"[0-9a-f]{40}\Z")
+_SEMVER_NUMBER = r"(?:0|[1-9][0-9]*)"
+_SEMVER_PRERELEASE_ID = (
+    r"(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)"
+)
 _RELEASE_TAG = re.compile(
-    r"v[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z][0-9A-Za-z.-]*)?\Z"
+    rf"v{_SEMVER_NUMBER}\.{_SEMVER_NUMBER}\.{_SEMVER_NUMBER}"
+    rf"(?:-{_SEMVER_PRERELEASE_ID}(?:\.{_SEMVER_PRERELEASE_ID})*)?\Z"
 )
 _SAFE_BRANCH = re.compile(r"[A-Za-z0-9][A-Za-z0-9._/-]{0,127}\Z")
 
@@ -61,10 +66,17 @@ class BootstrapPlanError(ValueError):
 def _repo_path(value: object) -> str:
     if not isinstance(value, str) or not value:
         raise BootstrapPlanError("invalid_path", "repository path must be non-empty")
-    if value.startswith("/") or "\\" in value or "\x00" in value:
+    if (
+        value.startswith("/")
+        or "\\" in value
+        or any(ord(character) < 32 or ord(character) == 127 for character in value)
+    ):
         raise BootstrapPlanError("invalid_path", f"unsafe repository path: {value!r}")
     parts = value.split("/")
-    if any(part in {"", ".", ".."} for part in parts):
+    if any(
+        part in {"", ".", ".."} or part.casefold() == ".git"
+        for part in parts
+    ):
         raise BootstrapPlanError("invalid_path", f"unsafe repository path: {value!r}")
     return value
 
@@ -86,9 +98,10 @@ def _pinned_idkmesh_ref(value: object) -> str:
 def _default_branch(value: object) -> str:
     if not isinstance(value, str) or _SAFE_BRANCH.fullmatch(value) is None:
         raise BootstrapPlanError("invalid_default_branch", "unsupported branch name")
+    parts = value.split("/")
     if (
-        value.startswith(".")
-        or value.endswith(("/", ".", ".lock"))
+        any(part.startswith(".") or part.endswith((".", ".lock")) for part in parts)
+        or value.endswith("/")
         or "//" in value
         or ".." in value
         or "@{" in value
