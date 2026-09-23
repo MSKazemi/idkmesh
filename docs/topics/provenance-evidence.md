@@ -1,7 +1,7 @@
 ---
 title: "AI Provenance, Evidence, and Reproducible Agent Workflows — IDKMesh"
 description: "Bind AI-agent claims to exact artifacts, identities, evaluations, and reproducible evidence so results remain inspectable after the model run or chat is gone."
-image: "/idkmesh/assets/idkmesh-social.png"
+image: "/assets/idkmesh-social.png"
 ---
 
 # AI provenance, evidence, and reproducibility
