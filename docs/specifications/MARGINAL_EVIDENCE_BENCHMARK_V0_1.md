@@ -129,11 +129,14 @@ The strategy is resolved only when:
 1. every candidate has a numeric, finite, uncensored
    `delta_effective_votes`;
 2. every candidate has a sufficient bootstrap result;
-3. every candidate has a finite effective-vote-delta interval;
-4. the largest point estimate is unique;
-5. the top point estimate is positive and its interval lower bound is strictly
+3. every configured bootstrap replicate produces a resolved effective-vote
+   delta for every candidate; v0.1 does not use a tuned partial-replicate
+   threshold;
+4. every candidate has a finite effective-vote-delta interval;
+5. the largest point estimate is unique;
+6. the top point estimate is positive and its interval lower bound is strictly
    greater than zero;
-6. the top candidate's interval lower bound is **strictly greater** than every
+7. the top candidate's interval lower bound is **strictly greater** than every
    other candidate's interval upper bound.
 
 Condition 5 is the v0.1 safe stop rule: if the audited design rows do not
