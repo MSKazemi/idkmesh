@@ -26,6 +26,8 @@ policy changes or merge decisions.
 
 ## Routing and Orchestration Experiments
 
+- [Adaptive Policy Evidence CLI](ADAPTIVE_POLICY_EVIDENCE_CLI.md) — deterministic
+  evidence extraction for shadow-policy cohort and outcome records.
 - [Physarum adaptive compute routing](PHYSARUM_N3_READINESS.md) — readiness
   boundary for the N3 routing simulation and its stress evidence.
 
