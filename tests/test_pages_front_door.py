@@ -31,7 +31,7 @@ from datetime import date
 from pathlib import Path
 from xml.etree import ElementTree
 
-from tools.build_sitemap import BASE, declared_locations, published_pages
+from tools.build_sitemap import BASE, _has_front_matter, declared_locations, published_pages
 
 ROOT = Path(__file__).resolve().parents[1]
 DOCS = ROOT / "docs"
@@ -71,6 +71,20 @@ class SitemapTests(unittest.TestCase):
             [],
             "docs/sitemap.xml declares URLs that no source file produces; a "
             f"sitemap pointing at 404s is worse than none: {extra}",
+        )
+
+    def test_readme_directory_hubs_remain_frontmatter_free(self) -> None:
+        offenders = sorted(
+            path.relative_to(DOCS).as_posix()
+            for path in DOCS.rglob("README.md")
+            if path.parent != DOCS and _has_front_matter(path)
+        )
+        self.assertEqual(
+            [],
+            offenders,
+            "a metadata-bearing nested README may publish as README.html rather "
+            "than the directory index; use index.md for public hubs: "
+            f"{offenders}",
         )
 
     def test_topic_hub_uses_explicit_index_source(self) -> None:
