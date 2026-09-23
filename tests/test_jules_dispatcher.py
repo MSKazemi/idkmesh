@@ -270,6 +270,53 @@ def test_existing_api_session_is_reused_instead_of_duplicated():
     assert "existing" in api.comments[0][1]
 
 
+def test_existing_session_match_survives_issue_title_edit():
+    queued = issue(70, "agent-ready")
+    old_title = deepcopy(queued)
+    old_title["title"] = "old issue title"
+    existing = {
+        "name": "sessions/existing-old-title",
+        "url": "https://jules.google.com/session/existing-old-title",
+        "title": jd.session_title("MSKazemi/idkmesh", old_title),
+        "state": "IN_PROGRESS",
+    }
+    queued["title"] = "new issue title after dispatch"
+    api = FakeAPI(issues=[queued])
+    jules = FakeJules(sessions=[existing])
+
+    assert jd.dispatch(
+        api,
+        POLICY,
+        jules_api=jules,
+        starting_branch="main",
+    ) == [70]
+    assert jules.created == []
+    assert "existing-old-title" in api.comments[0][1]
+
+
+def test_reconcile_session_match_survives_issue_title_edit():
+    active = issue(71, "agent:jules-dispatched")
+    original = deepcopy(active)
+    original["title"] = "title at dispatch time"
+    session = {
+        "name": "sessions/title-edit",
+        "title": jd.session_title("MSKazemi/idkmesh", original),
+        "state": "IN_PROGRESS",
+        "updateTime": "2026-09-23T17:59:00Z",
+    }
+    active["title"] = "later edited title"
+    api = FakeAPI(issues=[active])
+
+    assert jd.reconcile_active_sessions(
+        api,
+        POLICY,
+        jules_api=FakeJules(sessions=[session]),
+        now=NOW,
+    ) == []
+    assert api.added == []
+    assert api.removed == []
+
+
 def test_failed_existing_session_does_not_block_explicit_retry():
     queued = issue(8, "agent-ready")
     failed = {
