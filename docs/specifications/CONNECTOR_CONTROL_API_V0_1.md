@@ -496,6 +496,9 @@ The `preset` resolves to maintainer-controlled executable/arguments. WorkUnit co
 
 ## 19. Error envelope
 
+Reference implementation: `idkmesh.connector_errors` provides the stdlib-only error vocabulary, retryability defaults, JSON envelope, and recursive credential/header redaction boundary used by connector implementations.
+
+
 Example:
 
 ```json
