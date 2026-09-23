@@ -9,6 +9,7 @@ meaning of an existing version.
 
 - [Benchmark Cohort Index v0.1](BENCHMARK_COHORT_V0_1.md) — freezes a replayable
   task set over existing WorkUnit and evaluator objects.
+- [CandidateReference v0.1](CANDIDATE_REFERENCE_V0_1.md) — binds a discovered PR or artifact bundle to an immutable provider-neutral candidate identity without granting verification or integration authority.
 - [Worker ResultManifest v0.1](RESULT_MANIFEST_V0_1.md) — records worker-produced
   artifacts and claims without granting acceptance authority.
 - [Run Evidence Report v0.1](RUN_EVIDENCE_REPORT_V0_1.md) — aggregates attempt
