@@ -125,7 +125,9 @@ Primary references checked for this guide:
 - Amazon Q Developer for GitHub: https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/amazon-q-for-github.html
 - Amazon Q Developer GitHub quickstart: https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/github-quickstart.html
 - Amazon Q Developer pricing: https://aws.amazon.com/q/developer/pricing/
-- Google Gemini CLI -> Antigravity transition: https://developers.googleblog.com/an-important-update-transitioning-gemini-cli-to-antigravity-cli/\n- Antigravity CLI headless mode: https://antigravity.google/docs/cli/headless/\n- Antigravity CLI installation/auth: https://antigravity.google/docs/cli-install
+- Google Gemini CLI -> Antigravity transition: https://developers.googleblog.com/an-important-update-transitioning-gemini-cli-to-antigravity-cli/
+- Antigravity CLI headless mode: https://antigravity.google/docs/cli/headless/
+- Antigravity CLI installation/auth: https://antigravity.google/docs/cli-install
 - goose: https://block.github.io/goose/
 - SWE-agent / mini-SWE-agent: https://github.com/SWE-agent/SWE-agent and https://mini-swe-agent.com/
 - Aider model/provider documentation: https://aider.chat/docs/llms.html

@@ -30,24 +30,60 @@ class AgentPresetTests(unittest.TestCase):
             BUILTIN_AGENT_PRESETS["evil"] = get_builtin_preset("goose-local")
 
     def test_shell_executable_is_rejected(self):
-        with self.assertRaisesRegex(ValueError, "shell"):
+        for executable in ("bash", "BASH.EXE", "/bin/bash", "bin/bash"):
+            with self.subTest(executable=executable):
+                with self.assertRaisesRegex(ValueError, "shell|PATH-resolved"):
+                    AgentPreset(
+                        preset_id="bad",
+                        agent_family="bad",
+                        executable=executable,
+                        model_connection_ref="model:x",
+                        execution_connection_ref="execution:x",
+                    )
+
+    def test_repository_and_host_credentials_are_rejected(self):
+        for name in ("GITHUB_TOKEN", "GEMINI_API_KEY", "CUSTOM_PASSWORD"):
+            with self.subTest(name=name):
+                with self.assertRaisesRegex(ValueError, "credential"):
+                    AgentPreset(
+                        preset_id="bad",
+                        agent_family="bad",
+                        executable="agent",
+                        model_connection_ref="model:x",
+                        execution_connection_ref="execution:x",
+                        env_allowlist=(name,),
+                    )
+
+    def test_non_string_argv_and_malformed_connection_refs_fail_closed(self):
+        with self.assertRaisesRegex(ValueError, "fixed_args"):
             AgentPreset(
                 preset_id="bad",
                 agent_family="bad",
-                executable="bash",
+                executable="agent",
+                fixed_args=(1,),
                 model_connection_ref="model:x",
                 execution_connection_ref="execution:x",
             )
+        for reference in ("model", "model:", "model:x/y", "model:x\n"):
+            with self.subTest(reference=reference):
+                with self.assertRaisesRegex(ValueError, "model_connection_ref"):
+                    AgentPreset(
+                        preset_id="bad",
+                        agent_family="bad",
+                        executable="agent",
+                        model_connection_ref=reference,
+                        execution_connection_ref="execution:x",
+                    )
 
-    def test_repository_and_host_credentials_are_rejected(self):
-        with self.assertRaisesRegex(ValueError, "credential"):
+    def test_environment_allowlist_rejects_duplicates(self):
+        with self.assertRaisesRegex(ValueError, "duplicates"):
             AgentPreset(
                 preset_id="bad",
                 agent_family="bad",
                 executable="agent",
                 model_connection_ref="model:x",
                 execution_connection_ref="execution:x",
-                env_allowlist=("GITHUB_TOKEN",),
+                env_allowlist=("LANG", "LANG"),
             )
 
     def test_acceptance_authority_cannot_be_enabled(self):
