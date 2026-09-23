@@ -15,7 +15,7 @@ permissions:
 
 concurrency:
   group: public-discovery-monitor
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   probe:
