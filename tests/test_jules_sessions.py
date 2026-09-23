@@ -130,6 +130,7 @@ class JulesSessionCreationTests(unittest.TestCase):
         self.assertEqual(handle.session_name, "sessions/123")
         self.assertEqual(handle.session_id, "123")
         self.assertEqual(handle.work_unit_id, "wu-123")
+        self.assertEqual(handle.repository, "MSKazemi/idkmesh")
         self.assertEqual(handle.requested_source_revision, REVISION)
         self.assertEqual(handle.revision_binding, "scm_pinned_branch")
         self.assertTrue(handle.require_plan_approval)
