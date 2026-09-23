@@ -1,0 +1,388 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idkmesh.org/schemas/enterprise-control-profile-v0.1.schema.json",
+  "title": "IDKMesh Enterprise Control Profile v0.1",
+  "description": "Declared enterprise deployment/control policy input. The profile describes intended controls and grants no runtime authority or evidence that a control is actually enforced.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "kind",
+    "schema_version",
+    "profile_id",
+    "semantics",
+    "deployment",
+    "identity",
+    "authority",
+    "data",
+    "secrets",
+    "audit",
+    "reliability",
+    "supply_chain",
+    "change_management",
+    "enforcement"
+  ],
+  "properties": {
+    "kind": {
+      "const": "idkmesh-enterprise-control-profile"
+    },
+    "schema_version": {
+      "const": "0.1"
+    },
+    "profile_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+    },
+    "semantics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "profile_role",
+        "control_evidence",
+        "grants_runtime_authority"
+      ],
+      "properties": {
+        "profile_role": {
+          "const": "policy_input_only"
+        },
+        "control_evidence": {
+          "const": "declared_not_observed"
+        },
+        "grants_runtime_authority": {
+          "const": false
+        }
+      }
+    },
+    "deployment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "profile",
+        "tenant_scope",
+        "remote_api_enabled",
+        "coordinator_lifecycle",
+        "canonical_code_authority"
+      ],
+      "properties": {
+        "profile": {
+          "enum": [
+            "g0_local_operator",
+            "g1_github_native_team",
+            "g2_self_hosted_team",
+            "g3_multi_tenant_service"
+          ]
+        },
+        "tenant_scope": {
+          "enum": [
+            "single_project",
+            "single_org",
+            "multi_tenant"
+          ]
+        },
+        "remote_api_enabled": {
+          "type": "boolean"
+        },
+        "coordinator_lifecycle": {
+          "enum": [
+            "local_process",
+            "github_actions_ephemeral",
+            "long_lived_service"
+          ]
+        },
+        "canonical_code_authority": {
+          "const": "github_protected_integration"
+        }
+      }
+    },
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "human_source",
+        "service_source",
+        "high_risk_distinct_approval",
+        "break_glass_enabled"
+      ],
+      "properties": {
+        "human_source": {
+          "enum": [
+            "local_trusted_operator",
+            "github",
+            "oidc",
+            "saml",
+            "external"
+          ]
+        },
+        "service_source": {
+          "enum": [
+            "process",
+            "github_actions",
+            "oidc",
+            "mtls",
+            "external"
+          ]
+        },
+        "high_risk_distinct_approval": {
+          "type": "boolean"
+        },
+        "break_glass_enabled": {
+          "type": "boolean"
+        }
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "worker_can_merge",
+        "verifier_can_merge",
+        "worker_can_modify_policy",
+        "integration_authority"
+      ],
+      "properties": {
+        "worker_can_merge": {
+          "const": false
+        },
+        "verifier_can_merge": {
+          "const": false
+        },
+        "worker_can_modify_policy": {
+          "const": false
+        },
+        "integration_authority": {
+          "enum": [
+            "github_protected_integration",
+            "external_human_or_governance"
+          ]
+        }
+      }
+    },
+    "data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "default_classification",
+        "allowed_classifications",
+        "external_processing",
+        "egress_default"
+      ],
+      "properties": {
+        "default_classification": {
+          "enum": [
+            "public",
+            "internal",
+            "confidential",
+            "restricted"
+          ]
+        },
+        "allowed_classifications": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "public",
+              "internal",
+              "confidential",
+              "restricted"
+            ]
+          }
+        },
+        "external_processing": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "public",
+            "internal",
+            "confidential",
+            "restricted"
+          ],
+          "properties": {
+            "public": {
+              "type": "boolean"
+            },
+            "internal": {
+              "type": "boolean"
+            },
+            "confidential": {
+              "type": "boolean"
+            },
+            "restricted": {
+              "type": "boolean"
+            }
+          }
+        },
+        "egress_default": {
+          "enum": [
+            "deny",
+            "allow"
+          ]
+        }
+      }
+    },
+    "secrets": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "backend",
+        "long_lived_cloud_keys_allowed",
+        "raw_secret_material_in_work_units",
+        "raw_secret_material_in_evidence"
+      ],
+      "properties": {
+        "backend": {
+          "enum": [
+            "none",
+            "environment",
+            "github_actions",
+            "oidc_workload_identity",
+            "external_secret_manager"
+          ]
+        },
+        "long_lived_cloud_keys_allowed": {
+          "type": "boolean"
+        },
+        "raw_secret_material_in_work_units": {
+          "const": false
+        },
+        "raw_secret_material_in_evidence": {
+          "const": false
+        }
+      }
+    },
+    "audit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enabled",
+        "tamper_evident_required",
+        "retention_days",
+        "export"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "tamper_evident_required": {
+          "type": "boolean"
+        },
+        "retention_days": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 36500
+        },
+        "export": {
+          "enum": [
+            "none",
+            "file",
+            "siem",
+            "archive"
+          ]
+        }
+      }
+    },
+    "reliability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "availability_target",
+        "rpo_minutes",
+        "rto_minutes",
+        "backups_required",
+        "restore_test_required"
+      ],
+      "properties": {
+        "availability_target": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "rpo_minutes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "rto_minutes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "backups_required": {
+          "type": "boolean"
+        },
+        "restore_test_required": {
+          "type": "boolean"
+        }
+      }
+    },
+    "supply_chain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "immutable_action_pins_required",
+        "sbom_required",
+        "provenance_required",
+        "vulnerability_response_sla_hours"
+      ],
+      "properties": {
+        "immutable_action_pins_required": {
+          "type": "boolean"
+        },
+        "sbom_required": {
+          "type": "boolean"
+        },
+        "provenance_required": {
+          "type": "boolean"
+        },
+        "vulnerability_response_sla_hours": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 8760
+        }
+      }
+    },
+    "change_management": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protected_integration_required",
+        "policy_change_approval_required",
+        "break_glass_reason_required"
+      ],
+      "properties": {
+        "protected_integration_required": {
+          "type": "boolean"
+        },
+        "policy_change_approval_required": {
+          "type": "boolean"
+        },
+        "break_glass_reason_required": {
+          "type": "boolean"
+        }
+      }
+    },
+    "enforcement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "unknown_control_behavior",
+        "startup_profile_validation"
+      ],
+      "properties": {
+        "mode": {
+          "enum": [
+            "audit",
+            "enforce"
+          ]
+        },
+        "unknown_control_behavior": {
+          "enum": [
+            "warn",
+            "fail"
+          ]
+        },
+        "startup_profile_validation": {
+          "const": true
+        }
+      }
+    }
+  }
+}

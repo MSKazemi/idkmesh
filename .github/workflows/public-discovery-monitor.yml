@@ -1,18 +1,7 @@
 name: Public Discovery Monitor
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'docs/index.html'
-      - 'docs/topics/**'
-      - 'docs/sitemap.xml'
-      - 'docs/llms.txt'
-      - 'docs/_config.yml'
-      - 'docs/7c1f6d4a9b2e3c8f5a0d1e7b4c6f8a2d.txt'
-      - 'tools/check_public_discovery.py'
-      - '.github/workflows/public-discovery-monitor.yml'
+  page_build:
   schedule:
     - cron: '43 5 * * *'
   workflow_dispatch:
@@ -30,9 +19,26 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
-      - name: Check out canonical repository state
+      - name: Require a successful Pages build event
+        if: github.event_name == 'page_build'
+        env:
+          PAGES_STATUS: ${{ github.event.build.status }}
+          PAGES_COMMIT: ${{ github.event.build.commit }}
+        shell: bash
+        run: |
+          if [ "$PAGES_STATUS" != "built" ]; then
+            echo "Pages build did not succeed: status=$PAGES_STATUS commit=$PAGES_COMMIT" >&2
+            exit 1
+          fi
+          if [ -z "$PAGES_COMMIT" ]; then
+            echo "Pages build event did not identify the deployed commit." >&2
+            exit 1
+          fi
+
+      - name: Check out the deployed repository revision
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
+          ref: ${{ github.event_name == 'page_build' && github.event.build.commit || github.sha }}
           persist-credentials: false
 
       - name: Set up Python
@@ -52,6 +58,6 @@ jobs:
               echo "Public discovery surface did not converge after bounded retries." >&2
               exit 1
             fi
-            echo "Discovery probe attempt $attempt failed; retrying after Pages propagation."
+            echo "Discovery probe attempt $attempt failed after Pages build; retrying for edge propagation."
             sleep 30
           done

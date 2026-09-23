@@ -26,6 +26,7 @@ import subprocess
 import sys
 import unittest
 from pathlib import Path
+import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT))
@@ -148,6 +149,7 @@ class InsufficientCandidatesTests(unittest.TestCase):
 
 
 class DeterminismTests(unittest.TestCase):
+    @pytest.mark.slow
     def test_same_seed_and_replicates_reproduce_identically(self):
         first = gate_audit.audit(
             json.loads(EXAMPLE_INPUT.read_text(encoding="utf-8")),
@@ -159,6 +161,7 @@ class DeterminismTests(unittest.TestCase):
         self.assertEqual(gate_audit.render_json(first),
                           gate_audit.render_json(second))
 
+    @pytest.mark.slow
     def test_different_seed_can_change_the_interval(self):
         input_data = json.loads(EXAMPLE_INPUT.read_text(encoding="utf-8"))
         a = gate_audit.audit(
@@ -507,6 +510,7 @@ class CommittedV02ExampleTests(unittest.TestCase):
         REPO_ROOT / "examples" / "gate-audit"
         / "gate-audit-report-v0.2.example.json")
 
+    @pytest.mark.slow
     def test_regenerates_from_the_same_input_with_cli_default_bootstrap_params(self):
         report = gate_audit.audit_file(
             EXAMPLE_INPUT,

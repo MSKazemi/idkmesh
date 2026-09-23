@@ -1,0 +1,80 @@
+{
+  "kind": "idkmesh-enterprise-control-profile",
+  "schema_version": "0.1",
+  "profile_id": "example-g2-self-hosted",
+  "semantics": {
+    "profile_role": "policy_input_only",
+    "control_evidence": "declared_not_observed",
+    "grants_runtime_authority": false
+  },
+  "deployment": {
+    "profile": "g2_self_hosted_team",
+    "tenant_scope": "single_org",
+    "remote_api_enabled": true,
+    "coordinator_lifecycle": "long_lived_service",
+    "canonical_code_authority": "github_protected_integration"
+  },
+  "identity": {
+    "human_source": "oidc",
+    "service_source": "oidc",
+    "high_risk_distinct_approval": true,
+    "break_glass_enabled": true
+  },
+  "authority": {
+    "worker_can_merge": false,
+    "verifier_can_merge": false,
+    "worker_can_modify_policy": false,
+    "integration_authority": "github_protected_integration"
+  },
+  "data": {
+    "default_classification": "internal",
+    "allowed_classifications": [
+      "public",
+      "internal",
+      "confidential",
+      "restricted"
+    ],
+    "external_processing": {
+      "public": true,
+      "internal": false,
+      "confidential": false,
+      "restricted": false
+    },
+    "egress_default": "deny"
+  },
+  "secrets": {
+    "backend": "oidc_workload_identity",
+    "long_lived_cloud_keys_allowed": false,
+    "raw_secret_material_in_work_units": false,
+    "raw_secret_material_in_evidence": false
+  },
+  "audit": {
+    "enabled": true,
+    "tamper_evident_required": true,
+    "retention_days": 730,
+    "export": "siem"
+  },
+  "reliability": {
+    "availability_target": 0.995,
+    "rpo_minutes": 15,
+    "rto_minutes": 60,
+    "backups_required": true,
+    "restore_test_required": true
+  },
+  "supply_chain": {
+    "immutable_action_pins_required": true,
+    "sbom_required": true,
+    "provenance_required": true,
+    "vulnerability_response_sla_hours": 24
+  },
+  "change_management": {
+    "protected_integration_required": true,
+    "policy_change_approval_required": true,
+    "break_glass_reason_required": true
+  },
+  "enforcement": {
+    "mode": "enforce",
+    "unknown_control_behavior": "fail",
+    "startup_profile_validation": true
+  }
+}

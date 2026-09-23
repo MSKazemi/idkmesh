@@ -6,9 +6,9 @@ reviewer, merge authority, or replacement for the Jules dispatcher.
 
 ## Schedule
 
-As configured on 2026-09-22, the worker runs **once every hour**, which is the
-maximum cadence supported by the external ChatGPT task scheduler used for this
-lane.
+The intended cadence recorded on 2026-09-22 was **once every hour**. The
+external scheduler is the source of truth for its current configuration and
+actual runs; this repository does not verify that cadence.
 
 The scheduler is external to GitHub. This document records the repository-facing
 contract; it does not make GitHub Actions responsible for starting the worker.
@@ -34,20 +34,23 @@ Worker completion is never treated as acceptance.
 
 The first two ChatGPT-created pull requests predate the `chatgpt/` branch-prefix rule:
 
-- #639 uses `ci/reduce-pr-fanout-2026-09-22`;
+- #639 used `ci/reduce-pr-fanout-2026-09-22` and has merged;
 - #640 uses `docs/chatgpt-hourly-quality-worker`.
 
-While either remains open, the worker treats both as scheduled-worker work and converges them before opening fresh work when an actionable repair exists. This is a temporary compatibility rule, not permission to create additional branches outside `chatgpt/`.
+While #640 remains open, the worker treats it as scheduled-worker work and converges it before opening fresh work when an actionable repair exists. This is a temporary compatibility rule, not permission to create additional branches outside `chatgpt/`.
 
 ## Non-overlap with Jules
 
 The scheduled ChatGPT lane must not compete with the repository-operated Jules
 dispatcher.
 
-It therefore does **not** take issues carrying either execution/queue label:
+It therefore does **not** take issues carrying any Jules execution or queue label:
 
 - `agent-ready`;
-- `jules`.
+- `agent:jules-eligible`;
+- `agent:jules-dispatched`;
+- `agent:jules-needs-attention`;
+- `jules` (legacy manual fallback).
 
 It also fails closed on the Jules hard-veto classes:
 

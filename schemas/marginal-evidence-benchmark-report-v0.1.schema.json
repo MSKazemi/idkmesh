@@ -1,0 +1,864 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idkmesh.org/schemas/marginal-evidence-benchmark-report-v0.1.schema.json",
+  "title": "IDKMesh Marginal Evidence Benchmark Report v0.1",
+  "description": "Diagnostic held-out comparison of a preregistered marginal-evidence selector and four simple baselines. The report grants no routing, verification, acceptance, EvaluatorPlan, or merge authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "benchmark_id",
+    "gate_id",
+    "evidence_class",
+    "authority",
+    "analysis",
+    "splits",
+    "selection_plan",
+    "holdout_results",
+    "warnings",
+    "provenance"
+  ],
+  "properties": {
+    "schema": {
+      "const": "marginal-evidence-benchmark-report-v0.1"
+    },
+    "benchmark_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "gate_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "evidence_class": {
+      "enum": [
+        "synthetic",
+        "observed"
+      ]
+    },
+    "authority": {
+      "const": "diagnostic_only"
+    },
+    "analysis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "current_verifier_ids",
+        "candidate_verifier_ids",
+        "verifier_families",
+        "random_seed",
+        "bootstrap",
+        "selection_rule_version"
+      ],
+      "properties": {
+        "current_verifier_ids": {
+          "$ref": "#/$defs/id_array"
+        },
+        "candidate_verifier_ids": {
+          "$ref": "#/$defs/id_array"
+        },
+        "verifier_families": {
+          "type": "object",
+          "minProperties": 2,
+          "propertyNames": {
+            "minLength": 1
+          },
+          "additionalProperties": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "random_seed": {
+          "type": "integer"
+        },
+        "bootstrap": {
+          "$ref": "#/$defs/bootstrap_config"
+        },
+        "selection_rule_version": {
+          "const": "marginal-selection-interval-dominance-v0.1"
+        }
+      }
+    },
+    "splits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "design",
+        "holdout"
+      ],
+      "properties": {
+        "design": {
+          "$ref": "#/$defs/split"
+        },
+        "holdout": {
+          "$ref": "#/$defs/split"
+        }
+      }
+    },
+    "selection_plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rule_version",
+        "source",
+        "design_input_digest_sha256",
+        "current_verifier_ids",
+        "candidate_verifier_ids",
+        "selectors",
+        "digest_sha256"
+      ],
+      "properties": {
+        "rule_version": {
+          "const": "marginal-selection-interval-dominance-v0.1"
+        },
+        "source": {
+          "const": "design_only"
+        },
+        "current_verifier_ids": {
+          "$ref": "#/$defs/id_array"
+        },
+        "candidate_verifier_ids": {
+          "$ref": "#/$defs/id_array"
+        },
+        "selectors": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "allOf": [
+                {
+                  "$ref": "#/$defs/selector"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "strategy": {
+                      "const": "marginal_effective_votes"
+                    }
+                  },
+                  "required": [
+                    "strategy"
+                  ]
+                }
+              ]
+            },
+            {
+              "allOf": [
+                {
+                  "$ref": "#/$defs/selector"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "strategy": {
+                      "const": "random_eligible"
+                    }
+                  },
+                  "required": [
+                    "strategy"
+                  ]
+                }
+              ]
+            },
+            {
+              "allOf": [
+                {
+                  "$ref": "#/$defs/selector"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "strategy": {
+                      "const": "highest_standalone_accuracy"
+                    }
+                  },
+                  "required": [
+                    "strategy"
+                  ]
+                }
+              ]
+            },
+            {
+              "allOf": [
+                {
+                  "$ref": "#/$defs/selector"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "strategy": {
+                      "const": "different_family_first"
+                    }
+                  },
+                  "required": [
+                    "strategy"
+                  ]
+                }
+              ]
+            },
+            {
+              "allOf": [
+                {
+                  "$ref": "#/$defs/selector"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "strategy": {
+                      "const": "minimum_mean_pairwise_error_correlation"
+                    }
+                  },
+                  "required": [
+                    "strategy"
+                  ]
+                }
+              ]
+            }
+          ],
+          "items": false,
+          "minItems": 5,
+          "maxItems": 5
+        },
+        "digest_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "design_input_digest_sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "holdout_results": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "allOf": [
+            {
+              "$ref": "#/$defs/holdout_result"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "strategy": {
+                  "const": "marginal_effective_votes"
+                }
+              },
+              "required": [
+                "strategy"
+              ]
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {
+              "$ref": "#/$defs/holdout_result"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "strategy": {
+                  "const": "random_eligible"
+                }
+              },
+              "required": [
+                "strategy"
+              ]
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {
+              "$ref": "#/$defs/holdout_result"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "strategy": {
+                  "const": "highest_standalone_accuracy"
+                }
+              },
+              "required": [
+                "strategy"
+              ]
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {
+              "$ref": "#/$defs/holdout_result"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "strategy": {
+                  "const": "different_family_first"
+                }
+              },
+              "required": [
+                "strategy"
+              ]
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {
+              "$ref": "#/$defs/holdout_result"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "strategy": {
+                  "const": "minimum_mean_pairwise_error_correlation"
+                }
+              },
+              "required": [
+                "strategy"
+              ]
+            }
+          ]
+        }
+      ],
+      "items": false,
+      "minItems": 5,
+      "maxItems": 5
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tool",
+        "tool_version",
+        "config_digest_sha256",
+        "selection_plan_digest_sha256"
+      ],
+      "properties": {
+        "tool": {
+          "const": "idkmesh marginal-evidence-benchmark"
+        },
+        "tool_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "config_digest_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "selection_plan_digest_sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "id_array": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "bootstrap_config": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "replicates",
+        "seed",
+        "confidence_level"
+      ],
+      "properties": {
+        "replicates": {
+          "type": "integer",
+          "minimum": 100
+        },
+        "seed": {
+          "type": "integer"
+        },
+        "confidence_level": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "exclusiveMaximum": 1
+        }
+      }
+    },
+    "split": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "matrix",
+        "input_digest_sha256",
+        "non_probe_candidates",
+        "probe_candidates"
+      ],
+      "properties": {
+        "matrix": {
+          "type": "string",
+          "minLength": 1
+        },
+        "input_digest_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "non_probe_candidates": {
+          "type": "integer",
+          "minimum": 2
+        },
+        "probe_candidates": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "strategy": {
+      "enum": [
+        "marginal_effective_votes",
+        "random_eligible",
+        "highest_standalone_accuracy",
+        "different_family_first",
+        "minimum_mean_pairwise_error_correlation"
+      ]
+    },
+    "selector": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "strategy",
+        "status",
+        "selected_verifier_id",
+        "reason_code",
+        "design_score"
+      ],
+      "properties": {
+        "strategy": {
+          "$ref": "#/$defs/strategy"
+        },
+        "status": {
+          "enum": [
+            "selected",
+            "unresolved"
+          ]
+        },
+        "selected_verifier_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "reason_code": {
+          "type": "string",
+          "minLength": 1
+        },
+        "design_score": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "selected"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "selected_verifier_id": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "unresolved"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "selected_verifier_id": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "metric_interval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "point",
+        "ci_low",
+        "ci_high",
+        "replicates_used",
+        "replicates_undefined"
+      ],
+      "properties": {
+        "point": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "ci_low": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "ci_high": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "replicates_used": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "replicates_undefined": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "uncertainty": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "method",
+        "sampling_unit",
+        "confidence_level",
+        "replicates",
+        "seed",
+        "non_probe_candidates",
+        "min_candidates_for_inference",
+        "sufficient_for_inference",
+        "panel_error_delta",
+        "effective_votes_delta"
+      ],
+      "properties": {
+        "method": {
+          "const": "paired candidate-level nonparametric bootstrap (percentile interval, linear interpolation)"
+        },
+        "sampling_unit": {
+          "const": "non_probe_candidate_row"
+        },
+        "confidence_level": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "exclusiveMaximum": 1
+        },
+        "replicates": {
+          "type": "integer",
+          "minimum": 100
+        },
+        "seed": {
+          "type": "integer"
+        },
+        "non_probe_candidates": {
+          "type": "integer",
+          "minimum": 2
+        },
+        "min_candidates_for_inference": {
+          "const": 5
+        },
+        "sufficient_for_inference": {
+          "type": "boolean"
+        },
+        "panel_error_delta": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/metric_interval"
+            }
+          ]
+        },
+        "effective_votes_delta": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/metric_interval"
+            }
+          ]
+        }
+      }
+    },
+    "probe_effect": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "total",
+        "current_breached",
+        "augmented_breached",
+        "breaches_prevented",
+        "current_breach_rate",
+        "augmented_breach_rate"
+      ],
+      "properties": {
+        "total": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "current_breached": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "augmented_breached": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "breaches_prevented": {
+          "type": "integer"
+        },
+        "current_breach_rate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "augmented_breach_rate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "holdout_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "strategy",
+        "selection_status",
+        "selected_verifier_id",
+        "status",
+        "holdout_candidate_status",
+        "panel_error_delta",
+        "delta_effective_votes",
+        "standalone_accuracy",
+        "mean_error_correlation_with_current_panel",
+        "uncertainty",
+        "probe_effect",
+        "warnings"
+      ],
+      "properties": {
+        "strategy": {
+          "$ref": "#/$defs/strategy"
+        },
+        "selection_status": {
+          "enum": [
+            "selected",
+            "unresolved"
+          ]
+        },
+        "selected_verifier_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "status": {
+          "enum": [
+            "evaluated",
+            "evaluated_with_unresolved_metrics",
+            "not_evaluated"
+          ]
+        },
+        "holdout_candidate_status": {
+          "enum": [
+            "measured",
+            "unresolved",
+            null
+          ]
+        },
+        "panel_error_delta": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "delta_effective_votes": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "standalone_accuracy": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "mean_error_correlation_with_current_panel": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": -1,
+          "maximum": 1
+        },
+        "uncertainty": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/uncertainty"
+            }
+          ]
+        },
+        "probe_effect": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/probe_effect"
+            }
+          ]
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "not_evaluated"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "selection_status": {
+                "const": "unresolved"
+              },
+              "selected_verifier_id": {
+                "type": "null"
+              },
+              "holdout_candidate_status": {
+                "type": "null"
+              },
+              "panel_error_delta": {
+                "type": "null"
+              },
+              "delta_effective_votes": {
+                "type": "null"
+              },
+              "standalone_accuracy": {
+                "type": "null"
+              },
+              "mean_error_correlation_with_current_panel": {
+                "type": "null"
+              },
+              "uncertainty": {
+                "type": "null"
+              },
+              "probe_effect": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "enum": [
+                  "evaluated",
+                  "evaluated_with_unresolved_metrics"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "selection_status": {
+                "const": "selected"
+              },
+              "selected_verifier_id": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "evaluated"
+              }
+            },
+            "required": [
+              "status"
+            ]
+          },
+          "then": {
+            "properties": {
+              "holdout_candidate_status": {
+                "const": "measured"
+              },
+              "uncertainty": {
+                "$ref": "#/$defs/uncertainty"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "evaluated_with_unresolved_metrics"
+              }
+            },
+            "required": [
+              "status"
+            ]
+          },
+          "then": {
+            "properties": {
+              "holdout_candidate_status": {
+                "const": "unresolved"
+              },
+              "uncertainty": {
+                "$ref": "#/$defs/uncertainty"
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

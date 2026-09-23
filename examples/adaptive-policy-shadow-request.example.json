@@ -1,0 +1,75 @@
+{
+  "repository": "MSKazemi/idkmesh",
+  "source_revision_sha": "1111111111111111111111111111111111111111",
+  "captured_at": "2026-09-22T12:00:00Z",
+  "subsystem": "verification-allocation",
+  "policy": {
+    "id": "ave-core",
+    "version": "0.1",
+    "maturity": "N3"
+  },
+  "input_state": {
+    "work_unit_id": "illustrative-wu-1",
+    "review_utilization": 0.75,
+    "note": "Illustrative input only; not a real WorkUnit measurement."
+  },
+  "input_refs": [
+    "illustrative-work-unit:1"
+  ],
+  "hard_gates": [
+    {
+      "id": "evaluator-sovereignty",
+      "status": "pass",
+      "reason": "illustrative example only"
+    },
+    {
+      "id": "work-unit-binding",
+      "status": "pass",
+      "reason": "illustrative exact revision binding"
+    }
+  ],
+  "eligible_choices": [
+    {
+      "id": "baseline-single-verifier",
+      "class": "verifier-portfolio",
+      "reasons": [
+        "illustrative baseline"
+      ],
+      "metrics": {
+        "family_count": 1,
+        "review_units": 1
+      }
+    },
+    {
+      "id": "shadow-two-family-verifiers",
+      "class": "verifier-portfolio",
+      "reasons": [
+        "illustrative family-diverse alternative"
+      ],
+      "metrics": {
+        "family_count": 2,
+        "review_units": 2
+      }
+    }
+  ],
+  "recommendation": {
+    "selected_choice_id": "shadow-two-family-verifiers",
+    "baseline_choice_id": "baseline-single-verifier",
+    "exploration": false,
+    "reasons": [
+      "illustrative shadow recommendation only"
+    ],
+    "uncertainty": 0.5,
+    "expected_cost": {
+      "compute_units": 0,
+      "review_units": 2,
+      "human_attention_units": null
+    }
+  },
+  "evidence_refs": [
+    "illustrative-example-only"
+  ],
+  "limitations": [
+    "Synthetic request example; not real N3 evidence."
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "api_version": "idkmesh.io/v1alpha1",
+  "kind": "EnterpriseControlProfile",
+  "metadata": {
+    "name": "enterprise-production",
+    "environment": "production",
+    "enforcement_mode": "enforce"
+  },
+  "deployment": {
+    "profile": "G3",
+    "tenant_mode": "multi_tenant",
+    "tenant_isolation": "enforced",
+    "network_mode": "private_network"
+  },
+  "identity": {
+    "human_identity_source": "enterprise_sso",
+    "service_identity": "oidc_workload",
+    "mfa_required": true,
+    "high_risk_separation_of_duties": true
+  },
+  "data": {
+    "default_classification": "internal",
+    "external_processing_allowed_classes": [
+      "public",
+      "internal"
+    ],
+    "egress_mode": "allowlist"
+  },
+  "secrets": {
+    "backend": "external_secret_manager",
+    "workload_identity": "external_oidc",
+    "long_lived_cloud_keys_allowed": false
+  },
+  "audit": {
+    "append_only": true,
+    "integrity": "hash_chain",
+    "retention_days": 365,
+    "external_export_required": true,
+    "actor_policy_revision_required": true
+  },
+  "reliability": {
+    "availability_target_percent": 99.9,
+    "rpo_minutes": 15,
+    "rto_minutes": 60,
+    "restore_test_interval_days": 30,
+    "backpressure_required": true
+  },
+  "supply_chain": {
+    "immutable_action_pins_required": true,
+    "sbom_required": true,
+    "provenance_attestation_required": true,
+    "vulnerability_response_sla_hours": 72
+  },
+  "change_management": {
+    "high_risk_two_person_rule": true,
+    "break_glass": {
+      "enabled": true,
+      "time_bound_minutes": 30,
+      "reason_required": true,
+      "audit_required": true
+    }
+  }
+}

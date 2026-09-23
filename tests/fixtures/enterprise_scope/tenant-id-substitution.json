@@ -1,0 +1,15 @@
+{
+  "caller_scope": {
+    "tenant_id": "tenant-a",
+    "project_id": "project-main"
+  },
+  "attempted_substitution": {
+    "kind": "idkmesh-enterprise-resource-ref",
+    "schema_version": "0.1",
+    "tenant_id": "tenant-b",
+    "project_id": "project-main",
+    "resource_type": "claim",
+    "resource_id": "claim-88"
+  },
+  "expected_error": "scope_mismatch"
+}

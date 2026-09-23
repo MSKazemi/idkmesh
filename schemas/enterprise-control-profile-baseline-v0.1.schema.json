@@ -1,0 +1,251 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idkmesh.dev/schemas/enterprise-control-profile-v0.1.schema.json",
+  "title": "IDKMesh Enterprise Control Profile v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "api_version",
+    "kind",
+    "metadata",
+    "deployment",
+    "identity",
+    "data",
+    "secrets",
+    "audit",
+    "reliability",
+    "supply_chain",
+    "change_management"
+  ],
+  "properties": {
+    "api_version": {
+      "const": "idkmesh.io/v1alpha1"
+    },
+    "kind": {
+      "const": "EnterpriseControlProfile"
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "environment", "enforcement_mode"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+        },
+        "environment": {
+          "enum": ["development", "staging", "production"]
+        },
+        "enforcement_mode": {
+          "enum": ["audit", "enforce"]
+        }
+      }
+    },
+    "deployment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["profile", "tenant_mode", "tenant_isolation", "network_mode"],
+      "properties": {
+        "profile": {
+          "enum": ["G0", "G1", "G2", "G3"]
+        },
+        "tenant_mode": {
+          "enum": ["single_project", "single_organization", "multi_tenant"]
+        },
+        "tenant_isolation": {
+          "enum": ["not_applicable", "declared", "enforced"]
+        },
+        "network_mode": {
+          "enum": ["public", "controlled_egress", "private_network"]
+        }
+      }
+    },
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "human_identity_source",
+        "service_identity",
+        "mfa_required",
+        "high_risk_separation_of_duties"
+      ],
+      "properties": {
+        "human_identity_source": {
+          "enum": ["github", "enterprise_sso", "oidc", "saml"]
+        },
+        "service_identity": {
+          "enum": ["github_actions", "github_app", "oidc_workload", "managed_identity"]
+        },
+        "mfa_required": {
+          "type": "boolean"
+        },
+        "high_risk_separation_of_duties": {
+          "type": "boolean"
+        }
+      }
+    },
+    "data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "default_classification",
+        "external_processing_allowed_classes",
+        "egress_mode"
+      ],
+      "properties": {
+        "default_classification": {
+          "enum": ["public", "internal", "confidential", "restricted"]
+        },
+        "external_processing_allowed_classes": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": ["public", "internal", "confidential", "restricted"]
+          }
+        },
+        "egress_mode": {
+          "enum": ["unrestricted", "allowlist", "deny_by_default"]
+        }
+      }
+    },
+    "secrets": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "backend",
+        "workload_identity",
+        "long_lived_cloud_keys_allowed"
+      ],
+      "properties": {
+        "backend": {
+          "enum": ["github_environment", "external_secret_manager", "provider_managed"]
+        },
+        "workload_identity": {
+          "enum": ["none", "github_oidc", "external_oidc", "managed_identity"]
+        },
+        "long_lived_cloud_keys_allowed": {
+          "type": "boolean"
+        }
+      }
+    },
+    "audit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "append_only",
+        "integrity",
+        "retention_days",
+        "external_export_required",
+        "actor_policy_revision_required"
+      ],
+      "properties": {
+        "append_only": {
+          "type": "boolean"
+        },
+        "integrity": {
+          "enum": ["git_history", "hash_chain", "external_worm"]
+        },
+        "retention_days": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "external_export_required": {
+          "type": "boolean"
+        },
+        "actor_policy_revision_required": {
+          "type": "boolean"
+        }
+      }
+    },
+    "reliability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "availability_target_percent",
+        "rpo_minutes",
+        "rto_minutes",
+        "restore_test_interval_days",
+        "backpressure_required"
+      ],
+      "properties": {
+        "availability_target_percent": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "rpo_minutes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "rto_minutes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "restore_test_interval_days": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "backpressure_required": {
+          "type": "boolean"
+        }
+      }
+    },
+    "supply_chain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "immutable_action_pins_required",
+        "sbom_required",
+        "provenance_attestation_required",
+        "vulnerability_response_sla_hours"
+      ],
+      "properties": {
+        "immutable_action_pins_required": {
+          "type": "boolean"
+        },
+        "sbom_required": {
+          "type": "boolean"
+        },
+        "provenance_attestation_required": {
+          "type": "boolean"
+        },
+        "vulnerability_response_sla_hours": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "change_management": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["high_risk_two_person_rule", "break_glass"],
+      "properties": {
+        "high_risk_two_person_rule": {
+          "type": "boolean"
+        },
+        "break_glass": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["enabled", "time_bound_minutes", "reason_required", "audit_required"],
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "time_bound_minutes": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "reason_required": {
+              "type": "boolean"
+            },
+            "audit_required": {
+              "type": "boolean"
+            }
+          }
+        }
+      }
+    }
+  }
+}

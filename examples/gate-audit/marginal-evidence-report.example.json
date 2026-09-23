@@ -1,0 +1,82 @@
+{
+  "schema": "marginal-evidence-report-v0.1",
+  "gate_id": "example-five-verifier-gate",
+  "evidence_class": "synthetic",
+  "authority": "diagnostic_only",
+  "analysis": {
+    "current_verifier_ids": [
+      "reviewer-a",
+      "reviewer-b"
+    ],
+    "candidate_verifier_ids": [
+      "reviewer-d"
+    ],
+    "bootstrap": null,
+    "quorum": 0.5,
+    "non_probe_candidates": 12,
+    "probe_candidates": 3
+  },
+  "current_panel": {
+    "nominal_votes": 2,
+    "error": 0.25,
+    "mean_verifier_accuracy": 0.75,
+    "mean_pairwise_error_correlation": 1.0,
+    "effective_votes": 1.0,
+    "effective_votes_censored": false
+  },
+  "candidates": [
+    {
+      "id": "reviewer-d",
+      "status": "measured",
+      "unresolved_reasons": [],
+      "standalone_accuracy": 0.8333333333333334,
+      "current_panel_error": 0.25,
+      "augmented_panel_error": 0.25,
+      "panel_error_delta": 0.0,
+      "current_effective_votes": 1.0,
+      "augmented_effective_votes": 1.0,
+      "delta_effective_votes": 0.0,
+      "current_effective_votes_censored": false,
+      "augmented_effective_votes_censored": false,
+      "mean_error_correlation_with_current_panel": -0.2581988897471611,
+      "pairwise_error_correlations": [
+        {
+          "current_verifier_id": "reviewer-a",
+          "error_correlation": -0.2581988897471611
+        },
+        {
+          "current_verifier_id": "reviewer-b",
+          "error_correlation": -0.2581988897471611
+        }
+      ],
+      "transition_counts": {
+        "candidate_correct_on_current_panel_errors": 3,
+        "candidate_wrong_on_current_panel_correct_rows": 2,
+        "panel_decisions_changed": 0,
+        "panel_decisions_changed_to_correct": 0,
+        "panel_decisions_changed_to_wrong": 0
+      },
+      "probe_effect": {
+        "total": 3,
+        "current_breached": 1,
+        "augmented_breached": 1,
+        "breaches_prevented": 0,
+        "current_breach_rate": 0.3333333333333333,
+        "augmented_breach_rate": 0.3333333333333333
+      },
+      "uncertainty": null,
+      "warnings": [
+        "adding this verifier changed no panel decision on the audited non-probe candidate set"
+      ]
+    }
+  ],
+  "warnings": [
+    "1/3 seeded known-bad probes were accepted by the panel"
+  ],
+  "provenance": {
+    "tool": "idkmesh marginal-evidence",
+    "tool_version": "0.1.0",
+    "input_digest_sha256": "23caa4c4cc57e91c31262bc9e830ccaecdb7884b7bf97d739c37d0615d6b2d8a",
+    "analysis_digest_sha256": "6f6fd26c77c1a74d2f3a99b411242cfa3035e1ab6f167788e0cca62b702b8d29"
+  }
+}

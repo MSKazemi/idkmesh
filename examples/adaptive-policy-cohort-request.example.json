@@ -1,0 +1,11 @@
+{
+  "plans": [
+    "evidence/adaptive/plans/plan-001.json"
+  ],
+  "outcomes": [
+    "evidence/adaptive/outcomes/outcome-001.json"
+  ],
+  "limitations": [
+    "Illustrative file paths only; observational shadow cohort."
+  ]
+}
