@@ -241,6 +241,24 @@ class PublicDiscoveryMonitorTests(unittest.TestCase):
             failures = monitor.probe()
         self.assertIn("openai: question map HTTP 403", failures)
 
+    def test_answer_engine_specific_noindex_on_question_map_is_reported(self) -> None:
+        def fetch(url: str, user_agent: str, timeout: float = 10.0):
+            status, body = self._healthy_fetch(url, user_agent, timeout)
+            if url == monitor.QUESTIONS and user_agent == monitor.USER_AGENTS["openai"]:
+                body = body.replace(
+                    "</head>",
+                    '<meta name="robots" content="noindex"></head>',
+                )
+            return status, body
+
+        with mock.patch.object(monitor, "fetch", side_effect=fetch):
+            failures = monitor.probe()
+        self.assertIn(
+            "openai: question map: rendered page contains a noindex directive: "
+            "['noindex']",
+            failures,
+        )
+
     def test_wrong_indexnow_key_is_reported(self) -> None:
         def fetch(url: str, user_agent: str, timeout: float = 10.0):
             status, body = self._healthy_fetch(url, user_agent, timeout)

@@ -339,6 +339,12 @@ def probe() -> list[str]:
                 failures.append(
                     f"{name}: question map content missing 100-question marker"
                 )
+            _check_indexable_html(
+                f"{name}: question map",
+                QUESTIONS,
+                question_crawler_body,
+                failures,
+            )
             if question_status == 200 and len(question_body):
                 if len(question_crawler_body) < len(question_body) * 0.70:
                     failures.append(
