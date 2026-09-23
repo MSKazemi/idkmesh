@@ -10,6 +10,7 @@ import argparse
 from datetime import datetime, timezone
 import json
 import os
+import stat
 import sys
 from pathlib import Path
 
@@ -42,15 +43,16 @@ from idkmesh.marginal_evidence_benchmark import (
     referenced_paths as marginal_benchmark_referenced_paths,
     render_json as render_marginal_benchmark_json,
 )
+from idkmesh.local_ui_security import MAX_BODY_BYTES
 
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="idkmesh",
         description=(
-            "IDKMesh verification and stewardship tooling. Measure verifier "
-            "independence with 'gate-audit', inspect steward runs and history "
-            "offline, or open local read-only report/history dashboards."),
+            "IDKMesh local evidence tools. Inspect swarm runs with "
+            "'control-tower', steward runs with 'steward-report' and "
+            "'steward-history', and verifier panels with 'gate-audit'."),
     )
     parser.add_argument(
         "--version", action="version", version=f"idkmesh {__version__}")
@@ -300,6 +302,25 @@ def build_parser() -> argparse.ArgumentParser:
     gui.add_argument(
         "--no-browser", action="store_true",
         help="serve the UI without opening the default browser")
+
+    tower = sub.add_parser(
+        "control-tower",
+        help="open the local read-only Human Control Tower",
+        description=(
+            "Serve the IDKMesh Human Control Tower on 127.0.0.1. It renders "
+            "existing Run Evidence Report v0.1 documents, recomputes their "
+            "human-facing summary, and never runs workers, selects candidates, "
+            "pushes Git, or merges."),
+    )
+    tower.add_argument(
+        "report", nargs="?",
+        help="optional Run Evidence Report v0.1 JSON file to preload")
+    tower.add_argument(
+        "--port", type=int, default=8770, metavar="PORT",
+        help="loopback TCP port (default: 8770)")
+    tower.add_argument(
+        "--no-browser", action="store_true",
+        help="serve the Control Tower without opening the default browser")
 
     sr = sub.add_parser(
         "steward-report",
@@ -646,6 +667,50 @@ def _run_route(args: argparse.Namespace) -> int:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    if args.command == "control-tower":
+        if not (0 <= args.port <= 65535):
+            return _fail("--port must be between 0 and 65535")
+        initial_text = None
+        if args.report:
+            path = Path(args.report)
+            try:
+                if not stat.S_ISREG(path.stat().st_mode):
+                    return _fail(
+                        f"run evidence path is not a regular JSON file: {args.report}")
+                with path.open("rb") as handle:
+                    payload = handle.read(MAX_BODY_BYTES + 1)
+                if len(payload) > MAX_BODY_BYTES:
+                    return _fail("run evidence report exceeds the 2 MiB local-UI limit")
+                initial_text = payload.decode("utf-8-sig")
+            except FileNotFoundError:
+                return _fail(f"run evidence report not found: {args.report}")
+            except IsADirectoryError:
+                return _fail(
+                    f"run evidence path is a directory, not a JSON report: "
+                    f"{args.report}")
+            except UnicodeDecodeError as exc:
+                return _fail(
+                    f"{args.report}: not UTF-8 text ({exc.reason} at byte "
+                    f"{exc.start}); save the report as UTF-8")
+            except OSError as exc:
+                return _fail(
+                    f"cannot read run evidence report {args.report}: "
+                    f"{_reason(exc)}")
+        from idkmesh.control_tower_ui import serve_control_tower
+        try:
+            serve_control_tower(
+                initial_text,
+                port=args.port,
+                open_browser=not args.no_browser,
+            )
+        except ValueError as exc:
+            return _fail(str(exc))
+        except OSError as exc:
+            return _fail(
+                f"cannot start Control Tower on 127.0.0.1:{args.port}: "
+                f"{_reason(exc)}")
+        return 0
+
     if args.command == "connections":
         return _run_connections(args)
     if args.command == "doctor":
