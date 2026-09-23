@@ -105,6 +105,33 @@ readiness is reached only after this binding exists.
 If the PR head moves later, that is a different candidate revision and must be
 re-observed/re-normalized. Historical evidence stays bound to the old SHA.
 
+
+### Jules discovery-hint to SCM binding
+
+The first concrete provider-to-SCM bridge is `idkmesh/jules_candidate_binding.py`.
+
+It consumes a `JulesPullRequestHint` only after the Jules adapter has already bound that hint to the trusted Session repository. The bridge then:
+
+1. verifies that the hint is a Jules Session observation and that its canonical URL agrees with the bound repository/PR number;
+2. calls the provider-neutral GitHub PR reader with **only** repository + PR number;
+3. obtains the exact head object ID from the SCM reader, never from Jules;
+4. translates SCM identity failures into the shared connector error taxonomy without copying raw SCM/provider payloads;
+5. returns the shared `GitHubPullRequestResolution` unchanged.
+
+The bridge has no `candidate_ready`, verification, acceptance, merge, or integration field. The upper control plane may advance to candidate readiness only after this SCM-backed resolution succeeds.
+
+This keeps the trust chain explicit:
+
+```text
+Jules Session output
+ -> JulesPullRequestHint
+ -> JulesCandidateBindingService
+ -> GitHubPullRequestCandidateReader
+ -> GitHubPullRequestCandidateReference(repo, PR, exact head)
+```
+
+A Jules URL cannot supply or override `head_sha`, and a provider-specific adapter must not bypass the shared SCM reader with its own head-resolution rule.
+
 ## 4. Artifact-bundle form
 
 ```json
