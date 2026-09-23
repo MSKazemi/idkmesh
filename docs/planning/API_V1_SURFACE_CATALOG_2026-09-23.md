@@ -181,6 +181,17 @@ API-specific objects that #737 must freeze:
 - Human Decision request/result envelope;
 - idempotency/conflict metadata.
 
+## Storage profiles
+
+Storage is not a UI detail and not one universal backend.
+
+- local developer metadata/idempotency composes #616;
+- GitHub-first durable run/evidence/event state composes #597;
+- network/multi-user storage profile is owned by #750.
+
+All profiles must preserve the same canonical object identities/digests and
+must not grant authority merely because they can persist a record.
+
 ## Authority matrix
 
 | API class | Observe | Compute projection | Create durable record | Dispatch external work | Push/Merge |
