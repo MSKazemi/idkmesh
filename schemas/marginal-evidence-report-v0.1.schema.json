@@ -1,0 +1,365 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idkmesh.org/schemas/marginal-evidence-report-v0.1.schema.json",
+  "title": "IDKMesh Marginal Evidence Report v0.1",
+  "description": "Diagnostic add-one verifier analysis for a fixed verdict matrix and gate rule. The report measures contextual panel changes and grants no routing, acceptance, EvaluatorPlan, or merge authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "gate_id",
+    "evidence_class",
+    "authority",
+    "analysis",
+    "current_panel",
+    "candidates",
+    "warnings",
+    "provenance"
+  ],
+  "properties": {
+    "schema": {"const": "marginal-evidence-report-v0.1"},
+    "gate_id": {"type": "string", "minLength": 1},
+    "evidence_class": {"enum": ["synthetic", "observed"]},
+    "authority": {"const": "diagnostic_only"},
+    "analysis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "current_verifier_ids",
+        "candidate_verifier_ids",
+        "bootstrap",
+        "quorum",
+        "non_probe_candidates",
+        "probe_candidates"
+      ],
+      "properties": {
+        "current_verifier_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "candidate_verifier_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "bootstrap": {
+          "anyOf": [
+            {"type": "null"},
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["replicates", "seed", "confidence_level"],
+              "properties": {
+                "replicates": {"type": "integer", "minimum": 100},
+                "seed": {"type": "integer"},
+                "confidence_level": {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "exclusiveMaximum": 1
+                }
+              }
+            }
+          ]
+        },
+        "quorum": {
+          "type": "number",
+          "minimum": 0,
+          "exclusiveMaximum": 1
+        },
+        "non_probe_candidates": {"type": "integer", "minimum": 2},
+        "probe_candidates": {"type": "integer", "minimum": 0}
+      }
+    },
+    "current_panel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "nominal_votes",
+        "error",
+        "mean_verifier_accuracy",
+        "mean_pairwise_error_correlation",
+        "effective_votes",
+        "effective_votes_censored"
+      ],
+      "properties": {
+        "nominal_votes": {"type": "integer", "minimum": 1},
+        "error": {"type": "number", "minimum": 0, "maximum": 1},
+        "mean_verifier_accuracy": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "mean_pairwise_error_correlation": {
+          "type": ["number", "null"],
+          "minimum": -1,
+          "maximum": 1
+        },
+        "effective_votes": {
+          "type": ["number", "null"],
+          "minimum": 1
+        },
+        "effective_votes_censored": {"type": "boolean"}
+      }
+    },
+    "candidates": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "status",
+          "unresolved_reasons",
+          "standalone_accuracy",
+          "current_panel_error",
+          "augmented_panel_error",
+          "panel_error_delta",
+          "current_effective_votes",
+          "augmented_effective_votes",
+          "delta_effective_votes",
+          "current_effective_votes_censored",
+          "augmented_effective_votes_censored",
+          "mean_error_correlation_with_current_panel",
+          "pairwise_error_correlations",
+          "transition_counts",
+          "probe_effect",
+          "uncertainty",
+          "warnings"
+        ],
+        "properties": {
+          "id": {"type": "string", "minLength": 1},
+          "status": {"enum": ["measured", "unresolved"]},
+          "unresolved_reasons": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {"type": "string", "minLength": 1}
+          },
+          "standalone_accuracy": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "current_panel_error": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "augmented_panel_error": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "panel_error_delta": {
+            "type": "number",
+            "minimum": -1,
+            "maximum": 1
+          },
+          "current_effective_votes": {
+            "type": ["number", "null"],
+            "minimum": 1
+          },
+          "augmented_effective_votes": {
+            "type": ["number", "null"],
+            "minimum": 1
+          },
+          "delta_effective_votes": {"type": ["number", "null"]},
+          "current_effective_votes_censored": {"type": "boolean"},
+          "augmented_effective_votes_censored": {"type": "boolean"},
+          "mean_error_correlation_with_current_panel": {
+            "type": ["number", "null"],
+            "minimum": -1,
+            "maximum": 1
+          },
+          "pairwise_error_correlations": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["current_verifier_id", "error_correlation"],
+              "properties": {
+                "current_verifier_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "error_correlation": {
+                  "type": ["number", "null"],
+                  "minimum": -1,
+                  "maximum": 1
+                }
+              }
+            }
+          },
+          "transition_counts": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "candidate_correct_on_current_panel_errors",
+              "candidate_wrong_on_current_panel_correct_rows",
+              "panel_decisions_changed",
+              "panel_decisions_changed_to_correct",
+              "panel_decisions_changed_to_wrong"
+            ],
+            "properties": {
+              "candidate_correct_on_current_panel_errors": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "candidate_wrong_on_current_panel_correct_rows": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "panel_decisions_changed": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "panel_decisions_changed_to_correct": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "panel_decisions_changed_to_wrong": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          },
+          "probe_effect": {
+            "anyOf": [
+              {"type": "null"},
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "total",
+                  "current_breached",
+                  "augmented_breached",
+                  "breaches_prevented",
+                  "current_breach_rate",
+                  "augmented_breach_rate"
+                ],
+                "properties": {
+                  "total": {"type": "integer", "minimum": 1},
+                  "current_breached": {"type": "integer", "minimum": 0},
+                  "augmented_breached": {"type": "integer", "minimum": 0},
+                  "breaches_prevented": {"type": "integer"},
+                  "current_breach_rate": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "augmented_breach_rate": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              }
+            ]
+          },
+          "uncertainty": {
+            "anyOf": [
+              {"type": "null"},
+              {"$ref": "#/$defs/uncertainty"}
+            ]
+          },
+          "warnings": {
+            "type": "array",
+            "items": {"type": "string", "minLength": 1}
+          }
+        }
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1}
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tool",
+        "tool_version",
+        "input_digest_sha256",
+        "analysis_digest_sha256"
+      ],
+      "properties": {
+        "tool": {"const": "idkmesh marginal-evidence"},
+        "tool_version": {"type": "string", "minLength": 1},
+        "input_digest_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "analysis_digest_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "metric_interval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "point",
+        "ci_low",
+        "ci_high",
+        "replicates_used",
+        "replicates_undefined"
+      ],
+      "properties": {
+        "point": {"type": ["number", "null"]},
+        "ci_low": {"type": ["number", "null"]},
+        "ci_high": {"type": ["number", "null"]},
+        "replicates_used": {"type": "integer", "minimum": 0},
+        "replicates_undefined": {"type": "integer", "minimum": 0}
+      }
+    },
+    "uncertainty": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "method",
+        "sampling_unit",
+        "confidence_level",
+        "replicates",
+        "seed",
+        "non_probe_candidates",
+        "min_candidates_for_inference",
+        "sufficient_for_inference",
+        "panel_error_delta",
+        "effective_votes_delta"
+      ],
+      "properties": {
+        "method": {"const": "paired candidate-level nonparametric bootstrap (percentile interval, linear interpolation)"},
+        "sampling_unit": {"const": "non_probe_candidate_row"},
+        "confidence_level": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "exclusiveMaximum": 1
+        },
+        "replicates": {"type": "integer", "minimum": 100},
+        "seed": {"type": "integer"},
+        "non_probe_candidates": {"type": "integer", "minimum": 2},
+        "min_candidates_for_inference": {"const": 5},
+        "sufficient_for_inference": {"type": "boolean"},
+        "panel_error_delta": {
+          "anyOf": [
+            {"type": "null"},
+            {"$ref": "#/$defs/metric_interval"}
+          ]
+        },
+        "effective_votes_delta": {
+          "anyOf": [
+            {"type": "null"},
+            {"$ref": "#/$defs/metric_interval"}
+          ]
+        }
+      }
+    }
+  }
+}
