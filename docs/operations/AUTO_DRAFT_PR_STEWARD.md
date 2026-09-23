@@ -180,6 +180,33 @@ The JSON output includes:
 - any fail-closed block reason;
 - `merge_authorized: false`.
 
+### Inspect a saved report with the installed CLI
+
+After installing IDKMesh, a downloaded evidence artifact can be validated and
+summarized completely offline:
+
+```bash
+idkmesh steward-report steward-report.json
+idkmesh steward-report steward-report.json --details
+```
+
+The command requires no `GITHUB_TOKEN`, makes no network request, and has no
+mutation path. It rejects malformed or ambiguous evidence before rendering,
+including:
+
+- duplicate JSON keys and Python-only `NaN` / `Infinity` constants;
+- unsupported report schema versions or extra contract fields;
+- authority blocks that grant merge, approval, deletion, contents-write, or
+  other capabilities outside the steward boundary;
+- malformed commit SHAs or policy digests;
+- created-PR URLs that do not match the report repository and PR number;
+- summary counts that disagree with the actual arrays;
+- created/skipped outcomes that do not correspond to a planned candidate;
+- invalid completed/blocked/disabled state combinations.
+
+This command is the supported local consumer contract for future UI/dashboard
+work; consumers should not scrape GitHub workflow logs.
+
 ## Troubleshooting
 
 ### No PR appears for a new branch
