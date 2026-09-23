@@ -117,7 +117,9 @@ The machine-readable policy is
 
 Current defaults:
 
-- maximum open active Jules issues: **4**;
+- repository review/backpressure cap (`max_in_flight`): **4** open active Jules issues;
+- Jules provider concurrency cap (`provider_concurrency.max_concurrent_tasks`): **3** concurrent tasks for the configured `Jules` plan, checked 2026-09-23 against the official limits page;
+- effective automatic concurrency: **3**, the stricter minimum of the repository and provider caps;
 - maximum new dispatches per recovery sweep: **2**;
 - event-driven dispatch starts at most **1** routed/approved issue immediately;
 - one GitHub open-issue snapshot is reused for capacity and candidate selection;
@@ -127,12 +129,24 @@ Current defaults:
 - legacy/manual open issues carrying `jules` still consume capacity during
   migration so old work is not double-dispatched.
 
-The four-slot limit is repository review/backpressure, not a provider quota.
+`max_in_flight` is a repository review/backpressure limit, while
+`provider_concurrency.max_concurrent_tasks` records the current provider/account
+ceiling separately. Dispatch always uses the lower value. The provider limit is
+configuration with a source URL and `checked_at` date because Jules plans can
+change; after a plan upgrade, update that policy in a reviewed PR rather than
+changing dispatcher code.
+
 A `COMPLETED` Jules session continues to consume its issue slot until the
 issue closes, so generation cannot run far ahead of PR review. By contrast, a
 failed/stalled session is moved to `agent:jules-needs-attention`, its
 `agent:jules-dispatched` reservation is removed, and the freed slot may be
 used by other safe work.
+
+Provider capacity is also explicit policy, not an inferred UI number. The current
+entry cites <https://jules.google/docs/usage-limits> and records plan `Jules`,
+3 concurrent tasks, checked 2026-09-23. The dispatcher still handles provider
+precondition/quota rejection because the account may have tasks outside this
+repository or provider limits may change before policy is refreshed.
 
 Provider health thresholds are policy, not hidden constants:
 
@@ -227,7 +241,7 @@ Recommended operating rhythm:
 2. let the Issue Model Router automatically nominate trusted low-risk tasks;
 3. use `agent-ready` for explicit maintainer-approved tasks that are not in
    the automatic lane;
-4. let event-driven dispatch fill the four active slots;
+4. let event-driven dispatch fill the effective provider/repository capacity;
 5. let the 30-minute reconciliation sweep free slots held by genuinely stalled
    provider sessions;
 6. review/merge/close completed PRs promptly so completed work frees capacity;
@@ -236,13 +250,69 @@ Recommended operating rhythm:
 
 If review latency grows, lower concurrency before creating more generated work.
 
+## Atomic multi-file publications for agent branches
+
+When an agent or automation script needs to publish changes across multiple files, publishing each file using individual GitHub Contents API calls produces one commit and one branch reference update per file. This sequence causes multiple pull-request `synchronize` events and triggers CI workflows after every individual file write, creating unnecessary CI queue pressure and noise for reviewers.
+
+To avoid this, agents and automation should use `tools/github_atomic_commit.py`.
+
+### How it works
+
+The atomic writer uses the GitHub Git Data API to publish multiple file changes (writes and deletions) as a single atomic commit:
+
+```text
+expected branch head
+ -> create all blobs
+ -> create one tree on expected base tree
+ -> create one commit with expected head as parent
+ -> re-check branch head
+ -> non-force ref update
+ -> single synchronize event
+```
+
+### Key guarantees and safety constraints
+
+- **Exact head binding:** Compares the expected branch head SHA before and after blob/tree/commit creation. If the branch head moves, publication fails closed.
+- **Non-force updates:** Updates the branch reference using a non-force PATCH call, preventing concurrent agents from overwriting each other's work.
+- **No direct main writes:** Refuses direct writes to default branches (e.g., `main`) unless explicitly overridden with `--allow-default-branch`.
+- **Secret handling:** Reads `GITHUB_TOKEN` from the environment only and never prints or logs credentials.
+- **Dry-run planning:** Supports an offline `plan` subcommand that performs no GitHub API mutations and requires no token.
+- **Deterministic ordering:** Paths and mutations are normalized and sorted deterministically.
+
+### Example CLI usage
+
+**Planning (offline dry-run, no token required):**
+
+```bash
+python tools/github_atomic_commit.py plan \
+  --branch agent/my-work \
+  --expected-head <sha> \
+  --write idkmesh/a.py=/tmp/a.py \
+  --write tests/test_a.py=/tmp/test_a.py \
+  --delete old/file.txt \
+  --json
+```
+
+**Publishing (single commit and single ref update):**
+
+```bash
+GITHUB_TOKEN=... python tools/github_atomic_commit.py publish \
+  --repository owner/repo \
+  --branch agent/my-work \
+  --expected-head <sha> \
+  --message "agent: publish bounded candidate" \
+  --write idkmesh/a.py=/tmp/a.py \
+  --write tests/test_a.py=/tmp/test_a.py \
+  --delete old/file.txt
+```
+
 ## Reading the Jules web UI
 
 The Jules codebase badge and the **Needs review** section are not the repository
 dispatch-concurrency limit. They reflect provider-side session/review state.
 Completed sessions remain visible separately, while IDKMesh independently
 controls how many issue reservations may be active through
-`max_in_flight` (currently four).
+`max_in_flight` (repository cap 4) and `provider_concurrency` (current provider cap 3); the effective automatic cap is the lower of the two.
 
 A small number beside the codebase therefore does not mean Jules is limited to
 that many tasks. If the UI shows fewer active/review sessions than expected,
@@ -289,7 +359,7 @@ occurred in PR #765 a merge-blocking failure instead of a latent runtime outage.
 2. verify the issue author association is `OWNER`, `MEMBER`, or
    `COLLABORATOR`;
 3. check hard-veto and `agent:jules-needs-attention` labels;
-4. check whether four active/legacy Jules issues consume capacity;
+4. check whether the effective active capacity is consumed (currently 3 because the provider cap is stricter than the repository cap);
 5. inspect the Jules Dispatcher run and provider credential/source errors.
 
 ### `agent-ready` exists but `agent:jules-dispatched` does not
@@ -313,10 +383,30 @@ session. For an old queued/active session, resolve or delete that provider work
 before allowing a new attempt. Reconciliation intentionally never creates a
 replacement session.
 
-A returned 4xx during session creation removes the reservation for a safe
-corrected retry. A network error or provider 5xx is ambiguous, so the
-reservation is retained until reconciliation/operator inspection prevents a
-duplicate POST.
+A returned 4xx during session creation removes the reservation because the
+provider explicitly rejected the request. `FAILED_PRECONDITION`,
+`RESOURCE_EXHAUSTED`, and HTTP 429 are treated as provider backpressure: the
+reservation is rolled back, the current sweep stops, the issue remains queued,
+and a later recovery sweep can retry after provider capacity resets. Other 4xx
+responses remain red failures so configuration/request defects stay visible. A
+network error or provider 5xx is ambiguous, so the reservation is retained until
+reconciliation/operator inspection prevents a duplicate POST.
+
+### Jules provider capacity/precondition is full
+
+When Jules rejects session creation with HTTP 400 `FAILED_PRECONDITION`, a
+`RESOURCE_EXHAUSTED` status, or HTTP 429, IDKMesh treats that as rejected
+provider backpressure rather than an ambiguous create. The temporary
+`agent:jules-dispatched` reservation is removed, the issue remains in its queue,
+the sweep stops, and the workflow stays healthy. This prevents noisy red runs and
+prevents the dispatcher from hammering later candidates while the account is at
+capacity.
+
+If this repeats while fewer than the configured provider slots are visible,
+inspect Jules for tasks from other repositories/accounts and re-check the
+official limits page. If the Jules plan changes, update
+`provider_concurrency.max_concurrent_tasks`, `plan`, and `checked_at` in
+`config/jules-dispatch.json`; do not bypass the limit in code.
 
 ### GitHub API rate limit is exhausted
 
@@ -348,7 +438,8 @@ useful if verification becomes the bottleneck.
 - workflow: [`.github/workflows/jules-dispatch.yml`](../../.github/workflows/jules-dispatch.yml)
 - policy: [`config/jules-dispatch.json`](../../config/jules-dispatch.json)
 - dispatcher: [`tools/jules_dispatcher.py`](../../tools/jules_dispatcher.py)
-- tests: [`tests/test_jules_dispatcher.py`](../../tests/test_jules_dispatcher.py)
+- atomic commit helper: [`tools/github_atomic_commit.py`](../../tools/github_atomic_commit.py)
+- tests: [`tests/test_jules_dispatcher.py`](../../tests/test_jules_dispatcher.py), [`tests/test_github_atomic_commit.py`](../../tests/test_github_atomic_commit.py)
 - agent instructions: [`AGENTS.md`](../../AGENTS.md)
 
 ## Changing the policy

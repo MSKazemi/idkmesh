@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from datetime import datetime, timezone
+import io
 import json
 from pathlib import Path
 
@@ -32,6 +33,12 @@ POLICY = {
     "stale_missing_session_minutes": 60,
     "session_scan_max_pages": 10,
     "max_in_flight": 4,
+    "provider_concurrency": {
+        "max_concurrent_tasks": 3,
+        "plan": "Jules",
+        "source": "https://jules.google/docs/usage-limits",
+        "checked_at": "2026-09-23",
+    },
     "max_dispatch_per_sweep": 2,
     "blocked_labels": [
         "blocked",
@@ -223,14 +230,14 @@ def test_dispatch_uses_one_issue_snapshot_and_one_session_snapshot():
         starting_branch="main",
     )
 
-    assert dispatched == [1, 2]
+    # The provider cap is three; two existing dispatch labels leave one slot.
+    assert dispatched == [1]
     assert api.list_open_issues_calls == [None]
     assert jules.list_calls == 1
     assert api.added == [
         (1, ["agent:jules-dispatched"]),
-        (2, ["agent:jules-dispatched"]),
     ]
-    assert len(jules.created) == 2
+    assert len(jules.created) == 1
 
 
 def test_dispatch_fails_closed_when_capacity_is_full():
@@ -475,7 +482,6 @@ def test_reconcile_then_dispatch_backfills_freed_slot_in_same_snapshot():
         failed,
         issue(61, "agent:jules-dispatched", updated_at="2026-09-23T17:30:00Z"),
         issue(62, "agent:jules-dispatched", updated_at="2026-09-23T17:30:00Z"),
-        issue(63, "agent:jules-dispatched", updated_at="2026-09-23T17:30:00Z"),
         issue(1, "agent:jules-eligible", "priority:p0"),
     ]
     failed_session = {
@@ -535,8 +541,79 @@ def test_repository_policy_keeps_speed_and_hard_vetoes_explicit():
     assert policy["stale_session_minutes"]["QUEUED"] == 120
     assert policy["session_scan_max_pages"] == 10
     assert policy["max_in_flight"] == 4
+    assert policy["provider_concurrency"]["max_concurrent_tasks"] == 3
+    assert policy["provider_concurrency"]["plan"] == "Jules"
+    assert policy["provider_concurrency"]["source"] == "https://jules.google/docs/usage-limits"
+    assert jd.effective_in_flight_limit(policy) == 3
     assert policy["max_dispatch_per_sweep"] == 2
     assert "agent:jules-needs-attention" in policy["blocked_labels"]
+
+
+def test_effective_provider_cap_blocks_fourth_repo_dispatch():
+    api = FakeAPI(
+        issues=[
+            issue(1, "agent:jules-dispatched"),
+            issue(2, "agent:jules-dispatched"),
+            issue(3, "agent:jules-dispatched"),
+            issue(4, "agent:jules-eligible"),
+        ]
+    )
+
+    assert jd.effective_in_flight_limit(POLICY) == 3
+    assert jd.dispatch(
+        api,
+        POLICY,
+        jules_api=None,
+        starting_branch="main",
+    ) == []
+    assert api.added == []
+
+
+def test_provider_failed_precondition_defers_without_failing():
+    api = FakeAPI(issues=[issue(1, "agent:jules-eligible")])
+    jules = FakeJules(
+        create_error=jd.JulesAPIError(
+            "provider concurrency full",
+            status_code=400,
+            api_status="FAILED_PRECONDITION",
+        )
+    )
+
+    assert jd.dispatch(
+        api,
+        POLICY,
+        jules_api=jules,
+        starting_branch="main",
+    ) == []
+    assert api.added == [(1, ["agent:jules-dispatched"])]
+    assert api.removed == [(1, "agent:jules-dispatched")]
+    assert api.comments == []
+
+
+def test_jules_http_error_preserves_provider_status(monkeypatch):
+    payload = io.BytesIO(
+        b'{"error":{"code":400,"message":"Precondition check failed.",'
+        b'"status":"FAILED_PRECONDITION"}}'
+    )
+    error = jd.urllib.error.HTTPError(
+        "https://jules.googleapis.com/v1alpha/sessions",
+        400,
+        "Bad Request",
+        {},
+        payload,
+    )
+
+    def fail_request(*args, **kwargs):
+        raise error
+
+    monkeypatch.setattr(jd.urllib.request, "urlopen", fail_request)
+
+    with pytest.raises(jd.JulesAPIError) as captured:
+        jd.JulesAPI("secret").request("POST", "/sessions", {})
+
+    assert captured.value.status_code == 400
+    assert captured.value.api_status == "FAILED_PRECONDITION"
+    assert jd.is_provider_backpressure(captured.value)
 
 
 def test_model_routing_policy_uses_dispatcher_label_contract():

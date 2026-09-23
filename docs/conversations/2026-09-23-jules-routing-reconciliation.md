@@ -120,3 +120,35 @@ pair:
 This specifically prevents the failure mode where one PR removes the
 `issue_number` input or stops accepting `agent:jules-eligible` while the
 other side continues assuming those contracts exist.
+
+
+## Provider-capacity follow-up
+
+After the typed-contract repair merged, live execution proved the automatic lane
+was functioning: IDKMesh created three new Jules sessions without manual starts
+for issues #652, #669, and #643. The next session-create request was rejected by
+Jules with HTTP 400 and provider status `FAILED_PRECONDITION`.
+
+The current official Jules limits page documents 15 daily tasks and 3 concurrent
+tasks for the base `Jules` plan. IDKMesh had independently retained a
+repository review/backpressure cap of four, so the provider limit was the
+stricter runtime boundary.
+
+Issue #788 makes that distinction durable:
+
+- `max_in_flight` remains the repository review/backpressure cap;
+- `provider_concurrency.max_concurrent_tasks` records the provider/account cap
+  separately, with plan, official source URL, and checked date;
+- effective dispatch capacity is the minimum of those two limits;
+- HTTP 400 `FAILED_PRECONDITION`, provider `RESOURCE_EXHAUSTED`, and HTTP 429
+  are treated as explicitly rejected provider backpressure: the temporary
+  reservation is rolled back, the issue remains queued, and the rest of that
+  sweep stops;
+- unknown 4xx responses still fail visibly, while ambiguous network/5xx errors
+  retain the reservation to prevent duplicate session creation;
+- the required Jules contract guard verifies the provider-capacity policy and
+  dispatcher behavior, so future plan/config drift becomes a PR-gate failure.
+
+This allows a Jules plan upgrade to be represented as a reviewed policy change
+instead of a code rewrite, while provider-side tasks outside IDKMesh remain safe
+because explicit provider rejection is still handled as backpressure.
