@@ -147,6 +147,24 @@ Probe statuses:
 
 A probe must never return credential values.
 
+### Local read-only probe projection
+
+The C1 inspection CLI projects the same probe semantics through:
+
+```text
+idkmesh connections probe <connections.json>
+idkmesh doctor <connections.json>
+```
+
+At the C1-H stage these commands use offline fake drivers only. They do not
+contact live providers or materialize secret references. A configured secret
+reference is therefore reported as unavailable until the secret-admission
+service is composed by a later integration slice.
+
+`doctor` summarizes observed connector readiness as PASS/WARN/FAIL. This is
+an operator diagnostic only; PASS does not grant dispatch, verification,
+acceptance, or merge authority.
+
 ## 6. Work preview
 
 `POST /v1/work-units:preview`
@@ -214,6 +232,18 @@ Response:
 ```
 
 The endpoint should not select a connector unless the caller explicitly asks for the project's deterministic auto-routing policy to be applied.
+
+The same read-only decision can be inspected locally with:
+
+```text
+idkmesh route explain <connections.json> <routing-decision.json>
+```
+
+The command performs zero external work. Connector capability comes from the
+registered driver declaration/probe result and is intersected with any
+configuration claim, so a profile cannot upgrade itself to a stronger tier.
+Runtime connector cost may be supplied explicitly for explanation; unknown
+connection IDs fail closed.
 
 ### Required routing-decision fields
 
