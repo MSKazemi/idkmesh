@@ -1,11 +1,7 @@
 name: Public Discovery Monitor
 
 on:
-  workflow_run:
-    workflows:
-      - pages build and deployment
-    types:
-      - completed
+  page_build:
   schedule:
     - cron: '43 5 * * *'
   workflow_dispatch:
@@ -20,14 +16,29 @@ concurrency:
 jobs:
   probe:
     name: probe
-    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
+      - name: Require a successful Pages build event
+        if: github.event_name == 'page_build'
+        env:
+          PAGES_STATUS: ${{ github.event.build.status }}
+          PAGES_COMMIT: ${{ github.event.build.commit }}
+        shell: bash
+        run: |
+          if [ "$PAGES_STATUS" != "built" ]; then
+            echo "Pages build did not succeed: status=$PAGES_STATUS commit=$PAGES_COMMIT" >&2
+            exit 1
+          fi
+          if [ -z "$PAGES_COMMIT" ]; then
+            echo "Pages build event did not identify the deployed commit." >&2
+            exit 1
+          fi
+
       - name: Check out the deployed repository revision
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
+          ref: ${{ github.event_name == 'page_build' && github.event.build.commit || github.sha }}
           persist-credentials: false
 
       - name: Set up Python
@@ -47,6 +58,6 @@ jobs:
               echo "Public discovery surface did not converge after bounded retries." >&2
               exit 1
             fi
-            echo "Discovery probe attempt $attempt failed after Pages deployment; retrying for edge propagation."
+            echo "Discovery probe attempt $attempt failed after Pages build; retrying for edge propagation."
             sleep 30
           done
