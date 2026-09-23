@@ -232,14 +232,17 @@ def test_dispatch_uses_one_issue_snapshot_and_one_session_snapshot():
         starting_branch="main",
     )
 
-    # The provider cap is three; two existing dispatch labels leave one slot.
-    assert dispatched == [1]
+    # Repository reservations and provider tasks are independent. Two existing
+    # review reservations leave two repository slots, while an empty provider
+    # session snapshot leaves all three provider slots free.
+    assert dispatched == [1, 2]
     assert api.list_open_issues_calls == [None]
     assert jules.list_calls == 1
     assert api.added == [
         (1, ["agent:jules-dispatched"]),
+        (2, ["agent:jules-dispatched"]),
     ]
-    assert len(jules.created) == 1
+    assert len(jules.created) == 2
 
 
 def test_dispatch_fails_closed_when_capacity_is_full():
