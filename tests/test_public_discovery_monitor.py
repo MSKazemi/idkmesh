@@ -50,15 +50,16 @@ class PublicDiscoveryMonitorTests(unittest.TestCase):
         self.assertIn("browser", monitor.USER_AGENTS)
 
 
-    def test_workflow_waits_for_pages_deployment(self) -> None:
+    def test_workflow_uses_pages_native_build_event(self) -> None:
         root = Path(__file__).resolve().parents[1]
         text = (
             root / ".github" / "workflows" / "public-discovery-monitor.yml"
         ).read_text(encoding="utf-8")
-        self.assertIn("workflow_run:", text)
-        self.assertIn("pages build and deployment", text)
-        self.assertIn("github.event.workflow_run.head_sha", text)
-        self.assertIn("github.event.workflow_run.conclusion == 'success'", text)
+        self.assertIn("page_build:", text)
+        self.assertIn("github.event.build.commit", text)
+        self.assertIn("github.event.build.status", text)
+        self.assertIn('PAGES_STATUS" != "built"', text)
+        self.assertNotIn("workflow_run:", text)
         self.assertNotIn("\n  push:\n", text)
 
     def _healthy_fetch(self, url: str, user_agent: str, timeout: float = 10.0):
