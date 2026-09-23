@@ -1,0 +1,202 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idkmesh.org/schemas/auto-draft-pr-steward-report-v0.1.schema.json",
+  "title": "IDKMesh Auto Draft PR Steward Report v0.1",
+  "description": "Durable evidence for one Auto Draft PR Steward run. The report records observations and bounded Draft-PR creation outcomes; it never grants review, merge, branch-deletion, issue-closing, or repository-settings authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "repository",
+    "generated_at",
+    "status",
+    "dry_run",
+    "policy",
+    "provenance",
+    "authority",
+    "candidate_count",
+    "rate_limit_remaining",
+    "blocked_reason",
+    "summary",
+    "planned",
+    "created",
+    "skipped"
+  ],
+  "properties": {
+    "schema": {
+      "const": "auto-draft-pr-steward-report-v0.1"
+    },
+    "repository": {
+      "type": "string",
+      "pattern": "^[^/\\s]+/[^/\\s]+$"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "status": {
+      "enum": ["completed", "blocked", "disabled"]
+    },
+    "dry_run": {
+      "type": "boolean"
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "workflow",
+        "run_id",
+        "run_attempt",
+        "trusted_head_sha"
+      ],
+      "properties": {
+        "workflow": {"type": ["string", "null"]},
+        "run_id": {"type": ["string", "null"]},
+        "run_attempt": {"type": ["string", "null"]},
+        "trusted_head_sha": {
+          "anyOf": [
+            {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+            {"type": "null"}
+          ]
+        }
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "draft_pr_create",
+        "ready_for_review",
+        "approve",
+        "merge",
+        "auto_merge",
+        "delete_branch",
+        "close_issue",
+        "label_write",
+        "contents_write",
+        "repository_settings"
+      ],
+      "properties": {
+        "draft_pr_create": {"const": true},
+        "ready_for_review": {"const": false},
+        "approve": {"const": false},
+        "merge": {"const": false},
+        "auto_merge": {"const": false},
+        "delete_branch": {"const": false},
+        "close_issue": {"const": false},
+        "label_write": {"const": false},
+        "contents_write": {"const": false},
+        "repository_settings": {"const": false}
+      }
+    },
+    "candidate_count": {
+      "type": ["integer", "null"],
+      "minimum": 0
+    },
+    "rate_limit_remaining": {
+      "type": ["integer", "null"],
+      "minimum": 0
+    },
+    "blocked_reason": {
+      "type": ["string", "null"]
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["planned", "created", "skipped"],
+      "properties": {
+        "planned": {"type": "integer", "minimum": 0},
+        "created": {"type": "integer", "minimum": 0},
+        "skipped": {"type": "integer", "minimum": 0}
+      }
+    },
+    "planned": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/plannedCandidate"}
+    },
+    "created": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/createdCandidate"}
+    },
+    "skipped": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/skippedCandidate"}
+    }
+  },
+  "$defs": {
+    "candidateCore": {
+      "type": "object",
+      "required": [
+        "branch",
+        "base",
+        "head_sha",
+        "ahead_by",
+        "behind_by"
+      ],
+      "properties": {
+        "branch": {"type": "string", "minLength": 1},
+        "base": {"type": "string", "minLength": 1},
+        "head_sha": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "ahead_by": {"type": "integer", "minimum": 0},
+        "behind_by": {"type": "integer", "minimum": 0}
+      }
+    },
+    "plannedCandidate": {
+      "allOf": [
+        {"$ref": "#/$defs/candidateCore"}
+      ],
+      "unevaluatedProperties": false
+    },
+    "createdCandidate": {
+      "allOf": [
+        {"$ref": "#/$defs/candidateCore"},
+        {
+          "type": "object",
+          "required": ["number", "url"],
+          "properties": {
+            "number": {"type": "integer", "minimum": 1},
+            "url": {
+              "type": "string",
+              "pattern": "^https://github\\.com/"
+            }
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "skippedCandidate": {
+      "allOf": [
+        {"$ref": "#/$defs/candidateCore"},
+        {
+          "type": "object",
+          "required": ["reason"],
+          "properties": {
+            "reason": {
+              "enum": ["head_moved", "pr_already_exists"]
+            },
+            "current_head_sha": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{40}$"
+            }
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    }
+  }
+}

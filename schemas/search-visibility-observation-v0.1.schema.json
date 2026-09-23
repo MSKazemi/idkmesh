@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mskazemi.com/idkmesh/schemas/search-visibility-observation-v0.1.schema.json",
+  "title": "IDKMesh Search Visibility Observation Ledger v0.1",
+  "description": "Observed search/answer-engine visibility evidence; records observations without converting them into ranking guarantees or population-level claims.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "observations"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "0.1"
+    },
+    "observations": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/observation"
+      }
+    }
+  },
+  "$defs": {
+    "observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "observed_at",
+        "engine",
+        "surface",
+        "evidence_class",
+        "mapped_intent",
+        "query",
+        "target_url",
+        "surfaced",
+        "notes"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 160,
+          "pattern": "^[A-Za-z0-9._/-]+$"
+        },
+        "observed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "engine": {
+          "type": "string",
+          "enum": [
+            "google",
+            "bing",
+            "chatgpt",
+            "gemini",
+            "claude",
+            "perplexity",
+            "copilot",
+            "yahoo",
+            "other"
+          ]
+        },
+        "surface": {
+          "type": "string",
+          "enum": [
+            "web_search",
+            "ai_answer",
+            "webmaster_console",
+            "referral",
+            "index_status"
+          ]
+        },
+        "evidence_class": {
+          "type": "string",
+          "enum": [
+            "manual_reproduction",
+            "webmaster_export",
+            "referral_log",
+            "index_inspection"
+          ]
+        },
+        "mapped_intent": {
+          "type": "string",
+          "minLength": 2
+        },
+        "query": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 500
+        },
+        "target_url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "surfaced": {
+          "type": "boolean"
+        },
+        "citation_url": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uri"
+        },
+        "position": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "evidence_ref": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 1000
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4000
+        }
+      }
+    }
+  }
+}
