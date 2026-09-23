@@ -262,7 +262,17 @@ Every public endpoint must define:
 - #746 — Python/TypeScript clients + professional API docs
 - #747 — v1 beta release qualification
 
-## 10. Dependency sequence
+## 10. Requirements traceability
+
+The cross-program ownership/proof matrix is:
+
+`docs/planning/API_V1_REQUIREMENTS_TRACEABILITY_MATRIX_2026-09-23.md`
+
+It maps each professional API requirement to existing subsystem owners, API
+integration issues, and release evidence. If a new requirement has no owner and
+no proof, implementation pauses until the plan is updated.
+
+## 11. Dependency sequence
 
 ```text
 #735 current API convergence
@@ -328,7 +338,7 @@ Network path:
                     storage profiles
 ```
 
-## 11. Implementation rules
+## 12. Implementation rules
 
 Before implementing a new endpoint:
 
@@ -343,7 +353,7 @@ Before implementing a new endpoint:
 9. docs/OpenAPI impact is specified;
 10. no duplicate canonical object is introduced.
 
-## 12. Security planning baseline
+## 13. Security planning baseline
 
 The API threat model is documented in:
 
@@ -354,7 +364,7 @@ maps authority confusion, auth bypass, replay, CSRF/CORS, proxy ambiguity,
 webhook forgery, SSRF, storage tamper, and overload threats to their owning
 issues.
 
-## 13. Release quality gates
+## 14. Release quality gates
 
 ### Contract gate
 
@@ -403,7 +413,7 @@ issues.
 - error catalog and limits documented;
 - migration/deprecation status visible.
 
-## 14. Definition of done for API v1 beta
+## 15. Definition of done for API v1 beta
 
 The first professional API beta is complete only when the exact beta scope has:
 
@@ -421,7 +431,7 @@ The first professional API beta is complete only when the exact beta scope has:
 The beta may intentionally exclude some future domains, but it must not leave
 the semantics of included domains implicit.
 
-## 15. What we deliberately do not do yet
+## 16. What we deliberately do not do yet
 
 - no autonomous merge API;
 - no worker/verifier self-approval;
@@ -431,7 +441,7 @@ the semantics of included domains implicit.
 - no hidden majority selection;
 - no duplicate evidence/run/decision models for different UIs/providers.
 
-## 16. Community impact
+## 17. Community impact
 
 This plan reduces “architecture by chat” and makes API work independently
 claimable. Contributors can pick one issue with bounded acceptance evidence
