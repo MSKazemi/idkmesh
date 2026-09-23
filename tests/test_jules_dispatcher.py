@@ -562,13 +562,17 @@ def test_workflow_and_router_share_the_same_dispatch_contract():
         REPO_ROOT / ".github" / "workflows" / "issue-model-router.yml"
     ).read_text(encoding="utf-8")
 
-    assert "issue_number:" in workflow
+    assert "workflow_call:" in workflow
+    assert workflow.count("issue_number:") >= 2
     assert "inputs.issue_number" in workflow
     assert "agent:jules-eligible" in workflow
     assert "--reconcile" in workflow
     assert "inputs.bootstrap_labels" in workflow
-    assert "-f issue_number=" in router
-    assert "agent:jules-eligible" in router
+    assert "uses: ./.github/workflows/jules-dispatch.yml" in router
+    assert "issue_number: ${{ needs.route.outputs.routed_issue_number }}" in router
+    assert "secrets: inherit" in router
+    assert "gh workflow run jules-dispatch.yml" not in router
+    assert "actions: write" not in router
     assert "contents: read" in workflow
     assert "issues: write" in workflow
     assert "pull-requests: write" not in workflow
