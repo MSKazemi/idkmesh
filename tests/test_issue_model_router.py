@@ -113,3 +113,16 @@ def test_never_scope_does_not_escalate_sensitive_phrase():
         OVERRIDES,
     )
     assert router.TIER_ORDER[value.tier] <= router.TIER_ORDER["T2"]
+
+
+def test_router_workflow_keeps_hot_path_api_budget_bounded():
+    workflow = (ROOT / ".github" / "workflows" / "issue-model-router.yml").read_text(
+        encoding="utf-8"
+    )
+
+    assert "cron: '7 */6 * * *'" in workflow
+    assert "gh issue view" not in workflow
+    assert "Validate router syntax" in workflow
+    assert "python -m pytest" not in workflow
+    assert "github.event_name == 'workflow_dispatch' && inputs.bootstrap_labels" in workflow
+    assert "-f issue_number=" in workflow
