@@ -7,6 +7,7 @@ modules so it can be tested and embedded without a process boundary.
 from __future__ import annotations
 
 import argparse
+from datetime import datetime, timezone
 import json
 import os
 import sys
@@ -126,11 +127,11 @@ def build_parser() -> argparse.ArgumentParser:
             "(default: 0.95)"))
     connections = sub.add_parser(
         "connections",
-        help="validate or list connector profile configuration",
+        help="validate, list, or inspect connector configuration",
         description=(
-            "Inspect connector configuration only. These commands do not "
-            "probe providers, materialize secrets, dispatch work, or grant "
-            "repository authority."
+            "Read-only connector inspection. The current probe path uses "
+            "offline fake drivers only; it does not contact live providers, "
+            "materialize secrets, dispatch work, or grant repository authority."
         ),
     )
     connection_sub = connections.add_subparsers(
@@ -160,6 +161,85 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         dest="json_output",
         help="emit deterministic machine-readable JSON",
+    )
+
+    probe = connection_sub.add_parser(
+        "probe",
+        help="probe connector profiles through offline fake drivers",
+        description=(
+            "Read-only probe using offline fake drivers only. This command "
+            "does not contact live providers, materialize secrets, or dispatch work."
+        ),
+    )
+    probe.add_argument("profile", help="path to connector-profile JSON")
+    probe.add_argument(
+        "--checked-at",
+        help="explicit observation timestamp (default: current UTC time)",
+    )
+    probe.add_argument(
+        "--json",
+        action="store_true",
+        dest="json_output",
+        help="emit machine-readable JSON",
+    )
+
+    doctor = sub.add_parser(
+        "doctor",
+        help="summarize connector readiness without dispatching work",
+        description=(
+            "Validate and inspect connector profiles using the offline probe "
+            "contract without dispatching work. FAIL means configuration/driver health blocks routing; "
+            "WARN means disabled/degraded; PASS means healthy in this offline view."
+        ),
+    )
+    doctor.add_argument("profile", help="path to connector-profile JSON")
+    doctor.add_argument(
+        "--checked-at",
+        help="explicit observation timestamp (default: current UTC time)",
+    )
+    doctor.add_argument(
+        "--json",
+        action="store_true",
+        dest="json_output",
+        help="emit machine-readable JSON",
+    )
+
+    route = sub.add_parser(
+        "route",
+        help="explain provider-neutral connector routing",
+    )
+    route_sub = route.add_subparsers(dest="route_command", required=True)
+    explain = route_sub.add_parser(
+        "explain",
+        help="explain eligible/rejected connectors for a routing decision",
+        description=(
+            "Explain eligible/rejected connectors without external work or "
+            "repository mutation. Selection is applied only with --auto-select."
+        ),
+    )
+    explain.add_argument("profile", help="path to connector-profile JSON")
+    explain.add_argument("decision", help="path to routing-decision JSON")
+    explain.add_argument(
+        "--checked-at",
+        help="explicit observation timestamp (default: current UTC time)",
+    )
+    explain.add_argument(
+        "--cost",
+        action="append",
+        default=[],
+        metavar="CONNECTION_ID=USD",
+        help="runtime project cost for a connector; repeat as needed",
+    )
+    explain.add_argument(
+        "--auto-select",
+        action="store_true",
+        help="apply deterministic auto-selection after eligibility filtering",
+    )
+    explain.add_argument(
+        "--json",
+        action="store_true",
+        dest="json_output",
+        help="emit machine-readable JSON",
     )
 
     gui = sub.add_parser(
@@ -232,6 +312,12 @@ def _write(path: str, text: str, what: str) -> int | None:
     except OSError as exc:
         return _fail(f"cannot write the {what} to {path}: {_reason(exc)}")
     return None
+
+
+def _observation_time(value: str | None) -> str:
+    if value:
+        return value
+    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
 def _connection_summary(config) -> dict[str, object]:
@@ -325,13 +411,136 @@ def _run_connections(args: argparse.Namespace) -> int:
                 )
         return 0
 
+    if args.connections_command == "probe":
+        from idkmesh.connector_inspection import inspect_connectors
+
+        checked_at = _observation_time(args.checked_at)
+        inspected = inspect_connectors(configs, checked_at=checked_at)
+        payload = {
+            "checked_at": checked_at,
+            "connections": [item.to_dict() for item in inspected],
+        }
+        if args.json_output:
+            print(json.dumps(payload, sort_keys=True, separators=(",", ":")))
+        else:
+            print("id\tstatus\tdriver\treason")
+            for item in inspected:
+                if item.error_code is not None:
+                    status = "error"
+                    reason = item.error_code
+                else:
+                    status = item.probe.status
+                    reason = (
+                        item.probe.failure.code
+                        if item.probe and item.probe.failure
+                        else "-"
+                    )
+                print(
+                    f"{item.config.id}\t{status}\t"
+                    f"{item.config.kind}/{item.config.driver}\t{reason}"
+                )
+        return 0
+
     return 2
+
+
+def _run_doctor(args: argparse.Namespace) -> int:
+    from idkmesh.connector_inspection import doctor_report, inspect_connectors
+    from idkmesh.connector_profiles import (
+        ConnectorProfileError,
+        load_connector_profile_document,
+    )
+
+    try:
+        configs = load_connector_profile_document(args.profile)
+    except ConnectorProfileError as exc:
+        return _connections_error(exc, json_output=args.json_output)
+
+    checked_at = _observation_time(args.checked_at)
+    report = doctor_report(
+        inspect_connectors(configs, checked_at=checked_at)
+    )
+    payload = {"checked_at": checked_at, **report}
+    if args.json_output:
+        print(json.dumps(payload, sort_keys=True, separators=(",", ":")))
+    else:
+        print(f"doctor: {report['status']}")
+        for item in report["connections"]:
+            print(
+                f"- {item['connection_id']}: "
+                f"{item['state']} ({item['reason']})"
+            )
+    return 1 if report["status"] == "FAIL" else 0
+
+
+def _run_route(args: argparse.Namespace) -> int:
+    from idkmesh.connector_inspection import (
+        ConnectorInspectionError,
+        explain_route,
+        inspect_connectors,
+        load_routing_decision_document,
+        parse_connector_costs,
+    )
+    from idkmesh.connector_profiles import (
+        ConnectorProfileError,
+        load_connector_profile_document,
+    )
+
+    try:
+        configs = load_connector_profile_document(args.profile)
+        decision = load_routing_decision_document(args.decision)
+        costs = parse_connector_costs(args.cost)
+    except (ConnectorProfileError, ConnectorInspectionError) as exc:
+        return _connections_error(exc, json_output=args.json_output)
+
+    checked_at = _observation_time(args.checked_at)
+    try:
+        report = explain_route(
+            decision,
+            inspect_connectors(configs, checked_at=checked_at),
+            connector_costs=costs,
+            auto_select=args.auto_select,
+        )
+    except ConnectorInspectionError as exc:
+        return _connections_error(exc, json_output=args.json_output)
+
+    payload = {"checked_at": checked_at, **report}
+    if args.json_output:
+        print(json.dumps(payload, sort_keys=True, separators=(",", ":")))
+    else:
+        print("eligible:")
+        if report["eligible"]:
+            for item in report["eligible"]:
+                print(
+                    f"- {item['connection_id']}: "
+                    f"{item['supported_tier']}"
+                )
+        else:
+            print("- none")
+        print("ineligible:")
+        if report["ineligible"]:
+            for item in report["ineligible"]:
+                print(
+                    f"- {item['connection_id']}: "
+                    + ",".join(item["reasons"])
+                )
+        else:
+            print("- none")
+        print(
+            "selected: "
+            + (report["selected_connection_id"] or "none")
+        )
+    return 0
 
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     if args.command == "connections":
         return _run_connections(args)
+    if args.command == "doctor":
+        return _run_doctor(args)
+    if args.command == "route":
+        return _run_route(args)
     if args.command == "gate-audit-ui":
         if not (0 <= args.port <= 65535):
             return _fail("--port must be between 0 and 65535")
