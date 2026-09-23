@@ -38,11 +38,41 @@ class GitHubRateLimitError(DispatchError):
 
 
 class JulesAPIError(DispatchError):
-    """Jules API failure, with an HTTP status when one was returned."""
+    """Jules API failure with transport and provider status when available."""
 
-    def __init__(self, message: str, *, status_code: int | None = None) -> None:
+    def __init__(
+        self,
+        message: str,
+        *,
+        status_code: int | None = None,
+        api_status: str | None = None,
+    ) -> None:
         super().__init__(message)
         self.status_code = status_code
+        self.api_status = api_status
+
+
+def provider_concurrency_limit(policy: dict[str, Any]) -> int:
+    """Return the configured account/provider task-concurrency ceiling."""
+    provider = policy["provider_concurrency"]
+    return int(provider["max_concurrent_tasks"])
+
+
+def effective_in_flight_limit(policy: dict[str, Any]) -> int:
+    """Use the stricter of repository review capacity and provider capacity."""
+    return min(
+        int(policy["max_in_flight"]),
+        provider_concurrency_limit(policy),
+    )
+
+
+def is_provider_backpressure(exc: JulesAPIError) -> bool:
+    """Return whether Jules clearly rejected creation because a precondition/quota is full."""
+    return (
+        exc.status_code == 429
+        or str(exc.api_status or "").upper()
+        in {"FAILED_PRECONDITION", "RESOURCE_EXHAUSTED"}
+    )
 
 
 def load_policy(path: pathlib.Path = DEFAULT_POLICY) -> dict[str, Any]:
@@ -59,6 +89,7 @@ def load_policy(path: pathlib.Path = DEFAULT_POLICY) -> dict[str, Any]:
         "stale_missing_session_minutes",
         "session_scan_max_pages",
         "max_in_flight",
+        "provider_concurrency",
         "max_dispatch_per_sweep",
         "blocked_labels",
         "priority_weights",
@@ -73,6 +104,25 @@ def load_policy(path: pathlib.Path = DEFAULT_POLICY) -> dict[str, Any]:
         raise DispatchError("max_in_flight must be at least 1")
     if int(policy["max_dispatch_per_sweep"]) < 1:
         raise DispatchError("max_dispatch_per_sweep must be at least 1")
+    provider = policy["provider_concurrency"]
+    if not isinstance(provider, dict):
+        raise DispatchError("provider_concurrency must be an object")
+    provider_max = provider.get("max_concurrent_tasks")
+    if (
+        isinstance(provider_max, bool)
+        or not isinstance(provider_max, int)
+        or provider_max < 1
+    ):
+        raise DispatchError(
+            "provider_concurrency.max_concurrent_tasks must be an integer >= 1"
+        )
+    for field in ("plan", "source", "checked_at"):
+        if not str(provider.get(field) or "").strip():
+            raise DispatchError(f"provider_concurrency.{field} must be non-empty")
+    if int(policy["max_dispatch_per_sweep"]) > effective_in_flight_limit(policy):
+        raise DispatchError(
+            "max_dispatch_per_sweep cannot exceed the effective in-flight limit"
+        )
     if not isinstance(policy["trusted_author_associations"], list):
         raise DispatchError("trusted_author_associations must be a list")
     if not isinstance(policy["attention_session_states"], list):
@@ -381,9 +431,19 @@ class JulesAPI:
                 return json.loads(raw.decode("utf-8")) if raw else None
         except urllib.error.HTTPError as exc:
             detail = exc.read().decode("utf-8", errors="replace")
+            api_status = None
+            try:
+                parsed = json.loads(detail)
+                if isinstance(parsed, dict):
+                    error = parsed.get("error")
+                    if isinstance(error, dict) and error.get("status"):
+                        api_status = str(error["status"]).upper()
+            except (json.JSONDecodeError, TypeError):
+                pass
             raise JulesAPIError(
                 f"Jules API {method} {path} failed with {exc.code}: {detail}",
                 status_code=exc.code,
+                api_status=api_status,
             ) from exc
         except urllib.error.URLError as exc:
             raise JulesAPIError(f"Jules API request failed: {exc}") from exc
@@ -575,13 +635,16 @@ def _add_local_label(issue: dict[str, Any], name: str) -> None:
     issue["labels"] = labels
 
 
-def _replace_local_label(issue: dict[str, Any], old: str, new: str) -> None:
-    labels = [
+def _remove_local_label(issue: dict[str, Any], name: str) -> None:
+    issue["labels"] = [
         label
         for label in issue.get("labels", [])
-        if str(label.get("name", "")).casefold() != old.casefold()
+        if str(label.get("name", "")).casefold() != name.casefold()
     ]
-    issue["labels"] = labels
+
+
+def _replace_local_label(issue: dict[str, Any], old: str, new: str) -> None:
+    _remove_local_label(issue, old)
     _add_local_label(issue, new)
 
 
@@ -707,11 +770,14 @@ def dispatch(
         for issue in issues
         if label_names(issue).intersection(active_labels)
     ]
-    slots = max(0, int(policy["max_in_flight"]) - len(active))
+    effective_limit = effective_in_flight_limit(policy)
+    slots = max(0, effective_limit - len(active))
     if slots == 0:
         print(
-            f"jules dispatcher: capacity full "
-            f"({len(active)}/{policy['max_in_flight']} open dispatched issues)"
+            "jules dispatcher: capacity full "
+            f"({len(active)}/{effective_limit} effective active slots; "
+            f"repository cap={policy['max_in_flight']}, "
+            f"provider cap={provider_concurrency_limit(policy)})"
         )
         return []
 
@@ -748,8 +814,8 @@ def dispatch(
     for issue in selected:
         number = int(issue["number"])
         title = session_title(api.repository, issue)
-        numbers.append(number)
         if dry_run:
+            numbers.append(number)
             print(
                 f"jules dispatcher: would dispatch #{number} "
                 f"score={score_issue(issue, policy)}"
@@ -768,6 +834,7 @@ def dispatch(
             existing is not None
             and str(existing.get("state") or "").upper() != "FAILED"
         ):
+            numbers.append(number)
             api.add_comment(number, session_comment(existing))
             print(
                 f"jules dispatcher: reused existing Jules session for #{number}"
@@ -788,6 +855,15 @@ def dispatch(
             # the task before the response was lost, so retain status and stop.
             if exc.status_code is not None and 400 <= exc.status_code < 500:
                 api.remove_label(number, dispatch_label)
+                _remove_local_label(issue, dispatch_label)
+                if is_provider_backpressure(exc):
+                    print(
+                        "jules dispatcher: provider deferred "
+                        f"#{number} ({exc.api_status or exc.status_code}); "
+                        "reservation rolled back and remaining candidates left "
+                        "queued for a recovery sweep"
+                    )
+                    break
             else:
                 api.add_comment(
                     number,
@@ -798,6 +874,7 @@ def dispatch(
                 )
             raise
 
+        numbers.append(number)
         provider_sessions.append(session)
         api.add_comment(number, session_comment(session))
         print(
