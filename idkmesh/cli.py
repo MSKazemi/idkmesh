@@ -19,6 +19,11 @@ from idkmesh.gate_audit import (
     render_json,
     render_markdown,
 )
+from idkmesh.marginal_evidence import (
+    MarginalEvidenceInputError,
+    analyze_file as analyze_marginal_file,
+    render_json as render_marginal_json,
+)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -76,6 +81,50 @@ def build_parser() -> argparse.ArgumentParser:
             "confidence level in (0, 1) for the bootstrap interval; "
             "requires --bootstrap (default: 0.95)"))
 
+    gm = sub.add_parser(
+        "gate-marginal",
+        help="measure what one additional verifier adds to an existing panel",
+        description=(
+            "Analyze add-one verifier contribution against the same "
+            "ground-truthed verdict matrix and gate rule. This command is "
+            "diagnostic only: it does not rank/select a verifier, dispatch "
+            "work, approve an EvaluatorPlan, accept a candidate, or merge."),
+    )
+    gm.add_argument("input", help="path to the verdict-matrix JSON file")
+    gm.add_argument(
+        "--current", action="append", required=True, metavar="VERIFIER_ID",
+        help=(
+            "verifier already in the current panel; repeat for each panel "
+            "member"))
+    gm.add_argument(
+        "--candidate", action="append", metavar="VERIFIER_ID",
+        help=(
+            "candidate verifier to analyze; repeat as needed. If omitted, "
+            "analyze every verifier not already in --current"))
+    gm.add_argument(
+        "--out", metavar="PATH",
+        help="write the JSON report here (default: stdout)")
+    gm.add_argument(
+        "--pretty", action="store_true",
+        help="pretty-print the JSON report")
+    gm.add_argument(
+        "--bootstrap", action="store_true",
+        help=(
+            "add paired candidate-row bootstrap intervals for panel-error and "
+            "effective-vote deltas"))
+    gm.add_argument(
+        "--bootstrap-replicates", type=int, default=2000, metavar="N",
+        help="bootstrap resample count; requires --bootstrap (default: 2000)")
+    gm.add_argument(
+        "--bootstrap-seed", type=int, default=0, metavar="N",
+        help="bootstrap seed; requires --bootstrap (default: 0)")
+    gm.add_argument(
+        "--bootstrap-confidence-level", type=float, default=0.95,
+        metavar="X",
+        help=(
+            "confidence level in (0, 1); requires --bootstrap "
+            "(default: 0.95)"))
+
     gui = sub.add_parser(
         "gate-audit-ui",
         help="open the local browser interface for gate-audit",
@@ -121,7 +170,10 @@ def _check_output_paths(args: argparse.Namespace) -> int | None:
     itself, which is unrecoverable if it was not committed.
     """
     claimed: dict[str, str] = {}
-    for flag, path in (("--out", args.out), ("--markdown", args.markdown)):
+    for flag, path in (
+        ("--out", getattr(args, "out", None)),
+        ("--markdown", getattr(args, "markdown", None)),
+    ):
         if path is None:
             continue
         key = os.path.realpath(path)
@@ -177,6 +229,56 @@ def main(argv: list[str] | None = None) -> int:
             return _fail(
                 f"cannot start local UI on 127.0.0.1:{args.port}: "
                 f"{_reason(exc)}")
+        return 0
+
+    if args.command == "gate-marginal":
+        conflict = _check_output_paths(args)
+        if conflict is not None:
+            return conflict
+
+        bootstrap: dict[str, object] | None = None
+        if args.bootstrap:
+            bootstrap = {
+                "replicates": args.bootstrap_replicates,
+                "seed": args.bootstrap_seed,
+                "confidence_level": args.bootstrap_confidence_level,
+            }
+        elif (
+            args.bootstrap_replicates != 2000
+            or args.bootstrap_seed != 0
+            or args.bootstrap_confidence_level != 0.95
+        ):
+            return _fail(
+                "--bootstrap-replicates/--bootstrap-seed/"
+                "--bootstrap-confidence-level require --bootstrap")
+
+        try:
+            report = analyze_marginal_file(
+                args.input,
+                current_verifier_ids=args.current,
+                candidate_verifier_ids=args.candidate,
+                bootstrap=bootstrap,
+            )
+        except FileNotFoundError:
+            return _fail(f"input file not found: {args.input}")
+        except IsADirectoryError:
+            return _fail(
+                f"input path is a directory, not a verdict-matrix file: "
+                f"{args.input}")
+        except OSError as exc:
+            return _fail(
+                f"cannot read input file {args.input}: {_reason(exc)}")
+        except MarginalEvidenceInputError as exc:
+            return _fail(str(exc))
+
+        rendered = render_marginal_json(report, pretty=args.pretty)
+        if args.out:
+            failure = _write(
+                args.out, rendered + "\n", "marginal-evidence JSON report")
+            if failure is not None:
+                return failure
+        else:
+            print(rendered)
         return 0
 
     if args.command != "gate-audit":  # pragma: no cover - argparse enforces it
