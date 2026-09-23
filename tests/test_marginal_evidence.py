@@ -369,6 +369,27 @@ class FiniteSampleTests(unittest.TestCase):
         self.assertIsNotNone(section["ci_low"])
         self.assertIsNotNone(section["ci_high"])
 
+    def test_identical_candidates_share_the_same_bootstrap_draws(self):
+        data = make_matrix(
+            count=20,
+            error_sets={
+                "v1": {0, 1, 2, 3},
+                "v2": {0, 1, 4, 5},
+                "candidate-a": {2, 6, 10},
+                "candidate-b": {2, 6, 10},
+            },
+        )
+        report = marginal_evidence.analyze(
+            data,
+            current_verifier_ids=["v1", "v2"],
+            candidate_verifier_ids=["candidate-a", "candidate-b"],
+            bootstrap={"replicates": 120, "seed": 29},
+        )
+        first, second = report["candidates"]
+        self.assertEqual(first["uncertainty"], second["uncertainty"])
+        self.assertEqual(first["panel_error_delta"], second["panel_error_delta"])
+        self.assertEqual(first["delta_effective_votes"], second["delta_effective_votes"])
+
     def test_bad_bootstrap_parameters_are_refused(self):
         for params in (
             {"replicates": 99, "seed": 0},
