@@ -52,6 +52,9 @@ Do not duplicate these existing owners:
 | Connector/control-plane program | #570 |
 | End-to-end Product Spine | #682 |
 | Local persistence/idempotency | #616 |
+| GitHub-native durable run/evidence ledger | #597 |
+| GitHub multi-user role/authority profile | #598 |
+| GitHub governance/secret-access baseline | #607 |
 | Enterprise identity/RBAC/ABAC | #670 |
 | Enterprise readiness/security | #667 |
 | Human Decision Record schema | `schemas/human-decision-record-v0.1.schema.json` |
