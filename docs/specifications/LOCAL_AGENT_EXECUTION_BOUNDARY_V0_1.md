@@ -76,32 +76,52 @@ Every run supplies positive ceilings for:
 
 A production backend may enforce stricter values but not weaker ones.
 
-## SandboxCapabilities
+## SandboxCapabilities and SandboxPolicy
 
-Before execution, the orchestrator requires all of:
+Before execution, the orchestrator requires the backend to attest all of:
 
+- `network_enforcement`;
 - `process_tree_isolation`;
 - `cpu_limit`;
 - `memory_limit`;
 - `disk_limit`;
 - `process_limit`;
 - `filesystem_isolation`;
-- `credential_isolation`;
-- an enforced network policy matching the admitted preset/WorkUnit.
+- `writable_path_enforcement`;
+- `credential_isolation`.
 
 A missing capability is a hard error.
+
+Capability flags alone are not enough to execute a worker. Each call also passes
+an immutable `SandboxPolicy` containing:
+
+- `network_mode`;
+- exact `network_allowlist` destinations;
+- exact WorkUnit `writable_paths`;
+- exact WorkUnit `forbidden_paths`.
+
+The production backend is responsible for enforcing those values, not merely
+reporting them after execution. In the initial profile,
+`permissions.filesystem_write` must exactly equal
+`constraints.allowed_paths`; this intentionally avoids ambiguous competing
+write-scope declarations.
 
 ## Network mapping
 
 Initial v0.1 policy is intentionally narrow:
 
-| WorkUnit | Preset | Sandbox | Outcome |
-| --- | --- | --- | --- |
-| `none` | `disabled` | `disabled` | admissible |
-| `allowlist` | `model_only` | `model_only` | admissible |
-| `allowlist` | `allowlisted` | `allowlisted` | admissible |
-| `unrestricted` | any | any | rejected |
-| mismatch | any | any | rejected |
+| WorkUnit | Preset | Extra trusted input | SandboxPolicy | Outcome |
+| --- | --- | --- | --- | --- |
+| `none` | `disabled` | none | `disabled` | admissible |
+| `allowlist` | `allowlisted` | none | exact WorkUnit allowlist | admissible |
+| `allowlist` | `model_only` | connection-derived model destinations | exact WorkUnit allowlist | admissible only when WorkUnit destinations are a subset of trusted model destinations |
+| `allowlist` | `model_only` | missing | — | rejected |
+| `unrestricted` | any | any | — | rejected |
+| mismatch | any | any | — | rejected |
+
+A `model_only` preset therefore cannot turn task-authored hostnames into network
+authority. A trusted model/connection layer must resolve permitted destinations
+first, and the runner verifies the WorkUnit allowlist does not exceed them.
 
 The sandbox backend owns actual packet/namespace/firewall enforcement. A string
 claim without enforcement evidence is insufficient for production acceptance.
