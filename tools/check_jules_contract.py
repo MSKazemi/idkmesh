@@ -228,6 +228,11 @@ def main() -> int:
             "bootstrap_labels:" in block,
             f"{name} must declare bootstrap_labels",
         )
+    _require(
+        errors,
+        "fill_capacity:" in workflow_call,
+        "workflow_call must declare typed fill_capacity intent",
+    )
 
     _require(
         errors,
@@ -303,6 +308,11 @@ def main() -> int:
     )
     _require(
         errors,
+        "fill_capacity: true" in router_workflow,
+        "router recovery/backfill calls must explicitly request capacity fill",
+    )
+    _require(
+        errors,
         "\n  push:\n" not in dispatcher_workflow,
         "dispatcher must not duplicate router-owned control-plane push recovery",
     )
@@ -311,6 +321,11 @@ def main() -> int:
         errors,
         "inputs.issue_number" in dispatcher_workflow,
         "dispatcher must consume the typed issue_number input",
+    )
+    _require(
+        errors,
+        "inputs.fill_capacity" in dispatcher_workflow,
+        "dispatcher must consume typed reusable capacity-fill intent",
     )
     _require(
         errors,
