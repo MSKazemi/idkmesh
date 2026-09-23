@@ -167,7 +167,7 @@ Markdown/identity report, not the combined gate. See
 [the stable PR gate](.github/workflows/pr-gate.yml) for the CI invocation.
 
 **Do not verify your work with `python -m unittest discover`.** It silently
-under-collects — `unittest` only finds `TestCase` subclasses, so the 215
+under-collects — `unittest` only finds `TestCase` subclasses, so the 224
 module-level `test_*` functions spread across 23 files in `tests/` are
 invisible to it. That is roughly a tenth of the suite, skipped while the run
 still prints `OK`, with no indication anything was missed.
@@ -276,7 +276,7 @@ ignore it.
 2. Find or open an issue for non-trivial work and state what you plan to change.
 3. Fork/branch and make a focused change.
 4. Add tests, evidence, or documentation.
-5. Open a pull request using the template.
+5. Open a pull request using the template. For same-repository branches using a managed development prefix, the trusted [Auto Draft PR Steward](docs/operations/AUTO_DRAFT_PR_STEWARD.md) may create the initial Draft PR shell automatically; continue committing on the same branch and complete/refine the PR normally. Scratch, evidence, frozen, hold, dependency-bot, and Jules-managed branches are excluded from this automatic lane.
 6. Respond to review in public where possible.
 7. Update the change until the evidence and maintainability are sufficient.
 8. If the change represents a major durable decision, add/update a decision record.

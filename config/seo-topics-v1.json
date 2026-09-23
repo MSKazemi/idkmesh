@@ -1,0 +1,193 @@
+{
+  "version": "1.0",
+  "reviewed_at": "2026-09-22",
+  "purpose": "Map 100 strategically important search intents to ten useful IDKMesh topic pages. These are semantic priorities, not claims of search volume or ranking.",
+  "rules": [
+    "One authoritative page may satisfy several closely related query phrasings.",
+    "Do not create doorway pages or repeat exact-match phrases unnaturally.",
+    "Re-prioritize using Search Console, Bing Webmaster Tools, and citation/referral evidence once enough observations exist.",
+    "A query target must remain supported by the page's actual content and repository evidence."
+  ],
+  "clusters": [
+    {
+      "id": "agent-verification",
+      "title": "AI Agent Verification and Validation",
+      "path": "docs/topics/ai-agent-verification.md",
+      "url": "https://mskazemi.com/idkmesh/topics/ai-agent-verification.html",
+      "queries": [
+        "ai agent verification",
+        "ai agent validation",
+        "verify ai agents",
+        "ai agent testing",
+        "ai agent evaluation",
+        "independent ai verification",
+        "autonomous agent verification",
+        "agent output verification",
+        "ai agent quality assurance",
+        "trustworthy ai agents"
+      ]
+    },
+    {
+      "id": "multi-agent-orchestration",
+      "title": "Multi-Agent Orchestration and Coordination",
+      "path": "docs/topics/multi-agent-orchestration.md",
+      "url": "https://mskazemi.com/idkmesh/topics/multi-agent-orchestration.html",
+      "queries": [
+        "multi-agent orchestration",
+        "ai agent orchestration",
+        "multi-agent coordination",
+        "agent orchestration framework",
+        "ai workflow orchestration",
+        "ai agent coordination framework",
+        "distributed ai agents",
+        "collaborative ai agents",
+        "multi-agent workflow",
+        "agent swarm orchestration"
+      ]
+    },
+    {
+      "id": "ai-code-review",
+      "title": "AI Code Review and Coding-Agent Verification",
+      "path": "docs/topics/ai-code-review.md",
+      "url": "https://mskazemi.com/idkmesh/topics/ai-code-review.html",
+      "queries": [
+        "ai code review",
+        "ai code review agents",
+        "automated code review ai",
+        "llm code review",
+        "ai pull request review",
+        "autonomous coding agents",
+        "coding agent verification",
+        "ai software engineering agents",
+        "github coding agents",
+        "ai generated code verification"
+      ]
+    },
+    {
+      "id": "llm-judge-reliability",
+      "title": "LLM-as-a-Judge Reliability",
+      "path": "docs/topics/llm-judge-reliability.md",
+      "url": "https://mskazemi.com/idkmesh/topics/llm-judge-reliability.html",
+      "queries": [
+        "llm as a judge",
+        "llm judge reliability",
+        "llm evaluator",
+        "llm evaluation reliability",
+        "ai evaluator bias",
+        "llm judge bias",
+        "llm judge calibration",
+        "model evaluation panel",
+        "ai judge panel",
+        "correlated llm errors"
+      ]
+    },
+    {
+      "id": "verifier-panels",
+      "title": "Verifier Panels and Independent Review",
+      "path": "docs/topics/verifier-panels.md",
+      "url": "https://mskazemi.com/idkmesh/topics/verifier-panels.html",
+      "queries": [
+        "verifier panel",
+        "effective independent votes",
+        "correlated verifier errors",
+        "review panel reliability",
+        "independent reviewers ai",
+        "ai verification system",
+        "verification quorum",
+        "verifier diversity",
+        "evaluation independence",
+        "reliable ai review"
+      ]
+    },
+    {
+      "id": "agent-governance",
+      "title": "Human Oversight and AI Agent Governance",
+      "path": "docs/topics/agent-governance.md",
+      "url": "https://mskazemi.com/idkmesh/topics/agent-governance.html",
+      "queries": [
+        "human in the loop ai agents",
+        "ai agent governance",
+        "ai oversight for agents",
+        "ai approval workflow",
+        "human approval ai",
+        "agent permission boundaries",
+        "ai agent access control",
+        "safe autonomous agents",
+        "ai agent audit trail",
+        "ai agent accountability"
+      ]
+    },
+    {
+      "id": "provenance-evidence",
+      "title": "AI Provenance, Evidence, and Reproducibility",
+      "path": "docs/topics/provenance-evidence.md",
+      "url": "https://mskazemi.com/idkmesh/topics/provenance-evidence.html",
+      "queries": [
+        "ai provenance",
+        "agent provenance",
+        "ai evidence pipeline",
+        "reproducible ai workflows",
+        "ai audit evidence",
+        "ai decision provenance",
+        "model output provenance",
+        "ai workflow traceability",
+        "verifiable ai outputs",
+        "evidence based ai systems"
+      ]
+    },
+    {
+      "id": "mcp-a2a-interoperability",
+      "title": "MCP, A2A, and AI Agent Interoperability",
+      "path": "docs/topics/mcp-a2a-interoperability.md",
+      "url": "https://mskazemi.com/idkmesh/topics/mcp-a2a-interoperability.html",
+      "queries": [
+        "mcp a2a",
+        "mcp vs a2a",
+        "model context protocol a2a",
+        "ai agent interoperability",
+        "agent2agent protocol",
+        "a2a protocol",
+        "mcp agent orchestration",
+        "agent protocol interoperability",
+        "a2a mcp integration",
+        "ai agent connector framework"
+      ]
+    },
+    {
+      "id": "verification-scaling",
+      "title": "Verification Debt, Backpressure, and Agent Scaling",
+      "path": "docs/topics/verification-scaling.md",
+      "url": "https://mskazemi.com/idkmesh/topics/verification-scaling.html",
+      "queries": [
+        "verification debt",
+        "ai review bottleneck",
+        "ai verification bottleneck",
+        "agent scaling verification",
+        "ai agent scaling",
+        "multi-agent reliability",
+        "verification backpressure",
+        "ai evaluation at scale",
+        "scalable ai verification",
+        "ai swarm reliability"
+      ]
+    },
+    {
+      "id": "verified-swarm-engineering",
+      "title": "Verified Swarm and Agentic Software Engineering",
+      "path": "docs/topics/verified-swarm-engineering.md",
+      "url": "https://mskazemi.com/idkmesh/topics/verified-swarm-engineering.html",
+      "queries": [
+        "verified swarm engineering",
+        "verified ai swarm",
+        "ai swarm framework",
+        "open source ai agent framework",
+        "github native ai agents",
+        "ai agent development framework",
+        "ai agent collaboration framework",
+        "verification first ai",
+        "trustworthy agentic ai",
+        "agentic software engineering"
+      ]
+    }
+  ]
+}

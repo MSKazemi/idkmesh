@@ -9,6 +9,7 @@ meaning of an existing version.
 
 - [Benchmark Cohort Index v0.1](BENCHMARK_COHORT_V0_1.md) — freezes a replayable
   task set over existing WorkUnit and evaluator objects.
+- [CandidateReference v0.1](CANDIDATE_REFERENCE_V0_1.md) — binds a discovered PR or artifact bundle to an immutable provider-neutral candidate identity without granting verification or integration authority.
 - [Worker ResultManifest v0.1](RESULT_MANIFEST_V0_1.md) — records worker-produced
   artifacts and claims without granting acceptance authority.
 - [Run Evidence Report v0.1](RUN_EVIDENCE_REPORT_V0_1.md) — aggregates attempt
@@ -27,6 +28,10 @@ meaning of an existing version.
   measures a verifier panel's effective independent votes, correlation
   structure, and seeded-probe breach rate from a verdict matrix; diagnostic
   only, no acceptance authority.
+- [Marginal Evidence Analysis v0.1](MARGINAL_EVIDENCE_V0_1.md) — the
+  `idkmesh gate-marginal` diagnostic contract: measures what one additional
+  verifier changes for an already-selected panel under the exact same gate
+  rule, with explicit censoring/uncertainty and no routing authority.
 - [Bound Unified-Diff Evaluator Backend](PATCH_EVALUATOR_BACKEND.md) — verifies
   untrusted patch bundles against an evaluator-owned plan.
 - [EvaluatorPlan v0.3 Semantic Matching](EVALUATOR_PLAN_V0_3_SEMANTIC_MATCHING.md)
@@ -53,6 +58,10 @@ meaning of an existing version.
 
 ## Project Configuration
 
+- [Enterprise Control Profile v0.1](ENTERPRISE_CONTROL_PROFILE_V0_1.md) —
+  experimental machine-readable enterprise posture and deterministic
+  declaration-preflight contract for tenancy, identity/SoD, data/egress,
+  secrets, audit, recovery, supply chain, and emergency change.
 - [ProjectManifest and DomainPack Interfaces](PROJECT_DOMAIN_INTERFACES.md) —
   separates reusable coordination core from declarative domain and project
   policy.
@@ -60,6 +69,14 @@ meaning of an existing version.
   project-facing connection, dispatch, run-state, webhook, secret-reference,
   agent/model-provider, and error contract above the canonical WorkUnit and
   verification semantics.
+- [Product Spine Service v0.1](PRODUCT_SPINE_SERVICE_V0_1.md) — provider-neutral application-service contract that composes WorkUnit, routing, dispatch, candidate normalization, verification, evidence, and Human Decision Record without creating a new correctness or merge authority.
+- [Enterprise Tenant Scope v0.1](ENTERPRISE_TENANT_SCOPE_V0_1.md) —
+  tenant/project-scoped resource, storage-key, and idempotency foundation with
+  fail-closed cross-scope reference checks.
+- [Enterprise Authorization Kernel v0.1](ENTERPRISE_AUTHORIZATION_V0_1.md) —
+  strict ActorContext + RBAC/ABAC-style policy evaluation over exact tenant/project
+  resource scope, including identity freshness, data clearance, risk floors, and
+  distinct high-risk approval without executing the requested side effect.
 
 When modifying a contract, update its schema, fixtures, implementation, and
 tests together. Introduce a new explicit version when behavior changes; keep

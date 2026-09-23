@@ -33,6 +33,41 @@ sha256:<64 lowercase hex characters>
 
 This is the same canonical-digest convention already used by the Phase 0 harness.
 
+## Product control-plane source pre-binding
+
+Before a provider-specific candidate is normalized into ResultManifest evidence,
+the product control plane needs a retained binding between the **exact WorkUnit
+document** and the **exact Git source revision** admitted for that attempt.
+
+The reference implementation is `idkmesh/work_unit_binding.py`.
+
+It reuses the canonical digest convention above and records:
+
+```text
+WorkUnit id
+WorkUnit version
+canonical WorkUnit digest
+trusted starting Git object id
+```
+
+If `WorkUnit.provenance.source_revision` is already present, the trusted
+starting revision must match it. If the declaration is absent, the admission or
+execution boundary may supply the exact revision later and retain it in the
+binding.
+
+A retained binding fails closed when:
+
+- WorkUnit id or version changes;
+- any WorkUnit content changes and therefore changes its canonical digest;
+- a declared WorkUnit source revision disagrees with the trusted revision;
+- a later observed source revision disagrees with the retained revision;
+- a source revision is mutable text such as a branch name rather than a 40- or
+  64-hex Git object id.
+
+This pre-binding is identity/provenance evidence only. It cannot mark a worker
+successful, make a candidate ready, satisfy independent verification, or grant
+integration authority.
+
 ## Required bindings
 
 For a tuple `(WorkUnit, ResultManifest, VerificationResult)` the integrity checker requires:
