@@ -57,4 +57,4 @@ The important separations are simple:
 - [Architecture](https://github.com/MSKazemi/idkmesh/blob/main/ARCHITECTURE.md)
 - [Schema index](https://github.com/MSKazemi/idkmesh/blob/main/schemas/README.md)
 
-**Last reviewed:** 2026-09-22.
+**Last reviewed:** 2026-09-23.

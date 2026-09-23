@@ -92,6 +92,33 @@ does not reach the live front door: PR #391 (`59d6e39`) pointed `index.md` at
 `gate-audit` and the live page continued to contain no mention of it. Edit
 `index.html`.
 
+## Directory index convention
+
+A repository directory README and a public website directory index are not always
+the same publication contract.
+
+The Pages artifact from the first SEO rollout showed the exact distinction in
+this repository: the existing **frontmatter-free** directory `README.md` files
+were promoted to `index.html`, while `docs/topics/README.md` — which carried
+YAML front matter for title/description/social metadata — was emitted as
+`topics/README.html`, leaving the advertised `/topics/` URL at 404.
+
+Therefore, when a public hub needs front matter and is intended to resolve at
+`/idkmesh/<directory>/`, use `docs/<directory>/index.md` (or `index.html`)
+explicitly. Do not rely on a metadata-bearing `README.md` being promoted.
+
+The SEO topic hub follows this rule:
+
+```text
+docs/topics/index.md
+  -> https://mskazemi.com/idkmesh/topics/
+```
+
+The public-discovery monitor checks that URL after the Pages deployment
+workflow completes. This rule exists because the first live 100-query rollout
+published all ten pillar pages correctly while `/topics/` remained a 404 when
+the hub source was named `README.md`.
+
 ## Search and answer-engine discovery
 
 The discovery surface is intentionally layered rather than dependent on one

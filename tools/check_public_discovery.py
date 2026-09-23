@@ -20,6 +20,22 @@ LLMS = "https://mskazemi.com/idkmesh/llms.txt"
 INDEXNOW_KEY = "7c1f6d4a9b2e3c8f5a0d1e7b4c6f8a2d"
 INDEXNOW_KEY_URL = f"https://mskazemi.com/idkmesh/{INDEXNOW_KEY}.txt"
 
+DIRECTORY_HUBS = {
+    name: f"https://mskazemi.com/idkmesh/{name}/"
+    for name in (
+        "architecture",
+        "audits",
+        "community",
+        "conversations",
+        "decisions",
+        "findings",
+        "foundations",
+        "planning",
+        "research",
+        "specifications",
+    )
+}
+
 TOPIC_PAGES = {
     "agent-governance": (
         "https://mskazemi.com/idkmesh/topics/agent-governance.html",
@@ -67,6 +83,9 @@ USER_AGENTS = {
     "browser": "Mozilla/5.0 (compatible; IDKMesh-Discovery-Monitor/1.0)",
     "google": "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
     "bing": "Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)",
+    "yahoo": "Mozilla/5.0 (compatible; Yahoo! Slurp; http://help.yahoo.com/help/us/ysearch/slurp)",
+    "duckduckgo": "DuckDuckBot/1.1; (+http://duckduckgo.com/duckduckbot.html)",
+    "apple": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15 (Applebot/0.1; +http://www.apple.com/go/applebot)",
     "openai": "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko); compatible; OAI-SearchBot/1.0; +https://openai.com/searchbot",
     "claude-search": "Claude-SearchBot",
     "claude-user": "Claude-User",
@@ -77,6 +96,9 @@ USER_AGENTS = {
 ROBOTS_USER_AGENTS = {
     "google": "Googlebot",
     "bing": "bingbot",
+    "yahoo": "Slurp",
+    "duckduckgo": "DuckDuckBot",
+    "apple": "Applebot",
     "openai": "OAI-SearchBot",
     "claude-search": "Claude-SearchBot",
     "claude-user": "Claude-User",
@@ -130,7 +152,12 @@ def probe() -> list[str]:
     if sitemap_status != 200:
         failures.append(f"sitemap returned HTTP {sitemap_status}")
     else:
-        expected_urls = [HOME, TOPICS, *(url for url, _ in TOPIC_PAGES.values())]
+        expected_urls = [
+            HOME,
+            TOPICS,
+            *DIRECTORY_HUBS.values(),
+            *(url for url, _ in TOPIC_PAGES.values()),
+        ]
         for expected in expected_urls:
             if expected not in sitemap:
                 failures.append(f"sitemap does not contain {expected}")
@@ -144,6 +171,13 @@ def probe() -> list[str]:
         failures.append(f"topic hub returned HTTP {topic_status}")
     elif "AI agent verification" not in topic_body or "multi-agent orchestration" not in topic_body.lower():
         failures.append("topic hub returned 200 but expected topic content is absent")
+
+    for hub_id, url in DIRECTORY_HUBS.items():
+        status, body = fetch(url, browser)
+        if status != 200:
+            failures.append(f"{hub_id} directory hub returned HTTP {status}")
+        elif not body.strip():
+            failures.append(f"{hub_id} directory hub returned an empty body")
 
     for topic_id, (url, marker) in TOPIC_PAGES.items():
         status, body = fetch(url, browser)
@@ -200,8 +234,9 @@ def main() -> int:
         return 1
 
     print(
-        "Discovery surface healthy: robots, sitemap, topic hub, ten topic pages, "
-        "llms.txt, IndexNow key, and representative crawler probes all passed."
+        "Discovery surface healthy: robots, sitemap, directory hubs, topic hub, "
+        "ten topic pages, llms.txt, IndexNow key, and representative crawler "
+        "probes all passed."
     )
     return 0
 

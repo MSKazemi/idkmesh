@@ -383,3 +383,16 @@ The project becomes compelling if it can prove three things in order:
 3. its routing and verification strategy reduces human review cost or defects compared with simpler baselines.
 
 If those are demonstrated with real external repositories, IDKMesh has a credible reason to exist even in a crowded agent ecosystem.
+
+
+## 12. Follow-on innovation program
+
+The dated [Innovation Moat — 2026-09-23](INNOVATION_MOAT_2026-09-23.md)
+extends this positioning into concrete research/product candidates after a
+fresh competitor scan. Its lead proposal is **marginal independent-evidence
+routing**: select the next verifier by the evidence it adds to the panel already
+chosen, not merely by standalone accuracy, family label, or reviewer count.
+
+That proposal is intentionally aligned with the in-flight Adaptive Verification
+Ecology work (#621 / PR #622) rather than creating a second orchestration
+architecture.
