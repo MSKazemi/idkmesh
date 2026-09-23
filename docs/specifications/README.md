@@ -5,6 +5,10 @@ and project-configuration contracts. A status of experimental means the
 contract can gain a new version; it does not permit silently changing the
 meaning of an existing version.
 
+## GitHub-First Product Operations
+
+- [GitHub-First Operations v0.1](GITHUB_FIRST_OPERATIONS_V0_1.md) — implementation contract for no-server GitHub coordination: bootstrap, durable run ledger, idempotency/recovery, multi-user claims/authority, Actions security, optional Projects/Pages/OIDC/attestations, and the pilot test matrix.
+
 ## Work and Evidence Contracts
 
 - [Benchmark Cohort Index v0.1](BENCHMARK_COHORT_V0_1.md) — freezes a replayable
