@@ -9,7 +9,7 @@ human-governance boundaries.
 
 **Single-dispatcher invariant:** the REST-API path described here is the only project-operated automatic Jules dispatcher. Do not run a second API dispatcher, another queue, or another workflow that creates Jules sessions for the same repository at the same time. The legacy native GitHub App `jules` label is retained only as an explicit manual fallback and is never emitted by the automatic dispatcher.
 
-The deterministic issue router automatically marks low-risk bounded T1/T2 work `agent:jules-eligible`; maintainers may also explicitly approve a task with `agent-ready`. GitHub Actions resolves the connected repository through the official Jules Sources API, creates one Jules session with `AUTO_CREATE_PR`, and records `agent:jules-dispatched`; Jules opens a pull request; normal IDKMesh CI and review decide whether the candidate can be integrated.
+The deterministic issue router automatically marks low-risk bounded T1/T2 work `agent:jules-eligible`. Automatic dispatch from that label is accepted only for issues whose GitHub `author_association` is `OWNER`, `MEMBER`, or `COLLABORATOR`, preventing untrusted public issue authors from consuming Jules capacity. Maintainers may explicitly approve any reviewed task with `agent-ready`. GitHub Actions resolves the connected repository through the official Jules Sources API, creates one Jules session with `AUTO_CREATE_PR`, and records `agent:jules-dispatched`; Jules opens a pull request; normal IDKMesh CI and review decide whether the candidate can be integrated.
 
 ```mermaid
 flowchart LR
@@ -123,7 +123,7 @@ provider work.
 | Label | Meaning |
 | --- | --- |
 | `agent-ready` | explicit maintainer approval for bounded coding-agent execution |
-| `agent:jules-eligible` | deterministic low-risk T1/T2 route; enters the automatic Jules queue |
+| `agent:jules-eligible` | deterministic low-risk T1/T2 route; enters the automatic queue only for trusted repository-associated authors |
 | `agent:jules-dispatched` | automatic dispatcher reservation/status for an API-backed Jules session |
 | `jules` | legacy/manual native-App trigger; never added by automatic dispatch |
 
