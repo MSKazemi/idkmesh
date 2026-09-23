@@ -28,8 +28,19 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: Test visibility observatory
-        run: python -m unittest tests.test_visibility_observatory -v
+      - name: Test visibility and query-portfolio observatories
+        run: |
+          python -m unittest \
+            tests.test_visibility_observatory \
+            tests.test_discovery_query_portfolio \
+            -v
+
+      - name: Validate discovery query portfolio
+        run: |
+          python scripts/discovery_query_portfolio.py \
+            --portfolio config/discovery-query-portfolio-v0.1.json \
+            --root . \
+            --output results/visibility/query-portfolio.json
 
       - name: Collect visibility and acquisition evidence
         env:
@@ -51,6 +62,8 @@ jobs:
           discovery = result["github"]["discovery"]
           acquisition = result["github"]["community_acquisition"]
           site = result["site"]
+          portfolio = json.loads(Path("results/visibility/query-portfolio.json").read_text())
+          query_summary = portfolio["summary"]
           lines = [
               "# Visibility and Community Observatory",
               "",
@@ -64,6 +77,10 @@ jobs:
               f"- HTML pages audited: {site['html_pages']}",
               f"- Technical SEO/AEO coverage: {site['technical_coverage']}",
               f"- Sitemap URLs: {site['sitemap']['url_count']}",
+              f"- Non-branded query hypotheses: {query_summary['queries']}",
+              f"- Intent clusters: {query_summary['clusters']}",
+              f"- Canonical search targets: {query_summary['distinct_canonical_targets']}",
+              f"- Max query hypotheses on one target: {query_summary['max_queries_on_one_canonical_target']}",
               "",
               "## Known measurement gaps",
               "",
