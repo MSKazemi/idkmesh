@@ -94,6 +94,54 @@ What is **not** yet a finished capability:
 
 This distinction is important: **implemented infrastructure is evidence of capability to run experiments, not evidence that the research hypotheses are true.**
 
+## Inspect a swarm run in the Human Control Tower
+
+The local Control Tower is the first system-level GUI for the Verified Swarm
+Runner. It renders existing Run Evidence Report v0.1 documents as human
+attention items, attempt-by-attempt claim/evidence layers, authority boundaries,
+and a semantic background timeline.
+
+```bash
+git clone https://github.com/MSKazemi/idkmesh
+cd idkmesh
+pip install .
+idkmesh control-tower \
+  results/orchestration/replay-fixture-evaluator-plan-good-vs-bad/evidence-report.json
+```
+
+With no path, `idkmesh control-tower` opens the same committed two-attempt demo.
+The local API is versioned at `/api/v1/`, binds only to `127.0.0.1`, and is
+read-only: it cannot execute workers, record a human decision, select a
+candidate, push Git, or merge. See
+[`Control Tower Local API v0.1`](docs/specifications/CONTROL_TOWER_LOCAL_API_V0_1.md).
+
+The UI deliberately keeps three different ideas visually separate:
+
+```text
+worker claim -> independent evidence -> human authority
+```
+
+This is an inspection surface over existing evidence, not a second source of
+canonical truth.
+
+For local automation, provide a caller-known ephemeral token without putting it
+on the command line:
+
+```bash
+export IDKMESH_CONTROL_TOWER_TOKEN='replace-with-at-least-32-random-characters'
+idkmesh control-tower --no-browser --port 8770
+
+curl \
+  -H "X-IDKMesh-UI-Token: $IDKMESH_CONTROL_TOWER_TOKEN" \
+  http://127.0.0.1:8770/api/v1/status
+```
+
+Machine-readable discovery is available at
+`/api/v1/openapi.json`, and successful inspection snapshots are frozen by
+[`control-tower-snapshot-v0.1.schema.json`](schemas/control-tower-snapshot-v0.1.schema.json).
+See the [Control Tower Local API v0.1](docs/specifications/CONTROL_TOWER_LOCAL_API_V0_1.md)
+for media types, deterministic digests, error codes, and authority guarantees.
+
 ## Find IDKMesh by the problem you are solving
 
 If you arrived with a specific question rather than the project name, use the

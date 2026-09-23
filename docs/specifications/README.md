@@ -18,6 +18,9 @@ meaning of an existing version.
   artifacts and claims without granting acceptance authority.
 - [Run Evidence Report v0.1](RUN_EVIDENCE_REPORT_V0_1.md) — aggregates attempt
   and independent-verification evidence for human inspection.
+- [Control Tower Local API v0.1](CONTROL_TOWER_LOCAL_API_V0_1.md) — versioned,
+  loopback-only read API and presentation contract for Human Control Tower run
+  evidence inspection.
 - [HTTP Service Runtime Baseline v0.1](HTTP_SERVICE_RUNTIME_V0_1.md) —
   dependency-free request correlation, liveness/readiness, service metadata,
   and payload-free structured access logging for IDKMesh HTTP surfaces.
@@ -66,6 +69,10 @@ meaning of an existing version.
 - [GitHub to IDKGraph Projection v0.1](GITHUB_IDKGRAPH_PROJECTION_V0_1.md) —
   deterministically joins normalized GitHub activity to the repository graph
   without granting write or execution authority.
+
+## API Conventions
+
+- [API Conventions v0.1](API_CONVENTIONS_V0_1.md) — proposed shared HTTP conventions for namespace/versioning, errors, correlation, pagination, idempotency, concurrency, events, limits, OpenAPI/schema compatibility, deprecation, and deployment security profiles. Issue #736 owns review/freeze.
 
 ## Project Configuration
 
