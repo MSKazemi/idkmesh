@@ -42,10 +42,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="idkmesh",
         description=(
-            "IDKMesh verification and stewardship tooling. Measure verifier "
-            "independence with 'gate-audit', inspect steward evidence with "
-            "'steward-report', or open its local read-only dashboard with "
-            "'steward-report-ui'."),
+            "IDKMesh verification and stewardship tooling. Use 'gate-audit' "
+            "to measure verifier-panel independence, or 'steward-report' and "
+            "'steward-report-ui' to inspect steward evidence offline."),
     )
     parser.add_argument(
         "--version", action="version", version=f"idkmesh {__version__}")
