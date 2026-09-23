@@ -217,6 +217,7 @@ Otherwise:
 The design-only plan records:
 
 - rule version;
+- SHA-256 digest of the exact design verdict matrix;
 - canonical current IDs;
 - canonical candidate IDs;
 - all five selector states;
