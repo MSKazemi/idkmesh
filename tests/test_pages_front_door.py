@@ -28,10 +28,12 @@ import json
 import re
 import unittest
 from datetime import date
+from types import SimpleNamespace
+from unittest.mock import patch
 from pathlib import Path
 from xml.etree import ElementTree
 
-from tools.build_sitemap import BASE, _has_front_matter, declared_locations, published_pages
+from tools.build_sitemap import BASE, _git_lastmod, _has_front_matter, declared_locations, published_pages
 
 ROOT = Path(__file__).resolve().parents[1]
 DOCS = ROOT / "docs"
@@ -102,6 +104,18 @@ class SitemapTests(unittest.TestCase):
             [],
             f"every <loc> must be an absolute URL under {BASE}: {offenders}",
         )
+
+    def test_git_lastmod_uses_the_utc_date_of_the_commit_instant(self) -> None:
+        with patch("tools.build_sitemap.subprocess.run") as run:
+            run.return_value = SimpleNamespace(
+                stdout="2026-09-24T00:05:00+02:00\n"
+            )
+            self.assertEqual(
+                _git_lastmod(DOCS / "research" / "README.md"),
+                "2026-09-23",
+            )
+            command = run.call_args.args[0]
+            self.assertIn("--format=%cI", command)
 
     def test_lastmod_values_are_real_dates_that_are_not_in_the_future(self) -> None:
         tree = ElementTree.parse(SITEMAP)

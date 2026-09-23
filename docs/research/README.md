@@ -28,6 +28,7 @@ policy changes or merge decisions.
 
 - [Adaptive Policy Evidence CLI](ADAPTIVE_POLICY_EVIDENCE_CLI.md) — deterministic
   evidence extraction for shadow-policy cohort and outcome records.
+- [AVE-core Shadow Adapter](AVE_SHADOW_ADAPTER.md) — advisory verifier-allocation adapter that reuses canonical WorkUnit/EvaluatorPlan bindings, domain/time-scoped reliability evidence, and the common adaptive-policy shadow contract without dispatch or verification authority.
 - [Physarum adaptive compute routing](PHYSARUM_N3_READINESS.md) — readiness
   boundary for the N3 routing simulation and its stress evidence.
 
