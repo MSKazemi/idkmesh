@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "idkmesh"
 version = "0.1.0"
-description = "Evidence-first coordination tooling for inspecting swarm runs, provenance, authority boundaries, and verifier-panel quality."
+description = "Evidence-first review-gate toolkit for verifier independence, correlated errors, and swarm run inspection with provenance and authority boundaries."
 readme = "README.md"
 requires-python = ">=3.11"
 license = "Apache-2.0"
