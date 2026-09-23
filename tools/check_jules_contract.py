@@ -59,6 +59,7 @@ def main() -> int:
     routing_policy = _load_json("config/llm-routing-policy.json")
     dispatcher_workflow = _read(".github/workflows/jules-dispatch.yml")
     router_workflow = _read(".github/workflows/issue-model-router.yml")
+    pr_gate = _read(".github/workflows/pr-gate.yml")
     router_code = _read("scripts/issue_model_router.py")
     dispatcher_code = _read("tools/jules_dispatcher.py")
 
@@ -193,6 +194,16 @@ def main() -> int:
         errors,
         "actions: write" not in router_workflow,
         "router no longer needs actions:write when using workflow_call",
+    )
+    _require(
+        errors,
+        'dispatch_policy["automatic_queue_label"]' in router_workflow,
+        "router workflow must derive the automatic queue label from dispatch policy",
+    )
+    _require(
+        errors,
+        "python tools/check_jules_contract.py" in pr_gate,
+        "required PR Gate must execute the Jules contract guard",
     )
 
     _require(
