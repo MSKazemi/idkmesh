@@ -368,6 +368,27 @@ class EndToEndTests(unittest.TestCase):
         )
 
 
+class CommittedExampleTests(unittest.TestCase):
+    CONFIG = (
+        REPO_ROOT
+        / "examples"
+        / "gate-audit"
+        / "marginal-evidence-benchmark-config.example.json"
+    )
+
+    def test_committed_example_runs_and_preserves_split_separation(self):
+        report = benchmark.benchmark_file(self.CONFIG)
+        self.assertEqual(
+            report["benchmark_id"], "heldout-marginal-example-v0.1"
+        )
+        self.assertNotEqual(
+            report["splits"]["design"]["input_digest_sha256"],
+            report["splits"]["holdout"]["input_digest_sha256"],
+        )
+        self.assertEqual(report["authority"], "diagnostic_only")
+        self.assertEqual(len(report["selection_plan"]["selectors"]), 5)
+
+
 class FileAndCliTests(unittest.TestCase):
     def _write_fixture(self, root: Path) -> Path:
         (root / "design.json").write_text(
