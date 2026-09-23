@@ -30,9 +30,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="idkmesh",
         description=(
-            "IDKMesh verification and stewardship tooling. Use 'gate-audit' "
-            "to measure verifier-panel independence, or 'steward-report' to "
-            "validate and inspect Auto Draft PR Steward evidence offline."),
+            "IDKMesh verification and stewardship tooling. Measure verifier "
+            "independence with 'gate-audit', inspect steward evidence with "
+            "'steward-report', or open its local read-only dashboard with "
+            "'steward-report-ui'."),
     )
     parser.add_argument(
         "--version", action="version", version=f"idkmesh {__version__}")
@@ -112,6 +113,22 @@ def build_parser() -> argparse.ArgumentParser:
     sr.add_argument(
         "--details", action="store_true",
         help="also list planned, created, and skipped branch records")
+
+    sui = sub.add_parser(
+        "steward-report-ui",
+        help="open a local read-only dashboard for a steward report",
+        description=(
+            "Validate a local Auto Draft PR Steward report and serve a "
+            "self-contained read-only dashboard on 127.0.0.1. The UI makes "
+            "no live GitHub requests and exposes no mutation endpoint."),
+    )
+    sui.add_argument("input", help="path to steward-report.json")
+    sui.add_argument(
+        "--port", type=int, default=8766, metavar="PORT",
+        help="loopback TCP port (default: 8766)")
+    sui.add_argument(
+        "--no-browser", action="store_true",
+        help="serve the dashboard without opening the default browser")
     return parser
 
 
@@ -198,7 +215,9 @@ def main(argv: list[str] | None = None) -> int:
                 f"{_reason(exc)}")
         return 0
 
-    if args.command == "steward-report":
+    if args.command in {"steward-report", "steward-report-ui"}:
+        if args.command == "steward-report-ui" and not (0 <= args.port <= 65535):
+            return _fail("--port must be between 0 and 65535")
         try:
             report = load_steward_report(args.input)
         except FileNotFoundError:
@@ -211,7 +230,22 @@ def main(argv: list[str] | None = None) -> int:
                 f"cannot read steward report {args.input}: {_reason(exc)}")
         except StewardReportInputError as exc:
             return _fail(str(exc))
-        print(render_steward_summary(report, details=args.details), end="")
+
+        if args.command == "steward-report":
+            print(render_steward_summary(report, details=args.details), end="")
+            return 0
+
+        from idkmesh.steward_report_ui import serve_steward_report_ui
+        try:
+            serve_steward_report_ui(
+                report,
+                port=args.port,
+                open_browser=not args.no_browser,
+            )
+        except OSError as exc:
+            return _fail(
+                f"cannot start local steward dashboard on 127.0.0.1:{args.port}: "
+                f"{_reason(exc)}")
         return 0
 
     if args.command != "gate-audit":  # pragma: no cover - argparse enforces it
