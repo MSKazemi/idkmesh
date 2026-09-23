@@ -54,6 +54,65 @@ direct_merge_allowed = false
 
 for every branch state.
 
+### 2.1 Automatic Draft PR bridge
+
+Ordinary development branches should become visible review objects early, but
+that automation must not create integration authority.
+
+The trusted default-branch steward in
+`.github/workflows/auto-draft-pr.yml` evaluates the machine-readable policy in
+`config/auto-draft-pr.json`. It may create a **Draft** PR when all of the
+following are true:
+
+- the branch matches a managed development prefix;
+- it does not match an excluded scratch/evidence/frozen/hold lane;
+- its head commit is newer than the policy rollout cutoff;
+- no same-repository PR history already exists for that branch name;
+- the branch still has commits ahead of its selected base.
+
+The steward never checks out or executes candidate-branch code. It runs only
+from trusted `main` via a schedule or a push to `main`, with
+`contents: read` and `pull-requests: write`.
+
+The machine policy also preserves shared GitHub API capacity. Before scanning,
+the steward observes the core API budget and performs no branch/PR scan or
+mutation when remaining capacity is below
+`minimum_rate_limit_remaining`. The same policy bounds untracked branch
+inspection, ancestry evaluation, and the number of open PR heads admitted to
+stack inference; exceeding a bound fails closed rather than expanding API work.
+Immediately before creating each Draft PR, it re-reads the branch head; if the
+head moved after planning, that candidate is skipped and reconsidered on a
+later run rather than acting on stale state.
+
+For stacked work, the steward compares the new branch with the heads of current
+open PRs and selects the nearest open-PR ancestor when one exists. Otherwise it
+falls back to `main`. This base selection is coordination assistance only; it
+does not waive dependency, CI, evidence, or review requirements.
+
+Repository administrators must allow the repository `GITHUB_TOKEN` to create
+pull requests. If that capability is disabled, the steward fails with an
+actionable diagnostic. It deliberately has no PAT, app-secret, or other
+higher-authority fallback.
+
+Operational configuration, dry-run diagnosis, and failure recovery are documented in
+[`docs/operations/AUTO_DRAFT_PR_STEWARD.md`](../operations/AUTO_DRAFT_PR_STEWARD.md).
+
+The automatic lane is intentionally one-way and bounded:
+
+```text
+new managed branch
+ -> Draft PR shell
+ -> normal branch commits
+ -> exact-head CI/evidence/review
+ -> explicit ready-for-review decision
+ -> normal integration decision
+```
+
+It does **not** reopen closed or superseded PR branches, promote a Draft,
+approve, merge, delete a branch, close an issue, change labels/settings, or
+write repository contents. Existing orphan/closed branch cleanup remains under
+the convergence and retirement rules below.
+
 ## 3. Branch state machine
 
 For every branch `b`, inspect:

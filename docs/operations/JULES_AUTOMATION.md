@@ -7,12 +7,13 @@ human-governance boundaries.
 
 ## One-sentence operating model
 
-**Single-dispatcher invariant:** the native Google Labs Jules GitHub App path described here is the only project-operated Jules dispatcher. Do not run a second REST-API dispatcher, a second queue label, or another workflow that creates Jules sessions for the same repository at the same time. A second lane must first replace this one through an explicit migration, not coexist with it.
+**Single-dispatcher invariant:** the REST-API path described here is the only project-operated automatic Jules dispatcher. Do not run a second API dispatcher, another queue, or another workflow that creates Jules sessions for the same repository at the same time. The legacy native GitHub App `jules` label is retained only as an explicit manual fallback and is never emitted by the automatic dispatcher.
 
 A maintainer or trusted triager marks a reviewed issue `agent-ready`; GitHub
-Actions immediately adds `jules` when capacity is available; the Google Labs
-Jules GitHub App starts the coding task; Jules opens a pull request; normal
-IDKMesh CI and review decide whether the candidate can be integrated.
+Actions resolves the connected repository through the official Jules Sources
+API, creates one Jules session with `AUTO_CREATE_PR`, and records
+`agent:jules-dispatched`; Jules opens a pull request; normal IDKMesh CI and
+review decide whether the candidate can be integrated.
 
 ```mermaid
 flowchart LR
@@ -20,17 +21,20 @@ flowchart LR
     B -->|safe + bounded| C[agent-ready]
     B -->|human/research/security gate| X[do not automate]
     C --> D[Jules Dispatcher]
-    D -->|capacity available| E[jules]
+    D -->|capacity available| E[Jules REST API session]
     D -->|capacity full| Q[remain queued]
     Q --> D
-    E --> F[Google Labs Jules]
-    F --> G[branch + pull request]
+    E --> F[agent:jules-dispatched status]
+    E --> G[branch + pull request]
     G --> H[IDKMesh PR Gate]
     H --> I[review / explicit merge decision]
 ```
 
-The external provider behavior behind the `jules` label is documented by
-Google at <https://jules.google/docs/running-tasks/>.
+The automatic provider path uses the Jules REST API documented at
+<https://jules.google/docs/api/reference/>. The dispatcher discovers the
+connected repository through the Sources API, creates a Session, and requests
+`AUTO_CREATE_PR`. The REST API is currently alpha, so provider-contract changes
+must be treated as an external compatibility risk.
 
 ## Who does what
 
@@ -38,10 +42,26 @@ Google at <https://jules.google/docs/running-tasks/>.
 | --- | --- | --- |
 | issue author / contributor | describe a bounded problem and acceptance criteria | self-declare human evidence as satisfied |
 | maintainer / trusted triager | decide whether the issue is safe and bounded; add `agent-ready` | add it to human-only, research-evidence, or security-sensitive work |
-| Jules Dispatcher GitHub Action | create policy labels, enforce deny labels/capacity, add `jules` | infer safety from arbitrary issue prose or merge code |
-| Google Labs Jules GitHub App | react to `jules`, implement the task, create a PR | act as independent verifier or integration authority |
+| Jules Dispatcher GitHub Action | create policy labels, enforce deny labels/capacity, create one Jules API session, record `agent:jules-dispatched` | infer safety from arbitrary issue prose, expose the API key, or merge code |
+| Google Jules REST API / worker | execute the approved bounded task and create a PR | act as independent verifier or integration authority |
 | IDKMesh CI | test the exact PR candidate | decide scientific validity or governance approval |
 | maintainer / reviewer | review evidence and decide integration | treat agent output as self-validating |
+
+## One-time owner setup
+
+Automatic dispatch requires two provider-side prerequisites:
+
+1. connect `MSKazemi/idkmesh` to Jules through the Jules web app/GitHub App;
+2. create a Jules API key in Jules settings and store it only as the repository
+   Actions secret `JULES_API_KEY`.
+
+The dispatcher never prints the key and the key must not be committed, pasted
+into issues/PRs, or stored in ordinary repository variables. If the secret is
+missing, live dispatch fails closed with an explicit error rather than silently
+falling back to the unreliable bot-applied `jules` label path.
+
+The official authentication guide is
+<https://jules.google/docs/api/reference/authentication/>.
 
 ## Trigger frequency
 
@@ -49,8 +69,10 @@ There are two paths.
 
 **Fast path — event driven.** When `agent-ready` is applied, the
 `.github/workflows/jules-dispatch.yml` workflow runs immediately. If a slot is
-available and no veto label exists, it adds `jules` in that run. There is no
-polling delay in the normal path.
+available and no veto label exists, it resolves the Jules source, checks for an
+existing deterministic session title, reserves the issue with
+`agent:jules-dispatched`, and creates the Jules session. There is no polling
+delay in the normal path.
 
 **Capacity-release path — event driven.** When an open dispatched issue closes
 (for example after its Jules PR merges with an issue-closing reference), the
@@ -78,8 +100,10 @@ Current defaults:
 - maximum dispatches per recovery sweep: **2**;
 - an `agent-ready` label event dispatches at most **1** issue immediately;
 - closing a dispatched issue immediately triggers a capacity refill;
-- open issues already carrying `jules` consume capacity until they close or the
-  label is deliberately removed.
+- open issues carrying `agent:jules-dispatched` consume capacity until they
+  close or the status is deliberately cleared after investigation;
+- legacy/manual open issues carrying `jules` also consume capacity during the
+  migration so old work is not double-dispatched.
 
 Four concurrent issue slots are a repository-side review/backpressure choice,
 not a claim about a provider plan limit. Change the number only after measuring
@@ -92,7 +116,8 @@ review latency and CI/merge load.
 | Label | Meaning |
 | --- | --- |
 | `agent-ready` | a trusted triager has reviewed the issue as bounded and safe for a coding agent |
-| `jules` | execution signal; normally added by the dispatcher, not by semantic classification |
+| `agent:jules-dispatched` | automatic dispatcher reservation/status for an API-backed Jules session |
+| `jules` | legacy/manual native-App trigger; never added by automatic dispatch |
 
 The separation matters: classifying an issue as agent-suitable is different
 from starting work right now.
@@ -178,10 +203,11 @@ If one task repeatedly updates the same PR while Actions is already backlogged, 
 
 ## What happens after Jules starts
 
-The native Jules GitHub integration comments on the issue when it accepts a
-`jules` task and later links the created PR. Jules also currently supports
-automatic repair attempts for CI failures on PRs it creates; that provider
-feature does not replace IDKMesh's required checks or reviewer judgment.
+The dispatcher comments on the issue with the returned Jules session URL/name.
+Sessions are created with `automationMode: AUTO_CREATE_PR`, so Jules can open a
+pull request without the GitHub Actions workflow receiving pull-request write
+permission. Jules provider-side repair behavior does not replace IDKMesh's
+required checks or reviewer judgment.
 
 The repository PR gate remains authoritative for automated integration checks:
 
@@ -194,20 +220,29 @@ No Jules task auto-merges `main`.
 
 ## Failure and recovery runbook
 
-### `agent-ready` exists but `jules` does not
+### `agent-ready` exists but `agent:jules-dispatched` does not
 
 1. check the Jules Dispatcher Actions run;
-2. check whether four open `jules` issues already consume capacity;
-3. check for a hard-veto label;
-4. wait for the next 30-minute recovery sweep or manually run the workflow.
+2. verify the `JULES_API_KEY` Actions secret exists and is valid;
+3. verify Jules Sources lists `MSKazemi/idkmesh`;
+4. check whether four open automatic/legacy Jules issues already consume capacity;
+5. check for a hard-veto label;
+6. wait for the next 30-minute recovery sweep or manually run the workflow.
 
-### `jules` exists but Jules does not acknowledge the issue
+### `agent:jules-dispatched` exists but no session/PR appears
 
-1. verify the Google Labs Jules GitHub App still has access to `MSKazemi/idkmesh`;
-2. inspect the provider/task status;
-3. do **not** repeatedly remove/re-add `jules` while task state is unclear;
-4. if the provider task is definitively failed, remove `jules`, add `blocked`
-   (or another accurate veto), document the blocker, and re-triage before retry.
+A returned 4xx from session creation removes the reservation so a corrected run
+can retry. A network error or provider 5xx is ambiguous: Jules may have accepted
+the POST before the response was lost. In that case the dispatcher deliberately
+keeps `agent:jules-dispatched` and comments on the issue to prevent duplicate
+automatic work. Inspect Jules sessions before clearing the status and retrying.
+
+### Manual fallback with `jules`
+
+Use the legacy `jules` label only as an explicit owner action when the API lane
+is deliberately disabled or being repaired. Do not have automation add this
+label: the live repository showed that Jules did not reliably react when
+`github-actions[bot]` applied it.
 
 ### Jules creates a failing PR
 
@@ -238,7 +273,8 @@ python scripts/check_links.py
 make gate
 ```
 
-For changes that alter GitHub permissions, triggers, or the approval boundary,
-review the security implications explicitly. Keep `issues: write` scoped to the
-dispatcher workflow; the workflow checks out the trusted default branch and
-uses issue text only as inert metadata, never as shell/code input.
+For changes that alter GitHub permissions, triggers, the Jules API contract, or
+the approval boundary, review the security implications explicitly. Keep
+`issues: write` scoped to the dispatcher workflow; the workflow checks out the
+trusted default branch and sends approved issue text only as API data, never as
+shell/code input. Never echo or persist `JULES_API_KEY`.

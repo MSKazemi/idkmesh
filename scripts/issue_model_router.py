@@ -63,7 +63,7 @@ def _contains_any(text: str, phrases: Iterable[str]) -> list[str]:
             prefix = lowered[clause_start + 1 : match.start()]
             # Do not escalate on explicit negative-scope statements such as
             # "no schema changes" or "do not change workflows".
-            if re.search(r"\b(?:no|not|without|do not|must not|avoid)\b.{0,64}$", prefix):
+            if re.search(r"\b(?:no|not|never|without|do not|must not|avoid)\b.{0,64}$", prefix):
                 continue
             hits.append(phrase)
             break
@@ -257,10 +257,21 @@ def issue_from_event(path: str | Path) -> dict[str, Any]:
     return issue
 
 
-def _route_dict(route: Route) -> dict[str, Any]:
+def _current_label_names(issue: dict[str, Any]) -> list[str]:
+    names: list[str] = []
+    for label in issue.get("labels") or []:
+        if isinstance(label, str):
+            names.append(label)
+        elif isinstance(label, dict) and label.get("name"):
+            names.append(str(label["name"]))
+    return sorted(set(names))
+
+
+def _route_dict(route: Route, issue: dict[str, Any]) -> dict[str, Any]:
     data = asdict(route)
     data["model_label"] = TIER_LABELS[route.tier] if route.tier else TIER_LABELS["NONE"]
     data["authority_label"] = AUTHORITY_LABELS[route.authority]
+    data["current_labels"] = _current_label_names(issue)
     return data
 
 
@@ -278,18 +289,23 @@ def main() -> int:
     overrides = load_json(args.overrides) if Path(args.overrides).exists() else None
 
     if args.event:
-        route = classify_issue(issue_from_event(args.event), policy, overrides)
-        print(json.dumps(_route_dict(route), sort_keys=True))
+        issue = issue_from_event(args.event)
+        route = classify_issue(issue, policy, overrides)
+        print(json.dumps(_route_dict(route, issue), sort_keys=True))
         return 0
     if args.issue_json:
-        route = classify_issue(load_json(args.issue_json), policy, overrides)
-        print(json.dumps(_route_dict(route), sort_keys=True))
+        issue = load_json(args.issue_json)
+        route = classify_issue(issue, policy, overrides)
+        print(json.dumps(_route_dict(route, issue), sort_keys=True))
         return 0
 
     issues = load_json(args.issues)
     if not isinstance(issues, list):
         raise SystemExit("--issues must point to a JSON array")
-    routes = [_route_dict(classify_issue(issue, policy, overrides)) for issue in issues]
+    routes = [
+        _route_dict(classify_issue(issue, policy, overrides), issue)
+        for issue in issues
+    ]
     print(json.dumps({"routes": routes}, sort_keys=True))
     return 0
 
