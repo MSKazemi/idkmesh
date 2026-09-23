@@ -101,6 +101,7 @@
       "required": [
         "rule_version",
         "source",
+        "design_input_digest_sha256",
         "current_verifier_ids",
         "candidate_verifier_ids",
         "selectors",
@@ -216,6 +217,9 @@
           "items": false
         },
         "digest_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "design_input_digest_sha256": {
           "$ref": "#/$defs/sha256"
         }
       }
