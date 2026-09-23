@@ -62,11 +62,15 @@ After deployment, `tools/check_public_discovery.py` should be able to verify:
 - the homepage returns real IDKMesh content to representative search/answer
   crawler user agents rather than a block, challenge, or empty shell;
 - the topic hub is publicly reachable;
-- no tested crawler receives a `403`, `429`, or crawler-specific decoy page.
+- no tested crawler receives a `403`, `429`, or crawler-specific decoy page;
+- Jekyll social/JSON-LD image paths resolve under the site base path exactly once, never as `/idkmesh/idkmesh/...`.
 
-The scheduled workflow is a **visibility regression monitor**, not a ranking
-monitor. A green run means the public site is technically retrievable from a
-GitHub-hosted network path; it does not mean an engine has indexed or cited it.
+The workflow is a **visibility regression monitor**, not a ranking monitor. It
+runs from GitHub's Pages-native `page_build` event and also has scheduled/manual
+recovery paths. On a Pages event it requires a `built` status and binds the
+checkout/probe to that event's exact commit. A green run means the public site
+is technically retrievable from a GitHub-hosted network path; it does not mean
+an engine has indexed or cited it.
 
 ## Representative crawler identities
 
