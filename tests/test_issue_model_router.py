@@ -86,3 +86,30 @@ def test_new_human_evidence_task_is_not_agent_routed():
     )
     assert value.authority == "human_required"
     assert value.tier is None
+
+
+def test_route_serialization_carries_current_labels_for_api_free_diffing():
+    issue = {
+        "number": 9996,
+        "title": "Add focused docs test",
+        "body": "Documentation-only bounded task.",
+        "labels": [{"name": "enhancement"}, {"name": "priority:p2"}],
+    }
+    value = router.classify_issue(issue, POLICY, OVERRIDES)
+    payload = router._route_dict(value, issue)
+
+    assert payload["current_labels"] == ["enhancement", "priority:p2"]
+
+
+def test_never_scope_does_not_escalate_sensitive_phrase():
+    value = router.classify_issue(
+        {
+            "number": 9995,
+            "title": "Document bounded read-only behavior",
+            "body": "This helper never grants merge authority. Add a focused documentation test.",
+            "labels": [],
+        },
+        POLICY,
+        OVERRIDES,
+    )
+    assert router.TIER_ORDER[value.tier] <= router.TIER_ORDER["T2"]
