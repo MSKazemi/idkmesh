@@ -96,7 +96,9 @@ def published_pages() -> list[tuple[str, Path]]:
     Three rules, all derived from how GitHub Pages actually serves this tree:
 
     * ``docs/index.html`` is the site root;
-    * a directory's ``README.md`` becomes that directory's index URL;
+    * a nested ``index.md`` is an explicit directory index URL;
+    * legacy nested ``README.md`` hubs retain their existing directory mapping
+      until live publication evidence is migrated to explicit ``index.md``;
     * every other Markdown document renders at its ``.html`` path.
 
     Hand-written ``.html`` files other than ``index.html`` are published as-is.
@@ -110,13 +112,16 @@ def published_pages() -> list[tuple[str, Path]]:
 
     for source in sorted(DOCS.rglob("*.md")):
         relative = source.relative_to(DOCS)
-        if source.name == "README.md":
+        if source.name == "index.md":
             parent = relative.parent.as_posix()
             if parent == ".":
-                # Shadowed: docs/index.html already occupies the site root, so
-                # docs/README.md is published as raw Markdown only and has no
-                # HTML page. Verified live -- /idkmesh/README.html returns 404.
-                # This is the same shadowing rule that hid docs/index.md.
+                # Shadowed by docs/index.html at the site root.
+                continue
+            pages.append((BASE + parent + "/", source))
+        elif source.name == "README.md":
+            parent = relative.parent.as_posix()
+            if parent == ".":
+                # Shadowed: docs/index.html already occupies the site root.
                 continue
             pages.append((BASE + parent + "/", source))
         else:
