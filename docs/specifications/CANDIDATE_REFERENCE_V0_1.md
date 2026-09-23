@@ -105,6 +105,33 @@ readiness is reached only after this binding exists.
 If the PR head moves later, that is a different candidate revision and must be
 re-observed/re-normalized. Historical evidence stays bound to the old SHA.
 
+
+### Jules discovery-hint to SCM binding
+
+The first concrete provider-to-SCM bridge is `idkmesh/jules_candidate_binding.py`.
+
+It consumes a `JulesPullRequestHint` only after the Jules adapter has already bound that hint to the trusted Session repository. The bridge then:
+
+1. verifies that the hint is a Jules Session observation and that its canonical URL agrees with the bound repository/PR number;
+2. calls the provider-neutral GitHub PR reader with **only** repository + PR number;
+3. obtains the exact head object ID from the SCM reader, never from Jules;
+4. translates SCM identity failures into the shared connector error taxonomy without copying raw SCM/provider payloads;
+5. returns the shared `GitHubPullRequestResolution` unchanged.
+
+The bridge has no `candidate_ready`, verification, acceptance, merge, or integration field. The upper control plane may advance to candidate readiness only after this SCM-backed resolution succeeds.
+
+This keeps the trust chain explicit:
+
+```text
+Jules Session output
+ -> JulesPullRequestHint
+ -> JulesCandidateBindingService
+ -> GitHubPullRequestCandidateReader
+ -> GitHubPullRequestCandidateReference(repo, PR, exact head)
+```
+
+A Jules URL cannot supply or override `head_sha`, and a provider-specific adapter must not bypass the shared SCM reader with its own head-resolution rule.
+
 ## 4. Artifact-bundle form
 
 ```json
@@ -258,3 +285,32 @@ A provider adapter must not implement its own alternate head-SHA trust rule.
 Connector-specific error translation also remains outside this provider-neutral
 identity reader.
 
+### Production GitHub REST source
+
+`idkmesh/github_rest_source.py` provides the concrete public-GitHub transport for the PR identity reader.
+
+The trust split remains:
+
+```text
+GitHubRestPullRequestSource
+  = fixed-host transport + bounded JSON decoding + transport error normalization
+
+GitHubPullRequestCandidateReader
+  = repository/PR/URL/state/head identity validation
+```
+
+The REST source intentionally does **not** decide whether the returned object is the requested candidate. It returns an untrusted decoded object to the reader.
+
+Transport controls:
+
+- endpoint host is fixed to `https://api.github.com`; caller input cannot choose an arbitrary URL;
+- repository identity is restricted to `owner/name` before network I/O;
+- PR number must be a positive integer;
+- optional bearer token exists only in the in-memory request header and is never copied into error details;
+- connection ID is explicit so audit/error envelopes identify the configured SCM connection;
+- requests carry the pinned GitHub REST API version `2022-11-28` and vendor media type;
+- response reads are bounded (1 MiB default, 8 MiB hard configuration ceiling);
+- malformed UTF-8/JSON, non-object JSON, and oversized responses fail closed;
+- 401/403/404/408/429/5xx and network timeouts are normalized to the shared ConnectorError taxonomy without retaining response bodies.
+
+This v0.1 source targets public `github.com` only. GitHub Enterprise Server support should use a separately validated connection configuration; the candidate resolver must not accept an arbitrary provider-returned API base because that would turn candidate discovery into an SSRF surface.

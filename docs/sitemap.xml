@@ -1242,6 +1242,11 @@
     <priority>0.3</priority>
   </url>
   <url>
+    <loc>https://mskazemi.com/idkmesh/conversations/2026-09-23-heldout-marginal-benchmark-implementation.html</loc>
+    <lastmod>2026-09-23</lastmod>
+    <priority>0.3</priority>
+  </url>
+  <url>
     <loc>https://mskazemi.com/idkmesh/decisions/</loc>
     <lastmod>2026-09-23</lastmod>
     <priority>0.6</priority>
@@ -1318,6 +1323,11 @@
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/decisions/ADR-0014-enterprise-control-plane-baseline.html</loc>
+    <lastmod>2026-09-23</lastmod>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://mskazemi.com/idkmesh/decisions/ADR-0015-candidate-reference-result-manifest-normalization.html</loc>
     <lastmod>2026-09-23</lastmod>
     <priority>0.6</priority>
   </url>
@@ -1487,7 +1497,17 @@
     <priority>0.5</priority>
   </url>
   <url>
+    <loc>https://mskazemi.com/idkmesh/operations/PYPI_RELEASE_RUNBOOK.html</loc>
+    <lastmod>2026-09-23</lastmod>
+    <priority>0.5</priority>
+  </url>
+  <url>
     <loc>https://mskazemi.com/idkmesh/operations/SEARCH_AND_ANSWER_ENGINE_DISCOVERY_MATRIX.html</loc>
+    <lastmod>2026-09-23</lastmod>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://mskazemi.com/idkmesh/operations/WEBMASTER_TOOLS_MEASUREMENT_RUNBOOK.html</loc>
     <lastmod>2026-09-23</lastmod>
     <priority>0.5</priority>
   </url>
@@ -1862,6 +1882,11 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://mskazemi.com/idkmesh/specifications/MARGINAL_EVIDENCE_BENCHMARK_V0_1.html</loc>
+    <lastmod>2026-09-23</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://mskazemi.com/idkmesh/specifications/MARGINAL_EVIDENCE_V0_1.html</loc>
     <lastmod>2026-09-23</lastmod>
     <priority>0.8</priority>
@@ -1883,7 +1908,7 @@
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/specifications/RESULT_MANIFEST_V0_1.html</loc>
-    <lastmod>2026-08-28</lastmod>
+    <lastmod>2026-09-23</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
