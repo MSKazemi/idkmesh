@@ -66,7 +66,7 @@ class DiscoveryQueryPortfolioTests(unittest.TestCase):
     def test_missing_canonical_target_fails_closed(self):
         changed = copy.deepcopy(self.portfolio)
         changed["clusters"][0]["canonical_target"] = "docs/does-not-exist.html"
-        with self.assertRaisesRegex(ValueError, "missing canonical targets"):
+        with self.assertRaisesRegex(ValueError, "canonical SEO topic path"):
             validate(changed, ROOT)
 
     def test_missing_evidence_ref_fails_closed(self):
