@@ -6,6 +6,16 @@ on:
   schedule:
     # Backfill is recovery only; normal routing is event-driven.
     - cron: '7 */6 * * *'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/issue-model-router.yml'
+      - '.github/workflows/jules-dispatch.yml'
+      - 'config/llm-routing-policy.json'
+      - 'config/jules-dispatch.json'
+      - 'scripts/issue_model_router.py'
+      - 'tools/jules_dispatcher.py'
+      - 'tools/check_jules_contract.py'
   workflow_dispatch:
     inputs:
       backfill_open_issues:
@@ -98,7 +108,7 @@ jobs:
             > /tmp/issue-model-routes.json
 
       - name: Classify all open issues
-        if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.backfill_open_issues)
+        if: github.event_name == 'schedule' || github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.backfill_open_issues)
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
@@ -112,7 +122,7 @@ jobs:
 
       - name: Apply managed labels
         id: apply
-        if: github.event_name == 'issues' || github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.backfill_open_issues)
+        if: github.event_name == 'issues' || github.event_name == 'schedule' || github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.backfill_open_issues)
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
@@ -190,5 +200,11 @@ jobs:
   dispatch-after-manual-backfill:
     needs: route
     if: github.event_name == 'workflow_dispatch' && inputs.backfill_open_issues && needs.route.outputs.has_jules_candidate == 'true'
+    uses: ./.github/workflows/jules-dispatch.yml
+    secrets: inherit
+
+  dispatch-after-control-plane-change:
+    needs: route
+    if: github.event_name == 'push' && needs.route.outputs.has_jules_candidate == 'true'
     uses: ./.github/workflows/jules-dispatch.yml
     secrets: inherit
