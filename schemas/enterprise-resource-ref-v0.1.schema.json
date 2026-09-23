@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idkmesh.org/schemas/enterprise-resource-ref-v0.1.schema.json",
+  "title": "IDKMesh Enterprise Scoped Resource Reference v0.1",
+  "description": "Tenant/project-scoped reference for enterprise operational resources. Scope is part of identity and cannot be inferred from an unscoped resource id.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "kind",
+    "schema_version",
+    "tenant_id",
+    "project_id",
+    "resource_type",
+    "resource_id"
+  ],
+  "properties": {
+    "kind": {
+      "const": "idkmesh-enterprise-resource-ref"
+    },
+    "schema_version": {
+      "const": "0.1"
+    },
+    "tenant_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+    },
+    "project_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+    },
+    "resource_type": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9._-]{0,63}$"
+    },
+    "resource_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+    }
+  }
+}
