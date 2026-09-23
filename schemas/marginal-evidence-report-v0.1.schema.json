@@ -17,10 +17,22 @@
     "provenance"
   ],
   "properties": {
-    "schema": {"const": "marginal-evidence-report-v0.1"},
-    "gate_id": {"type": "string", "minLength": 1},
-    "evidence_class": {"enum": ["synthetic", "observed"]},
-    "authority": {"const": "diagnostic_only"},
+    "schema": {
+      "const": "marginal-evidence-report-v0.1"
+    },
+    "gate_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "evidence_class": {
+      "enum": [
+        "synthetic",
+        "observed"
+      ]
+    },
+    "authority": {
+      "const": "diagnostic_only"
+    },
     "analysis": {
       "type": "object",
       "additionalProperties": false,
@@ -37,24 +49,41 @@
           "type": "array",
           "minItems": 1,
           "uniqueItems": true,
-          "items": {"type": "string", "minLength": 1}
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
         },
         "candidate_verifier_ids": {
           "type": "array",
           "minItems": 1,
           "uniqueItems": true,
-          "items": {"type": "string", "minLength": 1}
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
         },
         "bootstrap": {
           "anyOf": [
-            {"type": "null"},
+            {
+              "type": "null"
+            },
             {
               "type": "object",
               "additionalProperties": false,
-              "required": ["replicates", "seed", "confidence_level"],
+              "required": [
+                "replicates",
+                "seed",
+                "confidence_level"
+              ],
               "properties": {
-                "replicates": {"type": "integer", "minimum": 100},
-                "seed": {"type": "integer"},
+                "replicates": {
+                  "type": "integer",
+                  "minimum": 100
+                },
+                "seed": {
+                  "type": "integer"
+                },
                 "confidence_level": {
                   "type": "number",
                   "exclusiveMinimum": 0,
@@ -69,8 +98,14 @@
           "minimum": 0,
           "exclusiveMaximum": 1
         },
-        "non_probe_candidates": {"type": "integer", "minimum": 2},
-        "probe_candidates": {"type": "integer", "minimum": 0}
+        "non_probe_candidates": {
+          "type": "integer",
+          "minimum": 2
+        },
+        "probe_candidates": {
+          "type": "integer",
+          "minimum": 0
+        }
       }
     },
     "current_panel": {
@@ -85,23 +120,38 @@
         "effective_votes_censored"
       ],
       "properties": {
-        "nominal_votes": {"type": "integer", "minimum": 1},
-        "error": {"type": "number", "minimum": 0, "maximum": 1},
+        "nominal_votes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "error": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
         "mean_verifier_accuracy": {
           "type": "number",
           "minimum": 0,
           "maximum": 1
         },
         "mean_pairwise_error_correlation": {
-          "type": ["number", "null"],
+          "type": [
+            "number",
+            "null"
+          ],
           "minimum": -1,
           "maximum": 1
         },
         "effective_votes": {
-          "type": ["number", "null"],
+          "type": [
+            "number",
+            "null"
+          ],
           "minimum": 1
         },
-        "effective_votes_censored": {"type": "boolean"}
+        "effective_votes_censored": {
+          "type": "boolean"
+        }
       }
     },
     "candidates": {
@@ -131,12 +181,23 @@
           "warnings"
         ],
         "properties": {
-          "id": {"type": "string", "minLength": 1},
-          "status": {"enum": ["measured", "unresolved"]},
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "enum": [
+              "measured",
+              "unresolved"
+            ]
+          },
           "unresolved_reasons": {
             "type": "array",
             "uniqueItems": true,
-            "items": {"type": "string", "minLength": 1}
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
           },
           "standalone_accuracy": {
             "type": "number",
@@ -159,18 +220,36 @@
             "maximum": 1
           },
           "current_effective_votes": {
-            "type": ["number", "null"],
+            "type": [
+              "number",
+              "null"
+            ],
             "minimum": 1
           },
           "augmented_effective_votes": {
-            "type": ["number", "null"],
+            "type": [
+              "number",
+              "null"
+            ],
             "minimum": 1
           },
-          "delta_effective_votes": {"type": ["number", "null"]},
-          "current_effective_votes_censored": {"type": "boolean"},
-          "augmented_effective_votes_censored": {"type": "boolean"},
+          "delta_effective_votes": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "current_effective_votes_censored": {
+            "type": "boolean"
+          },
+          "augmented_effective_votes_censored": {
+            "type": "boolean"
+          },
           "mean_error_correlation_with_current_panel": {
-            "type": ["number", "null"],
+            "type": [
+              "number",
+              "null"
+            ],
             "minimum": -1,
             "maximum": 1
           },
@@ -180,14 +259,20 @@
             "items": {
               "type": "object",
               "additionalProperties": false,
-              "required": ["current_verifier_id", "error_correlation"],
+              "required": [
+                "current_verifier_id",
+                "error_correlation"
+              ],
               "properties": {
                 "current_verifier_id": {
                   "type": "string",
                   "minLength": 1
                 },
                 "error_correlation": {
-                  "type": ["number", "null"],
+                  "type": [
+                    "number",
+                    "null"
+                  ],
                   "minimum": -1,
                   "maximum": 1
                 }
@@ -229,7 +314,9 @@
           },
           "probe_effect": {
             "anyOf": [
-              {"type": "null"},
+              {
+                "type": "null"
+              },
               {
                 "type": "object",
                 "additionalProperties": false,
@@ -242,10 +329,21 @@
                   "augmented_breach_rate"
                 ],
                 "properties": {
-                  "total": {"type": "integer", "minimum": 1},
-                  "current_breached": {"type": "integer", "minimum": 0},
-                  "augmented_breached": {"type": "integer", "minimum": 0},
-                  "breaches_prevented": {"type": "integer"},
+                  "total": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "current_breached": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "augmented_breached": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "breaches_prevented": {
+                    "type": "integer"
+                  },
                   "current_breach_rate": {
                     "type": "number",
                     "minimum": 0,
@@ -262,20 +360,96 @@
           },
           "uncertainty": {
             "anyOf": [
-              {"type": "null"},
-              {"$ref": "#/$defs/uncertainty"}
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/$defs/uncertainty"
+              }
             ]
           },
           "warnings": {
             "type": "array",
-            "items": {"type": "string", "minLength": 1}
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
           }
-        }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "status": {
+                  "const": "measured"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "unresolved_reasons": {
+                  "maxItems": 0
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "status": {
+                  "const": "unresolved"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "unresolved_reasons": {
+                  "minItems": 1
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "current_effective_votes_censored": {
+                  "const": true
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "delta_effective_votes": {
+                  "type": "null"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "augmented_effective_votes_censored": {
+                  "const": true
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "delta_effective_votes": {
+                  "type": "null"
+                }
+              }
+            }
+          }
+        ]
       }
     },
     "warnings": {
       "type": "array",
-      "items": {"type": "string", "minLength": 1}
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
     },
     "provenance": {
       "type": "object",
@@ -287,8 +461,13 @@
         "analysis_digest_sha256"
       ],
       "properties": {
-        "tool": {"const": "idkmesh marginal-evidence"},
-        "tool_version": {"type": "string", "minLength": 1},
+        "tool": {
+          "const": "idkmesh marginal-evidence"
+        },
+        "tool_version": {
+          "type": "string",
+          "minLength": 1
+        },
         "input_digest_sha256": {
           "type": "string",
           "pattern": "^[0-9a-f]{64}$"
@@ -312,11 +491,32 @@
         "replicates_undefined"
       ],
       "properties": {
-        "point": {"type": ["number", "null"]},
-        "ci_low": {"type": ["number", "null"]},
-        "ci_high": {"type": ["number", "null"]},
-        "replicates_used": {"type": "integer", "minimum": 0},
-        "replicates_undefined": {"type": "integer", "minimum": 0}
+        "point": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "ci_low": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "ci_high": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "replicates_used": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "replicates_undefined": {
+          "type": "integer",
+          "minimum": 0
+        }
       }
     },
     "uncertainty": {
@@ -335,31 +535,92 @@
         "effective_votes_delta"
       ],
       "properties": {
-        "method": {"const": "paired candidate-level nonparametric bootstrap (percentile interval, linear interpolation)"},
-        "sampling_unit": {"const": "non_probe_candidate_row"},
+        "method": {
+          "const": "paired candidate-level nonparametric bootstrap (percentile interval, linear interpolation)"
+        },
+        "sampling_unit": {
+          "const": "non_probe_candidate_row"
+        },
         "confidence_level": {
           "type": "number",
           "exclusiveMinimum": 0,
           "exclusiveMaximum": 1
         },
-        "replicates": {"type": "integer", "minimum": 100},
-        "seed": {"type": "integer"},
-        "non_probe_candidates": {"type": "integer", "minimum": 2},
-        "min_candidates_for_inference": {"const": 5},
-        "sufficient_for_inference": {"type": "boolean"},
+        "replicates": {
+          "type": "integer",
+          "minimum": 100
+        },
+        "seed": {
+          "type": "integer"
+        },
+        "non_probe_candidates": {
+          "type": "integer",
+          "minimum": 2
+        },
+        "min_candidates_for_inference": {
+          "const": 5
+        },
+        "sufficient_for_inference": {
+          "type": "boolean"
+        },
         "panel_error_delta": {
           "anyOf": [
-            {"type": "null"},
-            {"$ref": "#/$defs/metric_interval"}
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/metric_interval"
+            }
           ]
         },
         "effective_votes_delta": {
           "anyOf": [
-            {"type": "null"},
-            {"$ref": "#/$defs/metric_interval"}
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/metric_interval"
+            }
           ]
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "sufficient_for_inference": {
+                "const": false
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "panel_error_delta": {
+                "type": "null"
+              },
+              "effective_votes_delta": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "sufficient_for_inference": {
+                "const": true
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "panel_error_delta": {
+                "$ref": "#/$defs/metric_interval"
+              }
+            }
+          }
+        }
+      ]
     }
   }
 }
