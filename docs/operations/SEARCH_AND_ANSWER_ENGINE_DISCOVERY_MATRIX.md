@@ -19,6 +19,9 @@ rank, summarize, or cite.
 | ChatGPT search | `OAI-SearchBot` plus public crawlable/indexable pages | static pages, direct answers, topic hubs, `llms.txt` supplement |
 | Claude web search | `Claude-SearchBot`; user-directed retrieval may use `Claude-User` | public static content and answer-oriented topic pages |
 | Perplexity | `PerplexityBot`; user-directed retrieval may use `Perplexity-User` | public static content, topic/Q&A structure, sitemap |
+| DuckDuckGo | `DuckDuckBot` plus downstream index/search sources | explicit DuckDuckBot robots/HTTP probe, crawlable static HTML, sitemap |
+| Apple Search / Siri / Spotlight | `Applebot` | explicit Applebot robots/HTTP probe, semantic static HTML, metadata, sitemap |
+| Brave Search / AI Answers | Brave intentionally does not advertise a differentiated crawler user agent; Googlebot crawlability is a prerequisite | Googlebot/robots/noindex health plus crawlable static HTML and sitemap |
 | Other search/answer engines | open-web standards | semantic HTML, crawlable links, canonical URLs, sitemap, evidence-linked content |
 
 ## Current content architecture
@@ -56,6 +59,8 @@ The monitor uses representative current user-agent identities for:
 - `Googlebot`
 - `bingbot`
 - Yahoo `Slurp`
+- `DuckDuckBot`
+- `Applebot`
 - `OAI-SearchBot`
 - `Claude-SearchBot`
 - `Claude-User`
@@ -83,6 +88,12 @@ not freeze a user-agent string as a permanent protocol guarantee.
 - Yahoo Search crawler guidance (`Slurp`) and Bing-powered search-result guidance:
   https://help.yahoo.com/kb/SLN22600.html
   https://help.yahoo.com/kb/SLN2245.html
+- DuckDuckGo crawler guidance:
+  https://duckduckgo.com/duckduckgo-help-pages/results/duckduckbot
+- Applebot search / Siri / Spotlight / AI-context guidance:
+  https://support.apple.com/119829
+- Brave Search crawler guidance (no differentiated user agent; Googlebot crawlability prerequisite):
+  https://search.brave.com/help/brave-search-crawler
 
 ## Visibility evidence loop
 
