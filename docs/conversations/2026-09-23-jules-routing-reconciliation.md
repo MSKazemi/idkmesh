@@ -70,6 +70,8 @@ For lower API pressure and faster batches:
 
 - one GitHub open-issue snapshot feeds active-capacity and queue selection;
 - one Jules session-list snapshot feeds reconciliation and duplicate detection;
+- session identity uses a stable repository+issue-number marker, so later issue-title edits do not lose or duplicate provider work;
+- the provider history scan covers up to 10 pages of 100 sessions and fails closed if pagination is still incomplete;
 - label bootstrapping is removed from normal hot-path events and runs only after relevant policy/implementation changes land or when explicitly requested;
 - GitHub API quota exhaustion defers safely to a later recovery sweep instead of creating new provider work.
 
