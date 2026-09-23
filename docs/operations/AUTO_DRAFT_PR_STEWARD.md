@@ -191,7 +191,24 @@ idkmesh steward-report steward-report.json --details
 ```
 
 The command requires no `GITHUB_TOKEN`, makes no network request, and has no
-mutation path. It rejects malformed or ambiguous evidence before rendering,
+mutation path.
+
+For a visual view of the same validated local evidence:
+
+```bash
+idkmesh steward-report-ui steward-report.json
+idkmesh steward-report-ui steward-report.json --no-browser --port 8766
+```
+
+The dashboard binds only to `127.0.0.1`, contains no JavaScript or external
+assets, performs no live GitHub request, and exposes no POST/PUT/PATCH/DELETE
+mutation endpoint. It shows run status, branch lifecycle outcomes, created Draft
+PRs, the explicit authority boundary, policy digest, workflow provenance, and
+the raw validated JSON. The same `idkmesh.steward_report` validator runs before
+the HTTP server starts, so the CLI and browser surfaces cannot disagree about
+whether a report is valid.
+
+The offline readers reject malformed or ambiguous evidence before rendering,
 including:
 
 - duplicate JSON keys and Python-only `NaN` / `Infinity` constants;
