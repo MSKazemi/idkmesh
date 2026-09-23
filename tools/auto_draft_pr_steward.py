@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import html
 import json
 import os
 import re
@@ -13,6 +14,7 @@ from urllib import error, parse, request
 
 API_VERSION = "2022-11-28"
 MAX_PR_TITLE_LENGTH = 180
+_REPOSITORY = re.compile(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+\Z")
 
 
 class GitHubApiError(RuntimeError):
@@ -52,7 +54,9 @@ class Candidate:
 
 class GitHubClient:
     def __init__(self, repo: str, token: str, api_url: str = "https://api.github.com") -> None:
-        if repo.count("/") != 1:
+        if _REPOSITORY.fullmatch(repo) is None or any(
+            component in {".", ".."} for component in repo.split("/")
+        ):
             raise ValueError("repo must use owner/name form")
         self.repo = repo
         self.token = token
@@ -142,24 +146,50 @@ def parse_time(value: str) -> datetime:
 
 def load_policy(path: Path) -> Policy:
     raw = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(raw, dict):
+        raise ValueError("policy must be a JSON object")
     if raw.get("schema_version") != "0.1":
         raise ValueError("unsupported policy schema_version")
+
+    def boolean(name: str, default: bool) -> bool:
+        value = raw.get(name, default)
+        if type(value) is not bool:
+            raise ValueError(f"{name} must be a boolean")
+        return value
+
+    def integer(name: str, default: int) -> int:
+        value = raw.get(name, default)
+        if isinstance(value, bool) or not isinstance(value, int):
+            raise ValueError(f"{name} must be an integer")
+        return value
+
+    def strings(name: str) -> tuple[str, ...]:
+        value = raw.get(name, [])
+        if not isinstance(value, list) or any(
+            not isinstance(item, str) for item in value
+        ):
+            raise ValueError(f"{name} must be an array of strings")
+        return tuple(value)
+
+    default_base = raw.get("default_base", "main")
+    if not isinstance(default_base, str):
+        raise ValueError("default_base must be a string")
     policy = Policy(
-        enabled=bool(raw.get("enabled", False)),
+        enabled=boolean("enabled", False),
         not_before=parse_time(str(raw["not_before"])),
-        default_base=str(raw.get("default_base", "main")),
-        managed_prefixes=tuple(map(str, raw.get("managed_prefixes", []))),
-        excluded_prefixes=tuple(map(str, raw.get("excluded_prefixes", []))),
-        infer_stacked_base=bool(raw.get("infer_stacked_base", True)),
-        max_creations_per_run=int(raw.get("max_creations_per_run", 3)),
-        max_branch_pages=int(raw.get("max_branch_pages", 5)),
-        max_pr_pages=int(raw.get("max_pr_pages", 20)),
-        max_untracked_branches_per_run=int(raw.get("max_untracked_branches_per_run", 50)),
-        max_candidate_evaluations_per_run=int(raw.get("max_candidate_evaluations_per_run", 6)),
-        max_open_pr_heads_for_stack_inference=int(
-            raw.get("max_open_pr_heads_for_stack_inference", 50)
+        default_base=default_base,
+        managed_prefixes=strings("managed_prefixes"),
+        excluded_prefixes=strings("excluded_prefixes"),
+        infer_stacked_base=boolean("infer_stacked_base", True),
+        max_creations_per_run=integer("max_creations_per_run", 3),
+        max_branch_pages=integer("max_branch_pages", 5),
+        max_pr_pages=integer("max_pr_pages", 20),
+        max_untracked_branches_per_run=integer("max_untracked_branches_per_run", 50),
+        max_candidate_evaluations_per_run=integer("max_candidate_evaluations_per_run", 6),
+        max_open_pr_heads_for_stack_inference=integer(
+            "max_open_pr_heads_for_stack_inference", 50
         ),
-        minimum_rate_limit_remaining=int(raw.get("minimum_rate_limit_remaining", 1500)),
+        minimum_rate_limit_remaining=integer("minimum_rate_limit_remaining", 1500),
     )
     if not policy.default_base:
         raise ValueError("default_base must not be empty")
@@ -221,12 +251,15 @@ def infer_base(client: Any, branch: str, default: str, open_heads: set[str]) -> 
 
 
 def safe_ref_text(value: str) -> str:
-    """Render a ref without creating a GitHub issue reference in generated prose."""
-    return value.replace("#", "issue-")
+    """Render a ref as inert text in GitHub Markdown and titles."""
+    value = "".join(character if ord(character) >= 32 else "-" for character in value)
+    value = value.replace("#", "issue-").replace("@", "at-")
+    return html.escape(value, quote=True)
 
 
 def title_for(branch: str) -> str:
     prefix, _, rest = branch.partition("/")
+    prefix = safe_ref_text(prefix)
     label = re.sub(r"[-_]+", " ", safe_ref_text(rest or prefix)).strip()
     title = f"{prefix}: {label}" if rest else f"draft: {label}"
     if len(title) <= MAX_PR_TITLE_LENGTH:
@@ -458,9 +491,14 @@ def append_summary(path: Path, result: dict[str, Any]) -> None:
         f"- blocked: {result.get('blocked_reason') or 'false'}",
         "- merge authorized: false",
     ]
-    lines += [f"- planned: {p['branch']} -> {p['base']}" for p in result["planned"]]
     lines += [
-        f"- skipped: {p['branch']} ({p['reason']})"
+        f"- planned: {safe_ref_text(str(p['branch']))} -> "
+        f"{safe_ref_text(str(p['base']))}"
+        for p in result["planned"]
+    ]
+    lines += [
+        f"- skipped: {safe_ref_text(str(p['branch']))} "
+        f"({safe_ref_text(str(p['reason']))})"
         for p in result.get("skipped", [])
     ]
     with path.open("a", encoding="utf-8") as handle:
