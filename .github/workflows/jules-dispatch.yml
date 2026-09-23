@@ -1,14 +1,27 @@
 name: Jules Dispatcher
 
-# `agent-ready` is the approval boundary. This workflow adds `jules`, which the
-# Google Labs Jules GitHub App treats as the execution signal.
+# Routing and execution are deliberately separate. The issue router decides
+# whether bounded work is Jules-eligible; this workflow performs guarded
+# provider dispatch. Routine runs never bootstrap labels so the hot path stays
+# within a small GitHub API budget.
 on:
   issues:
     types: [labeled, closed]
   schedule:
-    # Recovery sweep only. Normal dispatch is event-driven and immediate.
+    # Recovery sweep only. Normal dispatch is event-driven through the router.
     - cron: '17,47 * * * *'
   workflow_dispatch:
+    inputs:
+      issue_number:
+        description: Optional routed issue to prioritize for one immediate dispatch
+        required: false
+        default: ''
+        type: string
+      bootstrap_labels:
+        description: Create any missing Jules policy labels before dispatch
+        required: false
+        default: false
+        type: boolean
   push:
     branches: [main]
     paths:
@@ -30,7 +43,9 @@ jobs:
     if: >-
       github.event_name != 'issues' ||
       github.event.action == 'closed' ||
-      (github.event.action == 'labeled' && github.event.label.name == 'agent-ready')
+      (github.event.action == 'labeled' &&
+       (github.event.label.name == 'agent-ready' ||
+        github.event.label.name == 'agent:jules-eligible'))
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -46,15 +61,18 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Ensure dispatch labels exist
+      - name: Bootstrap dispatch labels
+        if: github.event_name == 'workflow_dispatch' && inputs.bootstrap_labels
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python tools/jules_dispatcher.py --init-labels
 
-      - name: Dispatch newly approved issue immediately
+      - name: Dispatch explicitly labeled issue
         if: github.event_name == 'issues' && github.event.action == 'labeled'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          JULES_API_KEY: ${{ secrets.JULES_API_KEY }}
+          GITHUB_DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
         run: >-
           python tools/jules_dispatcher.py
@@ -62,8 +80,27 @@ jobs:
           --event-issue "${ISSUE_NUMBER}"
           --max-dispatch 1
 
-      - name: Fill available Jules capacity
-        if: github.event_name != 'issues' || github.event.action == 'closed'
+      - name: Dispatch routed issue from router
+        if: github.event_name == 'workflow_dispatch' && inputs.issue_number != ''
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          JULES_API_KEY: ${{ secrets.JULES_API_KEY }}
+          GITHUB_DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          ISSUE_NUMBER: ${{ inputs.issue_number }}
+        run: >-
+          python tools/jules_dispatcher.py
+          --dispatch
+          --event-issue "${ISSUE_NUMBER}"
+          --max-dispatch 1
+
+      - name: Fill available Jules capacity
+        if: >-
+          github.event_name == 'schedule' ||
+          github.event_name == 'push' ||
+          (github.event_name == 'workflow_dispatch' && inputs.issue_number == '') ||
+          (github.event_name == 'issues' && github.event.action == 'closed')
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          JULES_API_KEY: ${{ secrets.JULES_API_KEY }}
+          GITHUB_DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: python tools/jules_dispatcher.py --dispatch

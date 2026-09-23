@@ -1,7 +1,7 @@
 ---
 title: "Verifier Panels, Effective Independent Votes, and Reliable Review — IDKMesh"
 description: "Why reviewer head-count can overstate independent evidence, how correlated verifier errors weaken quorums, and how IDKMesh audits review panels."
-image: "/idkmesh/assets/idkmesh-social.png"
+image: "/assets/idkmesh-social.png"
 ---
 
 # Verifier panels and independent review

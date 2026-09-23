@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "idkmesh"
 version = "0.1.0"
-description = "Audit the AI review layer: measure a verifier panel's effective independent votes, correlation structure, and seeded-probe breach rate."
+description = "AI review-gate verification toolkit for measuring verifier independence, correlated errors, seeded-probe breach rate, provenance, and auditable evidence."
 readme = "README.md"
 requires-python = ">=3.11"
 license = "Apache-2.0"
@@ -13,12 +13,17 @@ authors = [
     { name = "Mohsen Seyedkazemi Ardebili", email = "mohsen.seyedkazemi@gmail.com" },
 ]
 keywords = [
+    "ai-agent-verification",
+    "ai-code-review",
+    "agent-evaluation",
     "verification",
+    "llm-evaluation",
     "llm-as-judge",
-    "code-review",
     "verifier-panel",
+    "correlated-errors",
     "evidence",
     "provenance",
+    "reproducible-research",
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -42,6 +47,9 @@ verify = ["jsonschema>=4.26,<5"]
 
 [project.urls]
 Homepage = "https://mskazemi.com/idkmesh/"
+Documentation = "https://mskazemi.com/idkmesh/start.html"
+Topics = "https://mskazemi.com/idkmesh/topics/"
+Research = "https://mskazemi.com/idkmesh/research.html"
 Repository = "https://github.com/MSKazemi/idkmesh"
 Issues = "https://github.com/MSKazemi/idkmesh/issues"
 

@@ -1,7 +1,7 @@
 ---
 title: "Human Oversight and AI Agent Governance — IDKMesh"
 description: "Govern AI agents with bounded authority, scoped permissions, human approval, auditable evidence, and a separate integration boundary for high-risk actions."
-image: "/idkmesh/assets/idkmesh-social.png"
+image: "/assets/idkmesh-social.png"
 ---
 
 # Human oversight and AI agent governance

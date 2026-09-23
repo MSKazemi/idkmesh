@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idkmesh.org/schemas/enterprise-actor-context-v0.1.schema.json",
+  "title": "IDKMesh Enterprise Actor Context v0.1",
+  "description": "Normalized trusted identity claims for enterprise authorization. This object must be produced by a trusted authentication adapter; task/issue/model text is not an identity source.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "kind",
+    "schema_version",
+    "principal_id",
+    "actor_type",
+    "issuer",
+    "roles",
+    "scopes",
+    "data_clearance",
+    "identity_revision",
+    "authenticated",
+    "revoked",
+    "expires_at_epoch"
+  ],
+  "properties": {
+    "kind": {"const": "idkmesh-enterprise-actor-context"},
+    "schema_version": {"const": "0.1"},
+    "principal_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,255}$"},
+    "actor_type": {"enum": ["human", "github_app", "github_actions", "service", "provider", "node"]},
+    "issuer": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,255}$"},
+    "roles": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"enum": ["owner", "admin", "integrator", "worker", "reviewer", "dispatcher", "node_operator", "auditor"]}
+    },
+    "scopes": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["tenant_id", "project_id"],
+        "properties": {
+          "tenant_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"},
+          "project_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"}
+        }
+      }
+    },
+    "data_clearance": {"enum": ["public", "internal", "confidential", "restricted"]},
+    "identity_revision": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$"},
+    "authenticated": {"type": "boolean"},
+    "revoked": {"type": "boolean"},
+    "expires_at_epoch": {
+      "oneOf": [
+        {"type": "integer", "minimum": 0},
+        {"type": "null"}
+      ]
+    }
+  }
+}

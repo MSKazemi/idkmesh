@@ -94,7 +94,6 @@ class JulesSessionHandle:
     session_id: str
     work_unit_id: str
     source_name: str
-    repository: str
     starting_branch: str
     requested_source_revision: str
     revision_binding: str
@@ -203,7 +202,6 @@ def _parse_created_session(
         session_id=session_id,
         work_unit_id=request.work_unit_id,
         source_name=request.source_name,
-        repository=f"{request.binding.github_owner}/{request.binding.github_repo}",
         starting_branch=request.binding.branch,
         requested_source_revision=request.binding.revision,
         revision_binding="scm_pinned_branch",
