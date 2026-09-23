@@ -20,6 +20,8 @@ This directory contains the machine-readable contracts used by the executable re
 - `ci-evaluation-v0.1.schema.json` — shadow plan/outcome comparison recording mapped misses, attribution gaps, modeled savings, and permanent v0.1 promotion ineligibility.
 - `human-decision-record-v0.1.schema.json` — a recorded, accountable human integration decision (`accept`/`reject`/`escalate`) against one Run Evidence Report: who decided, what they decided, when, and why, bound to the exact report by content digest. It is deliberately a record of a decision, not an executor of one: it carries no canonical-state-write, git-push, or merge authority. Produced by `experiments/record_human_decision.py`.
 - `enterprise-resource-ref-v0.1.schema.json` — tenant/project-scoped enterprise resource reference. Scope is part of resource identity and is not inferred from an unscoped resource id.
+- `enterprise-actor-context-v0.1.schema.json` — normalized trusted human/service/provider/node identity claims for E3 authorization. It is an authorization input only when produced by a trusted authentication adapter; issue/task/model text is not an identity source.
+- `enterprise-authorization-decision-v0.1.schema.json` — deterministic allow/deny/requires-approval evidence bound to tenant/project resource identity, policy revision, identity revision, risk, and data class. The decision object performs no side effect and carries no merge authority itself.
 
 All current schemas use JSON Schema Draft 2020-12.
 
