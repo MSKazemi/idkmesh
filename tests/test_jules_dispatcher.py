@@ -29,6 +29,7 @@ POLICY = {
         "IN_PROGRESS": 360,
     },
     "stale_missing_session_minutes": 60,
+    "session_scan_max_pages": 10,
     "max_in_flight": 4,
     "max_dispatch_per_sweep": 2,
     "blocked_labels": [
@@ -531,6 +532,7 @@ def test_repository_policy_keeps_speed_and_hard_vetoes_explicit():
     ]
     assert policy["attention_label"] == "agent:jules-needs-attention"
     assert policy["stale_session_minutes"]["QUEUED"] == 120
+    assert policy["session_scan_max_pages"] == 10
     assert policy["max_in_flight"] == 4
     assert policy["max_dispatch_per_sweep"] == 2
     assert "agent:jules-needs-attention" in policy["blocked_labels"]
