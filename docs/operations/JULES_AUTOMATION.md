@@ -236,6 +236,62 @@ Recommended operating rhythm:
 
 If review latency grows, lower concurrency before creating more generated work.
 
+## Atomic multi-file publications for agent branches
+
+When an agent or automation script needs to publish changes across multiple files, publishing each file using individual GitHub Contents API calls produces one commit and one branch reference update per file. This sequence causes multiple pull-request `synchronize` events and triggers CI workflows after every individual file write, creating unnecessary CI queue pressure and noise for reviewers.
+
+To avoid this, agents and automation should use `tools/github_atomic_commit.py`.
+
+### How it works
+
+The atomic writer uses the GitHub Git Data API to publish multiple file changes (writes and deletions) as a single atomic commit:
+
+```text
+expected branch head
+ -> create all blobs
+ -> create one tree on expected base tree
+ -> create one commit with expected head as parent
+ -> re-check branch head
+ -> non-force ref update
+ -> single synchronize event
+```
+
+### Key guarantees and safety constraints
+
+- **Exact head binding:** Compares the expected branch head SHA before and after blob/tree/commit creation. If the branch head moves, publication fails closed.
+- **Non-force updates:** Updates the branch reference using a non-force PATCH call, preventing concurrent agents from overwriting each other's work.
+- **No direct main writes:** Refuses direct writes to default branches (e.g., `main`) unless explicitly overridden with `--allow-default-branch`.
+- **Secret handling:** Reads `GITHUB_TOKEN` from the environment only and never prints or logs credentials.
+- **Dry-run planning:** Supports an offline `plan` subcommand that performs no GitHub API mutations and requires no token.
+- **Deterministic ordering:** Paths and mutations are normalized and sorted deterministically.
+
+### Example CLI usage
+
+**Planning (offline dry-run, no token required):**
+
+```bash
+python tools/github_atomic_commit.py plan \
+  --branch agent/my-work \
+  --expected-head <sha> \
+  --write idkmesh/a.py=/tmp/a.py \
+  --write tests/test_a.py=/tmp/test_a.py \
+  --delete old/file.txt \
+  --json
+```
+
+**Publishing (single commit and single ref update):**
+
+```bash
+GITHUB_TOKEN=... python tools/github_atomic_commit.py publish \
+  --repository owner/repo \
+  --branch agent/my-work \
+  --expected-head <sha> \
+  --message "agent: publish bounded candidate" \
+  --write idkmesh/a.py=/tmp/a.py \
+  --write tests/test_a.py=/tmp/test_a.py \
+  --delete old/file.txt
+```
+
 ## Reading the Jules web UI
 
 The Jules codebase badge and the **Needs review** section are not the repository
@@ -348,7 +404,8 @@ useful if verification becomes the bottleneck.
 - workflow: [`.github/workflows/jules-dispatch.yml`](../../.github/workflows/jules-dispatch.yml)
 - policy: [`config/jules-dispatch.json`](../../config/jules-dispatch.json)
 - dispatcher: [`tools/jules_dispatcher.py`](../../tools/jules_dispatcher.py)
-- tests: [`tests/test_jules_dispatcher.py`](../../tests/test_jules_dispatcher.py)
+- atomic commit helper: [`tools/github_atomic_commit.py`](../../tools/github_atomic_commit.py)
+- tests: [`tests/test_jules_dispatcher.py`](../../tests/test_jules_dispatcher.py), [`tests/test_github_atomic_commit.py`](../../tests/test_github_atomic_commit.py)
 - agent instructions: [`AGENTS.md`](../../AGENTS.md)
 
 ## Changing the policy
