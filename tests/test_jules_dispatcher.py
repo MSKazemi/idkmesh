@@ -561,6 +561,9 @@ def test_workflow_and_router_share_the_same_dispatch_contract():
     router = (
         REPO_ROOT / ".github" / "workflows" / "issue-model-router.yml"
     ).read_text(encoding="utf-8")
+    pr_gate = (REPO_ROOT / ".github" / "workflows" / "pr-gate.yml").read_text(
+        encoding="utf-8"
+    )
 
     assert "workflow_call:" in workflow
     assert workflow.count("issue_number:") >= 2
@@ -573,6 +576,8 @@ def test_workflow_and_router_share_the_same_dispatch_contract():
     assert "secrets: inherit" in router
     assert "gh workflow run jules-dispatch.yml" not in router
     assert "actions: write" not in router
+    assert 'dispatch_policy["automatic_queue_label"]' in router
+    assert "python tools/check_jules_contract.py" in pr_gate
     assert "contents: read" in workflow
     assert "issues: write" in workflow
     assert "pull-requests: write" not in workflow
