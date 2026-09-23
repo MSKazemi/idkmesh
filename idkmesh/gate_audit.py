@@ -811,11 +811,22 @@ def audit_text(text: str, *, source: str = "input",
                 bootstrap: dict[str, Any] | None = None) -> dict[str, Any]:
     """Parse, validate, and audit one verdict-matrix JSON text document."""
     data = parse_input_text(text, source=source)
-    return audit(data, bootstrap=bootstrap)
+    try:
+        return audit(data, bootstrap=bootstrap)
+    except GateAuditInputError as exc:
+        # Preserve the long-standing source-qualified error contract for
+        # audit-time failures such as invalid bootstrap parameters.
+        raise GateAuditInputError(f"{source}: {exc}") from exc
 
 
 def audit_file(input_path: str | Path, *,
                 bootstrap: dict[str, Any] | None = None) -> dict[str, Any]:
     """Load, validate, and audit one verdict-matrix JSON file."""
-    data = load_input_file(input_path)
-    return audit(data, bootstrap=bootstrap)
+    path = Path(input_path)
+    data = load_input_file(path)
+    try:
+        return audit(data, bootstrap=bootstrap)
+    except GateAuditInputError as exc:
+        # load_input_file() already qualifies parse/contract failures; only
+        # audit-time failures reach this branch.
+        raise GateAuditInputError(f"{path}: {exc}") from exc
