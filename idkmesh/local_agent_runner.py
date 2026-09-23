@@ -521,15 +521,15 @@ def _validate_local_agent_admission(
         raise LocalRunnerError("work_unit.constraints.forbidden_paths must be an array")
     for field, values in (("allowed_paths", allowed), ("forbidden_paths", forbidden)):
         for value in values:
-            normalized = value.replace("\\", "/") if isinstance(value, str) else value
             if (
-                not isinstance(normalized, str)
-                or not normalized
-                or "\x00" in normalized
-                or "\n" in normalized
-                or "\r" in normalized
-                or normalized.startswith("/")
-                or ".." in PurePosixPath(normalized).parts
+                not isinstance(value, str)
+                or not value
+                or "\x00" in value
+                or "\n" in value
+                or "\r" in value
+                or "\\" in value
+                or value.startswith("/")
+                or ".." in PurePosixPath(value).parts
             ):
                 raise LocalRunnerError(f"unsafe WorkUnit {field} entry: {value!r}")
 
@@ -668,11 +668,12 @@ def _changed_paths(workspace: Path, *, max_bytes: int = 1_000_000) -> list[tuple
         if len(entry) < 4 or entry[2] != " ":
             raise LocalRunnerError(f"unexpected git status entry: {entry!r}")
         status = entry[:2]
-        path = entry[3:].replace("\\", "/")
+        path = entry[3:]
         if (
             not path
             or "\n" in path
             or "\r" in path
+            or "\\" in path
             or path.startswith("/")
             or ".." in PurePosixPath(path).parts
         ):
@@ -901,6 +902,14 @@ def run_local_agent_preset(
             pass
         else:
             raise LocalRunnerError("artifact_dir must be outside worker workspace")
+        try:
+            workspace.path.relative_to(artifact_root)
+        except ValueError:
+            pass
+        else:
+            raise LocalRunnerError(
+                "artifact_dir must not contain the worker workspace"
+            )
 
         started_at = datetime.now(timezone.utc)
         process_result = sandbox.run(
