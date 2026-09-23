@@ -131,8 +131,14 @@ The strategy is resolved only when:
 2. every candidate has a sufficient bootstrap result;
 3. every candidate has a finite effective-vote-delta interval;
 4. the largest point estimate is unique;
-5. the top candidate's interval lower bound is **strictly greater** than every
+5. the top point estimate is positive and its interval lower bound is strictly
+   greater than zero;
+6. the top candidate's interval lower bound is **strictly greater** than every
    other candidate's interval upper bound.
+
+Condition 5 is the v0.1 safe stop rule: if the audited design rows do not
+support a positive incremental effective-vote gain, the strategy remains
+`unresolved` instead of adding the least-bad or merely non-separated reviewer.
 
 A candidate can still have an unrelated diagnostic status such as
 unmeasurable error correlation. That does not block this selector when the
