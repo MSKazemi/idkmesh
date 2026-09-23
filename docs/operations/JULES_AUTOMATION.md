@@ -106,7 +106,11 @@ the dispatcher checks provider session state, quarantines failed/stale work,
 and fills free slots. GitHub scheduled runs are best-effort and may be delayed,
 so this is not the primary path.
 
-The Issue Model Router also has a slower backfill schedule for reclassification. A push to the Jules/router control-plane files on `main` triggers an immediate full open-issue reclassification and reusable dispatcher call, so a repaired or changed contract does not wait for the next six-hour backfill window.
+The Issue Model Router also has a slower backfill schedule for reclassification.
+A push to the Jules/router control-plane files on `main` triggers one immediate
+full open-issue reclassification and then one reusable dispatcher call with label
+bootstrapping enabled, so a repaired or changed contract does not wait for the
+next six-hour backfill window and does not start a duplicate direct dispatcher.
 Manual `workflow_dispatch` remains available for operators, including an
 optional `issue_number` and an explicit `bootstrap_labels` control.
 
@@ -340,16 +344,25 @@ No Jules task auto-merges `main`.
 ### Contract-drift prevention
 
 The required PR Gate runs `python tools/check_jules_contract.py` before dependency
-installation. The guard fails if the router and dispatcher stop sharing the same
+installation. The same stdlib-only guard also runs inside the production Issue
+Model Router and Jules Dispatcher before either workflow mutates labels or calls
+the provider. The guard fails if the router and dispatcher stop sharing the same
 typed reusable-workflow input, if routing/dispatch label policies diverge, if the
-automatic trust boundary is weakened, or if the dispatcher gains pull-request
-write authority. The router also derives its Jules queue label from policy rather
-than embedding a second code literal.
+automatic trust boundary is weakened, if provider-capacity policy becomes invalid,
+or if the dispatcher gains pull-request write authority. The router also derives
+its Jules queue label from policy rather than embedding a second code literal.
 
 Because the router calls the dispatcher through `workflow_call`, GitHub validates
 the caller/callee input name at workflow-graph construction time. Together, the
-GitHub type check plus the repository contract guard make the regression that
-occurred in PR #765 a merge-blocking failure instead of a latent runtime outage.
+GitHub type check, required PR Gate, and production runtime self-check make the
+regression that occurred in PR #765 a merge-blocking or fail-closed error instead
+of a latent runtime outage.
+
+The router is the **single owner** of control-plane push recovery. A change to the
+router/dispatcher/policy surfaces causes one router backfill, which calls the
+reusable dispatcher with `bootstrap_labels: true`. The dispatcher deliberately
+has no independent `push` trigger, avoiding duplicate provider/API sweeps and
+preserving GitHub API quota.
 
 
 ### `agent:jules-eligible` exists but dispatch never starts
