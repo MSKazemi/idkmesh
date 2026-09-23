@@ -32,12 +32,13 @@ Worker completion is never treated as acceptance.
 
 ### Rollout compatibility
 
-The first two ChatGPT-created pull requests predate the `chatgpt/` branch-prefix rule:
+The first two ChatGPT-created pull requests predated the `chatgpt/` branch-prefix rule:
 
-- #639 used `ci/reduce-pr-fanout-2026-09-22` and has merged;
-- #640 uses `docs/chatgpt-hourly-quality-worker`.
+- #639 used `ci/reduce-pr-fanout-2026-09-22`;
+- #640 used `docs/chatgpt-hourly-quality-worker`.
 
-While #640 remains open, the worker treats it as scheduled-worker work and converges it before opening fresh work when an actionable repair exists. This is a temporary compatibility rule, not permission to create additional branches outside `chatgpt/`.
+Those names were rollout exceptions. New scheduled-worker branches use the
+`chatgpt/` prefix; the historical names do not create an ongoing exception.
 
 ## Non-overlap with Jules
 
