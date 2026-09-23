@@ -7,12 +7,13 @@ canonical files designated by [`../../PROJECT_RULES.md`](../../PROJECT_RULES.md)
 (decisions, specifications, architecture, findings); this directory keeps the trail
 that produced them.
 
-163 records across 8 dates, newest first.
+164 records across 8 dates, newest first.
 
 ## Index
 
 ### 2026-09-23
 
+- [Jules automatic-routing reconciliation and throughput hardening](2026-09-23-jules-routing-reconciliation.md)
 - [Evidence-centric innovation and marginal verifier implementation](2026-09-23-evidence-centric-innovation-and-marginal-verifier-implementation.md)
 
 ### 2026-09-22
