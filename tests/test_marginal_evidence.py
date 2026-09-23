@@ -297,12 +297,17 @@ class ContributionSemanticsTests(unittest.TestCase):
         self.assertIsNotNone(probed_report["candidates"][0]["probe_effect"])
 
     def test_censored_effective_vote_delta_is_not_subtracted(self):
+        # Each verifier is imperfect, but all false-accept errors are on
+        # disjoint known-bad rows. Both the current unanimity gate and the
+        # augmented majority gate therefore make zero panel errors while the
+        # individual mean accuracy stays below 1.0. That is the condition
+        # which reaches gate-audit's effective-vote comparison ceiling.
         data = make_matrix(
             count=30,
             error_sets={
-                "v1": set(),
-                "v2": set(),
-                "candidate": set(),
+                "v1": {1, 5},
+                "v2": {3, 7},
+                "candidate": {9, 11},
             },
         )
         report = marginal_evidence.analyze(
@@ -492,9 +497,9 @@ class SchemaTests(unittest.TestCase):
             make_matrix(
                 count=30,
                 error_sets={
-                    "v1": set(),
-                    "v2": set(),
-                    "candidate": set(),
+                    "v1": {1, 5},
+                    "v2": {3, 7},
+                    "candidate": {9, 11},
                 },
             ),
             current_verifier_ids=["v1", "v2"],
