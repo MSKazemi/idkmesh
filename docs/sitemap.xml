@@ -1497,6 +1497,11 @@
     <priority>0.4</priority>
   </url>
   <url>
+    <loc>https://mskazemi.com/idkmesh/planning/COMPETITIVE_LANDSCAPE_2026-09-22.html</loc>
+    <lastmod>2026-09-23</lastmod>
+    <priority>0.4</priority>
+  </url>
+  <url>
     <loc>https://mskazemi.com/idkmesh/planning/CURRENT_PRIORITIES.html</loc>
     <lastmod>2026-08-28</lastmod>
     <priority>0.4</priority>
@@ -1754,11 +1759,6 @@
   <url>
     <loc>https://mskazemi.com/idkmesh/specifications/ENTERPRISE_CONTROL_PROFILE_V0_1.html</loc>
     <lastmod>2026-09-23</lastmod>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://mskazemi.com/idkmesh/specifications/ENTERPRISE_CONTROL_PROFILE_V0_1.html</loc>
-    <lastmod>2026-09-22</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
