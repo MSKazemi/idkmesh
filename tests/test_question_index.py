@@ -29,10 +29,21 @@ class QuestionIndexTests(unittest.TestCase):
         for entry in question_index.question_entries():
             url = entry["url"]
             questions = entry["questions"]
+            anchors = entry["anchors"]
             self.assertEqual(10, len(questions))
-            for question in questions:
+            self.assertEqual(10, len(anchors))
+            for question, anchor in zip(questions, anchors, strict=True):
                 with self.subTest(question=question):
-                    self.assertIn(f"[{question}]({url})", rendered)
+                    self.assertIn(f"[{question}]({url}#{anchor})", rendered)
+
+    def test_question_anchors_are_globally_unique(self) -> None:
+        anchors = [
+            anchor
+            for entry in question_index.question_entries()
+            for anchor in entry["anchors"]
+        ]
+        self.assertEqual(100, len(anchors))
+        self.assertEqual(100, len(set(anchors)))
 
     def test_question_map_is_linked_from_discovery_surfaces(self) -> None:
         root = question_index.ROOT
