@@ -119,6 +119,24 @@ workflow completes. This rule exists because the first live 100-query rollout
 published all ten pillar pages correctly while `/topics/` remained a 404 when
 the hub source was named `README.md`.
 
+## Jekyll social image path convention
+
+Jekyll SEO Tag applies the configured `baseurl` when it turns `page.image`
+into an absolute Open Graph / JSON-LD URL. With this site's
+`baseurl: "/idkmesh"`, Markdown/front-matter image paths therefore use:
+
+```yaml
+image: "/assets/idkmesh-social.png"
+```
+
+Do **not** pre-prefix that value with `/idkmesh`. The first 100-query Pages
+artifact proved why: `image: "/idkmesh/assets/idkmesh-social.png"` rendered as
+`https://mskazemi.com/idkmesh/idkmesh/assets/idkmesh-social.png` across 367
+Jekyll pages.
+
+`tests/test_pages_seo.py` guards the source convention. The post-deploy
+discovery workflow provides the public-side backstop.
+
 ## Search and answer-engine discovery
 
 The discovery surface is intentionally layered rather than dependent on one
@@ -143,6 +161,21 @@ The implementation and measurement rules are recorded in
 Actual Google/Bing index coverage, search queries, and answer-engine citations
 must be measured externally after deployment rather than inferred from repository
 configuration.
+
+### Pages-native discovery trigger
+
+The public discovery monitor uses GitHub Actions' `page_build` event, not
+`workflow_run` against the implicit `pages build and deployment` run.
+
+This distinction is observed, not theoretical: after #724, a successful implicit
+Pages deployment completed for a later `main` revision, but no
+`workflow_run`-triggered Public Discovery Monitor was created. GitHub documents
+`page_build` as the native event for a push to a Pages publishing source.
+
+For a `page_build` event the monitor requires
+`github.event.build.status == "built"` and checks out
+`github.event.build.commit`, binding the probe to the Pages build that caused
+the event. Scheduled/manual probes remain as recovery paths.
 
 ## What is guarded, and what is not
 

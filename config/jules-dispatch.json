@@ -1,21 +1,20 @@
 {
-  "version": 2,
+  "version": 4,
   "queue_label": "agent-ready",
   "dispatch_label": "agent:jules-dispatched",
+  "legacy_dispatch_labels": [
+    "jules"
+  ],
   "max_in_flight": 4,
   "max_dispatch_per_sweep": 2,
-  "ci_backpressure": {
-    "enabled": true,
-    "max_queued_runs": 12,
-    "max_in_progress_runs": 8
-  },
   "blocked_labels": [
     "blocked",
     "do-not-automate",
     "human-required",
     "needs-decomposition",
     "research-evidence",
-    "security-sensitive"
+    "security-sensitive",
+    "agent:jules-needs-attention"
   ],
   "priority_weights": {
     "priority:p0": 300,
@@ -92,9 +91,41 @@
     "agent:jules-dispatched": {
       "color": "5319E7",
       "description": "Reserved/started by the API-backed Jules dispatcher"
+    },
+    "agent:jules-eligible": {
+      "color": "BFDADC",
+      "description": "Trusted low-risk bounded task routed for automatic Jules REST dispatch"
+    },
+    "agent:jules-needs-attention": {
+      "color": "D93F0B",
+      "description": "Jules session needs maintainer inspection before redispatch"
     }
   },
-  "legacy_dispatch_labels": [
-    "jules"
-  ]
+  "automatic_queue_label": "agent:jules-eligible",
+  "trusted_author_associations": [
+    "OWNER",
+    "MEMBER",
+    "COLLABORATOR"
+  ],
+  "attention_label": "agent:jules-needs-attention",
+  "attention_session_states": [
+    "FAILED",
+    "AWAITING_PLAN_APPROVAL",
+    "AWAITING_USER_FEEDBACK",
+    "PAUSED",
+    "STATE_UNSPECIFIED"
+  ],
+  "stale_session_minutes": {
+    "QUEUED": 120,
+    "PLANNING": 180,
+    "IN_PROGRESS": 360
+  },
+  "stale_missing_session_minutes": 60,
+  "session_scan_max_pages": 10,
+  "provider_concurrency": {
+    "max_concurrent_tasks": 3,
+    "plan": "Jules",
+    "source": "https://jules.google/docs/usage-limits",
+    "checked_at": "2026-09-23"
+  }
 }

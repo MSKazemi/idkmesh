@@ -1,0 +1,66 @@
+{
+  "config": {
+    "beta": 2.2,
+    "d_max": 4.0,
+    "d_min": 0.08,
+    "deposit_gain": 0.85,
+    "evaporation": 0.1,
+    "exploration": 0.06,
+    "failure_penalty": 0.3,
+    "max_hops": 5,
+    "shift_epoch": 40
+  },
+  "epochs": 80,
+  "experiment": "physarum-adaptive-compute-routing-v0",
+  "model_warning": "Synthetic admitted-network routing model; not empirical evidence.",
+  "seed_start": 1,
+  "seeds": 40,
+  "summary": {
+    "epsilon-greedy": {
+      "max_path_share": 0.907375,
+      "mean_route_burden": 2.1635108,
+      "mean_success_latency": 2.181896525,
+      "path_entropy": 0.20263735,
+      "post_shift_success_rate": 0.630625,
+      "pre_shift_success_rate": 0.96540625,
+      "success_rate": 0.798015625
+    },
+    "physarum": {
+      "max_path_share": 0.58728125,
+      "mean_route_burden": 2.298300125,
+      "mean_success_latency": 2.299554625,
+      "path_entropy": 0.355684675,
+      "post_shift_success_rate": 0.90503125,
+      "pre_shift_success_rate": 0.9639375,
+      "success_rate": 0.934484375
+    },
+    "reliability-greedy": {
+      "max_path_share": 1.0,
+      "mean_route_burden": 2.0,
+      "mean_success_latency": 2.0,
+      "path_entropy": 0.0,
+      "post_shift_success_rate": 0.60728125,
+      "pre_shift_success_rate": 0.96890625,
+      "success_rate": 0.78809375
+    },
+    "shortest-static": {
+      "max_path_share": 1.0,
+      "mean_route_burden": 2.0,
+      "mean_success_latency": 2.0,
+      "path_entropy": 0.0,
+      "post_shift_success_rate": 0.60728125,
+      "pre_shift_success_rate": 0.96890625,
+      "success_rate": 0.78809375
+    },
+    "thompson-path": {
+      "max_path_share": 0.9444375,
+      "mean_route_burden": 2.0223,
+      "mean_success_latency": 2.026686725,
+      "path_entropy": 0.274035425,
+      "post_shift_success_rate": 0.65090625,
+      "pre_shift_success_rate": 0.97025,
+      "success_rate": 0.810578125
+    }
+  },
+  "tasks_per_epoch": 20
+}

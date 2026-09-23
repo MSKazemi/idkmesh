@@ -571,6 +571,41 @@ Priority: **P3 inspiration; classical coding theory P1**.
 
 ---
 
+## Cross-disciplinary synthesis: Adaptive Verification Ecology (AVE)
+
+The scientific mechanisms above should not remain isolated metaphors. The current
+cross-disciplinary synthesis is [Adaptive Verification Ecology](docs/algorithms/ADAPTIVE_VERIFICATION_ECOLOGY.md),
+an **experimental** control policy that maps several mechanisms onto one concrete
+IDKMesh problem: allocating generation and verification when agents are cheap,
+review capacity is scarce, and verifier errors may be correlated.
+
+AVE combines:
+
+- **ecology:** niche occupancy / negative-frequency pressure to limit correlated
+  worker monoculture;
+- **adaptive-immunity inspiration:** known-bad probes and retained verifier
+  reliability memory;
+- **economics/control:** review-capacity shadow prices and generation
+  backpressure under congestion;
+- **statistical physics/information theory:** bounded entropy/temperature
+  exploration rather than a permanent random-exploration constant;
+- **Bayesian learning:** task-family outcome posteriors for uncertain routing;
+- **verification science:** correlation-aware verifier portfolios and
+  risk-adaptive quorum/fan-out.
+
+The retained AVE-0 reference sweep is synthetic and records a trade-off rather
+than a universal win: the combined mechanism reduces synthetic correlated-risk
+failure and duplication in its first environment while spending more review than
+the cheapest capability-only baseline. This is therefore a research hypothesis,
+not a production architecture decision.
+
+Its next falsification gate is the matched-budget ablation and environment sweep
+tracked by [issue #621](https://github.com/MSKazemi/idkmesh/issues/621). If a
+simpler subset reproduces the safety gain at lower review/human-attention cost,
+IDKMesh should keep that subset and reject the unnecessary mechanisms.
+
+---
+
 # A physics-to-engineering map
 
 | Scientific idea | IDKMesh variable/problem | Concrete mechanism | Earliest experiment | Priority |

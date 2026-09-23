@@ -18,6 +18,7 @@ class PublicDiscoveryMonitorTests(unittest.TestCase):
             monitor.SITEMAP,
             monitor.LLMS,
             monitor.INDEXNOW_KEY_URL,
+            monitor.JEKYLL_SENTINEL,
             *monitor.DIRECTORY_HUBS.values(),
             *(url for url, _ in monitor.TOPIC_PAGES.values()),
         ):
@@ -50,15 +51,16 @@ class PublicDiscoveryMonitorTests(unittest.TestCase):
         self.assertIn("browser", monitor.USER_AGENTS)
 
 
-    def test_workflow_waits_for_pages_deployment(self) -> None:
+    def test_workflow_uses_pages_native_build_event(self) -> None:
         root = Path(__file__).resolve().parents[1]
         text = (
             root / ".github" / "workflows" / "public-discovery-monitor.yml"
         ).read_text(encoding="utf-8")
-        self.assertIn("workflow_run:", text)
-        self.assertIn("pages build and deployment", text)
-        self.assertIn("github.event.workflow_run.head_sha", text)
-        self.assertIn("github.event.workflow_run.conclusion == 'success'", text)
+        self.assertIn("page_build:", text)
+        self.assertIn("github.event.build.commit", text)
+        self.assertIn("github.event.build.status", text)
+        self.assertIn('PAGES_STATUS" != "built"', text)
+        self.assertNotIn("workflow_run:", text)
         self.assertNotIn("\n  push:\n", text)
 
     def _healthy_fetch(self, url: str, user_agent: str, timeout: float = 10.0):
@@ -81,7 +83,16 @@ class PublicDiscoveryMonitorTests(unittest.TestCase):
         if url == monitor.TOPICS:
             return (
                 200,
-                "<html><body>AI agent verification and multi-agent orchestration</body></html>",
+                "<html><head><meta property=\"og:image\" content=\""
+                + monitor.SOCIAL_IMAGE
+                + "\"></head><body>AI agent verification and multi-agent orchestration</body></html>",
+            )
+        if url == monitor.JEKYLL_SENTINEL:
+            return (
+                200,
+                "<html><head><meta property=\"og:image\" content=\""
+                + monitor.SOCIAL_IMAGE
+                + "\"></head><body>IDKMesh document</body></html>",
             )
         if url == monitor.LLMS:
             return (
@@ -96,7 +107,10 @@ class PublicDiscoveryMonitorTests(unittest.TestCase):
                     200,
                     '<html><head><link rel="canonical" href="'
                     + topic_url
-                    + '"><meta name="description" content="topic"></head><body>'
+                    + '"><meta name="description" content="topic">'
+                    + '<meta property="og:image" content="'
+                    + monitor.SOCIAL_IMAGE
+                    + '"></head><body>'
                     + marker
                     + "</body></html>",
                 )
@@ -136,6 +150,23 @@ class PublicDiscoveryMonitorTests(unittest.TestCase):
             failures = monitor.probe()
         self.assertIn(
             f"robots.txt blocks openai from {monitor.HOME}", failures
+        )
+
+    def test_duplicated_social_image_baseurl_is_reported(self) -> None:
+        broken_url = monitor.TOPIC_PAGES["ai-agent-verification"][0]
+
+        def fetch(url: str, user_agent: str, timeout: float = 10.0):
+            status, body = self._healthy_fetch(url, user_agent, timeout)
+            if url == broken_url:
+                body = body.replace(monitor.SOCIAL_IMAGE, monitor.BAD_SOCIAL_IMAGE)
+            return status, body
+
+        with mock.patch.object(monitor, "fetch", side_effect=fetch):
+            failures = monitor.probe()
+        self.assertIn(
+            "ai-agent-verification: rendered page duplicates the /idkmesh "
+            "base path in its social image",
+            failures,
         )
 
     def test_wrong_indexnow_key_is_reported(self) -> None:
