@@ -52,9 +52,15 @@ The WorkUnit must also explicitly:
 - provide a positive wall-time budget;
 - provide a non-empty candidate path scope.
 
-The sandbox interface is an authority boundary. A backend implementation is
-responsible for proving that its capability claims are true; issue #804 owns the
-first production backend and adversarial evidence.
+The sandbox interface is an authority boundary. Capability claims are paired
+with an immutable per-attempt `SandboxPolicy` carrying exact network
+destinations and writable/forbidden paths. For `model_only` presets, WorkUnit
+destinations must be bounded by a separately resolved trusted model-connection
+allowlist; task text cannot create network authority.
+
+A backend implementation is responsible for proving that its capability claims
+and per-attempt policy enforcement are true; issue #804 owns the first
+production backend and adversarial evidence.
 
 ## Candidate/evidence boundary
 
