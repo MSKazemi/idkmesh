@@ -11,7 +11,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 CONFIG = ROOT / "config" / "seo-topics-v1.json"
 OUTPUT = ROOT / "docs" / "questions.md"
 
-QUESTION_RE = re.compile(r"^### (.+\?) \\{#([a-z0-9][a-z0-9-]*)\\}$", re.MULTILINE)
+QUESTION_RE = re.compile(r"^### (.+\\?) \\{#([a-z0-9][a-z0-9-]*)\\}$", re.MULTILINE)
 
 
 class QuestionIndexError(ValueError):
