@@ -4,6 +4,7 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 TOOLS = Path(__file__).parents[1] / "tools"
 
@@ -133,6 +134,36 @@ def verifier_pool(wu):
 
 
 class AVEShadowAdapterCLITests(unittest.TestCase):
+    def test_cli_refuses_output_created_after_initial_check(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            wu = work_unit()
+            work_path = root / "work.json"
+            plan_path = root / "evaluator.json"
+            pool_path = root / "pool.json"
+            output_path = root / "shadow.json"
+            work_path.write_text(json.dumps(wu), encoding="utf-8")
+            plan_path.write_text(json.dumps(evaluator_plan(wu)), encoding="utf-8")
+            pool_path.write_text(json.dumps(verifier_pool(wu)), encoding="utf-8")
+            original_open = Path.open
+
+            def raced_open(path, mode="r", *args, **kwargs):
+                if path == output_path and mode == "x":
+                    output_path.write_text("existing evidence\n", encoding="utf-8")
+                return original_open(path, mode, *args, **kwargs)
+
+            with patch.object(Path, "open", raced_open):
+                self.assertEqual(
+                    cli.main([
+                        "--work-unit", str(work_path),
+                        "--evaluator-plan", str(plan_path),
+                        "--verifier-pool", str(pool_path),
+                        "--output", str(output_path),
+                    ]),
+                    2,
+                )
+            self.assertEqual(output_path.read_text(encoding="utf-8"), "existing evidence\n")
+
     def test_cli_writes_frozen_plan_and_refuses_overwrite(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)

@@ -75,11 +75,19 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 2
 
-    output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(
-        json.dumps(plan, indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
-    )
+    try:
+        output.parent.mkdir(parents=True, exist_ok=True)
+        with output.open("x", encoding="utf-8") as stream:
+            stream.write(json.dumps(plan, indent=2, sort_keys=True) + "\n")
+    except FileExistsError:
+        print(
+            f"ERROR: refusing to overwrite frozen shadow plan: {output}",
+            file=sys.stderr,
+        )
+        return 2
+    except OSError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 2
     print(output)
     return 0
 
