@@ -294,18 +294,34 @@ Implemented in this branch:
 
 ### V2 — search analytics adapters
 
-Add read-only connectors for:
+**Partially implemented in this branch.**
 
-- Google Search Console;
-- Bing Webmaster Tools;
-- optional privacy-respecting site analytics.
+Google Search Console now has a read-only adapter in
+`scripts/search_console_snapshot.py`. When repository credentials are configured, the
+weekly visibility workflow collects aggregate query+page observations, separates
+branded from non-branded discovery, and joins exact query observations to the
+portfolio. Setup is documented in
+[`docs/admin/SEARCH_VISIBILITY_ANALYTICS.md`](../admin/SEARCH_VISIBILITY_ANALYTICS.md).
+
+Bing remains intentionally pending. Microsoft's current documentation states that the
+legacy SOAP/POX APIs were retired on 2026-08-31; IDKMesh should implement the current
+REST contract only after it can be verified without guessing. Optional
+privacy-respecting site analytics are also still open.
 
 Store aggregated query/page observations only. Do not ingest user-level browsing data.
 
 ### V3 — 100-query intent portfolio
 
-Create a versioned query map and an experiment ledger. Track branded vs non-branded
-queries separately so growth is not mistaken for people who already knew the name.
+**Implemented as a hypothesis seed in this branch.**
+
+`config/discovery-query-portfolio-v0.1.json` contains exactly 10 intent clusters with
+10 unique non-branded query hypotheses each. Every cluster maps to an existing
+canonical page and repository evidence. `scripts/discovery_query_portfolio.py` and
+its tests fail closed on branding, duplicates, missing targets, missing evidence, or
+count drift.
+
+The checked-in 100 queries are not claimed search-volume evidence. Search Console/Bing
+observations should reweight or replace hypotheses only after empirical data exists.
 
 ### V4 — authority graph
 
