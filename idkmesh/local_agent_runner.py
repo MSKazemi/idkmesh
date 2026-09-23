@@ -1,12 +1,13 @@
-"""Bounded local-runner primitives for disposable candidate execution.
+"""Fail-closed local-agent execution boundary and execution-neutral primitives.
 
-This module deliberately does not know goose, Gemini CLI, mini-SWE-agent, or
-any model provider. It materializes an exact Git revision into a disposable
-workspace and can run one argv-only process with a minimal environment,
-wall-time limit, and bounded captured output.
+The raw process/worktree helpers remain useful C4-B/C primitives but are not a
+hostile-code sandbox. Real coding-agent presets may run only through an explicit
+LocalSandboxExecutor whose enforcement capabilities satisfy the canonical
+WorkUnit and AgentPreset before execution.
 
-Network namespace/resource isolation is a later C4-D slice; callers must not
-treat this process boundary alone as a hostile-code sandbox.
+Candidate patches and logs are captured after sandbox execution into bounded,
+content-addressed artifacts outside worker authority. The module grants no
+verification, acceptance, or repository integration authority.
 """
 
 from __future__ import annotations
