@@ -23,6 +23,10 @@ remain authoritative; an index link does not promote a proposal into policy.
 - [GitHub-First Deployment and Multi-User Operation](GITHUB_FIRST_DEPLOYMENT_AND_MULTIUSER.md) —
   default server-optional deployment profile, durable GitHub-native state,
   team roles/claims, optional nodes, and evidence-based triggers for adding a service.
+- [Enterprise Control Plane Architecture](ENTERPRISE_CONTROL_PLANE.md) —
+  enterprise overlay for G0-G3: tenant isolation, identity/authority, data/egress,
+  secrets, audit, reliability/DR, supply-chain provenance, and the optional G2/G3
+  service boundary. It is a readiness architecture, not a certification claim.
 - [Opportunistic Compute Fabric](OPPORTUNISTIC_COMPUTE_FABRIC.md) —
   provider-neutral, zero-project-spend compute scheduling.
 - [Execution Substrate Abstraction](EXECUTION_SUBSTRATE_ABSTRACTION.md) —
@@ -47,6 +51,9 @@ remain authoritative; an index link does not promote a proposal into policy.
 
 ## Repository Evolution
 
+- [Self-Growth Mechanism](SELF_GROWTH_MECHANISM.md) — plain-language map of the
+  implemented repository/community feedback loops, authority boundaries, and
+  multi-axis growth model.
 - [Self-Evolving Repository](SELF_EVOLVING_REPOSITORY.md) — guarded proposal
   generation and evaluation over repository structure.
 - [IDKGraph Task and Evolution Model](IDKGRAPH_TASK_AND_EVOLUTION_MODEL.md) —

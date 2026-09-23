@@ -22,6 +22,8 @@ The five coupled roles of the repository are:
 
 See [`ITERATION_MODEL.md`](ITERATION_MODEL.md) for the canonical lifecycle and authority model.
 
+For a compact map of the implemented feedback loops, authority boundaries, and the distinction between repository evolution and ACE community reproduction, see [`docs/architecture/SELF_GROWTH_MECHANISM.md`](docs/architecture/SELF_GROWTH_MECHANISM.md).
+
 ## Current checkpoint
 
 The project has already passed the earliest “design the first contracts/simulator” stage.

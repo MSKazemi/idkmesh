@@ -7,9 +7,14 @@ canonical files designated by [`../../PROJECT_RULES.md`](../../PROJECT_RULES.md)
 (decisions, specifications, architecture, findings); this directory keeps the trail
 that produced them.
 
-162 records across 7 dates, newest first.
+164 records across 8 dates, newest first.
 
 ## Index
+
+### 2026-09-23
+
+- [Held-out marginal evidence benchmark implementation](2026-09-23-heldout-marginal-benchmark-implementation.md)
+- [Evidence-centric innovation and marginal verifier implementation](2026-09-23-evidence-centric-innovation-and-marginal-verifier-implementation.md)
 
 ### 2026-09-22
 

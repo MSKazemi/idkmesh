@@ -62,3 +62,44 @@ broad decomposition. Those tasks retain separate evidence/authority semantics.
 
 The detailed operational documentation names the actors, labels, triggers,
 frequency, failure recovery, speed controls, and no-auto-merge boundary.
+
+
+## Live handoff failure and REST-API migration
+
+Later live observation exposed a provider-boundary assumption that the original
+design had not tested: #586 and #587 received the `jules` label from
+`github-actions[bot]`, but Google Jules did not acknowledge those label events.
+When the owner removed and re-applied `jules`, Jules immediately accepted the
+same issues and later created PRs #590 and #592. Earlier owner-applied label
+pilots #563 and #564 had also succeeded.
+
+That evidence invalidated the bot-applied label as the unattended transport.
+The single automatic dispatcher therefore migrates from:
+
+```text
+agent-ready -> github-actions[bot] adds jules -> native Jules App
+```
+
+to:
+
+```text
+agent-ready
+  -> repository capacity/veto checks
+  -> resolve connected Jules source
+  -> official Jules REST API session
+  -> automationMode=AUTO_CREATE_PR
+  -> agent:jules-dispatched status
+  -> normal IDKMesh CI/review
+```
+
+The legacy `jules` label remains only as deliberate manual fallback and still
+counts against repository-side capacity during migration, so old work cannot be
+double-dispatched. Automatic dispatch requires the owner-managed Actions secret
+`JULES_API_KEY`; missing credentials fail closed. The dispatcher also uses a
+deterministic repo/issue marker in the Jules session title and checks recent
+sessions before creation. Returned 4xx failures release the reservation for a
+safe retry; ambiguous network/5xx failures retain the reservation to avoid
+creating duplicate provider work.
+
+The Jules REST API is alpha, so its contract is an explicitly monitored external
+dependency rather than a protocol constant.

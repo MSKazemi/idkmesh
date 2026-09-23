@@ -20,12 +20,17 @@ The public site sources are:
   actual result rather than a summary of the programme;
 - `docs/library.html` — every document and contract by category, generated from
   the tracked tree so an entry cannot name a file that is not there;
+- `docs/topics/` — ten substantial question-oriented topic guides plus a hub,
+  rendered by the same Jekyll path as the rest of the Markdown documentation;
+- `docs/llms.txt` — a supplemental machine-readable map to canonical project,
+  evidence, and topic sources;
 - `docs/assets/site.css` — the one shared stylesheet.
 
-All of them are hand-written, and all of them are dependency-free: no
+The six top-level HTML pages are hand-written and dependency-free: no
 JavaScript, external font, analytics, tracker, package build, or second
 documentation framework. The only `<script>` element anywhere on them is an
-inert `application/ld+json` structured-data block.
+inert `application/ld+json` structured-data block. The Markdown topic guides
+are rendered by GitHub Pages/Jekyll like the rest of `docs/**/*.md`.
 
 `pipelines.html` predates the shared stylesheet and keeps its rules inline,
 because its diagram primitives are the page; it links no stylesheet and that is
@@ -39,11 +44,15 @@ honours `prefers-reduced-motion`.
 Measured against the live site on 2026-09-10, not assumed:
 
 - the hand-written HTML pages above load no script and no external asset;
-- **every other page on the site does.** There is no `_config.yml` in the tree,
-  but GitHub Pages still runs legacy Jekyll v3.10.0 with the default theme, so
-  each `docs/**/*.md` file is *also* rendered into a themed HTML page — and that
-  rendering loads `anchor-js` from `cdnjs.cloudflare.com`. Verified:
-  `https://mskazemi.com/idkmesh/WHAT_IS_IDKMESH.html` returns
+- **every other page on the site does.** GitHub Pages runs legacy Jekyll v3.10.0
+  with the Primer theme, so each `docs/**/*.md` file is *also* rendered into a
+  themed HTML page — and that rendering loads `anchor-js` from
+  `cdnjs.cloudflare.com`. `docs/_config.yml` now pins the shared site identity
+  used by those generated pages (IDKMesh title/description, canonical site URL,
+  repository identity, language, author, and social image) so the long-tail
+  documentation no longer inherits only the lowercase repository name. Verified
+  live before this configuration was added:
+  `https://mskazemi.com/idkmesh/WHAT_IS_IDKMESH.html` returned
   `<meta name="generator" content="Jekyll v3.10.0" />` and a `cdnjs` script tag.
 
 So the constraint is a property of the pages this runbook owns, not of the whole
@@ -69,21 +78,104 @@ So an ordinary document gets three URLs, the two HTML forms canonicalising to
 the HTML file has taken that URL. `docs/index.md` is still served raw at
 `/idkmesh/index.md`, which is the only trace of it a reader can reach.
 
-A same-origin link to `<doc>.html` therefore resolves today — but it is valid
-only while Jekyll runs, and nothing in the tree pins that: there is no
-`_config.yml`, and adding `.nojekyll` (which a literal reading of the
-dependency-free rule invites) would break every such link at once while leaving
-the `.md` source in place, where no guard could see the breakage. The site
-links repository documents by their `github.com/.../blob/main/` URL for that
-reason, and because most targets — `schemas/*.json`, root-level `*.md` — are
-not under `docs/` and have no rendered URL at all. One convention, and every
-link checkable against the git index.
+A same-origin link to `<doc>.html` therefore resolves while the configured
+Jekyll publication path remains active. `docs/_config.yml` now pins the theme
+and shared site identity, but adding `.nojekyll` would still remove the rendered
+Markdown pages and break those generated `.html` URLs. Hand-written HTML pages
+therefore use repository URLs for most canonical technical documents, while the
+search-oriented topic cards use absolute public Pages URLs deliberately: those
+links are outcome surfaces whose availability must be verified after deployment.
 
 **`docs/index.html` shadows `docs/index.md`.** Jekyll serves the HTML file at
 `/idkmesh/` and the Markdown one is never rendered there. An edit to `index.md`
 does not reach the live front door: PR #391 (`59d6e39`) pointed `index.md` at
 `gate-audit` and the live page continued to contain no mention of it. Edit
 `index.html`.
+
+## Directory index convention
+
+A repository directory README and a public website directory index are not always
+the same publication contract.
+
+The Pages artifact from the first SEO rollout showed the exact distinction in
+this repository: the existing **frontmatter-free** directory `README.md` files
+were promoted to `index.html`, while `docs/topics/README.md` — which carried
+YAML front matter for title/description/social metadata — was emitted as
+`topics/README.html`, leaving the advertised `/topics/` URL at 404.
+
+Therefore, when a public hub needs front matter and is intended to resolve at
+`/idkmesh/<directory>/`, use `docs/<directory>/index.md` (or `index.html`)
+explicitly. Do not rely on a metadata-bearing `README.md` being promoted.
+
+The SEO topic hub follows this rule:
+
+```text
+docs/topics/index.md
+  -> https://mskazemi.com/idkmesh/topics/
+```
+
+The public-discovery monitor checks that URL after the Pages deployment
+workflow completes. This rule exists because the first live 100-query rollout
+published all ten pillar pages correctly while `/topics/` remained a 404 when
+the hub source was named `README.md`.
+
+## Jekyll social image path convention
+
+Jekyll SEO Tag applies the configured `baseurl` when it turns `page.image`
+into an absolute Open Graph / JSON-LD URL. With this site's
+`baseurl: "/idkmesh"`, Markdown/front-matter image paths therefore use:
+
+```yaml
+image: "/assets/idkmesh-social.png"
+```
+
+Do **not** pre-prefix that value with `/idkmesh`. The first 100-query Pages
+artifact proved why: `image: "/idkmesh/assets/idkmesh-social.png"` rendered as
+`https://mskazemi.com/idkmesh/idkmesh/assets/idkmesh-social.png` across 367
+Jekyll pages.
+
+`tests/test_pages_seo.py` guards the source convention. The post-deploy
+discovery workflow provides the public-side backstop.
+
+## Search and answer-engine discovery
+
+The discovery surface is intentionally layered rather than dependent on one
+crawler or one vendor:
+
+- `docs/sitemap.xml` declares every published HTML page with truthful per-source
+  `lastmod` dates;
+- `docs/_config.yml` supplies a consistent IDKMesh identity, canonical origin,
+  repository, language, author, and social image to Jekyll-rendered Markdown;
+- each hand-written HTML page carries its own canonical, Open Graph, Twitter,
+  robots, and JSON-LD metadata;
+- `docs/topics/` maps ten substantial topic guides to the 100 semantic query
+  intents in `config/seo-topics-v1.json`;
+- `docs/llms.txt` is a supplemental machine-readable navigation surface, not a
+  substitute for ordinary crawling or indexing;
+- `.github/workflows/indexnow-discovery.yml` submits recently changed sitemap
+  URLs to IndexNow on a daily recovery schedule. The notification is only a
+  freshness hint; it is not evidence that a URL was indexed or ranked.
+
+The implementation and measurement rules are recorded in
+[`planning/SEO_AEO_GEO_100_QUERY_PLAN_2026-09-22.md`](planning/SEO_AEO_GEO_100_QUERY_PLAN_2026-09-22.md).
+Actual Google/Bing index coverage, search queries, and answer-engine citations
+must be measured externally after deployment rather than inferred from repository
+configuration.
+
+### Pages-native discovery trigger
+
+The public discovery monitor uses GitHub Actions' `page_build` event, not
+`workflow_run` against the implicit `pages build and deployment` run.
+
+This distinction is observed, not theoretical: after #724, a successful implicit
+Pages deployment completed for a later `main` revision, but no
+`workflow_run`-triggered Public Discovery Monitor was created. GitHub documents
+`page_build` as the native event for a push to a Pages publishing source.
+
+For a `page_build` event the monitor requires
+`github.event.build.status == "built"` and checks out
+`github.event.build.commit`, binding the probe to the Pages build that caused
+the event. Scheduled/manual probes remain as recovery paths.
 
 ## What is guarded, and what is not
 
@@ -143,7 +235,7 @@ tags, or not writing the delimiters at all. The guard for Markdown lives in `tes
 one for the hand-written `.html` pages and `assets/site.css` is a test in
 `tests/test_pages_site_links.py`, because the Markdown scan does not reach them.
 
-There is no build step and no template engine, so the navigation bar is copied
+There is no repository-owned HTML build step or template engine for the hand-written pages, so the navigation bar is copied
 into each page by hand. That is the honest cost of the no-framework constraint,
 and it is only safe because divergence is a test failure.
 
