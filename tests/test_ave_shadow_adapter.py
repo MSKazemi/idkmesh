@@ -539,6 +539,55 @@ def test_verifier_pool_fixture_matches_published_schema():
     Draft202012Validator(schema).validate(value)
 
 
+
+def test_equivalent_timezone_representations_have_identical_plan():
+    wu = work_unit()
+    candidates = [candidate("v1", "family-a")]
+    first = build(wu, candidates)
+
+    equivalent = pool(wu, copy.deepcopy(candidates))
+    equivalent["captured_at"] = "2026-09-22T14:00:00+02:00"
+    equivalent["verifier_candidates"][0]["reliability"][
+        "observed_at"
+    ] = "2026-09-21T14:00:00+02:00"
+
+    second = adapter.build_ave_shadow_plan(
+        repository="MSKazemi/idkmesh",
+        work_unit=wu,
+        evaluator_plan=evaluator_plan(wu),
+        verifier_pool=equivalent,
+        maturity="N2",
+        input_refs=["fixture:test"],
+    )
+    assert first == second
+
+
+def test_pool_rejects_non_sha_source_revision():
+    wu = work_unit()
+    bad = pool(wu, [candidate("v1", "family-a")])
+    bad["source_revision"] = "z" * 40
+    try:
+        adapter.validate_verifier_pool(bad)
+    except adapter.AVEShadowAdapterError as exc:
+        assert "40-character Git SHA" in str(exc)
+    else:
+        raise AssertionError("invalid source revision was accepted")
+
+
+def test_pool_rejects_duplicate_reliability_source_refs():
+    wu = work_unit()
+    bad = pool(wu, [candidate("v1", "family-a")])
+    bad["verifier_candidates"][0]["reliability"]["source_refs"] = [
+        "same",
+        "same",
+    ]
+    try:
+        adapter.validate_verifier_pool(bad)
+    except adapter.AVEShadowAdapterError as exc:
+        assert "source_refs must be unique" in str(exc)
+    else:
+        raise AssertionError("duplicate source refs were accepted")
+
 def test_same_verifier_as_baseline_uses_same_choice_identity():
     wu = work_unit()
     baseline_candidate = candidate(
