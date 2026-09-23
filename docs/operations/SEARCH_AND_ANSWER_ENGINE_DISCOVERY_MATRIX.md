@@ -32,7 +32,10 @@ The public discovery architecture deliberately separates three layers:
 2. **10 substantial topic pillars** in `docs/topics/`;
 3. **100 explicit natural-language questions** — ten per pillar — so
    conversational search systems can retrieve concise passages answering the
-   same underlying intents without creating 100 thin doorway pages.
+   same underlying intents without creating 100 thin doorway pages;
+4. **one generated question map** at `https://mskazemi.com/idkmesh/questions.html`
+   that indexes those actual question headings and points every question back to
+   its substantial pillar rather than duplicating answers.
 
 The machine-readable query list is for measurement and maintenance. It is not
 published as a meta-keyword dump.
@@ -62,6 +65,7 @@ After deployment, `tools/check_public_discovery.py` should be able to verify:
 - the homepage returns real IDKMesh content to representative search/answer
   crawler user agents rather than a block, challenge, or empty shell;
 - the topic hub is publicly reachable;
+- the generated 100-question map is publicly reachable, self-canonical, indexable, present in the sitemap/`llms.txt`, and retrievable with every representative search/answer crawler identity;
 - the topic hub, all ten topic pillars, and a normal Jekyll-rendered sentinel page each expose exactly one canonical URL and that canonical equals the URL being monitored;
 - none of those pages contains a rendered `noindex` directive for `robots`, `googlebot`, or `bingbot`;
 - no tested crawler receives a `403`, `429`, or crawler-specific decoy page;
