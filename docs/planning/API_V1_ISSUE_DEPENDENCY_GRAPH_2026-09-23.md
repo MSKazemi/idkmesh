@@ -20,6 +20,7 @@ This document is the claimable execution map for API professionalization.
 | #742 | P1 | limits/backpressure/drain | #677 | #743 #744 | overload/slow-client/drain tests |
 | #743 | P1 | network security profile | #670 #736 #738 | #742 #744 | scope/auth/proxy/CORS/CSRF matrix |
 | #744 | P1 | metrics/tracing/SLO | #677 | #742 #743 | bounded telemetry + SLO evidence |
+| #750 | P1 | durable storage profiles/migrations/retention/recovery | #736 #738; composes #616 #597 | #742 #743 #744 | restart/reconstruction + corruption + backup/restore evidence |
 | #745 | P1 | qualification suite | #736 #737 | starts early, completes late | contract/fuzz/load/security report |
 | #746 | P2 | official clients + API docs | stable read contracts | #745 later | Python + typed web client examples |
 | #747 | P2 | v1 beta release | declared beta-scope issues | none at final gate | tag + qualification report |
@@ -103,7 +104,20 @@ Goal:
 
 A production transport can run behind a reviewed identity/proxy/storage boundary.
 
-### Wave 5 — qualification and developer experience
+### Wave 5 — durable storage convergence
+
+Work:
+
+- #750 storage-port/profile contract;
+- compose #616 local persistence and #597 GitHub-native ledger semantics;
+- define network-profile migrations, retention, backup/restore, and corruption checks.
+
+Goal:
+
+Application services use one persistence boundary across local, GitHub-first,
+and network profiles without inventing duplicate run/evidence/decision models.
+
+### Wave 6 — qualification and developer experience
 
 Work:
 
@@ -115,7 +129,7 @@ Goal:
 External contributors integrate against supported contracts, not server
 internals.
 
-### Wave 6 — beta
+### Wave 7 — beta
 
 Work:
 
