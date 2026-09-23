@@ -185,10 +185,10 @@ candidate reader/resolver (C6-C/C6-D), not this pure contract.
 - **VerificationResult** records independent evidence/recommendation.
 - **Human/governance decision** remains a separate integration-authority stage.
 
-See also proposed
-[ADR-0013 — Separate Provider Completion from Candidate Readiness](../decisions/ADR-0013-provider-completion-candidate-readiness.md).
-That ADR currently lives on the connector C2 hardening stack; this contract is
-compatible with the same boundary even when reviewed independently.
+The companion provider-completion decision is proposed as **ADR-0013 — Separate
+Provider Completion from Candidate Readiness** in PR #707. This contract remains
+reviewable independently and does not require that separate stacked branch to be
+present in the repository tree.
 
 ## 9. Next slices
 
