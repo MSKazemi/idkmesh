@@ -142,6 +142,16 @@ Machine-readable discovery is available at
 See the [Control Tower Local API v0.1](docs/specifications/CONTROL_TOWER_LOCAL_API_V0_1.md)
 for media types, deterministic digests, error codes, and authority guarantees.
 
+## Find IDKMesh by the problem you are solving
+
+If you arrived with a specific question rather than the project name, use the
+[AI agent verification, orchestration, and trust topic hub](https://mskazemi.com/idkmesh/topics/).
+It connects common questions about **AI agent verification**, **multi-agent
+orchestration**, **AI code review**, **LLM-as-a-judge reliability**, **verifier
+panels**, **agent governance**, **AI provenance**, **MCP/A2A interoperability**,
+**verification scaling**, and **verified swarm engineering** to the canonical
+contracts, experiments, and implementation in this repository.
+
 ## Try it in five minutes: audit a review gate
 
 The first installable tool cut from this research is `idkmesh gate-audit`. It
@@ -173,6 +183,9 @@ overstates it — the phenomenon measured on a real 25-verifier panel in
 sizing rule in [E015](experiments/E015-verification-phase-diagram.md). The
 contract is specified in
 [`docs/specifications/GATE_AUDIT_V0_1.md`](docs/specifications/GATE_AUDIT_V0_1.md).
+Add `--bootstrap` for a deterministic finite-sample confidence interval on
+those panel metrics ([issue #520](https://github.com/MSKazemi/idkmesh/issues/520);
+documented in the same specification's "Finite-sample uncertainty" section).
 The audit is diagnostic only: it consumes verdicts you collected and grants no
 acceptance or merge authority. In CI, the same audit runs as a GitHub Action:
 

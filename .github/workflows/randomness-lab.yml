@@ -2,15 +2,22 @@ name: randomness-lab
 
 on:
   push:
+    branches: [main]
     paths:
       - "randomness_lab/**"
-      - "tests/**"
+      - "tests/test_randomness_lab.py"
+      - "tests/test_r1_*.py"
+      - "tests/test_r2*.py"
+      - "tests/test_r3*.py"
       - ".github/workflows/randomness-lab.yml"
       - "requirements-phase0.txt"
   pull_request:
     paths:
       - "randomness_lab/**"
-      - "tests/**"
+      - "tests/test_randomness_lab.py"
+      - "tests/test_r1_*.py"
+      - "tests/test_r2*.py"
+      - "tests/test_r3*.py"
       - ".github/workflows/randomness-lab.yml"
       - "requirements-phase0.txt"
 
@@ -40,19 +47,19 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: pip
           cache-dependency-path: requirements-phase0.txt
-      # This job discovers the whole tests/ tree, not just randomness_lab's own
-      # stdlib-only tests, so it needs everything the tree guards on with
-      # find_spec. Without them those tests skip themselves and the job still
-      # reports success: jsonschema alone accounts for 72 such skips -- schema
-      # validation, evidence contracts and the patch evaluator safety tests
-      # among them -- and pytest for the documented-test-count guard.
-      # tests/test_full_suite_jobs_install_requirements.py enforces this and
-      # will name this job if the tree grows a dependency the job does not
-      # install.
-      - name: Install what the whole tests/ tree needs
+      # Keep this workflow focused on the randomness research surface. The
+      # repository-wide unit tier already runs in PR Gate; re-running the whole
+      # tests/ tree here on three Python versions multiplied every unrelated test
+      # change into three extra runner jobs.
+      - name: Install randomness-lab test dependencies
         run: python -m pip install -r requirements-phase0.txt pytest
-      - name: Run randomness-lab tests
-        run: python -m unittest discover -s tests -v
+      - name: Run focused randomness-lab tests
+        run: |
+          python -m pytest -q \
+            tests/test_randomness_lab.py \
+            tests/test_r1_*.py \
+            tests/test_r2*.py \
+            tests/test_r3*.py
       - name: Smoke-test base CLI and JSON output
         run: |
           python -m randomness_lab --policy thompson --rounds 100 --seed 42 --output /tmp/result.json

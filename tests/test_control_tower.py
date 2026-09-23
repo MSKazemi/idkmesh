@@ -28,7 +28,7 @@ from idkmesh.control_tower_ui import (
     TOKEN_ENV,
     create_server,
 )
-from idkmesh.local_ui_security import TOKEN_HEADER
+from idkmesh.local_ui_security import MAX_BODY_BYTES, TOKEN_HEADER, is_loopback_host
 
 
 def sample_report() -> dict:
@@ -605,6 +605,14 @@ class ControlTowerServerTests(unittest.TestCase):
 
 
 class ControlTowerTokenTests(unittest.TestCase):
+    def test_loopback_host_rejects_malformed_authorities(self) -> None:
+        for host in ("localhost@other.example", "localhost:bad", "localhost:0",
+                     "localhost:65536", "localhost:80:81", "localhost /", "[::1]"):
+            with self.subTest(host=host):
+                self.assertFalse(is_loopback_host(host))
+        self.assertTrue(is_loopback_host("127.0.0.1:8770"))
+        self.assertTrue(is_loopback_host("localhost"))
+
     def test_headless_client_can_supply_stable_token_via_environment(self) -> None:
         token = "a" * 32
         with mock.patch.dict(
@@ -668,6 +676,18 @@ class ControlTowerCliTests(unittest.TestCase):
             port=8770,
             open_browser=False,
         )
+
+    def test_control_tower_rejects_oversized_preload_before_server_start(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "too-large.json"
+            with path.open("wb") as handle:
+                handle.truncate(MAX_BODY_BYTES + 1)
+            with mock.patch("idkmesh.control_tower_ui.serve_control_tower") as serve:
+                with mock.patch("idkmesh.cli._fail", return_value=2) as fail:
+                    rc = cli.main(["control-tower", str(path), "--no-browser"])
+            self.assertEqual(rc, 2)
+            self.assertIn("2 MiB", fail.call_args.args[0])
+            serve.assert_not_called()
 
     def test_control_tower_reports_invalid_environment_token_cleanly(self) -> None:
         with mock.patch.dict(

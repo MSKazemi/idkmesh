@@ -73,6 +73,8 @@ For a newcomer trying to understand the executable foundation, this order is usu
 
 ### Agent development automation
 
+- [Search and Answer-Engine Discovery Matrix](operations/SEARCH_AND_ANSWER_ENGINE_DISCOVERY_MATRIX.md) — crawler/discovery paths for Google/Gemini, Bing/Copilot, ChatGPT, Claude, Perplexity, and open-web search, plus the live visibility probe.
+- [PyPI Trusted Publishing and Release Runbook](operations/PYPI_RELEASE_RUNBOOK.md) — tokenless OIDC publication, release/version identity checks, protected-environment approval, first-release acceptance, and recovery.
 - [Jules development automation](operations/JULES_AUTOMATION.md) — who may mark work `agent-ready`, how the dispatcher adds `jules`, event-driven and recovery frequencies, concurrency/backpressure, veto labels, failure recovery, and the no-auto-merge boundary.
 
 ### Work, evidence, and interoperability
@@ -96,6 +98,7 @@ For a newcomer trying to understand the executable foundation, this order is usu
 - [R2 Scale and Regime Sweep](research/R2_SCALE_REGIME_SWEEP.md) — randomized local scheduling under scale/churn/staleness.
 - [Verification Backpressure Temporal Benchmark](research/VERIFICATION_BACKPRESSURE_BENCHMARK.md) — generation/verification debt dynamics.
 - [Coordination Criticality and Finite-Difference Response](research/CRITICALITY_AND_FLUCTUATION_RESPONSE.md) — overload-warning experiment.
+- [Adaptive Verification Ecology](algorithms/ADAPTIVE_VERIFICATION_ECOLOGY.md) — synthetic bio/ecology/economics/physics-inspired routing + verification controller; production use is gated on matched-budget ablation and real WorkUnit evidence.
 
 ### Repository evolution
 
@@ -108,6 +111,7 @@ For a newcomer trying to understand the executable foundation, this order is usu
 
 ### Contribution surface and public front door
 
+- [AI Agent Verification, Orchestration, and Trust Topics](topics/index.md) — search-oriented, evidence-linked guides for agent verification, multi-agent orchestration, AI code review, evaluator reliability, provenance, governance, MCP/A2A interoperability, verification scaling, and verified swarm engineering.
 - [IDKMesh for Absolute Beginners](BEGINNER_GUIDE.md) — plain-language explanation of what IDKMesh is, what problem it solves, what is usable today, and the first commands to try.
 - [Getting Started: Using IDKMesh](GETTING_STARTED.md) — practical newcomer paths for the contract demo, the `idkmesh gate-audit` CLI, GitHub Actions integration, contribution setup, and the implemented-vs-planned product boundary.
 - [Use IDKMesh to Build Another Software Project](PROJECT_ADOPTION_GUIDE.md) — external-project adoption flow: repository setup, ProjectManifest/DomainPack policy, bounded Work Units, human/agent/model connection patterns, verification, and protected integration.

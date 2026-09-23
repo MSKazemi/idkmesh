@@ -17,13 +17,15 @@ def new_session_token() -> str:
 
 def is_loopback_host(host_header: str | None) -> bool:
     """Accept only the loopback host names used by IDKMesh local UIs."""
-    if not host_header:
+    if not host_header or any(ch in host_header for ch in "/\\@,\r\n\t "):
         return False
-    host = host_header.strip().lower()
-    if host.startswith("["):
+    host = host_header.lower()
+    if host.startswith("[") or host.count(":") > 1:
         return False
-    hostname = host.split(":", 1)[0]
-    return hostname in {HOST, "localhost"}
+    hostname, separator, port = host.partition(":")
+    if hostname not in {HOST, "localhost"}:
+        return False
+    return not separator or (port.isascii() and port.isdecimal() and 0 < int(port) <= 65535)
 
 
 def send_security_headers(handler: BaseHTTPRequestHandler) -> None:
