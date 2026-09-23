@@ -37,6 +37,8 @@ class PublicDiscoveryMonitorTests(unittest.TestCase):
             "google",
             "bing",
             "yahoo",
+            "duckduckgo",
+            "apple",
             "openai",
             "claude-search",
             "claude-user",
