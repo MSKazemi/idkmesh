@@ -234,6 +234,18 @@ Recommended operating rhythm:
 
 If review latency grows, lower concurrency before creating more generated work.
 
+## Reading the Jules web UI
+
+The Jules codebase badge and the **Needs review** section are not the repository
+dispatch-concurrency limit. They reflect provider-side session/review state.
+Completed sessions remain visible separately, while IDKMesh independently
+controls how many issue reservations may be active through
+`max_in_flight` (currently four).
+
+A small number beside the codebase therefore does not mean Jules is limited to
+that many tasks. If the UI shows fewer active/review sessions than expected,
+check the IDKMesh routing/dispatch labels and workflow contract first.
+
 ## What happens after Jules starts
 
 The dispatcher comments on the issue with the returned Jules session URL/name.
