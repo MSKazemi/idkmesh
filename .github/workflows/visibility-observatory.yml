@@ -34,6 +34,7 @@ jobs:
             tests.test_visibility_observatory \
             tests.test_discovery_query_portfolio \
             tests.test_search_console_snapshot \
+            tests.test_visibility_growth_selector \
             -v
 
       - name: Validate discovery query portfolio
@@ -88,6 +89,19 @@ jobs:
             --lag-days 3 \
             --output results/visibility/google-search-console.json
 
+      - name: Select one bounded growth experiment
+        run: |
+          args=( \
+            --visibility results/visibility/observatory.json \
+            --portfolio results/visibility/query-portfolio.json \
+            --policy config/visibility-growth-policy-v0.1.json \
+            --output results/visibility/growth-experiment.json \
+          )
+          if [[ -f results/visibility/google-search-console.json ]]; then
+            args+=(--search-console results/visibility/google-search-console.json)
+          fi
+          python scripts/visibility_growth_selector.py "${args[@]}"
+
       - name: Publish bounded summary
         run: |
           python - <<'PY'
@@ -103,6 +117,8 @@ jobs:
           query_summary = portfolio["summary"]
           gsc_path = Path("results/visibility/google-search-console.json")
           gsc = json.loads(gsc_path.read_text()) if gsc_path.exists() else None
+          experiment = json.loads(Path("results/visibility/growth-experiment.json").read_text())
+          selected = experiment["selected_experiment"]
           lines = [
               "# Visibility and Community Observatory",
               "",
@@ -130,6 +146,8 @@ jobs:
                   if gsc else
                   "- Search Console portfolio observations: unavailable"
               ),
+              f"- Selected bounded experiment: {selected['id']} ({selected['type']})",
+              f"- Experiment reason: {selected['reason']}",
               "",
               "## Known measurement gaps",
               "",
