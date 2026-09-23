@@ -39,43 +39,43 @@ That boundary is part of the product philosophy: capability to run an experiment
 
 ## Common questions
 
-### What is verified swarm engineering?
+### What is verified swarm engineering? {#q-verified-swarm-engineering-01}
 
 It is the design of multi-participant agent systems where proposals are bounded, independently evaluated, provenance is retained, and authority remains separate from generation.
 
-### Is IDKMesh an AI agent framework?
+### Is IDKMesh an AI agent framework? {#q-verified-swarm-engineering-02}
 
 It is a research framework and emerging reference platform for coordinating heterogeneous workers through common work/evidence contracts. Some product surfaces are implemented; the polished end-to-end runner is still being built.
 
-### Is IDKMesh GitHub-native?
+### Is IDKMesh GitHub-native? {#q-verified-swarm-engineering-03}
 
 Yes. GitHub is the current collaboration and canonical-history substrate, with issues, candidate branches, pull requests, CI, and protected integration used as system primitives.
 
-### What is verification-first AI?
+### What is verification-first AI? {#q-verified-swarm-engineering-04}
 
 It is an engineering stance that plans verification capacity, evidence, and authority before increasing autonomous generation.
 
-### How do I try IDKMesh?
+### How do I try IDKMesh? {#q-verified-swarm-engineering-05}
 
 Use the [15-minute quickstart](https://mskazemi.com/idkmesh/start.html), read [What Is IDKMesh?](https://github.com/MSKazemi/idkmesh/blob/main/docs/WHAT_IS_IDKMESH.md), or inspect the [repository README](https://github.com/MSKazemi/idkmesh/blob/main/README.md).
 
-### How is verified swarm engineering different from ordinary multi-agent orchestration?
+### How is verified swarm engineering different from ordinary multi-agent orchestration? {#q-verified-swarm-engineering-06}
 
 Ordinary orchestration may stop at coordinating tasks and messages. Verified swarm engineering also requires independent evidence, provenance, measured reviewer independence, backpressure, and a separate authority boundary before candidate work becomes canonical.
 
-### Can different AI models work in the same verified swarm?
+### Can different AI models work in the same verified swarm? {#q-verified-swarm-engineering-07}
 
 Yes. Heterogeneity is a design goal. Workers can differ by model, provider, toolchain, hardware, or human expertise as long as they can satisfy shared work and evidence contracts.
 
-### Why does IDKMesh use Git and GitHub?
+### Why does IDKMesh use Git and GitHub? {#q-verified-swarm-engineering-08}
 
 Git provides immutable revisions, isolated branches, diffs, provenance, and reproducibility; GitHub adds issues, pull requests, CI, protected branches, and public collaboration. Those primitives make candidate-versus-canonical state explicit.
 
-### Does IDKMesh replace frameworks such as LangGraph, CrewAI, or AutoGen?
+### Does IDKMesh replace frameworks such as LangGraph, CrewAI, or AutoGen? {#q-verified-swarm-engineering-09}
 
 Not necessarily. IDKMesh focuses on work/evidence/authority boundaries and can sit above or beside other orchestration systems through adapters. The relevant question is whether an external framework can participate without bypassing verification and governance.
 
-### What would make verified swarm engineering enterprise-ready?
+### What would make verified swarm engineering enterprise-ready? {#q-verified-swarm-engineering-10}
 
 It would require hardened identity and tenancy, policy enforcement, secret management, auditability, availability, rollback, stronger security assurance, operational observability, stable APIs, and real-world evidence that the verification model works under production risk.
 
