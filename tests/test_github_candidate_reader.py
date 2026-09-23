@@ -54,7 +54,6 @@ class GitHubPullRequestCandidateReaderTests(unittest.TestCase):
                 "head_sha": HEAD,
             },
         )
-        self.assertEqual(result.run_state, "candidate_ready")
         self.assertEqual(result.state, "open")
         self.assertFalse(result.draft)
         self.assertEqual(source.calls, [("MSKazemi/idkmesh", 42)])
@@ -123,7 +122,7 @@ class GitHubPullRequestCandidateReaderTests(unittest.TestCase):
         ).resolve(repository="MSKazemi/idkmesh", number=42)
         self.assertEqual(result.state, "closed")
         self.assertTrue(result.draft)
-        self.assertEqual(result.run_state, "candidate_ready")
+        self.assertFalse(hasattr(result, "run_state"))
         self.assertFalse(hasattr(result, "accepted"))
         self.assertFalse(hasattr(result, "verified"))
 
