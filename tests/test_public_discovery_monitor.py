@@ -36,6 +36,7 @@ class PublicDiscoveryMonitorTests(unittest.TestCase):
         required = {
             "google",
             "bing",
+            "yahoo",
             "openai",
             "claude-search",
             "claude-user",
@@ -68,6 +69,7 @@ class PublicDiscoveryMonitorTests(unittest.TestCase):
             )
         if url == monitor.SITEMAP:
             urls = [monitor.HOME, monitor.TOPICS]
+            urls.extend(monitor.DIRECTORY_HUBS.values())
             urls.extend(url for url, _ in monitor.TOPIC_PAGES.values())
             return 200, "\n".join(f"<loc>{item}</loc>" for item in urls)
         if url == monitor.HOME:
