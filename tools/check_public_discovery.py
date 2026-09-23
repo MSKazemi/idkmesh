@@ -16,6 +16,7 @@ import urllib.robotparser
 ROOT_ROBOTS = "https://mskazemi.com/robots.txt"
 HOME = "https://mskazemi.com/idkmesh/"
 TOPICS = "https://mskazemi.com/idkmesh/topics/"
+QUESTIONS = "https://mskazemi.com/idkmesh/questions.html"
 SITEMAP = "https://mskazemi.com/idkmesh/sitemap.xml"
 LLMS = "https://mskazemi.com/idkmesh/llms.txt"
 INDEXNOW_KEY = "7c1f6d4a9b2e3c8f5a0d1e7b4c6f8a2d"
@@ -210,7 +211,7 @@ def probe() -> list[str]:
             failures.append("domain-root robots.txt does not advertise the IDKMesh sitemap")
         parser = _robots_parser(robots)
         for name, token in ROBOTS_USER_AGENTS.items():
-            for url in (HOME, TOPICS):
+            for url in (HOME, TOPICS, QUESTIONS):
                 if not parser.can_fetch(token, url):
                     failures.append(f"robots.txt blocks {name} from {url}")
 
@@ -221,6 +222,7 @@ def probe() -> list[str]:
         expected_urls = [
             HOME,
             TOPICS,
+            QUESTIONS,
             *DIRECTORY_HUBS.values(),
             *(url for url, _ in TOPIC_PAGES.values()),
         ]
@@ -240,6 +242,21 @@ def probe() -> list[str]:
             failures.append("topic hub returned 200 but expected topic content is absent")
         _check_social_image("topic hub", topic_body, failures)
         _check_indexable_html("topic hub", TOPICS, topic_body, failures)
+
+    question_status, question_body = fetch(QUESTIONS, browser)
+    if question_status != 200:
+        failures.append(f"question-map returned HTTP {question_status}")
+    else:
+        lowered_questions = question_body.lower()
+        if (
+            "100 questions about ai agent verification" not in lowered_questions
+            or "what is verified swarm engineering?" not in lowered_questions
+        ):
+            failures.append(
+                "question-map returned 200 but expected 100-question content is absent"
+            )
+        _check_social_image("question map", question_body, failures)
+        _check_indexable_html("question map", QUESTIONS, question_body, failures)
 
     sentinel_status, sentinel_body = fetch(JEKYLL_SENTINEL, browser)
     if sentinel_status != 200:
@@ -276,7 +293,12 @@ def probe() -> list[str]:
     if llms_status != 200:
         failures.append(f"llms.txt returned HTTP {llms_status}")
     else:
-        for expected in ("AI agent verification", "Multi-agent orchestration", TOPICS):
+        for expected in (
+            "AI agent verification",
+            "Multi-agent orchestration",
+            TOPICS,
+            QUESTIONS,
+        ):
             if expected not in llms:
                 failures.append(f"llms.txt is missing {expected!r}")
 
@@ -304,6 +326,36 @@ def probe() -> list[str]:
                 )
             print(f"{name}: HTTP {status}, {len(body)} bytes")
 
+            question_crawler_status, question_crawler_body = fetch(QUESTIONS, user_agent)
+            if question_crawler_status != 200:
+                failures.append(
+                    f"{name}: question map HTTP {question_crawler_status}"
+                )
+                continue
+            if (
+                "100 questions about ai agent verification"
+                not in question_crawler_body.lower()
+            ):
+                failures.append(
+                    f"{name}: question map content missing 100-question marker"
+                )
+            _check_indexable_html(
+                f"{name}: question map",
+                QUESTIONS,
+                question_crawler_body,
+                failures,
+            )
+            if question_status == 200 and len(question_body):
+                if len(question_crawler_body) < len(question_body) * 0.70:
+                    failures.append(
+                        f"{name}: question-map crawler body is unexpectedly small "
+                        f"({len(question_crawler_body)} vs browser {len(question_body)})"
+                    )
+            print(
+                f"{name}: question map HTTP {question_crawler_status}, "
+                f"{len(question_crawler_body)} bytes"
+            )
+
     return failures
 
 
@@ -316,8 +368,8 @@ def main() -> int:
 
     print(
         "Discovery surface healthy: robots, sitemap, directory hubs, topic hub, "
-        "ten topic pages, exact canonicals, indexability, llms.txt, IndexNow key, "
-        "and representative crawler probes all passed."
+        "100-question map, ten topic pages, exact canonicals, indexability, "
+        "llms.txt, IndexNow key, and representative crawler probes all passed."
     )
     return 0
 

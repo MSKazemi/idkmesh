@@ -15,6 +15,7 @@ class PublicDiscoveryMonitorTests(unittest.TestCase):
         for url in (
             monitor.HOME,
             monitor.TOPICS,
+            monitor.QUESTIONS,
             monitor.SITEMAP,
             monitor.LLMS,
             monitor.INDEXNOW_KEY_URL,
@@ -72,7 +73,7 @@ class PublicDiscoveryMonitorTests(unittest.TestCase):
                 "Sitemap: https://mskazemi.com/idkmesh/sitemap.xml\n",
             )
         if url == monitor.SITEMAP:
-            urls = [monitor.HOME, monitor.TOPICS]
+            urls = [monitor.HOME, monitor.TOPICS, monitor.QUESTIONS]
             urls.extend(monitor.DIRECTORY_HUBS.values())
             urls.extend(url for url, _ in monitor.TOPIC_PAGES.values())
             return 200, "\n".join(f"<loc>{item}</loc>" for item in urls)
@@ -98,10 +99,24 @@ class PublicDiscoveryMonitorTests(unittest.TestCase):
                 + monitor.SOCIAL_IMAGE
                 + '"></head><body>IDKMesh document</body></html>',
             )
+        if url == monitor.QUESTIONS:
+            return (
+                200,
+                '<html><head><link rel="canonical" href="'
+                + monitor.QUESTIONS
+                + '"><meta property="og:image" content="'
+                + monitor.SOCIAL_IMAGE
+                + '"></head><body>'
+                + '100 questions about AI agent verification, orchestration, and trust. '
+                + 'What is verified swarm engineering?'
+                + '</body></html>',
+            )
         if url == monitor.LLMS:
             return (
                 200,
-                f"AI agent verification\nMulti-agent orchestration\n{monitor.TOPICS}",
+                "AI agent verification\n"
+                "Multi-agent orchestration\n"
+                f"{monitor.TOPICS}\n{monitor.QUESTIONS}",
             )
         if url == monitor.INDEXNOW_KEY_URL:
             return 200, monitor.INDEXNOW_KEY + "\n"
@@ -210,6 +225,37 @@ class PublicDiscoveryMonitorTests(unittest.TestCase):
         self.assertIn(
             "ai-agent-verification: rendered page duplicates the /idkmesh "
             "base path in its social image",
+            failures,
+        )
+
+    def test_answer_engine_block_on_question_map_is_reported(self) -> None:
+        def fetch(url: str, user_agent: str, timeout: float = 10.0):
+            if (
+                url == monitor.QUESTIONS
+                and user_agent == monitor.USER_AGENTS["openai"]
+            ):
+                return 403, ""
+            return self._healthy_fetch(url, user_agent, timeout)
+
+        with mock.patch.object(monitor, "fetch", side_effect=fetch):
+            failures = monitor.probe()
+        self.assertIn("openai: question map HTTP 403", failures)
+
+    def test_answer_engine_specific_noindex_on_question_map_is_reported(self) -> None:
+        def fetch(url: str, user_agent: str, timeout: float = 10.0):
+            status, body = self._healthy_fetch(url, user_agent, timeout)
+            if url == monitor.QUESTIONS and user_agent == monitor.USER_AGENTS["openai"]:
+                body = body.replace(
+                    "</head>",
+                    '<meta name="robots" content="noindex"></head>',
+                )
+            return status, body
+
+        with mock.patch.object(monitor, "fetch", side_effect=fetch):
+            failures = monitor.probe()
+        self.assertIn(
+            "openai: question map: rendered page contains a noindex directive: "
+            "['noindex']",
             failures,
         )
 
