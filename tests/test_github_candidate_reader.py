@@ -1,7 +1,9 @@
 import unittest
 
-from idkmesh.connector_errors import ConnectorError
-from idkmesh.github_candidate_reader import GitHubPullRequestCandidateReader
+from idkmesh.github_candidate_reader import (
+    CandidateResolutionError,
+    GitHubPullRequestCandidateReader,
+)
 
 
 HEAD = "0123456789abcdef0123456789abcdef01234567"
@@ -71,30 +73,27 @@ class GitHubPullRequestCandidateReaderTests(unittest.TestCase):
 
     def test_foreign_target_repository_fails_closed(self):
         source = FakeSource(_pr(repository="other/repo"))
-        with self.assertRaises(ConnectorError) as caught:
+        with self.assertRaises(CandidateResolutionError) as caught:
             GitHubPullRequestCandidateReader(source).resolve(
                 repository="MSKazemi/idkmesh",
                 number=42,
             )
-        self.assertEqual(caught.exception.code, "result_normalization_error")
 
     def test_wrong_pr_number_fails_closed(self):
         source = FakeSource(_pr(number=43))
-        with self.assertRaises(ConnectorError) as caught:
+        with self.assertRaises(CandidateResolutionError) as caught:
             GitHubPullRequestCandidateReader(source).resolve(
                 repository="MSKazemi/idkmesh",
                 number=42,
             )
-        self.assertEqual(caught.exception.code, "result_normalization_error")
 
     def test_mutable_branch_name_cannot_substitute_for_head_sha(self):
         source = FakeSource(_pr(head_sha="feature-branch"))
-        with self.assertRaises(ConnectorError) as caught:
+        with self.assertRaises(CandidateResolutionError) as caught:
             GitHubPullRequestCandidateReader(source).resolve(
                 repository="MSKazemi/idkmesh",
                 number=42,
             )
-        self.assertEqual(caught.exception.code, "result_normalization_error")
 
     def test_noncanonical_or_mismatched_html_url_fails_closed(self):
         urls = [
@@ -108,7 +107,7 @@ class GitHubPullRequestCandidateReaderTests(unittest.TestCase):
         ]
         for url in urls:
             with self.subTest(url=url):
-                with self.assertRaises(ConnectorError):
+                with self.assertRaises(CandidateResolutionError):
                     GitHubPullRequestCandidateReader(
                         FakeSource(_pr(html_url=url))
                     ).resolve(
@@ -132,7 +131,7 @@ class GitHubPullRequestCandidateReaderTests(unittest.TestCase):
             _pr(draft=None),
         ):
             with self.subTest(response=response):
-                with self.assertRaises(ConnectorError):
+                with self.assertRaises(CandidateResolutionError):
                     GitHubPullRequestCandidateReader(
                         FakeSource(response)
                     ).resolve(repository="MSKazemi/idkmesh", number=42)
@@ -148,7 +147,7 @@ class GitHubPullRequestCandidateReaderTests(unittest.TestCase):
         ]
         for response in cases:
             with self.subTest(response=response):
-                with self.assertRaises(ConnectorError):
+                with self.assertRaises(CandidateResolutionError):
                     GitHubPullRequestCandidateReader(
                         FakeSource(response)
                     ).resolve(repository="MSKazemi/idkmesh", number=42)
