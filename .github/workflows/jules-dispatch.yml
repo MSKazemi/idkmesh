@@ -6,7 +6,7 @@ name: Jules Dispatcher
 # added by this workflow.
 on:
   issues:
-    types: [labeled, closed]
+    types: [opened, edited, reopened, labeled, closed]
   schedule:
     # Recovery sweep only. Normal dispatch is event-driven and immediate.
     - cron: '17,47 * * * *'
@@ -32,7 +32,10 @@ jobs:
     if: >-
       github.event_name != 'issues' ||
       github.event.action == 'closed' ||
-      (github.event.action == 'labeled' && github.event.label.name == 'agent-ready')
+      github.event.action == 'opened' ||
+      github.event.action == 'edited' ||
+      github.event.action == 'reopened' ||
+      (github.event.action == 'labeled' && (github.event.label.name == 'agent-ready' || github.event.label.name == 'agent:jules-eligible'))
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -53,8 +56,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python tools/jules_dispatcher.py --init-labels
 
-      - name: Dispatch newly approved issue immediately
-        if: github.event_name == 'issues' && github.event.action == 'labeled'
+      - name: Dispatch routed or approved issue immediately
+        if: >-
+          github.event_name == 'issues' &&
+          (github.event.action == 'opened' || github.event.action == 'edited' || github.event.action == 'reopened' || github.event.action == 'labeled')
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           JULES_API_KEY: ${{ secrets.JULES_API_KEY }}
