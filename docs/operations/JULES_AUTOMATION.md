@@ -108,9 +108,12 @@ so this is not the primary path.
 
 The Issue Model Router also has a slower backfill schedule for reclassification.
 A push to the Jules/router control-plane files on `main` triggers one immediate
-full open-issue reclassification and then one reusable dispatcher call with label
-bootstrapping enabled, so a repaired or changed contract does not wait for the
-next six-hour backfill window and does not start a duplicate direct dispatcher.
+full open-issue reclassification and then one reusable dispatcher call with
+`bootstrap_labels: true` and `fill_capacity: true`. Reusable workflows inherit
+the caller's event context, so capacity-fill intent is passed as a typed input
+instead of inferred from `github.event_name`. This lets a repaired or changed
+contract refill capacity immediately without waiting for the next six-hour
+backfill window or starting a duplicate direct dispatcher.
 Manual `workflow_dispatch` remains available for operators, including an
 optional `issue_number` and an explicit `bootstrap_labels` control.
 
@@ -370,8 +373,9 @@ of a latent runtime outage.
 
 The router is the **single owner** of control-plane push recovery. A change to the
 router/dispatcher/policy surfaces causes one router backfill, which calls the
-reusable dispatcher with `bootstrap_labels: true`. The dispatcher deliberately
-has no independent `push` trigger, avoiding duplicate provider/API sweeps and
+reusable dispatcher with `bootstrap_labels: true` and `fill_capacity: true`.
+The contract checker requires both typed inputs. The dispatcher deliberately has
+no independent `push` trigger, avoiding duplicate provider/API sweeps and
 preserving GitHub API quota.
 
 
