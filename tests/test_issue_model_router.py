@@ -123,10 +123,13 @@ def test_router_workflow_keeps_hot_path_api_budget_bounded():
     assert "cron: '7 */6 * * *'" in workflow
     assert "gh issue view" not in workflow
     assert "Validate router syntax" in workflow
+    assert "Validate Jules control-plane contract" in workflow
+    assert "python tools/check_jules_contract.py" in workflow
     assert "python -m pytest" not in workflow
     assert "github.event_name == 'workflow_dispatch' && inputs.bootstrap_labels" in workflow
     assert "uses: ./.github/workflows/jules-dispatch.yml" in workflow
     assert "issue_number: ${{ needs.route.outputs.routed_issue_number }}" in workflow
     assert "secrets: inherit" in workflow
     assert "gh workflow run jules-dispatch.yml" not in workflow
+    assert "bootstrap_labels: true" in workflow
     assert "actions: write" not in workflow

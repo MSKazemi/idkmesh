@@ -188,6 +188,7 @@ def main() -> int:
 
     workflow_call = _indented_block(dispatcher_workflow, "workflow_call:")
     workflow_dispatch = _indented_block(dispatcher_workflow, "workflow_dispatch:")
+    router_push = _indented_block(router_workflow, "push:")
     for name, block in (
         ("workflow_call", workflow_call),
         ("workflow_dispatch", workflow_dispatch),
@@ -238,6 +239,48 @@ def main() -> int:
         errors,
         "python tools/check_jules_contract.py" in pr_gate,
         "required PR Gate must execute the Jules contract guard",
+    )
+    _require(
+        errors,
+        "python tools/check_jules_contract.py" in router_workflow,
+        "production Issue Model Router must self-check the Jules contract",
+    )
+    _require(
+        errors,
+        "python tools/check_jules_contract.py" in dispatcher_workflow,
+        "production Jules Dispatcher must self-check the Jules contract",
+    )
+    _require(
+        errors,
+        bool(router_push),
+        "router must own the control-plane push recovery trigger",
+    )
+    for required_path in (
+        ".github/workflows/issue-model-router.yml",
+        ".github/workflows/jules-dispatch.yml",
+        "config/jules-dispatch.json",
+        "tools/jules_dispatcher.py",
+        "tools/check_jules_contract.py",
+    ):
+        _require(
+            errors,
+            required_path in router_push,
+            f"router control-plane push recovery must watch {required_path}",
+        )
+    _require(
+        errors,
+        "dispatch-after-control-plane-change:" in router_workflow,
+        "router must retain immediate dispatch after control-plane changes",
+    )
+    _require(
+        errors,
+        "bootstrap_labels: true" in router_workflow,
+        "control-plane recovery must bootstrap any newly introduced policy labels",
+    )
+    _require(
+        errors,
+        "\n  push:\n" not in dispatcher_workflow,
+        "dispatcher must not duplicate router-owned control-plane push recovery",
     )
 
     _require(
