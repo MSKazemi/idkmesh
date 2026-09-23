@@ -276,7 +276,7 @@ ignore it.
 2. Find or open an issue for non-trivial work and state what you plan to change.
 3. Fork/branch and make a focused change.
 4. Add tests, evidence, or documentation.
-5. Open a pull request using the template.
+5. Open a pull request using the template. For same-repository branches using a managed development prefix, the trusted [Auto Draft PR Steward](docs/operations/AUTO_DRAFT_PR_STEWARD.md) may create the initial Draft PR shell automatically; continue committing on the same branch and complete/refine the PR normally. Scratch, evidence, frozen, hold, dependency-bot, and Jules-managed branches are excluded from this automatic lane.
 6. Respond to review in public where possible.
 7. Update the change until the evidence and maintainability are sufficient.
 8. If the change represents a major durable decision, add/update a decision record.

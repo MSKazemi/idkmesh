@@ -1,0 +1,54 @@
+name: Auto Draft PR Steward
+
+# This workflow is intentionally NOT triggered by non-main pushes.
+# A push workflow would execute workflow code from the candidate branch while
+# holding pull-request write authority. Scheduled and main-push runs execute the
+# trusted default-branch version instead.
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: auto-draft-pr-steward-main
+  cancel-in-progress: false
+
+jobs:
+  steward:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out trusted main
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: main
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+
+      - name: Open bounded Draft PRs
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python tools/auto_draft_pr_steward.py \
+            --repo "$GITHUB_REPOSITORY" \
+            --policy config/auto-draft-pr.json \
+            --summary-file "$GITHUB_STEP_SUMMARY"
+
+# Authority boundary:
+# - candidate branch code is never checked out or executed by this workflow;
+# - same-repository PR history blocks automatic reopening;
+# - only Draft PR creation is permitted; no approval, ready-for-review, merge,
+#   branch deletion, issue closure, label, settings, or contents-write authority;
+# - the machine policy caps creations per run and excludes evidence/scratch lanes;
+# - generated PRs remain subject to the normal exact-head CI/evidence/review gates.
