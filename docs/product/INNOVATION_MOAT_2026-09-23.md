@@ -50,6 +50,31 @@ Examples:
 
 A useful warning from the wider ecosystem is that **independent verification itself is no longer sufficient differentiation**. New systems and practices explicitly advertise separate verifiers. IDKMesh should move beyond "worker A + critic B".
 
+## 2.1 Alignment with existing Adaptive Verification Ecology work
+
+The repository already has an important in-flight research branch that overlaps several ideas below:
+
+- issue #621 — **Research: ablate Adaptive Verification Ecology under matched budgets**;
+- PR #622 — **research: add Adaptive Verification Ecology**.
+
+AVE already proposes and synthetically studies:
+
+- verifier-family diversification;
+- known-bad immune-style probe memory;
+- correlation penalties;
+- risk-adaptive verifier floors/quorums;
+- posterior/Thompson-style route learning;
+- exploration temperature;
+- economic shadow-price backpressure.
+
+Therefore this product document must **not** create a second competing control-policy architecture.
+
+The useful new product slice is narrower:
+
+> Convert AVE's qualitative/correlation-penalty idea into an explicit **marginal independent-evidence operator**: given the evidence already selected for one candidate, estimate how much effective evidence each additional verifier is expected to add, and allow the router to reject a redundant verifier even when that verifier is individually strong.
+
+This can become a reusable primitive beneath AVE, the Connector Control Plane, and the GUI. It should be tested against simple family-diversity heuristics rather than assumed better.
+
 ## 3. Innovation #1 — Adaptive Evidence Portfolio
 
 ### Short version
