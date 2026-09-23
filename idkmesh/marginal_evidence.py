@@ -624,6 +624,14 @@ def analyze(
             + ", ".join(unknown_current)
         )
 
+    # Panel membership is a set for this diagnostic; canonicalize it to the
+    # source-matrix order so equivalent CLI argument orderings produce the
+    # same report and analysis provenance digest.
+    requested_current = set(current_ids)
+    current_ids = tuple(
+        ver["id"] for ver in data["verifiers"] if ver["id"] in requested_current
+    )
+
     if candidate_verifier_ids is None:
         current_set = set(current_ids)
         candidate_ids = tuple(
