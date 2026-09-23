@@ -1,6 +1,6 @@
 # Auto Draft PR Steward
 
-**Status:** proposed in PR #635  
+**Status:** Draft PR producer active on `main` via PR #635; evidence/consumer hardening under review  
 **Scope:** convert new same-repository development branches into bounded Draft PR coordination records
 
 The Auto Draft PR Steward keeps the branch as the working surface while making
@@ -120,6 +120,42 @@ PRs created by the repository `GITHUB_TOKEN` do not themselves trigger a new
 downstream workflow cascade. A later ordinary branch push or human
 review-state action provides the normal PR check surface.
 
+## Durable run evidence
+
+Each successful steward invocation can render a versioned evidence bundle without
+making any additional GitHub API calls. The contract is
+`schemas/auto-draft-pr-steward-report-v0.1.schema.json`.
+
+The trusted workflow writes:
+
+- `steward-report.json` — machine-readable state for automation, CLI, and future
+  GUI surfaces;
+- `steward-report.md` — human-readable summary of the same result.
+
+Both files are uploaded as a short-retention GitHub Actions artifact named
+`auto-draft-pr-steward-<run-id>` for 14 days.
+
+The report records:
+
+- repository and generation time;
+- SHA-256 of the exact machine policy file used by the run;
+- workflow/run/attempt/trusted-head provenance from GitHub Actions;
+- explicit authority capabilities, with every integration authority set to
+  false;
+- completed, blocked, or disabled status;
+- API budget observed at run start;
+- candidate/planned/created/skipped counts;
+- branch/base/head/ancestry records;
+- created Draft PR number and canonical GitHub URL;
+- skip reasons such as `head_moved` and `pr_already_exists`.
+
+Artifact publication uses the result already held in memory. It does not rescan
+branches, reread PR history, or otherwise spend additional GitHub API budget.
+
+A report is evidence about what the steward did, not evidence that the generated
+change is correct or mergeable. In particular, the report permanently states
+`merge: false` and `auto_merge: false` in its authority block.
+
 ## Local/read-only diagnosis
 
 A maintainer with a read-capable GitHub token can inspect the planned actions
@@ -129,7 +165,9 @@ without creating PRs:
 GITHUB_TOKEN=... python tools/auto_draft_pr_steward.py \
   --repo MSKazemi/idkmesh \
   --policy config/auto-draft-pr.json \
-  --dry-run
+  --dry-run \
+  --output-json /tmp/idkmesh-steward.json \
+  --output-md /tmp/idkmesh-steward.md
 ```
 
 The JSON output includes:
@@ -205,6 +243,8 @@ The deterministic regression suite is
 `tests/test_auto_draft_pr_steward.py`. It covers the repository policy contract,
 historical/excluded refs, stacked-base inference, fork-name collisions, generated
 ref sanitization, title bounds, duplicate-creation races, exact-head movement,
-API-budget blocking, oldest-first ordering, and the per-run mutation cap.
+API-budget blocking, oldest-first ordering, the per-run mutation cap, workflow
+artifact bounds, policy/provenance digests, report rendering, output-path
+collision safety, and instance validation against the published report schema.
 
 Use the repository's normal PR gate for integration evidence.
