@@ -9,17 +9,6 @@ manual/native-App trigger and is never added by automatic dispatch.
 This tool never decides from issue prose whether work is safe. It acts only on
 explicit labels, applies deny-labels as a fail-closed veto, caps in-flight work,
 and sends already-approved issue text to the official Jules REST API.
-"""Safely dispatch bounded GitHub issues to Google Jules.
-
-The repository uses two labels with different meanings:
-
-- ``agent-ready`` is a maintainer/triager approval that the issue is bounded,
-  suitable for a coding agent, and contains no human-only evidence requirement.
-- ``jules`` is the execution signal consumed by the Google Labs Jules GitHub App.
-
-This tool never decides from issue prose whether work is safe. It only acts on
-explicit labels, applies deny-labels as a fail-closed veto, and caps the number
-of open Jules issues so generation cannot outrun review capacity.
 """
 
 from __future__ import annotations
