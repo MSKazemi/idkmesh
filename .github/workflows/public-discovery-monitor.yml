@@ -1,18 +1,11 @@
 name: Public Discovery Monitor
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'docs/index.html'
-      - 'docs/topics/**'
-      - 'docs/sitemap.xml'
-      - 'docs/llms.txt'
-      - 'docs/_config.yml'
-      - 'docs/7c1f6d4a9b2e3c8f5a0d1e7b4c6f8a2d.txt'
-      - 'tools/check_public_discovery.py'
-      - '.github/workflows/public-discovery-monitor.yml'
+  workflow_run:
+    workflows:
+      - pages build and deployment
+    types:
+      - completed
   schedule:
     - cron: '43 5 * * *'
   workflow_dispatch:
@@ -22,17 +15,19 @@ permissions:
 
 concurrency:
   group: public-discovery-monitor
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   probe:
     name: probe
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
-      - name: Check out canonical repository state
+      - name: Check out the deployed repository revision
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
           persist-credentials: false
 
       - name: Set up Python
@@ -52,6 +47,6 @@ jobs:
               echo "Public discovery surface did not converge after bounded retries." >&2
               exit 1
             fi
-            echo "Discovery probe attempt $attempt failed; retrying after Pages propagation."
+            echo "Discovery probe attempt $attempt failed after Pages deployment; retrying for edge propagation."
             sleep 30
           done
