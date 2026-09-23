@@ -26,6 +26,9 @@ policy changes or merge decisions.
 
 ## Routing and Orchestration Experiments
 
+- [Adaptive Policy Evidence CLI](ADAPTIVE_POLICY_EVIDENCE_CLI.md) — deterministic
+  evidence extraction for shadow-policy cohort and outcome records.
+
 
 - [R1 Swarm Diversity vs Replication](R1_SWARM_DIVERSITY_EXPERIMENT.md),
   [help/hurt sweep](R1_HELP_HURT_SWEEP.md), and
