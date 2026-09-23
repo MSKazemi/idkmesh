@@ -3,6 +3,8 @@ name: Issue Model Router
 on:
   issues:
     types: [opened, edited, reopened]
+  schedule:
+    - cron: '7 * * * *'
   workflow_dispatch:
     inputs:
       backfill_open_issues:
@@ -60,7 +62,7 @@ jobs:
               "authority:human-required": ("5319e7", "Human/external evidence is required to satisfy the issue"),
               "authority:human-gate": ("fbca04", "Human gate must pass before or alongside agent implementation"),
               "authority:deterministic": ("1d76db", "Workflow/script-maintained issue; do not dispatch an LLM"),
-              "agent:jules-eligible": ("bfdadc", "Bounded task shape is suitable for Jules; this label does not dispatch Jules"),
+              "agent:jules-eligible": ("bfdadc", "Low-risk bounded task routed for automatic Jules dispatch"),
           }
           for name, (color, description) in labels.items():
               subprocess.run(
@@ -79,7 +81,7 @@ jobs:
             > /tmp/issue-model-routes.json
 
       - name: Classify all open issues
-        if: github.event_name == 'workflow_dispatch' && inputs.backfill_open_issues
+        if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.backfill_open_issues)
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
@@ -92,7 +94,7 @@ jobs:
             > /tmp/issue-model-routes.json
 
       - name: Apply managed labels
-        if: github.event_name == 'issues' || (github.event_name == 'workflow_dispatch' && inputs.backfill_open_issues)
+        if: github.event_name == 'issues' || github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.backfill_open_issues)
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
@@ -143,7 +145,7 @@ jobs:
           PY
 
       - name: Kick Jules dispatcher after routing
-        if: github.event_name == 'issues' || (github.event_name == 'workflow_dispatch' && inputs.backfill_open_issues)
+        if: github.event_name == 'issues' || github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.backfill_open_issues)
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
