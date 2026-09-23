@@ -25,7 +25,12 @@ def is_loopback_host(host_header: str | None) -> bool:
     hostname, separator, port = host.partition(":")
     if hostname not in {HOST, "localhost"}:
         return False
-    return not separator or (port.isascii() and port.isdecimal() and 0 < int(port) <= 65535)
+    return not separator or (
+        1 <= len(port) <= 5
+        and port.isascii()
+        and port.isdecimal()
+        and 0 < int(port) <= 65535
+    )
 
 
 def send_security_headers(handler: BaseHTTPRequestHandler) -> None:

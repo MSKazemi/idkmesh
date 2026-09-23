@@ -607,7 +607,8 @@ class ControlTowerServerTests(unittest.TestCase):
 class ControlTowerTokenTests(unittest.TestCase):
     def test_loopback_host_rejects_malformed_authorities(self) -> None:
         for host in ("localhost@other.example", "localhost:bad", "localhost:0",
-                     "localhost:65536", "localhost:80:81", "localhost /", "[::1]"):
+                     "localhost:65536", "localhost:80:81", "localhost /", "[::1]",
+                     "localhost:" + "9" * 5000):
             with self.subTest(host=host):
                 self.assertFalse(is_loopback_host(host))
         self.assertTrue(is_loopback_host("127.0.0.1:8770"))
