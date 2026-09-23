@@ -30,7 +30,7 @@ from __future__ import annotations
 import argparse
 import subprocess
 import sys
-from datetime import date, datetime, timezone
+from datetime import datetime, timezone
 from pathlib import Path
 from xml.etree import ElementTree
 from xml.sax.saxutils import escape
@@ -74,7 +74,7 @@ def _git_lastmod(path: Path) -> str:
     """
     try:
         out = subprocess.run(
-            ["git", "log", "-1", "--format=%cs", "--", str(path.relative_to(ROOT))],
+            ["git", "log", "-1", "--format=%cI", "--", str(path.relative_to(ROOT))],
             cwd=ROOT,
             capture_output=True,
             text=True,
@@ -83,8 +83,10 @@ def _git_lastmod(path: Path) -> str:
         )
         stamp = out.stdout.strip()
         if stamp:
-            date.fromisoformat(stamp)  # reject anything that is not a date
-            return stamp
+            committed_at = datetime.fromisoformat(stamp)
+            if committed_at.tzinfo is None:
+                raise ValueError("commit timestamp has no timezone")
+            return committed_at.astimezone(timezone.utc).date().isoformat()
     except (OSError, ValueError, subprocess.SubprocessError):
         pass
     return datetime.now(timezone.utc).date().isoformat()

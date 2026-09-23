@@ -27,11 +27,11 @@ from __future__ import annotations
 import json
 import re
 import unittest
-from datetime import date
+from datetime import date, datetime, timezone
 from pathlib import Path
 from xml.etree import ElementTree
 
-from tools.build_sitemap import BASE, _has_front_matter, declared_locations, published_pages
+from tools.build_sitemap import BASE, _git_lastmod, _has_front_matter, declared_locations, published_pages
 
 ROOT = Path(__file__).resolve().parents[1]
 DOCS = ROOT / "docs"
@@ -45,6 +45,14 @@ HAND_WRITTEN_PAGES = ("index.html", "pipelines.html")
 
 
 class SitemapTests(unittest.TestCase):
+    def test_lastmod_uses_utc_commit_date(self) -> None:
+        from unittest.mock import patch
+        from types import SimpleNamespace
+
+        commit = SimpleNamespace(stdout="2026-09-24T00:30:00+02:00\n")
+        with patch("tools.build_sitemap.subprocess.run", return_value=commit):
+            self.assertEqual(_git_lastmod(DOCS / "research" / "README.md"), "2026-09-23")
+
     def test_sitemap_exists_and_parses(self) -> None:
         self.assertTrue(SITEMAP.exists(), "docs/sitemap.xml is missing")
         tree = ElementTree.parse(SITEMAP)
