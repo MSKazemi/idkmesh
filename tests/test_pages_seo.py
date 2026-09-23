@@ -219,6 +219,31 @@ class PagesSEOTests(unittest.TestCase):
         ):
             self.assertIn(expected, guide)
 
+    def test_markdown_social_images_do_not_prepend_baseurl_twice(self) -> None:
+        bad = 'image: "/idkmesh/assets/idkmesh-social.png"'
+        offenders = []
+
+        config = (DOCS / "_config.yml").read_text(encoding="utf-8")
+        if bad in config:
+            offenders.append("docs/_config.yml")
+
+        for path in DOCS.rglob("*.md"):
+            text = path.read_text(encoding="utf-8")
+            if not text.startswith("---\n"):
+                continue
+            end = text.find("\n---", 4)
+            front_matter = text if end < 0 else text[: end + 4]
+            if bad in front_matter:
+                offenders.append(path.relative_to(ROOT).as_posix())
+
+        self.assertEqual(
+            [],
+            sorted(offenders),
+            "Jekyll SEO Tag applies baseurl when rendering page.image; "
+            "metadata paths that already contain /idkmesh render as "
+            f"/idkmesh/idkmesh: {sorted(offenders)}",
+        )
+
     def test_jekyll_config_pins_markdown_page_identity_and_urls(self) -> None:
         config = (DOCS / "_config.yml").read_text(encoding="utf-8")
         required = (
@@ -228,7 +253,7 @@ class PagesSEOTests(unittest.TestCase):
             'baseurl: "/idkmesh"',
             "repository: MSKazemi/idkmesh",
             "lang: en",
-            'image: "/idkmesh/assets/idkmesh-social.png"',
+            'image: "/assets/idkmesh-social.png"',
         )
         for entry in required:
             self.assertIn(entry, config)

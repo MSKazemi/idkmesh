@@ -1,0 +1,80 @@
+{
+  "kind": "idkmesh-enterprise-control-profile",
+  "schema_version": "0.1",
+  "profile_id": "example-g1-github-native",
+  "semantics": {
+    "profile_role": "policy_input_only",
+    "control_evidence": "declared_not_observed",
+    "grants_runtime_authority": false
+  },
+  "deployment": {
+    "profile": "g1_github_native_team",
+    "tenant_scope": "single_project",
+    "remote_api_enabled": false,
+    "coordinator_lifecycle": "github_actions_ephemeral",
+    "canonical_code_authority": "github_protected_integration"
+  },
+  "identity": {
+    "human_source": "github",
+    "service_source": "github_actions",
+    "high_risk_distinct_approval": true,
+    "break_glass_enabled": false
+  },
+  "authority": {
+    "worker_can_merge": false,
+    "verifier_can_merge": false,
+    "worker_can_modify_policy": false,
+    "integration_authority": "github_protected_integration"
+  },
+  "data": {
+    "default_classification": "internal",
+    "allowed_classifications": [
+      "public",
+      "internal",
+      "confidential",
+      "restricted"
+    ],
+    "external_processing": {
+      "public": true,
+      "internal": false,
+      "confidential": false,
+      "restricted": false
+    },
+    "egress_default": "deny"
+  },
+  "secrets": {
+    "backend": "github_actions",
+    "long_lived_cloud_keys_allowed": false,
+    "raw_secret_material_in_work_units": false,
+    "raw_secret_material_in_evidence": false
+  },
+  "audit": {
+    "enabled": true,
+    "tamper_evident_required": true,
+    "retention_days": 365,
+    "export": "file"
+  },
+  "reliability": {
+    "availability_target": 0.99,
+    "rpo_minutes": 0,
+    "rto_minutes": 60,
+    "backups_required": false,
+    "restore_test_required": true
+  },
+  "supply_chain": {
+    "immutable_action_pins_required": true,
+    "sbom_required": false,
+    "provenance_required": true,
+    "vulnerability_response_sla_hours": 72
+  },
+  "change_management": {
+    "protected_integration_required": true,
+    "policy_change_approval_required": true,
+    "break_glass_reason_required": true
+  },
+  "enforcement": {
+    "mode": "enforce",
+    "unknown_control_behavior": "fail",
+    "startup_profile_validation": true
+  }
+}

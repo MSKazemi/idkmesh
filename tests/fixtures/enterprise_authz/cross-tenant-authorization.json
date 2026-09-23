@@ -1,0 +1,37 @@
+{
+  "actor": {
+    "kind": "idkmesh-enterprise-actor-context",
+    "schema_version": "0.1",
+    "principal_id": "github:user:alice",
+    "actor_type": "human",
+    "issuer": "github.com",
+    "roles": ["integrator"],
+    "scopes": [
+      {
+        "tenant_id": "tenant-a",
+        "project_id": "project-main"
+      }
+    ],
+    "data_clearance": "confidential",
+    "identity_revision": "github-membership:42",
+    "authenticated": true,
+    "revoked": false,
+    "expires_at_epoch": null
+  },
+  "request_scope": {
+    "tenant_id": "tenant-a",
+    "project_id": "project-main"
+  },
+  "resource": {
+    "tenant_id": "tenant-b",
+    "project_id": "project-main",
+    "resource_type": "candidate",
+    "resource_id": "candidate-17"
+  },
+  "action": "integrate",
+  "risk": "low",
+  "data_classification": "internal",
+  "evaluated_at_epoch": 1790168400,
+  "expected_effect": "deny",
+  "expected_code": "scope_mismatch"
+}

@@ -62,11 +62,15 @@ After deployment, `tools/check_public_discovery.py` should be able to verify:
 - the homepage returns real IDKMesh content to representative search/answer
   crawler user agents rather than a block, challenge, or empty shell;
 - the topic hub is publicly reachable;
-- no tested crawler receives a `403`, `429`, or crawler-specific decoy page.
+- no tested crawler receives a `403`, `429`, or crawler-specific decoy page;
+- Jekyll social/JSON-LD image paths resolve under the site base path exactly once, never as `/idkmesh/idkmesh/...`.
 
-The scheduled workflow is a **visibility regression monitor**, not a ranking
-monitor. A green run means the public site is technically retrievable from a
-GitHub-hosted network path; it does not mean an engine has indexed or cited it.
+The workflow is a **visibility regression monitor**, not a ranking monitor. It
+runs from GitHub's Pages-native `page_build` event and also has scheduled/manual
+recovery paths. On a Pages event it requires a `built` status and binds the
+checkout/probe to that event's exact commit. A green run means the public site
+is technically retrievable from a GitHub-hosted network path; it does not mean
+an engine has indexed or cited it.
 
 ## Representative crawler identities
 
@@ -110,6 +114,19 @@ not freeze a user-agent string as a permanent protocol guarantee.
   https://support.apple.com/119829
 - Brave Search crawler guidance (no differentiated user agent; Googlebot crawlability prerequisite):
   https://search.brave.com/help/brave-search-crawler
+
+## First-party webmaster measurement
+
+The account-owner workflow for Google Search Console and Bing Webmaster Tools is
+documented in
+[`WEBMASTER_TOOLS_MEASUREMENT_RUNBOOK.md`](WEBMASTER_TOOLS_MEASUREMENT_RUNBOOK.md).
+
+Use the URL-prefix / branch-scoped property
+`https://mskazemi.com/idkmesh/`, submit the canonical sitemap, inspect the
+eleven topic URLs, export query/page performance, and export Bing AI Performance
+citation/grounding data. Commit only normalized observations that satisfy the
+visibility evidence schema; do not commit account credentials or private
+account data.
 
 ## Visibility evidence loop
 
