@@ -61,6 +61,26 @@ It is a controlled path from proposal to evidence to an authority decision. In I
 
 Read the [Constitution](https://github.com/MSKazemi/idkmesh/blob/main/CONSTITUTION.md), [Governance](https://github.com/MSKazemi/idkmesh/blob/main/GOVERNANCE.md), and [Project Rules](https://github.com/MSKazemi/idkmesh/blob/main/PROJECT_RULES.md).
 
+### What permissions should an AI coding agent receive?
+
+Give only the permissions needed for the bounded task. Prefer read access plus isolated candidate-write capability, and keep branch protection, secrets, release credentials, and organization settings outside the worker's authority unless a specific reviewed task requires them.
+
+### How do you implement least privilege for AI agents?
+
+Issue short-lived, scoped credentials; isolate execution; separate read, write, approve, and merge capabilities; and make escalation an explicit policy decision rather than a hidden property of the agent runtime.
+
+### When should human review be mandatory for an AI agent?
+
+Human review is most valuable for high-impact security, privacy, governance, release, financial, destructive, or ambiguous changes, and whenever the verification evidence is insufficient for the configured risk threshold.
+
+### How do you audit AI-agent actions?
+
+Retain the task contract, identity, permissions, tool calls where relevant, artifact revisions, verifier results, and final authority decision. The audit record should let a reviewer reconstruct what changed and why.
+
+### How do you govern agents from multiple AI vendors?
+
+Use provider-neutral task, permission, provenance, and evidence contracts. Vendor-specific credentials and APIs stay behind connectors while shared governance determines what every worker may do and what evidence it must return.
+
 [Browse all AI-agent trust topics](https://mskazemi.com/idkmesh/topics/).
 
 **Last reviewed:** 2026-09-22.
