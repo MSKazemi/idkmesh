@@ -1,289 +1,210 @@
 # Enterprise Control Profile v0.1
 
-**Status:** experimental implementation contract  
-**Date:** 2026-09-22  
-**Schema:** ../../schemas/enterprise-control-profile-v0.1.schema.json  
-**Example:** ../../examples/enterprise-control-profile.example.json  
-**Tool:** ../../tools/enterprise_profile.py  
-**Program:** #667; E1 implementation: #668
+**Status:** experimental  
+**Issue:** #668  
+**Parent:** #667  
+**Schema:** `schemas/enterprise-control-profile-v0.1.schema.json`
 
-## 1. Purpose
+## Purpose
 
-The Enterprise Control Profile is a versioned, machine-readable statement of the control posture a project/deployment intends to enforce.
+The Enterprise Control Profile declares the controls that an IDKMesh deployment
+is expected to enforce.
 
-It exists so "enterprise" is not an adjective. A deployment can state, review, diff, test, and later observe concrete controls for tenancy, identity, data movement, secrets, audit, recovery, supply chain, and emergency change.
+It is deliberately a **policy input**, not an authorization object and not
+evidence that any control is actually deployed.
 
-A profile declaration is **not evidence that the control is actually enforced**.
+Every valid v0.1 profile says:
 
-The v0.1 preflight tool performs deterministic declaration/contradiction checks. Later issues bind those declarations to observed GitHub/service/runtime evidence.
-
-## 2. Version and kind
-
-v0.1 uses:
-
-~~~json
+```json
 {
-  "api_version": "idkmesh.io/v1alpha1",
-  "kind": "EnterpriseControlProfile"
+  "profile_role": "policy_input_only",
+  "control_evidence": "declared_not_observed",
+  "grants_runtime_authority": false
 }
-~~~
+```
 
-Breaking semantic changes require a new explicit profile/schema version.
+That separation prevents a configuration file from being presented as proof of
+compliance, security, or effective enforcement.
 
-## 3. Conformance status
+## Deployment profiles
 
-Preflight findings use:
+The control profile uses the existing G0/G1/G2/G3 deployment vocabulary.
 
-- PASS — the declaration satisfies this v0.1 baseline check;
-- WARN — usable but weaker than the recommended enterprise baseline, plan-dependent, or requires operator review;
-- FAIL — contradictory or below a non-compensating baseline invariant;
-- UNKNOWN — reserved for later observed checks where evidence cannot be retrieved.
+### G0 — local operator
 
-A profile is declaration-ready when it has zero FAIL findings.
+- one trusted local operator;
+- local process coordinator;
+- no remote API;
+- process identity;
+- single-project scope.
 
-Declaration-ready does not mean production-ready, secure against every threat, independently audited, or certified.
+This profile is useful for local CLI/Control Tower development. It is not an
+enterprise multi-user claim.
 
-## 4. Profile sections
+### G1 — GitHub-native team
 
-### metadata
+- GitHub is the human identity source;
+- GitHub Actions is the service execution identity;
+- coordinator is ephemeral;
+- no long-lived remote control API;
+- GitHub protected integration remains canonical;
+- high-risk work requires distinct approval;
+- egress defaults to deny.
 
-Required fields:
+This is the primary serverless/team enterprise path.
 
-- name;
-- environment: development / staging / production;
-- enforcement_mode: audit / enforce.
+### G2 — self-hosted team service
 
-Production enterprise profiles must use enforcement_mode=enforce.
+- one project or organization boundary;
+- long-lived control service;
+- remote API enabled;
+- federated/external human identity;
+- workload/service identity stronger than process identity;
+- backups and restore exercises required;
+- default-deny egress.
 
-### deployment
+G2 is the first profile that needs normal always-on service operations.
 
-Fields:
+### G3 — multi-tenant service
 
-- profile: G0 / G1 / G2 / G3;
-- tenant_mode: single_project / single_organization / multi_tenant;
-- tenant_isolation: not_applicable / declared / enforced;
-- network_mode: public / controlled_egress / private_network.
+G3 adds mandatory tenant scope and stronger controls:
 
-Rules:
+- tenant scope must be `multi_tenant`;
+- long-lived remote service;
+- federated workload identity;
+- distinct high-risk approval;
+- enabled tamper-evident audit;
+- backups + restore testing;
+- default-deny egress;
+- immutable action pins, SBOM, and build/release provenance.
 
-- G3 must use multi_tenant + tenant_isolation=enforced;
-- G0/G1 cannot claim shared multi-tenant service isolation;
-- G2 is normally dedicated/single-organization;
-- missing tenant context is never interpreted as a default tenant.
+G3 is not implied by G2 and requires the E2/E3 isolation/identity program.
 
-### identity
+## Control domains
 
-Fields:
+The v0.1 document covers:
 
-- human_identity_source: github / enterprise_sso / oidc / saml;
-- service_identity: github_actions / github_app / oidc_workload / managed_identity;
-- mfa_required;
-- high_risk_separation_of_duties.
+- deployment/tenant mode;
+- human and service identity sources;
+- separation-of-duty requirements;
+- integration authority boundaries;
+- data classification and external-processing policy;
+- secret backend and long-lived-key policy;
+- audit enablement/retention/export;
+- declared reliability objectives;
+- backup/restore requirements;
+- software-supply-chain controls;
+- change-management/break-glass controls;
+- audit vs enforce mode.
 
-Production requires MFA and high-risk separation of duties in the baseline.
+## Non-compensating invariants
 
-This does not require IDKMesh to become an identity provider. Identity should normally federate from GitHub/enterprise IdP and be normalized into stage-specific authorization context.
+The dependency-free validator rejects contradictory profiles before runtime
+admission.
 
-### data
+Examples include:
 
-Fields:
+- `enforce` mode with unknown controls configured to `warn`;
+- break-glass enabled without audit and required rationale;
+- OIDC workload identity while long-lived cloud keys are allowed;
+- G1 configured with local-only human identity;
+- G2 without a long-lived control service;
+- G2/G3 without required backup/restore behavior;
+- G3 without multi-tenant scope;
+- G3 without tamper-evident audit;
+- G3 without immutable pins, SBOM, and provenance;
+- any enterprise profile that allows workers or verifiers to merge;
+- any profile that permits raw secret material in WorkUnits/evidence;
+- default data classification not present in the admitted classification set.
 
-- default_classification;
-- external_processing_allowed_classes;
-- egress_mode.
+These checks are intentionally fail-closed.
 
-Minimum classifications:
+## Structural vs semantic validation
 
-- public;
-- internal;
-- confidential;
-- restricted.
+Two layers are retained:
 
-restricted must not appear in external_processing_allowed_classes.
+1. **JSON Schema Draft 2020-12** — published machine-readable structure,
+   enums, required fields, and authority constants.
+2. **`idkmesh.enterprise_profile`** — standard-library parser and semantic
+   validator for cross-field contradictions.
 
-Production should use allowlist or deny_by_default egress rather than unrestricted egress.
+Core `pip install .` does not require the optional `jsonschema` dependency
+to perform the semantic validation boundary.
 
-### secrets
+Repository CI meta-validates the schema when `jsonschema` is available.
 
-Fields:
+## Examples
 
-- backend;
-- workload_identity;
-- long_lived_cloud_keys_allowed.
+Retained examples:
 
-Backends:
+- `examples/enterprise/g1-github-native.example.json`;
+- `examples/enterprise/g2-self-hosted.example.json`.
 
-- github_environment;
-- external_secret_manager;
-- provider_managed.
+They are examples of **declared target controls** only.
 
-Workload identity:
+A valid example does not prove:
 
-- none;
-- github_oidc;
-- external_oidc;
-- managed_identity.
+- the GitHub ruleset exists;
+- an IdP actually authenticated a user;
+- backups were successfully restored;
+- audit records are complete;
+- an SBOM was generated;
+- a provider respected an egress policy.
 
-Production G2/G3 must not rely on long-lived cloud keys and should use a workload identity when external/cloud service access is required.
+Observed/enforced evidence belongs to E9 conformance and the relevant runtime
+control domains.
 
-Secret references are configuration metadata. Raw values must not be stored in this profile.
+## Versioning
 
-### audit
+`schema_version: "0.1"` is frozen once durable external profiles rely on it.
 
-Fields:
+A change is breaking when:
 
-- append_only;
-- integrity;
-- retention_days;
-- external_export_required;
-- actor_policy_revision_required.
+- a previously valid profile may become invalid;
+- an existing field changes meaning;
+- deployment-profile semantics are tightened in a way that changes admission.
 
-Integrity modes:
+Breaking changes require a new schema version/file.
 
-- git_history;
-- hash_chain;
-- external_worm.
+Additive fields should still be introduced deliberately because this v0.1
+schema rejects unknown fields to prevent typo-driven policy bypass.
 
-Production requires append-only audit and actor/policy-revision binding. G2/G3 production requires external export capability.
+## Authority
 
-The baseline recommends at least 365 days retention. Shorter retention is WARN rather than a universal FAIL because legal/organizational requirements vary.
+This profile never grants:
 
-### reliability
+- repository write authority;
+- merge authority;
+- secret access;
+- worker execution;
+- verifier acceptance authority;
+- tenant access.
 
-Fields:
+Runtime services must combine the declared profile with actual authenticated
+actor/service identity, resource state, policy version, and enforcement
+evidence.
 
-- availability_target_percent;
-- rpo_minutes;
-- rto_minutes;
-- restore_test_interval_days;
-- backpressure_required.
+## Relationship to the enterprise program
 
-These are objectives, not measured claims.
+This contract is E1 under #667.
 
-Production requires backpressure. Restore tests less frequent than every 90 days produce a warning in v0.1.
+Follow-on work:
 
-### supply_chain
+- E2 (#669) tenant/project isolation;
+- E3 (#670) identity/RBAC/ABAC/separation of duties;
+- E4 (#671) tamper-evident audit;
+- E5 (#672) data/egress/secrets;
+- E6 (#673) SLO/backup/DR;
+- E7 (#674) supply chain;
+- E8 (#675) hosted control service;
+- E9 (#676) destructive conformance pilot.
 
-Fields:
+## Exit gate
 
-- immutable_action_pins_required;
-- sbom_required;
-- provenance_attestation_required;
-- vulnerability_response_sla_hours.
+E1 is complete when:
 
-Production requires immutable action pinning for the controlled release/security lanes and an SBOM declaration.
-
-Provenance attestation is strongly recommended; the preflight reports WARN rather than FAIL when disabled because platform/plan/release applicability varies.
-
-### change_management
-
-Fields:
-
-- high_risk_two_person_rule;
-- break_glass:
-  - enabled;
-  - time_bound_minutes;
-  - reason_required;
-  - audit_required.
-
-Production requires the high-risk two-person rule.
-
-If break-glass is enabled it must be time bounded, reason required, and audit required.
-
-## 5. Non-compensating invariants
-
-These controls cannot be offset by better model quality, lower cost, more reviewers, or administrator confidence:
-
-1. tenant mismatch;
-2. unknown/expired authority;
-3. restricted-data external-processing prohibition;
-4. missing high-risk separation of duties where required;
-5. raw secret persistence;
-6. direct worker/verifier integration authority;
-7. missing durable audit for privileged production actions;
-8. missing recovery state for a service claiming restart-safe execution.
-
-Future routing and admission must apply these as hard eligibility checks.
-
-## 6. Required enterprise audit context
-
-Later runtime implementations should be able to bind privileged events to:
-
-~~~text
-tenant/project
-request/correlation/run ID
-initiating actor
-effective service identity
-action
-resource
-exact revision
-risk/data classification
-policy version
-decision
-approval/reason reference
-outcome
-evidence/result digest
-timestamp
-integrity linkage
-~~~
-
-The profile declares the required posture; #671 implements the durable event contract.
-
-## 7. Separation from WorkUnit
-
-EnterpriseControlProfile is repository/deployment policy.
-
-WorkUnit is bounded task intent.
-
-A WorkUnit may tighten enterprise policy for one task. It cannot relax it.
-
-Examples:
-
-- project allows external processing for public/internal, WorkUnit says public only -> public only;
-- project forbids restricted external processing, WorkUnit requests it -> reject;
-- enterprise profile requires high-risk two-person rule, WorkUnit says one reviewer -> still two-person;
-- project forbids long-lived cloud keys, task text cannot authorize one.
-
-## 8. Separation from compliance
-
-The profile may eventually support mappings to external control frameworks, but v0.1 intentionally does not contain a field such as compliant=true.
-
-A deployment may retain evidence useful to an audit. Certification/attestation by an external authority remains separate.
-
-## 9. Preflight tool
-
-Run:
-
-~~~bash
-python tools/enterprise_profile.py examples/enterprise-control-profile.example.json
-python tools/enterprise_profile.py examples/enterprise-control-profile.example.json --json
-~~~
-
-Exit behavior:
-
-- 0: no FAIL findings;
-- 1: one or more FAIL findings;
-- 2: profile cannot be parsed/inspected.
-
-The tool never:
-
-- mutates GitHub;
-- provisions infrastructure;
-- changes identity/roles;
-- creates secrets;
-- claims controls are observed;
-- grants execution or merge authority.
-
-## 10. GitHub enterprise surfaces
-
-Where available and appropriate, an implementation can use GitHub rulesets, Environments/protection rules, OIDC, artifact attestations, GitHub Apps, organization identity, and audit capabilities.
-
-These are implementation surfaces beneath the IDKMesh control contract. Availability varies by GitHub plan/repository visibility and must be detected rather than assumed.
-
-## 11. Evolution
-
-v0.1 is experimental.
-
-#668 can complete the declaration contract and deterministic preflight. #669-#676 progressively bind it to observed runtime/platform evidence.
-
-The contract should grow only when a control needs stable machine-readable meaning. Vendor-specific details belong in adapters/extensions rather than in the shared core where possible.
+1. the schema meta-validates;
+2. retained G1 and G2 examples validate;
+3. dependency-free runtime validation rejects contradictory profiles;
+4. profile semantics remain declaration-only and grant no authority;
+5. breaking-change/version rules are documented.
