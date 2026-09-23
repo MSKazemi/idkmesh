@@ -47,6 +47,10 @@ The important separations are simple:
 - **implemented infrastructure is not automatically observed evidence;**
 - **AI-generated volume is useful only when review capacity and evidence quality keep up.**
 
+## Browse by exact question
+
+If you already know the question you want to ask, use the [100-question answer map](https://mskazemi.com/idkmesh/questions.html). It indexes the actual question headings from all ten guides without creating one thin page per query.
+
 ## Useful entry points
 
 - [Start in 15 minutes](https://mskazemi.com/idkmesh/start.html)
@@ -57,4 +61,4 @@ The important separations are simple:
 - [Architecture](https://github.com/MSKazemi/idkmesh/blob/main/ARCHITECTURE.md)
 - [Schema index](https://github.com/MSKazemi/idkmesh/blob/main/schemas/README.md)
 
-**Last reviewed:** 2026-09-23.
+**Last reviewed:** 2026-09-24.
