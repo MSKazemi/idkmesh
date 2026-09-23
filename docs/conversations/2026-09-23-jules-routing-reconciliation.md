@@ -25,7 +25,7 @@ IDKMesh now distinguishes two execution ingress paths:
 
 Both routes remain subject to the same hard-veto labels, capacity controls, duplicate-session protection, normal CI, and no-auto-merge rule.
 
-The router-to-dispatcher handoff is explicit through `workflow_dispatch.issue_number`. This avoids relying on a workflow recursively triggering another workflow merely because `GITHUB_TOKEN` changed an issue label.
+The router-to-dispatcher handoff now uses a local reusable workflow through typed `workflow_call.issue_number`. This avoids relying on recursive `GITHUB_TOKEN` events and lets GitHub validate the caller/callee input contract before execution. A stdlib-only `tools/check_jules_contract.py` guard is also part of the required PR Gate so label-policy drift, missing reusable inputs, or privilege expansion becomes a merge-blocking failure.
 
 ## Provider-session reconciliation
 
@@ -95,3 +95,28 @@ Tracked under issue #768:
 The local execution container could not resolve `github.com`, so it could not clone the branch for local pytest execution. The implementation therefore must be validated by the normal IDKMesh pull-request gate on the exact branch head before integration.
 
 The Jules REST API remains an external alpha contract. Provider behavior is observed evidence, not repository authority. Jules output never self-verifies and no dispatcher path merges to `main`.
+
+
+## Regression-prevention contract
+
+The durable fix is intentionally stronger than repairing the current workflow
+pair:
+
+- the Issue Model Router calls `.github/workflows/jules-dispatch.yml` as a
+  repository-local reusable workflow instead of shelling out to
+  `gh workflow run`;
+- the dispatcher exposes `issue_number` through both `workflow_call` and
+  operator-facing `workflow_dispatch`;
+- the router derives the Jules queue label from routing policy, while the
+  router workflow derives the managed automatic label from
+  `config/jules-dispatch.json`;
+- `tools/check_jules_contract.py` cross-checks routing policy, dispatcher
+  policy, reusable-workflow inputs, trust labels, authority limits, and the
+  AUTO_CREATE_PR provider contract;
+- the unfiltered required PR Gate runs that guard before installing
+  dependencies, so future changes cannot silently merge a disconnected
+  router/dispatcher pair.
+
+This specifically prevents the failure mode where one PR removes the
+`issue_number` input or stops accepting `agent:jules-eligible` while the
+other side continues assuming those contracts exist.
