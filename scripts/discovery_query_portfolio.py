@@ -51,6 +51,26 @@ def validate(portfolio: dict[str, Any], root: Path) -> dict[str, Any]:
     _require(rules.get("branded_queries_allowed") is False, "branded queries must be disabled")
     _require(rules.get("authority") == "recommendation_only", "portfolio authority must be recommendation_only")
 
+    query_source = portfolio.get("query_source")
+    _require(
+        query_source == "config/seo-topics-v1.json",
+        "portfolio must declare config/seo-topics-v1.json as the canonical query source",
+    )
+    source_path = root / str(query_source)
+    _require(source_path.is_file(), f"canonical query source is missing: {query_source}")
+    seo_topics = load_json(source_path)
+    seo_clusters = seo_topics.get("clusters")
+    _require(isinstance(seo_clusters, list), "canonical SEO topic clusters must be an array")
+    canonical_by_id = {
+        str(cluster.get("id") or ""): cluster
+        for cluster in seo_clusters
+        if isinstance(cluster, dict)
+    }
+    _require(
+        len(canonical_by_id) == expected_clusters,
+        "canonical SEO query source must contain the expected cluster count",
+    )
+
     seen_cluster_ids: set[str] = set()
     seen_queries: set[str] = set()
     target_counts: Counter[str] = Counter()
@@ -87,6 +107,26 @@ def validate(portfolio: dict[str, Any], root: Path) -> dict[str, Any]:
             _require(value not in seen_queries, f"duplicate query: {query}")
             seen_queries.add(value)
             normalized.append(value)
+
+
+        canonical = canonical_by_id.get(cluster_id)
+        _require(
+            isinstance(canonical, dict),
+            f"{cluster_id}: cluster is absent from the canonical SEO query source",
+        )
+        _require(
+            label == canonical.get("title"),
+            f"{cluster_id}: analytics label must match the canonical SEO title",
+        )
+        _require(
+            target == canonical.get("path"),
+            f"{cluster_id}: analytics target must match the canonical SEO topic path",
+        )
+        canonical_queries = canonical.get("queries")
+        _require(
+            isinstance(canonical_queries, list) and queries == canonical_queries,
+            f"{cluster_id}: analytics queries must match the canonical SEO query source exactly",
+        )
 
         target_counts[target] += len(normalized)
         target_cluster_counts[target] += 1
@@ -132,6 +172,7 @@ def validate(portfolio: dict[str, Any], root: Path) -> dict[str, Any]:
         "version": 1,
         "method": VERSION,
         "portfolio_status": portfolio["status"],
+        "canonical_query_source": str(query_source),
         "summary": {
             "clusters": len(clusters),
             "queries": len(seen_queries),
