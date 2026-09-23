@@ -39,6 +39,7 @@ def load_policy(path: pathlib.Path = DEFAULT_POLICY) -> dict[str, Any]:
         "dispatch_label",
         "max_in_flight",
         "max_dispatch_per_sweep",
+        "ci_backpressure",
         "blocked_labels",
         "priority_weights",
         "size_weights",
@@ -52,6 +53,16 @@ def load_policy(path: pathlib.Path = DEFAULT_POLICY) -> dict[str, Any]:
         raise DispatchError("max_in_flight must be at least 1")
     if int(policy["max_dispatch_per_sweep"]) < 1:
         raise DispatchError("max_dispatch_per_sweep must be at least 1")
+
+    backpressure = policy["ci_backpressure"]
+    if not isinstance(backpressure, dict):
+        raise DispatchError("ci_backpressure must be an object")
+    if type(backpressure.get("enabled")) is not bool:
+        raise DispatchError("ci_backpressure.enabled must be a boolean")
+    for field in ("max_queued_runs", "max_in_progress_runs"):
+        value = backpressure.get(field)
+        if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+            raise DispatchError(f"ci_backpressure.{field} must be an integer >= 0")
     return policy
 
 
@@ -204,6 +215,54 @@ class GitHubAPI:
             {"labels": labels},
         )
 
+    def count_workflow_runs(self, status: str) -> int:
+        if status not in {"queued", "in_progress"}:
+            raise DispatchError(f"unsupported Actions run status: {status}")
+        encoded = urllib.parse.urlencode({"status": status, "per_page": 1})
+        result = self.request(
+            "GET",
+            f"{self.repo_path}/actions/runs?{encoded}",
+        )
+        if not isinstance(result, dict):
+            raise DispatchError("expected object response from Actions runs API")
+        value = result.get("total_count")
+        if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+            raise DispatchError("Actions runs API returned invalid total_count")
+        return value
+
+
+def actions_backpressure_status(
+    api: GitHubAPI,
+    policy: dict[str, Any],
+) -> dict[str, Any]:
+    """Return current Actions capacity without granting dispatch authority."""
+
+    config = policy["ci_backpressure"]
+    if not config["enabled"]:
+        return {
+            "enabled": False,
+            "blocked": False,
+            "queued_runs": None,
+            "in_progress_runs": None,
+            "max_queued_runs": config["max_queued_runs"],
+            "max_in_progress_runs": config["max_in_progress_runs"],
+        }
+
+    queued = api.count_workflow_runs("queued")
+    in_progress = api.count_workflow_runs("in_progress")
+    blocked = (
+        queued > int(config["max_queued_runs"])
+        or in_progress > int(config["max_in_progress_runs"])
+    )
+    return {
+        "enabled": True,
+        "blocked": blocked,
+        "queued_runs": queued,
+        "in_progress_runs": in_progress,
+        "max_queued_runs": int(config["max_queued_runs"]),
+        "max_in_progress_runs": int(config["max_in_progress_runs"]),
+    }
+
 
 def ensure_labels(
     api: GitHubAPI,
@@ -253,6 +312,17 @@ def dispatch(
         print(
             f"jules dispatcher: capacity full "
             f"({len(active)}/{policy['max_in_flight']} open dispatched issues)"
+        )
+        return []
+
+    backpressure = actions_backpressure_status(api, policy)
+    if backpressure["blocked"]:
+        print(
+            "jules dispatcher: paused for Actions backpressure "
+            f"queued={backpressure['queued_runs']}/"
+            f"{backpressure['max_queued_runs']} "
+            f"in_progress={backpressure['in_progress_runs']}/"
+            f"{backpressure['max_in_progress_runs']}"
         )
         return []
 

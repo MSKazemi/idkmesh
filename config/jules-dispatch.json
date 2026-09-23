@@ -4,6 +4,11 @@
   "dispatch_label": "jules",
   "max_in_flight": 4,
   "max_dispatch_per_sweep": 2,
+  "ci_backpressure": {
+    "enabled": true,
+    "max_queued_runs": 12,
+    "max_in_progress_runs": 8
+  },
   "blocked_labels": [
     "blocked",
     "do-not-automate",

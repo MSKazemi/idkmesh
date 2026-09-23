@@ -11,6 +11,11 @@ POLICY = {
     "dispatch_label": "jules",
     "max_in_flight": 4,
     "max_dispatch_per_sweep": 2,
+    "ci_backpressure": {
+        "enabled": True,
+        "max_queued_runs": 12,
+        "max_in_progress_runs": 8,
+    },
     "blocked_labels": [
         "blocked",
         "do-not-automate",
@@ -45,10 +50,23 @@ def issue(number: int, *labels: str, state: str = "open", pull: bool = False):
 
 
 class FakeAPI:
-    def __init__(self, *, active=None, queued=None, labels=None):
+    def __init__(
+        self,
+        *,
+        active=None,
+        queued=None,
+        labels=None,
+        queued_runs=0,
+        in_progress_runs=0,
+        fail_actions=False,
+    ):
         self.active = list(active or [])
         self.queued = list(queued or [])
         self.labels = list(labels or [])
+        self.queued_runs = queued_runs
+        self.in_progress_runs = in_progress_runs
+        self.fail_actions = fail_actions
+        self.workflow_count_calls = []
         self.added = []
         self.created = []
 
@@ -67,6 +85,16 @@ class FakeAPI:
 
     def create_label(self, name: str, color: str, description: str):
         self.created.append((name, color, description))
+
+    def count_workflow_runs(self, status: str):
+        self.workflow_count_calls.append(status)
+        if self.fail_actions:
+            raise jd.DispatchError("synthetic Actions API failure")
+        if status == "queued":
+            return self.queued_runs
+        if status == "in_progress":
+            return self.in_progress_runs
+        raise AssertionError(status)
 
 
 def test_dispatchability_requires_explicit_queue_label_and_respects_vetoes():
@@ -137,6 +165,69 @@ def test_dispatch_fails_closed_when_capacity_is_full():
     assert api.added == []
 
 
+def test_dispatch_pauses_when_actions_queue_exceeds_policy():
+    api = FakeAPI(
+        queued=[issue(1, "agent-ready", "priority:p0")],
+        queued_runs=13,
+        in_progress_runs=1,
+    )
+
+    assert jd.dispatch(api, POLICY) == []
+    assert api.added == []
+    assert api.workflow_count_calls == ["queued", "in_progress"]
+
+
+def test_dispatch_pauses_when_actions_in_progress_exceeds_policy():
+    api = FakeAPI(
+        queued=[issue(1, "agent-ready", "priority:p0")],
+        queued_runs=1,
+        in_progress_runs=9,
+    )
+
+    assert jd.dispatch(api, POLICY) == []
+    assert api.added == []
+
+
+def test_dispatch_allows_counts_exactly_at_backpressure_ceilings():
+    api = FakeAPI(
+        queued=[issue(1, "agent-ready", "priority:p0")],
+        queued_runs=12,
+        in_progress_runs=8,
+    )
+
+    assert jd.dispatch(api, POLICY) == [1]
+    assert api.added == [(1, ["jules"])]
+
+
+def test_disabled_ci_backpressure_preserves_previous_behavior():
+    policy = deepcopy(POLICY)
+    policy["ci_backpressure"]["enabled"] = False
+    api = FakeAPI(
+        queued=[issue(1, "agent-ready", "priority:p0")],
+        queued_runs=999,
+        in_progress_runs=999,
+    )
+
+    assert jd.dispatch(api, policy) == [1]
+    assert api.workflow_count_calls == []
+
+
+def test_actions_capacity_signal_failure_fails_closed_before_label_mutation():
+    api = FakeAPI(
+        queued=[issue(1, "agent-ready", "priority:p0")],
+        fail_actions=True,
+    )
+
+    try:
+        jd.dispatch(api, POLICY)
+    except jd.DispatchError as exc:
+        assert "Actions API" in str(exc)
+    else:
+        raise AssertionError("dispatch must fail closed when Actions state is unknown")
+
+    assert api.added == []
+
+
 def test_ensure_labels_creates_only_missing_policy_labels():
     api = FakeAPI(labels=[{"name": "agent-ready"}])
 
@@ -154,6 +245,11 @@ def test_repository_policy_keeps_speed_and_hard_vetoes_explicit():
 
     assert policy["max_in_flight"] == 4
     assert policy["max_dispatch_per_sweep"] == 2
+    assert policy["ci_backpressure"] == {
+        "enabled": True,
+        "max_queued_runs": 12,
+        "max_in_progress_runs": 8,
+    }
     assert {
         "human-required",
         "research-evidence",
@@ -170,8 +266,11 @@ def test_workflow_preserves_dispatch_trust_boundary_and_fast_recovery():
 
     assert "types: [labeled, closed]" in workflow
     assert "cron: '17,47 * * * *'" in workflow
+    assert "actions: read" in workflow
     assert "contents: read" in workflow
     assert "issues: write" in workflow
+    assert "actions: write" not in workflow
+    assert "contents: write" not in workflow
     assert "pull-requests: write" not in workflow
     assert "pull_request_target:" not in workflow
     assert "pull_request:" not in workflow

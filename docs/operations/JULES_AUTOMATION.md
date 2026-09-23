@@ -76,6 +76,8 @@ Current defaults:
 
 - maximum open dispatched issues: **4**;
 - maximum dispatches per recovery sweep: **2**;
+- automatic dispatch pauses when queued Actions runs exceed **12**;
+- automatic dispatch pauses when in-progress Actions runs exceed **8**;
 - an `agent-ready` label event dispatches at most **1** issue immediately;
 - closing a dispatched issue immediately triggers a capacity refill;
 - open issues already carrying `jules` consume capacity until they close or the
@@ -84,6 +86,13 @@ Current defaults:
 Four concurrent issue slots are a repository-side review/backpressure choice,
 not a claim about a provider plan limit. Change the number only after measuring
 review latency and CI/merge load.
+
+The Actions ceilings are a second, independent backpressure gate. They prevent
+new provider work from being generated while verification capacity is already
+saturated. Counts exactly at the ceiling remain eligible; exceeding either
+ceiling pauses dispatch. The existing recovery sweep retries later. If the
+dispatcher cannot read the Actions capacity signal, it fails closed and adds no
+new `jules` labels.
 
 ## Label contract
 
@@ -190,8 +199,9 @@ No Jules task auto-merges `main`.
 
 1. check the Jules Dispatcher Actions run;
 2. check whether four open `jules` issues already consume capacity;
-3. check for a hard-veto label;
-4. wait for the next 30-minute recovery sweep or manually run the workflow.
+3. check whether queued/in-progress Actions runs exceed the configured backpressure ceilings;
+4. check for a hard-veto label;
+5. wait for the next 30-minute recovery sweep or manually run the workflow after capacity recovers.
 
 ### `jules` exists but Jules does not acknowledge the issue
 
@@ -231,6 +241,6 @@ make gate
 ```
 
 For changes that alter GitHub permissions, triggers, or the approval boundary,
-review the security implications explicitly. Keep `issues: write` scoped to the
-dispatcher workflow; the workflow checks out the trusted default branch and
+review the security implications explicitly. Keep `actions: read` read-only and
+`issues: write` scoped to the dispatcher workflow; the workflow checks out the trusted default branch and
 uses issue text only as inert metadata, never as shell/code input.

@@ -17,6 +17,7 @@ on:
       - 'tools/jules_dispatcher.py'
 
 permissions:
+  actions: read
   contents: read
   issues: write
 
