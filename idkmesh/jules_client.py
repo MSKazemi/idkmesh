@@ -196,11 +196,13 @@ class JulesClient:
             raise ValueError("path must start with '/'")
         if "://" in path:
             raise ValueError("path must be relative to the configured Jules base URL")
+        if "?" in path or "#" in path:
+            raise ValueError("path must not contain query or fragment components")
 
         url = self._base_url + path
         if query:
             encoded: dict[str, str | int] = {}
-            for key, value in query.items():
+            for key, value in sorted(query.items()):
                 if not isinstance(key, str) or not key:
                     raise ValueError("query keys must be non-empty strings")
                 if isinstance(value, bool) or not isinstance(value, (str, int)):
@@ -274,6 +276,29 @@ class JulesClient:
                 message="Jules transport is unavailable.",
                 connection_id=self._connection_id,
             ) from exc
+
+        if (
+            isinstance(response.status, bool)
+            or not isinstance(response.status, int)
+            or not 100 <= response.status <= 599
+        ):
+            raise ConnectorError(
+                code="result_normalization_error",
+                message="Jules transport returned an invalid HTTP status.",
+                connection_id=self._connection_id,
+            )
+        if not isinstance(response.body, bytes):
+            raise ConnectorError(
+                code="result_normalization_error",
+                message="Jules transport returned a non-byte response body.",
+                connection_id=self._connection_id,
+            )
+        if len(response.body) > self._max_response_bytes:
+            raise ConnectorError(
+                code="result_normalization_error",
+                message="Jules response exceeded the configured safety boundary.",
+                connection_id=self._connection_id,
+            )
 
         if not 200 <= response.status < 300:
             raise self._http_error(response)
