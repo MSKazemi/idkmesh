@@ -11,7 +11,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 CONFIG = ROOT / "config" / "seo-topics-v1.json"
 OUTPUT = ROOT / "docs" / "questions.md"
 
-QUESTION_RE = re.compile(r"^### (.+\?)$", re.MULTILINE)
+QUESTION_RE = re.compile(r"^### (.+\?) \\{#([a-z0-9][a-z0-9-]*)\\}$", re.MULTILINE)
 
 
 class QuestionIndexError(ValueError):
@@ -29,16 +29,26 @@ def question_entries() -> list[dict[str, object]]:
 
     for cluster in payload["clusters"]:
         source = ROOT / cluster["path"]
-        questions = QUESTION_RE.findall(source.read_text(encoding="utf-8"))
-        if len(questions) != 10:
+        rows = QUESTION_RE.findall(source.read_text(encoding="utf-8"))
+        if len(rows) != 10:
             raise QuestionIndexError(
-                f"{cluster['id']}: expected 10 questions, found {len(questions)}"
+                f"{cluster['id']}: expected 10 anchored questions, found {len(rows)}"
             )
 
-        for question in questions:
+        questions: list[str] = []
+        anchors: list[str] = []
+        for index, (question, anchor) in enumerate(rows, start=1):
+            expected_anchor = f"q-{cluster['id']}-{index:02d}"
+            if anchor != expected_anchor:
+                raise QuestionIndexError(
+                    f"{cluster['id']}: expected anchor {expected_anchor!r}, "
+                    f"found {anchor!r}"
+                )
             if question in seen:
                 raise QuestionIndexError(f"duplicate question: {question}")
             seen.add(question)
+            questions.append(question)
+            anchors.append(anchor)
 
         entries.append(
             {
@@ -46,6 +56,7 @@ def question_entries() -> list[dict[str, object]]:
                 "title": cluster["title"],
                 "url": cluster["url"],
                 "questions": questions,
+                "anchors": anchors,
             }
         )
 
@@ -94,8 +105,8 @@ def render() -> str:
                 "",
             ]
         )
-        for question in entry["questions"]:
-            lines.append(f"{number}. [{question}]({entry['url']})")
+        for question, anchor in zip(entry["questions"], entry["anchors"], strict=True):
+            lines.append(f"{number}. [{question}]({entry['url']}#{anchor})")
             number += 1
         lines.append("")
 
@@ -104,7 +115,7 @@ def render() -> str:
             "## How this map is maintained",
             "",
             "- The ten topic pages remain the answer sources; this page only indexes them.",
-            "- A question appears here only if it is an actual `### ...?` heading on a topic page.",
+            "- A question appears here only if it is an actual anchored `### ...? {#q-...}` heading on a topic page.",
             "- CI requires exactly 100 unique questions across exactly ten topic clusters.",
             "- Exact-match keyword repetition and one-page-per-query doorway patterns are intentionally avoided.",
             "- Search visibility is measured separately from crawlability; see the",
