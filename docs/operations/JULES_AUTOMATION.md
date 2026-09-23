@@ -87,9 +87,11 @@ The system is event-first; schedules are recovery mechanisms.
 
 **Automatic fast path — event driven.** The Issue Model Router runs when an
 issue is opened, edited, or reopened. When its deterministic policy emits
-`agent:jules-eligible`, the router explicitly invokes
-`jules-dispatch.yml` with `workflow_dispatch.issue_number`. This explicit
-handoff is important because GitHub normally suppresses recursive workflow
+`agent:jules-eligible`, the router calls `jules-dispatch.yml` as a local reusable
+workflow and passes the typed `workflow_call.issue_number` input. GitHub validates
+that caller/callee input contract before execution, so removing or renaming the
+input breaks CI instead of silently disconnecting Jules. This explicit handoff
+also avoids relying on recursive workflow
 starts caused by mutations made with `GITHUB_TOKEN`.
 
 **Manual fast path — event driven.** Adding `agent-ready` directly triggers
@@ -265,10 +267,25 @@ No Jules task auto-merges `main`.
 
 ## Failure and recovery runbook
 
+### Contract-drift prevention
+
+The required PR Gate runs `python tools/check_jules_contract.py` before dependency
+installation. The guard fails if the router and dispatcher stop sharing the same
+typed reusable-workflow input, if routing/dispatch label policies diverge, if the
+automatic trust boundary is weakened, or if the dispatcher gains pull-request
+write authority. The router also derives its Jules queue label from policy rather
+than embedding a second code literal.
+
+Because the router calls the dispatcher through `workflow_call`, GitHub validates
+the caller/callee input name at workflow-graph construction time. Together, the
+GitHub type check plus the repository contract guard make the regression that
+occurred in PR #765 a merge-blocking failure instead of a latent runtime outage.
+
+
 ### `agent:jules-eligible` exists but dispatch never starts
 
-1. inspect the Issue Model Router run and confirm its explicit
-   `workflow_dispatch.issue_number` handoff succeeded;
+1. inspect the Issue Model Router run and confirm the reusable-workflow
+   `workflow_call.issue_number` handoff succeeded;
 2. verify the issue author association is `OWNER`, `MEMBER`, or
    `COLLABORATOR`;
 3. check hard-veto and `agent:jules-needs-attention` labels;
