@@ -71,8 +71,8 @@ class SEOTopicCoverageTests(unittest.TestCase):
             links = re.findall(r"\[[^\]]+\]\(([^)]+)\)", body)
             if len(words) < 400:
                 failures.append(f"{source.name}: only {len(words)} words")
-            if len(questions) < 4:
-                failures.append(f"{source.name}: only {len(questions)} question headings")
+            if len(questions) < 10:
+                failures.append(f"{source.name}: expected 10 question headings, got {len(questions)}")
             if len(links) < 4:
                 failures.append(f"{source.name}: only {len(links)} links")
             if not frontmatter.get("title"):
@@ -85,6 +85,14 @@ class SEOTopicCoverageTests(unittest.TestCase):
             if "https://mskazemi.com/idkmesh/topics/" not in body:
                 failures.append(f"{source.name}: missing topic-hub link")
         self.assertEqual([], failures)
+
+    def test_exactly_one_hundred_unique_conversational_questions(self) -> None:
+        questions: list[str] = []
+        for cluster in self.clusters:
+            text = (ROOT / cluster["path"]).read_text(encoding="utf-8")
+            questions.extend(re.findall(r"^### (.+\\?)$", text, flags=re.MULTILINE))
+        self.assertEqual(100, len(questions))
+        self.assertEqual(100, len(set(questions)))
 
     def test_topic_hub_links_every_cluster(self) -> None:
         hub = HUB.read_text(encoding="utf-8")
