@@ -47,6 +47,8 @@ VALID_AGAINST = {
     "examples/compute-offers/free-pool.example.json": "compute-offer-pool-v0.1.schema.json",
     "examples/domain-packs/software-engineering-v0.1.domain-pack.json": "domain-pack.schema.json",
     "examples/experiments/phase0-smoke.manifest.json": "experiment-manifest-v0.1.schema.json",
+    "examples/enterprise/g1-github-native.example.json": "enterprise-control-profile-v0.1.schema.json",
+    "examples/enterprise/g2-self-hosted.example.json": "enterprise-control-profile-v0.1.schema.json",
     # Invalid by graph semantics (a cycle), not by structure.
     "examples/idkgraph.invalid-cycle.json": "idkgraph.schema.json",
     "examples/gate-audit/gate-audit-report.example.json": "gate-audit-report-v0.1.schema.json",
