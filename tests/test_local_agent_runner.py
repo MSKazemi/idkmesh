@@ -33,7 +33,9 @@ class LocalAgentRunnerTests(unittest.TestCase):
         (self.repo / "hello.txt").write_text("base\n", encoding="utf-8")
         subprocess.run(("git", "-C", str(self.repo), "add", "hello.txt"), check=True)
         subprocess.run(
-            ("git", "-C", str(self.repo), "commit", "-q", "-m", "base"), check=True
+            ("git", "-C", str(self.repo), "commit", "-q", "-m", "base"),
+            check=True,
+            env={**os.environ, "GIT_IDENTITY_OK": "1"},
         )
         self.sha = resolve_exact_revision(self.repo, "HEAD")
 
@@ -81,6 +83,22 @@ class LocalAgentRunnerTests(unittest.TestCase):
         self.assertTrue(result.stdout_truncated)
         self.assertLessEqual(len(result.stdout.encode()), 40)
 
+    def test_both_output_streams_are_drained_and_capped(self):
+        result = run_bounded_process(
+            (
+                sys.executable,
+                "-c",
+                "import os; os.write(1, b'x' * 2000000); os.write(2, b'y' * 2000000)",
+            ),
+            cwd=self.repo,
+            limits=ProcessLimits(timeout_seconds=10, max_output_bytes=97),
+        )
+        self.assertEqual(result.returncode, 0)
+        self.assertEqual(len(result.stdout.encode()), 97)
+        self.assertEqual(len(result.stderr.encode()), 97)
+        self.assertTrue(result.stdout_truncated)
+        self.assertTrue(result.stderr_truncated)
+
     def test_process_timeout_is_normalized(self):
         result = run_bounded_process(
             (sys.executable, "-c", "import time; time.sleep(2)"),
@@ -105,6 +123,38 @@ class LocalAgentRunnerTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0)
         self.assertIn(hostile, result.stdout)
         self.assertFalse(marker.exists())
+
+    def test_oversized_stdin_fails_before_process_start(self):
+        marker = Path(self.temp.name) / "started"
+        with self.assertRaisesRegex(LocalRunnerError, "max_stdin_bytes"):
+            run_bounded_process(
+                (sys.executable, "-c", f"open({str(marker)!r}, 'w').close()"),
+                cwd=self.repo,
+                stdin_text="abcd",
+                limits=ProcessLimits(max_stdin_bytes=3),
+            )
+        self.assertFalse(marker.exists())
+
+    def test_limits_reject_boolean_non_finite_and_non_integer_values(self):
+        for kwargs in (
+            {"timeout_seconds": True},
+            {"timeout_seconds": float("inf")},
+            {"timeout_seconds": float("nan")},
+            {"max_output_bytes": True},
+            {"max_output_bytes": 1.5},
+            {"max_stdin_bytes": 0},
+        ):
+            with self.subTest(kwargs=kwargs):
+                with self.assertRaises(ValueError):
+                    ProcessLimits(**kwargs)
+
+    def test_environment_names_and_values_are_validated(self):
+        for name in ("bad-name", "A=B", ""):
+            with self.subTest(name=name):
+                with self.assertRaises(LocalRunnerError):
+                    minimal_environment((name,), {})
+        with self.assertRaises(LocalRunnerError):
+            minimal_environment(("SAFE",), {"SAFE": "bad\x00value"})
 
     def test_result_is_json_safe(self):
         result = run_bounded_process(

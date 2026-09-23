@@ -13,11 +13,15 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass
 import json
+import math
 import os
 from pathlib import Path
+import re
+import signal
 import shutil
 import subprocess
 import tempfile
+import threading
 import time
 from typing import Iterable, Mapping
 
@@ -30,12 +34,20 @@ class LocalRunnerError(RuntimeError):
 class ProcessLimits:
     timeout_seconds: float = 300.0
     max_output_bytes: int = 1_000_000
+    max_stdin_bytes: int = 1_000_000
 
     def __post_init__(self) -> None:
-        if self.timeout_seconds <= 0:
-            raise ValueError("timeout_seconds must be positive")
-        if self.max_output_bytes < 1:
-            raise ValueError("max_output_bytes must be positive")
+        if (
+            isinstance(self.timeout_seconds, bool)
+            or not isinstance(self.timeout_seconds, (int, float))
+            or not math.isfinite(self.timeout_seconds)
+            or self.timeout_seconds <= 0
+        ):
+            raise ValueError("timeout_seconds must be a finite positive number")
+        for name in ("max_output_bytes", "max_stdin_bytes"):
+            value = getattr(self, name)
+            if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+                raise ValueError(f"{name} must be a positive integer")
 
 
 @dataclass(frozen=True)
@@ -168,20 +180,62 @@ def minimal_environment(
     source_env = os.environ if source is None else source
     result = {"PATH": source_env.get("PATH", os.defpath)}
     for name in allowed_names:
+        if not isinstance(name, str) or re.fullmatch(r"[A-Z_][A-Z0-9_]*", name) is None:
+            raise LocalRunnerError(f"invalid environment allowlist name: {name!r}")
         if name == "PATH":
             continue
         if name in source_env:
-            result[name] = source_env[name]
+            value = source_env[name]
+            if not isinstance(value, str) or "\x00" in value:
+                raise LocalRunnerError(f"invalid environment value for {name}")
+            result[name] = value
     return result
 
 
-def _bounded_text(data: bytes | str | None, limit: int) -> tuple[str, bool]:
-    if data is None:
-        return "", False
-    raw = data.encode("utf-8", errors="replace") if isinstance(data, str) else data
-    truncated = len(raw) > limit
-    bounded = raw[:limit]
-    return bounded.decode("utf-8", errors="replace"), truncated
+def _drain_bounded(
+    pipe,
+    limit: int,
+    chunks: list[bytes],
+    truncated: list[bool],
+) -> None:
+    """Drain a pipe without allowing retained output to exceed ``limit``."""
+    retained = 0
+    try:
+        while True:
+            chunk = pipe.read(64 * 1024)
+            if not chunk:
+                break
+            remaining = limit - retained
+            if remaining > 0:
+                kept = chunk[:remaining]
+                chunks.append(kept)
+                retained += len(kept)
+            if len(chunk) > remaining:
+                truncated[0] = True
+    finally:
+        pipe.close()
+
+
+def _write_stdin(pipe, data: bytes) -> None:
+    try:
+        pipe.write(data)
+        pipe.flush()
+    except (BrokenPipeError, OSError):
+        pass
+    finally:
+        pipe.close()
+
+
+def _terminate_process(process: subprocess.Popen[bytes]) -> None:
+    if process.poll() is not None:
+        return
+    if os.name == "posix":
+        try:
+            os.killpg(process.pid, signal.SIGKILL)
+            return
+        except ProcessLookupError:
+            return
+    process.kill()
 
 
 def run_bounded_process(
@@ -205,51 +259,66 @@ def run_bounded_process(
 
     active_limits = limits or ProcessLimits()
     active_env = dict(env or minimal_environment(()))
+    stdin_bytes = None if stdin_text is None else stdin_text.encode("utf-8")
+    if stdin_bytes is not None and len(stdin_bytes) > active_limits.max_stdin_bytes:
+        raise LocalRunnerError("stdin exceeds max_stdin_bytes")
+
     started = time.monotonic()
+    process = subprocess.Popen(
+        command,
+        cwd=workdir,
+        env=active_env,
+        stdin=subprocess.PIPE if stdin_bytes is not None else subprocess.DEVNULL,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        shell=False,
+        start_new_session=os.name == "posix",
+    )
+    assert process.stdout is not None and process.stderr is not None
+    stdout_chunks: list[bytes] = []
+    stderr_chunks: list[bytes] = []
+    stdout_truncated = [False]
+    stderr_truncated = [False]
+    readers = (
+        threading.Thread(
+            target=_drain_bounded,
+            args=(process.stdout, active_limits.max_output_bytes, stdout_chunks, stdout_truncated),
+            daemon=True,
+        ),
+        threading.Thread(
+            target=_drain_bounded,
+            args=(process.stderr, active_limits.max_output_bytes, stderr_chunks, stderr_truncated),
+            daemon=True,
+        ),
+    )
+    for reader in readers:
+        reader.start()
+    if stdin_bytes is not None:
+        assert process.stdin is not None
+        threading.Thread(
+            target=_write_stdin,
+            args=(process.stdin, stdin_bytes),
+            daemon=True,
+        ).start()
+
+    timed_out = False
     try:
-        completed = subprocess.run(
-            command,
-            cwd=workdir,
-            env=active_env,
-            input=None if stdin_text is None else stdin_text.encode("utf-8"),
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            check=False,
-            timeout=active_limits.timeout_seconds,
-            shell=False,
-        )
-        duration = time.monotonic() - started
-        stdout, stdout_truncated = _bounded_text(
-            completed.stdout, active_limits.max_output_bytes
-        )
-        stderr, stderr_truncated = _bounded_text(
-            completed.stderr, active_limits.max_output_bytes
-        )
-        return ProcessResult(
-            argv=command,
-            returncode=completed.returncode,
-            timed_out=False,
-            duration_seconds=round(duration, 6),
-            stdout=stdout,
-            stderr=stderr,
-            stdout_truncated=stdout_truncated,
-            stderr_truncated=stderr_truncated,
-        )
-    except subprocess.TimeoutExpired as exc:
-        duration = time.monotonic() - started
-        stdout, stdout_truncated = _bounded_text(
-            exc.stdout, active_limits.max_output_bytes
-        )
-        stderr, stderr_truncated = _bounded_text(
-            exc.stderr, active_limits.max_output_bytes
-        )
-        return ProcessResult(
-            argv=command,
-            returncode=None,
-            timed_out=True,
-            duration_seconds=round(duration, 6),
-            stdout=stdout,
-            stderr=stderr,
-            stdout_truncated=stdout_truncated,
-            stderr_truncated=stderr_truncated,
-        )
+        process.wait(timeout=active_limits.timeout_seconds)
+    except subprocess.TimeoutExpired:
+        timed_out = True
+        _terminate_process(process)
+        process.wait()
+    for reader in readers:
+        reader.join()
+
+    duration = time.monotonic() - started
+    return ProcessResult(
+        argv=command,
+        returncode=None if timed_out else process.returncode,
+        timed_out=timed_out,
+        duration_seconds=round(duration, 6),
+        stdout=b"".join(stdout_chunks).decode("utf-8", errors="replace"),
+        stderr=b"".join(stderr_chunks).decode("utf-8", errors="replace"),
+        stdout_truncated=stdout_truncated[0],
+        stderr_truncated=stderr_truncated[0],
+    )
