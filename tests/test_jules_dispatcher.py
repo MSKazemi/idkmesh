@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from datetime import datetime, timezone
+import json
 from pathlib import Path
 
 import pytest
@@ -536,6 +537,21 @@ def test_repository_policy_keeps_speed_and_hard_vetoes_explicit():
     assert policy["max_in_flight"] == 4
     assert policy["max_dispatch_per_sweep"] == 2
     assert "agent:jules-needs-attention" in policy["blocked_labels"]
+
+
+def test_model_routing_policy_uses_dispatcher_label_contract():
+    dispatch_policy = jd.load_policy(REPO_ROOT / "config" / "jules-dispatch.json")
+    routing_policy = json.loads(
+        (REPO_ROOT / "config" / "llm-routing-policy.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    jules = routing_policy["provider_examples"]["jules"]
+
+    assert jules["queue_label"] == dispatch_policy["automatic_queue_label"]
+    assert jules["execution_status_label"] == dispatch_policy["dispatch_label"]
+    assert jules["attention_label"] == dispatch_policy["attention_label"]
+    assert jules["manual_fallback_label"] == "jules"
 
 
 def test_workflow_and_router_share_the_same_dispatch_contract():
