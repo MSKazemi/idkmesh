@@ -1,0 +1,156 @@
+{
+  "profile_inline_secret": {
+    "api_version": "idkmesh.io/v1alpha1",
+    "id": "unsafe-agent",
+    "kind": "agent",
+    "driver": "fake-agent",
+    "enabled": true,
+    "settings": {
+      "api_key": "sentinel-must-never-render"
+    }
+  },
+  "profile_secret_ref_outside_auth": {
+    "api_version": "idkmesh.io/v1alpha1",
+    "id": "unsafe-ref",
+    "kind": "agent",
+    "driver": "fake-agent",
+    "enabled": true,
+    "settings": {
+      "secret_ref": "env:ILLEGAL_LOCATION"
+    }
+  },
+  "profile_t4_overclaim": {
+    "api_version": "idkmesh.io/v1alpha1",
+    "id": "overclaiming-agent",
+    "kind": "agent",
+    "driver": "fake-agent",
+    "enabled": true,
+    "capabilities": {
+      "tiers": ["T4"],
+      "task_classes": ["coder"],
+      "tools": ["git"]
+    },
+    "policy": {
+      "external_processing": false,
+      "project_spend_usd_max": 5
+    }
+  },
+  "profile_missing_secret": {
+    "api_version": "idkmesh.io/v1alpha1",
+    "id": "secret-agent",
+    "kind": "agent",
+    "driver": "fake-agent",
+    "enabled": true,
+    "auth": {
+      "secret_ref": "env:UNRESOLVED_PROVIDER_KEY"
+    },
+    "capabilities": {
+      "tiers": ["T1"],
+      "task_classes": ["coder"],
+      "tools": ["git"]
+    },
+    "policy": {
+      "external_processing": false,
+      "project_spend_usd_max": 0
+    }
+  },
+  "profile_disabled": {
+    "api_version": "idkmesh.io/v1alpha1",
+    "id": "disabled-agent",
+    "kind": "agent",
+    "driver": "fake-agent",
+    "enabled": false,
+    "capabilities": {
+      "tiers": ["T1"],
+      "task_classes": ["coder"],
+      "tools": ["git"]
+    }
+  },
+  "profile_duplicate_ids": [
+    {
+      "api_version": "idkmesh.io/v1alpha1",
+      "id": "duplicate",
+      "kind": "agent",
+      "driver": "fake-agent",
+      "enabled": true
+    },
+    {
+      "api_version": "idkmesh.io/v1alpha1",
+      "id": "duplicate",
+      "kind": "execution",
+      "driver": "fake-execution",
+      "enabled": true
+    }
+  ],
+  "profile_fake_model": {
+    "api_version": "idkmesh.io/v1alpha1",
+    "id": "model-a",
+    "kind": "model",
+    "driver": "fake-model",
+    "enabled": true,
+    "capabilities": {
+      "tiers": ["T1", "T2", "T3"],
+      "task_classes": ["inference"],
+      "tools": []
+    },
+    "policy": {
+      "external_processing": true,
+      "project_spend_usd_max": 5
+    }
+  },
+  "decision_t4": {
+    "required_capability_tier": "T4",
+    "authority_mode": "agent_candidate",
+    "risk_class": "low",
+    "task_classes": ["coder"],
+    "required_tools": ["git"],
+    "allowed_connector_kinds": ["agent"],
+    "external_processing_allowed": true,
+    "project_spend_usd_max": 0
+  },
+  "decision_high_risk": {
+    "required_capability_tier": "T1",
+    "authority_mode": "agent_candidate",
+    "risk_class": "high",
+    "task_classes": ["coder"],
+    "required_tools": ["git"],
+    "allowed_connector_kinds": ["agent"],
+    "external_processing_allowed": true,
+    "project_spend_usd_max": 0
+  },
+  "decision_no_external": {
+    "required_capability_tier": "T1",
+    "authority_mode": "agent_candidate",
+    "risk_class": "low",
+    "task_classes": ["inference"],
+    "required_tools": [],
+    "allowed_connector_kinds": ["model"],
+    "external_processing_allowed": false,
+    "project_spend_usd_max": 0
+  },
+  "decision_zero_spend": {
+    "required_capability_tier": "T1",
+    "authority_mode": "agent_candidate",
+    "risk_class": "low",
+    "task_classes": ["coder"],
+    "required_tools": ["git"],
+    "allowed_connector_kinds": ["agent"],
+    "external_processing_allowed": true,
+    "project_spend_usd_max": 0
+  },
+  "decision_secret_injection": {
+    "required_capability_tier": "T1",
+    "authority_mode": "agent_candidate",
+    "secret_ref": "env:SHOULD_NOT_BE_ACCEPTED"
+  },
+  "decision_executable_injection": {
+    "required_capability_tier": "T1",
+    "authority_mode": "agent_candidate",
+    "executable": "/bin/sh"
+  },
+  "decision_negative_scope_text": {
+    "required_capability_tier": "T1",
+    "authority_mode": "agent_candidate",
+    "task_text": "do not change security or permissions"
+  }
+}

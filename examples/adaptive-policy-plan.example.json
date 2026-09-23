@@ -1,0 +1,90 @@
+{
+  "schema_version": "0.1",
+  "kind": "idkmesh-adaptive-policy-plan",
+  "planner_version": "0.1",
+  "mode": "shadow",
+  "plan_id": "adaptive-plan-ave-core-111111111111",
+  "subsystem": "verification-allocation",
+  "binding": {
+    "repository": "MSKazemi/idkmesh",
+    "source_revision_sha": "1111111111111111111111111111111111111111",
+    "captured_at": "2026-09-22T12:00:00Z",
+    "input_digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+    "input_refs": [
+      "illustrative-work-unit:wu-example"
+    ]
+  },
+  "policy": {
+    "id": "ave-core",
+    "version": "0.1",
+    "maturity": "N2"
+  },
+  "hard_gates": [
+    {
+      "id": "evaluator-sovereignty",
+      "status": "pass",
+      "reason": "illustrative example: evaluator is independently owned"
+    },
+    {
+      "id": "work-unit-binding",
+      "status": "pass",
+      "reason": "illustrative example: source revision is exact-bound"
+    }
+  ],
+  "eligible_choices": [
+    {
+      "id": "baseline-single-verifier",
+      "class": "verifier-portfolio",
+      "reasons": [
+        "illustrative deterministic baseline"
+      ],
+      "metrics": {
+        "family_count": 1,
+        "review_units": 1
+      }
+    },
+    {
+      "id": "two-family-portfolio",
+      "class": "verifier-portfolio",
+      "reasons": [
+        "illustrative family-diverse alternative"
+      ],
+      "metrics": {
+        "family_count": 2,
+        "review_units": 2
+      }
+    }
+  ],
+  "recommendation": {
+    "selected_choice_id": "two-family-portfolio",
+    "baseline_choice_id": "baseline-single-verifier",
+    "exploration": false,
+    "reasons": [
+      "illustrative only; no empirical recommendation"
+    ],
+    "uncertainty": 0.5,
+    "expected_cost": {
+      "project_spend_usd": 0,
+      "compute_units": 0,
+      "review_units": 2,
+      "human_attention_units": null
+    }
+  },
+  "evidence_refs": [
+    "illustrative-example-only"
+  ],
+  "limitations": [
+    "Synthetic example; not a recommendation about any real WorkUnit."
+  ],
+  "authority": {
+    "advisory_only": true,
+    "dispatch": false,
+    "execute": false,
+    "approve": false,
+    "merge": false,
+    "repository_write": false,
+    "relax_hard_gates": false,
+    "modify_required_verification": false,
+    "authorize_project_spend": false
+  }
+}

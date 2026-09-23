@@ -55,7 +55,7 @@ some unrelated page but missing from its own index stays invisible.
   `experiments/local_verifier.py` fails with an actionable message when the
   extra is missing. *(2026-09-21.)*
 
-- [ADR-0013 — One API Architecture, Separate Authority Boundaries](ADR-0013-one-api-architecture-separate-authority.md)
+- [ADR-0016 — One API Architecture, Separate Authority Boundaries](ADR-0016-one-api-architecture-separate-authority.md)
   — adopts one canonical domain/application-service API architecture, `/api/v1`
   product namespace, separate local/network security profiles, and an explicit
   boundary between human decision recording and integration execution.
@@ -63,7 +63,18 @@ some unrelated page but missing from its own index stays invisible.
 
 ## Proposed and experimental
 
+- [ADR-0013 — GitHub-First, Server-Optional Deployment](ADR-0013-github-first-server-optional-deployment.md)
+  — makes the target GitHub repository the default control plane for the first external-project product profile, with a durable Git-native run ledger and an evidence-gated path to an optional service only when scale/latency/tenancy requires it. *(Proposed for adoption, 2026-09-22.)*
+
+
 These record a default hypothesis the project builds on, not a settled contract.
+
+- [ADR-0014 — Enterprise Controls Are an Overlay; G0 Remains the Default](ADR-0014-enterprise-control-plane-baseline.md)
+  — keeps GitHub-first G0/G1 as the normal product path while making enterprise
+  tenancy, identity, audit, recovery, supply-chain, and optional G2/G3 service
+  controls explicit and evidence-gated. *(Proposed for adoption, 2026-09-22.)*
+- [ADR-0015 — Normalize Candidate Identity into ResultManifest Without Pretending Reference Digests Are Content Verification](ADR-0015-candidate-reference-result-manifest-normalization.md)
+  — keeps ResultManifest v0.1 provider-neutral by hashing the canonical CandidateReference envelope, explicitly separating candidate identity from byte-level verification. *(Proposed / experimental, 2026-09-23.)*
 
 - [ADR-0002 — Fractal Autonomous Cells for Scalability](ADR-0002-fractal-autonomous-cells.md)
   — adopts `node -> cell -> fabric/region -> global federation` as the default
@@ -80,6 +91,10 @@ These record a default hypothesis the project builds on, not a settled contract.
   — when an action lies outside the current actor's authority, the system must
   fail open in communication but fail closed in authority, rather than treating a
   recommendation as if the external control existed. *(Proposed, 2026-08-28.)*
+- [ADR-0013 — Separate Provider Completion from Candidate Readiness](ADR-0013-provider-completion-candidate-readiness.md)
+  — provider/worker completion is only an execution observation; `candidate_ready`
+  requires a separately normalized, immutable candidate reference. *(Proposed,
+  2026-09-23.)*
 
 ## Numbering integrity
 
@@ -101,3 +116,4 @@ owner's call.
    supersedes the other. `DECISIONS.md` cites only ADR-0009.
 
 There is also no ADR-0001; the sequence begins at 0002.
+- [ADR-0013: Cross-disciplinary policies behind hard gates](ADR-0013-cross-disciplinary-policies-behind-hard-gates.md)

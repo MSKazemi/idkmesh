@@ -26,7 +26,7 @@ implementation starts.
 
 | Requirement | Existing owner / source | API integration owner | Release evidence |
 | --- | --- | --- | --- |
-| one product HTTP namespace | ADR-0013 / planning PR #749 | #736 #738 | specs agree on `/api/v1`; no undocumented competing namespace |
+| one product HTTP namespace | ADR-0016 / planning PR #749 | #736 #738 | specs agree on `/api/v1`; no undocumented competing namespace |
 | URL/object version rules | API conventions baseline | #736 | accepted lifecycle/version spec |
 | stable error envelope/codes | Control Tower draft + conventions | #736 #737 | error schema + runtime conformance + compatibility test |
 | public object schemas | existing domain schemas | #737 | all public refs resolve and runtime examples validate |
@@ -44,7 +44,7 @@ implementation starts.
 | candidate/result identity | #579 / ResultManifest contracts | #738 #739 | exact candidate/result digest visible |
 | verification/evidence | verifier contracts / Run Evidence Report | #739 | evidence resource retains raw provenance |
 | human decision | Human Decision Record schema / #682 | #740 | immutable digest-bound decision |
-| integration execution | GitHub protected authority / ADR-0013 | future separate owner | no decision API merges/pushes |
+| integration execution | GitHub protected authority / ADR-0016 | future separate owner | no decision API merges/pushes |
 
 ## Read/query ergonomics
 
@@ -80,7 +80,7 @@ implementation starts.
 | separation of duties | #598 #670 | #740 #743 | self-approval/high-risk negative tests |
 | stale/revoked identity | #670 | #743 | freshness/revocation tests |
 | GitHub governance/secret gate | #607 | #743 | protected/secret-bearing preflight evidence |
-| integration authority separation | ADR-0013 / GitHub rules | #738 #740 | decision endpoint lacks merge/push authority |
+| integration authority separation | ADR-0016 / GitHub rules | #738 #740 | decision endpoint lacks merge/push authority |
 
 ## Data, secrets, privacy
 

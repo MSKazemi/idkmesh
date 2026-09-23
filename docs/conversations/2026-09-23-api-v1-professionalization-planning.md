@@ -80,7 +80,7 @@ Issue #736 owns review and final freezing of this baseline.
 
 ### Architecture decision
 
-`docs/decisions/ADR-0013-one-api-architecture-separate-authority.md`
+`docs/decisions/ADR-0016-one-api-architecture-separate-authority.md`
 
 Records the decision to use one API architecture, `/api/v1` as the intended
 product namespace, shared domain/application services, separate local/network

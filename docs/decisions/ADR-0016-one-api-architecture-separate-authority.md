@@ -1,4 +1,4 @@
-# ADR-0013 — One API Architecture, Separate Authority Boundaries
+# ADR-0016 — One API Architecture, Separate Authority Boundaries
 
 **Status:** Accepted for API planning and implementation  
 **Date:** 2026-09-23

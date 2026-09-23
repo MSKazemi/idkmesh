@@ -114,7 +114,7 @@ Consider:
 
 | Threat | Example | Required mitigation/owner |
 | --- | --- | --- |
-| authority confusion | verifier recommendation treated as merge approval | ADR-0013, #738, #740 |
+| authority confusion | verifier recommendation treated as merge approval | ADR-0016, #738, #740 |
 | auth bypass | network mutation accepts localhost token | #743 + #670 |
 | horizontal access | project A reads project B run | #743, scoped resource model #739 |
 | vertical escalation | worker calls integration action | #670/#743 scope matrix |
