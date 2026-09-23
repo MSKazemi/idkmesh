@@ -7,6 +7,7 @@ modules so it can be tested and embedded without a process boundary.
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import sys
 from pathlib import Path
@@ -43,7 +44,7 @@ def build_parser() -> argparse.ArgumentParser:
         description=(
             "Read a verdict-matrix JSON document (see "
             "docs/specifications/GATE_AUDIT_V0_1.md), compute per-verifier "
-            "accuracy, pairwise error correlation, panel error, effective "
+            "verifier panel accuracy, pairwise error correlation, panel error, effective "
             "votes and probe breach rate, and emit a gate-audit-report-v0.1 "
             "JSON document. The audit consumes verdicts; it never runs a gate "
             "and never grants acceptance."),
@@ -123,6 +124,43 @@ def build_parser() -> argparse.ArgumentParser:
         help=(
             "confidence level in (0, 1); requires --bootstrap "
             "(default: 0.95)"))
+    connections = sub.add_parser(
+        "connections",
+        help="validate or list connector profile configuration",
+        description=(
+            "Inspect connector configuration only. These commands do not "
+            "probe providers, materialize secrets, dispatch work, or grant "
+            "repository authority."
+        ),
+    )
+    connection_sub = connections.add_subparsers(
+        dest="connections_command",
+        required=True,
+    )
+
+    validate = connection_sub.add_parser(
+        "validate",
+        help="validate a connector-profile JSON document",
+    )
+    validate.add_argument("profile", help="path to connector-profile JSON")
+    validate.add_argument(
+        "--json",
+        action="store_true",
+        dest="json_output",
+        help="emit deterministic machine-readable JSON",
+    )
+
+    list_cmd = connection_sub.add_parser(
+        "list",
+        help="list normalized connector metadata from a profile",
+    )
+    list_cmd.add_argument("profile", help="path to connector-profile JSON")
+    list_cmd.add_argument(
+        "--json",
+        action="store_true",
+        dest="json_output",
+        help="emit deterministic machine-readable JSON",
+    )
 
     gui = sub.add_parser(
         "gate-audit-ui",
@@ -196,8 +234,104 @@ def _write(path: str, text: str, what: str) -> int | None:
     return None
 
 
+def _connection_summary(config) -> dict[str, object]:
+    return {
+        "id": config.id,
+        "kind": config.kind,
+        "driver": config.driver,
+        "enabled": config.enabled,
+        "auth_ref_configured": config.secret_ref is not None,
+        "capability_tiers": sorted(config.capability_tiers),
+        "task_classes": sorted(config.task_classes),
+        "tools": sorted(config.tools),
+        "candidate_types": sorted(config.candidate_types),
+        "max_risk": config.max_risk,
+        "external_processing": config.external_processing,
+        "project_spend_usd_max": config.project_spend_usd_max,
+        "max_concurrency": config.max_concurrency,
+    }
+
+
+def _connections_error(exc, *, json_output: bool) -> int:
+    if json_output:
+        payload = {
+            "valid": False,
+            "error": {
+                "code": getattr(exc, "code", "connector_profile_error"),
+                "path": getattr(exc, "path", "$"),
+                "message": str(exc),
+            },
+        }
+        print(
+            json.dumps(payload, sort_keys=True, separators=(",", ":")),
+            file=sys.stderr,
+        )
+        return 2
+    return _fail(str(exc))
+
+
+def _run_connections(args: argparse.Namespace) -> int:
+    from idkmesh.connector_profiles import (
+        ConnectorProfileError,
+        load_connector_profile_document,
+    )
+
+    try:
+        configs = load_connector_profile_document(args.profile)
+    except ConnectorProfileError as exc:
+        return _connections_error(exc, json_output=args.json_output)
+
+    summaries = [_connection_summary(config) for config in configs]
+
+    if args.connections_command == "validate":
+        if args.json_output:
+            print(
+                json.dumps(
+                    {
+                        "valid": True,
+                        "count": len(summaries),
+                        "connections": summaries,
+                    },
+                    sort_keys=True,
+                    separators=(",", ":"),
+                )
+            )
+        else:
+            print(f"valid: {len(summaries)} connector profile(s)")
+            for item in summaries:
+                print(f"- {item['id']} ({item['kind']}/{item['driver']})")
+        return 0
+
+    if args.connections_command == "list":
+        if args.json_output:
+            print(
+                json.dumps(
+                    {
+                        "count": len(summaries),
+                        "connections": summaries,
+                    },
+                    sort_keys=True,
+                    separators=(",", ":"),
+                )
+            )
+        else:
+            print("id\tkind\tdriver\tenabled\ttiers\tmax_risk")
+            for item in summaries:
+                tiers = ",".join(item["capability_tiers"])
+                enabled = "yes" if item["enabled"] else "no"
+                print(
+                    f"{item['id']}\t{item['kind']}\t{item['driver']}\t"
+                    f"{enabled}\t{tiers}\t{item['max_risk']}"
+                )
+        return 0
+
+    return 2
+
+
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    if args.command == "connections":
+        return _run_connections(args)
     if args.command == "gate-audit-ui":
         if not (0 <= args.port <= 65535):
             return _fail("--port must be between 0 and 65535")
