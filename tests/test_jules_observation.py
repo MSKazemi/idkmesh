@@ -41,14 +41,15 @@ def _activity(**extra):
 
 
 class JulesObservationTests(unittest.TestCase):
-    def test_completed_maps_only_to_candidate_ready(self):
+    def test_completed_maps_only_to_worker_completed(self):
         observation = parse_session_observation(
             _session("COMPLETED", outputs=[{"pullRequest": {"url": "https://example"}}]),
             expected_session_name="sessions/123",
             connection_id="jules-main",
         )
-        self.assertEqual(observation.run_state, "candidate_ready")
+        self.assertEqual(observation.run_state, "worker_completed")
         self.assertEqual(observation.candidate_output_count, 1)
+        self.assertNotEqual(observation.run_state, "candidate_ready")
         self.assertNotEqual(observation.run_state, "verified")
         self.assertNotEqual(observation.run_state, "integrated")
 
