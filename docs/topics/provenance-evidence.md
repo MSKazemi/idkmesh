@@ -40,43 +40,43 @@ A review result becomes ambiguous if the candidate changes after evaluation. Goo
 
 ## Common questions
 
-### What is AI provenance?
+### What is AI provenance? {#q-provenance-evidence-01}
 
 It is the traceable record of origin, transformations, identities, artifacts, and evidence behind an AI-produced output or decision.
 
-### Why is model output provenance important?
+### Why is model output provenance important? {#q-provenance-evidence-02}
 
 Because a text claim that "tests passed" is weaker than an inspectable record showing which tests ran on which exact artifact under which environment.
 
-### What makes an AI workflow reproducible?
+### What makes an AI workflow reproducible? {#q-provenance-evidence-03}
 
 Pinned inputs and artifacts, deterministic checks where possible, recorded versions and identities, stable schemas, and commands or procedures another reviewer can rerun.
 
-### Is an audit log enough?
+### Is an audit log enough? {#q-provenance-evidence-04}
 
 Not if it only records events. Stronger evidence also binds those events to the exact data, candidate, and evaluation that support a conclusion.
 
-### Where are IDKMesh provenance contracts?
+### Where are IDKMesh provenance contracts? {#q-provenance-evidence-05}
 
 Start with the [schema index](https://github.com/MSKazemi/idkmesh/blob/main/schemas/README.md), [architecture](https://github.com/MSKazemi/idkmesh/blob/main/ARCHITECTURE.md), and [specifications](https://github.com/MSKazemi/idkmesh/tree/main/docs/specifications).
 
-### What metadata should an AI provenance record contain?
+### What metadata should an AI provenance record contain? {#q-provenance-evidence-06}
 
 Useful fields include task identity, worker/model identity, timestamps, input references, artifact hashes or commit SHAs, tool/environment versions, evaluator identity, checks performed, outcomes, and the integration decision.
 
-### How can I prove which model generated an artifact?
+### How can I prove which model generated an artifact? {#q-provenance-evidence-07}
 
 Record model/provider identity together with observable runtime or artifact evidence when available, and bind that identity to the exact ResultManifest or output digest rather than relying only on a host-side label.
 
-### How do you bind an evaluation to an exact Git commit?
+### How do you bind an evaluation to an exact Git commit? {#q-provenance-evidence-08}
 
 Store the immutable commit SHA or artifact digest in the evaluation record and require re-verification when the candidate revision changes.
 
-### What is the difference between logs and provenance?
+### What is the difference between logs and provenance? {#q-provenance-evidence-09}
 
 Logs record events. Provenance connects identities, inputs, outputs, transformations, and evidence into a traceable relationship that can support later verification.
 
-### How do you preserve AI evidence without leaking secrets?
+### How do you preserve AI evidence without leaking secrets? {#q-provenance-evidence-10}
 
 Store references, hashes, redacted metadata, and reproducible commands while excluding raw credentials and sensitive payloads. Secret values should remain in dedicated secret stores, not evidence documents.
 
