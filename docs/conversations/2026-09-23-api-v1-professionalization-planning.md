@@ -124,6 +124,7 @@ Created under #713:
 - #745 — conformance/fuzz/load/security qualification;
 - #746 — official Python/TypeScript clients + professional docs;
 - #747 — v1 beta release qualification.
+- #750 — durable API storage profiles, migrations, retention, and recovery.
 
 These issues explicitly reference existing owners where work is already
 assigned rather than creating replacement implementations.
