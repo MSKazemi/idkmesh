@@ -115,6 +115,19 @@ not freeze a user-agent string as a permanent protocol guarantee.
 - Brave Search crawler guidance (no differentiated user agent; Googlebot crawlability prerequisite):
   https://search.brave.com/help/brave-search-crawler
 
+## First-party webmaster measurement
+
+The account-owner workflow for Google Search Console and Bing Webmaster Tools is
+documented in
+[`WEBMASTER_TOOLS_MEASUREMENT_RUNBOOK.md`](WEBMASTER_TOOLS_MEASUREMENT_RUNBOOK.md).
+
+Use the URL-prefix / branch-scoped property
+`https://mskazemi.com/idkmesh/`, submit the canonical sitemap, inspect the
+eleven topic URLs, export query/page performance, and export Bing AI Performance
+citation/grounding data. Commit only normalized observations that satisfy the
+visibility evidence schema; do not commit account credentials or private
+account data.
+
 ## Visibility evidence loop
 
 Crawler eligibility is only the input. Actual visibility is recorded separately
