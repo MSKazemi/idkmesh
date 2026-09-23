@@ -4,6 +4,8 @@ This directory translates the long-range vision into current execution choices.
 
 ## Planning artifacts
 
+- [`API_V1_PROFESSIONALIZATION_PLAN_2026-09-23.md`](API_V1_PROFESSIONALIZATION_PLAN_2026-09-23.md) — canonical API program plan: completeness definition, deployment profiles, resource families, issue ownership, release gates, and v1 beta definition of done.
+- [`API_V1_ISSUE_DEPENDENCY_GRAPH_2026-09-23.md`](API_V1_ISSUE_DEPENDENCY_GRAPH_2026-09-23.md) — dependency/parallelism map for issues #735–#747 plus existing runtime, identity, persistence, Product Spine, connector, and Control Tower owners.
 - [`END_TO_END_PRODUCT_SPINE_PLAN_2026-09-22.md`](END_TO_END_PRODUCT_SPINE_PLAN_2026-09-22.md) — P0 integration plan for converging connector/routing, dispatch, candidate normalization, verification, human decision, GitHub durability, bootstrap, and release into one end-to-end product spine.
 - [`MODEL_TIER_DISPATCHER_EXECUTION_PLAN_2026-09-22.md`](MODEL_TIER_DISPATCHER_EXECUTION_PLAN_2026-09-22.md) — capability-tier, authority, connector-admission, escalation, GitHub-only state, and #574 implementation plan.
 - [`AGENT_MODEL_INTEGRATION_SELF_HOSTING_PLAN_2026-09-22.md`](AGENT_MODEL_INTEGRATION_SELF_HOSTING_PLAN_2026-09-22.md) — staged connector-control-plane roadmap: first use external agents/models to finish IDKMesh, then self-host repository development, then use the same product interfaces to build a second application.
