@@ -73,6 +73,10 @@ meaning of an existing version.
 - [Enterprise Tenant Scope v0.1](ENTERPRISE_TENANT_SCOPE_V0_1.md) —
   tenant/project-scoped resource, storage-key, and idempotency foundation with
   fail-closed cross-scope reference checks.
+- [Enterprise Authorization Kernel v0.1](ENTERPRISE_AUTHORIZATION_V0_1.md) —
+  strict ActorContext + RBAC/ABAC-style policy evaluation over exact tenant/project
+  resource scope, including identity freshness, data clearance, risk floors, and
+  distinct high-risk approval without executing the requested side effect.
 
 When modifying a contract, update its schema, fixtures, implementation, and
 tests together. Introduce a new explicit version when behavior changes; keep
