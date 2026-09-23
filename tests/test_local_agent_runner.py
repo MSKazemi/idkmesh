@@ -551,6 +551,32 @@ class LocalAgentRunnerTests(unittest.TestCase):
                 artifact_dir=self.repo / "results" / "agent",
             )
 
+        with self.assertRaisesRegex(LocalRunnerError, "must not contain the worker workspace"):
+            run_local_agent_preset(
+                self._test_preset(),
+                self._canonical_work_unit(),
+                source_revision=self.sha,
+                repository=self.repo,
+                sandbox=FakeSandbox(behavior=change),
+                limits=self._sandbox_limits(),
+                artifact_dir=Path(tempfile.gettempdir()),
+            )
+
+        unsafe_work_unit = self._canonical_work_unit(
+            allowed_paths=["dir\\escape.txt"],
+        )
+        unsafe_work_unit["permissions"]["filesystem_write"] = ["dir\\escape.txt"]
+        with self.assertRaisesRegex(LocalRunnerError, "unsafe WorkUnit allowed_paths"):
+            run_local_agent_preset(
+                self._test_preset(),
+                unsafe_work_unit,
+                source_revision=self.sha,
+                repository=self.repo,
+                sandbox=FakeSandbox(),
+                limits=self._sandbox_limits(),
+                artifact_dir=Path(self.temp.name) / "unsafe-path-artifacts",
+            )
+
     @unittest.skipUnless(os.name == "posix", "POSIX process-group cleanup test")
     def test_process_tree_cleanup_does_not_wait_for_background_child_pipes(self):
         started = __import__("time").monotonic()
