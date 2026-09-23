@@ -44,7 +44,7 @@ def build_parser() -> argparse.ArgumentParser:
         description=(
             "Read a verdict-matrix JSON document (see "
             "docs/specifications/GATE_AUDIT_V0_1.md), compute per-verifier "
-            "accuracy, pairwise error correlation, panel error, effective "
+            "verifier panel accuracy, pairwise error correlation, panel error, effective "
             "votes and probe breach rate, and emit a gate-audit-report-v0.1 "
             "JSON document. The audit consumes verdicts; it never runs a gate "
             "and never grants acceptance."),
