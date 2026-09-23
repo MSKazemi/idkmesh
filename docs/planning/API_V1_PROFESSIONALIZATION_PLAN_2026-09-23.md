@@ -343,7 +343,18 @@ Before implementing a new endpoint:
 9. docs/OpenAPI impact is specified;
 10. no duplicate canonical object is introduced.
 
-## 12. Release quality gates
+## 12. Security planning baseline
+
+The API threat model is documented in:
+
+`docs/security/API_THREAT_MODEL_V0_1.md`
+
+It separates local, GitHub-first, and network/multi-user trust boundaries and
+maps authority confusion, auth bypass, replay, CSRF/CORS, proxy ambiguity,
+webhook forgery, SSRF, storage tamper, and overload threats to their owning
+issues.
+
+## 13. Release quality gates
 
 ### Contract gate
 
@@ -392,7 +403,7 @@ Before implementing a new endpoint:
 - error catalog and limits documented;
 - migration/deprecation status visible.
 
-## 13. Definition of done for API v1 beta
+## 14. Definition of done for API v1 beta
 
 The first professional API beta is complete only when the exact beta scope has:
 
@@ -410,7 +421,7 @@ The first professional API beta is complete only when the exact beta scope has:
 The beta may intentionally exclude some future domains, but it must not leave
 the semantics of included domains implicit.
 
-## 14. What we deliberately do not do yet
+## 15. What we deliberately do not do yet
 
 - no autonomous merge API;
 - no worker/verifier self-approval;
@@ -420,7 +431,7 @@ the semantics of included domains implicit.
 - no hidden majority selection;
 - no duplicate evidence/run/decision models for different UIs/providers.
 
-## 15. Community impact
+## 16. Community impact
 
 This plan reduces “architecture by chat” and makes API work independently
 claimable. Contributors can pick one issue with bounded acceptance evidence
