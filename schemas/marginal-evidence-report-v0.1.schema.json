@@ -440,6 +440,54 @@
                 }
               }
             }
+          },
+          {
+            "if": {
+              "properties": {
+                "current_effective_votes": {
+                  "type": "null"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "delta_effective_votes": {
+                  "type": "null"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "augmented_effective_votes": {
+                  "type": "null"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "delta_effective_votes": {
+                  "type": "null"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "status": {
+                  "const": "measured"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "delta_effective_votes": {
+                  "type": "number"
+                }
+              }
+            }
           }
         ]
       }
