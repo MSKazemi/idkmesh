@@ -61,7 +61,7 @@ already carries, and never creates a label.
 
 **Parallel welcome.** ~45 minutes.
 
-`tools/` contains 48 modules that build an `argparse` parser. Nothing asserts
+`tools/` contains 49 modules that build an `argparse` parser. Nothing asserts
 that they still start. A tool can be broken by an import error, a bad default,
 or a renamed helper, and no test in the suite would notice until someone ran it
 by hand.
