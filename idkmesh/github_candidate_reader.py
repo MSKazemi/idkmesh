@@ -40,11 +40,6 @@ class GitHubPullRequestResolution:
     state: str
     draft: bool
 
-    @property
-    def run_state(self) -> str:
-        """State that becomes eligible only because immutable identity exists."""
-        return "candidate_ready"
-
 
 def _repository(value: Any) -> str:
     if not isinstance(value, str) or _REPOSITORY_RE.fullmatch(value) is None:
