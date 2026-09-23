@@ -535,15 +535,27 @@ def _select_marginal(rows: list[dict[str, Any]]) -> dict[str, Any]:
             design_score=None,
         )
 
+    top_interval = _marginal_interval(top)
+    if top_interval is None:
+        return _selector_result(
+            STRATEGY_MARGINAL,
+            selected_verifier_id=None,
+            reason_code="unresolved_design_effective_vote_metrics",
+            design_score=None,
+        )
+
+    if (
+        top["delta_effective_votes"] <= 0.0
+        or top_interval[0] <= 0.0
+    ):
+        return _selector_result(
+            STRATEGY_MARGINAL,
+            selected_verifier_id=None,
+            reason_code="marginal_gain_not_positive_with_interval_support",
+            design_score=top["delta_effective_votes"],
+        )
+
     if len(rows) > 1:
-        top_interval = _marginal_interval(top)
-        if top_interval is None:
-            return _selector_result(
-                STRATEGY_MARGINAL,
-                selected_verifier_id=None,
-                reason_code="unresolved_design_effective_vote_metrics",
-                design_score=None,
-            )
         other_highs = []
         for row in rows:
             if row["id"] == top["id"]:
