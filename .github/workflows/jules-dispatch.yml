@@ -37,13 +37,6 @@ on:
         required: false
         default: false
         type: boolean
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/jules-dispatch.yml'
-      - 'config/jules-dispatch.json'
-      - 'tools/jules_dispatcher.py'
-
 permissions:
   contents: read
   issues: write
@@ -76,8 +69,11 @@ jobs:
         with:
           python-version: '3.11'
 
+      - name: Validate Jules control-plane contract
+        run: python tools/check_jules_contract.py
+
       - name: Bootstrap dispatch labels
-        if: github.event_name == 'push' || inputs.bootstrap_labels
+        if: inputs.bootstrap_labels
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: python tools/jules_dispatcher.py --init-labels
@@ -114,7 +110,6 @@ jobs:
         if: >-
           inputs.issue_number == '' &&
           (github.event_name == 'schedule' ||
-           github.event_name == 'push' ||
            github.event_name == 'workflow_dispatch' ||
            (github.event_name == 'issues' && github.event.action == 'closed'))
         env:
