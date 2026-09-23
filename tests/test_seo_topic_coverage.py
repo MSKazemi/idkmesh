@@ -13,6 +13,7 @@ DOCS = ROOT / "docs"
 CONFIG = ROOT / "config" / "seo-topics-v1.json"
 HUB = DOCS / "topics" / "index.md"
 SITE_PREFIX = "https://mskazemi.com/idkmesh/topics/"
+QUESTION_HEADING_RE = re.compile(r"^### (.+\?) \\{#([a-z0-9][a-z0-9-]*)\\}$", re.MULTILINE)
 
 
 def _frontmatter(text: str) -> dict[str, str]:
@@ -67,7 +68,7 @@ class SEOTopicCoverageTests(unittest.TestCase):
             frontmatter = _frontmatter(text)
             body = text.split("---\n", 2)[-1]
             words = re.findall(r"\b[\w'-]+\b", body)
-            questions = re.findall(r"^### .+\?$", body, flags=re.MULTILINE)
+            questions = QUESTION_HEADING_RE.findall(body)
             links = re.findall(r"\[[^\]]+\]\(([^)]+)\)", body)
             if len(words) < 400:
                 failures.append(f"{source.name}: only {len(words)} words")
@@ -90,9 +91,28 @@ class SEOTopicCoverageTests(unittest.TestCase):
         questions: list[str] = []
         for cluster in self.clusters:
             text = (ROOT / cluster["path"]).read_text(encoding="utf-8")
-            questions.extend(re.findall(r"^### (.+\\?)$", text, flags=re.MULTILINE))
+            questions.extend(
+                question
+                for question, _anchor in QUESTION_HEADING_RE.findall(text)
+            )
         self.assertEqual(100, len(questions))
         self.assertEqual(100, len(set(questions)))
+
+    def test_question_anchors_are_stable_and_unique(self) -> None:
+        anchors: list[str] = []
+        for cluster in self.clusters:
+            text = (ROOT / cluster["path"]).read_text(encoding="utf-8")
+            rows = QUESTION_HEADING_RE.findall(text)
+            self.assertEqual(10, len(rows))
+            expected = [
+                f"q-{cluster['id']}-{index:02d}"
+                for index in range(1, 11)
+            ]
+            actual = [anchor for _question, anchor in rows]
+            self.assertEqual(expected, actual)
+            anchors.extend(actual)
+        self.assertEqual(100, len(anchors))
+        self.assertEqual(100, len(set(anchors)))
 
     def test_topic_hub_links_every_cluster(self) -> None:
         hub = HUB.read_text(encoding="utf-8")
