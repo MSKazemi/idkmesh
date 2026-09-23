@@ -191,12 +191,26 @@ def find_issue_session(
     issue: dict[str, Any],
     sessions: Iterable[dict[str, Any]],
 ) -> dict[str, Any] | None:
-    """Match a provider session by stable repo+issue marker, not mutable title."""
+    """Return the newest session matching a stable repo+issue marker."""
     marker = session_marker(repository, issue)
-    for session in sessions:
-        if str(session.get("title") or "").startswith(marker):
-            return session
-    return None
+    matches = [
+        session
+        for session in sessions
+        if str(session.get("title") or "").startswith(marker)
+    ]
+    if not matches:
+        return None
+
+    floor = datetime.min.replace(tzinfo=timezone.utc)
+
+    def session_time(session: dict[str, Any]) -> datetime:
+        return (
+            _parse_rfc3339(session.get("updateTime"))
+            or _parse_rfc3339(session.get("createTime"))
+            or floor
+        )
+
+    return max(matches, key=session_time)
 
 
 def build_jules_prompt(repository: str, issue: dict[str, Any]) -> str:
@@ -407,7 +421,15 @@ class JulesAPI:
             "to Jules before enabling automatic dispatch"
         )
 
-    def list_sessions(self, *, max_pages: int = 3) -> list[dict[str, Any]]:
+    def list_sessions(self, *, max_pages: int = 10) -> list[dict[str, Any]]:
+        """List enough provider history to make duplicate detection trustworthy.
+
+        A silent partial scan is unsafe: an older matching session beyond the
+        scan window could cause a duplicate Jules task. If the configured safety
+        cap is exhausted while a next-page token still exists, fail closed.
+        """
+        if max_pages < 1:
+            raise JulesAPIError("max_pages must be at least 1")
         items: list[dict[str, Any]] = []
         page_token: str | None = None
         for _ in range(max_pages):
@@ -424,10 +446,13 @@ class JulesAPI:
             if not isinstance(batch, list):
                 raise JulesAPIError("Jules sessions response has invalid sessions")
             items.extend(item for item in batch if isinstance(item, dict))
-            page_token = payload.get("nextPageToken")
-            if not page_token:
-                break
-        return items
+            page_token = str(payload.get("nextPageToken") or "").strip() or None
+            if page_token is None:
+                return items
+        raise JulesAPIError(
+            "Jules session history exceeded the safe pagination scan; "
+            "refusing dispatch/reconciliation rather than risking a duplicate"
+        )
 
     def find_existing_session(self, title: str) -> dict[str, Any] | None:
         for session in self.list_sessions():
