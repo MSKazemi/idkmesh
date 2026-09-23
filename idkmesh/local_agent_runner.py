@@ -19,7 +19,7 @@ import hashlib
 import json
 import math
 import os
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import re
 import signal
 import shutil
@@ -504,12 +504,15 @@ def _validate_local_agent_admission(
         raise LocalRunnerError("work_unit.constraints.forbidden_paths must be an array")
     for field, values in (("allowed_paths", allowed), ("forbidden_paths", forbidden)):
         for value in values:
+            normalized = value.replace("\\", "/") if isinstance(value, str) else value
             if (
-                not isinstance(value, str)
-                or not value
-                or "\x00" in value
-                or value.startswith("/")
-                or ".." in Path(value).parts
+                not isinstance(normalized, str)
+                or not normalized
+                or "\x00" in normalized
+                or "\n" in normalized
+                or "\r" in normalized
+                or normalized.startswith("/")
+                or ".." in PurePosixPath(normalized).parts
             ):
                 raise LocalRunnerError(f"unsafe WorkUnit {field} entry: {value!r}")
 
@@ -531,7 +534,10 @@ def _validate_local_agent_admission(
             "sandbox wall limit exceeds WorkUnit budget.wall_seconds"
         )
 
-    resources = work_unit.get("requirements", {}).get("resources")
+    requirements = work_unit.get("requirements")
+    if not isinstance(requirements, dict):
+        raise LocalRunnerError("work_unit.requirements must be an object")
+    resources = requirements.get("resources")
     if not isinstance(resources, dict):
         raise LocalRunnerError("work_unit.requirements.resources must be an object")
     minimum_memory = resources.get("memory_mb_min", 0)
@@ -617,10 +623,16 @@ def _changed_paths(workspace: Path, *, max_bytes: int = 1_000_000) -> list[tuple
         if len(entry) < 4 or entry[2] != " ":
             raise LocalRunnerError(f"unexpected git status entry: {entry!r}")
         status = entry[:2]
-        path = entry[3:]
-        if not path or path.startswith("/") or ".." in Path(path).parts:
+        path = entry[3:].replace("\\", "/")
+        if (
+            not path
+            or "\n" in path
+            or "\r" in path
+            or path.startswith("/")
+            or ".." in PurePosixPath(path).parts
+        ):
             raise LocalRunnerError(f"unsafe changed path: {path!r}")
-        rows.append((path.replace("\\", "/"), status == "??"))
+        rows.append((path, status == "??"))
     return rows
 
 
@@ -854,6 +866,10 @@ def run_local_agent_preset(
         finished_at = datetime.now(timezone.utc)
         if not isinstance(process_result, ProcessResult):
             raise LocalRunnerError("sandbox executor returned an invalid ProcessResult")
+        if process_result.argv != argv:
+            raise LocalRunnerError(
+                "sandbox executor result argv does not match admitted invocation"
+            )
 
         candidate, _ = _capture_candidate_patch(
             workspace.path,
