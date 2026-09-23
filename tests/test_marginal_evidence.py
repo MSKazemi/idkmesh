@@ -388,6 +388,24 @@ class FiniteSampleTests(unittest.TestCase):
                     )
 
 
+class ExampleFixtureTests(unittest.TestCase):
+    INPUT = REPO_ROOT / "examples" / "gate-audit" / "panel-votes.example.json"
+    REPORT = (
+        REPO_ROOT / "examples" / "gate-audit"
+        / "marginal-evidence-report.example.json"
+    )
+
+    def test_committed_example_regenerates_exactly(self):
+        data = json.loads(self.INPUT.read_text(encoding="utf-8"))
+        expected = json.loads(self.REPORT.read_text(encoding="utf-8"))
+        actual = marginal_evidence.analyze(
+            data,
+            current_verifier_ids=["reviewer-a", "reviewer-b"],
+            candidate_verifier_ids=["reviewer-d"],
+        )
+        self.assertEqual(actual, expected)
+
+
 class ProvenanceTests(unittest.TestCase):
     def test_analysis_digest_changes_when_panel_selection_changes(self):
         data = make_matrix()
