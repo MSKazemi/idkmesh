@@ -126,13 +126,18 @@ Selection uses the design `gate-marginal` report with bootstrap enabled.
 
 The strategy is resolved only when:
 
-1. every candidate row is `measured`;
-2. every candidate has a numeric, uncensored `delta_effective_votes`;
-3. every candidate has a sufficient bootstrap result;
-4. every candidate has a finite effective-vote-delta interval;
-5. the largest point estimate is unique;
-6. the top candidate's interval lower bound is **strictly greater** than every
+1. every candidate has a numeric, finite, uncensored
+   `delta_effective_votes`;
+2. every candidate has a sufficient bootstrap result;
+3. every candidate has a finite effective-vote-delta interval;
+4. the largest point estimate is unique;
+5. the top candidate's interval lower bound is **strictly greater** than every
    other candidate's interval upper bound.
+
+A candidate can still have an unrelated diagnostic status such as
+unmeasurable error correlation. That does not block this selector when the
+effective-vote estimand itself is fully resolved. The correlation baseline has
+its own separate fail-closed rule.
 
 If any requirement fails, the strategy is `unresolved`.
 
