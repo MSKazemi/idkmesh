@@ -55,6 +55,26 @@ CI provides deterministic evidence about declared checks. It does not establish 
 
 See [Jules automation](https://github.com/MSKazemi/idkmesh/blob/main/docs/operations/JULES_AUTOMATION.md), the [connector control plane](https://github.com/MSKazemi/idkmesh/blob/main/docs/architecture/AGENT_MODEL_CONNECTOR_CONTROL_PLANE.md), and the repository [contribution rules](https://github.com/MSKazemi/idkmesh/blob/main/CONTRIBUTING.md).
 
+### Can AI code review replace human code review?
+
+It can replace some repetitive checks, but whether it can replace a human decision depends on risk, evaluator evidence, repository policy, and what the review actually measures. High-impact changes still benefit from independent human authority.
+
+### How do you verify an AI-generated pull request?
+
+Bind tests and reviews to the exact head revision, check that the diff matches the requested scope, run deterministic security and regression gates, and require additional independent review when semantics remain uncertain.
+
+### What security risks do coding agents introduce?
+
+Common risks include excessive repository permissions, secret exposure, prompt-injection through untrusted content, unsafe shell execution, dependency/supply-chain changes, and agents modifying the workflow that evaluates their own work.
+
+### Should a coding agent have write access to the main branch?
+
+A safer default is no. Let the agent create a candidate branch or pull request and keep protected-branch integration under separate authority.
+
+### How do you compare coding agents from different models or vendors?
+
+Use the same bounded task set, comparable execution constraints, exact-revision evidence, success criteria, cost/latency observations, and independent verification rather than comparing self-reported completion rates.
+
 [Browse all AI-agent trust topics](https://mskazemi.com/idkmesh/topics/).
 
 **Last reviewed:** 2026-09-22.
