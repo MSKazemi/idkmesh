@@ -88,7 +88,7 @@ For materially AI-generated code, research, tests, or documentation, include a s
 
 Do not submit large volumes of unreviewed generated material. Generation must not grow faster than the community's ability to verify and maintain it.
 
-Maintainers and trusted triagers using the repository's Google Jules automation should follow [`docs/operations/JULES_AUTOMATION.md`](docs/operations/JULES_AUTOMATION.md). `agent-ready` is the explicit human-approved queue. The Issue Model Router may also emit `agent:jules-eligible` for a narrow automatic lane, but the dispatcher accepts that label only for trusted author associations and after hard-veto checks. Live work records `agent:jules-dispatched`; failed or stale provider work moves to `agent:jules-needs-attention` and is not automatically retried. The `jules` label is retained only for deliberate manual/native-App fallback. Human-only evidence, independent research, security approval, secret-management tasks, and governance work stay outside automatic execution. Keep the router-to-dispatcher handoff as a local reusable `workflow_call`; the required PR Gate's `tools/check_jules_contract.py` check is the anti-drift boundary and must not be bypassed by Jules-related changes.
+Maintainers and trusted triagers using the repository's Google Jules automation should follow [`docs/operations/JULES_AUTOMATION.md`](docs/operations/JULES_AUTOMATION.md). `agent-ready` is the explicit human-approved queue. The Issue Model Router may also emit `agent:jules-eligible` for a narrow automatic lane, but the dispatcher accepts that label only for trusted author associations and after hard-veto checks. Live work records `agent:jules-dispatched`; failed or stale provider work moves to `agent:jules-needs-attention` and is not automatically retried. The `jules` label is retained only for deliberate manual/native-App fallback. Human-only evidence, independent research, security approval, secret-management tasks, and governance work stay outside automatic execution. Keep the router-to-dispatcher handoff as a local reusable `workflow_call`; the required PR Gate's `tools/check_jules_contract.py` check is the anti-drift boundary and must not be bypassed by Jules-related changes. Jules plan concurrency is a separate, dated policy in `provider_concurrency.max_concurrent_tasks`; update that configuration with its official source when plans change rather than hard-coding or bypassing provider capacity.
 
 ## Running the tests
 
@@ -167,7 +167,7 @@ Markdown/identity report, not the combined gate. See
 [the stable PR gate](.github/workflows/pr-gate.yml) for the CI invocation.
 
 **Do not verify your work with `python -m unittest discover`.** It silently
-under-collects — `unittest` only finds `TestCase` subclasses, so the 246
+under-collects — `unittest` only finds `TestCase` subclasses, so the 249
 module-level `test_*` functions spread across 24 files in `tests/` are
 invisible to it. That is roughly a tenth of the suite, skipped while the run
 still prints `OK`, with no indication anything was missed.
