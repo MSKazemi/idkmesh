@@ -94,6 +94,23 @@ class JulesObservationTests(unittest.TestCase):
         self.assertEqual(observation.run_state, "waiting_for_agent")
         self.assertIn("provider_state_unspecified", observation.warnings)
 
+    def test_non_object_observations_fail_closed(self):
+        with self.assertRaises(ConnectorError) as session:
+            parse_session_observation(
+                [],
+                expected_session_name="sessions/123",
+                connection_id="jules-main",
+            )
+        self.assertEqual(session.exception.code, "result_normalization_error")
+
+        with self.assertRaises(ConnectorError) as activity:
+            parse_activity_observation(
+                [],
+                session_name="sessions/123",
+                connection_id="jules-main",
+            )
+        self.assertEqual(activity.exception.code, "result_normalization_error")
+
     def test_wrong_session_identity_fails_closed(self):
         with self.assertRaises(ConnectorError) as caught:
             parse_session_observation(
