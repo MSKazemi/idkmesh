@@ -432,6 +432,42 @@ class SchemaTests(unittest.TestCase):
         )
         jsonschema.validate(report, schema)
 
+    @unittest.skipUnless(HAS_JSONSCHEMA, "jsonschema not installed")
+    def test_schema_rejects_measured_status_with_unresolved_reason(self):
+        schema = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
+        report = marginal_evidence.analyze(
+            make_matrix(),
+            current_verifier_ids=["v1", "v2"],
+            candidate_verifier_ids=["v3"],
+        )
+        row = report["candidates"][0]
+        row["status"] = "measured"
+        row["unresolved_reasons"] = ["contradiction"]
+        with self.assertRaises(jsonschema.ValidationError):
+            jsonschema.validate(report, schema)
+
+    @unittest.skipUnless(HAS_JSONSCHEMA, "jsonschema not installed")
+    def test_schema_rejects_numeric_delta_when_effective_votes_are_censored(self):
+        schema = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
+        report = marginal_evidence.analyze(
+            make_matrix(
+                count=30,
+                error_sets={
+                    "v1": set(),
+                    "v2": set(),
+                    "candidate": set(),
+                },
+            ),
+            current_verifier_ids=["v1", "v2"],
+            candidate_verifier_ids=["candidate"],
+        )
+        row = report["candidates"][0]
+        self.assertTrue(row["current_effective_votes_censored"])
+        row["delta_effective_votes"] = 0.0
+        with self.assertRaises(jsonschema.ValidationError):
+            jsonschema.validate(report, schema)
+
+
 
 class CliTests(unittest.TestCase):
     EXAMPLE_INPUT = (
