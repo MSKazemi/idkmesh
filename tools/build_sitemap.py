@@ -90,6 +90,15 @@ def _git_lastmod(path: Path) -> str:
     return datetime.now(timezone.utc).date().isoformat()
 
 
+def _has_front_matter(path: Path) -> bool:
+    """Whether a Markdown source starts with a YAML front-matter fence."""
+    try:
+        with path.open("r", encoding="utf-8") as handle:
+            return handle.readline().strip() == "---"
+    except OSError:
+        return False
+
+
 def published_pages() -> list[tuple[str, Path]]:
     """Every URL Pages publishes as an HTML page, paired with its source file.
 
@@ -97,8 +106,11 @@ def published_pages() -> list[tuple[str, Path]]:
 
     * ``docs/index.html`` is the site root;
     * a nested ``index.md`` is an explicit directory index URL;
-    * legacy nested ``README.md`` hubs retain their existing directory mapping
-      until live publication evidence is migrated to explicit ``index.md``;
+    * a frontmatter-free nested ``README.md`` is promoted by GitHub Pages to
+      that directory's ``index.html`` (verified from the built Pages artifact);
+    * a nested ``README.md`` with YAML front matter renders as
+      ``README.html``, so public hubs that need front matter must use
+      ``index.md`` explicitly;
     * every other Markdown document renders at its ``.html`` path.
 
     Hand-written ``.html`` files other than ``index.html`` are published as-is.
@@ -118,7 +130,7 @@ def published_pages() -> list[tuple[str, Path]]:
                 # Shadowed by docs/index.html at the site root.
                 continue
             pages.append((BASE + parent + "/", source))
-        elif source.name == "README.md":
+        elif source.name == "README.md" and not _has_front_matter(source):
             parent = relative.parent.as_posix()
             if parent == ".":
                 # Shadowed: docs/index.html already occupies the site root.
