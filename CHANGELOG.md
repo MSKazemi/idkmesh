@@ -14,6 +14,18 @@ and the release notes for that tag.
 
 ### Added
 
+- `idkmesh control-tower [evidence-report.json]`, a dependency-free local
+  Human Control Tower for Run Evidence Report v0.1. It shows human-attention
+  conditions, claim/evidence/authority layers, attempt details, and a semantic
+  background timeline through a versioned read-only `/api/v1/` surface.
+  Summary/disagreement values are recomputed before display, reports that grant
+  write/push/merge/automatic-selection authority fail closed, and both local
+  browser UIs now share one loopback/security-header boundary. The API now
+  also publishes OpenAPI 3.1 discovery and a frozen snapshot JSON Schema,
+  supports generic/vendor JSON negotiation and headless token injection,
+  emits deterministic content digests/ETags and read-only/version headers, and
+  returns explicit method/version/query/media-type errors instead of relying on
+  the base HTTP server's implicit behavior.
 - `idkmesh/connector_routing.py` (issue #574, C1): a pure-stdlib, deterministic
   routing kernel that separates task requirements (`RoutingDecision`) from
   connector capabilities (`ConnectorProfile`) and resolves eligible connectors
