@@ -14,6 +14,17 @@ and the release notes for that tag.
 
 ### Added
 
+- `idkmesh/connector_routing.py` (issue #574, C1): a pure-stdlib, deterministic
+  routing kernel that separates task requirements (`RoutingDecision`) from
+  connector capabilities (`ConnectorProfile`) and resolves eligible connectors
+  with non-compensating hard filters — human-required gate, capability tier,
+  risk ceiling, external-processing policy, spend ceiling, secret
+  availability, capacity — plus transparent lexicographic selection with
+  stable tie-breaking. No live provider calls, GitHub mutation, secret
+  materialization, persistence, or merge authority yet; this is the first
+  bounded implementation slice of the Connector Control Plane
+  (`docs/architecture/AGENT_MODEL_CONNECTOR_CONTROL_PLANE.md`).
+
 - A dependency-free local browser GUI for the installable gate-audit diagnostic,
   launched with `idkmesh gate-audit-ui [input.json]`. It binds only to
   `127.0.0.1`, reuses the CLI audit engine, shows panel and verifier metrics,
@@ -21,6 +32,19 @@ and the release notes for that tag.
   Markdown summary. The local API requires a per-session token and JSON content
   type and rejects non-loopback Host headers; verdict data is not uploaded to a
   hosted IDKMesh service.
+- `idkmesh gate-audit --bootstrap` (issue #520): a deterministic candidate-level
+  nonparametric bootstrap confidence interval for panel error, mean verifier
+  accuracy, mean pairwise error correlation and effective votes. Resamples whole
+  candidate rows, never verifier cells, so cross-verifier dependence survives
+  resampling. Opt-in only — the default report stays byte-identical
+  `gate-audit-report-v0.1`; `--bootstrap` switches the emitted schema to the new
+  `gate-audit-report-v0.2` (`schemas/gate-audit-report-v0.2.schema.json`,
+  `idkmesh/gate_audit_uncertainty.py`). Documented in
+  `docs/specifications/GATE_AUDIT_V0_1.md` under "Finite-sample uncertainty",
+  with a committed, test-regenerated example at
+  `examples/gate-audit/gate-audit-report-v0.2.example.json`. Not wired into the
+  composite GitHub Action yet — deliberately deferred, not bundled into a
+  statistics change.
 
 - `.github/workflows/nightly-full-suite.yml`, running the complete suite — the `nightly`
   tier, everything `unit` excludes included — on a daily schedule (plus `workflow_dispatch`),

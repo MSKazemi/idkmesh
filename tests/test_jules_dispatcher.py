@@ -3,12 +3,15 @@ from __future__ import annotations
 from copy import deepcopy
 from pathlib import Path
 
+import pytest
+
 from tools import jules_dispatcher as jd
 
 
 POLICY = {
     "queue_label": "agent-ready",
-    "dispatch_label": "jules",
+    "dispatch_label": "agent:jules-dispatched",
+    "legacy_dispatch_labels": ["jules"],
     "max_in_flight": 4,
     "max_dispatch_per_sweep": 2,
     "blocked_labels": [
@@ -28,7 +31,8 @@ POLICY = {
     "bonus_weights": {"bug": 15, "good first issue": 10, "documentation": 5},
     "label_definitions": {
         "agent-ready": {"color": "0E8A16", "description": "ready"},
-        "jules": {"color": "EDEDED", "description": "dispatch"},
+        "agent:jules-dispatched": {"color": "5319E7", "description": "dispatch"},
+        "jules": {"color": "EDEDED", "description": "legacy"},
     },
 }
 
@@ -45,22 +49,34 @@ def issue(number: int, *labels: str, state: str = "open", pull: bool = False):
 
 
 class FakeAPI:
-    def __init__(self, *, active=None, queued=None, labels=None):
+    def __init__(self, *, active=None, legacy=None, queued=None, labels=None):
+        self.repository = "MSKazemi/idkmesh"
         self.active = list(active or [])
+        self.legacy = list(legacy or [])
         self.queued = list(queued or [])
         self.labels = list(labels or [])
         self.added = []
+        self.removed = []
+        self.comments = []
         self.created = []
 
     def list_open_issues(self, label: str):
-        if label == "jules":
+        if label == "agent:jules-dispatched":
             return deepcopy(self.active)
+        if label == "jules":
+            return deepcopy(self.legacy)
         if label == "agent-ready":
             return deepcopy(self.queued)
         return []
 
     def add_labels(self, issue_number: int, labels: list[str]):
         self.added.append((issue_number, list(labels)))
+
+    def remove_label(self, issue_number: int, label: str):
+        self.removed.append((issue_number, label))
+
+    def add_comment(self, issue_number: int, body: str):
+        self.comments.append((issue_number, body))
 
     def list_labels(self):
         return deepcopy(self.labels)
@@ -69,14 +85,42 @@ class FakeAPI:
         self.created.append((name, color, description))
 
 
+class FakeJules:
+    def __init__(self, *, existing=None, create_error=None):
+        self.existing = existing
+        self.create_error = create_error
+        self.resolved = []
+        self.created = []
+
+    def resolve_source(self, repository: str):
+        self.resolved.append(repository)
+        return "sources/github/MSKazemi/idkmesh"
+
+    def find_existing_session(self, title: str):
+        return deepcopy(self.existing)
+
+    def create_session(self, **kwargs):
+        self.created.append(deepcopy(kwargs))
+        if self.create_error:
+            raise self.create_error
+        return {
+            "name": "sessions/123",
+            "url": "https://jules.google.com/session/123",
+            "state": "QUEUED",
+        }
+
+
 def test_dispatchability_requires_explicit_queue_label_and_respects_vetoes():
     assert jd.is_dispatchable(issue(1, "agent-ready"), POLICY)
     assert not jd.is_dispatchable(issue(2, "good first issue"), POLICY)
-    assert not jd.is_dispatchable(issue(3, "agent-ready", "jules"), POLICY)
-    assert not jd.is_dispatchable(issue(4, "agent-ready", "human-required"), POLICY)
-    assert not jd.is_dispatchable(issue(5, "agent-ready", "security-sensitive"), POLICY)
-    assert not jd.is_dispatchable(issue(6, "agent-ready", state="closed"), POLICY)
-    assert not jd.is_dispatchable(issue(7, "agent-ready", pull=True), POLICY)
+    assert not jd.is_dispatchable(
+        issue(3, "agent-ready", "agent:jules-dispatched"), POLICY
+    )
+    assert not jd.is_dispatchable(issue(4, "agent-ready", "jules"), POLICY)
+    assert not jd.is_dispatchable(issue(5, "agent-ready", "human-required"), POLICY)
+    assert not jd.is_dispatchable(issue(6, "agent-ready", "security-sensitive"), POLICY)
+    assert not jd.is_dispatchable(issue(7, "agent-ready", state="closed"), POLICY)
+    assert not jd.is_dispatchable(issue(8, "agent-ready", pull=True), POLICY)
 
 
 def test_selection_prefers_event_issue_then_priority_and_small_size():
@@ -108,50 +152,75 @@ def test_selection_is_bounded_by_slots_and_sweep_limit():
     assert len(jd.select_candidates(queued, POLICY, slots=4)) == 2
 
 
+
 def test_dispatch_does_not_exceed_open_jules_capacity():
     api = FakeAPI(
         active=[
-            issue(100, "jules"),
-            issue(101, "jules"),
-            issue(102, "jules"),
+            issue(100, "agent:jules-dispatched"),
+            issue(101, "agent:jules-dispatched"),
         ],
+        legacy=[issue(102, "jules")],
         queued=[
             issue(1, "agent-ready", "priority:p0"),
             issue(2, "agent-ready", "priority:p1"),
         ],
     )
+    jules = FakeJules()
 
-    dispatched = jd.dispatch(api, POLICY)
+    dispatched = jd.dispatch(
+        api,
+        POLICY,
+        jules_api=jules,
+        starting_branch="main",
+    )
 
     assert dispatched == [1]
-    assert api.added == [(1, ["jules"])]
+    assert api.added == [(1, ["agent:jules-dispatched"])]
+    assert len(jules.created) == 1
+    assert jules.created[0]["source"] == "sources/github/MSKazemi/idkmesh"
+    assert jules.created[0]["starting_branch"] == "main"
+    assert "official Jules REST API" in api.comments[0][1]
+
 
 
 def test_dispatch_fails_closed_when_capacity_is_full():
     api = FakeAPI(
-        active=[issue(number, "jules") for number in range(100, 104)],
+        active=[
+            issue(number, "agent:jules-dispatched")
+            for number in range(100, 104)
+        ],
         queued=[issue(1, "agent-ready", "priority:p0")],
     )
 
-    assert jd.dispatch(api, POLICY) == []
+    assert jd.dispatch(
+        api,
+        POLICY,
+        jules_api=FakeJules(),
+        starting_branch="main",
+    ) == []
     assert api.added == []
 
 
 def test_ensure_labels_creates_only_missing_policy_labels():
-    api = FakeAPI(labels=[{"name": "agent-ready"}])
+    api = FakeAPI(labels=[{"name": "agent-ready"}, {"name": "jules"}])
 
     created = jd.ensure_labels(api, POLICY)
 
-    assert created == ["jules"]
-    assert api.created == [("jules", "EDEDED", "dispatch")]
+    assert created == ["agent:jules-dispatched"]
+    assert api.created == [
+        ("agent:jules-dispatched", "5319E7", "dispatch")
+    ]
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
+
 def test_repository_policy_keeps_speed_and_hard_vetoes_explicit():
     policy = jd.load_policy(REPO_ROOT / "config" / "jules-dispatch.json")
 
+    assert policy["dispatch_label"] == "agent:jules-dispatched"
+    assert policy["legacy_dispatch_labels"] == ["jules"]
     assert policy["max_in_flight"] == 4
     assert policy["max_dispatch_per_sweep"] == 2
     assert {
@@ -170,6 +239,11 @@ def test_workflow_preserves_dispatch_trust_boundary_and_fast_recovery():
 
     assert "types: [labeled, closed]" in workflow
     assert "cron: '17,47 * * * *'" in workflow
+    assert "JULES_API_KEY: ${{ secrets.JULES_API_KEY }}" in workflow
+    assert (
+        "GITHUB_DEFAULT_BRANCH: "
+        "${{ github.event.repository.default_branch }}" in workflow
+    )
     assert "contents: read" in workflow
     assert "issues: write" in workflow
     assert "pull-requests: write" not in workflow
@@ -179,3 +253,157 @@ def test_workflow_preserves_dispatch_trust_boundary_and_fast_recovery():
     assert "persist-credentials: false" in workflow
     assert "github.event.issue.body" not in workflow
     assert "github.event.issue.title" not in workflow
+
+
+def test_prompt_preserves_issue_context_and_safety_boundary():
+    payload = issue(42, "agent-ready")
+    payload["title"] = "add tests"
+    payload["body"] = "Only touch tests/foo.py"
+    payload["html_url"] = "https://github.com/MSKazemi/idkmesh/issues/42"
+
+    prompt = jd.build_jules_prompt("MSKazemi/idkmesh", payload)
+
+    assert "GitHub issue #42" in prompt
+    assert "Only touch tests/foo.py" in prompt
+    assert "AGENTS.md" in prompt
+    assert "human-only evidence" in prompt
+
+
+def test_existing_api_session_is_reused_instead_of_duplicated():
+    api = FakeAPI(queued=[issue(7, "agent-ready")])
+    jules = FakeJules(
+        existing={
+            "name": "sessions/existing",
+            "url": "https://jules.google.com/session/existing",
+            "state": "IN_PROGRESS",
+        }
+    )
+
+    assert jd.dispatch(
+        api,
+        POLICY,
+        jules_api=jules,
+        starting_branch="main",
+    ) == [7]
+    assert jules.created == []
+    assert api.added == [(7, ["agent:jules-dispatched"])]
+    assert "existing" in api.comments[0][1]
+
+
+def test_client_error_rolls_back_status_for_safe_retry():
+    api = FakeAPI(queued=[issue(8, "agent-ready")])
+    jules = FakeJules(
+        create_error=jd.JulesAPIError("bad request", status_code=400)
+    )
+
+    with pytest.raises(jd.JulesAPIError):
+        jd.dispatch(
+            api,
+            POLICY,
+            jules_api=jules,
+            starting_branch="main",
+        )
+
+    assert api.added == [(8, ["agent:jules-dispatched"])]
+    assert api.removed == [(8, "agent:jules-dispatched")]
+
+
+def test_ambiguous_provider_error_keeps_status_to_prevent_duplicate():
+    api = FakeAPI(queued=[issue(9, "agent-ready")])
+    jules = FakeJules(create_error=jd.JulesAPIError("connection reset"))
+
+    with pytest.raises(jd.JulesAPIError):
+        jd.dispatch(
+            api,
+            POLICY,
+            jules_api=jules,
+            starting_branch="main",
+        )
+
+    assert api.removed == []
+    assert "prevent an automatic duplicate session" in api.comments[0][1]
+
+
+def test_dispatch_requires_api_client_for_live_work():
+    api = FakeAPI(queued=[issue(1, "agent-ready")])
+
+    with pytest.raises(jd.DispatchError, match="JULES_API_KEY"):
+        jd.dispatch(
+            api,
+            POLICY,
+            jules_api=None,
+            starting_branch="main",
+        )
+
+
+def test_dry_run_does_not_require_api_key_or_mutate():
+    api = FakeAPI(queued=[issue(1, "agent-ready")])
+
+    assert jd.dispatch(
+        api,
+        POLICY,
+        jules_api=None,
+        starting_branch="main",
+        dry_run=True,
+    ) == [1]
+    assert api.added == []
+
+
+def test_create_session_uses_auto_create_pr_and_no_plan_gate(monkeypatch):
+    client = jd.JulesAPI("secret")
+    captured = {}
+
+    def fake_request(method, path, payload=None):
+        captured.update(
+            {"method": method, "path": path, "payload": deepcopy(payload)}
+        )
+        return {"name": "sessions/abc", "state": "QUEUED"}
+
+    monkeypatch.setattr(client, "request", fake_request)
+    session = client.create_session(
+        source="sources/github/MSKazemi/idkmesh",
+        starting_branch="main",
+        title="task title",
+        prompt="task prompt",
+    )
+
+    assert session["name"] == "sessions/abc"
+    assert captured["method"] == "POST"
+    assert captured["path"] == "/sessions"
+    assert captured["payload"]["automationMode"] == "AUTO_CREATE_PR"
+    assert captured["payload"]["requirePlanApproval"] is False
+    assert captured["payload"]["sourceContext"] == {
+        "source": "sources/github/MSKazemi/idkmesh",
+        "githubRepoContext": {"startingBranch": "main"},
+    }
+
+
+def test_resolve_source_matches_connected_github_repository(monkeypatch):
+    client = jd.JulesAPI("secret")
+    monkeypatch.setattr(
+        client,
+        "list_sources",
+        lambda: [
+            {
+                "name": "sources/github/other/repo",
+                "githubRepo": {"owner": "other", "repo": "repo"},
+            },
+            {
+                "name": "sources/github/MSKazemi/idkmesh",
+                "githubRepo": {"owner": "MSKazemi", "repo": "idkmesh"},
+            },
+        ],
+    )
+
+    assert (
+        client.resolve_source("MSKazemi/idkmesh")
+        == "sources/github/MSKazemi/idkmesh"
+    )
+
+
+def test_resolve_source_fails_closed_when_repo_is_not_connected(monkeypatch):
+    client = jd.JulesAPI("secret")
+    monkeypatch.setattr(client, "list_sources", lambda: [])
+
+    with pytest.raises(jd.JulesAPIError, match="connect the repository"):
+        client.resolve_source("MSKazemi/idkmesh")

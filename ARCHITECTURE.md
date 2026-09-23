@@ -190,6 +190,8 @@ That distinction replaces the older architecture statement that the project mere
 
 The recommended default deployment for this reference product is GitHub-first and server-optional — repository, Issues/Projects, labels, Actions, checks, and a durable Git-native ledger stand in for a permanent service until measured requirements (event volume, scheduling frequency, long-lived sessions, multi-tenant scale, private enterprise data, GUI, or ledger size) justify one. See [`docs/architecture/GITHUB_FIRST_DEPLOYMENT_AND_MULTIUSER.md`](docs/architecture/GITHUB_FIRST_DEPLOYMENT_AND_MULTIUSER.md).
 
+Enterprise operation is an explicit control overlay rather than a replacement default. G0/G1 remain the low-operations path; G2/G3 add persistent infrastructure only when tenant, identity, private-network, audit, recovery, or state requirements demand it. The enterprise baseline requires stage-specific authority, tenant-scoped state, data/egress controls, auditable privileged decisions, tested recovery, and supply-chain provenance without claiming certification from configuration alone. See [`docs/architecture/ENTERPRISE_CONTROL_PLANE.md`](docs/architecture/ENTERPRISE_CONTROL_PLANE.md) and [ADR-0014](docs/decisions/ADR-0014-enterprise-control-plane-baseline.md).
+
 ## 11. Scaling principle
 
 Long-term scaling remains a hypothesis to earn through evidence.
