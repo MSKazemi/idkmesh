@@ -12,7 +12,7 @@ It does **not** replace WorkUnit, ResultManifest, EvaluatorPlan, VerificationRes
 
 1. A connection stores provider metadata and a **secret reference**, never a raw secret.
 2. A model connection is not automatically a coding agent.
-3. Agent completion becomes a candidate result, never acceptance.
+3. Agent/provider completion becomes `worker_completed`; `candidate_ready` requires a separately normalized candidate reference and still never implies acceptance.
 4. GitHub/project authority is constrained independently from provider credentials.
 5. Unknown connector kinds, drivers, versions and states fail closed.
 6. CLI and HTTP surfaces use the same service layer and data contracts.
@@ -311,6 +311,7 @@ States:
 - `admitted`;
 - `dispatched`;
 - `waiting_for_agent`;
+- `worker_completed`;
 - `candidate_ready`;
 - `verification_pending`;
 - `verified`;
@@ -320,6 +321,8 @@ States:
 - `rejected`;
 - `cancelled`;
 - `failed`.
+
+`worker_completed` means only that the selected worker/provider reports the attempt finished. It does not prove that a usable candidate exists. `candidate_ready` requires a concrete provider-neutral candidate reference bound to an immutable candidate revision or digest.
 
 State transitions must be monotonic except for explicitly modeled retry/attempt records.
 
@@ -363,6 +366,8 @@ Events are append-only observations such as:
 - `human.decision_recorded`;
 - `run.failed`;
 - `run.cancelled`.
+
+`agent.completed` records worker completion only. It cannot synthesize `candidate.discovered`, `result.normalized`, verification, or human-decision events.
 
 Provider-specific payloads belong under an extension namespace and must not redefine canonical state.
 
@@ -473,7 +478,9 @@ or:
 }
 ```
 
-The normalizer converts the external candidate into canonical ResultManifest/artifact evidence.
+A provider-returned URL or provider output object is a discovery hint, not by itself a canonical candidate. For a GitHub pull request, candidate readiness requires repository identity, pull-request number, and exact head SHA resolved through the SCM boundary. For an artifact bundle, it requires a stable locator plus content digest.
+
+Only after that provider-neutral reference exists may the run advance from `worker_completed` to `candidate_ready`. The normalizer then converts the external candidate into canonical ResultManifest/artifact evidence.
 
 ## 17. Model connection example
 

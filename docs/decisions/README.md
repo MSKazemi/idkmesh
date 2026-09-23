@@ -79,6 +79,10 @@ These record a default hypothesis the project builds on, not a settled contract.
   — when an action lies outside the current actor's authority, the system must
   fail open in communication but fail closed in authority, rather than treating a
   recommendation as if the external control existed. *(Proposed, 2026-08-28.)*
+- [ADR-0013 — Separate Provider Completion from Candidate Readiness](ADR-0013-provider-completion-candidate-readiness.md)
+  — provider/worker completion is only an execution observation; `candidate_ready`
+  requires a separately normalized, immutable candidate reference. *(Proposed,
+  2026-09-23.)*
 
 ## Numbering integrity
 
@@ -100,3 +104,4 @@ owner's call.
    supersedes the other. `DECISIONS.md` cites only ADR-0009.
 
 There is also no ADR-0001; the sequence begins at 0002.
+- [ADR-0013: Cross-disciplinary policies behind hard gates](ADR-0013-cross-disciplinary-policies-behind-hard-gates.md)
