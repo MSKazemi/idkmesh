@@ -249,10 +249,16 @@ class JulesClient:
                     connection_id=self._connection_id,
                 ) from exc
 
+        # Path/query validation is caller configuration and should fail before
+        # the transport boundary. Keeping it outside the transport try block
+        # prevents those ValueErrors from being mislabeled as provider output
+        # normalization failures.
+        url = self._url(path, query)
+
         try:
             response = self._transport.request(
                 method=method,
-                url=self._url(path, query),
+                url=url,
                 headers=self._headers(has_body=payload is not None),
                 body=payload,
                 timeout_seconds=self._timeout_seconds,
