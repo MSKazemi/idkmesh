@@ -153,7 +153,10 @@ set, including untracked files. Each changed path must:
 2. match at least one allowed-path pattern.
 
 Matching follows verifier-style `fnmatchcase` glob semantics, with literal
-directory entries also matching descendants.
+directory entries also matching descendants. WorkUnit and observed repository
+paths must use canonical Git-style `/` separators; backslashes, absolute paths,
+control characters, and `..` components fail closed instead of being normalized
+after validation.
 
 A scope violation rejects the candidate rather than silently dropping the
 unauthorized change.
@@ -165,7 +168,8 @@ Patch and logs are generated/read by the orchestrator after sandbox execution.
 Requirements:
 
 - artifact root must be outside the canonical repository;
-- artifact root must be outside the disposable worker workspace;
+- artifact root must neither be inside the disposable worker workspace nor be an
+  ancestor that contains that workspace;
 - patch capture is byte-bounded;
 - untracked files are included;
 - artifact files are content-addressed through `LocalArtifactBundleReader`;
