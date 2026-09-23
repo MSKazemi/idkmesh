@@ -391,8 +391,8 @@ def _select_random(
 ) -> dict[str, Any]:
     material = (
         str(random_seed)
-        + "\\0"
-        + "\\0".join(row["id"] for row in rows)
+        + "\x00"
+        + "\x00".join(row["id"] for row in rows)
     ).encode("utf-8")
     index = int.from_bytes(hashlib.sha256(material).digest(), "big") % len(rows)
     selected = rows[index]
@@ -500,20 +500,21 @@ def _marginal_interval(row: dict[str, Any]) -> tuple[float, float] | None:
 
 
 def _select_marginal(rows: list[dict[str, Any]]) -> dict[str, Any]:
-    unresolved = [
-        row["id"]
-        for row in rows
+    unresolved = []
+    for row in rows:
+        delta = row.get("delta_effective_votes")
         if (
-            row["status"] != "measured"
-            or row["delta_effective_votes"] is None
+            isinstance(delta, bool)
+            or not isinstance(delta, (int, float))
+            or not math.isfinite(float(delta))
             or _marginal_interval(row) is None
-        )
-    ]
+        ):
+            unresolved.append(row["id"])
     if unresolved:
         return _selector_result(
             STRATEGY_MARGINAL,
             selected_verifier_id=None,
-            reason_code="unresolved_design_candidate_metrics",
+            reason_code="unresolved_design_effective_vote_metrics",
             design_score=None,
         )
 
