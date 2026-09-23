@@ -66,9 +66,21 @@ def _parse_time(value: str, field: str) -> datetime:
     return result.astimezone(timezone.utc)
 
 
+def _canonical_time(value: str, field: str) -> str:
+    return (
+        _parse_time(value, field)
+        .isoformat()
+        .replace("+00:00", "Z")
+    )
+
+
 def _normalized_pool(pool: Mapping[str, Any]) -> dict[str, Any]:
     """Canonicalize set-like pool arrays before policy hashing/replay."""
     result = dict(pool)
+    result["captured_at"] = _canonical_time(
+        str(pool["captured_at"]),
+        "captured_at",
+    )
     normalized_candidates: list[dict[str, Any]] = []
     for raw in pool.get("verifier_candidates", []):
         candidate = dict(raw)
@@ -79,6 +91,11 @@ def _normalized_pool(pool: Mapping[str, Any]) -> dict[str, Any]:
         reliability["source_refs"] = sorted(
             set(reliability.get("source_refs", []))
         )
+        if reliability.get("observed_at") is not None:
+            reliability["observed_at"] = _canonical_time(
+                str(reliability["observed_at"]),
+                f"{candidate.get('id', 'unknown')}.reliability.observed_at",
+            )
         candidate["reliability"] = reliability
         normalized_candidates.append(candidate)
     result["verifier_candidates"] = sorted(
@@ -99,6 +116,21 @@ def validate_verifier_pool(pool: Mapping[str, Any]) -> None:
     if pool.get("kind") != "idkmesh-verifier-observation-pool":
         raise AVEShadowAdapterError(
             "unexpected verifier observation pool kind"
+        )
+    for field in ("repository", "work_unit_id", "task_domain", "worker_id"):
+        value = pool.get(field)
+        if not isinstance(value, str) or not value:
+            raise AVEShadowAdapterError(
+                f"{field} must be a non-empty string"
+            )
+    source_revision = pool.get("source_revision")
+    if (
+        not isinstance(source_revision, str)
+        or len(source_revision) != 40
+        or any(ch not in "0123456789abcdef" for ch in source_revision)
+    ):
+        raise AVEShadowAdapterError(
+            "source_revision must be a lowercase 40-character Git SHA"
         )
     max_age = pool.get("reliability_max_age_days")
     if isinstance(max_age, bool) or not isinstance(max_age, int) or max_age < 1:
@@ -134,6 +166,13 @@ def validate_verifier_pool(pool: Mapping[str, Any]) -> None:
         if not isinstance(family, str) or not family:
             raise AVEShadowAdapterError(
                 f"{verifier_id}: family must be non-empty"
+            )
+        provider_family = candidate.get("provider_family")
+        if provider_family is not None and (
+            not isinstance(provider_family, str) or not provider_family
+        ):
+            raise AVEShadowAdapterError(
+                f"{verifier_id}: provider_family must be null or non-empty"
             )
 
         validators = candidate.get("supported_validator_ids")
@@ -210,6 +249,23 @@ def validate_verifier_pool(pool: Mapping[str, Any]) -> None:
         ):
             raise AVEShadowAdapterError(
                 f"{verifier_id}: reliability.sample_count must be >= 0"
+            )
+        domain = reliability.get("domain")
+        if not isinstance(domain, str) or not domain:
+            raise AVEShadowAdapterError(
+                f"{verifier_id}: reliability.domain must be non-empty"
+            )
+        source_refs = reliability.get("source_refs")
+        if not isinstance(source_refs, list) or any(
+            not isinstance(value, str) or not value
+            for value in source_refs
+        ):
+            raise AVEShadowAdapterError(
+                f"{verifier_id}: reliability.source_refs must be strings"
+            )
+        if len(set(source_refs)) != len(source_refs):
+            raise AVEShadowAdapterError(
+                f"{verifier_id}: reliability.source_refs must be unique"
             )
         if not isinstance(reliability.get("shift_warning"), bool):
             raise AVEShadowAdapterError(
