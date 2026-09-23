@@ -228,9 +228,10 @@ There is intentionally no opaque global “trust score.”
 
 The verifier pool is canonicalized before shadow-plan hashing:
 
+- capture and reliability timestamps normalized to UTC;
 - verifier candidates sorted by ID;
-- validator ID lists sorted/deduplicated;
-- reliability source refs sorted/deduplicated;
+- already-validated validator ID lists sorted;
+- already-validated reliability source refs sorted;
 - limitations sorted/deduplicated.
 
 Equivalent pool orderings therefore produce the same shadow plan.
@@ -277,3 +278,26 @@ This adapter should remain shadow-only until a real pre-outcome cohort shows:
 
 N3 observational data remains descriptive and does not establish the causal
 effect of an unexecuted AVE portfolio.
+
+
+## CLI capture
+
+Use `tools/ave_shadow_adapter_cli.py` to freeze a pre-outcome AVE plan:
+
+```bash
+python tools/ave_shadow_adapter_cli.py \
+  --repository MSKazemi/idkmesh \
+  --work-unit path/to/work-unit.json \
+  --evaluator-plan path/to/evaluator-plan.json \
+  --verifier-pool path/to/verifier-observation-pool.json \
+  --maturity N3 \
+  --input-ref work-unit:real-id \
+  --output evidence/adaptive/plans/ave-real-id.json
+```
+
+The CLI refuses to overwrite an existing frozen plan. It writes evidence only;
+it does not execute or dispatch the recommended portfolio.
+
+An illustrative pool shape is available at
+`examples/verifier-observation-pool.example.json`. It is synthetic and must
+not be cited as real verifier performance evidence.
