@@ -1,0 +1,21 @@
+{
+  "schema": "marginal-evidence-benchmark-config-v0.1",
+  "benchmark_id": "heldout-marginal-example-v0.1",
+  "design_matrix": "marginal-benchmark-design.example.json",
+  "holdout_matrix": "marginal-benchmark-holdout.example.json",
+  "current_verifier_ids": ["reviewer-a", "reviewer-b"],
+  "candidate_verifier_ids": ["reviewer-c", "reviewer-d", "reviewer-e"],
+  "verifier_families": {
+    "reviewer-a": "family-alpha",
+    "reviewer-b": "family-alpha",
+    "reviewer-c": "family-beta",
+    "reviewer-d": "family-alpha",
+    "reviewer-e": "family-gamma"
+  },
+  "random_seed": 17,
+  "bootstrap": {
+    "replicates": 200,
+    "seed": 23,
+    "confidence_level": 0.9
+  }
+}
