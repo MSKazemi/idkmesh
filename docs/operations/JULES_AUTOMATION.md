@@ -121,6 +121,7 @@ Current defaults:
 - one GitHub open-issue snapshot is reused for capacity and candidate selection;
 - one Jules session-list snapshot is reused for reconciliation and duplicate
   detection within a run;
+- provider session history is scanned in pages of 100, up to **10 pages**; if history still has a next page, dispatch fails closed rather than deduplicating against an incomplete view;
 - legacy/manual open issues carrying `jules` still consume capacity during
   migration so old work is not double-dispatched.
 
