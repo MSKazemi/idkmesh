@@ -70,6 +70,26 @@ Provider-specific coordinator branches duplicate policy and make trust behavior 
 
 Read the [A2A/MCP mapping](https://github.com/MSKazemi/idkmesh/blob/main/docs/interoperability/A2A_MCP_MAPPING_V0_1.md) and [connector-control-plane architecture](https://github.com/MSKazemi/idkmesh/blob/main/docs/architecture/AGENT_MODEL_CONNECTOR_CONTROL_PLANE.md).
 
+### When should I use MCP instead of A2A?
+
+Use MCP when an agentic application needs tools, resources, or context exposed by a server. Use A2A when one agentic application needs to communicate or delegate work to another agentic application.
+
+### Can MCP and A2A be used together?
+
+Yes. An A2A-connected agent may itself use MCP servers for tools and context. The protocols operate at different boundaries and can be composed.
+
+### How is IDKMesh different from MCP or A2A?
+
+IDKMesh is not a replacement transport protocol. It adds bounded Work Units, routing policy, evidence, provenance, verification, and integration-authority semantics around heterogeneous workers and protocols.
+
+### How should MCP or A2A connectors be secured?
+
+Use explicit capability declarations, scoped credentials, input validation, network and filesystem boundaries, secret-reference indirection, auditable execution, and a policy layer that can deny high-risk operations.
+
+### What metadata should an interoperable agent adapter expose?
+
+At minimum: identity, capabilities, health, supported task/transport versions, authority limits, resource constraints, provenance hooks, and normalized result/error semantics.
+
 [Browse all AI-agent trust topics](https://mskazemi.com/idkmesh/topics/).
 
 **Last reviewed:** 2026-09-22.
