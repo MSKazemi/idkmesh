@@ -8,6 +8,7 @@ from tools.openhands_pilot import (
     build_prompt,
     conversation_identity,
     create_conversation,
+    get_conversation,
     validate_issue,
 )
 
@@ -29,20 +30,17 @@ def test_agent_ready_issue_is_accepted():
     validate_issue(issue("agent-ready", "size:s"))
 
 
-@pytest.mark.parametrize(
-    "label",
-    [
+def test_veto_labels_fail_closed():
+    for label in [
         "blocked",
         "do-not-automate",
         "human-required",
         "needs-decomposition",
         "research-evidence",
         "security-sensitive",
-    ],
-)
-def test_veto_labels_fail_closed(label):
-    with pytest.raises(PilotError, match="veto"):
-        validate_issue(issue("agent-ready", label))
+    ]:
+        with pytest.raises(PilotError, match="veto"):
+            validate_issue(issue("agent-ready", label))
 
 
 def test_missing_agent_ready_fails_closed():
@@ -92,7 +90,7 @@ def test_create_conversation_sends_bounded_repository_context(monkeypatch):
     def fake_urlopen(request, timeout):
         observed["url"] = request.full_url
         observed["body"] = json.loads(request.data.decode())
-        observed["authorization"] = request.headers["Authorization"]
+        observed["api_key"] = request.headers["X-session-api-key"]
         observed["timeout"] = timeout
         return Response()
 
@@ -113,5 +111,40 @@ def test_create_conversation_sends_bounded_repository_context(monkeypatch):
         "repository": "MSKazemi/idkmesh",
         "selected_branch": "main",
     }
-    assert observed["authorization"] == "Bearer secret-value"
+    assert observed["api_key"] == "secret-value"
+    assert observed["timeout"] == 30
+
+
+def test_get_conversation_uses_session_api_key(monkeypatch):
+    observed = {}
+
+    class Response:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+        def read(self):
+            return json.dumps(
+                {"conversation_id": "conv-1", "status": "STOPPED"}
+            ).encode()
+
+    def fake_urlopen(request, timeout):
+        observed["url"] = request.full_url
+        observed["api_key"] = request.headers["X-session-api-key"]
+        observed["timeout"] = timeout
+        return Response()
+
+    monkeypatch.setattr("urllib.request.urlopen", fake_urlopen)
+
+    response = get_conversation(
+        "secret-value", "https://app.all-hands.dev", "conv-1"
+    )
+
+    assert response["status"] == "STOPPED"
+    assert observed["url"] == (
+        "https://app.all-hands.dev/api/conversations/conv-1"
+    )
+    assert observed["api_key"] == "secret-value"
     assert observed["timeout"] == 30

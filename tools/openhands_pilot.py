@@ -139,7 +139,7 @@ def create_conversation(
         f"{base_url.rstrip('/')}/api/conversations",
         headers={
             "Accept": "application/json",
-            "Authorization": f"Bearer {api_key}",
+            "X-Session-API-Key": api_key,
             "User-Agent": "idkmesh-openhands-pilot/1",
         },
         payload={
@@ -156,7 +156,7 @@ def get_conversation(api_key: str, base_url: str, conversation_id: str) -> dict[
         f"{base_url.rstrip('/')}/api/conversations/{conversation_id}",
         headers={
             "Accept": "application/json",
-            "Authorization": f"Bearer {api_key}",
+            "X-Session-API-Key": api_key,
             "User-Agent": "idkmesh-openhands-pilot/1",
         },
     )

@@ -27,7 +27,7 @@ python -m randomness_lab --policy thompson --rounds 100 --seed 42
 
 `pytest.ini` sets the repository root on `pythonpath`, so `PYTHONPATH=.` is no longer required for pytest on current `main`. See `docs/TESTING.md` for tier budgets, caching, hooks, CI parity, and Windows-specific guidance. Use a focused module, such as `python -m pytest -q tests/test_r2.py`, while iterating.
 
-**Do not use `python -m unittest discover` to check your work.** It silently under-collects: `unittest` only finds `TestCase` subclasses, so the **232** module-level `test_*` functions spread across **24** files in `tests/` are invisible to it — roughly a tenth of the suite, reported as `OK` with no warning that anything was missed. `tests/test_documented_test_counts.py` re-measures both figures and the gap they explain, so this paragraph fails the suite if it drifts.
+**Do not use `python -m unittest discover` to check your work.** It silently under-collects: `unittest` only finds `TestCase` subclasses, so the **233** module-level `test_*` functions spread across **24** files in `tests/` are invisible to it — roughly a tenth of the suite, reported as `OK` with no warning that anything was missed. `tests/test_documented_test_counts.py` re-measures both figures and the gap they explain, so this paragraph fails the suite if it drifts.
 
 ## Agent Contribution Loop
 
