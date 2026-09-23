@@ -8,6 +8,7 @@ citation, or vendor endorsement.
 from __future__ import annotations
 
 import sys
+from html.parser import HTMLParser
 import urllib.error
 import urllib.request
 import urllib.robotparser
@@ -134,6 +135,61 @@ def _robots_parser(text: str) -> urllib.robotparser.RobotFileParser:
     return parser
 
 
+class _IndexabilityParser(HTMLParser):
+    """Extract the small metadata subset that controls public indexability."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.canonicals: list[str] = []
+        self.robots: list[str] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        values = {key.lower(): value for key, value in attrs if value is not None}
+        if tag.lower() == "link" and "canonical" in {
+            token.strip().lower()
+            for token in values.get("rel", "").split()
+            if token.strip()
+        }:
+            href = values.get("href", "").strip()
+            if href:
+                self.canonicals.append(href)
+
+        if tag.lower() == "meta" and values.get("name", "").lower() in {
+            "robots",
+            "googlebot",
+            "bingbot",
+        }:
+            content = values.get("content", "").strip()
+            if content:
+                self.robots.append(content)
+
+
+def _check_indexable_html(
+    label: str,
+    expected_url: str,
+    body: str,
+    failures: list[str],
+) -> None:
+    parser = _IndexabilityParser()
+    parser.feed(body)
+
+    if parser.canonicals != [expected_url]:
+        failures.append(
+            f"{label}: canonical URLs {parser.canonicals!r} do not equal "
+            f"the expected {expected_url!r}"
+        )
+
+    blocking = sorted(
+        directive
+        for directive in parser.robots
+        if "noindex" in directive.lower()
+    )
+    if blocking:
+        failures.append(
+            f"{label}: rendered page contains a noindex directive: {blocking!r}"
+        )
+
+
 def _check_social_image(label: str, body: str, failures: list[str]) -> None:
     if SOCIAL_IMAGE not in body:
         failures.append(f"{label}: rendered page is missing the canonical social image")
@@ -183,12 +239,19 @@ def probe() -> list[str]:
         if "AI agent verification" not in topic_body or "multi-agent orchestration" not in topic_body.lower():
             failures.append("topic hub returned 200 but expected topic content is absent")
         _check_social_image("topic hub", topic_body, failures)
+        _check_indexable_html("topic hub", TOPICS, topic_body, failures)
 
     sentinel_status, sentinel_body = fetch(JEKYLL_SENTINEL, browser)
     if sentinel_status != 200:
         failures.append(f"Jekyll sentinel returned HTTP {sentinel_status}")
     else:
         _check_social_image("Jekyll sentinel", sentinel_body, failures)
+        _check_indexable_html(
+            "Jekyll sentinel",
+            JEKYLL_SENTINEL,
+            sentinel_body,
+            failures,
+        )
 
     for hub_id, url in DIRECTORY_HUBS.items():
         status, body = fetch(url, browser)
@@ -204,11 +267,10 @@ def probe() -> list[str]:
             continue
         if marker.lower() not in body.lower():
             failures.append(f"{topic_id}: expected content marker {marker!r} is absent")
-        if 'rel="canonical"' not in body.lower():
-            failures.append(f"{topic_id}: rendered page has no canonical link")
         if 'name="description"' not in body.lower():
             failures.append(f"{topic_id}: rendered page has no meta description")
         _check_social_image(topic_id, body, failures)
+        _check_indexable_html(topic_id, url, body, failures)
 
     llms_status, llms = fetch(LLMS, browser)
     if llms_status != 200:
@@ -254,8 +316,8 @@ def main() -> int:
 
     print(
         "Discovery surface healthy: robots, sitemap, directory hubs, topic hub, "
-        "ten topic pages, llms.txt, IndexNow key, and representative crawler "
-        "probes all passed."
+        "ten topic pages, exact canonicals, indexability, llms.txt, IndexNow key, "
+        "and representative crawler probes all passed."
     )
     return 0
 
