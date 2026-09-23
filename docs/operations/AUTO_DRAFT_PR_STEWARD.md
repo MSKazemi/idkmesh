@@ -128,8 +128,8 @@ making any additional GitHub API calls. The contract is
 
 The trusted workflow writes:
 
-- `steward-report.json` — machine-readable state for automation, CLI, and future
-  GUI surfaces;
+- `steward-report.json` — machine-readable state for automation, CLI, and
+  local dashboards;
 - `steward-report.md` — human-readable summary of the same result.
 
 Both files are uploaded as a short-retention GitHub Actions artifact named
@@ -306,8 +306,8 @@ including:
 - created/skipped outcomes that do not correspond to a planned candidate;
 - invalid completed/blocked/disabled state combinations.
 
-This command is the supported local consumer contract for future UI/dashboard
-work; consumers should not scrape GitHub workflow logs.
+The report validator is shared by the CLI, dashboard, and history consumers;
+they should not scrape GitHub workflow logs.
 
 ## Troubleshooting
 
