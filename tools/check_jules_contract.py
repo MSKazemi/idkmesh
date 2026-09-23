@@ -183,6 +183,39 @@ def main() -> int:
         "max_dispatch_per_sweep cannot exceed effective provider/repository capacity",
     )
 
+    ci_backpressure = dispatch_policy.get("ci_backpressure") or {}
+    _require(
+        errors,
+        isinstance(ci_backpressure, dict)
+        and isinstance(ci_backpressure.get("enabled"), bool),
+        "ci_backpressure.enabled must be a boolean",
+    )
+    for field in ("max_queued_runs", "max_in_progress_runs"):
+        value = (
+            ci_backpressure.get(field)
+            if isinstance(ci_backpressure, dict)
+            else None
+        )
+        _require(
+            errors,
+            isinstance(value, int) and not isinstance(value, bool) and value >= 0,
+            f"ci_backpressure.{field} must be an integer >= 0",
+        )
+    _require(
+        errors,
+        isinstance(ci_backpressure, dict)
+        and str(ci_backpressure.get("source") or "").startswith(
+            "https://docs.github.com/en/rest/actions/workflow-runs"
+        ),
+        "CI backpressure must cite the official GitHub workflow-runs API",
+    )
+    _require(
+        errors,
+        isinstance(ci_backpressure, dict)
+        and bool(str(ci_backpressure.get("checked_at") or "").strip()),
+        "CI backpressure must record checked_at",
+    )
+
     jules_routing = (
         routing_policy.get("provider_examples", {})
         .get("jules", {})
@@ -256,8 +289,13 @@ def main() -> int:
     )
     _require(
         errors,
+        "actions: read" in router_workflow,
+        "router must pass Actions read permission to reusable Jules dispatch",
+    )
+    _require(
+        errors,
         "actions: write" not in router_workflow,
-        "router no longer needs actions:write when using workflow_call",
+        "router must never grant Actions write to Jules automation",
     )
     _require(
         errors,
@@ -339,6 +377,16 @@ def main() -> int:
     )
     _require(
         errors,
+        "actions: read" in dispatcher_workflow,
+        "dispatcher must have read-only Actions capacity visibility",
+    )
+    _require(
+        errors,
+        "actions: write" not in dispatcher_workflow,
+        "dispatcher must not gain Actions write authority",
+    )
+    _require(
+        errors,
         "pull-requests: write" not in dispatcher_workflow,
         "dispatcher must not gain pull-request write authority",
     )
@@ -377,6 +425,22 @@ def main() -> int:
         errors,
         "available_dispatch_capacity" in dispatcher_code,
         "dispatcher must compute independent repository/provider slot budgets",
+    )
+    _require(
+        errors,
+        "count_workflow_runs" in dispatcher_code,
+        "dispatcher must read repository Actions backlog before new work",
+    )
+    _require(
+        errors,
+        "ci_backpressure_reason" in dispatcher_code,
+        "dispatcher must enforce configured CI backpressure",
+    )
+    _require(
+        errors,
+        dispatcher_code.find("ci_backpressure_reason(api, policy)")
+        < dispatcher_code.find("issues = open_issues"),
+        "dispatcher must check CI backpressure before selecting/reserving issues",
     )
     _require(
         errors,
