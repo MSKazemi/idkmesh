@@ -132,4 +132,5 @@ def test_router_workflow_keeps_hot_path_api_budget_bounded():
     assert "secrets: inherit" in workflow
     assert "gh workflow run jules-dispatch.yml" not in workflow
     assert "bootstrap_labels: true" in workflow
+    assert "fill_capacity: true" in workflow
     assert "actions: write" not in workflow

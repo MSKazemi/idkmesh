@@ -17,6 +17,11 @@ on:
         required: false
         default: false
         type: boolean
+      fill_capacity:
+        description: Reconcile sessions and fill available capacity for reusable callers
+        required: false
+        default: false
+        type: boolean
     secrets:
       JULES_API_KEY:
         required: true
@@ -108,10 +113,11 @@ jobs:
 
       - name: Reconcile and fill available Jules capacity
         if: >-
-          inputs.issue_number == '' &&
-          (github.event_name == 'schedule' ||
-           github.event_name == 'workflow_dispatch' ||
-           (github.event_name == 'issues' && github.event.action == 'closed'))
+          inputs.fill_capacity ||
+          (inputs.issue_number == '' &&
+           (github.event_name == 'schedule' ||
+            github.event_name == 'workflow_dispatch' ||
+            (github.event_name == 'issues' && github.event.action == 'closed')))
         env:
           GITHUB_TOKEN: ${{ github.token }}
           JULES_API_KEY: ${{ secrets.JULES_API_KEY }}

@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "reviewed_at": "2026-09-22",
+  "reviewed_at": "2026-09-24",
   "purpose": "Map 100 strategically important search intents to ten useful IDKMesh topic pages. These are semantic priorities, not claims of search volume or ranking.",
   "rules": [
     "One authoritative page may satisfy several closely related query phrasings.",

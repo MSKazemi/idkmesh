@@ -59,10 +59,57 @@ def provider_concurrency_limit(policy: dict[str, Any]) -> int:
 
 
 def effective_in_flight_limit(policy: dict[str, Any]) -> int:
-    """Use the stricter of repository review capacity and provider capacity."""
+    """Return the configured zero-occupancy ceiling for one dispatch cycle.
+
+    Runtime availability is computed from two independent budgets: repository
+    reservations and provider-active sessions. This helper remains the static
+    upper bound used for policy validation.
+    """
     return min(
         int(policy["max_in_flight"]),
         provider_concurrency_limit(policy),
+    )
+
+
+def provider_terminal_session_states(policy: dict[str, Any]) -> set[str]:
+    """Return provider states that no longer consume task concurrency."""
+    provider = policy["provider_concurrency"]
+    return {
+        str(value).upper()
+        for value in provider["terminal_session_states"]
+    }
+
+
+def provider_active_session_count(
+    policy: dict[str, Any],
+    sessions: Iterable[dict[str, Any]],
+) -> int:
+    """Count account-wide provider sessions that conservatively consume capacity."""
+    terminal = provider_terminal_session_states(policy)
+    return sum(
+        1
+        for session in sessions
+        if str(session.get("state") or "STATE_UNSPECIFIED").upper() not in terminal
+    )
+
+
+def available_dispatch_capacity(
+    policy: dict[str, Any],
+    *,
+    repository_active_count: int,
+    sessions: Iterable[dict[str, Any]],
+) -> tuple[int, int, int, int]:
+    """Return dispatch slots plus repository/provider occupancy details."""
+    repository_limit = int(policy["max_in_flight"])
+    provider_limit = provider_concurrency_limit(policy)
+    provider_active = provider_active_session_count(policy, sessions)
+    repository_slots = max(0, repository_limit - repository_active_count)
+    provider_slots = max(0, provider_limit - provider_active)
+    return (
+        min(repository_slots, provider_slots),
+        repository_slots,
+        provider_slots,
+        provider_active,
     )
 
 
@@ -116,9 +163,24 @@ def load_policy(path: pathlib.Path = DEFAULT_POLICY) -> dict[str, Any]:
         raise DispatchError(
             "provider_concurrency.max_concurrent_tasks must be an integer >= 1"
         )
-    for field in ("plan", "source", "checked_at"):
+    for field in ("plan", "source", "session_state_source", "checked_at"):
         if not str(provider.get(field) or "").strip():
             raise DispatchError(f"provider_concurrency.{field} must be non-empty")
+    terminal_states = provider.get("terminal_session_states")
+    if (
+        not isinstance(terminal_states, list)
+        or not terminal_states
+        or any(not str(value).strip() for value in terminal_states)
+    ):
+        raise DispatchError(
+            "provider_concurrency.terminal_session_states must be a non-empty list"
+        )
+    normalized_terminal = {str(value).upper() for value in terminal_states}
+    if not {"COMPLETED", "FAILED"}.issubset(normalized_terminal):
+        raise DispatchError(
+            "provider_concurrency.terminal_session_states must include "
+            "COMPLETED and FAILED"
+        )
     if int(policy["max_dispatch_per_sweep"]) > effective_in_flight_limit(policy):
         raise DispatchError(
             "max_dispatch_per_sweep cannot exceed the effective in-flight limit"
@@ -770,14 +832,43 @@ def dispatch(
         for issue in issues
         if label_names(issue).intersection(active_labels)
     ]
-    effective_limit = effective_in_flight_limit(policy)
-    slots = max(0, effective_limit - len(active))
+    repository_limit = int(policy["max_in_flight"])
+    repository_slots = max(0, repository_limit - len(active))
+    if repository_slots == 0:
+        print(
+            "jules dispatcher: repository review capacity full "
+            f"({len(active)}/{repository_limit} open dispatch reservations)"
+        )
+        return []
+
+    if not dry_run and jules_api is None:
+        raise DispatchError(
+            "JULES_API_KEY is required for automatic Jules dispatch"
+        )
+
+    provider_sessions: list[dict[str, Any]] = list(sessions or [])
+    if not dry_run and sessions is None:
+        assert jules_api is not None
+        provider_sessions = jules_api.list_sessions(
+            max_pages=int(policy["session_scan_max_pages"])
+        )
+
+    (
+        slots,
+        repository_slots,
+        provider_slots,
+        provider_active,
+    ) = available_dispatch_capacity(
+        policy,
+        repository_active_count=len(active),
+        sessions=provider_sessions,
+    )
     if slots == 0:
         print(
-            "jules dispatcher: capacity full "
-            f"({len(active)}/{effective_limit} effective active slots; "
-            f"repository cap={policy['max_in_flight']}, "
-            f"provider cap={provider_concurrency_limit(policy)})"
+            "jules dispatcher: provider capacity full "
+            f"({provider_active}/{provider_concurrency_limit(policy)} "
+            "non-terminal account sessions; "
+            f"repository reservations={len(active)}/{repository_limit})"
         )
         return []
 
@@ -792,23 +883,10 @@ def dispatch(
         print("jules dispatcher: no eligible Jules queue issues")
         return []
 
-    if not dry_run and jules_api is None:
-        raise DispatchError(
-            "JULES_API_KEY is required for automatic Jules dispatch"
-        )
-
     source = None
-    provider_sessions: list[dict[str, Any]] = []
     if not dry_run:
         assert jules_api is not None
         source = jules_api.resolve_source(api.repository)
-        provider_sessions = (
-            sessions
-            if sessions is not None
-            else jules_api.list_sessions(
-                max_pages=int(policy["session_scan_max_pages"])
-            )
-        )
 
     numbers: list[int] = []
     for issue in selected:
