@@ -54,6 +54,26 @@ It can contribute evidence. Final integration authority should remain a separate
 
 See the [EvaluatorPlan and VerificationResult specifications](https://github.com/MSKazemi/idkmesh/tree/main/docs/specifications) and [schema index](https://github.com/MSKazemi/idkmesh/blob/main/schemas/README.md).
 
+### Can ChatGPT, Claude, or Gemini be used as an LLM judge?
+
+They can be used as evaluators when the task, rubric, model/version, prompt, and observed reliability are recorded. Brand or model size alone does not establish that a judge is accurate for a particular evaluation.
+
+### How can I reduce LLM-judge bias?
+
+Use explicit rubrics, blinded ordering where possible, counterbalanced prompts, held-out calibration cases, multiple evidence types, and measurements for systematic preference rather than relying on one prompt format.
+
+### Should an LLM judge know which model generated the answer?
+
+Often it is safer to hide irrelevant producer identity when measuring output quality, because model names can introduce preference bias. Keep identity available in provenance even when it is blinded from the scoring prompt.
+
+### How many LLM judges are enough?
+
+There is no universal number. Add judges only while they contribute useful independent information relative to cost and latency; correlated judges can make a large panel behave like a much smaller one.
+
+### What should happen when an LLM judge is uncertain?
+
+Preserve or expose the uncertainty, request additional evidence, use a different evaluator class, or escalate to a human rather than forcing every case into an accept/reject verdict.
+
 [Browse all AI-agent trust topics](https://mskazemi.com/idkmesh/topics/).
 
 **Last reviewed:** 2026-09-22.
