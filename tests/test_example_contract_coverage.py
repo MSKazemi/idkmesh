@@ -68,6 +68,7 @@ VALID_AGAINST = {
     "examples/results/phase0-smoke.result-manifest.json": "result-manifest-v0.1.schema.json",
     "examples/results/phase0-smoke.verification-result.json": "verification-result-v0.1.schema.json",
     "examples/routing-replay.example.json": "routing-replay-v0.schema.json",
+    "examples/verifier-observation-pool.example.json": "verifier-observation-pool-v0.1.schema.json",
     "examples/verifier/bad/result-manifest.json": "result-manifest-v0.1.schema.json",
     "examples/verifier/good/result-manifest.json": "result-manifest-v0.1.schema.json",
     "examples/verifier/patch/forbidden/result-manifest.json": "result-manifest-v0.1.schema.json",
