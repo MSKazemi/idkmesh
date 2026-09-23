@@ -641,12 +641,22 @@ def dispatch(
     event_issue_number: int | None = None,
     max_dispatch: int | None = None,
     dry_run: bool = False,
+    open_issues: list[dict[str, Any]] | None = None,
+    sessions: list[dict[str, Any]] | None = None,
 ) -> list[int]:
-    """Fill available Jules capacity from the explicit agent-ready queue."""
+    """Fill available Jules capacity from trusted manual and automatic queues."""
     dispatch_label = str(policy["dispatch_label"])
-    queue_label = str(policy["queue_label"])
 
-    active = list_active_issues(api, policy)
+    # One repository issue snapshot feeds capacity accounting and queue
+    # selection. This materially reduces GitHub API pressure.
+    issues = open_issues if open_issues is not None else api.list_open_issues()
+    issues = [issue for issue in issues if not issue.get("pull_request")]
+    active_labels = active_dispatch_labels(policy)
+    active = [
+        issue
+        for issue in issues
+        if label_names(issue).intersection(active_labels)
+    ]
     slots = max(0, int(policy["max_in_flight"]) - len(active))
     if slots == 0:
         print(
@@ -655,16 +665,15 @@ def dispatch(
         )
         return []
 
-    queued = api.list_open_issues(queue_label)
     selected = select_candidates(
-        queued,
+        issues,
         policy,
         slots=slots,
         event_issue_number=event_issue_number,
         max_dispatch=max_dispatch,
     )
     if not selected:
-        print("jules dispatcher: no eligible agent-ready issues")
+        print("jules dispatcher: no eligible Jules queue issues")
         return []
 
     if not dry_run and jules_api is None:
@@ -673,9 +682,15 @@ def dispatch(
         )
 
     source = None
+    existing_by_title: dict[str, dict[str, Any]] = {}
     if not dry_run:
         assert jules_api is not None
         source = jules_api.resolve_source(api.repository)
+        provider_sessions = sessions if sessions is not None else jules_api.list_sessions()
+        for session in provider_sessions:
+            title = str(session.get("title") or "")
+            if title and title not in existing_by_title:
+                existing_by_title[title] = session
 
     numbers: list[int] = []
     for issue in selected:
@@ -691,13 +706,16 @@ def dispatch(
 
         assert jules_api is not None
         assert source is not None
-        existing = jules_api.find_existing_session(title)
+        existing = existing_by_title.get(title)
 
-        # This status label is deliberately NOT the provider-native jules label.
-        # It reserves the issue before the external POST and prevents a second
-        # dispatcher run from creating duplicate work.
+        # Reserve before provider creation so concurrent runs cannot create
+        # duplicate sessions for the same issue.
         api.add_labels(number, [dispatch_label])
-        if existing is not None:
+        _replace_local_label(issue, "", dispatch_label)
+        if (
+            existing is not None
+            and str(existing.get("state") or "").upper() != "FAILED"
+        ):
             api.add_comment(number, session_comment(existing))
             print(
                 f"jules dispatcher: reused existing Jules session for #{number}"
@@ -728,6 +746,7 @@ def dispatch(
                 )
             raise
 
+        existing_by_title[title] = session
         api.add_comment(number, session_comment(session))
         print(
             f"jules dispatcher: dispatched #{number} via {session.get('name')} "
@@ -735,7 +754,6 @@ def dispatch(
         )
 
     return numbers
-
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
