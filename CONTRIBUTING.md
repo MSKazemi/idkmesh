@@ -88,7 +88,7 @@ For materially AI-generated code, research, tests, or documentation, include a s
 
 Do not submit large volumes of unreviewed generated material. Generation must not grow faster than the community's ability to verify and maintain it.
 
-Maintainers and trusted triagers using the repository's Google Jules automation should follow [`docs/operations/JULES_AUTOMATION.md`](docs/operations/JULES_AUTOMATION.md). In that flow, `agent-ready` means a bounded issue has been reviewed as suitable for an implementation agent; the dispatcher adds `jules` when review capacity is available. Human-only evidence, independent research, security approval, and governance work stay outside that automatic lane.
+Maintainers and trusted triagers using the repository's Google Jules automation should follow [`docs/operations/JULES_AUTOMATION.md`](docs/operations/JULES_AUTOMATION.md). `agent-ready` is the explicit human-approved queue. The Issue Model Router may also emit `agent:jules-eligible` for a narrow automatic lane, but the dispatcher accepts that label only for trusted author associations and after hard-veto checks. Live work records `agent:jules-dispatched`; failed or stale provider work moves to `agent:jules-needs-attention` and is not automatically retried. The `jules` label is retained only for deliberate manual/native-App fallback. Human-only evidence, independent research, security approval, secret-management tasks, and governance work stay outside automatic execution. Keep the router-to-dispatcher handoff as a local reusable `workflow_call`; the required PR Gate's `tools/check_jules_contract.py` check is the anti-drift boundary and must not be bypassed by Jules-related changes. Jules plan concurrency is a separate, dated policy in `provider_concurrency.max_concurrent_tasks`; update that configuration with its official source when plans change rather than hard-coding or bypassing provider capacity.
 
 ## Running the tests
 
@@ -167,8 +167,8 @@ Markdown/identity report, not the combined gate. See
 [the stable PR gate](.github/workflows/pr-gate.yml) for the CI invocation.
 
 **Do not verify your work with `python -m unittest discover`.** It silently
-under-collects — `unittest` only finds `TestCase` subclasses, so the 215
-module-level `test_*` functions spread across 23 files in `tests/` are
+under-collects — `unittest` only finds `TestCase` subclasses, so the 249
+module-level `test_*` functions spread across 24 files in `tests/` are
 invisible to it. That is roughly a tenth of the suite, skipped while the run
 still prints `OK`, with no indication anything was missed.
 `tests/test_documented_test_counts.py` re-measures both figures and the gap
@@ -276,7 +276,7 @@ ignore it.
 2. Find or open an issue for non-trivial work and state what you plan to change.
 3. Fork/branch and make a focused change.
 4. Add tests, evidence, or documentation.
-5. Open a pull request using the template.
+5. Open a pull request using the template. For same-repository branches using a managed development prefix, the trusted [Auto Draft PR Steward](docs/operations/AUTO_DRAFT_PR_STEWARD.md) may create the initial Draft PR shell automatically; continue committing on the same branch and complete/refine the PR normally. Scratch, evidence, frozen, hold, dependency-bot, and Jules-managed branches are excluded from this automatic lane.
 6. Respond to review in public where possible.
 7. Update the change until the evidence and maintainability are sufficient.
 8. If the change represents a major durable decision, add/update a decision record.

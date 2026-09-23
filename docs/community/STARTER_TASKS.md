@@ -61,12 +61,12 @@ already carries, and never creates a label.
 
 **Parallel welcome.** ~45 minutes.
 
-`tools/` contains 44 modules that build an `argparse` parser. Nothing asserts
+`tools/` contains 51 modules that build an `argparse` parser. Nothing asserts
 that they still start. A tool can be broken by an import error, a bad default,
 or a renamed helper, and no test in the suite would notice until someone ran it
 by hand.
 
-All 44 currently pass, so this task adds a guard rather than fixing a bug.
+This task adds a discovery-based guard rather than hard-coding the current tool list.
 
 **Acceptance:** a test that discovers the tools rather than hard-coding a list,
 runs each with `--help` in a subprocess, and asserts a zero exit status and
@@ -100,9 +100,9 @@ functions, or a short written finding showing where it is already exercised.
 
 ### S1 — Check every workflow's `permissions:` block is least-privilege
 
-**Parallel welcome** — split the 49 workflows into batches. ~2 hours per batch.
+**Parallel welcome** — split the 51 workflows into batches. ~2 hours per batch.
 
-All 49 workflows in `.github/workflows/` declare an explicit top-level
+All 51 workflows in `.github/workflows/` declare an explicit top-level
 `permissions:` block, so none of them silently inherits the default token
 scope. The remaining question is whether each block is *minimal*: a workflow
 that only reads the tree should not hold `contents: write`.
