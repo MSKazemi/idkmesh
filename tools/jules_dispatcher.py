@@ -57,6 +57,7 @@ def load_policy(path: pathlib.Path = DEFAULT_POLICY) -> dict[str, Any]:
         "attention_session_states",
         "stale_session_minutes",
         "stale_missing_session_minutes",
+        "session_scan_max_pages",
         "max_in_flight",
         "max_dispatch_per_sweep",
         "blocked_labels",
@@ -90,6 +91,9 @@ def load_policy(path: pathlib.Path = DEFAULT_POLICY) -> dict[str, Any]:
         or missing_minutes < 1
     ):
         raise DispatchError("stale_missing_session_minutes must be an integer >= 1")
+    scan_pages = policy["session_scan_max_pages"]
+    if isinstance(scan_pages, bool) or not isinstance(scan_pages, int) or scan_pages < 1:
+        raise DispatchError("session_scan_max_pages must be an integer >= 1")
     return policy
 
 def label_names(issue: dict[str, Any]) -> set[str]:
@@ -606,7 +610,11 @@ def reconcile_active_sessions(
         print("jules dispatcher: no API-dispatched sessions to reconcile")
         return []
 
-    provider_sessions = sessions if sessions is not None else jules_api.list_sessions()
+    provider_sessions = (
+        sessions
+        if sessions is not None
+        else jules_api.list_sessions(max_pages=int(policy["session_scan_max_pages"]))
+    )
 
     attention: list[int] = []
     for issue in active:
@@ -728,7 +736,13 @@ def dispatch(
     if not dry_run:
         assert jules_api is not None
         source = jules_api.resolve_source(api.repository)
-        provider_sessions = sessions if sessions is not None else jules_api.list_sessions()
+        provider_sessions = (
+            sessions
+            if sessions is not None
+            else jules_api.list_sessions(
+                max_pages=int(policy["session_scan_max_pages"])
+            )
+        )
 
     numbers: list[int] = []
     for issue in selected:
@@ -850,7 +864,9 @@ def main(argv: list[str] | None = None) -> int:
         if args.reconcile or args.dispatch:
             open_issues = api.list_open_issues()
         if jules_api is not None and (args.reconcile or args.dispatch):
-            sessions = jules_api.list_sessions()
+            sessions = jules_api.list_sessions(
+                max_pages=int(policy["session_scan_max_pages"])
+            )
 
         if args.reconcile:
             assert jules_api is not None
