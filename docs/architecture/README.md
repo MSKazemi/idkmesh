@@ -12,6 +12,7 @@ remain authoritative; an index link does not promote a proposal into policy.
 
 ## System and Compute Fabric
 
+
 - [Scalability and Agility](SCALABILITY_AND_AGILITY.md) — fractal federation
   direction for nodes, cells, and regions.
 - [Agent Network and Volunteer Nodes](AGENT_NETWORK_AND_VOLUNTEER_NODES.md) —
