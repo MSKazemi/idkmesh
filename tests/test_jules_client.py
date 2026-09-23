@@ -145,6 +145,35 @@ class JulesClientTests(unittest.TestCase):
                     client.get_json("/sources")
                 self.assertEqual(caught.exception.code, "result_normalization_error")
 
+    def test_custom_transport_cannot_bypass_response_boundaries(self):
+        oversized = JulesClient(
+            api_key="runtime-key",
+            max_response_bytes=2,
+            transport=FakeTransport(JulesHttpResponse(200, {}, b"{}x")),
+        )
+        with self.assertRaises(ConnectorError) as too_large:
+            oversized.get_json("/sources")
+        self.assertEqual(
+            too_large.exception.code,
+            "result_normalization_error",
+        )
+
+        bad_status = JulesClient(
+            api_key="runtime-key",
+            transport=FakeTransport(JulesHttpResponse(True, {}, b"{}")),
+        )
+        with self.assertRaises(ConnectorError) as status:
+            bad_status.get_json("/sources")
+        self.assertEqual(status.exception.code, "result_normalization_error")
+
+        bad_body = JulesClient(
+            api_key="runtime-key",
+            transport=FakeTransport(JulesHttpResponse(200, {}, "not-bytes")),
+        )
+        with self.assertRaises(ConnectorError) as body:
+            bad_body.get_json("/sources")
+        self.assertEqual(body.exception.code, "result_normalization_error")
+
     def test_empty_success_body_returns_empty_object(self):
         client = JulesClient(
             api_key="runtime-key",
@@ -152,9 +181,14 @@ class JulesClientTests(unittest.TestCase):
         )
         self.assertEqual(client.post_json("/sessions/123:approvePlan"), {})
 
-    def test_path_cannot_override_base_url(self):
+    def test_path_cannot_override_base_url_or_query_builder(self):
         client = JulesClient(api_key="runtime-key", transport=FakeTransport())
-        for path in ("sources", "https://evil.example/sources"):
+        for path in (
+            "sources",
+            "https://evil.example/sources",
+            "/sources?pageSize=100",
+            "/sources#fragment",
+        ):
             with self.subTest(path=path):
                 with self.assertRaises(ValueError):
                     client.get_json(path)
