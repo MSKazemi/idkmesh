@@ -27,7 +27,6 @@ import hashlib
 import json
 import math
 import random
-import statistics
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -218,7 +217,7 @@ def _pairwise_correlations(
         if correlation is not None:
             measured.append(correlation)
 
-    mean = statistics.fmean(measured) if measured else None
+    mean = (math.fsum(measured) / len(measured)) if measured else None
     return rows, mean
 
 
@@ -419,7 +418,6 @@ def _bootstrap_candidate(
     point_panel_error_delta: float,
     point_effective_votes_delta: float | None,
     params: dict[str, Any],
-    seed_offset: int,
 ) -> tuple[dict[str, Any], list[str]]:
     non_probe = _non_probe_candidates(data)
     n = len(non_probe)
@@ -432,7 +430,7 @@ def _bootstrap_candidate(
             "sampling_unit": SAMPLING_UNIT,
             "confidence_level": confidence_level,
             "replicates": replicates,
-            "seed": params["seed"] + seed_offset,
+            "seed": params["seed"],
             "non_probe_candidates": n,
             "min_candidates_for_inference": MIN_CANDIDATES_FOR_INFERENCE,
             "sufficient_for_inference": False,
@@ -450,7 +448,7 @@ def _bootstrap_candidate(
         data, augmented_verifier_ids
     )
     quorum = float(data.get("quorum", 0.5))
-    rng = random.Random(params["seed"] + seed_offset)
+    rng = random.Random(params["seed"])
 
     error_deltas: list[float] = []
     effective_deltas: list[float] = []
@@ -486,7 +484,7 @@ def _bootstrap_candidate(
         "sampling_unit": SAMPLING_UNIT,
         "confidence_level": confidence_level,
         "replicates": replicates,
-        "seed": params["seed"] + seed_offset,
+        "seed": params["seed"],
         "non_probe_candidates": n,
         "min_candidates_for_inference": MIN_CANDIDATES_FOR_INFERENCE,
         "sufficient_for_inference": True,
@@ -507,7 +505,6 @@ def _candidate_row(
     current_report: dict[str, Any],
     *,
     bootstrap: dict[str, Any] | None,
-    seed_offset: int,
 ) -> dict[str, Any]:
     augmented_ids = current_verifier_ids + (candidate_verifier_id,)
     augmented_report = gate_audit.audit(_subset_data(data, augmented_ids))
@@ -590,7 +587,6 @@ def _candidate_row(
             point_panel_error_delta=panel_error_delta,
             point_effective_votes_delta=effective_delta,
             params=bootstrap,
-            seed_offset=seed_offset,
         )
         row["uncertainty"] = uncertainty
         row["warnings"].extend(warnings)
@@ -669,9 +665,8 @@ def analyze(
             candidate_id,
             current_report,
             bootstrap=bootstrap_params,
-            seed_offset=index,
         )
-        for index, candidate_id in enumerate(candidate_ids)
+        for candidate_id in candidate_ids
     ]
 
     non_probe = _non_probe_candidates(data)
