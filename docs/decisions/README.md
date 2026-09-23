@@ -104,3 +104,4 @@ owner's call.
    supersedes the other. `DECISIONS.md` cites only ADR-0009.
 
 There is also no ADR-0001; the sequence begins at 0002.
+- [ADR-0013: Cross-disciplinary policies behind hard gates](ADR-0013-cross-disciplinary-policies-behind-hard-gates.md)
