@@ -379,6 +379,17 @@ class EndToEndTests(unittest.TestCase):
             report["provenance"]["selection_plan_digest_sha256"],
         )
 
+    def test_selection_plan_is_bound_to_exact_design_matrix(self):
+        report = benchmark.benchmark(
+            make_matrix("design"),
+            make_matrix("holdout"),
+            config=make_config(),
+        )
+        self.assertEqual(
+            report["selection_plan"]["design_input_digest_sha256"],
+            report["splits"]["design"]["input_digest_sha256"],
+        )
+
 
 class CommittedExampleTests(unittest.TestCase):
     CONFIG = (
