@@ -490,6 +490,48 @@ class SchemaTests(unittest.TestCase):
         with self.assertRaises(jsonschema.ValidationError):
             jsonschema.validate(report, schema)
 
+    @unittest.skipUnless(HAS_JSONSCHEMA, "jsonschema not installed")
+    def test_schema_rejects_reordered_selector_rows(self):
+        schema = json.loads(REPORT_SCHEMA_PATH.read_text(encoding="utf-8"))
+        report = benchmark.benchmark(
+            make_matrix("design"),
+            make_matrix("holdout"),
+            config=make_config(),
+        )
+        selectors = report["selection_plan"]["selectors"]
+        selectors[0], selectors[1] = selectors[1], selectors[0]
+        with self.assertRaises(jsonschema.ValidationError):
+            jsonschema.validate(report, schema)
+
+    @unittest.skipUnless(HAS_JSONSCHEMA, "jsonschema not installed")
+    def test_schema_rejects_reordered_holdout_rows(self):
+        schema = json.loads(REPORT_SCHEMA_PATH.read_text(encoding="utf-8"))
+        report = benchmark.benchmark(
+            make_matrix("design"),
+            make_matrix("holdout"),
+            config=make_config(),
+        )
+        rows = report["holdout_results"]
+        rows[0], rows[1] = rows[1], rows[0]
+        with self.assertRaises(jsonschema.ValidationError):
+            jsonschema.validate(report, schema)
+
+    @unittest.skipUnless(HAS_JSONSCHEMA, "jsonschema not installed")
+    def test_schema_rejects_evaluated_row_with_unresolved_candidate_status(self):
+        schema = json.loads(REPORT_SCHEMA_PATH.read_text(encoding="utf-8"))
+        report = benchmark.benchmark(
+            make_matrix("design"),
+            make_matrix("holdout"),
+            config=make_config(),
+        )
+        evaluated = next(
+            row for row in report["holdout_results"]
+            if row["status"] == "evaluated"
+        )
+        evaluated["holdout_candidate_status"] = "unresolved"
+        with self.assertRaises(jsonschema.ValidationError):
+            jsonschema.validate(report, schema)
+
 
 if __name__ == "__main__":
     unittest.main()
