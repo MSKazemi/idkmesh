@@ -64,6 +64,7 @@ def _manifest_semantics(manifest):
 def _handoff_semantics(handoff):
     encoded = handoff.to_dict()
     candidate_specific = {
+        "result_manifest_id",
         "result_manifest_digest",
         "worker_id",
         "candidate_artifact_digest",
