@@ -1,0 +1,146 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idkmesh.org/schemas/adaptive-policy-outcome-v0.1.schema.json",
+  "title": "IDKMesh Adaptive Policy Shadow Outcome v0.1",
+  "description": "A retrospective outcome record joined to an immutable adaptive-policy shadow plan. It records observed real-process outcomes without pretending an unexecuted shadow recommendation has an observed counterfactual outcome.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "kind",
+    "evaluator_version",
+    "record_id",
+    "plan_id",
+    "plan_digest",
+    "binding",
+    "observed_process",
+    "comparison",
+    "evidence_refs",
+    "limitations",
+    "authority"
+  ],
+  "properties": {
+    "schema_version": {"const": "0.1"},
+    "kind": {"const": "idkmesh-adaptive-policy-outcome"},
+    "evaluator_version": {"const": "0.1"},
+    "record_id": {
+      "type": "string",
+      "pattern": "^adaptive-outcome-[a-f0-9]{12}-[a-f0-9]{12}$"
+    },
+    "plan_id": {"type": "string", "minLength": 1},
+    "plan_digest": {"$ref": "#/$defs/digest"},
+    "binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repository",
+        "source_revision_sha",
+        "input_digest"
+      ],
+      "properties": {
+        "repository": {"type": "string", "minLength": 1},
+        "source_revision_sha": {"$ref": "#/$defs/sha"},
+        "input_digest": {"$ref": "#/$defs/digest"}
+      }
+    },
+    "observed_process": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "actual_choice_id",
+        "observed_at",
+        "outcome",
+        "verified_utility",
+        "escaped_defect",
+        "high_risk_escape",
+        "actual_cost"
+      ],
+      "properties": {
+        "actual_choice_id": {"type": ["string", "null"]},
+        "observed_at": {"type": "string", "format": "date-time"},
+        "outcome": {
+          "enum": [
+            "succeeded",
+            "failed",
+            "rejected",
+            "abstained",
+            "unknown"
+          ]
+        },
+        "verified_utility": {"type": ["number", "null"], "minimum": 0},
+        "escaped_defect": {"type": ["boolean", "null"]},
+        "high_risk_escape": {"type": ["boolean", "null"]},
+        "actual_cost": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "project_spend_usd",
+            "compute_units",
+            "review_units",
+            "human_attention_units"
+          ],
+          "properties": {
+            "project_spend_usd": {"type": ["number", "null"], "minimum": 0},
+            "compute_units": {"type": ["number", "null"], "minimum": 0},
+            "review_units": {"type": ["number", "null"], "minimum": 0},
+            "human_attention_units": {"type": ["number", "null"], "minimum": 0}
+          }
+        }
+      }
+    },
+    "comparison": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "shadow_choice_id",
+        "baseline_choice_id",
+        "shadow_matches_actual",
+        "baseline_matches_actual",
+        "shadow_counterfactual_observed",
+        "causal_claim_allowed"
+      ],
+      "properties": {
+        "shadow_choice_id": {"type": ["string", "null"]},
+        "baseline_choice_id": {"type": ["string", "null"]},
+        "shadow_matches_actual": {"type": ["boolean", "null"]},
+        "baseline_matches_actual": {"type": ["boolean", "null"]},
+        "shadow_counterfactual_observed": {"const": false},
+        "causal_claim_allowed": {"const": false}
+      }
+    },
+    "evidence_refs": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "limitations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "evidence_only",
+        "dispatch",
+        "execute",
+        "approve",
+        "merge",
+        "repository_write"
+      ],
+      "properties": {
+        "evidence_only": {"const": true},
+        "dispatch": {"const": false},
+        "execute": {"const": false},
+        "approve": {"const": false},
+        "merge": {"const": false},
+        "repository_write": {"const": false}
+      }
+    }
+  },
+  "$defs": {
+    "sha": {"type": "string", "pattern": "^[a-f0-9]{40}$"},
+    "digest": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$"}
+  }
+}

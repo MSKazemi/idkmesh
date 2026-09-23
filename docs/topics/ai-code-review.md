@@ -1,7 +1,7 @@
 ---
 title: "AI Code Review and Coding-Agent Verification — IDKMesh"
 description: "How to use AI coding agents and AI code review without collapsing generation, review, CI evidence, and merge authority into one untrusted automation path."
-image: "/idkmesh/assets/idkmesh-social.png"
+image: "/assets/idkmesh-social.png"
 ---
 
 # AI code review and coding-agent verification

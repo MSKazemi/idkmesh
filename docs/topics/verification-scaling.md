@@ -1,7 +1,7 @@
 ---
 title: "Verification Debt, Backpressure, and AI Agent Scaling — IDKMesh"
 description: "Why AI-agent generation can outrun trustworthy review, how verification debt creates risk, and how backpressure and independent evidence support scalable agent systems."
-image: "/idkmesh/assets/idkmesh-social.png"
+image: "/assets/idkmesh-social.png"
 ---
 
 # Verification debt, backpressure, and AI agent scaling

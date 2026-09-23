@@ -367,3 +367,29 @@ preview through human-decision recording while:
 - keeping secrets out of durable/public surfaces;
 - keeping verification and human authority separate;
 - performing no merge.
+
+
+## Reference lifecycle core
+
+The standard-library reference implementation begins in
+`idkmesh.product_spine`.
+
+PS-A implements only the pure operational lifecycle boundary:
+
+- explicit run and attempt state vocabularies;
+- fail-closed transition validation;
+- immutable run and attempt projections;
+- retained failed attempts and new identities for retries;
+- exact WorkUnit digest and Git source revision fields;
+- the same authority-mode vocabulary used by connector routing;
+- automatic admission blocked for `human_required` work;
+- explicit zero write/push/merge authority in serialized projections;
+- strict round-trip parsing for replay/read projections.
+
+This module performs no network, provider, filesystem, database, verification,
+human-decision, GitHub mutation, or integration work.
+
+Its projection is not a canonical correctness artifact and must not replace
+WorkUnit, ResultManifest, VerificationResult, Run Evidence Report, or Human
+Decision Record. Those remain independently authoritative for their own
+semantics.

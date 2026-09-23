@@ -332,9 +332,6 @@ class AutoDraftPrTests(unittest.TestCase):
         )
 
     def test_policy_rejects_overlapping_prefixes(self):
-        import json
-        import tempfile
-
         raw = {
             "schema_version": "0.1",
             "enabled": True,
@@ -356,6 +353,47 @@ class AutoDraftPrTests(unittest.TestCase):
             path.write_text(json.dumps(raw), encoding="utf-8")
             with self.assertRaisesRegex(ValueError, "must not overlap"):
                 steward.load_policy(path)
+
+    def test_policy_rejects_coerced_booleans_limits_and_prefixes(self):
+        base = {
+            "schema_version": "0.1",
+            "enabled": True,
+            "not_before": "2026-09-22T15:25:00Z",
+            "default_base": "main",
+            "managed_prefixes": ["feat/"],
+            "excluded_prefixes": [],
+            "infer_stacked_base": True,
+            "max_creations_per_run": 1,
+            "max_branch_pages": 1,
+            "max_pr_pages": 1,
+            "max_untracked_branches_per_run": 1,
+            "max_candidate_evaluations_per_run": 1,
+            "max_open_pr_heads_for_stack_inference": 1,
+            "minimum_rate_limit_remaining": 0,
+        }
+        invalid = (
+            ("enabled", "false"),
+            ("infer_stacked_base", 1),
+            ("max_creations_per_run", True),
+            ("max_branch_pages", 1.5),
+            ("managed_prefixes", "feat/"),
+            ("excluded_prefixes", [1]),
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "policy.json"
+            for field, value in invalid:
+                with self.subTest(field=field, value=value):
+                    raw = dict(base)
+                    raw[field] = value
+                    path.write_text(json.dumps(raw), encoding="utf-8")
+                    with self.assertRaisesRegex(ValueError, field):
+                        steward.load_policy(path)
+
+    def test_github_client_rejects_unsafe_repository_identifiers(self):
+        for repo in ("owner", "owner/repo/extra", "../repo", "owner/<repo>", "owner/repo\n"):
+            with self.subTest(repo=repo):
+                with self.assertRaisesRegex(ValueError, "owner/name"):
+                    steward.GitHubClient(repo, "token")
 
     def test_old_or_excluded_or_historical_branches_are_not_candidates(self):
         client = FakeClient(
@@ -441,6 +479,44 @@ class AutoDraftPrTests(unittest.TestCase):
         self.assertNotIn("#12", body)
         self.assertIn("issue-632", body)
 
+    def test_generated_text_neutralizes_mentions_html_and_summary_markup(self):
+        candidate = steward.Candidate(
+            "feat/@team-<b>#7",
+            "abc123",
+            "docs/@owner-<i>#8",
+            "ahead",
+            1,
+            0,
+        )
+        title = steward.title_for(candidate.branch)
+        body = steward.body_for(candidate)
+        for rendered in (title, body):
+            self.assertNotIn("@team", rendered)
+            self.assertNotIn("@owner", rendered)
+            self.assertNotIn("<b>", rendered)
+            self.assertNotIn("<i>", rendered)
+            self.assertNotIn("#7", rendered)
+            self.assertNotIn("#8", rendered)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            summary = Path(tmp) / "summary.md"
+            steward.append_summary(
+                summary,
+                {
+                    "candidate_count": 1,
+                    "planned": [{"branch": candidate.branch, "base": candidate.base}],
+                    "created": [],
+                    "skipped": [
+                        {"branch": candidate.branch, "reason": "@team-<script>"}
+                    ],
+                    "rate_limit_remaining": 5000,
+                    "blocked_reason": None,
+                },
+            )
+            rendered = summary.read_text(encoding="utf-8")
+            self.assertNotIn("@team", rendered)
+            self.assertNotIn("<script>", rendered)
+
     def test_generated_title_is_bounded(self):
         title = steward.title_for("feat/" + "long-name-" * 40)
         self.assertLessEqual(len(title), steward.MAX_PR_TITLE_LENGTH)
@@ -464,6 +540,29 @@ class AutoDraftPrTests(unittest.TestCase):
             },
         )
         with self.assertRaisesRegex(RuntimeError, "valid PR number"):
+            steward.run_steward(client, policy())
+
+    def test_created_pr_url_must_bind_repository_and_number(self):
+        class BadUrlClient(FakeClient):
+            def create_draft_pr(self, **kwargs):
+                return {
+                    "number": 701,
+                    "html_url": "https://github.com.evil/MSKazemi/idkmesh/pull/701",
+                }
+
+        client = BadUrlClient(
+            [branch("feat/bad-url", "a" * 40)],
+            [],
+            {"a" * 40: commit("2026-09-22T15:00:00Z")},
+            {
+                ("main", "feat/bad-url"): {
+                    "status": "ahead",
+                    "ahead_by": 1,
+                    "behind_by": 0,
+                }
+            },
+        )
+        with self.assertRaisesRegex(RuntimeError, "canonical GitHub URL"):
             steward.run_steward(client, policy())
 
     def test_duplicate_creation_race_is_benign_and_visible(self):
