@@ -200,3 +200,36 @@ C6-A defines identity only. Follow-up work remains intentionally separate:
 4. C6-E — ResultManifest builder;
 5. C6-F — evaluator-owned verification handoff;
 6. C6-G — PR/local equivalence fixture.
+
+## 10. SCM resolution boundary
+
+For GitHub PR candidates, the reference implementation is
+`idkmesh/github_candidate_reader.py`.
+
+The reader takes only provider-neutral target identity:
+
+```text
+repository + PR number
+        |
+        v
+trusted GitHub/SCM lookup
+        |
+        +-- target repo mismatch -> fail closed
+        +-- PR number mismatch   -> fail closed
+        +-- malformed head SHA   -> fail closed
+        |
+        v
+GitHubPullRequestCandidateReference
+(repository + number + exact head SHA)
+```
+
+The reader also records descriptive GitHub state/draft flags for operator
+visibility, but those fields do not become acceptance or verification
+authority. A closed or draft PR can still be *identified* precisely; whether it
+is eligible for further processing belongs to policy/verification, not identity
+parsing.
+
+A provider adapter must not implement its own alternate head-SHA trust rule.
+Connector-specific error translation also remains outside this provider-neutral
+identity reader.
+
