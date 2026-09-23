@@ -18,9 +18,14 @@ class PublicDiscoveryMonitorTests(unittest.TestCase):
             monitor.SITEMAP,
             monitor.LLMS,
             monitor.INDEXNOW_KEY_URL,
+            *monitor.DIRECTORY_HUBS.values(),
             *(url for url, _ in monitor.TOPIC_PAGES.values()),
         ):
             self.assertTrue(url.startswith("https://mskazemi.com/idkmesh/"))
+
+    def test_ten_legacy_directory_hubs_are_monitored(self) -> None:
+        self.assertEqual(10, len(monitor.DIRECTORY_HUBS))
+        self.assertEqual(10, len(set(monitor.DIRECTORY_HUBS.values())))
 
     def test_exactly_ten_topic_pillars_are_monitored(self) -> None:
         self.assertEqual(10, len(monitor.TOPIC_PAGES))
@@ -67,6 +72,8 @@ class PublicDiscoveryMonitorTests(unittest.TestCase):
             return 200, "\n".join(f"<loc>{item}</loc>" for item in urls)
         if url == monitor.HOME:
             return 200, "<html><body>IDKMesh Verified swarm engineering</body></html>"
+        if url in monitor.DIRECTORY_HUBS.values():
+            return 200, "<html><body>directory hub</body></html>"
         if url == monitor.TOPICS:
             return (
                 200,
