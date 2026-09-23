@@ -5,6 +5,7 @@ from __future__ import annotations
 import http.client
 import json
 from pathlib import Path
+import socket
 import tempfile
 import threading
 import unittest
@@ -408,6 +409,22 @@ class ControlTowerServerTests(unittest.TestCase):
         self.assertEqual(body, b"")
         self.assertGreater(int(headers["Content-Length"]), 0)
         self.assertEqual(headers["X-IDKMesh-Read-Only"], "true")
+
+    def test_head_error_writes_no_body_on_the_wire(self) -> None:
+        with socket.create_connection(
+            ("127.0.0.1", self.server.server_port), timeout=3
+        ) as connection:
+            connection.sendall(
+                b"HEAD /api/v2/status HTTP/1.0\r\n"
+                b"Host: 127.0.0.1\r\n\r\n"
+            )
+            chunks = []
+            while chunk := connection.recv(4096):
+                chunks.append(chunk)
+        headers, separator, body = b"".join(chunks).partition(b"\r\n\r\n")
+        self.assertTrue(separator)
+        self.assertIn(b" 404 ", headers)
+        self.assertEqual(body, b"")
 
     def test_api_honors_json_accept_negotiation(self) -> None:
         status, _, body = self.request(

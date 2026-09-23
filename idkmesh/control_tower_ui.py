@@ -650,7 +650,7 @@ def _handler(initial_text: str | None, token: str):
                 len(body),
                 extra_headers=headers,
             )
-            if not head_only:
+            if not head_only and self.command != "HEAD":
                 self.wfile.write(body)
 
         def _host_allowed(self) -> bool:
