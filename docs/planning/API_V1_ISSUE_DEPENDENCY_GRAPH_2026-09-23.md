@@ -34,6 +34,9 @@ These are dependencies, not child replacements:
 | #677 | reusable HTTP service runtime |
 | #670 | trusted actor + authorization semantics |
 | #616 | restart-safe local metadata/idempotency |
+| #597 | GitHub-native durable run/event/evidence ledger |
+| #598 | GitHub-first multi-user identity/role/authority profile |
+| #607 | GitHub governance and secret-access baseline |
 | #580 | connector CLI/HTTP surface |
 | #570 | connector-control program |
 | #682 | end-to-end Product Spine |
@@ -160,7 +163,7 @@ Operational parallel path:
   |          |
   +------> #744 ----+
                      +--> #745
-#670 + #738 -> #743 -+
+#670 + #598 + #607 + #738 -> #743 -+
 ```
 
 ## Contributor slicing rule
@@ -214,3 +217,13 @@ Checkbox completion is evidence-based.
 An issue is not complete because code exists on a branch. It closes only when
 its acceptance artifacts are integrated and reproducible from the canonical
 repository state.
+
+Storage profile path:
+
+```text
+#616 local metadata ----+
+                        |
+#597 GitHub ledger -----+----> #750 storage profiles ----> #745
+                        |
+#738 architecture ------+
+```
