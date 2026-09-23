@@ -282,6 +282,9 @@ The API program does not absorb existing subsystems.
 - #677 owns common HTTP runtime primitives.
 - #670 owns enterprise identity/policy semantics.
 - #616 owns local persistence/idempotency prototype.
+- #597 owns the GitHub-native durable run/event/evidence ledger.
+- #598 owns the GitHub-first multi-user role/authority profile.
+- #607 owns GitHub governance and secret-access preflight.
 - #580 owns connector CLI/HTTP productization.
 - #682 owns Product Spine lifecycle integration.
 - #572 owns Human Control Tower UX.
