@@ -5,7 +5,8 @@ repository/PR discovery data, but the SCM reader owns observation of the exact
 GitHub head object id.
 
 The reader emits identity/provenance only. It does not verify, accept, merge, or
-otherwise integrate the candidate.
+otherwise integrate the candidate. Connector-specific error translation belongs
+outside this provider-neutral identity boundary.
 """
 
 from __future__ import annotations
@@ -16,10 +17,24 @@ from typing import Any, Mapping, Protocol
 from urllib.parse import urlsplit
 
 from idkmesh.candidate_reference import GitHubPullRequestCandidateReference
-from idkmesh.connector_errors import ConnectorError
 
 
 _REPOSITORY_RE = re.compile(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+\Z")
+
+
+class CandidateResolutionError(RuntimeError):
+    """Raised when observed SCM data cannot safely identify the requested candidate."""
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        field: str | None = None,
+        details: Mapping[str, Any] | None = None,
+    ) -> None:
+        super().__init__(message)
+        self.field = field
+        self.details = dict(details or {})
 
 
 class GitHubPullRequestSource(Protocol):
@@ -53,34 +68,20 @@ def _number(value: Any) -> int:
     return value
 
 
-def _mapping(
-    value: Any,
-    *,
-    field: str,
-    connection_id: str,
-) -> Mapping[str, Any]:
+def _mapping(value: Any, *, field: str) -> Mapping[str, Any]:
     if not isinstance(value, Mapping):
-        raise ConnectorError(
-            code="result_normalization_error",
-            message="GitHub returned malformed pull-request metadata.",
-            connection_id=connection_id,
-            details={"field": field},
+        raise CandidateResolutionError(
+            "GitHub returned malformed pull-request metadata.",
+            field=field,
         )
     return value
 
 
-def _string(
-    value: Any,
-    *,
-    field: str,
-    connection_id: str,
-) -> str:
+def _string(value: Any, *, field: str) -> str:
     if not isinstance(value, str) or not value.strip():
-        raise ConnectorError(
-            code="result_normalization_error",
-            message="GitHub returned malformed pull-request metadata.",
-            connection_id=connection_id,
-            details={"field": field},
+        raise CandidateResolutionError(
+            "GitHub returned malformed pull-request metadata.",
+            field=field,
         )
     return value
 
@@ -90,9 +91,8 @@ def _canonical_pr_url(
     *,
     repository: str,
     number: int,
-    connection_id: str,
 ) -> str:
-    url = _string(value, field="html_url", connection_id=connection_id)
+    url = _string(value, field="html_url")
     parsed = urlsplit(url)
     parts = [part for part in parsed.path.split("/") if part]
     if (
@@ -105,19 +105,17 @@ def _canonical_pr_url(
         or len(parts) != 4
         or parts[2] != "pull"
     ):
-        raise ConnectorError(
-            code="result_normalization_error",
-            message="GitHub returned a non-canonical pull-request URL.",
-            connection_id=connection_id,
+        raise CandidateResolutionError(
+            "GitHub returned a non-canonical pull-request URL.",
+            field="html_url",
         )
 
     try:
         observed_number = int(parts[3])
     except ValueError as exc:
-        raise ConnectorError(
-            code="result_normalization_error",
-            message="GitHub returned a pull-request URL with an invalid number.",
-            connection_id=connection_id,
+        raise CandidateResolutionError(
+            "GitHub returned a pull-request URL with an invalid number.",
+            field="html_url",
         ) from exc
 
     owner, repo = repository.split("/", 1)
@@ -126,10 +124,9 @@ def _canonical_pr_url(
         or parts[1].casefold() != repo.casefold()
         or observed_number != number
     ):
-        raise ConnectorError(
-            code="result_normalization_error",
-            message="GitHub pull-request URL does not match requested candidate identity.",
-            connection_id=connection_id,
+        raise CandidateResolutionError(
+            "GitHub pull-request URL does not match requested candidate identity.",
+            field="html_url",
             details={
                 "requested_repository": repository,
                 "requested_number": number,
@@ -141,16 +138,8 @@ def _canonical_pr_url(
 class GitHubPullRequestCandidateReader:
     """Resolve one target-repository PR to an immutable exact-head reference."""
 
-    def __init__(
-        self,
-        source: GitHubPullRequestSource,
-        *,
-        connection_id: str = "github",
-    ) -> None:
-        if not isinstance(connection_id, str) or not connection_id.strip():
-            raise ValueError("connection_id must be a non-empty string")
+    def __init__(self, source: GitHubPullRequestSource) -> None:
         self._source = source
-        self._connection_id = connection_id
 
     def resolve(
         self,
@@ -166,10 +155,8 @@ class GitHubPullRequestCandidateReader:
             number=expected_number,
         )
         if not isinstance(raw, Mapping):
-            raise ConnectorError(
-                code="result_normalization_error",
-                message="GitHub returned a non-object pull-request response.",
-                connection_id=self._connection_id,
+            raise CandidateResolutionError(
+                "GitHub returned a non-object pull-request response."
             )
 
         observed_number = raw.get("number")
@@ -178,36 +165,25 @@ class GitHubPullRequestCandidateReader:
             or not isinstance(observed_number, int)
             or observed_number != expected_number
         ):
-            raise ConnectorError(
-                code="result_normalization_error",
-                message="GitHub returned a different pull request than requested.",
-                connection_id=self._connection_id,
+            raise CandidateResolutionError(
+                "GitHub returned a different pull request than requested.",
+                field="number",
                 details={
                     "requested_number": expected_number,
                     "observed_number": observed_number,
                 },
             )
 
-        base = _mapping(
-            raw.get("base"),
-            field="base",
-            connection_id=self._connection_id,
-        )
-        base_repo = _mapping(
-            base.get("repo"),
-            field="base.repo",
-            connection_id=self._connection_id,
-        )
+        base = _mapping(raw.get("base"), field="base")
+        base_repo = _mapping(base.get("repo"), field="base.repo")
         observed_repository = _string(
             base_repo.get("full_name"),
             field="base.repo.full_name",
-            connection_id=self._connection_id,
         )
         if observed_repository.casefold() != expected_repository.casefold():
-            raise ConnectorError(
-                code="result_normalization_error",
-                message="GitHub returned a pull request from another target repository.",
-                connection_id=self._connection_id,
+            raise CandidateResolutionError(
+                "GitHub returned a pull request from another target repository.",
+                field="base.repo.full_name",
                 details={
                     "requested_repository": expected_repository,
                     "observed_repository": observed_repository,
@@ -218,19 +194,10 @@ class GitHubPullRequestCandidateReader:
             raw.get("html_url"),
             repository=expected_repository,
             number=expected_number,
-            connection_id=self._connection_id,
         )
 
-        head = _mapping(
-            raw.get("head"),
-            field="head",
-            connection_id=self._connection_id,
-        )
-        head_sha = _string(
-            head.get("sha"),
-            field="head.sha",
-            connection_id=self._connection_id,
-        )
+        head = _mapping(raw.get("head"), field="head")
+        head_sha = _string(head.get("sha"), field="head.sha")
         try:
             reference = GitHubPullRequestCandidateReference(
                 repository=expected_repository,
@@ -238,31 +205,23 @@ class GitHubPullRequestCandidateReader:
                 head_sha=head_sha,
             )
         except ValueError as exc:
-            raise ConnectorError(
-                code="result_normalization_error",
-                message="GitHub returned an invalid immutable pull-request head.",
-                connection_id=self._connection_id,
-                details={"field": "head.sha"},
+            raise CandidateResolutionError(
+                "GitHub returned an invalid immutable pull-request head.",
+                field="head.sha",
             ) from exc
 
-        state = _string(
-            raw.get("state"),
-            field="state",
-            connection_id=self._connection_id,
-        )
+        state = _string(raw.get("state"), field="state")
         if state not in {"open", "closed"}:
-            raise ConnectorError(
-                code="result_normalization_error",
-                message="GitHub returned an unknown pull-request state.",
-                connection_id=self._connection_id,
+            raise CandidateResolutionError(
+                "GitHub returned an unknown pull-request state.",
+                field="state",
                 details={"state": state},
             )
         draft = raw.get("draft")
         if type(draft) is not bool:
-            raise ConnectorError(
-                code="result_normalization_error",
-                message="GitHub returned malformed pull-request draft metadata.",
-                connection_id=self._connection_id,
+            raise CandidateResolutionError(
+                "GitHub returned malformed pull-request draft metadata.",
+                field="draft",
             )
 
         return GitHubPullRequestResolution(
