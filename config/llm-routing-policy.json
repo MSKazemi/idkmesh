@@ -5,7 +5,7 @@
     "Choose capability tier before provider.",
     "Authority is independent from model capability.",
     "Deterministic floors and human gates can only escalate, never silently de-escalate.",
-    "Jules eligibility is advisory and never auto-dispatches the jules label.",
+    "Jules eligibility is routing metadata; guarded REST dispatch may start trusted low-risk work, but automation never applies the native jules fallback label.",
     "No routed agent receives merge authority."
   ],
   "tiers": {
@@ -53,10 +53,16 @@
       "T4": "gemini-3.1-pro-preview + independent second-model review"
     },
     "jules": {
-      "source": "https://jules.google/docs/running-tasks/",
-      "eligible_tiers": ["T1", "T2"],
-      "dispatch_label": "jules",
-      "note": "Treat Jules as a managed coding lane. Deterministically routed T1/T2 agent tasks may enter the automatic Jules queue with agent:jules-eligible; human-gated, human-required, security-sensitive, research, and higher-risk work remains excluded unless explicitly approved."
+      "source": "https://jules.google/docs/api/reference/",
+      "eligible_tiers": [
+        "T1",
+        "T2"
+      ],
+      "queue_label": "agent:jules-eligible",
+      "execution_status_label": "agent:jules-dispatched",
+      "attention_label": "agent:jules-needs-attention",
+      "manual_fallback_label": "jules",
+      "note": "Treat Jules as a managed coding lane. Deterministically routed T1/T2 agent tasks may enter the guarded REST dispatcher through agent:jules-eligible; automatic execution still requires the dispatcher trust/veto/capacity checks. Human-gated, human-required, security-sensitive, research, and higher-risk work remains excluded unless explicitly approved."
     }
   },
   "phrases": {
