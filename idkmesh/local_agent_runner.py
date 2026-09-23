@@ -12,6 +12,8 @@ treat this process boundary alone as a hostile-code sandbox.
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
+from datetime import datetime, timezone
+import hashlib
 import json
 import math
 import os
@@ -20,10 +22,30 @@ import re
 import signal
 import shutil
 import subprocess
+import sys
 import tempfile
 import threading
 import time
-from typing import Iterable, Mapping
+from typing import Any, Iterable, Mapping
+
+from idkmesh.agent_presets import (
+    FORBIDDEN_ENV_NAMES,
+    _SECRET_ENV_SUFFIXES,
+    AgentPreset,
+    get_builtin_preset,
+)
+from idkmesh.candidate_reference import ArtifactBundleCandidateReference
+from idkmesh.local_candidate_reader import LocalArtifactBundleReader
+from idkmesh.result_manifest_builder import (
+    ExecutionEnvironment,
+    LogReference,
+    ModelIdentity,
+    ResourceUsage,
+    SelfReport,
+    WorkerIdentity,
+    build_result_manifest,
+)
+from idkmesh.work_unit_binding import bind_work_unit_source
 
 
 class LocalRunnerError(RuntimeError):
@@ -322,3 +344,216 @@ def run_bounded_process(
         stdout_truncated=stdout_truncated[0],
         stderr_truncated=stderr_truncated[0],
     )
+
+
+@dataclass(frozen=True)
+class LocalAgentRunResult:
+    """Normalized output from executing one local coding-agent preset."""
+
+    manifest: dict[str, Any]
+    candidate: ArtifactBundleCandidateReference
+    process_result: ProcessResult
+    workspace_sha: str
+    patch_text: str
+
+    def to_json(self) -> str:
+        return json.dumps(
+            {
+                "manifest": self.manifest,
+                "candidate": self.candidate.to_dict(),
+                "process_result": json.loads(self.process_result.to_json()),
+                "workspace_sha": self.workspace_sha,
+                "patch_text": self.patch_text,
+            },
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+
+
+def run_local_agent_preset(
+    preset: AgentPreset | str,
+    work_unit: dict[str, Any],
+    *,
+    source_revision: str,
+    repository: str | Path = ".",
+    limits: ProcessLimits | None = None,
+    extra_env: Mapping[str, str] | None = None,
+    manifest_id: str | None = None,
+    attempt: int = 1,
+    artifact_dir: str | Path | None = None,
+) -> LocalAgentRunResult:
+    """Run one local coding-agent preset in a bounded disposable workspace."""
+    if isinstance(preset, str):
+        active_preset = get_builtin_preset(preset)
+    elif isinstance(preset, AgentPreset):
+        active_preset = preset
+    else:
+        raise LocalRunnerError(
+            "preset must be an AgentPreset instance or valid preset identifier"
+        )
+
+    binding = bind_work_unit_source(work_unit, source_revision=source_revision)
+
+    prompt = ""
+    if isinstance(work_unit, dict):
+        for field in ("prompt", "description", "goal", "title"):
+            val = work_unit.get(field)
+            if isinstance(val, str) and val.strip():
+                prompt = val.strip()
+                break
+
+    repo_path = Path(repository).resolve()
+    with DisposableGitWorkspace(repo_path, binding.source_revision) as workspace:
+        if workspace.path is None:
+            raise LocalRunnerError("disposable workspace path is unavailable")
+
+        prefix = active_preset.invocation_prefix()
+        stdin_text = None
+
+        if active_preset.prompt_transport == "stdin":
+            argv = prefix
+            stdin_text = prompt
+        elif active_preset.prompt_transport == "argument":
+            arg = active_preset.prompt_arg
+            argv = (*prefix, arg, prompt) if arg else (*prefix, prompt)
+        elif active_preset.prompt_transport == "file":
+            prompt_file = workspace.path / ".idkmesh_prompt.txt"
+            prompt_file.write_text(prompt, encoding="utf-8")
+            if active_preset.prompt_arg:
+                argv = (*prefix, active_preset.prompt_arg, str(prompt_file))
+            else:
+                argv = (*prefix, str(prompt_file))
+        else:
+            raise LocalRunnerError(
+                f"unsupported prompt_transport: {active_preset.prompt_transport}"
+            )
+
+        active_env = minimal_environment(
+            active_preset.env_allowlist, source=extra_env
+        )
+
+        for env_key, env_val in active_env.items():
+            if env_key in FORBIDDEN_ENV_NAMES or any(
+                env_key.endswith(suffix) for suffix in _SECRET_ENV_SUFFIXES
+            ):
+                raise LocalRunnerError(
+                    f"forbidden host credential environment variable exposed in preset env: {env_key}"
+                )
+            if env_key == "DOCKER_HOST" or "docker.sock" in env_val.casefold():
+                raise LocalRunnerError(
+                    "Docker socket mount or authority is forbidden in local candidate runner"
+                )
+
+        active_limits = limits or ProcessLimits()
+        started_at = datetime.now(timezone.utc)
+        proc_result = run_bounded_process(
+            argv,
+            cwd=workspace.path,
+            limits=active_limits,
+            env=active_env,
+            stdin_text=stdin_text,
+        )
+        finished_at = datetime.now(timezone.utc)
+
+        _run_git(workspace.path, "add", "-N", ".")
+        patch_text = _run_git(workspace.path, "diff", "HEAD")
+        patch_bytes = patch_text.encode("utf-8")
+        patch_digest = "sha256:" + hashlib.sha256(patch_bytes).hexdigest()
+
+        if artifact_dir is not None:
+            target_dir = Path(artifact_dir).resolve()
+            target_dir.mkdir(parents=True, exist_ok=True)
+            patch_file = target_dir / f"patch_{patch_digest[7:19]}.diff"
+            patch_file.write_bytes(patch_bytes)
+            reader = LocalArtifactBundleReader(target_dir, max_bytes=10 * 1024 * 1024)
+            resolution = reader.resolve(
+                relative_path=patch_file.name,
+                expected_digest=patch_digest,
+                media_type="text/x-diff",
+            )
+            candidate_ref = resolution.reference
+        else:
+            candidate_ref = ArtifactBundleCandidateReference(
+                locator=f"artifact:bundle:patch:{patch_digest[7:19]}",
+                digest=patch_digest,
+                media_type="text/x-diff",
+            )
+
+        if proc_result.timed_out:
+            status = "timeout"
+        elif proc_result.returncode == 0:
+            status = "succeeded"
+        else:
+            status = "failed"
+
+        log_refs = []
+        if proc_result.stdout:
+            stdout_digest = (
+                "sha256:"
+                + hashlib.sha256(proc_result.stdout.encode("utf-8")).hexdigest()
+            )
+            log_refs.append(
+                LogReference(
+                    type="stdout", locator="inline:stdout", digest=stdout_digest
+                )
+            )
+        if proc_result.stderr:
+            stderr_digest = (
+                "sha256:"
+                + hashlib.sha256(proc_result.stderr.encode("utf-8")).hexdigest()
+            )
+            log_refs.append(
+                LogReference(
+                    type="stderr", locator="inline:stderr", digest=stderr_digest
+                )
+            )
+
+        active_manifest_id = (
+            manifest_id or f"manifest-{binding.work_unit_id}-attempt-{attempt}"
+        )
+
+        worker_id = WorkerIdentity(
+            id=active_preset.preset_id,
+            type="agent",
+            adapter=active_preset.agent_family,
+            adapter_version="0.1",
+            model=ModelIdentity(name=active_preset.model_connection_ref),
+        )
+
+        resources = ResourceUsage(wall_seconds=proc_result.duration_seconds)
+
+        self_report = SelfReport(
+            summary=f"Local agent preset {active_preset.preset_id} execution completed.",
+            claims=(),
+        )
+
+        execution_env = ExecutionEnvironment(
+            platform=sys.platform,
+            python=f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
+            tool_versions={active_preset.executable: "0.1"},
+        )
+
+        manifest = build_result_manifest(
+            work_unit=work_unit,
+            binding=binding,
+            candidate=candidate_ref,
+            manifest_id=active_manifest_id,
+            attempt=attempt,
+            worker=worker_id,
+            status=status,
+            started_at=started_at,
+            finished_at=finished_at,
+            resources=resources,
+            self_report=self_report,
+            self_report_source="normalizer",
+            logs=tuple(log_refs),
+            environment=execution_env,
+        )
+
+        return LocalAgentRunResult(
+            manifest=manifest,
+            candidate=candidate_ref,
+            process_result=proc_result,
+            workspace_sha=workspace.source_sha,
+            patch_text=patch_text,
+        )

@@ -6,13 +6,16 @@ import sys
 import tempfile
 import unittest
 
+from idkmesh.agent_presets import AgentPreset
 from idkmesh.local_agent_runner import (
     DisposableGitWorkspace,
+    LocalAgentRunResult,
     LocalRunnerError,
     ProcessLimits,
     minimal_environment,
     resolve_exact_revision,
     run_bounded_process,
+    run_local_agent_preset,
 )
 
 
@@ -164,6 +167,162 @@ class LocalAgentRunnerTests(unittest.TestCase):
         decoded = json.loads(result.to_json())
         self.assertEqual(decoded["returncode"], 0)
         self.assertEqual(decoded["argv"][0], sys.executable)
+
+    def test_run_local_agent_preset_stdin_transport(self):
+        work_unit = {
+            "id": "wu-stdin-1",
+            "version": 1,
+            "prompt": "Harmless WorkUnit task description",
+            "provenance": {"source_revision": self.sha},
+            "validators": [{"id": "pytest", "type": "command"}],
+        }
+        preset = AgentPreset(
+            preset_id="test-agent-stdin",
+            agent_family="python-agent",
+            executable="python3",
+            fixed_args=("-c", "import sys; print('REC:' + sys.stdin.read().strip())"),
+            prompt_transport="stdin",
+            model_connection_ref="model:local-test",
+            execution_connection_ref="execution:bounded-local",
+        )
+        run_res = run_local_agent_preset(
+            preset,
+            work_unit,
+            source_revision=self.sha,
+            repository=self.repo,
+        )
+        self.assertIsInstance(run_res, LocalAgentRunResult)
+        self.assertEqual(run_res.manifest["status"], "succeeded")
+        self.assertEqual(run_res.manifest["work_unit_id"], "wu-stdin-1")
+        self.assertIn("REC:Harmless WorkUnit task description", run_res.process_result.stdout)
+        decoded_json = json.loads(run_res.to_json())
+        self.assertEqual(decoded_json["manifest"]["id"], run_res.manifest["id"])
+
+    def test_run_local_agent_preset_argument_transport(self):
+        work_unit = {
+            "id": "wu-arg-1",
+            "version": 1,
+            "prompt": "Prompt text for argument transport",
+            "provenance": {"source_revision": self.sha},
+            "validators": [{"id": "pytest", "type": "command"}],
+        }
+        preset = AgentPreset(
+            preset_id="test-agent-arg",
+            agent_family="python-agent",
+            executable="python3",
+            fixed_args=("-c", "import sys; print('ARG:' + sys.argv[2])"),
+            prompt_transport="argument",
+            prompt_arg="-p",
+            model_connection_ref="model:local-test",
+            execution_connection_ref="execution:bounded-local",
+        )
+        run_res = run_local_agent_preset(
+            preset,
+            work_unit,
+            source_revision=self.sha,
+            repository=self.repo,
+        )
+        self.assertEqual(run_res.manifest["status"], "succeeded")
+        self.assertIn("ARG:Prompt text for argument transport", run_res.process_result.stdout)
+
+    def test_run_local_agent_preset_file_transport(self):
+        work_unit = {
+            "id": "wu-file-1",
+            "version": 1,
+            "prompt": "Prompt text written to file",
+            "provenance": {"source_revision": self.sha},
+            "validators": [{"id": "pytest", "type": "command"}],
+        }
+        preset = AgentPreset(
+            preset_id="test-agent-file",
+            agent_family="python-agent",
+            executable="python3",
+            fixed_args=("-c", "import sys, pathlib; print('FILE:' + pathlib.Path(sys.argv[1]).read_text())"),
+            prompt_transport="file",
+            model_connection_ref="model:local-test",
+            execution_connection_ref="execution:bounded-local",
+        )
+        run_res = run_local_agent_preset(
+            preset,
+            work_unit,
+            source_revision=self.sha,
+            repository=self.repo,
+        )
+        self.assertEqual(run_res.manifest["status"], "succeeded")
+        self.assertIn("FILE:Prompt text written to file", run_res.process_result.stdout)
+
+    def test_run_local_agent_preset_captures_diff_patch_and_artifacts(self):
+        work_unit = {
+            "id": "wu-patch-1",
+            "version": 1,
+            "prompt": "Modify hello.txt",
+            "provenance": {"source_revision": self.sha},
+            "validators": [{"id": "pytest", "type": "command"}],
+        }
+        preset = AgentPreset(
+            preset_id="test-agent-patch",
+            agent_family="python-agent",
+            executable="python3",
+            fixed_args=("-c", "open('hello.txt', 'w').write('candidate code change\\n')"),
+            prompt_transport="stdin",
+            model_connection_ref="model:local-test",
+            execution_connection_ref="execution:bounded-local",
+        )
+        artifact_dir = Path(self.temp.name) / "artifacts"
+        run_res = run_local_agent_preset(
+            preset,
+            work_unit,
+            source_revision=self.sha,
+            repository=self.repo,
+            artifact_dir=artifact_dir,
+        )
+        self.assertEqual(run_res.manifest["status"], "succeeded")
+        self.assertIn("candidate code change", run_res.patch_text)
+        self.assertEqual(run_res.candidate.type, "artifact_bundle")
+        self.assertTrue(artifact_dir.exists())
+
+    def test_run_local_agent_preset_timeout_normalization(self):
+        work_unit = {
+            "id": "wu-timeout-1",
+            "version": 1,
+            "prompt": "Sleep longer than limit",
+            "provenance": {"source_revision": self.sha},
+            "validators": [{"id": "pytest", "type": "command"}],
+        }
+        preset = AgentPreset(
+            preset_id="test-agent-timeout",
+            agent_family="python-agent",
+            executable="python3",
+            fixed_args=("-c", "import time; time.sleep(2)"),
+            prompt_transport="stdin",
+            model_connection_ref="model:local-test",
+            execution_connection_ref="execution:bounded-local",
+        )
+        run_res = run_local_agent_preset(
+            preset,
+            work_unit,
+            source_revision=self.sha,
+            repository=self.repo,
+            limits=ProcessLimits(timeout_seconds=0.05),
+        )
+        self.assertEqual(run_res.manifest["status"], "timeout")
+        self.assertTrue(run_res.process_result.timed_out)
+
+    def test_run_local_agent_preset_invalid_preset_or_env_fails(self):
+        work_unit = {
+            "id": "wu-env-1",
+            "version": 1,
+            "prompt": "Test invalid preset",
+            "provenance": {"source_revision": self.sha},
+            "validators": [{"id": "pytest", "type": "command"}],
+        }
+        with self.assertRaises(LocalRunnerError):
+            run_local_agent_preset(
+                12345,  # type: ignore[arg-type]
+                work_unit,
+                source_revision=self.sha,
+                repository=self.repo,
+            )
 
 
 if __name__ == "__main__":
