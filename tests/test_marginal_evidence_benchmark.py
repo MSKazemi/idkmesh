@@ -267,22 +267,34 @@ class SelectorTests(unittest.TestCase):
             "marginal_ordering_not_interval_separated",
         )
 
-    def test_marginal_selector_does_not_fallback_from_unresolved_candidate(self):
+    def test_marginal_selector_does_not_fallback_from_unresolved_metric(self):
         rows = [
             _fake_row("a", delta=2.0, low=1.5, high=2.5),
-            _fake_row(
-                "b",
-                delta=0.0,
-                low=-0.5,
-                high=0.5,
-                status="unresolved",
-            ),
+            _fake_row("b", delta=0.0, low=-0.5, high=0.5),
         ]
+        rows[1]["delta_effective_votes"] = None
         selected = benchmark._select_marginal(rows)
         self.assertEqual(selected["status"], "unresolved")
         self.assertEqual(
-            selected["reason_code"], "unresolved_design_candidate_metrics"
+            selected["reason_code"],
+            "unresolved_design_effective_vote_metrics",
         )
+
+    def test_marginal_selector_is_not_blocked_by_correlation_only_status(self):
+        rows = [
+            _fake_row(
+                "a",
+                delta=2.0,
+                low=1.5,
+                high=2.5,
+                correlation=None,
+                status="unresolved",
+            ),
+            _fake_row("b", delta=0.0, low=-0.5, high=0.5),
+        ]
+        selected = benchmark._select_marginal(rows)
+        self.assertEqual(selected["status"], "selected")
+        self.assertEqual(selected["selected_verifier_id"], "a")
 
     def test_correlation_selector_fails_closed_if_any_candidate_unmeasurable(self):
         rows = [
