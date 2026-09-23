@@ -63,6 +63,8 @@ These record a default hypothesis the project builds on, not a settled contract.
   — keeps GitHub-first G0/G1 as the normal product path while making enterprise
   tenancy, identity, audit, recovery, supply-chain, and optional G2/G3 service
   controls explicit and evidence-gated. *(Proposed for adoption, 2026-09-22.)*
+- [ADR-0015 — Normalize Candidate Identity into ResultManifest Without Pretending Reference Digests Are Content Verification](ADR-0015-candidate-reference-result-manifest-normalization.md)
+  — keeps ResultManifest v0.1 provider-neutral by hashing the canonical CandidateReference envelope, explicitly separating candidate identity from byte-level verification. *(Proposed / experimental, 2026-09-23.)*
 
 - [ADR-0002 — Fractal Autonomous Cells for Scalability](ADR-0002-fractal-autonomous-cells.md)
   — adopts `node -> cell -> fabric/region -> global federation` as the default

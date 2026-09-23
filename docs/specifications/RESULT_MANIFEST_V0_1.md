@@ -117,6 +117,21 @@ The manifest records:
 
 The worker identifies which validators are expected and which produced artifact ids should be evaluated. The worker requests verification; it does not fill in the verifier's verdict.
 
+
+## C6 candidate-normalization profile
+
+The C6 product normalizer uses the existing ResultManifest v0.1 schema without adding provider-specific top-level fields.
+
+For a normalized CandidateReference v0.1, C6-E emits a primary artifact with media type `application/vnd.idkmesh.candidate-reference+json`. Its SHA-256 digest is the canonical digest of the **CandidateReference envelope**, using the same sorted/minified JSON convention as WorkUnit provenance.
+
+This digest is identity/provenance evidence, not a claim that all remote candidate bytes were independently content-hashed. For local artifact bundles, the underlying content SHA-256 remains inside the CandidateReference. For GitHub PR candidates, the CandidateReference binds repository + PR number + exact head object ID.
+
+The exact reference and its envelope digest are retained in the namespaced extension `org.idkmesh.candidate_reference`. The normalizer also records `org.idkmesh.normalization.self_report_source` so an absent or provider-supplied self-report is not silently presented as independent evidence.
+
+C6-E derives `verification_request.expected_validator_ids` from the bound WorkUnit. Provider output cannot choose or remove evaluator requirements.
+
+See [ADR-0015](../decisions/ADR-0015-candidate-reference-result-manifest-normalization.md) for the decision and alternatives.
+
 ## Negative invariant
 
 The schema uses `additionalProperties: false` at the shared top level and intentionally defines no `accepted` field.
