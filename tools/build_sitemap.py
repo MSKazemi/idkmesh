@@ -30,7 +30,7 @@ from __future__ import annotations
 import argparse
 import subprocess
 import sys
-from datetime import date, datetime, timezone
+from datetime import datetime, timezone
 from pathlib import Path
 from xml.etree import ElementTree
 from xml.sax.saxutils import escape
@@ -67,14 +67,16 @@ DEFAULT_PRIORITY = "0.5"
 
 
 def _git_lastmod(path: Path) -> str:
-    """The file's last commit date, or today's date when git cannot answer.
+    """The file's last commit date in UTC, or today's UTC date when unavailable.
 
-    A shallow clone or an uncommitted file both fall back to today, which is
-    honest: an uncommitted file genuinely has no commit date yet.
+    Git records an offset-aware commit timestamp. Normalize that instant to UTC
+    before taking its date so a commit just after local midnight cannot appear
+    to be from the future on a UTC CI runner. A shallow clone or an uncommitted
+    file falls back to today's UTC date.
     """
     try:
         out = subprocess.run(
-            ["git", "log", "-1", "--format=%cs", "--", str(path.relative_to(ROOT))],
+            ["git", "log", "-1", "--format=%cI", "--", str(path.relative_to(ROOT))],
             cwd=ROOT,
             capture_output=True,
             text=True,
@@ -83,8 +85,12 @@ def _git_lastmod(path: Path) -> str:
         )
         stamp = out.stdout.strip()
         if stamp:
-            date.fromisoformat(stamp)  # reject anything that is not a date
-            return stamp
+            parsed = datetime.fromisoformat(
+                stamp[:-1] + "+00:00" if stamp.endswith("Z") else stamp
+            )
+            if parsed.tzinfo is None:
+                raise ValueError("git commit timestamp has no timezone")
+            return parsed.astimezone(timezone.utc).date().isoformat()
     except (OSError, ValueError, subprocess.SubprocessError):
         pass
     return datetime.now(timezone.utc).date().isoformat()
