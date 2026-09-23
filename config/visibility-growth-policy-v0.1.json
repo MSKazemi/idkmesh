@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "status": "bootstrap_thresholds_require_calibration",
+  "thresholds": {
+    "minimum_nonbranded_impressions_28d": 50,
+    "minimum_nonbranded_ctr": 0.02,
+    "minimum_portfolio_queries_observed": 3
+  },
+  "provenance": {
+    "minimum_nonbranded_impressions_28d": "hand_authored_bootstrap_prior",
+    "minimum_nonbranded_ctr": "hand_authored_bootstrap_prior",
+    "minimum_portfolio_queries_observed": "hand_authored_bootstrap_prior"
+  },
+  "authority": {
+    "recommendation_only": true,
+    "automatic_content_publication": false,
+    "automatic_outreach": false,
+    "automatic_issue_creation": false,
+    "merge_authority": false
+  }
+}

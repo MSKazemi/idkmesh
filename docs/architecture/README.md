@@ -51,6 +51,9 @@ remain authoritative; an index link does not promote a proposal into policy.
 
 ## Repository Evolution
 
+- [Self-Growth Mechanism](SELF_GROWTH_MECHANISM.md) — plain-language map of the
+  implemented repository/community feedback loops, authority boundaries, and
+  multi-axis growth model.
 - [Self-Evolving Repository](SELF_EVOLVING_REPOSITORY.md) — guarded proposal
   generation and evaluation over repository structure.
 - [IDKGraph Task and Evolution Model](IDKGRAPH_TASK_AND_EVOLUTION_MODEL.md) —

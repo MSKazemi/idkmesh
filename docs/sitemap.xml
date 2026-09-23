@@ -57,6 +57,11 @@
     <priority>0.4</priority>
   </url>
   <url>
+    <loc>https://mskazemi.com/idkmesh/admin/SEARCH_VISIBILITY_ANALYTICS.html</loc>
+    <lastmod>2026-09-23</lastmod>
+    <priority>0.4</priority>
+  </url>
+  <url>
     <loc>https://mskazemi.com/idkmesh/algorithms/ACO_STIGMERGIC_TASK_ROUTING.html</loc>
     <lastmod>2026-08-28</lastmod>
     <priority>0.7</priority>
@@ -227,6 +232,11 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://mskazemi.com/idkmesh/architecture/SELF_GROWTH_MECHANISM.html</loc>
+    <lastmod>2026-09-22</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://mskazemi.com/idkmesh/architecture/SEQUENTIAL_EVIDENCE_KERNEL.html</loc>
     <lastmod>2026-08-28</lastmod>
     <priority>0.8</priority>
@@ -388,6 +398,11 @@
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/community/STARTER_TASKS.html</loc>
+    <lastmod>2026-09-23</lastmod>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://mskazemi.com/idkmesh/community/VISIBILITY_AND_COMMUNITY_GROWTH_LOOP.html</loc>
     <lastmod>2026-09-23</lastmod>
     <priority>0.6</priority>
   </url>
