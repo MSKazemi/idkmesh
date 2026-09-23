@@ -289,6 +289,8 @@ Study how verification capacity should be allocated under generation pressure:
 - overload/criticality signals;
 - human escalation by information value.
 
+Adaptive Verification Ecology (AVE) is the current cross-disciplinary experimental synthesis for this phase. It combines ecological anti-monoculture pressure, posterior/entropy exploration, known-bad verifier probes, correlation-aware verifier portfolios, risk-adaptive verification, and review-capacity shadow prices. AVE remains **simulation/research only** until the matched-budget component ablations and environment sweeps in [issue #621](https://github.com/MSKazemi/idkmesh/issues/621) show a reproducible Pareto improvement or an explicitly justified risk/cost trade-off, followed by held-out real WorkUnit evidence.
+
 ### Phase M3 — Locality and federated scheduling
 
 Test the fractal scaling hypothesis:

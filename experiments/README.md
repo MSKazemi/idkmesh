@@ -49,6 +49,14 @@ The Physarum routing research records are also indexed here:
 [PHY-0 reference routing](PHY-0-physarum-compute-routing.md) and
 [PHY-1 stress matrix](PHY-1-stress-matrix.md).
 
+The Adaptive Verification Ecology records are indexed here:
+[AVE-0 foundation](AVE-0-adaptive-verification-ecology.md),
+[AVE-1 ablation](AVE-1-adaptive-verification-ecology-ablation.md),
+[AVE-1 targeted policy](AVE-1-targeted-core-policy.md),
+[AVE-2 targeted ecology](AVE-2-adaptive-verification-ecology-targeted.md),
+[AVE-2 adversarial matrix](AVE-2-adversarial-matrix.md), and
+[AVE-3 stress evidence](AVE-3-adaptive-verification-ecology-stress.md).
+
 E014's sweeps publish their own result documents:
 [reference sweep](results/E014-reference-sweep.md),
 [parameter Pareto front](results/E014-parameter-pareto.md), and the

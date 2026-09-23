@@ -150,6 +150,7 @@ See [`ITERATION_MODEL.md`](ITERATION_MODEL.md), [`docs/architecture/SELF_EVOLVIN
 - scheduling and stigmergy;
 - criticality/overload behavior;
 - learned verifier reliability;
+- Adaptive Verification Ecology (experimental synthesis of niche-aware routing, verifier-memory/probes, correlation-aware verification, and capacity backpressure);
 - decomposition strategy;
 - repository/community evolution.
 

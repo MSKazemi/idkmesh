@@ -98,6 +98,7 @@ For a newcomer trying to understand the executable foundation, this order is usu
 - [R2 Scale and Regime Sweep](research/R2_SCALE_REGIME_SWEEP.md) — randomized local scheduling under scale/churn/staleness.
 - [Verification Backpressure Temporal Benchmark](research/VERIFICATION_BACKPRESSURE_BENCHMARK.md) — generation/verification debt dynamics.
 - [Coordination Criticality and Finite-Difference Response](research/CRITICALITY_AND_FLUCTUATION_RESPONSE.md) — overload-warning experiment.
+- [Adaptive Verification Ecology](algorithms/ADAPTIVE_VERIFICATION_ECOLOGY.md) — synthetic bio/ecology/economics/physics-inspired routing + verification controller; production use is gated on matched-budget ablation and real WorkUnit evidence.
 
 ### Repository evolution
 
