@@ -40,6 +40,26 @@ class PublicDiscoveryMonitorTests(unittest.TestCase):
         self.assertEqual(required, set(monitor.ROBOTS_USER_AGENTS))
         self.assertIn("browser", monitor.USER_AGENTS)
 
+
+    def test_workflow_waits_for_pages_deployment(self) -> None:
+        workflow = (
+            monitor.ROOT
+            if hasattr(monitor, "ROOT")
+            else None
+        )
+        del workflow
+        from pathlib import Path
+
+        root = Path(__file__).resolve().parents[1]
+        text = (
+            root / ".github" / "workflows" / "public-discovery-monitor.yml"
+        ).read_text(encoding="utf-8")
+        self.assertIn("workflow_run:", text)
+        self.assertIn("pages build and deployment", text)
+        self.assertIn("github.event.workflow_run.head_sha", text)
+        self.assertIn("github.event.workflow_run.conclusion == 'success'", text)
+        self.assertNotIn("\n  push:\n", text)
+
     def _healthy_fetch(self, url: str, user_agent: str, timeout: float = 10.0):
         del user_agent, timeout
         if url == monitor.ROOT_ROBOTS:
