@@ -764,6 +764,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="path to the dispatch policy JSON",
     )
     parser.add_argument("--init-labels", action="store_true")
+    parser.add_argument("--reconcile", action="store_true")
     parser.add_argument("--dispatch", action="store_true")
     parser.add_argument("--event-issue", type=int)
     parser.add_argument("--max-dispatch", type=int)
@@ -773,8 +774,8 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
-    if not args.init_labels and not args.dispatch:
-        raise SystemExit("choose --init-labels and/or --dispatch")
+    if not args.init_labels and not args.reconcile and not args.dispatch:
+        raise SystemExit("choose --init-labels, --reconcile, and/or --dispatch")
     if args.max_dispatch is not None and args.max_dispatch < 1:
         raise SystemExit("--max-dispatch must be at least 1")
 
@@ -789,7 +790,8 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         jules_api = None
-        if args.dispatch and not args.dry_run:
+        needs_provider = args.reconcile or (args.dispatch and not args.dry_run)
+        if needs_provider:
             jules_api = JulesAPI(
                 api_key=os.environ.get("JULES_API_KEY", ""),
                 api_url=os.environ.get(
@@ -804,6 +806,24 @@ def main(argv: list[str] | None = None) -> int:
                 print("jules dispatcher: labels " + ", ".join(created))
             else:
                 print("jules dispatcher: policy labels already exist")
+
+        open_issues = None
+        sessions = None
+        if args.reconcile or args.dispatch:
+            open_issues = api.list_open_issues()
+        if jules_api is not None and (args.reconcile or args.dispatch):
+            sessions = jules_api.list_sessions()
+
+        if args.reconcile:
+            assert jules_api is not None
+            reconcile_active_sessions(
+                api,
+                policy,
+                jules_api=jules_api,
+                open_issues=open_issues,
+                sessions=sessions,
+                dry_run=args.dry_run,
+            )
         if args.dispatch:
             dispatch(
                 api,
@@ -816,7 +836,14 @@ def main(argv: list[str] | None = None) -> int:
                 event_issue_number=args.event_issue,
                 max_dispatch=args.max_dispatch,
                 dry_run=args.dry_run,
+                open_issues=open_issues,
+                sessions=sessions,
             )
+    except GitHubRateLimitError as exc:
+        # Quota exhaustion is transient. Fail closed, but keep the workflow
+        # green so the scheduled recovery sweep can retry later.
+        print(f"jules dispatcher: deferred: {exc}", file=sys.stderr)
+        return 0
     except DispatchError as exc:
         print(f"jules dispatcher: {exc}", file=sys.stderr)
         return 2
