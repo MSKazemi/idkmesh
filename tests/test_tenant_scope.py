@@ -30,6 +30,13 @@ ADVERSARIAL_PATH = (
     / "enterprise_scope"
     / "cross-tenant-reference.json"
 )
+SUBSTITUTION_FIXTURE_PATH = (
+    ROOT
+    / "tests"
+    / "fixtures"
+    / "enterprise_scope"
+    / "tenant-id-substitution.json"
+)
 DIGEST_A = "sha256:" + "a" * 64
 DIGEST_B = "sha256:" + "b" * 64
 
@@ -132,6 +139,20 @@ class TenantScopeTests(unittest.TestCase):
 
         self.assertEqual(caught.exception.code, fixture["expected_error"])
 
+    def test_adversarial_tenant_id_substitution_fixture_fails_closed(self) -> None:
+        fixture = json.loads(SUBSTITUTION_FIXTURE_PATH.read_text(encoding="utf-8"))
+        caller = TenantScope(**fixture["caller_scope"])
+        substituted_ref = parse_resource_ref(fixture["attempted_substitution"])
+
+        store = ScopedMemoryStore()
+        original_ref = store.put(caller, substituted_ref.resource_type, substituted_ref.resource_id, {"data": "secret"})
+
+        with self.assertRaises(TenantIsolationError) as caught:
+            store.get_ref(caller, substituted_ref)
+
+        self.assertEqual(caught.exception.code, fixture["expected_error"])
+        self.assertEqual(store.get_ref(caller, original_ref), {"data": "secret"})
+
     def test_cross_tenant_delete_cannot_remove_resource(self) -> None:
         store = ScopedMemoryStore()
         ref = store.put(self.tenant_a, "run", "run-17", "value")
@@ -140,6 +161,28 @@ class TenantScopeTests(unittest.TestCase):
             store.delete_ref(self.tenant_b, ref)
 
         self.assertEqual(store.get_ref(self.tenant_a, ref), "value")
+
+    def test_cross_tenant_update_fails_closed(self) -> None:
+        store = ScopedMemoryStore()
+        ref = store.put(self.tenant_a, "claim", "claim-42", {"status": "active"})
+
+        with self.assertRaises(TenantIsolationError) as caught:
+            store.put_ref(self.tenant_b, ref, {"status": "hijacked"})
+
+        self.assertEqual(caught.exception.code, "scope_mismatch")
+        self.assertEqual(
+            store.get_ref(self.tenant_a, ref),
+            {"status": "active"},
+        )
+
+    def test_cache_queue_audit_resources_have_tenant_scoped_keys(self) -> None:
+        for resource_type in ("run", "claim", "audit", "cache", "queue"):
+            ref = ScopedResourceRef(self.tenant_a, resource_type, "item-1")
+            self.assertTrue(
+                ref.storage_key.startswith(
+                    f"idkmesh/scope/v1/tenant/{self.tenant_a.tenant_id}/project/{self.tenant_a.project_id}/resource/{resource_type}/"
+                )
+            )
 
     def test_scope_listing_returns_only_own_keyspace(self) -> None:
         store = ScopedMemoryStore()
