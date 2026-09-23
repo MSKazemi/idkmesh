@@ -1,0 +1,78 @@
+{
+  "schema_version": "0.1",
+  "kind": "idkmesh-verifier-observation-pool",
+  "repository": "MSKazemi/idkmesh",
+  "source_revision": "1111111111111111111111111111111111111111",
+  "captured_at": "2026-09-23T20:00:00Z",
+  "work_unit_id": "illustrative/ave-shadow",
+  "task_domain": "testing",
+  "worker_id": "illustrative-worker",
+  "reliability_max_age_days": 30,
+  "verifier_candidates": [
+    {
+      "id": "illustrative-local-schema",
+      "family": "deterministic-local",
+      "provider_family": null,
+      "available": true,
+      "supported_validator_ids": [
+        "result-manifest-schema"
+      ],
+      "review_units": 1,
+      "queue_load": 0,
+      "independence": {
+        "independent_from_worker": true,
+        "shared_model_family": false,
+        "shared_runtime": false
+      },
+      "reliability": {
+        "basis": "live_outcomes",
+        "alpha": 8,
+        "beta": 2,
+        "sample_count": 8,
+        "domain": "testing",
+        "observed_at": "2026-09-22T20:00:00Z",
+        "shift_warning": false,
+        "source_refs": [
+          "illustrative-live-outcomes"
+        ],
+        "known_bad_probe_trials": 2,
+        "known_bad_probe_breaches": 0
+      }
+    },
+    {
+      "id": "illustrative-independent-review",
+      "family": "independent-review-family",
+      "provider_family": "illustrative-provider",
+      "available": true,
+      "supported_validator_ids": [
+        "independent-review"
+      ],
+      "review_units": 1.5,
+      "queue_load": 0.2,
+      "independence": {
+        "independent_from_worker": true,
+        "shared_model_family": false,
+        "shared_runtime": false
+      },
+      "reliability": {
+        "basis": "known_bad_probes",
+        "alpha": 20,
+        "beta": 1,
+        "sample_count": 19,
+        "domain": "testing",
+        "observed_at": "2026-09-23T18:00:00Z",
+        "shift_warning": false,
+        "source_refs": [
+          "illustrative-probe-run"
+        ],
+        "known_bad_probe_trials": 19,
+        "known_bad_probe_breaches": 0
+      }
+    }
+  ],
+  "limitations": [
+    "Illustrative synthetic snapshot only; not real verifier reliability evidence.",
+    "Family labels are heuristics and do not prove statistical independence.",
+    "Probe-only success is deliberately not treated as positive reliability."
+  ]
+}
