@@ -15,7 +15,7 @@ rank, summarize, or cite.
 | Google Search | Googlebot, crawlable HTML, canonical URLs, internal links, XML sitemap | static HTML/Markdown, canonical metadata, topic hub, complete sitemap |
 | Gemini / Google AI search experiences | Google Search index plus Google's Gemini-related crawling controls | same Google Search foundation; no separate keyword-stuffing path |
 | Bing / Microsoft Copilot | Bingbot, XML sitemap, IndexNow freshness | sitemap + scheduled IndexNow notifier |
-| Yahoo and other engines consuming major web indexes | standards-based crawl/index signals | public HTML, robots-compatible crawling, sitemap, canonicals |
+| Yahoo Search / Yahoo Scout discovery | Yahoo `Slurp` plus Bing-supplied search infrastructure; open-web crawl/index signals | explicit Slurp robots/HTTP probe, Bing/IndexNow coverage, sitemap, canonicals |
 | ChatGPT search | `OAI-SearchBot` plus public crawlable/indexable pages | static pages, direct answers, topic hubs, `llms.txt` supplement |
 | Claude web search | `Claude-SearchBot`; user-directed retrieval may use `Claude-User` | public static content and answer-oriented topic pages |
 | Perplexity | `PerplexityBot`; user-directed retrieval may use `Perplexity-User` | public static content, topic/Q&A structure, sitemap |
@@ -55,6 +55,7 @@ The monitor uses representative current user-agent identities for:
 
 - `Googlebot`
 - `bingbot`
+- Yahoo `Slurp`
 - `OAI-SearchBot`
 - `Claude-SearchBot`
 - `Claude-User`
@@ -79,6 +80,9 @@ not freeze a user-agent string as a permanent protocol guarantee.
   https://docs.perplexity.ai/docs/resources/perplexity-crawlers
 - Bing sitemap + AI-search freshness guidance:
   https://blogs.bing.com/webmaster/2025/7/Keeping-Content-Discoverable-with-Sitemaps-in-AI-Powered-Search/
+- Yahoo Search crawler guidance (`Slurp`) and Bing-powered search-result guidance:
+  https://help.yahoo.com/kb/SLN22600.html
+  https://help.yahoo.com/kb/SLN2245.html
 
 ## Visibility evidence loop
 
