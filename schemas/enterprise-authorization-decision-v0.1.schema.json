@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idkmesh.org/schemas/enterprise-authorization-decision-v0.1.schema.json",
+  "title": "IDKMesh Enterprise Authorization Decision v0.1",
+  "description": "Deterministic authorization evidence for one scoped request. The object records an allow/deny/approval-required result but performs no action and carries no merge/canonical-write authority itself.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "kind",
+    "schema_version",
+    "effect",
+    "code",
+    "message",
+    "request_id",
+    "principal_id",
+    "action",
+    "resource",
+    "requested_risk",
+    "effective_risk",
+    "data_classification",
+    "policy",
+    "identity_revision",
+    "evaluated_at_epoch",
+    "approved_by",
+    "approval_reference",
+    "authority"
+  ],
+  "properties": {
+    "kind": {"const": "idkmesh-enterprise-authorization-decision"},
+    "schema_version": {"const": "0.1"},
+    "effect": {"enum": ["allow", "deny", "requires_approval"]},
+    "code": {"type": "string", "minLength": 1},
+    "message": {"type": "string", "minLength": 1},
+    "request_id": {"type": "string", "minLength": 1},
+    "principal_id": {"type": "string", "minLength": 1},
+    "action": {"enum": ["read", "claim", "release", "dispatch", "execute", "verify", "integrate", "manage_policy", "audit_export"]},
+    "resource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tenant_id", "project_id", "resource_type", "resource_id"],
+      "properties": {
+        "tenant_id": {"type": "string", "minLength": 1},
+        "project_id": {"type": "string", "minLength": 1},
+        "resource_type": {"type": "string", "minLength": 1},
+        "resource_id": {"type": "string", "minLength": 1}
+      }
+    },
+    "requested_risk": {"enum": ["low", "medium", "high", "critical"]},
+    "effective_risk": {"enum": ["low", "medium", "high", "critical"]},
+    "data_classification": {"enum": ["public", "internal", "confidential", "restricted"]},
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["policy_id", "revision"],
+      "properties": {
+        "policy_id": {"type": "string", "minLength": 1},
+        "revision": {"type": "string", "minLength": 1}
+      }
+    },
+    "identity_revision": {"type": "string", "minLength": 1},
+    "evaluated_at_epoch": {"type": "integer", "minimum": 0},
+    "approved_by": {"type": ["string", "null"]},
+    "approval_reference": {"type": ["string", "null"]},
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["executes_action", "canonical_state_write", "merge"],
+      "properties": {
+        "executes_action": {"const": false},
+        "canonical_state_write": {"const": false},
+        "merge": {"const": false}
+      }
+    }
+  }
+}
