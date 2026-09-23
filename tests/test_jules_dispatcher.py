@@ -482,7 +482,6 @@ def test_reconcile_then_dispatch_backfills_freed_slot_in_same_snapshot():
         failed,
         issue(61, "agent:jules-dispatched", updated_at="2026-09-23T17:30:00Z"),
         issue(62, "agent:jules-dispatched", updated_at="2026-09-23T17:30:00Z"),
-        issue(63, "agent:jules-dispatched", updated_at="2026-09-23T17:30:00Z"),
         issue(1, "agent:jules-eligible", "priority:p0"),
     ]
     failed_session = {
