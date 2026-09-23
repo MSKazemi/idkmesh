@@ -132,6 +132,31 @@ C6-E derives `verification_request.expected_validator_ids` from the bound WorkUn
 
 See [ADR-0015](../decisions/ADR-0015-candidate-reference-result-manifest-normalization.md) for the decision and alternatives.
 
+
+## C6 verifier handoff
+
+After C6-E emits a normalized ResultManifest, C6-F may prepare a small immutable `VerificationHandoff` application object from the exact WorkUnit and ResultManifest.
+
+The handoff binds:
+
+- WorkUnit id/version/canonical digest;
+- exact source revision;
+- ResultManifest id/canonical digest and attempt;
+- worker id;
+- candidate artifact id and digest;
+- required WorkUnit validator IDs;
+- verification strategy, independence requirement, minimum independent verifier count, and quorum when present.
+
+The handoff deliberately contains **no verifier identity, EvaluatorPlan, verdict, recommendation, acceptance, or integration authority**.
+
+EvaluatorPlan remains verifier-owned under ADR-0009. `VerificationHandoff.evaluator_binding()` only exposes the exact binding values an independently owned plan must match; it does not create, select, or modify that plan.
+
+C6-F derives the required validator set from `WorkUnit.validators[*].required == true` and requires the ResultManifest verification request to include every required validator. Optional validators are not silently promoted to required checks.
+
+When the ResultManifest requests multiple evidence artifacts, the caller must select the candidate artifact explicitly; C6-F does not guess.
+
+Reference implementation: `idkmesh/verification_handoff.py`.
+
 ## Negative invariant
 
 The schema uses `additionalProperties: false` at the shared top level and intentionally defines no `accepted` field.
