@@ -10,13 +10,14 @@ raw provider credentials are outside its contract.
 
 from __future__ import annotations
 
+from contextlib import contextmanager
 from dataclasses import dataclass
 import json
 import math
 from pathlib import Path
 import re
 import sqlite3
-from typing import Any, Mapping
+from typing import Any, Iterator, Mapping
 
 
 SCHEMA_VERSION = 1
@@ -75,6 +76,23 @@ def _connect(path: Path) -> sqlite3.Connection:
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     return conn
+
+
+@contextmanager
+def _session(path: Path) -> Iterator[sqlite3.Connection]:
+    """Open one connection, commit/rollback its transaction, then always close it.
+
+    ``sqlite3.Connection.__exit__`` commits or rolls back the transaction but
+    does not close the connection, so a bare ``with _connect(path) as conn``
+    leaks a connection (and file descriptor) on every call.
+    """
+
+    conn = _connect(path)
+    try:
+        with conn:
+            yield conn
+    finally:
+        conn.close()
 
 
 def _safe_key(key: object) -> str:
@@ -142,7 +160,7 @@ class LocalMetadataStore:
         self._migrate()
 
     def _migrate(self) -> None:
-        with _connect(self.path) as conn:
+        with _session(self.path) as conn:
             current = int(conn.execute("PRAGMA user_version").fetchone()[0])
             if current > SCHEMA_VERSION:
                 raise LocalStoreError(
@@ -209,7 +227,7 @@ class LocalMetadataStore:
         self._require_text(connection_id, "connection_id")
         self._require_text(updated_at, "updated_at")
         payload = _dump_metadata(metadata)
-        with _connect(self.path) as conn:
+        with _session(self.path) as conn:
             conn.execute(
                 """
                 INSERT INTO connections(connection_id, metadata_json, updated_at)
@@ -223,7 +241,7 @@ class LocalMetadataStore:
 
     def get_connection(self, connection_id: str) -> Mapping[str, Any] | None:
         self._require_text(connection_id, "connection_id")
-        with _connect(self.path) as conn:
+        with _session(self.path) as conn:
             row = conn.execute(
                 "SELECT metadata_json FROM connections WHERE connection_id = ?",
                 (connection_id,),
@@ -243,7 +261,7 @@ class LocalMetadataStore:
         self._require_text(status, "status")
         payload = _dump_metadata(metadata)
 
-        with _connect(self.path) as conn:
+        with _session(self.path) as conn:
             existing = conn.execute(
                 """
                 SELECT status, metadata_json
@@ -268,7 +286,7 @@ class LocalMetadataStore:
 
     def latest_probe(self, connection_id: str) -> Mapping[str, Any] | None:
         self._require_text(connection_id, "connection_id")
-        with _connect(self.path) as conn:
+        with _session(self.path) as conn:
             row = conn.execute(
                 """
                 SELECT checked_at, status, metadata_json
@@ -301,7 +319,7 @@ class LocalMetadataStore:
         self._require_text(created_at, "created_at")
         payload = _dump_metadata(metadata)
 
-        with _connect(self.path) as conn:
+        with _session(self.path) as conn:
             existing = conn.execute(
                 """
                 SELECT request_digest, metadata_json, created_at
@@ -330,7 +348,7 @@ class LocalMetadataStore:
 
     def get_route(self, route_id: str) -> Mapping[str, Any] | None:
         self._require_text(route_id, "route_id")
-        with _connect(self.path) as conn:
+        with _session(self.path) as conn:
             row = conn.execute(
                 """
                 SELECT request_digest, metadata_json, created_at
@@ -464,7 +482,7 @@ class LocalMetadataStore:
 
     def get_run(self, run_id: str) -> RunRecord | None:
         self._require_text(run_id, "run_id")
-        with _connect(self.path) as conn:
+        with _session(self.path) as conn:
             return self._get_run_with_conn(conn, run_id)
 
     def update_run(
@@ -480,7 +498,7 @@ class LocalMetadataStore:
         self._require_text(updated_at, "updated_at")
         payload = _dump_metadata(metadata)
 
-        with _connect(self.path) as conn:
+        with _session(self.path) as conn:
             cursor = conn.execute(
                 """
                 UPDATE runs
