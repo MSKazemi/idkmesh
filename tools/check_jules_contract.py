@@ -117,12 +117,46 @@ def main() -> int:
 
     max_in_flight = int(dispatch_policy.get("max_in_flight", 0))
     max_per_sweep = int(dispatch_policy.get("max_dispatch_per_sweep", 0))
+    provider = dispatch_policy.get("provider_concurrency") or {}
+    provider_max = (
+        provider.get("max_concurrent_tasks")
+        if isinstance(provider, dict)
+        else None
+    )
+    provider_max_valid = (
+        isinstance(provider_max, int)
+        and not isinstance(provider_max, bool)
+        and provider_max > 0
+    )
+    effective_cap = min(
+        max_in_flight,
+        provider_max if provider_max_valid else 0,
+    )
+
     _require(errors, max_in_flight > 0, "max_in_flight must be positive")
     _require(errors, max_per_sweep > 0, "max_dispatch_per_sweep must be positive")
     _require(
         errors,
-        max_per_sweep <= max_in_flight,
-        "max_dispatch_per_sweep cannot exceed max_in_flight",
+        provider_max_valid,
+        "provider_concurrency.max_concurrent_tasks must be a positive integer",
+    )
+    _require(
+        errors,
+        isinstance(provider, dict)
+        and str(provider.get("source") or "").startswith(
+            "https://jules.google/docs/usage-limits"
+        ),
+        "provider concurrency must cite the official Jules limits page",
+    )
+    _require(
+        errors,
+        isinstance(provider, dict) and bool(str(provider.get("checked_at") or "").strip()),
+        "provider concurrency must record checked_at",
+    )
+    _require(
+        errors,
+        max_per_sweep <= effective_cap,
+        "max_dispatch_per_sweep cannot exceed effective provider/repository capacity",
     )
 
     jules_routing = (
@@ -252,6 +286,22 @@ def main() -> int:
         '"requirePlanApproval": False' in dispatcher_code,
         "dispatcher must keep unattended bounded tasks free of a provider plan gate",
     )
+    _require(
+        errors,
+        "effective_in_flight_limit(policy)" in dispatcher_code,
+        "dispatcher must enforce the stricter repository/provider concurrency cap",
+    )
+    _require(
+        errors,
+        "is_provider_backpressure(exc)" in dispatcher_code,
+        "dispatcher must explicitly handle rejected provider backpressure",
+    )
+    _require(
+        errors,
+        "FAILED_PRECONDITION" in dispatcher_code
+        and "RESOURCE_EXHAUSTED" in dispatcher_code,
+        "dispatcher must recognize Jules precondition/quota backpressure statuses",
+    )
 
     if errors:
         print("Jules automation contract check failed:", file=sys.stderr)
@@ -262,7 +312,8 @@ def main() -> int:
     print(
         "Jules automation contract OK: "
         f"manual={manual_queue}, automatic={automatic_queue}, "
-        f"active_cap={max_in_flight}, sweep_cap={max_per_sweep}"
+        f"repo_cap={max_in_flight}, provider_cap={provider_max}, "
+        f"effective_cap={effective_cap}, sweep_cap={max_per_sweep}"
     )
     return 0
 
