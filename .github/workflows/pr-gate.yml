@@ -1,10 +1,10 @@
 name: PR Gate
 
-# Every other workflow in this repository is path-filtered, so no status check runs
-# on every pull request. That makes branch protection unusable: a required check that
-# never runs leaves the pull request permanently blocked, which is the "unrecoverable
-# deadlock" issue #35 warns against. This workflow is deliberately unfiltered so it can
-# serve as the one stable required check on `main`.
+# This workflow is deliberately unfiltered so branch protection can depend on one
+# stable required check for every pull request. Product/research workflows may be
+# path-filtered, while CI Shadow Planner remains intentionally advisory and unfiltered.
+# A required path-filtered check can deadlock a PR when it never runs; issue #35 records
+# that failure mode. Keep PR Gate as the stable merge-safety surface on `main`.
 
 on:
   pull_request:

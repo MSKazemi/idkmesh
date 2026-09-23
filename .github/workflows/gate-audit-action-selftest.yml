@@ -5,14 +5,18 @@ on:
     branches: [main]
     paths:
       - "actions/gate-audit/**"
-      - "idkmesh/**"
+      - "idkmesh/__init__.py"
+      - "idkmesh/cli.py"
+      - "idkmesh/gate_audit.py"
       - "pyproject.toml"
       - "examples/gate-audit/**"
       - ".github/workflows/gate-audit-action-selftest.yml"
   pull_request:
     paths:
       - "actions/gate-audit/**"
-      - "idkmesh/**"
+      - "idkmesh/__init__.py"
+      - "idkmesh/cli.py"
+      - "idkmesh/gate_audit.py"
       - "pyproject.toml"
       - "examples/gate-audit/**"
       - ".github/workflows/gate-audit-action-selftest.yml"
