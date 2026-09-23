@@ -1,6 +1,18 @@
 name: Public Discovery Monitor
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'docs/index.html'
+      - 'docs/topics/**'
+      - 'docs/sitemap.xml'
+      - 'docs/llms.txt'
+      - 'docs/_config.yml'
+      - 'docs/7c1f6d4a9b2e3c8f5a0d1e7b4c6f8a2d.txt'
+      - 'tools/check_public_discovery.py'
+      - '.github/workflows/public-discovery-monitor.yml'
   schedule:
     - cron: '43 5 * * *'
   workflow_dispatch:
@@ -16,7 +28,7 @@ jobs:
   probe:
     name: probe
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 8
     steps:
       - name: Check out canonical repository state
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -29,4 +41,17 @@ jobs:
           python-version: '3.13'
 
       - name: Probe public search and answer-engine discovery surface
-        run: python tools/check_public_discovery.py
+        shell: bash
+        run: |
+          attempts=5
+          for attempt in $(seq 1 "$attempts"); do
+            if python tools/check_public_discovery.py; then
+              exit 0
+            fi
+            if [ "$attempt" -eq "$attempts" ]; then
+              echo "Public discovery surface did not converge after bounded retries." >&2
+              exit 1
+            fi
+            echo "Discovery probe attempt $attempt failed; retrying after Pages propagation."
+            sleep 30
+          done
