@@ -1,7 +1,7 @@
 ---
 title: "LLM-as-a-Judge Reliability and Evaluator Bias — IDKMesh"
 description: "How to reason about LLM-as-a-judge reliability: evaluator calibration, correlated errors, panel independence, evidence classes, and authority boundaries."
-image: "/idkmesh/assets/idkmesh-social.png"
+image: "/assets/idkmesh-social.png"
 ---
 
 # LLM-as-a-judge reliability
