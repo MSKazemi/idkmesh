@@ -47,6 +47,20 @@ Prefer one reviewable outcome per branch/PR over broad speculative rewrites. If 
 
 For repository-operated Google Jules work, `agent-ready` is an explicit maintainer/trusted-triager approval boundary. Separately, the deterministic Issue Model Router may emit `agent:jules-eligible` for the narrow automatic lane; the dispatcher accepts that route only for trusted GitHub author associations and still applies hard veto labels, capacity limits, duplicate protection, and provider-session reconciliation. Automatic execution goes through the official Jules REST API and records `agent:jules-dispatched`; failed/stalled sessions move to `agent:jules-needs-attention`, which blocks automatic redispatch. The legacy `jules` label is manual/native-App fallback only and must not be added by automation. Never approve or auto-route work that requires genuine human observation, independent research/evidence, security approval, governance judgment, secret handling, or broad decomposition. See `docs/operations/JULES_AUTOMATION.md` and `config/jules-dispatch.json` for the full queue/trust/watchdog contract. The router-to-dispatcher handoff through local `workflow_call`, the `issue_number` reusable-workflow input, and `tools/check_jules_contract.py` in the required PR Gate **and both production workflows** are protected integration invariants: do not replace them with `gh workflow run`, remove them, or duplicate the queue-label contract in code without an explicit reviewed architecture change. The router alone owns control-plane `push` recovery; do not add a second dispatcher `push` trigger. Keep Jules account/provider concurrency in `config/jules-dispatch.json` under `provider_concurrency.max_concurrent_tasks`; repository review reservations and provider-active session occupancy are separate budgets, and dispatcher code must use the smaller **remaining** budget without counting terminal provider sessions as running work. GitHub Actions verification backlog is a third admission gate: the dispatcher must read it with `actions: read`, fail closed when the signal is unavailable, and never add new dispatch reservations above the configured queued/in-progress ceilings. Provider/CI backpressure must leave work queued rather than bypassing a cap.
 
+## Local Coding-Agent Sandbox Boundary
+
+Local coding-agent presets are untrusted candidate workers. A preset with
+`sandbox_required=true` must never be executed through raw
+`run_bounded_process()` as a fallback. Use the
+`LocalSandboxExecutor` boundary defined by
+`docs/specifications/LOCAL_AGENT_EXECUTION_BOUNDARY_V0_1.md`; execution fails
+closed unless process-tree, CPU, memory, disk, PID, filesystem, credential, and
+network enforcement match the canonical WorkUnit and AgentPreset. Candidate
+patches/logs are captured after execution outside worker authority and carry no
+verification, acceptance, or merge authority. Issue #804 owns the first real
+sandbox backend; until it is proven, do not represent goose/Gemini/mini-SWE-agent
+as safely executable on the host.
+
 ## Coding Style & Naming Conventions
 
 Follow existing Python conventions: four-space indentation, type hints for public interfaces, and deterministic seeded experiments. Use `snake_case` for files/functions, `PascalCase` for classes, and uppercase constants. Keep CLI scripts runnable from the repository root. No formatter or linter is mandated; match nearby code and avoid unnecessary dependencies.
