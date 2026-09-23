@@ -68,6 +68,7 @@ not freeze a user-agent string as a permanent protocol guarantee.
 
 - Google generative-search optimization:
   https://developers.google.com/search/docs/fundamentals/ai-optimization-guide
+  - Google clarified in June 2026 that `llms.txt` is not needed for Google Search and does not positively or negatively affect Google visibility/rankings; IDKMesh keeps it only as a supplement for systems that choose to use it.
 - Google crawler / Gemini control overview:
   https://developers.google.com/crawling
 - OpenAI publisher/developer discovery FAQ:
@@ -78,6 +79,28 @@ not freeze a user-agent string as a permanent protocol guarantee.
   https://docs.perplexity.ai/docs/resources/perplexity-crawlers
 - Bing sitemap + AI-search freshness guidance:
   https://blogs.bing.com/webmaster/2025/7/Keeping-Content-Discoverable-with-Sitemaps-in-AI-Powered-Search/
+
+## Visibility evidence loop
+
+Crawler eligibility is only the input. Actual visibility is recorded separately
+under the versioned evidence contract in
+`schemas/search-visibility-observation-v0.1.schema.json`.
+
+The canonical ledger is
+`evidence/search-visibility/observations.json`; its deterministic report is
+`evidence/search-visibility/REPORT.md`. This prevents a manual AI-answer check,
+a Search Console impression, an index inspection, and a Bing citation from being
+collapsed into one misleading score.
+
+For the Microsoft ecosystem, Bing Webmaster Tools now exposes first-party AI
+Performance data for citations across Copilot, Bing AI-generated answers, and
+selected partners. Its 2026 preview includes cited URLs and grounding queries,
+and later preview additions include intents, topics, citation share, and compare.
+Those observations should be recorded as `webmaster_export` evidence rather
+than reconstructed by scraping result pages.
+
+Repository evidence location:
+https://github.com/MSKazemi/idkmesh/tree/main/evidence/search-visibility
 
 ## What this does not solve
 
