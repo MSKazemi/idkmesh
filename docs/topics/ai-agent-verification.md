@@ -63,6 +63,26 @@ In practical software-agent workflows, verification asks whether the candidate s
 
 Start with the [schema index](https://github.com/MSKazemi/idkmesh/blob/main/schemas/README.md), [architecture](https://github.com/MSKazemi/idkmesh/blob/main/ARCHITECTURE.md), and [getting-started guide](https://github.com/MSKazemi/idkmesh/blob/main/docs/GETTING_STARTED.md).
 
+### How do you verify an AI agent in production?
+
+Verify the exact action or artifact the agent produced, not merely the conversation that led to it. Use environment-appropriate tests, policy checks, provenance, and an integration boundary that can reject or escalate the result.
+
+### What evidence should an AI agent return?
+
+At minimum: the task identity, worker identity, exact output or revision, commands/checks performed, relevant logs or structured results, and enough provenance for another reviewer to reproduce the important checks.
+
+### How can I detect an agent that falsely reports success?
+
+Do not use the agent's self-report as the acceptance signal. Run verifier-owned checks against the produced artifact and compare the result to explicit acceptance criteria.
+
+### What should happen when AI-agent verification is inconclusive?
+
+The system should preserve the uncertainty rather than converting it into approval. Escalate to a stronger evaluator, a different evidence source, or a human reviewer according to the task's risk policy.
+
+### How do you verify agents from different AI providers consistently?
+
+Normalize them behind the same task, result, provenance, and verification contracts. Provider-specific APIs can differ while the evidence required for acceptance remains stable.
+
 [Browse all AI-agent trust topics](https://mskazemi.com/idkmesh/topics/).
 
 **Last reviewed:** 2026-09-22.
