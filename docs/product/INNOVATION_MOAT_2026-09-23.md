@@ -593,6 +593,8 @@ Do not:
 
 ## 14. Next implementation slice
 
+Tracked implementation/research issue: [#693 — measure marginal evidence contribution before adding a verifier](https://github.com/MSKazemi/idkmesh/issues/693).
+
 The smallest useful technical slice is:
 
 > Given a historical verdict matrix, an existing selected verifier panel, and candidate verifier error history, compute the candidate's **marginal effective-vote gain** and reject additions that provide negligible incremental independence.
