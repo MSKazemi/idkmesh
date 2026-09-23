@@ -20,6 +20,11 @@ from idkmesh.gate_audit import (
     render_json,
     render_markdown,
 )
+from idkmesh.steward_report import (
+    StewardReportInputError,
+    load_report as load_steward_report,
+    render_summary as render_steward_summary,
+)
 from idkmesh.marginal_evidence import (
     MarginalEvidenceInputError,
     analyze_file as analyze_marginal_file,
@@ -37,9 +42,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="idkmesh",
         description=(
-            "IDKMesh verification tooling. 'gate-audit' measures how many "
-            "effective independent votes a verifier panel really has, and how "
-            "often seeded known-bad probes get through it."),
+            "IDKMesh verification and stewardship tooling. Use 'gate-audit' "
+            "to measure verifier-panel independence, or 'steward-report' to "
+            "validate and inspect Auto Draft PR Steward evidence offline."),
     )
     parser.add_argument(
         "--version", action="version", version=f"idkmesh {__version__}")
@@ -289,6 +294,20 @@ def build_parser() -> argparse.ArgumentParser:
     gui.add_argument(
         "--no-browser", action="store_true",
         help="serve the UI without opening the default browser")
+
+    sr = sub.add_parser(
+        "steward-report",
+        help="validate and summarize an Auto Draft PR Steward report",
+        description=(
+            "Read a local auto-draft-pr-steward-report-v0.1 JSON artifact, "
+            "strictly validate its evidence and authority contract, and print "
+            "a concise offline summary. No GitHub token or network access is "
+            "used."),
+    )
+    sr.add_argument("input", help="path to steward-report.json")
+    sr.add_argument(
+        "--details", action="store_true",
+        help="also list planned, created, and skipped branch records")
     return parser
 
 
@@ -601,6 +620,22 @@ def main(argv: list[str] | None = None) -> int:
             return _fail(
                 f"cannot start local UI on 127.0.0.1:{args.port}: "
                 f"{_reason(exc)}")
+        return 0
+
+    if args.command == "steward-report":
+        try:
+            report = load_steward_report(args.input)
+        except FileNotFoundError:
+            return _fail(f"input file not found: {args.input}")
+        except IsADirectoryError:
+            return _fail(
+                f"input path is a directory, not a steward report: {args.input}")
+        except OSError as exc:
+            return _fail(
+                f"cannot read steward report {args.input}: {_reason(exc)}")
+        except StewardReportInputError as exc:
+            return _fail(str(exc))
+        print(render_steward_summary(report, details=args.details), end="")
         return 0
 
     if args.command == "gate-marginal-benchmark":
