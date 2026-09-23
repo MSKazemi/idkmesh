@@ -1,8 +1,7 @@
-"""``idkmesh`` command-line interface.
+"""IDKMesh command-line interface.
 
-One subcommand for now — ``gate-audit`` — kept deliberately thin: all logic
-lives in ``idkmesh.gate_audit`` so it can be tested and reused without a
-process boundary.
+Command handlers stay deliberately thin. Product logic lives in reusable
+modules so it can be tested and embedded without a process boundary.
 """
 
 from __future__ import annotations
