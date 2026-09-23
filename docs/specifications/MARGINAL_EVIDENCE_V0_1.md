@@ -113,6 +113,12 @@ The machine-readable report validates against:
 
 - `schemas/marginal-evidence-report-v0.1.schema.json`
 
+A committed example generated from
+`examples/gate-audit/panel-votes.example.json` lives at
+`examples/gate-audit/marginal-evidence-report.example.json`. The test suite
+regenerates it from the implementation and requires exact equality, so the
+published fixture cannot silently drift from the code.
+
 Top-level authority is always:
 
 ```json
@@ -245,6 +251,11 @@ replicate.
 This pairing is load-bearing: independently resampling the two panels would add
 Monte Carlo noise unrelated to the verifier addition and would destroy the
 row-level comparison.
+
+Every candidate verifier in one analysis starts from the same configured seed
+and therefore receives the same sequence of resampled row indices. This keeps
+candidate-to-candidate differences from being contaminated by avoidable
+Monte Carlo differences in which rows happened to be drawn.
 
 The report includes percentile intervals for:
 
