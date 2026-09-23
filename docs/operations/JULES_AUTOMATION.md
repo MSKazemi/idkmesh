@@ -219,6 +219,15 @@ No Jules task auto-merges `main`.
 
 ## Failure and recovery runbook
 
+### Jules health check
+
+Maintainers can confirm that unattended Jules dispatch is working from the repository side by checking these indicators:
+
+1. **Workflow run history:** Inspect the latest `Jules Dispatcher` workflow run in repository Actions history ([`.github/workflows/jules-dispatch.yml`](../../.github/workflows/jules-dispatch.yml)) to confirm execution status and logs.
+2. **Issue status:** Check that the dispatcher applies `agent:jules-dispatched` to mark a started task.
+3. **Session comment:** Confirm that the dispatcher posts an issue comment containing the Jules session reference.
+4. **CI and review boundary:** Remember that normal IDKMesh CI, test gates, and human code review still apply to all generated pull requests.
+
 ### GitHub API quota is exhausted
 
 The dispatcher treats installation rate-limit exhaustion as a transient,
