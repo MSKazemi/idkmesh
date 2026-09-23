@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import unittest
+from pathlib import Path
 from unittest import mock
 
 from tools import check_public_discovery as monitor
@@ -42,14 +43,6 @@ class PublicDiscoveryMonitorTests(unittest.TestCase):
 
 
     def test_workflow_waits_for_pages_deployment(self) -> None:
-        workflow = (
-            monitor.ROOT
-            if hasattr(monitor, "ROOT")
-            else None
-        )
-        del workflow
-        from pathlib import Path
-
         root = Path(__file__).resolve().parents[1]
         text = (
             root / ".github" / "workflows" / "public-discovery-monitor.yml"
