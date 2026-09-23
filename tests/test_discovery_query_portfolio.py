@@ -4,6 +4,7 @@ import copy
 import json
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 from scripts.discovery_query_portfolio import load_json, validate
@@ -50,6 +51,19 @@ class DiscoveryQueryPortfolioTests(unittest.TestCase):
         changed["clusters"][0]["queries"][0] = "different nonbranded query"
         with self.assertRaisesRegex(ValueError, "canonical SEO query source"):
             validate(changed, ROOT)
+
+    def test_duplicate_canonical_cluster_fails_closed(self):
+        seo = load_json(ROOT / "config/seo-topics-v1.json")
+        seo["clusters"].append(copy.deepcopy(seo["clusters"][0]))
+        with patch("scripts.discovery_query_portfolio.load_json", return_value=seo):
+            with self.assertRaisesRegex(ValueError, "canonical SEO query source"):
+                validate(self.portfolio, ROOT)
+
+        seo["clusters"].pop()
+        seo["clusters"][-1] = copy.deepcopy(seo["clusters"][0])
+        with patch("scripts.discovery_query_portfolio.load_json", return_value=seo):
+            with self.assertRaisesRegex(ValueError, "distinct cluster ids"):
+                validate(self.portfolio, ROOT)
 
     def test_duplicate_query_fails_closed(self):
         changed = copy.deepcopy(self.portfolio)

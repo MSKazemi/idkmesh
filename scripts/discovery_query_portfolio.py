@@ -61,14 +61,23 @@ def validate(portfolio: dict[str, Any], root: Path) -> dict[str, Any]:
     seo_topics = load_json(source_path)
     seo_clusters = seo_topics.get("clusters")
     _require(isinstance(seo_clusters, list), "canonical SEO topic clusters must be an array")
+    _require(
+        len(seo_clusters) == expected_clusters
+        and all(
+            isinstance(cluster, dict)
+            and isinstance(cluster.get("id"), str)
+            and cluster["id"]
+            for cluster in seo_clusters
+        ),
+        "canonical SEO query source must contain exactly the expected clusters",
+    )
     canonical_by_id = {
-        str(cluster.get("id") or ""): cluster
+        cluster["id"]: cluster
         for cluster in seo_clusters
-        if isinstance(cluster, dict)
     }
     _require(
         len(canonical_by_id) == expected_clusters,
-        "canonical SEO query source must contain the expected cluster count",
+        "canonical SEO query source must contain distinct cluster ids",
     )
 
     seen_cluster_ids: set[str] = set()
@@ -107,7 +116,6 @@ def validate(portfolio: dict[str, Any], root: Path) -> dict[str, Any]:
             _require(value not in seen_queries, f"duplicate query: {query}")
             seen_queries.add(value)
             normalized.append(value)
-
 
         canonical = canonical_by_id.get(cluster_id)
         _require(
