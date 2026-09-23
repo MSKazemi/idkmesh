@@ -395,21 +395,36 @@ class SandboxLimits:
 
 
 @dataclass(frozen=True)
+class SandboxPolicy:
+    """Per-attempt policy that a sandbox backend must actually enforce."""
+
+    network_mode: str
+    network_allowlist: tuple[str, ...]
+    writable_paths: tuple[str, ...]
+    forbidden_paths: tuple[str, ...]
+
+    def __post_init__(self) -> None:
+        if self.network_mode not in {"disabled", "allowlisted"}:
+            raise ValueError("unsupported sandbox network_mode")
+        if self.network_mode == "disabled" and self.network_allowlist:
+            raise ValueError("disabled network policy cannot carry an allowlist")
+        if self.network_mode == "allowlisted" and not self.network_allowlist:
+            raise ValueError("allowlisted network policy requires destinations")
+
+
+@dataclass(frozen=True)
 class SandboxCapabilities:
     """Attested enforcement properties required by the orchestration layer."""
 
-    network_policy: str
+    network_enforcement: bool
     process_tree_isolation: bool
     cpu_limit: bool
     memory_limit: bool
     disk_limit: bool
     process_limit: bool
     filesystem_isolation: bool
+    writable_path_enforcement: bool
     credential_isolation: bool
-
-    def __post_init__(self) -> None:
-        if self.network_policy not in {"disabled", "model_only", "allowlisted"}:
-            raise ValueError("unsupported sandbox network_policy")
 
 
 class LocalSandboxExecutor(Protocol):
@@ -423,6 +438,7 @@ class LocalSandboxExecutor(Protocol):
         *,
         cwd: Path,
         limits: SandboxLimits,
+        policy: SandboxPolicy,
         env: Mapping[str, str],
         stdin_text: str | None,
     ) -> ProcessResult:
@@ -472,7 +488,8 @@ def _validate_local_agent_admission(
     preset: AgentPreset,
     sandbox: LocalSandboxExecutor,
     limits: SandboxLimits,
-) -> str:
+    trusted_model_network_allowlist: Iterable[str] | None,
+) -> tuple[str, SandboxPolicy]:
     """Validate only execution/admission facts needed at this product boundary."""
     objective = _require_nonempty_string(work_unit.get("objective"), "work_unit.objective")
 
@@ -547,16 +564,25 @@ def _validate_local_agent_admission(
     if isinstance(minimum_disk, int) and limits.disk_mb < minimum_disk:
         raise LocalRunnerError("sandbox disk limit is below WorkUnit minimum")
 
+    filesystem_write = permissions.get("filesystem_write")
+    if not isinstance(filesystem_write, list) or filesystem_write != allowed:
+        raise LocalRunnerError(
+            "initial local-agent profile requires permissions.filesystem_write "
+            "to exactly match constraints.allowed_paths"
+        )
+
     caps = getattr(sandbox, "capabilities", None)
     if not isinstance(caps, SandboxCapabilities):
         raise LocalRunnerError("sandbox executor must expose SandboxCapabilities")
     enforcement = {
+        "network_enforcement": caps.network_enforcement,
         "process_tree_isolation": caps.process_tree_isolation,
         "cpu_limit": caps.cpu_limit,
         "memory_limit": caps.memory_limit,
         "disk_limit": caps.disk_limit,
         "process_limit": caps.process_limit,
         "filesystem_isolation": caps.filesystem_isolation,
+        "writable_path_enforcement": caps.writable_path_enforcement,
         "credential_isolation": caps.credential_isolation,
     }
     missing = sorted(name for name, enabled in enforcement.items() if not enabled)
@@ -566,14 +592,35 @@ def _validate_local_agent_admission(
         )
 
     network = permissions.get("network")
+    network_allowlist: tuple[str, ...]
     if network == "none":
-        required_network_policy = "disabled"
+        if preset.network_policy != "disabled":
+            raise LocalRunnerError(
+                "preset network policy conflicts with WorkUnit network permission"
+            )
+        network_mode = "disabled"
+        network_allowlist = ()
     elif network == "allowlist":
-        allowlist = permissions.get("network_allowlist")
-        if not isinstance(allowlist, list) or not allowlist:
-            raise LocalRunnerError("network=allowlist requires network_allowlist")
-        required_network_policy = preset.network_policy
-        if required_network_policy not in {"model_only", "allowlisted"}:
+        raw_allowlist = permissions.get("network_allowlist")
+        if (
+            not isinstance(raw_allowlist, list)
+            or not raw_allowlist
+            or any(not isinstance(value, str) or not value.strip() for value in raw_allowlist)
+        ):
+            raise LocalRunnerError("network=allowlist requires non-empty destinations")
+        network_allowlist = tuple(raw_allowlist)
+        network_mode = "allowlisted"
+        if preset.network_policy == "model_only":
+            trusted = tuple(trusted_model_network_allowlist or ())
+            if not trusted:
+                raise LocalRunnerError(
+                    "model_only preset requires a trusted model network allowlist"
+                )
+            if set(network_allowlist) - set(trusted):
+                raise LocalRunnerError(
+                    "WorkUnit network allowlist exceeds trusted model destinations"
+                )
+        elif preset.network_policy != "allowlisted":
             raise LocalRunnerError(
                 "preset network policy cannot satisfy an allowlisted WorkUnit"
             )
@@ -581,16 +628,14 @@ def _validate_local_agent_admission(
         raise LocalRunnerError(
             "local coding-agent execution does not admit unrestricted network"
         )
-    if preset.network_policy != required_network_policy:
-        raise LocalRunnerError(
-            "preset network policy conflicts with WorkUnit network permission"
-        )
-    if caps.network_policy != required_network_policy:
-        raise LocalRunnerError(
-            "sandbox network enforcement does not match admitted preset policy"
-        )
 
-    return objective
+    policy = SandboxPolicy(
+        network_mode=network_mode,
+        network_allowlist=network_allowlist,
+        writable_paths=tuple(allowed),
+        forbidden_paths=tuple(forbidden),
+    )
+    return objective, policy
 
 
 def _changed_paths(workspace: Path, *, max_bytes: int = 1_000_000) -> list[tuple[str, bool]]:
@@ -784,6 +829,7 @@ def run_local_agent_preset(
     artifact_dir: str | Path,
     repository: str | Path = ".",
     extra_env: Mapping[str, str] | None = None,
+    trusted_model_network_allowlist: Iterable[str] | None = None,
     manifest_id: str | None = None,
     attempt: int = 1,
 ) -> LocalAgentRunResult:
@@ -801,11 +847,12 @@ def run_local_agent_preset(
         )
 
     binding = bind_work_unit_source(work_unit, source_revision=source_revision)
-    objective = _validate_local_agent_admission(
+    objective, sandbox_policy = _validate_local_agent_admission(
         work_unit,
         active_preset,
         sandbox,
         limits,
+        trusted_model_network_allowlist,
     )
 
     # File transport needs a sandbox-owned ephemeral input mount so task text can
@@ -860,6 +907,7 @@ def run_local_agent_preset(
             argv,
             cwd=workspace.path,
             limits=limits,
+            policy=sandbox_policy,
             env=active_env,
             stdin_text=stdin_text,
         )
