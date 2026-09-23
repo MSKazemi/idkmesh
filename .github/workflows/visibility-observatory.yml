@@ -33,6 +33,7 @@ jobs:
           python -m unittest \
             tests.test_visibility_observatory \
             tests.test_discovery_query_portfolio \
+            tests.test_search_console_snapshot \
             -v
 
       - name: Validate discovery query portfolio
@@ -51,6 +52,42 @@ jobs:
             --docs-dir docs \
             --output results/visibility/observatory.json
 
+      - name: Detect Search Console configuration
+        id: gsc
+        env:
+          GSC_SITE_URL: ${{ vars.GSC_SITE_URL }}
+          GSC_ACCESS_TOKEN: ${{ secrets.GSC_ACCESS_TOKEN }}
+          GSC_REFRESH_TOKEN: ${{ secrets.GSC_REFRESH_TOKEN }}
+          GSC_CLIENT_ID: ${{ secrets.GSC_CLIENT_ID }}
+          GSC_CLIENT_SECRET: ${{ secrets.GSC_CLIENT_SECRET }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          configured=false
+          if [[ -n "$GSC_SITE_URL" && -n "$GSC_ACCESS_TOKEN" ]]; then
+            configured=true
+          elif [[ -n "$GSC_SITE_URL" && -n "$GSC_REFRESH_TOKEN" && -n "$GSC_CLIENT_ID" && -n "$GSC_CLIENT_SECRET" ]]; then
+            configured=true
+          fi
+          echo "configured=$configured" >> "$GITHUB_OUTPUT"
+
+      - name: Collect Google Search Console evidence
+        if: steps.gsc.outputs.configured == 'true'
+        env:
+          GSC_SITE_URL: ${{ vars.GSC_SITE_URL }}
+          GSC_ACCESS_TOKEN: ${{ secrets.GSC_ACCESS_TOKEN }}
+          GSC_REFRESH_TOKEN: ${{ secrets.GSC_REFRESH_TOKEN }}
+          GSC_CLIENT_ID: ${{ secrets.GSC_CLIENT_ID }}
+          GSC_CLIENT_SECRET: ${{ secrets.GSC_CLIENT_SECRET }}
+        run: |
+          python scripts/search_console_snapshot.py \
+            --site-url "$GSC_SITE_URL" \
+            --page-prefix "https://mskazemi.com/idkmesh/" \
+            --portfolio config/discovery-query-portfolio-v0.1.json \
+            --days 28 \
+            --lag-days 3 \
+            --output results/visibility/google-search-console.json
+
       - name: Publish bounded summary
         run: |
           python - <<'PY'
@@ -64,6 +101,8 @@ jobs:
           site = result["site"]
           portfolio = json.loads(Path("results/visibility/query-portfolio.json").read_text())
           query_summary = portfolio["summary"]
+          gsc_path = Path("results/visibility/google-search-console.json")
+          gsc = json.loads(gsc_path.read_text()) if gsc_path.exists() else None
           lines = [
               "# Visibility and Community Observatory",
               "",
@@ -81,6 +120,16 @@ jobs:
               f"- Intent clusters: {query_summary['clusters']}",
               f"- Canonical search targets: {query_summary['distinct_canonical_targets']}",
               f"- Max query hypotheses on one target: {query_summary['max_queries_on_one_canonical_target']}",
+              (
+                  f"- Search Console non-branded impressions (28d): {gsc['summary']['nonbranded']['impressions']}"
+                  if gsc else
+                  "- Search Console: not configured"
+              ),
+              (
+                  f"- Search Console portfolio queries observed (exact): {gsc['summary']['portfolio_queries_with_observations']}"
+                  if gsc else
+                  "- Search Console portfolio observations: unavailable"
+              ),
               "",
               "## Known measurement gaps",
               "",
