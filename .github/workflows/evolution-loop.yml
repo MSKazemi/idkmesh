@@ -10,6 +10,20 @@ on:
   # PR-head event is used only by the token-minimal deterministic test job below.
   pull_request:
     types: [opened, reopened, synchronize, ready_for_review, converted_to_draft]
+    paths:
+      - "scripts/evolution_math.py"
+      - "scripts/checkpoint_manifest.py"
+      - "scripts/evolution_score.py"
+      - "scripts/evolution_snapshot.py"
+      - "scripts/repository_evolution_score.py"
+      - "scripts/conjunctive_evolution_control.py"
+      - "tests/test_evolution*.py"
+      - "tests/test_conjunctive_evolution_control.py"
+      - "tests/test_checkpoint_manifest.py"
+      - "state/evolution-*"
+      - "config/evolution-policy-v1.json"
+      - "results/evolution/**"
+      - ".github/workflows/evolution-loop.yml"
   push:
     branches: [main]
   workflow_dispatch:

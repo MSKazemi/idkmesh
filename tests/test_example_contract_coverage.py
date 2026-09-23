@@ -47,9 +47,15 @@ VALID_AGAINST = {
     "examples/compute-offers/free-pool.example.json": "compute-offer-pool-v0.1.schema.json",
     "examples/domain-packs/software-engineering-v0.1.domain-pack.json": "domain-pack.schema.json",
     "examples/experiments/phase0-smoke.manifest.json": "experiment-manifest-v0.1.schema.json",
+    "examples/enterprise/g1-github-native.example.json": "enterprise-control-profile-v0.1.schema.json",
+    "examples/enterprise/g2-self-hosted.example.json": "enterprise-control-profile-v0.1.schema.json",
     # Invalid by graph semantics (a cycle), not by structure.
     "examples/idkgraph.invalid-cycle.json": "idkgraph.schema.json",
     "examples/gate-audit/gate-audit-report.example.json": "gate-audit-report-v0.1.schema.json",
+    "examples/gate-audit/gate-audit-report-v0.2.example.json": "gate-audit-report-v0.2.schema.json",
+    "examples/gate-audit/marginal-evidence-report.example.json": "marginal-evidence-report-v0.1.schema.json",
+    "examples/gate-audit/marginal-evidence-benchmark-config.example.json": "marginal-evidence-benchmark-config-v0.1.schema.json",
+    "examples/enterprise-control-profile.example.json": "enterprise-control-profile-baseline-v0.1.schema.json",
     "examples/idkgraph.repository-mapping.example.json": "idkgraph.schema.json",
     "examples/idkgraph.valid.json": "idkgraph.schema.json",
     "examples/projects/idkmesh-research-replication.project.json": "project-manifest.schema.json",
@@ -103,10 +109,16 @@ INVALID_AGAINST = {
 # consumer, or not a schema-bearing artifact at all. Listed so that "no schema"
 # is a recorded decision rather than an oversight.
 NO_SCHEMA_CONTRACT = {
+    "examples/adaptive-policy-cohort-request.example.json": "adaptive-policy cohort request fixture; validated by tests/test_adaptive_policy_cohort.py",
+    "examples/adaptive-policy-observation.example.json": "adaptive-policy observation fixture; validated by tests/test_adaptive_policy_shadow.py",
+    "examples/adaptive-policy-plan.example.json": "adaptive-policy plan fixture; validated by tests/test_adaptive_policy_shadow.py",
+    "examples/adaptive-policy-shadow-request.example.json": "adaptive-policy shadow request fixture; validated by tests/test_adaptive_policy_shadow.py",
     "examples/challenges/byo-agent-001/challenge.json": "BYO-agent challenge envelope; validated in code by scripts/byo_agent_challenge.py and tests/test_byo_agent_challenge.py; embedded candidate manifests are evaluated against the pinned canonical ResultManifest schema",
     "examples/community/ace-activation-gate-current.example.json": "ACE activation gate state; no schema published",
     "examples/community/ace-generation-shadow.example.json": "ACE generation shadow record; no schema published",
     "examples/gate-audit/panel-votes.example.json": "gate-audit verdict-matrix input; validated in code by idkmesh/gate_audit.py and tests/test_gate_audit.py",
+    "examples/gate-audit/marginal-benchmark-design.example.json": "held-out benchmark design verdict matrix; validated in code by idkmesh/marginal_evidence_benchmark.py and tests/test_marginal_evidence_benchmark.py",
+    "examples/gate-audit/marginal-benchmark-holdout.example.json": "held-out benchmark evaluation verdict matrix; validated in code by idkmesh/marginal_evidence_benchmark.py and tests/test_marginal_evidence_benchmark.py",
     "examples/idkgraph-p1-review-session.example.json": "review-session record; validated by tests/test_idkgraph_review_session.py",
     "examples/orchestration/two-attempt-evaluator-plan-good-vs-bad.json": "orchestration run input; consumed by experiments/two_attempt_orchestrator.py",
     "examples/orchestration/two-attempt-good-vs-bad.json": "orchestration run input; consumed by experiments/run_evidence_report.py",

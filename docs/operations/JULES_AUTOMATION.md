@@ -7,65 +7,108 @@ human-governance boundaries.
 
 ## One-sentence operating model
 
-**Single-dispatcher invariant:** the native Google Labs Jules GitHub App path described here is the only project-operated Jules dispatcher. Do not run a second REST-API dispatcher, a second queue label, or another workflow that creates Jules sessions for the same repository at the same time. A second lane must first replace this one through an explicit migration, not coexist with it.
+**Single-dispatcher invariant:** the REST-API path described here is the only
+project-operated automatic Jules dispatcher. Do not run a second API dispatcher
+for the same repository. The legacy native GitHub App `jules` label is retained
+only as an explicit manual fallback and is never emitted by the automatic
+dispatcher.
 
-A maintainer or trusted triager marks a reviewed issue `agent-ready`; GitHub
-Actions immediately adds `jules` when capacity is available; the Google Labs
-Jules GitHub App starts the coding task; Jules opens a pull request; normal
-IDKMesh CI and review decide whether the candidate can be integrated.
+There are two trusted ingress paths:
+
+1. **automatic route:** the deterministic Issue Model Router classifies a
+   low-risk bounded issue as `agent:jules-eligible`; the dispatcher accepts that
+   label only when GitHub reports the issue author association as
+   `OWNER`, `MEMBER`, or `COLLABORATOR`;
+2. **manual route:** a maintainer/trusted triager adds `agent-ready`, which is
+   an explicit human approval and does not depend on the issue author's
+   association.
+
+Both paths converge on the same guarded Jules REST API session with
+`AUTO_CREATE_PR`, then normal IDKMesh CI/review remains the integration
+authority.
 
 ```mermaid
 flowchart LR
-    A[Issue created] --> B[Human / trusted triage]
-    B -->|safe + bounded| C[agent-ready]
-    B -->|human/research/security gate| X[do not automate]
-    C --> D[Jules Dispatcher]
-    D -->|capacity available| E[jules]
+    A[Issue created or edited] --> R[Issue Model Router]
+    R -->|trusted low-risk bounded| E[agent:jules-eligible]
+    R -->|human/research/security gate| X[no automatic execution]
+    M[Maintainer triage] -->|explicit approval| AR[agent-ready]
+    E --> D[Jules Dispatcher]
+    AR --> D
+    D -->|capacity available| S[Jules REST API session]
     D -->|capacity full| Q[remain queued]
     Q --> D
-    E --> F[Google Labs Jules]
-    F --> G[branch + pull request]
-    G --> H[IDKMesh PR Gate]
-    H --> I[review / explicit merge decision]
+    S --> DS[agent:jules-dispatched]
+    S --> PR[branch + pull request]
+    DS -->|failed/stale/feedback needed| AT[agent:jules-needs-attention]
+    PR --> CI[IDKMesh PR Gate]
+    CI --> H[review / explicit merge decision]
 ```
 
-The external provider behavior behind the `jules` label is documented by
-Google at <https://jules.google/docs/running-tasks/>.
+The automatic provider path uses the Jules REST API documented at
+<https://jules.google/docs/api/reference/>. Sessions are created with
+`requirePlanApproval: false` and `automationMode: AUTO_CREATE_PR`. Jules'
+documented session states include `QUEUED`, `PLANNING`,
+`AWAITING_PLAN_APPROVAL`, `AWAITING_USER_FEEDBACK`, `IN_PROGRESS`,
+`PAUSED`, `FAILED`, and `COMPLETED`. The API is currently alpha, so
+provider-contract changes remain an external compatibility risk.
 
 ## Who does what
 
 | Actor | Responsibility | Must not do |
 | --- | --- | --- |
 | issue author / contributor | describe a bounded problem and acceptance criteria | self-declare human evidence as satisfied |
-| maintainer / trusted triager | decide whether the issue is safe and bounded; add `agent-ready` | add it to human-only, research-evidence, or security-sensitive work |
-| Jules Dispatcher GitHub Action | create policy labels, enforce deny labels/capacity, add `jules` | infer safety from arbitrary issue prose or merge code |
-| Google Labs Jules GitHub App | react to `jules`, implement the task, create a PR | act as independent verifier or integration authority |
+| Issue Model Router | classify capability/authority and emit `agent:jules-eligible` only for the configured low-risk lane | grant merge authority or bypass the dispatcher's trusted-author/veto checks |
+| maintainer / trusted triager | manually approve a bounded task with `agent-ready`; inspect attention states | add approval to human-only, research-evidence, or security-sensitive work |
+| Jules Dispatcher GitHub Action | enforce trust/veto/capacity policy, reconcile provider sessions, create one Jules API session, record repository status | infer safety from arbitrary prose, expose the API key, silently duplicate a session, or merge code |
+| Google Jules REST API / worker | execute approved bounded work and create a PR | act as independent verifier or integration authority |
 | IDKMesh CI | test the exact PR candidate | decide scientific validity or governance approval |
 | maintainer / reviewer | review evidence and decide integration | treat agent output as self-validating |
 
+## One-time owner setup
+
+Automatic dispatch requires two provider-side prerequisites:
+
+1. connect `MSKazemi/idkmesh` to Jules through the Jules web app/GitHub App;
+2. create a Jules API key in Jules settings and store it only as the repository
+   Actions secret `JULES_API_KEY`.
+
+The dispatcher never prints the key and the key must not be committed, pasted
+into issues/PRs, or stored in ordinary repository variables. If the secret is
+missing, live dispatch fails closed with an explicit error rather than silently
+falling back to the unreliable bot-applied `jules` label path.
+
+The official authentication guide is
+<https://jules.google/docs/api/reference/authentication/>.
+
 ## Trigger frequency
 
-There are two paths.
+The system is event-first; schedules are recovery mechanisms.
 
-**Fast path — event driven.** When `agent-ready` is applied, the
-`.github/workflows/jules-dispatch.yml` workflow runs immediately. If a slot is
-available and no veto label exists, it adds `jules` in that run. There is no
-polling delay in the normal path.
+**Automatic fast path — event driven.** The Issue Model Router runs when an
+issue is opened, edited, or reopened. When its deterministic policy emits
+`agent:jules-eligible`, the router calls `jules-dispatch.yml` as a local reusable
+workflow and passes the typed `workflow_call.issue_number` input. GitHub validates
+that caller/callee input contract before execution, so removing or renaming the
+input breaks CI instead of silently disconnecting Jules. This explicit handoff
+also avoids relying on recursive workflow
+starts caused by mutations made with `GITHUB_TOKEN`.
 
-**Capacity-release path — event driven.** When an open dispatched issue closes
-(for example after its Jules PR merges with an issue-closing reference), the
-workflow runs again and immediately fills newly available capacity from the
-remaining `agent-ready` queue. Development therefore does not normally wait
-for the recovery schedule after a completed task.
+**Manual fast path — event driven.** Adding `agent-ready` directly triggers
+the Jules Dispatcher. The newly approved issue is prioritized and at most one
+task is started by that event.
 
-**Recovery path — every 30 minutes.** At minutes 17 and 47 UTC, the same
-workflow rescans the queue. This catches an issue that was left waiting because
-capacity was full or an earlier workflow run was interrupted. GitHub Actions
-scheduled runs are best-effort and can be delayed by the platform, so the
-scheduled sweep is a reliability mechanism, not the primary dispatch mechanism.
+**Capacity-release path — event driven.** Closing an open dispatched issue
+immediately invokes reconciliation and fills newly available capacity.
 
-The workflow also runs after its own policy/implementation files land on
-`main`, and it supports manual `workflow_dispatch` for maintainers.
+**Recovery/reconciliation path — every 30 minutes.** At minutes 17 and 47 UTC,
+the dispatcher checks provider session state, quarantines failed/stale work,
+and fills free slots. GitHub scheduled runs are best-effort and may be delayed,
+so this is not the primary path.
+
+The Issue Model Router also has a slower backfill schedule for reclassification. A push to the Jules/router control-plane files on `main` triggers an immediate full open-issue reclassification and reusable dispatcher call, so a repaired or changed contract does not wait for the next six-hour backfill window.
+Manual `workflow_dispatch` remains available for operators, including an
+optional `issue_number` and an explicit `bootstrap_labels` control.
 
 ## Queue and concurrency policy
 
@@ -74,43 +117,78 @@ The machine-readable policy is
 
 Current defaults:
 
-- maximum open dispatched issues: **4**;
-- maximum dispatches per recovery sweep: **2**;
-- an `agent-ready` label event dispatches at most **1** issue immediately;
-- closing a dispatched issue immediately triggers a capacity refill;
-- open issues already carrying `jules` consume capacity until they close or the
-  label is deliberately removed.
+- repository review/backpressure cap (`max_in_flight`): **4** open active Jules issues;
+- Jules provider concurrency cap (`provider_concurrency.max_concurrent_tasks`): **3** concurrent tasks for the configured `Jules` plan, checked 2026-09-23 against the official limits page;
+- effective automatic concurrency: **3**, the stricter minimum of the repository and provider caps;
+- maximum new dispatches per recovery sweep: **2**;
+- event-driven dispatch starts at most **1** routed/approved issue immediately;
+- one GitHub open-issue snapshot is reused for capacity and candidate selection;
+- one Jules session-list snapshot is reused for reconciliation and duplicate
+  detection within a run;
+- provider session history is scanned in pages of 100, up to **10 pages**; if history still has a next page, dispatch fails closed rather than deduplicating against an incomplete view;
+- legacy/manual open issues carrying `jules` still consume capacity during
+  migration so old work is not double-dispatched.
 
-Four concurrent issue slots are a repository-side review/backpressure choice,
-not a claim about a provider plan limit. Change the number only after measuring
-review latency and CI/merge load.
+`max_in_flight` is a repository review/backpressure limit, while
+`provider_concurrency.max_concurrent_tasks` records the current provider/account
+ceiling separately. Dispatch always uses the lower value. The provider limit is
+configuration with a source URL and `checked_at` date because Jules plans can
+change; after a plan upgrade, update that policy in a reviewed PR rather than
+changing dispatcher code.
+
+A `COMPLETED` Jules session continues to consume its issue slot until the
+issue closes, so generation cannot run far ahead of PR review. By contrast, a
+failed/stalled session is moved to `agent:jules-needs-attention`, its
+`agent:jules-dispatched` reservation is removed, and the freed slot may be
+used by other safe work.
+
+Provider capacity is also explicit policy, not an inferred UI number. The current
+entry cites <https://jules.google/docs/usage-limits> and records plan `Jules`,
+3 concurrent tasks, checked 2026-09-23. The dispatcher still handles provider
+precondition/quota rejection because the account may have tasks outside this
+repository or provider limits may change before policy is refreshed.
+
+Provider health thresholds are policy, not hidden constants:
+
+- missing matching API session after **60 minutes** -> attention;
+- `QUEUED` without update for **120 minutes** -> attention;
+- `PLANNING` without update for **180 minutes** -> attention;
+- `IN_PROGRESS` without update for **360 minutes** -> attention;
+- `FAILED`, `AWAITING_PLAN_APPROVAL`, `AWAITING_USER_FEEDBACK`,
+  `PAUSED`, or `STATE_UNSPECIFIED` -> immediate attention on reconciliation.
+
+Reconciliation never creates a replacement session automatically.
 
 ## Label contract
 
-### Execution labels
+### Queue and execution labels
 
 | Label | Meaning |
 | --- | --- |
-| `agent-ready` | a trusted triager has reviewed the issue as bounded and safe for a coding agent |
-| `jules` | execution signal; normally added by the dispatcher, not by semantic classification |
+| `agent:jules-eligible` | deterministic router says this is a low-risk bounded Jules-shaped task; dispatcher still requires a trusted author association |
+| `agent-ready` | maintainer/trusted-triager explicit approval for bounded coding-agent execution |
+| `agent:jules-dispatched` | active repository reservation/status for an API-backed Jules session |
+| `agent:jules-needs-attention` | provider work failed, stalled, paused, needs feedback, or cannot be matched; automatic redispatch is blocked |
+| `jules` | legacy/manual native-App trigger; never added by automatic dispatch |
 
-The separation matters: classifying an issue as agent-suitable is different
-from starting work right now.
+The separation matters: routing metadata is not execution authority, and
+execution status is not verification authority.
 
 ### Hard veto labels
 
-Any of these prevents automatic dispatch even if `agent-ready` is present:
+Any of these prevents automatic dispatch even if a queue label is present:
 
 - `blocked`;
 - `do-not-automate`;
 - `human-required`;
 - `needs-decomposition`;
 - `research-evidence`;
-- `security-sensitive`.
+- `security-sensitive`;
+- `agent:jules-needs-attention`.
 
 The dispatcher fails closed on these labels.
 
-### Scheduling labels
+## Scheduling labels
 
 Priority weights:
 
@@ -129,9 +207,11 @@ bounded work receives a small preference. `bug`, `good first issue`, and
 `documentation` receive small tie-breaking bonuses. The issue that just
 received `agent-ready` is attempted first on the event-driven path.
 
-## Triage checklist before `agent-ready`
+## Eligibility and manual-approval checklist
 
-Use `agent-ready` only when all of these are true:
+The automatic router may nominate low-risk work, but the dispatcher still
+requires a trusted GitHub author association. For work outside that narrow
+automatic lane, use `agent-ready` only when all of these are true:
 
 1. the deliverable is concrete and can fit in one focused PR;
 2. acceptance criteria are observable;
@@ -141,8 +221,7 @@ Use `agent-ready` only when all of these are true:
 6. it is not a security approval, governance decision, secret-management task,
    or broad architecture redesign;
 7. the issue body contains no credentials/private data;
-8. the prompt is resistant to ambiguity: allowed files/scope, required tests,
-   and stop conditions are stated.
+8. allowed scope, required tests, and stop conditions are stated.
 
 Good automatic tasks include small bugs, focused tests, deterministic tooling,
 narrow documentation/code consistency fixes, and bounded refactors.
@@ -153,27 +232,99 @@ large roadmap/architecture work.
 
 ## Speed without flooding review
 
-For development throughput, keep a ready queue of small tasks rather than
-raising concurrency first.
+Development speed comes from a continuously replenished queue of small,
+verifiable work—not unlimited concurrency.
 
 Recommended operating rhythm:
 
 1. keep several `size:xs` / `size:s` issues fully specified;
-2. apply `priority:p0` or `priority:p1` only where ordering matters;
-3. mark the next safe tasks `agent-ready`;
-4. let the event workflow fill the four slots;
-5. review/merge/close completed PRs promptly so slots free automatically;
-6. decompose broad work with `needs-decomposition` instead of sending a vague
-   prompt to an agent.
+2. let the Issue Model Router automatically nominate trusted low-risk tasks;
+3. use `agent-ready` for explicit maintainer-approved tasks that are not in
+   the automatic lane;
+4. let event-driven dispatch fill the effective provider/repository capacity;
+5. let the 30-minute reconciliation sweep free slots held by genuinely stalled
+   provider sessions;
+6. review/merge/close completed PRs promptly so completed work frees capacity;
+7. decompose broad work with `needs-decomposition` instead of sending vague
+   prompts.
 
-This gives parallel development while keeping review backpressure explicit.
+If review latency grows, lower concurrency before creating more generated work.
+
+## Atomic multi-file publications for agent branches
+
+When an agent or automation script needs to publish changes across multiple files, publishing each file using individual GitHub Contents API calls produces one commit and one branch reference update per file. This sequence causes multiple pull-request `synchronize` events and triggers CI workflows after every individual file write, creating unnecessary CI queue pressure and noise for reviewers.
+
+To avoid this, agents and automation should use `tools/github_atomic_commit.py`.
+
+### How it works
+
+The atomic writer uses the GitHub Git Data API to publish multiple file changes (writes and deletions) as a single atomic commit:
+
+```text
+expected branch head
+ -> create all blobs
+ -> create one tree on expected base tree
+ -> create one commit with expected head as parent
+ -> re-check branch head
+ -> non-force ref update
+ -> single synchronize event
+```
+
+### Key guarantees and safety constraints
+
+- **Exact head binding:** Compares the expected branch head SHA before and after blob/tree/commit creation. If the branch head moves, publication fails closed.
+- **Non-force updates:** Updates the branch reference using a non-force PATCH call, preventing concurrent agents from overwriting each other's work.
+- **No direct main writes:** Refuses direct writes to default branches (e.g., `main`) unless explicitly overridden with `--allow-default-branch`.
+- **Secret handling:** Reads `GITHUB_TOKEN` from the environment only and never prints or logs credentials.
+- **Dry-run planning:** Supports an offline `plan` subcommand that performs no GitHub API mutations and requires no token.
+- **Deterministic ordering:** Paths and mutations are normalized and sorted deterministically.
+
+### Example CLI usage
+
+**Planning (offline dry-run, no token required):**
+
+```bash
+python tools/github_atomic_commit.py plan \
+  --branch agent/my-work \
+  --expected-head <sha> \
+  --write idkmesh/a.py=/tmp/a.py \
+  --write tests/test_a.py=/tmp/test_a.py \
+  --delete old/file.txt \
+  --json
+```
+
+**Publishing (single commit and single ref update):**
+
+```bash
+GITHUB_TOKEN=... python tools/github_atomic_commit.py publish \
+  --repository owner/repo \
+  --branch agent/my-work \
+  --expected-head <sha> \
+  --message "agent: publish bounded candidate" \
+  --write idkmesh/a.py=/tmp/a.py \
+  --write tests/test_a.py=/tmp/test_a.py \
+  --delete old/file.txt
+```
+
+## Reading the Jules web UI
+
+The Jules codebase badge and the **Needs review** section are not the repository
+dispatch-concurrency limit. They reflect provider-side session/review state.
+Completed sessions remain visible separately, while IDKMesh independently
+controls how many issue reservations may be active through
+`max_in_flight` (repository cap 4) and `provider_concurrency` (current provider cap 3); the effective automatic cap is the lower of the two.
+
+A small number beside the codebase therefore does not mean Jules is limited to
+that many tasks. If the UI shows fewer active/review sessions than expected,
+check the IDKMesh routing/dispatch labels and workflow contract first.
 
 ## What happens after Jules starts
 
-The native Jules GitHub integration comments on the issue when it accepts a
-`jules` task and later links the created PR. Jules also currently supports
-automatic repair attempts for CI failures on PRs it creates; that provider
-feature does not replace IDKMesh's required checks or reviewer judgment.
+The dispatcher comments on the issue with the returned Jules session URL/name.
+Sessions are created with `automationMode: AUTO_CREATE_PR`, so Jules can open a
+pull request without the GitHub Actions workflow receiving pull-request write
+permission. Jules provider-side repair behavior does not replace IDKMesh's
+required checks or reviewer judgment.
 
 The repository PR gate remains authoritative for automated integration checks:
 
@@ -186,20 +337,90 @@ No Jules task auto-merges `main`.
 
 ## Failure and recovery runbook
 
-### `agent-ready` exists but `jules` does not
+### Contract-drift prevention
+
+The required PR Gate runs `python tools/check_jules_contract.py` before dependency
+installation. The guard fails if the router and dispatcher stop sharing the same
+typed reusable-workflow input, if routing/dispatch label policies diverge, if the
+automatic trust boundary is weakened, or if the dispatcher gains pull-request
+write authority. The router also derives its Jules queue label from policy rather
+than embedding a second code literal.
+
+Because the router calls the dispatcher through `workflow_call`, GitHub validates
+the caller/callee input name at workflow-graph construction time. Together, the
+GitHub type check plus the repository contract guard make the regression that
+occurred in PR #765 a merge-blocking failure instead of a latent runtime outage.
+
+
+### `agent:jules-eligible` exists but dispatch never starts
+
+1. inspect the Issue Model Router run and confirm the reusable-workflow
+   `workflow_call.issue_number` handoff succeeded;
+2. verify the issue author association is `OWNER`, `MEMBER`, or
+   `COLLABORATOR`;
+3. check hard-veto and `agent:jules-needs-attention` labels;
+4. check whether the effective active capacity is consumed (currently 3 because the provider cap is stricter than the repository cap);
+5. inspect the Jules Dispatcher run and provider credential/source errors.
+
+### `agent-ready` exists but `agent:jules-dispatched` does not
 
 1. check the Jules Dispatcher Actions run;
-2. check whether four open `jules` issues already consume capacity;
-3. check for a hard-veto label;
-4. wait for the next 30-minute recovery sweep or manually run the workflow.
+2. verify the `JULES_API_KEY` Actions secret exists and is valid;
+3. verify Jules Sources lists `MSKazemi/idkmesh`;
+4. check active capacity and hard-veto labels;
+5. use manual workflow dispatch or wait for the recovery sweep.
 
-### `jules` exists but Jules does not acknowledge the issue
+### `agent:jules-dispatched` exists but no PR appears
 
-1. verify the Google Labs Jules GitHub App still has access to `MSKazemi/idkmesh`;
-2. inspect the provider/task status;
-3. do **not** repeatedly remove/re-add `jules` while task state is unclear;
-4. if the provider task is definitively failed, remove `jules`, add `blocked`
-   (or another accurate veto), document the blocker, and re-triage before retry.
+The dispatcher records the Jules session URL in an issue comment. The
+30-minute reconciliation cycle compares active reservations with current Jules
+session state. Failed, feedback-required, paused, missing-after-grace, and
+stale sessions are moved to `agent:jules-needs-attention` and removed from
+the active pool.
+
+Do not simply remove `agent:jules-needs-attention`. First inspect the provider
+session. For an old queued/active session, resolve or delete that provider work
+before allowing a new attempt. Reconciliation intentionally never creates a
+replacement session.
+
+A returned 4xx during session creation removes the reservation because the
+provider explicitly rejected the request. `FAILED_PRECONDITION`,
+`RESOURCE_EXHAUSTED`, and HTTP 429 are treated as provider backpressure: the
+reservation is rolled back, the current sweep stops, the issue remains queued,
+and a later recovery sweep can retry after provider capacity resets. Other 4xx
+responses remain red failures so configuration/request defects stay visible. A
+network error or provider 5xx is ambiguous, so the reservation is retained until
+reconciliation/operator inspection prevents a duplicate POST.
+
+### Jules provider capacity/precondition is full
+
+When Jules rejects session creation with HTTP 400 `FAILED_PRECONDITION`, a
+`RESOURCE_EXHAUSTED` status, or HTTP 429, IDKMesh treats that as rejected
+provider backpressure rather than an ambiguous create. The temporary
+`agent:jules-dispatched` reservation is removed, the issue remains in its queue,
+the sweep stops, and the workflow stays healthy. This prevents noisy red runs and
+prevents the dispatcher from hammering later candidates while the account is at
+capacity.
+
+If this repeats while fewer than the configured provider slots are visible,
+inspect Jules for tasks from other repositories/accounts and re-check the
+official limits page. If the Jules plan changes, update
+`provider_concurrency.max_concurrent_tasks`, `plan`, and `checked_at` in
+`config/jules-dispatch.json`; do not bypass the limit in code.
+
+### GitHub API rate limit is exhausted
+
+Routine dispatch uses one issue-list snapshot and label bootstrap is not part of
+the hot path. If GitHub still returns a rate-limit response, the dispatcher
+fails closed and reports a deferred run; the next recovery sweep retries
+without creating provider work.
+
+### Manual fallback with `jules`
+
+Use the legacy `jules` label only as an explicit owner action when the API lane
+is deliberately disabled or being repaired. Do not have automation add it: live
+repository evidence showed that Jules did not reliably react when
+`github-actions[bot]` applied it.
 
 ### Jules creates a failing PR
 
@@ -209,15 +430,16 @@ merely to make an agent PR green.
 
 ### Too many PRs waiting for review
 
-Stop adding `agent-ready`, or lower `max_in_flight` in the policy. Generation
-speed is not useful if verification becomes the bottleneck.
+Lower `max_in_flight` or stop adding manual approvals. Generation speed is not
+useful if verification becomes the bottleneck.
 
 ## Implementation surfaces
 
 - workflow: [`.github/workflows/jules-dispatch.yml`](../../.github/workflows/jules-dispatch.yml)
 - policy: [`config/jules-dispatch.json`](../../config/jules-dispatch.json)
 - dispatcher: [`tools/jules_dispatcher.py`](../../tools/jules_dispatcher.py)
-- tests: [`tests/test_jules_dispatcher.py`](../../tests/test_jules_dispatcher.py)
+- atomic commit helper: [`tools/github_atomic_commit.py`](../../tools/github_atomic_commit.py)
+- tests: [`tests/test_jules_dispatcher.py`](../../tests/test_jules_dispatcher.py), [`tests/test_github_atomic_commit.py`](../../tests/test_github_atomic_commit.py)
 - agent instructions: [`AGENTS.md`](../../AGENTS.md)
 
 ## Changing the policy
@@ -230,7 +452,8 @@ python scripts/check_links.py
 make gate
 ```
 
-For changes that alter GitHub permissions, triggers, or the approval boundary,
-review the security implications explicitly. Keep `issues: write` scoped to the
-dispatcher workflow; the workflow checks out the trusted default branch and
-uses issue text only as inert metadata, never as shell/code input.
+For changes that alter GitHub permissions, triggers, the Jules API contract, or
+the approval boundary, review the security implications explicitly. Keep
+`issues: write` scoped to the dispatcher workflow; the workflow checks out the
+trusted default branch and sends approved issue text only as API data, never as
+shell/code input. Never echo or persist `JULES_API_KEY`.
