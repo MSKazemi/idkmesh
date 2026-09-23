@@ -22,12 +22,34 @@ class DiscoveryQueryPortfolioTests(unittest.TestCase):
         summary = result["summary"]
         self.assertEqual(10, summary["clusters"])
         self.assertEqual(100, summary["queries"])
-        self.assertGreaterEqual(summary["distinct_canonical_targets"], 4)
+        self.assertEqual(10, summary["distinct_canonical_targets"])
         self.assertTrue(summary["all_canonical_targets_exist"])
         self.assertTrue(summary["all_evidence_refs_exist"])
         self.assertFalse(result["authority"]["search_demand_claim"])
         self.assertFalse(result["authority"]["ranking_claim"])
         self.assertFalse(result["authority"]["content_creation_authority"])
+
+    def test_analytics_portfolio_is_pinned_to_canonical_seo_queries(self):
+        seo = load_json(ROOT / "config/seo-topics-v1.json")
+        self.assertEqual(
+            "config/seo-topics-v1.json",
+            self.portfolio["query_source"],
+        )
+        portfolio_by_id = {cluster["id"]: cluster for cluster in self.portfolio["clusters"]}
+        seo_by_id = {cluster["id"]: cluster for cluster in seo["clusters"]}
+        self.assertEqual(set(seo_by_id), set(portfolio_by_id))
+        for cluster_id, canonical in seo_by_id.items():
+            with self.subTest(cluster=cluster_id):
+                analytics = portfolio_by_id[cluster_id]
+                self.assertEqual(canonical["queries"], analytics["queries"])
+                self.assertEqual(canonical["path"], analytics["canonical_target"])
+                self.assertEqual(canonical["title"], analytics["label"])
+
+    def test_semantic_query_drift_fails_closed(self):
+        changed = copy.deepcopy(self.portfolio)
+        changed["clusters"][0]["queries"][0] = "different nonbranded query"
+        with self.assertRaisesRegex(ValueError, "canonical SEO query source"):
+            validate(changed, ROOT)
 
     def test_duplicate_query_fails_closed(self):
         changed = copy.deepcopy(self.portfolio)
