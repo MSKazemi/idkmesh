@@ -1,6 +1,6 @@
 # Search and Answer-Engine Discovery Matrix
 
-**Date:** 2026-09-23  
+**Date:** 2026-09-24  
 **Site:** `https://mskazemi.com/idkmesh/`
 
 This matrix records the discovery path IDKMesh should keep healthy for the major
@@ -62,6 +62,8 @@ After deployment, `tools/check_public_discovery.py` should be able to verify:
 - the homepage returns real IDKMesh content to representative search/answer
   crawler user agents rather than a block, challenge, or empty shell;
 - the topic hub is publicly reachable;
+- the topic hub, all ten topic pillars, and a normal Jekyll-rendered sentinel page each expose exactly one canonical URL and that canonical equals the URL being monitored;
+- none of those pages contains a rendered `noindex` directive for `robots`, `googlebot`, or `bingbot`;
 - no tested crawler receives a `403`, `429`, or crawler-specific decoy page;
 - Jekyll social/JSON-LD image paths resolve under the site base path exactly once, never as `/idkmesh/idkmesh/...`.
 
@@ -99,6 +101,7 @@ not freeze a user-agent string as a permanent protocol guarantee.
   https://developers.google.com/crawling
 - OpenAI publisher/developer discovery FAQ:
   https://help.openai.com/en/articles/12627856-publishers-and-developers-faq
+  - OpenAI's current publisher guidance also makes `noindex` operationally important: OAI-SearchBot must be allowed to crawl a page in order to read its meta tags, and a `noindex` directive is the control for preventing even title/link surfacing when a URL is otherwise discovered.
 - Anthropic crawler controls:
   https://support.claude.com/en/articles/8896518-does-anthropic-crawl-data-from-the-web-and-how-can-site-owners-block-the-crawler
 - Perplexity crawler documentation:

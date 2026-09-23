@@ -83,16 +83,20 @@ class PublicDiscoveryMonitorTests(unittest.TestCase):
         if url == monitor.TOPICS:
             return (
                 200,
-                "<html><head><meta property=\"og:image\" content=\""
+                '<html><head><link rel="canonical" href="'
+                + monitor.TOPICS
+                + '"><meta property="og:image" content="'
                 + monitor.SOCIAL_IMAGE
-                + "\"></head><body>AI agent verification and multi-agent orchestration</body></html>",
+                + '"></head><body>AI agent verification and multi-agent orchestration</body></html>',
             )
         if url == monitor.JEKYLL_SENTINEL:
             return (
                 200,
-                "<html><head><meta property=\"og:image\" content=\""
+                '<html><head><link rel="canonical" href="'
+                + monitor.JEKYLL_SENTINEL
+                + '"><meta property="og:image" content="'
                 + monitor.SOCIAL_IMAGE
-                + "\"></head><body>IDKMesh document</body></html>",
+                + '"></head><body>IDKMesh document</body></html>',
             )
         if url == monitor.LLMS:
             return (
@@ -132,7 +136,47 @@ class PublicDiscoveryMonitorTests(unittest.TestCase):
         with mock.patch.object(monitor, "fetch", side_effect=fetch):
             failures = monitor.probe()
         self.assertIn(
-            "ai-agent-verification: rendered page has no canonical link", failures
+            "ai-agent-verification: canonical URLs [] do not equal the expected "
+            f"{broken_url!r}",
+            failures,
+        )
+
+    def test_wrong_topic_canonical_is_reported(self) -> None:
+        broken_url = monitor.TOPIC_PAGES["ai-agent-verification"][0]
+        wrong_url = monitor.TOPIC_PAGES["agent-governance"][0]
+
+        def fetch(url: str, user_agent: str, timeout: float = 10.0):
+            status, body = self._healthy_fetch(url, user_agent, timeout)
+            if url == broken_url:
+                body = body.replace(broken_url, wrong_url, 1)
+            return status, body
+
+        with mock.patch.object(monitor, "fetch", side_effect=fetch):
+            failures = monitor.probe()
+        self.assertIn(
+            "ai-agent-verification: canonical URLs "
+            f"[{wrong_url!r}] do not equal the expected {broken_url!r}",
+            failures,
+        )
+
+    def test_topic_noindex_is_reported(self) -> None:
+        broken_url = monitor.TOPIC_PAGES["ai-agent-verification"][0]
+
+        def fetch(url: str, user_agent: str, timeout: float = 10.0):
+            status, body = self._healthy_fetch(url, user_agent, timeout)
+            if url == broken_url:
+                body = body.replace(
+                    "</head>",
+                    '<meta name="robots" content="noindex,follow"></head>',
+                )
+            return status, body
+
+        with mock.patch.object(monitor, "fetch", side_effect=fetch):
+            failures = monitor.probe()
+        self.assertIn(
+            "ai-agent-verification: rendered page contains a noindex directive: "
+            "['noindex,follow']",
+            failures,
         )
 
     def test_robots_block_for_answer_engine_is_reported(self) -> None:
