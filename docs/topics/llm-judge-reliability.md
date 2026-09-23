@@ -37,7 +37,7 @@ Six judges emitted one constant verdict for all 72 tasks, three more emitted one
 
 That means the tempting near-zero pairwise error correlation reported by the analyzer was **not evidence of independence**. Noise and constant decision rules can also produce near-zero correlation. E016 therefore blocks the correlation interpretation rather than publishing a plausible-looking independence number.
 
-### The practical lesson from the failed experiment
+## The practical lesson from the failed experiment
 
 Before asking whether LLM judges are independent, first establish that they are actually judging the task. On an imbalanced corpus, raw accuracy can make a constant strategy look competent: in E016, rejecting every candidate without reading it scored 0.639, better than the 20-judge majority.
 
