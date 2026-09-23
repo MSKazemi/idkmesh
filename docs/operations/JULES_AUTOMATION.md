@@ -56,9 +56,12 @@ Automatic dispatch requires two provider-side prerequisites:
    Actions secret `JULES_API_KEY`.
 
 The dispatcher never prints the key and the key must not be committed, pasted
-into issues/PRs, or stored in ordinary repository variables. If the secret is
-missing, live dispatch fails closed with an explicit error rather than silently
-falling back to the unreliable bot-applied `jules` label path.
+into issues/PRs, or stored in ordinary repository variables. Idle recovery runs
+do not require the key: they can inspect capacity and conclude that no work is
+eligible without contacting Jules. If approved work actually reaches the
+provider boundary while the secret is missing, dispatch fails closed with an
+explicit error rather than silently falling back to the unreliable bot-applied
+`jules` label path.
 
 The official authentication guide is
 <https://jules.google/docs/api/reference/authentication/>.

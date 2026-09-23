@@ -659,13 +659,15 @@ def main(argv: list[str] | None = None) -> int:
     try:
         jules_api = None
         if args.dispatch and not args.dry_run:
-            jules_api = JulesAPI(
-                api_key=os.environ.get("JULES_API_KEY", ""),
-                api_url=os.environ.get(
-                    "JULES_API_URL",
-                    DEFAULT_JULES_API_URL,
-                ),
-            )
+            api_key = os.environ.get("JULES_API_KEY", "").strip()
+            if api_key:
+                jules_api = JulesAPI(
+                    api_key=api_key,
+                    api_url=os.environ.get(
+                        "JULES_API_URL",
+                        DEFAULT_JULES_API_URL,
+                    ),
+                )
 
         if args.init_labels:
             created = ensure_labels(api, policy, dry_run=args.dry_run)

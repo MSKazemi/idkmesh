@@ -249,8 +249,12 @@ def test_dispatch_fails_closed_when_capacity_is_full():
         queued=[issue(1, "agent-ready", "priority:p0")],
     )
 
-    assert jd.dispatch(api, POLICY, jules_api=FakeJules(), starting_branch="main") == []
+    assert jd.dispatch(api, POLICY, jules_api=None, starting_branch="main") == []
     assert api.added == []
+
+    idle = FakeAPI()
+    assert jd.dispatch(idle, POLICY, jules_api=None, starting_branch="main") == []
+    assert idle.added == []
 
 
 def test_dispatch_pauses_when_actions_queue_exceeds_policy():
