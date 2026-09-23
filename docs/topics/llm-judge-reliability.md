@@ -61,43 +61,43 @@ A high average agreement score cannot answer all of these.
 
 ## Common questions
 
-### Is LLM-as-a-judge reliable?
+### Is LLM-as-a-judge reliable? {#q-llm-judge-reliability-01}
 
 Sometimes, for a defined task and measured evaluator. Reliability should be established on representative cases and reported with limitations; it should not be inferred from model reputation.
 
-### Does using several LLM judges make evaluation independent?
+### Does using several LLM judges make evaluation independent? {#q-llm-judge-reliability-02}
 
 Not necessarily. Different models can share training data, prompts, abstractions, and item-level failure modes. Measure error dependence rather than counting brands.
 
-### What is LLM judge calibration?
+### What is LLM judge calibration? {#q-llm-judge-reliability-03}
 
 Calibration asks whether the evaluator's confidence or score meaningfully corresponds to correctness or outcome frequency. It is distinct from simple agreement.
 
-### Should an LLM judge decide whether code is merged?
+### Should an LLM judge decide whether code is merged? {#q-llm-judge-reliability-04}
 
 It can contribute evidence. Final integration authority should remain a separate policy decision, especially for security-sensitive or high-impact changes.
 
-### How does IDKMesh represent evaluator evidence?
+### How does IDKMesh represent evaluator evidence? {#q-llm-judge-reliability-05}
 
 See the [EvaluatorPlan and VerificationResult specifications](https://github.com/MSKazemi/idkmesh/tree/main/docs/specifications) and [schema index](https://github.com/MSKazemi/idkmesh/blob/main/schemas/README.md).
 
-### Can ChatGPT, Claude, or Gemini be used as an LLM judge?
+### Can ChatGPT, Claude, or Gemini be used as an LLM judge? {#q-llm-judge-reliability-06}
 
 They can be used as evaluators when the task, rubric, model/version, prompt, and observed reliability are recorded. Brand or model size alone does not establish that a judge is accurate for a particular evaluation.
 
-### How can I reduce LLM-judge bias?
+### How can I reduce LLM-judge bias? {#q-llm-judge-reliability-07}
 
 Use explicit rubrics, blinded ordering where possible, counterbalanced prompts, held-out calibration cases, multiple evidence types, and measurements for systematic preference rather than relying on one prompt format.
 
-### Should an LLM judge know which model generated the answer?
+### Should an LLM judge know which model generated the answer? {#q-llm-judge-reliability-08}
 
 Often it is safer to hide irrelevant producer identity when measuring output quality, because model names can introduce preference bias. Keep identity available in provenance even when it is blinded from the scoring prompt.
 
-### How many LLM judges are enough?
+### How many LLM judges are enough? {#q-llm-judge-reliability-09}
 
 There is no universal number. Add judges only while they contribute useful independent information relative to cost and latency; correlated judges can make a large panel behave like a much smaller one.
 
-### What should happen when an LLM judge is uncertain?
+### What should happen when an LLM judge is uncertain? {#q-llm-judge-reliability-10}
 
 Preserve or expose the uncertainty, request additional evidence, use a different evaluator class, or escalate to a human rather than forcing every case into an accept/reject verdict.
 
