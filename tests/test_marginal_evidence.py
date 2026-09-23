@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import subprocess
 import sys
 import unittest
 from pathlib import Path
@@ -400,6 +401,56 @@ class SchemaTests(unittest.TestCase):
             bootstrap={"replicates": 100, "seed": 11},
         )
         jsonschema.validate(report, schema)
+
+
+class CliTests(unittest.TestCase):
+    EXAMPLE_INPUT = (
+        REPO_ROOT / "examples" / "gate-audit" / "panel-votes.example.json"
+    )
+
+    def run_cli(self, *args):
+        return subprocess.run(
+            [sys.executable, "-m", "idkmesh.cli", *args],
+            capture_output=True,
+            text=True,
+            cwd=REPO_ROOT,
+            env={"PYTHONPATH": str(REPO_ROOT), "PATH": "/usr/bin:/bin"},
+        )
+
+    def test_gate_marginal_emits_report(self):
+        proc = self.run_cli(
+            "gate-marginal",
+            str(self.EXAMPLE_INPUT),
+            "--current", "reviewer-a",
+            "--current", "reviewer-b",
+            "--candidate", "reviewer-d",
+            "--pretty",
+        )
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        report = json.loads(proc.stdout)
+        self.assertEqual(report["schema"], marginal_evidence.SCHEMA_ID)
+        self.assertEqual(report["authority"], "diagnostic_only")
+        self.assertEqual([row["id"] for row in report["candidates"]], ["reviewer-d"])
+
+    def test_gate_marginal_bootstrap_options_require_flag(self):
+        proc = self.run_cli(
+            "gate-marginal",
+            str(self.EXAMPLE_INPUT),
+            "--current", "reviewer-a",
+            "--bootstrap-seed", "5",
+        )
+        self.assertEqual(proc.returncode, 2)
+        self.assertIn("require --bootstrap", proc.stderr)
+
+    def test_gate_marginal_refuses_output_over_input(self):
+        proc = self.run_cli(
+            "gate-marginal",
+            str(self.EXAMPLE_INPUT),
+            "--current", "reviewer-a",
+            "--out", str(self.EXAMPLE_INPUT),
+        )
+        self.assertEqual(proc.returncode, 2)
+        self.assertIn("would overwrite the verdict matrix", proc.stderr)
 
 
 if __name__ == "__main__":
