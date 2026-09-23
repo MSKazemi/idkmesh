@@ -30,6 +30,7 @@ on:
         type: boolean
 
 permissions:
+  actions: read
   contents: read
   issues: write
 
