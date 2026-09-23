@@ -26,6 +26,7 @@ policy changes or merge decisions.
 
 ## Routing and Orchestration Experiments
 
+
 - [R1 Swarm Diversity vs Replication](R1_SWARM_DIVERSITY_EXPERIMENT.md),
   [help/hurt sweep](R1_HELP_HURT_SWEEP.md), and
   [real-result replay](R1_REAL_RESULT_REPLAY.md) — identify and replay regimes

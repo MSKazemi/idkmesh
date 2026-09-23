@@ -1,7 +1,10 @@
 {
-  "version": 1,
+  "version": 3,
   "queue_label": "agent-ready",
-  "dispatch_label": "jules",
+  "dispatch_label": "agent:jules-dispatched",
+  "legacy_dispatch_labels": [
+    "jules"
+  ],
   "max_in_flight": 4,
   "max_dispatch_per_sweep": 2,
   "blocked_labels": [
@@ -10,7 +13,8 @@
     "human-required",
     "needs-decomposition",
     "research-evidence",
-    "security-sensitive"
+    "security-sensitive",
+    "agent:jules-needs-attention"
   ],
   "priority_weights": {
     "priority:p0": 300,
@@ -34,7 +38,7 @@
     },
     "jules": {
       "color": "EDEDED",
-      "description": "Execution signal consumed by Google Labs Jules"
+      "description": "Legacy/manual Google Jules GitHub App trigger; not added by automation"
     },
     "blocked": {
       "color": "D93F0B",
@@ -83,6 +87,39 @@
     "size:m": {
       "color": "FBCA04",
       "description": "Medium bounded change"
+    },
+    "agent:jules-dispatched": {
+      "color": "5319E7",
+      "description": "Reserved/started by the API-backed Jules dispatcher"
+    },
+    "agent:jules-eligible": {
+      "color": "BFDADC",
+      "description": "Trusted low-risk bounded task routed for automatic Jules REST dispatch"
+    },
+    "agent:jules-needs-attention": {
+      "color": "D93F0B",
+      "description": "Jules session needs maintainer inspection before redispatch"
     }
-  }
+  },
+  "automatic_queue_label": "agent:jules-eligible",
+  "trusted_author_associations": [
+    "OWNER",
+    "MEMBER",
+    "COLLABORATOR"
+  ],
+  "attention_label": "agent:jules-needs-attention",
+  "attention_session_states": [
+    "FAILED",
+    "AWAITING_PLAN_APPROVAL",
+    "AWAITING_USER_FEEDBACK",
+    "PAUSED",
+    "STATE_UNSPECIFIED"
+  ],
+  "stale_session_minutes": {
+    "QUEUED": 120,
+    "PLANNING": 180,
+    "IN_PROGRESS": 360
+  },
+  "stale_missing_session_minutes": 60,
+  "session_scan_max_pages": 10
 }

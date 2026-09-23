@@ -63,7 +63,7 @@ def _contains_any(text: str, phrases: Iterable[str]) -> list[str]:
             prefix = lowered[clause_start + 1 : match.start()]
             # Do not escalate on explicit negative-scope statements such as
             # "no schema changes" or "do not change workflows".
-            if re.search(r"\b(?:no|not|without|do not|must not|avoid)\b.{0,64}$", prefix):
+            if re.search(r"\b(?:no|not|never|without|do not|must not|avoid)\b.{0,64}$", prefix):
                 continue
             hits.append(phrase)
             break
@@ -82,6 +82,18 @@ def _score_to_tier(score: int) -> str:
     if score <= 8:
         return "T3"
     return "T4"
+
+
+def _jules_queue_label(policy: dict[str, Any]) -> str:
+    """Return the queue label from the provider policy, never a code literal."""
+    value = (
+        policy.get("provider_examples", {})
+        .get("jules", {})
+        .get("queue_label")
+    )
+    if not value:
+        raise ValueError("routing policy is missing provider_examples.jules.queue_label")
+    return str(value)
 
 
 def _recommended_lane(tier: str | None, authority: str, text: str) -> str:
@@ -130,7 +142,7 @@ def classify_issue(
         route_labels = [AUTHORITY_LABELS[authority]]
         route_labels.append(TIER_LABELS[tier] if tier else TIER_LABELS["NONE"])
         if override.get("jules_eligible"):
-            route_labels.append("agent:jules-eligible")
+            route_labels.append(_jules_queue_label(policy))
         lane = override.get("recommended_lane") or _recommended_lane(tier, authority, text)
         return Route(number, tier, authority, 0, "high", reasons, lane, route_labels, "override")
 
@@ -240,7 +252,7 @@ def classify_issue(
     lane = _recommended_lane(tier, authority, text)
     route_labels = [TIER_LABELS[tier], AUTHORITY_LABELS[authority]]
     if tier in {"T1", "T2"} and lane == "jules-or-equivalent":
-        route_labels.append("agent:jules-eligible")
+        route_labels.append(_jules_queue_label(policy))
 
     return Route(number, tier, authority, score, confidence, reasons or ["default bounded issue"], lane, route_labels, "rules")
 
@@ -257,10 +269,21 @@ def issue_from_event(path: str | Path) -> dict[str, Any]:
     return issue
 
 
-def _route_dict(route: Route) -> dict[str, Any]:
+def _current_label_names(issue: dict[str, Any]) -> list[str]:
+    names: list[str] = []
+    for label in issue.get("labels") or []:
+        if isinstance(label, str):
+            names.append(label)
+        elif isinstance(label, dict) and label.get("name"):
+            names.append(str(label["name"]))
+    return sorted(set(names))
+
+
+def _route_dict(route: Route, issue: dict[str, Any]) -> dict[str, Any]:
     data = asdict(route)
     data["model_label"] = TIER_LABELS[route.tier] if route.tier else TIER_LABELS["NONE"]
     data["authority_label"] = AUTHORITY_LABELS[route.authority]
+    data["current_labels"] = _current_label_names(issue)
     return data
 
 
@@ -278,18 +301,23 @@ def main() -> int:
     overrides = load_json(args.overrides) if Path(args.overrides).exists() else None
 
     if args.event:
-        route = classify_issue(issue_from_event(args.event), policy, overrides)
-        print(json.dumps(_route_dict(route), sort_keys=True))
+        issue = issue_from_event(args.event)
+        route = classify_issue(issue, policy, overrides)
+        print(json.dumps(_route_dict(route, issue), sort_keys=True))
         return 0
     if args.issue_json:
-        route = classify_issue(load_json(args.issue_json), policy, overrides)
-        print(json.dumps(_route_dict(route), sort_keys=True))
+        issue = load_json(args.issue_json)
+        route = classify_issue(issue, policy, overrides)
+        print(json.dumps(_route_dict(route, issue), sort_keys=True))
         return 0
 
     issues = load_json(args.issues)
     if not isinstance(issues, list):
         raise SystemExit("--issues must point to a JSON array")
-    routes = [_route_dict(classify_issue(issue, policy, overrides)) for issue in issues]
+    routes = [
+        _route_dict(classify_issue(issue, policy, overrides), issue)
+        for issue in issues
+    ]
     print(json.dumps({"routes": routes}, sort_keys=True))
     return 0
 
