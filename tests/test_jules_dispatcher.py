@@ -37,6 +37,8 @@ POLICY = {
         "max_concurrent_tasks": 3,
         "plan": "Jules",
         "source": "https://jules.google/docs/usage-limits",
+        "terminal_session_states": ["COMPLETED", "FAILED"],
+        "session_state_source": "https://jules.google/docs/api/reference/types/",
         "checked_at": "2026-09-23",
     },
     "max_dispatch_per_sweep": 2,
@@ -544,13 +546,45 @@ def test_repository_policy_keeps_speed_and_hard_vetoes_explicit():
     assert policy["provider_concurrency"]["max_concurrent_tasks"] == 3
     assert policy["provider_concurrency"]["plan"] == "Jules"
     assert policy["provider_concurrency"]["source"] == "https://jules.google/docs/usage-limits"
+    assert policy["provider_concurrency"]["terminal_session_states"] == [
+        "COMPLETED",
+        "FAILED",
+    ]
+    assert (
+        policy["provider_concurrency"]["session_state_source"]
+        == "https://jules.google/docs/api/reference/types/"
+    )
     assert jd.effective_in_flight_limit(policy) == 3
     assert policy["max_dispatch_per_sweep"] == 2
     assert "agent:jules-needs-attention" in policy["blocked_labels"]
 
 
-def test_effective_provider_cap_blocks_fourth_repo_dispatch():
-    api = FakeAPI(
+def test_provider_capacity_is_independent_from_repository_reservations():
+    provider_full = FakeAPI(
+        issues=[
+            issue(1, "agent:jules-dispatched"),
+            issue(4, "agent:jules-eligible"),
+        ]
+    )
+    active_sessions = [
+        {"name": "sessions/a", "title": "other task a", "state": "QUEUED"},
+        {"name": "sessions/b", "title": "other task b", "state": "PLANNING"},
+        {"name": "sessions/c", "title": "other task c", "state": "IN_PROGRESS"},
+    ]
+    active_jules = FakeJules(sessions=active_sessions)
+
+    assert jd.effective_in_flight_limit(POLICY) == 3
+    assert jd.provider_active_session_count(POLICY, active_sessions) == 3
+    assert jd.dispatch(
+        provider_full,
+        POLICY,
+        jules_api=active_jules,
+        starting_branch="main",
+    ) == []
+    assert provider_full.added == []
+    assert active_jules.created == []
+
+    completed_reservations = FakeAPI(
         issues=[
             issue(1, "agent:jules-dispatched"),
             issue(2, "agent:jules-dispatched"),
@@ -558,15 +592,22 @@ def test_effective_provider_cap_blocks_fourth_repo_dispatch():
             issue(4, "agent:jules-eligible"),
         ]
     )
+    terminal_sessions = [
+        {"name": "sessions/1", "title": "old task 1", "state": "COMPLETED"},
+        {"name": "sessions/2", "title": "old task 2", "state": "COMPLETED"},
+        {"name": "sessions/3", "title": "old task 3", "state": "FAILED"},
+    ]
+    terminal_jules = FakeJules(sessions=terminal_sessions)
 
-    assert jd.effective_in_flight_limit(POLICY) == 3
+    assert jd.provider_active_session_count(POLICY, terminal_sessions) == 0
     assert jd.dispatch(
-        api,
+        completed_reservations,
         POLICY,
-        jules_api=None,
+        jules_api=terminal_jules,
         starting_branch="main",
-    ) == []
-    assert api.added == []
+    ) == [4]
+    assert completed_reservations.added == [(4, ["agent:jules-dispatched"])]
+    assert len(terminal_jules.created) == 1
 
 
 def test_provider_failed_precondition_defers_without_failing():
