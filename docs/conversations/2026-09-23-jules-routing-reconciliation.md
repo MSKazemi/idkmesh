@@ -174,3 +174,28 @@ The contract checker guards these properties as well, including the watched
 control-plane paths. This gives three layers of protection: GitHub reusable
 workflow type validation, merge-time contract validation, and fail-closed
 runtime validation after integration.
+
+
+## Independent provider-capacity follow-up
+
+Live execution after the provider-cap policy landed exposed a subtler
+conflation: `dispatch()` subtracted open GitHub dispatch reservations from the
+provider concurrency cap. That is conservative, but it is not the same quantity
+as provider-running work. Jules PRs 790 and 792 were merged while their broader
+issues stayed open, so those completed sessions still made the dispatcher report
+the 3/3 provider cap as full.
+
+The corrected model keeps two budgets:
+
+- repository review slots = `max_in_flight - open dispatch reservations`;
+- provider task slots = `max_concurrent_tasks - non-terminal account sessions`;
+- new work = the smaller remaining budget.
+
+The Jules API documents `COMPLETED` and `FAILED` as terminal SessionState
+values. They therefore do not consume provider concurrency, while all other
+known/unspecified states are counted conservatively. The provider session list is
+account-wide, so work started outside this repository is naturally included.
+
+This preserves the intentional repository review backpressure: a completed Jules
+task may still occupy an open issue reservation until the issue closes, but it no
+longer falsely occupies a provider-running-task slot.
