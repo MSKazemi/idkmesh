@@ -46,7 +46,7 @@ not dumped onto public pages as a keyword list.
 9. Verification debt, backpressure, and agent scaling
 10. Verified swarm and agentic software engineering
 
-The public hub is `docs/topics/README.md`, published at
+The public hub is `docs/topics/index.md`, published at
 `https://mskazemi.com/idkmesh/topics/`.
 
 ## Discovery surfaces

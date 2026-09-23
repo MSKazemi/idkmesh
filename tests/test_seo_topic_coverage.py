@@ -11,7 +11,7 @@ from urllib.parse import urlparse
 ROOT = Path(__file__).resolve().parents[1]
 DOCS = ROOT / "docs"
 CONFIG = ROOT / "config" / "seo-topics-v1.json"
-HUB = DOCS / "topics" / "README.md"
+HUB = DOCS / "topics" / "index.md"
 SITE_PREFIX = "https://mskazemi.com/idkmesh/topics/"
 
 

@@ -90,13 +90,27 @@ def _git_lastmod(path: Path) -> str:
     return datetime.now(timezone.utc).date().isoformat()
 
 
+def _has_front_matter(path: Path) -> bool:
+    """Whether a Markdown source starts with a YAML front-matter fence."""
+    try:
+        with path.open("r", encoding="utf-8") as handle:
+            return handle.readline().strip() == "---"
+    except OSError:
+        return False
+
+
 def published_pages() -> list[tuple[str, Path]]:
     """Every URL Pages publishes as an HTML page, paired with its source file.
 
     Three rules, all derived from how GitHub Pages actually serves this tree:
 
     * ``docs/index.html`` is the site root;
-    * a directory's ``README.md`` becomes that directory's index URL;
+    * a nested ``index.md`` is an explicit directory index URL;
+    * a frontmatter-free nested ``README.md`` is promoted by GitHub Pages to
+      that directory's ``index.html`` (verified from the built Pages artifact);
+    * a nested ``README.md`` with YAML front matter renders as
+      ``README.html``, so public hubs that need front matter must use
+      ``index.md`` explicitly;
     * every other Markdown document renders at its ``.html`` path.
 
     Hand-written ``.html`` files other than ``index.html`` are published as-is.
@@ -110,13 +124,16 @@ def published_pages() -> list[tuple[str, Path]]:
 
     for source in sorted(DOCS.rglob("*.md")):
         relative = source.relative_to(DOCS)
-        if source.name == "README.md":
+        if source.name == "index.md":
             parent = relative.parent.as_posix()
             if parent == ".":
-                # Shadowed: docs/index.html already occupies the site root, so
-                # docs/README.md is published as raw Markdown only and has no
-                # HTML page. Verified live -- /idkmesh/README.html returns 404.
-                # This is the same shadowing rule that hid docs/index.md.
+                # Shadowed by docs/index.html at the site root.
+                continue
+            pages.append((BASE + parent + "/", source))
+        elif source.name == "README.md" and not _has_front_matter(source):
+            parent = relative.parent.as_posix()
+            if parent == ".":
+                # Shadowed: docs/index.html already occupies the site root.
                 continue
             pages.append((BASE + parent + "/", source))
         else:
