@@ -101,5 +101,10 @@
   "legacy_dispatch_labels": [
     "jules"
   ],
-  "automatic_queue_label": "agent:jules-eligible"
+  "automatic_queue_label": "agent:jules-eligible",
+  "trusted_author_associations": [
+    "OWNER",
+    "MEMBER",
+    "COLLABORATOR"
+  ]
 }
