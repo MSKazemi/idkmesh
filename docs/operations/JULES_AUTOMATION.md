@@ -128,6 +128,8 @@ Current defaults:
 - Jules provider concurrency cap (`provider_concurrency.max_concurrent_tasks`): **3** concurrent tasks for the configured `Jules` plan, checked 2026-09-23 against the official limits page;
 - provider occupancy: account-wide sessions whose state is not terminal; current terminal states are `COMPLETED` and `FAILED`, checked against the official Jules API type reference;
 - new dispatch capacity: the smaller of remaining repository slots and remaining provider slots, not the smaller of the two raw limits minus one shared counter;
+- GitHub Actions backpressure: **enabled**; new Jules dispatch pauses when repository-wide queued runs exceed **12** or in-progress runs exceed **8**;
+- thresholds are strict `>` checks, so counts exactly at 12 queued / 8 in-progress remain admissible;
 - maximum new dispatches per recovery sweep: **2**;
 - event-driven dispatch starts at most **1** routed/approved issue immediately;
 - one GitHub open-issue snapshot is reused for capacity and candidate selection;
@@ -157,6 +159,27 @@ are conservatively treated as provider-active.
 The provider limit and terminal-state model are dated configuration with official
 source URLs because Jules plans/API states can change. After a plan/API change,
 update that policy in a reviewed PR rather than changing dispatcher code.
+
+### GitHub Actions backpressure
+
+Provider/review slots are necessary but not sufficient: IDKMesh must also avoid
+generating candidate work faster than repository verification can absorb it.
+Before selecting or reserving a new issue, the dispatcher reads the repository
+workflow-run counts for `queued` and `in_progress` through GitHub's Actions API.
+When either count is **above** its configured ceiling, the run prints the observed
+count/ceiling and starts no new Jules task. Queue labels remain unchanged and the
+normal recovery schedule retries later.
+
+The signal is fail-closed. If Actions capacity cannot be read, dispatch does not
+add `agent:jules-dispatched`; ordinary API failures make the workflow visible as
+an error, while an actual GitHub rate-limit exhaustion is treated as transient
+defer/retry. Setting `ci_backpressure.enabled=false` is an explicit reviewed
+policy override, not an automatic fallback.
+
+Both Issue Model Router and Jules Dispatcher grant only `actions: read` for this
+signal. They retain `issues: write` for routing/status labels and never gain
+Actions write, pull-request write, or merge authority. The counts are
+repository-wide and may include the currently running dispatcher itself.
 
 Provider capacity is explicit policy, not an inferred UI number. The current
 entry cites <https://jules.google/docs/usage-limits> and records plan `Jules`,

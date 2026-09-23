@@ -41,6 +41,13 @@ POLICY = {
         "session_state_source": "https://jules.google/docs/api/reference/types/",
         "checked_at": "2026-09-23",
     },
+    "ci_backpressure": {
+        "enabled": True,
+        "max_queued_runs": 12,
+        "max_in_progress_runs": 8,
+        "source": "https://docs.github.com/en/rest/actions/workflow-runs?apiVersion=2022-11-28#list-workflow-runs-for-a-repository",
+        "checked_at": "2026-09-23",
+    },
     "max_dispatch_per_sweep": 2,
     "blocked_labels": [
         "blocked",
@@ -95,15 +102,37 @@ def issue(
 
 
 class FakeAPI:
-    def __init__(self, *, issues=None, labels=None):
+    def __init__(
+        self,
+        *,
+        issues=None,
+        labels=None,
+        queued_runs=0,
+        in_progress_runs=0,
+        actions_error=None,
+    ):
         self.repository = "MSKazemi/idkmesh"
         self.issues = deepcopy(list(issues or []))
         self.labels = list(labels or [])
+        self.queued_runs = queued_runs
+        self.in_progress_runs = in_progress_runs
+        self.actions_error = actions_error
+        self.workflow_run_count_calls = []
         self.list_open_issues_calls = []
         self.added = []
         self.removed = []
         self.comments = []
         self.created = []
+
+    def count_workflow_runs(self, status: str):
+        self.workflow_run_count_calls.append(status)
+        if self.actions_error is not None:
+            raise self.actions_error
+        if status == "queued":
+            return self.queued_runs
+        if status == "in_progress":
+            return self.in_progress_runs
+        raise AssertionError(f"unexpected status {status}")
 
     def list_open_issues(self, label: str | None = None):
         self.list_open_issues_calls.append(label)
@@ -245,22 +274,97 @@ def test_dispatch_uses_one_issue_snapshot_and_one_session_snapshot():
     assert len(jules.created) == 2
 
 
-def test_dispatch_fails_closed_when_capacity_is_full():
-    api = FakeAPI(
+def test_dispatch_fails_closed_on_review_or_actions_backpressure(monkeypatch):
+    repo_full = FakeAPI(
         issues=[
             issue(number, "agent:jules-dispatched")
             for number in range(100, 104)
         ]
         + [issue(1, "agent:jules-eligible")]
     )
-
     assert jd.dispatch(
-        api,
+        repo_full,
         POLICY,
         jules_api=FakeJules(),
         starting_branch="main",
     ) == []
-    assert api.added == []
+    assert repo_full.added == []
+
+    for api in (
+        FakeAPI(issues=[issue(1, "agent:jules-eligible")], queued_runs=13),
+        FakeAPI(issues=[issue(1, "agent:jules-eligible")], in_progress_runs=9),
+    ):
+        assert jd.dispatch(
+            api,
+            POLICY,
+            jules_api=FakeJules(),
+            starting_branch="main",
+        ) == []
+        assert api.list_open_issues_calls == []
+        assert api.added == []
+        assert api.workflow_run_count_calls == ["queued", "in_progress"]
+
+    at_ceiling = FakeAPI(
+        issues=[issue(1, "agent:jules-eligible")],
+        queued_runs=12,
+        in_progress_runs=8,
+    )
+    assert jd.dispatch(
+        at_ceiling,
+        POLICY,
+        jules_api=FakeJules(),
+        starting_branch="main",
+    ) == [1]
+    assert at_ceiling.added == [(1, ["agent:jules-dispatched"])]
+
+    unavailable = FakeAPI(
+        issues=[issue(1, "agent:jules-eligible")],
+        actions_error=jd.DispatchError("Actions signal unavailable"),
+    )
+    with pytest.raises(jd.DispatchError, match="Actions signal unavailable"):
+        jd.dispatch(
+            unavailable,
+            POLICY,
+            jules_api=FakeJules(),
+            starting_branch="main",
+        )
+    assert unavailable.list_open_issues_calls == []
+    assert unavailable.added == []
+
+    disabled = deepcopy(POLICY)
+    disabled["ci_backpressure"]["enabled"] = False
+    disabled_api = FakeAPI(
+        issues=[issue(2, "agent:jules-eligible")],
+        actions_error=jd.DispatchError("must not be read"),
+    )
+    assert jd.dispatch(
+        disabled_api,
+        disabled,
+        jules_api=FakeJules(),
+        starting_branch="main",
+    ) == [2]
+    assert disabled_api.workflow_run_count_calls == []
+
+    client = jd.GitHubAPI(
+        token="token",
+        repository="MSKazemi/idkmesh",
+        api_url="https://api.github.test",
+    )
+    calls = []
+
+    def fake_request(method, path, payload=None):
+        calls.append((method, path, payload))
+        return {"total_count": 7, "workflow_runs": []}
+
+    monkeypatch.setattr(client, "request", fake_request)
+    assert client.count_workflow_runs("queued") == 7
+    assert calls == [
+        (
+            "GET",
+            "/repos/MSKazemi/idkmesh/actions/runs?status=queued&per_page=1",
+            None,
+        )
+    ]
 
 
 def test_existing_api_session_is_reused_instead_of_duplicated():
@@ -549,6 +653,9 @@ def test_repository_policy_keeps_speed_and_hard_vetoes_explicit():
     assert policy["provider_concurrency"]["max_concurrent_tasks"] == 3
     assert policy["provider_concurrency"]["plan"] == "Jules"
     assert policy["provider_concurrency"]["source"] == "https://jules.google/docs/usage-limits"
+    assert policy["ci_backpressure"]["enabled"] is True
+    assert policy["ci_backpressure"]["max_queued_runs"] == 12
+    assert policy["ci_backpressure"]["max_in_progress_runs"] == 8
     assert policy["provider_concurrency"]["terminal_session_states"] == [
         "COMPLETED",
         "FAILED",
@@ -707,6 +814,9 @@ def test_workflow_and_router_share_the_same_dispatch_contract():
     assert "bootstrap_labels: true" in router
     assert "fill_capacity: true" in router
     assert "\n  push:\n" not in workflow
+    assert "actions: read" in workflow
+    assert "actions: read" in router
+    assert "actions: write" not in workflow
     assert "contents: read" in workflow
     assert "issues: write" in workflow
     assert "pull-requests: write" not in workflow

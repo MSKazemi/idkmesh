@@ -43,6 +43,7 @@ on:
         default: false
         type: boolean
 permissions:
+  actions: read
   contents: read
   issues: write
 
