@@ -436,10 +436,13 @@ def main() -> int:
         "ci_backpressure_reason" in dispatcher_code,
         "dispatcher must enforce configured CI backpressure",
     )
+    backpressure_call = dispatcher_code.find("ci_backpressure_reason(api, policy)")
+    issue_snapshot = dispatcher_code.find("issues = open_issues")
     _require(
         errors,
-        dispatcher_code.find("ci_backpressure_reason(api, policy)")
-        < dispatcher_code.find("issues = open_issues"),
+        backpressure_call >= 0
+        and issue_snapshot >= 0
+        and backpressure_call < issue_snapshot,
         "dispatcher must check CI backpressure before selecting/reserving issues",
     )
     _require(
