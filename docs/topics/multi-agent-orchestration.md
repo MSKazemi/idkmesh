@@ -60,6 +60,26 @@ Use capability, task type, risk, authority, resource constraints, current load, 
 
 Not merely because a worker or verifier reports success. The integration boundary is separate and should follow repository governance and risk policy.
 
+### What architecture works well for multiple AI agents?
+
+A useful baseline separates task decomposition, capability routing, isolated execution, shared evidence contracts, independent verification, and protected integration instead of placing every responsibility inside one supervisor prompt.
+
+### How should AI agents hand work to each other?
+
+Handoffs should carry explicit task state, artifact references, assumptions, dependencies, and acceptance criteria. Passing only a chat summary makes provenance and responsibility difficult to inspect.
+
+### How do you prevent multiple agents from conflicting on the same code?
+
+Use isolated branches, worktrees, sandboxes, or candidate artifacts; declare ownership or dependency boundaries; and integrate only after conflict-aware verification.
+
+### When should a multi-agent system escalate to a stronger model or human?
+
+Escalate when capability requirements exceed the current worker tier, repeated verification fails, evidence remains ambiguous, risk crosses a policy threshold, or the task requires authority the worker does not possess.
+
+### How should I compare multi-agent orchestration frameworks?
+
+Compare task contracts, state model, provider portability, isolation, observability, verification independence, security boundaries, human control, reproducibility, and how candidate work becomes canonical—not only how many agent roles the framework can spawn.
+
 [Browse all AI-agent trust topics](https://mskazemi.com/idkmesh/topics/).
 
 **Last reviewed:** 2026-09-22.
