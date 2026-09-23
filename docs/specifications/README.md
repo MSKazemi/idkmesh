@@ -28,6 +28,10 @@ meaning of an existing version.
   measures a verifier panel's effective independent votes, correlation
   structure, and seeded-probe breach rate from a verdict matrix; diagnostic
   only, no acceptance authority.
+- [Marginal Evidence Analysis v0.1](MARGINAL_EVIDENCE_V0_1.md) — the
+  `idkmesh gate-marginal` diagnostic contract: measures what one additional
+  verifier changes for an already-selected panel under the exact same gate
+  rule, with explicit censoring/uncertainty and no routing authority.
 - [Bound Unified-Diff Evaluator Backend](PATCH_EVALUATOR_BACKEND.md) — verifies
   untrusted patch bundles against an evaluator-owned plan.
 - [EvaluatorPlan v0.3 Semantic Matching](EVALUATOR_PLAN_V0_3_SEMANTIC_MATCHING.md)

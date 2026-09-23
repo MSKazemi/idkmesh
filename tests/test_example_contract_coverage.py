@@ -51,6 +51,7 @@ VALID_AGAINST = {
     "examples/idkgraph.invalid-cycle.json": "idkgraph.schema.json",
     "examples/gate-audit/gate-audit-report.example.json": "gate-audit-report-v0.1.schema.json",
     "examples/gate-audit/gate-audit-report-v0.2.example.json": "gate-audit-report-v0.2.schema.json",
+    "examples/gate-audit/marginal-evidence-report.example.json": "marginal-evidence-report-v0.1.schema.json",
     "examples/idkgraph.repository-mapping.example.json": "idkgraph.schema.json",
     "examples/idkgraph.valid.json": "idkgraph.schema.json",
     "examples/projects/idkmesh-research-replication.project.json": "project-manifest.schema.json",
