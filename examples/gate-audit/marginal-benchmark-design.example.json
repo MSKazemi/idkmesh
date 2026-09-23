@@ -1,0 +1,58 @@
+{
+  "gate_id": "heldout-marginal-example",
+  "evidence_class": "synthetic",
+  "quorum": 0.5,
+  "candidates": [
+    {"id": "d01", "ground_truth": "accept"},
+    {"id": "d02", "ground_truth": "reject"},
+    {"id": "d03", "ground_truth": "accept"},
+    {"id": "d04", "ground_truth": "reject"},
+    {"id": "d05", "ground_truth": "accept"},
+    {"id": "d06", "ground_truth": "reject"},
+    {"id": "d07", "ground_truth": "accept"},
+    {"id": "d08", "ground_truth": "reject"},
+    {"id": "dp01", "ground_truth": "reject", "probe": true, "probe_kind": "seeded-defect"}
+  ],
+  "verifiers": [
+    {
+      "id": "reviewer-a",
+      "verdicts": {
+        "d01": "reject", "d02": "reject", "d03": "accept", "d04": "accept",
+        "d05": "accept", "d06": "reject", "d07": "accept", "d08": "reject",
+        "dp01": "accept"
+      }
+    },
+    {
+      "id": "reviewer-b",
+      "verdicts": {
+        "d01": "accept", "d02": "reject", "d03": "accept", "d04": "reject",
+        "d05": "accept", "d06": "accept", "d07": "accept", "d08": "reject",
+        "dp01": "reject"
+      }
+    },
+    {
+      "id": "reviewer-c",
+      "verdicts": {
+        "d01": "accept", "d02": "reject", "d03": "reject", "d04": "reject",
+        "d05": "accept", "d06": "reject", "d07": "accept", "d08": "reject",
+        "dp01": "reject"
+      }
+    },
+    {
+      "id": "reviewer-d",
+      "verdicts": {
+        "d01": "reject", "d02": "reject", "d03": "accept", "d04": "accept",
+        "d05": "accept", "d06": "reject", "d07": "accept", "d08": "reject",
+        "dp01": "accept"
+      }
+    },
+    {
+      "id": "reviewer-e",
+      "verdicts": {
+        "d01": "accept", "d02": "reject", "d03": "accept", "d04": "reject",
+        "d05": "reject", "d06": "reject", "d07": "accept", "d08": "accept",
+        "dp01": "reject"
+      }
+    }
+  ]
+}

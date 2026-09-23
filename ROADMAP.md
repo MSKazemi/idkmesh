@@ -154,6 +154,27 @@ Maintain progressive disclosure:
 
 Historical records should remain inspectable without silently becoming current architecture.
 
+### Gate F — enterprise control-plane readiness
+
+Enterprise readiness is a separate evidence gate from basic multi-user GitHub operation.
+
+Required outcomes before any production multi-tenant claim:
+
+- versioned Enterprise Control Profile + deterministic preflight;
+- tenant/project scope on every mutable operational resource;
+- normalized human/service identity and stage-specific authorization;
+- high-risk separation of duties and audited break-glass behavior;
+- non-compensating data-classification/egress/secret controls;
+- append-only/tamper-evident privileged audit history with export path;
+- declared and tested SLO/RPO/RTO/restore behavior;
+- release SBOM/provenance verification;
+- destructive conformance scenarios for unauthorized, cross-tenant, replay,
+  coordinator-loss, provider-outage, secret-revocation, restore, and SoD failures.
+
+The enterprise program is tracked by #667 and #668-#676. Passing its internal
+preflight/pilot is engineering evidence, not a SOC 2, ISO 27001, FedRAMP, HIPAA,
+PCI DSS, or other certification claim.
+
 ## 4. Near-term engineering sequence
 
 ### R0 — Keep the foundation green
@@ -267,6 +288,8 @@ Study how verification capacity should be allocated under generation pressure:
 - sequential/anytime evidence;
 - overload/criticality signals;
 - human escalation by information value.
+
+Adaptive Verification Ecology (AVE) is the current cross-disciplinary experimental synthesis for this phase. It combines ecological anti-monoculture pressure, posterior/entropy exploration, known-bad verifier probes, correlation-aware verifier portfolios, risk-adaptive verification, and review-capacity shadow prices. AVE remains **simulation/research only** until the matched-budget component ablations and environment sweeps in [issue #621](https://github.com/MSKazemi/idkmesh/issues/621) show a reproducible Pareto improvement or an explicitly justified risk/cost trade-off, followed by held-out real WorkUnit evidence.
 
 ### Phase M3 — Locality and federated scheduling
 

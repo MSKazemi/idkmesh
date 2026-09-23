@@ -764,14 +764,15 @@ def _reject_json_constant(token: str) -> Any:
         "by other implementations")
 
 
-def audit_text(text: str, *, source: str = "input",
-                bootstrap: dict[str, Any] | None = None) -> dict[str, Any]:
-    """Parse, validate, and audit one verdict-matrix JSON text document.
+def parse_input_text(text: str, *, source: str = "input") -> dict[str, Any]:
+    """Parse and validate one verdict-matrix JSON text document.
 
-    This is the shared text boundary for browser/embedded callers. It preserves
-    the file CLI's strict JSON rules: duplicate keys and Python-only constants
-    are refused, an optional UTF-8 BOM is tolerated, and contract failures name
-    the supplied source.
+    This is the reusable strict input boundary shared by gate-audit and other
+    diagnostics that operate on the same verdict-matrix contract. Duplicate
+    keys and Python-only JSON constants are refused, an optional UTF-8 BOM is
+    tolerated, and validation failures name the supplied source.
+
+    The returned object has already passed validate_input().
     """
     text = text.removeprefix("\ufeff")
     try:
@@ -784,22 +785,16 @@ def audit_text(text: str, *, source: str = "input",
     except GateAuditInputError as exc:
         raise GateAuditInputError(f"{source}: {exc}") from exc
     try:
-        return audit(data, bootstrap=bootstrap)
+        return validate_input(data)
     except GateAuditInputError as exc:
         raise GateAuditInputError(f"{source}: {exc}") from exc
 
 
-def audit_file(input_path: str | Path, *,
-                bootstrap: dict[str, Any] | None = None) -> dict[str, Any]:
-    """Load, validate, and audit one verdict-matrix JSON file.
+def load_input_file(input_path: str | Path) -> dict[str, Any]:
+    """Load, strictly parse, and validate one verdict-matrix JSON file.
 
-    Raises GateAuditInputError for anything wrong with the document encoding,
-    syntax or contract, with the path named so a CI log says which file was
-    rejected. Failures to reach the file (missing, a directory, not readable)
-    stay OSError, which is what they are.
-
-    The text is decoded as utf-8-sig so a byte-order mark is tolerated:
-    Windows editors and PowerShell redirection add one.
+    Failures to reach the file remain OSError. Encoding, JSON, and contract
+    failures are GateAuditInputError with the path included in the message.
     """
     path = Path(input_path)
     try:
@@ -809,4 +804,29 @@ def audit_file(input_path: str | Path, *,
             f"{path}: not UTF-8 text ({exc.reason} at byte {exc.start}); save "
             "the verdict matrix as UTF-8. UTF-16, the default for PowerShell "
             "output redirection, is not readable as JSON") from exc
-    return audit_text(text, source=str(path), bootstrap=bootstrap)
+    return parse_input_text(text, source=str(path))
+
+
+def audit_text(text: str, *, source: str = "input",
+                bootstrap: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Parse, validate, and audit one verdict-matrix JSON text document."""
+    data = parse_input_text(text, source=source)
+    try:
+        return audit(data, bootstrap=bootstrap)
+    except GateAuditInputError as exc:
+        # Preserve the long-standing source-qualified error contract for
+        # audit-time failures such as invalid bootstrap parameters.
+        raise GateAuditInputError(f"{source}: {exc}") from exc
+
+
+def audit_file(input_path: str | Path, *,
+                bootstrap: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Load, validate, and audit one verdict-matrix JSON file."""
+    path = Path(input_path)
+    data = load_input_file(path)
+    try:
+        return audit(data, bootstrap=bootstrap)
+    except GateAuditInputError as exc:
+        # load_input_file() already qualifies parse/contract failures; only
+        # audit-time failures reach this branch.
+        raise GateAuditInputError(f"{path}: {exc}") from exc

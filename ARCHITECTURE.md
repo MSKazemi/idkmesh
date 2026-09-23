@@ -150,6 +150,7 @@ See [`ITERATION_MODEL.md`](ITERATION_MODEL.md), [`docs/architecture/SELF_EVOLVIN
 - scheduling and stigmergy;
 - criticality/overload behavior;
 - learned verifier reliability;
+- Adaptive Verification Ecology (experimental synthesis of niche-aware routing, verifier-memory/probes, correlation-aware verification, and capacity backpressure);
 - decomposition strategy;
 - repository/community evolution.
 
@@ -189,6 +190,8 @@ Substantial contracts, verification machinery, replay/evidence work, and interop
 That distinction replaces the older architecture statement that the project merely needed to “start with a single-machine simulation”; the repository has already progressed beyond that stage.
 
 The recommended default deployment for this reference product is GitHub-first and server-optional — repository, Issues/Projects, labels, Actions, checks, and a durable Git-native ledger stand in for a permanent service until measured requirements (event volume, scheduling frequency, long-lived sessions, multi-tenant scale, private enterprise data, GUI, or ledger size) justify one. See [`docs/architecture/GITHUB_FIRST_DEPLOYMENT_AND_MULTIUSER.md`](docs/architecture/GITHUB_FIRST_DEPLOYMENT_AND_MULTIUSER.md).
+
+Enterprise operation is an explicit control overlay rather than a replacement default. G0/G1 remain the low-operations path; G2/G3 add persistent infrastructure only when tenant, identity, private-network, audit, recovery, or state requirements demand it. The enterprise baseline requires stage-specific authority, tenant-scoped state, data/egress controls, auditable privileged decisions, tested recovery, and supply-chain provenance without claiming certification from configuration alone. See [`docs/architecture/ENTERPRISE_CONTROL_PLANE.md`](docs/architecture/ENTERPRISE_CONTROL_PLANE.md) and [ADR-0014](docs/decisions/ADR-0014-enterprise-control-plane-baseline.md).
 
 ## 11. Scaling principle
 

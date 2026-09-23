@@ -12,7 +12,7 @@ It does **not** replace WorkUnit, ResultManifest, EvaluatorPlan, VerificationRes
 
 1. A connection stores provider metadata and a **secret reference**, never a raw secret.
 2. A model connection is not automatically a coding agent.
-3. Agent completion becomes a candidate result, never acceptance.
+3. Agent/provider completion becomes `worker_completed`; `candidate_ready` requires a separately normalized candidate reference and still never implies acceptance.
 4. GitHub/project authority is constrained independently from provider credentials.
 5. Unknown connector kinds, drivers, versions and states fail closed.
 6. CLI and HTTP surfaces use the same service layer and data contracts.
@@ -147,6 +147,24 @@ Probe statuses:
 
 A probe must never return credential values.
 
+### Local read-only probe projection
+
+The C1 inspection CLI projects the same probe semantics through:
+
+```text
+idkmesh connections probe <connections.json>
+idkmesh doctor <connections.json>
+```
+
+At the C1-H stage these commands use offline fake drivers only. They do not
+contact live providers or materialize secret references. A configured secret
+reference is therefore reported as unavailable until the secret-admission
+service is composed by a later integration slice.
+
+`doctor` summarizes observed connector readiness as PASS/WARN/FAIL. This is
+an operator diagnostic only; PASS does not grant dispatch, verification,
+acceptance, or merge authority.
+
 ## 6. Work preview
 
 `POST /v1/work-units:preview`
@@ -215,6 +233,18 @@ Response:
 
 The endpoint should not select a connector unless the caller explicitly asks for the project's deterministic auto-routing policy to be applied.
 
+The same read-only decision can be inspected locally with:
+
+```text
+idkmesh route explain <connections.json> <routing-decision.json>
+```
+
+The command performs zero external work. Connector capability comes from the
+registered driver declaration/probe result and is intersected with any
+configuration claim, so a profile cannot upgrade itself to a stronger tier.
+Runtime connector cost may be supplied explicitly for explanation; unknown
+connection IDs fail closed.
+
 ### Required routing-decision fields
 
 The route response should carry or reference one canonical RoutingDecision with at least:
@@ -281,6 +311,7 @@ States:
 - `admitted`;
 - `dispatched`;
 - `waiting_for_agent`;
+- `worker_completed`;
 - `candidate_ready`;
 - `verification_pending`;
 - `verified`;
@@ -290,6 +321,8 @@ States:
 - `rejected`;
 - `cancelled`;
 - `failed`.
+
+`worker_completed` means only that the selected worker/provider reports the attempt finished. It does not prove that a usable candidate exists. `candidate_ready` requires a concrete provider-neutral candidate reference bound to an immutable candidate revision or digest.
 
 State transitions must be monotonic except for explicitly modeled retry/attempt records.
 
@@ -333,6 +366,8 @@ Events are append-only observations such as:
 - `human.decision_recorded`;
 - `run.failed`;
 - `run.cancelled`.
+
+`agent.completed` records worker completion only. It cannot synthesize `candidate.discovered`, `result.normalized`, verification, or human-decision events.
 
 Provider-specific payloads belong under an extension namespace and must not redefine canonical state.
 
@@ -443,7 +478,9 @@ or:
 }
 ```
 
-The normalizer converts the external candidate into canonical ResultManifest/artifact evidence.
+A provider-returned URL or provider output object is a discovery hint, not by itself a canonical candidate. For a GitHub pull request, candidate readiness requires repository identity, pull-request number, and exact head SHA resolved through the SCM boundary. For an artifact bundle, it requires a stable locator plus content digest.
+
+Only after that provider-neutral reference exists may the run advance from `worker_completed` to `candidate_ready`. The normalizer then converts the external candidate into canonical ResultManifest/artifact evidence.
 
 ## 17. Model connection example
 
@@ -592,3 +629,32 @@ Connector API
 ```
 
 A change to this control API must not silently change the meaning of those canonical objects.
+
+## Offline Jules lifecycle conformance
+
+The connector implementation has a deterministic offline integration fixture in `tests/test_jules_candidate_pipeline.py`. It composes the real C2 service boundaries with fake transports/SCM observations:
+
+```text
+trusted ScmRevisionBinding
+ -> Jules Source validation
+ -> Session creation (requirePlanApproval=true)
+ -> Session observation
+ -> COMPLETED => worker_completed
+ -> JulesPullRequestHint
+ -> trusted GitHub exact-head resolution
+ -> CandidateReference
+```
+
+The fixture is intentionally **not** live-provider acceptance. It performs no network access, uses no API key, creates no external Jules Session, and opens no PR.
+
+It proves the following preconditions before C2-G may use credentials:
+
+- the authorized repository/branch/source binding survives Session creation;
+- provider completion stops at `worker_completed`;
+- a completed Session with no PR output does not invent a candidate;
+- a non-completed Session cannot enter final candidate discovery;
+- Jules contributes no head SHA;
+- the exact candidate head is observed only through the shared GitHub SCM reader;
+- the final candidate identity contains no verification, acceptance, merge, or integration authority.
+
+C2-G remains a separate live low-risk smoke gate. Passing the offline fixture must never be reported as evidence that a real Jules credential, Source, remote sandbox, candidate PR, or live verification path is healthy.
