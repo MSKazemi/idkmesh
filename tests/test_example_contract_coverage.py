@@ -109,6 +109,10 @@ INVALID_AGAINST = {
 # consumer, or not a schema-bearing artifact at all. Listed so that "no schema"
 # is a recorded decision rather than an oversight.
 NO_SCHEMA_CONTRACT = {
+    "examples/adaptive-policy-cohort-request.example.json": "adaptive-policy cohort request fixture; validated by tests/test_adaptive_policy_cohort.py",
+    "examples/adaptive-policy-observation.example.json": "adaptive-policy observation fixture; validated by tests/test_adaptive_policy_shadow.py",
+    "examples/adaptive-policy-plan.example.json": "adaptive-policy plan fixture; validated by tests/test_adaptive_policy_shadow.py",
+    "examples/adaptive-policy-shadow-request.example.json": "adaptive-policy shadow request fixture; validated by tests/test_adaptive_policy_shadow.py",
     "examples/challenges/byo-agent-001/challenge.json": "BYO-agent challenge envelope; validated in code by scripts/byo_agent_challenge.py and tests/test_byo_agent_challenge.py; embedded candidate manifests are evaluated against the pinned canonical ResultManifest schema",
     "examples/community/ace-activation-gate-current.example.json": "ACE activation gate state; no schema published",
     "examples/community/ace-generation-shadow.example.json": "ACE generation shadow record; no schema published",
