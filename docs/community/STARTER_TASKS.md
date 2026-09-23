@@ -66,7 +66,7 @@ that they still start. A tool can be broken by an import error, a bad default,
 or a renamed helper, and no test in the suite would notice until someone ran it
 by hand.
 
-All 46 currently pass, so this task adds a guard rather than fixing a bug.
+This task adds a discovery-based guard rather than hard-coding the current tool list.
 
 **Acceptance:** a test that discovers the tools rather than hard-coding a list,
 runs each with `--help` in a subprocess, and asserts a zero exit status and
