@@ -1,0 +1,29 @@
+# GitHub Pages/Jekyll metadata for the Markdown-rendered documentation.
+# The hand-written docs/*.html pages own their <head> metadata directly.
+theme: jekyll-theme-primer
+
+title: IDKMesh
+description: >-
+  Open-source framework for AI agent verification, multi-agent orchestration,
+  independent review, provenance, and evidence-first agentic software engineering.
+url: "https://mskazemi.com"
+baseurl: "/idkmesh"
+repository: MSKazemi/idkmesh
+lang: en
+
+author:
+  name: Mohsen Seyedkazemi Ardebili
+  url: "https://mskazemi.com/"
+
+social:
+  name: Mohsen Seyedkazemi Ardebili
+  links:
+    - "https://github.com/MSKazemi"
+    - "https://gitlab.com/mskazemi"
+    - "https://mskazemi.com/"
+
+defaults:
+  - scope:
+      path: ""
+    values:
+      image: "/idkmesh/assets/idkmesh-social.png"
