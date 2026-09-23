@@ -138,9 +138,12 @@ def _fake_row(
         "mean_error_correlation_with_current_panel": correlation,
         "uncertainty": {
             "sufficient_for_inference": True,
+            "replicates": 100,
             "effective_votes_delta": {
                 "ci_low": low,
                 "ci_high": high,
+                "replicates_used": 100,
+                "replicates_undefined": 0,
             },
         },
     }
@@ -286,6 +289,21 @@ class SelectorTests(unittest.TestCase):
             _fake_row("b", delta=0.0, low=-0.5, high=0.5),
         ]
         rows[1]["delta_effective_votes"] = None
+        selected = benchmark._select_marginal(rows)
+        self.assertEqual(selected["status"], "unresolved")
+        self.assertEqual(
+            selected["reason_code"],
+            "unresolved_design_effective_vote_metrics",
+        )
+
+    def test_marginal_selector_requires_all_bootstrap_replicates_resolved(self):
+        rows = [
+            _fake_row("a", delta=2.0, low=1.5, high=2.5),
+            _fake_row("b", delta=0.2, low=0.1, high=0.3),
+        ]
+        section = rows[0]["uncertainty"]["effective_votes_delta"]
+        section["replicates_used"] = 99
+        section["replicates_undefined"] = 1
         selected = benchmark._select_marginal(rows)
         self.assertEqual(selected["status"], "unresolved")
         self.assertEqual(
