@@ -127,6 +127,11 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://mskazemi.com/idkmesh/architecture/API_CONTROL_PLANE_ARCHITECTURE.html</loc>
+    <lastmod>2026-09-23</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://mskazemi.com/idkmesh/architecture/CI_SHADOW_OUTCOME_EVALUATOR.html</loc>
     <lastmod>2026-08-29</lastmod>
     <priority>0.8</priority>
@@ -1237,6 +1242,16 @@
     <priority>0.3</priority>
   </url>
   <url>
+    <loc>https://mskazemi.com/idkmesh/conversations/2026-09-22-control-tower-api-hardening.html</loc>
+    <lastmod>2026-09-22</lastmod>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://mskazemi.com/idkmesh/conversations/2026-09-22-control-tower-gui-api.html</loc>
+    <lastmod>2026-09-22</lastmod>
+    <priority>0.3</priority>
+  </url>
+  <url>
     <loc>https://mskazemi.com/idkmesh/conversations/2026-09-22-external-project-adoption-guide.html</loc>
     <lastmod>2026-09-22</lastmod>
     <priority>0.3</priority>
@@ -1263,6 +1278,11 @@
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/conversations/2026-09-23-jules-routing-reconciliation.html</loc>
+    <lastmod>2026-09-23</lastmod>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://mskazemi.com/idkmesh/conversations/2026-09-23-api-v1-professionalization-planning.html</loc>
     <lastmod>2026-09-23</lastmod>
     <priority>0.3</priority>
   </url>
@@ -1360,6 +1380,11 @@
     <loc>https://mskazemi.com/idkmesh/design/ARTISTIC_INSPIRATION_M_C_ESCHER.html</loc>
     <lastmod>2026-08-28</lastmod>
     <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://mskazemi.com/idkmesh/decisions/ADR-0016-one-api-architecture-separate-authority.html</loc>
+    <lastmod>2026-09-23</lastmod>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/findings/</loc>
@@ -1564,6 +1589,26 @@
   <url>
     <loc>https://mskazemi.com/idkmesh/planning/AUTONOMOUS_SWARM_V2_2026-09-17.html</loc>
     <lastmod>2026-09-17</lastmod>
+    <priority>0.4</priority>
+  </url>
+  <url>
+    <loc>https://mskazemi.com/idkmesh/planning/API_V1_ISSUE_DEPENDENCY_GRAPH_2026-09-23.html</loc>
+    <lastmod>2026-09-23</lastmod>
+    <priority>0.4</priority>
+  </url>
+  <url>
+    <loc>https://mskazemi.com/idkmesh/planning/API_V1_PROFESSIONALIZATION_PLAN_2026-09-23.html</loc>
+    <lastmod>2026-09-23</lastmod>
+    <priority>0.4</priority>
+  </url>
+  <url>
+    <loc>https://mskazemi.com/idkmesh/planning/API_V1_REQUIREMENTS_TRACEABILITY_MATRIX_2026-09-23.html</loc>
+    <lastmod>2026-09-23</lastmod>
+    <priority>0.4</priority>
+  </url>
+  <url>
+    <loc>https://mskazemi.com/idkmesh/planning/API_V1_SURFACE_CATALOG_2026-09-23.html</loc>
+    <lastmod>2026-09-23</lastmod>
     <priority>0.4</priority>
   </url>
   <url>
@@ -1852,7 +1897,17 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://mskazemi.com/idkmesh/security/API_THREAT_MODEL_V0_1.html</loc>
+    <lastmod>2026-09-23</lastmod>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://mskazemi.com/idkmesh/specifications/</loc>
+    <lastmod>2026-09-23</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://mskazemi.com/idkmesh/specifications/API_CONVENTIONS_V0_1.html</loc>
     <lastmod>2026-09-23</lastmod>
     <priority>0.8</priority>
   </url>
@@ -1884,6 +1939,11 @@
   <url>
     <loc>https://mskazemi.com/idkmesh/specifications/ENTERPRISE_TENANT_SCOPE_V0_1.html</loc>
     <lastmod>2026-09-23</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://mskazemi.com/idkmesh/specifications/CONTROL_TOWER_LOCAL_API_V0_1.html</loc>
+    <lastmod>2026-09-22</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
