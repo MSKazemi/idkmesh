@@ -60,6 +60,11 @@ some unrelated page but missing from its own index stays invisible.
   product namespace, separate local/network security profiles, and an explicit
   boundary between human decision recording and integration execution.
   *(2026-09-23.)*
+- [ADR-0017 — Local Coding Agents Require an Enforced Sandbox Boundary](ADR-0017-local-agents-require-sandbox.md)
+  — makes `sandbox_required=true` a runtime precondition: local coding agents
+  must execute through an enforcing sandbox backend, with no raw-process
+  fallback, and candidates are captured outside worker authority.
+  *(2026-09-23.)*
 
 ## Proposed and experimental
 
