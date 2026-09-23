@@ -175,11 +175,28 @@ def select_candidates(
     return sorted(candidates, key=sort_key)[:limit]
 
 
-def session_title(repository: str, issue: dict[str, Any]) -> str:
+def session_marker(repository: str, issue: dict[str, Any]) -> str:
+    """Stable per-issue marker that survives issue-title edits."""
     number = int(issue["number"])
+    return f"[idkmesh {repository}#{number}]"
+
+
+def session_title(repository: str, issue: dict[str, Any]) -> str:
     raw_title = str(issue.get("title") or "bounded repository task").strip()
-    marker = f"[idkmesh {repository}#{number}]"
-    return f"{marker} {raw_title}"[:240]
+    return f"{session_marker(repository, issue)} {raw_title}"[:240]
+
+
+def find_issue_session(
+    repository: str,
+    issue: dict[str, Any],
+    sessions: Iterable[dict[str, Any]],
+) -> dict[str, Any] | None:
+    """Match a provider session by stable repo+issue marker, not mutable title."""
+    marker = session_marker(repository, issue)
+    for session in sessions:
+        if str(session.get("title") or "").startswith(marker):
+            return session
+    return None
 
 
 def build_jules_prompt(repository: str, issue: dict[str, Any]) -> str:
@@ -559,17 +576,11 @@ def reconcile_active_sessions(
         return []
 
     provider_sessions = sessions if sessions is not None else jules_api.list_sessions()
-    by_title: dict[str, dict[str, Any]] = {}
-    for session in provider_sessions:
-        title = str(session.get("title") or "")
-        if title and title not in by_title:
-            by_title[title] = session
 
     attention: list[int] = []
     for issue in active:
         number = int(issue["number"])
-        title = session_title(api.repository, issue)
-        session = by_title.get(title)
+        session = find_issue_session(api.repository, issue, provider_sessions)
         reason: str | None = None
 
         if session is None:
@@ -682,15 +693,11 @@ def dispatch(
         )
 
     source = None
-    existing_by_title: dict[str, dict[str, Any]] = {}
+    provider_sessions: list[dict[str, Any]] = []
     if not dry_run:
         assert jules_api is not None
         source = jules_api.resolve_source(api.repository)
         provider_sessions = sessions if sessions is not None else jules_api.list_sessions()
-        for session in provider_sessions:
-            title = str(session.get("title") or "")
-            if title and title not in existing_by_title:
-                existing_by_title[title] = session
 
     numbers: list[int] = []
     for issue in selected:
@@ -706,7 +713,7 @@ def dispatch(
 
         assert jules_api is not None
         assert source is not None
-        existing = existing_by_title.get(title)
+        existing = find_issue_session(api.repository, issue, provider_sessions)
 
         # Reserve before provider creation so concurrent runs cannot create
         # duplicate sessions for the same issue.
@@ -746,7 +753,7 @@ def dispatch(
                 )
             raise
 
-        existing_by_title[title] = session
+        provider_sessions.append(session)
         api.add_comment(number, session_comment(session))
         print(
             f"jules dispatcher: dispatched #{number} via {session.get('name')} "
