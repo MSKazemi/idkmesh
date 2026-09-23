@@ -27,7 +27,9 @@ from __future__ import annotations
 import json
 import re
 import unittest
-from datetime import date, datetime, timezone
+from datetime import date
+from types import SimpleNamespace
+from unittest.mock import patch
 from pathlib import Path
 from xml.etree import ElementTree
 
@@ -45,14 +47,6 @@ HAND_WRITTEN_PAGES = ("index.html", "pipelines.html")
 
 
 class SitemapTests(unittest.TestCase):
-    def test_lastmod_uses_utc_commit_date(self) -> None:
-        from unittest.mock import patch
-        from types import SimpleNamespace
-
-        commit = SimpleNamespace(stdout="2026-09-24T00:30:00+02:00\n")
-        with patch("tools.build_sitemap.subprocess.run", return_value=commit):
-            self.assertEqual(_git_lastmod(DOCS / "research" / "README.md"), "2026-09-23")
-
     def test_sitemap_exists_and_parses(self) -> None:
         self.assertTrue(SITEMAP.exists(), "docs/sitemap.xml is missing")
         tree = ElementTree.parse(SITEMAP)
@@ -110,6 +104,18 @@ class SitemapTests(unittest.TestCase):
             [],
             f"every <loc> must be an absolute URL under {BASE}: {offenders}",
         )
+
+    def test_git_lastmod_uses_the_utc_date_of_the_commit_instant(self) -> None:
+        with patch("tools.build_sitemap.subprocess.run") as run:
+            run.return_value = SimpleNamespace(
+                stdout="2026-09-24T00:05:00+02:00\n"
+            )
+            self.assertEqual(
+                _git_lastmod(DOCS / "research" / "README.md"),
+                "2026-09-23",
+            )
+            command = run.call_args.args[0]
+            self.assertIn("--format=%cI", command)
 
     def test_lastmod_values_are_real_dates_that_are_not_in_the_future(self) -> None:
         tree = ElementTree.parse(SITEMAP)
