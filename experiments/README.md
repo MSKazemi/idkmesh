@@ -45,6 +45,10 @@ listed here fails the suite rather than becoming quietly undiscoverable.
 | **E043** | [A verifier panel does not pay for itself, and its one advantage needs real independence](E043-panel-frontier.md) |
 | **E044** | [Review capacity as a carrying-capacity governor](E044-review-capacity-governor.md) |
 
+The Physarum routing research records are also indexed here:
+[PHY-0 reference routing](PHY-0-physarum-compute-routing.md) and
+[PHY-1 stress matrix](PHY-1-stress-matrix.md).
+
 E014's sweeps publish their own result documents:
 [reference sweep](results/E014-reference-sweep.md),
 [parameter Pareto front](results/E014-parameter-pareto.md), and the

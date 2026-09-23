@@ -26,6 +26,8 @@ policy changes or merge decisions.
 
 ## Routing and Orchestration Experiments
 
+- [Physarum adaptive compute routing](PHYSARUM_N3_READINESS.md) — readiness
+  boundary for the N3 routing simulation and its stress evidence.
 
 - [R1 Swarm Diversity vs Replication](R1_SWARM_DIVERSITY_EXPERIMENT.md),
   [help/hurt sweep](R1_HELP_HURT_SWEEP.md), and
