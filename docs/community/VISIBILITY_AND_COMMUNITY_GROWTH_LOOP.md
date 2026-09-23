@@ -354,16 +354,29 @@ community capacity rather than transient attention.
 
 ### V6 — bounded growth experiments
 
-The controller may then recommend experiments such as:
+**Bootstrap selector implemented in this branch.**
 
-- improve one high-impression/low-CTR page;
-- publish one missing evidence-backed query page;
-- turn one major experiment into a reproducible external challenge;
-- create one contributor pathway for an incoming audience;
-- recruit one independent reviewer for a growing subsystem.
+`scripts/visibility_growth_selector.py` consumes the static visibility observation,
+query-portfolio report, optional Search Console evidence, and
+`config/visibility-growth-policy-v0.1.json`. It emits exactly one bounded
+recommendation from the currently observable bottleneck.
 
-Automatic publishing, outreach, ranking manipulation, or self-approval remain outside
-the controller's authority.
+Current experiment types include:
+
+- repair one deterministic technical SEO/AEO defect;
+- connect Search Console before making content decisions;
+- investigate weak non-branded discovery;
+- improve one high-impression/low-CTR search snippet;
+- recalibrate one intent cluster from observed queries;
+- improve one visitor-to-first-contribution path;
+- expand authority/referral measurement.
+
+The current thresholds are explicitly labeled hand-authored bootstrap priors and must
+be calibrated from future evidence. The selector cannot publish content, perform
+outreach, create issues, mutate branches, or merge changes.
+
+Future versions should add a deliberate no-op when evidence does not justify an
+experiment and should consume V4/V5 authority/funnel evidence when those layers exist.
 
 ## Success criterion
 
