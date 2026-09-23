@@ -87,12 +87,16 @@ class FakeAPI:
         self.in_progress_runs = in_progress_runs
         self.fail_actions = fail_actions
         self.workflow_count_calls = []
+        self.list_open_issues_calls = []
         self.added = []
         self.removed = []
         self.comments = []
         self.created = []
 
-    def list_open_issues(self, label: str):
+    def list_open_issues(self, label: str | None = None):
+        self.list_open_issues_calls.append(label)
+        if label is None:
+            return deepcopy(self.active + self.legacy + self.queued)
         if label == "agent:jules-dispatched":
             return deepcopy(self.active)
         if label == "jules":
@@ -229,6 +233,7 @@ def test_dispatch_does_not_exceed_open_jules_capacity():
     assert jules.created[0]["starting_branch"] == "main"
     assert "approved GitHub issue #1" in jules.created[0]["prompt"]
     assert "official Jules REST API" in api.comments[0][1]
+    assert api.list_open_issues_calls == [None]
 
     reused_api = FakeAPI(queued=[issue(7, "agent-ready")])
     reused_jules = FakeJules(
@@ -337,6 +342,22 @@ def test_actions_capacity_signal_failure_fails_closed_before_label_mutation():
     assert api.added == []
 
 
+
+
+def test_main_defers_cleanly_on_github_rate_limit(monkeypatch):
+    class RateLimitedAPI:
+        repository = "MSKazemi/idkmesh"
+
+        def list_open_issues(self, label=None):
+            raise jd.GitHubRateLimitError("synthetic exhausted quota")
+
+    monkeypatch.setattr(jd, "GitHubAPI", lambda **kwargs: RateLimitedAPI())
+    monkeypatch.setenv("GITHUB_TOKEN", "token")
+    monkeypatch.setenv("GITHUB_REPOSITORY", "MSKazemi/idkmesh")
+    monkeypatch.delenv("JULES_API_KEY", raising=False)
+
+    assert jd.main(["--dispatch"]) == 0
+
 def test_ensure_labels_creates_only_missing_policy_labels(monkeypatch):
     api = FakeAPI(labels=[{"name": "agent-ready"}, {"name": "jules"}])
 
@@ -415,7 +436,9 @@ def test_workflow_preserves_dispatch_trust_boundary_and_fast_recovery():
         encoding="utf-8"
     )
 
-    assert "types: [opened, edited, reopened, labeled, closed]" in workflow
+    assert "types: [labeled, closed]" in workflow
+    assert "inputs.bootstrap_labels" in workflow
+    assert "inputs.issue_number" in workflow
     assert "cron: '17,47 * * * *'" in workflow
     assert "actions: read" in workflow
     assert "JULES_API_KEY: ${{ secrets.JULES_API_KEY }}" in workflow
