@@ -89,11 +89,25 @@ observatory.
 
 ## Query portfolio
 
-The non-branded hypothesis set lives at:
+There is one canonical 100-query source:
+
+```text
+config/seo-topics-v1.json
+```
+
+It owns the ten semantic clusters, their 100 query strings, and the ten canonical
+topic targets.
+
+The visibility observatory consumes an analytics companion:
 
 ```text
 config/discovery-query-portfolio-v0.1.json
 ```
+
+That companion adds evidence references and recommendation-only analytics
+metadata, but its cluster ids, labels, query strings, and canonical targets are
+required by CI to match `config/seo-topics-v1.json` exactly. This prevents the
+site from optimizing one "top 100" list while Search Console measures another.
 
 It is validated by:
 
@@ -108,6 +122,7 @@ The current contract requires:
 - exactly 10 intent clusters;
 - exactly 10 queries per cluster;
 - 100 unique non-branded queries total;
+- exact query/cluster/target equality with `config/seo-topics-v1.json`;
 - an existing canonical target for every cluster;
 - at least one existing evidence reference for every cluster;
 - recommendation-only authority.
