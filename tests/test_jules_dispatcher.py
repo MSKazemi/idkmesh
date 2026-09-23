@@ -17,8 +17,8 @@ POLICY = {
     "max_dispatch_per_sweep": 2,
     "ci_backpressure": {
         "enabled": True,
-        "max_queued_runs": 96,
-        "max_in_progress_runs": 24,
+        "max_queued_runs": 12,
+        "max_in_progress_runs": 8,
     },
     "blocked_labels": [
         "blocked",
@@ -382,8 +382,8 @@ def test_repository_policy_keeps_speed_and_hard_vetoes_explicit():
     assert policy["max_dispatch_per_sweep"] == 2
     assert policy["ci_backpressure"] == {
         "enabled": True,
-        "max_queued_runs": 12,
-        "max_in_progress_runs": 8,
+        "max_queued_runs": 96,
+        "max_in_progress_runs": 24,
     }
     assert {
         "human-required",
