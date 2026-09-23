@@ -284,7 +284,7 @@ def test_dispatch_allows_counts_exactly_at_backpressure_ceilings():
     )
 
     assert jd.dispatch(api, POLICY, jules_api=FakeJules(), starting_branch="main") == [1]
-    assert api.added == [(1, ["jules"])]
+    assert api.added == [(1, ["agent:jules-dispatched"])]
 
 
 def test_disabled_ci_backpressure_preserves_previous_behavior():
