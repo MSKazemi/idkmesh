@@ -33,6 +33,10 @@ class DispatchError(RuntimeError):
     """Raised when the dispatcher cannot safely inspect or mutate state."""
 
 
+class GitHubRateLimitError(DispatchError):
+    """Transient GitHub API quota exhaustion; dispatch must defer safely."""
+
+
 class JulesAPIError(DispatchError):
     """Jules API failure, with an HTTP status when one was returned."""
 
@@ -228,6 +232,16 @@ class GitHubAPI:
                 return json.loads(raw.decode("utf-8")) if raw else None
         except urllib.error.HTTPError as exc:
             detail = exc.read().decode("utf-8", errors="replace")
+            remaining = str(exc.headers.get("X-RateLimit-Remaining", ""))
+            if exc.code in {403, 429} and (
+                remaining == "0" or "rate limit" in detail.casefold()
+            ):
+                reset = str(exc.headers.get("X-RateLimit-Reset", "")).strip()
+                suffix = f" reset={reset}" if reset else ""
+                raise GitHubRateLimitError(
+                    f"GitHub API quota exhausted while calling {method} {path};"
+                    f"{suffix or ' retry on the next recovery sweep'}"
+                ) from exc
             raise DispatchError(
                 f"GitHub API {method} {path} failed with {exc.code}: {detail}"
             ) from exc
@@ -259,11 +273,11 @@ class GitHubAPI:
             {"name": name, "color": color.lstrip("#"), "description": description},
         )
 
-    def list_open_issues(self, label: str) -> list[dict[str, Any]]:
-        return self.paginate(
-            f"{self.repo_path}/issues",
-            {"state": "open", "labels": label},
-        )
+    def list_open_issues(self, label: str | None = None) -> list[dict[str, Any]]:
+        params: dict[str, Any] = {"state": "open"}
+        if label:
+            params["labels"] = label
+        return self.paginate(f"{self.repo_path}/issues", params)
 
     def add_labels(self, issue_number: int, labels: list[str]) -> None:
         self.request(
@@ -492,19 +506,6 @@ def ensure_labels(
     return created
 
 
-def list_active_issues(
-    api: GitHubAPI,
-    policy: dict[str, Any],
-) -> list[dict[str, Any]]:
-    by_number: dict[int, dict[str, Any]] = {}
-    for label in active_dispatch_labels(policy):
-        for issue in api.list_open_issues(label):
-            if issue.get("pull_request"):
-                continue
-            by_number[int(issue["number"])] = issue
-    return list(by_number.values())
-
-
 def session_comment(session: dict[str, Any]) -> str:
     name = str(session.get("name") or "unknown session")
     url = str(session.get("url") or "").strip()
@@ -530,12 +531,21 @@ def dispatch(
 ) -> list[int]:
     """Fill available Jules capacity from the explicit agent-ready queue."""
     dispatch_label = str(policy["dispatch_label"])
-    queue_labels = [
-        str(policy["queue_label"]),
-        str(policy["automatic_queue_label"]),
-    ]
 
-    active = list_active_issues(api, policy)
+    # One repository issue snapshot feeds both active-capacity accounting and
+    # queue selection. This avoids separate list calls per label and materially
+    # reduces GITHUB_TOKEN quota pressure in high-fanout repositories.
+    open_issues = [
+        issue
+        for issue in api.list_open_issues()
+        if not issue.get("pull_request")
+    ]
+    active_labels = active_dispatch_labels(policy)
+    active = [
+        issue
+        for issue in open_issues
+        if label_names(issue).intersection(active_labels)
+    ]
     slots = max(0, int(policy["max_in_flight"]) - len(active))
     if slots == 0:
         print(
@@ -555,15 +565,8 @@ def dispatch(
         )
         return []
 
-    queued_by_number: dict[int, dict[str, Any]] = {}
-    for queue_label in queue_labels:
-        for issue in api.list_open_issues(queue_label):
-            if issue.get("pull_request"):
-                continue
-            queued_by_number[int(issue["number"])] = issue
-    queued = list(queued_by_number.values())
     selected = select_candidates(
-        queued,
+        open_issues,
         policy,
         slots=slots,
         event_issue_number=event_issue_number,
@@ -707,6 +710,11 @@ def main(argv: list[str] | None = None) -> int:
                 max_dispatch=args.max_dispatch,
                 dry_run=args.dry_run,
             )
+    except GitHubRateLimitError as exc:
+        # Quota exhaustion is transient. Fail closed (no new provider work) but
+        # keep the workflow green so the scheduled recovery sweep can retry.
+        print(f"jules dispatcher: deferred: {exc}", file=sys.stderr)
+        return 0
     except DispatchError as exc:
         print(f"jules dispatcher: {exc}", file=sys.stderr)
         return 2

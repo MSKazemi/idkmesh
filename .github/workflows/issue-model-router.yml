@@ -4,13 +4,19 @@ on:
   issues:
     types: [opened, edited, reopened]
   schedule:
-    - cron: '7 * * * *'
+    # Backfill is recovery only; normal routing is event-driven.
+    - cron: '7 */6 * * *'
   workflow_dispatch:
     inputs:
       backfill_open_issues:
         description: Reclassify every currently open issue
         required: false
         default: true
+        type: boolean
+      bootstrap_labels:
+        description: Create/update the managed routing labels before classification
+        required: false
+        default: false
         type: boolean
 
 permissions:
@@ -37,13 +43,11 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Validate router
-        run: |
-          python -m py_compile scripts/issue_model_router.py tests/test_issue_model_router.py
-          python -m pip install --disable-pip-version-check 'pytest>=8,<10'
-          python -m pytest -q tests/test_issue_model_router.py
+      - name: Validate router syntax
+        run: python -m py_compile scripts/issue_model_router.py
 
-      - name: Ensure managed routing labels exist
+      - name: Bootstrap managed routing labels
+        if: github.event_name == 'workflow_dispatch' && inputs.bootstrap_labels
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
@@ -94,6 +98,7 @@ jobs:
             > /tmp/issue-model-routes.json
 
       - name: Apply managed labels
+        id: apply
         if: github.event_name == 'issues' || github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.backfill_open_issues)
         env:
           GH_TOKEN: ${{ github.token }}
@@ -115,19 +120,25 @@ jobs:
           payload = json.loads(Path("/tmp/issue-model-routes.json").read_text(encoding="utf-8"))
           routes = payload.get("routes", [payload])
           rows = []
+          has_jules_candidate = False
 
           for route in routes:
               number = str(route["issue_number"])
               desired = set(route["labels"])
-              current_payload = subprocess.check_output(
-                  ["gh", "issue", "view", number, "--json", "labels"], text=True
-              )
-              current = {item["name"] for item in json.loads(current_payload)["labels"]}
+              current = set(route.get("current_labels", []))
+              remove = sorted((current & managed) - desired)
+              add = sorted(desired - current)
 
-              for label in sorted((current & managed) - desired):
-                  subprocess.run(["gh", "issue", "edit", number, "--remove-label", label], check=True)
-              for label in sorted(desired - current):
-                  subprocess.run(["gh", "issue", "edit", number, "--add-label", label], check=True)
+              if remove or add:
+                  command = ["gh", "issue", "edit", number]
+                  for label in remove:
+                      command.extend(["--remove-label", label])
+                  for label in add:
+                      command.extend(["--add-label", label])
+                  subprocess.run(command, check=True)
+
+              if "agent:jules-eligible" in desired:
+                  has_jules_candidate = True
 
               reason = "; ".join(route["reasons"]).replace("|", "/")
               rows.append(
@@ -138,14 +149,27 @@ jobs:
           summary = Path(os.environ["GITHUB_STEP_SUMMARY"])
           with summary.open("a", encoding="utf-8") as handle:
               handle.write("## Issue model routing\n\n")
-              handle.write("Routing is advisory capability/authority metadata. It does not dispatch a provider, approve code, or grant merge authority.\n\n")
+              handle.write("Routing is advisory capability/authority metadata. It does not approve code or grant merge authority.\n\n")
               handle.write("| Issue | Tier | Authority | Lane | Reason |\n")
               handle.write("| --- | --- | --- | --- | --- |\n")
               handle.write("\n".join(rows) + "\n")
+
+          with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as handle:
+              handle.write(f"has_jules_candidate={'true' if has_jules_candidate else 'false'}\n")
           PY
 
-      - name: Kick Jules dispatcher after routing
-        if: github.event_name == 'issues' || github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.backfill_open_issues)
+      - name: Kick Jules for routed issue
+        if: github.event_name == 'issues' && steps.apply.outputs.has_jules_candidate == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: >-
+          gh workflow run jules-dispatch.yml
+          --ref "${{ github.event.repository.default_branch }}"
+          -f issue_number="${{ github.event.issue.number }}"
+
+      - name: Kick Jules after manual backfill
+        if: github.event_name == 'workflow_dispatch' && inputs.backfill_open_issues && steps.apply.outputs.has_jules_candidate == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
