@@ -60,6 +60,26 @@ Not if it only records events. Stronger evidence also binds those events to the 
 
 Start with the [schema index](https://github.com/MSKazemi/idkmesh/blob/main/schemas/README.md), [architecture](https://github.com/MSKazemi/idkmesh/blob/main/ARCHITECTURE.md), and [specifications](https://github.com/MSKazemi/idkmesh/tree/main/docs/specifications).
 
+### What metadata should an AI provenance record contain?
+
+Useful fields include task identity, worker/model identity, timestamps, input references, artifact hashes or commit SHAs, tool/environment versions, evaluator identity, checks performed, outcomes, and the integration decision.
+
+### How can I prove which model generated an artifact?
+
+Record model/provider identity together with observable runtime or artifact evidence when available, and bind that identity to the exact ResultManifest or output digest rather than relying only on a host-side label.
+
+### How do you bind an evaluation to an exact Git commit?
+
+Store the immutable commit SHA or artifact digest in the evaluation record and require re-verification when the candidate revision changes.
+
+### What is the difference between logs and provenance?
+
+Logs record events. Provenance connects identities, inputs, outputs, transformations, and evidence into a traceable relationship that can support later verification.
+
+### How do you preserve AI evidence without leaking secrets?
+
+Store references, hashes, redacted metadata, and reproducible commands while excluding raw credentials and sensitive payloads. Secret values should remain in dedicated secret stores, not evidence documents.
+
 [Browse all AI-agent trust topics](https://mskazemi.com/idkmesh/topics/).
 
 **Last reviewed:** 2026-09-22.
