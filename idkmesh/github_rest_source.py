@@ -96,6 +96,7 @@ def _http_error(
     *,
     repository: str,
     number: int,
+    connection_id: str,
 ) -> ConnectorError:
     status = int(exc.code)
     details: dict[str, Any] = {
@@ -138,7 +139,7 @@ def _http_error(
     return ConnectorError(
         code=code,
         message=message,
-        connection_id="github",
+        connection_id=connection_id,
         details=details,
     )
 
@@ -154,8 +155,12 @@ class GitHubRestPullRequestSource:
         max_response_bytes: int = _DEFAULT_MAX_RESPONSE_BYTES,
         opener: Callable[..., Any] = urlopen,
         user_agent: str = "idkmesh/0.1",
+        connection_id: str = "github",
     ) -> None:
         self._token = _token(token)
+        if not isinstance(connection_id, str) or not connection_id.strip():
+            raise ValueError("connection_id must be a non-empty string")
+        self._connection_id = connection_id
         self._timeout_seconds = _timeout(timeout_seconds)
         self._max_response_bytes = _max_response_bytes(max_response_bytes)
         if not callable(opener):
@@ -205,7 +210,7 @@ class GitHubRestPullRequestSource:
                     raise ConnectorError(
                         code="provider_unavailable",
                         message="GitHub API returned an unexpected HTTP status.",
-                        connection_id="github",
+                        connection_id=self._connection_id,
                         details={
                             "status": status,
                             "repository": repo,
@@ -218,12 +223,13 @@ class GitHubRestPullRequestSource:
                 exc,
                 repository=repo,
                 number=pr_number,
+                connection_id=self._connection_id,
             ) from exc
         except (TimeoutError, socket.timeout) as exc:
             raise ConnectorError(
                 code="timeout",
                 message="GitHub pull-request request timed out.",
-                connection_id="github",
+                connection_id=self._connection_id,
                 details={
                     "repository": repo,
                     "pull_request_number": pr_number,
@@ -235,7 +241,7 @@ class GitHubRestPullRequestSource:
                 raise ConnectorError(
                     code="timeout",
                     message="GitHub pull-request request timed out.",
-                    connection_id="github",
+                    connection_id=self._connection_id,
                     details={
                         "repository": repo,
                         "pull_request_number": pr_number,
@@ -244,7 +250,7 @@ class GitHubRestPullRequestSource:
             raise ConnectorError(
                 code="provider_unavailable",
                 message="GitHub pull-request metadata is unavailable.",
-                connection_id="github",
+                connection_id=self._connection_id,
                 details={
                     "repository": repo,
                     "pull_request_number": pr_number,
@@ -256,7 +262,7 @@ class GitHubRestPullRequestSource:
             raise ConnectorError(
                 code="provider_unavailable",
                 message="GitHub pull-request metadata is unavailable.",
-                connection_id="github",
+                connection_id=self._connection_id,
                 details={
                     "repository": repo,
                     "pull_request_number": pr_number,
@@ -267,7 +273,7 @@ class GitHubRestPullRequestSource:
             raise ConnectorError(
                 code="result_normalization_error",
                 message="GitHub returned a non-bytes pull-request response.",
-                connection_id="github",
+                connection_id=self._connection_id,
                 details={
                     "repository": repo,
                     "pull_request_number": pr_number,
@@ -277,7 +283,7 @@ class GitHubRestPullRequestSource:
             raise ConnectorError(
                 code="result_normalization_error",
                 message="GitHub pull-request response exceeds the configured size limit.",
-                connection_id="github",
+                connection_id=self._connection_id,
                 details={
                     "repository": repo,
                     "pull_request_number": pr_number,
@@ -291,7 +297,7 @@ class GitHubRestPullRequestSource:
             raise ConnectorError(
                 code="result_normalization_error",
                 message="GitHub returned malformed pull-request JSON.",
-                connection_id="github",
+                connection_id=self._connection_id,
                 details={
                     "repository": repo,
                     "pull_request_number": pr_number,
@@ -302,7 +308,7 @@ class GitHubRestPullRequestSource:
             raise ConnectorError(
                 code="result_normalization_error",
                 message="GitHub returned a non-object pull-request JSON response.",
-                connection_id="github",
+                connection_id=self._connection_id,
                 details={
                     "repository": repo,
                     "pull_request_number": pr_number,
