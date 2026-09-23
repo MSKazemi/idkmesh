@@ -35,15 +35,27 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Open bounded Draft PRs
+      - name: Open bounded Draft PRs and render evidence
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
+          EVIDENCE_DIR="$RUNNER_TEMP/idkmesh-auto-draft-pr"
+          mkdir -p "$EVIDENCE_DIR"
           python tools/auto_draft_pr_steward.py \
             --repo "$GITHUB_REPOSITORY" \
             --policy config/auto-draft-pr.json \
-            --summary-file "$GITHUB_STEP_SUMMARY"
+            --summary-file "$GITHUB_STEP_SUMMARY" \
+            --output-json "$EVIDENCE_DIR/steward-report.json" \
+            --output-md "$EVIDENCE_DIR/steward-report.md"
+
+      - name: Upload steward evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: auto-draft-pr-steward-${{ github.run_id }}
+          path: ${{ runner.temp }}/idkmesh-auto-draft-pr
+          retention-days: 14
+          if-no-files-found: error
 
 # Authority boundary:
 # - candidate branch code is never checked out or executed by this workflow;
@@ -51,4 +63,6 @@ jobs:
 # - only Draft PR creation is permitted; no approval, ready-for-review, merge,
 #   branch deletion, issue closure, label, settings, or contents-write authority;
 # - the machine policy caps creations per run and excludes evidence/scratch lanes;
+# - JSON/Markdown evidence is derived from the already-computed result and adds no API calls;
+# - artifact publication grants no repository mutation authority;
 # - generated PRs remain subject to the normal exact-head CI/evidence/review gates.

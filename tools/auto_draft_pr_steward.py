@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import html
 import json
 import os
@@ -13,6 +14,7 @@ from typing import Any
 from urllib import error, parse, request
 
 API_VERSION = "2022-11-28"
+REPORT_SCHEMA = "auto-draft-pr-steward-report-v0.1"
 MAX_PR_TITLE_LENGTH = 180
 _REPOSITORY = re.compile(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+\Z")
 
@@ -460,7 +462,14 @@ def run(client: Any, policy: Policy, dry_run: bool = False) -> dict[str, Any]:
                     exc.body,
                 ) from exc
             raise
-        created.append({**record, "number": pr.get("number"), "url": pr.get("html_url")})
+        number = pr.get("number")
+        url = pr.get("html_url")
+        if not isinstance(number, int) or number < 1:
+            raise RuntimeError("created pull request response has no valid PR number")
+        expected_url = f"https://github.com/{client.repo}/pull/{number}"
+        if url != expected_url:
+            raise RuntimeError("created pull request response has no canonical GitHub URL")
+        created.append({**record, "number": number, "url": url})
 
     return {
         "schema_version": "0.1",
@@ -477,6 +486,203 @@ def run(client: Any, policy: Policy, dry_run: bool = False) -> dict[str, Any]:
 
 discover_candidates = discover
 run_steward = run
+
+
+def _utc_now_text() -> str:
+    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def _optional_sha(value: str | None) -> str | None:
+    if value is None:
+        return None
+    normalized = value.strip().lower()
+    return normalized if re.fullmatch(r"[0-9a-f]{40}", normalized) else None
+
+
+def build_report(
+    result: dict[str, Any],
+    *,
+    repo: str,
+    policy_path: Path,
+    generated_at: str | None = None,
+    env: dict[str, str] | os._Environ[str] | None = None,
+) -> dict[str, Any]:
+    environment = os.environ if env is None else env
+    policy_bytes = policy_path.read_bytes()
+    blocked = result.get("blocked_reason")
+    if blocked == "policy_disabled":
+        status = "disabled"
+    elif blocked:
+        status = "blocked"
+    else:
+        status = "completed"
+
+    return {
+        "schema": REPORT_SCHEMA,
+        "repository": repo,
+        "generated_at": generated_at or _utc_now_text(),
+        "status": status,
+        "dry_run": bool(result.get("dry_run", False)),
+        "policy": {
+            "path": str(policy_path),
+            "sha256": hashlib.sha256(policy_bytes).hexdigest(),
+        },
+        "provenance": {
+            "workflow": environment.get("GITHUB_WORKFLOW"),
+            "run_id": environment.get("GITHUB_RUN_ID"),
+            "run_attempt": environment.get("GITHUB_RUN_ATTEMPT"),
+            "trusted_head_sha": _optional_sha(environment.get("GITHUB_SHA")),
+        },
+        "authority": {
+            "draft_pr_create": True,
+            "ready_for_review": False,
+            "approve": False,
+            "merge": False,
+            "auto_merge": False,
+            "delete_branch": False,
+            "close_issue": False,
+            "label_write": False,
+            "contents_write": False,
+            "repository_settings": False,
+        },
+        "candidate_count": result.get("candidate_count"),
+        "rate_limit_remaining": result.get("rate_limit_remaining"),
+        "blocked_reason": blocked,
+        "summary": {
+            "planned": len(result.get("planned", [])),
+            "created": len(result.get("created", [])),
+            "skipped": len(result.get("skipped", [])),
+        },
+        "planned": list(result.get("planned", [])),
+        "created": list(result.get("created", [])),
+        "skipped": list(result.get("skipped", [])),
+    }
+
+
+def render_report_json(report: dict[str, Any]) -> str:
+    return json.dumps(report, indent=2, sort_keys=True) + "\n"
+
+
+def _md_text(value: Any) -> str:
+    return html.escape(str(value), quote=True).replace("|", "&#124;").replace("\n", " ")
+
+
+def _md_code(value: Any) -> str:
+    return f"<code>{_md_text(value)}</code>"
+
+
+def render_report_markdown(report: dict[str, Any]) -> str:
+    summary = report["summary"]
+    lines = [
+        "# Auto Draft PR Steward Report",
+        "",
+        f"- Repository: {_md_code(report['repository'])}",
+        f"- Status: **{_md_text(report['status'])}**",
+        f"- Generated at: {_md_code(report['generated_at'])}",
+        f"- Policy SHA-256: `{report['policy']['sha256']}`",
+        f"- API remaining at start: `{report['rate_limit_remaining']}`",
+        f"- Candidate count: `{report['candidate_count']}`",
+        f"- Planned: **{summary['planned']}**",
+        f"- Created: **{summary['created']}**",
+        f"- Skipped: **{summary['skipped']}**",
+        f"- Blocked reason: {_md_code(report['blocked_reason'] or 'none')}",
+        "- Merge authorized: **false**",
+        "",
+        "This report is decision-support/evidence only. The steward may create bounded Draft PRs but cannot approve, promote, merge, enable auto-merge, delete branches, close issues, write repository contents, or change repository settings.",
+        "",
+    ]
+
+    if report["planned"]:
+        lines.extend(
+            [
+                "## Planned candidates",
+                "",
+                "| Branch | Base | Ahead | Behind | Head |",
+                "| --- | --- | ---: | ---: | --- |",
+            ]
+        )
+        for item in report["planned"]:
+            lines.append(
+                f"| {_md_code(item['branch'])} | {_md_code(item['base'])} | "
+                f"{item['ahead_by']} | {item['behind_by']} | `{item['head_sha']}` |"
+            )
+        lines.append("")
+
+    if report["created"]:
+        lines.extend(
+            [
+                "## Created Draft PRs",
+                "",
+                "| PR | Branch | Base | Head |",
+                "| ---: | --- | --- | --- |",
+            ]
+        )
+        for item in report["created"]:
+            lines.append(
+                f"| #{item['number']} | {_md_code(item['branch'])} | "
+                f"{_md_code(item['base'])} | {_md_code(item['head_sha'])} |"
+            )
+        lines.append("")
+
+    if report["skipped"]:
+        lines.extend(
+            [
+                "## Skipped candidates",
+                "",
+                "| Branch | Base | Reason | Planned head | Current head |",
+                "| --- | --- | --- | --- | --- |",
+            ]
+        )
+        for item in report["skipped"]:
+            lines.append(
+                f"| {_md_code(item['branch'])} | {_md_code(item['base'])} | "
+                f"{_md_code(item['reason'])} | {_md_code(item['head_sha'])} | "
+                f"{_md_code(item.get('current_head_sha', '-'))} |"
+            )
+        lines.append("")
+
+    provenance = report["provenance"]
+    lines.extend(
+        [
+            "## Provenance",
+            "",
+            f"- Workflow: {_md_code(provenance['workflow'] or 'local')}",
+            f"- Run ID: {_md_code(provenance['run_id'] or 'n/a')}",
+            f"- Run attempt: {_md_code(provenance['run_attempt'] or 'n/a')}",
+            f"- Trusted workflow head: {_md_code(provenance['trusted_head_sha'] or 'n/a')}",
+            "",
+        ]
+    )
+    return "\n".join(lines)
+
+
+def _validate_output_paths(
+    policy_path: Path,
+    output_json: Path | None,
+    output_md: Path | None,
+    summary_file: Path | None,
+) -> None:
+    claimed: dict[str, str] = {}
+    policy_real = os.path.realpath(policy_path)
+    for label, path in (
+        ("--output-json", output_json),
+        ("--output-md", output_md),
+        ("--summary-file", summary_file),
+    ):
+        if path is None:
+            continue
+        real = os.path.realpath(path)
+        if real == policy_real:
+            raise ValueError(f"{label} must not overwrite the policy file")
+        previous = claimed.get(real)
+        if previous:
+            raise ValueError(f"{label} and {previous} must use different paths")
+        claimed[real] = label
+
+
+def _write_text(path: Path, text: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text, encoding="utf-8")
 
 
 def append_summary(path: Path, result: dict[str, Any]) -> None:
@@ -513,22 +719,37 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--api-url", default=os.environ.get("GITHUB_API_URL", "https://api.github.com"))
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--summary-file", type=Path)
+    parser.add_argument("--output-json", type=Path)
+    parser.add_argument("--output-md", type=Path)
     args = parser.parse_args(argv)
+    try:
+        _validate_output_paths(
+            args.policy, args.output_json, args.output_md, args.summary_file
+        )
+    except ValueError as exc:
+        print(f"auto-draft-pr steward configuration error: {exc}", file=sys.stderr)
+        return 2
     if not args.token:
         print("GITHUB_TOKEN or --token is required", file=sys.stderr)
         return 2
     try:
+        policy = load_policy(args.policy)
         result = run(
             GitHubClient(args.repo, args.token, args.api_url),
-            load_policy(args.policy),
+            policy,
             args.dry_run,
         )
-    except (GitHubApiError, RuntimeError, ValueError) as exc:
+        report = build_report(result, repo=args.repo, policy_path=args.policy)
+        if args.output_json:
+            _write_text(args.output_json, render_report_json(report))
+        if args.output_md:
+            _write_text(args.output_md, render_report_markdown(report))
+        if args.summary_file:
+            append_summary(args.summary_file, result)
+    except (GitHubApiError, RuntimeError, ValueError, OSError) as exc:
         print(f"auto-draft-pr steward failed: {exc}", file=sys.stderr)
         return 1
     print(json.dumps(result, indent=2, sort_keys=True))
-    if args.summary_file:
-        append_summary(args.summary_file, result)
     return 0
 
 
