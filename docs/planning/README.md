@@ -4,8 +4,7 @@ This directory translates the long-range vision into current execution choices.
 
 ## Planning artifacts
 
-- [GitHub-First Product Execution Plan — 2026-09-22](GITHUB_FIRST_PRODUCT_EXECUTION_PLAN_2026-09-22.md) — developer-ready critical path from connector kernel through bootstrap, durable state, multi-user governance, GitHub-native UX, and the no-server second-project pilot; includes PR-sized work packages, test strategy, capability matrix, milestones, and Definitions of Ready/Done.
-
+- [`PRODUCT_GOALS_COMPONENT_SLICE_MAP_2026-09-22.md`](PRODUCT_GOALS_COMPONENT_SLICE_MAP_2026-09-22.md) — north-star product gates, C1-C14 responsibility boundaries, micro-slice catalog, dependency graph, and issue-promotion rules for parallel development.
 - [`MODEL_TIER_DISPATCHER_EXECUTION_PLAN_2026-09-22.md`](MODEL_TIER_DISPATCHER_EXECUTION_PLAN_2026-09-22.md) — capability-tier, authority, connector-admission, escalation, GitHub-only state, and #574 implementation plan.
 - [`AGENT_MODEL_INTEGRATION_SELF_HOSTING_PLAN_2026-09-22.md`](AGENT_MODEL_INTEGRATION_SELF_HOSTING_PLAN_2026-09-22.md) — staged connector-control-plane roadmap: first use external agents/models to finish IDKMesh, then self-host repository development, then use the same product interfaces to build a second application.
 - [`CURRENT_PRIORITIES.md`](CURRENT_PRIORITIES.md) — current narrative priority assessment and sequencing rationale.
