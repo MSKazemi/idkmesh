@@ -243,6 +243,16 @@ class GitHubAPI:
                 return json.loads(raw.decode("utf-8")) if raw else None
         except urllib.error.HTTPError as exc:
             detail = exc.read().decode("utf-8", errors="replace")
+            remaining = str(exc.headers.get("X-RateLimit-Remaining", ""))
+            if exc.code in {403, 429} and (
+                remaining == "0" or "rate limit" in detail.casefold()
+            ):
+                reset = str(exc.headers.get("X-RateLimit-Reset", "")).strip()
+                suffix = f" reset={reset}" if reset else ""
+                raise GitHubRateLimitError(
+                    f"GitHub API quota exhausted while calling {method} {path};"
+                    f"{suffix or ' retry on the next recovery sweep'}"
+                ) from exc
             raise DispatchError(
                 f"GitHub API {method} {path} failed with {exc.code}: {detail}"
             ) from exc
@@ -274,11 +284,11 @@ class GitHubAPI:
             {"name": name, "color": color.lstrip("#"), "description": description},
         )
 
-    def list_open_issues(self, label: str) -> list[dict[str, Any]]:
-        return self.paginate(
-            f"{self.repo_path}/issues",
-            {"state": "open", "labels": label},
-        )
+    def list_open_issues(self, label: str | None = None) -> list[dict[str, Any]]:
+        params: dict[str, Any] = {"state": "open"}
+        if label:
+            params["labels"] = label
+        return self.paginate(f"{self.repo_path}/issues", params)
 
     def add_labels(self, issue_number: int, labels: list[str]) -> None:
         self.request(
