@@ -1,0 +1,89 @@
+{
+  "schema_version": "0.2",
+  "id": "c6/equivalence-fixture",
+  "version": 1,
+  "kind": "coding",
+  "objective": "Prove remote PR and local artifact candidates enter equivalent canonical normalization and verification-handoff semantics.",
+  "inputs": [],
+  "outputs": [
+    {
+      "id": "candidate",
+      "type": "patch",
+      "description": "One normalized candidate implementation."
+    }
+  ],
+  "dependencies": [],
+  "requirements": {
+    "capabilities": ["coding"],
+    "resources": {
+      "cpu_cores_min": 0,
+      "memory_mb_min": 0,
+      "gpu": "none"
+    }
+  },
+  "constraints": {
+    "allowed_paths": ["idkmesh/", "tests/"],
+    "forbidden_paths": [".github/workflows/"],
+    "policies": ["No direct merge authority"]
+  },
+  "uncertainty": [],
+  "security": {
+    "risk_class": "low",
+    "data_classification": "public",
+    "minimum_worker_trust": "untrusted",
+    "sandbox_required": false
+  },
+  "permissions": {
+    "network": "none",
+    "filesystem_write": ["idkmesh/", "tests/"],
+    "secrets": [],
+    "process_execution": false
+  },
+  "verification_policy": {
+    "strategy": "all_required",
+    "independent_from_worker": true,
+    "minimum_independent_verifiers": 1,
+    "acceptance_rule": "Required validators must produce independent evidence; verification remains decision support only."
+  },
+  "validators": [
+    {
+      "id": "result-schema",
+      "type": "schema",
+      "required": true,
+      "description": "Validate canonical ResultManifest structure."
+    },
+    {
+      "id": "independent-review",
+      "type": "review",
+      "required": true,
+      "description": "Review the exact normalized candidate independently."
+    }
+  ],
+  "evidence_requirements": [
+    {
+      "type": "artifact_hash",
+      "required": true,
+      "description": "Retain immutable normalized candidate identity."
+    },
+    {
+      "type": "review",
+      "required": true,
+      "description": "Retain independent verifier evidence."
+    }
+  ],
+  "budget": {
+    "project_spend_usd_max": 0,
+    "paid_fallback_allowed": false
+  },
+  "provenance": {
+    "created_by": "IDKMesh C6 equivalence fixture",
+    "creator_type": "system",
+    "source": "issue #579",
+    "source_revision": "0123456789abcdef0123456789abcdef01234567"
+  },
+  "failure_semantics": {
+    "retryable": false,
+    "max_attempts": 1,
+    "on_failure": "stop"
+  }
+}
