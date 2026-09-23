@@ -94,12 +94,18 @@ does not reach the live front door: PR #391 (`59d6e39`) pointed `index.md` at
 
 ## Directory index convention
 
-A repository directory README and a public website directory index are not the
-same publication contract.
+A repository directory README and a public website directory index are not always
+the same publication contract.
 
-When a public URL is intended to resolve at `/idkmesh/<directory>/`, the source
-must be `docs/<directory>/index.md` (or `index.html`). Do not rely on
-`README.md` being promoted to a directory index by GitHub Pages/Jekyll.
+The Pages artifact from the first SEO rollout showed the exact distinction in
+this repository: the existing **frontmatter-free** directory `README.md` files
+were promoted to `index.html`, while `docs/topics/README.md` — which carried
+YAML front matter for title/description/social metadata — was emitted as
+`topics/README.html`, leaving the advertised `/topics/` URL at 404.
+
+Therefore, when a public hub needs front matter and is intended to resolve at
+`/idkmesh/<directory>/`, use `docs/<directory>/index.md` (or `index.html`)
+explicitly. Do not rely on a metadata-bearing `README.md` being promoted.
 
 The SEO topic hub follows this rule:
 
