@@ -73,6 +73,11 @@ jobs:
           done
           python tools/closing_keyword_guard.py "${args[@]}"
 
+      - name: Guard Jules router-dispatch contract
+        env:
+          PYTHONPATH: .
+        run: python tools/check_jules_contract.py
+
       - name: Install dependencies
         run: |
           python -m pip install --disable-pip-version-check pytest

@@ -22,7 +22,7 @@ def test_current_good_first_issue_routes_to_small_and_jules_eligible():
     value = route(563, "good first issue: add direct tests for sim/e017_oracles.py")
     assert value.tier == "T1"
     assert value.authority == "agent"
-    assert "agent:jules-eligible" in value.labels
+    assert POLICY["provider_examples"]["jules"]["queue_label"] in value.labels
 
 
 def test_current_benchmark_generator_task_routes_to_standard():
@@ -125,4 +125,8 @@ def test_router_workflow_keeps_hot_path_api_budget_bounded():
     assert "Validate router syntax" in workflow
     assert "python -m pytest" not in workflow
     assert "github.event_name == 'workflow_dispatch' && inputs.bootstrap_labels" in workflow
-    assert "-f issue_number=" in workflow
+    assert "uses: ./.github/workflows/jules-dispatch.yml" in workflow
+    assert "issue_number: ${{ needs.route.outputs.routed_issue_number }}" in workflow
+    assert "secrets: inherit" in workflow
+    assert "gh workflow run jules-dispatch.yml" not in workflow
+    assert "actions: write" not in workflow

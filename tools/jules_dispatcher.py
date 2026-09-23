@@ -18,6 +18,7 @@ import json
 import os
 import pathlib
 import sys
+from datetime import datetime, timezone
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -32,6 +33,10 @@ class DispatchError(RuntimeError):
     """Raised when the dispatcher cannot safely inspect or mutate state."""
 
 
+class GitHubRateLimitError(DispatchError):
+    """Transient GitHub API quota exhaustion; dispatch must defer safely."""
+
+
 class JulesAPIError(DispatchError):
     """Jules API failure, with an HTTP status when one was returned."""
 
@@ -44,8 +49,15 @@ def load_policy(path: pathlib.Path = DEFAULT_POLICY) -> dict[str, Any]:
     policy = json.loads(path.read_text(encoding="utf-8"))
     required = {
         "queue_label",
+        "automatic_queue_label",
+        "trusted_author_associations",
         "dispatch_label",
         "legacy_dispatch_labels",
+        "attention_label",
+        "attention_session_states",
+        "stale_session_minutes",
+        "stale_missing_session_minutes",
+        "session_scan_max_pages",
         "max_in_flight",
         "max_dispatch_per_sweep",
         "blocked_labels",
@@ -61,8 +73,28 @@ def load_policy(path: pathlib.Path = DEFAULT_POLICY) -> dict[str, Any]:
         raise DispatchError("max_in_flight must be at least 1")
     if int(policy["max_dispatch_per_sweep"]) < 1:
         raise DispatchError("max_dispatch_per_sweep must be at least 1")
+    if not isinstance(policy["trusted_author_associations"], list):
+        raise DispatchError("trusted_author_associations must be a list")
+    if not isinstance(policy["attention_session_states"], list):
+        raise DispatchError("attention_session_states must be a list")
+    if not isinstance(policy["stale_session_minutes"], dict):
+        raise DispatchError("stale_session_minutes must be an object")
+    for state, minutes in policy["stale_session_minutes"].items():
+        if isinstance(minutes, bool) or not isinstance(minutes, int) or minutes < 1:
+            raise DispatchError(
+                f"stale_session_minutes.{state} must be an integer >= 1"
+            )
+    missing_minutes = policy["stale_missing_session_minutes"]
+    if (
+        isinstance(missing_minutes, bool)
+        or not isinstance(missing_minutes, int)
+        or missing_minutes < 1
+    ):
+        raise DispatchError("stale_missing_session_minutes must be an integer >= 1")
+    scan_pages = policy["session_scan_max_pages"]
+    if isinstance(scan_pages, bool) or not isinstance(scan_pages, int) or scan_pages < 1:
+        raise DispatchError("session_scan_max_pages must be an integer >= 1")
     return policy
-
 
 def label_names(issue: dict[str, Any]) -> set[str]:
     return {
@@ -86,15 +118,24 @@ def is_dispatchable(issue: dict[str, Any], policy: dict[str, Any]) -> bool:
         return False
 
     labels = label_names(issue)
-    queue_label = str(policy["queue_label"]).casefold()
+    manual_queue_label = str(policy["queue_label"]).casefold()
+    automatic_queue_label = str(policy["automatic_queue_label"]).casefold()
     blocked = {str(name).casefold() for name in policy["blocked_labels"]}
 
-    return (
-        queue_label in labels
-        and not labels.intersection(active_dispatch_labels(policy))
-        and not labels.intersection(blocked)
-    )
+    if labels.intersection(active_dispatch_labels(policy)):
+        return False
+    if labels.intersection(blocked):
+        return False
+    if manual_queue_label in labels:
+        return True
+    if automatic_queue_label not in labels:
+        return False
 
+    trusted = {
+        str(value).upper() for value in policy["trusted_author_associations"]
+    }
+    association = str(issue.get("author_association") or "").upper()
+    return association in trusted
 
 def score_issue(issue: dict[str, Any], policy: dict[str, Any]) -> int:
     """Score an already-eligible issue; higher values are dispatched first."""
@@ -138,11 +179,42 @@ def select_candidates(
     return sorted(candidates, key=sort_key)[:limit]
 
 
-def session_title(repository: str, issue: dict[str, Any]) -> str:
+def session_marker(repository: str, issue: dict[str, Any]) -> str:
+    """Stable per-issue marker that survives issue-title edits."""
     number = int(issue["number"])
+    return f"[idkmesh {repository}#{number}]"
+
+
+def session_title(repository: str, issue: dict[str, Any]) -> str:
     raw_title = str(issue.get("title") or "bounded repository task").strip()
-    marker = f"[idkmesh {repository}#{number}]"
-    return f"{marker} {raw_title}"[:240]
+    return f"{session_marker(repository, issue)} {raw_title}"[:240]
+
+
+def find_issue_session(
+    repository: str,
+    issue: dict[str, Any],
+    sessions: Iterable[dict[str, Any]],
+) -> dict[str, Any] | None:
+    """Return the newest session matching a stable repo+issue marker."""
+    marker = session_marker(repository, issue)
+    matches = [
+        session
+        for session in sessions
+        if str(session.get("title") or "").startswith(marker)
+    ]
+    if not matches:
+        return None
+
+    floor = datetime.min.replace(tzinfo=timezone.utc)
+
+    def session_time(session: dict[str, Any]) -> datetime:
+        return (
+            _parse_rfc3339(session.get("updateTime"))
+            or _parse_rfc3339(session.get("createTime"))
+            or floor
+        )
+
+    return max(matches, key=session_time)
 
 
 def build_jules_prompt(repository: str, issue: dict[str, Any]) -> str:
@@ -206,6 +278,16 @@ class GitHubAPI:
                 return json.loads(raw.decode("utf-8")) if raw else None
         except urllib.error.HTTPError as exc:
             detail = exc.read().decode("utf-8", errors="replace")
+            remaining = str(exc.headers.get("X-RateLimit-Remaining", ""))
+            if exc.code in {403, 429} and (
+                remaining == "0" or "rate limit" in detail.casefold()
+            ):
+                reset = str(exc.headers.get("X-RateLimit-Reset", "")).strip()
+                suffix = f" reset={reset}" if reset else ""
+                raise GitHubRateLimitError(
+                    f"GitHub API quota exhausted while calling {method} {path};"
+                    f"{suffix or ' retry on the next recovery sweep'}"
+                ) from exc
             raise DispatchError(
                 f"GitHub API {method} {path} failed with {exc.code}: {detail}"
             ) from exc
@@ -237,11 +319,11 @@ class GitHubAPI:
             {"name": name, "color": color.lstrip("#"), "description": description},
         )
 
-    def list_open_issues(self, label: str) -> list[dict[str, Any]]:
-        return self.paginate(
-            f"{self.repo_path}/issues",
-            {"state": "open", "labels": label},
-        )
+    def list_open_issues(self, label: str | None = None) -> list[dict[str, Any]]:
+        params: dict[str, Any] = {"state": "open"}
+        if label:
+            params["labels"] = label
+        return self.paginate(f"{self.repo_path}/issues", params)
 
     def add_labels(self, issue_number: int, labels: list[str]) -> None:
         self.request(
@@ -343,7 +425,15 @@ class JulesAPI:
             "to Jules before enabling automatic dispatch"
         )
 
-    def list_sessions(self, *, max_pages: int = 3) -> list[dict[str, Any]]:
+    def list_sessions(self, *, max_pages: int = 10) -> list[dict[str, Any]]:
+        """List enough provider history to make duplicate detection trustworthy.
+
+        A silent partial scan is unsafe: an older matching session beyond the
+        scan window could cause a duplicate Jules task. If the configured safety
+        cap is exhausted while a next-page token still exists, fail closed.
+        """
+        if max_pages < 1:
+            raise JulesAPIError("max_pages must be at least 1")
         items: list[dict[str, Any]] = []
         page_token: str | None = None
         for _ in range(max_pages):
@@ -360,10 +450,13 @@ class JulesAPI:
             if not isinstance(batch, list):
                 raise JulesAPIError("Jules sessions response has invalid sessions")
             items.extend(item for item in batch if isinstance(item, dict))
-            page_token = payload.get("nextPageToken")
-            if not page_token:
-                break
-        return items
+            page_token = str(payload.get("nextPageToken") or "").strip() or None
+            if page_token is None:
+                return items
+        raise JulesAPIError(
+            "Jules session history exceeded the safe pagination scan; "
+            "refusing dispatch/reconciliation rather than risking a duplicate"
+        )
 
     def find_existing_session(self, title: str) -> dict[str, Any] | None:
         for session in self.list_sessions():
@@ -423,18 +516,158 @@ def ensure_labels(
     return created
 
 
-def list_active_issues(
+def _parse_rfc3339(value: Any) -> datetime | None:
+    text_value = str(value or "").strip()
+    if not text_value:
+        return None
+    try:
+        parsed = datetime.fromisoformat(text_value.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
+def _age_minutes(value: Any, now: datetime) -> float | None:
+    parsed = _parse_rfc3339(value)
+    if parsed is None:
+        return None
+    return max(0.0, (now - parsed).total_seconds() / 60.0)
+
+
+def session_attention_reason(
+    session: dict[str, Any],
+    policy: dict[str, Any],
+    *,
+    now: datetime,
+) -> str | None:
+    """Return why an unattended session needs maintainer attention, if any."""
+    state = str(session.get("state") or "STATE_UNSPECIFIED").upper()
+    attention_states = {
+        str(value).upper() for value in policy["attention_session_states"]
+    }
+    if state in attention_states:
+        return f"provider session entered {state}"
+
+    threshold = policy["stale_session_minutes"].get(state)
+    if threshold is None:
+        return None
+    age = _age_minutes(
+        session.get("updateTime") or session.get("createTime"),
+        now,
+    )
+    if age is not None and age >= int(threshold):
+        return (
+            f"provider session remained {state} without an update for "
+            f"{int(age)} minutes (threshold {threshold})"
+        )
+    return None
+
+
+def _add_local_label(issue: dict[str, Any], name: str) -> None:
+    labels = list(issue.get("labels", []))
+    if all(
+        str(label.get("name", "")).casefold() != name.casefold()
+        for label in labels
+    ):
+        labels.append({"name": name})
+    issue["labels"] = labels
+
+
+def _replace_local_label(issue: dict[str, Any], old: str, new: str) -> None:
+    labels = [
+        label
+        for label in issue.get("labels", [])
+        if str(label.get("name", "")).casefold() != old.casefold()
+    ]
+    issue["labels"] = labels
+    _add_local_label(issue, new)
+
+
+def reconcile_active_sessions(
     api: GitHubAPI,
     policy: dict[str, Any],
-) -> list[dict[str, Any]]:
-    by_number: dict[int, dict[str, Any]] = {}
-    for label in active_dispatch_labels(policy):
-        for issue in api.list_open_issues(label):
-            if issue.get("pull_request"):
-                continue
-            by_number[int(issue["number"])] = issue
-    return list(by_number.values())
+    *,
+    jules_api: JulesAPI,
+    open_issues: list[dict[str, Any]] | None = None,
+    sessions: list[dict[str, Any]] | None = None,
+    now: datetime | None = None,
+    dry_run: bool = False,
+) -> list[int]:
+    """Move failed or stalled unattended sessions to an explicit attention state."""
+    dispatch_label = str(policy["dispatch_label"])
+    attention_label = str(policy["attention_label"])
+    current_time = now or datetime.now(timezone.utc)
+    issues = open_issues if open_issues is not None else api.list_open_issues()
+    active = [
+        issue
+        for issue in issues
+        if not issue.get("pull_request")
+        and dispatch_label.casefold() in label_names(issue)
+    ]
+    if not active:
+        print("jules dispatcher: no API-dispatched sessions to reconcile")
+        return []
 
+    provider_sessions = (
+        sessions
+        if sessions is not None
+        else jules_api.list_sessions(max_pages=int(policy["session_scan_max_pages"]))
+    )
+
+    attention: list[int] = []
+    for issue in active:
+        number = int(issue["number"])
+        session = find_issue_session(api.repository, issue, provider_sessions)
+        reason: str | None = None
+
+        if session is None:
+            age = _age_minutes(issue.get("updated_at"), current_time)
+            threshold = int(policy["stale_missing_session_minutes"])
+            if age is not None and age >= threshold:
+                reason = (
+                    "no matching Jules session is visible after "
+                    f"{int(age)} minutes (threshold {threshold})"
+                )
+        else:
+            reason = session_attention_reason(
+                session,
+                policy,
+                now=current_time,
+            )
+
+        if reason is None:
+            continue
+
+        attention.append(number)
+        state = str((session or {}).get("state") or "MISSING")
+        location = str(
+            (session or {}).get("url")
+            or (session or {}).get("name")
+            or "no matching session"
+        )
+        if dry_run:
+            print(
+                f"jules dispatcher: would mark #{number} needs-attention: {reason}"
+            )
+            continue
+
+        # Block redispatch before releasing the active reservation.
+        api.add_labels(number, [attention_label])
+        api.remove_label(number, dispatch_label)
+        api.add_comment(
+            number,
+            "IDKMesh Jules reconciliation moved this task out of the active "
+            f"dispatch pool. Session: {location} (state: {state}). Reason: "
+            f"{reason}. Automatic redispatch is blocked by {attention_label}. "
+            "Inspect the provider session and issue before removing that label. "
+            "Reconciliation never creates a replacement session.",
+        )
+        _replace_local_label(issue, dispatch_label, attention_label)
+        print(f"jules dispatcher: #{number} needs attention: {reason}")
+
+    return attention
 
 def session_comment(session: dict[str, Any]) -> str:
     name = str(session.get("name") or "unknown session")
@@ -458,12 +691,22 @@ def dispatch(
     event_issue_number: int | None = None,
     max_dispatch: int | None = None,
     dry_run: bool = False,
+    open_issues: list[dict[str, Any]] | None = None,
+    sessions: list[dict[str, Any]] | None = None,
 ) -> list[int]:
-    """Fill available Jules capacity from the explicit agent-ready queue."""
+    """Fill available Jules capacity from trusted manual and automatic queues."""
     dispatch_label = str(policy["dispatch_label"])
-    queue_label = str(policy["queue_label"])
 
-    active = list_active_issues(api, policy)
+    # One repository issue snapshot feeds capacity accounting and queue
+    # selection. This materially reduces GitHub API pressure.
+    issues = open_issues if open_issues is not None else api.list_open_issues()
+    issues = [issue for issue in issues if not issue.get("pull_request")]
+    active_labels = active_dispatch_labels(policy)
+    active = [
+        issue
+        for issue in issues
+        if label_names(issue).intersection(active_labels)
+    ]
     slots = max(0, int(policy["max_in_flight"]) - len(active))
     if slots == 0:
         print(
@@ -472,16 +715,15 @@ def dispatch(
         )
         return []
 
-    queued = api.list_open_issues(queue_label)
     selected = select_candidates(
-        queued,
+        issues,
         policy,
         slots=slots,
         event_issue_number=event_issue_number,
         max_dispatch=max_dispatch,
     )
     if not selected:
-        print("jules dispatcher: no eligible agent-ready issues")
+        print("jules dispatcher: no eligible Jules queue issues")
         return []
 
     if not dry_run and jules_api is None:
@@ -490,9 +732,17 @@ def dispatch(
         )
 
     source = None
+    provider_sessions: list[dict[str, Any]] = []
     if not dry_run:
         assert jules_api is not None
         source = jules_api.resolve_source(api.repository)
+        provider_sessions = (
+            sessions
+            if sessions is not None
+            else jules_api.list_sessions(
+                max_pages=int(policy["session_scan_max_pages"])
+            )
+        )
 
     numbers: list[int] = []
     for issue in selected:
@@ -508,13 +758,16 @@ def dispatch(
 
         assert jules_api is not None
         assert source is not None
-        existing = jules_api.find_existing_session(title)
+        existing = find_issue_session(api.repository, issue, provider_sessions)
 
-        # This status label is deliberately NOT the provider-native jules label.
-        # It reserves the issue before the external POST and prevents a second
-        # dispatcher run from creating duplicate work.
+        # Reserve before provider creation so concurrent runs cannot create
+        # duplicate sessions for the same issue.
         api.add_labels(number, [dispatch_label])
-        if existing is not None:
+        _add_local_label(issue, dispatch_label)
+        if (
+            existing is not None
+            and str(existing.get("state") or "").upper() != "FAILED"
+        ):
             api.add_comment(number, session_comment(existing))
             print(
                 f"jules dispatcher: reused existing Jules session for #{number}"
@@ -545,6 +798,7 @@ def dispatch(
                 )
             raise
 
+        provider_sessions.append(session)
         api.add_comment(number, session_comment(session))
         print(
             f"jules dispatcher: dispatched #{number} via {session.get('name')} "
@@ -552,7 +806,6 @@ def dispatch(
         )
 
     return numbers
-
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
@@ -563,6 +816,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="path to the dispatch policy JSON",
     )
     parser.add_argument("--init-labels", action="store_true")
+    parser.add_argument("--reconcile", action="store_true")
     parser.add_argument("--dispatch", action="store_true")
     parser.add_argument("--event-issue", type=int)
     parser.add_argument("--max-dispatch", type=int)
@@ -572,8 +826,8 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
-    if not args.init_labels and not args.dispatch:
-        raise SystemExit("choose --init-labels and/or --dispatch")
+    if not args.init_labels and not args.reconcile and not args.dispatch:
+        raise SystemExit("choose --init-labels, --reconcile, and/or --dispatch")
     if args.max_dispatch is not None and args.max_dispatch < 1:
         raise SystemExit("--max-dispatch must be at least 1")
 
@@ -588,7 +842,8 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         jules_api = None
-        if args.dispatch and not args.dry_run:
+        needs_provider = args.reconcile or (args.dispatch and not args.dry_run)
+        if needs_provider:
             jules_api = JulesAPI(
                 api_key=os.environ.get("JULES_API_KEY", ""),
                 api_url=os.environ.get(
@@ -603,6 +858,26 @@ def main(argv: list[str] | None = None) -> int:
                 print("jules dispatcher: labels " + ", ".join(created))
             else:
                 print("jules dispatcher: policy labels already exist")
+
+        open_issues = None
+        sessions = None
+        if args.reconcile or args.dispatch:
+            open_issues = api.list_open_issues()
+        if jules_api is not None and (args.reconcile or args.dispatch):
+            sessions = jules_api.list_sessions(
+                max_pages=int(policy["session_scan_max_pages"])
+            )
+
+        if args.reconcile:
+            assert jules_api is not None
+            reconcile_active_sessions(
+                api,
+                policy,
+                jules_api=jules_api,
+                open_issues=open_issues,
+                sessions=sessions,
+                dry_run=args.dry_run,
+            )
         if args.dispatch:
             dispatch(
                 api,
@@ -615,7 +890,14 @@ def main(argv: list[str] | None = None) -> int:
                 event_issue_number=args.event_issue,
                 max_dispatch=args.max_dispatch,
                 dry_run=args.dry_run,
+                open_issues=open_issues,
+                sessions=sessions,
             )
+    except GitHubRateLimitError as exc:
+        # Quota exhaustion is transient. Fail closed, but keep the workflow
+        # green so the scheduled recovery sweep can retry later.
+        print(f"jules dispatcher: deferred: {exc}", file=sys.stderr)
+        return 0
     except DispatchError as exc:
         print(f"jules dispatcher: {exc}", file=sys.stderr)
         return 2
