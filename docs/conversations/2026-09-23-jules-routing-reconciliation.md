@@ -222,3 +222,29 @@ The durable correction is another typed workflow contract:
 
 This avoids inferring reusable-workflow intent from the inherited event name and
 turns another implicit cross-workflow assumption into a checked interface.
+
+
+## Verification-backlog backpressure follow-up
+
+After the router/provider contract and capacity accounting were repaired, the
+next limiting resource is repository verification throughput. Provider slots can
+be free while GitHub Actions is already saturated; continuing to create Jules
+work in that state grows candidate generation faster than CI/review can absorb.
+
+The bounded correction implements issue 651 as a third independent admission
+gate:
+
+- repository review budget remains `max_in_flight`;
+- provider task budget remains account-wide non-terminal Jules sessions;
+- GitHub verification budget is read from repository Actions workflow-run counts;
+- dispatch pauses when queued runs are greater than 12 or in-progress runs are
+  greater than 8;
+- counts exactly at the ceiling remain allowed;
+- inability to read the Actions signal fails closed before a new issue
+  reservation is added;
+- `ci_backpressure.enabled=false` is the only explicit policy bypass;
+- reusable router calls and the dispatcher receive `actions: read` only.
+
+The dispatcher checks this signal before listing/selecting candidate issues, so
+a saturated repository produces no new `agent:jules-dispatched` mutation. The
+normal recovery schedule retries queued work after verification pressure falls.
