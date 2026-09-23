@@ -35,43 +35,43 @@ IDKMesh's repository rules make this explicit: prior eligibility is stale after 
 
 ## Common questions
 
-### Can AI review AI-generated code?
+### Can AI review AI-generated code? {#q-ai-code-review-01}
 
 Yes, as an evidence source. Reliability improves when the review method is genuinely independent, tests concrete properties, and does not grant its own merge authority.
 
-### What should an automated AI code review check?
+### What should an automated AI code review check? {#q-ai-code-review-02}
 
 Useful checks include regressions, unsafe permission changes, missing tests, API-contract drift, error handling, data/provenance handling, and mismatches between the requested task and the actual diff.
 
-### Are GitHub coding agents safe to auto-merge?
+### Are GitHub coding agents safe to auto-merge? {#q-ai-code-review-03}
 
 Auto-merge should depend on repository governance, risk, and independent evidence—not merely the fact that a hosted coding agent completed a task.
 
-### What is the role of CI?
+### What is the role of CI? {#q-ai-code-review-04}
 
 CI provides deterministic evidence about declared checks. It does not establish that the specification was correct, that hidden risks are absent, or that a human independently reviewed the change.
 
-### Where does IDKMesh automate coding-agent work?
+### Where does IDKMesh automate coding-agent work? {#q-ai-code-review-05}
 
 See [Jules automation](https://github.com/MSKazemi/idkmesh/blob/main/docs/operations/JULES_AUTOMATION.md), the [connector control plane](https://github.com/MSKazemi/idkmesh/blob/main/docs/architecture/AGENT_MODEL_CONNECTOR_CONTROL_PLANE.md), and the repository [contribution rules](https://github.com/MSKazemi/idkmesh/blob/main/CONTRIBUTING.md).
 
-### Can AI code review replace human code review?
+### Can AI code review replace human code review? {#q-ai-code-review-06}
 
 It can replace some repetitive checks, but whether it can replace a human decision depends on risk, evaluator evidence, repository policy, and what the review actually measures. High-impact changes still benefit from independent human authority.
 
-### How do you verify an AI-generated pull request?
+### How do you verify an AI-generated pull request? {#q-ai-code-review-07}
 
 Bind tests and reviews to the exact head revision, check that the diff matches the requested scope, run deterministic security and regression gates, and require additional independent review when semantics remain uncertain.
 
-### What security risks do coding agents introduce?
+### What security risks do coding agents introduce? {#q-ai-code-review-08}
 
 Common risks include excessive repository permissions, secret exposure, prompt-injection through untrusted content, unsafe shell execution, dependency/supply-chain changes, and agents modifying the workflow that evaluates their own work.
 
-### Should a coding agent have write access to the main branch?
+### Should a coding agent have write access to the main branch? {#q-ai-code-review-09}
 
 A safer default is no. Let the agent create a candidate branch or pull request and keep protected-branch integration under separate authority.
 
-### How do you compare coding agents from different models or vendors?
+### How do you compare coding agents from different models or vendors? {#q-ai-code-review-10}
 
 Use the same bounded task set, comparable execution constraints, exact-revision evidence, success criteria, cost/latency observations, and independent verification rather than comparing self-reported completion rates.
 
