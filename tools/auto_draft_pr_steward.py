@@ -466,7 +466,8 @@ def run(client: Any, policy: Policy, dry_run: bool = False) -> dict[str, Any]:
         url = pr.get("html_url")
         if not isinstance(number, int) or number < 1:
             raise RuntimeError("created pull request response has no valid PR number")
-        if not isinstance(url, str) or not url.startswith("https://github.com/"):
+        expected_url = f"https://github.com/{client.repo}/pull/{number}"
+        if url != expected_url:
             raise RuntimeError("created pull request response has no canonical GitHub URL")
         created.append({**record, "number": number, "url": url})
 

@@ -7,8 +7,6 @@ import tempfile
 import unittest
 from datetime import datetime, timezone
 from pathlib import Path
-import json
-import tempfile
 
 from tools import auto_draft_pr_steward as steward
 
@@ -542,6 +540,29 @@ class AutoDraftPrTests(unittest.TestCase):
             },
         )
         with self.assertRaisesRegex(RuntimeError, "valid PR number"):
+            steward.run_steward(client, policy())
+
+    def test_created_pr_url_must_bind_repository_and_number(self):
+        class BadUrlClient(FakeClient):
+            def create_draft_pr(self, **kwargs):
+                return {
+                    "number": 701,
+                    "html_url": "https://github.com.evil/MSKazemi/idkmesh/pull/701",
+                }
+
+        client = BadUrlClient(
+            [branch("feat/bad-url", "a" * 40)],
+            [],
+            {"a" * 40: commit("2026-09-22T15:00:00Z")},
+            {
+                ("main", "feat/bad-url"): {
+                    "status": "ahead",
+                    "ahead_by": 1,
+                    "behind_by": 0,
+                }
+            },
+        )
+        with self.assertRaisesRegex(RuntimeError, "canonical GitHub URL"):
             steward.run_steward(client, policy())
 
     def test_duplicate_creation_race_is_benign_and_visible(self):
