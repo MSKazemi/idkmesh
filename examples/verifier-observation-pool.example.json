@@ -1,0 +1,79 @@
+{
+  "schema_version": "0.1",
+  "kind": "idkmesh-verifier-observation-pool",
+  "repository": "MSKazemi/idkmesh",
+  "source_revision": "1111111111111111111111111111111111111111",
+  "captured_at": "2026-09-22T12:00:00Z",
+  "work_unit_id": "illustrative/ave-shadow",
+  "task_domain": "testing",
+  "worker_id": "illustrative-worker",
+  "reliability_max_age_days": 30,
+  "verifier_candidates": [
+    {
+      "id": "illustrative-live-verifier",
+      "family": "family-a",
+      "provider_family": null,
+      "available": true,
+      "supported_validator_ids": [
+        "independent-review",
+        "result-manifest-schema"
+      ],
+      "review_units": 1.0,
+      "queue_load": 0.2,
+      "independence": {
+        "independent_from_worker": true,
+        "shared_model_family": false,
+        "shared_runtime": false
+      },
+      "reliability": {
+        "basis": "live_outcomes",
+        "alpha": 9,
+        "beta": 3,
+        "sample_count": 10,
+        "domain": "testing",
+        "observed_at": "2026-09-21T12:00:00Z",
+        "shift_warning": false,
+        "source_refs": [
+          "illustrative-live-history"
+        ],
+        "known_bad_probe_trials": 4,
+        "known_bad_probe_breaches": 0
+      }
+    },
+    {
+      "id": "illustrative-probe-only-verifier",
+      "family": "family-b",
+      "provider_family": null,
+      "available": true,
+      "supported_validator_ids": [
+        "independent-review",
+        "result-manifest-schema"
+      ],
+      "review_units": 0.8,
+      "queue_load": 0.0,
+      "independence": {
+        "independent_from_worker": true,
+        "shared_model_family": false,
+        "shared_runtime": false
+      },
+      "reliability": {
+        "basis": "known_bad_probes",
+        "alpha": 101,
+        "beta": 1,
+        "sample_count": 100,
+        "domain": "testing",
+        "observed_at": "2026-09-22T10:00:00Z",
+        "shift_warning": false,
+        "source_refs": [
+          "illustrative-probe-history"
+        ],
+        "known_bad_probe_trials": 100,
+        "known_bad_probe_breaches": 0
+      }
+    }
+  ],
+  "limitations": [
+    "Illustrative pool only; not real verifier performance evidence.",
+    "Family labels are not proof of statistical independence."
+  ]
+}
