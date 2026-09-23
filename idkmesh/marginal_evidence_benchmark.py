@@ -488,6 +488,22 @@ def _marginal_interval(row: dict[str, Any]) -> tuple[float, float] | None:
     section = uncertainty.get("effective_votes_delta")
     if not isinstance(section, dict):
         return None
+
+    expected = uncertainty.get("replicates")
+    used = section.get("replicates_used")
+    undefined = section.get("replicates_undefined")
+    if (
+        isinstance(expected, bool)
+        or not isinstance(expected, int)
+        or isinstance(used, bool)
+        or not isinstance(used, int)
+        or isinstance(undefined, bool)
+        or not isinstance(undefined, int)
+        or used != expected
+        or undefined != 0
+    ):
+        return None
+
     low = section.get("ci_low")
     high = section.get("ci_high")
     if not isinstance(low, (int, float)) or isinstance(low, bool):
