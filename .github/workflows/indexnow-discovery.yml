@@ -1,6 +1,17 @@
 name: IndexNow Discovery
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'docs/index.html'
+      - 'docs/topics/**'
+      - 'docs/sitemap.xml'
+      - 'docs/llms.txt'
+      - 'docs/_config.yml'
+      - 'tools/submit_indexnow.py'
+      - '.github/workflows/indexnow-discovery.yml'
   schedule:
     - cron: '17 4 * * *'
   workflow_dispatch:
