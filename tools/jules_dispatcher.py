@@ -18,6 +18,7 @@ import json
 import os
 import pathlib
 import sys
+from datetime import datetime, timezone
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -32,6 +33,10 @@ class DispatchError(RuntimeError):
     """Raised when the dispatcher cannot safely inspect or mutate state."""
 
 
+class GitHubRateLimitError(DispatchError):
+    """Transient GitHub API quota exhaustion; dispatch must defer safely."""
+
+
 class JulesAPIError(DispatchError):
     """Jules API failure, with an HTTP status when one was returned."""
 
@@ -44,8 +49,14 @@ def load_policy(path: pathlib.Path = DEFAULT_POLICY) -> dict[str, Any]:
     policy = json.loads(path.read_text(encoding="utf-8"))
     required = {
         "queue_label",
+        "automatic_queue_label",
+        "trusted_author_associations",
         "dispatch_label",
         "legacy_dispatch_labels",
+        "attention_label",
+        "attention_session_states",
+        "stale_session_minutes",
+        "stale_missing_session_minutes",
         "max_in_flight",
         "max_dispatch_per_sweep",
         "blocked_labels",
@@ -61,8 +72,25 @@ def load_policy(path: pathlib.Path = DEFAULT_POLICY) -> dict[str, Any]:
         raise DispatchError("max_in_flight must be at least 1")
     if int(policy["max_dispatch_per_sweep"]) < 1:
         raise DispatchError("max_dispatch_per_sweep must be at least 1")
+    if not isinstance(policy["trusted_author_associations"], list):
+        raise DispatchError("trusted_author_associations must be a list")
+    if not isinstance(policy["attention_session_states"], list):
+        raise DispatchError("attention_session_states must be a list")
+    if not isinstance(policy["stale_session_minutes"], dict):
+        raise DispatchError("stale_session_minutes must be an object")
+    for state, minutes in policy["stale_session_minutes"].items():
+        if isinstance(minutes, bool) or not isinstance(minutes, int) or minutes < 1:
+            raise DispatchError(
+                f"stale_session_minutes.{state} must be an integer >= 1"
+            )
+    missing_minutes = policy["stale_missing_session_minutes"]
+    if (
+        isinstance(missing_minutes, bool)
+        or not isinstance(missing_minutes, int)
+        or missing_minutes < 1
+    ):
+        raise DispatchError("stale_missing_session_minutes must be an integer >= 1")
     return policy
-
 
 def label_names(issue: dict[str, Any]) -> set[str]:
     return {
