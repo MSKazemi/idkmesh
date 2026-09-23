@@ -1,5 +1,6 @@
 import unittest
 
+from idkmesh.connector_errors import ConnectorError
 from idkmesh.github_candidate_reader import GitHubPullRequestCandidateReader
 from idkmesh.jules_candidate_binding import JulesCandidateBindingService
 from idkmesh.jules_candidates import JulesCandidateDiscoveryService
@@ -222,7 +223,7 @@ class JulesOfflineLifecycleIntegrationTests(unittest.TestCase):
         self.assertEqual(observation.run_state, "waiting_for_agent")
 
         with self.assertRaisesRegex(
-            Exception,
+            ConnectorError,
             "completed Session",
         ):
             JulesCandidateDiscoveryService(
