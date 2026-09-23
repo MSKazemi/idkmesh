@@ -1222,6 +1222,11 @@
     <priority>0.3</priority>
   </url>
   <url>
+    <loc>https://mskazemi.com/idkmesh/conversations/2026-09-23-heldout-marginal-benchmark-implementation.html</loc>
+    <lastmod>2026-09-23</lastmod>
+    <priority>0.3</priority>
+  </url>
+  <url>
     <loc>https://mskazemi.com/idkmesh/conversations/2026-09-23-evidence-centric-innovation-and-marginal-verifier-implementation.html</loc>
     <lastmod>2026-09-23</lastmod>
     <priority>0.3</priority>
@@ -1482,7 +1487,7 @@
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mskazemi.com/idkmesh/operations/WEBMASTER_TOOLS_MEASUREMENT_RUNBOOK.html</loc>
+    <loc>https://mskazemi.com/idkmesh/operations/PYPI_RELEASE_RUNBOOK.html</loc>
     <lastmod>2026-09-23</lastmod>
     <priority>0.5</priority>
   </url>
@@ -1854,6 +1859,11 @@
   <url>
     <loc>https://mskazemi.com/idkmesh/specifications/IDKGRAPH_REPOSITORY_MAPPING_V0_1.html</loc>
     <lastmod>2026-08-28</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://mskazemi.com/idkmesh/specifications/MARGINAL_EVIDENCE_BENCHMARK_V0_1.html</loc>
+    <lastmod>2026-09-23</lastmod>
     <priority>0.8</priority>
   </url>
   <url>

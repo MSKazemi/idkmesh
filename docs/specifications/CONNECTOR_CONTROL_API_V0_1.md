@@ -629,3 +629,32 @@ Connector API
 ```
 
 A change to this control API must not silently change the meaning of those canonical objects.
+
+## Offline Jules lifecycle conformance
+
+The connector implementation has a deterministic offline integration fixture in `tests/test_jules_candidate_pipeline.py`. It composes the real C2 service boundaries with fake transports/SCM observations:
+
+```text
+trusted ScmRevisionBinding
+ -> Jules Source validation
+ -> Session creation (requirePlanApproval=true)
+ -> Session observation
+ -> COMPLETED => worker_completed
+ -> JulesPullRequestHint
+ -> trusted GitHub exact-head resolution
+ -> CandidateReference
+```
+
+The fixture is intentionally **not** live-provider acceptance. It performs no network access, uses no API key, creates no external Jules Session, and opens no PR.
+
+It proves the following preconditions before C2-G may use credentials:
+
+- the authorized repository/branch/source binding survives Session creation;
+- provider completion stops at `worker_completed`;
+- a completed Session with no PR output does not invent a candidate;
+- a non-completed Session cannot enter final candidate discovery;
+- Jules contributes no head SHA;
+- the exact candidate head is observed only through the shared GitHub SCM reader;
+- the final candidate identity contains no verification, acceptance, merge, or integration authority.
+
+C2-G remains a separate live low-risk smoke gate. Passing the offline fixture must never be reported as evidence that a real Jules credential, Source, remote sandbox, candidate PR, or live verification path is healthy.
