@@ -113,6 +113,27 @@ def available_dispatch_capacity(
     )
 
 
+def ci_backpressure_reason(api: GitHubAPI, policy: dict[str, Any]) -> str | None:
+    """Return a concise reason when repository Actions backlog blocks new work."""
+    config = policy["ci_backpressure"]
+    if not bool(config["enabled"]):
+        return None
+
+    queued = api.count_workflow_runs("queued")
+    in_progress = api.count_workflow_runs("in_progress")
+    max_queued = int(config["max_queued_runs"])
+    max_in_progress = int(config["max_in_progress_runs"])
+
+    blockers: list[str] = []
+    if queued > max_queued:
+        blockers.append(f"queued={queued}>{max_queued}")
+    if in_progress > max_in_progress:
+        blockers.append(f"in_progress={in_progress}>{max_in_progress}")
+    if not blockers:
+        return None
+    return ", ".join(blockers)
+
+
 def is_provider_backpressure(exc: JulesAPIError) -> bool:
     """Return whether Jules clearly rejected creation because a precondition/quota is full."""
     return (
@@ -137,6 +158,7 @@ def load_policy(path: pathlib.Path = DEFAULT_POLICY) -> dict[str, Any]:
         "session_scan_max_pages",
         "max_in_flight",
         "provider_concurrency",
+        "ci_backpressure",
         "max_dispatch_per_sweep",
         "blocked_labels",
         "priority_weights",
@@ -185,6 +207,23 @@ def load_policy(path: pathlib.Path = DEFAULT_POLICY) -> dict[str, Any]:
         raise DispatchError(
             "max_dispatch_per_sweep cannot exceed the effective in-flight limit"
         )
+    ci_backpressure = policy["ci_backpressure"]
+    if not isinstance(ci_backpressure, dict):
+        raise DispatchError("ci_backpressure must be an object")
+    if not isinstance(ci_backpressure.get("enabled"), bool):
+        raise DispatchError("ci_backpressure.enabled must be a boolean")
+    for field in ("max_queued_runs", "max_in_progress_runs"):
+        value = ci_backpressure.get(field)
+        if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+            raise DispatchError(f"ci_backpressure.{field} must be an integer >= 0")
+    if not str(ci_backpressure.get("source") or "").startswith(
+        "https://docs.github.com/en/rest/actions/workflow-runs"
+    ):
+        raise DispatchError(
+            "ci_backpressure.source must cite the official GitHub workflow-runs API"
+        )
+    if not str(ci_backpressure.get("checked_at") or "").strip():
+        raise DispatchError("ci_backpressure.checked_at must be non-empty")
     if not isinstance(policy["trusted_author_associations"], list):
         raise DispatchError("trusted_author_associations must be a list")
     if not isinstance(policy["attention_session_states"], list):
@@ -436,6 +475,24 @@ class GitHubAPI:
         if label:
             params["labels"] = label
         return self.paginate(f"{self.repo_path}/issues", params)
+
+    def count_workflow_runs(self, status: str) -> int:
+        """Return repository-wide Actions run count for one GitHub status."""
+        encoded = urllib.parse.urlencode({"status": status, "per_page": 1})
+        payload = self.request(
+            "GET",
+            f"{self.repo_path}/actions/runs?{encoded}",
+        )
+        if not isinstance(payload, dict):
+            raise DispatchError(
+                f"expected object response while reading Actions status {status!r}"
+            )
+        total = payload.get("total_count")
+        if isinstance(total, bool) or not isinstance(total, int) or total < 0:
+            raise DispatchError(
+                f"invalid Actions total_count for status {status!r}: {total!r}"
+            )
+        return total
 
     def add_labels(self, issue_number: int, labels: list[str]) -> None:
         self.request(
@@ -821,6 +878,11 @@ def dispatch(
 ) -> list[int]:
     """Fill available Jules capacity from trusted manual and automatic queues."""
     dispatch_label = str(policy["dispatch_label"])
+
+    backpressure = ci_backpressure_reason(api, policy)
+    if backpressure is not None:
+        print(f"jules dispatcher: CI backpressure active ({backpressure})")
+        return []
 
     # One repository issue snapshot feeds capacity accounting and queue
     # selection. This materially reduces GitHub API pressure.
