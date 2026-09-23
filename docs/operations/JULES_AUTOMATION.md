@@ -108,9 +108,12 @@ so this is not the primary path.
 
 The Issue Model Router also has a slower backfill schedule for reclassification.
 A push to the Jules/router control-plane files on `main` triggers one immediate
-full open-issue reclassification and then one reusable dispatcher call with label
-bootstrapping enabled, so a repaired or changed contract does not wait for the
-next six-hour backfill window and does not start a duplicate direct dispatcher.
+full open-issue reclassification and then one reusable dispatcher call with
+`bootstrap_labels: true` and `fill_capacity: true`. Reusable workflows inherit
+the caller's event context, so capacity-fill intent is passed as a typed input
+instead of inferred from `github.event_name`. This lets a repaired or changed
+contract refill capacity immediately without waiting for the next six-hour
+backfill window or starting a duplicate direct dispatcher.
 Manual `workflow_dispatch` remains available for operators, including an
 optional `issue_number` and an explicit `bootstrap_labels` control.
 
@@ -121,9 +124,10 @@ The machine-readable policy is
 
 Current defaults:
 
-- repository review/backpressure cap (`max_in_flight`): **4** open active Jules issues;
+- repository review/backpressure cap (`max_in_flight`): **4** open Jules dispatch reservations;
 - Jules provider concurrency cap (`provider_concurrency.max_concurrent_tasks`): **3** concurrent tasks for the configured `Jules` plan, checked 2026-09-23 against the official limits page;
-- effective automatic concurrency: **3**, the stricter minimum of the repository and provider caps;
+- provider occupancy: account-wide sessions whose state is not terminal; current terminal states are `COMPLETED` and `FAILED`, checked against the official Jules API type reference;
+- new dispatch capacity: the smaller of remaining repository slots and remaining provider slots, not the smaller of the two raw limits minus one shared counter;
 - maximum new dispatches per recovery sweep: **2**;
 - event-driven dispatch starts at most **1** routed/approved issue immediately;
 - one GitHub open-issue snapshot is reused for capacity and candidate selection;
@@ -135,22 +139,31 @@ Current defaults:
 
 `max_in_flight` is a repository review/backpressure limit, while
 `provider_concurrency.max_concurrent_tasks` records the current provider/account
-ceiling separately. Dispatch always uses the lower value. The provider limit is
-configuration with a source URL and `checked_at` date because Jules plans can
-change; after a plan upgrade, update that policy in a reviewed PR rather than
-changing dispatcher code.
+ceiling separately. They are budgeted independently. Repository availability is
+`max_in_flight - open dispatch reservations`; provider availability is
+`max_concurrent_tasks - non-terminal account sessions`; dispatch uses the
+smaller remaining budget. The provider session list is account-wide, so tasks
+started outside IDKMesh also consume the provider budget.
 
-A `COMPLETED` Jules session continues to consume its issue slot until the
-issue closes, so generation cannot run far ahead of PR review. By contrast, a
-failed/stalled session is moved to `agent:jules-needs-attention`, its
-`agent:jules-dispatched` reservation is removed, and the freed slot may be
-used by other safe work.
+A `COMPLETED` Jules session continues to consume its **repository review**
+reservation until the issue closes, so generation cannot run arbitrarily ahead
+of review, but it no longer consumes a **provider concurrency** slot. `FAILED`
+is also terminal for provider-capacity accounting; reconciliation separately
+moves failed/stalled repository work to `agent:jules-needs-attention` and
+removes its dispatch reservation. All other current Jules states—including
+queued, planning, in-progress, feedback/approval waits, paused, and unspecified—
+are conservatively treated as provider-active.
 
-Provider capacity is also explicit policy, not an inferred UI number. The current
+The provider limit and terminal-state model are dated configuration with official
+source URLs because Jules plans/API states can change. After a plan/API change,
+update that policy in a reviewed PR rather than changing dispatcher code.
+
+Provider capacity is explicit policy, not an inferred UI number. The current
 entry cites <https://jules.google/docs/usage-limits> and records plan `Jules`,
-3 concurrent tasks, checked 2026-09-23. The dispatcher still handles provider
-precondition/quota rejection because the account may have tasks outside this
-repository or provider limits may change before policy is refreshed.
+3 concurrent tasks, checked 2026-09-23. Terminal session states cite
+<https://jules.google/docs/api/reference/types/>. The dispatcher still handles
+provider precondition/quota rejection because the account may have tasks outside
+this repository or provider limits may change before policy is refreshed.
 
 Provider health thresholds are policy, not hidden constants:
 
@@ -360,8 +373,9 @@ of a latent runtime outage.
 
 The router is the **single owner** of control-plane push recovery. A change to the
 router/dispatcher/policy surfaces causes one router backfill, which calls the
-reusable dispatcher with `bootstrap_labels: true`. The dispatcher deliberately
-has no independent `push` trigger, avoiding duplicate provider/API sweeps and
+reusable dispatcher with `bootstrap_labels: true` and `fill_capacity: true`.
+The contract checker requires both typed inputs. The dispatcher deliberately has
+no independent `push` trigger, avoiding duplicate provider/API sweeps and
 preserving GitHub API quota.
 
 

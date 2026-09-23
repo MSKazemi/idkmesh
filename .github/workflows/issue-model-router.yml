@@ -204,6 +204,8 @@ jobs:
     needs: route
     if: github.event_name == 'workflow_dispatch' && inputs.backfill_open_issues && needs.route.outputs.has_jules_candidate == 'true'
     uses: ./.github/workflows/jules-dispatch.yml
+    with:
+      fill_capacity: true
     secrets: inherit
 
   dispatch-after-control-plane-change:
@@ -212,4 +214,5 @@ jobs:
     uses: ./.github/workflows/jules-dispatch.yml
     with:
       bootstrap_labels: true
+      fill_capacity: true
     secrets: inherit

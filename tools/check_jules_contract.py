@@ -153,6 +153,30 @@ def main() -> int:
         isinstance(provider, dict) and bool(str(provider.get("checked_at") or "").strip()),
         "provider concurrency must record checked_at",
     )
+    terminal_states = (
+        provider.get("terminal_session_states", [])
+        if isinstance(provider, dict)
+        else []
+    )
+    normalized_terminal = {
+        str(value).upper()
+        for value in terminal_states
+        if str(value).strip()
+    }
+    _require(
+        errors,
+        isinstance(terminal_states, list)
+        and {"COMPLETED", "FAILED"}.issubset(normalized_terminal),
+        "provider terminal_session_states must include COMPLETED and FAILED",
+    )
+    _require(
+        errors,
+        isinstance(provider, dict)
+        and str(provider.get("session_state_source") or "").startswith(
+            "https://jules.google/docs/api/reference/"
+        ),
+        "provider terminal states must cite the official Jules API reference",
+    )
     _require(
         errors,
         max_per_sweep <= effective_cap,
@@ -204,6 +228,11 @@ def main() -> int:
             "bootstrap_labels:" in block,
             f"{name} must declare bootstrap_labels",
         )
+    _require(
+        errors,
+        "fill_capacity:" in workflow_call,
+        "workflow_call must declare typed fill_capacity intent",
+    )
 
     _require(
         errors,
@@ -279,6 +308,11 @@ def main() -> int:
     )
     _require(
         errors,
+        "fill_capacity: true" in router_workflow,
+        "router recovery/backfill calls must explicitly request capacity fill",
+    )
+    _require(
+        errors,
         "\n  push:\n" not in dispatcher_workflow,
         "dispatcher must not duplicate router-owned control-plane push recovery",
     )
@@ -287,6 +321,11 @@ def main() -> int:
         errors,
         "inputs.issue_number" in dispatcher_workflow,
         "dispatcher must consume the typed issue_number input",
+    )
+    _require(
+        errors,
+        "inputs.fill_capacity" in dispatcher_workflow,
+        "dispatcher must consume typed reusable capacity-fill intent",
     )
     _require(
         errors,
@@ -328,6 +367,26 @@ def main() -> int:
         errors,
         '"requirePlanApproval": False' in dispatcher_code,
         "dispatcher must keep unattended bounded tasks free of a provider plan gate",
+    )
+    _require(
+        errors,
+        "provider_active_session_count" in dispatcher_code,
+        "dispatcher must account provider concurrency from session state",
+    )
+    _require(
+        errors,
+        "available_dispatch_capacity" in dispatcher_code,
+        "dispatcher must compute independent repository/provider slot budgets",
+    )
+    _require(
+        errors,
+        "repository review capacity full" in dispatcher_code,
+        "dispatcher must report repository review capacity separately",
+    )
+    _require(
+        errors,
+        "non-terminal account sessions" in dispatcher_code,
+        "dispatcher must report provider-active session capacity separately",
     )
     _require(
         errors,
