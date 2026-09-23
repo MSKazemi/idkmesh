@@ -103,14 +103,33 @@ class InputContractTests(unittest.TestCase):
             make_matrix(),
             current_verifier_ids=["v2", "v1"],
         )
-        # Current id order is caller-owned; candidate row order is source-owned.
+        # Both current and candidate ids are canonicalized to source order so
+        # equivalent CLI argument orderings have identical provenance.
         self.assertEqual(
-            report["analysis"]["current_verifier_ids"], ["v2", "v1"]
+            report["analysis"]["current_verifier_ids"], ["v1", "v2"]
         )
         self.assertEqual(
             [row["id"] for row in report["candidates"]],
             ["v3", "v4", "v5"],
         )
+
+    def test_current_panel_argument_order_does_not_change_analysis_digest(self):
+        data = make_matrix()
+        first = marginal_evidence.analyze(
+            data,
+            current_verifier_ids=["v1", "v2"],
+            candidate_verifier_ids=["v3"],
+        )
+        second = marginal_evidence.analyze(
+            data,
+            current_verifier_ids=["v2", "v1"],
+            candidate_verifier_ids=["v3"],
+        )
+        self.assertEqual(
+            first["provenance"]["analysis_digest_sha256"],
+            second["provenance"]["analysis_digest_sha256"],
+        )
+        self.assertEqual(first["current_panel"], second["current_panel"])
 
     def test_no_remaining_candidate_is_refused(self):
         data = make_matrix(error_sets={"v1": {0, 1}})
