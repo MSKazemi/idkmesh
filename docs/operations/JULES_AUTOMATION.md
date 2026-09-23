@@ -9,11 +9,7 @@ human-governance boundaries.
 
 **Single-dispatcher invariant:** the REST-API path described here is the only project-operated automatic Jules dispatcher. Do not run a second API dispatcher, another queue, or another workflow that creates Jules sessions for the same repository at the same time. The legacy native GitHub App `jules` label is retained only as an explicit manual fallback and is never emitted by the automatic dispatcher.
 
-A maintainer or trusted triager marks a reviewed issue `agent-ready`; GitHub
-Actions resolves the connected repository through the official Jules Sources
-API, creates one Jules session with `AUTO_CREATE_PR`, and records
-`agent:jules-dispatched`; Jules opens a pull request; normal IDKMesh CI and
-review decide whether the candidate can be integrated.
+The deterministic issue router automatically marks low-risk bounded T1/T2 work `agent:jules-eligible`; maintainers may also explicitly approve a task with `agent-ready`. GitHub Actions resolves the connected repository through the official Jules Sources API, creates one Jules session with `AUTO_CREATE_PR`, and records `agent:jules-dispatched`; Jules opens a pull request; normal IDKMesh CI and review decide whether the candidate can be integrated.
 
 ```mermaid
 flowchart LR
@@ -70,7 +66,7 @@ The official authentication guide is
 
 There are two paths.
 
-**Fast path — event driven.** When `agent-ready` is applied, the
+**Fast path — event driven.** When a new/edited/reopened issue is routed to `agent:jules-eligible`, or when `agent-ready` is applied, the
 `.github/workflows/jules-dispatch.yml` workflow runs immediately. If a slot is
 available and no veto label exists, it resolves the Jules source, checks for an
 existing deterministic session title, reserves the issue with
@@ -84,7 +80,7 @@ remaining `agent-ready` queue. Development therefore does not normally wait
 for the recovery schedule after a completed task.
 
 **Recovery path — every 30 minutes.** At minutes 17 and 47 UTC, the same
-workflow rescans the queue. This catches an issue that was left waiting because
+workflow rescans the queue. In addition, the issue router backfills all open issues hourly at minute 7 and explicitly wakes the dispatcher after routing. This catches an issue that was left waiting because
 capacity was full or an earlier workflow run was interrupted. GitHub Actions
 scheduled runs are best-effort and can be delayed by the platform, so the
 scheduled sweep is a reliability mechanism, not the primary dispatch mechanism.
@@ -126,7 +122,8 @@ provider work.
 
 | Label | Meaning |
 | --- | --- |
-| `agent-ready` | a trusted triager has reviewed the issue as bounded and safe for a coding agent |
+| `agent-ready` | explicit maintainer approval for bounded coding-agent execution |
+| `agent:jules-eligible` | deterministic low-risk T1/T2 route; enters the automatic Jules queue |
 | `agent:jules-dispatched` | automatic dispatcher reservation/status for an API-backed Jules session |
 | `jules` | legacy/manual native-App trigger; never added by automatic dispatch |
 
