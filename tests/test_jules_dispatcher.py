@@ -689,6 +689,8 @@ def test_workflow_and_router_share_the_same_dispatch_contract():
     assert "agent:jules-eligible" in workflow
     assert "--reconcile" in workflow
     assert "inputs.bootstrap_labels" in workflow
+    assert "fill_capacity:" in workflow
+    assert "inputs.fill_capacity" in workflow
     assert "uses: ./.github/workflows/jules-dispatch.yml" in router
     assert "issue_number: ${{ needs.route.outputs.routed_issue_number }}" in router
     assert "secrets: inherit" in router
@@ -700,6 +702,7 @@ def test_workflow_and_router_share_the_same_dispatch_contract():
     assert "python tools/check_jules_contract.py" in workflow
     assert "dispatch-after-control-plane-change:" in router
     assert "bootstrap_labels: true" in router
+    assert "fill_capacity: true" in router
     assert "\n  push:\n" not in workflow
     assert "contents: read" in workflow
     assert "issues: write" in workflow
