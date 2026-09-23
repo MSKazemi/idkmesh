@@ -1,6 +1,7 @@
 """Normalize Jules Session state and immutable Activities for C2-D (#575).
 
-Provider completion is candidate readiness only. This module never emits
+Provider completion is worker completion only. Candidate readiness requires a
+separate candidate-discovery/normalization boundary. This module never emits
 verification, acceptance, or integration authority.
 
 The observation layer intentionally retains structural metadata and event kinds,
@@ -28,7 +29,7 @@ _SESSION_STATE_MAP: dict[str, tuple[str, str | None]] = {
     "PAUSED": ("waiting_for_agent", "inspect_paused_session"),
     "FAILED": ("failed", None),
     # Provider completion is never verification or integration.
-    "COMPLETED": ("candidate_ready", None),
+    "COMPLETED": ("worker_completed", None),
 }
 
 _KNOWN_ACTIVITY_FIELDS = (
