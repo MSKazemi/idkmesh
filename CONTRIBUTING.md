@@ -167,8 +167,8 @@ Markdown/identity report, not the combined gate. See
 [the stable PR gate](.github/workflows/pr-gate.yml) for the CI invocation.
 
 **Do not verify your work with `python -m unittest discover`.** It silently
-under-collects — `unittest` only finds `TestCase` subclasses, so the 224
-module-level `test_*` functions spread across 23 files in `tests/` are
+under-collects — `unittest` only finds `TestCase` subclasses, so the 232
+module-level `test_*` functions spread across 24 files in `tests/` are
 invisible to it. That is roughly a tenth of the suite, skipped while the run
 still prints `OK`, with no indication anything was missed.
 `tests/test_documented_test_counts.py` re-measures both figures and the gap
