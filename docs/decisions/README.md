@@ -55,6 +55,12 @@ some unrelated page but missing from its own index stays invisible.
   `experiments/local_verifier.py` fails with an actionable message when the
   extra is missing. *(2026-09-21.)*
 
+- [ADR-0013 — One API Architecture, Separate Authority Boundaries](ADR-0013-one-api-architecture-separate-authority.md)
+  — adopts one canonical domain/application-service API architecture, `/api/v1`
+  product namespace, separate local/network security profiles, and an explicit
+  boundary between human decision recording and integration execution.
+  *(2026-09-23.)*
+
 ## Proposed and experimental
 
 These record a default hypothesis the project builds on, not a settled contract.
