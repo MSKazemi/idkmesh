@@ -336,6 +336,11 @@ def main() -> int:
     )
     _require(
         errors,
+        "--dispatch-policy config/jules-dispatch.json" in router_workflow,
+        "router classifier must consume the dispatcher policy for hard vetoes",
+    )
+    _require(
+        errors,
         "python tools/check_jules_contract.py" in pr_gate,
         "required PR Gate must execute the Jules contract guard",
     )
@@ -437,6 +442,12 @@ def main() -> int:
         errors,
         "_jules_queue_label(policy)" in router_code,
         "router code must use the routing-policy Jules queue label",
+    )
+    _require(
+        errors,
+        "_jules_veto_hits" in router_code
+        and 'dispatch_policy.get("blocked_labels")' in router_code,
+        "router code must suppress Jules eligibility from dispatcher blocked_labels",
     )
     _require(
         errors,

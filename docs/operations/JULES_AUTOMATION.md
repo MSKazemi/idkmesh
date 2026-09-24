@@ -242,9 +242,15 @@ Any of these prevents automatic dispatch even if a queue label is present:
 - `needs-decomposition`;
 - `research-evidence`;
 - `security-sensitive`;
-- `agent:jules-needs-attention`.
+- `agent:jules-needs-attention`;
+- `agent:jules-completed`.
 
-The dispatcher fails closed on these labels.
+The router reads this hard-veto set from `config/jules-dispatch.json`. When an
+issue already carries any veto, routing still emits the independent model and
+authority labels but suppresses/removes `agent:jules-eligible`. If a maintainer
+later removes the veto and the issue still qualifies, the next normal router
+event/backfill may restore the automatic queue label. The dispatcher repeats
+the same veto check and therefore remains the final execution boundary.
 
 ## Scheduling labels
 

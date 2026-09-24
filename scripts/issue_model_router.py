@@ -96,6 +96,24 @@ def _jules_queue_label(policy: dict[str, Any]) -> str:
     return str(value)
 
 
+def _jules_veto_hits(
+    issue_labels: Iterable[str],
+    dispatch_policy: dict[str, Any] | None,
+) -> list[str]:
+    """Return dispatcher hard-veto labels already present on one issue."""
+    if dispatch_policy is None:
+        return []
+    blocked = dispatch_policy.get("blocked_labels")
+    if not isinstance(blocked, list):
+        raise ValueError("dispatch policy blocked_labels must be a list")
+    current = {str(label).casefold() for label in issue_labels}
+    return sorted(
+        str(label)
+        for label in blocked
+        if str(label).casefold() in current
+    )
+
+
 def _recommended_lane(tier: str | None, authority: str, text: str) -> str:
     if authority == "human_required":
         return "human"
@@ -118,6 +136,7 @@ def classify_issue(
     issue: dict[str, Any],
     policy: dict[str, Any],
     overrides: dict[str, Any] | None = None,
+    dispatch_policy: dict[str, Any] | None = None,
 ) -> Route:
     number_raw = issue.get("number", issue.get("issue_number"))
     number = int(number_raw) if number_raw not in (None, "") else None
@@ -131,6 +150,7 @@ def classify_issue(
         elif isinstance(label, dict) and label.get("name"):
             labels.append(str(label["name"]))
     text = f"{title}\n{body}\n{' '.join(labels)}"
+    jules_veto_hits = _jules_veto_hits(labels, dispatch_policy)
 
     override = None
     if overrides and number is not None:
@@ -142,7 +162,12 @@ def classify_issue(
         route_labels = [AUTHORITY_LABELS[authority]]
         route_labels.append(TIER_LABELS[tier] if tier else TIER_LABELS["NONE"])
         if override.get("jules_eligible"):
-            route_labels.append(_jules_queue_label(policy))
+            if jules_veto_hits:
+                reasons.append(
+                    "Jules hard veto labels: " + ", ".join(jules_veto_hits)
+                )
+            else:
+                route_labels.append(_jules_queue_label(policy))
         lane = override.get("recommended_lane") or _recommended_lane(tier, authority, text)
         return Route(number, tier, authority, 0, "high", reasons, lane, route_labels, "override")
 
@@ -252,7 +277,12 @@ def classify_issue(
     lane = _recommended_lane(tier, authority, text)
     route_labels = [TIER_LABELS[tier], AUTHORITY_LABELS[authority]]
     if tier in {"T1", "T2"} and lane == "jules-or-equivalent":
-        route_labels.append(_jules_queue_label(policy))
+        if jules_veto_hits:
+            reasons.append(
+                "Jules hard veto labels: " + ", ".join(jules_veto_hits)
+            )
+        else:
+            route_labels.append(_jules_queue_label(policy))
 
     return Route(number, tier, authority, score, confidence, reasons or ["default bounded issue"], lane, route_labels, "rules")
 
@@ -290,6 +320,11 @@ def _route_dict(route: Route, issue: dict[str, Any]) -> dict[str, Any]:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--policy", default="config/llm-routing-policy.json")
+    parser.add_argument(
+        "--dispatch-policy",
+        default="config/jules-dispatch.json",
+        help="Jules dispatcher policy used for hard-veto queue suppression",
+    )
     parser.add_argument("--overrides", default="config/issue-model-routing-overrides.json")
     source = parser.add_mutually_exclusive_group(required=True)
     source.add_argument("--event", help="GitHub event JSON containing an issue")
@@ -298,16 +333,17 @@ def main() -> int:
     args = parser.parse_args()
 
     policy = load_json(args.policy)
+    dispatch_policy = load_json(args.dispatch_policy)
     overrides = load_json(args.overrides) if Path(args.overrides).exists() else None
 
     if args.event:
         issue = issue_from_event(args.event)
-        route = classify_issue(issue, policy, overrides)
+        route = classify_issue(issue, policy, overrides, dispatch_policy)
         print(json.dumps(_route_dict(route, issue), sort_keys=True))
         return 0
     if args.issue_json:
         issue = load_json(args.issue_json)
-        route = classify_issue(issue, policy, overrides)
+        route = classify_issue(issue, policy, overrides, dispatch_policy)
         print(json.dumps(_route_dict(route, issue), sort_keys=True))
         return 0
 
@@ -315,7 +351,10 @@ def main() -> int:
     if not isinstance(issues, list):
         raise SystemExit("--issues must point to a JSON array")
     routes = [
-        _route_dict(classify_issue(issue, policy, overrides), issue)
+        _route_dict(
+            classify_issue(issue, policy, overrides, dispatch_policy),
+            issue,
+        )
         for issue in issues
     ]
     print(json.dumps({"routes": routes}, sort_keys=True))

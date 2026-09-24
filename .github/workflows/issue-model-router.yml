@@ -107,6 +107,7 @@ jobs:
         run: |
           python scripts/issue_model_router.py \
             --policy config/llm-routing-policy.json \
+            --dispatch-policy config/jules-dispatch.json \
             --overrides config/issue-model-routing-overrides.json \
             --event "$GITHUB_EVENT_PATH" \
             > /tmp/issue-model-routes.json
@@ -120,6 +121,7 @@ jobs:
           gh issue list --state open --limit 500 --json number,title,body,labels > /tmp/open-issues.json
           python scripts/issue_model_router.py \
             --policy config/llm-routing-policy.json \
+            --dispatch-policy config/jules-dispatch.json \
             --overrides config/issue-model-routing-overrides.json \
             --issues /tmp/open-issues.json \
             > /tmp/issue-model-routes.json
