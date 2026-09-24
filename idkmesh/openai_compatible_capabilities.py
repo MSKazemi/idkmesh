@@ -241,7 +241,23 @@ class OpenAICompatibleModelDriver:
         return evidence
 
     def declared_capabilities(self, config: ConnectorConfig) -> DriverCapabilities:
-        return self.capability_evidence(config).to_driver_capabilities()
+        evidence = self.capability_evidence(config)
+        tiers = config.capability_tiers or evidence.capability_tiers
+        task_classes = config.task_classes or evidence.task_classes
+        tools = config.tools or evidence.routing_tools
+        candidate_types = config.candidate_types or frozenset({"text"})
+        max_risk = min(
+            (config.max_risk, evidence.max_risk),
+            key=RISK_ORDER.__getitem__,
+        )
+        return DriverCapabilities(
+            capability_tiers=tiers,
+            task_classes=task_classes,
+            tools=tools,
+            candidate_types=candidate_types,
+            max_risk=max_risk,
+            external_processing=evidence.external_processing,
+        )
 
     def _validate_config_identity(self, config: ConnectorConfig) -> None:
         if config.kind != self.kind or config.driver != self.driver_id:
