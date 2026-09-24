@@ -1,0 +1,7 @@
+{
+  "schema_version": "0.1",
+  "type": "artifact_bundle",
+  "locator": "file:///tmp/idkmesh-c6-equivalence/candidate.patch",
+  "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "media_type": "text/x-diff"
+}
