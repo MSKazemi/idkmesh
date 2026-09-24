@@ -160,6 +160,51 @@ Retain the original export outside the repository if it contains account/private
 metadata; commit only the minimum normalized observations needed for the public
 evidence ledger.
 
+### Offline AI Performance CSV normalization
+
+Because the authenticated Bing Webmaster REST contract is not fully available
+from the public documentation surface, IDKMesh does not guess API endpoints or
+payloads. Owner-downloaded AI Performance CSV exports can instead be normalized
+offline with:
+
+```bash
+python scripts/bing_ai_performance_import.py \
+  --kind grounding \
+  --input /path/to/bing-grounding.csv \
+  --window-start 2026-08-25 \
+  --window-end 2026-09-23 \
+  --query-column "Grounding Query" \
+  --citations-column "Citations" \
+  --output results/visibility/bing-ai-grounding.json
+```
+
+The export headers are supplied explicitly through CLI arguments. The importer
+does not assume Bing's CSV column names.
+
+Supported export shapes:
+
+- `grounding`: grouped grounding phrase + citation count;
+- `pages`: IDKMesh page URL + citation count;
+- `mapping`: grounding phrase + IDKMesh page URL + citation count;
+- `timeline`: date + citation count.
+
+The importer:
+
+- uses only the Python standard library;
+- fingerprints the source CSV with SHA-256;
+- rejects page rows outside `https://mskazemi.com/idkmesh/`;
+- validates the declared date window;
+- maps a grounding phrase to the canonical 100-query portfolio only when the
+  normalized phrase is an **exact** match;
+- does not infer semantic equivalence, ranking, traffic, endorsement, or
+  causation.
+
+Keep the raw account export outside the public repository when it contains
+private/account metadata. A normalized output may be retained as evidence only
+after reviewing that it contains the minimum public aggregate information
+needed for the observation.
+
+
 ## Recording evidence in IDKMesh
 
 Every committed search/answer-engine observation must conform to:
