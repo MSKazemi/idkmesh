@@ -1,9 +1,11 @@
 from pathlib import Path
+import stat
 import tempfile
 import unittest
 from unittest.mock import patch
 
 from idkmesh.agent_presets import AgentPreset
+from idkmesh.local_agent_runner import ProcessLimits
 from idkmesh.local_agent_sandbox import (
     BubblewrapSandbox,
     SandboxUnavailableError,
@@ -178,6 +180,93 @@ class LocalAgentSandboxTests(unittest.TestCase):
                 workspace=self.workspace,
                 env={"SAFE": "bad\x00value"},
             )
+
+    def _stub_bwrap(self, body):
+        """Install a stand-in for bwrap so run() can be observed on any host."""
+        stub = Path(self.temp.name) / "stub-bwrap"
+        stub.write_text("#!/bin/sh\n" + body, encoding="utf-8")
+        stub.chmod(stub.stat().st_mode | stat.S_IXUSR)
+        return stub
+
+    def test_run_actually_executes_the_bubblewrap_command(self):
+        """run() must go through build_argv, never fall back to a raw process."""
+        marker = Path(self.temp.name) / "argv.txt"
+        stub = self._stub_bwrap(
+            f'printf "%s\\n" "$@" > {marker}\n'
+            'printf "ENV:%s\\n" "$(env | sort | tr "\\n" " ")"\n'
+        )
+        sandbox = BubblewrapSandbox(str(stub))
+        result = sandbox.run(
+            _preset(env_allowlist=("LANG",)),
+            workspace=self.workspace,
+            env={"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8"},
+            limits=ProcessLimits(timeout_seconds=30),
+            stdin_text="bounded objective",
+        )
+        self.assertEqual(result.returncode, 0)
+        self.assertFalse(result.timed_out)
+        self.assertEqual(result.argv[0], str(stub))
+
+        observed = marker.read_text(encoding="utf-8").splitlines()
+        # The sandbox flags reached the executable, not merely the argv tuple.
+        for required in (
+            "--die-with-parent",
+            "--new-session",
+            "--unshare-all",
+            "--unshare-net",
+            "--cap-drop",
+            "--clearenv",
+        ):
+            self.assertIn(required, observed)
+        self.assertEqual(observed[-2:], ["--", "agent"])
+        self.assertIn("--bind", observed)
+        self.assertIn(str(self.workspace.resolve()), observed)
+        # The outer process inherits PATH only; the inner env is rebuilt by bwrap.
+        env_line = next(line for line in result.stdout.splitlines() if line.startswith("ENV:"))
+        self.assertNotIn("GITHUB_TOKEN=", env_line)
+        self.assertNotIn("SSH_AUTH_SOCK=", env_line)
+        self.assertNotIn("LANG=", env_line)
+
+    def test_run_starts_no_process_when_the_policy_cannot_be_enforced(self):
+        """Fail closed before the worker starts, never a raw-process fallback."""
+        marker = Path(self.temp.name) / "executed"
+        stub = self._stub_bwrap(f'touch {marker}\n')
+        sandbox = BubblewrapSandbox(str(stub))
+        for policy in ("model_only", "allowlisted"):
+            with self.subTest(policy=policy):
+                with self.assertRaises(SandboxUnavailableError):
+                    sandbox.run(
+                        _preset(network_policy=policy),
+                        workspace=self.workspace,
+                        env={"PATH": "/usr/bin"},
+                    )
+        with self.assertRaises(Exception):
+            sandbox.run(
+                _preset(),
+                workspace=self.workspace,
+                env={"PATH": "/usr/bin", "GITHUB_TOKEN": "secret"},
+            )
+        self.assertFalse(
+            marker.exists(),
+            "a rejected preset must not reach any execution primitive",
+        )
+
+    def test_failed_sandbox_setup_is_not_reported_as_a_successful_attempt(self):
+        """bwrap unable to build its namespaces must surface as a failure."""
+        stub = self._stub_bwrap(
+            'echo "bwrap: loopback: Failed RTM_NEWADDR: Operation not permitted" >&2\n'
+            "exit 1\n"
+        )
+        sandbox = BubblewrapSandbox(str(stub))
+        result = sandbox.run(
+            _preset(),
+            workspace=self.workspace,
+            env={"PATH": "/usr/bin"},
+            limits=ProcessLimits(timeout_seconds=30),
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("loopback", result.stderr)
+        self.assertEqual(result.stdout, "")
 
     def test_availability_requires_linux_and_bwrap(self):
         with patch(

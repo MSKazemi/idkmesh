@@ -15,6 +15,18 @@ The sandbox:
 - drops capabilities;
 - runs the maintainer-owned argv without a shell.
 
+What this backend does NOT enforce, and therefore does not yet discharge from
+the C4-D contract: CPU-seconds, address-space/RAM, writable-disk, and PID
+ceilings, and per-path writable-scope enforcement inside the workspace. The
+workspace is bound read-write as a whole. ``run`` bounds only wall time, stdin,
+and retained output, through ``ProcessLimits``.
+
+``admit`` reports how the command is *configured*, not a probe of the running
+host. ``available`` likewise only reports that Linux and a ``bwrap`` executable
+are present; bubblewrap can still be unable to establish the namespaces it is
+asked for (for example where unprivileged user namespaces are restricted), in
+which case ``bwrap`` exits non-zero and no worker process ever starts.
+
 This module does not weaken AgentPreset validation and does not grant candidate
 acceptance or merge authority.
 """
