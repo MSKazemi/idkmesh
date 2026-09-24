@@ -25,6 +25,8 @@ import sys
 import unittest
 from pathlib import Path
 
+import pytest
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT))
 
@@ -273,7 +275,15 @@ class RenderJsonTests(unittest.TestCase):
 
 
 class CliTests(unittest.TestCase):
-    """The packaged CLI surface, exercised as a subprocess like a user would."""
+    """The packaged CLI surface, exercised as a subprocess like a user would.
+
+    Each test spawns a fresh interpreter; four of them tipped the ``unit``
+    tier's fixed 90 CPU-second budget over the edge (measured: 90.4s), so
+    this class runs in ``integration``/``nightly`` instead, matching the
+    ``slow`` convention other CPU-heavy test modules already use.
+    """
+
+    pytestmark = pytest.mark.slow
 
     def run_cli(self, *args: str) -> subprocess.CompletedProcess:
         return subprocess.run(
