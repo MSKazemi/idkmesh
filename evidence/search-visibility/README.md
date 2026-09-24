@@ -2,7 +2,7 @@
 
 This directory stores **observations**, not marketing claims.
 
-The target map in `config/seo-topics-v1.json` contains 100 semantic search intents. This ledger records what is actually observed after deployment across Google, Bing, ChatGPT, Gemini, Claude, Perplexity, Copilot, Yahoo, and other surfaces.
+The target map in `config/seo-topics-v1.json` contains 100 semantic search intents. The balanced observation plan covers 16 named search/answer surfaces across Google, Microsoft, Yahoo, DuckDuckGo, Brave, Apple, Amazon, Meta, OpenAI, Google Gemini, Anthropic, Perplexity, xAI, Mistral, and You.com products.
 
 ## Files
 
@@ -30,13 +30,13 @@ Use `scripts/search_visibility_observation_plan.py` to avoid cherry-picking
 queries or engines.
 
 ```bash
-# 80 sentinel checks: ten cluster-head queries x eight primary surfaces
+# 160 sentinel checks: ten cluster-head queries x sixteen primary surfaces
 python scripts/search_visibility_observation_plan.py \
   --sample heads \
   --format csv \
   --output results/visibility/answer-engine-heads.csv
 
-# 800 checks: all 100 canonical intents x eight primary surfaces
+# 1,600 checks: all 100 canonical intents x sixteen primary surfaces
 python scripts/search_visibility_observation_plan.py \
   --sample full \
   --format csv \
@@ -51,11 +51,11 @@ only a deterministic queue of queries/surfaces to reproduce.
 Generate a fillable CSV template from the same deterministic plan:
 
 ```bash
-# 80 sentinel rows
+# 160 sentinel rows
 python scripts/search_visibility_observation_import.py \
   --template heads > /tmp/idkmesh-search-heads.csv
 
-# 800 full rows
+# 1,600 full rows
 python scripts/search_visibility_observation_import.py \
   --template full > /tmp/idkmesh-search-full.csv
 ```
@@ -91,7 +91,7 @@ python scripts/search_visibility_observation_import.py \
 ```
 
 The importer revalidates every plan-controlled field against the canonical
-800-item worklist, rejects invalid timestamps and impossible negative-result
+1,600-item worklist, rejects invalid timestamps and impossible negative-result
 claims, generates deterministic observation IDs, and refuses to overwrite the
 canonical ledger directly.
 

@@ -61,6 +61,9 @@ def validate_surfaces(payload: dict[str, Any]) -> list[dict[str, str]]:
         raise ObservationPlanError("full query count per surface must remain 100")
     if rules.get("head_query_count_per_surface") != 10:
         raise ObservationPlanError("head query count per surface must remain 10")
+    primary_surface_count = rules.get("primary_surface_count")
+    if not isinstance(primary_surface_count, int) or primary_surface_count < 1:
+        raise ObservationPlanError("primary surface count must be a positive integer")
 
     allowed_engines, allowed_surfaces, allowed_evidence = _schema_enums()
     ids: set[str] = set()
@@ -86,8 +89,10 @@ def validate_surfaces(payload: dict[str, Any]) -> list[dict[str, str]]:
             )
         normalized.append({key: item[key] for key in required})
 
-    if len(normalized) != 8:
-        raise ObservationPlanError(f"expected 8 primary surfaces, found {len(normalized)}")
+    if len(normalized) != primary_surface_count:
+        raise ObservationPlanError(
+            f"expected {primary_surface_count} primary surfaces, found {len(normalized)}"
+        )
     return normalized
 
 

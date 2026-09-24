@@ -7,16 +7,121 @@
     "evidence_schema": "schemas/search-visibility-observation-v0.1.schema.json",
     "full_query_count_per_surface": 100,
     "head_query_count_per_surface": 10,
-    "result_authority": "none_until_observed"
+    "result_authority": "none_until_observed",
+    "primary_surface_count": 16
   },
   "surfaces": [
-    {"id":"google-web","engine":"google","surface":"web_search","evidence_class":"manual_reproduction","label":"Google Search"},
-    {"id":"bing-web","engine":"bing","surface":"web_search","evidence_class":"manual_reproduction","label":"Bing Search"},
-    {"id":"yahoo-web","engine":"yahoo","surface":"web_search","evidence_class":"manual_reproduction","label":"Yahoo Search"},
-    {"id":"chatgpt-search","engine":"chatgpt","surface":"ai_answer","evidence_class":"manual_reproduction","label":"ChatGPT search/answers"},
-    {"id":"gemini-apps","engine":"gemini","surface":"ai_answer","evidence_class":"manual_reproduction","label":"Gemini Apps"},
-    {"id":"claude-search","engine":"claude","surface":"ai_answer","evidence_class":"manual_reproduction","label":"Claude web search"},
-    {"id":"perplexity-answer","engine":"perplexity","surface":"ai_answer","evidence_class":"manual_reproduction","label":"Perplexity answers"},
-    {"id":"copilot-answer","engine":"copilot","surface":"ai_answer","evidence_class":"manual_reproduction","label":"Microsoft Copilot"}
+    {
+      "id": "google-web",
+      "engine": "google",
+      "surface": "web_search",
+      "evidence_class": "manual_reproduction",
+      "label": "Google Search"
+    },
+    {
+      "id": "bing-web",
+      "engine": "bing",
+      "surface": "web_search",
+      "evidence_class": "manual_reproduction",
+      "label": "Bing Search"
+    },
+    {
+      "id": "yahoo-web",
+      "engine": "yahoo",
+      "surface": "web_search",
+      "evidence_class": "manual_reproduction",
+      "label": "Yahoo Search"
+    },
+    {
+      "id": "duckduckgo-web",
+      "engine": "duckduckgo",
+      "surface": "web_search",
+      "evidence_class": "manual_reproduction",
+      "label": "DuckDuckGo Search"
+    },
+    {
+      "id": "brave-web",
+      "engine": "brave",
+      "surface": "web_search",
+      "evidence_class": "manual_reproduction",
+      "label": "Brave Search"
+    },
+    {
+      "id": "apple-siri",
+      "engine": "apple",
+      "surface": "ai_answer",
+      "evidence_class": "manual_reproduction",
+      "label": "Apple Siri / Spotlight web answers"
+    },
+    {
+      "id": "amazon-alexa",
+      "engine": "amazon",
+      "surface": "ai_answer",
+      "evidence_class": "manual_reproduction",
+      "label": "Amazon Alexa web answers"
+    },
+    {
+      "id": "meta-ai",
+      "engine": "meta",
+      "surface": "ai_answer",
+      "evidence_class": "manual_reproduction",
+      "label": "Meta AI web answers / research"
+    },
+    {
+      "id": "chatgpt-search",
+      "engine": "chatgpt",
+      "surface": "ai_answer",
+      "evidence_class": "manual_reproduction",
+      "label": "ChatGPT search/answers"
+    },
+    {
+      "id": "gemini-apps",
+      "engine": "gemini",
+      "surface": "ai_answer",
+      "evidence_class": "manual_reproduction",
+      "label": "Gemini Apps"
+    },
+    {
+      "id": "claude-search",
+      "engine": "claude",
+      "surface": "ai_answer",
+      "evidence_class": "manual_reproduction",
+      "label": "Claude web search"
+    },
+    {
+      "id": "perplexity-answer",
+      "engine": "perplexity",
+      "surface": "ai_answer",
+      "evidence_class": "manual_reproduction",
+      "label": "Perplexity answers"
+    },
+    {
+      "id": "copilot-answer",
+      "engine": "copilot",
+      "surface": "ai_answer",
+      "evidence_class": "manual_reproduction",
+      "label": "Microsoft Copilot"
+    },
+    {
+      "id": "grok-web",
+      "engine": "grok",
+      "surface": "ai_answer",
+      "evidence_class": "manual_reproduction",
+      "label": "Grok web search"
+    },
+    {
+      "id": "mistral-vibe",
+      "engine": "mistral",
+      "surface": "ai_answer",
+      "evidence_class": "manual_reproduction",
+      "label": "Mistral Vibe"
+    },
+    {
+      "id": "you-answer",
+      "engine": "you",
+      "surface": "ai_answer",
+      "evidence_class": "manual_reproduction",
+      "label": "You.com Answer / Research"
+    }
   ]
 }
