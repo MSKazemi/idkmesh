@@ -21,6 +21,10 @@ from idkmesh.gate_audit import (
     render_json,
     render_markdown,
 )
+from idkmesh.gate_audit_dependence import (
+    dependence_file as gate_audit_dependence_file,
+    render_json as render_gate_audit_dependence_json,
+)
 from idkmesh.steward_report import (
     StewardReportInputError,
     load_report as load_steward_report,
@@ -168,6 +172,27 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="pretty-print the JSON report",
     )
+
+    gad = sub.add_parser(
+        "gate-audit-dependence",
+        help="export measured pairwise verifier error-dependence evidence",
+        description=(
+            "Read the same verdict-matrix JSON document gate-audit consumes "
+            "and emit a gate-audit-dependence-v0.1 report: each verifier "
+            "pair's measured phi error-correlation over non-probe "
+            "candidates, bound to the same canonical input digest as the "
+            "matching gate-audit report. Diagnostic only: it grants no "
+            "routing, acceptance, EvaluatorPlan, or merge authority, and it "
+            "never aggregates pairs into a per-verifier reputation score."),
+    )
+    gad.add_argument("input", help="path to the verdict-matrix JSON file")
+    gad.add_argument(
+        "--out", metavar="PATH",
+        help="write the JSON report here (default: stdout)")
+    gad.add_argument(
+        "--pretty", action="store_true",
+        help="pretty-print the JSON report")
+
     connections = sub.add_parser(
         "connections",
         help="validate, list, or inspect connector configuration",
@@ -817,6 +842,36 @@ def main(argv: list[str] | None = None) -> int:
             return _fail(
                 f"cannot start local steward history dashboard on "
                 f"127.0.0.1:{args.port}: {_reason(exc)}")
+        return 0
+
+    if args.command == "gate-audit-dependence":
+        conflict = _check_output_paths(args)
+        if conflict is not None:
+            return conflict
+
+        try:
+            report = gate_audit_dependence_file(args.input)
+        except FileNotFoundError:
+            return _fail(f"input file not found: {args.input}")
+        except IsADirectoryError:
+            return _fail(
+                f"input path is a directory, not a verdict-matrix file: "
+                f"{args.input}")
+        except OSError as exc:
+            return _fail(
+                f"cannot read input file {args.input}: {_reason(exc)}")
+        except GateAuditInputError as exc:
+            return _fail(str(exc))
+
+        rendered = render_gate_audit_dependence_json(report, pretty=args.pretty)
+        if args.out:
+            failure = _write(
+                args.out, rendered + "\n",
+                "gate-audit-dependence JSON report")
+            if failure is not None:
+                return failure
+        else:
+            print(rendered)
         return 0
 
     if args.command == "gate-marginal-benchmark":
