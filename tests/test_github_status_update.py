@@ -212,7 +212,7 @@ class GitHubRestIssueCommentTransportTests(unittest.TestCase):
             body=rendered,
         )
         self.assertEqual(seen["body"], rendered)
-        self.assertIn("\\n", rendered)
+        self.assertIn("\n", rendered)
 
     def test_fixed_host_post_uses_bearer_only_in_request_header(self):
         seen = {}
