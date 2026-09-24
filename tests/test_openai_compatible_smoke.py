@@ -130,21 +130,23 @@ class OpenAICompatibleSmokeTests(unittest.TestCase):
             "result_normalization_error",
         )
 
-    def test_cli_never_accepts_literal_api_key_option(self):
+    def test_cli_never_accepts_or_echoes_literal_api_key_option(self):
         stderr = io.StringIO()
         with redirect_stderr(stderr):
-            with self.assertRaises(SystemExit):
-                main(
-                    [
-                        "--base-url",
-                        "https://example.com/v1",
-                        "--model",
-                        "model",
-                        "--api-key",
-                        "literal-secret",
-                    ]
-                )
+            code = main(
+                [
+                    "--base-url",
+                    "https://example.com/v1",
+                    "--model",
+                    "model",
+                    "--api-key",
+                    "literal-secret",
+                ]
+            )
+        self.assertEqual(code, 2)
         self.assertNotIn("literal-secret", stderr.getvalue())
+        payload = json.loads(stderr.getvalue())
+        self.assertEqual(payload["error"]["code"], "configuration_error")
 
     def test_cli_missing_secret_env_reports_reference_not_value(self):
         stderr = io.StringIO()
