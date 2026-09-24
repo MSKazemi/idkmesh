@@ -441,8 +441,9 @@ the deterministic offline service and the existing SQLite
 
 The wrapper applies these fail-closed rules before worker/verifier execution:
 
-- one canonical digest covers project, exact WorkUnit/source, routing policy,
-  connector capabilities/policy, and deterministic attempt request content;
+- one canonical idempotency digest covers project, exact WorkUnit/source,
+  routing policy, connector capabilities/policy, and deterministic attempt
+  request content;
 - candidate filesystem roots are excluded from semantic identity, while
   CandidateReference and WorkUnit/source/attempt bindings remain included;
 - the idempotency key is atomically reserved before orchestration;
@@ -451,6 +452,10 @@ The wrapper applies these fail-closed rules before worker/verifier execution:
 - same key + different request returns an idempotency conflict;
 - a retained but incomplete reservation is not automatically re-dispatched;
 - persisted Product Spine/evidence digest drift fails closed on replay.
+
+The Product Spine run keeps its own internally derived request/evidence digest.
+The SQLite record keeps the broader idempotency-request digest, and replay
+cross-checks both bindings rather than allowing callers to override either one.
 
 The persisted record contains compact, secret-free semantic projections and
 digests. It is a development/reference store, not the hosted multi-tenant
