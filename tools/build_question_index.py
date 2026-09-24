@@ -22,14 +22,24 @@ def load_config() -> dict:
     return json.loads(CONFIG.read_text(encoding="utf-8"))
 
 
+def question_anchor(question: str) -> str:
+    """Return the stable public fragment for one conversational question."""
+    slug = re.sub(r"[^a-z0-9]+", "-", question.lower()).strip("-")
+    if not slug:
+        raise QuestionIndexError(f"question has no usable anchor: {question!r}")
+    return "q-" + slug
+
+
 def question_entries() -> list[dict[str, object]]:
     payload = load_config()
     entries: list[dict[str, object]] = []
     seen: set[str] = set()
+    seen_anchors: set[str] = set()
 
     for cluster in payload["clusters"]:
         source = ROOT / cluster["path"]
-        questions = QUESTION_RE.findall(source.read_text(encoding="utf-8"))
+        source_text = source.read_text(encoding="utf-8")
+        questions = QUESTION_RE.findall(source_text)
         if len(questions) != 10:
             raise QuestionIndexError(
                 f"{cluster['id']}: expected 10 questions, found {len(questions)}"
@@ -39,6 +49,15 @@ def question_entries() -> list[dict[str, object]]:
             if question in seen:
                 raise QuestionIndexError(f"duplicate question: {question}")
             seen.add(question)
+            anchor = question_anchor(question)
+            if anchor in seen_anchors:
+                raise QuestionIndexError(f"duplicate question anchor: {anchor}")
+            seen_anchors.add(anchor)
+            expected_marker = f'<a id="{anchor}"></a>\n### {question}'
+            if expected_marker not in source_text:
+                raise QuestionIndexError(
+                    f"{cluster['id']}: missing stable anchor before {question!r}"
+                )
 
         entries.append(
             {
@@ -95,7 +114,8 @@ def render() -> str:
             ]
         )
         for question in entry["questions"]:
-            lines.append(f"{number}. [{question}]({entry['url']})")
+            anchor = question_anchor(question)
+            lines.append(f"{number}. [{question}]({entry['url']}#{anchor})")
             number += 1
         lines.append("")
 
@@ -105,7 +125,8 @@ def render() -> str:
             "",
             "- The ten topic pages remain the answer sources; this page only indexes them.",
             "- A question appears here only if it is an actual `### ...?` heading on a topic page.",
-            "- CI requires exactly 100 unique questions across exactly ten topic clusters.",
+            "- Every question links to a stable `q-...` fragment immediately before its answer heading.",
+            "- CI requires exactly 100 unique questions and 100 unique answer anchors across exactly ten topic clusters.",
             "- Exact-match keyword repetition and one-page-per-query doorway patterns are intentionally avoided.",
             "- Search visibility is measured separately from crawlability; see the",
             "  [search and answer-engine visibility evidence](https://github.com/MSKazemi/idkmesh/tree/main/evidence/search-visibility).",

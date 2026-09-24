@@ -61,46 +61,56 @@ A high average agreement score cannot answer all of these.
 
 ## Common questions
 
+<a id="q-is-llm-as-a-judge-reliable"></a>
 ### Is LLM-as-a-judge reliable?
 
 Sometimes, for a defined task and measured evaluator. Reliability should be established on representative cases and reported with limitations; it should not be inferred from model reputation.
 
+<a id="q-does-using-several-llm-judges-make-evaluation-independent"></a>
 ### Does using several LLM judges make evaluation independent?
 
 Not necessarily. Different models can share training data, prompts, abstractions, and item-level failure modes. Measure error dependence rather than counting brands.
 
+<a id="q-what-is-llm-judge-calibration"></a>
 ### What is LLM judge calibration?
 
 Calibration asks whether the evaluator's confidence or score meaningfully corresponds to correctness or outcome frequency. It is distinct from simple agreement.
 
+<a id="q-should-an-llm-judge-decide-whether-code-is-merged"></a>
 ### Should an LLM judge decide whether code is merged?
 
 It can contribute evidence. Final integration authority should remain a separate policy decision, especially for security-sensitive or high-impact changes.
 
+<a id="q-how-does-idkmesh-represent-evaluator-evidence"></a>
 ### How does IDKMesh represent evaluator evidence?
 
 See the [EvaluatorPlan and VerificationResult specifications](https://github.com/MSKazemi/idkmesh/tree/main/docs/specifications) and [schema index](https://github.com/MSKazemi/idkmesh/blob/main/schemas/README.md).
 
+<a id="q-can-chatgpt-claude-or-gemini-be-used-as-an-llm-judge"></a>
 ### Can ChatGPT, Claude, or Gemini be used as an LLM judge?
 
 They can be used as evaluators when the task, rubric, model/version, prompt, and observed reliability are recorded. Brand or model size alone does not establish that a judge is accurate for a particular evaluation.
 
+<a id="q-how-can-i-reduce-llm-judge-bias"></a>
 ### How can I reduce LLM-judge bias?
 
 Use explicit rubrics, blinded ordering where possible, counterbalanced prompts, held-out calibration cases, multiple evidence types, and measurements for systematic preference rather than relying on one prompt format.
 
+<a id="q-should-an-llm-judge-know-which-model-generated-the-answer"></a>
 ### Should an LLM judge know which model generated the answer?
 
 Often it is safer to hide irrelevant producer identity when measuring output quality, because model names can introduce preference bias. Keep identity available in provenance even when it is blinded from the scoring prompt.
 
+<a id="q-how-many-llm-judges-are-enough"></a>
 ### How many LLM judges are enough?
 
 There is no universal number. Add judges only while they contribute useful independent information relative to cost and latency; correlated judges can make a large panel behave like a much smaller one.
 
+<a id="q-what-should-happen-when-an-llm-judge-is-uncertain"></a>
 ### What should happen when an LLM judge is uncertain?
 
 Preserve or expose the uncertainty, request additional evidence, use a different evaluator class, or escalate to a human rather than forcing every case into an accept/reject verdict.
 
 [Browse all AI-agent trust topics](https://mskazemi.com/idkmesh/topics/).
 
-**Last reviewed:** 2026-09-23.
+**Last reviewed:** 2026-09-24.
