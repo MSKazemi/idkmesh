@@ -1,4 +1,4 @@
-"""Completed cross-engine observations must match the canonical 800-item plan."""
+"""Completed cross-engine observations must match the canonical observation plan."""
 
 from __future__ import annotations
 
@@ -56,10 +56,12 @@ class SearchVisibilityObservationImportTests(unittest.TestCase):
         )
 
     def test_templates_cover_balanced_head_and_full_plans(self) -> None:
+        heads_plan = plan.build_plan(sample="heads")
+        full_plan = plan.build_plan(sample="full")
         heads = importer.render_template(sample="heads").splitlines()
         full = importer.render_template(sample="full").splitlines()
-        self.assertEqual(81, len(heads))
-        self.assertEqual(801, len(full))
+        self.assertEqual(1 + heads_plan["summary"]["work_items"], len(heads))
+        self.assertEqual(1 + full_plan["summary"]["work_items"], len(full))
         self.assertEqual(",".join(importer.ALL_COLUMNS), heads[0])
 
     def test_completed_row_becomes_one_candidate_observation(self) -> None:

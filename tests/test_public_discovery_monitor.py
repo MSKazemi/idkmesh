@@ -46,6 +46,10 @@ class PublicDiscoveryMonitorTests(unittest.TestCase):
             "claude-user",
             "perplexity",
             "perplexity-user",
+            "mistral-index",
+            "mistral-user",
+            "amazon-search",
+            "amazon-user",
         }
         self.assertTrue(required.issubset(monitor.USER_AGENTS))
         self.assertEqual(required, set(monitor.ROBOTS_USER_AGENTS))

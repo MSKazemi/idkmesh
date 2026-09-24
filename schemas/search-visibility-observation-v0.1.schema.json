@@ -52,12 +52,20 @@
           "enum": [
             "google",
             "bing",
+            "duckduckgo",
+            "brave",
+            "yahoo",
+            "apple",
+            "amazon",
+            "meta",
             "chatgpt",
             "gemini",
             "claude",
             "perplexity",
             "copilot",
-            "yahoo",
+            "grok",
+            "mistral",
+            "you",
             "other"
           ]
         },

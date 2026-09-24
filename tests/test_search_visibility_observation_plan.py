@@ -9,18 +9,18 @@ from scripts import search_visibility_observation_plan as planner
 
 
 class SearchVisibilityObservationPlanTests(unittest.TestCase):
-    def test_full_plan_is_100_queries_across_eight_surfaces(self) -> None:
+    def test_full_plan_is_100_queries_across_sixteen_surfaces(self) -> None:
         plan = planner.build_plan(sample="full")
-        self.assertEqual(8, plan["summary"]["surfaces"])
+        self.assertEqual(16, plan["summary"]["surfaces"])
         self.assertEqual(100, plan["summary"]["queries_per_surface"])
-        self.assertEqual(800, plan["summary"]["work_items"])
+        self.assertEqual(1600, plan["summary"]["work_items"])
         self.assertEqual(10, plan["summary"]["clusters"])
 
     def test_head_plan_is_one_query_per_cluster_per_surface(self) -> None:
         plan = planner.build_plan(sample="heads")
-        self.assertEqual(8, plan["summary"]["surfaces"])
+        self.assertEqual(16, plan["summary"]["surfaces"])
         self.assertEqual(10, plan["summary"]["queries_per_surface"])
-        self.assertEqual(80, plan["summary"]["work_items"])
+        self.assertEqual(160, plan["summary"]["work_items"])
         self.assertEqual(
             10,
             len({item["mapped_intent"] for item in plan["items"]}),
@@ -50,11 +50,19 @@ class SearchVisibilityObservationPlanTests(unittest.TestCase):
                 "google-web",
                 "bing-web",
                 "yahoo-web",
+                "duckduckgo-web",
+                "brave-web",
+                "apple-siri",
+                "amazon-alexa",
+                "meta-ai",
                 "chatgpt-search",
                 "gemini-apps",
                 "claude-search",
                 "perplexity-answer",
                 "copilot-answer",
+                "grok-web",
+                "mistral-vibe",
+                "you-answer",
             },
             {surface["id"] for surface in surfaces},
         )
@@ -86,12 +94,12 @@ class SearchVisibilityObservationPlanTests(unittest.TestCase):
         self.assertFalse(plan["authority"]["ranking_claim"])
         self.assertFalse(plan["authority"]["citation_claim"])
 
-    def test_csv_is_deterministic_and_has_80_head_rows(self) -> None:
+    def test_csv_is_deterministic_and_has_160_head_rows(self) -> None:
         plan = planner.build_plan(sample="heads")
         first = planner.render_csv(plan)
         second = planner.render_csv(plan)
         self.assertEqual(first, second)
-        self.assertEqual(81, len(first.strip().splitlines()))
+        self.assertEqual(161, len(first.strip().splitlines()))
         self.assertTrue(first.startswith("plan_id,engine,product_surface,"))
 
 

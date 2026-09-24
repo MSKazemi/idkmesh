@@ -22,6 +22,11 @@ rank, summarize, or cite.
 | DuckDuckGo | `DuckDuckBot` plus downstream index/search sources | explicit DuckDuckBot robots/HTTP probe, crawlable static HTML, sitemap |
 | Apple Search / Siri / Spotlight | `Applebot` | explicit Applebot robots/HTTP probe, semantic static HTML, metadata, sitemap |
 | Brave Search / AI Answers | Brave intentionally does not advertise a differentiated crawler user agent; Googlebot crawlability is a prerequisite | Googlebot/robots/noindex health plus crawlable static HTML and sitemap |
+| Amazon Alexa / Amazon search experiences | `Amzn-SearchBot` for search indexing and `Amzn-User` for user-requested fresh web retrieval | explicit robots + live HTTP probes for both published Amazon search/user agents |
+| Meta AI | Meta documents web-backed search/research in Meta AI; no dedicated search crawler identity is assumed from the checked official guidance | manual product observation plus open-web crawlability, self-canonical pages, sitemap, evidence-linked content |
+| Mistral Vibe / Mistral search | `MistralAI-Index` for search indexing and `MistralAI-User` for user-requested retrieval | explicit robots + live HTTP probes for both published Mistral search/user agents |
+| Grok / xAI web search | Grok's documented web-search tool browses the public web and returns citations; no separate site crawler identity is assumed here | manual/API observation surface plus open-web crawlability, self-canonical pages, sitemap, evidence-linked content |
+| You.com Answer / Research | You.com search/answer products operate over a live web index; no separate crawler UA is assumed from the checked product docs | manual/API observation surface plus open-web crawlability, self-canonical pages, sitemap, evidence-linked content |
 | Other search/answer engines | open-web standards | semantic HTML, crawlable links, canonical URLs, sitemap, evidence-linked content |
 
 ## Current content architecture
@@ -93,6 +98,10 @@ The monitor uses representative current user-agent identities for:
 - `Claude-User`
 - `PerplexityBot`
 - `Perplexity-User`
+- `MistralAI-Index`
+- `MistralAI-User`
+- `Amzn-SearchBot`
+- `Amzn-User`
 
 Crawler identities can change. Vendor documentation is the source of truth; do
 not freeze a user-agent string as a permanent protocol guarantee.
@@ -134,6 +143,18 @@ Robots-only product controls:
   https://support.apple.com/119829
 - Brave Search crawler guidance (no differentiated user agent; Googlebot crawlability prerequisite):
   https://search.brave.com/help/brave-search-crawler
+- Amazon search/user crawler guidance:
+  https://developer.amazon.com/amazonbot
+- Mistral search/user crawler guidance:
+  https://docs.mistral.ai/robots
+- Meta AI web-backed search/research guidance:
+  https://about.fb.com/news/2025/04/introducing-meta-ai-app-new-way-access-ai-assistant/
+  https://about.fb.com/news/2026/07/meta-ai-muse-spark-doesnt-just-think-it-acts/
+- xAI Grok web-search and citation guidance:
+  https://docs.x.ai/developers/tools/web-search
+  https://docs.x.ai/developers/tools/citations
+- You.com live web-search / answer product guidance:
+  https://you.com/docs/welcome
 
 ## First-party webmaster measurement
 
@@ -157,24 +178,26 @@ Generate a deterministic observation worklist from the **same** canonical
 100-query source:
 
 ```bash
-# One head query from each of the ten clusters across eight primary surfaces:
+# One head query from each of the ten clusters across sixteen primary surfaces:
 python scripts/search_visibility_observation_plan.py \
   --sample heads \
   --format csv \
   --output results/visibility/answer-engine-heads.csv
 
-# All 100 intents across the same eight surfaces:
+# All 100 intents across the same fifteen surfaces:
 python scripts/search_visibility_observation_plan.py \
   --sample full \
   --format csv \
   --output results/visibility/answer-engine-full.csv
 ```
 
-The primary surfaces are Google Search, Bing Search, Yahoo Search, ChatGPT,
-Gemini Apps, Claude web search, Perplexity, and Microsoft Copilot.
+The primary surfaces are Google Search, Bing Search, Yahoo Search, DuckDuckGo,
+Brave Search, Apple Siri / Spotlight web answers, Amazon Alexa web answers,
+Meta AI, ChatGPT search/answers, Gemini Apps, Claude web search, Perplexity,
+Microsoft Copilot, Grok web search, Mistral Vibe, and You.com Answer / Research.
 
-The head sweep contains **80 work items** (10 intents x 8 surfaces). The full
-sweep contains **800 work items** (100 intents x 8 surfaces).
+The head sweep contains **160 work items** (10 intents x 16 surfaces). The full
+sweep contains **1,600 work items** (100 intents x 16 surfaces).
 
 The generated worklist is **not evidence**. It contains no surfaced result,
 position, citation URL, or observation time. Only an actually reproduced result

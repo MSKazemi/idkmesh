@@ -96,6 +96,10 @@ USER_AGENTS = {
     "claude-user": "Claude-User",
     "perplexity": "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; PerplexityBot/1.0; +https://perplexity.ai/perplexitybot)",
     "perplexity-user": "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; Perplexity-User/1.0; +https://perplexity.ai/perplexity-user)",
+    "mistral-index": "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; MistralAI-Index/1.0; +https://docs.mistral.ai/robots)",
+    "mistral-user": "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; MistralAI-User/1.0; +https://docs.mistral.ai/robots)",
+    "amazon-search": "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; Amzn-SearchBot/0.1) Chrome/120.0.0.0 Safari/537.36",
+    "amazon-user": "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; Amzn-User/0.1) Chrome/120.0.0.0 Safari/537.36",
 }
 
 ROBOTS_PRODUCT_TOKENS = {
@@ -116,6 +120,10 @@ ROBOTS_USER_AGENTS = {
     "claude-user": "Claude-User",
     "perplexity": "PerplexityBot",
     "perplexity-user": "Perplexity-User",
+    "mistral-index": "MistralAI-Index",
+    "mistral-user": "MistralAI-User",
+    "amazon-search": "Amzn-SearchBot",
+    "amazon-user": "Amzn-User",
 }
 
 
