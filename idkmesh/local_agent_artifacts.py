@@ -13,6 +13,15 @@ The bundle contains:
 The resulting ZIP is resolved immediately through LocalArtifactBundleReader and
 therefore enters C6 as an immutable ArtifactBundleCandidateReference.
 
+Bundle bytes are deterministic: stored (uncompressed) entries, a fixed ZIP
+timestamp, fixed entry permissions, sorted entry names, and a canonical JSON
+manifest that carries no clock, duration, argv, or random identifier. Replaying
+the same workspace and process result therefore reproduces the same digest.
+"Immutable" is scoped to controller-owned evidence: the API never overwrites a
+published bundle path, and the recorded digest is observed from the published
+bytes rather than asserted. It is not an on-disk write protection, so the
+artifact root must stay outside both the worker workspace and the repository.
+
 Symlinks, path traversal, worktree repository rebinding, oversized data, and
 truncated Git capture fail closed.
 """
@@ -169,6 +178,11 @@ def _git_capture(
         raise LocalRunnerError("Git artifact capture failed")
     if result.stdout_truncated:
         raise LocalRunnerError("Git artifact capture exceeded configured byte limit")
+    if "\ufffd" in result.stdout:
+        # Bounded process output is decoded with errors="replace". Accepting a
+        # substituted byte would content-address a corrupted patch/listing as
+        # if it were the candidate, so capture fails closed instead.
+        raise LocalRunnerError("Git artifact capture is not valid UTF-8")
     return result.stdout.encode("utf-8")
 
 

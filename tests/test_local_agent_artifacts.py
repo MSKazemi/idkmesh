@@ -1,3 +1,4 @@
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -197,7 +198,7 @@ class LocalAgentArtifactCaptureTests(unittest.TestCase):
             f"gitdir: {other / '.git'}\n",
             encoding="utf-8",
         )
-        with self.assertRaises(LocalRunnerError):
+        with self.assertRaisesRegex(LocalRunnerError, "expected repository"):
             capture_local_agent_artifacts(
                 workspace=self.workspace,
                 repository=self.repo,
@@ -205,6 +206,121 @@ class LocalAgentArtifactCaptureTests(unittest.TestCase):
                 output_root=self.output,
                 process_result=_result(),
             )
+
+    def test_rebinding_to_a_clone_holding_the_source_sha_fails_closed(self):
+        """A clone resolves the same SHA, so only the common-dir check can fail."""
+        clone = self.root / "clone"
+        subprocess.run(
+            ("git", "clone", "-q", "--no-local", str(self.repo), str(clone)),
+            check=True,
+        )
+        self.assertEqual(resolve_exact_revision(clone, self.sha), self.sha)
+        (self.workspace / ".git").write_text(
+            f"gitdir: {clone / '.git'}\n",
+            encoding="utf-8",
+        )
+        with self.assertRaisesRegex(LocalRunnerError, "expected repository"):
+            capture_local_agent_artifacts(
+                workspace=self.workspace,
+                repository=self.repo,
+                source_revision=self.sha,
+                output_root=self.output,
+                process_result=_result(),
+            )
+
+    def test_committed_candidate_is_captured_against_controller_source_sha(self):
+        """A worker that commits its work cannot hide the candidate diff."""
+        (self.workspace / "tracked.txt").write_text("candidate\n", encoding="utf-8")
+        subprocess.run(
+            ("git", "-C", str(self.workspace), "add", "tracked.txt"),
+            check=True,
+        )
+        subprocess.run(
+            ("git", "-C", str(self.workspace), "commit", "-q", "-m", "worker commit"),
+            check=True,
+            env={**os.environ, "GIT_IDENTITY_OK": "1"},
+        )
+        head = resolve_exact_revision(self.workspace, "HEAD")
+        self.assertNotEqual(head, self.sha)
+
+        captured = capture_local_agent_artifacts(
+            workspace=self.workspace,
+            repository=self.repo,
+            source_revision=self.sha,
+            output_root=self.output,
+            process_result=_result(),
+        )
+        self.assertEqual(captured.source_sha, self.sha)
+        with zipfile.ZipFile(self.output / "candidate-bundle.zip") as archive:
+            patch = archive.read("candidate.patch").decode()
+            manifest = json.loads(archive.read("manifest.json"))
+        self.assertIn("-base", patch)
+        self.assertIn("+candidate", patch)
+        self.assertEqual(manifest["source_sha"], self.sha)
+
+    def test_identical_input_reproduces_the_same_bundle_digest(self):
+        """The recorded digest must be replayable, not a one-off observation."""
+        (self.workspace / "tracked.txt").write_text("candidate\n", encoding="utf-8")
+        (self.workspace / "new.txt").write_text("new file\n", encoding="utf-8")
+
+        first = capture_local_agent_artifacts(
+            workspace=self.workspace,
+            repository=self.repo,
+            source_revision=self.sha,
+            output_root=self.root / "out-first",
+            process_result=_result(),
+        )
+        second = capture_local_agent_artifacts(
+            workspace=self.workspace,
+            repository=self.repo,
+            source_revision=self.sha,
+            output_root=self.root / "out-second",
+            process_result=_result(),
+        )
+        self.assertEqual(first.bundle.reference.digest, second.bundle.reference.digest)
+        first_bytes = (self.root / "out-first" / "candidate-bundle.zip").read_bytes()
+        second_bytes = (self.root / "out-second" / "candidate-bundle.zip").read_bytes()
+        self.assertEqual(first_bytes, second_bytes)
+        self.assertEqual(
+            first.bundle.reference.digest,
+            "sha256:" + hashlib.sha256(first_bytes).hexdigest(),
+        )
+
+        # Two captures a second apart would still agree by luck, so pin the
+        # entry metadata that makes the bytes independent of the wall clock.
+        with zipfile.ZipFile(self.root / "out-first" / "candidate-bundle.zip") as archive:
+            for info in archive.infolist():
+                self.assertEqual(
+                    info.date_time,
+                    (1980, 1, 1, 0, 0, 0),
+                    f"{info.filename} carries a wall-clock timestamp",
+                )
+                self.assertEqual(info.compress_type, zipfile.ZIP_STORED)
+                self.assertEqual(info.external_attr, 0o100644 << 16)
+
+        # Positive control: a different candidate must not reproduce the digest.
+        (self.workspace / "new.txt").write_text("different\n", encoding="utf-8")
+        third = capture_local_agent_artifacts(
+            workspace=self.workspace,
+            repository=self.repo,
+            source_revision=self.sha,
+            output_root=self.root / "out-third",
+            process_result=_result(),
+        )
+        self.assertNotEqual(first.bundle.reference.digest, third.bundle.reference.digest)
+
+    def test_non_utf8_git_capture_fails_closed(self):
+        """Replaced bytes must never be content-addressed as the candidate."""
+        (self.workspace / "tracked.txt").write_bytes(b"caf\xe9 latin-1\n")
+        with self.assertRaisesRegex(LocalRunnerError, "not valid UTF-8"):
+            capture_local_agent_artifacts(
+                workspace=self.workspace,
+                repository=self.repo,
+                source_revision=self.sha,
+                output_root=self.output,
+                process_result=_result(),
+            )
+        self.assertFalse((self.output / "candidate-bundle.zip").exists())
 
     def test_untracked_symlink_is_rejected(self):
         target = self.root / "outside-secret.txt"
