@@ -11,7 +11,10 @@ project configuration. The preview is bound to one exact trusted Git source SHA.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import datetime
 import hashlib
+import math
+from pathlib import PurePosixPath
 import re
 from typing import Any, Mapping
 from urllib.parse import urlsplit
@@ -87,6 +90,41 @@ def _api_string(value: Any, field: str) -> str:
 
 def _canonical_issue_url(repository: str, number: int) -> str:
     return f"https://github.com/{repository}/issues/{number}"
+
+
+def _safe_scope_path(value: str, field_name: str) -> str:
+    if (
+        "\x00" in value
+        or "\n" in value
+        or "\r" in value
+        or "\\" in value
+        or value.startswith("/")
+        or ".." in PurePosixPath(value).parts
+    ):
+        raise ValueError(f"{field_name} contains an unsafe path: {value!r}")
+    return value
+
+
+def _issue_version(updated_at: str) -> int:
+    try:
+        parsed = datetime.fromisoformat(updated_at.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise ConnectorError(
+            code="result_normalization_error",
+            message="GitHub issue updated_at is not an ISO-8601 timestamp.",
+        ) from exc
+    if parsed.tzinfo is None:
+        raise ConnectorError(
+            code="result_normalization_error",
+            message="GitHub issue updated_at must include a timezone.",
+        )
+    version = int(parsed.timestamp())
+    if version < 1:
+        raise ConnectorError(
+            code="result_normalization_error",
+            message="GitHub issue updated_at cannot produce a valid WorkUnit version.",
+        )
+    return version
 
 
 @dataclass(frozen=True)
@@ -296,6 +334,14 @@ class GitHubIssueWorkPolicy:
             "network_allowlist",
             allow_empty=True,
         )
+        allowed = tuple(
+            _safe_scope_path(item, "allowed_paths")
+            for item in allowed
+        )
+        forbidden = tuple(
+            _safe_scope_path(item, "forbidden_paths")
+            for item in forbidden
+        )
         object.__setattr__(self, "allowed_paths", allowed)
         object.__setattr__(self, "forbidden_paths", forbidden)
         object.__setattr__(self, "required_capabilities", capabilities)
@@ -317,9 +363,12 @@ class GitHubIssueWorkPolicy:
             if (
                 isinstance(value, bool)
                 or not isinstance(value, (int, float))
+                or not math.isfinite(float(value))
                 or value < 0
             ):
                 raise ValueError(f"{name} must be a finite nonnegative number")
+        if self.wall_seconds <= 0:
+            raise ValueError("wall_seconds must be a finite positive number")
         for name in ("memory_mb_min", "disk_mb_min", "max_title_chars", "max_body_chars"):
             value = getattr(self, name)
             if isinstance(value, bool) or not isinstance(value, int) or value < 1:
@@ -425,7 +474,7 @@ def preview_github_issue_work_unit(
     work_unit: dict[str, Any] = {
         "schema_version": "0.2",
         "id": _work_unit_id(snapshot.repository, snapshot.number),
-        "version": 1,
+        "version": _issue_version(snapshot.updated_at),
         "kind": policy.kind,
         "objective": objective,
         "context": {
