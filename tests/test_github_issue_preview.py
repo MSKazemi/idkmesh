@@ -179,6 +179,42 @@ class GitHubIssuePreviewTests(unittest.TestCase):
             ["model.example.invalid"],
         )
 
+    def test_issue_update_time_versions_repeated_previews(self):
+        first = preview_github_issue_work_unit(
+            self._snapshot(updated_at="2026-09-24T01:00:00Z"),
+            source_revision=SHA,
+            policy=_policy(),
+        )
+        second = preview_github_issue_work_unit(
+            self._snapshot(updated_at="2026-09-24T01:01:00Z"),
+            source_revision=SHA,
+            policy=_policy(),
+        )
+        self.assertGreater(
+            second.work_unit["version"],
+            first.work_unit["version"],
+        )
+        self.assertNotEqual(
+            second.work_unit_digest,
+            first.work_unit_digest,
+        )
+
+    def test_policy_rejects_unsafe_path_scopes(self):
+        for path in ("/etc/passwd", "../secret", "dir\\escape"):
+            with self.subTest(path=path):
+                with self.assertRaisesRegex(ValueError, "unsafe"):
+                    _policy(allowed_paths=(path,))
+
+    def test_policy_rejects_nonfinite_numbers(self):
+        for field, value in (
+            ("cpu_cores_min", float("nan")),
+            ("wall_seconds", float("inf")),
+            ("project_spend_usd_max", float("nan")),
+        ):
+            with self.subTest(field=field):
+                with self.assertRaises(ValueError):
+                    _policy(**{field: value})
+
     def test_policy_rejects_unrestricted_or_inconsistent_network(self):
         with self.assertRaisesRegex(ValueError, "none"):
             _policy(network="none", network_allowlist=("example.com",))
