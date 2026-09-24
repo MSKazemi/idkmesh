@@ -135,6 +135,38 @@ citation/grounding data. Commit only normalized observations that satisfy the
 visibility evidence schema; do not commit account credentials or private
 account data.
 
+## Cross-engine 100-intent observation plan
+
+Technical eligibility and webmaster dashboards do not by themselves show whether
+all answer-engine products surface IDKMesh for the intended questions.
+
+Generate a deterministic manual observation worklist from the **same** canonical
+100-query source with:
+
+```bash
+# One head query from each of the ten clusters across eight primary surfaces:
+python scripts/search_visibility_observation_plan.py \
+  --sample heads \
+  --format csv \
+  --output results/visibility/answer-engine-heads.csv
+
+# All 100 intents across the same eight surfaces:
+python scripts/search_visibility_observation_plan.py \
+  --sample full \
+  --format csv \
+  --output results/visibility/answer-engine-full.csv
+```
+
+The primary surfaces are Google Search, Bing Search, Yahoo Search, ChatGPT,
+Gemini Apps, Claude web search, Perplexity, and Microsoft Copilot.
+
+The head sweep contains **80 work items** (10 intents x 8 surfaces). The full
+sweep contains **800 work items** (100 intents x 8 surfaces).
+
+The generated worklist is **not evidence**. It contains no surfaced result,
+position, citation URL, or observation time. Only an actually reproduced result
+may be added to the visibility ledger under the schema-backed evidence contract.
+
 ## Visibility evidence loop
 
 Crawler eligibility is only the input. Actual visibility is recorded separately
