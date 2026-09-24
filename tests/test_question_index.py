@@ -30,9 +30,29 @@ class QuestionIndexTests(unittest.TestCase):
             url = entry["url"]
             questions = entry["questions"]
             self.assertEqual(10, len(questions))
-            for question in questions:
+            source = (question_index.ROOT / next(
+                cluster["path"]
+                for cluster in question_index.load_config()["clusters"]
+                if cluster["id"] == entry["id"]
+            )).read_text(encoding="utf-8")
+            for question_number, question in enumerate(questions, start=1):
+                anchor = f"q{question_number:02d}"
                 with self.subTest(question=question):
-                    self.assertIn(f"[{question}]({url})", rendered)
+                    self.assertIn(f"[{question}]({url}#{anchor})", rendered)
+                    self.assertIn(f'<a id="{anchor}"></a>\n### {question}', source)
+
+    def test_every_pillar_has_exactly_ten_stable_question_anchors(self) -> None:
+        for cluster in question_index.load_config()["clusters"]:
+            source = (
+                question_index.ROOT / cluster["path"]
+            ).read_text(encoding="utf-8")
+            anchors = [
+                f'<a id="q{number:02d}"></a>'
+                for number in range(1, 11)
+            ]
+            with self.subTest(cluster=cluster["id"]):
+                self.assertTrue(all(anchor in source for anchor in anchors))
+                self.assertEqual(10, sum(source.count(anchor) for anchor in anchors))
 
     def test_question_map_is_linked_from_discovery_surfaces(self) -> None:
         root = question_index.ROOT
