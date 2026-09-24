@@ -43,6 +43,9 @@ SCHEMAS = REPO_ROOT / "schemas"
 # turning a semantic fixture into a structural one.
 VALID_AGAINST = {
     "examples/benchmarks/work-unit-decomposition-v0.1.json": "decomposition-benchmark-v0.1.schema.json",
+    "examples/candidate-normalization/c6-equivalence.work-unit.json": "work-unit-v0.2.schema.json",
+    "examples/candidate-normalization/local-candidate-reference.json": "candidate-reference-v0.1.schema.json",
+    "examples/candidate-normalization/pr-candidate-reference.json": "candidate-reference-v0.1.schema.json",
     "examples/community/ace-lineage-valid.example.json": "ace-lineage-v0.1.schema.json",
     "examples/compute-offers/free-pool.example.json": "compute-offer-pool-v0.1.schema.json",
     "examples/domain-packs/software-engineering-v0.1.domain-pack.json": "domain-pack.schema.json",
