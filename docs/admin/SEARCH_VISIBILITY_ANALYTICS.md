@@ -158,7 +158,7 @@ retired on **2026-08-31** and directs users to its REST APIs. The public documen
 surface available during this implementation did not expose enough authenticated REST
 query-stat contract detail to add a production adapter without guessing.
 
-The Bing slice therefore remains intentionally open:
+The authenticated REST adapter remains intentionally open:
 
 1. obtain the current REST API contract from the authenticated Bing Webmaster
    documentation/account;
@@ -166,6 +166,13 @@ The Bing slice therefore remains intentionally open:
 3. normalize its aggregate query/page data into the same discovery evidence model;
 4. test it with recorded synthetic responses;
 5. never fall back to the retired legacy endpoint.
+
+Bing AI Performance does provide owner-downloadable CSV/Excel exports. Those do
+not require repository credentials. Normalize a reviewed CSV offline with
+`scripts/bing_ai_performance_import.py`; the command accepts explicit column
+names for grounding-query, page, date, and citation-count exports rather than
+guessing vendor headers. Exact grounding-query matches are compared with the same
+canonical 100-query portfolio used by Search Console.
 
 ## Privacy boundary
 
