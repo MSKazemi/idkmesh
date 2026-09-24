@@ -1,12 +1,12 @@
-"""Bounded GitHub REST transport for pull-request identity lookup.
+"""Bounded public-GitHub REST sources for SCM identity lookup.
 
-This module performs only the network transport needed by
-GitHubPullRequestCandidateReader. It does not decide candidate identity itself:
-the reader still validates repository, PR number, canonical URL, state/draft,
-and exact head object id.
+This module owns fixed-host HTTP mechanics, bounded JSON decoding, and stable
+ConnectorError translation for GitHub identity reads.
 
-The source is stdlib-only, constructs a fixed api.github.com endpoint, limits
-response bytes, and normalizes transport/auth/rate failures into ConnectorError.
+It deliberately does not decide SCM identity correctness:
+- GitHubPullRequestCandidateReader validates pull-request identity;
+- GitHubBranchHeadReader validates branch-ref identity.
+
 Raw response bodies and credentials are never copied into error details.
 """
 
@@ -18,6 +18,7 @@ import re
 import socket
 from typing import Any, Callable, Mapping
 from urllib.error import HTTPError, URLError
+from urllib.parse import quote
 from urllib.request import Request, urlopen
 
 from idkmesh.connector_errors import ConnectorError
@@ -27,6 +28,7 @@ _API_BASE = "https://api.github.com"
 _API_VERSION = "2022-11-28"
 _ACCEPT = "application/vnd.github+json"
 _REPOSITORY_RE = re.compile(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+\Z")
+_BRANCH_CHARS_RE = re.compile(r"[A-Za-z0-9._/-]+\Z")
 _DEFAULT_MAX_RESPONSE_BYTES = 1024 * 1024
 _MAX_CONFIGURED_RESPONSE_BYTES = 8 * 1024 * 1024
 
@@ -40,6 +42,28 @@ def _repository(value: Any) -> str:
 def _number(value: Any) -> int:
     if isinstance(value, bool) or not isinstance(value, int) or value < 1:
         raise ValueError("number must be an integer >= 1")
+    return value
+
+
+def _branch(value: Any) -> str:
+    if not isinstance(value, str) or not value:
+        raise ValueError("branch must be a non-empty string")
+    if len(value) > 255:
+        raise ValueError("branch exceeds the 255-character bound")
+    if _BRANCH_CHARS_RE.fullmatch(value) is None:
+        raise ValueError("branch contains unsupported characters")
+    if (
+        value.startswith("/")
+        or value.endswith("/")
+        or value.startswith(".")
+        or value.endswith(".")
+        or value.endswith(".lock")
+        or "//" in value
+        or ".." in value
+        or "@{" in value
+        or any(part in {"", ".", ".."} for part in value.split("/"))
+    ):
+        raise ValueError("branch is not a safe canonical Git branch name")
     return value
 
 
@@ -94,15 +118,14 @@ def _header(headers: Any, name: str) -> str | None:
 def _http_error(
     exc: HTTPError,
     *,
-    repository: str,
-    number: int,
     connection_id: str,
+    details: Mapping[str, Any],
+    resource_label: str,
 ) -> ConnectorError:
     status = int(exc.code)
-    details: dict[str, Any] = {
+    normalized_details = {
         "status": status,
-        "repository": repository,
-        "pull_request_number": number,
+        **dict(details),
     }
 
     if status == 401:
@@ -115,16 +138,16 @@ def _http_error(
             message = "GitHub API rate limit is exhausted."
         else:
             code = "authorization_error"
-            message = "GitHub denied pull-request metadata access."
+            message = f"GitHub denied {resource_label} access."
     elif status == 404:
         code = "not_found"
-        message = "GitHub pull request was not found."
+        message = f"GitHub {resource_label} was not found."
     elif status == 408:
         code = "timeout"
-        message = "GitHub pull-request request timed out."
+        message = f"GitHub {resource_label} request timed out."
     elif status == 429:
         code = "rate_limited"
-        message = "GitHub API rate limited the pull-request request."
+        message = f"GitHub API rate limited the {resource_label} request."
     elif 500 <= status <= 599:
         code = "provider_unavailable"
         message = "GitHub API is temporarily unavailable."
@@ -134,18 +157,18 @@ def _http_error(
 
     retry_after = _header(exc.headers, "Retry-After")
     if retry_after is not None and retry_after.strip():
-        details["retry_after"] = retry_after.strip()
+        normalized_details["retry_after"] = retry_after.strip()
 
     return ConnectorError(
         code=code,
         message=message,
         connection_id=connection_id,
-        details=details,
+        details=normalized_details,
     )
 
 
-class GitHubRestPullRequestSource:
-    """Fetch one GitHub PR REST object through a bounded fixed-host transport."""
+class GitHubRestIdentitySource:
+    """Fixed-host bounded REST source for GitHub SCM identity observations."""
 
     def __init__(
         self,
@@ -172,19 +195,13 @@ class GitHubRestPullRequestSource:
             raise ValueError("user_agent must not contain control characters")
         self._user_agent = user_agent
 
-    def get_pull_request(
+    def _get_json(
         self,
         *,
-        repository: str,
-        number: int,
+        url: str,
+        details: Mapping[str, Any],
+        resource_label: str,
     ) -> Mapping[str, Any]:
-        """Return one untrusted decoded PR object for the identity reader."""
-
-        repo = _repository(repository)
-        pr_number = _number(number)
-        owner, name = repo.split("/", 1)
-        url = f"{_API_BASE}/repos/{owner}/{name}/pulls/{pr_number}"
-
         headers = {
             "Accept": _ACCEPT,
             "X-GitHub-Api-Version": _API_VERSION,
@@ -213,80 +230,66 @@ class GitHubRestPullRequestSource:
                         connection_id=self._connection_id,
                         details={
                             "status": status,
-                            "repository": repo,
-                            "pull_request_number": pr_number,
+                            **dict(details),
                         },
                     )
                 payload = response.read(self._max_response_bytes + 1)
         except HTTPError as exc:
             raise _http_error(
                 exc,
-                repository=repo,
-                number=pr_number,
                 connection_id=self._connection_id,
+                details=details,
+                resource_label=resource_label,
             ) from exc
         except (TimeoutError, socket.timeout) as exc:
             raise ConnectorError(
                 code="timeout",
-                message="GitHub pull-request request timed out.",
+                message=f"GitHub {resource_label} request timed out.",
                 connection_id=self._connection_id,
-                details={
-                    "repository": repo,
-                    "pull_request_number": pr_number,
-                },
+                details=dict(details),
             ) from exc
         except URLError as exc:
             reason = getattr(exc, "reason", None)
             if isinstance(reason, (TimeoutError, socket.timeout)):
                 raise ConnectorError(
                     code="timeout",
-                    message="GitHub pull-request request timed out.",
+                    message=f"GitHub {resource_label} request timed out.",
                     connection_id=self._connection_id,
-                    details={
-                        "repository": repo,
-                        "pull_request_number": pr_number,
-                    },
+                    details=dict(details),
                 ) from exc
             raise ConnectorError(
                 code="provider_unavailable",
-                message="GitHub pull-request metadata is unavailable.",
+                message=f"GitHub {resource_label} metadata is unavailable.",
                 connection_id=self._connection_id,
-                details={
-                    "repository": repo,
-                    "pull_request_number": pr_number,
-                },
+                details=dict(details),
             ) from exc
         except ConnectorError:
             raise
         except OSError as exc:
             raise ConnectorError(
                 code="provider_unavailable",
-                message="GitHub pull-request metadata is unavailable.",
+                message=f"GitHub {resource_label} metadata is unavailable.",
                 connection_id=self._connection_id,
-                details={
-                    "repository": repo,
-                    "pull_request_number": pr_number,
-                },
+                details=dict(details),
             ) from exc
 
         if not isinstance(payload, bytes):
             raise ConnectorError(
                 code="result_normalization_error",
-                message="GitHub returned a non-bytes pull-request response.",
+                message=f"GitHub returned a non-bytes {resource_label} response.",
                 connection_id=self._connection_id,
-                details={
-                    "repository": repo,
-                    "pull_request_number": pr_number,
-                },
+                details=dict(details),
             )
         if len(payload) > self._max_response_bytes:
             raise ConnectorError(
                 code="result_normalization_error",
-                message="GitHub pull-request response exceeds the configured size limit.",
+                message=(
+                    f"GitHub {resource_label} response exceeds "
+                    "the configured size limit."
+                ),
                 connection_id=self._connection_id,
                 details={
-                    "repository": repo,
-                    "pull_request_number": pr_number,
+                    **dict(details),
                     "max_response_bytes": self._max_response_bytes,
                 },
             )
@@ -296,22 +299,67 @@ class GitHubRestPullRequestSource:
         except (UnicodeDecodeError, json.JSONDecodeError) as exc:
             raise ConnectorError(
                 code="result_normalization_error",
-                message="GitHub returned malformed pull-request JSON.",
+                message=f"GitHub returned malformed {resource_label} JSON.",
                 connection_id=self._connection_id,
-                details={
-                    "repository": repo,
-                    "pull_request_number": pr_number,
-                },
+                details=dict(details),
             ) from exc
 
         if not isinstance(decoded, dict):
             raise ConnectorError(
                 code="result_normalization_error",
-                message="GitHub returned a non-object pull-request JSON response.",
+                message=(
+                    f"GitHub returned a non-object {resource_label} "
+                    "JSON response."
+                ),
                 connection_id=self._connection_id,
-                details={
-                    "repository": repo,
-                    "pull_request_number": pr_number,
-                },
+                details=dict(details),
             )
         return decoded
+
+    def get_pull_request(
+        self,
+        *,
+        repository: str,
+        number: int,
+    ) -> Mapping[str, Any]:
+        """Return one untrusted decoded PR object for the identity reader."""
+
+        repo = _repository(repository)
+        pr_number = _number(number)
+        owner, name = repo.split("/", 1)
+        return self._get_json(
+            url=f"{_API_BASE}/repos/{owner}/{name}/pulls/{pr_number}",
+            details={
+                "repository": repo,
+                "pull_request_number": pr_number,
+            },
+            resource_label="pull-request",
+        )
+
+    def get_branch_ref(
+        self,
+        *,
+        repository: str,
+        branch: str,
+    ) -> Mapping[str, Any]:
+        """Return one untrusted decoded branch-ref object for the identity reader."""
+
+        repo = _repository(repository)
+        branch_name = _branch(branch)
+        owner, name = repo.split("/", 1)
+        encoded_branch = quote(branch_name, safe="")
+        return self._get_json(
+            url=(
+                f"{_API_BASE}/repos/{owner}/{name}/git/ref/heads/"
+                f"{encoded_branch}"
+            ),
+            details={
+                "repository": repo,
+                "branch": branch_name,
+            },
+            resource_label="branch-ref",
+        )
+
+
+# Compatibility alias retained for existing callers introduced in v0.1.
+GitHubRestPullRequestSource = GitHubRestIdentitySource
