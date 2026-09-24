@@ -658,3 +658,22 @@ It proves the following preconditions before C2-G may use credentials:
 - the final candidate identity contains no verification, acceptance, merge, or integration authority.
 
 C2-G remains a separate live low-risk smoke gate. Passing the offline fixture must never be reported as evidence that a real Jules credential, Source, remote sandbox, candidate PR, or live verification path is healthy.
+
+## Trusted GitHub branch-head observation
+
+Jules Session creation currently names a mutable GitHub starting branch. IDKMesh must not treat a caller-supplied branch name or revision string as proof that the branch actually resolves to that revision.
+
+`idkmesh/github_branch_reader.py` introduces the provider-neutral source-identity boundary:
+
+```text
+authorized repository + branch
+ -> untrusted GitHub ref observation
+ -> GitHubBranchHeadReader
+ -> exact repository + branch + immutable commit object id
+```
+
+The reader requires the returned ref to equal the exact requested `refs/heads/<branch>`, requires the target object type to be `commit`, and validates a 40- or 64-character hexadecimal Git object id. Request identity is validated before source I/O.
+
+The resulting `GitHubBranchHeadBinding` is **identity evidence only**. It deliberately has no `verified`, dispatch, candidate-ready, verification, acceptance, merge, or integration-authority field.
+
+A higher orchestration layer may construct Jules `ScmRevisionBinding(verified=True)` only after it has independently compared the authorized requested revision with this exact SCM observation. Merely possessing a syntactically valid SHA is not sufficient.
