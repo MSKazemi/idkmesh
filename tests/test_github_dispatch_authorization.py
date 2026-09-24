@@ -1,6 +1,7 @@
 import unittest
 
 from idkmesh.github_dispatch_authorization import (
+    GitHubDispatchAuthorization,
     GitHubDispatchAuthorizationPolicy,
     TrustedGitHubActor,
     authorize_github_dispatch,
@@ -235,6 +236,53 @@ class GitHubDispatchAuthorizationTests(unittest.TestCase):
             _policy(trusted_actors=())
         with self.assertRaisesRegex(ValueError, "allowed_roles"):
             _policy(allowed_roles=frozenset())
+
+    def test_decision_cannot_be_constructed_self_contradictory(self):
+        """The decision object is the dispatch boundary's authority token, so
+        it must not be constructible in a state that claims authority while
+        naming denial reasons, or that claims authority without the identity
+        the evaluator guarantees."""
+
+        base = dict(
+            delivery_id="delivery-123",
+            repository="MSKazemi/idkmesh",
+            issue_number=77,
+            actor_id=42,
+            actor_login="MSKazemi",
+            actor_role="maintainer",
+            label_name="agent-ready",
+            installation_id=None,
+        )
+        for overrides in (
+            {"authorized": True, "reasons": ("actor_id_not_trusted",)},
+            {"authorized": False, "reasons": ()},
+            {"authorized": True, "reasons": (), "issue_number": None},
+            {"authorized": True, "reasons": (), "label_name": None},
+            {"authorized": True, "reasons": (), "actor_role": None},
+            {"authorized": True, "reasons": (), "actor_id": 0},
+            {"authorized": True, "reasons": (), "actor_login": ""},
+            {"authorized": True, "reasons": (), "actor_role": "stranger"},
+            {"authorized": False, "reasons": ("",)},
+            {"authorized": False, "reasons": ["actor_id_not_trusted"]},
+        ):
+            with self.subTest(overrides=overrides):
+                values = dict(base)
+                values.update(overrides)
+                with self.assertRaises(ValueError):
+                    GitHubDispatchAuthorization(**values)
+
+        allowed = GitHubDispatchAuthorization(
+            authorized=True,
+            reasons=(),
+            **base,
+        )
+        self.assertTrue(allowed.authorized)
+        denied = GitHubDispatchAuthorization(
+            authorized=False,
+            reasons=("actor_id_not_trusted",),
+            **{**base, "actor_role": None},
+        )
+        self.assertFalse(denied.authorized)
 
     def test_decision_contains_no_issue_text_or_secret_value(self):
         decision = authorize_github_dispatch(

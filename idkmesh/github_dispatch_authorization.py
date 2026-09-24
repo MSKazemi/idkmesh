@@ -164,6 +164,46 @@ class GitHubDispatchAuthorization:
     label_name: str | None
     installation_id: int | None
 
+    def __post_init__(self) -> None:
+        if not isinstance(self.authorized, bool):
+            raise ValueError("authorized must be a bool")
+        if not isinstance(self.reasons, tuple) or any(
+            not isinstance(reason, str) or not reason
+            for reason in self.reasons
+        ):
+            raise ValueError("reasons must be a tuple of non-empty strings")
+        if self.authorized and self.reasons:
+            raise ValueError(
+                "an authorized decision must carry no denial reasons"
+            )
+        if not self.authorized and not self.reasons:
+            raise ValueError(
+                "a denied decision must name at least one reason"
+            )
+        _text(self.delivery_id, "delivery_id")
+        _text(self.repository, "repository")
+        _positive_int(self.actor_id, "actor_id")
+        _text(self.actor_login, "actor_login")
+        if self.issue_number is not None:
+            _positive_int(self.issue_number, "issue_number")
+        if self.installation_id is not None:
+            _positive_int(self.installation_id, "installation_id")
+        if (
+            self.actor_role is not None
+            and self.actor_role not in _ALLOWED_ROLES
+        ):
+            raise ValueError(
+                f"unsupported actor role: {self.actor_role}"
+            )
+        if self.authorized and (
+            self.issue_number is None
+            or self.label_name is None
+            or self.actor_role is None
+        ):
+            raise ValueError(
+                "an authorized decision must name the issue, label, and role"
+            )
+
     def to_dict(self) -> dict[str, Any]:
         return {
             "authorized": self.authorized,
