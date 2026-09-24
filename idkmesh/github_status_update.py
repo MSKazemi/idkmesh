@@ -95,7 +95,7 @@ def _comment_body(value: object) -> str:
     if len(value.encode("utf-8")) > 4096:
         raise ValueError("body exceeds 4096 UTF-8 bytes")
     if any(
-        (ord(char) < 32 and char not in {"\\n", "\\t"})
+        (ord(char) < 32 and char not in {"\n", "\t"})
         or ord(char) == 127
         for char in value
     ):
