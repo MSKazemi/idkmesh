@@ -44,6 +44,7 @@ Status: research preview; not production software.
 - [Experiment atlas](https://mskazemi.com/idkmesh/research.html) — published experiment summaries with their actual result status.
 - [Research documentation](https://mskazemi.com/idkmesh/research/)
 - [E017 verifier-panel measurement](https://github.com/MSKazemi/idkmesh/blob/main/experiments/E017-item-difficulty-and-quorum.md)
+- [E017 reproduction guide](https://mskazemi.com/idkmesh/research/E017_VERIFIER_PANEL_REPRODUCIBILITY.html) — retained artifact SHA, commands, expected verifier-panel metrics, limitations, and falsification criteria.
 - [Audits](https://mskazemi.com/idkmesh/audits/)
 - [Findings](https://mskazemi.com/idkmesh/findings/)
 
