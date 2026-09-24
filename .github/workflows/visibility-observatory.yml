@@ -4,6 +4,18 @@ on:
   workflow_dispatch:
   schedule:
     - cron: "11 6 * * 1"
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/visibility-observatory.yml"
+      - "config/seo-topics-v1.json"
+      - "config/discovery-query-portfolio-v0.1.json"
+      - "config/visibility-growth-policy-v0.1.json"
+      - "scripts/discovery_query_portfolio.py"
+      - "scripts/search_console_snapshot.py"
+      - "scripts/visibility_growth_selector.py"
+      - "scripts/visibility_observatory.py"
 
 permissions:
   contents: read
