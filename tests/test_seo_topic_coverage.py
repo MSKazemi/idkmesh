@@ -13,7 +13,7 @@ DOCS = ROOT / "docs"
 CONFIG = ROOT / "config" / "seo-topics-v1.json"
 HUB = DOCS / "topics" / "index.md"
 SITE_PREFIX = "https://mskazemi.com/idkmesh/topics/"
-QUESTION_HEADING_RE = re.compile(r"^### (.+\?) \\{#([a-z0-9][a-z0-9-]*)\\}$", re.MULTILINE)
+QUESTION_HEADING_RE = re.compile(r"^### (.+\?) \{#([a-z0-9][a-z0-9-]*)\}$", re.MULTILINE)
 
 
 def _frontmatter(text: str) -> dict[str, str]:
