@@ -18,6 +18,7 @@ POLICY = {
     "dispatch_label": "agent:jules-dispatched",
     "legacy_dispatch_labels": ["jules"],
     "attention_label": "agent:jules-needs-attention",
+    "completion_label": "agent:jules-completed",
     "attention_session_states": [
         "FAILED",
         "AWAITING_PLAN_APPROVAL",
@@ -57,6 +58,7 @@ POLICY = {
         "research-evidence",
         "security-sensitive",
         "agent:jules-needs-attention",
+        "agent:jules-completed",
     ],
     "priority_weights": {
         "priority:p0": 300,
@@ -72,6 +74,10 @@ POLICY = {
         "agent:jules-needs-attention": {
             "color": "D93F0B",
             "description": "attention",
+        },
+        "agent:jules-completed": {
+            "color": "1D76DB",
+            "description": "completed",
         },
         "jules": {"color": "EDEDED", "description": "legacy"},
     },
@@ -110,10 +116,12 @@ class FakeAPI:
         queued_runs=0,
         in_progress_runs=0,
         actions_error=None,
+        pull_requests=None,
     ):
         self.repository = "MSKazemi/idkmesh"
         self.issues = deepcopy(list(issues or []))
         self.labels = list(labels or [])
+        self.pull_requests = deepcopy(dict(pull_requests or {}))
         self.queued_runs = queued_runs
         self.in_progress_runs = in_progress_runs
         self.actions_error = actions_error
@@ -123,6 +131,11 @@ class FakeAPI:
         self.removed = []
         self.comments = []
         self.created = []
+
+    def get_pull_request_from_url(self, url: str):
+        if url not in self.pull_requests:
+            raise AssertionError(f"unexpected pull request URL {url}")
+        return deepcopy(self.pull_requests[url])
 
     def count_workflow_runs(self, status: str):
         self.workflow_run_count_calls.append(status)
@@ -183,6 +196,7 @@ class FakeJules:
         self.resolved = []
         self.created = []
         self.list_calls = 0
+        self.get_calls = []
 
     def resolve_source(self, repository: str):
         self.resolved.append(repository)
@@ -191,6 +205,13 @@ class FakeJules:
     def list_sessions(self, *, max_pages: int = 3):
         self.list_calls += 1
         return deepcopy(self.sessions)
+
+    def get_session(self, name: str):
+        self.get_calls.append(name)
+        for session in self.sessions:
+            if str(session.get("name") or "") == name:
+                return deepcopy(session)
+        raise AssertionError(f"unexpected session resource {name}")
 
     def create_session(self, **kwargs):
         self.created.append(deepcopy(kwargs))
@@ -224,8 +245,12 @@ def test_dispatchability_supports_manual_and_trusted_automatic_queues():
         issue(6, "agent-ready", "agent:jules-dispatched"),
         POLICY,
     )
-    assert not jd.is_dispatchable(issue(7, "agent-ready", state="closed"), POLICY)
-    assert not jd.is_dispatchable(issue(8, "agent-ready", pull=True), POLICY)
+    assert not jd.is_dispatchable(
+        issue(7, "agent-ready", "agent:jules-completed"),
+        POLICY,
+    )
+    assert not jd.is_dispatchable(issue(8, "agent-ready", state="closed"), POLICY)
+    assert not jd.is_dispatchable(issue(9, "agent-ready", pull=True), POLICY)
 
 
 def test_selection_prefers_event_issue_then_priority_and_small_size():
@@ -585,6 +610,91 @@ def test_reconcile_marks_missing_session_after_grace_period():
     assert "no matching Jules session" in api.comments[0][1]
 
 
+def test_reconcile_completed_session_keeps_reservation_while_pr_is_open():
+    active = issue(54, "agent:jules-dispatched")
+    pull_url = "https://github.com/MSKazemi/idkmesh/pull/900"
+    session = {
+        "name": "sessions/completed-open-pr",
+        "url": "https://jules.google.com/session/completed-open-pr",
+        "title": jd.session_title("MSKazemi/idkmesh", active),
+        "state": "COMPLETED",
+        "updateTime": "2026-09-23T17:59:00Z",
+        "outputs": [{"pullRequest": {"url": pull_url, "title": "candidate"}}],
+    }
+    api = FakeAPI(
+        issues=[active],
+        pull_requests={pull_url: {"number": 900, "state": "open"}},
+    )
+    jules = FakeJules(sessions=[session])
+
+    assert jd.reconcile_active_sessions(
+        api,
+        POLICY,
+        jules_api=jules,
+        now=NOW,
+    ) == []
+    assert jules.get_calls == ["sessions/completed-open-pr"]
+    assert api.added == []
+    assert api.removed == []
+
+
+def test_reconcile_completed_session_releases_reservation_after_pr_closes():
+    active = issue(55, "agent:jules-dispatched")
+    pull_url = "https://github.com/MSKazemi/idkmesh/pull/901"
+    session = {
+        "name": "sessions/completed-closed-pr",
+        "url": "https://jules.google.com/session/completed-closed-pr",
+        "title": jd.session_title("MSKazemi/idkmesh", active),
+        "state": "COMPLETED",
+        "updateTime": "2026-09-23T17:59:00Z",
+        "outputs": [{"pullRequest": {"url": pull_url, "title": "candidate"}}],
+    }
+    api = FakeAPI(
+        issues=[active],
+        pull_requests={
+            pull_url: {
+                "number": 901,
+                "state": "closed",
+                "merged_at": "2026-09-23T17:50:00Z",
+            }
+        },
+    )
+
+    assert jd.reconcile_active_sessions(
+        api,
+        POLICY,
+        jules_api=FakeJules(sessions=[session]),
+        now=NOW,
+    ) == [55]
+    assert api.added == [(55, ["agent:jules-completed"])]
+    assert api.removed == [(55, "agent:jules-dispatched")]
+    assert "review reservation" in api.comments[0][1]
+    assert pull_url in api.comments[0][1]
+
+
+def test_reconcile_completed_session_without_pr_fails_closed_to_attention():
+    active = issue(56, "agent:jules-dispatched")
+    session = {
+        "name": "sessions/completed-no-pr",
+        "url": "https://jules.google.com/session/completed-no-pr",
+        "title": jd.session_title("MSKazemi/idkmesh", active),
+        "state": "COMPLETED",
+        "updateTime": "2026-09-23T17:59:00Z",
+        "outputs": [],
+    }
+    api = FakeAPI(issues=[active])
+
+    assert jd.reconcile_active_sessions(
+        api,
+        POLICY,
+        jules_api=FakeJules(sessions=[session]),
+        now=NOW,
+    ) == [56]
+    assert api.added == [(56, ["agent:jules-needs-attention"])]
+    assert api.removed == [(56, "agent:jules-dispatched")]
+    assert "without a pull-request output" in api.comments[0][1]
+
+
 def test_reconcile_then_dispatch_backfills_freed_slot_in_same_snapshot():
     failed = issue(60, "agent:jules-dispatched")
     open_issues = [
@@ -631,6 +741,7 @@ def test_ensure_labels_creates_new_queue_and_attention_labels():
         "agent:jules-eligible",
         "agent:jules-dispatched",
         "agent:jules-needs-attention",
+        "agent:jules-completed",
     }
 
 
@@ -647,6 +758,7 @@ def test_repository_policy_keeps_speed_and_hard_vetoes_explicit():
         "COLLABORATOR",
     ]
     assert policy["attention_label"] == "agent:jules-needs-attention"
+    assert policy["completion_label"] == "agent:jules-completed"
     assert policy["stale_session_minutes"]["QUEUED"] == 120
     assert policy["session_scan_max_pages"] == 10
     assert policy["max_in_flight"] == 4
@@ -667,6 +779,7 @@ def test_repository_policy_keeps_speed_and_hard_vetoes_explicit():
     assert jd.effective_in_flight_limit(policy) == 3
     assert policy["max_dispatch_per_sweep"] == 2
     assert "agent:jules-needs-attention" in policy["blocked_labels"]
+    assert "agent:jules-completed" in policy["blocked_labels"]
 
 
 def test_provider_capacity_is_independent_from_repository_reservations():
