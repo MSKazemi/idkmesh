@@ -16,6 +16,7 @@ on:
       - "scripts/bing_ai_performance_import.py"
       - "scripts/search_console_snapshot.py"
       - "scripts/search_visibility_observation_plan.py"
+      - "scripts/search_visibility_observation_import.py"
       - "scripts/visibility_growth_selector.py"
       - "scripts/visibility_observatory.py"
 
@@ -50,6 +51,7 @@ jobs:
             tests.test_bing_ai_performance_import \
             tests.test_search_console_snapshot \
             tests.test_search_visibility_observation_plan \
+            tests.test_search_visibility_observation_import \
             tests.test_visibility_growth_selector \
             -v
 

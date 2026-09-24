@@ -46,6 +46,59 @@ python scripts/search_visibility_observation_plan.py \
 The worklist is not an observation ledger and makes no visibility claim. It is
 only a deterministic queue of queries/surfaces to reproduce.
 
+## Complete and import a worklist
+
+Generate a fillable CSV template from the same deterministic plan:
+
+```bash
+# 80 sentinel rows
+python scripts/search_visibility_observation_import.py \
+  --template heads > /tmp/idkmesh-search-heads.csv
+
+# 800 full rows
+python scripts/search_visibility_observation_import.py \
+  --template full > /tmp/idkmesh-search-full.csv
+```
+
+The plan-controlled columns must not be edited:
+
+- `plan_id`
+- `engine`
+- `product_surface`
+- `surface`
+- `evidence_class`
+- `cluster`
+- `mapped_intent`
+- `query`
+- `target_url`
+
+For a row that was actually reproduced, fill:
+
+- `observed_at` — timezone-aware ISO 8601 timestamp;
+- `surfaced` — exactly `true` or `false`;
+- `position` — optional positive integer when the named surface exposes an
+  ordered position;
+- `citation_url` — optional URL actually surfaced/cited;
+- `evidence_ref` — optional minimal reproducibility reference;
+- `notes` — required concise observation note.
+
+Then produce a **candidate** ledger:
+
+```bash
+python scripts/search_visibility_observation_import.py \
+  --input /tmp/idkmesh-search-heads.csv \
+  --output /tmp/observations.candidate.json
+```
+
+The importer revalidates every plan-controlled field against the canonical
+800-item worklist, rejects invalid timestamps and impossible negative-result
+claims, generates deterministic observation IDs, and refuses to overwrite the
+canonical ledger directly.
+
+Review the candidate diff before replacing
+`evidence/search-visibility/observations.json`. After a reviewed ledger change,
+regenerate `REPORT.md` and run the focused visibility tests.
+
 ## Add an observation
 
 1. Choose one of the 100 `mapped_intent` values from `config/seo-topics-v1.json`.
