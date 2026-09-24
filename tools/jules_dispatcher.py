@@ -947,11 +947,12 @@ def reconcile_active_sessions(
                 else:
                     session = full_session
 
-            reason = session_attention_reason(
-                session,
-                policy,
-                now=current_time,
-            )
+            if reason is None:
+                reason = session_attention_reason(
+                    session,
+                    policy,
+                    now=current_time,
+                )
 
         if reason is None:
             continue
