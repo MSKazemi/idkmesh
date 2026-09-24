@@ -50,42 +50,52 @@ Interoperability also does not remove the need for verification. A remote agent 
 
 ## Common questions
 
+<a id="q01"></a>
 ### Is MCP the same as A2A?
 
 No. MCP focuses on connecting AI applications to tools and data; A2A focuses on communication between agentic applications. They are complementary.
 
+<a id="q02"></a>
 ### Can MCP orchestrate multiple agents?
 
 It can participate in multi-agent designs, but orchestration policy, shared task lifecycle, authority, and evidence often need application-level semantics beyond tool invocation.
 
+<a id="q03"></a>
 ### What is an AI agent connector framework?
 
 It is an abstraction layer that normalizes configuration, health, capability, execution, credentials, and results across heterogeneous agents or model providers.
 
+<a id="q04"></a>
 ### Why not write a separate coordinator for every provider?
 
 Provider-specific coordinator branches duplicate policy and make trust behavior inconsistent. IDKMesh instead targets shared contracts with adapters behind them.
 
+<a id="q05"></a>
 ### Where is the IDKMesh mapping documented?
 
 Read the [A2A/MCP mapping](https://github.com/MSKazemi/idkmesh/blob/main/docs/interoperability/A2A_MCP_MAPPING_V0_1.md) and [connector-control-plane architecture](https://github.com/MSKazemi/idkmesh/blob/main/docs/architecture/AGENT_MODEL_CONNECTOR_CONTROL_PLANE.md).
 
+<a id="q06"></a>
 ### When should I use MCP instead of A2A?
 
 Use MCP when an agentic application needs tools, resources, or context exposed by a server. Use A2A when one agentic application needs to communicate or delegate work to another agentic application.
 
+<a id="q07"></a>
 ### Can MCP and A2A be used together?
 
 Yes. An A2A-connected agent may itself use MCP servers for tools and context. The protocols operate at different boundaries and can be composed.
 
+<a id="q08"></a>
 ### How is IDKMesh different from MCP or A2A?
 
 IDKMesh is not a replacement transport protocol. It adds bounded Work Units, routing policy, evidence, provenance, verification, and integration-authority semantics around heterogeneous workers and protocols.
 
+<a id="q09"></a>
 ### How should MCP or A2A connectors be secured?
 
 Use explicit capability declarations, scoped credentials, input validation, network and filesystem boundaries, secret-reference indirection, auditable execution, and a policy layer that can deny high-risk operations.
 
+<a id="q10"></a>
 ### What metadata should an interoperable agent adapter expose?
 
 At minimum: identity, capabilities, health, supported task/transport versions, authority limits, resource constraints, provenance hooks, and normalized result/error semantics.
