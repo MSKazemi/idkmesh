@@ -62,6 +62,8 @@ IDKMesh attempted a live LLM-verifier measurement earlier in [E016](https://gith
 
 The transferable lesson is narrower and more useful: **measure reviewer competence and shared error structure before treating reviewer count as independent evidence.**
 
+Reproduce the retained votes, analysis, and acceptance metrics with the [E017 reproduction guide](https://mskazemi.com/idkmesh/research/E017_VERIFIER_PANEL_REPRODUCIBILITY.html).
+
 ## Common questions
 
 ### What is an effective independent vote?
@@ -106,4 +108,4 @@ Compare item-level error patterns, prompts, tools, data sources, model/provider 
 
 [Browse all AI-agent trust topics](https://mskazemi.com/idkmesh/topics/).
 
-**Last reviewed:** 2026-09-23.
+**Last reviewed:** 2026-09-24.
