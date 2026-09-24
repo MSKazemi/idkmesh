@@ -431,3 +431,31 @@ The retained offline scenarios prove:
 This slice does not yet make admission/dispatch restart-idempotent. Durable
 same-key/same-request reuse and same-key/different-request conflict handling
 remain the PS-C composition over the local metadata/idempotency store.
+
+
+## Local restart-safe idempotency composition
+
+PS-C adds `idkmesh.product_spine_idempotency`, a local/reference wrapper around
+the deterministic offline service and the existing SQLite
+`LocalMetadataStore`.
+
+The wrapper applies these fail-closed rules before worker/verifier execution:
+
+- one canonical digest covers project, exact WorkUnit/source, routing policy,
+  connector capabilities/policy, and deterministic attempt request content;
+- candidate filesystem roots are excluded from semantic identity, while
+  CandidateReference and WorkUnit/source/attempt bindings remain included;
+- the idempotency key is atomically reserved before orchestration;
+- same key + same request reconstructs the stored Product Spine projection and
+  evidence without invoking the worker/verifier path again;
+- same key + different request returns an idempotency conflict;
+- a retained but incomplete reservation is not automatically re-dispatched;
+- persisted Product Spine/evidence digest drift fails closed on replay.
+
+The persisted record contains compact, secret-free semantic projections and
+digests. It is a development/reference store, not the hosted multi-tenant
+durable ledger.
+
+This slice completes the deterministic offline idempotency acceptance behavior.
+Hosted recovery, provider session reconciliation, and distributed locking remain
+separate durable-ledger concerns.

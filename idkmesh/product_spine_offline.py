@@ -377,6 +377,7 @@ class OfflineProductSpineService:
         routing_decision: RoutingDecision,
         connectors: Iterable[ConnectorProfile],
         attempts: Sequence[OfflineAttemptSpec],
+        request_digest: str | None = None,
     ) -> OfflineProductSpineResult:
         """Run the deterministic offline lifecycle until human decision is pending."""
 
@@ -399,10 +400,14 @@ class OfflineProductSpineService:
         )
         run = ProductSpineRun(
             run_id=run_id,
-            request_digest=_request_digest(
-                project_id=project_id,
-                binding=binding,
-                decision=routing_decision,
+            request_digest=(
+                request_digest
+                if request_digest is not None
+                else _request_digest(
+                    project_id=project_id,
+                    binding=binding,
+                    decision=routing_decision,
+                )
             ),
             project_id=project_id,
             work_unit_id=binding.work_unit_id,
