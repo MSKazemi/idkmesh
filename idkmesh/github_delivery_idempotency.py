@@ -70,7 +70,7 @@ def github_delivery_idempotency_key(
         raise TypeError("envelope must be GitHubWebhookEnvelope")
     return (
         "github-webhook:"
-        + str(envelope.repository_id)
+        + envelope.repository.casefold()
         + ":"
         + envelope.delivery_id
     )
