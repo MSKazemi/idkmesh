@@ -373,7 +373,8 @@ class ProductSpineRunCliTests(unittest.TestCase):
         self.assertIn("create", proc.stdout)
         self.assertIn("status", proc.stdout)
         self.assertIn("cancel", proc.stdout)
-        self.assertIn("do not dispatch providers", proc.stdout)
+        normalized_stdout = " ".join(proc.stdout.split())
+        self.assertIn("do not dispatch providers", normalized_stdout)
 
 
 if __name__ == "__main__":
