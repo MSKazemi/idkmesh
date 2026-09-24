@@ -50,46 +50,56 @@ Interoperability also does not remove the need for verification. A remote agent 
 
 ## Common questions
 
+<a id="q-is-mcp-the-same-as-a2a"></a>
 ### Is MCP the same as A2A?
 
 No. MCP focuses on connecting AI applications to tools and data; A2A focuses on communication between agentic applications. They are complementary.
 
+<a id="q-can-mcp-orchestrate-multiple-agents"></a>
 ### Can MCP orchestrate multiple agents?
 
 It can participate in multi-agent designs, but orchestration policy, shared task lifecycle, authority, and evidence often need application-level semantics beyond tool invocation.
 
+<a id="q-what-is-an-ai-agent-connector-framework"></a>
 ### What is an AI agent connector framework?
 
 It is an abstraction layer that normalizes configuration, health, capability, execution, credentials, and results across heterogeneous agents or model providers.
 
+<a id="q-why-not-write-a-separate-coordinator-for-every-provider"></a>
 ### Why not write a separate coordinator for every provider?
 
 Provider-specific coordinator branches duplicate policy and make trust behavior inconsistent. IDKMesh instead targets shared contracts with adapters behind them.
 
+<a id="q-where-is-the-idkmesh-mapping-documented"></a>
 ### Where is the IDKMesh mapping documented?
 
 Read the [A2A/MCP mapping](https://github.com/MSKazemi/idkmesh/blob/main/docs/interoperability/A2A_MCP_MAPPING_V0_1.md) and [connector-control-plane architecture](https://github.com/MSKazemi/idkmesh/blob/main/docs/architecture/AGENT_MODEL_CONNECTOR_CONTROL_PLANE.md).
 
+<a id="q-when-should-i-use-mcp-instead-of-a2a"></a>
 ### When should I use MCP instead of A2A?
 
 Use MCP when an agentic application needs tools, resources, or context exposed by a server. Use A2A when one agentic application needs to communicate or delegate work to another agentic application.
 
+<a id="q-can-mcp-and-a2a-be-used-together"></a>
 ### Can MCP and A2A be used together?
 
 Yes. An A2A-connected agent may itself use MCP servers for tools and context. The protocols operate at different boundaries and can be composed.
 
+<a id="q-how-is-idkmesh-different-from-mcp-or-a2a"></a>
 ### How is IDKMesh different from MCP or A2A?
 
 IDKMesh is not a replacement transport protocol. It adds bounded Work Units, routing policy, evidence, provenance, verification, and integration-authority semantics around heterogeneous workers and protocols.
 
+<a id="q-how-should-mcp-or-a2a-connectors-be-secured"></a>
 ### How should MCP or A2A connectors be secured?
 
 Use explicit capability declarations, scoped credentials, input validation, network and filesystem boundaries, secret-reference indirection, auditable execution, and a policy layer that can deny high-risk operations.
 
+<a id="q-what-metadata-should-an-interoperable-agent-adapter-expose"></a>
 ### What metadata should an interoperable agent adapter expose?
 
 At minimum: identity, capabilities, health, supported task/transport versions, authority limits, resource constraints, provenance hooks, and normalized result/error semantics.
 
 [Browse all AI-agent trust topics](https://mskazemi.com/idkmesh/topics/).
 
-**Last reviewed:** 2026-09-22.
+**Last reviewed:** 2026-09-24.
