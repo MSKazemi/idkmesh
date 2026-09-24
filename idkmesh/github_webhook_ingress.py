@@ -87,11 +87,19 @@ def _safe_text(
 def _normalize_header_map(headers: Mapping[str, Any]) -> dict[str, str]:
     if not isinstance(headers, Mapping):
         raise ValueError("headers must be a mapping")
+
+    required_names = {
+        "x-hub-signature-256",
+        "x-github-delivery",
+        "x-github-event",
+    }
     normalized: dict[str, str] = {}
     for raw_name, raw_value in headers.items():
         if not isinstance(raw_name, str) or not raw_name:
             raise ValueError("header names must be non-empty strings")
         name = raw_name.casefold()
+        if name not in required_names:
+            continue
         if name in normalized:
             raise ValueError(
                 f"ambiguous duplicate header after case normalization: {raw_name}"
