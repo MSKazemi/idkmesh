@@ -26,7 +26,7 @@ from typing import Any
 from idkmesh.github_webhook_ingress import GitHubWebhookEnvelope
 
 
-_REPOSITORY_RE = re.compile(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+\\Z")
+_REPOSITORY_RE = re.compile(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+\Z")
 _ALLOWED_ROLES = frozenset(
     {
         "owner",
