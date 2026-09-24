@@ -32,7 +32,26 @@ class QuestionIndexTests(unittest.TestCase):
             self.assertEqual(10, len(questions))
             for question in questions:
                 with self.subTest(question=question):
-                    self.assertIn(f"[{question}]({url})", rendered)
+                    anchor = question_index.question_anchor(question)
+                    self.assertIn(f"[{question}]({url}#{anchor})", rendered)
+
+    def test_every_question_has_one_unique_source_anchor(self) -> None:
+        anchors: list[str] = []
+        for entry in question_index.question_entries():
+            source = question_index.ROOT / next(
+                cluster["path"]
+                for cluster in question_index.load_config()["clusters"]
+                if cluster["id"] == entry["id"]
+            )
+            source_text = source.read_text(encoding="utf-8")
+            for question in entry["questions"]:
+                fragment = question_index.question_anchor(question)
+                anchors.append(fragment)
+                marker = f'<a id="{fragment}"></a>\n### {question}'
+                with self.subTest(question=question):
+                    self.assertEqual(1, source_text.count(marker))
+        self.assertEqual(100, len(anchors))
+        self.assertEqual(100, len(set(anchors)))
 
     def test_question_map_is_linked_from_discovery_surfaces(self) -> None:
         root = question_index.ROOT
