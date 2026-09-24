@@ -77,6 +77,32 @@ def _digest(value: object, field: str) -> str:
     return value
 
 
+def _repository(value: object) -> str:
+    if not isinstance(value, str) or _REPOSITORY_RE.fullmatch(value) is None:
+        raise ValueError("repository must be in owner/name form")
+    return value
+
+
+def _issue_number(value: object) -> int:
+    if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+        raise ValueError("issue_number must be an integer >= 1")
+    return value
+
+
+def _comment_body(value: object) -> str:
+    if not isinstance(value, str) or not value:
+        raise ValueError("body must be a non-empty string")
+    if len(value.encode("utf-8")) > 4096:
+        raise ValueError("body exceeds 4096 UTF-8 bytes")
+    if any(
+        (ord(char) < 32 and char not in {"\\n", "\\t"})
+        or ord(char) == 127
+        for char in value
+    ):
+        raise ValueError("body contains unsupported control characters")
+    return value
+
+
 @dataclass(frozen=True, slots=True)
 class GitHubRunStatus:
     repository: str
@@ -88,17 +114,8 @@ class GitHubRunStatus:
     routing_digest: str
 
     def __post_init__(self) -> None:
-        if (
-            not isinstance(self.repository, str)
-            or _REPOSITORY_RE.fullmatch(self.repository) is None
-        ):
-            raise ValueError("repository must be in owner/name form")
-        if (
-            isinstance(self.issue_number, bool)
-            or not isinstance(self.issue_number, int)
-            or self.issue_number < 1
-        ):
-            raise ValueError("issue_number must be an integer >= 1")
+        _repository(self.repository)
+        _issue_number(self.issue_number)
         for field in ("run_id", "work_unit_id"):
             value = _text(getattr(self, field), field, max_length=192)
             if _ID_RE.fullmatch(value) is None:
@@ -415,17 +432,9 @@ class GitHubRestIssueCommentTransport:
         issue_number: int,
         body: str,
     ) -> GitHubIssueComment:
-        status = GitHubRunStatus(
-            repository=repository,
-            issue_number=issue_number,
-            run_id="validation/run",
-            state="proposed",
-            work_unit_id="validation/work",
-            work_unit_digest="sha256:" + "0" * 64,
-            routing_digest="sha256:" + "0" * 64,
-        )
-        del status
-        body = _text(body, "body", max_length=4096)
+        repository = _repository(repository)
+        issue_number = _issue_number(issue_number)
+        body = _comment_body(body)
 
         owner, name = repository.split("/", 1)
         url = (
@@ -560,10 +569,17 @@ class GitHubRestIssueCommentTransport:
 
         comment_id = decoded.get("id")
         html_url = decoded.get("html_url")
-        comment = GitHubIssueComment(
-            comment_id=comment_id,
-            html_url=html_url,
-        )
+        try:
+            comment = GitHubIssueComment(
+                comment_id=comment_id,
+                html_url=html_url,
+            )
+        except ValueError as exc:
+            raise ConnectorError(
+                code="result_normalization_error",
+                message="GitHub returned malformed status comment identity.",
+                connection_id=self._connection_id,
+            ) from exc
         expected_prefix = (
             f"https://github.com/{repository}/issues/"
             f"{issue_number}#issuecomment-"
