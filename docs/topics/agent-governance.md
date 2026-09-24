@@ -41,42 +41,52 @@ See [provenance and evidence](https://mskazemi.com/idkmesh/topics/provenance-evi
 
 ## Common questions
 
+<a id="q01"></a>
 ### What does human-in-the-loop mean for AI agents?
 
 A human retains specific decision rights in an automated workflow. Good designs identify the exact boundary—such as permission escalation or merge—not merely say "a human is involved."
 
+<a id="q02"></a>
 ### How do I make autonomous agents safer?
 
 Use least authority, isolated execution, bounded tasks, explicit stop conditions, provenance, deterministic checks, independent verification, and protected integration.
 
+<a id="q03"></a>
 ### Should every AI action need human approval?
 
 No. Approval burden should follow risk. The goal is to preserve meaningful human authority without making humans rubber-stamp high-volume low-risk operations.
 
+<a id="q04"></a>
 ### What is an AI approval workflow?
 
 It is a controlled path from proposal to evidence to an authority decision. In IDKMesh, worker completion and verifier recommendation remain separate from final integration.
 
+<a id="q05"></a>
 ### Where are IDKMesh governance rules?
 
 Read the [Constitution](https://github.com/MSKazemi/idkmesh/blob/main/CONSTITUTION.md), [Governance](https://github.com/MSKazemi/idkmesh/blob/main/GOVERNANCE.md), and [Project Rules](https://github.com/MSKazemi/idkmesh/blob/main/PROJECT_RULES.md).
 
+<a id="q06"></a>
 ### What permissions should an AI coding agent receive?
 
 Give only the permissions needed for the bounded task. Prefer read access plus isolated candidate-write capability, and keep branch protection, secrets, release credentials, and organization settings outside the worker's authority unless a specific reviewed task requires them.
 
+<a id="q07"></a>
 ### How do you implement least privilege for AI agents?
 
 Issue short-lived, scoped credentials; isolate execution; separate read, write, approve, and merge capabilities; and make escalation an explicit policy decision rather than a hidden property of the agent runtime.
 
+<a id="q08"></a>
 ### When should human review be mandatory for an AI agent?
 
 Human review is most valuable for high-impact security, privacy, governance, release, financial, destructive, or ambiguous changes, and whenever the verification evidence is insufficient for the configured risk threshold.
 
+<a id="q09"></a>
 ### How do you audit AI-agent actions?
 
 Retain the task contract, identity, permissions, tool calls where relevant, artifact revisions, verifier results, and final authority decision. The audit record should let a reviewer reconstruct what changed and why.
 
+<a id="q10"></a>
 ### How do you govern agents from multiple AI vendors?
 
 Use provider-neutral task, permission, provenance, and evidence contracts. Vendor-specific credentials and APIs stay behind connectors while shared governance determines what every worker may do and what evidence it must return.
