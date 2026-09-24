@@ -178,10 +178,16 @@ def _run_id(idempotency_key: str, request_digest: str) -> str:
     )
 
 
-def _result_metadata(result) -> dict[str, Any]:
+def _result_metadata(
+    result,
+    *,
+    idempotency_request_digest: str,
+) -> dict[str, Any]:
     return {
         "schema_version": IDEMPOTENCY_SCHEMA_VERSION,
         "kind": _RESULT_KIND,
+        "idempotency_request_digest": idempotency_request_digest,
+        "product_spine_request_digest": result.run.request_digest,
         "projection": result.run.to_dict(),
         "source_run_record": result.source_run_record,
         "evidence_report": result.evidence_report,
@@ -235,11 +241,17 @@ def _restore(
             "store.run_id",
             "stored projection run id differs from idempotency record",
         )
-    if run.request_digest != record.request_digest:
+    if metadata.get("idempotency_request_digest") != record.request_digest:
         raise OfflineProductSpineError(
             "persisted_state_corrupt",
-            "store.request_digest",
-            "stored projection request digest differs from idempotency record",
+            "store.idempotency_request_digest",
+            "persisted idempotency digest differs from the atomic store record",
+        )
+    if metadata.get("product_spine_request_digest") != run.request_digest:
+        raise OfflineProductSpineError(
+            "persisted_state_corrupt",
+            "store.product_spine_request_digest",
+            "persisted Product Spine digest differs from the run projection",
         )
     if record.idempotency_key != idempotency_key:
         raise OfflineProductSpineError(
@@ -380,7 +392,6 @@ class IdempotentOfflineProductSpineService:
                 routing_decision=routing_decision,
                 connectors=connector_tuple,
                 attempts=attempts,
-                request_digest=request_digest,
             )
         except OfflineProductSpineError as exc:
             self._store.update_run(
@@ -399,7 +410,10 @@ class IdempotentOfflineProductSpineService:
         stored = self._store.update_run(
             run_id,
             state=result.run.state,
-            metadata=_result_metadata(result),
+            metadata=_result_metadata(
+                result,
+                idempotency_request_digest=request_digest,
+            ),
             updated_at=updated_at or created_at,
         )
 
