@@ -98,7 +98,7 @@ class GitHubDeliveryIdempotencyTests(unittest.TestCase):
                 received_at="2026-09-24T01:21:00Z",
             )
 
-    def test_same_delivery_with_changed_header_identity_fails_closed(self):
+    def test_same_delivery_with_changed_normalized_identity_fails_closed(self):
         admit_github_delivery(
             store=self._store(),
             envelope=_envelope(),
@@ -112,25 +112,22 @@ class GitHubDeliveryIdempotencyTests(unittest.TestCase):
         ):
             with self.subTest(changes=changes):
                 with self.assertRaises(GitHubDeliveryConflict):
-                    # Keep the idempotency namespace fixed where necessary so
-                    # changed normalized content must conflict rather than form
-                    # an independent repository delivery.
-                    envelope = _envelope(**changes)
-                    if "repository_id" in changes:
-                        envelope = _envelope(
-                            repository_id=123,
-                            repository="Other/repo",
-                        )
                     admit_github_delivery(
                         store=self._store(),
-                        envelope=envelope,
+                        envelope=_envelope(**changes),
                         received_at="2026-09-24T01:21:00Z",
                     )
 
-    def test_repository_id_is_part_of_delivery_namespace(self):
-        one = github_delivery_idempotency_key(_envelope(repository_id=1))
-        two = github_delivery_idempotency_key(_envelope(repository_id=2))
-        self.assertNotEqual(one, two)
+    def test_repository_name_and_delivery_define_replay_namespace(self):
+        base = github_delivery_idempotency_key(_envelope(repository_id=1))
+        changed_numeric_id = github_delivery_idempotency_key(
+            _envelope(repository_id=2)
+        )
+        changed_repository = github_delivery_idempotency_key(
+            _envelope(repository="Other/repo")
+        )
+        self.assertEqual(base, changed_numeric_id)
+        self.assertNotEqual(base, changed_repository)
 
     def test_digest_includes_event_header_identity_not_only_raw_payload_hash(self):
         base = _envelope()
