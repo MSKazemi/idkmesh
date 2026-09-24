@@ -73,6 +73,7 @@ After deployment, `tools/check_public_discovery.py` should be able to verify:
 - the flagship E017 reproducibility authority page is publicly reachable, self-canonical, indexable, and renders the expected research marker;
 - the generated 100-question map is publicly reachable, self-canonical, indexable, present in the sitemap/`llms.txt`, and retrievable with every representative search/answer crawler identity;
 - the topic hub, all ten topic pillars, and a normal Jekyll-rendered sentinel page each expose exactly one canonical URL and that canonical equals the URL being monitored;
+- the rendered 100-question map contains exactly 100 `#q-...` passage links and each topic pillar renders exactly 10 matching `id="q-..."` answer anchors;
 - none of those pages contains a rendered `noindex` directive for `robots`, `googlebot`, or `bingbot`;
 - the robots.txt `Google-Extended` product token is not blocked from the homepage, topic hub, or 100-question map;
 - no tested crawler receives a `403`, `429`, or crawler-specific decoy page;
