@@ -98,6 +98,13 @@ USER_AGENTS = {
     "perplexity-user": "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; Perplexity-User/1.0; +https://perplexity.ai/perplexity-user)",
 }
 
+ROBOTS_PRODUCT_TOKENS = {
+    # Google documents Google-Extended as a robots.txt product token rather
+    # than a distinct HTTP request user-agent. It controls whether Google-crawled
+    # content may be used for Gemini Apps / Vertex AI Gemini grounding.
+    "gemini": "Google-Extended",
+}
+
 ROBOTS_USER_AGENTS = {
     "google": "Googlebot",
     "bing": "bingbot",
@@ -214,6 +221,12 @@ def probe() -> list[str]:
             for url in (HOME, TOPICS, QUESTIONS):
                 if not parser.can_fetch(token, url):
                     failures.append(f"robots.txt blocks {name} from {url}")
+        for name, token in ROBOTS_PRODUCT_TOKENS.items():
+            for url in (HOME, TOPICS, QUESTIONS):
+                if not parser.can_fetch(token, url):
+                    failures.append(
+                        f"robots.txt blocks {name} product token {token} from {url}"
+                    )
 
     sitemap_status, sitemap = fetch(SITEMAP, browser)
     if sitemap_status != 200:
@@ -369,7 +382,8 @@ def main() -> int:
     print(
         "Discovery surface healthy: robots, sitemap, directory hubs, topic hub, "
         "100-question map, ten topic pages, exact canonicals, indexability, "
-        "llms.txt, IndexNow key, and representative crawler probes all passed."
+        "llms.txt, IndexNow key, Gemini robots control, and representative crawler "
+        "probes all passed."
     )
     return 0
 

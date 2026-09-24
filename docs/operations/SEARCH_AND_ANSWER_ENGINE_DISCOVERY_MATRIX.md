@@ -13,7 +13,7 @@ rank, summarize, or cite.
 | Surface | Primary discovery path to keep healthy | Repository-controlled support |
 | --- | --- | --- |
 | Google Search | Googlebot, crawlable HTML, canonical URLs, internal links, XML sitemap | static HTML/Markdown, canonical metadata, topic hub, complete sitemap |
-| Gemini / Google AI search experiences | Google Search index plus Google's Gemini-related crawling controls | same Google Search foundation; no separate keyword-stuffing path |
+| Gemini Apps / Google AI experiences | Google Search index plus the `Google-Extended` robots.txt product token for Gemini/Vertex AI use and grounding | Googlebot crawl/index foundation plus an explicit Google-Extended robots-permission check; no invented separate Gemini crawler UA |
 | Bing / Microsoft Copilot | Bingbot, XML sitemap, IndexNow freshness | sitemap + scheduled IndexNow notifier |
 | Yahoo Search / Yahoo Scout discovery | Yahoo `Slurp` plus Bing-supplied search infrastructure; open-web crawl/index signals | explicit Slurp robots/HTTP probe, Bing/IndexNow coverage, sitemap, canonicals |
 | ChatGPT search | `OAI-SearchBot` plus public crawlable/indexable pages | static pages, direct answers, topic hubs, `llms.txt` supplement |
@@ -68,6 +68,7 @@ After deployment, `tools/check_public_discovery.py` should be able to verify:
 - the generated 100-question map is publicly reachable, self-canonical, indexable, present in the sitemap/`llms.txt`, and retrievable with every representative search/answer crawler identity;
 - the topic hub, all ten topic pillars, and a normal Jekyll-rendered sentinel page each expose exactly one canonical URL and that canonical equals the URL being monitored;
 - none of those pages contains a rendered `noindex` directive for `robots`, `googlebot`, or `bingbot`;
+- the robots.txt `Google-Extended` product token is not blocked from the homepage, topic hub, or 100-question map;
 - no tested crawler receives a `403`, `429`, or crawler-specific decoy page;
 - Jekyll social/JSON-LD image paths resolve under the site base path exactly once, never as `/idkmesh/idkmesh/...`.
 
@@ -96,6 +97,14 @@ The monitor uses representative current user-agent identities for:
 Crawler identities can change. Vendor documentation is the source of truth; do
 not freeze a user-agent string as a permanent protocol guarantee.
 
+Robots-only product controls:
+
+- `Google-Extended` — Gemini Apps / Vertex AI Gemini training and grounding
+  control. Google documents that it has **no separate HTTP request user-agent
+  string**; existing Google crawler user agents perform the crawl, while
+  `Google-Extended` is evaluated as a robots.txt product token.
+
+
 ## Vendor guidance checked
 
 - Google generative-search optimization:
@@ -103,6 +112,10 @@ not freeze a user-agent string as a permanent protocol guarantee.
   - Google clarified in June 2026 that `llms.txt` is not needed for Google Search and does not positively or negatively affect Google visibility/rankings; IDKMesh keeps it only as a supplement for systems that choose to use it.
 - Google crawler / Gemini control overview:
   https://developers.google.com/crawling
+  - Google documents `Google-Extended` as the standalone robots product token
+    controlling whether Google-crawled content may be used for Gemini Apps /
+    Vertex AI Gemini model improvement and grounding. It does not affect Google
+    Search inclusion or ranking and does not have its own request UA string.
 - OpenAI publisher/developer discovery FAQ:
   https://help.openai.com/en/articles/12627856-publishers-and-developers-faq
   - OpenAI's current publisher guidance also makes `noindex` operationally important: OAI-SearchBot must be allowed to crawl a page in order to read its meta tags, and a `noindex` directive is the control for preventing even title/link surfacing when a URL is otherwise discovered.

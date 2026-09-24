@@ -49,6 +49,7 @@ class PublicDiscoveryMonitorTests(unittest.TestCase):
         }
         self.assertTrue(required.issubset(monitor.USER_AGENTS))
         self.assertEqual(required, set(monitor.ROBOTS_USER_AGENTS))
+        self.assertEqual({"gemini": "Google-Extended"}, monitor.ROBOTS_PRODUCT_TOKENS)
         self.assertIn("browser", monitor.USER_AGENTS)
 
 
@@ -191,6 +192,27 @@ class PublicDiscoveryMonitorTests(unittest.TestCase):
         self.assertIn(
             "ai-agent-verification: rendered page contains a noindex directive: "
             "['noindex,follow']",
+            failures,
+        )
+
+    def test_google_extended_block_for_gemini_is_reported(self) -> None:
+        def fetch(url: str, user_agent: str, timeout: float = 10.0):
+            status, body = self._healthy_fetch(url, user_agent, timeout)
+            if url == monitor.ROOT_ROBOTS:
+                body = (
+                    "User-agent: Google-Extended\n"
+                    "Disallow: /idkmesh/\n\n"
+                    "User-agent: *\n"
+                    "Allow: /\n"
+                    "Sitemap: https://mskazemi.com/idkmesh/sitemap.xml\n"
+                )
+            return status, body
+
+        with mock.patch.object(monitor, "fetch", side_effect=fetch):
+            failures = monitor.probe()
+        self.assertIn(
+            "robots.txt blocks gemini product token Google-Extended from "
+            + monitor.HOME,
             failures,
         )
 
