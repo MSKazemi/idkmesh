@@ -3,7 +3,7 @@
 
 The input CSV must be based on the deterministic worklist emitted by
 scripts/search_visibility_observation_plan.py. Every plan-controlled field is
-revalidated against the canonical 800-item plan before an observation is
+revalidated against the canonical full observation plan before an observation is
 accepted.
 
 This tool never queries a search engine and never invents visibility evidence.
