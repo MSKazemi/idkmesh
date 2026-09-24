@@ -184,6 +184,36 @@ class GitHubRunStatusTests(unittest.TestCase):
 
 
 class GitHubRestIssueCommentTransportTests(unittest.TestCase):
+    def test_rest_transport_accepts_rendered_multiline_status_body(self):
+        seen = {}
+
+        def opener(request, timeout):
+            seen["body"] = json.loads(request.data.decode())["body"]
+            return FakeResponse(
+                json.dumps(
+                    {
+                        "id": 1234,
+                        "html_url": (
+                            "https://github.com/MSKazemi/idkmesh/"
+                            "issues/77#issuecomment-1234"
+                        ),
+                    }
+                ).encode()
+            )
+
+        transport = GitHubRestIssueCommentTransport(
+            token="safe-test-token-value",
+            opener=opener,
+        )
+        rendered = _status().render_body()
+        transport.create_issue_comment(
+            repository="MSKazemi/idkmesh",
+            issue_number=77,
+            body=rendered,
+        )
+        self.assertEqual(seen["body"], rendered)
+        self.assertIn("\\n", rendered)
+
     def test_fixed_host_post_uses_bearer_only_in_request_header(self):
         seen = {}
 
