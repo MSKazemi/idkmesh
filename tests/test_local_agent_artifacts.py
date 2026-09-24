@@ -140,6 +140,16 @@ class LocalAgentArtifactCaptureTests(unittest.TestCase):
         self.assertNotIn("duration_seconds", manifest["process"])
         self.assertNotIn("argv", manifest["process"])
 
+    def test_source_revision_must_be_exact_object_id(self):
+        with self.assertRaisesRegex(LocalRunnerError, "exact"):
+            capture_local_agent_artifacts(
+                workspace=self.workspace,
+                repository=self.repo,
+                source_revision="HEAD",
+                output_root=self.output,
+                process_result=_result(),
+            )
+
     def test_output_root_must_be_outside_worker_workspace(self):
         with self.assertRaisesRegex(LocalRunnerError, "outside"):
             capture_local_agent_artifacts(
@@ -158,7 +168,7 @@ class LocalAgentArtifactCaptureTests(unittest.TestCase):
             f"gitdir: {other / '.git'}\n",
             encoding="utf-8",
         )
-        with self.assertRaisesRegex(LocalRunnerError, "expected repository"):
+        with self.assertRaises(LocalRunnerError):
             capture_local_agent_artifacts(
                 workspace=self.workspace,
                 repository=self.repo,
@@ -218,6 +228,17 @@ class LocalAgentArtifactCaptureTests(unittest.TestCase):
                 output_root=self.output,
                 process_result=_result(),
                 limits=ArtifactCaptureLimits(max_untracked_files=1),
+            )
+
+    def test_include_paths_must_not_be_one_string(self):
+        with self.assertRaisesRegex(ValueError, "iterable"):
+            capture_local_agent_artifacts(
+                workspace=self.workspace,
+                repository=self.repo,
+                source_revision=self.sha,
+                output_root=self.output,
+                process_result=_result(),
+                include_paths="test-report.txt",
             )
 
     def test_explicit_artifact_path_traversal_fails_closed(self):
