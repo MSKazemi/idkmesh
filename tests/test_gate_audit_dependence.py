@@ -16,12 +16,15 @@ Mirrors ``tests/test_gate_audit.py``'s structure. Three properties matter:
 
 from __future__ import annotations
 
+import contextlib
 import importlib.util
+import io
 import itertools
 import json
 import math
 import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -30,7 +33,7 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT))
 
-from idkmesh import gate_audit, gate_audit_dependence  # noqa: E402
+from idkmesh import cli, gate_audit, gate_audit_dependence  # noqa: E402
 
 HAS_JSONSCHEMA = importlib.util.find_spec("jsonschema") is not None
 if HAS_JSONSCHEMA:
@@ -272,6 +275,66 @@ class RenderJsonTests(unittest.TestCase):
         report = gate_audit_dependence.compute(minimal_input())
         rendered = gate_audit_dependence.render_json(report, pretty=True)
         self.assertEqual(json.loads(rendered), report)
+
+
+class CliDispatchTests(unittest.TestCase):
+    """The new CLI wiring, exercised in-process so the *required* gate runs it.
+
+    ``CliTests`` below spawns a fresh interpreter per test and is therefore
+    ``slow``-marked, which means the PR Gate's ``unit`` tier
+    (``-m "not sim and not slow"``) deselects it: without this class the 55
+    new lines of ``idkmesh/cli.py`` wiring would only ever be executed by the
+    nightly full-suite workflow. These tests reach the same dispatch branch
+    through ``cli.main()`` at no measurable CPU cost, so subcommand
+    registration, the success path, ``--out``, ``--pretty``, and the
+    output-path-conflict guard stay inside the required check.
+    """
+
+    def test_parser_registers_the_subcommand(self):
+        parser = cli.build_parser()
+        args = parser.parse_args(
+            ["gate-audit-dependence", str(EXAMPLE_INPUT), "--pretty"])
+        self.assertEqual(args.command, "gate-audit-dependence")
+        self.assertEqual(args.input, str(EXAMPLE_INPUT))
+        self.assertTrue(args.pretty)
+        self.assertIsNone(args.out)
+
+    def test_main_writes_the_committed_example_to_out(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "dependence.json"
+            rc = cli.main([
+                "gate-audit-dependence", str(EXAMPLE_INPUT),
+                "--out", str(out), "--pretty"])
+            self.assertEqual(rc, 0)
+            written = out.read_text(encoding="utf-8")
+        # Exact text, not parsed equality: comparing decoded objects would
+        # pass even if --pretty were ignored, and the committed example is
+        # the pretty form plus the trailing newline --out writes.
+        self.assertEqual(written, EXAMPLE_REPORT.read_text(encoding="utf-8"))
+
+    def test_main_prints_the_report_to_stdout(self):
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout):
+            rc = cli.main(["gate-audit-dependence", str(EXAMPLE_INPUT)])
+        self.assertEqual(rc, 0)
+        committed = json.loads(EXAMPLE_REPORT.read_text(encoding="utf-8"))
+        self.assertEqual(json.loads(stdout.getvalue()), committed)
+
+    def test_main_rejects_a_missing_input_file(self):
+        stderr = io.StringIO()
+        with contextlib.redirect_stderr(stderr):
+            rc = cli.main(["gate-audit-dependence", "/no/such/file.json"])
+        self.assertEqual(rc, 2)
+        self.assertIn("input file not found", stderr.getvalue())
+
+    def test_main_refuses_to_overwrite_the_input(self):
+        stderr = io.StringIO()
+        with contextlib.redirect_stderr(stderr):
+            rc = cli.main([
+                "gate-audit-dependence", str(EXAMPLE_INPUT),
+                "--out", str(EXAMPLE_INPUT)])
+        self.assertEqual(rc, 2)
+        self.assertIn("is the input file", stderr.getvalue())
 
 
 class CliTests(unittest.TestCase):
