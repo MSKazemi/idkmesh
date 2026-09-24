@@ -20,9 +20,10 @@ import sqlite3
 from typing import Any, Iterator, Mapping
 
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 _ENV_SECRET_REF = re.compile(r"env:[A-Za-z_][A-Za-z0-9_]{0,127}\Z")
+_SHA256_DIGEST = re.compile(r"sha256:[0-9a-f]{64}\Z")
 
 _SENSITIVE_KEY_FRAGMENTS = (
     "api_key",
@@ -68,6 +69,26 @@ class RunRecord:
             "metadata": dict(self.metadata),
             "created_at": self.created_at,
             "updated_at": self.updated_at,
+        }
+
+
+@dataclass(frozen=True)
+class WebhookDeliveryRecord:
+    delivery_id: str
+    request_digest: str
+    event: str
+    repository: str
+    metadata: Mapping[str, Any]
+    received_at: str
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "delivery_id": self.delivery_id,
+            "request_digest": self.request_digest,
+            "event": self.event,
+            "repository": self.repository,
+            "metadata": dict(self.metadata),
+            "received_at": self.received_at,
         }
 
 
@@ -207,6 +228,29 @@ class LocalMetadataStore:
                         created_at TEXT NOT NULL,
                         FOREIGN KEY (run_id) REFERENCES runs(run_id)
                     );
+
+                    CREATE TABLE IF NOT EXISTS webhook_deliveries (
+                        delivery_id TEXT PRIMARY KEY,
+                        request_digest TEXT NOT NULL,
+                        event TEXT NOT NULL,
+                        repository TEXT NOT NULL,
+                        metadata_json TEXT NOT NULL,
+                        received_at TEXT NOT NULL
+                    );
+                    """
+                )
+                conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
+            elif current == 1:
+                conn.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS webhook_deliveries (
+                        delivery_id TEXT PRIMARY KEY,
+                        request_digest TEXT NOT NULL,
+                        event TEXT NOT NULL,
+                        repository TEXT NOT NULL,
+                        metadata_json TEXT NOT NULL,
+                        received_at TEXT NOT NULL
+                    )
                     """
                 )
                 conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
@@ -365,6 +409,134 @@ class LocalMetadataStore:
             "metadata": _load_metadata(row["metadata_json"]),
             "created_at": row["created_at"],
         }
+
+    def admit_webhook_delivery(
+        self,
+        *,
+        delivery_id: str,
+        request_digest: str,
+        event: str,
+        repository: str,
+        metadata: Mapping[str, Any],
+        received_at: str,
+    ) -> tuple[WebhookDeliveryRecord, bool]:
+        """Atomically admit one normalized webhook delivery.
+
+        Exact delivery replays return the existing record. Reuse of the same
+        delivery ID for a different digest, event, or repository fails closed.
+        Raw webhook bodies and signatures do not belong in metadata.
+        """
+
+        for value, field in (
+            (delivery_id, "delivery_id"),
+            (event, "event"),
+            (repository, "repository"),
+            (received_at, "received_at"),
+        ):
+            self._require_text(value, field)
+        if (
+            not isinstance(request_digest, str)
+            or _SHA256_DIGEST.fullmatch(request_digest) is None
+        ):
+            raise ValueError(
+                "request_digest must be a lowercase sha256 content digest"
+            )
+        payload = _dump_metadata(metadata)
+
+        conn = _connect(self.path)
+        try:
+            conn.execute("BEGIN IMMEDIATE")
+            existing = conn.execute(
+                """
+                SELECT delivery_id, request_digest, event, repository,
+                       metadata_json, received_at
+                FROM webhook_deliveries
+                WHERE delivery_id = ?
+                """,
+                (delivery_id,),
+            ).fetchone()
+            if existing is not None:
+                if (
+                    existing["request_digest"] != request_digest
+                    or existing["event"] != event
+                    or existing["repository"].casefold() != repository.casefold()
+                ):
+                    raise LocalStoreConflict(
+                        "webhook delivery identity already exists with different request content"
+                    )
+                record = self._webhook_record(existing)
+                conn.commit()
+                return record, False
+
+            conn.execute(
+                """
+                INSERT INTO webhook_deliveries(
+                    delivery_id, request_digest, event, repository,
+                    metadata_json, received_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    delivery_id,
+                    request_digest,
+                    event,
+                    repository,
+                    payload,
+                    received_at,
+                ),
+            )
+            row = conn.execute(
+                """
+                SELECT delivery_id, request_digest, event, repository,
+                       metadata_json, received_at
+                FROM webhook_deliveries
+                WHERE delivery_id = ?
+                """,
+                (delivery_id,),
+            ).fetchone()
+            if row is None:
+                raise LocalStoreError("new webhook delivery could not be re-read")
+            record = self._webhook_record(row)
+            conn.commit()
+            return record, True
+        except sqlite3.IntegrityError as exc:
+            conn.rollback()
+            raise LocalStoreConflict(
+                "webhook delivery identity conflicts with existing record"
+            ) from exc
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
+
+    @staticmethod
+    def _webhook_record(row: sqlite3.Row) -> WebhookDeliveryRecord:
+        return WebhookDeliveryRecord(
+            delivery_id=row["delivery_id"],
+            request_digest=row["request_digest"],
+            event=row["event"],
+            repository=row["repository"],
+            metadata=_load_metadata(row["metadata_json"]),
+            received_at=row["received_at"],
+        )
+
+    def get_webhook_delivery(
+        self,
+        delivery_id: str,
+    ) -> WebhookDeliveryRecord | None:
+        self._require_text(delivery_id, "delivery_id")
+        with _session(self.path) as conn:
+            row = conn.execute(
+                """
+                SELECT delivery_id, request_digest, event, repository,
+                       metadata_json, received_at
+                FROM webhook_deliveries
+                WHERE delivery_id = ?
+                """,
+                (delivery_id,),
+            ).fetchone()
+        return None if row is None else self._webhook_record(row)
 
     def admit_run(
         self,
