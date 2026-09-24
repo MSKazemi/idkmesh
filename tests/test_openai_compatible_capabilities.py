@@ -141,6 +141,27 @@ class OpenAICompatibleCapabilityEvidenceTests(unittest.TestCase):
         capabilities = resolved.declared_capabilities(_config())
         self.assertEqual(capabilities.capability_tiers, frozenset({"T1", "T2"}))
 
+    def test_profile_can_downscope_evidence_without_reexpansion(self):
+        driver = OpenAICompatibleModelDriver({"model-a": _evidence()})
+        config = _config(
+            capabilities={
+                "tiers": ["T1"],
+                "task_classes": ["inference"],
+                "tools": [],
+                "candidate_types": ["text"],
+                "max_risk": "low",
+            },
+            policy={
+                "task_classes": ["inference"],
+                "allowed_risk": ["low"],
+                "external_processing": True,
+            },
+        )
+        capabilities = driver.declared_capabilities(config)
+        self.assertEqual(capabilities.capability_tiers, frozenset({"T1"}))
+        self.assertEqual(capabilities.task_classes, frozenset({"inference"}))
+        self.assertEqual(capabilities.max_risk, "low")
+
     def test_profile_cannot_upgrade_capability_tier(self):
         driver = OpenAICompatibleModelDriver({"model-a": _evidence()})
         config = _config(
