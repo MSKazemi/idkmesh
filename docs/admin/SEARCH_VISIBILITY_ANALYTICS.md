@@ -74,7 +74,7 @@ this is not the preferred long-term scheduled configuration.
 
 ### Fail-quiet behavior
 
-If `GSC_SITE_URL` and a complete credential set are absent, the weekly visibility
+If `GSC_SITE_URL` and a complete credential set are absent, the visibility
 workflow still succeeds and reports:
 
 ```text
@@ -86,6 +86,22 @@ observations continue to run.
 
 This prevents missing private credentials from disabling the public repository
 observatory.
+
+### Workflow cadence
+
+The observatory runs in three modes:
+
+- **weekly** at `06:11 UTC` on Monday for longitudinal measurement;
+- **manual** through `workflow_dispatch` for an owner-requested read-only check;
+- **contract-triggered** on protected `main` when the observatory workflow,
+  canonical 100-query contract, analytics companion, growth policy, or
+  measurement scripts change.
+
+The push trigger is intentionally path-bounded. Ordinary product/docs commits do
+not repeatedly query Search Console. A measurement-contract change does run the
+observer immediately, which proves the workflow remains executable and makes
+missing Search Console configuration visible without waiting for the next weekly
+window.
 
 ## Query portfolio
 
