@@ -67,6 +67,7 @@ def main() -> int:
     automatic_queue = str(dispatch_policy.get("automatic_queue_label") or "")
     dispatch_label = str(dispatch_policy.get("dispatch_label") or "")
     attention_label = str(dispatch_policy.get("attention_label") or "")
+    completion_label = str(dispatch_policy.get("completion_label") or "")
     definitions = dispatch_policy.get("label_definitions") or {}
     blocked = {str(value) for value in dispatch_policy.get("blocked_labels") or []}
     trusted = {
@@ -88,8 +89,19 @@ def main() -> int:
     )
     _require(
         errors,
-        len({manual_queue, automatic_queue, dispatch_label, attention_label}) == 4,
-        "manual queue, automatic queue, dispatch, and attention labels must be distinct",
+        bool(completion_label),
+        "dispatch policy is missing completion_label",
+    )
+    _require(
+        errors,
+        len({
+            manual_queue,
+            automatic_queue,
+            dispatch_label,
+            attention_label,
+            completion_label,
+        }) == 5,
+        "manual queue, automatic queue, dispatch, attention, and completion labels must be distinct",
     )
 
     for label_name, role in (
@@ -97,6 +109,7 @@ def main() -> int:
         (automatic_queue, "automatic queue"),
         (dispatch_label, "dispatch status"),
         (attention_label, "attention"),
+        (completion_label, "completion"),
     ):
         _require(
             errors,
@@ -108,6 +121,11 @@ def main() -> int:
         errors,
         attention_label in blocked,
         "attention label must be a hard dispatch veto",
+    )
+    _require(
+        errors,
+        completion_label in blocked,
+        "completion label must be a hard dispatch veto",
     )
     _require(
         errors,
@@ -475,6 +493,22 @@ def main() -> int:
         and "RESOURCE_EXHAUSTED" in dispatcher_code,
         "dispatcher must recognize Jules precondition/quota backpressure statuses",
     )
+    _require(
+        errors,
+        "def get_session(" in dispatcher_code
+        and "session_pull_request_urls" in dispatcher_code,
+        "dispatcher must inspect full completed Jules Session outputs",
+    )
+    _require(
+        errors,
+        "get_pull_request_from_url" in dispatcher_code,
+        "dispatcher must bind Jules pull-request outputs back to same-repository GitHub state",
+    )
+    _require(
+        errors,
+        completion_label in dispatcher_code,
+        "dispatcher must implement the terminal completion lifecycle label",
+    )
 
     if errors:
         print("Jules automation contract check failed:", file=sys.stderr)
@@ -485,6 +519,7 @@ def main() -> int:
     print(
         "Jules automation contract OK: "
         f"manual={manual_queue}, automatic={automatic_queue}, "
+        f"completion={completion_label}, "
         f"repo_cap={max_in_flight}, provider_cap={provider_max}, "
         f"effective_cap={effective_cap}, sweep_cap={max_per_sweep}"
     )
