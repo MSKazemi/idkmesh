@@ -20,10 +20,23 @@ class PublicDiscoveryMonitorTests(unittest.TestCase):
             monitor.LLMS,
             monitor.INDEXNOW_KEY_URL,
             monitor.JEKYLL_SENTINEL,
+            *(url for url, _ in monitor.AUTHORITY_PAGES.values()),
             *monitor.DIRECTORY_HUBS.values(),
             *(url for url, _ in monitor.TOPIC_PAGES.values()),
         ):
             self.assertTrue(url.startswith("https://mskazemi.com/idkmesh/"))
+
+    def test_flagship_authority_page_is_monitored(self) -> None:
+        self.assertEqual(
+            {
+                "e017-reproduction": (
+                    "https://mskazemi.com/idkmesh/research/"
+                    "E017_VERIFIER_PANEL_REPRODUCIBILITY.html",
+                    "when 25 verifiers behaved like one",
+                )
+            },
+            monitor.AUTHORITY_PAGES,
+        )
 
     def test_ten_legacy_directory_hubs_are_monitored(self) -> None:
         self.assertEqual(10, len(monitor.DIRECTORY_HUBS))
@@ -79,11 +92,29 @@ class PublicDiscoveryMonitorTests(unittest.TestCase):
             )
         if url == monitor.SITEMAP:
             urls = [monitor.HOME, monitor.TOPICS, monitor.QUESTIONS]
+            urls.extend(url for url, _ in monitor.AUTHORITY_PAGES.values())
             urls.extend(monitor.DIRECTORY_HUBS.values())
             urls.extend(url for url, _ in monitor.TOPIC_PAGES.values())
             return 200, "\n".join(f"<loc>{item}</loc>" for item in urls)
         if url == monitor.HOME:
             return 200, "<html><body>IDKMesh Verified swarm engineering</body></html>"
+        if url in {item[0] for item in monitor.AUTHORITY_PAGES.values()}:
+            marker = next(
+                item[1]
+                for item in monitor.AUTHORITY_PAGES.values()
+                if item[0] == url
+            )
+            return (
+                200,
+                '<html><head><link rel="canonical" href="'
+                + url
+                + '"><meta name="description" content="research">'
+                + '<meta property="og:image" content="'
+                + monitor.SOCIAL_IMAGE
+                + '"></head><body>'
+                + marker
+                + "</body></html>",
+            )
         if url in monitor.DIRECTORY_HUBS.values():
             return 200, "<html><body>directory hub</body></html>"
         if url == monitor.TOPICS:
@@ -281,6 +312,26 @@ class PublicDiscoveryMonitorTests(unittest.TestCase):
             failures = monitor.probe()
         self.assertIn(
             "openai: question map: rendered page contains a noindex directive: "
+            "['noindex']",
+            failures,
+        )
+
+    def test_authority_page_noindex_is_reported(self) -> None:
+        page_url = monitor.AUTHORITY_PAGES["e017-reproduction"][0]
+
+        def fetch(url: str, user_agent: str, timeout: float = 10.0):
+            status, body = self._healthy_fetch(url, user_agent, timeout)
+            if url == page_url:
+                body = body.replace(
+                    "</head>",
+                    '<meta name="robots" content="noindex"></head>',
+                )
+            return status, body
+
+        with mock.patch.object(monitor, "fetch", side_effect=fetch):
+            failures = monitor.probe()
+        self.assertIn(
+            "e017-reproduction: rendered page contains a noindex directive: "
             "['noindex']",
             failures,
         )
