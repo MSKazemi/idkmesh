@@ -74,7 +74,12 @@ class LocalAgentSandboxTests(unittest.TestCase):
         )
         rendered = " ".join(argv)
         self.assertIn("--unshare-net", argv)
+        self.assertIn("--unshare-user", argv)
         self.assertIn("--clearenv", argv)
+        # bwrap --share-net overrides an earlier --unshare-all, so asserting the
+        # presence of --unshare-net is not on its own a network-isolation claim.
+        for reenabling in ("--share-net", "--userns", "--userns2", "--share-namespaces"):
+            self.assertNotIn(reenabling, argv)
         self.assertIn("--cap-drop", argv)
         self.assertIn("--setenv LANG C.UTF-8", rendered)
         self.assertIn("--tmpfs /home", rendered)
@@ -213,11 +218,14 @@ class LocalAgentSandboxTests(unittest.TestCase):
             "--die-with-parent",
             "--new-session",
             "--unshare-all",
+            "--unshare-user",
             "--unshare-net",
             "--cap-drop",
             "--clearenv",
         ):
             self.assertIn(required, observed)
+        for reenabling in ("--share-net", "--userns", "--userns2"):
+            self.assertNotIn(reenabling, observed)
         self.assertEqual(observed[-2:], ["--", "agent"])
         self.assertIn("--bind", observed)
         self.assertIn(str(self.workspace.resolve()), observed)

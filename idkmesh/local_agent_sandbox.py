@@ -11,7 +11,8 @@ The sandbox:
 - creates private /proc, /dev, /home, /root, /run, and /tmp views;
 - does not mount host /etc, /var, /opt, /srv, /mnt, or /media;
 - bind-mounts only the disposable workspace read-write at /workspace;
-- unshares network and other namespaces;
+- unshares the network, user, and other namespaces, requesting the user
+  namespace explicitly so it cannot be silently skipped;
 - drops capabilities;
 - runs the maintainer-owned argv without a shell.
 
@@ -199,6 +200,10 @@ class BubblewrapSandbox:
             "--die-with-parent",
             "--new-session",
             "--unshare-all",
+            # --unshare-all only requests --unshare-user-try, which is silently
+            # skipped where a user namespace cannot be created. Ask for it
+            # explicitly so missing user-namespace isolation fails closed.
+            "--unshare-user",
             "--unshare-net",
             "--cap-drop",
             "ALL",
