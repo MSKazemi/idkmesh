@@ -24,7 +24,7 @@
     {
       "verifier_a": "reviewer-a",
       "verifier_b": "reviewer-c",
-      "phi_error": 0.7745966692414834,
+      "phi_error": 0.774596669241,
       "measurable": true,
       "joint_error_count": 2,
       "a_error_count": 3,
@@ -33,7 +33,7 @@
     {
       "verifier_a": "reviewer-a",
       "verifier_b": "reviewer-d",
-      "phi_error": -0.2581988897471611,
+      "phi_error": -0.258198889747,
       "measurable": true,
       "joint_error_count": 0,
       "a_error_count": 3,
@@ -42,7 +42,7 @@
     {
       "verifier_a": "reviewer-a",
       "verifier_b": "reviewer-e",
-      "phi_error": -0.2581988897471612,
+      "phi_error": -0.258198889747,
       "measurable": true,
       "joint_error_count": 0,
       "a_error_count": 3,
@@ -51,7 +51,7 @@
     {
       "verifier_a": "reviewer-b",
       "verifier_b": "reviewer-c",
-      "phi_error": 0.7745966692414834,
+      "phi_error": 0.774596669241,
       "measurable": true,
       "joint_error_count": 2,
       "a_error_count": 3,
@@ -60,7 +60,7 @@
     {
       "verifier_a": "reviewer-b",
       "verifier_b": "reviewer-d",
-      "phi_error": -0.2581988897471611,
+      "phi_error": -0.258198889747,
       "measurable": true,
       "joint_error_count": 0,
       "a_error_count": 3,
@@ -69,7 +69,7 @@
     {
       "verifier_a": "reviewer-b",
       "verifier_b": "reviewer-e",
-      "phi_error": -0.2581988897471612,
+      "phi_error": -0.258198889747,
       "measurable": true,
       "joint_error_count": 0,
       "a_error_count": 3,
@@ -78,7 +78,7 @@
     {
       "verifier_a": "reviewer-c",
       "verifier_b": "reviewer-d",
-      "phi_error": -0.19999999999999996,
+      "phi_error": -0.2,
       "measurable": true,
       "joint_error_count": 0,
       "a_error_count": 2,
@@ -87,7 +87,7 @@
     {
       "verifier_a": "reviewer-c",
       "verifier_b": "reviewer-e",
-      "phi_error": -0.19999999999999998,
+      "phi_error": -0.2,
       "measurable": true,
       "joint_error_count": 0,
       "a_error_count": 2,
@@ -96,7 +96,7 @@
     {
       "verifier_a": "reviewer-d",
       "verifier_b": "reviewer-e",
-      "phi_error": -0.19999999999999998,
+      "phi_error": -0.2,
       "measurable": true,
       "joint_error_count": 0,
       "a_error_count": 2,

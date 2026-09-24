@@ -39,6 +39,16 @@ from idkmesh.gate_audit import (
 SCHEMA_ID = "gate-audit-dependence-v0.1"
 AUTHORITY = "diagnostic_only"
 
+# phi() ends in a math.sqrt() division; the trailing bits of that result are
+# not reproducible across Python/libm builds (observed: Python 3.11 and 3.13
+# disagree in the last 1-2 bits of a phi_error value for the committed
+# example, on the exact same input). A committed, byte-compared artifact
+# cannot carry noise the statistic itself does not claim, so every phi_error
+# is rounded to this many decimal digits - far beyond what a Pearson
+# correlation over a handful of candidates means, but exactly enough to make
+# the report reproducible across interpreters.
+_PHI_ERROR_DECIMALS = 12
+
 __all__ = [
     "GateAuditInputError",
     "SCHEMA_ID",
@@ -94,7 +104,8 @@ def compute(data: dict[str, Any]) -> dict[str, Any]:
         pairs.append({
             "verifier_a": a,
             "verifier_b": b,
-            "phi_error": value if measurable else None,
+            "phi_error": (
+                round(value, _PHI_ERROR_DECIMALS) if measurable else None),
             "measurable": measurable,
             "joint_error_count": sum(
                 1 for x, y in zip(error_a, error_b) if x == 1 and y == 1),
