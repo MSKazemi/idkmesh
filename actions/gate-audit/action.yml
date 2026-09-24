@@ -3,7 +3,9 @@ description: >-
   Measure what a verifier panel is actually worth: effective independent votes
   (not nominal head-count), error-correlation structure, and the breach rate of
   seeded known-bad probes, from a verdict matrix with ground truth. Emits a
-  gate-audit-report-v0.1 JSON document and, by default, a Markdown summary.
+  gate-audit-report-v0.1 JSON document -- or v0.2, carrying finite-sample
+  uncertainty, when the bootstrap input is enabled -- and, by default, a
+  Markdown summary.
   Diagnostic only: it grants no acceptance or merge authority.
 author: "Mohsen Seyedkazemi Ardebili"
 branding:
@@ -45,7 +47,8 @@ inputs:
     default: "false"
   bootstrap-replicates:
     description: >-
-      Bootstrap resample count. Only used when bootstrap is "true".
+      Bootstrap resample count, at most 100000. Requires bootstrap "true";
+      setting it otherwise fails rather than being silently discarded.
     required: false
     default: "2000"
   bootstrap-seed:
@@ -92,12 +95,53 @@ runs:
         BOOTSTRAP_REPLICATES: ${{ inputs.bootstrap-replicates }}
         BOOTSTRAP_SEED: ${{ inputs.bootstrap-seed }}
         BOOTSTRAP_CONFIDENCE_LEVEL: ${{ inputs.bootstrap-confidence-level }}
+        # 50x the default replicate count. Generous for any real panel, and
+        # bounded, so a caller cannot ask for unbounded work on their runner.
+        MAX_BOOTSTRAP_REPLICATES: "100000"
       run: |
+        set -euo pipefail
+
+        # Untrusted caller input reaches this script through the environment
+        # only, never through the workflow template, and every value below is
+        # passed as one quoted argv element. The checks here exist because the
+        # silent alternatives are worse than a failure: a misspelled boolean
+        # would drop the statistics the caller asked for, and a bootstrap
+        # parameter set without `bootstrap: "true"` would be discarded even
+        # though `idkmesh gate-audit` itself rejects that combination.
+        if [[ "${BOOTSTRAP}" != "true" && "${BOOTSTRAP}" != "false" ]]; then
+          echo "::error::bootstrap must be \"true\" or \"false\", got \"${BOOTSTRAP}\"." >&2
+          exit 1
+        fi
+        if [[ "${BOOTSTRAP}" != "true" ]]; then
+          for pair in \
+            "bootstrap-replicates=${BOOTSTRAP_REPLICATES}=2000" \
+            "bootstrap-seed=${BOOTSTRAP_SEED}=0" \
+            "bootstrap-confidence-level=${BOOTSTRAP_CONFIDENCE_LEVEL}=0.95"; do
+            name="${pair%%=*}"; rest="${pair#*=}"
+            value="${rest%=*}"; default="${rest##*=}"
+            if [[ "${value}" != "${default}" ]]; then
+              echo "::error::${name} requires bootstrap: \"true\"." >&2
+              exit 1
+            fi
+          done
+        fi
+
         args=(gate-audit "${VOTES_FILE}" --pretty --out "${REPORT_FILE}")
         if [[ -n "${MARKDOWN_FILE}" ]]; then
           args+=(--markdown "${MARKDOWN_FILE}")
         fi
         if [[ "${BOOTSTRAP}" == "true" ]]; then
+          # The bootstrap cost is linear in the replicate count, and the CLI
+          # enforces only a floor (MIN_REPLICATES). This action is consumed by
+          # third-party workflows, so it caps the count rather than letting a
+          # caller-supplied value burn a runner to its job timeout. A cap in
+          # `gate_audit_uncertainty._validate_params` would be the better home;
+          # that belongs to the metric's own issue, not to wiring it up here.
+          if [[ ! "${BOOTSTRAP_REPLICATES}" =~ ^[0-9]+$ ]] \
+            || (( BOOTSTRAP_REPLICATES > MAX_BOOTSTRAP_REPLICATES )); then
+            echo "::error::bootstrap-replicates must be a whole number at most ${MAX_BOOTSTRAP_REPLICATES}, got \"${BOOTSTRAP_REPLICATES}\"." >&2
+            exit 1
+          fi
           args+=(
             --bootstrap
             --bootstrap-replicates "${BOOTSTRAP_REPLICATES}"

@@ -117,6 +117,55 @@ class WorkflowTriggerScopeTests(unittest.TestCase):
         self.assertTrue(_matches("idkmesh/gate_audit.py", patterns))
         self.assertTrue(_matches("idkmesh/cli.py", patterns))
         self.assertTrue(_matches("actions/gate-audit/action.yml", patterns))
+        self.assertTrue(
+            _matches("idkmesh/gate_audit_uncertainty.py", patterns),
+            "the bootstrap engine the action now exposes must re-run the "
+            "self-test when it changes on its own.",
+        )
+
+    def test_gate_audit_action_bootstrap_wiring_survives_on_the_required_gate(self):
+        """The action's self-test is path-filtered and is not a required check.
+
+        Nothing else in the tree cross-checks a workflow's `with:` keys against
+        an action's declared `inputs:`, so the four bootstrap inputs could be
+        deleted from `action.yml` and only a non-required, path-gated workflow
+        would notice. This assertion runs on the unfiltered PR Gate instead.
+        """
+        action = (ROOT / "actions" / "gate-audit" / "action.yml").read_text(
+            encoding="utf-8"
+        )
+        selftest = self.read("gate-audit-action-selftest.yml")
+
+        for name, flag in (
+            ("bootstrap", "--bootstrap"),
+            ("bootstrap-replicates", "--bootstrap-replicates"),
+            ("bootstrap-seed", "--bootstrap-seed"),
+            ("bootstrap-confidence-level", "--bootstrap-confidence-level"),
+        ):
+            with self.subTest(input=name):
+                self.assertIn(f"\n  {name}:", action, "input must be declared")
+                self.assertIn(flag, action, "input must reach the CLI flag")
+
+        # The self-test must exercise the opt-in and at least one non-default
+        # numeric value; the action's defaults equal the CLI's, so a self-test
+        # that only flips `bootstrap` leaves the other three decorative.
+        self.assertIn('bootstrap: "true"', selftest)
+        self.assertIn('bootstrap-replicates: "300"', selftest)
+        self.assertIn('bootstrap-seed: "7"', selftest)
+        self.assertIn('bootstrap-confidence-level: "0.8"', selftest)
+
+        # A misspelled boolean or a parameter set without the opt-in must fail
+        # rather than silently drop the statistics the caller asked for, and the
+        # replicate count must stay bounded for a third-party caller's runner.
+        self.assertIn('bootstrap must be \\"true\\" or \\"false\\"', action)
+        self.assertIn('requires bootstrap: \\"true\\"', action)
+        self.assertIn("MAX_BOOTSTRAP_REPLICATES", action)
+
+        # The action's own marketplace-facing description must not claim it
+        # emits only v0.1; with the opt-in enabled it emits v0.2.
+        description = action.split("author:", 1)[0]
+        self.assertIn("gate-audit-report-v0.1", description)
+        self.assertIn("v0.2", description)
 
     def test_evolution_pr_head_verification_is_path_scoped(self):
         text = self.read("evolution-loop.yml")
