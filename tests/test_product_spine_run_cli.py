@@ -1,3 +1,5 @@
+import contextlib
+import io
 import json
 import os
 from pathlib import Path
@@ -5,6 +7,9 @@ import subprocess
 import sys
 import tempfile
 import unittest
+
+from idkmesh import cli
+from idkmesh.local_ui_security import MAX_BODY_BYTES
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -375,6 +380,97 @@ class ProductSpineRunCliTests(unittest.TestCase):
         self.assertIn("cancel", proc.stdout)
         normalized_stdout = " ".join(proc.stdout.split())
         self.assertIn("do not dispatch providers", normalized_stdout)
+
+
+class ProductSpineRunInputBoundTests(unittest.TestCase):
+    """The two input bounds `run create` advertises but nothing exercised.
+
+    `_strict_json_file` caps the projection at the shared 2 MiB local-input
+    limit and requires a regular file. Both are part of what "bounded" means
+    in this command's own help text, and both survived being deleted outright
+    while the rest of this module stayed green -- so they are asserted here.
+
+    These run in-process through `cli.main()` rather than a subprocess, the
+    same way `tests/test_control_tower.py` covers its own 2 MiB preload
+    bound: a sparse `truncate()` file plus no interpreter spawn keeps the
+    `unit` tier's CPU budget unaffected.
+    """
+
+    def _create(self, projection_path, store_path):
+        stderr = io.StringIO()
+        with contextlib.redirect_stderr(stderr):
+            rc = cli.main([
+                "run",
+                "create",
+                str(projection_path),
+                "--store",
+                str(store_path),
+                "--idempotency-key",
+                "request-1",
+                "--json",
+            ])
+        return rc, stderr.getvalue()
+
+    def test_oversized_projection_fails_closed_before_parsing(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "too-large.json"
+            with path.open("wb") as handle:
+                handle.truncate(MAX_BODY_BYTES + 1)
+            store = Path(tmp) / "state.sqlite"
+
+            rc, stderr = self._create(path, store)
+
+            self.assertEqual(rc, 2)
+            self.assertIn("2 MiB", json.loads(stderr)["error"]["message"])
+            # Fail closed: no run may be admitted from a rejected input. The
+            # store *file* is created before the projection is read, because
+            # the CLI opens LocalMetadataStore first; what must not happen is
+            # a run record appearing in it.
+            status_err = io.StringIO()
+            with contextlib.redirect_stderr(status_err):
+                status_rc = cli.main([
+                    "run", "status", "run/cli-1",
+                    "--store", str(store), "--json",
+                ])
+            self.assertEqual(status_rc, 2)
+            self.assertEqual(
+                json.loads(status_err.getvalue())["error"]["code"],
+                "run_not_found",
+            )
+
+    def test_directory_projection_is_rejected_as_not_a_regular_file(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "projection-dir"
+            path.mkdir()
+            store = Path(tmp) / "state.sqlite"
+
+            rc, stderr = self._create(path, store)
+
+            self.assertEqual(rc, 2)
+            self.assertIn(
+                "not a regular file",
+                json.loads(stderr)["error"]["message"],
+            )
+
+    @unittest.skipUnless(
+        os.path.exists(os.devnull), "a character-device path is required")
+    def test_character_device_projection_is_rejected_by_the_same_guard(self):
+        # A directory alone does not pin the S_ISREG guard tightly: without it
+        # the open() below raises IsADirectoryError and the command still
+        # fails, just with a different message. A character device reads as
+        # empty instead, so only the S_ISREG check can reject it -- and unlike
+        # a FIFO it cannot block, which keeps a regression here a failure
+        # rather than a hung job.
+        with tempfile.TemporaryDirectory() as tmp:
+            store = Path(tmp) / "state.sqlite"
+
+            rc, stderr = self._create(os.devnull, store)
+
+            self.assertEqual(rc, 2)
+            self.assertIn(
+                "not a regular file",
+                json.loads(stderr)["error"]["message"],
+            )
 
 
 if __name__ == "__main__":
