@@ -40,6 +40,9 @@ class SandboxUnavailableError(LocalRunnerError):
     """Requested sandbox guarantee cannot be enforced on this host."""
 
 
+_RESERVED_INNER_ENV = frozenset({"HOME", "PWD", "OLDPWD", "TMPDIR"})
+
+
 @dataclass(frozen=True)
 class SandboxAdmission:
     backend: str
@@ -132,6 +135,20 @@ class BubblewrapSandbox:
             raise LocalRunnerError("sandbox workspace must be an existing directory")
 
         safe_env = _validated_env(env)
+        allowed_env = {"PATH", *preset.env_allowlist}
+        unexpected_env = sorted(set(safe_env) - allowed_env)
+        if unexpected_env:
+            raise LocalRunnerError(
+                "sandbox environment contains names outside preset allowlist: "
+                + ", ".join(unexpected_env)
+            )
+        reserved_env = sorted(set(safe_env).intersection(_RESERVED_INNER_ENV))
+        if reserved_env:
+            raise LocalRunnerError(
+                "sandbox environment cannot override controller-owned variables: "
+                + ", ".join(reserved_env)
+            )
+
         command = list(preset.invocation_prefix())
         if preset.prompt_transport == "file":
             if not isinstance(prompt_file, str) or not prompt_file:
@@ -141,6 +158,23 @@ class BubblewrapSandbox:
                 raise LocalRunnerError(
                     "prompt_file must be a workspace-relative path"
                 )
+
+            cursor = root
+            for part in prompt_path.parts:
+                cursor = cursor / part
+                if cursor.is_symlink():
+                    raise LocalRunnerError(
+                        "prompt_file must not traverse symlinks"
+                    )
+            try:
+                resolved_prompt = (root / prompt_path).resolve(strict=True)
+                resolved_prompt.relative_to(root)
+            except (OSError, ValueError) as exc:
+                raise LocalRunnerError(
+                    "prompt_file must resolve inside the workspace"
+                ) from exc
+            if not resolved_prompt.is_file():
+                raise LocalRunnerError("prompt_file must be a regular file")
             command.append(str(Path("/workspace") / prompt_path))
         elif prompt_file is not None:
             raise LocalRunnerError(
