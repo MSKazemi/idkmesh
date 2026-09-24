@@ -1,0 +1,42 @@
+{
+  "kind": "idkmesh-enterprise-github-identity-binding-table",
+  "schema_version": "0.1",
+  "bindings": [
+    {
+      "actor_id": 100001,
+      "login": "alice-maintainer",
+      "actor_type": "human",
+      "issuer": "github.com",
+      "roles": ["owner", "integrator"],
+      "scopes": [{"tenant_id": "tenant-a", "project_id": "project-main"}],
+      "data_clearance": "restricted",
+      "identity_revision": "github-identity:1",
+      "revoked": false,
+      "expires_at_epoch": null
+    },
+    {
+      "actor_id": 100002,
+      "login": "bob-reviewer",
+      "actor_type": "human",
+      "issuer": "github.com",
+      "roles": ["reviewer"],
+      "scopes": [{"tenant_id": "tenant-a", "project_id": "project-main"}],
+      "data_clearance": "confidential",
+      "identity_revision": "github-identity:1",
+      "revoked": false,
+      "expires_at_epoch": null
+    },
+    {
+      "actor_id": 200001,
+      "login": "idkmesh-ci[bot]",
+      "actor_type": "github_actions",
+      "issuer": "github.com",
+      "roles": ["dispatcher"],
+      "scopes": [{"tenant_id": "tenant-a", "project_id": "project-main"}],
+      "data_clearance": "internal",
+      "identity_revision": "github-identity:1",
+      "revoked": false,
+      "expires_at_epoch": null
+    }
+  ]
+}
