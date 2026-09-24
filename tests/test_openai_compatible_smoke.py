@@ -165,8 +165,72 @@ class OpenAICompatibleSmokeTests(unittest.TestCase):
         self.assertEqual(code, 2)
         payload = json.loads(stderr.getvalue())
         self.assertEqual(
-            payload["error"]["secret_ref"],
+            payload["error"]["details"]["secret_ref"],
             "env:MISSING_MODEL_KEY",
+        )
+        self.assertEqual(payload["error"]["code"], "authentication_error")
+        self.assertIs(payload["error"]["retryable"], False)
+
+    def test_cli_refuses_every_shape_that_could_echo_a_credential(self):
+        secret = "sk-live-NEVER-ECHO-THIS"
+        rejected_command_lines = (
+            # a credential mistakenly passed as the --secret-env value
+            ["--secret-env", secret],
+            # a credential-looking option outside any enumerated denylist
+            ["--key", secret],
+            ["--apikey=" + secret],
+            ["--openai-api-key", secret],
+            # an unambiguous argparse abbreviation of --secret-env
+            ["--secret", secret],
+            # a bare token in option position
+            [secret],
+            # a value argparse's own type= conversion would quote back
+            ["--timeout-seconds", secret],
+            # the three flags the original enumerated guard covered
+            ["--api-key", secret],
+            ["--token", secret],
+            ["--authorization", "Bearer " + secret],
+        )
+        for extra in rejected_command_lines:
+            with self.subTest(extra=extra[0]):
+                stderr = io.StringIO()
+                with patch.dict(os.environ, {}, clear=True):
+                    with redirect_stderr(stderr):
+                        code = main(
+                            [
+                                "--base-url",
+                                "https://example.com/v1",
+                                "--model",
+                                "model",
+                                *extra,
+                            ]
+                        )
+                rendered = stderr.getvalue()
+                self.assertEqual(code, 2)
+                self.assertNotIn(secret, rendered)
+                payload = json.loads(rendered)
+                self.assertEqual(
+                    payload["error"]["code"],
+                    "configuration_error",
+                )
+
+    def test_resolved_api_key_never_reaches_smoke_evidence(self):
+        secret = "sk-live-RESOLVED-KEY-VALUE"
+        transport = _transport("SMOKE OK")
+        evidence = run_openai_compatible_smoke(
+            _config(secret_ref="env:MODEL_API_KEY"),
+            api_key=secret,
+            checked_at="2026-09-24T00:00:00Z",
+            transport=transport,
+        )
+        rendered = json.dumps(evidence.to_dict(), sort_keys=True)
+        self.assertNotIn(secret, rendered)
+        self.assertNotIn("Authorization", rendered)
+        # Positive control: the key really was sent on the wire, so the
+        # assertion above is not vacuous.
+        self.assertEqual(
+            transport.calls[0]["headers"]["Authorization"],
+            f"Bearer {secret}",
         )
 
     def test_cli_success_outputs_only_safe_evidence(self):
