@@ -506,8 +506,8 @@ def main() -> int:
     )
     _require(
         errors,
-        completion_label in dispatcher_code,
-        "dispatcher must implement the terminal completion lifecycle label",
+        'policy["completion_label"]' in dispatcher_code,
+        "dispatcher must implement the terminal completion lifecycle from policy",
     )
 
     if errors:
