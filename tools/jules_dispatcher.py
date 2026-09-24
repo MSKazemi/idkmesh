@@ -225,6 +225,20 @@ def load_policy(path: pathlib.Path = DEFAULT_POLICY) -> dict[str, Any]:
         )
     if not str(ci_backpressure.get("checked_at") or "").strip():
         raise DispatchError("ci_backpressure.checked_at must be non-empty")
+    definitions = policy["label_definitions"]
+    if not isinstance(definitions, dict):
+        raise DispatchError("label_definitions must be an object")
+    for label_name, definition in definitions.items():
+        if not isinstance(definition, dict):
+            raise DispatchError(
+                f"label_definitions.{label_name} must be an object"
+            )
+        description = str(definition.get("description") or "")
+        if len(description) > 100:
+            raise DispatchError(
+                f"label_definitions.{label_name}.description exceeds "
+                "GitHub's 100-character limit"
+            )
     if not str(policy["completion_label"]).strip():
         raise DispatchError("completion_label must be non-empty")
     if str(policy["completion_label"]).casefold() not in {

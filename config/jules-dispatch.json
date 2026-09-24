@@ -103,7 +103,7 @@
     },
     "agent:jules-completed": {
       "color": "1D76DB",
-      "description": "Jules session finished and candidate review reservation is resolved; requires explicit re-triage before redispatch"
+      "description": "Jules work and PR review finished; explicit re-triage required before redispatch"
     }
   },
   "automatic_queue_label": "agent:jules-eligible",

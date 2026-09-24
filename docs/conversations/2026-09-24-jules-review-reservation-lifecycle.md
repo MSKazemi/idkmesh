@@ -135,3 +135,9 @@ Repository-wide PR Gate remains the integration authority for the exact branch.
 ## CI metadata correction
 
 The first PR Gate run correctly rejected a free-form `Fixes #813` phrase in the pull-request body. IDKMesh's closing-keyword guard requires intentional issue closure to use the PR template's dedicated `Closes on merge` line. The PR metadata was corrected accordingly; this is a repository process guard, not an implementation failure.
+
+## Post-merge label-bootstrap correction
+
+After PR #814 merged as `cf6241d6`, the trusted Issue Model Router push run reached the Jules reusable workflow but failed during managed-label bootstrap. GitHub returned HTTP 422 because the first `agent:jules-completed` description exceeded the platform's 100-character label-description limit. Reconciliation therefore did not run on that first post-merge attempt.
+
+The follow-up hardening shortens the description and makes the limit part of both `load_policy()` and the machine-checkable Jules control-plane contract. Managed-label metadata must now be valid before any GitHub label write is attempted. This converts an observed platform constraint into a repository invariant rather than relying on operator memory.
