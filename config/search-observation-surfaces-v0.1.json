@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "status": "observation_plan_only_not_visibility_evidence",
+  "purpose": "Define the named public search/answer surfaces across which IDKMesh's canonical 100 semantic intents should be observed without duplicating the query portfolio.",
+  "rules": {
+    "query_source": "config/seo-topics-v1.json",
+    "evidence_schema": "schemas/search-visibility-observation-v0.1.schema.json",
+    "full_query_count_per_surface": 100,
+    "head_query_count_per_surface": 10,
+    "result_authority": "none_until_observed"
+  },
+  "surfaces": [
+    {"id":"google-web","engine":"google","surface":"web_search","evidence_class":"manual_reproduction","label":"Google Search"},
+    {"id":"bing-web","engine":"bing","surface":"web_search","evidence_class":"manual_reproduction","label":"Bing Search"},
+    {"id":"yahoo-web","engine":"yahoo","surface":"web_search","evidence_class":"manual_reproduction","label":"Yahoo Search"},
+    {"id":"chatgpt-search","engine":"chatgpt","surface":"ai_answer","evidence_class":"manual_reproduction","label":"ChatGPT search/answers"},
+    {"id":"gemini-apps","engine":"gemini","surface":"ai_answer","evidence_class":"manual_reproduction","label":"Gemini Apps"},
+    {"id":"claude-search","engine":"claude","surface":"ai_answer","evidence_class":"manual_reproduction","label":"Claude web search"},
+    {"id":"perplexity-answer","engine":"perplexity","surface":"ai_answer","evidence_class":"manual_reproduction","label":"Perplexity answers"},
+    {"id":"copilot-answer","engine":"copilot","surface":"ai_answer","evidence_class":"manual_reproduction","label":"Microsoft Copilot"}
+  ]
+}
