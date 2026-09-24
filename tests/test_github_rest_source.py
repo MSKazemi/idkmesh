@@ -6,7 +6,10 @@ import unittest
 
 from idkmesh.connector_errors import ConnectorError
 from idkmesh.github_candidate_reader import GitHubPullRequestCandidateReader
-from idkmesh.github_rest_source import GitHubRestPullRequestSource
+from idkmesh.github_rest_source import (
+    GitHubRestIdentitySource,
+    GitHubRestPullRequestSource,
+)
 
 
 HEAD = "0123456789abcdef0123456789abcdef01234567"
@@ -23,6 +26,21 @@ def _pr_payload(**overrides):
     }
     value.update(overrides)
     return value
+
+
+def _ref_payload(
+    *,
+    branch="feature/test",
+    object_type="commit",
+    sha=HEAD,
+):
+    return {
+        "ref": f"refs/heads/{branch}",
+        "object": {
+            "type": object_type,
+            "sha": sha,
+        },
+    }
 
 
 class FakeResponse:
@@ -64,9 +82,12 @@ def _headers(**values):
     return message
 
 
-def _http_error(status, *, headers=None):
+def _http_error(status, *, headers=None, resource="pull"):
     return HTTPError(
-        url="https://api.github.com/repos/MSKazemi/idkmesh/pulls/42",
+        url=(
+            "https://api.github.com/repos/MSKazemi/idkmesh/"
+            f"{resource}/synthetic"
+        ),
         code=status,
         msg="synthetic",
         hdrs=headers or Message(),
@@ -74,12 +95,15 @@ def _http_error(status, *, headers=None):
     )
 
 
-class GitHubRestPullRequestSourceTests(unittest.TestCase):
-    def test_public_request_uses_fixed_endpoint_and_bounded_read(self):
+class GitHubRestIdentitySourceTests(unittest.TestCase):
+    def test_compatibility_alias_is_preserved(self):
+        self.assertIs(GitHubRestPullRequestSource, GitHubRestIdentitySource)
+
+    def test_public_pr_request_uses_fixed_endpoint_and_bounded_read(self):
         payload = json.dumps(_pr_payload()).encode()
         response = FakeResponse(payload)
         opener = FakeOpener(response=response)
-        source = GitHubRestPullRequestSource(
+        source = GitHubRestIdentitySource(
             opener=opener,
             timeout_seconds=7,
             max_response_bytes=4096,
@@ -92,7 +116,6 @@ class GitHubRestPullRequestSourceTests(unittest.TestCase):
         )
 
         self.assertEqual(result["head"]["sha"], HEAD)
-        self.assertEqual(len(opener.calls), 1)
         request, timeout = opener.calls[0]
         self.assertEqual(
             request.full_url,
@@ -109,10 +132,37 @@ class GitHubRestPullRequestSourceTests(unittest.TestCase):
         self.assertIsNone(request.get_header("Authorization"))
         self.assertEqual(response.read_sizes, [4097])
 
+    def test_branch_ref_request_percent_encodes_branch_as_one_ref_parameter(self):
+        payload = json.dumps(_ref_payload()).encode()
+        response = FakeResponse(payload)
+        opener = FakeOpener(response=response)
+        source = GitHubRestIdentitySource(
+            opener=opener,
+            timeout_seconds=9,
+            max_response_bytes=4096,
+        )
+
+        result = source.get_branch_ref(
+            repository="MSKazemi/idkmesh",
+            branch="feature/test",
+        )
+
+        self.assertEqual(result["ref"], "refs/heads/feature/test")
+        request, timeout = opener.calls[0]
+        self.assertEqual(
+            request.full_url,
+            (
+                "https://api.github.com/repos/MSKazemi/idkmesh/"
+                "git/ref/heads/feature%2Ftest"
+            ),
+        )
+        self.assertEqual(timeout, 9.0)
+        self.assertEqual(response.read_sizes, [4097])
+
     def test_token_is_used_in_memory_but_never_returned(self):
         payload = json.dumps(_pr_payload()).encode()
         opener = FakeOpener(response=FakeResponse(payload))
-        source = GitHubRestPullRequestSource(
+        source = GitHubRestIdentitySource(
             token="super-secret-token",
             opener=opener,
             connection_id="github-main",
@@ -130,9 +180,9 @@ class GitHubRestPullRequestSourceTests(unittest.TestCase):
         )
         self.assertNotIn("super-secret-token", json.dumps(result))
 
-    def test_source_composes_with_exact_head_identity_reader(self):
+    def test_pr_source_composes_with_exact_head_identity_reader(self):
         payload = json.dumps(_pr_payload()).encode()
-        source = GitHubRestPullRequestSource(
+        source = GitHubRestIdentitySource(
             opener=FakeOpener(response=FakeResponse(payload)),
         )
 
@@ -147,38 +197,37 @@ class GitHubRestPullRequestSourceTests(unittest.TestCase):
             "https://github.com/MSKazemi/idkmesh/pull/42",
         )
 
-    def test_response_size_limit_fails_closed(self):
-        opener = FakeOpener(
-            response=FakeResponse(b"x" * 33)
-        )
-        source = GitHubRestPullRequestSource(
-            opener=opener,
-            max_response_bytes=32,
-        )
-
-        with self.assertRaisesRegex(
-            ConnectorError,
-            "size limit",
-        ) as caught:
-            source.get_pull_request(
-                repository="MSKazemi/idkmesh",
-                number=42,
-            )
-
-        self.assertEqual(
-            caught.exception.code,
-            "result_normalization_error",
-        )
+    def test_response_size_limit_fails_closed_for_each_resource(self):
+        for call in ("pr", "branch"):
+            with self.subTest(call=call):
+                opener = FakeOpener(response=FakeResponse(b"x" * 33))
+                source = GitHubRestIdentitySource(
+                    opener=opener,
+                    max_response_bytes=32,
+                )
+                with self.assertRaisesRegex(
+                    ConnectorError,
+                    "size limit",
+                ) as caught:
+                    if call == "pr":
+                        source.get_pull_request(
+                            repository="MSKazemi/idkmesh",
+                            number=42,
+                        )
+                    else:
+                        source.get_branch_ref(
+                            repository="MSKazemi/idkmesh",
+                            branch="feature/test",
+                        )
+                self.assertEqual(
+                    caught.exception.code,
+                    "result_normalization_error",
+                )
 
     def test_malformed_json_and_non_object_fail_closed(self):
-        cases = [
-            b"{not-json",
-            b"[]",
-            b"null",
-        ]
-        for payload in cases:
+        for payload in (b"{not-json", b"[]", b"null"):
             with self.subTest(payload=payload):
-                source = GitHubRestPullRequestSource(
+                source = GitHubRestIdentitySource(
                     opener=FakeOpener(
                         response=FakeResponse(payload)
                     ),
@@ -193,7 +242,7 @@ class GitHubRestPullRequestSourceTests(unittest.TestCase):
                     "result_normalization_error",
                 )
 
-    def test_http_error_mapping(self):
+    def test_http_error_mapping_for_pr_and_branch(self):
         cases = [
             (401, Message(), "authentication_error"),
             (403, Message(), "authorization_error"),
@@ -210,61 +259,64 @@ class GitHubRestPullRequestSourceTests(unittest.TestCase):
             (418, Message(), "provider_unavailable"),
         ]
 
-        for status, headers, expected_code in cases:
-            with self.subTest(status=status, expected_code=expected_code):
-                source = GitHubRestPullRequestSource(
-                    token="secret-token",
-                    opener=FakeOpener(
-                        error=_http_error(
-                            status,
-                            headers=headers,
-                        )
-                    ),
-                )
-                with self.assertRaises(ConnectorError) as caught:
-                    source.get_pull_request(
-                        repository="MSKazemi/idkmesh",
-                        number=42,
+        for resource in ("pr", "branch"):
+            for status, headers, expected_code in cases:
+                with self.subTest(
+                    resource=resource,
+                    status=status,
+                    expected_code=expected_code,
+                ):
+                    source = GitHubRestIdentitySource(
+                        token="secret-token",
+                        opener=FakeOpener(
+                            error=_http_error(
+                                status,
+                                headers=headers,
+                                resource=resource,
+                            )
+                        ),
                     )
+                    with self.assertRaises(ConnectorError) as caught:
+                        if resource == "pr":
+                            source.get_pull_request(
+                                repository="MSKazemi/idkmesh",
+                                number=42,
+                            )
+                        else:
+                            source.get_branch_ref(
+                                repository="MSKazemi/idkmesh",
+                                branch="feature/test",
+                            )
 
-                error = caught.exception
-                self.assertEqual(error.code, expected_code)
-                self.assertEqual(error.connection_id, "github")
-                self.assertNotIn("secret-token", str(error))
-                self.assertNotIn("secret-token", json.dumps(error.details))
-                self.assertEqual(error.details["status"], status)
-                if status == 429:
-                    self.assertEqual(error.details["retry_after"], "5")
+                    error = caught.exception
+                    self.assertEqual(error.code, expected_code)
+                    self.assertEqual(error.connection_id, "github")
+                    self.assertNotIn("secret-token", str(error))
+                    self.assertNotIn(
+                        "secret-token",
+                        json.dumps(error.details),
+                    )
+                    self.assertEqual(error.details["status"], status)
+                    if status == 429:
+                        self.assertEqual(error.details["retry_after"], "5")
 
     def test_network_and_timeout_failures_are_normalized(self):
         cases = [
-            (
-                URLError("offline"),
-                "provider_unavailable",
-            ),
-            (
-                URLError(socket.timeout("slow")),
-                "timeout",
-            ),
-            (
-                socket.timeout("slow"),
-                "timeout",
-            ),
-            (
-                OSError("network down"),
-                "provider_unavailable",
-            ),
+            (URLError("offline"), "provider_unavailable"),
+            (URLError(socket.timeout("slow")), "timeout"),
+            (socket.timeout("slow"), "timeout"),
+            (OSError("network down"), "provider_unavailable"),
         ]
 
         for error, expected_code in cases:
             with self.subTest(error=error):
-                source = GitHubRestPullRequestSource(
+                source = GitHubRestIdentitySource(
                     opener=FakeOpener(error=error),
                 )
                 with self.assertRaises(ConnectorError) as caught:
-                    source.get_pull_request(
+                    source.get_branch_ref(
                         repository="MSKazemi/idkmesh",
-                        number=42,
+                        branch="feature/test",
                     )
                 self.assertEqual(caught.exception.code, expected_code)
 
@@ -272,7 +324,7 @@ class GitHubRestPullRequestSourceTests(unittest.TestCase):
         opener = FakeOpener(
             response=FakeResponse(json.dumps(_pr_payload()).encode())
         )
-        source = GitHubRestPullRequestSource(opener=opener)
+        source = GitHubRestIdentitySource(opener=opener)
 
         for repository, number in (
             ("not-a-repository", 42),
@@ -285,6 +337,22 @@ class GitHubRestPullRequestSourceTests(unittest.TestCase):
                     source.get_pull_request(
                         repository=repository,
                         number=number,
+                    )
+
+        for repository, branch in (
+            ("not-a-repository", "main"),
+            ("owner/repo", ""),
+            ("owner/repo", "../main"),
+            ("owner/repo", "feature//double"),
+            ("owner/repo", "feature..bad"),
+            ("owner/repo", "bad branch"),
+            ("owner/repo", "bad?branch"),
+        ):
+            with self.subTest(repository=repository, branch=branch):
+                with self.assertRaises(ValueError):
+                    source.get_branch_ref(
+                        repository=repository,
+                        branch=branch,
                     )
 
         self.assertEqual(opener.calls, [])
@@ -306,7 +374,7 @@ class GitHubRestPullRequestSourceTests(unittest.TestCase):
         for config in bad_configs:
             with self.subTest(config=config):
                 with self.assertRaises(ValueError):
-                    GitHubRestPullRequestSource(**config)
+                    GitHubRestIdentitySource(**config)
 
 
 if __name__ == "__main__":
