@@ -35,42 +35,52 @@ IDKMesh's repository rules make this explicit: prior eligibility is stale after 
 
 ## Common questions
 
+<a id="q01"></a>
 ### Can AI review AI-generated code?
 
 Yes, as an evidence source. Reliability improves when the review method is genuinely independent, tests concrete properties, and does not grant its own merge authority.
 
+<a id="q02"></a>
 ### What should an automated AI code review check?
 
 Useful checks include regressions, unsafe permission changes, missing tests, API-contract drift, error handling, data/provenance handling, and mismatches between the requested task and the actual diff.
 
+<a id="q03"></a>
 ### Are GitHub coding agents safe to auto-merge?
 
 Auto-merge should depend on repository governance, risk, and independent evidence—not merely the fact that a hosted coding agent completed a task.
 
+<a id="q04"></a>
 ### What is the role of CI?
 
 CI provides deterministic evidence about declared checks. It does not establish that the specification was correct, that hidden risks are absent, or that a human independently reviewed the change.
 
+<a id="q05"></a>
 ### Where does IDKMesh automate coding-agent work?
 
 See [Jules automation](https://github.com/MSKazemi/idkmesh/blob/main/docs/operations/JULES_AUTOMATION.md), the [connector control plane](https://github.com/MSKazemi/idkmesh/blob/main/docs/architecture/AGENT_MODEL_CONNECTOR_CONTROL_PLANE.md), and the repository [contribution rules](https://github.com/MSKazemi/idkmesh/blob/main/CONTRIBUTING.md).
 
+<a id="q06"></a>
 ### Can AI code review replace human code review?
 
 It can replace some repetitive checks, but whether it can replace a human decision depends on risk, evaluator evidence, repository policy, and what the review actually measures. High-impact changes still benefit from independent human authority.
 
+<a id="q07"></a>
 ### How do you verify an AI-generated pull request?
 
 Bind tests and reviews to the exact head revision, check that the diff matches the requested scope, run deterministic security and regression gates, and require additional independent review when semantics remain uncertain.
 
+<a id="q08"></a>
 ### What security risks do coding agents introduce?
 
 Common risks include excessive repository permissions, secret exposure, prompt-injection through untrusted content, unsafe shell execution, dependency/supply-chain changes, and agents modifying the workflow that evaluates their own work.
 
+<a id="q09"></a>
 ### Should a coding agent have write access to the main branch?
 
 A safer default is no. Let the agent create a candidate branch or pull request and keep protected-branch integration under separate authority.
 
+<a id="q10"></a>
 ### How do you compare coding agents from different models or vendors?
 
 Use the same bounded task set, comparable execution constraints, exact-revision evidence, success criteria, cost/latency observations, and independent verification rather than comparing self-reported completion rates.
