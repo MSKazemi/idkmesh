@@ -37,6 +37,18 @@
       "identity_revision": "github-identity:1",
       "revoked": false,
       "expires_at_epoch": null
+    },
+    {
+      "actor_id": 300001,
+      "login": "idkmesh-governance-app[bot]",
+      "actor_type": "github_app",
+      "issuer": "github.com",
+      "roles": ["dispatcher"],
+      "scopes": [{"tenant_id": "tenant-a", "project_id": "project-main"}],
+      "data_clearance": "internal",
+      "identity_revision": "github-identity:1",
+      "revoked": false,
+      "expires_at_epoch": null
     }
   ]
 }

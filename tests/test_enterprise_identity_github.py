@@ -108,6 +108,58 @@ class ActorContextFromGithubTests(unittest.TestCase):
         context = actor_context_from_github(claims, table)
         self.assertEqual(context.actor_type, "github_actions")
 
+    def test_known_github_app_actor_resolves(self):
+        """The App lane is declared in code and schema, so it must be exercised.
+
+        Issue 670's E3-B line names GitHub App metadata alongside user and
+        Actions metadata. ``github_app`` was an accepted ``actor_type`` with no
+        test resolving one, so a regression in the ``bot`` -> App mapping would
+        have shipped green.
+        """
+        table = _table(
+            GithubIdentityBinding(
+                actor_id=300001,
+                login="idkmesh-governance-app[bot]",
+                context=_context(
+                    principal="github:github_app:300001",
+                    actor_type="github_app",
+                    roles=("dispatcher",),
+                    clearance="internal",
+                ),
+            )
+        )
+        claims = GithubActorClaims(
+            actor_id=300001, login="idkmesh-governance-app[bot]", kind="bot"
+        )
+        context = actor_context_from_github(claims, table)
+        self.assertEqual(context.actor_type, "github_app")
+        self.assertEqual(context.principal_id, "github:github_app:300001")
+
+    def test_a_login_that_merely_contains_the_bound_login_is_denied(self):
+        """The login check must be equality, not a prefix or substring match.
+
+        Both other login tests survive a substring comparison: the bound login
+        is not contained in ``renamed-or-spoofed``, and it is contained in its
+        own differently-cased self. Rewriting the comparison to
+        ``bound not in claimed`` therefore left the suite green. An attacker who
+        can register ``alice-maintainer-ops`` must not satisfy a binding for
+        ``alice-maintainer``, in either direction.
+        """
+        table = _table()
+        for login in (
+            "alice-maintainer-ops",
+            "not-alice-maintainer",
+            "alice-maintaine",
+            "alice",
+        ):
+            with self.subTest(login=login):
+                claims = GithubActorClaims(
+                    actor_id=100001, login=login, kind="user"
+                )
+                with self.assertRaises(GithubIdentityAdapterError) as ctx:
+                    actor_context_from_github(claims, table)
+                self.assertEqual(ctx.exception.code, "actor_login_mismatch")
+
     def test_unknown_actor_id_is_denied(self):
         table = _table()
         claims = GithubActorClaims(actor_id=999999, login="nobody", kind="user")
@@ -392,6 +444,15 @@ class CommittedExampleTests(unittest.TestCase):
         ci_bot = table.by_actor_id(200001)
         self.assertIsNotNone(ci_bot)
         self.assertEqual(ci_bot.context.actor_type, "github_actions")
+        app = table.by_actor_id(300001)
+        self.assertIsNotNone(app)
+        self.assertEqual(app.context.actor_type, "github_app")
+        self.assertEqual(
+            sorted(binding.context.actor_type for binding in table.bindings),
+            ["github_actions", "github_app", "human", "human"],
+            "the committed example must exercise every GitHub actor type the "
+            "schema accepts, so a declared-but-unused lane cannot go stale.",
+        )
 
 
 if __name__ == "__main__":

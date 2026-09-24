@@ -9,16 +9,16 @@ module is that adapter for GitHub actors specifically.
 It turns two already-trusted inputs into an ``ActorContext``:
 
 - :class:`GithubActorClaims` -- already-authenticated GitHub actor fields
-  (for example the verified ``sender_id``/``sender_login`` of an HMAC-checked
-  :class:`idkmesh.github_webhook_ingress.GitHubWebhookEnvelope`, or the
-  equivalent ``github.actor``/``github.actor_id`` values of a GitHub Actions
-  run). Never raw issue/PR/comment title or body text.
+  (for example the verified sender id/login of a signature-checked webhook
+  delivery, or the ``github.actor``/``github.actor_id`` values of a GitHub
+  Actions run). Never raw issue/PR/comment title or body text. Nothing on
+  ``main`` constructs these yet; a caller that reads them off a real payload
+  is E3-F scope, so no in-tree producer is named here.
 - :class:`GithubIdentityBindingTable` -- a maintainer-reviewed, versioned
   table binding each trusted numeric GitHub actor id to its enterprise
   roles, tenant/project scopes, and data clearance. The numeric actor id is
-  the primary trust key, matching the actor-id-primary binding pattern used
-  by ``idkmesh.github_dispatch_authorization``: a renamed/spoofed login for
-  a bound id, or a login reused under a different id, is denied.
+  the primary trust key: a renamed/spoofed login for a bound id, or a login
+  reused under a different id, is denied.
 
 Resolution fails closed: an unbound actor id, a login that does not match
 the bound id, or a GitHub actor "kind" (human user vs. bot) inconsistent
@@ -164,6 +164,15 @@ class GithubIdentityBindingTable:
             )
 
     def by_actor_id(self, actor_id: int) -> GithubIdentityBinding | None:
+        """Look a binding up by actor id, applying no trust check at all.
+
+        This is table access, not authorization. The returned binding carries
+        a complete ``ActorContext``, so using it directly skips the login and
+        actor-kind checks that make a claim trustworthy.
+        :func:`actor_context_from_github` is the only trust boundary in this
+        module; call that instead unless you are inspecting the table itself.
+        """
+
         return next(
             (binding for binding in self.bindings if binding.actor_id == actor_id),
             None,
