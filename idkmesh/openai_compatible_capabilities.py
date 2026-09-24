@@ -40,6 +40,14 @@ _ALLOWED_EVIDENCE_SOURCES = frozenset(
     }
 )
 
+# Sources that name an artifact outside this repository. Claiming one without a
+# reference would let a capability record advertise external provenance that
+# nothing points at, so at least one evidence_ref is required.
+#
+# "maintainer_config" is self-referencing (the profile is the artifact) and
+# "probe" is machine-derived, with its scope carried by model_observed.
+_CITED_EVIDENCE_SOURCES = frozenset({"provider_documentation", "benchmark"})
+
 
 def _nonempty(value: object, field: str) -> str:
     if not isinstance(value, str) or not value.strip():
@@ -132,6 +140,11 @@ class ModelCapabilityEvidence:
         object.__setattr__(self, "evidence_sources", sources)
 
         refs = tuple(_nonempty(item, "evidence_ref") for item in self.evidence_refs)
+        if not refs and sources & _CITED_EVIDENCE_SOURCES:
+            cited = ", ".join(sorted(sources & _CITED_EVIDENCE_SOURCES))
+            raise ValueError(
+                f"evidence_refs must cite at least one artifact for source(s): {cited}"
+            )
         object.__setattr__(self, "evidence_refs", refs)
 
     def to_driver_capabilities(self) -> DriverCapabilities:
@@ -241,6 +254,15 @@ class OpenAICompatibleModelDriver:
         return evidence
 
     def declared_capabilities(self, config: ConnectorConfig) -> DriverCapabilities:
+        """Merge the profile declaration with the evidence ceiling.
+
+        An empty profile collection means *inherit the evidence*, not *deny*:
+        ConnectorConfig cannot distinguish "capabilities.tools omitted" from
+        "capabilities.tools: []", so a profile cannot subtract a single tool or
+        candidate type here. Narrowing that far belongs in the routing policy,
+        which is evaluated separately.
+        """
+
         evidence = self.capability_evidence(config)
         tiers = config.capability_tiers or evidence.capability_tiers
         task_classes = config.task_classes or evidence.task_classes

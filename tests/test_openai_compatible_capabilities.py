@@ -161,6 +161,16 @@ class OpenAICompatibleCapabilityEvidenceTests(unittest.TestCase):
         self.assertEqual(capabilities.capability_tiers, frozenset({"T1"}))
         self.assertEqual(capabilities.task_classes, frozenset({"inference"}))
         self.assertEqual(capabilities.max_risk, "low")
+        # An empty profile collection means "inherit the evidence", not "deny":
+        # ConnectorConfig represents an omitted and an explicitly empty list
+        # identically, so `tools: []` here still resolves to the evidenced tool
+        # set. Asserted so the boundary is visible rather than assumed.
+        self.assertEqual(config.tools, frozenset())
+        self.assertEqual(
+            capabilities.tools,
+            frozenset({"model:function_calling"}),
+        )
+        self.assertEqual(capabilities.candidate_types, frozenset({"text"}))
 
     def test_profile_cannot_upgrade_capability_tier(self):
         driver = OpenAICompatibleModelDriver({"model-a": _evidence()})
@@ -250,7 +260,42 @@ class OpenAICompatibleCapabilityEvidenceTests(unittest.TestCase):
     def test_mapping_key_must_match_evidence_model(self):
         with self.assertRaisesRegex(ValueError, "mapping key"):
             OpenAICompatibleModelDriver({"model-b": _evidence()})
-            
+
+    def test_external_source_claims_require_a_reference(self):
+        for source in ("benchmark", "provider_documentation"):
+            with self.subTest(source=source):
+                with self.assertRaisesRegex(ValueError, "must cite at least one"):
+                    _evidence(
+                        evidence_sources=frozenset({source}),
+                        evidence_refs=(),
+                    )
+
+        # maintainer_config is self-referencing and needs no external artifact.
+        self.assertEqual(
+            _evidence(
+                evidence_sources=frozenset({"maintainer_config"}),
+                evidence_refs=(),
+            ).evidence_refs,
+            (),
+        )
+
+    def test_probe_confirmation_needs_no_new_reference(self):
+        evidence = _evidence(
+            evidence_sources=frozenset({"maintainer_config"}),
+            evidence_refs=(),
+        )
+        probe = OpenAICompatibleProbeResult(
+            connection_id="model-main",
+            status="healthy",
+            configured_model="model-a",
+            observed_models=("model-a",),
+            model_available=True,
+            warnings=(),
+        )
+        confirmed = confirm_model_identity(evidence, probe)
+        self.assertIn("probe", confirmed.evidence_sources)
+        self.assertEqual(confirmed.evidence_refs, ())
+
 
 if __name__ == "__main__":
     unittest.main()
