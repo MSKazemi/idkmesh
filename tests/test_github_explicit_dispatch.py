@@ -230,6 +230,39 @@ class GitHubExplicitDispatchTests(unittest.TestCase):
                         created_at="2026-09-24T15:01:00Z",
                     )
 
+    def test_repository_case_matches_authorization_binding(self):
+        """Authorization binds the repository case-insensitively, so the
+        retained delivery record must be compared the same way. A policy
+        spelled differently from the ingress configuration must not authorize
+        a dispatch that can then never be reserved."""
+
+        calls = []
+        result = dispatch_github_run_once(
+            store=self.store,
+            authorization=_authorization(
+                repository="mskazemi/idkmesh",
+            ),
+            request=_request(),
+            dispatcher=lambda request: calls.append(request) or "ref-case",
+            created_at="2026-09-24T15:01:00Z",
+        )
+        self.assertEqual(len(calls), 1)
+        self.assertTrue(result.created)
+        self.assertEqual(result.provider_reference, "ref-case")
+
+        with self.assertRaises(GitHubDispatchConflict):
+            dispatch_github_run_once(
+                store=self.store,
+                authorization=_authorization(
+                    repository="MSKazemi/other-repo",
+                ),
+                request=_request(
+                    delivery_run_id="github/delivery-parent",
+                ),
+                dispatcher=lambda _: "never",
+                created_at="2026-09-24T15:02:00Z",
+            )
+
     def test_incomplete_preexisting_dispatch_requires_reconciliation(self):
         request = _request()
         authorization = _authorization()

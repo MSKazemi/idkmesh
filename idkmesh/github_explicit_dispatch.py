@@ -263,7 +263,12 @@ def _parent_delivery_record(
             raise GitHubDispatchConflict(
                 f"delivery run {key} does not match dispatch request"
             )
-    if metadata.get("repository") != authorization.repository:
+    retained_repository = metadata.get("repository")
+    if (
+        not isinstance(retained_repository, str)
+        or retained_repository.casefold()
+        != authorization.repository.casefold()
+    ):
         raise GitHubDispatchConflict(
             "delivery repository does not match authorization"
         )
@@ -420,10 +425,6 @@ def dispatch_github_run_once(
             },
             updated_at=updated_at or created_at,
         )
-        if isinstance(exc, (ValueError, GitHubDispatchExecutionError)):
-            raise GitHubDispatchExecutionError(
-                "selected connector dispatch failed"
-            ) from exc
         raise GitHubDispatchExecutionError(
             "selected connector dispatch failed"
         ) from exc
