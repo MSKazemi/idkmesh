@@ -163,6 +163,18 @@ class GitHubWebhookIngressTests(unittest.TestCase):
                     "authentication_error",
                 )
 
+    def test_unrelated_http_headers_do_not_become_authentication_policy(self):
+        body = _body()
+        headers = _headers(body)
+        headers["User-Agent"] = ""
+        headers["X-Unrelated-Large-Metadata"] = "x" * 5000
+
+        envelope = _receiver().receive(
+            body=body,
+            headers=headers,
+        )
+        self.assertEqual(envelope.delivery_id, DELIVERY)
+
     def test_case_ambiguous_headers_are_rejected(self):
         body = _body()
         headers = _headers(body)
