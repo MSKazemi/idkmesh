@@ -13,6 +13,7 @@ on:
       - "config/discovery-query-portfolio-v0.1.json"
       - "config/visibility-growth-policy-v0.1.json"
       - "scripts/discovery_query_portfolio.py"
+      - "scripts/bing_ai_performance_import.py"
       - "scripts/search_console_snapshot.py"
       - "scripts/visibility_growth_selector.py"
       - "scripts/visibility_observatory.py"
@@ -45,6 +46,7 @@ jobs:
           python -m unittest \
             tests.test_visibility_observatory \
             tests.test_discovery_query_portfolio \
+            tests.test_bing_ai_performance_import \
             tests.test_search_console_snapshot \
             tests.test_visibility_growth_selector \
             -v
