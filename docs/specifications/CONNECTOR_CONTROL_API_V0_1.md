@@ -658,3 +658,25 @@ It proves the following preconditions before C2-G may use credentials:
 - the final candidate identity contains no verification, acceptance, merge, or integration authority.
 
 C2-G remains a separate live low-risk smoke gate. Passing the offline fixture must never be reported as evidence that a real Jules credential, Source, remote sandbox, candidate PR, or live verification path is healthy.
+
+## Jules lifecycle application service
+
+`idkmesh/jules_lifecycle.py` composes the already-separated Jules Session, observation, candidate-discovery, and SCM candidate-binding services into one bounded application boundary.
+
+The state progression is intentionally non-collapsing:
+
+```text
+waiting_for_agent
+ -> worker_completed
+ -> provider PR hints
+ -> exact SCM candidate resolution
+ -> candidate_ready
+```
+
+A Session in `COMPLETED` state remains `worker_completed` when no candidate hint exists. A discovered hint does not become readiness by itself. `candidate_ready` is emitted only when every retained hint has resolved through the trusted SCM CandidateReference boundary.
+
+If multiple PR candidates exist, the service retains all of them and makes no selection. If any candidate binding fails, the inspection fails instead of returning a partially ready snapshot.
+
+The service also rechecks Session name/id and hint Session/repository identity at the composition boundary. A descriptive provider candidate count that differs from the deduplicated hint count becomes a warning, not hidden state.
+
+`JulesLifecycleSnapshot` contains no verifier result, acceptance, selected candidate, human decision, merge authorization, or integration authorization.
