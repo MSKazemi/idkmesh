@@ -34,6 +34,32 @@ inputs:
     description: Python version used to run the audit (needs >= 3.11).
     required: false
     default: "3.12"
+  bootstrap:
+    description: >-
+      Add a deterministic candidate-level bootstrap confidence interval for
+      panel error, mean verifier accuracy, mean pairwise correlation and
+      effective votes (issue #520). Emits gate-audit-report-v0.2 instead of
+      v0.1. Set to "true" to enable; disabled by default so the report
+      contract is unchanged unless explicitly opted in.
+    required: false
+    default: "false"
+  bootstrap-replicates:
+    description: >-
+      Bootstrap resample count. Only used when bootstrap is "true".
+    required: false
+    default: "2000"
+  bootstrap-seed:
+    description: >-
+      Seed for the bootstrap's deterministic PRNG. Only used when bootstrap
+      is "true".
+    required: false
+    default: "0"
+  bootstrap-confidence-level:
+    description: >-
+      Confidence level in (0, 1) for the bootstrap interval. Only used when
+      bootstrap is "true".
+    required: false
+    default: "0.95"
 
 outputs:
   report-file:
@@ -62,10 +88,22 @@ runs:
         VOTES_FILE: ${{ inputs.votes-file }}
         REPORT_FILE: ${{ inputs.report-file }}
         MARKDOWN_FILE: ${{ inputs.markdown-file }}
+        BOOTSTRAP: ${{ inputs.bootstrap }}
+        BOOTSTRAP_REPLICATES: ${{ inputs.bootstrap-replicates }}
+        BOOTSTRAP_SEED: ${{ inputs.bootstrap-seed }}
+        BOOTSTRAP_CONFIDENCE_LEVEL: ${{ inputs.bootstrap-confidence-level }}
       run: |
         args=(gate-audit "${VOTES_FILE}" --pretty --out "${REPORT_FILE}")
         if [[ -n "${MARKDOWN_FILE}" ]]; then
           args+=(--markdown "${MARKDOWN_FILE}")
+        fi
+        if [[ "${BOOTSTRAP}" == "true" ]]; then
+          args+=(
+            --bootstrap
+            --bootstrap-replicates "${BOOTSTRAP_REPLICATES}"
+            --bootstrap-seed "${BOOTSTRAP_SEED}"
+            --bootstrap-confidence-level "${BOOTSTRAP_CONFIDENCE_LEVEL}"
+          )
         fi
         idkmesh "${args[@]}"
 

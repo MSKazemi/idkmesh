@@ -224,10 +224,11 @@ same fail-closed rule the rest of the CLI follows. Runtime is
 `O(replicates × candidates × verifiers²)`, dominated by the pairwise
 correlation term; reduce `--bootstrap-replicates` for very large panels.
 
-Not yet done, deliberately: the composite GitHub Action
-(`actions/gate-audit/action.yml`) does not expose `--bootstrap` as an input.
-The CLI supports it today; wiring the action is separate follow-on scope, not
-bundled into a change whose point was the statistics.
+The composite GitHub Action (`actions/gate-audit/action.yml`) exposes this as
+an opt-in `bootstrap: "true"` input (plus `bootstrap-replicates`,
+`bootstrap-seed` and `bootstrap-confidence-level`), mirroring the CLI flags
+above. It defaults to `"false"`, so the action's default output contract is
+unchanged unless a workflow explicitly opts in.
 
 ## Output contract
 

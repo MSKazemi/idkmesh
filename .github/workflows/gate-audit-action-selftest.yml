@@ -96,3 +96,51 @@ jobs:
               "JSON-only mode emitted canonical JSON, no Markdown artifact, and "
               "reported matching action outputs")
           EOF
+
+      - name: Run the action with bootstrap uncertainty enabled
+        id: audit-bootstrap
+        uses: ./actions/gate-audit
+        with:
+          votes-file: examples/gate-audit/panel-votes.example.json
+          report-file: selftest-bootstrap-report.json
+          markdown-file: ""
+          bootstrap: "true"
+
+      - name: Assert bootstrap mode reproduces the committed v0.2 example
+        run: |
+          python - <<'EOF'
+          # Compared by value with a tight float tolerance, not byte-for-byte:
+          # phi()'s plain sum() over floats changed summation algorithm
+          # between Python 3.11 and 3.12+ (see assert_close in
+          # tests/test_gate_audit_uncertainty.py), so a seeded bootstrap can
+          # round a correlation to a different last representable bit across
+          # interpreter versions even though the resampling itself is exactly
+          # reproducible.
+          import json
+          from pathlib import Path
+
+          def assert_close(actual, expected, path="$"):
+              if isinstance(expected, float) and isinstance(actual, float):
+                  assert abs(actual - expected) < 1e-9, (
+                      f"{path}: {actual!r} != {expected!r}")
+              elif isinstance(expected, dict) and isinstance(actual, dict):
+                  assert set(actual) == set(expected), path
+                  for key in expected:
+                      assert_close(actual[key], expected[key], f"{path}.{key}")
+              elif isinstance(expected, list) and isinstance(actual, list):
+                  assert len(actual) == len(expected), path
+                  for i, (a, e) in enumerate(zip(actual, expected)):
+                      assert_close(a, e, f"{path}[{i}]")
+              else:
+                  assert actual == expected, f"{path}: {actual!r} != {expected!r}"
+
+          produced = json.loads(
+              Path("selftest-bootstrap-report.json").read_text(encoding="utf-8"))
+          committed = json.loads(
+              Path("examples/gate-audit/gate-audit-report-v0.2.example.json")
+              .read_text(encoding="utf-8"))
+          assert_close(produced, committed)
+          print(
+              "bootstrap action output matches the committed v0.2 example "
+              "report (float tolerance 1e-9)")
+          EOF
