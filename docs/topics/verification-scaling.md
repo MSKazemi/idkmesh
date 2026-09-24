@@ -47,42 +47,52 @@ A larger swarm is valuable only when decomposition quality, independence, verifi
 
 ## Common questions
 
+<a id="q01"></a>
 ### What is verification debt?
 
 It is accumulated candidate work waiting for trustworthy evaluation or integration evidence.
 
+<a id="q02"></a>
 ### What is an AI review bottleneck?
 
 It occurs when the rate or complexity of generated work exceeds the system's capacity to review it reliably.
 
+<a id="q03"></a>
 ### How do you scale AI agents safely?
 
 Bound concurrency, isolate attempts, measure queues and outcomes, preserve provenance, use risk-based verification, and apply backpressure before review capacity is exhausted.
 
+<a id="q04"></a>
 ### Does adding more agents improve reliability?
 
 Not automatically. More agents can add diversity, but they can also duplicate errors, increase conflicts, and consume the same limited verifier capacity.
 
+<a id="q05"></a>
 ### Does IDKMesh study verification backpressure?
 
 Yes. See the [verification backpressure benchmark](https://github.com/MSKazemi/idkmesh/blob/main/docs/research/VERIFICATION_BACKPRESSURE_BENCHMARK.md) and the [research atlas](https://mskazemi.com/idkmesh/research.html).
 
+<a id="q06"></a>
 ### How many AI agents can I add before review breaks down?
 
 There is no fixed number. The limit appears when candidate arrival rate, complexity, or correlation grows faster than available verification capacity and the queue of untrusted work starts accumulating.
 
+<a id="q07"></a>
 ### How do you measure verification debt?
 
 Track pending candidates, age of unverified work, reviewer latency, re-review frequency, unresolved failures, and the amount of compute or human attention required to clear the queue.
 
+<a id="q08"></a>
 ### What backpressure policies work for AI-agent systems?
 
 Useful policies include concurrency caps, admission control, priority queues, duplicate-work suppression, risk-based routing, verifier reservation, and pausing generation when evidence queues exceed safe limits.
 
+<a id="q09"></a>
 ### How should scarce human review be scheduled?
 
 Reserve humans for decisions where their judgment adds the most value: high risk, conflicting evidence, novel failure modes, authority changes, and cases automated evaluators cannot resolve confidently.
 
+<a id="q10"></a>
 ### How can I tell whether adding more agents helps or hurts?
 
 Measure accepted regression-free outcomes, reviewer burden, latency, conflicts, cost, and evidence quality against a smaller baseline. More activity is useful only if verified useful work improves.
