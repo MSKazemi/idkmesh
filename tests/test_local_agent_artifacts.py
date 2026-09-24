@@ -162,14 +162,16 @@ class LocalAgentArtifactCaptureTests(unittest.TestCase):
 
 
     def test_output_root_must_be_outside_canonical_repository(self):
+        forbidden_output = self.repo / "controller-output"
         with self.assertRaisesRegex(LocalRunnerError, "canonical repository"):
             capture_local_agent_artifacts(
                 workspace=self.workspace,
                 repository=self.repo,
                 source_revision=self.sha,
-                output_root=self.repo / "controller-output",
+                output_root=forbidden_output,
                 process_result=_result(),
             )
+        self.assertFalse(forbidden_output.exists())
 
     def test_existing_bundle_is_never_overwritten(self):
         self.output.mkdir(parents=True)
