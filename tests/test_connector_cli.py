@@ -290,6 +290,18 @@ class ConnectorCliTests(unittest.TestCase):
             self.assertEqual(corrupt_proc.returncode, 2)
             self.assertIn("error:", corrupt_proc.stderr)
 
+            corrupt_json_proc = self.run_cli(
+                "connections",
+                "stored",
+                "--store",
+                str(corrupt_db),
+                "--json",
+            )
+            self.assertEqual(corrupt_json_proc.returncode, 2)
+            corrupt_payload = json.loads(corrupt_json_proc.stderr)
+            self.assertFalse(corrupt_payload["valid"])
+            self.assertEqual(corrupt_payload["error"]["code"], "connector_store_error")
+
     def test_connections_help_is_read_only_in_language(self):
         proc = self.run_cli("connections", "--help")
         self.assertEqual(proc.returncode, 0, proc.stderr)

@@ -520,9 +520,12 @@ def _connection_summary(config) -> dict[str, object]:
 
 def _connections_error(exc, *, json_output: bool) -> int:
     if json_output:
+        import sqlite3
+        from idkmesh.connector_store import LocalStoreError
+
         default_code = (
             "connector_store_error"
-            if "store" in type(exc).__name__.lower() or "sqlite" in type(exc).__name__.lower()
+            if isinstance(exc, (LocalStoreError, sqlite3.Error))
             else "connector_profile_error"
         )
         payload = {
