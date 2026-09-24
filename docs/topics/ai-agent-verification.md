@@ -43,42 +43,52 @@ See [verifier panels and independent review](https://mskazemi.com/idkmesh/topics
 
 ## Common questions
 
+<a id="q01"></a>
 ### How do I verify an autonomous AI agent?
 
 Give the agent a bounded task, keep its output untrusted, execute checks that do not depend on the agent's own success claim, bind those checks to the exact artifacts produced, and keep final integration authority outside the worker.
 
+<a id="q02"></a>
 ### Is AI agent testing the same as AI agent verification?
 
 Testing is one source of evidence. Verification is the wider decision process that connects requirements, tests, provenance, independent review, and authority.
 
+<a id="q03"></a>
 ### Can one AI agent verify another AI agent?
 
 It can contribute evidence, but the value depends on genuine independence and task-appropriate evaluation. A second model identity by itself is not proof of independence.
 
+<a id="q04"></a>
 ### What is the difference between validation and verification?
 
 In practical software-agent workflows, verification asks whether the candidate satisfies stated criteria; validation asks whether those criteria and the resulting behavior are useful for the intended goal. IDKMesh keeps both questions explicit rather than assuming passing tests proves the broader goal.
 
+<a id="q05"></a>
 ### Where are the executable contracts?
 
 Start with the [schema index](https://github.com/MSKazemi/idkmesh/blob/main/schemas/README.md), [architecture](https://github.com/MSKazemi/idkmesh/blob/main/ARCHITECTURE.md), and [getting-started guide](https://github.com/MSKazemi/idkmesh/blob/main/docs/GETTING_STARTED.md).
 
+<a id="q06"></a>
 ### How do you verify an AI agent in production?
 
 Verify the exact action or artifact the agent produced, not merely the conversation that led to it. Use environment-appropriate tests, policy checks, provenance, and an integration boundary that can reject or escalate the result.
 
+<a id="q07"></a>
 ### What evidence should an AI agent return?
 
 At minimum: the task identity, worker identity, exact output or revision, commands/checks performed, relevant logs or structured results, and enough provenance for another reviewer to reproduce the important checks.
 
+<a id="q08"></a>
 ### How can I detect an agent that falsely reports success?
 
 Do not use the agent's self-report as the acceptance signal. Run verifier-owned checks against the produced artifact and compare the result to explicit acceptance criteria.
 
+<a id="q09"></a>
 ### What should happen when AI-agent verification is inconclusive?
 
 The system should preserve the uncertainty rather than converting it into approval. Escalate to a stronger evaluator, a different evidence source, or a human reviewer according to the task's risk policy.
 
+<a id="q10"></a>
 ### How do you verify agents from different AI providers consistently?
 
 Normalize them behind the same task, result, provenance, and verification contracts. Provider-specific APIs can differ while the evidence required for acceptance remains stable.
