@@ -29,16 +29,23 @@ def question_entries() -> list[dict[str, object]]:
 
     for cluster in payload["clusters"]:
         source = ROOT / cluster["path"]
-        questions = QUESTION_RE.findall(source.read_text(encoding="utf-8"))
+        source_text = source.read_text(encoding="utf-8")
+        questions = QUESTION_RE.findall(source_text)
         if len(questions) != 10:
             raise QuestionIndexError(
                 f"{cluster['id']}: expected 10 questions, found {len(questions)}"
             )
 
-        for question in questions:
+        for question_number, question in enumerate(questions, start=1):
             if question in seen:
                 raise QuestionIndexError(f"duplicate question: {question}")
             seen.add(question)
+            anchor = f"q{question_number:02d}"
+            expected = f'<a id="{anchor}"></a>\n### {question}'
+            if expected not in source_text:
+                raise QuestionIndexError(
+                    f"{cluster['id']}: {question!r} is missing stable anchor #{anchor}"
+                )
 
         entries.append(
             {
@@ -94,8 +101,9 @@ def render() -> str:
                 "",
             ]
         )
-        for question in entry["questions"]:
-            lines.append(f"{number}. [{question}]({entry['url']})")
+        for question_number, question in enumerate(entry["questions"], start=1):
+            anchor = f"q{question_number:02d}"
+            lines.append(f"{number}. [{question}]({entry['url']}#{anchor})")
             number += 1
         lines.append("")
 
@@ -105,6 +113,7 @@ def render() -> str:
             "",
             "- The ten topic pages remain the answer sources; this page only indexes them.",
             "- A question appears here only if it is an actual `### ...?` heading on a topic page.",
+            "- Each question has a stable `#q01` through `#q10` anchor on its pillar so the map links directly to the answer passage.",
             "- CI requires exactly 100 unique questions across exactly ten topic clusters.",
             "- Exact-match keyword repetition and one-page-per-query doorway patterns are intentionally avoided.",
             "- Search visibility is measured separately from crawlability; see the",
