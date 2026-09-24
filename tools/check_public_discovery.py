@@ -25,6 +25,13 @@ SOCIAL_IMAGE = "https://mskazemi.com/idkmesh/assets/idkmesh-social.png"
 BAD_SOCIAL_IMAGE = "https://mskazemi.com/idkmesh/idkmesh/assets/idkmesh-social.png"
 JEKYLL_SENTINEL = "https://mskazemi.com/idkmesh/WHAT_IS_IDKMESH.html"
 
+AUTHORITY_PAGES = {
+    "e017-reproduction": (
+        "https://mskazemi.com/idkmesh/research/E017_VERIFIER_PANEL_REPRODUCIBILITY.html",
+        "when 25 verifiers behaved like one",
+    ),
+}
+
 DIRECTORY_HUBS = {
     name: f"https://mskazemi.com/idkmesh/{name}/"
     for name in (
@@ -244,6 +251,7 @@ def probe() -> list[str]:
             HOME,
             TOPICS,
             QUESTIONS,
+            *(url for url, _ in AUTHORITY_PAGES.values()),
             *DIRECTORY_HUBS.values(),
             *(url for url, _ in TOPIC_PAGES.values()),
         ]
@@ -290,6 +298,20 @@ def probe() -> list[str]:
             sentinel_body,
             failures,
         )
+
+    for page_id, (url, marker) in AUTHORITY_PAGES.items():
+        status, body = fetch(url, browser)
+        if status != 200:
+            failures.append(f"{page_id}: HTTP {status}")
+            continue
+        if marker.lower() not in body.lower():
+            failures.append(
+                f"{page_id}: expected content marker {marker!r} is absent"
+            )
+        if 'name="description"' not in body.lower():
+            failures.append(f"{page_id}: rendered page has no meta description")
+        _check_social_image(page_id, body, failures)
+        _check_indexable_html(page_id, url, body, failures)
 
     for hub_id, url in DIRECTORY_HUBS.items():
         status, body = fetch(url, browser)
@@ -389,7 +411,8 @@ def main() -> int:
 
     print(
         "Discovery surface healthy: robots, sitemap, directory hubs, topic hub, "
-        "100-question map, ten topic pages, exact canonicals, indexability, "
+        "flagship authority page, 100-question map, ten topic pages, exact "
+        "canonicals, indexability, "
         "llms.txt, IndexNow key, Gemini robots control, and representative crawler "
         "probes all passed."
     )
