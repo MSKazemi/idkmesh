@@ -178,6 +178,9 @@ def test_router_workflow_keeps_hot_path_api_budget_bounded():
     workflow = (ROOT / ".github" / "workflows" / "issue-model-router.yml").read_text(
         encoding="utf-8"
     )
+    dispatcher = (ROOT / ".github" / "workflows" / "jules-dispatch.yml").read_text(
+        encoding="utf-8"
+    )
 
     assert "cron: '7 */6 * * *'" in workflow
     assert "gh issue view" not in workflow
@@ -194,3 +197,8 @@ def test_router_workflow_keeps_hot_path_api_budget_bounded():
     assert "bootstrap_labels: true" in workflow
     assert "fill_capacity: true" in workflow
     assert "actions: write" not in workflow
+    assert 'workflows: ["PR Gate"]' in dispatcher
+    assert "types: [completed]" in dispatcher
+    assert "github.event.workflow_run.conclusion == 'success'" in dispatcher
+    assert "github.event_name == 'workflow_run'" in dispatcher
+    assert "python tools/jules_dispatcher.py --reconcile --dispatch" in dispatcher

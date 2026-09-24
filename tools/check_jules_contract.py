@@ -277,6 +277,7 @@ def main() -> int:
 
     workflow_call = _indented_block(dispatcher_workflow, "workflow_call:")
     workflow_dispatch = _indented_block(dispatcher_workflow, "workflow_dispatch:")
+    workflow_run = _indented_block(dispatcher_workflow, "workflow_run:")
     router_push = _indented_block(router_workflow, "push:")
     for name, block in (
         ("workflow_call", workflow_call),
@@ -297,6 +298,21 @@ def main() -> int:
         errors,
         "fill_capacity:" in workflow_call,
         "workflow_call must declare typed fill_capacity intent",
+    )
+    _require(
+        errors,
+        bool(workflow_run),
+        "Jules workflow must declare workflow_run capacity recovery",
+    )
+    _require(
+        errors,
+        'workflows: ["PR Gate"]' in workflow_run,
+        "Jules workflow_run recovery must be sourced only from PR Gate",
+    )
+    _require(
+        errors,
+        "types: [completed]" in workflow_run,
+        "Jules workflow_run recovery must run only after completion",
     )
 
     _require(
@@ -416,6 +432,17 @@ def main() -> int:
         errors,
         "actions: read" in dispatcher_workflow,
         "dispatcher must have read-only Actions capacity visibility",
+    )
+    _require(
+        errors,
+        "github.event.workflow_run.conclusion == 'success'" in dispatcher_workflow,
+        "PR Gate capacity recovery must be success-only",
+    )
+    _require(
+        errors,
+        "github.event_name == 'workflow_run'" in dispatcher_workflow
+        and "--reconcile --dispatch" in dispatcher_workflow,
+        "successful PR Gate completion must reuse Jules reconciliation/dispatch",
     )
     _require(
         errors,

@@ -27,6 +27,9 @@ on:
         required: true
   issues:
     types: [labeled, closed]
+  workflow_run:
+    workflows: ["PR Gate"]
+    types: [completed]
   schedule:
     # Recovery/reconciliation only. Normal dispatch is event-driven.
     - cron: '17,47 * * * *'
@@ -54,12 +57,14 @@ concurrency:
 jobs:
   dispatch:
     if: >-
-      inputs.issue_number != '' ||
-      github.event_name != 'issues' ||
-      github.event.action == 'closed' ||
-      (github.event.action == 'labeled' &&
-       (github.event.label.name == 'agent-ready' ||
-        github.event.label.name == 'agent:jules-eligible'))
+      (github.event_name != 'workflow_run' ||
+       github.event.workflow_run.conclusion == 'success') &&
+      (inputs.issue_number != '' ||
+       github.event_name != 'issues' ||
+       github.event.action == 'closed' ||
+       (github.event.action == 'labeled' &&
+        (github.event.label.name == 'agent-ready' ||
+         github.event.label.name == 'agent:jules-eligible')))
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -118,6 +123,7 @@ jobs:
           (inputs.issue_number == '' &&
            (github.event_name == 'schedule' ||
             github.event_name == 'workflow_dispatch' ||
+            github.event_name == 'workflow_run' ||
             (github.event_name == 'issues' && github.event.action == 'closed')))
         env:
           GITHUB_TOKEN: ${{ github.token }}

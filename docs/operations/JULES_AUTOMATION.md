@@ -98,8 +98,13 @@ starts caused by mutations made with `GITHUB_TOKEN`.
 the Jules Dispatcher. The newly approved issue is prioritized and at most one
 task is started by that event.
 
-**Capacity-release path — event driven.** Closing an open dispatched issue
-immediately invokes reconciliation and fills newly available capacity.
+**Capacity-release paths — event driven.** Closing an open dispatched issue
+immediately invokes reconciliation and fills newly available capacity. A
+successful `PR Gate` workflow completion also wakes the dispatcher to re-check
+the same live provider/repository/Actions budgets. This does not reserve a slot
+or bypass backpressure: if queued runs are still above 12 or in-progress runs
+are still above 8, the recovery attempt exits without starting new Jules work.
+Failed or cancelled PR Gates do not start this recovery job.
 
 **Recovery/reconciliation path — every 30 minutes.** At minutes 17 and 47 UTC,
 the dispatcher checks provider session state, quarantines failed/stale work,
@@ -306,13 +311,15 @@ Recommended operating rhythm:
 3. use `agent-ready` for explicit maintainer-approved tasks that are not in
    the automatic lane;
 4. let event-driven dispatch fill the effective provider/repository capacity;
-5. let the 30-minute reconciliation sweep free slots held by genuinely stalled
+5. let successful PR Gate completion re-check capacity immediately after
+   verification jobs leave the active set;
+6. let the 30-minute reconciliation sweep free slots held by genuinely stalled
    provider sessions and by completed Sessions whose Jules PR review has ended;
-6. review/merge/close completed PRs promptly; the parent issue may stay open
+7. review/merge/close completed PRs promptly; the parent issue may stay open
    without pinning the Jules review slot after reconciliation;
-7. explicitly re-triage an `agent:jules-completed` issue before removing that
+8. explicitly re-triage an `agent:jules-completed` issue before removing that
    terminal veto for another bounded attempt;
-8. decompose broad work with `needs-decomposition` instead of sending vague
+9. decompose broad work with `needs-decomposition` instead of sending vague
    prompts.
 
 If review latency grows, lower concurrency before creating more generated work.
@@ -426,7 +433,10 @@ router/dispatcher/policy surfaces causes one router backfill, which calls the
 reusable dispatcher with `bootstrap_labels: true` and `fill_capacity: true`.
 The contract checker requires both typed inputs. The dispatcher deliberately has
 no independent `push` trigger, avoiding duplicate provider/API sweeps and
-preserving GitHub API quota.
+preserving GitHub API quota. Its only verification-capacity wake-up is a
+success-only `workflow_run` from the required `PR Gate`; it checks out trusted
+default-branch code and reuses the normal fail-closed backpressure logic rather
+than consuming PR-head output or raising concurrency.
 
 
 ### `agent:jules-eligible` exists but dispatch never starts
