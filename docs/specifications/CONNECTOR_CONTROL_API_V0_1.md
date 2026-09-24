@@ -677,3 +677,27 @@ The reader requires the returned ref to equal the exact requested `refs/heads/<b
 The resulting `GitHubBranchHeadBinding` is **identity evidence only**. It deliberately has no `verified`, dispatch, candidate-ready, verification, acceptance, merge, or integration-authority field.
 
 A higher orchestration layer may construct Jules `ScmRevisionBinding(verified=True)` only after it has independently compared the authorized requested revision with this exact SCM observation. Merely possessing a syntactically valid SHA is not sufficient.
+
+## Jules lifecycle application service
+
+`idkmesh/jules_lifecycle.py` composes the already-separated Jules Session, observation, candidate-discovery, and SCM candidate-binding services into one bounded application boundary.
+
+The state progression is intentionally non-collapsing:
+
+```text
+waiting_for_agent
+ -> worker_completed
+ -> provider PR hints
+ -> exact SCM candidate resolution
+ -> candidate_ready
+```
+
+A Session in `COMPLETED` state remains `worker_completed` when no candidate hint exists. A discovered hint does not become readiness by itself. `candidate_ready` is emitted only when every retained hint has resolved through the trusted SCM CandidateReference boundary.
+
+If multiple PR candidates exist, the service retains all of them and makes no selection. If any candidate binding fails, the inspection fails instead of returning a partially ready snapshot.
+
+The service also rechecks Session name/id and hint Session/repository identity at the composition boundary. A descriptive provider candidate count that differs from the deduplicated hint count becomes a warning, not hidden state.
+
+The service composes existing boundaries and adds no source-identity authority of its own. `JulesLifecycleService.start` delegates to `JulesSessionService`, which still refuses an unverified `ScmRevisionBinding`; constructing `ScmRevisionBinding(verified=True)` from an exact `GitHubBranchHeadBinding` remains the caller's responsibility, outside this service.
+
+`JulesLifecycleSnapshot` contains no verifier result, acceptance, selected candidate, human decision, merge authorization, or integration authorization.
