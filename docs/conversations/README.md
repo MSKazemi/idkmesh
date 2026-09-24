@@ -7,9 +7,13 @@ canonical files designated by [`../../PROJECT_RULES.md`](../../PROJECT_RULES.md)
 (decisions, specifications, architecture, findings); this directory keeps the trail
 that produced them.
 
-168 records across 8 dates, newest first.
+169 records across 9 dates, newest first.
 
 ## Index
+
+### 2026-09-24
+
+- [Jules review-reservation lifecycle and development-speed hardening](2026-09-24-jules-review-reservation-lifecycle.md)
 
 ### 2026-09-23
 
