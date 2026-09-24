@@ -263,7 +263,9 @@ class GitHubIssuePreviewTests(unittest.TestCase):
         self.assertEqual(metadata["number"], 77)
 
     def test_long_repository_uses_bounded_deterministic_work_unit_id(self):
-        repository = "owner/" + "r" * 100
+        # GitHub permits an owner/name combination long enough that the direct
+        # identifier would exceed WorkUnit v0.2's 128-character id ceiling.
+        repository = ("o" * 39) + "/" + ("r" * 100)
         snapshot = parse_github_issue_snapshot(
             _raw_issue(
                 html_url=f"https://github.com/{repository}/issues/77"
