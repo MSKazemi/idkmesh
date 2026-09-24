@@ -521,6 +521,56 @@ class LocalAgentRunnerTests(unittest.TestCase):
                 artifact_dir=Path(self.temp.name) / "bounded-artifacts",
             )
 
+    def test_candidate_capture_survives_worker_commit_and_head_move(self):
+        def commit_change(workspace, argv, stdin_text):
+            (workspace / "hello.txt").write_text(
+                "committed candidate\n",
+                encoding="utf-8",
+            )
+            subprocess.run(
+                ("git", "-C", str(workspace), "add", "hello.txt"),
+                check=True,
+            )
+            subprocess.run(
+                (
+                    "git",
+                    "-C",
+                    str(workspace),
+                    "-c",
+                    "user.email=worker@example.invalid",
+                    "-c",
+                    "user.name=Untrusted Worker",
+                    "commit",
+                    "-q",
+                    "-m",
+                    "worker candidate",
+                ),
+                check=True,
+                env={**os.environ, "GIT_IDENTITY_OK": "1"},
+            )
+            self.assertNotEqual(
+                resolve_exact_revision(workspace, "HEAD"),
+                self.sha,
+            )
+
+        artifact_dir = Path(self.temp.name) / "committed-artifacts"
+        result = run_local_agent_preset(
+            self._test_preset(),
+            self._canonical_work_unit(),
+            source_revision=self.sha,
+            repository=self.repo,
+            sandbox=FakeSandbox(behavior=commit_change),
+            limits=self._sandbox_limits(),
+            artifact_dir=artifact_dir,
+        )
+
+        patch = next(artifact_dir.glob("candidate-*.patch")).read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("-base", patch)
+        self.assertIn("+committed candidate", patch)
+        self.assertEqual(result.workspace_sha, self.sha)
+
     def test_local_agent_boundary_rejects_implicit_host_env_and_repo_artifacts(self):
         os.environ["SAFE_LOCAL_RUNNER_TEST"] = "should-not-leak"
         preset = self._test_preset(env_allowlist=("SAFE_LOCAL_RUNNER_TEST",))
