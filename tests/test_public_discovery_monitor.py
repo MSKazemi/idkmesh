@@ -136,6 +136,10 @@ class PublicDiscoveryMonitorTests(unittest.TestCase):
                 + '"></head><body>IDKMesh document</body></html>',
             )
         if url == monitor.QUESTIONS:
+            passage_links = "".join(
+                f'<a href="https://example.test/topic.html#q-fixture-{index}">q</a>'
+                for index in range(100)
+            )
             return (
                 200,
                 '<html><head><link rel="canonical" href="'
@@ -145,6 +149,7 @@ class PublicDiscoveryMonitorTests(unittest.TestCase):
                 + '"></head><body>'
                 + '100 questions about AI agent verification, orchestration, and trust. '
                 + 'What is verified swarm engineering?'
+                + passage_links
                 + '</body></html>',
             )
         if url == monitor.LLMS:
@@ -158,6 +163,10 @@ class PublicDiscoveryMonitorTests(unittest.TestCase):
             return 200, monitor.INDEXNOW_KEY + "\n"
         for topic_url, marker in monitor.TOPIC_PAGES.values():
             if url == topic_url:
+                answer_anchors = "".join(
+                    f'<a id="q-fixture-{index}"></a>'
+                    for index in range(10)
+                )
                 return (
                     200,
                     '<html><head><link rel="canonical" href="'
@@ -167,6 +176,7 @@ class PublicDiscoveryMonitorTests(unittest.TestCase):
                     + monitor.SOCIAL_IMAGE
                     + '"></head><body>'
                     + marker
+                    + answer_anchors
                     + "</body></html>",
                 )
         return 404, ""
@@ -282,6 +292,36 @@ class PublicDiscoveryMonitorTests(unittest.TestCase):
         self.assertIn(
             "ai-agent-verification: rendered page duplicates the /idkmesh "
             "base path in its social image",
+            failures,
+        )
+
+    def test_question_map_missing_passage_link_is_reported(self) -> None:
+        def fetch(url: str, user_agent: str, timeout: float = 10.0):
+            status, body = self._healthy_fetch(url, user_agent, timeout)
+            if url == monitor.QUESTIONS:
+                body = body.replace("#q-fixture-99", "#not-a-question", 1)
+            return status, body
+
+        with mock.patch.object(monitor, "fetch", side_effect=fetch):
+            failures = monitor.probe()
+        self.assertIn(
+            "question map: expected 100 rendered question fragments, found 99",
+            failures,
+        )
+
+    def test_topic_missing_answer_anchor_is_reported(self) -> None:
+        broken_url = monitor.TOPIC_PAGES["ai-agent-verification"][0]
+
+        def fetch(url: str, user_agent: str, timeout: float = 10.0):
+            status, body = self._healthy_fetch(url, user_agent, timeout)
+            if url == broken_url:
+                body = body.replace('id="q-fixture-9"', 'id="not-a-question"', 1)
+            return status, body
+
+        with mock.patch.object(monitor, "fetch", side_effect=fetch):
+            failures = monitor.probe()
+        self.assertIn(
+            "ai-agent-verification: expected 10 rendered question anchors, found 9",
             failures,
         )
 
