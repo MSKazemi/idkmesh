@@ -70,6 +70,7 @@ After deployment, `tools/check_public_discovery.py` should be able to verify:
 - the homepage returns real IDKMesh content to representative search/answer
   crawler user agents rather than a block, challenge, or empty shell;
 - the topic hub is publicly reachable;
+- the flagship E017 reproducibility authority page is publicly reachable, self-canonical, indexable, and renders the expected research marker;
 - the generated 100-question map is publicly reachable, self-canonical, indexable, present in the sitemap/`llms.txt`, and retrievable with every representative search/answer crawler identity;
 - the topic hub, all ten topic pillars, and a normal Jekyll-rendered sentinel page each expose exactly one canonical URL and that canonical equals the URL being monitored;
 - none of those pages contains a rendered `noindex` directive for `robots`, `googlebot`, or `bingbot`;
