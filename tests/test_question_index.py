@@ -50,6 +50,13 @@ class QuestionIndexTests(unittest.TestCase):
             (root / "docs" / "sitemap.xml").read_text(encoding="utf-8"),
         )
 
+    def test_repository_readme_links_question_map(self) -> None:
+        expected_url = "https://mskazemi.com/idkmesh/questions.html"
+        self.assertIn(
+            expected_url,
+            (question_index.ROOT / "README.md").read_text(encoding="utf-8"),
+        )
+
     def test_index_does_not_duplicate_answers_or_create_doorway_pages(self) -> None:
         rendered = question_index.render()
         self.assertIn(

@@ -152,6 +152,11 @@ panels**, **agent governance**, **AI provenance**, **MCP/A2A interoperability**,
 **verification scaling**, and **verified swarm engineering** to the canonical
 contracts, experiments, and implementation in this repository.
 
+If you already know the question you want to ask, browse the
+[100-question answer map](https://mskazemi.com/idkmesh/questions.html). It is
+generated from the actual question headings in those ten substantial guides, so
+it improves navigation without creating one thin page per query.
+
 ## Try it in five minutes: audit a review gate
 
 The first installable tool cut from this research is `idkmesh gate-audit`. It
