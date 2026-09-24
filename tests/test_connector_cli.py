@@ -333,6 +333,46 @@ class ConnectorCliTests(unittest.TestCase):
                     f"{command} mislabelled an OS-level store failure",
                 )
 
+    def test_stored_renders_a_row_without_the_summary_shape(self):
+        """`stored` must not traceback on a row it did not write.
+
+        ``connections`` is the shared C1-F control-metadata table and
+        ``record_connection`` accepts free-form metadata, so persisted rows need
+        not carry this command's summary keys - and stored data outlives the code
+        that wrote it.
+        """
+
+        with tempfile.TemporaryDirectory() as tmp:
+            db_path = Path(tmp) / "store.sqlite"
+            script = (
+                "import sys; sys.path.insert(0, %r)\n"
+                "from idkmesh.connector_store import LocalMetadataStore\n"
+                "LocalMetadataStore(%r).record_connection(\n"
+                "    'other-producer',\n"
+                "    metadata={'id': 'other-producer', 'note': 'minimal'},\n"
+                "    updated_at='2026-01-01T00:00:00Z',\n"
+                ")\n" % (str(ROOT), str(db_path))
+            )
+            seed = subprocess.run(
+                [sys.executable, "-c", script],
+                capture_output=True,
+                text=True,
+                cwd=ROOT,
+            )
+            self.assertEqual(seed.returncode, 0, seed.stderr)
+
+            proc = self.run_cli("connections", "stored", "--store", str(db_path))
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            self.assertNotIn("Traceback", proc.stderr)
+            self.assertIn("other-producer", proc.stdout)
+
+            json_proc = self.run_cli(
+                "connections", "stored", "--store", str(db_path), "--json"
+            )
+            self.assertEqual(json_proc.returncode, 0, json_proc.stderr)
+            payload = json.loads(json_proc.stdout)
+            self.assertEqual(payload["count"], 1)
+
     def test_connections_help_is_read_only_in_language(self):
         proc = self.run_cli("connections", "--help")
         self.assertEqual(proc.returncode, 0, proc.stderr)

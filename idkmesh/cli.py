@@ -584,13 +584,25 @@ def _run_connections(args: argparse.Namespace) -> int:
                 )
             )
         else:
+            # `connections` is the shared C1-F control-metadata table and
+            # `record_connection` takes free-form metadata, so a persisted row
+            # need not carry this command's summary shape - and stored data
+            # outlives the code that wrote it. Render what a row has instead of
+            # raising an unhandled KeyError out of the CLI; JSON mode already
+            # returns stored rows verbatim.
             print("id\tkind\tdriver\tenabled\ttiers\tmax_risk")
             for item in summaries:
-                tiers = ",".join(item["capability_tiers"])
-                enabled = "yes" if item["enabled"] else "no"
+                raw_tiers = item.get("capability_tiers")
+                tiers = (
+                    ",".join(str(tier) for tier in raw_tiers)
+                    if isinstance(raw_tiers, (list, tuple))
+                    else ""
+                )
+                enabled = {True: "yes", False: "no"}.get(item.get("enabled"), "?")
                 print(
-                    f"{item['id']}\t{item['kind']}\t{item['driver']}\t"
-                    f"{enabled}\t{tiers}\t{item['max_risk']}"
+                    f"{item.get('id', '')}\t{item.get('kind', '')}\t"
+                    f"{item.get('driver', '')}\t"
+                    f"{enabled}\t{tiers}\t{item.get('max_risk', '')}"
                 )
         return 0
 
