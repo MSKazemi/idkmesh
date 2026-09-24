@@ -74,6 +74,7 @@ class LocalAgentSandboxTests(unittest.TestCase):
         self.assertIn("--unshare-net", argv)
         self.assertIn("--clearenv", argv)
         self.assertIn("--cap-drop", argv)
+        self.assertIn("--setenv LANG C.UTF-8", rendered)
         self.assertIn("--tmpfs /home", rendered)
         self.assertIn("--tmpfs /root", rendered)
         self.assertIn("--tmpfs /run", rendered)
