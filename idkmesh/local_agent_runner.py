@@ -638,16 +638,27 @@ def _validate_local_agent_admission(
     return objective, policy
 
 
-def _changed_paths(workspace: Path, *, max_bytes: int = 1_000_000) -> list[tuple[str, bool]]:
+def _candidate_path(value: str) -> str:
+    if (
+        not value
+        or "\n" in value
+        or "\r" in value
+        or "\\" in value
+        or value.startswith("/")
+        or ".." in PurePosixPath(value).parts
+    ):
+        raise LocalRunnerError(f"unsafe changed path: {value!r}")
+    return value
+
+
+def _git_path_list(
+    workspace: Path,
+    argv: tuple[str, ...],
+    *,
+    max_bytes: int,
+) -> tuple[str, ...]:
     result = run_bounded_process(
-        (
-            "git",
-            "status",
-            "--porcelain=v1",
-            "-z",
-            "--untracked-files=all",
-            "--no-renames",
-        ),
+        argv,
         cwd=workspace,
         limits=ProcessLimits(
             timeout_seconds=30,
@@ -660,26 +671,65 @@ def _changed_paths(workspace: Path, *, max_bytes: int = 1_000_000) -> list[tuple
         raise LocalRunnerError("unable to enumerate candidate paths within bounds")
     if "\ufffd" in result.stdout:
         raise LocalRunnerError("candidate path is not valid UTF-8")
+    return tuple(
+        _candidate_path(item)
+        for item in result.stdout.split("\x00")
+        if item
+    )
 
-    rows: list[tuple[str, bool]] = []
-    for entry in result.stdout.split("\x00"):
-        if not entry:
-            continue
-        if len(entry) < 4 or entry[2] != " ":
-            raise LocalRunnerError(f"unexpected git status entry: {entry!r}")
-        status = entry[:2]
-        path = entry[3:]
-        if (
-            not path
-            or "\n" in path
-            or "\r" in path
-            or "\\" in path
-            or path.startswith("/")
-            or ".." in PurePosixPath(path).parts
-        ):
-            raise LocalRunnerError(f"unsafe changed path: {path!r}")
-        rows.append((path, status == "??"))
-    return rows
+
+def _changed_paths(
+    workspace: Path,
+    *,
+    source_sha: str,
+    max_bytes: int = 1_000_000,
+) -> list[tuple[str, bool]]:
+    """Enumerate all changes relative to the controller-owned source SHA.
+
+    Git status alone is insufficient because an untrusted worker can stage or
+    commit its changes. Comparing the current worktree directly to source_sha
+    preserves candidate visibility even when HEAD moves inside the sandbox.
+    """
+
+    resolved_source = resolve_exact_revision(workspace, source_sha)
+    if resolved_source.casefold() != source_sha.casefold():
+        raise LocalRunnerError("candidate source SHA does not resolve exactly")
+
+    tracked = _git_path_list(
+        workspace,
+        (
+            "git",
+            "diff",
+            "--name-only",
+            "-z",
+            "--no-renames",
+            "--no-ext-diff",
+            "--no-textconv",
+            source_sha,
+            "--",
+        ),
+        max_bytes=max_bytes,
+    )
+    untracked = _git_path_list(
+        workspace,
+        (
+            "git",
+            "ls-files",
+            "--others",
+            "--exclude-standard",
+            "-z",
+        ),
+        max_bytes=max_bytes,
+    )
+
+    rows: dict[str, bool] = {path: False for path in tracked}
+    for path in untracked:
+        if path in rows:
+            raise LocalRunnerError(
+                f"candidate path has conflicting tracked/untracked identity: {path}"
+            )
+        rows[path] = True
+    return [(path, rows[path]) for path in sorted(rows)]
 
 
 def _validate_candidate_scope(
@@ -726,9 +776,10 @@ def _capture_candidate_patch(
     work_unit: dict[str, Any],
     artifact_root: Path,
     *,
+    source_sha: str,
     max_bytes: int,
 ) -> tuple[ArtifactBundleCandidateReference, Path]:
-    changed = _changed_paths(workspace)
+    changed = _changed_paths(workspace, source_sha=source_sha)
     if not changed:
         raise LocalRunnerError("local agent produced no candidate changes")
     _validate_candidate_scope(changed, work_unit)
@@ -742,7 +793,16 @@ def _capture_candidate_patch(
         pathspecs = tuple(f":(literal){path}" for path in tracked)
         fragment = _git_patch_fragment(
             workspace,
-            ("git", "diff", "--binary", "--no-ext-diff", "HEAD", "--", *pathspecs),
+            (
+                "git",
+                "diff",
+                "--binary",
+                "--no-ext-diff",
+                "--no-textconv",
+                source_sha,
+                "--",
+                *pathspecs,
+            ),
             max_bytes=max_bytes,
         )
         fragments.append(fragment)
@@ -759,6 +819,7 @@ def _capture_candidate_patch(
                 "--no-index",
                 "--binary",
                 "--no-ext-diff",
+                "--no-textconv",
                 "--",
                 os.devnull,
                 path,
@@ -932,6 +993,7 @@ def run_local_agent_preset(
             workspace.path,
             work_unit,
             artifact_root,
+            source_sha=workspace.source_sha,
             max_bytes=limits.max_candidate_bytes,
         )
 
