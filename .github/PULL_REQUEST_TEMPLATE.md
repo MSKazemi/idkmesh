@@ -26,13 +26,14 @@ Link the issue(s) this work addresses. If this pull request is a candidate respo
 
 Put issue numbers on `Refs:` by default. Leave `Closes:` blank unless merging
 this pull request should actually close the issue — and when it should, write
-nothing else on that line but the reference itself, in the form
-`Closes: #<issue>`. GitHub only recognizes a closing keyword when it sits
-immediately next to the issue number: extra words in between (including a
+nothing on that line but the reference itself, in the form `Closes: #<issue>`
+(separate several with commas). GitHub only recognizes a closing keyword when it
+sits immediately next to the issue number: extra words in between (including a
 parenthetical disclaimer such as "does not close", or instructional text left
 over from this template) silently prevent the auto-close. Evidence PRs that
 must leave a review gate open belong on `Refs:` instead, with `Closes:` left
-blank.
+blank. `tools/closing_keyword_guard.py` exempts this line only while it carries
+nothing but references, so prose written after the colon is still reported.
 
 - Refs:
 - Closes:

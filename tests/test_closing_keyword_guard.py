@@ -76,6 +76,41 @@ class ClosingKeywordDetectionTests(unittest.TestCase):
 
         self.assertEqual(scan_text(line, source="body"), [])
 
+    def test_the_opt_in_line_stays_exempt_for_every_reference_form(self) -> None:
+        for line in (
+            "- Closes:",
+            "- Closes: #152",
+            "- Closes: #152, #153",
+            "- Closes: #152 #153",
+            "- CLOSES: #152",
+            "Closes: MSKazemi/idkmesh#152",
+            "Closes: GH-152",
+        ):
+            with self.subTest(line=line):
+                self.assertEqual(scan_text(line, source="body"), [])
+
+    def test_the_opt_in_line_does_not_shield_a_second_keyword_beside_it(self) -> None:
+        """The exemption covers a whole line, so it must not be a blanket pass.
+
+        ``Closes:`` naming no reference of its own, followed by prose that ends
+        in an unrelated closing keyword, would have GitHub close the adjacent
+        number while the opt-in beside it hid the pair from this guard. The
+        exemption therefore applies only while the line carries nothing but
+        references. A false positive costs one rephrasing; this false negative
+        would silently dissolve a review gate.
+        """
+        violations = scan_text(
+            "Closes: superseded by prose, fixes #500", source="body"
+        )
+
+        self.assertEqual(len(violations), 1)
+        self.assertEqual(violations[0].reference, "#500")
+
+    def test_prose_after_the_opt_in_colon_is_still_reported(self) -> None:
+        violations = scan_text("Closes: this supersedes #123", source="body")
+
+        self.assertEqual(len(violations), 1)
+
     def test_a_bare_number_without_a_hash_is_not_a_reference(self) -> None:
         text = "PR 315 stated it did not close issue 152; gate 167 stays open."
 
@@ -181,6 +216,23 @@ class PullRequestTemplateTests(unittest.TestCase):
             line for line in template.splitlines() if line.strip().startswith("- Closes:")
         )
         self.assertEqual(line.strip(), "- Closes:")
+
+    def test_the_draft_pr_steward_emits_the_same_closes_field(self) -> None:
+        """The steward writes its own pull request body from a separate string.
+
+        Nothing but this assertion keeps the two in step, and the retired
+        ``Closes on merge:`` field had to be corrected in both places at once.
+        A steward body carrying the old field would reintroduce exactly the
+        auto-close miss issue 858 recorded, on every automatically opened
+        Draft PR.
+        """
+        steward = (ROOT / "tools" / "auto_draft_pr_steward.py").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("\n- Closes:\n", steward)
+        self.assertNotIn("Closes on merge", steward)
+        self.assertEqual(scan_text(steward, source="steward"), [])
 
 
 class SelfReferenceTests(unittest.TestCase):
