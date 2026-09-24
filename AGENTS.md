@@ -43,6 +43,24 @@ Autonomous agents should treat current repository state as evidence, not memory.
 
 Prefer one reviewable outcome per branch/PR over broad speculative rewrites. If a requested feature depends on a human-only evidence gate or missing authority, document the blocker instead of manufacturing evidence.
 
+### Agent publication backpressure
+
+When an agent or automation writes several files through the GitHub API, batch the finished candidate into **one branch commit / one ref update** whenever practical. Do not use one Contents-API mutation per file on an open PR: every branch-head change can create a new `synchronize` event, invalidate exact-head evidence, and start another Actions wave.
+
+`tools/github_atomic_commit.py` is the supported path. Plan offline first, then publish once the bounded change and its focused checks are ready:
+
+```bash
+python tools/github_atomic_commit.py plan \
+  --branch agent/my-work \
+  --expected-head <sha> \
+  --write path/in/repo=/tmp/file \
+  --json
+```
+
+The tool binds publication to an exact expected head, rechecks that head immediately before moving the ref, publishes one Git tree and one commit, and updates the branch with a non-force ref update. A changed branch head is a stop/replan condition, not permission to force-push. Direct writes to `main` remain forbidden by the normal contribution path. See [`docs/operations/JULES_AUTOMATION.md`](docs/operations/JULES_AUTOMATION.md) for the full guarantees, CLI reference, and failure modes.
+
+Provider-owned agents that cannot call this tool directly must still follow the same behavioural rule: accumulate a coherent candidate provider-side, then minimize PR-head updates rather than streaming a commit for every file edit or repair step.
+
 ## Jules Dispatch Boundary
 
 For repository-operated Google Jules work, `agent-ready` is an explicit maintainer/trusted-triager approval boundary. Separately, the deterministic Issue Model Router may emit `agent:jules-eligible` for the narrow automatic lane; the dispatcher accepts that route only for trusted GitHub author associations and still applies hard veto labels, capacity limits, duplicate protection, and provider-session reconciliation. Automatic execution goes through the official Jules REST API and records `agent:jules-dispatched`; failed/stalled sessions move to `agent:jules-needs-attention`, which blocks automatic redispatch. The legacy `jules` label is manual/native-App fallback only and must not be added by automation. Never approve or auto-route work that requires genuine human observation, independent research/evidence, security approval, governance judgment, secret handling, or broad decomposition. See `docs/operations/JULES_AUTOMATION.md` and `config/jules-dispatch.json` for the full queue/trust/watchdog contract. The router-to-dispatcher handoff through local `workflow_call`, the `issue_number` reusable-workflow input, and `tools/check_jules_contract.py` in the required PR Gate **and both production workflows** are protected integration invariants: do not replace them with `gh workflow run`, remove them, or duplicate the queue-label contract in code without an explicit reviewed architecture change. The router alone owns control-plane `push` recovery; do not add a second dispatcher `push` trigger. Keep Jules account/provider concurrency in `config/jules-dispatch.json` under `provider_concurrency.max_concurrent_tasks`; repository review reservations and provider-active session occupancy are separate budgets, and dispatcher code must use the smaller **remaining** budget without counting terminal provider sessions as running work. GitHub Actions verification backlog is a third admission gate: the dispatcher must read it with `actions: read`, fail closed when the signal is unavailable, and never add new dispatch reservations above the configured queued/in-progress ceilings. Provider/CI backpressure must leave work queued rather than bypassing a cap.
