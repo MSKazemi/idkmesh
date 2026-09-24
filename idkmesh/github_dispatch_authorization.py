@@ -20,11 +20,13 @@ dispatch, GitHub mutation, verification, acceptance, push, or merge action.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Iterable
+import re
+from typing import Any
 
 from idkmesh.github_webhook_ingress import GitHubWebhookEnvelope
 
 
+_REPOSITORY_RE = re.compile(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+\\Z")
 _ALLOWED_ROLES = frozenset(
     {
         "owner",
@@ -73,11 +75,10 @@ class GitHubDispatchAuthorizationPolicy:
     allowed_installation_ids: frozenset[int] | None = None
 
     def __post_init__(self) -> None:
-        object.__setattr__(
-            self,
-            "repository",
-            _text(self.repository, "repository"),
-        )
+        repository = _text(self.repository, "repository")
+        if _REPOSITORY_RE.fullmatch(repository) is None:
+            raise ValueError("repository must be in owner/name form")
+        object.__setattr__(self, "repository", repository)
 
         if isinstance(self.dispatch_labels, str):
             raise ValueError("dispatch_labels must be a collection")
