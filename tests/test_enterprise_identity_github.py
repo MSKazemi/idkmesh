@@ -435,6 +435,43 @@ class CommittedExampleTests(unittest.TestCase):
         errors = sorted(validator.iter_errors(document), key=lambda e: list(e.path))
         self.assertEqual([], [error.message for error in errors])
 
+    def test_the_modules_this_docstring_names_exist(self):
+        """A dotted module path in backticks is invisible to the link gate.
+
+        The adapter's docstring and the specification both cross-reference two
+        neighbouring modules. Written against an earlier `main`, both named code
+        that existed only in an open pull request, and nothing caught it: the
+        link checker resolves Markdown links, not `idkmesh.x.Y` prose. Import
+        them, so the claim is checked rather than asserted.
+        """
+        from idkmesh import enterprise_identity_github
+        from idkmesh.github_dispatch_authorization import TrustedGitHubActor
+        from idkmesh.github_webhook_ingress import GitHubWebhookEnvelope
+
+        docstring = enterprise_identity_github.__doc__ or ""
+        self.assertIn(
+            "idkmesh.github_webhook_ingress.GitHubWebhookEnvelope", docstring
+        )
+        self.assertIn(
+            "idkmesh.github_dispatch_authorization.TrustedGitHubActor", docstring
+        )
+        # The claims fields the docstring points at must really be there, and
+        # the neighbouring lane must really key on the numeric actor id.
+        self.assertIn("sender_id", GitHubWebhookEnvelope.__annotations__)
+        self.assertIn("sender_login", GitHubWebhookEnvelope.__annotations__)
+        # `from __future__ import annotations` makes these strings, not types.
+        self.assertEqual(
+            str(TrustedGitHubActor.__annotations__["actor_id"]), "int"
+        )
+
+        spec = (
+            ROOT / "docs" / "specifications" / "ENTERPRISE_AUTHORIZATION_V0_1.md"
+        ).read_text(encoding="utf-8")
+        for dotted in ("idkmesh.github_dispatch_authorization",):
+            with self.subTest(module=dotted):
+                self.assertIn(dotted, spec)
+                __import__(dotted)
+
     def test_example_parses_into_a_working_binding_table(self):
         document = json.loads(EXAMPLE.read_text(encoding="utf-8"))
         table = parse_identity_binding_table(document)

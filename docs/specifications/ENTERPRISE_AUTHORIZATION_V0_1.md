@@ -248,9 +248,12 @@ Two inputs, both already trusted before this adapter runs:
   tenant/project scopes, data clearance, and issuer. The numeric actor id is
   the primary trust key, because a GitHub login can be renamed or re-registered
   while the numeric id cannot; a login reused under a different id, or an id
-  whose login changed, is denied rather than trusted. No module on `main`
-  constructs `GithubActorClaims` from a live webhook or Actions payload yet;
-  that producer is E3-F scope.
+  whose login changed, is denied rather than trusted. This matches the
+  actor-id-primary pattern `idkmesh.github_dispatch_authorization` uses for the
+  separate C5 dispatch lane, which answers a different question — may this actor
+  dispatch — and returns a boolean decision rather than an `ActorContext`. No
+  module on `main` builds `GithubActorClaims` from a live webhook or Actions
+  payload yet; that producer is E3-F scope.
 
 `actor_context_from_github` fails closed with `GithubIdentityAdapterError`
 for:

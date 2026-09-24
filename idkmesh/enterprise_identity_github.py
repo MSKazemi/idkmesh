@@ -9,16 +9,25 @@ module is that adapter for GitHub actors specifically.
 It turns two already-trusted inputs into an ``ActorContext``:
 
 - :class:`GithubActorClaims` -- already-authenticated GitHub actor fields
-  (for example the verified sender id/login of a signature-checked webhook
-  delivery, or the ``github.actor``/``github.actor_id`` values of a GitHub
-  Actions run). Never raw issue/PR/comment title or body text. Nothing on
-  ``main`` constructs these yet; a caller that reads them off a real payload
-  is E3-F scope, so no in-tree producer is named here.
+  (for example the ``sender_id``/``sender_login`` of an HMAC-verified
+  :class:`idkmesh.github_webhook_ingress.GitHubWebhookEnvelope`, or the
+  ``github.actor``/``github.actor_id`` values of a GitHub Actions run). Never
+  raw issue/PR/comment title or body text. Nothing on ``main`` builds these
+  claims from such a payload yet; that producer is E3-F scope.
 - :class:`GithubIdentityBindingTable` -- a maintainer-reviewed, versioned
   table binding each trusted numeric GitHub actor id to its enterprise
   roles, tenant/project scopes, and data clearance. The numeric actor id is
-  the primary trust key: a renamed/spoofed login for a bound id, or a login
-  reused under a different id, is denied.
+  the primary trust key, matching the actor-id-primary pattern of
+  :class:`idkmesh.github_dispatch_authorization.TrustedGitHubActor` in the
+  separate C5 dispatch lane: a renamed/spoofed login for a bound id, or a
+  login reused under a different id, is denied. That module answers a
+  different question -- may this actor dispatch -- and returns a boolean
+  decision, not an ``ActorContext``.
+
+Both cross-references above are pinned by
+``test_the_modules_this_docstring_names_exist``, because a dotted module path
+inside backticks is invisible to the repository's link gate and had already
+been written here while naming code that was only in an open pull request.
 
 Resolution fails closed: an unbound actor id, a login that does not match
 the bound id, or a GitHub actor "kind" (human user vs. bot) inconsistent
