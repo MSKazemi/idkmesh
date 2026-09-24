@@ -277,6 +277,7 @@ def main() -> int:
 
     workflow_call = _indented_block(dispatcher_workflow, "workflow_call:")
     workflow_dispatch = _indented_block(dispatcher_workflow, "workflow_dispatch:")
+    workflow_run = _indented_block(dispatcher_workflow, "workflow_run:")
     router_push = _indented_block(router_workflow, "push:")
     for name, block in (
         ("workflow_call", workflow_call),
@@ -432,16 +433,52 @@ def main() -> int:
         "pull_request_target:" not in dispatcher_workflow,
         "dispatcher must not run with pull_request_target privileges",
     )
+    # P1 #834: a successful PR Gate completion is a verification-capacity release
+    # event and may wake the recovery path. Every assertion below is scoped to the
+    # `workflow_run:` block, because a whole-file substring match would be
+    # satisfied by the same text sitting in a comment after the trigger was
+    # removed. The wake-up must stay a narrow, success-only, trusted-code
+    # reconciliation: it may not widen an admission cap or consume the run that
+    # woke it.
     _require(
         errors,
-        'workflows: ["PR Gate"]' in dispatcher_workflow
-        and "types: [completed]" in dispatcher_workflow,
-        "dispatcher workflow_run recovery must watch PR Gate completion",
+        bool(workflow_run),
+        "dispatcher must declare the workflow_run capacity recovery trigger",
+    )
+    _require(
+        errors,
+        'workflows: ["PR Gate"]' in workflow_run,
+        "dispatcher workflow_run recovery must be sourced only from PR Gate",
+    )
+    _require(
+        errors,
+        "types: [completed]" in workflow_run,
+        "dispatcher workflow_run recovery must run only after completion",
     )
     _require(
         errors,
         "github.event.workflow_run.conclusion == 'success'" in dispatcher_workflow,
         "dispatcher workflow_run recovery must gate on a successful PR Gate conclusion",
+    )
+    _require(
+        errors,
+        "github.event_name == 'workflow_run'" in dispatcher_workflow
+        and "--reconcile --dispatch" in dispatcher_workflow,
+        "successful PR Gate completion must reuse the Jules reconciliation path",
+    )
+    _require(
+        errors,
+        "github.event.workflow_run" not in _indented_block(
+            dispatcher_workflow, "steps:"
+        ).replace("github.event.workflow_run.conclusion", ""),
+        "dispatcher steps must not consume payload from the run that woke them",
+    )
+    dispatcher_concurrency = _indented_block(dispatcher_workflow, "concurrency:")
+    _require(
+        errors,
+        [line.strip() for line in dispatcher_concurrency.splitlines() if line.strip()]
+        == ["group: jules-dispatch", "cancel-in-progress: false"],
+        "workflow_run recovery must reuse the single jules-dispatch concurrency group",
     )
 
     _require(

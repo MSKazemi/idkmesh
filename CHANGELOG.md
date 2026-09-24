@@ -149,6 +149,20 @@ and the release notes for that tag.
 
 ### Changed
 
+- `.github/workflows/jules-dispatch.yml` also wakes its reconciliation path on a
+  successful `PR Gate` completion (issue 834), so a verification slot freed when
+  the gate's matrix jobs leave the active set is reclaimed within minutes instead
+  of at the next half-hourly tick. The trigger is a trusted default-branch
+  `workflow_run` that consumes nothing from the run that woke it; failed and
+  cancelled gates do not start it; the 12/8 Actions backpressure ceilings,
+  provider concurrency, review reservations, and the single `jules-dispatch`
+  concurrency group are unchanged, so the wake-up can free a slot but never
+  admit past a cap. `tools/check_jules_contract.py` pins the source workflow,
+  the success-only conclusion, the reuse of `--reconcile --dispatch`, and the
+  single concurrency group. `docs/operations/JULES_AUTOMATION.md` records the
+  path and the cases where it is silently skipped, since it is a latency
+  optimization over the 30-minute schedule and never a guarantee.
+
 - `.github/workflows/pr-gate.yml` no longer runs the complete, unfiltered suite as its
   required check. It ran `python -m pytest -q` directly — every `sim`/`slow` simulation
   and sweep test included, synchronously, blocking every merge, on two Python versions —

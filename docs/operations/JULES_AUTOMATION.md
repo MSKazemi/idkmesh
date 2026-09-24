@@ -98,8 +98,27 @@ starts caused by mutations made with `GITHUB_TOKEN`.
 the Jules Dispatcher. The newly approved issue is prioritized and at most one
 task is started by that event.
 
-**Capacity-release path — event driven.** Closing an open dispatched issue
-immediately invokes reconciliation and fills newly available capacity.
+**Capacity-release paths — event driven.** Closing an open dispatched issue
+immediately invokes reconciliation and fills newly available capacity. A
+successful `PR Gate` workflow completion also wakes the dispatcher to re-check
+the same live provider, repository and Actions budgets: the gate's matrix jobs
+have just left the active set, so a slot freed by verification is reclaimed
+within minutes instead of at the next half-hourly tick. This reserves nothing
+and bypasses no cap — if queued runs are still above 12 or in-progress runs are
+still above 8, the recovery attempt exits without starting Jules work. Failed
+and cancelled `PR Gate` runs do not start it at all.
+
+This wake-up is a latency optimization, never a guarantee, and nothing should be
+built on its arrival. It is silently skipped whenever there is no successful
+`PR Gate` completion to observe: a run cancelled by a newer push to the same pull
+request, a commit that reaches `main` with no gate result at all, and a wake-up
+dropped while pending because the shared `jules-dispatch` concurrency group
+already held a newer one. Because `PR Gate` also runs on pushes to `main`, a
+merge touching the control-plane files additionally produces a router backfill
+and this wake-up for the same event; the concurrency group serializes them and
+the second sweep is a no-op reconcile. Every skipped or collapsed wake-up
+degrades to the 30-minute schedule below, which remains the recovery path of
+record.
 
 **Recovery/reconciliation path — every 30 minutes.** At minutes 17 and 47 UTC,
 the dispatcher checks provider session state, quarantines failed/stale work,
@@ -306,13 +325,15 @@ Recommended operating rhythm:
 3. use `agent-ready` for explicit maintainer-approved tasks that are not in
    the automatic lane;
 4. let event-driven dispatch fill the effective provider/repository capacity;
-5. let the 30-minute reconciliation sweep free slots held by genuinely stalled
+5. let a successful `PR Gate` completion re-check capacity as soon as the
+   verification jobs leave the active set, without relying on it arriving;
+6. let the 30-minute reconciliation sweep free slots held by genuinely stalled
    provider sessions and by completed Sessions whose Jules PR review has ended;
-6. review/merge/close completed PRs promptly; the parent issue may stay open
+7. review/merge/close completed PRs promptly; the parent issue may stay open
    without pinning the Jules review slot after reconciliation;
-7. explicitly re-triage an `agent:jules-completed` issue before removing that
+8. explicitly re-triage an `agent:jules-completed` issue before removing that
    terminal veto for another bounded attempt;
-8. decompose broad work with `needs-decomposition` instead of sending vague
+9. decompose broad work with `needs-decomposition` instead of sending vague
    prompts.
 
 If review latency grows, lower concurrency before creating more generated work.
@@ -426,7 +447,24 @@ router/dispatcher/policy surfaces causes one router backfill, which calls the
 reusable dispatcher with `bootstrap_labels: true` and `fill_capacity: true`.
 The contract checker requires both typed inputs. The dispatcher deliberately has
 no independent `push` trigger, avoiding duplicate provider/API sweeps and
-preserving GitHub API quota.
+preserving GitHub API quota; the contract checker fails if one is added.
+
+The dispatcher's only other wake-up is a success-only `workflow_run` from the
+required `PR Gate`. It is not a second control-plane push trigger: it starts no
+routing pass, checks out trusted default-branch code rather than any pull
+request head, consumes no output of the run that woke it, and reuses the same
+fail-closed `--reconcile --dispatch` path and the same `jules-dispatch`
+concurrency group as the schedule. Note who can cause it to fire: `PR Gate` runs
+on pull requests from forks too, so an unprivileged contributor can now make the
+dispatcher wake by opening a pull request that passes the gate. What that buys an
+outsider is timing only — no untrusted code runs, no field of the triggering
+payload is read, and no cap moves — but it does mean the sweep rate is no longer
+bounded by maintainer activity and the schedule alone. It does raise how often that group is busy,
+so a label-triggered dispatch queued behind it can be dropped while pending; the
+approved issue is then admitted by the recovery sweep instead of by its own run,
+which costs prioritization rather than the dispatch. The contract checker pins
+the source workflow, the success-only conclusion, and the reuse of the
+reconciliation path.
 
 
 ### `agent:jules-eligible` exists but dispatch never starts

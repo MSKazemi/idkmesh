@@ -952,6 +952,15 @@ def test_workflow_and_router_share_the_same_dispatch_contract():
         "github.event.workflow_run.conclusion == 'success'" in workflow
     ), "workflow_run recovery must gate on a successful PR Gate conclusion"
     assert "github.event_name == 'workflow_run'" in workflow
+    # The wake-up must reuse the existing reconciliation path rather than
+    # introduce a second admission route, and must stay inside the one
+    # dispatcher concurrency group so two sweeps can never run at once.
+    assert "python tools/jules_dispatcher.py --reconcile --dispatch" in workflow
+    assert "group: jules-dispatch\n" in workflow
+    assert "cancel-in-progress: false" in workflow
+    # The router alone owns control-plane push recovery (AGENTS.md); the
+    # workflow_run wake-up must not become a second dispatcher push trigger.
+    assert "\n  push:\n" not in workflow
 
 
 def test_prompt_preserves_issue_context_and_safety_boundary():
