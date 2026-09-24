@@ -287,16 +287,20 @@ identity reader.
 
 ### Production GitHub REST source
 
-`idkmesh/github_rest_source.py` provides the concrete public-GitHub transport for the PR identity reader.
+`idkmesh/github_rest_source.py` provides the concrete public-GitHub transport for SCM identity readers. `GitHubRestIdentitySource` supports bounded pull-request and branch-ref reads; the original `GitHubRestPullRequestSource` name remains a compatibility alias.
 
 The trust split remains:
 
 ```text
-GitHubRestPullRequestSource
+GitHubRestIdentitySource
   = fixed-host transport + bounded JSON decoding + transport error normalization
+  = get_pull_request(...) + get_branch_ref(...)
 
 GitHubPullRequestCandidateReader
   = repository/PR/URL/state/head identity validation
+
+GitHubBranchHeadReader
+  = exact refs/heads/<branch> + commit-object identity validation
 ```
 
 The REST source intentionally does **not** decide whether the returned object is the requested candidate. It returns an untrusted decoded object to the reader.
@@ -306,6 +310,7 @@ Transport controls:
 - endpoint host is fixed to `https://api.github.com`; caller input cannot choose an arbitrary URL;
 - repository identity is restricted to `owner/name` before network I/O;
 - PR number must be a positive integer;
+- branch refs are restricted to a bounded canonical branch syntax and percent-encoded as one ref parameter before I/O;
 - optional bearer token exists only in the in-memory request header and is never copied into error details;
 - connection ID is explicit so audit/error envelopes identify the configured SCM connection;
 - requests carry the pinned GitHub REST API version `2022-11-28` and vendor media type;
@@ -313,4 +318,6 @@ Transport controls:
 - malformed UTF-8/JSON, non-object JSON, and oversized responses fail closed;
 - 401/403/404/408/429/5xx and network timeouts are normalized to the shared ConnectorError taxonomy without retaining response bodies.
 
-This v0.1 source targets public `github.com` only. GitHub Enterprise Server support should use a separately validated connection configuration; the candidate resolver must not accept an arbitrary provider-returned API base because that would turn candidate discovery into an SSRF surface.
+This v0.1 source targets public `github.com` only. GitHub Enterprise Server support should use a separately validated connection configuration; neither candidate discovery nor source-revision binding may accept an arbitrary provider-returned API base because that would create an SSRF surface.
+
+The branch-ref method returns untrusted JSON only. Exact source-revision identity still belongs to `GitHubBranchHeadReader`; the transport itself cannot set `ScmRevisionBinding.verified=True`.
