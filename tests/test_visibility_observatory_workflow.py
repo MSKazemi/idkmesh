@@ -29,6 +29,7 @@ class VisibilityObservatoryWorkflowTests(unittest.TestCase):
             "scripts/discovery_query_portfolio.py",
             "scripts/bing_ai_performance_import.py",
             "scripts/search_console_snapshot.py",
+            "scripts/search_visibility_observation_plan.py",
             "scripts/visibility_growth_selector.py",
             "scripts/visibility_observatory.py",
         )
@@ -41,6 +42,9 @@ class VisibilityObservatoryWorkflowTests(unittest.TestCase):
 
     def test_focused_self_test_includes_bing_export_importer(self) -> None:
         self.assertIn("tests.test_bing_ai_performance_import", self.text)
+
+    def test_focused_self_test_includes_cross_engine_plan(self) -> None:
+        self.assertIn("tests.test_search_visibility_observation_plan", self.text)
 
     def test_observatory_preserves_every_measurement_run(self) -> None:
         self.assertIn("cancel-in-progress: false", self.text)
