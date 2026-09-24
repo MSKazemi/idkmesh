@@ -170,10 +170,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     connections = sub.add_parser(
         "connections",
-        help="validate, list, or inspect connector configuration",
+        help="validate, list, import, store, or inspect connector configuration",
         description=(
-            "Read-only connector inspection. The current probe path uses "
-            "offline fake drivers only; it does not contact live providers, "
+            "Read-only connector inspection and local profile metadata persistence. "
+            "The probe path uses offline fake drivers only; store commands persist "
+            "safe normalized metadata only and never contact live providers, "
             "materialize secrets, dispatch work, or grant repository authority."
         ),
     )
@@ -200,6 +201,53 @@ def build_parser() -> argparse.ArgumentParser:
     )
     list_cmd.add_argument("profile", help="path to connector-profile JSON")
     list_cmd.add_argument(
+        "--json",
+        action="store_true",
+        dest="json_output",
+        help="emit deterministic machine-readable JSON",
+    )
+
+    import_cmd = connection_sub.add_parser(
+        "import",
+        help="import and validate connector profile into a local store",
+        description=(
+            "Validate a connector-profile document and persist safe normalized "
+            "metadata into a local SQLite store. Secret material and credentials "
+            "are never persisted."
+        ),
+    )
+    import_cmd.add_argument("profile", help="path to connector-profile JSON")
+    import_cmd.add_argument(
+        "--store",
+        required=True,
+        metavar="PATH",
+        help="path to local SQLite metadata store",
+    )
+    import_cmd.add_argument(
+        "--updated-at",
+        help="explicit update timestamp (default: current UTC time)",
+    )
+    import_cmd.add_argument(
+        "--json",
+        action="store_true",
+        dest="json_output",
+        help="emit deterministic machine-readable JSON",
+    )
+
+    stored_cmd = connection_sub.add_parser(
+        "stored",
+        help="list normalized connector metadata from a local store",
+        description=(
+            "Read normalized connector configuration metadata from a local SQLite store."
+        ),
+    )
+    stored_cmd.add_argument(
+        "--store",
+        required=True,
+        metavar="PATH",
+        help="path to local SQLite metadata store",
+    )
+    stored_cmd.add_argument(
         "--json",
         action="store_true",
         dest="json_output",
@@ -472,10 +520,15 @@ def _connection_summary(config) -> dict[str, object]:
 
 def _connections_error(exc, *, json_output: bool) -> int:
     if json_output:
+        default_code = (
+            "connector_store_error"
+            if "store" in type(exc).__name__.lower() or "sqlite" in type(exc).__name__.lower()
+            else "connector_profile_error"
+        )
         payload = {
             "valid": False,
             "error": {
-                "code": getattr(exc, "code", "connector_profile_error"),
+                "code": getattr(exc, "code", default_code),
                 "path": getattr(exc, "path", "$"),
                 "message": str(exc),
             },
@@ -489,6 +542,50 @@ def _connections_error(exc, *, json_output: bool) -> int:
 
 
 def _run_connections(args: argparse.Namespace) -> int:
+    if args.connections_command == "stored":
+        import sqlite3
+        from idkmesh.connector_store import LocalMetadataStore, LocalStoreError
+
+        store_path = Path(args.store)
+        if not store_path.exists():
+            return _connections_error(
+                LocalStoreError(f"store database file not found: {args.store}"),
+                json_output=args.json_output,
+            )
+        if store_path.is_dir():
+            return _connections_error(
+                LocalStoreError(f"store path is a directory: {args.store}"),
+                json_output=args.json_output,
+            )
+
+        try:
+            store = LocalMetadataStore(store_path)
+            summaries = store.list_connections()
+        except (LocalStoreError, sqlite3.Error, OSError) as exc:
+            return _connections_error(exc, json_output=args.json_output)
+
+        if args.json_output:
+            print(
+                json.dumps(
+                    {
+                        "count": len(summaries),
+                        "connections": summaries,
+                    },
+                    sort_keys=True,
+                    separators=(",", ":"),
+                )
+            )
+        else:
+            print("id\tkind\tdriver\tenabled\ttiers\tmax_risk")
+            for item in summaries:
+                tiers = ",".join(item["capability_tiers"])
+                enabled = "yes" if item["enabled"] else "no"
+                print(
+                    f"{item['id']}\t{item['kind']}\t{item['driver']}\t"
+                    f"{enabled}\t{tiers}\t{item['max_risk']}"
+                )
+        return 0
+
     from idkmesh.connector_profiles import (
         ConnectorProfileError,
         load_connector_profile_document,
@@ -541,6 +638,47 @@ def _run_connections(args: argparse.Namespace) -> int:
                     f"{item['id']}\t{item['kind']}\t{item['driver']}\t"
                     f"{enabled}\t{tiers}\t{item['max_risk']}"
                 )
+        return 0
+
+    if args.connections_command == "import":
+        import sqlite3
+        from idkmesh.connector_store import LocalMetadataStore, LocalStoreError
+
+        updated_at = _observation_time(getattr(args, "updated_at", None))
+        store_path = Path(args.store)
+        if store_path.is_dir():
+            return _connections_error(
+                LocalStoreError(f"store path is a directory: {args.store}"),
+                json_output=args.json_output,
+            )
+
+        try:
+            store = LocalMetadataStore(store_path)
+            for item in summaries:
+                store.record_connection(
+                    item["id"],
+                    metadata=item,
+                    updated_at=updated_at,
+                )
+        except (LocalStoreError, sqlite3.Error, OSError) as exc:
+            return _connections_error(exc, json_output=args.json_output)
+
+        if args.json_output:
+            print(
+                json.dumps(
+                    {
+                        "imported": len(summaries),
+                        "connections": summaries,
+                        "store": str(store_path),
+                    },
+                    sort_keys=True,
+                    separators=(",", ":"),
+                )
+            )
+        else:
+            print(f"imported: {len(summaries)} connector profile(s) into {store_path}")
+            for item in summaries:
+                print(f"- {item['id']} ({item['kind']}/{item['driver']})")
         return 0
 
     if args.connections_command == "probe":

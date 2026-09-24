@@ -23,6 +23,30 @@ class LocalMetadataStoreTests(unittest.TestCase):
     def _store(self):
         return LocalMetadataStore(self.db)
 
+    def test_list_connections_returns_deterministic_sorted_records(self):
+        store = self._store()
+        self.assertEqual(store.list_connections(), [])
+
+        store.record_connection(
+            "zebra-agent",
+            metadata={"id": "zebra-agent", "kind": "agent"},
+            updated_at="2026-09-22T14:20:00Z",
+        )
+        store.record_connection(
+            "alpha-agent",
+            metadata={"id": "alpha-agent", "kind": "agent"},
+            updated_at="2026-09-22T14:20:00Z",
+        )
+        store.record_connection(
+            "beta-agent",
+            metadata={"id": "beta-agent", "kind": "agent"},
+            updated_at="2026-09-22T14:20:00Z",
+        )
+
+        listed = store.list_connections()
+        self.assertEqual(len(listed), 3)
+        self.assertEqual([item["id"] for item in listed], ["alpha-agent", "beta-agent", "zebra-agent"])
+
     def test_connection_probe_and_route_metadata_survive_restart(self):
         store = self._store()
         store.record_connection(
