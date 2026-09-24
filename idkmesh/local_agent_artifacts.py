@@ -134,6 +134,10 @@ def _validate_worktree_binding(
             "workspace Git metadata no longer points at the expected repository"
         )
 
+    if not isinstance(source_revision, str) or _GIT_SHA_RE.fullmatch(source_revision) is None:
+        raise LocalRunnerError(
+            "source_revision must be an exact 40- or 64-character Git object id"
+        )
     source_sha = resolve_exact_revision(repository, source_revision)
     observed_source = resolve_exact_revision(workspace, source_sha)
     if observed_source.lower() != source_sha.lower():
@@ -305,6 +309,7 @@ def capture_local_agent_artifacts(
             "--binary",
             "--full-index",
             "--no-ext-diff",
+            "--no-textconv",
             "--no-color",
             source_sha,
             "--",
@@ -315,6 +320,8 @@ def capture_local_agent_artifacts(
     )
 
     untracked = _untracked_paths(workspace_path, limits=active_limits)
+    if isinstance(include_paths, (str, bytes)):
+        raise ValueError("include_paths must be an iterable of relative path strings")
     selected = tuple(sorted(set(include_paths)))
 
     entries: list[tuple[str, bytes]] = []
