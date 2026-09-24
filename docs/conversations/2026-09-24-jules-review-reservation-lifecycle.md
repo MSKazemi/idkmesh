@@ -131,3 +131,7 @@ Focused regression coverage was added for:
 - policy/contract guard requires the terminal completion lifecycle.
 
 Repository-wide PR Gate remains the integration authority for the exact branch.
+
+## CI metadata correction
+
+The first PR Gate run correctly rejected a free-form `Fixes #813` phrase in the pull-request body. IDKMesh's closing-keyword guard requires intentional issue closure to use the PR template's dedicated `Closes on merge` line. The PR metadata was corrected accordingly; this is a repository process guard, not an implementation failure.
