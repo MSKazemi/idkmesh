@@ -31,6 +31,10 @@ meaning of an existing version.
   experimental reference profile adding the five-arm decomposition benchmark
   contract and a canonical WorkUnit DAG without changing either historical
   WorkUnit schema. Related: issues #3, #15, #17.
+- [Local Agent Execution Boundary v0.1](LOCAL_AGENT_EXECUTION_BOUNDARY_V0_1.md) —
+  fail-closed C4 contract separating canonical WorkUnit/AgentPreset admission,
+  platform-specific sandbox enforcement, bounded outside-authority candidate
+  capture, and provider-neutral ResultManifest normalization.
 
 ## Evaluation Contracts
 
