@@ -310,6 +310,96 @@ def build_parser() -> argparse.ArgumentParser:
         help="emit machine-readable JSON",
     )
 
+    run_cmd = sub.add_parser(
+        "run",
+        help="create, inspect, or cancel durable Product Spine runs",
+        description=(
+            "Manage bounded local Product Spine run projections. These commands "
+            "do not dispatch providers, terminate provider processes, verify or "
+            "accept candidates, mutate GitHub, push Git, or merge."
+        ),
+    )
+    run_sub = run_cmd.add_subparsers(
+        dest="run_command",
+        required=True,
+    )
+
+    run_create = run_sub.add_parser(
+        "create",
+        help="persist one canonical proposed Product Spine run",
+    )
+    run_create.add_argument(
+        "projection",
+        help="path to an idkmesh-product-spine-run v0.1 JSON projection",
+    )
+    run_create.add_argument(
+        "--store",
+        required=True,
+        metavar="PATH",
+        help="local SQLite control-state path",
+    )
+    run_create.add_argument(
+        "--idempotency-key",
+        required=True,
+        metavar="KEY",
+        help="caller-owned logical create request identity",
+    )
+    run_create.add_argument(
+        "--created-at",
+        help="explicit ISO-8601 timestamp (default: current UTC time)",
+    )
+    run_create.add_argument(
+        "--json",
+        action="store_true",
+        dest="json_output",
+        help="emit deterministic machine-readable JSON",
+    )
+
+    run_status = run_sub.add_parser(
+        "status",
+        help="inspect one retained Product Spine run",
+    )
+    run_status.add_argument("run_id")
+    run_status.add_argument(
+        "--store",
+        required=True,
+        metavar="PATH",
+        help="local SQLite control-state path",
+    )
+    run_status.add_argument(
+        "--json",
+        action="store_true",
+        dest="json_output",
+        help="emit deterministic machine-readable JSON",
+    )
+
+    run_cancel = run_sub.add_parser(
+        "cancel",
+        help="record a lifecycle-valid cancellation transition",
+        description=(
+            "Transition a retained Product Spine run to cancelled when the "
+            "canonical lifecycle permits it. This does not terminate an "
+            "external/provider process."
+        ),
+    )
+    run_cancel.add_argument("run_id")
+    run_cancel.add_argument(
+        "--store",
+        required=True,
+        metavar="PATH",
+        help="local SQLite control-state path",
+    )
+    run_cancel.add_argument(
+        "--updated-at",
+        help="explicit ISO-8601 timestamp (default: current UTC time)",
+    )
+    run_cancel.add_argument(
+        "--json",
+        action="store_true",
+        dest="json_output",
+        help="emit deterministic machine-readable JSON",
+    )
+
     gui = sub.add_parser(
         "gate-audit-ui",
         help="open the local browser interface for gate-audit",
@@ -601,6 +691,171 @@ def _run_connections(args: argparse.Namespace) -> int:
     return 2
 
 
+def _run_control_error(exc, *, json_output: bool) -> int:
+    code = getattr(exc, "code", "run_control_error")
+    if json_output:
+        print(
+            json.dumps(
+                {
+                    "ok": False,
+                    "error": {
+                        "code": code,
+                        "message": str(exc),
+                    },
+                },
+                sort_keys=True,
+                separators=(",", ":"),
+            ),
+            file=sys.stderr,
+        )
+        return 2
+    return _fail(f"{code}: {exc}")
+
+
+def _strict_json_file(path_value: str) -> dict[str, object]:
+    class DuplicateKeyError(ValueError):
+        pass
+
+    def no_duplicates(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise DuplicateKeyError(
+                    f"duplicate JSON key: {key}"
+                )
+            result[key] = value
+        return result
+
+    def reject_constant(value):
+        raise ValueError(
+            f"non-standard JSON constant: {value}"
+        )
+
+    path = Path(path_value)
+    try:
+        if not stat.S_ISREG(path.stat().st_mode):
+            raise ValueError(
+                f"run projection is not a regular file: {path_value}"
+            )
+        with path.open("rb") as handle:
+            payload = handle.read(MAX_BODY_BYTES + 1)
+    except FileNotFoundError as exc:
+        raise ValueError(
+            f"run projection not found: {path_value}"
+        ) from exc
+    except IsADirectoryError as exc:
+        raise ValueError(
+            f"run projection is a directory: {path_value}"
+        ) from exc
+    except OSError as exc:
+        raise ValueError(
+            f"cannot read run projection {path_value}: {_reason(exc)}"
+        ) from exc
+
+    if len(payload) > MAX_BODY_BYTES:
+        raise ValueError(
+            "run projection exceeds the 2 MiB local input limit"
+        )
+    try:
+        text = payload.decode("utf-8-sig")
+    except UnicodeDecodeError as exc:
+        raise ValueError(
+            f"{path_value}: run projection is not UTF-8"
+        ) from exc
+    try:
+        value = json.loads(
+            text,
+            object_pairs_hook=no_duplicates,
+            parse_constant=reject_constant,
+        )
+    except (json.JSONDecodeError, DuplicateKeyError, ValueError) as exc:
+        raise ValueError(
+            f"{path_value}: invalid strict JSON: {exc}"
+        ) from exc
+    if not isinstance(value, dict):
+        raise ValueError(
+            "run projection JSON must be an object"
+        )
+    return value
+
+
+def _run_product_spine_control(args: argparse.Namespace) -> int:
+    from idkmesh.connector_store import (
+        LocalMetadataStore,
+        LocalStoreError,
+    )
+    from idkmesh.product_spine_run_store import (
+        ProductSpineRunStore,
+        ProductSpineRunStoreError,
+    )
+
+    try:
+        service = ProductSpineRunStore(
+            LocalMetadataStore(args.store)
+        )
+
+        if args.run_command == "create":
+            projection = _strict_json_file(args.projection)
+            result = service.create(
+                projection,
+                idempotency_key=args.idempotency_key,
+                created_at=_observation_time(args.created_at),
+            )
+        elif args.run_command == "status":
+            result = service.status(args.run_id)
+        elif args.run_command == "cancel":
+            result = service.cancel(
+                args.run_id,
+                updated_at=_observation_time(args.updated_at),
+            )
+        else:  # pragma: no cover - argparse enforces this
+            return 2
+    except (
+        ProductSpineRunStoreError,
+        LocalStoreError,
+        OSError,
+        ValueError,
+    ) as exc:
+        return _run_control_error(
+            exc,
+            json_output=args.json_output,
+        )
+
+    payload = result.to_dict()
+    if args.json_output:
+        print(
+            json.dumps(
+                payload,
+                sort_keys=True,
+                separators=(",", ":"),
+            )
+        )
+        return 0
+
+    run = result.run
+    if args.run_command == "create":
+        disposition = "created" if result.created else "replayed"
+        print(
+            f"{disposition}: {run.run_id} "
+            f"state={run.state}"
+        )
+    elif args.run_command == "status":
+        print(
+            f"run: {run.run_id}\n"
+            f"state: {run.state}\n"
+            f"project: {run.project_id}\n"
+            f"work_unit: {run.work_unit_id}\n"
+            "merge_authority: no"
+        )
+    else:
+        print(
+            f"cancelled: {run.run_id}\n"
+            "provider_execution_terminated: no\n"
+            "merge_authority: no"
+        )
+    return 0
+
+
 def _run_doctor(args: argparse.Namespace) -> int:
     from idkmesh.connector_inspection import doctor_report, inspect_connectors
     from idkmesh.connector_profiles import (
@@ -736,6 +991,8 @@ def main(argv: list[str] | None = None) -> int:
                 f"{_reason(exc)}")
         return 0
 
+    if args.command == "run":
+        return _run_product_spine_control(args)
     if args.command == "connections":
         return _run_connections(args)
     if args.command == "doctor":
