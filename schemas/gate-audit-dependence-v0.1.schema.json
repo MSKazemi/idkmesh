@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idkmesh.org/schemas/gate-audit-dependence-v0.1.schema.json",
+  "title": "IDKMesh Gate Audit Dependence Report v0.1",
+  "description": "Measured pairwise verifier error-dependence for the exact same verdict matrix a gate-audit-report-v0.1 was computed from (bound by provenance.input_digest_sha256), produced by `idkmesh gate-audit-dependence`. gate-audit-report-v0.1 exposes only the panel mean pairwise error correlation; this artifact exists so a future adaptive verifier-allocation revision can consume each pair's own measured phi correlation instead of reconstructing it from the mean or from provider/family identity. It is decision support only: it grants no routing, acceptance, EvaluatorPlan, or merge authority, and it never aggregates pairs into a per-verifier reputation score.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "gate_id",
+    "evidence_class",
+    "authority",
+    "non_probe_candidate_count",
+    "verifier_ids",
+    "pairs",
+    "warnings",
+    "provenance"
+  ],
+  "properties": {
+    "schema": {"const": "gate-audit-dependence-v0.1"},
+    "gate_id": {"type": "string", "minLength": 1},
+    "evidence_class": {
+      "description": "Copied verbatim from the input declaration. A report can never upgrade synthetic fixture data into an observed claim.",
+      "enum": ["synthetic", "observed"]
+    },
+    "authority": {"const": "diagnostic_only"},
+    "non_probe_candidate_count": {"type": "integer", "minimum": 2},
+    "verifier_ids": {
+      "description": "Every verifier id from the input, sorted, independent of input list order.",
+      "type": "array",
+      "items": {"type": "string", "minLength": 1},
+      "uniqueItems": true
+    },
+    "pairs": {
+      "description": "One entry per unordered verifier pair, in the order itertools.combinations(sorted(verifier_ids), 2) produces.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "verifier_a",
+          "verifier_b",
+          "phi_error",
+          "measurable",
+          "joint_error_count",
+          "a_error_count",
+          "b_error_count"
+        ],
+        "properties": {
+          "verifier_a": {"type": "string", "minLength": 1},
+          "verifier_b": {"type": "string", "minLength": 1},
+          "phi_error": {
+            "description": "Pearson correlation of the pair's binary error vectors over non-probe candidates, or null when unmeasurable.",
+            "type": ["number", "null"],
+            "minimum": -1,
+            "maximum": 1
+          },
+          "measurable": {
+            "description": "False when either error vector has zero variance; phi_error is then null, never 0 - unmeasurable is not the same claim as independent.",
+            "type": "boolean"
+          },
+          "joint_error_count": {"type": "integer", "minimum": 0},
+          "a_error_count": {"type": "integer", "minimum": 0},
+          "b_error_count": {"type": "integer", "minimum": 0}
+        }
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1}
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tool", "tool_version", "input_digest_sha256"],
+      "properties": {
+        "tool": {"const": "idkmesh gate-audit-dependence"},
+        "tool_version": {"type": "string", "minLength": 1},
+        "input_digest_sha256": {
+          "description": "sha256 of the canonical (sort_keys, compact-separator) verdict-matrix input JSON. Identical to the matching gate-audit-report-v0.1's provenance.input_digest_sha256 for the same input, so the two artifacts can be proven to describe the same audited population.",
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    }
+  }
+}

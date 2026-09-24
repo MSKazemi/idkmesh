@@ -318,3 +318,17 @@ count is acceptable is a human/governance decision outside this tool.
   would move it into the tool.
 - Reading the verdict matrix from stdin. The audit takes a path so the report
   can name the file it rejected.
+
+## Related: per-pair dependence evidence
+
+`gate-audit-report-v0.1` reports only the panel's *mean* pairwise error
+correlation, on purpose: a future adaptive verifier-allocation revision must
+not reconstruct or invent each pair's own dependence from that mean, or from
+provider/model/family identity. `idkmesh gate-audit-dependence` (issue #654)
+reads the same verdict-matrix input and emits a separate, optional
+`gate-audit-dependence-v0.1` report with every verifier pair's own measured
+phi error-correlation, bound to the identical `provenance.input_digest_sha256`
+so the two reports are provably about the same audited panel. It is
+diagnostic only — see
+[`idkmesh/gate_audit_dependence.py`](../../idkmesh/gate_audit_dependence.py)
+and [`schemas/gate-audit-dependence-v0.1.schema.json`](../../schemas/gate-audit-dependence-v0.1.schema.json).
