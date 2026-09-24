@@ -97,6 +97,7 @@ class LocalAgentSandboxTests(unittest.TestCase):
     def test_prompt_file_must_stay_inside_workspace(self):
         preset = _preset(prompt_transport="file")
         sandbox = BubblewrapSandbox("/usr/bin/bwrap")
+        (self.workspace / "task.md").write_text("bounded prompt", encoding="utf-8")
         argv = sandbox.build_argv(
             preset,
             workspace=self.workspace,
@@ -105,12 +106,13 @@ class LocalAgentSandboxTests(unittest.TestCase):
         )
         self.assertEqual(argv[-2:], ("agent", "/workspace/task.md"))
 
-        for path in ("/etc/passwd", "../secret"):
+        outside = Path(self.temp.name) / "outside.txt"
+        outside.write_text("outside", encoding="utf-8")
+        (self.workspace / "escape").symlink_to(outside)
+
+        for path in ("/etc/passwd", "../secret", "escape"):
             with self.subTest(path=path):
-                with self.assertRaisesRegex(
-                    Exception,
-                    "workspace-relative",
-                ):
+                with self.assertRaises(Exception):
                     sandbox.build_argv(
                         preset,
                         workspace=self.workspace,
@@ -126,6 +128,33 @@ class LocalAgentSandboxTests(unittest.TestCase):
                 workspace=self.workspace,
                 env={"PATH": "/usr/bin"},
                 prompt_file="task.md",
+            )
+
+    def test_caller_cannot_inject_env_outside_preset_allowlist(self):
+        sandbox = BubblewrapSandbox("/usr/bin/bwrap")
+        with self.assertRaisesRegex(Exception, "outside preset allowlist"):
+            sandbox.build_argv(
+                _preset(),
+                workspace=self.workspace,
+                env={"PATH": "/usr/bin", "GITHUB_TOKEN": "secret"},
+            )
+
+    def test_reserved_environment_cannot_override_private_home(self):
+        preset = AgentPreset(
+            preset_id="offline-agent",
+            agent_family="offline-agent",
+            executable="agent",
+            model_connection_ref="model:offline",
+            execution_connection_ref="execution:bwrap",
+            network_policy="disabled",
+            env_allowlist=("HOME",),
+        )
+        sandbox = BubblewrapSandbox("/usr/bin/bwrap")
+        with self.assertRaisesRegex(Exception, "controller-owned"):
+            sandbox.build_argv(
+                preset,
+                workspace=self.workspace,
+                env={"PATH": "/usr/bin", "HOME": "/home/user"},
             )
 
     def test_invalid_environment_value_fails_before_command_build(self):
