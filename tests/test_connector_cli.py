@@ -302,6 +302,37 @@ class ConnectorCliTests(unittest.TestCase):
             self.assertFalse(corrupt_payload["valid"])
             self.assertEqual(corrupt_payload["error"]["code"], "connector_store_error")
 
+    def test_os_level_store_failure_reports_a_store_error_code(self):
+        """An OSError from the store path is a store error, not a profile error.
+
+        ``_connections_error`` classifies the JSON error code from the exception
+        type, and both store branches catch ``OSError`` alongside
+        ``LocalStoreError``/``sqlite3.Error``. A blocking non-directory parent is
+        a portable way to raise ``OSError`` without depending on file modes.
+        """
+
+        profiles = self.valid_profiles()
+        with tempfile.TemporaryDirectory() as tmp:
+            profile_path = self.write_profile(tmp, profiles)
+            blocker = Path(tmp) / "blocker"
+            blocker.write_text("not a directory", encoding="utf-8")
+            store_path = blocker / "db.sqlite"
+
+            for command in ("import", "stored"):
+                args = ["connections", command]
+                if command == "import":
+                    args.append(str(profile_path))
+                args += ["--store", str(store_path), "--json"]
+                proc = self.run_cli(*args)
+                self.assertEqual(proc.returncode, 2, proc.stderr)
+                payload = json.loads(proc.stderr)
+                self.assertFalse(payload["valid"])
+                self.assertEqual(
+                    payload["error"]["code"],
+                    "connector_store_error",
+                    f"{command} mislabelled an OS-level store failure",
+                )
+
     def test_connections_help_is_read_only_in_language(self):
         proc = self.run_cli("connections", "--help")
         self.assertEqual(proc.returncode, 0, proc.stderr)

@@ -523,9 +523,14 @@ def _connections_error(exc, *, json_output: bool) -> int:
         import sqlite3
         from idkmesh.connector_store import LocalStoreError
 
+        # The store branches below catch OSError alongside LocalStoreError and
+        # sqlite3.Error, so an OS-level store failure (an unwritable or
+        # non-directory parent path) must classify as a store error too.
+        # Profile loading raises ConnectorProfileError, never OSError, so this
+        # cannot mislabel a profile failure.
         default_code = (
             "connector_store_error"
-            if isinstance(exc, (LocalStoreError, sqlite3.Error))
+            if isinstance(exc, (LocalStoreError, sqlite3.Error, OSError))
             else "connector_profile_error"
         )
         payload = {
