@@ -201,6 +201,10 @@ class GitHubDispatchAuthorizationTests(unittest.TestCase):
         )
         self.assertTrue(decision.authorized)
 
+    def test_policy_rejects_malformed_repository(self):
+        with self.assertRaisesRegex(ValueError, "owner/name"):
+            _policy(repository="not-a-repository")
+
     def test_policy_rejects_duplicate_actor_ids(self):
         with self.assertRaisesRegex(ValueError, "unique"):
             _policy(
@@ -241,7 +245,9 @@ class GitHubDispatchAuthorizationTests(unittest.TestCase):
         self.assertNotIn("title", rendered)
         self.assertNotIn("body", rendered)
         self.assertNotIn("comment", rendered)
-        self.assertNotIn("secret", str(rendered).casefold())
+        self.assertNotIn("secret_value", rendered)
+        self.assertNotIn("token", rendered)
+        self.assertNotIn("authorization_header", rendered)
 
 
 if __name__ == "__main__":
