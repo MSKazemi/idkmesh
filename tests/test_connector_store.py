@@ -9,6 +9,7 @@ from idkmesh.connector_store import (
     LocalStoreConflict,
     LocalStoreError,
     UnsafeMetadataError,
+    WebhookDeliveryRecord,
 )
 
 
@@ -47,6 +48,156 @@ class LocalMetadataStoreTests(unittest.TestCase):
         self.assertEqual(restarted.get_connection("agent-one")["driver"], "fake")
         self.assertEqual(restarted.latest_probe("agent-one")["status"], "healthy")
         self.assertEqual(restarted.get_route("route-1")["metadata"]["selected"], "agent-one")
+
+    def test_webhook_delivery_survives_restart_and_replay_is_idempotent(self):
+        store = self._store()
+        first, created_first = store.admit_webhook_delivery(
+            delivery_id="delivery-1",
+            request_digest="sha256:" + "a" * 64,
+            event="issues",
+            repository="MSKazemi/idkmesh",
+            metadata={
+                "action": "labeled",
+                "subject_number": 77,
+                "payload_digest": "sha256:" + "b" * 64,
+            },
+            received_at="2026-09-24T01:00:00Z",
+        )
+        self.assertIsInstance(first, WebhookDeliveryRecord)
+        self.assertTrue(created_first)
+
+        restarted = self._store()
+        second, created_second = restarted.admit_webhook_delivery(
+            delivery_id="delivery-1",
+            request_digest="sha256:" + "a" * 64,
+            event="issues",
+            repository="mskazemi/IDKMESH",
+            metadata={"ignored_after_first_admission": True},
+            received_at="2026-09-24T01:05:00Z",
+        )
+
+        self.assertFalse(created_second)
+        self.assertEqual(second.delivery_id, first.delivery_id)
+        self.assertEqual(second.metadata["action"], "labeled")
+        self.assertEqual(second.received_at, "2026-09-24T01:00:00Z")
+        self.assertEqual(
+            restarted.get_webhook_delivery("delivery-1").request_digest,
+            "sha256:" + "a" * 64,
+        )
+
+    def test_webhook_delivery_reuse_with_different_content_conflicts(self):
+        store = self._store()
+        store.admit_webhook_delivery(
+            delivery_id="delivery-conflict",
+            request_digest="sha256:" + "a" * 64,
+            event="issues",
+            repository="MSKazemi/idkmesh",
+            metadata={},
+            received_at="2026-09-24T01:00:00Z",
+        )
+        for changes in (
+            {"request_digest": "sha256:" + "b" * 64},
+            {"event": "issue_comment"},
+            {"repository": "other/repo"},
+        ):
+            kwargs = {
+                "delivery_id": "delivery-conflict",
+                "request_digest": "sha256:" + "a" * 64,
+                "event": "issues",
+                "repository": "MSKazemi/idkmesh",
+                "metadata": {},
+                "received_at": "2026-09-24T01:01:00Z",
+            }
+            kwargs.update(changes)
+            with self.subTest(changes=changes):
+                with self.assertRaises(LocalStoreConflict):
+                    store.admit_webhook_delivery(**kwargs)
+
+    def test_webhook_delivery_rejects_non_sha256_request_digest(self):
+        with self.assertRaisesRegex(ValueError, "sha256"):
+            self._store().admit_webhook_delivery(
+                delivery_id="delivery-bad-digest",
+                request_digest="payload",
+                event="issues",
+                repository="MSKazemi/idkmesh",
+                metadata={},
+                received_at="2026-09-24T01:00:00Z",
+            )
+
+    def test_webhook_delivery_metadata_uses_existing_secret_safety_boundary(self):
+        store = self._store()
+        sentinel = "never-persist-webhook-secret"
+        with self.assertRaises(UnsafeMetadataError):
+            store.admit_webhook_delivery(
+                delivery_id="delivery-secret",
+                request_digest="sha256:" + "c" * 64,
+                event="issues",
+                repository="MSKazemi/idkmesh",
+                metadata={"authorization": sentinel},
+                received_at="2026-09-24T01:00:00Z",
+            )
+        self.assertNotIn(sentinel.encode(), self.db.read_bytes())
+
+    def test_schema_v1_migrates_to_v2_without_losing_existing_tables(self):
+        with sqlite3.connect(self.db) as conn:
+            conn.executescript(
+                """
+                CREATE TABLE connections (
+                    connection_id TEXT PRIMARY KEY,
+                    metadata_json TEXT NOT NULL,
+                    updated_at TEXT NOT NULL
+                );
+                INSERT INTO connections(connection_id, metadata_json, updated_at)
+                VALUES ('existing', '{}', '2026-09-22T00:00:00Z');
+                PRAGMA user_version = 1;
+                """
+            )
+
+        store = self._store()
+        self.assertEqual(store.get_connection("existing"), {})
+        with sqlite3.connect(self.db) as conn:
+            version = int(conn.execute("PRAGMA user_version").fetchone()[0])
+            table = conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='webhook_deliveries'"
+            ).fetchone()
+        self.assertEqual(version, 2)
+        self.assertIsNotNone(table)
+
+    def test_concurrent_duplicate_webhook_delivery_creates_one_record(self):
+        self._store()
+        barrier = threading.Barrier(2)
+        outcomes = []
+        failures = []
+
+        def worker(timestamp):
+            try:
+                store = self._store()
+                barrier.wait(timeout=5)
+                record, created = store.admit_webhook_delivery(
+                    delivery_id="delivery-concurrent",
+                    request_digest="sha256:" + "d" * 64,
+                    event="issues",
+                    repository="MSKazemi/idkmesh",
+                    metadata={"action": "labeled"},
+                    received_at=timestamp,
+                )
+                outcomes.append((record.received_at, created))
+            except Exception as exc:
+                failures.append(exc)
+
+        threads = [
+            threading.Thread(target=worker, args=("2026-09-24T01:00:00Z",)),
+            threading.Thread(target=worker, args=("2026-09-24T01:00:01Z",)),
+        ]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join(timeout=10)
+
+        self.assertEqual(failures, [])
+        self.assertEqual(len(outcomes), 2)
+        self.assertEqual(sum(1 for _, created in outcomes if created), 1)
+        self.assertEqual(len({received for received, _ in outcomes}), 1)
 
     def test_same_idempotency_key_and_digest_returns_existing_run(self):
         store = self._store()
