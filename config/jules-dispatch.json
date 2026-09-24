@@ -1,5 +1,5 @@
 {
-  "version": 6,
+  "version": 7,
   "queue_label": "agent-ready",
   "dispatch_label": "agent:jules-dispatched",
   "legacy_dispatch_labels": [
@@ -14,7 +14,8 @@
     "needs-decomposition",
     "research-evidence",
     "security-sensitive",
-    "agent:jules-needs-attention"
+    "agent:jules-needs-attention",
+    "agent:jules-completed"
   ],
   "priority_weights": {
     "priority:p0": 300,
@@ -99,6 +100,10 @@
     "agent:jules-needs-attention": {
       "color": "D93F0B",
       "description": "Jules session needs maintainer inspection before redispatch"
+    },
+    "agent:jules-completed": {
+      "color": "1D76DB",
+      "description": "Jules session finished and candidate review reservation is resolved; requires explicit re-triage before redispatch"
     }
   },
   "automatic_queue_label": "agent:jules-eligible",
@@ -139,5 +144,6 @@
     "max_in_progress_runs": 8,
     "source": "https://docs.github.com/en/rest/actions/workflow-runs?apiVersion=2022-11-28#list-workflow-runs-for-a-repository",
     "checked_at": "2026-09-23"
-  }
+  },
+  "completion_label": "agent:jules-completed"
 }

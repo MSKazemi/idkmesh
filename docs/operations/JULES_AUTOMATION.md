@@ -124,7 +124,7 @@ The machine-readable policy is
 
 Current defaults:
 
-- repository review/backpressure cap (`max_in_flight`): **4** open Jules dispatch reservations;
+- repository review/backpressure cap (`max_in_flight`): **4** unresolved Jules review reservations;
 - Jules provider concurrency cap (`provider_concurrency.max_concurrent_tasks`): **3** concurrent tasks for the configured `Jules` plan, checked 2026-09-23 against the official limits page;
 - provider occupancy: account-wide sessions whose state is not terminal; current terminal states are `COMPLETED` and `FAILED`, checked against the official Jules API type reference;
 - new dispatch capacity: the smaller of remaining repository slots and remaining provider slots, not the smaller of the two raw limits minus one shared counter;
@@ -142,19 +142,36 @@ Current defaults:
 `max_in_flight` is a repository review/backpressure limit, while
 `provider_concurrency.max_concurrent_tasks` records the current provider/account
 ceiling separately. They are budgeted independently. Repository availability is
-`max_in_flight - open dispatch reservations`; provider availability is
+`max_in_flight - unresolved review reservations`; provider availability is
 `max_concurrent_tasks - non-terminal account sessions`; dispatch uses the
 smaller remaining budget. The provider session list is account-wide, so tasks
 started outside IDKMesh also consume the provider budget.
 
-A `COMPLETED` Jules session continues to consume its **repository review**
-reservation until the issue closes, so generation cannot run arbitrarily ahead
-of review, but it no longer consumes a **provider concurrency** slot. `FAILED`
-is also terminal for provider-capacity accounting; reconciliation separately
-moves failed/stalled repository work to `agent:jules-needs-attention` and
-removes its dispatch reservation. All other current Jules states—including
-queued, planning, in-progress, feedback/approval waits, paused, and unspecified—
-are conservatively treated as provider-active.
+A `COMPLETED` Jules session no longer consumes **provider concurrency**, but
+its **repository review** reservation remains while any Jules output PR is still
+open. Reconciliation fetches the full Session, reads
+`outputs[].pullRequest.url`, binds each URL back to the same repository, and
+checks GitHub PR state. Once all Jules output PRs are closed/merged, the
+dispatcher replaces `agent:jules-dispatched` with `agent:jules-completed`
+and releases the review slot even if the broader parent issue intentionally
+stays open. `agent:jules-completed` is a hard redispatch veto until a
+maintainer explicitly re-triages the issue for a new bounded attempt.
+
+A completed Session with no usable PR output fails closed to
+`agent:jules-needs-attention` rather than silently freeing capacity or starting
+a duplicate task. `FAILED` is terminal for provider-capacity accounting;
+reconciliation separately moves failed/stalled repository work to
+`agent:jules-needs-attention` and removes its dispatch reservation. All other
+current Jules states—including queued, planning, in-progress,
+feedback/approval waits, paused, and unspecified—are conservatively treated as
+provider-active.
+
+The official Jules Session type documents output pull requests at
+<https://jules.google/docs/api/reference/types/>, and Get Session documents the
+full completed Session response at
+<https://jules.google/docs/api/reference/sessions>. The dispatcher relies on
+that provider contract only for candidate-location discovery; GitHub remains
+the authority for whether the referenced PR is actually open or closed.
 
 The provider limit and terminal-state model are dated configuration with official
 source URLs because Jules plans/API states can change. After a plan/API change,
@@ -207,8 +224,9 @@ Reconciliation never creates a replacement session automatically.
 | --- | --- |
 | `agent:jules-eligible` | deterministic router says this is a low-risk bounded Jules-shaped task; dispatcher still requires a trusted author association |
 | `agent-ready` | maintainer/trusted-triager explicit approval for bounded coding-agent execution |
-| `agent:jules-dispatched` | active repository reservation/status for an API-backed Jules session |
-| `agent:jules-needs-attention` | provider work failed, stalled, paused, needs feedback, or cannot be matched; automatic redispatch is blocked |
+| `agent:jules-dispatched` | active repository reservation/status for an API-backed Jules session or its still-open output PR |
+| `agent:jules-completed` | Jules provider work finished and all output PR review is closed/merged; review slot released, automatic redispatch blocked pending explicit re-triage |
+| `agent:jules-needs-attention` | provider work failed, stalled, paused, needs feedback, cannot be matched, or completed without a usable PR output; automatic redispatch is blocked |
 | `jules` | legacy/manual native-App trigger; never added by automatic dispatch |
 
 The separation matters: routing metadata is not execution authority, and
@@ -283,9 +301,12 @@ Recommended operating rhythm:
    the automatic lane;
 4. let event-driven dispatch fill the effective provider/repository capacity;
 5. let the 30-minute reconciliation sweep free slots held by genuinely stalled
-   provider sessions;
-6. review/merge/close completed PRs promptly so completed work frees capacity;
-7. decompose broad work with `needs-decomposition` instead of sending vague
+   provider sessions and by completed Sessions whose Jules PR review has ended;
+6. review/merge/close completed PRs promptly; the parent issue may stay open
+   without pinning the Jules review slot after reconciliation;
+7. explicitly re-triage an `agent:jules-completed` issue before removing that
+   terminal veto for another bounded attempt;
+8. decompose broad work with `needs-decomposition` instead of sending vague
    prompts.
 
 If review latency grows, lower concurrency before creating more generated work.
@@ -428,6 +449,13 @@ session state. Failed, feedback-required, paused, missing-after-grace, and
 stale sessions are moved to `agent:jules-needs-attention` and removed from
 the active pool.
 
+For `COMPLETED` Sessions, reconciliation fetches the full provider Session and
+inspects its output PR URLs. An open output PR keeps
+`agent:jules-dispatched`; once all output PRs are closed/merged the issue moves
+to `agent:jules-completed`, releasing repository review capacity without
+requiring the umbrella issue itself to close. A completed Session with no
+usable PR output moves to `agent:jules-needs-attention`.
+
 Do not simply remove `agent:jules-needs-attention`. First inspect the provider
 session. For an old queued/active session, resolve or delete that provider work
 before allowing a new attempt. Reconciliation intentionally never creates a
@@ -481,7 +509,17 @@ merely to make an agent PR green.
 ### Too many PRs waiting for review
 
 Lower `max_in_flight` or stop adding manual approvals. Generation speed is not
-useful if verification becomes the bottleneck.
+useful if verification becomes the bottleneck. Do not raise the cap merely
+because provider task slots are free; repository review capacity is a separate
+budget.
+
+### `agent:jules-completed` exists but the parent issue is still open
+
+This is expected for umbrella/component issues. The Jules attempt and candidate
+review are finished, so the repository review reservation has been released.
+The issue may remain open for broader work. Do not remove
+`agent:jules-completed` merely to increase throughput; remove it only after
+explicitly redefining the next bounded agent task and re-triaging the issue.
 
 ## Implementation surfaces
 

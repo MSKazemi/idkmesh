@@ -152,6 +152,7 @@ def load_policy(path: pathlib.Path = DEFAULT_POLICY) -> dict[str, Any]:
         "dispatch_label",
         "legacy_dispatch_labels",
         "attention_label",
+        "completion_label",
         "attention_session_states",
         "stale_session_minutes",
         "stale_missing_session_minutes",
@@ -224,6 +225,12 @@ def load_policy(path: pathlib.Path = DEFAULT_POLICY) -> dict[str, Any]:
         )
     if not str(ci_backpressure.get("checked_at") or "").strip():
         raise DispatchError("ci_backpressure.checked_at must be non-empty")
+    if not str(policy["completion_label"]).strip():
+        raise DispatchError("completion_label must be non-empty")
+    if str(policy["completion_label"]).casefold() not in {
+        str(name).casefold() for name in policy["blocked_labels"]
+    }:
+        raise DispatchError("completion_label must be a hard dispatch veto")
     if not isinstance(policy["trusted_author_associations"], list):
         raise DispatchError("trusted_author_associations must be a list")
     if not isinstance(policy["attention_session_states"], list):
@@ -476,6 +483,35 @@ class GitHubAPI:
             params["labels"] = label
         return self.paginate(f"{self.repo_path}/issues", params)
 
+    def get_pull_request_from_url(self, url: str) -> dict[str, Any]:
+        """Return one same-repository GitHub pull request from its canonical URL."""
+        parsed = urllib.parse.urlparse(str(url).strip())
+        owner, repo = self.repository.split("/", 1)
+        parts = [part for part in parsed.path.split("/") if part]
+        if (
+            parsed.scheme != "https"
+            or parsed.netloc.casefold() != "github.com"
+            or len(parts) != 4
+            or parts[0].casefold() != owner.casefold()
+            or parts[1].casefold() != repo.casefold()
+            or parts[2] != "pull"
+        ):
+            raise DispatchError(
+                f"Jules returned a pull-request URL outside {self.repository}: {url!r}"
+            )
+        try:
+            number = int(parts[3])
+        except ValueError as exc:
+            raise DispatchError(
+                f"Jules returned an invalid pull-request URL: {url!r}"
+            ) from exc
+        payload = self.request("GET", f"{self.repo_path}/pulls/{number}")
+        if not isinstance(payload, dict):
+            raise DispatchError(
+                f"GitHub pull request #{number} response was not an object"
+            )
+        return payload
+
     def count_workflow_runs(self, status: str) -> int:
         """Return repository-wide Actions run count for one GitHub status."""
         encoded = urllib.parse.urlencode({"status": status, "per_page": 1})
@@ -637,6 +673,19 @@ class JulesAPI:
             "refusing dispatch/reconciliation rather than risking a duplicate"
         )
 
+    def get_session(self, name: str) -> dict[str, Any]:
+        """Return one full Jules Session, including terminal outputs."""
+        normalized = str(name).strip()
+        parts = normalized.split("/")
+        if len(parts) != 2 or parts[0] != "sessions" or not parts[1]:
+            raise JulesAPIError(f"invalid Jules session resource name: {name!r}")
+        payload = self.request("GET", f"/{normalized}")
+        if not isinstance(payload, dict) or not payload.get("name"):
+            raise JulesAPIError(
+                f"Jules get-session response for {normalized} was not a Session object"
+            )
+        return payload
+
     def find_existing_session(self, title: str) -> dict[str, Any] | None:
         for session in self.list_sessions():
             if str(session.get("title") or "") == title:
@@ -715,6 +764,26 @@ def _age_minutes(value: Any, now: datetime) -> float | None:
     return max(0.0, (now - parsed).total_seconds() / 60.0)
 
 
+def session_pull_request_urls(session: dict[str, Any]) -> list[str]:
+    """Return canonical PR URLs from a full Jules Session output."""
+    outputs = session.get("outputs", [])
+    if outputs is None:
+        return []
+    if not isinstance(outputs, list):
+        raise JulesAPIError("Jules Session outputs must be a list")
+    urls: list[str] = []
+    for output in outputs:
+        if not isinstance(output, dict):
+            continue
+        pull_request = output.get("pullRequest")
+        if not isinstance(pull_request, dict):
+            continue
+        url = str(pull_request.get("url") or "").strip()
+        if url:
+            urls.append(url)
+    return urls
+
+
 def session_attention_reason(
     session: dict[str, Any],
     policy: dict[str, Any],
@@ -777,9 +846,10 @@ def reconcile_active_sessions(
     now: datetime | None = None,
     dry_run: bool = False,
 ) -> list[int]:
-    """Move failed or stalled unattended sessions to an explicit attention state."""
+    """Reconcile active reservations with provider state and candidate review state."""
     dispatch_label = str(policy["dispatch_label"])
     attention_label = str(policy["attention_label"])
+    completion_label = str(policy["completion_label"])
     current_time = now or datetime.now(timezone.utc)
     issues = open_issues if open_issues is not None else api.list_open_issues()
     active = [
@@ -798,7 +868,7 @@ def reconcile_active_sessions(
         else jules_api.list_sessions(max_pages=int(policy["session_scan_max_pages"]))
     )
 
-    attention: list[int] = []
+    released: list[int] = []
     for issue in active:
         number = int(issue["number"])
         session = find_issue_session(api.repository, issue, provider_sessions)
@@ -813,16 +883,81 @@ def reconcile_active_sessions(
                     f"{int(age)} minutes (threshold {threshold})"
                 )
         else:
-            reason = session_attention_reason(
-                session,
-                policy,
-                now=current_time,
-            )
+            state = str(session.get("state") or "STATE_UNSPECIFIED").upper()
+            if state == "COMPLETED":
+                session_name = str(session.get("name") or "").strip()
+                full_session = jules_api.get_session(session_name)
+                full_state = str(
+                    full_session.get("state") or "STATE_UNSPECIFIED"
+                ).upper()
+                if full_state == "COMPLETED":
+                    pull_urls = session_pull_request_urls(full_session)
+                    if not pull_urls:
+                        reason = (
+                            "provider session COMPLETED without a pull-request output"
+                        )
+                    else:
+                        open_pull_urls: list[str] = []
+                        for pull_url in pull_urls:
+                            pull_request = api.get_pull_request_from_url(pull_url)
+                            if str(pull_request.get("state") or "").lower() == "open":
+                                open_pull_urls.append(pull_url)
+                        if open_pull_urls:
+                            print(
+                                f"jules dispatcher: #{number} completed provider work "
+                                f"but review remains open ({', '.join(open_pull_urls)})"
+                            )
+                            continue
+
+                        released.append(number)
+                        location = str(
+                            full_session.get("url")
+                            or full_session.get("name")
+                            or session_name
+                        )
+                        if dry_run:
+                            print(
+                                f"jules dispatcher: would mark #{number} completed "
+                                "because all Jules output PRs are closed"
+                            )
+                            continue
+
+                        api.add_labels(number, [completion_label])
+                        api.remove_label(number, dispatch_label)
+                        api.add_comment(
+                            number,
+                            "IDKMesh Jules reconciliation released this task's "
+                            "repository review reservation. "
+                            f"Session: {location} (state: COMPLETED). "
+                            "All Jules output pull requests are closed/merged: "
+                            f"{', '.join(pull_urls)}. "
+                            f"Automatic redispatch is blocked by {completion_label}; "
+                            "remove that terminal label only after explicit re-triage "
+                            "for a new bounded agent attempt.",
+                        )
+                        _replace_local_label(
+                            issue,
+                            dispatch_label,
+                            completion_label,
+                        )
+                        print(
+                            f"jules dispatcher: #{number} review reservation completed"
+                        )
+                        continue
+                else:
+                    session = full_session
+
+            if reason is None:
+                reason = session_attention_reason(
+                    session,
+                    policy,
+                    now=current_time,
+                )
 
         if reason is None:
             continue
 
-        attention.append(number)
+        released.append(number)
         state = str((session or {}).get("state") or "MISSING")
         location = str(
             (session or {}).get("url")
@@ -849,7 +984,7 @@ def reconcile_active_sessions(
         _replace_local_label(issue, dispatch_label, attention_label)
         print(f"jules dispatcher: #{number} needs attention: {reason}")
 
-    return attention
+    return released
 
 def session_comment(session: dict[str, Any]) -> str:
     name = str(session.get("name") or "unknown session")
