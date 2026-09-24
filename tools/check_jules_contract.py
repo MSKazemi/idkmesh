@@ -440,6 +440,21 @@ def main() -> int:
     )
     _require(
         errors,
+        "blocked_labels = set((dispatch_policy or {}).get(\"blocked_labels\") or [])" in router_code,
+        "router code must consume dispatcher veto policy blocked_labels",
+    )
+    _require(
+        errors,
+        not any(f'"{label}"' in router_code or f"'{label}'" in router_code for label in blocked),
+        "router code must not duplicate dispatcher hard veto label literals",
+    )
+    _require(
+        errors,
+        "--dispatch-policy config/jules-dispatch.json" in router_workflow,
+        "router workflow must pass --dispatch-policy config/jules-dispatch.json",
+    )
+    _require(
+        errors,
         '"automationMode": "AUTO_CREATE_PR"' in dispatcher_code,
         "dispatcher must continue requesting Jules AUTO_CREATE_PR",
     )

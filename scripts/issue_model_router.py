@@ -118,7 +118,13 @@ def classify_issue(
     issue: dict[str, Any],
     policy: dict[str, Any],
     overrides: dict[str, Any] | None = None,
+    dispatch_policy: dict[str, Any] | None = None,
 ) -> Route:
+    if dispatch_policy is None and Path("config/jules-dispatch.json").exists():
+        dispatch_policy = load_json("config/jules-dispatch.json")
+
+    blocked_labels = set((dispatch_policy or {}).get("blocked_labels") or [])
+
     number_raw = issue.get("number", issue.get("issue_number"))
     number = int(number_raw) if number_raw not in (None, "") else None
     title = str(issue.get("title") or "")
@@ -131,6 +137,8 @@ def classify_issue(
         elif isinstance(label, dict) and label.get("name"):
             labels.append(str(label["name"]))
     text = f"{title}\n{body}\n{' '.join(labels)}"
+    current_label_set = set(labels)
+    vetoed = sorted(current_label_set & blocked_labels)
 
     override = None
     if overrides and number is not None:
@@ -142,7 +150,12 @@ def classify_issue(
         route_labels = [AUTHORITY_LABELS[authority]]
         route_labels.append(TIER_LABELS[tier] if tier else TIER_LABELS["NONE"])
         if override.get("jules_eligible"):
-            route_labels.append(_jules_queue_label(policy))
+            if not vetoed:
+                route_labels.append(_jules_queue_label(policy))
+            else:
+                reasons.append(
+                    f"suppressed automatic Jules queue label due to dispatcher hard veto: {', '.join(vetoed)}"
+                )
         lane = override.get("recommended_lane") or _recommended_lane(tier, authority, text)
         return Route(number, tier, authority, 0, "high", reasons, lane, route_labels, "override")
 
@@ -252,7 +265,12 @@ def classify_issue(
     lane = _recommended_lane(tier, authority, text)
     route_labels = [TIER_LABELS[tier], AUTHORITY_LABELS[authority]]
     if tier in {"T1", "T2"} and lane == "jules-or-equivalent":
-        route_labels.append(_jules_queue_label(policy))
+        if not vetoed:
+            route_labels.append(_jules_queue_label(policy))
+        else:
+            reasons.append(
+                f"suppressed automatic Jules queue label due to dispatcher hard veto: {', '.join(vetoed)}"
+            )
 
     return Route(number, tier, authority, score, confidence, reasons or ["default bounded issue"], lane, route_labels, "rules")
 
@@ -291,6 +309,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--policy", default="config/llm-routing-policy.json")
     parser.add_argument("--overrides", default="config/issue-model-routing-overrides.json")
+    parser.add_argument("--dispatch-policy", default="config/jules-dispatch.json")
     source = parser.add_mutually_exclusive_group(required=True)
     source.add_argument("--event", help="GitHub event JSON containing an issue")
     source.add_argument("--issues", help="JSON array from `gh issue list --json ...`")
@@ -299,15 +318,16 @@ def main() -> int:
 
     policy = load_json(args.policy)
     overrides = load_json(args.overrides) if Path(args.overrides).exists() else None
+    dispatch_policy = load_json(args.dispatch_policy) if Path(args.dispatch_policy).exists() else None
 
     if args.event:
         issue = issue_from_event(args.event)
-        route = classify_issue(issue, policy, overrides)
+        route = classify_issue(issue, policy, overrides, dispatch_policy)
         print(json.dumps(_route_dict(route, issue), sort_keys=True))
         return 0
     if args.issue_json:
         issue = load_json(args.issue_json)
-        route = classify_issue(issue, policy, overrides)
+        route = classify_issue(issue, policy, overrides, dispatch_policy)
         print(json.dumps(_route_dict(route, issue), sort_keys=True))
         return 0
 
@@ -315,7 +335,7 @@ def main() -> int:
     if not isinstance(issues, list):
         raise SystemExit("--issues must point to a JSON array")
     routes = [
-        _route_dict(classify_issue(issue, policy, overrides), issue)
+        _route_dict(classify_issue(issue, policy, overrides, dispatch_policy), issue)
         for issue in issues
     ]
     print(json.dumps({"routes": routes}, sort_keys=True))

@@ -108,6 +108,7 @@ jobs:
           python scripts/issue_model_router.py \
             --policy config/llm-routing-policy.json \
             --overrides config/issue-model-routing-overrides.json \
+            --dispatch-policy config/jules-dispatch.json \
             --event "$GITHUB_EVENT_PATH" \
             > /tmp/issue-model-routes.json
 
@@ -121,6 +122,7 @@ jobs:
           python scripts/issue_model_router.py \
             --policy config/llm-routing-policy.json \
             --overrides config/issue-model-routing-overrides.json \
+            --dispatch-policy config/jules-dispatch.json \
             --issues /tmp/open-issues.json \
             > /tmp/issue-model-routes.json
 

@@ -134,3 +134,81 @@ def test_router_workflow_keeps_hot_path_api_budget_bounded():
     assert "bootstrap_labels: true" in workflow
     assert "fill_capacity: true" in workflow
     assert "actions: write" not in workflow
+
+
+def test_needs_decomposition_suppresses_jules_eligible_label():
+    issue = {
+        "number": 9994,
+        "title": "Add focused docs generator tests",
+        "body": "Documentation generator bounded task.",
+        "labels": ["needs-decomposition"],
+    }
+    value = router.classify_issue(issue, POLICY, OVERRIDES)
+    assert value.tier in {"T1", "T2"}
+    assert value.authority == "agent"
+    assert "authority:agent-candidate" in value.labels
+    assert POLICY["provider_examples"]["jules"]["queue_label"] not in value.labels
+    assert any("dispatcher hard veto" in r for r in value.reasons)
+
+
+def test_terminal_completion_and_attention_labels_suppress_jules_eligible_label():
+    for label in ("agent:jules-completed", "agent:jules-needs-attention"):
+        issue = {
+            "number": 9993,
+            "title": "Add focused generator test",
+            "body": "Bounded task.",
+            "labels": [label],
+        }
+        value = router.classify_issue(issue, POLICY, OVERRIDES)
+        assert POLICY["provider_examples"]["jules"]["queue_label"] not in value.labels
+        assert any("dispatcher hard veto" in r for r in value.reasons)
+
+
+def test_removing_veto_restores_jules_eligibility():
+    vetoed_issue = {
+        "number": 9992,
+        "title": "Add focused docs generator tests",
+        "body": "Documentation generator task.",
+        "labels": ["needs-decomposition"],
+    }
+    value_vetoed = router.classify_issue(vetoed_issue, POLICY, OVERRIDES)
+    jules_label = POLICY["provider_examples"]["jules"]["queue_label"]
+    assert jules_label not in value_vetoed.labels
+
+    unblocked_issue = {
+        "number": 9992,
+        "title": "Add focused docs generator tests",
+        "body": "Documentation generator task.",
+        "labels": [],
+    }
+    value_unblocked = router.classify_issue(unblocked_issue, POLICY, OVERRIDES)
+    assert jules_label in value_unblocked.labels
+
+
+def test_explicit_override_cannot_bypass_dispatcher_hard_veto():
+    issue = {
+        "number": 563,
+        "title": "good first issue: add direct tests for sim/e017_oracles.py",
+        "body": "",
+        "labels": ["blocked"],
+    }
+    value = router.classify_issue(issue, POLICY, OVERRIDES)
+    assert value.tier == "T1"
+    assert value.authority == "agent"
+    assert "authority:agent-candidate" in value.labels
+    assert POLICY["provider_examples"]["jules"]["queue_label"] not in value.labels
+    assert any("dispatcher hard veto" in r for r in value.reasons)
+
+
+def test_issue_580_backfill_retains_metadata_without_jules_eligible():
+    issue = {
+        "number": 580,
+        "title": "CLI and optional HTTP control API",
+        "body": "Add CLI and optional HTTP API.",
+        "labels": ["needs-decomposition"],
+    }
+    value = router.classify_issue(issue, POLICY, OVERRIDES)
+    assert value.tier in {"T1", "T2"}
+    assert value.authority == "agent"
+    assert "authority:agent-candidate" in value.labels
+    assert POLICY["provider_examples"]["jules"]["queue_label"] not in value.labels
