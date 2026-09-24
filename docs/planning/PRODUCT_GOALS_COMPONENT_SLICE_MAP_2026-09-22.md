@@ -379,8 +379,8 @@ Acceptance:
 - **C4-A — AgentPreset contract:** maintainer-owned executable/args/model/execution refs.
 - **C4-B — disposable workspace:** exact source SHA checkout/copy, deterministic cleanup.
 - **C4-C — process limits:** wall time, disk/output bounds, exit normalization.
-- **C4-D — sandbox policy:** environment allowlist, no host credentials/Docker socket, network default-off.
-- **C4-E — artifact capture:** patch/log/test outputs outside worker authority.
+- **C4-D — sandbox policy:** environment allowlist, no host credentials/Docker socket, network default-off. Promoted as [#804](https://github.com/MSKazemi/idkmesh/issues/804); no raw-process fallback is allowed by [ADR-0017](../decisions/ADR-0017-local-agents-require-sandbox.md).
+- **C4-E — artifact capture:** bounded patch/log outputs outside worker authority, normalized through [Local Agent Execution Boundary v0.1](../specifications/LOCAL_AGENT_EXECUTION_BOUNDARY_V0_1.md).
 - **C4-F — first preset:** goose or Gemini CLI adapter behind AgentPreset.
 - **C4-G — end-to-end harmless WorkUnit smoke:** local candidate -> normalizer boundary.
 
@@ -390,6 +390,9 @@ Acceptance:
 - [#652](https://github.com/MSKazemi/idkmesh/issues/652) / PR #653 — C4-B/C exact-SHA disposable workspace and bounded local process result.
 
 These remain reviewable foundations only: no real coding agent is executed by either slice.
+The orchestration/artifact layer may advance behind the sandbox interface, but
+real goose/Gemini/mini-SWE-agent execution stays blocked until #804 proves a
+conforming production backend.
 
 **C4 exit gate:** same WorkUnit semantics as remote agent, different execution path.
 
