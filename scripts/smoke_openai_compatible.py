@@ -51,7 +51,33 @@ def _parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
-    args = _parser().parse_args(argv)
+    raw_argv = list(sys.argv[1:] if argv is None else argv)
+    forbidden_literal_options = (
+        "--api-key",
+        "--token",
+        "--authorization",
+    )
+    if any(
+        item == option or item.startswith(option + "=")
+        for item in raw_argv
+        for option in forbidden_literal_options
+    ):
+        print(
+            json.dumps(
+                {
+                    "error": {
+                        "code": "configuration_error",
+                        "message": "Literal credential CLI options are forbidden; use --secret-env.",
+                        "retryable": False,
+                    }
+                },
+                sort_keys=True,
+            ),
+            file=sys.stderr,
+        )
+        return 2
+
+    args = _parser().parse_args(raw_argv)
 
     api_key = None
     secret_ref = None
