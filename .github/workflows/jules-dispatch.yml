@@ -30,6 +30,14 @@ on:
   schedule:
     # Recovery/reconciliation only. Normal dispatch is event-driven.
     - cron: '17,47 * * * *'
+  workflow_run:
+    # Recovery/reconciliation only. A successful PR Gate completion is a
+    # verification-capacity release event: the gate's matrix jobs have left
+    # the active set, so live provider/repository/CI capacity may now admit
+    # more dispatch. This never widens the 12/8 backpressure limits; the
+    # dispatcher still decides admission from the current live backlog.
+    workflows: ["PR Gate"]
+    types: [completed]
   workflow_dispatch:
     inputs:
       issue_number:
@@ -54,12 +62,14 @@ concurrency:
 jobs:
   dispatch:
     if: >-
-      inputs.issue_number != '' ||
-      github.event_name != 'issues' ||
-      github.event.action == 'closed' ||
-      (github.event.action == 'labeled' &&
-       (github.event.label.name == 'agent-ready' ||
-        github.event.label.name == 'agent:jules-eligible'))
+      (github.event_name != 'workflow_run' ||
+       github.event.workflow_run.conclusion == 'success') &&
+      (inputs.issue_number != '' ||
+       github.event_name != 'issues' ||
+       github.event.action == 'closed' ||
+       (github.event.action == 'labeled' &&
+        (github.event.label.name == 'agent-ready' ||
+         github.event.label.name == 'agent:jules-eligible')))
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -118,6 +128,7 @@ jobs:
           (inputs.issue_number == '' &&
            (github.event_name == 'schedule' ||
             github.event_name == 'workflow_dispatch' ||
+            github.event_name == 'workflow_run' ||
             (github.event_name == 'issues' && github.event.action == 'closed')))
         env:
           GITHUB_TOKEN: ${{ github.token }}

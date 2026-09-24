@@ -942,6 +942,17 @@ def test_workflow_and_router_share_the_same_dispatch_contract():
     assert "github.event.issue.body" not in workflow
     assert "github.event.issue.title" not in workflow
 
+    # P1 #834: a successful PR Gate completion is a verification-capacity
+    # release event and may wake the Jules recovery path, without widening
+    # the dispatcher's admission decision.
+    assert "workflow_run:" in workflow
+    assert 'workflows: ["PR Gate"]' in workflow
+    assert "types: [completed]" in workflow
+    assert (
+        "github.event.workflow_run.conclusion == 'success'" in workflow
+    ), "workflow_run recovery must gate on a successful PR Gate conclusion"
+    assert "github.event_name == 'workflow_run'" in workflow
+
 
 def test_prompt_preserves_issue_context_and_safety_boundary():
     payload = issue(42, "agent-ready")

@@ -432,6 +432,17 @@ def main() -> int:
         "pull_request_target:" not in dispatcher_workflow,
         "dispatcher must not run with pull_request_target privileges",
     )
+    _require(
+        errors,
+        'workflows: ["PR Gate"]' in dispatcher_workflow
+        and "types: [completed]" in dispatcher_workflow,
+        "dispatcher workflow_run recovery must watch PR Gate completion",
+    )
+    _require(
+        errors,
+        "github.event.workflow_run.conclusion == 'success'" in dispatcher_workflow,
+        "dispatcher workflow_run recovery must gate on a successful PR Gate conclusion",
+    )
 
     _require(
         errors,
