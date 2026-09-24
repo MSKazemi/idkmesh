@@ -24,6 +24,28 @@ A single manual query is not a ranking probability, market-share estimate, or pr
 
 Do not commit personal identifiers, account cookies, search history, private queries, or screenshots containing user data. Store only the minimum evidence needed to reproduce the observation.
 
+## Generate a balanced observation worklist
+
+Use `scripts/search_visibility_observation_plan.py` to avoid cherry-picking
+queries or engines.
+
+```bash
+# 80 sentinel checks: ten cluster-head queries x eight primary surfaces
+python scripts/search_visibility_observation_plan.py \
+  --sample heads \
+  --format csv \
+  --output results/visibility/answer-engine-heads.csv
+
+# 800 checks: all 100 canonical intents x eight primary surfaces
+python scripts/search_visibility_observation_plan.py \
+  --sample full \
+  --format csv \
+  --output results/visibility/answer-engine-full.csv
+```
+
+The worklist is not an observation ledger and makes no visibility claim. It is
+only a deterministic queue of queries/surfaces to reproduce.
+
 ## Add an observation
 
 1. Choose one of the 100 `mapped_intent` values from `config/seo-topics-v1.json`.
