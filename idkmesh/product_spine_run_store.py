@@ -22,6 +22,7 @@ Cancel:
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from typing import Any, Mapping
 
 from idkmesh.connector_store import (
@@ -98,12 +99,29 @@ def _timestamp(value: str, field: str) -> str:
             "invalid_timestamp",
             f"{field} must be a non-empty string",
         )
-    if any(ord(char) < 32 or ord(char) == 127 for char in value):
+    text = value.strip()
+    if any(ord(char) < 32 or ord(char) == 127 for char in text):
         raise ProductSpineRunStoreError(
             "invalid_timestamp",
             f"{field} contains control characters",
         )
-    return value.strip()
+    try:
+        parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise ProductSpineRunStoreError(
+            "invalid_timestamp",
+            f"{field} must be an ISO-8601 timestamp",
+        ) from exc
+    if parsed.tzinfo is None:
+        raise ProductSpineRunStoreError(
+            "invalid_timestamp",
+            f"{field} must include a timezone",
+        )
+    return (
+        parsed.astimezone(timezone.utc)
+        .isoformat()
+        .replace("+00:00", "Z")
+    )
 
 
 def _projection(
