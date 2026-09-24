@@ -24,6 +24,8 @@ INDEXNOW_KEY_URL = f"https://mskazemi.com/idkmesh/{INDEXNOW_KEY}.txt"
 SOCIAL_IMAGE = "https://mskazemi.com/idkmesh/assets/idkmesh-social.png"
 BAD_SOCIAL_IMAGE = "https://mskazemi.com/idkmesh/idkmesh/assets/idkmesh-social.png"
 JEKYLL_SENTINEL = "https://mskazemi.com/idkmesh/WHAT_IS_IDKMESH.html"
+QUESTION_FRAGMENT_MARKER = "#q-"
+ANSWER_ANCHOR_MARKER = 'id="q-'
 
 AUTHORITY_PAGES = {
     "e017-reproduction": (
@@ -284,6 +286,12 @@ def probe() -> list[str]:
             failures.append(
                 "question-map returned 200 but expected 100-question content is absent"
             )
+        fragment_count = question_body.count(QUESTION_FRAGMENT_MARKER)
+        if fragment_count != 100:
+            failures.append(
+                "question map: expected 100 rendered question fragments, "
+                f"found {fragment_count}"
+            )
         _check_social_image("question map", question_body, failures)
         _check_indexable_html("question map", QUESTIONS, question_body, failures)
 
@@ -329,6 +337,12 @@ def probe() -> list[str]:
             failures.append(f"{topic_id}: expected content marker {marker!r} is absent")
         if 'name="description"' not in body.lower():
             failures.append(f"{topic_id}: rendered page has no meta description")
+        anchor_count = body.count(ANSWER_ANCHOR_MARKER)
+        if anchor_count != 10:
+            failures.append(
+                f"{topic_id}: expected 10 rendered question anchors, "
+                f"found {anchor_count}"
+            )
         _check_social_image(topic_id, body, failures)
         _check_indexable_html(topic_id, url, body, failures)
 
@@ -382,6 +396,14 @@ def probe() -> list[str]:
                 failures.append(
                     f"{name}: question map content missing 100-question marker"
                 )
+            crawler_fragment_count = question_crawler_body.count(
+                QUESTION_FRAGMENT_MARKER
+            )
+            if crawler_fragment_count != 100:
+                failures.append(
+                    f"{name}: question map expected 100 rendered question "
+                    f"fragments, found {crawler_fragment_count}"
+                )
             _check_indexable_html(
                 f"{name}: question map",
                 QUESTIONS,
@@ -411,8 +433,9 @@ def main() -> int:
 
     print(
         "Discovery surface healthy: robots, sitemap, directory hubs, topic hub, "
-        "flagship authority page, 100-question map, ten topic pages, exact "
-        "canonicals, indexability, "
+        "flagship authority page, 100-question map, 100 live passage links, "
+        "ten topic pages with 10 answer anchors each, exact canonicals, "
+        "indexability, "
         "llms.txt, IndexNow key, Gemini robots control, and representative crawler "
         "probes all passed."
     )
