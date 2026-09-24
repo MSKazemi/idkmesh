@@ -39,42 +39,52 @@ That boundary is part of the product philosophy: capability to run an experiment
 
 ## Common questions
 
+<a id="q01"></a>
 ### What is verified swarm engineering?
 
 It is the design of multi-participant agent systems where proposals are bounded, independently evaluated, provenance is retained, and authority remains separate from generation.
 
+<a id="q02"></a>
 ### Is IDKMesh an AI agent framework?
 
 It is a research framework and emerging reference platform for coordinating heterogeneous workers through common work/evidence contracts. Some product surfaces are implemented; the polished end-to-end runner is still being built.
 
+<a id="q03"></a>
 ### Is IDKMesh GitHub-native?
 
 Yes. GitHub is the current collaboration and canonical-history substrate, with issues, candidate branches, pull requests, CI, and protected integration used as system primitives.
 
+<a id="q04"></a>
 ### What is verification-first AI?
 
 It is an engineering stance that plans verification capacity, evidence, and authority before increasing autonomous generation.
 
+<a id="q05"></a>
 ### How do I try IDKMesh?
 
 Use the [15-minute quickstart](https://mskazemi.com/idkmesh/start.html), read [What Is IDKMesh?](https://github.com/MSKazemi/idkmesh/blob/main/docs/WHAT_IS_IDKMESH.md), or inspect the [repository README](https://github.com/MSKazemi/idkmesh/blob/main/README.md).
 
+<a id="q06"></a>
 ### How is verified swarm engineering different from ordinary multi-agent orchestration?
 
 Ordinary orchestration may stop at coordinating tasks and messages. Verified swarm engineering also requires independent evidence, provenance, measured reviewer independence, backpressure, and a separate authority boundary before candidate work becomes canonical.
 
+<a id="q07"></a>
 ### Can different AI models work in the same verified swarm?
 
 Yes. Heterogeneity is a design goal. Workers can differ by model, provider, toolchain, hardware, or human expertise as long as they can satisfy shared work and evidence contracts.
 
+<a id="q08"></a>
 ### Why does IDKMesh use Git and GitHub?
 
 Git provides immutable revisions, isolated branches, diffs, provenance, and reproducibility; GitHub adds issues, pull requests, CI, protected branches, and public collaboration. Those primitives make candidate-versus-canonical state explicit.
 
+<a id="q09"></a>
 ### Does IDKMesh replace frameworks such as LangGraph, CrewAI, or AutoGen?
 
 Not necessarily. IDKMesh focuses on work/evidence/authority boundaries and can sit above or beside other orchestration systems through adapters. The relevant question is whether an external framework can participate without bypassing verification and governance.
 
+<a id="q10"></a>
 ### What would make verified swarm engineering enterprise-ready?
 
 It would require hardened identity and tenancy, policy enforcement, secret management, auditability, availability, rollback, stronger security assurance, operational observability, stable APIs, and real-world evidence that the verification model works under production risk.
