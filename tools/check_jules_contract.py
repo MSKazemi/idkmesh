@@ -117,6 +117,20 @@ def main() -> int:
             f"{role} label {label_name!r} is missing from label_definitions",
         )
 
+    for label_name, definition in definitions.items():
+        _require(
+            errors,
+            isinstance(definition, dict),
+            f"label definition {label_name!r} must be an object",
+        )
+        if isinstance(definition, dict):
+            description = str(definition.get("description") or "")
+            _require(
+                errors,
+                len(description) <= 100,
+                f"label {label_name!r} description exceeds GitHub's 100-character limit",
+            )
+
     _require(
         errors,
         attention_label in blocked,

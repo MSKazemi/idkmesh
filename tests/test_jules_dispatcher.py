@@ -780,6 +780,10 @@ def test_repository_policy_keeps_speed_and_hard_vetoes_explicit():
     assert policy["max_dispatch_per_sweep"] == 2
     assert "agent:jules-needs-attention" in policy["blocked_labels"]
     assert "agent:jules-completed" in policy["blocked_labels"]
+    assert all(
+        len(str(definition.get("description") or "")) <= 100
+        for definition in policy["label_definitions"].values()
+    )
 
 
 def test_provider_capacity_is_independent_from_repository_reservations():
