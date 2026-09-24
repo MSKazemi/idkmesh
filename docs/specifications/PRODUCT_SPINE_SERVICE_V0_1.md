@@ -393,3 +393,41 @@ Its projection is not a canonical correctness artifact and must not replace
 WorkUnit, ResultManifest, VerificationResult, Run Evidence Report, or Human
 Decision Record. Those remain independently authoritative for their own
 semantics.
+
+
+## Deterministic offline vertical slice
+
+The PS-B reference composition lives in
+`idkmesh.product_spine_offline`.
+
+It composes the lifecycle core with existing canonical boundaries while keeping
+all external work fake:
+
+```text
+WorkUnit + exact source revision
+ -> connector RoutingDecision
+ -> fake admitted attempt
+ -> CandidateReference observation
+ -> ResultManifest normalization
+ -> VerificationHandoff
+ -> injected independent verifier
+ -> existing Run Evidence Report builder
+ -> human decision pending
+ -> injected Human Decision Record builder
+```
+
+The package module does not import repository experiments. Verification,
+evidence, and human-decision functions are injected, so the installed package
+does not silently acquire evaluator or human authority.
+
+The retained offline scenarios prove:
+
+- a supported bounded candidate reaches independent verification and evidence;
+- a failed worker attempt remains visible while a peer succeeds;
+- wrong WorkUnit/source candidate bindings fail before verification;
+- `human_required` authority blocks automatic dispatch even with a T4 connector;
+- replaying identical offline inputs yields the same semantic run/evidence state.
+
+This slice does not yet make admission/dispatch restart-idempotent. Durable
+same-key/same-request reuse and same-key/different-request conflict handling
+remain the PS-C composition over the local metadata/idempotency store.
