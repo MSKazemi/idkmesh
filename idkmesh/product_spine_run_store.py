@@ -314,7 +314,7 @@ class ProductSpineRunStore:
             idempotency_key=caller_key,
             create_request_digest=record.request_digest,
             created=False,
-            replayed=True,
+            replayed=False,
         )
 
     def cancel(
