@@ -299,8 +299,12 @@ surfacing as a published secret.
 
 ### Linking issues without closing them
 
-Reference an issue on the template's `Refs:` line. Use `Closes on merge:` only
-when merging should actually resolve it.
+Reference an issue on the template's `Refs:` line. Use `Closes:` only when
+merging should actually resolve it, and write nothing else on that line but
+the reference itself, in the form `Closes: #<issue>` — GitHub only recognizes
+the closing keyword when it sits immediately next to the issue number, so any
+other text in between (including leftover template wording) silently prevents
+the auto-close.
 
 This distinction is enforced, because GitHub closes an issue whenever a closing
 keyword (`close`, `fix`, `resolve`, and their inflections) sits near an issue
@@ -312,8 +316,8 @@ gate.
 
 The `PR Gate` check runs `tools/closing_keyword_guard.py` over the title, the
 body, and every commit message in the pull request. If it fails, either move the
-reference to `Closes on merge:` when closure is intended, or write the number
-without `#` in prose, for example "issue 152".
+reference to `Closes:` (and nothing else) when closure is intended, or write the
+number without `#` in prose, for example "issue 152".
 
 When you check a squash subject by hand, pass the pull request's own number:
 

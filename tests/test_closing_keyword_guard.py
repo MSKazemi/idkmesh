@@ -72,7 +72,7 @@ class ClosingKeywordDetectionTests(unittest.TestCase):
                 self.assertEqual(len(scan_text(f"Closes {reference}", source="s")), 1)
 
     def test_the_sanctioned_template_line_is_the_explicit_opt_in(self) -> None:
-        line = "- Closes on merge (leave blank unless the merge should close it): #152"
+        line = "- Closes: #152"
 
         self.assertEqual(scan_text(line, source="body"), [])
 
@@ -151,19 +151,36 @@ class PullRequestTemplateTests(unittest.TestCase):
 
         self.assertEqual(scan_text(template, source="template"), [])
 
-    def test_the_template_offers_both_a_refs_and_a_closes_on_merge_field(self) -> None:
+    def test_the_template_offers_both_a_refs_and_a_closes_field(self) -> None:
         template = (ROOT / ".github" / "PULL_REQUEST_TEMPLATE.md").read_text(
             encoding="utf-8"
         )
 
         self.assertIn("\n- Refs:", template)
-        self.assertIn("\n- Closes on merge", template)
+        self.assertIn("\n- Closes:", template)
         self.assertLess(
             template.index("\n- Refs:"),
-            template.index("\n- Closes on merge"),
-            "Refs must precede Closes on merge so a number on Refs is never "
+            template.index("\n- Closes:"),
+            "Refs must precede Closes so a number on Refs is never "
             "preceded by a closing keyword.",
         )
+
+    def test_the_closes_field_carries_no_text_that_could_break_adjacency(self) -> None:
+        """Issue #858: `Closes on merge: #663` never closed the issue, because
+
+        the explanatory words sitting between the keyword and the number kept
+        GitHub's linker from recognizing it. The fillable line must therefore
+        stay bare, with any instructions kept in the surrounding prose instead
+        of on the line a contributor appends the issue number to.
+        """
+        template = (ROOT / ".github" / "PULL_REQUEST_TEMPLATE.md").read_text(
+            encoding="utf-8"
+        )
+
+        line = next(
+            line for line in template.splitlines() if line.strip().startswith("- Closes:")
+        )
+        self.assertEqual(line.strip(), "- Closes:")
 
 
 class SelfReferenceTests(unittest.TestCase):

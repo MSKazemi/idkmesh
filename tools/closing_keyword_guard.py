@@ -13,9 +13,9 @@ carry genuinely different meanings here. A silent auto-closure posts a false
 "resolved" status on a public repository and dissolves the gate.
 
 This module reports every keyword/reference pair that would close an issue,
-except on the pull request template's sanctioned ``Closes on merge:`` line,
-which is the explicit opt-in. It inspects text only: no network access, no
-repository mutation, and no inference about whether a closure was desired.
+except on the pull request template's sanctioned ``Closes:`` line, which is
+the explicit opt-in. It inspects text only: no network access, no repository
+mutation, and no inference about whether a closure was desired.
 """
 
 from __future__ import annotations
@@ -57,7 +57,7 @@ PAIR_RE = re.compile(
 )
 
 # The pull request template's explicit opt-in line.
-SANCTIONED_LINE_RE = re.compile(r"^\s*(?:[-*+]\s*)?closes on merge\b", re.IGNORECASE)
+SANCTIONED_LINE_RE = re.compile(r"^\s*(?:[-*+]\s*)?closes\s*:", re.IGNORECASE)
 
 # A blank line ends the association in practice; do not report across one.
 PARAGRAPH_BREAK_RE = re.compile(r"\n[ \t]*\n")
@@ -167,8 +167,8 @@ REMEDY = """
 How to fix this:
 
   * If the merge SHOULD close the issue, move the reference onto the pull
-    request template's line:
-        - Closes on merge (leave blank unless the merge should close it): #<n>
+    request template's line, with nothing else on it:
+        - Closes: #<n>
   * Otherwise write the number without '#', for example "issue 152" or
     "PR 315", or move the reference onto the template's 'Refs:' line.
 
