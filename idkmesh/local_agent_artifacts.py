@@ -312,6 +312,18 @@ def capture_local_agent_artifacts(
             f"artifact output root must be outside the {label}"
         )
 
+    # The boundary contract also forbids an output root that *contains* the
+    # worker workspace: the worker would then be writing inside the evidence
+    # directory even though the evidence path itself is outside the workspace.
+    try:
+        workspace_path.relative_to(output_path)
+    except ValueError:
+        pass
+    else:
+        raise LocalRunnerError(
+            "artifact output root must not contain the worker workspace"
+        )
+
     output_path.mkdir(parents=True, exist_ok=True)
 
     source_sha = _validate_worktree_binding(

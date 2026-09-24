@@ -174,6 +174,16 @@ class LocalAgentArtifactCaptureTests(unittest.TestCase):
             )
         self.assertFalse(forbidden_output.exists())
 
+    def test_output_root_must_not_contain_the_worker_workspace(self):
+        with self.assertRaisesRegex(LocalRunnerError, "must not contain"):
+            capture_local_agent_artifacts(
+                workspace=self.workspace,
+                repository=self.repo,
+                source_revision=self.sha,
+                output_root=self.root,
+                process_result=_result(),
+            )
+
     def test_existing_bundle_is_never_overwritten(self):
         self.output.mkdir(parents=True)
         existing = self.output / "candidate-bundle.zip"
