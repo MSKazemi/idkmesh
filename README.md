@@ -200,6 +200,12 @@ acceptance or merge authority. In CI, the same audit runs as a GitHub Action:
     votes-file: path/to/panel-votes.json
 ```
 
+For a complete least-privilege `workflow_dispatch` example that pins both the
+checkout step and IDKMesh to reviewed commit SHAs, copy
+[`examples/gate-audit/github-action-workflow.example.yml`](examples/gate-audit/github-action-workflow.example.yml).
+It is intentionally opt-in: point it at verdicts your repository already
+collects rather than manufacturing review data for the demo.
+
 `idkmesh` itself stays dependency-free (`pip install .` pulls in nothing
 beyond the standard library). Real, schema-based independent verification of
 `ResultManifest`/`VerificationResult` documents
