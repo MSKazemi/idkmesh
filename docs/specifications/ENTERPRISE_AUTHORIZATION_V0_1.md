@@ -277,18 +277,91 @@ resolved `ActorContext` and are enforced exactly once, by this kernel's own
 contract composes with `ActorContext`'s validation rather than
 duplicating it.
 
-This closes only the GitHub identity source. E3-C (enterprise IdP/OIDC/SAML
-adapter), E3-D (identity/policy freshness cache integration), E3-E (audited
-break-glass grant), E3-F (dispatch/API enforcement integration), E3-G
-(two-principal acceptance fixture), and E3-H (service middleware/
-conformance) remain open E3 slices.
+This closes only the GitHub identity source. E3-D (identity/policy freshness
+cache integration), E3-E (audited break-glass grant), E3-F (dispatch/API
+enforcement integration), E3-G (two-principal acceptance fixture), and E3-H
+(service middleware/conformance) remain open E3 slices; E3-C (enterprise
+IdP/OIDC/SAML adapter) is covered separately below.
+
+## E3-C: enterprise IdP adapter contract (OIDC/SAML/SSO)
+
+`idkmesh.enterprise_identity_oidc` (schema:
+`enterprise-oidc-identity-binding-v0.1.schema.json`) is a trusted
+authentication adapter that produces an `ActorContext` from an enterprise
+identity provider reached through OIDC, SAML, or another SSO protocol. It
+composes with this kernel rather than replacing any of its checks, the same
+way the E3-B GitHub identity adapter does.
+
+Two inputs, both already trusted before this adapter runs:
+
+- `OidcIdentityClaims` — already-verified IdP claims (an OIDC ID token's
+  `iss`/`sub`/`aud`/`iat`/`exp`, or the equivalent normalized fields of a
+  verified SAML assertion). Issue/PR/comment title and body text is never a
+  claims source, and signature/assertion verification happens upstream —
+  this adapter never re-derives trust from an unverified token. No module on
+  `main` builds these claims from a live IdP response yet; that producer is
+  E3-F scope.
+- `OidcIdentityBindingTable` — a maintainer-reviewed, versioned table
+  binding each trusted `(issuer, subject)` pair to its `ActorContext` roles,
+  tenant/project scopes, data clearance, and expected relying-party
+  audience. Unlike E3-B's single numeric GitHub actor id, a subject claim is
+  only unique within its issuing IdP, so the composite `(issuer, subject)`
+  pair is the primary trust key: the same subject string bound under two
+  different issuers is two distinct identities, not a collision.
+
+`actor_context_from_oidc` fails closed with `OidcIdentityAdapterError` for:
+
+- claims already expired at the supplied evaluation time — an OIDC/SAML
+  claim is an ephemeral per-session credential with its own `exp`, distinct
+  from the durable identity's own expiry, so this check runs before any
+  binding lookup;
+- claims not yet valid at that evaluation time — the comparison is
+  two-directional, so a post-dated claim and a caller whose clock precedes the
+  claim's own `issued_at_epoch` are both refused rather than read as fresh;
+- an `(issuer, subject)` pair with no reviewed binding;
+- claims whose `audience` does not match the binding's configured
+  relying-party audience (a token replayed against the wrong relying
+  party).
+
+`issuer`, `subject` and `audience` are opaque IdP-controlled strings that this
+adapter only ever compares, so they are compared byte for byte and a value
+carrying leading or trailing whitespace is refused rather than trimmed. Trimming
+would fold every leading and trailing variant of the code points Python's
+`str.strip()` removes — TAB, NBSP, IDEOGRAPHIC SPACE and 26 others — onto one
+bound identity, and `audience` is this adapter's replay check.
+
+It does not re-check revocation, or the *bound identity's* own expiry,
+itself. Those live on the resolved `ActorContext` and are enforced exactly
+once, by this kernel's own `authorize`, so the adapter and the kernel cannot
+disagree about what "revoked" or "expired" means for the underlying
+identity — only claim freshness is this adapter's own concern.
+
+`enterprise-oidc-identity-binding-v0.1` field-level identity errors (an
+unknown role, an invalid data clearance) are validated by `ActorContext`
+itself and surface as this kernel's own `AuthorizationContractError`, not a
+separate error type — the binding contract composes with `ActorContext`'s
+validation rather than duplicating it. Structural errors in the table
+document (missing or unknown fields, a wrong `kind`/`schema_version`, an
+unsupported `actor_type`, a duplicate `(issuer, subject)` pair) stay with
+the adapter and raise `OidcIdentityAdapterError`.
+
+This closes only the enterprise IdP identity source. E3-D (identity/policy
+freshness cache integration), E3-E (audited break-glass grant), E3-F
+(dispatch/API enforcement integration, including a live claims producer for
+both this adapter and E3-B), E3-G (two-principal acceptance fixture), and
+E3-H (service middleware/conformance) remain open E3 slices.
 
 ## Non-goals
 
 v0.1 does not claim:
 
-- SAML/OIDC/GitHub authentication implementation beyond the E3-B GitHub
-  identity adapter above;
+- live OIDC/SAML/SSO token or assertion verification, or a live IdP claims
+  producer — E3-C only normalizes already-verified claims into
+  `ActorContext`; verifying a token/assertion against a real IdP is E3-F
+  scope;
+- a live GitHub claims producer — E3-B normalizes already-authenticated
+  GitHub actor claims only; building `GithubActorClaims` from a verified
+  webhook envelope or Actions run context is likewise E3-F scope;
 - organization/team synchronization;
 - a production policy database;
 - policy caching;

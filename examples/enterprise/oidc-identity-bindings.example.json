@@ -1,0 +1,42 @@
+{
+  "kind": "idkmesh-enterprise-oidc-identity-binding-table",
+  "schema_version": "0.1",
+  "bindings": [
+    {
+      "issuer": "https://idp.example.com/",
+      "subject": "auth0|maintainer-alice",
+      "audience": "idkmesh-enterprise-console",
+      "actor_type": "human",
+      "roles": ["owner", "integrator"],
+      "scopes": [{"tenant_id": "tenant-a", "project_id": "project-main"}],
+      "data_clearance": "restricted",
+      "identity_revision": "oidc-identity:1",
+      "revoked": false,
+      "expires_at_epoch": null
+    },
+    {
+      "issuer": "https://idp.example.com/",
+      "subject": "auth0|reviewer-bob",
+      "audience": "idkmesh-enterprise-console",
+      "actor_type": "human",
+      "roles": ["reviewer"],
+      "scopes": [{"tenant_id": "tenant-a", "project_id": "project-main"}],
+      "data_clearance": "confidential",
+      "identity_revision": "oidc-identity:1",
+      "revoked": false,
+      "expires_at_epoch": null
+    },
+    {
+      "issuer": "https://idp.example.com/",
+      "subject": "service-account|billing-sync",
+      "audience": "idkmesh-enterprise-service",
+      "actor_type": "service",
+      "roles": ["worker"],
+      "scopes": [{"tenant_id": "tenant-a", "project_id": "project-main"}],
+      "data_clearance": "internal",
+      "identity_revision": "oidc-identity:1",
+      "revoked": false,
+      "expires_at_epoch": null
+    }
+  ]
+}
