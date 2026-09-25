@@ -145,7 +145,16 @@ def _dump_metadata(metadata: Mapping[str, Any] | None) -> str:
 
 
 def _load_metadata(raw: str) -> Mapping[str, Any]:
-    value = json.loads(raw)
+    # A corrupt row is corrupt store input and must surface as a store error.
+    # Raising json.JSONDecodeError here escaped every caller: it is a ValueError,
+    # so neither the store nor the CLI caught it, and a single bad row crashed
+    # with a traceback instead of a stable error code. Widening a caller to
+    # ValueError is not the fix -- ConnectorProfileError is also a ValueError, so
+    # that would reclassify every profile fault as a store fault.
+    try:
+        value = json.loads(raw)
+    except ValueError as exc:
+        raise LocalStoreError(f"stored metadata is not valid JSON: {exc}") from exc
     if not isinstance(value, dict):
         raise LocalStoreError("stored metadata is not an object")
     return value

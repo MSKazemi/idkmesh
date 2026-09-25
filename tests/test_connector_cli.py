@@ -302,6 +302,34 @@ class ConnectorCliTests(unittest.TestCase):
             self.assertFalse(corrupt_payload["valid"])
             self.assertEqual(corrupt_payload["error"]["code"], "connector_store_error")
 
+    def test_a_corrupt_metadata_row_reports_a_store_error_code(self):
+        """A corrupt stored row must report a stable code, not a traceback.
+
+        `json.loads` raises `json.JSONDecodeError`, a `ValueError`, which neither
+        store branch caught, so one bad row exited 1 with a traceback.
+        """
+        import sqlite3
+
+        with tempfile.TemporaryDirectory() as tmp:
+            store = Path(tmp) / "store.db"
+            profile = self.write_profile(tmp, self.valid_profiles())
+            seeded = self.run_cli(
+                "connections", "import", str(profile), "--store", str(store)
+            )
+            self.assertEqual(seeded.returncode, 0, seeded.stderr)
+            with sqlite3.connect(store) as conn:
+                conn.execute("UPDATE connections SET metadata_json = '{not json'")
+
+            result = self.run_cli(
+                "connections", "stored", "--store", str(store), "--json"
+            )
+            self.assertNotIn("Traceback", result.stderr)
+            self.assertEqual(result.returncode, 2, result.stderr)
+            # The error envelope goes to stderr on this path; stdout stays empty.
+            payload = json.loads(result.stderr)
+            self.assertEqual(payload["error"]["code"], "connector_store_error")
+            self.assertIn("not valid JSON", payload["error"]["message"])
+
     def test_os_level_store_failure_reports_a_store_error_code(self):
         """An OSError from the store path is a store error, not a profile error.
 

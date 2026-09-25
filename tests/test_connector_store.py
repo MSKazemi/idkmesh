@@ -257,6 +257,25 @@ class LocalMetadataStoreTests(unittest.TestCase):
         with self.assertRaises(LocalStoreError):
             self._store()
 
+    def test_a_corrupt_metadata_row_fails_as_a_store_error(self):
+        """A corrupt row is corrupt store input, not an uncaught ValueError.
+
+        `json.loads` raises `json.JSONDecodeError`, which is a `ValueError`, so it
+        escaped every caller and crashed with a traceback. Widening a caller to
+        `ValueError` is not the remedy: `ConnectorProfileError` is also a
+        `ValueError`, so that would reclassify profile faults as store faults.
+        """
+        store = self._store()
+        store.record_connection(
+            "corrupt-row",
+            metadata={"id": "corrupt-row"},
+            updated_at="2026-09-25T00:00:00Z",
+        )
+        with sqlite3.connect(self.db) as conn:
+            conn.execute("UPDATE connections SET metadata_json = '{not json'")
+        with self.assertRaises(LocalStoreError):
+            self._store().list_connections()
+
     def test_unknown_run_update_fails(self):
         with self.assertRaises(LocalStoreError):
             self._store().update_run(
