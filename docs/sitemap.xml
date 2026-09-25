@@ -443,7 +443,7 @@
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/conversations/</loc>
-    <lastmod>2026-09-23</lastmod>
+    <lastmod>2026-09-24</lastmod>
     <priority>0.3</priority>
   </url>
   <url>
@@ -1293,7 +1293,7 @@
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/decisions/</loc>
-    <lastmod>2026-09-23</lastmod>
+    <lastmod>2026-09-24</lastmod>
     <priority>0.6</priority>
   </url>
   <url>
@@ -1388,7 +1388,7 @@
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/decisions/ADR-0017-local-agents-require-sandbox.html</loc>
-    <lastmod>2026-09-23</lastmod>
+    <lastmod>2026-09-24</lastmod>
     <priority>0.6</priority>
   </url>
   <url>
@@ -1553,7 +1553,7 @@
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/operations/JULES_AUTOMATION.html</loc>
-    <lastmod>2026-09-23</lastmod>
+    <lastmod>2026-09-24</lastmod>
     <priority>0.5</priority>
   </url>
   <url>
@@ -1678,7 +1678,7 @@
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/planning/PRODUCT_GOALS_COMPONENT_SLICE_MAP_2026-09-22.html</loc>
-    <lastmod>2026-09-23</lastmod>
+    <lastmod>2026-09-24</lastmod>
     <priority>0.4</priority>
   </url>
   <url>
@@ -1723,12 +1723,12 @@
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/research.html</loc>
-    <lastmod>2026-09-23</lastmod>
+    <lastmod>2026-09-24</lastmod>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/research/</loc>
-    <lastmod>2026-09-23</lastmod>
+    <lastmod>2026-09-24</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
@@ -1923,7 +1923,7 @@
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/specifications/</loc>
-    <lastmod>2026-09-23</lastmod>
+    <lastmod>2026-09-24</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
@@ -1938,12 +1938,12 @@
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/specifications/CANDIDATE_REFERENCE_V0_1.html</loc>
-    <lastmod>2026-09-23</lastmod>
+    <lastmod>2026-09-24</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/specifications/CONNECTOR_CONTROL_API_V0_1.html</loc>
-    <lastmod>2026-09-23</lastmod>
+    <lastmod>2026-09-24</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
@@ -1992,13 +1992,13 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://mskazemi.com/idkmesh/specifications/GITHUB_WEBHOOK_INGRESS_V0_1.html</loc>
-    <lastmod>2026-09-24</lastmod>
+    <loc>https://mskazemi.com/idkmesh/specifications/GITHUB_IDKGRAPH_PROJECTION_V0_1.html</loc>
+    <lastmod>2026-08-29</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://mskazemi.com/idkmesh/specifications/GITHUB_IDKGRAPH_PROJECTION_V0_1.html</loc>
-    <lastmod>2026-08-29</lastmod>
+    <loc>https://mskazemi.com/idkmesh/specifications/GITHUB_WEBHOOK_INGRESS_V0_1.html</loc>
+    <lastmod>2026-09-24</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
@@ -2022,8 +2022,13 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://mskazemi.com/idkmesh/specifications/JULES_SOURCE_REVISION_BINDING.html</loc>
+    <lastmod>2026-09-24</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://mskazemi.com/idkmesh/specifications/LOCAL_AGENT_EXECUTION_BOUNDARY_V0_1.html</loc>
-    <lastmod>2026-09-23</lastmod>
+    <lastmod>2026-09-24</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
@@ -2043,7 +2048,7 @@
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/specifications/PRODUCT_SPINE_SERVICE_V0_1.html</loc>
-    <lastmod>2026-09-23</lastmod>
+    <lastmod>2026-09-24</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
