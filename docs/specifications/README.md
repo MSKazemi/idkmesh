@@ -100,7 +100,10 @@ meaning of an existing version.
 - [Enterprise Authorization Kernel v0.1](ENTERPRISE_AUTHORIZATION_V0_1.md) —
   strict ActorContext + RBAC/ABAC-style policy evaluation over exact tenant/project
   resource scope, including identity freshness, data clearance, risk floors, and
-  distinct high-risk approval without executing the requested side effect.
+  distinct high-risk approval without executing the requested side effect. Also
+  carries the trusted identity adapter contracts that may produce an
+  ActorContext: E3-B from GitHub actor claims, E3-C from enterprise IdP
+  (OIDC/SAML/SSO) claims. Neither adapter verifies a live credential.
 
 When modifying a contract, update its schema, fixtures, implementation, and
 tests together. Introduce a new explicit version when behavior changes; keep

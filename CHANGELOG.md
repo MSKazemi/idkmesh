@@ -23,7 +23,24 @@ and the release notes for that tag.
   Fails closed on an unbound actor id, a login mismatch for a bound id, or
   a GitHub actor kind (human vs. bot) inconsistent with the bound
   `actor_type`. Revocation/expiry are left to `enterprise_authz.authorize`
-  itself so the two do not drift. E3-C through E3-H remain open.
+  itself so the two do not drift.
+
+- `idkmesh/enterprise_identity_oidc.py` (E3-C, issue #670): a trusted
+  authentication adapter that normalizes already-verified enterprise IdP
+  (OIDC/SAML/SSO) claims into the E3 authorization kernel's `ActorContext`
+  (`idkmesh/enterprise_authz.py`). Keys a maintainer-reviewed, versioned
+  `enterprise-oidc-identity-binding-v0.1` table on the composite
+  `(issuer, subject)` pair, since a subject claim is only unique within its
+  issuing IdP. Fails closed on claims already expired at evaluation
+  time, claims not yet valid at it (a post-dated claim, or a caller whose clock
+  precedes the claim's own `issued_at_epoch`), an unbound `(issuer, subject)`
+  pair, or an `audience` mismatch against the binding's configured
+  relying-party audience. `issuer`, `subject` and `audience` are opaque IdP
+  strings compared byte for byte: a value carrying leading or trailing
+  whitespace is refused rather than trimmed onto a bound identity. Revocation and the bound
+  identity's own expiry are left to `enterprise_authz.authorize` itself, so
+  the adapter and the kernel cannot disagree about what those mean. E3-D
+  through E3-H remain open.
 
 - `idkmesh control-tower [evidence-report.json]`, a dependency-free local
   Human Control Tower for Run Evidence Report v0.1. It shows human-attention

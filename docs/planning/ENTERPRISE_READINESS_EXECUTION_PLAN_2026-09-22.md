@@ -109,16 +109,25 @@ Exit: a cross-tenant reference cannot read, mutate, claim, retry, or attach evid
 
 ## 5. Phase E3 — identity and authority (#670)
 
-Suggested slices:
+Slices, lettered as issue #670 and
+[the authorization kernel specification](../specifications/ENTERPRISE_AUTHORIZATION_V0_1.md)
+letter them. Those two are authoritative; this section's original lettering was a
+suggestion that predated both and assigned different work to the same letters.
 
-- E3-A normalized ActorContext;
-- E3-B GitHub/App/Actions/service identity adapters;
-- E3-C role + attribute policy evaluator;
-- E3-D policy-revision binding;
-- E3-E high-risk distinct-actor requirement;
-- E3-F revocation/expiry/cache invalidation;
-- E3-G break-glass object;
-- E3-H unauthorized task-text escalation tests.
+- E3-A normalized ActorContext + authorization kernel;
+- E3-B trusted GitHub identity adapter;
+- E3-C enterprise IdP adapter contract (OIDC/SAML/SSO);
+- E3-D identity/policy freshness integration;
+- E3-E audited break-glass grant;
+- E3-F dispatch/API enforcement integration;
+- E3-G two-principal acceptance fixture;
+- E3-H service middleware/conformance.
+
+The suggestions this replaces are not lost work. Role and attribute policy
+evaluation, policy-revision binding, the high-risk distinct-actor requirement and
+the task-text escalation negatives are items 3, 4, 9, 7 and 8 of the E3-A exit
+gate in that specification rather than separate slices; revocation/expiry cache
+invalidation is E3-D above, and the break-glass object is E3-E.
 
 Exit: authority derives from trusted identity/policy state, not task text/provider output.
 
