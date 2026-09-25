@@ -248,6 +248,13 @@ class LocalMetadataStore:
             ).fetchone()
         return None if row is None else _load_metadata(row["metadata_json"])
 
+    def list_connections(self) -> list[Mapping[str, Any]]:
+        with _session(self.path) as conn:
+            rows = conn.execute(
+                "SELECT metadata_json FROM connections ORDER BY connection_id ASC"
+            ).fetchall()
+        return [_load_metadata(row["metadata_json"]) for row in rows]
+
     def record_probe(
         self,
         connection_id: str,

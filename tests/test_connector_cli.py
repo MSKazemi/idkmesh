@@ -158,11 +158,228 @@ class ConnectorCliTests(unittest.TestCase):
         self.assertIn("inline_secret_forbidden", proc.stderr)
         self.assertNotIn("sentinel-do-not-render", proc.stderr)
 
+    def test_connections_import_and_stored_round_trip(self):
+        profiles = self.valid_profiles()
+        profiles[0]["settings"] = {"api_key_ref": "env:KEY"}
+        with tempfile.TemporaryDirectory() as tmp:
+            profile_path = self.write_profile(tmp, profiles)
+            db_path = Path(tmp) / "store.db"
+
+            # Import profiles into SQLite store
+            import_proc = self.run_cli(
+                "connections",
+                "import",
+                str(profile_path),
+                "--store",
+                str(db_path),
+            )
+            self.assertEqual(import_proc.returncode, 0, import_proc.stderr)
+            self.assertIn("imported: 2 connector profile(s)", import_proc.stdout)
+            self.assertIn("agent-a (agent/fake-agent)", import_proc.stdout)
+
+            # Query stored profiles (human tabular format)
+            stored_proc = self.run_cli(
+                "connections",
+                "stored",
+                "--store",
+                str(db_path),
+            )
+            self.assertEqual(stored_proc.returncode, 0, stored_proc.stderr)
+            lines = stored_proc.stdout.strip().splitlines()
+            self.assertEqual(
+                lines[0],
+                "id\tkind\tdriver\tenabled\ttiers\tmax_risk",
+            )
+            self.assertEqual(
+                lines[1],
+                "agent-a\tagent\tfake-agent\tyes\tT1,T2\tmedium",
+            )
+            self.assertEqual(
+                lines[2],
+                "exec-b\texecution\tfake-execution\tno\tT0\tlow",
+            )
+
+            # Query stored profiles (JSON mode)
+            json_proc = self.run_cli(
+                "connections",
+                "stored",
+                "--store",
+                str(db_path),
+                "--json",
+            )
+            self.assertEqual(json_proc.returncode, 0, json_proc.stderr)
+            payload = json.loads(json_proc.stdout)
+            self.assertEqual(payload["count"], 2)
+            item = payload["connections"][0]
+            self.assertEqual(item["id"], "agent-a")
+            self.assertTrue(item["auth_ref_configured"])
+            self.assertNotIn("settings", item)
+            self.assertNotIn("secret_ref", item)
+            self.assertNotIn("SHOULD_NOT_RENDER", json_proc.stdout)
+
+    def test_connections_import_is_idempotent(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            profile_path = self.write_profile(tmp, self.valid_profiles())
+            db_path = Path(tmp) / "store.db"
+
+            self.run_cli("connections", "import", str(profile_path), "--store", str(db_path))
+            self.run_cli("connections", "import", str(profile_path), "--store", str(db_path))
+
+            stored_proc = self.run_cli(
+                "connections",
+                "stored",
+                "--store",
+                str(db_path),
+                "--json",
+            )
+            self.assertEqual(stored_proc.returncode, 0, stored_proc.stderr)
+            payload = json.loads(stored_proc.stdout)
+            self.assertEqual(payload["count"], 2)
+
+    def test_invalid_profile_fails_import_without_mutating_store(self):
+        profiles = self.valid_profiles()
+        profiles[0]["kind"] = "invalid_kind"
+        with tempfile.TemporaryDirectory() as tmp:
+            profile_path = self.write_profile(tmp, profiles)
+            db_path = Path(tmp) / "store.db"
+
+            proc = self.run_cli(
+                "connections",
+                "import",
+                str(profile_path),
+                "--store",
+                str(db_path),
+            )
+            self.assertEqual(proc.returncode, 2)
+            self.assertIn("unknown_connector_kind", proc.stderr)
+            self.assertFalse(db_path.exists())
+
+    def test_missing_and_corrupt_store_return_stable_actionable_error(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            missing_db = Path(tmp) / "missing.db"
+            proc = self.run_cli(
+                "connections",
+                "stored",
+                "--store",
+                str(missing_db),
+            )
+            self.assertEqual(proc.returncode, 2)
+            self.assertIn("store database file not found", proc.stderr)
+
+            json_proc = self.run_cli(
+                "connections",
+                "stored",
+                "--store",
+                str(missing_db),
+                "--json",
+            )
+            self.assertEqual(json_proc.returncode, 2)
+            payload = json.loads(json_proc.stderr)
+            self.assertFalse(payload["valid"])
+            self.assertEqual(payload["error"]["code"], "connector_store_error")
+            self.assertIn("store database file not found", payload["error"]["message"])
+
+            corrupt_db = Path(tmp) / "corrupt.db"
+            corrupt_db.write_text("not a sqlite file", encoding="utf-8")
+            corrupt_proc = self.run_cli(
+                "connections",
+                "stored",
+                "--store",
+                str(corrupt_db),
+            )
+            self.assertEqual(corrupt_proc.returncode, 2)
+            self.assertIn("error:", corrupt_proc.stderr)
+
+            corrupt_json_proc = self.run_cli(
+                "connections",
+                "stored",
+                "--store",
+                str(corrupt_db),
+                "--json",
+            )
+            self.assertEqual(corrupt_json_proc.returncode, 2)
+            corrupt_payload = json.loads(corrupt_json_proc.stderr)
+            self.assertFalse(corrupt_payload["valid"])
+            self.assertEqual(corrupt_payload["error"]["code"], "connector_store_error")
+
+    def test_os_level_store_failure_reports_a_store_error_code(self):
+        """An OSError from the store path is a store error, not a profile error.
+
+        ``_connections_error`` classifies the JSON error code from the exception
+        type, and both store branches catch ``OSError`` alongside
+        ``LocalStoreError``/``sqlite3.Error``. A blocking non-directory parent is
+        a portable way to raise ``OSError`` without depending on file modes.
+        """
+
+        profiles = self.valid_profiles()
+        with tempfile.TemporaryDirectory() as tmp:
+            profile_path = self.write_profile(tmp, profiles)
+            blocker = Path(tmp) / "blocker"
+            blocker.write_text("not a directory", encoding="utf-8")
+            store_path = blocker / "db.sqlite"
+
+            for command in ("import", "stored"):
+                args = ["connections", command]
+                if command == "import":
+                    args.append(str(profile_path))
+                args += ["--store", str(store_path), "--json"]
+                proc = self.run_cli(*args)
+                self.assertEqual(proc.returncode, 2, proc.stderr)
+                payload = json.loads(proc.stderr)
+                self.assertFalse(payload["valid"])
+                self.assertEqual(
+                    payload["error"]["code"],
+                    "connector_store_error",
+                    f"{command} mislabelled an OS-level store failure",
+                )
+
+    def test_stored_renders_a_row_without_the_summary_shape(self):
+        """`stored` must not traceback on a row it did not write.
+
+        ``connections`` is the shared C1-F control-metadata table and
+        ``record_connection`` accepts free-form metadata, so persisted rows need
+        not carry this command's summary keys - and stored data outlives the code
+        that wrote it.
+        """
+
+        with tempfile.TemporaryDirectory() as tmp:
+            db_path = Path(tmp) / "store.sqlite"
+            script = (
+                "import sys; sys.path.insert(0, %r)\n"
+                "from idkmesh.connector_store import LocalMetadataStore\n"
+                "LocalMetadataStore(%r).record_connection(\n"
+                "    'other-producer',\n"
+                "    metadata={'id': 'other-producer', 'note': 'minimal'},\n"
+                "    updated_at='2026-01-01T00:00:00Z',\n"
+                ")\n" % (str(ROOT), str(db_path))
+            )
+            seed = subprocess.run(
+                [sys.executable, "-c", script],
+                capture_output=True,
+                text=True,
+                cwd=ROOT,
+            )
+            self.assertEqual(seed.returncode, 0, seed.stderr)
+
+            proc = self.run_cli("connections", "stored", "--store", str(db_path))
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            self.assertNotIn("Traceback", proc.stderr)
+            self.assertIn("other-producer", proc.stdout)
+
+            json_proc = self.run_cli(
+                "connections", "stored", "--store", str(db_path), "--json"
+            )
+            self.assertEqual(json_proc.returncode, 0, json_proc.stderr)
+            payload = json.loads(json_proc.stdout)
+            self.assertEqual(payload["count"], 1)
+
     def test_connections_help_is_read_only_in_language(self):
         proc = self.run_cli("connections", "--help")
         self.assertEqual(proc.returncode, 0, proc.stderr)
         self.assertIn("validate", proc.stdout)
         self.assertIn("list", proc.stdout)
+        self.assertIn("import", proc.stdout)
+        self.assertIn("stored", proc.stdout)
 
     def test_existing_gate_audit_help_still_works(self):
         proc = self.run_cli("gate-audit", "--help")
