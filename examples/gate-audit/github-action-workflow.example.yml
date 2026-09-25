@@ -1,0 +1,38 @@
+# Copy this file into .github/workflows/gate-audit.yml in the repository
+# whose review/verifier panel you want to audit.
+#
+# The example is intentionally manual and read-only. It assumes the target
+# repository already contains meaningful verdict data that follows IDKMesh's
+# gate-audit input contract. Do not manufacture reviewer data just to make the
+# workflow green.
+name: Audit review panel
+
+on:
+  workflow_dispatch:
+    inputs:
+      votes-file:
+        description: Path to a gate-audit verdict matrix already in this repository
+        required: true
+        default: panel-votes.json
+
+permissions:
+  contents: read
+
+jobs:
+  gate-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out verdict data
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Measure verifier-panel independence
+        uses: MSKazemi/idkmesh/actions/gate-audit@076af6793909a7ecfcb5df5f00585d49671d60e8
+        with:
+          votes-file: ${{ inputs.votes-file }}
+          bootstrap: "true"
+
+# The IDKMesh Action is diagnostic only. Its report is evidence for a human or
+# project-defined integration decision; it grants no approval or merge authority.
+#
+# Input contract:
+# https://github.com/MSKazemi/idkmesh/blob/main/docs/specifications/GATE_AUDIT_V0_1.md
