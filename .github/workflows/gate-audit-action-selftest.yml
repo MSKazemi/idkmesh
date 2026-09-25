@@ -8,6 +8,7 @@ on:
       - "idkmesh/__init__.py"
       - "idkmesh/cli.py"
       - "idkmesh/gate_audit.py"
+      - "idkmesh/gate_audit_uncertainty.py"
       - "pyproject.toml"
       - "examples/gate-audit/**"
       - ".github/workflows/gate-audit-action-selftest.yml"
@@ -17,6 +18,7 @@ on:
       - "idkmesh/__init__.py"
       - "idkmesh/cli.py"
       - "idkmesh/gate_audit.py"
+      - "idkmesh/gate_audit_uncertainty.py"
       - "pyproject.toml"
       - "examples/gate-audit/**"
       - ".github/workflows/gate-audit-action-selftest.yml"
@@ -95,4 +97,91 @@ jobs:
           print(
               "JSON-only mode emitted canonical JSON, no Markdown artifact, and "
               "reported matching action outputs")
+          EOF
+
+      - name: Run the action with bootstrap uncertainty enabled
+        id: audit-bootstrap
+        uses: ./actions/gate-audit
+        with:
+          votes-file: examples/gate-audit/panel-votes.example.json
+          report-file: selftest-bootstrap-report.json
+          markdown-file: ""
+          bootstrap: "true"
+
+      - name: Assert bootstrap mode reproduces the committed v0.2 example
+        run: |
+          python - <<'EOF'
+          # Compared by value with a tight float tolerance, not byte-for-byte:
+          # phi()'s plain sum() over floats changed summation algorithm
+          # between Python 3.11 and 3.12+ (see assert_close in
+          # tests/test_gate_audit_uncertainty.py), so a seeded bootstrap can
+          # round a correlation to a different last representable bit across
+          # interpreter versions even though the resampling itself is exactly
+          # reproducible.
+          import json
+          from pathlib import Path
+
+          def assert_close(actual, expected, path="$"):
+              if isinstance(expected, float) and isinstance(actual, float):
+                  assert abs(actual - expected) < 1e-9, (
+                      f"{path}: {actual!r} != {expected!r}")
+              elif isinstance(expected, dict) and isinstance(actual, dict):
+                  assert set(actual) == set(expected), path
+                  for key in expected:
+                      assert_close(actual[key], expected[key], f"{path}.{key}")
+              elif isinstance(expected, list) and isinstance(actual, list):
+                  assert len(actual) == len(expected), path
+                  for i, (a, e) in enumerate(zip(actual, expected)):
+                      assert_close(a, e, f"{path}[{i}]")
+              else:
+                  assert actual == expected, f"{path}: {actual!r} != {expected!r}"
+
+          produced = json.loads(
+              Path("selftest-bootstrap-report.json").read_text(encoding="utf-8"))
+          committed = json.loads(
+              Path("examples/gate-audit/gate-audit-report-v0.2.example.json")
+              .read_text(encoding="utf-8"))
+          assert_close(produced, committed)
+          print(
+              "bootstrap action output matches the committed v0.2 example "
+              "report (float tolerance 1e-9)")
+          EOF
+
+      - name: Run the action with non-default bootstrap parameters
+        id: audit-bootstrap-params
+        uses: ./actions/gate-audit
+        with:
+          votes-file: examples/gate-audit/panel-votes.example.json
+          report-file: selftest-bootstrap-params-report.json
+          markdown-file: ""
+          bootstrap: "true"
+          bootstrap-replicates: "300"
+          bootstrap-seed: "7"
+          bootstrap-confidence-level: "0.8"
+
+      - name: Assert the numeric bootstrap inputs actually reach the CLI
+        run: |
+          python - <<'EOF'
+          # Without this step the three numeric inputs are wired but unexercised:
+          # the action's defaults equal the CLI's, so the lines that forward them
+          # could be deleted and the bootstrap self-test above would stay green.
+          # Asserting a NON-default result is what makes the wiring load-bearing.
+          import json
+          from pathlib import Path
+
+          produced = json.loads(
+              Path("selftest-bootstrap-params-report.json").read_text(encoding="utf-8"))
+          default = json.loads(
+              Path("examples/gate-audit/gate-audit-report-v0.2.example.json")
+              .read_text(encoding="utf-8"))
+
+          inputs = produced["uncertainty"]
+          assert inputs["replicates"] == 300, inputs
+          assert inputs["seed"] == 7, inputs
+          assert abs(inputs["confidence_level"] - 0.8) < 1e-12, inputs
+          assert produced["schema"] == "gate-audit-report-v0.2", produced["schema"]
+          assert produced["uncertainty"] != default["uncertainty"], (
+              "non-default bootstrap parameters produced the default interval, so "
+              "the inputs are not reaching the CLI")
+          print("non-default bootstrap inputs reached the CLI and changed the interval")
           EOF
