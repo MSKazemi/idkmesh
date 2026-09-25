@@ -14,6 +14,17 @@ and the release notes for that tag.
 
 ### Added
 
+- `idkmesh/enterprise_identity_github.py` (E3-B, issue #670): the first
+  trusted authentication adapter for the E3 authorization kernel
+  (`idkmesh/enterprise_authz.py`). Resolves already-authenticated GitHub
+  actor claims (never issue/PR/comment text) against a maintainer-reviewed,
+  versioned `enterprise-github-identity-binding-v0.1` table into an
+  `ActorContext`, keyed primarily on the trusted numeric GitHub actor id.
+  Fails closed on an unbound actor id, a login mismatch for a bound id, or
+  a GitHub actor kind (human vs. bot) inconsistent with the bound
+  `actor_type`. Revocation/expiry are left to `enterprise_authz.authorize`
+  itself so the two do not drift. E3-C through E3-H remain open.
+
 - `idkmesh control-tower [evidence-report.json]`, a dependency-free local
   Human Control Tower for Run Evidence Report v0.1. It shows human-attention
   conditions, claim/evidence/authority layers, attempt details, and a semantic
