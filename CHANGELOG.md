@@ -14,6 +14,16 @@ and the release notes for that tag.
 
 ### Added
 
+- `idkmesh/enterprise_identity_github.py` (E3-B, issue #670): the first
+  trusted authentication adapter for the E3 authorization kernel
+  (`idkmesh/enterprise_authz.py`). Resolves already-authenticated GitHub
+  actor claims (never issue/PR/comment text) against a maintainer-reviewed,
+  versioned `enterprise-github-identity-binding-v0.1` table into an
+  `ActorContext`, keyed primarily on the trusted numeric GitHub actor id.
+  Fails closed on an unbound actor id, a login mismatch for a bound id, or
+  a GitHub actor kind (human vs. bot) inconsistent with the bound
+  `actor_type`. Revocation/expiry are left to `enterprise_authz.authorize`
+  itself so the two do not drift.
 - `idkmesh/enterprise_identity_oidc.py` (E3-C, issue #670): a trusted
   authentication adapter that normalizes already-verified enterprise IdP
   (OIDC/SAML/SSO) claims into the E3 authorization kernel's `ActorContext`
@@ -67,9 +77,25 @@ and the release notes for that tag.
   `idkmesh/gate_audit_uncertainty.py`). Documented in
   `docs/specifications/GATE_AUDIT_V0_1.md` under "Finite-sample uncertainty",
   with a committed, test-regenerated example at
-  `examples/gate-audit/gate-audit-report-v0.2.example.json`. Not wired into the
-  composite GitHub Action yet — deliberately deferred, not bundled into a
-  statistics change.
+  `examples/gate-audit/gate-audit-report-v0.2.example.json`.
+- `actions/gate-audit/action.yml` now exposes the `--bootstrap` CLI flag
+  (issue #520) as opt-in `bootstrap`, `bootstrap-replicates`,
+  `bootstrap-seed` and `bootstrap-confidence-level` inputs, defaulting to
+  `bootstrap: "false"` so the action's default output is unchanged. Covered
+  by a new self-test step in `gate-audit-action-selftest.yml` asserting the
+  action's output matches the committed `gate-audit-report-v0.2.example.json`
+  (float-tolerant, matching the existing cross-Python-version comparison in
+  `tests/test_gate_audit_uncertainty.py`), plus a second step passing
+  non-default numeric parameters and asserting the interval actually changes,
+  so the three numeric inputs cannot become decorative. The action validates
+  the group rather than discarding it silently: `bootstrap` must be exactly
+  `true` or `false`, the three parameters require `bootstrap: "true"` (matching
+  the CLI's own rejection of that combination), and `bootstrap-replicates` is
+  capped, because the action is consumed by third-party workflows and the
+  bootstrap's cost is linear in the replicate count while the CLI enforces only
+  a floor. `tests/test_ci_trigger_scope.py` pins the four inputs, their CLI
+  flags, the self-test's use of them and those three guards on the required PR
+  Gate, since the action's own self-test is path-filtered and not required.
 
 - `.github/workflows/nightly-full-suite.yml`, running the complete suite — the `nightly`
   tier, everything `unit` excludes included — on a daily schedule (plus `workflow_dispatch`),
@@ -161,6 +187,20 @@ and the release notes for that tag.
   its re-verification against a later base.
 
 ### Changed
+
+- `.github/PULL_REQUEST_TEMPLATE.md`'s closing convention now actually closes an
+  issue on merge. The old `Closes on merge (leave blank unless the merge should
+  close it):` field never linked anything: GitHub only recognizes a closing
+  keyword immediately beside the reference, and GitHub's own parse of the six
+  pull requests recorded in issue 858 confirms it resolved no closing issue for
+  any of them. The fillable line is now a bare `- Closes:` that takes references
+  and nothing else, with the instructions moved into the surrounding prose.
+  `CONTRIBUTING.md` and the Draft PR steward's generated body carry the same
+  field, and a test pins the steward to it so the two cannot drift again.
+  `tools/closing_keyword_guard.py` recognizes the new line as its one sanctioned
+  opt-in, and the exemption is scoped to lines carrying nothing but references:
+  the previous prefix match would have let an opt-in line shield an unrelated
+  closing keyword written beside it, which GitHub would still have acted on.
 
 - `.github/workflows/pr-gate.yml` no longer runs the complete, unfiltered suite as its
   required check. It ran `python -m pytest -q` directly — every `sim`/`slow` simulation
