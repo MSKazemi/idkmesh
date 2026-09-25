@@ -12,6 +12,25 @@ and the release notes for that tag.
 
 ## [Unreleased]
 
+### Changed
+
+- `tests/test_cli_tools_help.py` runs each discovered tool's `--help` through
+  `runpy` in the test process instead of spawning an interpreter per tool. The
+  assertion is unchanged — every tool must still exit 0 and print help through
+  its real `__main__` path with a real `argv` — but the tier no longer pays ~52
+  process startups for a smoke test. `sys.argv`, `sys.path` and the working
+  directory are restored afterwards, and modules loaded out of `tools/` are
+  evicted so one tool cannot satisfy another's sibling import and mask a broken
+  fallback. In-process execution does keep global state a subprocess discarded
+  (`logging.basicConfig()`, `warnings` filters, `os.environ`, signal handlers,
+  and `atexit` handlers now running at pytest exit); that is an accepted
+  trade-off recorded in the test's own docstring.
+- `docs/TESTING.md` re-measured and re-dated against `045f84d`. The published
+  unit-tier row had drifted from 1643 to 3043 passed and from 3077 to 5790
+  subtests, and the whole-suite count from 2027 to 3467. Nothing pins those
+  figures — `tests/test_documented_tier_scopes.py` re-derives the marker
+  expressions, not the counts — so they are re-measured by hand and carry a date.
+
 ### Added
 
 - `idkmesh/enterprise_identity_github.py` (E3-B, issue #670): the first
