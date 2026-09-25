@@ -701,3 +701,44 @@ The service also rechecks Session name/id and hint Session/repository identity a
 The service composes existing boundaries and adds no source-identity authority of its own. `JulesLifecycleService.start` delegates to `JulesSessionService`, which still refuses an unverified `ScmRevisionBinding`; constructing `ScmRevisionBinding(verified=True)` from an exact `GitHubBranchHeadBinding` remains the caller's responsibility, outside this service.
 
 `JulesLifecycleSnapshot` contains no verifier result, acceptance, selected candidate, human decision, merge authorization, or integration authorization.
+
+## Stored connector metadata CLI
+
+`idkmesh connections import <profile> --store <path>` validates a connector-profile
+document and persists the safe, normalized metadata into a local SQLite store.
+`idkmesh connections stored --store <path>` reads that metadata back. Both accept
+`--json` and emit the §19 error envelope on failure.
+
+**Only non-secret metadata is persisted.** A profile's credential material is never
+written: the stored row records `auth_ref_configured` as a boolean and nothing else
+about the secret. An inline secret is rejected before any write, and the rejection
+does not echo the value.
+
+Error codes on these paths distinguish the two failure domains, because a caller
+branching on the code needs to know which side to fix:
+
+| condition | code |
+|---|---|
+| profile document is invalid | the profile's own code, e.g. `unknown_field` |
+| store missing, unreadable, or not a database | `connector_store_error` |
+| an OS-level store failure, such as a non-directory parent path | `connector_store_error` |
+| a stored row whose `metadata_json` is not valid JSON | `connector_store_error` |
+
+The last row is the one that is easy to get wrong in implementation. `json.loads`
+raises `json.JSONDecodeError`, which is a `ValueError`; the fix belongs in the store,
+which wraps it as a store error, and **not** in the caller. Widening a caller's
+`except` to `ValueError` would also catch `ConnectorProfileError`, which is itself a
+`ValueError`, and would silently reclassify every profile fault as a store fault.
+
+Known limitations, so an operator is not surprised by them:
+
+- `connections import` is **not atomic**. It uses one transaction per profile, so a
+  failure partway through a multi-profile document leaves earlier profiles committed.
+- The store sets a busy timeout but does not enable WAL, so concurrent writers
+  serialize and a contended writer can observe `database is locked`. This is a
+  development-mode store, not a shared production one.
+- `connections stored` writes to its target even though it only reads. Measured:
+  pointed at an unrelated SQLite database, it added the `connections`, `idempotency`,
+  `probes`, `routes` and `runs` tables and exited 0. It does **not** create a missing
+  parent directory on this path -- that exits 2 -- but it will migrate any existing
+  SQLite file it is given. Point it at a path you intend to be an IDKMesh store.
