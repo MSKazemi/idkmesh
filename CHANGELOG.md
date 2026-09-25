@@ -14,6 +14,19 @@ and the release notes for that tag.
 
 ### Added
 
+- `idkmesh/enterprise_identity_oidc.py` (E3-C, issue #670): a trusted
+  authentication adapter that normalizes already-verified enterprise IdP
+  (OIDC/SAML/SSO) claims into the E3 authorization kernel's `ActorContext`
+  (`idkmesh/enterprise_authz.py`). Keys a maintainer-reviewed, versioned
+  `enterprise-oidc-identity-binding-v0.1` table on the composite
+  `(issuer, subject)` pair, since a subject claim is only unique within its
+  issuing IdP. Fails closed on claims already expired at evaluation time, an
+  unbound `(issuer, subject)` pair, or an `audience` mismatch against the
+  binding's configured relying-party audience. Revocation and the bound
+  identity's own expiry are left to `enterprise_authz.authorize` itself, so
+  the adapter and the kernel cannot disagree about what those mean. E3-D
+  through E3-H remain open.
+
 - `idkmesh control-tower [evidence-report.json]`, a dependency-free local
   Human Control Tower for Run Evidence Report v0.1. It shows human-attention
   conditions, claim/evidence/authority layers, attempt details, and a semantic

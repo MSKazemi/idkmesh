@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idkmesh.org/schemas/enterprise-oidc-identity-binding-v0.1.schema.json",
+  "title": "IDKMesh Enterprise OIDC/SAML/SSO Identity Binding Table v0.1",
+  "description": "Maintainer-reviewed table binding trusted (issuer, subject) enterprise IdP claim pairs to enterprise ActorContext roles, tenant/project scopes, and data clearance (E3-C, issue #670). The (issuer, subject) pair is the primary trust key. This is config input to idkmesh.enterprise_identity_oidc; issue/PR/comment text is never a binding source.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["kind", "schema_version", "bindings"],
+  "properties": {
+    "kind": {"const": "idkmesh-enterprise-oidc-identity-binding-table"},
+    "schema_version": {"const": "0.1"},
+    "bindings": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "issuer",
+          "subject",
+          "audience",
+          "actor_type",
+          "roles",
+          "scopes",
+          "data_clearance",
+          "identity_revision",
+          "revoked",
+          "expires_at_epoch"
+        ],
+        "properties": {
+          "issuer": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Trusted IdP issuer (the verified token/assertion's iss). Half of the primary trust key."
+          },
+          "subject": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Trusted IdP subject (the verified token/assertion's sub). Only unique within its issuer, so the primary trust key is the (issuer, subject) pair, not subject alone."
+          },
+          "audience": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Expected relying-party audience (aud) for this binding. Claims whose audience does not match are denied rather than trusted."
+          },
+          "actor_type": {
+            "enum": ["human", "service"],
+            "description": "Enterprise IdP identities cannot be a github_app/github_actions/provider/node ActorContext actor_type."
+          },
+          "roles": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {"enum": ["owner", "admin", "integrator", "worker", "reviewer", "dispatcher", "node_operator", "auditor"]}
+          },
+          "scopes": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["tenant_id", "project_id"],
+              "properties": {
+                "tenant_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"},
+                "project_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"}
+              }
+            }
+          },
+          "data_clearance": {"enum": ["public", "internal", "confidential", "restricted"]},
+          "identity_revision": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$"},
+          "revoked": {"type": "boolean"},
+          "expires_at_epoch": {
+            "oneOf": [
+              {"type": "integer", "minimum": 0},
+              {"type": "null"}
+            ]
+          }
+        }
+      }
+    }
+  }
+}

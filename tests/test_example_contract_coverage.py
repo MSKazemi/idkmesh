@@ -52,6 +52,7 @@ VALID_AGAINST = {
     "examples/experiments/phase0-smoke.manifest.json": "experiment-manifest-v0.1.schema.json",
     "examples/enterprise/g1-github-native.example.json": "enterprise-control-profile-v0.1.schema.json",
     "examples/enterprise/g2-self-hosted.example.json": "enterprise-control-profile-v0.1.schema.json",
+    "examples/enterprise/oidc-identity-bindings.example.json": "enterprise-oidc-identity-binding-v0.1.schema.json",
     # Invalid by graph semantics (a cycle), not by structure.
     "examples/idkgraph.invalid-cycle.json": "idkgraph.schema.json",
     "examples/gate-audit/gate-audit-report.example.json": "gate-audit-report-v0.1.schema.json",
