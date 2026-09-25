@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idkmesh.org/schemas/enterprise-github-identity-binding-v0.1.schema.json",
+  "title": "IDKMesh Enterprise GitHub Identity Binding Table v0.1",
+  "description": "Maintainer-reviewed table binding trusted numeric GitHub actor ids to enterprise ActorContext roles, tenant/project scopes, and data clearance (E3-B, issue #670). The numeric actor id is the primary trust key. This is config input to idkmesh.enterprise_identity_github; issue/PR/comment text is never a binding source.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["kind", "schema_version", "bindings"],
+  "properties": {
+    "kind": {"const": "idkmesh-enterprise-github-identity-binding-table"},
+    "schema_version": {"const": "0.1"},
+    "bindings": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "actor_id",
+          "login",
+          "actor_type",
+          "issuer",
+          "roles",
+          "scopes",
+          "data_clearance",
+          "identity_revision",
+          "revoked",
+          "expires_at_epoch"
+        ],
+        "properties": {
+          "actor_id": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Trusted numeric GitHub actor id; the primary trust key for this binding."
+          },
+          "login": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Expected GitHub login for actor_id. A login match with a different actor_id, or an actor_id with a different login, is denied."
+          },
+          "actor_type": {
+            "enum": ["human", "github_app", "github_actions"],
+            "description": "GitHub identities cannot be a service/provider/node ActorContext actor_type."
+          },
+          "issuer": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,255}$"},
+          "roles": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {"enum": ["owner", "admin", "integrator", "worker", "reviewer", "dispatcher", "node_operator", "auditor"]}
+          },
+          "scopes": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["tenant_id", "project_id"],
+              "properties": {
+                "tenant_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"},
+                "project_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"}
+              }
+            }
+          },
+          "data_clearance": {"enum": ["public", "internal", "confidential", "restricted"]},
+          "identity_revision": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$"},
+          "revoked": {"type": "boolean"},
+          "expires_at_epoch": {
+            "oneOf": [
+              {"type": "integer", "minimum": 0},
+              {"type": "null"}
+            ]
+          }
+        }
+      }
+    }
+  }
+}

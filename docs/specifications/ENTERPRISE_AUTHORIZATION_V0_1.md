@@ -230,11 +230,65 @@ authenticated request
 
 Authorization should run again when a relevant identity or policy revision changes.
 
+## E3-B: trusted GitHub identity adapter
+
+`idkmesh.enterprise_identity_github` (schema:
+`enterprise-github-identity-binding-v0.1.schema.json`) is the first trusted
+authentication adapter that produces an `ActorContext`. It composes with
+this kernel rather than replacing any of its checks.
+
+Two inputs, both already trusted before this adapter runs:
+
+- `GithubActorClaims` — already-authenticated GitHub actor fields (a
+  verified webhook's `sender_id`/`sender_login`, or a GitHub Actions run's
+  own `github.actor`/`github.actor_id` context). Issue/PR/comment title and
+  body text is never a claims source.
+- `GithubIdentityBindingTable` — a maintainer-reviewed, versioned table
+  binding each trusted numeric GitHub actor id to its `ActorContext` roles,
+  tenant/project scopes, data clearance, and issuer. The numeric actor id is
+  the primary trust key, because a GitHub login can be renamed or re-registered
+  while the numeric id cannot; a login reused under a different id, or an id
+  whose login changed, is denied rather than trusted. This matches the
+  actor-id-primary pattern `idkmesh.github_dispatch_authorization` uses for the
+  separate C5 dispatch lane, which answers a different question — may this actor
+  dispatch — and returns a boolean decision rather than an `ActorContext`. No
+  module on `main` builds `GithubActorClaims` from a live webhook or Actions
+  payload yet; that producer is E3-F scope.
+
+`actor_context_from_github` fails closed with `GithubIdentityAdapterError`
+for:
+
+- an actor id with no reviewed binding;
+- a login that does not match the id's bound login;
+- a GitHub actor kind (human user vs. bot) inconsistent with the bound
+  `actor_type` — a `human` binding backed by a bot account, or a
+  `github_app`/`github_actions` binding backed by a human account, is a
+  configuration or spoofing mismatch, not a valid identity.
+
+It does not re-check revocation or expiry itself. Those live on the
+resolved `ActorContext` and are enforced exactly once, by this kernel's own
+`authorize`, so the adapter and the kernel cannot disagree about what
+"expired" means.
+
+`enterprise-github-identity-binding-v0.1` field-level identity errors
+(an unknown role, an invalid data clearance, ...) are validated by
+`ActorContext` itself and surface as this kernel's own
+`AuthorizationContractError`, not a separate error type — the binding
+contract composes with `ActorContext`'s validation rather than
+duplicating it.
+
+This closes only the GitHub identity source. E3-C (enterprise IdP/OIDC/SAML
+adapter), E3-D (identity/policy freshness cache integration), E3-E (audited
+break-glass grant), E3-F (dispatch/API enforcement integration), E3-G
+(two-principal acceptance fixture), and E3-H (service middleware/
+conformance) remain open E3 slices.
+
 ## Non-goals
 
 v0.1 does not claim:
 
-- SAML/OIDC/GitHub authentication implementation;
+- SAML/OIDC/GitHub authentication implementation beyond the E3-B GitHub
+  identity adapter above;
 - organization/team synchronization;
 - a production policy database;
 - policy caching;

@@ -30,6 +30,7 @@ This directory contains the machine-readable contracts used by the executable re
 - `enterprise-resource-ref-v0.1.schema.json` — tenant/project-scoped enterprise resource reference. Scope is part of resource identity and is not inferred from an unscoped resource id.
 - `enterprise-actor-context-v0.1.schema.json` — normalized trusted human/service/provider/node identity claims for E3 authorization. It is an authorization input only when produced by a trusted authentication adapter; issue/task/model text is not an identity source.
 - `enterprise-authorization-decision-v0.1.schema.json` — deterministic allow/deny/requires-approval evidence bound to tenant/project resource identity, policy revision, identity revision, risk, and data class. The decision object performs no side effect and carries no merge authority itself.
+- `enterprise-github-identity-binding-v0.1.schema.json` — maintainer-reviewed table binding trusted numeric GitHub actor ids to enterprise `ActorContext` roles, tenant/project scopes, and data clearance (E3-B, issue #670). The numeric actor id is the primary trust key; issue/PR/comment text is never a binding source.
 
 All current schemas use JSON Schema Draft 2020-12.
 
