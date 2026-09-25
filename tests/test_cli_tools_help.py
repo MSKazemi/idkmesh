@@ -30,11 +30,20 @@ def discover_argparse_tools() -> list[Path]:
 def _help_output(tool_path: Path) -> tuple[int, str]:
     """Run one tool's ``--help`` as ``__main__`` inside this process.
 
-    Spawning an interpreter per tool cost about 13 of the unit tier's 90 CPU-second
-    budget -- over 50 interpreter startups, which was the whole cost rather than any
-    work the tools do. ``runpy`` still executes each tool through its real
-    ``__main__`` entry path with a real ``argv``, so the property under test is
-    unchanged, while the startup is paid once for the suite.
+    Spawning an interpreter per tool cost about 13 seconds -- over 50 interpreter
+    startups, which was the whole cost rather than any work the tools do. ``runpy``
+    still executes each tool through its real ``__main__`` entry path with a real
+    ``argv``, and the import search path is not broadened (measured: the in-pytest
+    ``sys.path`` adds only a duplicate of an entry the subprocess already had).
+
+    It is not a perfect substitute, and the difference is worth knowing. ``sys.argv``,
+    ``sys.path``, the working directory and modules loaded out of ``tools/`` are all
+    restored or evicted below, but interpreter-global state a tool mutates is not:
+    ``logging.basicConfig()``, ``warnings`` filters, ``os.environ`` edits, signal
+    handlers and ``atexit`` registrations now persist for the rest of the session, and
+    ``atexit`` handlers run at pytest exit rather than per tool. These are first-party
+    tools already imported throughout this suite, so that is an accepted trade rather
+    than an unknown one.
     """
     argv = sys.argv[:]
     path = sys.path[:]
@@ -53,7 +62,15 @@ def _help_output(tool_path: Path) -> tuple[int, str]:
             try:
                 runpy.run_path(str(tool_path), run_name="__main__")
             except SystemExit as exc:
-                code = 0 if exc.code is None else int(exc.code)
+                # A str code means the tool exited with a message: treat it as a
+                # failure rather than coercing it, because int("msg") would raise
+                # and surface as a confusing test error instead of "tool X failed".
+                if exc.code is None:
+                    code = 0
+                elif isinstance(exc.code, int):
+                    code = exc.code
+                else:
+                    code = 1
     finally:
         sys.argv = argv
         sys.path[:] = path
