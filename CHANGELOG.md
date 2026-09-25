@@ -149,6 +149,20 @@ and the release notes for that tag.
 
 ### Changed
 
+- `.github/PULL_REQUEST_TEMPLATE.md`'s closing convention now actually closes an
+  issue on merge. The old `Closes on merge (leave blank unless the merge should
+  close it):` field never linked anything: GitHub only recognizes a closing
+  keyword immediately beside the reference, and GitHub's own parse of the six
+  pull requests recorded in issue 858 confirms it resolved no closing issue for
+  any of them. The fillable line is now a bare `- Closes:` that takes references
+  and nothing else, with the instructions moved into the surrounding prose.
+  `CONTRIBUTING.md` and the Draft PR steward's generated body carry the same
+  field, and a test pins the steward to it so the two cannot drift again.
+  `tools/closing_keyword_guard.py` recognizes the new line as its one sanctioned
+  opt-in, and the exemption is scoped to lines carrying nothing but references:
+  the previous prefix match would have let an opt-in line shield an unrelated
+  closing keyword written beside it, which GitHub would still have acted on.
+
 - `.github/workflows/pr-gate.yml` no longer runs the complete, unfiltered suite as its
   required check. It ran `python -m pytest -q` directly — every `sim`/`slow` simulation
   and sweep test included, synchronously, blocking every merge, on two Python versions —
