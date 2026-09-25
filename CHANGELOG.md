@@ -65,9 +65,25 @@ and the release notes for that tag.
   `idkmesh/gate_audit_uncertainty.py`). Documented in
   `docs/specifications/GATE_AUDIT_V0_1.md` under "Finite-sample uncertainty",
   with a committed, test-regenerated example at
-  `examples/gate-audit/gate-audit-report-v0.2.example.json`. Not wired into the
-  composite GitHub Action yet — deliberately deferred, not bundled into a
-  statistics change.
+  `examples/gate-audit/gate-audit-report-v0.2.example.json`.
+- `actions/gate-audit/action.yml` now exposes the `--bootstrap` CLI flag
+  (issue #520) as opt-in `bootstrap`, `bootstrap-replicates`,
+  `bootstrap-seed` and `bootstrap-confidence-level` inputs, defaulting to
+  `bootstrap: "false"` so the action's default output is unchanged. Covered
+  by a new self-test step in `gate-audit-action-selftest.yml` asserting the
+  action's output matches the committed `gate-audit-report-v0.2.example.json`
+  (float-tolerant, matching the existing cross-Python-version comparison in
+  `tests/test_gate_audit_uncertainty.py`), plus a second step passing
+  non-default numeric parameters and asserting the interval actually changes,
+  so the three numeric inputs cannot become decorative. The action validates
+  the group rather than discarding it silently: `bootstrap` must be exactly
+  `true` or `false`, the three parameters require `bootstrap: "true"` (matching
+  the CLI's own rejection of that combination), and `bootstrap-replicates` is
+  capped, because the action is consumed by third-party workflows and the
+  bootstrap's cost is linear in the replicate count while the CLI enforces only
+  a floor. `tests/test_ci_trigger_scope.py` pins the four inputs, their CLI
+  flags, the self-test's use of them and those three guards on the required PR
+  Gate, since the action's own self-test is path-filtered and not required.
 
 - `.github/workflows/nightly-full-suite.yml`, running the complete suite — the `nightly`
   tier, everything `unit` excludes included — on a daily schedule (plus `workflow_dispatch`),

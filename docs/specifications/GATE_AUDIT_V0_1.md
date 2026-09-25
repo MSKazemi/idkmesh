@@ -224,10 +224,11 @@ same fail-closed rule the rest of the CLI follows. Runtime is
 `O(replicates × candidates × verifiers²)`, dominated by the pairwise
 correlation term; reduce `--bootstrap-replicates` for very large panels.
 
-Not yet done, deliberately: the composite GitHub Action
-(`actions/gate-audit/action.yml`) does not expose `--bootstrap` as an input.
-The CLI supports it today; wiring the action is separate follow-on scope, not
-bundled into a change whose point was the statistics.
+The composite GitHub Action (`actions/gate-audit/action.yml`) exposes this as
+an opt-in `bootstrap: "true"` input (plus `bootstrap-replicates`,
+`bootstrap-seed` and `bootstrap-confidence-level`), mirroring the CLI flags
+above. It defaults to `"false"`, so the action's default output contract is
+unchanged unless a workflow explicitly opts in.
 
 ## Output contract
 
@@ -291,10 +292,28 @@ job summary page.
 
 Inputs: `votes-file` (required), `report-file`, `markdown-file`, `job-summary`,
 `python-version` (defaults `gate-audit-report.json`, `gate-audit-report.md`,
-`true`, `3.12`). The workflow
+`true`, `3.12`), and the opt-in finite-sample uncertainty group `bootstrap`,
+`bootstrap-replicates`, `bootstrap-seed`, `bootstrap-confidence-level` (defaults
+`false`, `2000`, `0`, `0.95`).
+
+The action validates that group rather than discarding it silently: `bootstrap`
+must be exactly `true` or `false`, so a misspelled boolean fails instead of
+quietly dropping the statistics; setting any of the three parameters without
+`bootstrap: "true"` fails, matching the CLI's own rejection of that combination;
+and `bootstrap-replicates` is capped at `100000`, because the action is consumed
+by third-party workflows and the bootstrap's cost is linear in the replicate
+count. The CLI itself enforces only the `MIN_REPLICATES` floor.
+
+The workflow
 [`gate-audit-action-selftest.yml`](../../.github/workflows/gate-audit-action-selftest.yml)
-runs the action on the committed example on every relevant change and asserts
-the output is byte-identical to the committed report example.
+runs the action on the committed example on every relevant change. Without
+`bootstrap` it asserts the output is byte-identical to the committed v0.1 report
+example. With `bootstrap` it compares against the committed v0.2 example by value
+within `1e-9` rather than byte-for-byte, because `phi()`'s summation order
+changed between Python 3.11 and 3.12 and can move a correlation by one
+representable bit; a further step passes non-default `bootstrap-replicates`,
+`bootstrap-seed` and `bootstrap-confidence-level` and asserts the interval
+actually changes, so the numeric inputs cannot become decorative.
 
 ## Authority boundary
 
