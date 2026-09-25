@@ -288,7 +288,7 @@ The steward ran trusted code from main and did not check out or execute the cand
 ## Related work / ACE lineage (optional)
 
 - Refs:
-- Closes on merge (leave blank unless intended):
+- Closes:
 - ACE-Seed:
 
 ## Community Impact

@@ -24,15 +24,19 @@ How did you check the change? Include tests, reproduction steps, references, exp
 
 Link the issue(s) this work addresses. If this pull request is a candidate response to an ACE Growth Seed, include a line such as `ACE-Seed: #24` so the public cohort observer can associate the candidate with its seed.
 
-Put issue numbers on `Refs:` by default. Use `Closes on merge:` only when merging
-this pull request should actually close the issue. GitHub auto-closes an issue
-whenever a closing keyword sits near its number, and it **ignores any disclaimer
-you add in parentheses** — a line reading `Closes: Refs #<issue> (does not close)`
-still closes that issue on merge. Evidence PRs that must leave a review gate open
-therefore belong on `Refs:`.
+Put issue numbers on `Refs:` by default. Leave `Closes:` blank unless merging
+this pull request should actually close the issue — and when it should, write
+nothing on that line but the reference itself, in the form `Closes: #<issue>`
+(separate several with commas). GitHub only recognizes a closing keyword when it
+sits immediately next to the issue number: extra words in between (including a
+parenthetical disclaimer such as "does not close", or instructional text left
+over from this template) silently prevent the auto-close. Evidence PRs that
+must leave a review gate open belong on `Refs:` instead, with `Closes:` left
+blank. `tools/closing_keyword_guard.py` exempts this line only while it carries
+nothing but references, so prose written after the colon is still reported.
 
 - Refs:
-- Closes on merge (leave blank unless the merge should close it):
+- Closes:
 - ACE-Seed:
 
 ## API contract change (if applicable)

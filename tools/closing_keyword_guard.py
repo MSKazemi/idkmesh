@@ -13,8 +13,10 @@ carry genuinely different meanings here. A silent auto-closure posts a false
 "resolved" status on a public repository and dissolves the gate.
 
 This module reports every keyword/reference pair that would close an issue,
-except on the pull request template's sanctioned ``Closes on merge:`` line,
-which is the explicit opt-in. It inspects text only: no network access, no
+except on the pull request template's sanctioned ``Closes:`` line, which is the
+explicit opt-in. That line is exempt only when it carries nothing but issue
+references, so the opt-in cannot be used as cover for an unrelated closing
+keyword sitting beside it. It inspects text only: no network access, no
 repository mutation, and no inference about whether a closure was desired.
 """
 
@@ -56,8 +58,19 @@ PAIR_RE = re.compile(
     re.IGNORECASE | re.DOTALL,
 )
 
-# The pull request template's explicit opt-in line.
-SANCTIONED_LINE_RE = re.compile(r"^\s*(?:[-*+]\s*)?closes on merge\b", re.IGNORECASE)
+# The pull request template's explicit opt-in line. The exemption covers the
+# whole line, so it is deliberately narrow: the line must carry the keyword, a
+# colon, and nothing but issue references separated by commas or whitespace.
+# A looser "starts with ``Closes:``" match would grant blanket immunity to every
+# other keyword/reference pair on the same line -- a line reading
+# ``Closes: superseded by prose, fixes #<n>`` would go unreported while GitHub
+# still closed n from the adjacent ``fixes``. A false positive here costs one
+# rephrasing; that false negative silently closes someone else's review gate.
+SANCTIONED_LINE_RE = re.compile(
+    rf"^\s*(?:[-*+]\s*)?closes\s*:\s*"
+    rf"(?:(?:{REFERENCE_PATTERN})[\s,]*)*$",
+    re.IGNORECASE,
+)
 
 # A blank line ends the association in practice; do not report across one.
 PARAGRAPH_BREAK_RE = re.compile(r"\n[ \t]*\n")
@@ -167,8 +180,9 @@ REMEDY = """
 How to fix this:
 
   * If the merge SHOULD close the issue, move the reference onto the pull
-    request template's line:
-        - Closes on merge (leave blank unless the merge should close it): #<n>
+    request template's line, with nothing on it but references (separate
+    several with commas):
+        - Closes: #<n>
   * Otherwise write the number without '#', for example "issue 152" or
     "PR 315", or move the reference onto the template's 'Refs:' line.
 
