@@ -899,9 +899,36 @@ def test_model_routing_policy_uses_dispatcher_label_contract():
     assert jules["manual_fallback_label"] == "jules"
 
 
+def _without_yaml_comments(text: str) -> str:
+    """Blank YAML comments so a substring assertion cannot match a disabled line.
+
+    Mirrors `tools/check_jules_contract.py`: a commented-out trigger still
+    contains the exact text these assertions look for.
+    """
+    out = []
+    for line in text.splitlines():
+        quote = None
+        cut = len(line)
+        for index, char in enumerate(line):
+            if quote is not None:
+                if char == quote:
+                    quote = None
+                continue
+            if char in "'\"":
+                quote = char
+                continue
+            if char == "#":
+                cut = index
+                break
+        out.append(line[:cut].rstrip())
+    return "\n".join(out)
+
+
 def test_workflow_and_router_share_the_same_dispatch_contract():
-    workflow = (REPO_ROOT / ".github" / "workflows" / "jules-dispatch.yml").read_text(
-        encoding="utf-8"
+    workflow = _without_yaml_comments(
+        (REPO_ROOT / ".github" / "workflows" / "jules-dispatch.yml").read_text(
+            encoding="utf-8"
+        )
     )
     router = (
         REPO_ROOT / ".github" / "workflows" / "issue-model-router.yml"
@@ -941,6 +968,39 @@ def test_workflow_and_router_share_the_same_dispatch_contract():
     assert "persist-credentials: false" in workflow
     assert "github.event.issue.body" not in workflow
     assert "github.event.issue.title" not in workflow
+
+    # P1 #834: a successful PR Gate completion is a verification-capacity
+    # release event and may wake the Jules recovery path, without widening
+    # the dispatcher's admission decision.
+    assert "workflow_run:" in workflow
+    assert 'workflows: ["PR Gate"]' in workflow
+    assert "types: [completed]" in workflow
+    # PR Gate runs on `pull_request` AND on `push: branches: [main]`, so the
+    # wake-up must be constrained to pull-request-derived runs or it becomes a
+    # second dispatcher control-plane push trigger. A `branches:` filter would
+    # do the opposite: it matches the triggering run's head_branch, which is
+    # `main` only for the push leg.
+    assert "github.event.workflow_run.event == 'pull_request'" in workflow, (
+        "workflow_run recovery must fire only for pull-request-derived runs"
+    )
+    # And PR Gate runs on fork pull requests, so it must be same-repository only.
+    assert (
+        "github.event.workflow_run.head_repository.full_name == github.repository"
+        in workflow
+    ), "workflow_run recovery must be limited to same-repository runs"
+    assert (
+        "github.event.workflow_run.conclusion == 'success'" in workflow
+    ), "workflow_run recovery must gate on a successful PR Gate conclusion"
+    assert "github.event_name == 'workflow_run'" in workflow
+    # The wake-up must reuse the existing reconciliation path rather than
+    # introduce a second admission route, and must stay inside the one
+    # dispatcher concurrency group so two sweeps can never run at once.
+    assert "python tools/jules_dispatcher.py --reconcile --dispatch" in workflow
+    assert "group: jules-dispatch\n" in workflow
+    assert "cancel-in-progress: false" in workflow
+    # The router alone owns control-plane push recovery (AGENTS.md); the
+    # workflow_run wake-up must not become a second dispatcher push trigger.
+    assert "\n  push:\n" not in workflow
 
 
 def test_prompt_preserves_issue_context_and_safety_boundary():

@@ -8,6 +8,8 @@ routing policy and GitHub workflow handoff must agree with it.
 
 from __future__ import annotations
 
+import re
+
 import json
 from pathlib import Path
 import sys
@@ -25,6 +27,35 @@ def _load_json(relative: str) -> dict[str, Any]:
 
 def _read(relative: str) -> str:
     return (ROOT / relative).read_text(encoding="utf-8")
+
+
+def _strip_yaml_comments(text: str) -> str:
+    """Blank out YAML comments so a substring rule cannot be satisfied by one.
+
+    Every structural rule below is a substring match against workflow text. A
+    commented-out trigger still contains the exact text the rule looks for, so
+    without this a contributor can disable `workflows:`/`types:`/a job `if:`
+    guard by commenting it out and the checker stays green -- block scoping does
+    not help, because the comment sits inside the block. Lines are blanked
+    rather than dropped so indentation-based block extraction is unaffected.
+    """
+    out: list[str] = []
+    for line in text.splitlines():
+        quote: str | None = None
+        cut = len(line)
+        for index, char in enumerate(line):
+            if quote is not None:
+                if char == quote:
+                    quote = None
+                continue
+            if char in "'\"":
+                quote = char
+                continue
+            if char == "#":
+                cut = index
+                break
+        out.append(line[:cut].rstrip())
+    return "\n".join(out)
 
 
 def _indented_block(text: str, header: str) -> str:
@@ -57,8 +88,12 @@ def main() -> int:
 
     dispatch_policy = _load_json("config/jules-dispatch.json")
     routing_policy = _load_json("config/llm-routing-policy.json")
-    dispatcher_workflow = _read(".github/workflows/jules-dispatch.yml")
-    router_workflow = _read(".github/workflows/issue-model-router.yml")
+    dispatcher_workflow = _strip_yaml_comments(
+        _read(".github/workflows/jules-dispatch.yml")
+    )
+    router_workflow = _strip_yaml_comments(
+        _read(".github/workflows/issue-model-router.yml")
+    )
     pr_gate = _read(".github/workflows/pr-gate.yml")
     router_code = _read("scripts/issue_model_router.py")
     dispatcher_code = _read("tools/jules_dispatcher.py")
@@ -277,6 +312,7 @@ def main() -> int:
 
     workflow_call = _indented_block(dispatcher_workflow, "workflow_call:")
     workflow_dispatch = _indented_block(dispatcher_workflow, "workflow_dispatch:")
+    workflow_run = _indented_block(dispatcher_workflow, "workflow_run:")
     router_push = _indented_block(router_workflow, "push:")
     for name, block in (
         ("workflow_call", workflow_call),
@@ -386,9 +422,13 @@ def main() -> int:
         "fill_capacity: true" in router_workflow,
         "router recovery/backfill calls must explicitly request capacity fill",
     )
+    # Matching "\n  push:\n" alone misses a flow mapping such as
+    # `push: {branches: [main]}` and any trailing-space variant, so inspect the
+    # parsed `on:` block for a `push` key in either YAML form.
+    _dispatcher_on = _indented_block(dispatcher_workflow, "on:")
     _require(
         errors,
-        "\n  push:\n" not in dispatcher_workflow,
+        re.search(r"(?:^|[{,\s])push\s*:", _dispatcher_on, re.MULTILINE) is None,
         "dispatcher must not duplicate router-owned control-plane push recovery",
     )
 
@@ -431,6 +471,76 @@ def main() -> int:
         errors,
         "pull_request_target:" not in dispatcher_workflow,
         "dispatcher must not run with pull_request_target privileges",
+    )
+    # P1 #834: a successful PR Gate completion is a verification-capacity release
+    # event and may wake the recovery path. Every assertion below is scoped to the
+    # `workflow_run:` block, because a whole-file substring match would be
+    # satisfied by the same text sitting in a comment after the trigger was
+    # removed. The wake-up must stay a narrow, success-only, trusted-code
+    # reconciliation: it may not widen an admission cap or consume the run that
+    # woke it.
+    _require(
+        errors,
+        bool(workflow_run),
+        "dispatcher must declare the workflow_run capacity recovery trigger",
+    )
+    _require(
+        errors,
+        'workflows: ["PR Gate"]' in workflow_run,
+        "dispatcher workflow_run recovery must be sourced only from PR Gate",
+    )
+    _require(
+        errors,
+        "types: [completed]" in workflow_run,
+        "dispatcher workflow_run recovery must run only after completion",
+    )
+    # `PR Gate` runs on `pull_request` AND on `push: branches: [main]`, so an
+    # unconstrained `workflow_run` also fires for every push to the default
+    # branch -- which would be a second dispatcher control-plane push recovery
+    # trigger, the thing AGENTS.md reserves to the router. Constrain the wake-up
+    # to pull-request-derived runs (the repo already does this in
+    # ci-shadow-outcome.yml) rather than filtering on branch: `workflow_run`
+    # branch filters match the *triggering* run's head_branch, which is `main`
+    # only for the push leg, so `branches: [main]` would keep exactly the push
+    # sweep and discard every pull-request wake.
+    _require(
+        errors,
+        "github.event.workflow_run.event == 'pull_request'" in dispatcher_workflow,
+        "dispatcher workflow_run recovery must fire only for pull-request-derived runs, "
+        "never for a push to the default branch",
+    )
+    # `PR Gate` also runs on fork pull requests, so without this an
+    # unprivileged contributor could wake this secret-bearing workflow at will.
+    _require(
+        errors,
+        "github.event.workflow_run.head_repository.full_name == github.repository"
+        in dispatcher_workflow,
+        "dispatcher workflow_run recovery must be limited to same-repository runs",
+    )
+    _require(
+        errors,
+        "github.event.workflow_run.conclusion == 'success'" in dispatcher_workflow,
+        "dispatcher workflow_run recovery must gate on a successful PR Gate conclusion",
+    )
+    _require(
+        errors,
+        "github.event_name == 'workflow_run'" in dispatcher_workflow
+        and "--reconcile --dispatch" in dispatcher_workflow,
+        "successful PR Gate completion must reuse the Jules reconciliation path",
+    )
+    _require(
+        errors,
+        "github.event.workflow_run" not in _indented_block(
+            dispatcher_workflow, "steps:"
+        ).replace("github.event.workflow_run.conclusion", ""),
+        "dispatcher steps must not consume payload from the run that woke them",
+    )
+    dispatcher_concurrency = _indented_block(dispatcher_workflow, "concurrency:")
+    _require(
+        errors,
+        [line.strip() for line in dispatcher_concurrency.splitlines() if line.strip()]
+        == ["group: jules-dispatch", "cancel-in-progress: false"],
+        "workflow_run recovery must reuse the single jules-dispatch concurrency group",
     )
 
     _require(
