@@ -206,6 +206,29 @@ and the release notes for that tag.
   opt-in, and the exemption is scoped to lines carrying nothing but references:
   the previous prefix match would have let an opt-in line shield an unrelated
   closing keyword written beside it, which GitHub would still have acted on.
+- `.github/workflows/jules-dispatch.yml` also wakes its reconciliation path on a
+  successful `PR Gate` completion (issue 834), so a verification slot freed when
+  the gate's matrix jobs leave the active set is reclaimed within minutes instead
+  of at the next half-hourly tick. The trigger is a trusted default-branch
+  `workflow_run` that consumes nothing from the run that woke it; it fires only
+  for pull-request-derived, same-repository gate runs, because `PR Gate` also
+  triggers on pushes to `main` (an unconstrained trigger would become a second
+  dispatcher control-plane push recovery path, which `AGENTS.md` reserves to the
+  router) and on fork pull requests (which would let any unprivileged
+  contributor wake this secret-bearing workflow at will); failed and cancelled gates do not start it; the 12/8 Actions backpressure ceilings,
+  provider concurrency, review reservations, and the single `jules-dispatch`
+  concurrency group are unchanged, so the wake-up can free a slot but never
+  admit past a cap. `tools/check_jules_contract.py` pins the source workflow,
+  the success-only conclusion, the pull-request-derived and same-repository
+  constraints, the reuse of `--reconcile --dispatch`, and the single concurrency
+  group. The contract checker and the equivalent test now strip YAML comments
+  before matching, because every structural rule is a substring match and a
+  commented-out trigger still contains the text the rule looks for -- a
+  commented-out `workflows:` filter with `types: [completed, requested]` added
+  passed both before this change. The `push` rule now inspects the parsed `on:`
+  block for a `push` key in either YAML form, closing a flow-mapping evasion. `docs/operations/JULES_AUTOMATION.md` records the
+  path and the cases where it is silently skipped, since it is a latency
+  optimization over the 30-minute schedule and never a guarantee.
 
 - `.github/workflows/pr-gate.yml` no longer runs the complete, unfiltered suite as its
   required check. It ran `python -m pytest -q` directly — every `sim`/`slow` simulation

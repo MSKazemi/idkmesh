@@ -98,8 +98,34 @@ starts caused by mutations made with `GITHUB_TOKEN`.
 the Jules Dispatcher. The newly approved issue is prioritized and at most one
 task is started by that event.
 
-**Capacity-release path — event driven.** Closing an open dispatched issue
-immediately invokes reconciliation and fills newly available capacity.
+**Capacity-release paths — event driven.** Closing an open dispatched issue
+immediately invokes reconciliation and fills newly available capacity. A
+successful `PR Gate` workflow completion also wakes the dispatcher to re-check
+the same live provider, repository and Actions budgets: the gate's matrix jobs
+have just left the active set, so a slot freed by verification is reclaimed
+within minutes instead of at the next half-hourly tick. This reserves nothing
+and bypasses no cap — if queued runs are still above 12 or in-progress runs are
+still above 8, the recovery attempt exits without starting Jules work. Failed
+and cancelled `PR Gate` runs do not start it at all.
+
+This wake-up is a latency optimization, never a guarantee, and nothing should be
+built on its arrival. It is silently skipped whenever there is no successful
+`PR Gate` completion to observe: a run cancelled by a newer push to the same pull
+request, a commit that reaches `main` with no gate result at all, and a wake-up
+dropped while pending because the shared `jules-dispatch` concurrency group
+already held a newer one. `PR Gate` also runs on pushes to `main`, but the
+wake-up is constrained to pull-request-derived runs, so a merge does **not**
+produce both a router backfill and this sweep for the same event -- control-plane
+push recovery stays solely the router's. Note that a serialized second sweep is
+not free: `reconcile_active_sessions` calls `list_open_issues()` and, whenever a
+reservation is active, `list_sessions()`, and a dispatch pass adds two
+`count_workflow_runs` reads. That GitHub and provider API cost is exactly what
+the single-owner invariant protects, so collapsing duplicate sweeps matters.
+Every skipped or collapsed wake-up degrades to the 30-minute schedule below --
+which is the backstop, but a weaker one than its cron implies: scheduled GitHub
+Actions runs are dropped under load, and this repository has measured a mean
+delay of about 4.6 hours across 21 scheduled runs. Treat the schedule as
+eventual, not punctual.
 
 **Recovery/reconciliation path — every 30 minutes.** At minutes 17 and 47 UTC,
 the dispatcher checks provider session state, quarantines failed/stale work,
@@ -306,13 +332,15 @@ Recommended operating rhythm:
 3. use `agent-ready` for explicit maintainer-approved tasks that are not in
    the automatic lane;
 4. let event-driven dispatch fill the effective provider/repository capacity;
-5. let the 30-minute reconciliation sweep free slots held by genuinely stalled
+5. let a successful `PR Gate` completion re-check capacity as soon as the
+   verification jobs leave the active set, without relying on it arriving;
+6. let the 30-minute reconciliation sweep free slots held by genuinely stalled
    provider sessions and by completed Sessions whose Jules PR review has ended;
-6. review/merge/close completed PRs promptly; the parent issue may stay open
+7. review/merge/close completed PRs promptly; the parent issue may stay open
    without pinning the Jules review slot after reconciliation;
-7. explicitly re-triage an `agent:jules-completed` issue before removing that
+8. explicitly re-triage an `agent:jules-completed` issue before removing that
    terminal veto for another bounded attempt;
-8. decompose broad work with `needs-decomposition` instead of sending vague
+9. decompose broad work with `needs-decomposition` instead of sending vague
    prompts.
 
 If review latency grows, lower concurrency before creating more generated work.
@@ -426,7 +454,32 @@ router/dispatcher/policy surfaces causes one router backfill, which calls the
 reusable dispatcher with `bootstrap_labels: true` and `fill_capacity: true`.
 The contract checker requires both typed inputs. The dispatcher deliberately has
 no independent `push` trigger, avoiding duplicate provider/API sweeps and
-preserving GitHub API quota.
+preserving GitHub API quota; the contract checker fails if one is added.
+
+The dispatcher's only other wake-up is a success-only `workflow_run` from the
+required `PR Gate`. It is not a second control-plane push trigger: it starts no
+routing pass, checks out trusted default-branch code rather than any pull
+request head, consumes no output of the run that woke it, and reuses the same
+fail-closed `--reconcile --dispatch` path and the same `jules-dispatch`
+concurrency group as the schedule. Two constraints define who can cause it to
+fire, and both are pinned by the contract checker. First, it runs only for
+**pull-request-derived** gate runs (`github.event.workflow_run.event ==
+'pull_request'`). `PR Gate` also triggers on `push: branches: [main]`, so an
+unconstrained `workflow_run` would fire on every push to the default branch and
+become a second dispatcher control-plane push recovery trigger — the thing this
+document and `AGENTS.md` reserve to the router. Note that a `workflow_run`
+`branches:` filter would achieve the **opposite** of that: it matches the
+triggering run's `head_branch`, which is `main` only for the push leg, so
+`branches: [main]` would keep exactly the push sweep and discard every
+pull-request wake. Second, it runs only for **same-repository** runs
+(`head_repository.full_name == github.repository`), because `PR Gate` also runs
+on pull requests from forks and without that an unprivileged contributor could
+make this secret-bearing workflow run at will. It does raise how often that group is busy,
+so a label-triggered dispatch queued behind it can be dropped while pending; the
+approved issue is then admitted by the recovery sweep instead of by its own run,
+which costs prioritization rather than the dispatch. The contract checker pins
+the source workflow, the success-only conclusion, and the reuse of the
+reconciliation path.
 
 
 ### `agent:jules-eligible` exists but dispatch never starts
