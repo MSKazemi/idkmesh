@@ -1,0 +1,112 @@
+{
+  "schema": "gate-audit-dependence-v0.1",
+  "gate_id": "example-five-verifier-gate",
+  "evidence_class": "synthetic",
+  "authority": "diagnostic_only",
+  "non_probe_candidate_count": 12,
+  "verifier_ids": [
+    "reviewer-a",
+    "reviewer-b",
+    "reviewer-c",
+    "reviewer-d",
+    "reviewer-e"
+  ],
+  "pairs": [
+    {
+      "verifier_a": "reviewer-a",
+      "verifier_b": "reviewer-b",
+      "phi_error": 1.0,
+      "measurable": true,
+      "joint_error_count": 3,
+      "a_error_count": 3,
+      "b_error_count": 3
+    },
+    {
+      "verifier_a": "reviewer-a",
+      "verifier_b": "reviewer-c",
+      "phi_error": 0.774596669241,
+      "measurable": true,
+      "joint_error_count": 2,
+      "a_error_count": 3,
+      "b_error_count": 2
+    },
+    {
+      "verifier_a": "reviewer-a",
+      "verifier_b": "reviewer-d",
+      "phi_error": -0.258198889747,
+      "measurable": true,
+      "joint_error_count": 0,
+      "a_error_count": 3,
+      "b_error_count": 2
+    },
+    {
+      "verifier_a": "reviewer-a",
+      "verifier_b": "reviewer-e",
+      "phi_error": -0.258198889747,
+      "measurable": true,
+      "joint_error_count": 0,
+      "a_error_count": 3,
+      "b_error_count": 2
+    },
+    {
+      "verifier_a": "reviewer-b",
+      "verifier_b": "reviewer-c",
+      "phi_error": 0.774596669241,
+      "measurable": true,
+      "joint_error_count": 2,
+      "a_error_count": 3,
+      "b_error_count": 2
+    },
+    {
+      "verifier_a": "reviewer-b",
+      "verifier_b": "reviewer-d",
+      "phi_error": -0.258198889747,
+      "measurable": true,
+      "joint_error_count": 0,
+      "a_error_count": 3,
+      "b_error_count": 2
+    },
+    {
+      "verifier_a": "reviewer-b",
+      "verifier_b": "reviewer-e",
+      "phi_error": -0.258198889747,
+      "measurable": true,
+      "joint_error_count": 0,
+      "a_error_count": 3,
+      "b_error_count": 2
+    },
+    {
+      "verifier_a": "reviewer-c",
+      "verifier_b": "reviewer-d",
+      "phi_error": -0.2,
+      "measurable": true,
+      "joint_error_count": 0,
+      "a_error_count": 2,
+      "b_error_count": 2
+    },
+    {
+      "verifier_a": "reviewer-c",
+      "verifier_b": "reviewer-e",
+      "phi_error": -0.2,
+      "measurable": true,
+      "joint_error_count": 0,
+      "a_error_count": 2,
+      "b_error_count": 2
+    },
+    {
+      "verifier_a": "reviewer-d",
+      "verifier_b": "reviewer-e",
+      "phi_error": -0.2,
+      "measurable": true,
+      "joint_error_count": 0,
+      "a_error_count": 2,
+      "b_error_count": 2
+    }
+  ],
+  "warnings": [],
+  "provenance": {
+    "tool": "idkmesh gate-audit-dependence",
+    "tool_version": "0.1.0",
+    "input_digest_sha256": "23caa4c4cc57e91c31262bc9e830ccaecdb7884b7bf97d739c37d0615d6b2d8a"
+  }
+}
