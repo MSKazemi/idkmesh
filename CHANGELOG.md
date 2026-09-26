@@ -12,6 +12,24 @@ and the release notes for that tag.
 
 ## [Unreleased]
 
+### Added
+
+- `idkmesh local-loop <config>` (`idkmesh/local_loop.py`), the first CLI command
+  wiring ROADMAP.md S4's R1 local product loop end to end: validates a
+  two-attempt orchestration config and its WorkUnit, dispatches the two
+  isolated attempts, routes each through independent verification, and
+  captures the same replayable evidence bundle `experiments/replay_run.py`
+  produces (run record, evidence report JSON + Markdown, raw per-attempt
+  `VerificationResult` evidence, replay manifest), printing the two remaining
+  human-gated next steps (record a decision, confirm replay) rather than
+  performing them. Named `local-loop` rather than `run` because `idkmesh run`
+  already names the unrelated Product Spine run-bookkeeping command, which
+  explicitly never dispatches or verifies anything. Its heaviest test (three
+  real subprocess spawns: the CLI, `experiments/replay_run.py`,
+  `experiments/record_human_decision.py`) is marked `slow` and runs in the
+  nightly tier rather than the unit tier, per `docs/TESTING.md`'s "mark the
+  worst offenders `sim`/`slow`, do not raise the budget" policy.
+
 ### Changed
 
 - `tests/test_cli_tools_help.py` runs each discovered tool's `--help` through

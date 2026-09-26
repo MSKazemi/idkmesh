@@ -217,6 +217,18 @@ negative regression coverage. This does not by itself close R1 or R4 — it
 covers only the replay of an already-produced local orchestration run, not
 corpus collection, worker interchangeability, or a packaged release.
 
+The full chain above is now runnable as one command, `idkmesh local-loop
+<config>` (`idkmesh/local_loop.py` + `idkmesh/cli.py`): it validates a
+two-attempt orchestration config and its WorkUnit, dispatches the two
+isolated attempts, routes each through independent verification, and
+captures the same replayable evidence bundle `experiments/replay_run.py`
+produces, printing the two remaining human-gated next steps (recording a
+decision, confirming replay) rather than performing them. This closes the
+"runnable and explainable without reading research-history documents" bar
+for one already-existing config; it does not by itself close R1 — corpus
+collection, worker interchangeability (R2), and a packaged release are
+still open.
+
 ### R2 — Demonstrate heterogeneous worker interchangeability
 
 Route at least two materially different worker implementations through the same coordinator-facing contract without coordinator-core rewrites.
