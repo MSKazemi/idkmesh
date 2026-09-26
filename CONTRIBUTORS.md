@@ -35,6 +35,13 @@ convention.
       </a>
       <br />🐛
     </td>
+    <td align="center">
+      <a href="https://github.com/JLuhanaJakubowicz">
+        <img src="https://avatars.githubusercontent.com/u/197538128?v=4" width="80px;" alt="JLuhanaJakubowicz"/>
+        <br /><sub><b>JLuhanaJakubowicz</b></sub>
+      </a>
+      <br />🔬📖
+    </td>
   </tr>
 </table>
 
@@ -43,3 +50,9 @@ that the documented support path (`CONTRIBUTING.md` -> `SUPPORT.md` ->
 GitHub Discussions Q&A) led to a near-empty Discussions Q&A: exactly the
 newcomer-friction evidence [issue #542](https://github.com/MSKazemi/idkmesh/issues/542)
 was designed to surface.
+
+**JLuhanaJakubowicz** — [independently re-counted](docs/audits/2026-09-24-benchmark-publication-counts.md)
+every task, attempt, and verified outcome across all four `benchmarks/*/cohort.json`
+files for [issue #541](https://github.com/MSKazemi/idkmesh/issues/541), by hand and
+without relying on `benchmarks/PUBLICATION.md` or its generation script, confirming
+the published totals with no discrepancy.

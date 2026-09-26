@@ -39,6 +39,15 @@ Whole-repository snapshots, ordered by date.
 
 Each answers one bounded question rather than surveying the repository.
 
+- [Independent Verification of the Benchmark Publication Counts](2026-09-24-benchmark-publication-counts.md)
+  — 2026-09-24; baseline `8a295e3`. Manually recounts tasks, attempts, and
+  verified outcomes across the four `benchmarks/*/cohort.json` files for issue
+  #541, independent of `benchmarks/PUBLICATION.md` and its generation script.
+  Finds no discrepancy. Also records that `tools/benchmark_publication.py
+  --check` fails without `PYTHONPATH=.`, and one unrelated baseline test
+  (`test_local_agent_boundary_rejects_implicit_host_env_and_repo_artifacts`)
+  failed on the reviewer's machine before any change.
+
 - [SEO + AI-Visibility Audit](2026-09-20-seo-ai-visibility-audit.md) —
   2026-09-20; baseline `999bc26d`. Is `mskazemi.com/idkmesh/` visible to search
   engines and AI answer engines, and if not, why? Zero P0 blockers found; robots
