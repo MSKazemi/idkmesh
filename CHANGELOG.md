@@ -24,7 +24,11 @@ and the release notes for that tag.
   human-gated next steps (record a decision, confirm replay) rather than
   performing them. Named `local-loop` rather than `run` because `idkmesh run`
   already names the unrelated Product Spine run-bookkeeping command, which
-  explicitly never dispatches or verifies anything.
+  explicitly never dispatches or verifies anything. Its heaviest test (three
+  real subprocess spawns: the CLI, `experiments/replay_run.py`,
+  `experiments/record_human_decision.py`) is marked `slow` and runs in the
+  nightly tier rather than the unit tier, per `docs/TESTING.md`'s "mark the
+  worst offenders `sim`/`slow`, do not raise the budget" policy.
 
 ### Changed
 

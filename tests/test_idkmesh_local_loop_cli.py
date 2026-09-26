@@ -21,6 +21,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
+import pytest
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 HAS_JSONSCHEMA = importlib.util.find_spec("jsonschema") is not None
@@ -60,6 +62,7 @@ class LocalLoopCliEndToEndTests(unittest.TestCase):
             + "/bundle"
         )
 
+    @pytest.mark.slow  # three real subprocess spawns: idkmesh CLI, replay_run.py, record_human_decision.py
     def test_local_loop_produces_a_valid_evidence_bundle_for_a_real_patch_run(self):
         """A real WorkUnit + two real unified-diff attempts, end to end."""
 
