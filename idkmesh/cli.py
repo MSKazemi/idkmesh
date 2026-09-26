@@ -47,6 +47,12 @@ from idkmesh.marginal_evidence_benchmark import (
     referenced_paths as marginal_benchmark_referenced_paths,
     render_json as render_marginal_benchmark_json,
 )
+from idkmesh.local_loop import (
+    LocalLoopError,
+    LocalLoopSetupError,
+    render_summary as render_local_loop_summary,
+    run_work_unit,
+)
 from idkmesh.local_ui_security import MAX_BODY_BYTES
 
 
@@ -554,6 +560,42 @@ def build_parser() -> argparse.ArgumentParser:
     shi.add_argument(
         "--no-browser", action="store_true",
         help="serve the dashboard without opening the default browser")
+
+    loop = sub.add_parser(
+        "local-loop",
+        help=(
+            "run a bounded WorkUnit through the R1 local product loop: two "
+            "isolated attempts, independent verification, and an evidence "
+            "report (see ROADMAP.md S4)"),
+        description=(
+            "Validate a two-attempt orchestration config (see "
+            "experiments/two_attempt_orchestrator.py) and its referenced "
+            "WorkUnit, dispatch the two isolated attempts, route each "
+            "through independent verification, and capture a "
+            "self-describing, replayable evidence bundle under "
+            "--output-dir: the run record, an evidence report (JSON and "
+            "Markdown), the raw per-attempt VerificationResult evidence, "
+            "and a replay manifest. This command produces evidence only -- "
+            "it never records a human integration decision "
+            "(experiments/record_human_decision.py) and never replays "
+            "(experiments/replay_run.py) on its own behalf; both are "
+            "printed as next steps. Needs a repository checkout and the "
+            "'idkmesh[verify]' extra (jsonschema). Distinct from the "
+            "'run' command above, which only manages durable Product Spine "
+            "run bookkeeping and never dispatches or verifies anything."),
+    )
+    loop.add_argument(
+        "config",
+        help=(
+            "repository-relative path to a two-attempt orchestration "
+            "config JSON file, e.g. "
+            "examples/orchestration/two-attempt-good-vs-bad.json"))
+    loop.add_argument(
+        "--output-dir", metavar="PATH",
+        help=(
+            "repository-relative directory under results/ to write the "
+            "evidence bundle to; must not already exist non-empty "
+            "(default: results/idkmesh-local-loop/<run_id>)"))
     return parser
 
 
@@ -937,6 +979,23 @@ def _strict_json_file(path_value: str) -> dict[str, object]:
     return value
 
 
+def _run_local_loop(args: argparse.Namespace) -> int:
+    try:
+        result = run_work_unit(args.config, args.output_dir)
+    except (LocalLoopSetupError, LocalLoopError) as exc:
+        return _fail(str(exc))
+    except ImportError as exc:
+        # experiments/local_verifier.py raises this itself, with its own
+        # actionable install message, when jsonschema is missing (PR #554);
+        # it is printed unmodified rather than reworded here.
+        return _fail(str(exc))
+    except FileNotFoundError as exc:
+        return _fail(f"file not found: {exc}")
+
+    print(render_local_loop_summary(result))
+    return 0
+
+
 def _run_product_spine_control(args: argparse.Namespace) -> int:
     from idkmesh.connector_store import (
         LocalMetadataStore,
@@ -1151,6 +1210,8 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "run":
         return _run_product_spine_control(args)
+    if args.command == "local-loop":
+        return _run_local_loop(args)
     if args.command == "connections":
         return _run_connections(args)
     if args.command == "doctor":
