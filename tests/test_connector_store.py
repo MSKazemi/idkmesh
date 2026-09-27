@@ -285,6 +285,63 @@ class LocalMetadataStoreTests(unittest.TestCase):
                 updated_at="2026-09-22T14:35:00Z",
             )
 
+    def _admit(self, store, run_id: str) -> None:
+        store.admit_run(
+            run_id=run_id,
+            idempotency_key=f"key:{run_id}",
+            request_digest="sha256:same",
+            state="proposed",
+            metadata={"run_id": run_id},
+            created_at="2026-09-22T14:23:00Z",
+        )
+
+    def test_list_runs_is_empty_for_a_fresh_store(self):
+        store = self._store()
+        page, has_more = store.list_runs()
+        self.assertEqual(page, [])
+        self.assertFalse(has_more)
+
+    def test_list_runs_orders_by_run_id_not_insertion_order(self):
+        store = self._store()
+        for run_id in ("run-c", "run-a", "run-b"):
+            self._admit(store, run_id)
+
+        page, has_more = store.list_runs()
+        self.assertEqual(
+            [record.run_id for record in page], ["run-a", "run-b", "run-c"]
+        )
+        self.assertFalse(has_more)
+
+    def test_list_runs_pages_deterministically_with_a_keyset_cursor(self):
+        store = self._store()
+        for i in range(5):
+            self._admit(store, f"run-{i}")
+
+        page1, more1 = store.list_runs(limit=2)
+        self.assertEqual([r.run_id for r in page1], ["run-0", "run-1"])
+        self.assertTrue(more1)
+
+        page2, more2 = store.list_runs(limit=2, after=page1[-1].run_id)
+        self.assertEqual([r.run_id for r in page2], ["run-2", "run-3"])
+        self.assertTrue(more2)
+
+        page3, more3 = store.list_runs(limit=2, after=page2[-1].run_id)
+        self.assertEqual([r.run_id for r in page3], ["run-4"])
+        self.assertFalse(more3)
+
+        # A run admitted between two page reads never shifts an
+        # already-returned row: keyset pagination by run_id, not offset.
+        self._admit(store, "run-0-again-but-sorts-first-numerically")
+        page2_again, _ = store.list_runs(limit=2, after=page1[-1].run_id)
+        self.assertEqual([r.run_id for r in page2_again], ["run-2", "run-3"])
+
+    def test_list_runs_rejects_an_out_of_bounds_limit(self):
+        store = self._store()
+        with self.assertRaises(ValueError):
+            store.list_runs(limit=0)
+        with self.assertRaises(ValueError):
+            store.list_runs(limit=201)
+
 
 if __name__ == "__main__":
     unittest.main()

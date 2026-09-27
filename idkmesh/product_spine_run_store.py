@@ -21,11 +21,14 @@ Cancel:
 
 from __future__ import annotations
 
+import base64
 from dataclasses import dataclass
 from datetime import datetime, timezone
+import json
 from typing import Any, Mapping
 
 from idkmesh.connector_store import (
+    DEFAULT_LIST_LIMIT,
     LocalMetadataStore,
     LocalStoreConflict,
     LocalStoreError,
@@ -122,6 +125,43 @@ def _timestamp(value: str, field: str) -> str:
         .isoformat()
         .replace("+00:00", "Z")
     )
+
+
+_CURSOR_KIND = "product-spine-run-list-cursor-v1"
+
+
+def _encode_cursor(after_run_id: str) -> str:
+    """Opaque next-page cursor: callers must treat this as a token, never
+    construct or parse one themselves (API Conventions v0.1 section 10)."""
+    payload = json.dumps(
+        {"kind": _CURSOR_KIND, "after": after_run_id},
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return base64.urlsafe_b64encode(payload).decode("ascii")
+
+
+def _decode_cursor(cursor: str) -> str:
+    if not isinstance(cursor, str) or not cursor:
+        raise ProductSpineRunStoreError(
+            "invalid_cursor", "cursor must be a non-empty string"
+        )
+    try:
+        payload = json.loads(base64.urlsafe_b64decode(cursor.encode("ascii")))
+    except Exception as exc:
+        raise ProductSpineRunStoreError(
+            "invalid_cursor", "cursor is not a value this service issued"
+        ) from exc
+    if (
+        not isinstance(payload, dict)
+        or payload.get("kind") != _CURSOR_KIND
+        or not isinstance(payload.get("after"), str)
+        or not payload["after"]
+    ):
+        raise ProductSpineRunStoreError(
+            "invalid_cursor", "cursor is not a value this service issued"
+        )
+    return payload["after"]
 
 
 def _projection(
@@ -316,6 +356,28 @@ class ProductSpineRunStore:
             created=False,
             replayed=False,
         )
+
+    def list(
+        self,
+        *,
+        limit: int = DEFAULT_LIST_LIMIT,
+        cursor: str | None = None,
+    ) -> tuple[list[ProductSpineRun], str | None]:
+        """Deterministic keyset-paginated run listing.
+
+        Returns ``(runs, next_cursor)``; ``next_cursor`` is ``None`` on the
+        last page. The cursor is opaque -- see ``_encode_cursor`` -- and
+        raises ``ProductSpineRunStoreError("invalid_cursor", ...)`` for
+        anything this service did not itself issue.
+        """
+        after = _decode_cursor(cursor) if cursor is not None else None
+        try:
+            records, has_more = self._store.list_runs(limit=limit, after=after)
+        except ValueError as exc:
+            raise ProductSpineRunStoreError("invalid_limit", str(exc)) from exc
+        runs = [_restore(record) for record in records]
+        next_cursor = _encode_cursor(records[-1].run_id) if has_more else None
+        return runs, next_cursor
 
     def cancel(
         self,

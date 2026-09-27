@@ -378,8 +378,92 @@ class ProductSpineRunCliTests(unittest.TestCase):
         self.assertIn("create", proc.stdout)
         self.assertIn("status", proc.stdout)
         self.assertIn("cancel", proc.stdout)
+        self.assertIn("list", proc.stdout)
         normalized_stdout = " ".join(proc.stdout.split())
         self.assertIn("do not dispatch providers", normalized_stdout)
+
+    def test_run_list_is_empty_for_a_fresh_store(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            store = Path(tmp) / "state.sqlite"
+            proc = self.run_cli("run", "list", "--store", str(store))
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            self.assertIn("no retained runs", proc.stdout)
+
+    def test_run_list_json_matches_status_for_each_created_run(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            store = Path(tmp) / "state.sqlite"
+            for i in range(3):
+                projection = self.write_projection(
+                    tmp, _projection(run_id=f"run/list-{i}")
+                )
+                created = self.run_cli(
+                    "run", "create", str(projection),
+                    "--store", str(store),
+                    "--idempotency-key", f"list-key-{i}",
+                )
+                self.assertEqual(created.returncode, 0, created.stderr)
+
+            listed = self.run_cli(
+                "run", "list", "--store", str(store), "--json"
+            )
+            self.assertEqual(listed.returncode, 0, listed.stderr)
+            payload = json.loads(listed.stdout)
+            self.assertEqual(payload["kind"], "idkmesh-list")
+            self.assertEqual(
+                [item["run_id"] for item in payload["items"]],
+                ["run/list-0", "run/list-1", "run/list-2"],
+            )
+            self.assertIsNone(payload["page"]["next_cursor"])
+
+            status = self.run_cli(
+                "run", "status", "run/list-1", "--store", str(store), "--json"
+            )
+            status_run = json.loads(status.stdout)["run"]
+            self.assertEqual(payload["items"][1], status_run)
+
+    def test_run_list_paginates_with_a_returned_cursor(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            store = Path(tmp) / "state.sqlite"
+            for i in range(3):
+                projection = self.write_projection(
+                    tmp, _projection(run_id=f"run/page-{i}")
+                )
+                self.run_cli(
+                    "run", "create", str(projection),
+                    "--store", str(store),
+                    "--idempotency-key", f"page-key-{i}",
+                )
+
+            page1 = json.loads(
+                self.run_cli(
+                    "run", "list", "--store", str(store),
+                    "--limit", "2", "--json",
+                ).stdout
+            )
+            self.assertEqual(len(page1["items"]), 2)
+            cursor = page1["page"]["next_cursor"]
+            self.assertIsNotNone(cursor)
+
+            page2 = json.loads(
+                self.run_cli(
+                    "run", "list", "--store", str(store),
+                    "--limit", "2", "--cursor", cursor, "--json",
+                ).stdout
+            )
+            self.assertEqual(len(page2["items"]), 1)
+            self.assertIsNone(page2["page"]["next_cursor"])
+
+    def test_run_list_rejects_a_cursor_it_did_not_issue(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            store = Path(tmp) / "state.sqlite"
+            proc = self.run_cli(
+                "run", "list", "--store", str(store),
+                "--cursor", "not-a-real-cursor", "--json",
+            )
+            self.assertEqual(proc.returncode, 2)
+            self.assertEqual(
+                json.loads(proc.stderr)["error"]["code"], "invalid_cursor"
+            )
 
 
 class ProductSpineRunInputBoundTests(unittest.TestCase):

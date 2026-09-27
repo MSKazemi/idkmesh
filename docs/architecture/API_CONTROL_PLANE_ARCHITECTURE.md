@@ -169,7 +169,8 @@ today (not a target-state sketch):
 | control-tower  |  | idkmesh {...}  |  | Actions/hooks |  | HTTP    |
 | /api/v1, read  |  | connections,   |  | untrusted     |  | (not    |
 | -only + GET    |  | run, local-loop|  | until checked |  | built)  |
-| runs/{id} (#739)|  |                |  |               |  |        |
+| runs, GET runs/|  |                |  |               |  |         |
+| {id} (#739)    |  |                |  |               |  |         |
 +----------------+  +----------------+  +---------------+  +---------+
 ```
 

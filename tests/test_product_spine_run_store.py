@@ -222,6 +222,54 @@ class ProductSpineRunStoreTests(unittest.TestCase):
         ):
             self.service.status("run/cli-1")
 
+    def test_list_paginates_deterministically_and_matches_status(self):
+        for i in range(3):
+            self.service.create(
+                _run(run_id=f"run/list-{i}"),
+                idempotency_key=f"list-key-{i}",
+                created_at="2026-09-24T15:30:00Z",
+            )
+
+        page1, cursor1 = self.service.list(limit=2)
+        self.assertEqual(
+            [run.run_id for run in page1], ["run/list-0", "run/list-1"]
+        )
+        self.assertIsNotNone(cursor1)
+
+        page2, cursor2 = self.service.list(limit=2, cursor=cursor1)
+        self.assertEqual([run.run_id for run in page2], ["run/list-2"])
+        self.assertIsNone(cursor2)
+
+        # The service and CLI/HTTP surfaces must never disagree about one
+        # run's shape: a listed run is exactly what status() returns.
+        self.assertEqual(
+            page1[0].to_dict(),
+            self.service.status("run/list-0").run.to_dict(),
+        )
+
+    def test_list_rejects_a_cursor_this_service_did_not_issue(self):
+        with self.assertRaisesRegex(
+            ProductSpineRunStoreError, "not a value this service issued"
+        ):
+            self.service.list(cursor="not-base64-json")
+
+    def test_list_rejects_a_forged_but_validly_encoded_cursor(self):
+        import base64
+        import json
+
+        forged = base64.urlsafe_b64encode(
+            json.dumps({"kind": "some-other-kind", "after": "x"}).encode()
+        ).decode("ascii")
+        with self.assertRaisesRegex(
+            ProductSpineRunStoreError, "not a value this service issued"
+        ):
+            self.service.list(cursor=forged)
+
+    def test_list_of_an_empty_store_returns_no_runs_and_no_cursor(self):
+        runs, cursor = self.service.list()
+        self.assertEqual(runs, [])
+        self.assertIsNone(cursor)
+
 
 if __name__ == "__main__":
     unittest.main()

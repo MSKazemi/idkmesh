@@ -393,6 +393,58 @@ POST
 Wrong methods return HTTP 405 with an `Allow` header. `HEAD` on a POST-only
 resource also returns no body.
 
+### `GET /api/v1/runs`
+
+Authenticated, read-only Product Spine run listing (issue #739). Serves the
+same `idkmesh/product_spine_run_store.py:ProductSpineRunStore.list()`
+application service `idkmesh run list` already uses, deterministically
+ordered by `run_id` with keyset (not offset) pagination -- API Conventions
+v0.1 sections 10-11.
+
+This is the one Control Tower endpoint that accepts query parameters:
+
+- `limit` (optional integer, 1-200, default 50);
+- `cursor` (optional opaque string from a previous response's
+  `page.next_cursor`; never constructed or parsed by the caller).
+
+Any other query parameter, or either of these repeated, is rejected with
+`400 unexpected_query_parameters`. An out-of-range `limit` is rejected with
+`400 invalid_limit`. Like `GET /api/v1/runs/{run_id}`, this endpoint returns
+`503 product_spine_store_not_configured` when this server instance was not
+started with `--product-spine-store`.
+
+Representative shape:
+
+```json
+{
+  "kind": "idkmesh-list",
+  "schema_version": "0.1",
+  "items": [
+    {
+      "schema_version": "0.1",
+      "kind": "idkmesh-product-spine-run",
+      "run_id": "...",
+      "state": "proposed"
+    }
+  ],
+  "page": {
+    "next_cursor": null,
+    "limit": 50
+  }
+}
+```
+
+Frozen by the cross-cutting `schemas/idkmesh-list-v0.1.schema.json` (API
+Conventions v0.1 section 10) wrapping
+`schemas/idkmesh-product-spine-run-v0.1.schema.json` items -- no new envelope
+schema was needed for this endpoint.
+
+Supported methods:
+
+```text
+GET, HEAD
+```
+
 ### `GET /api/v1/runs/{run_id}`
 
 Authenticated, read-only Product Spine run projection (issue #739, the first
@@ -650,8 +702,12 @@ Stable v0.1 codes include:
 - `preflight_not_supported`;
 - `not_found`;
 - `run_not_found` (`GET /api/v1/runs/{run_id}`, unknown `run_id`);
-- `product_spine_store_not_configured` (`GET /api/v1/runs/{run_id}`, no
-  `--product-spine-store` given to this server instance).
+- `product_spine_store_not_configured` (`GET /api/v1/runs/{run_id}` and
+  `GET /api/v1/runs`, no `--product-spine-store` given to this server
+  instance);
+- `invalid_limit` (`GET /api/v1/runs`, `limit` outside 1-200);
+- `invalid_cursor` (`GET /api/v1/runs`, `cursor` this service did not
+  itself issue).
 
 ## HTTP method behavior
 
