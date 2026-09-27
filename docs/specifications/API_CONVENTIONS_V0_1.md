@@ -395,6 +395,13 @@ A breaking change requires an explicit decision record (see
 template this document itself was frozen under) plus release/migration
 evidence.
 
+For the object schemas under `schemas/`, this is mechanically enforced, not
+only a labeling convention:
+[ADR-0020](../decisions/ADR-0020-schema-backward-compatibility-gate.md)'s
+`tools/schema_compat_check.py` fails the required PR Gate on a breaking
+in-place edit to an already-shipped schema file, so introducing one requires
+adding a new, separately versioned file instead.
+
 ## 23. Authority statement
 
 These conventions standardize transport behavior.

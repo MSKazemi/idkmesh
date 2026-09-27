@@ -101,3 +101,15 @@ jobs:
         # Shared with contributors: Markdown/anchors plus tracked local assets.
         # Seeded negative sources under tests/fixtures/ remain excluded.
         run: python scripts/check_links.py
+
+      # ADR-0020: a schemas/*.json file's content must never change
+      # incompatibly once it exists -- a breaking change always means a new,
+      # separately versioned file instead. Compares against the exact PR base
+      # commit on a pull request (matching the closing-keyword guard's own
+      # BASE_SHA above), or the immediately preceding commit on a direct push
+      # to `main` (each such push is one linear squash-merge commit).
+      - name: Check schema backward compatibility
+        env:
+          PYTHONPATH: .
+          BASE_SHA: ${{ github.event.pull_request.base.sha || 'HEAD~1' }}
+        run: python tools/schema_compat_check.py --base "${BASE_SHA}"

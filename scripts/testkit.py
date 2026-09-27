@@ -294,6 +294,9 @@ def integration_gates() -> list[tuple[str, list[str]]]:
     link = ROOT / "tools" / "idkgraph_link_check.py"
     if link.exists():
         gates.append(("markdown-links", [python(), str(ROOT / "scripts" / "check_links.py")]))
+    compat_check = ROOT / "tools" / "schema_compat_check.py"
+    if compat_check.exists():
+        gates.append(("schema-compat", [python(), str(compat_check)]))
     for schema in sorted((ROOT / "schemas").glob("*.json")):
         # JSON *syntax* only -- deliberately labelled as such. `json.tool` happily
         # accepts a structurally invalid JSON Schema, so calling this leg
