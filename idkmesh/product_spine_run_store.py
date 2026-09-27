@@ -35,6 +35,7 @@ from idkmesh.connector_store import (
     RunRecord,
 )
 from idkmesh.product_spine import (
+    RUN_STATES,
     ProductSpineError,
     ProductSpineRun,
     projection_from_mapping,
@@ -362,17 +363,29 @@ class ProductSpineRunStore:
         *,
         limit: int = DEFAULT_LIST_LIMIT,
         cursor: str | None = None,
+        state: str | None = None,
+        project_id: str | None = None,
     ) -> tuple[list[ProductSpineRun], str | None]:
         """Deterministic keyset-paginated run listing.
 
         Returns ``(runs, next_cursor)``; ``next_cursor`` is ``None`` on the
         last page. The cursor is opaque -- see ``_encode_cursor`` -- and
         raises ``ProductSpineRunStoreError("invalid_cursor", ...)`` for
-        anything this service did not itself issue.
+        anything this service did not itself issue. ``state``, if given,
+        must be one of the canonical ``RUN_STATES``; an unrecognized value
+        fails explicitly with ``invalid_state`` rather than silently
+        matching zero rows (API Conventions v0.1 section 11).
         """
+        if state is not None and state not in RUN_STATES:
+            raise ProductSpineRunStoreError(
+                "invalid_state",
+                f"state must be one of {sorted(RUN_STATES)}",
+            )
         after = _decode_cursor(cursor) if cursor is not None else None
         try:
-            records, has_more = self._store.list_runs(limit=limit, after=after)
+            records, has_more = self._store.list_runs(
+                limit=limit, after=after, state=state, project_id=project_id,
+            )
         except ValueError as exc:
             raise ProductSpineRunStoreError("invalid_limit", str(exc)) from exc
         runs = [_restore(record) for record in records]

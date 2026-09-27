@@ -465,6 +465,44 @@ class ProductSpineRunCliTests(unittest.TestCase):
                 json.loads(proc.stderr)["error"]["code"], "invalid_cursor"
             )
 
+    def test_run_list_filters_by_project_id(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            store = Path(tmp) / "state.sqlite"
+            for run_id, project_id in (
+                ("run/f-1", "project.alpha"),
+                ("run/f-2", "project.beta"),
+            ):
+                projection = self.write_projection(
+                    tmp, _projection(run_id=run_id, project_id=project_id)
+                )
+                self.run_cli(
+                    "run", "create", str(projection),
+                    "--store", str(store),
+                    "--idempotency-key", f"filter-{run_id}",
+                )
+
+            listed = self.run_cli(
+                "run", "list", "--store", str(store),
+                "--project-id", "project.alpha", "--json",
+            )
+            self.assertEqual(listed.returncode, 0, listed.stderr)
+            payload = json.loads(listed.stdout)
+            self.assertEqual(
+                [item["run_id"] for item in payload["items"]], ["run/f-1"]
+            )
+
+    def test_run_list_rejects_an_unrecognized_state(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            store = Path(tmp) / "state.sqlite"
+            proc = self.run_cli(
+                "run", "list", "--store", str(store),
+                "--state", "not-a-real-state", "--json",
+            )
+            self.assertEqual(proc.returncode, 2)
+            self.assertEqual(
+                json.loads(proc.stderr)["error"]["code"], "invalid_state"
+            )
+
 
 class ProductSpineRunInputBoundTests(unittest.TestCase):
     """The two input bounds `run create` advertises but nothing exercised.

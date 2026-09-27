@@ -1000,6 +1000,37 @@ class ControlTowerRunReadTests(unittest.TestCase):
         self.assertEqual(status, 400)
         self.assertEqual(payload["error"]["code"], "invalid_limit")
 
+    def test_list_filters_by_project_id(self) -> None:
+        status, _, body = self.request(
+            "GET", "/api/v1/runs?project_id=project.test")
+        payload = json.loads(body)
+        self.assertEqual(status, 200)
+        self.assertEqual(len(payload["items"]), 3)
+
+        status, _, body = self.request(
+            "GET", "/api/v1/runs?project_id=no-such-project")
+        payload = json.loads(body)
+        self.assertEqual(status, 200)
+        self.assertEqual(payload["items"], [])
+
+    def test_list_filters_by_state(self) -> None:
+        status, _, body = self.request("GET", "/api/v1/runs?state=proposed")
+        payload = json.loads(body)
+        self.assertEqual(status, 200)
+        self.assertEqual(len(payload["items"]), 3)
+
+        status, _, body = self.request("GET", "/api/v1/runs?state=cancelled")
+        payload = json.loads(body)
+        self.assertEqual(status, 200)
+        self.assertEqual(payload["items"], [])
+
+    def test_list_rejects_an_unrecognized_state(self) -> None:
+        status, _, body = self.request(
+            "GET", "/api/v1/runs?state=not-a-real-state")
+        payload = json.loads(body)
+        self.assertEqual(status, 400)
+        self.assertEqual(payload["error"]["code"], "invalid_state")
+
     def test_list_post_is_method_not_allowed(self) -> None:
         conn = http.client.HTTPConnection(
             "127.0.0.1", self.server.server_port, timeout=3

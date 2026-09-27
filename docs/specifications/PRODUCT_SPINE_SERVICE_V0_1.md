@@ -475,7 +475,7 @@ group over the same SQLite `LocalMetadataStore` the PS-C composition uses:
 idkmesh run create PROJECTION --store PATH --idempotency-key KEY
 idkmesh run status RUN_ID --store PATH
 idkmesh run cancel RUN_ID --store PATH
-idkmesh run list --store PATH [--limit N] [--cursor TOKEN]
+idkmesh run list --store PATH [--limit N] [--cursor TOKEN] [--state STATE] [--project-id ID]
 ```
 
 Each accepts `--json` for deterministic machine-readable output, and `create`
@@ -507,6 +507,16 @@ under a caller mid-page (API Conventions v0.1 section 10). The
 `--cursor` value is opaque and must be passed back exactly as returned;
 a cursor this service did not itself issue fails closed with
 `invalid_cursor`.
+
+`--state` and `--project-id` are optional, exact-match, bounded filters
+(section 11: an unknown filter fails explicitly rather than being
+silently ignored) and combine with AND when both are given. `--state`
+must be one of the canonical `RUN_STATES`; an unrecognized value fails
+closed with `invalid_state` rather than silently matching zero rows.
+`--project-id` filters on the stored projection's `project_id` via
+`json_extract`, not an indexed column -- adequate at this store's
+local development-reference scale (see its module docstring), not a
+scalability claim for a hosted multi-tenant ledger.
 
 Projection input is bounded: the file must be a regular file, is read against
 the shared 2 MiB local-input limit, is decoded as UTF-8, and is parsed as

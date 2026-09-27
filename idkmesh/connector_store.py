@@ -508,6 +508,8 @@ class LocalMetadataStore:
         *,
         limit: int = DEFAULT_LIST_LIMIT,
         after: str | None = None,
+        state: str | None = None,
+        project_id: str | None = None,
     ) -> tuple[list[RunRecord], bool]:
         """Deterministic keyset-paginated run listing, ordered by run_id.
 
@@ -517,6 +519,15 @@ class LocalMetadataStore:
         section 10 of the API conventions warns against for mutable streams:
         a run inserted between two list calls can never shift an already
         returned row out from under a caller paging by ``after=<run_id>``.
+
+        ``state`` filters on the indexed column directly. ``project_id``
+        filters via ``json_extract`` on the stored projection, since
+        project_id is not (yet) its own indexed column; fine at the local
+        development-store scale this store targets (module docstring).
+        Both are bounded, explicitly-named filters -- section 11 of the API
+        conventions requires an unknown filter to fail explicitly rather
+        than silently match everything, which is enforced by callers only
+        ever passing these two named parameters, never an arbitrary column.
         """
         if (
             isinstance(limit, bool)
@@ -528,31 +539,39 @@ class LocalMetadataStore:
             )
         if after is not None:
             self._require_text(after, "after")
+        if state is not None:
+            self._require_text(state, "state")
+        if project_id is not None:
+            self._require_text(project_id, "project_id")
+
+        clauses = []
+        params: list[Any] = []
+        if after is not None:
+            clauses.append("run_id > ?")
+            params.append(after)
+        if state is not None:
+            clauses.append("state = ?")
+            params.append(state)
+        if project_id is not None:
+            clauses.append(
+                "json_extract(metadata_json, '$.projection.project_id') = ?"
+            )
+            params.append(project_id)
+        where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
+        params.append(limit + 1)
 
         with _session(self.path) as conn:
-            if after is None:
-                rows = conn.execute(
-                    """
-                    SELECT run_id, idempotency_key, request_digest, state,
-                           metadata_json, created_at, updated_at
-                    FROM runs
-                    ORDER BY run_id ASC
-                    LIMIT ?
-                    """,
-                    (limit + 1,),
-                ).fetchall()
-            else:
-                rows = conn.execute(
-                    """
-                    SELECT run_id, idempotency_key, request_digest, state,
-                           metadata_json, created_at, updated_at
-                    FROM runs
-                    WHERE run_id > ?
-                    ORDER BY run_id ASC
-                    LIMIT ?
-                    """,
-                    (after, limit + 1),
-                ).fetchall()
+            rows = conn.execute(
+                f"""
+                SELECT run_id, idempotency_key, request_digest, state,
+                       metadata_json, created_at, updated_at
+                FROM runs
+                {where}
+                ORDER BY run_id ASC
+                LIMIT ?
+                """,
+                params,
+            ).fetchall()
 
         has_more = len(rows) > limit
         page = rows[:limit]

@@ -997,6 +997,23 @@ def openapi_document() -> dict[str, Any]:
                             ),
                             "schema": {"type": "string"},
                         },
+                        {
+                            "name": "state",
+                            "in": "query",
+                            "required": False,
+                            "description": (
+                                "Exact lifecycle state; an unrecognized "
+                                "value fails with 400 invalid_state rather "
+                                "than silently matching zero rows."
+                            ),
+                            "schema": {"type": "string"},
+                        },
+                        {
+                            "name": "project_id",
+                            "in": "query",
+                            "required": False,
+                            "schema": {"type": "string"},
+                        },
                     ],
                     "responses": {
                         "200": {
@@ -1014,8 +1031,8 @@ def openapi_document() -> dict[str, Any]:
                         },
                         "400": {
                             "description": (
-                                "Unsupported/duplicate query parameter or "
-                                "invalid limit/cursor"
+                                "Unsupported/duplicate query parameter, or "
+                                "invalid limit/cursor/state"
                             )
                         },
                         "403": {"description": "Invalid local session token"},
