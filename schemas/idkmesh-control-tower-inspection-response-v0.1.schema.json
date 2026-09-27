@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idkmesh.org/schemas/idkmesh-control-tower-inspection-response-v0.1.schema.json",
+  "title": "IDKMesh Control Tower Inspection Response v0.1",
+  "description": "The success envelope returned by `POST /api/v1/run-evidence/inspect` (docs/specifications/CONTROL_TOWER_LOCAL_API_V0_1.md), wrapping one deterministic, digest-bound `idkmesh-control-tower-snapshot`. The wrapper itself carries no authority; `snapshot_digest` is the canonical digest of `snapshot`, so a caller can detect a swapped or corrupted snapshot without re-deriving it. The full snapshot shape is its own frozen contract -- schemas/control-tower-snapshot-v0.1.schema.json -- and is intentionally not duplicated here; this schema only constrains the wrapper and the snapshot's own identity fields.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "api_version", "schema_version", "kind", "ok", "snapshot_digest", "snapshot"
+  ],
+  "properties": {
+    "api_version": {"const": "v1"},
+    "schema_version": {"const": "0.1"},
+    "kind": {"const": "idkmesh-control-tower-inspection-response"},
+    "ok": {"const": true},
+    "snapshot_digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "description": "canonical_digest() of the sibling snapshot field."
+    },
+    "snapshot": {
+      "type": "object",
+      "required": ["kind", "schema_version"],
+      "properties": {
+        "kind": {"const": "idkmesh-control-tower-snapshot"},
+        "schema_version": {"const": "0.1"}
+      }
+    }
+  }
+}

@@ -523,9 +523,21 @@ The schema constrains:
 
 Focused tests validate the generated sample snapshot against this exact schema.
 
+The status document (`GET /api/v1/status`) and the inspection success envelope
+(`POST /api/v1/run-evidence/inspect`) are frozen the same way:
+
+- `schemas/idkmesh-control-tower-status-v0.1.schema.json`
+- `schemas/idkmesh-control-tower-inspection-response-v0.1.schema.json`
+
+Focused tests validate `status_document()`'s and `success_document()`'s real
+return values against these schemas, not only a hand-written example.
+
 ## Error envelope
 
-All API JSON errors use:
+All API JSON errors use the shape frozen by
+[`schemas/idkmesh-api-error-v0.1.schema.json`](../../schemas/idkmesh-api-error-v0.1.schema.json)
+(cross-cutting for every IDKMesh product API, not specific to Control Tower —
+see [API Conventions v0.1](API_CONVENTIONS_V0_1.md) section 5):
 
 ```json
 {
