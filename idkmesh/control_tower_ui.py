@@ -748,19 +748,17 @@ def _handler(
             )
             return True
 
+        _RUN_SUBRESOURCES = ("attempts", "evidence", "decisions")
+
         def _run_id_from_path(self, path: str) -> str | None:
             """Return the run_id if path is /api/v1/runs/<run_id>.
 
-            Product Spine run_ids legitimately contain '/' (the same
-            identifier grammar as WorkUnit ids, e.g. "run/http-read-1"), so
-            everything after the prefix is the run_id, with no reserved
-            sub-path. This deliberately leaves an unresolved ambiguity for
-            whichever future PR adds a /{run_id}/attempts, /evidence, or
-            /decisions sub-resource (issue #739): it must either choose a
-            colon-suffixed action shape (":inspect" etc., matching
-            docs/specifications/CONNECTOR_CONTROL_API_V0_1.md's existing
-            convention) or otherwise disambiguate, rather than assume no
-            real run_id ever contains a '/'.
+            Returns the full remainder, including a reserved sub-resource
+            suffix if present -- callers that only handle the single-run
+            read must check `_run_subresource_from_path` first and treat a
+            match there as a different endpoint, not a run_id. See
+            ADR-0019 for why `attempts`/`evidence`/`decisions` are reserved
+            trailing segments rather than requiring percent-encoding.
             """
             prefix = f"/api/{API_VERSION}/runs/"
             if not path.startswith(prefix):
@@ -769,6 +767,25 @@ def _handler(
             if not remainder:
                 return None
             return remainder
+
+        def _run_subresource_from_path(
+            self, path: str
+        ) -> tuple[str, str] | None:
+            """Return (run_id, subresource) for a reserved sub-resource path.
+
+            ADR-0019: a trailing "/attempts", "/evidence", or "/decisions"
+            segment is always resolved as that sub-resource, independent of
+            whether the derived run_id exists -- routing is a pure function
+            of the path string, never a lookup outcome.
+            """
+            remainder = self._run_id_from_path(path)
+            if remainder is None:
+                return None
+            for name in self._RUN_SUBRESOURCES:
+                suffix = f"/{name}"
+                if remainder.endswith(suffix) and len(remainder) > len(suffix):
+                    return remainder[: -len(suffix)], name
+            return None
 
         def _run_read_response(
             self, run_id: str, *, head_only: bool
@@ -821,6 +838,63 @@ def _handler(
                 "kind": "idkmesh-control-tower-run-response",
                 "ok": True,
                 **result.to_dict(),
+            }
+            self._send_json(200, payload, head_only=head_only)
+
+        def _run_attempts_response(
+            self, run_id: str, *, head_only: bool
+        ) -> None:
+            if product_spine_store_path is None:
+                self._send_json(
+                    503,
+                    error_document(
+                        "product_spine_store_not_configured",
+                        "this Control Tower instance was started without a "
+                        "Product Spine store; runs cannot be read",
+                    ),
+                    head_only=head_only,
+                )
+                return
+            from idkmesh.connector_store import (
+                LocalMetadataStore,
+                LocalStoreError,
+            )
+            from idkmesh.product_spine_run_store import (
+                ProductSpineRunStore,
+                ProductSpineRunStoreError,
+            )
+
+            try:
+                service = ProductSpineRunStore(
+                    LocalMetadataStore(product_spine_store_path)
+                )
+                result = service.status(run_id)
+            except ProductSpineRunStoreError as exc:
+                code = getattr(exc, "code", "run_control_error")
+                status = 404 if code == "run_not_found" else 400
+                self._send_json(
+                    status,
+                    error_document(code, str(exc)),
+                    head_only=head_only,
+                )
+                return
+            except (LocalStoreError, OSError, ValueError) as exc:
+                self._send_json(
+                    500,
+                    error_document("store_error", str(exc)),
+                    head_only=head_only,
+                )
+                return
+
+            payload = {
+                "api_version": API_VERSION,
+                "schema_version": API_SCHEMA_VERSION,
+                "kind": "idkmesh-control-tower-run-attempts-response",
+                "ok": True,
+                "run_id": run_id,
+                "attempts": [
+                    attempt.to_dict() for attempt in result.run.attempts
+                ],
             }
             self._send_json(200, payload, head_only=head_only)
 
@@ -1067,6 +1141,18 @@ def _handler(
                 return
             if path == f"/api/{API_VERSION}/runs":
                 self._run_list_response(query, head_only=head_only)
+                return
+            subresource = self._run_subresource_from_path(path)
+            if subresource is not None:
+                run_id, name = subresource
+                if name == "attempts":
+                    self._run_attempts_response(run_id, head_only=head_only)
+                    return
+                self._send_json(
+                    404,
+                    error_document("not_found", "endpoint not found"),
+                    head_only=head_only,
+                )
                 return
             run_id = self._run_id_from_path(path)
             if run_id is not None:

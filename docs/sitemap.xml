@@ -108,7 +108,7 @@
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/architecture/AGENT_MODEL_CONNECTOR_CONTROL_PLANE.html</loc>
-    <lastmod>2026-09-22</lastmod>
+    <lastmod>2026-09-27</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
@@ -128,7 +128,7 @@
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/architecture/API_CONTROL_PLANE_ARCHITECTURE.html</loc>
-    <lastmod>2026-09-23</lastmod>
+    <lastmod>2026-09-27</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
@@ -1298,7 +1298,7 @@
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/decisions/</loc>
-    <lastmod>2026-09-24</lastmod>
+    <lastmod>2026-09-27</lastmod>
     <priority>0.6</priority>
   </url>
   <url>
@@ -1398,6 +1398,11 @@
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/decisions/ADR-0018-freeze-api-conventions-v0-1.html</loc>
+    <lastmod>2026-09-27</lastmod>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://mskazemi.com/idkmesh/decisions/ADR-0019-run-subresource-suffix-reservation.html</loc>
     <lastmod>2026-09-27</lastmod>
     <priority>0.6</priority>
   </url>
@@ -1608,7 +1613,7 @@
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/planning/API_V1_PROFESSIONALIZATION_PLAN_2026-09-23.html</loc>
-    <lastmod>2026-09-23</lastmod>
+    <lastmod>2026-09-27</lastmod>
     <priority>0.4</priority>
   </url>
   <url>
@@ -1933,12 +1938,12 @@
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/specifications/</loc>
-    <lastmod>2026-09-25</lastmod>
+    <lastmod>2026-09-27</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/specifications/API_CONVENTIONS_V0_1.html</loc>
-    <lastmod>2026-09-23</lastmod>
+    <lastmod>2026-09-27</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
@@ -1953,12 +1958,12 @@
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/specifications/CONNECTOR_CONTROL_API_V0_1.html</loc>
-    <lastmod>2026-09-25</lastmod>
+    <lastmod>2026-09-27</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/specifications/CONTROL_TOWER_LOCAL_API_V0_1.html</loc>
-    <lastmod>2026-09-23</lastmod>
+    <lastmod>2026-09-27</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
@@ -2058,7 +2063,7 @@
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/specifications/PRODUCT_SPINE_SERVICE_V0_1.html</loc>
-    <lastmod>2026-09-25</lastmod>
+    <lastmod>2026-09-27</lastmod>
     <priority>0.8</priority>
   </url>
   <url>

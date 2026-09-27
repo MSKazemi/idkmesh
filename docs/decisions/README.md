@@ -71,6 +71,12 @@ some unrelated page but missing from its own index stays invisible.
   stable v0.1 contract every IDKMesh product API follows, backed by JSON
   Schemas and CI-validated examples for the error and list envelopes.
   *(2026-09-27.)*
+- [ADR-0019 — Reserve Run Sub-Resource Suffixes for the Product Spine Read API](ADR-0019-run-subresource-suffix-reservation.md)
+  — resolves the run_id-may-contain-`/` ambiguity flagged when `GET
+  /api/v1/runs/{run_id}` shipped: `attempts`, `evidence`, and `decisions`
+  are reserved trailing path segments, resolved as a pure function of the
+  request path so routing never depends on what a store currently holds.
+  *(2026-09-27.)*
 
 ## Proposed and experimental
 

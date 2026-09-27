@@ -170,7 +170,9 @@ today (not a target-state sketch):
 | /api/v1, read  |  | connections,   |  | untrusted     |  | (not    |
 | -only + GET    |  | run, local-loop|  | until checked |  | built)  |
 | runs, GET runs/|  |                |  |               |  |         |
-| {id} (#739)    |  |                |  |               |  |         |
+| {id}, GET runs/|  |                |  |               |  |         |
+| {id}/attempts  |  |                |  |               |  |         |
+| (#739)         |  |                |  |               |  |         |
 +----------------+  +----------------+  +---------------+  +---------+
 ```
 

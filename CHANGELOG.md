@@ -14,6 +14,15 @@ and the release notes for that tag.
 
 ### Added
 
+- `GET /api/v1/runs/{run_id}/attempts` (issue #739, `attempts` read
+  surface): reads one run's worker/verifier attempts. `attempts` is now a
+  reserved trailing path segment alongside `evidence` and `decisions`
+  ([ADR-0019](docs/decisions/ADR-0019-run-subresource-suffix-reservation.md)):
+  resolution is a pure function of the request path, never a lookup
+  outcome, so a `run_id` ending in one of those three literal suffixes can
+  no longer be read through the plain single-run `GET`. Frozen by
+  `schemas/idkmesh-control-tower-run-attempts-response-v0.1.schema.json`.
+
 - `--state` and `--project-id` filters for `idkmesh run list` and
   `GET /api/v1/runs` (issue #739): bounded, exact-match, AND-combined
   filters per API Conventions v0.1 section 11. An unrecognized `state`

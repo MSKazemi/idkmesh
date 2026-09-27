@@ -747,6 +747,7 @@ def status_document() -> dict[str, Any]:
             "inspect_run_evidence": "POST /api/v1/run-evidence/inspect",
             "list_runs": "GET /api/v1/runs",
             "read_run": "GET /api/v1/runs/{run_id}",
+            "read_run_attempts": "GET /api/v1/runs/{run_id}/attempts",
             "health": "GET /healthz",
             "readiness": "GET /readyz",
         },
@@ -1075,6 +1076,52 @@ def openapi_document() -> dict[str, Any]:
                                             "https://idkmesh.org/schemas/"
                                             "idkmesh-control-tower-run-"
                                             "response-v0.1.schema.json"
+                                        )
+                                    }
+                                }
+                            },
+                        },
+                        "403": {"description": "Invalid local session token"},
+                        "404": {"description": "Unknown run_id"},
+                        "503": {
+                            "description": (
+                                "No Product Spine store configured for this "
+                                "server instance"
+                            )
+                        },
+                    },
+                }
+            },
+            "/api/v1/runs/{run_id}/attempts": {
+                "get": {
+                    "summary": "Read one run's worker/verifier attempts",
+                    "description": (
+                        "Pure read-only. `attempts` is a reserved trailing "
+                        "path segment (ADR-0019): resolution is a pure "
+                        "function of the path string, never a lookup "
+                        "outcome, so a run_id ending in \"/attempts\" "
+                        "cannot be read through the plain single-run GET."
+                    ),
+                    "security": [{"LocalSessionToken": []}],
+                    "parameters": [
+                        {
+                            "name": "run_id",
+                            "in": "path",
+                            "required": True,
+                            "schema": {"type": "string", "minLength": 1},
+                        }
+                    ],
+                    "responses": {
+                        "200": {
+                            "description": "The run's attempts, in order",
+                            "content": {
+                                JSON_MEDIA_TYPE: {
+                                    "schema": {
+                                        "$ref": (
+                                            "https://idkmesh.org/schemas/"
+                                            "idkmesh-control-tower-run-"
+                                            "attempts-response-v0.1."
+                                            "schema.json"
                                         )
                                     }
                                 }

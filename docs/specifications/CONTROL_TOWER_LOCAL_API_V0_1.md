@@ -471,13 +471,15 @@ product_spine_store_path=...)` programmatically); otherwise every request
 returns `503` with code `product_spine_store_not_configured`.
 
 `run_id` may itself contain `/` (Product Spine run_ids share WorkUnit's
-identifier grammar), so everything after the `/runs/` prefix is read as one
-literal `run_id`, with no reserved sub-path. A future `/attempts`,
-`/evidence`, or `/decisions` sub-resource (also in issue #739's target
-surfaces) will need to resolve that ambiguity explicitly -- most likely with
-a colon-suffixed action shape (`:inspect`, matching
-`docs/specifications/CONNECTOR_CONTROL_API_V0_1.md`'s existing convention)
-rather than a `/`-nested path.
+identifier grammar). [ADR-0019](../decisions/ADR-0019-run-subresource-suffix-reservation.md)
+reserves `attempts`, `evidence`, and `decisions` as the only recognized
+trailing path segments: a path ending in `/attempts`, `/evidence`, or
+`/decisions` (with at least one character before it) always resolves as
+that sub-resource of the remaining prefix, regardless of whether that
+derived `run_id` exists; every other path is read as one literal `run_id`.
+The accepted cost: a `run_id` that itself ends in one of those three
+literal suffixes can no longer be read through this plain single-run `GET`
+-- see `GET /api/v1/runs/{run_id}/attempts` below.
 
 Representative shape:
 
@@ -509,6 +511,53 @@ call's outcome, carried over unchanged from the shared
 shape for reads.
 
 Unknown `run_id` returns `404` with code `run_not_found`.
+
+Supported methods:
+
+```text
+GET, HEAD
+```
+
+### `GET /api/v1/runs/{run_id}/attempts`
+
+Authenticated, read-only listing of one run's worker/verifier attempts
+(issue #739's `attempts` read surface). `attempts` is a reserved trailing
+path segment; see [ADR-0019](../decisions/ADR-0019-run-subresource-suffix-reservation.md)
+and the note on the plain single-run `GET` above. Serves the same
+`ProductSpineRunStore.status()` application service as the plain read, then
+projects `run.attempts`.
+
+This server instance only exposes it when started with
+`--product-spine-store PATH`; otherwise every request returns `503` with
+code `product_spine_store_not_configured`.
+
+Representative shape:
+
+```json
+{
+  "api_version": "v1",
+  "schema_version": "0.1",
+  "kind": "idkmesh-control-tower-run-attempts-response",
+  "ok": true,
+  "run_id": "run/example-1",
+  "attempts": [
+    {
+      "attempt_id": "attempt-1",
+      "order": 1,
+      "connector_id": "connector.example",
+      "state": "created",
+      "provider_reference": null,
+      "candidate_reference_digest": null,
+      "result_manifest_digest": null,
+      "verification_semantic_digest": null,
+      "error_code": null
+    }
+  ]
+}
+```
+
+Unknown `run_id` returns `404` with code `run_not_found`, including when the
+derived `run_id` (path minus the `/attempts` suffix) does not exist.
 
 Supported methods:
 
@@ -671,6 +720,11 @@ create/status/cancel --json` prints):
 through the same `ProductSpineRunStore` the CLI uses, and separately asserts
 the HTTP response is byte-for-byte identical to what the CLI's `run status
 --json` would print for the same run.
+
+The run-attempts response (`GET /api/v1/runs/{run_id}/attempts`) is frozen
+by:
+
+- `schemas/idkmesh-control-tower-run-attempts-response-v0.1.schema.json`
 
 ## Error envelope
 
