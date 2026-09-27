@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idkmesh.org/schemas/idkmesh-list-v0.1.schema.json",
+  "title": "IDKMesh List Envelope v0.1",
+  "description": "The standard paginated list response shape for IDKMesh JSON list endpoints, per docs/specifications/API_CONVENTIONS_V0_1.md section 10. Uses an opaque cursor rather than offset pagination so mutable event/run streams stay safe to page through. This envelope carries no dispatch, verification, acceptance, or merge authority -- it is a read projection only.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["kind", "schema_version", "items", "page"],
+  "properties": {
+    "kind": {"const": "idkmesh-list"},
+    "schema_version": {"const": "0.1"},
+    "items": {
+      "type": "array",
+      "description": "The page of resources. Each item's own shape is owned by the domain schema for that resource type, not by this envelope."
+    },
+    "page": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["next_cursor", "limit"],
+      "properties": {
+        "next_cursor": {
+          "type": ["string", "null"],
+          "description": "Opaque continuation token for the next page, or null when this is the last page. Never constructed by a client; never an offset."
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "The bounded page size actually applied to this response."
+        }
+      }
+    }
+  }
+}

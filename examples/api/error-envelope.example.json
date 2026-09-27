@@ -1,0 +1,14 @@
+{
+  "api_version": "v1",
+  "schema_version": "0.1",
+  "kind": "idkmesh-api-error",
+  "ok": false,
+  "error": {
+    "code": "idempotency_key_conflict",
+    "message": "Idempotency-Key was reused with a different request body.",
+    "retryable": false,
+    "details": {
+      "idempotency_key": "run-create-2026-09-27-001"
+    }
+  }
+}

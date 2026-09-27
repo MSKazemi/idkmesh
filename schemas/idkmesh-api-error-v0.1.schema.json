@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idkmesh.org/schemas/idkmesh-api-error-v0.1.schema.json",
+  "title": "IDKMesh API Error Envelope v0.1",
+  "description": "The standard error envelope every IDKMesh JSON API returns, per docs/specifications/API_CONVENTIONS_V0_1.md section 5. `code` is the compatibility-sensitive machine identifier; `message` is explanatory only and is never a parsing contract. A provider/worker domain failure is not automatically mapped to this shape as an HTTP 5xx -- that mapping is owned by the endpoint's own domain specification.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["api_version", "schema_version", "kind", "ok", "error"],
+  "properties": {
+    "api_version": {
+      "type": "string",
+      "pattern": "^v[0-9]+$",
+      "description": "The URL compatibility version this response was served under, e.g. \"v1\". Independent of schema_version -- see section 1."
+    },
+    "schema_version": {"const": "0.1"},
+    "kind": {"const": "idkmesh-api-error"},
+    "ok": {"const": false},
+    "error": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message", "retryable"],
+      "properties": {
+        "code": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]{2,63}$",
+          "description": "Stable machine-readable error code. This is the compatibility contract; message text may change freely."
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Human-readable explanation. Never parsed by a compliant client."
+        },
+        "retryable": {
+          "type": "boolean",
+          "description": "Whether an identical retry of the same request could plausibly succeed without caller changes."
+        },
+        "details": {
+          "type": "object",
+          "description": "Bounded structured recovery information. Must never contain secrets, tokens, prompts, or private raw payloads (section 18)."
+        }
+      }
+    }
+  }
+}
