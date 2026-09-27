@@ -34,6 +34,9 @@ This directory contains the machine-readable contracts used by the executable re
 - `enterprise-oidc-identity-binding-v0.1.schema.json` — maintainer-reviewed table binding trusted `(issuer, subject)` enterprise IdP (OIDC/SAML/SSO) claim pairs to enterprise `ActorContext` roles, tenant/project scopes, data clearance, and expected relying-party audience (E3-C, issue #670). The `(issuer, subject)` pair is the primary trust key; issue/PR/comment text is never a binding source.
 - `idkmesh-api-error-v0.1.schema.json` — the frozen standard error envelope every IDKMesh JSON API returns (`docs/specifications/API_CONVENTIONS_V0_1.md` section 5, [ADR-0018](../docs/decisions/ADR-0018-freeze-api-conventions-v0-1.md)). `code` is the compatibility-sensitive contract; `message` is explanatory only.
 - `idkmesh-list-v0.1.schema.json` — the frozen standard paginated list envelope for IDKMesh JSON list endpoints (`docs/specifications/API_CONVENTIONS_V0_1.md` section 10, ADR-0018). Uses an opaque cursor, never an offset, so mutable event/run streams stay safe to page.
+- `control-tower-snapshot-v0.1.schema.json` — the deterministic, read-only human-facing projection of one validated Run Evidence Report returned by the Control Tower Local API's inspection endpoint (`docs/specifications/CONTROL_TOWER_LOCAL_API_V0_1.md`). Grants no actuation authority.
+- `idkmesh-control-tower-status-v0.1.schema.json` — the authenticated discovery/status document from `GET /api/v1/status`: accepted media types, published schema URLs, and explicitly enabled/disabled capabilities (issue #737).
+- `idkmesh-control-tower-inspection-response-v0.1.schema.json` — the success envelope wrapping one digest-bound `control-tower-snapshot` from `POST /api/v1/run-evidence/inspect` (issue #737).
 
 All current schemas use JSON Schema Draft 2020-12.
 

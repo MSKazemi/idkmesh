@@ -18,6 +18,7 @@ from idkmesh.control_tower_api import (
     ControlTowerInputError,
     build_snapshot,
     canonical_digest,
+    error_document,
     openapi_document,
     parse_report_text,
     status_document,
@@ -34,6 +35,15 @@ from idkmesh.local_ui_security import MAX_BODY_BYTES, TOKEN_HEADER, is_loopback_
 
 def sample_report() -> dict:
     return json.loads(SAMPLE_REPORT)
+
+
+def _validate_against_schema(schema_filename: str, document: dict) -> None:
+    root = Path(__file__).resolve().parents[1]
+    schema = json.loads(
+        (root / "schemas" / schema_filename).read_text(encoding="utf-8")
+    )
+    Draft202012Validator.check_schema(schema)
+    Draft202012Validator(schema).validate(document)
 
 
 class ControlTowerModelTests(unittest.TestCase):
@@ -168,17 +178,27 @@ class ControlTowerModelTests(unittest.TestCase):
         )
 
     def test_snapshot_matches_published_json_schema(self) -> None:
-        root = Path(__file__).resolve().parents[1]
-        schema = json.loads(
-            (
-                root
-                / "schemas"
-                / "control-tower-snapshot-v0.1.schema.json"
-            ).read_text(encoding="utf-8")
+        _validate_against_schema(
+            "control-tower-snapshot-v0.1.schema.json",
+            build_snapshot(sample_report()),
         )
-        Draft202012Validator.check_schema(schema)
-        Draft202012Validator(schema).validate(
-            build_snapshot(sample_report())
+
+    def test_status_document_matches_published_json_schema(self) -> None:
+        _validate_against_schema(
+            "idkmesh-control-tower-status-v0.1.schema.json",
+            status_document(),
+        )
+
+    def test_success_envelope_matches_published_json_schema(self) -> None:
+        _validate_against_schema(
+            "idkmesh-control-tower-inspection-response-v0.1.schema.json",
+            success_document(build_snapshot(sample_report())),
+        )
+
+    def test_error_document_matches_published_json_schema(self) -> None:
+        _validate_against_schema(
+            "idkmesh-api-error-v0.1.schema.json",
+            error_document("invalid_run_evidence", "example", retryable=True),
         )
 
     def test_success_envelope_is_deterministic_and_digest_bound(self) -> None:

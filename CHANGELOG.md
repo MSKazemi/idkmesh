@@ -14,6 +14,15 @@ and the release notes for that tag.
 
 ### Added
 
+- `schemas/idkmesh-control-tower-status-v0.1.schema.json` and
+  `schemas/idkmesh-control-tower-inspection-response-v0.1.schema.json`
+  (issue #737): the Control Tower Local API's `GET /api/v1/status` and
+  `POST /api/v1/run-evidence/inspect` success responses now have canonical
+  JSON Schemas, joining the already-schema'd `control-tower-snapshot-v0.1`.
+  `tests/test_control_tower.py` validates the real `status_document()`,
+  `success_document()`, and `error_document()` return values against their
+  schemas directly, not only a hand-written example.
+
 - `idkmesh local-loop <config>` (`idkmesh/local_loop.py`), the first CLI command
   wiring ROADMAP.md S4's R1 local product loop end to end: validates a
   two-attempt orchestration config and its WorkUnit, dispatches the two
