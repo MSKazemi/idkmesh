@@ -14,6 +14,15 @@ and the release notes for that tag.
 
 ### Added
 
+- `docs/architecture/API_CONTROL_PLANE_ARCHITECTURE.md` (issue #738): a
+  checked-in dependency diagram grounding the domain/application-service/
+  transport-adapter rule in the actual modules on `main`, a "resource/compute
+  admission" row the resource ownership map was missing, and a dated,
+  per-criterion verification pass against the document's own six-point
+  "architecture completion evidence" bar. Not a full closure: criteria 1
+  (connector HTTP endpoint) and 4 (event service) are blocked on work that
+  does not exist yet.
+
 - `schemas/idkmesh-readiness-v0.1.schema.json` (issue #737): freezes the
   shared `GET /readyz` readiness document built by
   `idkmesh/service_runtime.py:readiness_document()`. Validated against the
