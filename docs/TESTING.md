@@ -160,12 +160,14 @@ All of them delegate to `scripts/testkit.py`, so the Makefile, the Claude Code
 hooks, and CI execute the same code path and cannot drift apart.
 
 **PR Gate runs `unit` (`scripts/testkit.py unit`) plus the same Markdown-link
-check (`scripts/check_links.py`) as its one required, always-on check** —
-seconds, not minutes, so a documentation fix isn't held up by the health of an
-unrelated simulation. It does not run `integration` as a single delegated call:
-the link check stays its own explicit, stdlib-only step
-(`tests/test_ci_local_gate_parity.py` pins that shape) so it can run before
-`pip install` and cannot silently diverge into a second, inline copy.
+check (`scripts/check_links.py`) and schema backward-compatibility check
+(`tools/schema_compat_check.py`, ADR-0020) as its required, always-on
+checks** — seconds, not minutes, so a documentation fix isn't held up by the
+health of an unrelated simulation. It does not run `integration` as a single
+delegated call: both shared scripts stay their own explicit, stdlib-only
+steps (`tests/test_ci_local_gate_parity.py` pins that shape for both) so
+they can run before `pip install` and cannot silently diverge into a second,
+inline copy.
 
 **The complete suite — `nightly`, everything `unit` excludes included — runs
 on a schedule** in `.github/workflows/nightly-full-suite.yml`, decoupled from

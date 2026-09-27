@@ -14,6 +14,19 @@ and the release notes for that tag.
 
 ### Added
 
+- `tools/schema_compat_check.py` (issue #737, API-2's sixth and last unmet
+  CI requirement, "backwards-compatibility diff check for stable v1
+  objects") ([ADR-0020](docs/decisions/ADR-0020-schema-backward-compatibility-gate.md)):
+  a required PR Gate step that fails on a breaking in-place edit to an
+  already-shipped `schemas/*.json` file -- a property removed, a `required`
+  set changed in either direction, `additionalProperties` changed, or a
+  leaf subschema changed outside two recognized widenings (`enum` gaining
+  values, `type` gaining alternatives). Verified against this repository's
+  own git history: it correctly flags the two real in-place breaking edits
+  already on `main` (`work-unit-v0.2.schema.json`,
+  `evaluator-plan-v0.2.schema.json`, both predating this gate) and raises
+  nothing else across every schema file's full commit history.
+
 - `GET /api/v1/runs/{run_id}/attempts` (issue #739, `attempts` read
   surface): reads one run's worker/verifier attempts. `attempts` is now a
   reserved trailing path segment alongside `evidence` and `decisions`

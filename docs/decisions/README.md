@@ -77,6 +77,12 @@ some unrelated page but missing from its own index stays invisible.
   are reserved trailing path segments, resolved as a pure function of the
   request path so routing never depends on what a store currently holds.
   *(2026-09-27.)*
+- [ADR-0020 — Schema Backward-Compatibility Gate](ADR-0020-schema-backward-compatibility-gate.md)
+  — once a `schemas/*.json` file exists, its content must never change
+  incompatibly; `tools/schema_compat_check.py` enforces this mechanically
+  in the required PR Gate, with two recognized widenings (`enum` growth,
+  `type` widening) and one v0.1 blind spot (`allOf`/`oneOf`, cross-file
+  `$ref`) both documented in its module docstring. *(2026-09-27.)*
 
 ## Proposed and experimental
 
