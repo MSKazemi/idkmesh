@@ -490,6 +490,12 @@ def build_parser() -> argparse.ArgumentParser:
     tower.add_argument(
         "--no-browser", action="store_true",
         help="serve the Control Tower without opening the default browser")
+    tower.add_argument(
+        "--product-spine-store", metavar="PATH",
+        help=(
+            "optional path to an existing 'idkmesh run create/status/cancel' "
+            "SQLite store; enables read-only GET /api/v1/runs/{run_id} over "
+            "that same durable state (default: that endpoint returns 503)"))
 
     sr = sub.add_parser(
         "steward-report",
@@ -1199,6 +1205,7 @@ def main(argv: list[str] | None = None) -> int:
                 initial_text,
                 port=args.port,
                 open_browser=not args.no_browser,
+                product_spine_store_path=args.product_spine_store,
             )
         except ValueError as exc:
             return _fail(str(exc))

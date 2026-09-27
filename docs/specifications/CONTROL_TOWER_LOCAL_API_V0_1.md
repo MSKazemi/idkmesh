@@ -393,6 +393,65 @@ POST
 Wrong methods return HTTP 405 with an `Allow` header. `HEAD` on a POST-only
 resource also returns no body.
 
+### `GET /api/v1/runs/{run_id}`
+
+Authenticated, read-only Product Spine run projection (issue #739, the first
+slice of the API-4 read model). Serves the same
+`idkmesh/product_spine_run_store.py:ProductSpineRunStore.status()`
+application service `idkmesh run status` already uses -- the CLI and this
+endpoint read through one service, never two.
+
+This server instance only exposes it when started with
+`--product-spine-store PATH` (or `create_server(...,
+product_spine_store_path=...)` programmatically); otherwise every request
+returns `503` with code `product_spine_store_not_configured`.
+
+`run_id` may itself contain `/` (Product Spine run_ids share WorkUnit's
+identifier grammar), so everything after the `/runs/` prefix is read as one
+literal `run_id`, with no reserved sub-path. A future `/attempts`,
+`/evidence`, or `/decisions` sub-resource (also in issue #739's target
+surfaces) will need to resolve that ambiguity explicitly -- most likely with
+a colon-suffixed action shape (`:inspect`, matching
+`docs/specifications/CONNECTOR_CONTROL_API_V0_1.md`'s existing convention)
+rather than a `/`-nested path.
+
+Representative shape:
+
+```json
+{
+  "api_version": "v1",
+  "schema_version": "0.1",
+  "kind": "idkmesh-control-tower-run-response",
+  "ok": true,
+  "run": {
+    "schema_version": "0.1",
+    "kind": "idkmesh-product-spine-run",
+    "run_id": "...",
+    "state": "proposed"
+  },
+  "idempotency_key": "...",
+  "create_request_digest": "sha256:...",
+  "created": false,
+  "replayed": false,
+  "provider_execution_terminated": false,
+  "candidate_accepted": false,
+  "merge_authority": false
+}
+```
+
+`created` and `replayed` are always `false` here: they describe a create
+call's outcome, carried over unchanged from the shared
+`PersistedProductSpineRun` projection rather than given a second response
+shape for reads.
+
+Unknown `run_id` returns `404` with code `run_not_found`.
+
+Supported methods:
+
+```text
+GET, HEAD
+```
+
 ## Snapshot semantics
 
 The snapshot is a deterministic projection, not a decision object.
@@ -536,6 +595,19 @@ The status document (`GET /api/v1/status`) and the inspection success envelope
 Focused tests validate `status_document()`'s and `success_document()`'s real
 return values against these schemas, not only a hand-written example.
 
+The run-read response (`GET /api/v1/runs/{run_id}`) is frozen by two
+schemas, since the wrapper envelope and the nested run projection are
+separately reusable contracts (the run projection is also what `idkmesh run
+create/status/cancel --json` prints):
+
+- `schemas/idkmesh-control-tower-run-response-v0.1.schema.json`
+- `schemas/idkmesh-product-spine-run-v0.1.schema.json`
+
+`tests/test_control_tower.py` validates both against a real run created
+through the same `ProductSpineRunStore` the CLI uses, and separately asserts
+the HTTP response is byte-for-byte identical to what the CLI's `run status
+--json` would print for the same run.
+
 ## Error envelope
 
 All API JSON errors use the shape frozen by
@@ -576,7 +648,10 @@ Stable v0.1 codes include:
 - `unsupported_api_version`;
 - `method_not_allowed`;
 - `preflight_not_supported`;
-- `not_found`.
+- `not_found`;
+- `run_not_found` (`GET /api/v1/runs/{run_id}`, unknown `run_id`);
+- `product_spine_store_not_configured` (`GET /api/v1/runs/{run_id}`, no
+  `--product-spine-store` given to this server instance).
 
 ## HTTP method behavior
 
@@ -612,6 +687,15 @@ Headless server with a caller-known token:
 ```bash
 export IDKMESH_CONTROL_TOWER_TOKEN='replace-with-at-least-32-random-characters'
 idkmesh control-tower --no-browser --port 8770
+```
+
+Headless server that also serves `GET /api/v1/runs/{run_id}` over an
+existing Product Spine store (the same file `idkmesh run create/status/cancel`
+already writes to):
+
+```bash
+idkmesh control-tower --no-browser --port 8770 \
+  --product-spine-store path/to/product-spine.sqlite3
 ```
 
 Example status request:

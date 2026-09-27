@@ -154,11 +154,12 @@ today (not a target-state sketch):
                               |
 +----------------------------------------------------------------+
 | Application services (idkmesh/*.py)                            |
-|  control_tower_api.py    -- read-only evidence inspection       |
-|  connector_store.py      -- connections/routing/run persistence |
-|  connector_routing.py    -- RoutingDecision resolution          |
-|  local_loop.py           -- WorkUnit -> attempts -> evidence    |
-|                              (delegates to experiments/*)       |
+|  control_tower_api.py     -- read-only evidence inspection      |
+|  connector_store.py       -- connections/routing/run persistence|
+|  connector_routing.py     -- RoutingDecision resolution         |
+|  product_spine_run_store.py -- run create/status/cancel         |
+|  local_loop.py            -- WorkUnit -> attempts -> evidence   |
+|                               (delegates to experiments/*)      |
 +----------------------------------------------------------------+
           ^                 ^                  ^              ^
           | thin dispatch   | thin dispatch    | thin dispatch |
@@ -167,9 +168,14 @@ today (not a target-state sketch):
 | Local HTTP     |  | CLI            |  | GitHub-native |  | Network |
 | control-tower  |  | idkmesh {...}  |  | Actions/hooks |  | HTTP    |
 | /api/v1, read  |  | connections,   |  | untrusted     |  | (not    |
-| -only          |  | run, local-loop|  | until checked |  | built)  |
+| -only + GET    |  | run, local-loop|  | until checked |  | built)  |
+| runs/{id} (#739)|  |                |  |               |  |        |
 +----------------+  +----------------+  +---------------+  +---------+
 ```
+
+The Local HTTP box's `GET runs/{id}` is opt-in per server instance
+(`idkmesh control-tower --product-spine-store PATH`); the endpoint returns
+503 without it, rather than being conditionally present in this diagram.
 
 Every box in the bottom row is a transport/client adapter over the same
 application services; none may redefine a domain contract to fit its own

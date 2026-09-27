@@ -384,6 +384,23 @@ class ControlTowerServerTests(unittest.TestCase):
         self.assertEqual(second_status, 200)
         self.assertEqual(first_body, second_body)
 
+    def test_run_read_is_503_without_a_configured_store(self) -> None:
+        status, _, body = self.request(
+            "GET", "/api/v1/runs/some-run", token=True)
+        payload = json.loads(body)
+        self.assertEqual(status, 503)
+        self.assertEqual(
+            payload["error"]["code"],
+            "product_spine_store_not_configured",
+        )
+
+    def test_run_read_requires_session_token(self) -> None:
+        status, _, body = self.request("GET", "/api/v1/runs/some-run")
+        payload = json.loads(body)
+        self.assertEqual(status, 403)
+        self.assertEqual(
+            payload["error"]["code"], "invalid_session_token")
+
     def test_status_api_requires_session_token(self) -> None:
         status, _, body = self.request("GET", "/api/v1/status")
         payload = json.loads(body)
@@ -697,6 +714,7 @@ class ControlTowerCliTests(unittest.TestCase):
             None,
             port=9124,
             open_browser=False,
+            product_spine_store_path=None,
         )
 
     def test_control_tower_preloads_report(self) -> None:
@@ -713,6 +731,7 @@ class ControlTowerCliTests(unittest.TestCase):
             SAMPLE_REPORT,
             port=8770,
             open_browser=False,
+            product_spine_store_path=None,
         )
 
     def test_control_tower_rejects_oversized_preload_before_server_start(self) -> None:
@@ -745,6 +764,177 @@ class ControlTowerCliTests(unittest.TestCase):
         self.assertEqual(rc, 2)
         fail.assert_called_once_with(
             "--port must be between 0 and 65535")
+
+
+def _run_projection(**overrides):
+    value = {
+        "schema_version": "0.1",
+        "kind": "idkmesh-product-spine-run",
+        "run_id": "run/http-read-1",
+        "request_digest": "sha256:" + "a" * 64,
+        "project_id": "project.test",
+        "work_unit": {
+            "id": "work/test-1",
+            "version": 1,
+            "digest": "sha256:" + "b" * 64,
+            "source_revision": "0123456789abcdef0123456789abcdef01234567",
+        },
+        "routing": {
+            "policy_version": "c1-v0.1",
+            "authority_mode": "agent_candidate",
+            "admitted_connectors": [],
+        },
+        "state": "proposed",
+        "attempts": [],
+        "evidence_report_digest": None,
+        "human_decision_record_digest": None,
+        "authority": {
+            "canonical_state_write": False,
+            "git_push": False,
+            "merge": False,
+        },
+    }
+    for key, child in overrides.items():
+        if key in {"work_unit", "routing", "authority"}:
+            value[key].update(child)
+        else:
+            value[key] = child
+    return value
+
+
+class ControlTowerRunReadTests(unittest.TestCase):
+    """GET /api/v1/runs/{run_id} over a real, configured Product Spine store."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        from idkmesh.connector_store import LocalMetadataStore
+        from idkmesh.product_spine_run_store import ProductSpineRunStore
+
+        cls._tmp = tempfile.TemporaryDirectory()
+        cls.store_path = str(Path(cls._tmp.name) / "product-spine.sqlite3")
+        service = ProductSpineRunStore(LocalMetadataStore(cls.store_path))
+        service.create(
+            _run_projection(),
+            idempotency_key="http-read-test-1",
+            created_at="2026-09-27T00:00:00Z",
+        )
+        cls.server = create_server(
+            port=0, product_spine_store_path=cls.store_path
+        )
+        cls.thread = threading.Thread(
+            target=cls.server.serve_forever, daemon=True
+        )
+        cls.thread.start()
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        cls.server.shutdown()
+        cls.server.server_close()
+        cls.thread.join(timeout=2)
+        cls._tmp.cleanup()
+
+    def request(self, method: str, path: str, *, token: bool = True):
+        conn = http.client.HTTPConnection(
+            "127.0.0.1", self.server.server_port, timeout=3
+        )
+        headers = {}
+        if token:
+            headers[TOKEN_HEADER] = self.server.ui_token
+        conn.request(method, path, headers=headers)
+        response = conn.getresponse()
+        payload = response.read()
+        response_headers = dict(response.getheaders())
+        conn.close()
+        return response.status, response_headers, payload
+
+    def test_read_returns_the_created_run_matching_its_schema(self) -> None:
+        status, _, body = self.request(
+            "GET", "/api/v1/runs/run/http-read-1")
+        self.assertEqual(status, 200)
+        payload = json.loads(body)
+        _validate_against_schema(
+            "idkmesh-control-tower-run-response-v0.1.schema.json", payload
+        )
+        _validate_against_schema(
+            "idkmesh-product-spine-run-v0.1.schema.json", payload["run"]
+        )
+        self.assertEqual(payload["run"]["run_id"], "run/http-read-1")
+        self.assertEqual(payload["run"]["state"], "proposed")
+        # A read is never a create/replay and grants no authority.
+        self.assertFalse(payload["created"])
+        self.assertFalse(payload["replayed"])
+        self.assertFalse(payload["merge_authority"])
+
+    def test_read_matches_the_cli_status_command_exactly(self) -> None:
+        """The HTTP surface and the CLI must consume the same service."""
+        from idkmesh.connector_store import LocalMetadataStore
+        from idkmesh.product_spine_run_store import ProductSpineRunStore
+
+        cli_result = ProductSpineRunStore(
+            LocalMetadataStore(self.store_path)
+        ).status("run/http-read-1")
+
+        _, _, body = self.request("GET", "/api/v1/runs/run/http-read-1")
+        http_result = json.loads(body)
+
+        expected = {
+            "api_version": "v1",
+            "schema_version": "0.1",
+            "kind": "idkmesh-control-tower-run-response",
+            "ok": True,
+            **cli_result.to_dict(),
+        }
+        self.assertEqual(http_result, expected)
+
+    def test_unknown_run_id_is_404(self) -> None:
+        status, _, body = self.request(
+            "GET", "/api/v1/runs/no-such-run")
+        payload = json.loads(body)
+        self.assertEqual(status, 404)
+        self.assertEqual(payload["error"]["code"], "run_not_found")
+
+    def test_head_returns_headers_without_a_body(self) -> None:
+        status, headers, body = self.request(
+            "HEAD", "/api/v1/runs/run/http-read-1")
+        self.assertEqual(status, 200)
+        self.assertEqual(body, b"")
+        self.assertIn("Content-Length", headers)
+
+    def test_post_is_method_not_allowed(self) -> None:
+        conn = http.client.HTTPConnection(
+            "127.0.0.1", self.server.server_port, timeout=3
+        )
+        conn.request(
+            "POST",
+            "/api/v1/runs/run/http-read-1",
+            headers={TOKEN_HEADER: self.server.ui_token},
+        )
+        response = conn.getresponse()
+        status = response.status
+        allow = response.getheader("Allow")
+        response.read()
+        conn.close()
+        self.assertEqual(status, 405)
+        self.assertEqual(allow, "GET, HEAD")
+
+    def test_run_id_containing_a_slash_is_read_as_one_literal_id(self) -> None:
+        """Product Spine run_ids share WorkUnit's identifier grammar and may
+        contain '/'; this route takes everything after the prefix as one
+        run_id rather than reserving any sub-path (see the docstring on
+        _run_id_from_path for the ambiguity a future sub-resource endpoint
+        will need to resolve)."""
+        status, _, body = self.request(
+            "GET", "/api/v1/runs/run/http-read-1")
+        payload = json.loads(body)
+        self.assertEqual(status, 200)
+        self.assertEqual(payload["run"]["run_id"], "run/http-read-1")
+
+        # A different, nonexistent literal id -- not a route miss.
+        status, _, body = self.request(
+            "GET", "/api/v1/runs/run/http-read-1/attempts")
+        payload = json.loads(body)
+        self.assertEqual(status, 404)
+        self.assertEqual(payload["error"]["code"], "run_not_found")
 
 
 if __name__ == "__main__":

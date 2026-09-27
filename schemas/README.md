@@ -38,6 +38,8 @@ This directory contains the machine-readable contracts used by the executable re
 - `idkmesh-control-tower-status-v0.1.schema.json` — the authenticated discovery/status document from `GET /api/v1/status`: accepted media types, published schema URLs, and explicitly enabled/disabled capabilities (issue #737).
 - `idkmesh-control-tower-inspection-response-v0.1.schema.json` — the success envelope wrapping one digest-bound `control-tower-snapshot` from `POST /api/v1/run-evidence/inspect` (issue #737).
 - `idkmesh-readiness-v0.1.schema.json` — the minimal `GET /readyz` readiness document (`idkmesh/service_runtime.py:readiness_document()`), shared by every IDKMesh HTTP service and carrying no project/evidence state (issue #737).
+- `idkmesh-product-spine-run-v0.1.schema.json` — an immutable read projection over one Product Spine lifecycle (`idkmesh/product_spine.py:ProductSpineRun`), printed by `idkmesh run create/status/cancel --json` and served read-only by `GET /api/v1/runs/{run_id}` (issue #739). Carries no canonical-state-write, git-push, or merge authority.
+- `idkmesh-control-tower-run-response-v0.1.schema.json` — the success envelope wrapping the run projection above for `GET /api/v1/runs/{run_id}` (issue #739). Reuses the exact `PersistedProductSpineRun` shape the CLI's `run status --json` already prints, so the HTTP and CLI surfaces cannot silently disagree.
 
 All current schemas use JSON Schema Draft 2020-12.
 

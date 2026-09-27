@@ -14,6 +14,7 @@ from urllib.parse import urlsplit
 
 from idkmesh import __version__
 from idkmesh.control_tower_api import (
+    API_SCHEMA_VERSION,
     API_VERSION,
     JSON_MEDIA_TYPE,
     V1_MEDIA_TYPE,
@@ -540,7 +541,12 @@ def _resolve_token() -> str:
     return configured
 
 
-def _handler(initial_text: str | None, token: str):
+def _handler(
+    initial_text: str | None,
+    token: str,
+    *,
+    product_spine_store_path: str | None = None,
+):
     page = _app_html(initial_text, token).encode("utf-8")
 
     class Handler(BaseHTTPRequestHandler):
@@ -733,6 +739,82 @@ def _handler(initial_text: str | None, token: str):
             )
             return True
 
+        def _run_id_from_path(self, path: str) -> str | None:
+            """Return the run_id if path is /api/v1/runs/<run_id>.
+
+            Product Spine run_ids legitimately contain '/' (the same
+            identifier grammar as WorkUnit ids, e.g. "run/http-read-1"), so
+            everything after the prefix is the run_id, with no reserved
+            sub-path. This deliberately leaves an unresolved ambiguity for
+            whichever future PR adds a /{run_id}/attempts, /evidence, or
+            /decisions sub-resource (issue #739): it must either choose a
+            colon-suffixed action shape (":inspect" etc., matching
+            docs/specifications/CONNECTOR_CONTROL_API_V0_1.md's existing
+            convention) or otherwise disambiguate, rather than assume no
+            real run_id ever contains a '/'.
+            """
+            prefix = f"/api/{API_VERSION}/runs/"
+            if not path.startswith(prefix):
+                return None
+            remainder = path[len(prefix):]
+            if not remainder:
+                return None
+            return remainder
+
+        def _run_read_response(
+            self, run_id: str, *, head_only: bool
+        ) -> None:
+            if product_spine_store_path is None:
+                self._send_json(
+                    503,
+                    error_document(
+                        "product_spine_store_not_configured",
+                        "this Control Tower instance was started without a "
+                        "Product Spine store; runs cannot be read",
+                    ),
+                    head_only=head_only,
+                )
+                return
+            from idkmesh.connector_store import (
+                LocalMetadataStore,
+                LocalStoreError,
+            )
+            from idkmesh.product_spine_run_store import (
+                ProductSpineRunStore,
+                ProductSpineRunStoreError,
+            )
+
+            try:
+                service = ProductSpineRunStore(
+                    LocalMetadataStore(product_spine_store_path)
+                )
+                result = service.status(run_id)
+            except ProductSpineRunStoreError as exc:
+                code = getattr(exc, "code", "run_control_error")
+                status = 404 if code == "run_not_found" else 400
+                self._send_json(
+                    status,
+                    error_document(code, str(exc)),
+                    head_only=head_only,
+                )
+                return
+            except (LocalStoreError, OSError, ValueError) as exc:
+                self._send_json(
+                    500,
+                    error_document("store_error", str(exc)),
+                    head_only=head_only,
+                )
+                return
+
+            payload = {
+                "api_version": API_VERSION,
+                "schema_version": API_SCHEMA_VERSION,
+                "kind": "idkmesh-control-tower-run-response",
+                "ok": True,
+                **result.to_dict(),
+            }
+            self._send_json(200, payload, head_only=head_only)
+
         def _read_json_text(self) -> str | None:
             if self.headers.get("Transfer-Encoding"):
                 self._send_json(
@@ -884,6 +966,10 @@ def _handler(initial_text: str | None, token: str):
             if path == f"/api/{API_VERSION}/run-evidence/inspect":
                 self._method_not_allowed("POST", head_only=head_only)
                 return
+            run_id = self._run_id_from_path(path)
+            if run_id is not None:
+                self._run_read_response(run_id, head_only=head_only)
+                return
             self._send_json(
                 404,
                 error_document("not_found", "endpoint not found"),
@@ -934,6 +1020,9 @@ def _handler(initial_text: str | None, token: str):
             ):
                 self._method_not_allowed("GET, HEAD")
                 return
+            if self._run_id_from_path(path) is not None:
+                self._method_not_allowed("GET, HEAD")
+                return
             if path != f"/api/{API_VERSION}/run-evidence/inspect":
                 self._send_json(
                     404,
@@ -978,7 +1067,7 @@ def _handler(initial_text: str | None, token: str):
                 "/healthz",
                 f"/api/{API_VERSION}/status",
                 f"/api/{API_VERSION}/openapi.json",
-            ):
+            ) or self._run_id_from_path(path) is not None:
                 self._method_not_allowed("GET, HEAD")
                 return
             self._send_json(
@@ -1005,12 +1094,24 @@ def create_server(
     initial_text: str | None = None,
     *,
     port: int = DEFAULT_PORT,
+    product_spine_store_path: str | None = None,
 ) -> ControlTowerServer:
-    """Create, but do not start, the loopback-only Control Tower server."""
+    """Create, but do not start, the loopback-only Control Tower server.
+
+    ``product_spine_store_path``, when given, is the SQLite path an existing
+    ``idkmesh run create/status/cancel`` invocation already writes to (see
+    ``idkmesh/product_spine_run_store.py``). It enables ``GET
+    /api/v1/runs/{run_id}``, read-only, over that same durable state; when
+    omitted, that endpoint returns 503 rather than being absent.
+    """
     token = _resolve_token()
     server = ControlTowerServer(
         (HOST, port),
-        _handler(initial_text, token),
+        _handler(
+            initial_text,
+            token,
+            product_spine_store_path=product_spine_store_path,
+        ),
     )
     server.ui_token = token
     return server
@@ -1021,9 +1122,14 @@ def serve_control_tower(
     *,
     port: int = DEFAULT_PORT,
     open_browser: bool = True,
+    product_spine_store_path: str | None = None,
 ) -> None:
     """Serve the local Control Tower until interrupted."""
-    server = create_server(initial_text, port=port)
+    server = create_server(
+        initial_text,
+        port=port,
+        product_spine_store_path=product_spine_store_path,
+    )
     url = f"http://{HOST}:{server.server_port}/"
     print(f"IDKMesh Control Tower: {url}")
     print(
