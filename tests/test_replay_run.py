@@ -32,6 +32,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
+import pytest
+
 if importlib.util.find_spec("jsonschema") is None:
     raise unittest.SkipTest(
         "replay_run tests require the Phase 0 jsonschema dependency "
@@ -74,6 +76,7 @@ class ReplayRunTests(unittest.TestCase):
 
     # -- positive case ----------------------------------------------------
 
+    @pytest.mark.slow  # real orchestration replay over the committed bundle
     def test_replay_reproduces_the_real_captured_bundle(self) -> None:
         report = replay_run.replay_bundle(REAL_MANIFEST)
         self.assertTrue(report.ok, replay_run.format_report(report))
@@ -107,6 +110,7 @@ class ReplayRunTests(unittest.TestCase):
 
     # -- negative case: a must-match field is corrupted --------------------
 
+    @pytest.mark.slow  # real orchestration replay over the committed bundle
     def test_replay_detects_a_corrupted_must_match_field(self) -> None:
         bundle = self._copy_bundle("corrupted")
         sidecar = bundle / "verification-result-attempt-001.json"
@@ -138,6 +142,7 @@ class ReplayRunTests(unittest.TestCase):
 
     # -- expected-to-vary fields must never fail replay --------------------
 
+    @pytest.mark.slow  # real orchestration replay over the committed bundle
     def test_replay_ignores_expected_to_vary_fields(self) -> None:
         bundle = self._copy_bundle("volatile-only")
         sidecar = bundle / "verification-result-attempt-002.json"
@@ -155,6 +160,7 @@ class ReplayRunTests(unittest.TestCase):
 
     # -- fail closed on a mismatched replay path (missing sidecar entry) --
 
+    @pytest.mark.slow  # real orchestration replay over the committed bundle
     def test_replay_fails_closed_if_a_saved_verification_result_is_absent_on_replay(
         self,
     ) -> None:
@@ -186,6 +192,7 @@ class ReplayRunTests(unittest.TestCase):
 
     # -- CLI exit codes ------------------------------------------------------
 
+    @pytest.mark.slow  # two real replay_run.py CLI subprocess spawns
     def test_cli_exit_codes_match_success_and_failure(self) -> None:
         ok = subprocess.run(
             [sys.executable, str(EXPERIMENTS / "replay_run.py"), "replay", "--bundle", str(REAL_MANIFEST)],
