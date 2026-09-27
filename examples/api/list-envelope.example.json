@@ -1,0 +1,12 @@
+{
+  "kind": "idkmesh-list",
+  "schema_version": "0.1",
+  "items": [
+    {"id": "run-2026-09-27-001", "status": "completed"},
+    {"id": "run-2026-09-27-002", "status": "running"}
+  ],
+  "page": {
+    "next_cursor": "eyJvZmZzZXQiOiAyfQ==",
+    "limit": 50
+  }
+}

@@ -1,11 +1,19 @@
 # IDKMesh API Conventions v0.1
 
-**Status:** proposed baseline; issue #736 owns review/freeze  
-**Date:** 2026-09-23  
-**Program:** #713
+**Status:** Frozen v0.1  
+**Date:** 2026-09-23 (proposed), frozen 2026-09-27 via issue #736  
+**Program:** #713  
+**Decision record:** [ADR-0018](../decisions/ADR-0018-freeze-api-conventions-v0-1.md)
 
 This specification defines cross-cutting conventions for IDKMesh HTTP product
 APIs. Domain specifications remain authoritative for domain semantics.
+
+Frozen means: sections 5 (error envelope), 6 (status mapping), 12
+(idempotency), 13 (concurrency), and 20 (deprecation) are the stable v0.1
+contract new and existing product HTTP endpoints must follow. A breaking
+change to any of them requires the compatibility-class process in section 22,
+not a silent edit of this document. Additive, backward-compatible clarifications
+remain in scope for a `v0.1.x` revision of this file.
 
 ## 1. Namespace and versions
 
@@ -132,7 +140,8 @@ Baseline meanings:
 - 500 — internal service failure;
 - 503 — dependency/capacity unavailable; include `Retry-After` when meaningful.
 
-Issue #736 freezes any final mapping changes.
+This mapping is frozen as of issue #736; a change to it is a breaking change
+under section 22, not an editorial fix.
 
 ## 7. Request correlation
 
@@ -346,7 +355,7 @@ Requirements:
 
 Stable API deprecation must be explicit.
 
-Final policy is owned by #736, but should include:
+Frozen via issue #736, deprecation must include:
 
 - deprecation announcement;
 - affected version/path/object;
@@ -381,7 +390,9 @@ Every API change should be labeled internally as one of:
 - deprecated;
 - breaking.
 
-Breaking changes require the process defined by #736 and release/migration
+A breaking change requires an explicit decision record (see
+[ADR-0018](../decisions/ADR-0018-freeze-api-conventions-v0-1.md) for the
+template this document itself was frozen under) plus release/migration
 evidence.
 
 ## 23. Authority statement

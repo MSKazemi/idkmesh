@@ -65,6 +65,12 @@ some unrelated page but missing from its own index stays invisible.
   must execute through an enforcing sandbox backend, with no raw-process
   fallback, and candidates are captured outside worker authority.
   *(2026-09-23.)*
+- [ADR-0018 — Freeze API Conventions v0.1](ADR-0018-freeze-api-conventions-v0-1.md)
+  — freezes `docs/specifications/API_CONVENTIONS_V0_1.md`'s error envelope,
+  status mapping, idempotency, concurrency, and deprecation sections as the
+  stable v0.1 contract every IDKMesh product API follows, backed by JSON
+  Schemas and CI-validated examples for the error and list envelopes.
+  *(2026-09-27.)*
 
 ## Proposed and experimental
 
