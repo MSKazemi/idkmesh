@@ -21,6 +21,8 @@ from typing import Any, Iterator, Mapping
 
 
 SCHEMA_VERSION = 1
+DEFAULT_LIST_LIMIT = 50
+MAX_LIST_LIMIT = 200
 
 _ENV_SECRET_REF = re.compile(r"env:[A-Za-z_][A-Za-z0-9_]{0,127}\Z")
 
@@ -500,6 +502,75 @@ class LocalMetadataStore:
         self._require_text(run_id, "run_id")
         with _session(self.path) as conn:
             return self._get_run_with_conn(conn, run_id)
+
+    def list_runs(
+        self,
+        *,
+        limit: int = DEFAULT_LIST_LIMIT,
+        after: str | None = None,
+    ) -> tuple[list[RunRecord], bool]:
+        """Deterministic keyset-paginated run listing, ordered by run_id.
+
+        Returns ``(page, has_more)``. Ordering by the primary key rather than
+        ``created_at`` avoids ties (two runs can share a timestamp; run_id is
+        unique by construction) and avoids the offset-pagination hazard
+        section 10 of the API conventions warns against for mutable streams:
+        a run inserted between two list calls can never shift an already
+        returned row out from under a caller paging by ``after=<run_id>``.
+        """
+        if (
+            isinstance(limit, bool)
+            or not isinstance(limit, int)
+            or not (1 <= limit <= MAX_LIST_LIMIT)
+        ):
+            raise ValueError(
+                f"limit must be an integer between 1 and {MAX_LIST_LIMIT}"
+            )
+        if after is not None:
+            self._require_text(after, "after")
+
+        with _session(self.path) as conn:
+            if after is None:
+                rows = conn.execute(
+                    """
+                    SELECT run_id, idempotency_key, request_digest, state,
+                           metadata_json, created_at, updated_at
+                    FROM runs
+                    ORDER BY run_id ASC
+                    LIMIT ?
+                    """,
+                    (limit + 1,),
+                ).fetchall()
+            else:
+                rows = conn.execute(
+                    """
+                    SELECT run_id, idempotency_key, request_digest, state,
+                           metadata_json, created_at, updated_at
+                    FROM runs
+                    WHERE run_id > ?
+                    ORDER BY run_id ASC
+                    LIMIT ?
+                    """,
+                    (after, limit + 1),
+                ).fetchall()
+
+        has_more = len(rows) > limit
+        page = rows[:limit]
+        return (
+            [
+                RunRecord(
+                    run_id=row["run_id"],
+                    idempotency_key=row["idempotency_key"],
+                    request_digest=row["request_digest"],
+                    state=row["state"],
+                    metadata=_load_metadata(row["metadata_json"]),
+                    created_at=row["created_at"],
+                    updated_at=row["updated_at"],
+                )
+                for row in page
+            ],
+            has_more,
+        )
 
     def update_run(
         self,

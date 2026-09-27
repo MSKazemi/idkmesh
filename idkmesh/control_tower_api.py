@@ -745,6 +745,7 @@ def status_document() -> dict[str, Any]:
             "status": "GET /api/v1/status",
             "openapi": "GET /api/v1/openapi.json",
             "inspect_run_evidence": "POST /api/v1/run-evidence/inspect",
+            "list_runs": "GET /api/v1/runs",
             "read_run": "GET /api/v1/runs/{run_id}",
             "health": "GET /healthz",
             "readiness": "GET /readyz",
@@ -963,6 +964,67 @@ def openapi_document() -> dict[str, Any]:
                         "406": {"description": "Requested response type unsupported"},
                         "413": {"description": "Request body too large"},
                         "415": {"description": "Request content type unsupported"},
+                    },
+                }
+            },
+            "/api/v1/runs": {
+                "get": {
+                    "summary": "List durable Product Spine runs",
+                    "description": (
+                        "Pure read-only, deterministic keyset pagination "
+                        "ordered by run_id. Serves the same "
+                        "idkmesh/product_spine_run_store.py application "
+                        "service `idkmesh run list` uses. Returns 503 when "
+                        "no Product Spine store is configured for this "
+                        "server instance."
+                    ),
+                    "security": [{"LocalSessionToken": []}],
+                    "parameters": [
+                        {
+                            "name": "limit",
+                            "in": "query",
+                            "required": False,
+                            "schema": {"type": "integer", "minimum": 1},
+                        },
+                        {
+                            "name": "cursor",
+                            "in": "query",
+                            "required": False,
+                            "description": (
+                                "Opaque next-page token from a previous "
+                                "response's page.next_cursor. Never "
+                                "constructed or parsed by the caller."
+                            ),
+                            "schema": {"type": "string"},
+                        },
+                    ],
+                    "responses": {
+                        "200": {
+                            "description": "One page of runs",
+                            "content": {
+                                JSON_MEDIA_TYPE: {
+                                    "schema": {
+                                        "$ref": (
+                                            "https://idkmesh.org/schemas/"
+                                            "idkmesh-list-v0.1.schema.json"
+                                        )
+                                    }
+                                }
+                            },
+                        },
+                        "400": {
+                            "description": (
+                                "Unsupported/duplicate query parameter or "
+                                "invalid limit/cursor"
+                            )
+                        },
+                        "403": {"description": "Invalid local session token"},
+                        "503": {
+                            "description": (
+                                "No Product Spine store configured for this "
+                                "server instance"
+                            )
+                        },
                     },
                 }
             },

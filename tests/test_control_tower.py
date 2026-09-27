@@ -818,6 +818,19 @@ class ControlTowerRunReadTests(unittest.TestCase):
             idempotency_key="http-read-test-1",
             created_at="2026-09-27T00:00:00Z",
         )
+        # Two more runs, deliberately created out of run_id sort order, so
+        # list-endpoint tests can assert deterministic ordering rather than
+        # insertion order.
+        service.create(
+            _run_projection(run_id="run/http-read-3"),
+            idempotency_key="http-read-test-3",
+            created_at="2026-09-27T00:00:01Z",
+        )
+        service.create(
+            _run_projection(run_id="run/http-read-2"),
+            idempotency_key="http-read-test-2",
+            created_at="2026-09-27T00:00:02Z",
+        )
         cls.server = create_server(
             port=0, product_spine_store_path=cls.store_path
         )
@@ -935,6 +948,109 @@ class ControlTowerRunReadTests(unittest.TestCase):
         payload = json.loads(body)
         self.assertEqual(status, 404)
         self.assertEqual(payload["error"]["code"], "run_not_found")
+
+    def test_list_returns_every_run_ordered_by_run_id(self) -> None:
+        status, _, body = self.request("GET", "/api/v1/runs")
+        self.assertEqual(status, 200)
+        payload = json.loads(body)
+        _validate_against_schema("idkmesh-list-v0.1.schema.json", payload)
+        self.assertEqual(payload["kind"], "idkmesh-list")
+        self.assertEqual(
+            [item["run_id"] for item in payload["items"]],
+            ["run/http-read-1", "run/http-read-2", "run/http-read-3"],
+        )
+        self.assertIsNone(payload["page"]["next_cursor"])
+        self.assertEqual(payload["page"]["limit"], 50)
+        for item in payload["items"]:
+            _validate_against_schema(
+                "idkmesh-product-spine-run-v0.1.schema.json", item
+            )
+
+    def test_list_paginates_with_limit_and_cursor(self) -> None:
+        status, _, body = self.request("GET", "/api/v1/runs?limit=2")
+        self.assertEqual(status, 200)
+        page1 = json.loads(body)
+        self.assertEqual(
+            [item["run_id"] for item in page1["items"]],
+            ["run/http-read-1", "run/http-read-2"],
+        )
+        cursor = page1["page"]["next_cursor"]
+        self.assertIsNotNone(cursor)
+
+        status, _, body = self.request(
+            "GET", f"/api/v1/runs?limit=2&cursor={cursor}")
+        self.assertEqual(status, 200)
+        page2 = json.loads(body)
+        self.assertEqual(
+            [item["run_id"] for item in page2["items"]],
+            ["run/http-read-3"],
+        )
+        self.assertIsNone(page2["page"]["next_cursor"])
+
+    def test_list_rejects_an_unknown_query_parameter(self) -> None:
+        status, _, body = self.request("GET", "/api/v1/runs?filter=x")
+        payload = json.loads(body)
+        self.assertEqual(status, 400)
+        self.assertEqual(
+            payload["error"]["code"], "unexpected_query_parameters")
+
+    def test_list_rejects_an_out_of_bounds_limit(self) -> None:
+        status, _, body = self.request("GET", "/api/v1/runs?limit=0")
+        payload = json.loads(body)
+        self.assertEqual(status, 400)
+        self.assertEqual(payload["error"]["code"], "invalid_limit")
+
+    def test_list_post_is_method_not_allowed(self) -> None:
+        conn = http.client.HTTPConnection(
+            "127.0.0.1", self.server.server_port, timeout=3
+        )
+        conn.request(
+            "POST", "/api/v1/runs",
+            headers={TOKEN_HEADER: self.server.ui_token},
+        )
+        response = conn.getresponse()
+        status = response.status
+        allow = response.getheader("Allow")
+        response.read()
+        conn.close()
+        self.assertEqual(status, 405)
+        self.assertEqual(allow, "GET, HEAD")
+
+
+class ControlTowerRunListWithoutAStoreTests(unittest.TestCase):
+    """GET /api/v1/runs (list) also requires --product-spine-store."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.server = create_server(port=0)
+        cls.thread = threading.Thread(
+            target=cls.server.serve_forever, daemon=True
+        )
+        cls.thread.start()
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        cls.server.shutdown()
+        cls.server.server_close()
+        cls.thread.join(timeout=2)
+
+    def test_list_is_503_without_a_configured_store(self) -> None:
+        conn = http.client.HTTPConnection(
+            "127.0.0.1", self.server.server_port, timeout=3
+        )
+        conn.request(
+            "GET", "/api/v1/runs",
+            headers={TOKEN_HEADER: self.server.ui_token},
+        )
+        response = conn.getresponse()
+        status = response.status
+        body = response.read()
+        conn.close()
+        self.assertEqual(status, 503)
+        self.assertEqual(
+            json.loads(body)["error"]["code"],
+            "product_spine_store_not_configured",
+        )
 
 
 if __name__ == "__main__":

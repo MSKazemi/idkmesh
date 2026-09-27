@@ -10,7 +10,7 @@ import time
 import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any
-from urllib.parse import urlsplit
+from urllib.parse import parse_qsl, urlsplit
 
 from idkmesh import __version__
 from idkmesh.control_tower_api import (
@@ -27,6 +27,7 @@ from idkmesh.control_tower_api import (
     status_document,
     success_document,
 )
+from idkmesh.connector_store import DEFAULT_LIST_LIMIT, MAX_LIST_LIMIT
 from idkmesh.local_ui_security import (
     HOST,
     MAX_BODY_BYTES,
@@ -712,7 +713,15 @@ def _handler(
 
         def _path(self) -> tuple[str, str] | None:
             parsed = urlsplit(self.path)
-            if parsed.query and parsed.path.startswith("/api/"):
+            # GET /api/v1/runs (list) is the one endpoint with declared,
+            # bounded query parameters (?limit=, ?cursor=; API Conventions
+            # v0.1 sections 10-11). Every other /api/ endpoint keeps
+            # rejecting stray query parameters outright.
+            if (
+                parsed.query
+                and parsed.path.startswith("/api/")
+                and parsed.path != f"/api/{API_VERSION}/runs"
+            ):
                 self._send_json(
                     400,
                     error_document(
@@ -815,6 +824,93 @@ def _handler(
             }
             self._send_json(200, payload, head_only=head_only)
 
+        def _run_list_response(self, query: str, *, head_only: bool) -> None:
+            if product_spine_store_path is None:
+                self._send_json(
+                    503,
+                    error_document(
+                        "product_spine_store_not_configured",
+                        "this Control Tower instance was started without a "
+                        "Product Spine store; runs cannot be listed",
+                    ),
+                    head_only=head_only,
+                )
+                return
+
+            allowed = {"limit", "cursor"}
+            params: dict[str, str] = {}
+            for key, value in parse_qsl(query, keep_blank_values=True):
+                if key not in allowed or key in params:
+                    self._send_json(
+                        400,
+                        error_document(
+                            "unexpected_query_parameters",
+                            f"unsupported or duplicate query parameter: {key}",
+                            details={"allowed": sorted(allowed)},
+                        ),
+                        head_only=head_only,
+                    )
+                    return
+                params[key] = value
+
+            limit = DEFAULT_LIST_LIMIT
+            if "limit" in params:
+                try:
+                    limit = int(params["limit"])
+                except ValueError:
+                    limit = -1
+                if not (1 <= limit <= MAX_LIST_LIMIT):
+                    self._send_json(
+                        400,
+                        error_document(
+                            "invalid_limit",
+                            f"limit must be an integer between 1 and "
+                            f"{MAX_LIST_LIMIT}",
+                        ),
+                        head_only=head_only,
+                    )
+                    return
+
+            from idkmesh.connector_store import (
+                LocalMetadataStore,
+                LocalStoreError,
+            )
+            from idkmesh.product_spine_run_store import (
+                ProductSpineRunStore,
+                ProductSpineRunStoreError,
+            )
+
+            try:
+                service = ProductSpineRunStore(
+                    LocalMetadataStore(product_spine_store_path)
+                )
+                runs, next_cursor = service.list(
+                    limit=limit, cursor=params.get("cursor")
+                )
+            except ProductSpineRunStoreError as exc:
+                code = getattr(exc, "code", "run_control_error")
+                self._send_json(
+                    400,
+                    error_document(code, str(exc)),
+                    head_only=head_only,
+                )
+                return
+            except (LocalStoreError, OSError, ValueError) as exc:
+                self._send_json(
+                    500,
+                    error_document("store_error", str(exc)),
+                    head_only=head_only,
+                )
+                return
+
+            payload = {
+                "kind": "idkmesh-list",
+                "schema_version": API_SCHEMA_VERSION,
+                "items": [run.to_dict() for run in runs],
+                "page": {"next_cursor": next_cursor, "limit": limit},
+            }
+            self._send_json(200, payload, head_only=head_only)
+
         def _read_json_text(self) -> str | None:
             if self.headers.get("Transfer-Encoding"):
                 self._send_json(
@@ -912,7 +1008,7 @@ def _handler(
             parsed = self._path()
             if parsed is None:
                 return
-            path, _query = parsed
+            path, query = parsed
             if path in ("/", "/index.html"):
                 self._headers(
                     200,
@@ -966,6 +1062,9 @@ def _handler(
             if path == f"/api/{API_VERSION}/run-evidence/inspect":
                 self._method_not_allowed("POST", head_only=head_only)
                 return
+            if path == f"/api/{API_VERSION}/runs":
+                self._run_list_response(query, head_only=head_only)
+                return
             run_id = self._run_id_from_path(path)
             if run_id is not None:
                 self._run_read_response(run_id, head_only=head_only)
@@ -1017,6 +1116,7 @@ def _handler(
                 "/readyz",
                 f"/api/{API_VERSION}/status",
                 f"/api/{API_VERSION}/openapi.json",
+                f"/api/{API_VERSION}/runs",
             ):
                 self._method_not_allowed("GET, HEAD")
                 return
@@ -1067,6 +1167,7 @@ def _handler(
                 "/healthz",
                 f"/api/{API_VERSION}/status",
                 f"/api/{API_VERSION}/openapi.json",
+                f"/api/{API_VERSION}/runs",
             ) or self._run_id_from_path(path) is not None:
                 self._method_not_allowed("GET, HEAD")
                 return

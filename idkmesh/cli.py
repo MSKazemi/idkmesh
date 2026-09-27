@@ -53,6 +53,7 @@ from idkmesh.local_loop import (
     render_summary as render_local_loop_summary,
     run_work_unit,
 )
+from idkmesh.connector_store import DEFAULT_LIST_LIMIT, MAX_LIST_LIMIT
 from idkmesh.local_ui_security import MAX_BODY_BYTES
 
 
@@ -448,6 +449,40 @@ def build_parser() -> argparse.ArgumentParser:
         help="explicit ISO-8601 timestamp (default: current UTC time)",
     )
     run_cancel.add_argument(
+        "--json",
+        action="store_true",
+        dest="json_output",
+        help="emit deterministic machine-readable JSON",
+    )
+
+    run_list = run_sub.add_parser(
+        "list",
+        help="list retained Product Spine runs, oldest run_id first",
+        description=(
+            "Deterministic keyset-paginated run listing, ordered by run_id. "
+            "Pass the previous page's --cursor value verbatim to continue; "
+            "never construct or parse a cursor by hand."
+        ),
+    )
+    run_list.add_argument(
+        "--store",
+        required=True,
+        metavar="PATH",
+        help="local SQLite control-state path",
+    )
+    run_list.add_argument(
+        "--limit",
+        type=int,
+        default=DEFAULT_LIST_LIMIT,
+        metavar="N",
+        help=f"page size, 1-{MAX_LIST_LIMIT} (default: {DEFAULT_LIST_LIMIT})",
+    )
+    run_list.add_argument(
+        "--cursor",
+        metavar="TOKEN",
+        help="opaque next-page token from a previous 'run list' call",
+    )
+    run_list.add_argument(
         "--json",
         action="store_true",
         dest="json_output",
@@ -897,6 +932,32 @@ def _run_connections(args: argparse.Namespace) -> int:
     return 2
 
 
+def _print_run_list(runs, next_cursor, *, limit, json_output: bool) -> int:
+    if json_output:
+        print(
+            json.dumps(
+                {
+                    "kind": "idkmesh-list",
+                    "schema_version": "0.1",
+                    "items": [run.to_dict() for run in runs],
+                    "page": {"next_cursor": next_cursor, "limit": limit},
+                },
+                sort_keys=True,
+                separators=(",", ":"),
+            )
+        )
+        return 0
+
+    if not runs:
+        print("no retained runs")
+        return 0
+    for run in runs:
+        print(f"{run.run_id}\tstate={run.state}")
+    if next_cursor is not None:
+        print(f"next_cursor: {next_cursor}")
+    return 0
+
+
 def _run_control_error(exc, *, json_output: bool) -> int:
     code = getattr(exc, "code", "run_control_error")
     if json_output:
@@ -1017,6 +1078,15 @@ def _run_product_spine_control(args: argparse.Namespace) -> int:
             LocalMetadataStore(args.store)
         )
 
+        if args.run_command == "list":
+            runs, next_cursor = service.list(
+                limit=args.limit,
+                cursor=args.cursor,
+            )
+            return _print_run_list(
+                runs, next_cursor, limit=args.limit,
+                json_output=args.json_output,
+            )
         if args.run_command == "create":
             projection = _strict_json_file(args.projection)
             result = service.create(

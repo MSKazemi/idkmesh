@@ -475,6 +475,7 @@ group over the same SQLite `LocalMetadataStore` the PS-C composition uses:
 idkmesh run create PROJECTION --store PATH --idempotency-key KEY
 idkmesh run status RUN_ID --store PATH
 idkmesh run cancel RUN_ID --store PATH
+idkmesh run list --store PATH [--limit N] [--cursor TOKEN]
 ```
 
 Each accepts `--json` for deterministic machine-readable output, and `create`
@@ -495,6 +496,17 @@ atomic run record.
 `cancel` applies the canonical lifecycle transition to `cancelled` and is
 idempotent once cancelled. It refuses a lifecycle-illegal cancellation such as
 a terminal `decided` run.
+
+`list` pages every retained run, ordered deterministically by `run_id`
+(issue #739, the read-API program's first "list" surface, and this
+command's exact application service also backs `GET /api/v1/runs`, per
+section 11's "these surfaces ... must not compute independent business
+rules"). Pagination is keyset-based, not offset-based, so a run admitted
+between two page reads never shifts an already-returned row out from
+under a caller mid-page (API Conventions v0.1 section 10). The
+`--cursor` value is opaque and must be passed back exactly as returned;
+a cursor this service did not itself issue fails closed with
+`invalid_cursor`.
 
 Projection input is bounded: the file must be a regular file, is read against
 the shared 2 MiB local-input limit, is decoded as UTF-8, and is parsed as

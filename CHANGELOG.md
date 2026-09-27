@@ -14,6 +14,18 @@ and the release notes for that tag.
 
 ### Added
 
+- `idkmesh run list [--limit N] [--cursor TOKEN]` and `GET /api/v1/runs`
+  (issue #739, second read-API slice): deterministic keyset-paginated
+  Product Spine run listing, ordered by `run_id`. Adds
+  `LocalMetadataStore.list_runs()` and `ProductSpineRunStore.list()`; the
+  opaque cursor is a self-describing, service-issued token that fails
+  closed (`invalid_cursor`) if forged or issued by anything else. Reuses
+  the existing `idkmesh-list-v0.1` envelope and
+  `idkmesh-product-spine-run-v0.1` item schema -- no new schema needed.
+  The HTTP endpoint is the one Control Tower route that accepts query
+  parameters (`limit`, `cursor`); every other endpoint still rejects any
+  query string outright.
+
 - `GET /api/v1/runs/{run_id}` on the Control Tower Local API (issue #739,
   the first slice of the API-4 read model): read-only Product Spine run
   state, served through the same `ProductSpineRunStore` application service
