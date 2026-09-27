@@ -153,8 +153,9 @@ HTTP compatibility line: /api/v1
 object schema:            0.1 or idkmesh.io/v1alpha1
 ```
 
-The older Connector Control API document currently uses `/v1`; #736/#738 own
-reconciling that design before connector HTTP implementation becomes canonical.
+The older Connector Control API document used `/v1`; reconciled to `/api/v1`
+when #736 froze `docs/specifications/API_CONVENTIONS_V0_1.md`
+([ADR-0018](../decisions/ADR-0018-freeze-api-conventions-v0-1.md)).
 
 ## 7. Resource model
 

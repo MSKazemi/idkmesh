@@ -32,6 +32,8 @@ This directory contains the machine-readable contracts used by the executable re
 - `enterprise-authorization-decision-v0.1.schema.json` — deterministic allow/deny/requires-approval evidence bound to tenant/project resource identity, policy revision, identity revision, risk, and data class. The decision object performs no side effect and carries no merge authority itself.
 - `enterprise-github-identity-binding-v0.1.schema.json` — maintainer-reviewed table binding trusted numeric GitHub actor ids to enterprise `ActorContext` roles, tenant/project scopes, and data clearance (E3-B, issue #670). The numeric actor id is the primary trust key; issue/PR/comment text is never a binding source.
 - `enterprise-oidc-identity-binding-v0.1.schema.json` — maintainer-reviewed table binding trusted `(issuer, subject)` enterprise IdP (OIDC/SAML/SSO) claim pairs to enterprise `ActorContext` roles, tenant/project scopes, data clearance, and expected relying-party audience (E3-C, issue #670). The `(issuer, subject)` pair is the primary trust key; issue/PR/comment text is never a binding source.
+- `idkmesh-api-error-v0.1.schema.json` — the frozen standard error envelope every IDKMesh JSON API returns (`docs/specifications/API_CONVENTIONS_V0_1.md` section 5, [ADR-0018](../docs/decisions/ADR-0018-freeze-api-conventions-v0-1.md)). `code` is the compatibility-sensitive contract; `message` is explanatory only.
+- `idkmesh-list-v0.1.schema.json` — the frozen standard paginated list envelope for IDKMesh JSON list endpoints (`docs/specifications/API_CONVENTIONS_V0_1.md` section 10, ADR-0018). Uses an opaque cursor, never an offset, so mutable event/run streams stay safe to page.
 
 All current schemas use JSON Schema Draft 2020-12.
 

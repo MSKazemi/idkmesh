@@ -3,7 +3,13 @@
 **Status:** planning baseline  
 **Date:** 2026-09-23  
 **Program:** #713  
-**Companion plan:** `API_V1_PROFESSIONALIZATION_PLAN_2026-09-23.md`
+**Companion plan:** `API_V1_PROFESSIONALIZATION_PLAN_2026-09-23.md`  
+**Cross-cutting conventions:** every endpoint under `/api/v1` follows the frozen
+[API Conventions v0.1](../specifications/API_CONVENTIONS_V0_1.md) (error
+envelope, status mapping, pagination, idempotency, concurrency, deprecation —
+[ADR-0018](../decisions/ADR-0018-freeze-api-conventions-v0-1.md)). This
+document defines how surfaces compose; the conventions specification defines
+how each one talks HTTP.
 
 ## Purpose
 

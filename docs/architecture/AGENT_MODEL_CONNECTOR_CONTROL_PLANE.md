@@ -540,45 +540,53 @@ The dispatcher uses only healthy/eligible connections.
 
 The first HTTP API should be thin over the same Python control-plane services used by the CLI.
 
+None of the paths below are implemented; this section is a proposed resource
+shape, not a shipped contract. Every path uses the `/api/v1` product
+namespace ADR-0016 settled and follows the frozen
+[API Conventions v0.1](../specifications/API_CONVENTIONS_V0_1.md) (error
+envelope, status mapping, pagination, idempotency — this section predates
+that freeze and used a bare `/v1` prefix before it; corrected here so this
+document does not describe a second, undocumented namespace).
+
 ### Service
 
-- `GET /health`
+- `GET /healthz`
 
 ### Projects
 
-- `GET /v1/projects`
-- `POST /v1/projects`
-- `GET /v1/projects/{project_id}`
+- `GET /api/v1/projects`
+- `POST /api/v1/projects`
+- `GET /api/v1/projects/{project_id}`
 
 ### Connections
 
-- `GET /v1/connections`
-- `POST /v1/connections`
-- `GET /v1/connections/{connection_id}`
-- `POST /v1/connections/{connection_id}:probe`
-- `POST /v1/connections/{connection_id}:enable`
-- `POST /v1/connections/{connection_id}:disable`
+- `GET /api/v1/connections`
+- `POST /api/v1/connections`
+- `GET /api/v1/connections/{connection_id}`
+- `POST /api/v1/connections/{connection_id}:probe`
+- `POST /api/v1/connections/{connection_id}:enable`
+- `POST /api/v1/connections/{connection_id}:disable`
 
 ### Routing
 
-- `POST /v1/routes:resolve` — dry-run eligibility/routing explanation.
+- `POST /api/v1/routes:resolve` — dry-run eligibility/routing explanation.
 
 ### Work
 
-- `POST /v1/work-units:preview` — convert an SCM issue/spec into canonical WorkUnit without dispatch.
-- `POST /v1/runs` — dispatch an already-authorized WorkUnit.
-- `GET /v1/runs/{run_id}`
-- `GET /v1/runs/{run_id}/events`
-- `POST /v1/runs/{run_id}:cancel`
+- `POST /api/v1/work-units:preview` — convert an SCM issue/spec into canonical WorkUnit without dispatch.
+- `POST /api/v1/runs` — dispatch an already-authorized WorkUnit.
+- `GET /api/v1/runs/{run_id}`
+- `GET /api/v1/runs/{run_id}/events`
+- `POST /api/v1/runs/{run_id}:cancel`
 
 ### Results
 
-- `GET /v1/results/{result_id}`
-- `GET /v1/verifications/{verification_id}`
+- `GET /api/v1/results/{result_id}`
+- `GET /api/v1/verifications/{verification_id}`
 
 ### GitHub ingress
 
-- `POST /v1/webhooks/github`
+- `POST /api/v1/webhooks/github`
 
 The webhook endpoint must verify GitHub signatures and event replay/idempotency before touching project state.
 

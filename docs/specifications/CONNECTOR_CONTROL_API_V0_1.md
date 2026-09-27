@@ -2,7 +2,15 @@
 
 **Status:** experimental design contract  
 **Date:** 2026-09-22  
-**Authority:** configuration/dispatch interface only; this API grants no acceptance or merge authority.
+**Authority:** configuration/dispatch interface only; this API grants no acceptance or merge authority.  
+**Cross-cutting conventions:** every endpoint below follows the frozen
+[API Conventions v0.1](API_CONVENTIONS_V0_1.md) (error envelope, status
+mapping, pagination, idempotency, concurrency, deprecation —
+[ADR-0018](../decisions/ADR-0018-freeze-api-conventions-v0-1.md)). This
+document's paths were drafted 2026-09-22, one day before ADR-0016 settled the
+`/api/v1` product namespace; they are corrected here to that namespace so this
+specification does not describe a second, undocumented one. None of the
+paths below are implemented.
 
 This specification defines the first product-facing API for connecting repositories, coding agents, model providers and execution backends to IDKMesh.
 
@@ -29,7 +37,7 @@ idkmesh.io/v1alpha1
 The HTTP prefix is:
 
 ```text
-/v1
+/api/v1
 ```
 
 The HTTP prefix is intentionally decoupled from alpha object-schema naming so future compatible fields do not require a new URL for every additive change.
@@ -167,7 +175,7 @@ acceptance, or merge authority.
 
 ## 6. Work preview
 
-`POST /v1/work-units:preview`
+`POST /api/v1/work-units:preview`
 
 Purpose:
 
@@ -198,7 +206,7 @@ Issue text is untrusted input and cannot set connector credentials, executable p
 
 ## 7. Route resolution
 
-`POST /v1/routes:resolve`
+`POST /api/v1/routes:resolve`
 
 This is advisory/deterministic routing, not execution.
 
@@ -269,7 +277,7 @@ See [Model-Tier Dispatcher and Connector Routing](../planning/MODEL_TIER_DISPATC
 
 ## 8. Run creation
 
-`POST /v1/runs`
+`POST /api/v1/runs`
 
 Request:
 
@@ -330,7 +338,7 @@ A retry creates a new attempt identity; it must not rewrite historical evidence.
 
 ## 10. Run inspection
 
-`GET /v1/runs/{run_id}`
+`GET /api/v1/runs/{run_id}`
 
 Minimum response fields:
 
@@ -350,7 +358,7 @@ Minimum response fields:
 
 ## 11. Run events
 
-`GET /v1/runs/{run_id}/events`
+`GET /api/v1/runs/{run_id}/events`
 
 Events are append-only observations such as:
 
@@ -373,7 +381,7 @@ Provider-specific payloads belong under an extension namespace and must not rede
 
 ## 12. Cancellation
 
-`POST /v1/runs/{run_id}:cancel`
+`POST /api/v1/runs/{run_id}:cancel`
 
 Cancellation means:
 
@@ -388,27 +396,27 @@ Cancellation is best effort for external systems whose API cannot guarantee imme
 
 ### List
 
-`GET /v1/connections`
+`GET /api/v1/connections`
 
 ### Create
 
-`POST /v1/connections`
+`POST /api/v1/connections`
 
 The API accepts secret references only.
 
 ### Inspect
 
-`GET /v1/connections/{connection_id}`
+`GET /api/v1/connections/{connection_id}`
 
 ### Probe
 
-`POST /v1/connections/{connection_id}:probe`
+`POST /api/v1/connections/{connection_id}:probe`
 
 ### Enable/disable
 
-`POST /v1/connections/{connection_id}:enable`
+`POST /api/v1/connections/{connection_id}:enable`
 
-`POST /v1/connections/{connection_id}:disable`
+`POST /api/v1/connections/{connection_id}:disable`
 
 Deleting a connection should not delete historical run/evidence records.
 
@@ -416,9 +424,9 @@ Deleting a connection should not delete historical run/evidence records.
 
 Minimum:
 
-- `GET /v1/projects`;
-- `POST /v1/projects`;
-- `GET /v1/projects/{project_id}`.
+- `GET /api/v1/projects`;
+- `POST /api/v1/projects`;
+- `GET /api/v1/projects/{project_id}`.
 
 Project record should include:
 
@@ -434,7 +442,7 @@ Project policy never contains provider API keys.
 
 ## 15. GitHub webhook ingress
 
-`POST /v1/webhooks/github`
+`POST /api/v1/webhooks/github`
 
 Requirements:
 
