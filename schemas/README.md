@@ -37,6 +37,7 @@ This directory contains the machine-readable contracts used by the executable re
 - `control-tower-snapshot-v0.1.schema.json` — the deterministic, read-only human-facing projection of one validated Run Evidence Report returned by the Control Tower Local API's inspection endpoint (`docs/specifications/CONTROL_TOWER_LOCAL_API_V0_1.md`). Grants no actuation authority.
 - `idkmesh-control-tower-status-v0.1.schema.json` — the authenticated discovery/status document from `GET /api/v1/status`: accepted media types, published schema URLs, and explicitly enabled/disabled capabilities (issue #737).
 - `idkmesh-control-tower-inspection-response-v0.1.schema.json` — the success envelope wrapping one digest-bound `control-tower-snapshot` from `POST /api/v1/run-evidence/inspect` (issue #737).
+- `idkmesh-readiness-v0.1.schema.json` — the minimal `GET /readyz` readiness document (`idkmesh/service_runtime.py:readiness_document()`), shared by every IDKMesh HTTP service and carrying no project/evidence state (issue #737).
 
 All current schemas use JSON Schema Draft 2020-12.
 

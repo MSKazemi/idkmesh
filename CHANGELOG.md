@@ -14,6 +14,12 @@ and the release notes for that tag.
 
 ### Added
 
+- `schemas/idkmesh-readiness-v0.1.schema.json` (issue #737): freezes the
+  shared `GET /readyz` readiness document built by
+  `idkmesh/service_runtime.py:readiness_document()`. Validated against the
+  function's real return value (with and without the optional
+  `api_version` field) in `tests/test_service_runtime.py`.
+
 - `schemas/idkmesh-control-tower-status-v0.1.schema.json` and
   `schemas/idkmesh-control-tower-inspection-response-v0.1.schema.json`
   (issue #737): the Control Tower Local API's `GET /api/v1/status` and
