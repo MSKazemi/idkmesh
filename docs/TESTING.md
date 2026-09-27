@@ -1,7 +1,7 @@
 # Testing and CI Practice
 
 How tests run in IDKMesh, why the tiers are drawn where they are, and what to do
-when a gate complains. The measurements quoted here were taken on 2026-09-20;
+when a gate complains. The measurements quoted here were taken on 2026-09-27;
 re-measure before treating any of them as current.
 
 ## The short version
@@ -59,12 +59,14 @@ Every number in this section is **a measurement with a date attached, not a
 constant**. Re-measure before trusting any figure here, and re-date the line
 above when you do.
 
-The timing rows were measured on 2026-09-25 on **20 cores at an idle load
-average of 0.75** on commit `045f84d`, so they are not directly comparable to a
-figure from a busier or wider machine; the section below on CPU-seconds explains
-why. Load is not a second-order effect here: the same unit-tier selection
-measured **254 CPU-seconds at load 12 and 424 at load 20** on byte-identical
-content, so `uptime` belongs beside any figure you record. The counting rows are properties of the
+The timing rows were measured on 2026-09-27 on **20 cores at an idle load
+average of about 2** on the commit that added
+`docs/decisions/ADR-0019-run-subresource-suffix-reservation.md`, so they are
+not directly comparable to a figure from a busier or wider machine; the
+section below on CPU-seconds explains why. Load is not a second-order effect
+here: the same unit-tier selection measured **91-94 CPU-seconds at load 15-22
+and 56.5 at load 2-9** on byte-identical content, so `uptime` belongs beside
+any figure you record. The counting rows are properties of the
 tree, not of the machine, and `tests/test_documented_tier_scopes.py` re-derives
 the marker expressions this document publishes directly from
 `scripts/testkit.py`.
@@ -74,12 +76,19 @@ copied from a blog post:
 
 | Quantity | Measurement |
 |---|---|
-| `make test` (unit tier) | **70.7 s wall, 63.2 CPU-s**, 3043 passed / 2 skipped / 422 deselected / 5790 subtests |
-| Whole suite, no marker filter (`python -m pytest -q`) | 3467 collected |
-| Selected by the nightly leg (`-m "sim or slow"`) | 422 |
-| Slowest single test in the unit tier | 1.31 s (`test_replay_run.py::ReplayRunTests::test_cli_exit_codes_match_success_and_failure`) |
+| `make test` (unit tier) | **66.8 s wall, 56.5 CPU-s**, 3098 passed / 2 skipped / 428 deselected / 5942 subtests |
+| Whole suite, no marker filter (`python -m pytest -q`) | 3528 collected |
+| Selected by the nightly leg (`-m "sim or slow"`) | 428 |
+| Slowest single test in the unit tier | 1.13 s (`test_e016_corpus.py::test_build_returns_deterministic_tasks_with_unique_ids`, setup) |
 | Affected-test run after a one-file edit | **0.1–0.4 s** |
 | CI, mean run / slowest run / daily volume | not re-measured since PR Gate moved from the full suite to the `unit` tier — the figures that stood here predate that change and would understate PR Gate's new speed and overstate its old one |
+
+On 2026-09-27, `tests/test_replay_run.py`'s five real-orchestration-replay
+tests (one spawning two real `replay_run.py` CLI subprocesses) moved from
+`unit` to `slow` -- together they cost about 26 CPU-s of the unit tier's 90
+CPU-s budget, which is exactly the margin `gate (3.13)` was failing into on a
+busier CI runner with zero test failures. They still run every night; see the
+`nightly` row below.
 
 This is not a static state — the suite keeps growing, and the response to a
 tight budget is always to make the tier cheaper, never to raise the ceiling.
@@ -122,12 +131,14 @@ one over a few quarters.
 | `nightly` | `integration` + everything marked `sim` or `slow` (`-m "sim or slow"`) | none | scheduled — see `.github/workflows/nightly-full-suite.yml` |
 
 **`nightly` is not equivalent to `integration`.** The two tier markers are in
-use: 311 tests carry `sim`, and `-m "sim or slow"` selects 382 (the rest carry
-`slow` — mostly meta-tests that shell out to `unittest` discovery or pytest
-collection as subprocesses, where the subprocess spawn rather than the
-assertion is what's slow) — exactly the 382 the unit tier deselects in the
-table above. Every one of them runs only in `nightly`, so a change that breaks
-one is invisible to the pre-commit and pre-push gates until the scheduled run.
+use: 311 tests carry `sim`, and `-m "sim or slow"` selects 428 (the other 117
+carry `slow` — mostly meta-tests that shell out to `unittest` discovery or
+pytest collection as subprocesses, plus the five `test_replay_run.py` real
+orchestration-replay tests, where the subprocess spawn or the real replay
+rather than the assertion is what's slow) — exactly the 428 the unit tier
+deselects in the table above. Every one of them runs only in `nightly`, so a
+change that breaks one is invisible to the pre-commit and pre-push gates
+until the scheduled run.
 
 This paragraph previously said the opposite — that no test carried
 `@pytest.mark.sim` and that the two tiers therefore did the same work — while

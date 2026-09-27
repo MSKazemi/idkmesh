@@ -14,6 +14,28 @@ and the release notes for that tag.
 
 ### Added
 
+- `GET /api/v1/runs/{run_id}/attempts` (issue #739, `attempts` read
+  surface): reads one run's worker/verifier attempts. `attempts` is now a
+  reserved trailing path segment alongside `evidence` and `decisions`
+  ([ADR-0019](docs/decisions/ADR-0019-run-subresource-suffix-reservation.md)):
+  resolution is a pure function of the request path, never a lookup
+  outcome, so a `run_id` ending in one of those three literal suffixes can
+  no longer be read through the plain single-run `GET`. Frozen by
+  `schemas/idkmesh-control-tower-run-attempts-response-v0.1.schema.json`.
+
+### Changed
+
+- `tests/test_replay_run.py`'s five real-orchestration-replay tests (one
+  spawning two real `replay_run.py` CLI subprocesses) moved from the `unit`
+  tier to `slow`, per `docs/TESTING.md`'s "mark the worst offenders
+  `sim`/`slow`, do not raise the budget" policy: together they cost about
+  26 CPU-s of the unit tier's 90 CPU-s budget, which is exactly the margin
+  `gate (3.13)` was failing into on a busier CI runner with zero test
+  failures across three consecutive runs. They still run every night.
+  `docs/TESTING.md`'s measured baseline re-measured and re-dated to match.
+
+### Added
+
 - `--state` and `--project-id` filters for `idkmesh run list` and
   `GET /api/v1/runs` (issue #739): bounded, exact-match, AND-combined
   filters per API Conventions v0.1 section 11. An unrecognized `state`

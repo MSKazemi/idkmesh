@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idkmesh.org/schemas/idkmesh-control-tower-run-attempts-response-v0.1.schema.json",
+  "title": "IDKMesh Control Tower Run Attempts Response v0.1",
+  "description": "The success envelope returned by `GET /api/v1/runs/{run_id}/attempts`, wrapping the same idkmesh/product_spine.py:AttemptProjection.to_dict() shape already embedded in the full run document. `attempts` is a reserved trailing path segment (ADR-0019): a run_id ending in \"/attempts\" cannot be read through the plain single-run GET, only through this endpoint.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["api_version", "schema_version", "kind", "ok", "run_id", "attempts"],
+  "properties": {
+    "api_version": {"const": "v1"},
+    "schema_version": {"const": "0.1"},
+    "kind": {"const": "idkmesh-control-tower-run-attempts-response"},
+    "ok": {"const": true},
+    "run_id": {"type": "string", "minLength": 1},
+    "attempts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "attempt_id", "order", "connector_id", "state",
+          "provider_reference", "candidate_reference_digest",
+          "result_manifest_digest", "verification_semantic_digest",
+          "error_code"
+        ],
+        "properties": {
+          "attempt_id": {"type": "string", "minLength": 1},
+          "order": {"type": "integer", "minimum": 1},
+          "connector_id": {"type": "string", "minLength": 1},
+          "state": {
+            "enum": [
+              "created", "dispatched", "worker_error", "candidate_observed",
+              "normalization_error", "normalized", "verification_requested",
+              "verification_error", "verified", "cancelled"
+            ]
+          },
+          "provider_reference": {"type": ["string", "null"]},
+          "candidate_reference_digest": {
+            "anyOf": [{"$ref": "#/$defs/digest"}, {"type": "null"}]
+          },
+          "result_manifest_digest": {
+            "anyOf": [{"$ref": "#/$defs/digest"}, {"type": "null"}]
+          },
+          "verification_semantic_digest": {
+            "anyOf": [{"$ref": "#/$defs/digest"}, {"type": "null"}]
+          },
+          "error_code": {"type": ["string", "null"]}
+        }
+      }
+    }
+  },
+  "$defs": {
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    }
+  }
+}

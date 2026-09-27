@@ -932,19 +932,31 @@ class ControlTowerRunReadTests(unittest.TestCase):
 
     def test_run_id_containing_a_slash_is_read_as_one_literal_id(self) -> None:
         """Product Spine run_ids share WorkUnit's identifier grammar and may
-        contain '/'; this route takes everything after the prefix as one
-        run_id rather than reserving any sub-path (see the docstring on
-        _run_id_from_path for the ambiguity a future sub-resource endpoint
-        will need to resolve)."""
+        contain '/'; a plain single-run GET takes everything after the
+        prefix as one run_id -- except a trailing "/attempts", "/evidence",
+        or "/decisions" segment, which ADR-0019 reserves for the matching
+        sub-resource regardless of whether that derived run_id exists."""
         status, _, body = self.request(
             "GET", "/api/v1/runs/run/http-read-1")
         payload = json.loads(body)
         self.assertEqual(status, 200)
         self.assertEqual(payload["run"]["run_id"], "run/http-read-1")
 
-        # A different, nonexistent literal id -- not a route miss.
+        # "/attempts" is reserved: this resolves as the attempts
+        # sub-resource of run_id "run/http-read-1", not a literal id lookup
+        # for "run/http-read-1/attempts" -- run/http-read-1 has no
+        # attempts, so the sub-resource exists and returns an empty list,
+        # not 404.
         status, _, body = self.request(
             "GET", "/api/v1/runs/run/http-read-1/attempts")
+        payload = json.loads(body)
+        self.assertEqual(status, 200)
+        self.assertEqual(payload["run_id"], "run/http-read-1")
+        self.assertEqual(payload["attempts"], [])
+
+        # A trailing segment outside the reserved set stays a literal id.
+        status, _, body = self.request(
+            "GET", "/api/v1/runs/run/http-read-1/other")
         payload = json.loads(body)
         self.assertEqual(status, 404)
         self.assertEqual(payload["error"]["code"], "run_not_found")
@@ -1037,6 +1049,158 @@ class ControlTowerRunReadTests(unittest.TestCase):
         )
         conn.request(
             "POST", "/api/v1/runs",
+            headers={TOKEN_HEADER: self.server.ui_token},
+        )
+        response = conn.getresponse()
+        status = response.status
+        allow = response.getheader("Allow")
+        response.read()
+        conn.close()
+        self.assertEqual(status, 405)
+        self.assertEqual(allow, "GET, HEAD")
+
+
+class ControlTowerRunAttemptsTests(unittest.TestCase):
+    """GET /api/v1/runs/{run_id}/attempts (ADR-0019 reserved sub-resource)."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        from idkmesh.connector_store import LocalMetadataStore
+        from idkmesh.product_spine import AttemptProjection
+        from idkmesh.product_spine_run_store import (
+            ProductSpineRunStore,
+            _restore,
+        )
+
+        cls._tmp = tempfile.TemporaryDirectory()
+        cls.store_path = str(Path(cls._tmp.name) / "product-spine.sqlite3")
+        store = LocalMetadataStore(cls.store_path)
+        service = ProductSpineRunStore(store)
+        service.create(
+            _run_projection(
+                run_id="run/attempts-1",
+                routing={"admitted_connectors": ["connector.test"]},
+            ),
+            idempotency_key="attempts-test-1",
+            created_at="2026-09-27T00:00:00Z",
+        )
+        # Drive the run through real lifecycle transitions to get a
+        # dispatched run with one real attempt, then persist that
+        # projection directly (ProductSpineRunStore.create only accepts
+        # state="proposed"; matching
+        # test_product_spine_run_store.py's own pattern for seeding a
+        # non-proposed fixture run).
+        record = store.get_run("run/attempts-1")
+        dispatched = (
+            _restore(record)
+            .transition("previewed")
+            .transition("admitted")
+            .transition("dispatched")
+            .append_attempt(
+                AttemptProjection(
+                    attempt_id="attempt-1",
+                    order=1,
+                    connector_id="connector.test",
+                    state="created",
+                )
+            )
+        )
+        metadata = dict(record.metadata)
+        metadata["projection"] = dispatched.to_dict()
+        store.update_run(
+            "run/attempts-1",
+            state=dispatched.state,
+            metadata=metadata,
+            updated_at="2026-09-27T00:00:02Z",
+        )
+        # A run_id that itself ends in the reserved "/attempts" suffix --
+        # ADR-0019's documented, caller-avoidable collision: it is only
+        # reachable as run_id "run/collision", never through the plain
+        # single-run GET.
+        service.create(
+            _run_projection(run_id="run/collision/attempts"),
+            idempotency_key="attempts-test-collision",
+            created_at="2026-09-27T00:00:01Z",
+        )
+        cls.server = create_server(
+            port=0, product_spine_store_path=cls.store_path
+        )
+        cls.thread = threading.Thread(
+            target=cls.server.serve_forever, daemon=True
+        )
+        cls.thread.start()
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        cls.server.shutdown()
+        cls.server.server_close()
+        cls.thread.join(timeout=2)
+        cls._tmp.cleanup()
+
+    def request(self, method: str, path: str, *, token: bool = True):
+        conn = http.client.HTTPConnection(
+            "127.0.0.1", self.server.server_port, timeout=3
+        )
+        headers = {}
+        if token:
+            headers[TOKEN_HEADER] = self.server.ui_token
+        conn.request(method, path, headers=headers)
+        response = conn.getresponse()
+        payload = response.read()
+        response_headers = dict(response.getheaders())
+        conn.close()
+        return response.status, response_headers, payload
+
+    def test_returns_the_runs_attempts_matching_its_schema(self) -> None:
+        status, _, body = self.request(
+            "GET", "/api/v1/runs/run/attempts-1/attempts")
+        payload = json.loads(body)
+        self.assertEqual(status, 200)
+        _validate_against_schema(
+            "idkmesh-control-tower-run-attempts-response-v0.1.schema.json",
+            payload,
+        )
+        self.assertEqual(payload["kind"], "idkmesh-control-tower-run-attempts-response")
+        self.assertEqual(payload["run_id"], "run/attempts-1")
+        self.assertEqual(len(payload["attempts"]), 1)
+        self.assertEqual(payload["attempts"][0]["attempt_id"], "attempt-1")
+
+    def test_unknown_run_id_is_404(self) -> None:
+        status, _, body = self.request(
+            "GET", "/api/v1/runs/run/does-not-exist/attempts")
+        payload = json.loads(body)
+        self.assertEqual(status, 404)
+        self.assertEqual(payload["error"]["code"], "run_not_found")
+
+    def test_run_id_ending_in_reserved_suffix_is_unreachable(self) -> None:
+        # A run_id that itself ends in "/attempts" (here
+        # "run/collision/attempts", seeded in setUpClass) can never be
+        # read again -- the literal path that names it is always
+        # resolved as the "attempts" sub-resource of run_id
+        # "run/collision" instead (ADR-0019's accepted, documented cost),
+        # and "run/collision" was never created, so this 404s rather than
+        # silently returning the wrong run or falling back.
+        status, _, body = self.request(
+            "GET", "/api/v1/runs/run/collision/attempts")
+        payload = json.loads(body)
+        self.assertEqual(status, 404)
+        self.assertEqual(payload["error"]["code"], "run_not_found")
+
+    def test_query_parameters_are_rejected(self) -> None:
+        status, _, body = self.request(
+            "GET", "/api/v1/runs/run/attempts-1/attempts?limit=1")
+        payload = json.loads(body)
+        self.assertEqual(status, 400)
+        self.assertEqual(
+            payload["error"]["code"], "unexpected_query_parameters"
+        )
+
+    def test_post_is_method_not_allowed(self) -> None:
+        conn = http.client.HTTPConnection(
+            "127.0.0.1", self.server.server_port, timeout=3
+        )
+        conn.request(
+            "POST", "/api/v1/runs/run/attempts-1/attempts",
             headers={TOKEN_HEADER: self.server.ui_token},
         )
         response = conn.getresponse()
