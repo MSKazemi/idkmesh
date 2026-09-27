@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idkmesh.org/schemas/idkmesh-readiness-v0.1.schema.json",
+  "title": "IDKMesh Readiness Document v0.1",
+  "description": "The minimal `GET /readyz` readiness document built by `idkmesh/service_runtime.py:readiness_document()` and shared by every IDKMesh HTTP service (currently the Control Tower Local API). It carries no project/evidence state and no secrets -- readiness answers only whether the process is ready for its declared profile (docs/specifications/API_CONVENTIONS_V0_1.md section 16).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["status", "service", "service_version", "mode"],
+  "properties": {
+    "status": {"const": "ready"},
+    "service": {"type": "string", "minLength": 1},
+    "service_version": {"type": "string", "minLength": 1},
+    "mode": {"type": "string", "minLength": 1},
+    "api_version": {
+      "type": "string",
+      "description": "Present only when the caller's service has a versioned HTTP API; omitted otherwise."
+    }
+  }
+}

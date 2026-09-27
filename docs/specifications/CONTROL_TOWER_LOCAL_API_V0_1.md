@@ -254,6 +254,10 @@ Representative shape:
 Liveness and readiness are intentionally separate: a future service may be alive
 while a required runtime dependency is not ready.
 
+Frozen by `schemas/idkmesh-readiness-v0.1.schema.json`. Built by the shared
+`idkmesh/service_runtime.py:readiness_document()`, so any future IDKMesh HTTP
+service reuses this same contract rather than defining its own.
+
 Supported methods:
 
 ```text

@@ -4,8 +4,11 @@ from __future__ import annotations
 
 from io import StringIO
 import json
+from pathlib import Path
 import unittest
 from unittest import mock
+
+from jsonschema import Draft202012Validator
 
 from idkmesh.service_runtime import (
     ACCESS_LOG_ENV,
@@ -86,6 +89,29 @@ class ServiceRuntimeTests(unittest.TestCase):
         self.assertNotIn("work_unit", document)
         self.assertNotIn("token", json.dumps(document).lower())
         self.assertNotIn("secret", json.dumps(document).lower())
+
+    def test_readiness_document_matches_published_json_schema(self) -> None:
+        root = Path(__file__).resolve().parents[1]
+        schema = json.loads(
+            (root / "schemas" / "idkmesh-readiness-v0.1.schema.json")
+            .read_text(encoding="utf-8")
+        )
+        Draft202012Validator.check_schema(schema)
+        Draft202012Validator(schema).validate(
+            readiness_document(
+                service="idkmesh-control-tower",
+                service_version="0.1.0",
+                mode="local-read-only",
+                api_version="v1",
+            )
+        )
+        Draft202012Validator(schema).validate(
+            readiness_document(
+                service="idkmesh-control-tower",
+                service_version="0.1.0",
+                mode="local-read-only",
+            )
+        )
 
     def test_access_logging_is_opt_in(self) -> None:
         self.assertFalse(access_logging_enabled({}))
