@@ -14,6 +14,14 @@ and the release notes for that tag.
 
 ### Added
 
+- `--state` and `--project-id` filters for `idkmesh run list` and
+  `GET /api/v1/runs` (issue #739): bounded, exact-match, AND-combined
+  filters per API Conventions v0.1 section 11. An unrecognized `state`
+  fails closed with `invalid_state` rather than silently matching zero
+  rows; any other/duplicate query parameter still fails with
+  `unexpected_query_parameters`. `LocalMetadataStore.list_runs()` and
+  `ProductSpineRunStore.list()` both gained matching keyword arguments.
+
 - `idkmesh run list [--limit N] [--cursor TOKEN]` and `GET /api/v1/runs`
   (issue #739, second read-API slice): deterministic keyset-paginated
   Product Spine run listing, ordered by `run_id`. Adds

@@ -837,7 +837,7 @@ def _handler(
                 )
                 return
 
-            allowed = {"limit", "cursor"}
+            allowed = {"limit", "cursor", "state", "project_id"}
             params: dict[str, str] = {}
             for key, value in parse_qsl(query, keep_blank_values=True):
                 if key not in allowed or key in params:
@@ -885,7 +885,10 @@ def _handler(
                     LocalMetadataStore(product_spine_store_path)
                 )
                 runs, next_cursor = service.list(
-                    limit=limit, cursor=params.get("cursor")
+                    limit=limit,
+                    cursor=params.get("cursor"),
+                    state=params.get("state"),
+                    project_id=params.get("project_id"),
                 )
             except ProductSpineRunStoreError as exc:
                 code = getattr(exc, "code", "run_control_error")

@@ -285,13 +285,23 @@ class LocalMetadataStoreTests(unittest.TestCase):
                 updated_at="2026-09-22T14:35:00Z",
             )
 
-    def _admit(self, store, run_id: str) -> None:
+    def _admit(
+        self,
+        store,
+        run_id: str,
+        *,
+        state: str = "proposed",
+        project_id: str = "project.test",
+    ) -> None:
         store.admit_run(
             run_id=run_id,
             idempotency_key=f"key:{run_id}",
             request_digest="sha256:same",
-            state="proposed",
-            metadata={"run_id": run_id},
+            state=state,
+            metadata={
+                "run_id": run_id,
+                "projection": {"project_id": project_id},
+            },
             created_at="2026-09-22T14:23:00Z",
         )
 
@@ -341,6 +351,42 @@ class LocalMetadataStoreTests(unittest.TestCase):
             store.list_runs(limit=0)
         with self.assertRaises(ValueError):
             store.list_runs(limit=201)
+
+    def test_list_runs_filters_by_state(self):
+        store = self._store()
+        self._admit(store, "run-a", state="proposed")
+        self._admit(store, "run-b", state="cancelled")
+        self._admit(store, "run-c", state="proposed")
+
+        page, _ = store.list_runs(state="proposed")
+        self.assertEqual([r.run_id for r in page], ["run-a", "run-c"])
+
+        page, _ = store.list_runs(state="cancelled")
+        self.assertEqual([r.run_id for r in page], ["run-b"])
+
+        page, _ = store.list_runs(state="no-such-state")
+        self.assertEqual(page, [])
+
+    def test_list_runs_filters_by_project_id(self):
+        store = self._store()
+        self._admit(store, "run-a", project_id="project.alpha")
+        self._admit(store, "run-b", project_id="project.beta")
+        self._admit(store, "run-c", project_id="project.alpha")
+
+        page, _ = store.list_runs(project_id="project.alpha")
+        self.assertEqual([r.run_id for r in page], ["run-a", "run-c"])
+
+        page, _ = store.list_runs(project_id="project.beta")
+        self.assertEqual([r.run_id for r in page], ["run-b"])
+
+    def test_list_runs_combines_state_and_project_id_filters(self):
+        store = self._store()
+        self._admit(store, "run-a", state="proposed", project_id="project.alpha")
+        self._admit(store, "run-b", state="cancelled", project_id="project.alpha")
+        self._admit(store, "run-c", state="proposed", project_id="project.beta")
+
+        page, _ = store.list_runs(state="proposed", project_id="project.alpha")
+        self.assertEqual([r.run_id for r in page], ["run-a"])
 
 
 if __name__ == "__main__":

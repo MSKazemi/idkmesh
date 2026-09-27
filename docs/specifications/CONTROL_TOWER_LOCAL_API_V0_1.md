@@ -405,13 +405,25 @@ This is the one Control Tower endpoint that accepts query parameters:
 
 - `limit` (optional integer, 1-200, default 50);
 - `cursor` (optional opaque string from a previous response's
-  `page.next_cursor`; never constructed or parsed by the caller).
+  `page.next_cursor`; never constructed or parsed by the caller);
+- `state` (optional, an exact canonical Product Spine lifecycle state --
+  `proposed`, `previewed`, `admission_blocked`, `admitted`, `dispatched`,
+  `attempt_failed`, `candidate_observed`, `normalized`,
+  `verification_requested`, `verification_error`, `evidence_ready`,
+  `awaiting_human_decision`, `decided`, or `cancelled`);
+- `project_id` (optional, an exact match; not a search/prefix).
 
-Any other query parameter, or either of these repeated, is rejected with
-`400 unexpected_query_parameters`. An out-of-range `limit` is rejected with
-`400 invalid_limit`. Like `GET /api/v1/runs/{run_id}`, this endpoint returns
+Any other query parameter, or any of these repeated, is rejected with
+`400 unexpected_query_parameters` (API Conventions v0.1 section 11: an
+unknown filter fails explicitly rather than being silently ignored). An
+out-of-range `limit` is rejected with `400 invalid_limit`; an unrecognized
+`state` value is rejected with `400 invalid_state` rather than silently
+matching zero rows. Like `GET /api/v1/runs/{run_id}`, this endpoint returns
 `503 product_spine_store_not_configured` when this server instance was not
 started with `--product-spine-store`.
+
+`state` and `project_id` combine with AND, not OR: passing both narrows to
+runs matching both.
 
 Representative shape:
 
@@ -707,7 +719,9 @@ Stable v0.1 codes include:
   instance);
 - `invalid_limit` (`GET /api/v1/runs`, `limit` outside 1-200);
 - `invalid_cursor` (`GET /api/v1/runs`, `cursor` this service did not
-  itself issue).
+  itself issue);
+- `invalid_state` (`GET /api/v1/runs`, `state` not one of the canonical
+  Product Spine lifecycle states).
 
 ## HTTP method behavior
 

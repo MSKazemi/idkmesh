@@ -483,6 +483,16 @@ def build_parser() -> argparse.ArgumentParser:
         help="opaque next-page token from a previous 'run list' call",
     )
     run_list.add_argument(
+        "--state",
+        metavar="STATE",
+        help="only list runs in this exact lifecycle state",
+    )
+    run_list.add_argument(
+        "--project-id",
+        metavar="ID",
+        help="only list runs for this exact project_id",
+    )
+    run_list.add_argument(
         "--json",
         action="store_true",
         dest="json_output",
@@ -1082,6 +1092,8 @@ def _run_product_spine_control(args: argparse.Namespace) -> int:
             runs, next_cursor = service.list(
                 limit=args.limit,
                 cursor=args.cursor,
+                state=args.state,
+                project_id=args.project_id,
             )
             return _print_run_list(
                 runs, next_cursor, limit=args.limit,

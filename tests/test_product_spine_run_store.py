@@ -270,6 +270,34 @@ class ProductSpineRunStoreTests(unittest.TestCase):
         self.assertEqual(runs, [])
         self.assertIsNone(cursor)
 
+    def test_list_filters_by_project_id(self):
+        self.service.create(
+            _run(run_id="run/alpha-1", project_id="project.alpha"),
+            idempotency_key="k1", created_at="2026-09-24T15:30:00Z",
+        )
+        self.service.create(
+            _run(run_id="run/beta-1", project_id="project.beta"),
+            idempotency_key="k2", created_at="2026-09-24T15:30:00Z",
+        )
+
+        runs, _ = self.service.list(project_id="project.alpha")
+        self.assertEqual([r.run_id for r in runs], ["run/alpha-1"])
+
+    def test_list_rejects_an_unrecognized_state(self):
+        with self.assertRaises(ProductSpineRunStoreError) as ctx:
+            self.service.list(state="not-a-real-state")
+        self.assertEqual(ctx.exception.code, "invalid_state")
+
+    def test_list_filters_by_a_recognized_state(self):
+        self.service.create(
+            _run(run_id="run/gamma-1"),
+            idempotency_key="k3", created_at="2026-09-24T15:30:00Z",
+        )
+        runs, _ = self.service.list(state="proposed")
+        self.assertEqual([r.run_id for r in runs], ["run/gamma-1"])
+        runs, _ = self.service.list(state="cancelled")
+        self.assertEqual(runs, [])
+
 
 if __name__ == "__main__":
     unittest.main()
