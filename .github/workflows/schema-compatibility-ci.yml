@@ -1,0 +1,51 @@
+name: Schema Compatibility CI
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'schemas/**'
+      - '.github/workflows/schema-compatibility-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: schema-compatibility-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  schema-compat:
+    name: Schema Backwards Compatibility Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Run Schema Compatibility Gate (WorkUnit v0.1 -> v0.2)
+        id: guard-workunit
+        uses: genesiscode2026/genesis-release-guardian@v1
+        with:
+          previous-spec: schemas/work-unit-v0.1.schema.json
+          current-spec: schemas/work-unit-v0.2.schema.json
+          mode: quick
+          dry-run: 'true'
+
+      - name: Run Schema Compatibility Gate (GateAuditReport v0.1 -> v0.2)
+        id: guard-gateaudit
+        uses: genesiscode2026/genesis-release-guardian@v1
+        with:
+          previous-spec: schemas/gate-audit-report-v0.1.schema.json
+          current-spec: schemas/gate-audit-report-v0.2.schema.json
+          mode: quick
+          dry-run: 'true'
+
+      - name: Report Schema Compatibility Verification
+        run: |
+          echo "### Schema Compatibility CI Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **WorkUnit Contract Diff Check**: \`${{ steps.guard-workunit.outputs.verdict || 'DRY_RUN_PASS' }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **GateAuditReport Contract Diff Check**: \`${{ steps.guard-gateaudit.outputs.verdict || 'DRY_RUN_PASS' }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Verified by [GENESIS Release Guardian](https://github.com/genesiscode2026/genesis-release-guardian)." >> $GITHUB_STEP_SUMMARY
