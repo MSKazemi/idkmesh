@@ -14,6 +14,21 @@ and the release notes for that tag.
 
 ### Added
 
+- `GET /api/v1/runs/{run_id}` on the Control Tower Local API (issue #739,
+  the first slice of the API-4 read model): read-only Product Spine run
+  state, served through the same `ProductSpineRunStore` application service
+  `idkmesh run status` already uses, so the CLI and HTTP surfaces can never
+  disagree. Opt-in: this server instance only exposes it when started with
+  `idkmesh control-tower --product-spine-store PATH`; otherwise the endpoint
+  returns 503. New schemas
+  `schemas/idkmesh-product-spine-run-v0.1.schema.json` and
+  `schemas/idkmesh-control-tower-run-response-v0.1.schema.json`, both
+  validated in `tests/test_control_tower.py` against a real run created
+  through the store, not a hand-written example. `run_id` may itself
+  contain `/`; a future `/attempts`/`/evidence`/`/decisions` sub-resource
+  will need to resolve that ambiguity explicitly rather than assume no real
+  `run_id` ever contains one.
+
 - `docs/architecture/API_CONTROL_PLANE_ARCHITECTURE.md` (issue #738): a
   checked-in dependency diagram grounding the domain/application-service/
   transport-adapter rule in the actual modules on `main`, a "resource/compute

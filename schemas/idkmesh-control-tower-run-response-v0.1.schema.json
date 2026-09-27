@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idkmesh.org/schemas/idkmesh-control-tower-run-response-v0.1.schema.json",
+  "title": "IDKMesh Control Tower Run Response v0.1",
+  "description": "The success envelope returned by `GET /api/v1/runs/{run_id}`, wrapping the same idkmesh/product_spine_run_store.py:PersistedProductSpineRun.to_dict() shape the CLI's `idkmesh run status --json` already prints -- the HTTP read surface reuses the CLI's application service rather than defining a second one (docs/architecture/API_CONTROL_PLANE_ARCHITECTURE.md). `created` and `replayed` are always false for a read: they describe the outcome of a create call, carried over from the shared projection type rather than given a second one.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "api_version", "schema_version", "kind", "ok", "run", "idempotency_key",
+    "create_request_digest", "created", "replayed",
+    "provider_execution_terminated", "candidate_accepted", "merge_authority"
+  ],
+  "properties": {
+    "api_version": {"const": "v1"},
+    "schema_version": {"const": "0.1"},
+    "kind": {"const": "idkmesh-control-tower-run-response"},
+    "ok": {"const": true},
+    "run": {
+      "type": "object",
+      "required": ["kind", "schema_version"],
+      "properties": {
+        "kind": {"const": "idkmesh-product-spine-run"},
+        "schema_version": {"const": "0.1"}
+      }
+    },
+    "idempotency_key": {"type": "string", "minLength": 1},
+    "create_request_digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "created": {"const": false},
+    "replayed": {"const": false},
+    "provider_execution_terminated": {"const": false},
+    "candidate_accepted": {"const": false},
+    "merge_authority": {"const": false}
+  }
+}

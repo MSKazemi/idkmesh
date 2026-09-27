@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idkmesh.org/schemas/idkmesh-product-spine-run-v0.1.schema.json",
+  "title": "IDKMesh Product Spine Run v0.1",
+  "description": "An immutable read projection over one Product Spine lifecycle (idkmesh/product_spine.py:ProductSpineRun), as returned by `idkmesh run status`/`run create`/`run cancel` and by `GET /api/v1/runs/{run_id}`. It records bounded lifecycle state and per-attempt digests; it carries no canonical-state-write, git-push, or merge authority of its own -- see the fixed `authority` block.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "kind", "run_id", "request_digest", "project_id",
+    "work_unit", "routing", "state", "attempts", "evidence_report_digest",
+    "human_decision_record_digest", "authority"
+  ],
+  "properties": {
+    "schema_version": {"const": "0.1"},
+    "kind": {"const": "idkmesh-product-spine-run"},
+    "run_id": {"type": "string", "minLength": 1},
+    "request_digest": {"$ref": "#/$defs/digest"},
+    "project_id": {"type": "string", "minLength": 1},
+    "work_unit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version", "digest", "source_revision"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "version": {"type": "integer", "minimum": 1},
+        "digest": {"$ref": "#/$defs/digest"},
+        "source_revision": {
+          "type": "string",
+          "pattern": "^(?:[0-9a-fA-F]{40}|[0-9a-fA-F]{64})$"
+        }
+      }
+    },
+    "routing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["policy_version", "authority_mode", "admitted_connectors"],
+      "properties": {
+        "policy_version": {"type": "string", "minLength": 1},
+        "authority_mode": {
+          "enum": [
+            "deterministic", "agent_candidate", "human_gate_then_agent",
+            "human_required"
+          ]
+        },
+        "admitted_connectors": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "state": {
+      "enum": [
+        "proposed", "previewed", "admission_blocked", "admitted",
+        "dispatched", "attempt_failed", "candidate_observed", "normalized",
+        "verification_requested", "verification_error", "evidence_ready",
+        "awaiting_human_decision", "decided", "cancelled"
+      ]
+    },
+    "attempts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "attempt_id", "order", "connector_id", "state",
+          "provider_reference", "candidate_reference_digest",
+          "result_manifest_digest", "verification_semantic_digest",
+          "error_code"
+        ],
+        "properties": {
+          "attempt_id": {"type": "string", "minLength": 1},
+          "order": {"type": "integer", "minimum": 1},
+          "connector_id": {"type": "string", "minLength": 1},
+          "state": {
+            "enum": [
+              "created", "dispatched", "worker_error", "candidate_observed",
+              "normalization_error", "normalized", "verification_requested",
+              "verification_error", "verified", "cancelled"
+            ]
+          },
+          "provider_reference": {"type": ["string", "null"]},
+          "candidate_reference_digest": {
+            "anyOf": [{"$ref": "#/$defs/digest"}, {"type": "null"}]
+          },
+          "result_manifest_digest": {
+            "anyOf": [{"$ref": "#/$defs/digest"}, {"type": "null"}]
+          },
+          "verification_semantic_digest": {
+            "anyOf": [{"$ref": "#/$defs/digest"}, {"type": "null"}]
+          },
+          "error_code": {"type": ["string", "null"]}
+        }
+      }
+    },
+    "evidence_report_digest": {
+      "anyOf": [{"$ref": "#/$defs/digest"}, {"type": "null"}]
+    },
+    "human_decision_record_digest": {
+      "anyOf": [{"$ref": "#/$defs/digest"}, {"type": "null"}]
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["canonical_state_write", "git_push", "merge"],
+      "properties": {
+        "canonical_state_write": {"const": false},
+        "git_push": {"const": false},
+        "merge": {"const": false}
+      }
+    }
+  },
+  "$defs": {
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    }
+  }
+}

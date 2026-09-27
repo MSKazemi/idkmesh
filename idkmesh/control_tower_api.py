@@ -745,6 +745,7 @@ def status_document() -> dict[str, Any]:
             "status": "GET /api/v1/status",
             "openapi": "GET /api/v1/openapi.json",
             "inspect_run_evidence": "POST /api/v1/run-evidence/inspect",
+            "read_run": "GET /api/v1/runs/{run_id}",
             "health": "GET /healthz",
             "readiness": "GET /readyz",
         },
@@ -962,6 +963,52 @@ def openapi_document() -> dict[str, Any]:
                         "406": {"description": "Requested response type unsupported"},
                         "413": {"description": "Request body too large"},
                         "415": {"description": "Request content type unsupported"},
+                    },
+                }
+            },
+            "/api/v1/runs/{run_id}": {
+                "get": {
+                    "summary": "Read one durable Product Spine run's current state",
+                    "description": (
+                        "Pure read-only. Serves the same "
+                        "idkmesh/product_spine_run_store.py application "
+                        "service `idkmesh run status` uses, so the CLI and "
+                        "this endpoint can never disagree about a run's "
+                        "state. Returns 503 when no Product Spine store is "
+                        "configured for this server instance."
+                    ),
+                    "security": [{"LocalSessionToken": []}],
+                    "parameters": [
+                        {
+                            "name": "run_id",
+                            "in": "path",
+                            "required": True,
+                            "schema": {"type": "string", "minLength": 1},
+                        }
+                    ],
+                    "responses": {
+                        "200": {
+                            "description": "The run's current state",
+                            "content": {
+                                JSON_MEDIA_TYPE: {
+                                    "schema": {
+                                        "$ref": (
+                                            "https://idkmesh.org/schemas/"
+                                            "idkmesh-control-tower-run-"
+                                            "response-v0.1.schema.json"
+                                        )
+                                    }
+                                }
+                            },
+                        },
+                        "403": {"description": "Invalid local session token"},
+                        "404": {"description": "Unknown run_id"},
+                        "503": {
+                            "description": (
+                                "No Product Spine store configured for this "
+                                "server instance"
+                            )
+                        },
                     },
                 }
             },
