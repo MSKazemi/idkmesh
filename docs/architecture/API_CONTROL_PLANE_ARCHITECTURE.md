@@ -138,6 +138,44 @@ Runtime probes remain outside the product namespace:
 
 Object schema versions remain independent from URL compatibility versions.
 
+## Dependency diagram
+
+The architectural rule above, grounded in the modules that exist on `main`
+today (not a target-state sketch):
+
+```text
++----------------------------------------------------------------+
+| Domain contracts (schemas/*.schema.json)                       |
+| WorkUnit, RoutingDecision, CandidateReference, ResultManifest,  |
+| VerificationResult, Run Evidence Report, Human Decision Record  |
++----------------------------------------------------------------+
+                              ^
+                              | validated against, never redefined by
+                              |
++----------------------------------------------------------------+
+| Application services (idkmesh/*.py)                            |
+|  control_tower_api.py    -- read-only evidence inspection       |
+|  connector_store.py      -- connections/routing/run persistence |
+|  connector_routing.py    -- RoutingDecision resolution          |
+|  local_loop.py           -- WorkUnit -> attempts -> evidence    |
+|                              (delegates to experiments/*)       |
++----------------------------------------------------------------+
+          ^                 ^                  ^              ^
+          | thin dispatch   | thin dispatch    | thin dispatch |
+          |                 |                  |               |
++---------+------+  +-------+--------+  +------+-------+  +----+----+
+| Local HTTP     |  | CLI            |  | GitHub-native |  | Network |
+| control-tower  |  | idkmesh {...}  |  | Actions/hooks |  | HTTP    |
+| /api/v1, read  |  | connections,   |  | untrusted     |  | (not    |
+| -only          |  | run, local-loop|  | until checked |  | built)  |
++----------------+  +----------------+  +---------------+  +---------+
+```
+
+Every box in the bottom row is a transport/client adapter over the same
+application services; none may redefine a domain contract to fit its own
+transport. The Network HTTP adapter is explicitly not built yet -- see
+"Architecture completion evidence" below.
+
 ## Resource ownership map
 
 | Resource/use case | Canonical owner |
@@ -152,6 +190,7 @@ Object schema versions remain independent from URL compatibility versions.
 | verification | verifier/evidence service |
 | run evidence | Run Evidence Report |
 | human decisions | Human Decision Record |
+| resource/compute admission | zero-project-spend compute router (`experiments/free_compute_router.py`, `scripts/free_resource_planner.py`, ADR-0006) |
 | events | canonical event service (#741) |
 | integration execution | separate protected integration authority |
 
@@ -322,3 +361,44 @@ This architecture is considered implemented only when:
 5. a client can follow WorkUnit -> run -> evidence -> human decision without
    provider-specific knowledge;
 6. integration remains separately authorized.
+
+### Verified against current main -- 2026-09-27
+
+Not yet fully implemented; measured state per criterion, so a later pass can
+tell what actually changed rather than re-deriving all six from scratch:
+
+1. **Partial.** `idkmesh/control_tower_api.py` emits the frozen conventions
+   (`idkmesh-api-error`, service headers) over real local HTTP endpoints. No
+   connector-control HTTP endpoint exists yet to compare against --
+   `docs/specifications/CONNECTOR_CONTROL_API_V0_1.md` remains an
+   unimplemented design contract (issue #580). Not measurable until a
+   connector HTTP endpoint ships.
+2. **Partial.** Domain contracts (WorkUnit, ResultManifest, VerificationResult,
+   Run Evidence Report, Human Decision Record) and the cross-cutting
+   envelopes (error, list, status, inspection, readiness -- issue #736/#737)
+   are schema-bound. The event envelope and a human-decision API
+   request/response wrapper are not (issue #737 remains open for both).
+3. **True for the CLI mutation path.** `idkmesh run create --idempotency-key`
+   persists to a SQLite `idempotency_key TEXT ... UNIQUE` constraint in
+   `idkmesh/connector_store.py`, so a duplicate key with a different request
+   digest fails closed rather than double-creating a run. No HTTP mutation
+   endpoint exists yet to verify the same at the transport layer.
+4. **Partial.** Product Spine run/connection state persists in a restart-safe
+   local SQLite store (`idkmesh/connector_store.py`). The canonical event
+   service (#741) referenced by the ownership map above does not exist yet,
+   so "events are restart-safe" is not yet measurable.
+5. **True for one bounded case, via the CLI.** `idkmesh local-loop <config>`
+   (issue #883/ROADMAP S4 R1) runs WorkUnit -> two isolated attempts ->
+   independent verification -> evidence report end to end without the
+   caller naming a worker/provider. Recording a human decision and replay
+   are still separate, deliberately manual commands, not part of this
+   client path. Not yet exposed over HTTP.
+6. **True.** No code path in `idkmesh/control_tower_api.py`,
+   `idkmesh/local_loop.py`, or the Product Spine CLI grants merge/push
+   authority; `idkmesh local-loop` explicitly prints next steps
+   (`record_human_decision.py`, `replay_run.py`) rather than executing them.
+
+Net: this architecture is grounded and consistently followed where it has
+been implemented, but is not yet complete by its own six-criterion bar --
+criteria 1 and 4 are blocked on work (a connector HTTP endpoint, the event
+service) that does not exist yet, not on a design disagreement.
