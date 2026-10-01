@@ -434,6 +434,32 @@ class LocalMetadataStoreTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             store.get_work_unit("")
 
+    def test_get_project_counts_derives_counts_from_runs(self):
+        store = self._store()
+        self._admit_wu(store, "run-1", "work/a", project_id="p1")
+        self._admit_wu(store, "run-2", "work/a", project_id="p1", version=2)
+        self._admit_wu(store, "run-3", "work/b", project_id="p1")
+        self._admit_wu(store, "run-4", "work/a", project_id="p2")
+        self._admit(store, "run-5", state="cancelled", project_id="p1")
+
+        counts = store.get_project_counts("p1")
+
+        self.assertEqual(counts["project_id"], "p1")
+        self.assertEqual(counts["run_count"], 4)
+        self.assertEqual(
+            counts["state_counts"], {"cancelled": 1, "proposed": 3}
+        )
+        self.assertEqual(counts["work_unit_count"], 2)
+
+    def test_get_project_counts_is_none_for_an_unknown_project(self):
+        store = self._store()
+        self._admit_wu(store, "run-1", "work/a", project_id="project.alpha")
+
+        self.assertIsNone(store.get_project_counts("project.alph"))
+        self.assertIsNone(store.get_project_counts("project.alpha/"))
+        with self.assertRaises(ValueError):
+            store.get_project_counts("")
+
     def test_list_runs_is_empty_for_a_fresh_store(self):
         store = self._store()
         page, has_more = store.list_runs()

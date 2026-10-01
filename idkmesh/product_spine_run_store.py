@@ -449,6 +449,37 @@ class ProductSpineRunStore:
             )
         return resource
 
+    def get_project(self, project_id: str) -> dict[str, Any]:
+        """One derived project summary (ADR-0021), or ``project_not_found``.
+
+        ``runs_by_state`` lists every canonical run state, zero-filled, so the
+        shape is identical for every project. No health or status rollup is
+        computed: counts only, nothing selected.
+        """
+        if not isinstance(project_id, str) or not project_id:
+            raise ProductSpineRunStoreError(
+                "invalid_project_id",
+                "project_id must be a non-empty string",
+            )
+        try:
+            counts = self._store.get_project_counts(project_id)
+        except LocalStoreError as exc:
+            raise ProductSpineRunStoreError("store_error", str(exc)) from exc
+        if counts is None:
+            raise ProductSpineRunStoreError(
+                "project_not_found",
+                f"no stored run references project: {project_id}",
+            )
+        return {
+            "project_id": counts["project_id"],
+            "run_count": counts["run_count"],
+            "runs_by_state": {
+                state: counts["state_counts"].get(state, 0)
+                for state in sorted(RUN_STATES)
+            },
+            "work_unit_count": counts["work_unit_count"],
+        }
+
     def cancel(
         self,
         run_id: str,

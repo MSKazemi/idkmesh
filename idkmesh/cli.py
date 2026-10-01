@@ -572,6 +572,41 @@ def build_parser() -> argparse.ArgumentParser:
         help="emit deterministic machine-readable JSON",
     )
 
+    project_cmd = sub.add_parser(
+        "project",
+        help="inspect a project summary derived from retained runs",
+        description=(
+            "Read-only project summary derived on demand from the runs "
+            "already stored by 'idkmesh run' (ADR-0021). No project record "
+            "exists, so only counts are returned: runs, runs per state and "
+            "distinct WorkUnits. Nothing is selected or rolled up into a "
+            "health score. These commands never dispatch, verify, accept, "
+            "mutate GitHub, push Git, or merge."
+        ),
+    )
+    project_sub = project_cmd.add_subparsers(
+        dest="project_command",
+        required=True,
+    )
+
+    project_status = project_sub.add_parser(
+        "status",
+        help="show run counts by state for one project",
+    )
+    project_status.add_argument("project_id")
+    project_status.add_argument(
+        "--store",
+        required=True,
+        metavar="PATH",
+        help="local SQLite control-state path",
+    )
+    project_status.add_argument(
+        "--json",
+        action="store_true",
+        dest="json_output",
+        help="emit deterministic machine-readable JSON",
+    )
+
     gui = sub.add_parser(
         "gate-audit-ui",
         help="open the local browser interface for gate-audit",
@@ -1298,6 +1333,42 @@ def _run_work_unit_control(args: argparse.Namespace) -> int:
     return 0
 
 
+def _run_project_control(args: argparse.Namespace) -> int:
+    from idkmesh.connector_store import (
+        LocalMetadataStore,
+        LocalStoreError,
+    )
+    from idkmesh.product_spine_run_store import (
+        ProductSpineRunStore,
+        ProductSpineRunStoreError,
+    )
+
+    try:
+        service = ProductSpineRunStore(LocalMetadataStore(args.store))
+        payload = service.get_project(args.project_id)
+    except (
+        ProductSpineRunStoreError,
+        LocalStoreError,
+        OSError,
+        ValueError,
+    ) as exc:
+        return _run_control_error(exc, json_output=args.json_output)
+
+    if args.json_output:
+        print(json.dumps(payload, sort_keys=True, separators=(",", ":")))
+        return 0
+
+    print(
+        f"project: {payload['project_id']}\n"
+        f"runs: {payload['run_count']}\n"
+        f"work_units: {payload['work_unit_count']}"
+    )
+    for state, count in payload["runs_by_state"].items():
+        if count:
+            print(f"{state}: {count}")
+    return 0
+
+
 def _run_doctor(args: argparse.Namespace) -> int:
     from idkmesh.connector_inspection import doctor_report, inspect_connectors
     from idkmesh.connector_profiles import (
@@ -1438,6 +1509,8 @@ def main(argv: list[str] | None = None) -> int:
         return _run_product_spine_control(args)
     if args.command == "work-unit":
         return _run_work_unit_control(args)
+    if args.command == "project":
+        return _run_project_control(args)
     if args.command == "local-loop":
         return _run_local_loop(args)
     if args.command == "connections":

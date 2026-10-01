@@ -1024,6 +1024,75 @@ def _handler(
                 head_only=head_only,
             )
 
+        def _project_id_from_path(self, path: str) -> str | None:
+            """Return the id if path is /api/v1/projects/<project_id>.
+
+            ADR-0021: the entire remainder is one literal project_id; v0.1
+            reserves no project sub-resource suffix and has no project list.
+            """
+            prefix = f"/api/{API_VERSION}/projects/"
+            if not path.startswith(prefix):
+                return None
+            remainder = path[len(prefix):]
+            return remainder or None
+
+        def _project_read_response(
+            self, project_id: str, *, head_only: bool
+        ) -> None:
+            if product_spine_store_path is None:
+                self._send_json(
+                    503,
+                    error_document(
+                        "product_spine_store_not_configured",
+                        "this Control Tower instance was started without a "
+                        "Product Spine store; projects cannot be read",
+                    ),
+                    head_only=head_only,
+                )
+                return
+            from idkmesh.connector_store import (
+                LocalMetadataStore,
+                LocalStoreError,
+            )
+            from idkmesh.product_spine_run_store import (
+                ProductSpineRunStore,
+                ProductSpineRunStoreError,
+            )
+
+            try:
+                service = ProductSpineRunStore(
+                    LocalMetadataStore(product_spine_store_path)
+                )
+                resource = service.get_project(project_id)
+            except ProductSpineRunStoreError as exc:
+                code = getattr(exc, "code", "run_control_error")
+                status = 404 if code == "project_not_found" else 400
+                self._send_json(
+                    status,
+                    error_document(code, str(exc)),
+                    head_only=head_only,
+                )
+                return
+            except (LocalStoreError, OSError, ValueError) as exc:
+                self._send_json(
+                    500,
+                    error_document("store_error", str(exc)),
+                    head_only=head_only,
+                )
+                return
+
+            self._send_json(
+                200,
+                {
+                    "api_version": API_VERSION,
+                    "schema_version": API_SCHEMA_VERSION,
+                    "kind": "idkmesh-control-tower-project-response",
+                    "ok": True,
+                    "project": resource,
+                },
+                head_only=head_only,
+            )
+
         def _work_unit_list_response(
             self, query: str, *, head_only: bool
         ) -> None:
@@ -1311,6 +1380,10 @@ def _handler(
                     work_unit_id, head_only=head_only
                 )
                 return
+            project_id = self._project_id_from_path(path)
+            if project_id is not None:
+                self._project_read_response(project_id, head_only=head_only)
+                return
             subresource = self._run_subresource_from_path(path)
             if subresource is not None:
                 run_id, name = subresource
@@ -1382,6 +1455,7 @@ def _handler(
             if (
                 self._run_id_from_path(path) is not None
                 or self._work_unit_id_from_path(path) is not None
+                or self._project_id_from_path(path) is not None
             ):
                 self._method_not_allowed("GET, HEAD")
                 return
@@ -1434,6 +1508,7 @@ def _handler(
             ) or (
                 self._run_id_from_path(path) is not None
                 or self._work_unit_id_from_path(path) is not None
+                or self._project_id_from_path(path) is not None
             ):
                 self._method_not_allowed("GET, HEAD")
                 return

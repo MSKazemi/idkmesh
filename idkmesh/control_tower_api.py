@@ -750,6 +750,7 @@ def status_document() -> dict[str, Any]:
             "read_run_attempts": "GET /api/v1/runs/{run_id}/attempts",
             "list_work_units": "GET /api/v1/work-units",
             "read_work_unit": "GET /api/v1/work-units/{work_unit_id}",
+            "read_project": "GET /api/v1/projects/{project_id}",
             "health": "GET /healthz",
             "readiness": "GET /readyz",
         },
@@ -1247,6 +1248,54 @@ def openapi_document() -> dict[str, Any]:
                         },
                         "403": {"description": "Invalid local session token"},
                         "404": {"description": "No stored run references this id"},
+                        "503": {
+                            "description": (
+                                "No Product Spine store configured for this "
+                                "server instance"
+                            )
+                        },
+                    },
+                }
+            },
+            "/api/v1/projects/{project_id}": {
+                "get": {
+                    "summary": "Read one project summary derived from stored runs",
+                    "description": (
+                        "Pure read-only (ADR-0021). No project record "
+                        "exists: this is counts over stored runs "
+                        "(run_count, runs_by_state with every canonical "
+                        "state zero-filled, distinct work_unit_count) and "
+                        "carries no health or status rollup. The whole "
+                        "path remainder is one literal project_id. 404 "
+                        "means no stored run names this project, not that "
+                        "the project does not exist."
+                    ),
+                    "security": [{"LocalSessionToken": []}],
+                    "parameters": [
+                        {
+                            "name": "project_id",
+                            "in": "path",
+                            "required": True,
+                            "schema": {"type": "string", "minLength": 1},
+                        }
+                    ],
+                    "responses": {
+                        "200": {
+                            "description": "The derived project summary",
+                            "content": {
+                                JSON_MEDIA_TYPE: {
+                                    "schema": {
+                                        "$ref": (
+                                            "https://idkmesh.org/schemas/"
+                                            "idkmesh-control-tower-project-"
+                                            "response-v0.1.schema.json"
+                                        )
+                                    }
+                                }
+                            },
+                        },
+                        "403": {"description": "Invalid local session token"},
+                        "404": {"description": "No stored run names this project"},
                         "503": {
                             "description": (
                                 "No Product Spine store configured for this "

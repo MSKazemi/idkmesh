@@ -44,8 +44,27 @@ and the release notes for that tag.
   `schemas/idkmesh-control-tower-work-unit-response-v0.1.schema.json`; the
   list reuses `idkmesh-list-v0.1`. Adds `LocalMetadataStore.list_work_units()`
   / `get_work_unit()` and the matching `ProductSpineRunStore` methods. Not
-  yet built: `GET /api/v1/projects/{project_id}` (the next slice), and
-  `/evidence` / `/decisions`, which wait on the content store of issue #740.
+  yet built: `/evidence` / `/decisions`, which wait on the content store of
+  issue #740.
+
+- `GET /api/v1/projects/{project_id}` and `idkmesh project status`
+  (issue #739, `projects` read surface)
+  ([ADR-0021](docs/decisions/ADR-0021-derived-work-unit-and-project-read-models.md)):
+  a read-only project summary **derived on demand** from the stored Product
+  Spine runs that name the project. No project record exists, so it is counts
+  only: `run_count`, `runs_by_state` (every one of the 14 canonical run states
+  present and zero-filled, so the shape is identical for every project), and
+  the distinct `work_unit_count`. It computes no health or status rollup and
+  selects nothing; list a project's WorkUnits with
+  `GET /api/v1/work-units?project_id=`. A project no stored run names is
+  `404 project_not_found`, which says only that the retained runs do not
+  mention it. The whole path remainder is one literal `project_id` (it may
+  contain `/`), and there is no project list endpoint. Frozen by
+  `schemas/idkmesh-project-resource-v0.1.schema.json` and
+  `schemas/idkmesh-control-tower-project-response-v0.1.schema.json`. Adds
+  `LocalMetadataStore.get_project_counts()` and
+  `ProductSpineRunStore.get_project()`. Not yet built: `/evidence` /
+  `/decisions` (issue #740).
 
 - `GET /api/v1/runs/{run_id}/attempts` (issue #739, `attempts` read
   surface): reads one run's worker/verifier attempts. `attempts` is now a
