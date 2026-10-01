@@ -476,6 +476,7 @@ idkmesh run create PROJECTION --store PATH --idempotency-key KEY
 idkmesh run status RUN_ID --store PATH
 idkmesh run cancel RUN_ID --store PATH
 idkmesh run list --store PATH [--limit N] [--cursor TOKEN] [--state STATE] [--project-id ID]
+idkmesh run evidence RUN_ID --store PATH
 ```
 
 Each accepts `--json` for deterministic machine-readable output, and `create`
@@ -517,6 +518,38 @@ closed with `invalid_state` rather than silently matching zero rows.
 `json_extract`, not an indexed column -- adequate at this store's
 local development-reference scale (see its module docstring), not a
 scalability claim for a hosted multi-tenant ledger.
+
+`list` and `status` read **Product Spine runs** of two stored kinds, selected
+explicitly ([ADR-0024](../decisions/ADR-0024-retained-evidence-read-and-mixed-store-run-reads.md)):
+`product-spine-cli-run` (created by `create`) and
+`product-spine-idempotency-result` (the completed rows of the idempotent offline
+spine, section "Local restart-safe idempotency composition"). The restore checks
+differ by kind: a CLI row must match its `create_request_digest`, an offline
+result row its `idempotency_request_digest`; both must agree with the atomic
+record on run id, state and Product Spine request digest. The listing
+(`LocalMetadataStore.list_runs(..., kinds=...)`) excludes rows of every other
+kind (admission-only, execution-error, GitHub dispatch/status rows), so one
+foreign row in a shared store no longer fails the page. A row of a listed kind
+that does not restore still fails loudly.
+
+`evidence` (`ProductSpineRunStore.get_run_evidence`) returns the Run Evidence
+Report retained in a run row together with its digest:
+
+```text
+{"run_id": ..., "evidence_report_digest": "sha256:...", "evidence_report": {...}}
+```
+
+It verifies that the projection is a valid Product Spine run and that
+`canonical_digest(report)` equals the projection's `evidence_report_digest`,
+and otherwise fails with `evidence_integrity_error` without printing the
+report. Failure codes: `invalid_run_id`, `run_not_found`,
+`evidence_not_available` (the run exists but retains no evidence report, as for
+every `create`d CLI run), `evidence_integrity_error`, `store_error`. Text output
+prints the run id, the digest, the attempt count and the human-decision status;
+`--json` prints the full retained report. `GET
+/api/v1/runs/{run_id}/evidence` is backed by the same method. Nothing is
+synthesised, selected or accepted, and `human_decision_record_digest` is not
+dereferenced: no decision content is retained anywhere (issue #740).
 
 Projection input is bounded: the file must be a regular file, is read against
 the shared 2 MiB local-input limit, is decoded as UTF-8, and is parsed as

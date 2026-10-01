@@ -21,7 +21,8 @@ meaning of an existing version.
   and independent-verification evidence for human inspection.
 - [Control Tower Local API v0.1](CONTROL_TOWER_LOCAL_API_V0_1.md) — versioned,
   loopback-only read API and presentation contract for Human Control Tower run
-  evidence inspection, plus read-only Product Spine run, attempt, and derived
+  evidence inspection, plus read-only Product Spine run, attempt, retained
+  run-evidence ([ADR-0024](../decisions/ADR-0024-retained-evidence-read-and-mixed-store-run-reads.md)), and derived
   WorkUnit and project views ([ADR-0021](../decisions/ADR-0021-derived-work-unit-and-project-read-models.md)),
   the bounded service limits the development server enforces
   ([ADR-0022](../decisions/ADR-0022-control-tower-bounded-service-limits.md)),

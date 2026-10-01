@@ -462,6 +462,32 @@ def build_parser() -> argparse.ArgumentParser:
         help="emit deterministic machine-readable JSON",
     )
 
+    run_evidence = run_sub.add_parser(
+        "evidence",
+        help="show the digest-verified evidence report retained for one run",
+        description=(
+            "Read-only. Returns the evidence report retained in the run row "
+            "after verifying that its canonical digest equals the run's "
+            "evidence_report_digest (ADR-0024). A run with no retained "
+            "evidence fails with evidence_not_available; a mismatching report "
+            "fails with evidence_integrity_error and is never printed. This "
+            "command never selects, accepts, pushes, or merges a candidate."
+        ),
+    )
+    run_evidence.add_argument("run_id")
+    run_evidence.add_argument(
+        "--store",
+        required=True,
+        metavar="PATH",
+        help="local SQLite control-state path",
+    )
+    run_evidence.add_argument(
+        "--json",
+        action="store_true",
+        dest="json_output",
+        help="emit deterministic machine-readable JSON",
+    )
+
     run_cancel = run_sub.add_parser(
         "cancel",
         help="record a lifecycle-valid cancellation transition",
@@ -1328,6 +1354,27 @@ def _run_local_loop(args: argparse.Namespace) -> int:
     return 0
 
 
+def _print_run_evidence(evidence, *, json_output: bool) -> int:
+    if json_output:
+        print(
+            json.dumps(
+                evidence,
+                sort_keys=True,
+                separators=(",", ":"),
+            )
+        )
+        return 0
+    report = evidence["evidence_report"]
+    attempts = report.get("attempts", [])
+    print(f"run: {evidence['run_id']}")
+    print(f"evidence_report_digest: {evidence['evidence_report_digest']}")
+    print(f"attempts: {len(attempts) if isinstance(attempts, list) else 0}")
+    decision = report.get("human_decision")
+    if isinstance(decision, dict) and "status" in decision:
+        print(f"human_decision_status: {decision['status']}")
+    return 0
+
+
 def _run_product_spine_control(args: argparse.Namespace) -> int:
     from idkmesh.connector_store import (
         LocalMetadataStore,
@@ -1353,6 +1400,11 @@ def _run_product_spine_control(args: argparse.Namespace) -> int:
             return _print_run_list(
                 runs, next_cursor, limit=args.limit,
                 json_output=args.json_output,
+            )
+        if args.run_command == "evidence":
+            evidence = service.get_run_evidence(args.run_id)
+            return _print_run_evidence(
+                evidence, json_output=args.json_output
             )
         if args.run_command == "create":
             projection = _strict_json_file(args.projection)

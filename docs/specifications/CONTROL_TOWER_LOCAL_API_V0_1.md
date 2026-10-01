@@ -435,6 +435,17 @@ started with `--product-spine-store`.
 `state` and `project_id` combine with AND, not OR: passing both narrows to
 runs matching both.
 
+The list contains **Product Spine runs only**, selected by an explicit set of
+stored row kinds (`product-spine-cli-run`, created by `idkmesh run create`,
+and `product-spine-idempotency-result`, the completed rows of the idempotent
+offline Product Spine). The shared `runs` table also holds admission-only,
+execution-error and GitHub dispatch/status rows; those are not Product Spine
+runs and are excluded deterministically, including from keyset pagination
+([ADR-0024](../decisions/ADR-0024-retained-evidence-read-and-mixed-store-run-reads.md)).
+Before this rule a single non-Product-Spine row in the store made the whole
+page fail; that defect is fixed. A row of a listed kind that does not restore
+still fails loudly rather than being skipped.
+
 Representative shape:
 
 ```json
@@ -568,6 +579,65 @@ Representative shape:
 
 Unknown `run_id` returns `404` with code `run_not_found`, including when the
 derived `run_id` (path minus the `/attempts` suffix) does not exist.
+
+Supported methods:
+
+```text
+GET, HEAD
+```
+
+### `GET /api/v1/runs/{run_id}/evidence`
+
+Authenticated, read-only retrieval of the Run Evidence Report retained in one
+run's row (issue #739's `evidence` read surface;
+[ADR-0024](../decisions/ADR-0024-retained-evidence-read-and-mixed-store-run-reads.md)).
+`evidence` is a reserved trailing path segment
+([ADR-0019](../decisions/ADR-0019-run-subresource-suffix-reservation.md)).
+The idempotent offline Product Spine retains the full report in the run row
+next to the projection whose `evidence_report_digest` it must equal; this
+endpoint serves that report, so a client can reconstruct a run and its
+evidence without repository files and without supplying the evidence document.
+
+The report is returned as retained, never synthesised. Before it is served the
+service verifies that the run projection is a valid Product Spine run and that
+`canonical_digest(report)` equals `evidence_report_digest`. On a mismatch the
+report is **not** served: the response is `500 evidence_integrity_error`
+(fail closed).
+
+This server instance only exposes it when started with
+`--product-spine-store PATH`; otherwise every request returns `503` with code
+`product_spine_store_not_configured`. The endpoint accepts no query parameters.
+
+Representative shape (the report is abbreviated):
+
+```json
+{
+  "api_version": "v1",
+  "schema_version": "0.1",
+  "kind": "idkmesh-control-tower-run-evidence-response",
+  "ok": true,
+  "run_id": "run/example-1",
+  "evidence_report_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "evidence_report": {
+    "kind": "idkmesh-run-evidence-report",
+    "schema_version": "0.1"
+  }
+}
+```
+
+Errors are distinct so a client can tell them apart:
+
+| Condition | Status | Code |
+|---|---|---|
+| no stored run has this `run_id` | `404` | `run_not_found` |
+| the run exists but retains no evidence (a run created by `idkmesh run create`, or one that has not reached `evidence_ready`) | `404` | `evidence_not_available` |
+| the retained report does not match the run's `evidence_report_digest`, or the projection is not a valid Product Spine run | `500` | `evidence_integrity_error` |
+
+`GET /api/v1/runs/{run_id}/decisions` is still not built and answers the generic
+`404 not_found`. It needs a retained decision store and an authenticated,
+accountable human or governance principal (issue #740 and the enterprise
+identity work, issue #670); a local session token is not an accountable person,
+so this is a governance gate and not an implementation detail.
 
 Supported methods:
 
@@ -1094,6 +1164,13 @@ by:
 
 - `schemas/idkmesh-control-tower-run-attempts-response-v0.1.schema.json`
 
+The run-evidence response (`GET /api/v1/runs/{run_id}/evidence`) is frozen by:
+
+- `schemas/idkmesh-control-tower-run-evidence-response-v0.1.schema.json`
+
+It references the existing `schemas/run-evidence-report-v0.1.schema.json` for
+the retained report.
+
 The derived WorkUnit resource and its single-read response
 (`GET /api/v1/work-units`, `GET /api/v1/work-units/{work_unit_id}`) are frozen
 by:
@@ -1155,13 +1232,19 @@ Stable v0.1 codes include:
 - `method_not_allowed`;
 - `preflight_not_supported`;
 - `not_found`;
-- `run_not_found` (`GET /api/v1/runs/{run_id}`, unknown `run_id`);
+- `run_not_found` (`GET /api/v1/runs/{run_id}` and
+  `GET /api/v1/runs/{run_id}/evidence`, unknown `run_id`);
+- `evidence_not_available` (`GET /api/v1/runs/{run_id}/evidence`, 404, the run
+  exists but retains no evidence report);
+- `evidence_integrity_error` (`GET /api/v1/runs/{run_id}/evidence`, 500, the
+  retained report does not match the run's `evidence_report_digest`; the report
+  is never served);
 - `work_unit_not_found` (`GET /api/v1/work-units/{work_unit_id}`, no
   stored run references the id);
 - `project_not_found` (`GET /api/v1/projects/{project_id}`, no stored run
   names the project);
 - `product_spine_store_not_configured` (`GET /api/v1/runs/{run_id}`,
-  `GET /api/v1/runs`, `GET /api/v1/work-units`,
+  `GET /api/v1/runs/{run_id}/evidence`, `GET /api/v1/runs`, `GET /api/v1/work-units`,
   `GET /api/v1/work-units/{work_unit_id}`,
   `GET /api/v1/projects/{project_id}`, `GET /api/v1/events` and
   `GET /api/v1/events/stream`, no `--product-spine-store` given to this server
@@ -1372,8 +1455,13 @@ identity distinction != independence
 
 ## Next compatible extensions
 
-Issue #739's only unshipped read surfaces are `GET /api/v1/runs/{run_id}/evidence`
-and `/decisions`, blocked on the immutable content store of issue #740.
+Issue #739's only unshipped read surface is `GET /api/v1/runs/{run_id}/decisions`.
+`/evidence` is shipped
+([ADR-0024](../decisions/ADR-0024-retained-evidence-read-and-mixed-store-run-reads.md)):
+the idempotent offline spine already retains the digest-verified report in the
+run row. `/decisions` stays blocked on issue #740: no decision content is
+retained anywhere, and recording one needs an authenticated, accountable human
+or governance principal, which is a governance gate.
 
 Issue #741's canonical event source, history query and resumable SSE stream
 are shipped
