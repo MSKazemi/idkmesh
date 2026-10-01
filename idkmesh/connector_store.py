@@ -717,6 +717,43 @@ class LocalMetadataStore:
             return None
         return self._work_unit_resource(work_unit_id, revisions)
 
+    def get_project_counts(self, project_id: str) -> dict[str, Any] | None:
+        """Derived per-project counts, or None if no run names the project.
+
+        Returns ``{"project_id", "run_count", "state_counts",
+        "work_unit_count"}`` where ``state_counts`` holds only the states that
+        occur (the service zero-fills the canonical set). ADR-0021: no project
+        record exists, so this is purely a count over stored runs.
+        """
+        self._require_text(project_id, "project_id")
+        with _session(self.path) as conn:
+            state_rows = conn.execute(
+                f"""
+                SELECT state, COUNT(*) AS n
+                FROM runs
+                WHERE {self._PROJECT} = ?
+                GROUP BY state
+                ORDER BY state ASC
+                """,
+                (project_id,),
+            ).fetchall()
+            if not state_rows:
+                return None
+            distinct = conn.execute(
+                f"""
+                SELECT COUNT(DISTINCT {self._WU_ID}) AS n
+                FROM runs
+                WHERE {self._PROJECT} = ? AND {self._WU_ID} IS NOT NULL
+                """,
+                (project_id,),
+            ).fetchone()
+        return {
+            "project_id": project_id,
+            "run_count": sum(row["n"] for row in state_rows),
+            "state_counts": {row["state"]: row["n"] for row in state_rows},
+            "work_unit_count": distinct["n"],
+        }
+
     def update_run(
         self,
         run_id: str,

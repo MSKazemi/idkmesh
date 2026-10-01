@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idkmesh.org/schemas/idkmesh-project-resource-v0.1.schema.json",
+  "title": "IDKMesh Project Resource v0.1",
+  "description": "The `project` member of `GET /api/v1/projects/{project_id}`. A summary derived on demand from stored Product Spine runs (ADR-0021): no project record exists, so this is counts only. `runs_by_state` always carries every canonical run state (zero-filled) so the shape is identical for every project. It carries no health, status or score rollup and selects nothing. `work_unit_count` is the number of distinct WorkUnit ids referenced by this project's runs; list them with `GET /api/v1/work-units?project_id=`.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "project_id",
+    "run_count",
+    "runs_by_state",
+    "work_unit_count"
+  ],
+  "properties": {
+    "project_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "run_count": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Sum of runs_by_state."
+    },
+    "runs_by_state": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "proposed",
+        "previewed",
+        "admission_blocked",
+        "admitted",
+        "dispatched",
+        "attempt_failed",
+        "candidate_observed",
+        "normalized",
+        "verification_requested",
+        "verification_error",
+        "evidence_ready",
+        "awaiting_human_decision",
+        "decided",
+        "cancelled"
+      ],
+      "properties": {
+        "proposed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "previewed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "admission_blocked": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "admitted": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "dispatched": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "attempt_failed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "candidate_observed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "normalized": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "verification_requested": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "verification_error": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "evidence_ready": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "awaiting_human_decision": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "decided": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "cancelled": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "work_unit_count": {
+      "type": "integer",
+      "minimum": 0
+    }
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idkmesh.org/schemas/idkmesh-control-tower-project-response-v0.1.schema.json",
+  "title": "IDKMesh Control Tower Project Response v0.1",
+  "description": "The success envelope returned by `GET /api/v1/projects/{project_id}`, wrapping the derived project summary (ADR-0021). A 404 means no stored run names the project; it does not assert the project does not exist elsewhere.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "api_version",
+    "schema_version",
+    "kind",
+    "ok",
+    "project"
+  ],
+  "properties": {
+    "api_version": {
+      "const": "v1"
+    },
+    "schema_version": {
+      "const": "0.1"
+    },
+    "kind": {
+      "const": "idkmesh-control-tower-project-response"
+    },
+    "ok": {
+      "const": true
+    },
+    "project": {
+      "$ref": "https://idkmesh.org/schemas/idkmesh-project-resource-v0.1.schema.json"
+    }
+  }
+}

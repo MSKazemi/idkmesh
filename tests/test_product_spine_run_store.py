@@ -384,5 +384,50 @@ class ProductSpineRunStoreTests(unittest.TestCase):
             self.assertNotIn(forbidden, resource)
 
 
+    def test_get_project_zero_fills_every_canonical_state(self):
+        from idkmesh.product_spine import RUN_STATES
+
+        self._seed_work_units()
+
+        project = self.service.get_project("project.alpha")
+
+        self.assertEqual(
+            set(project),
+            {"project_id", "run_count", "runs_by_state", "work_unit_count"},
+        )
+        self.assertEqual(project["run_count"], 3)
+        self.assertEqual(project["work_unit_count"], 2)
+        self.assertEqual(set(project["runs_by_state"]), set(RUN_STATES))
+        self.assertEqual(project["runs_by_state"]["proposed"], 3)
+        self.assertEqual(project["runs_by_state"]["cancelled"], 0)
+        self.assertEqual(
+            sum(project["runs_by_state"].values()), project["run_count"]
+        )
+
+    def test_get_project_reflects_a_state_change(self):
+        self._seed_work_units()
+        self.service.cancel("run/w-1", updated_at="2026-10-01T01:00:00Z")
+
+        project = self.service.get_project("project.alpha")
+
+        self.assertEqual(project["runs_by_state"]["proposed"], 2)
+        self.assertEqual(project["runs_by_state"]["cancelled"], 1)
+
+    def test_get_project_not_found_and_invalid(self):
+        self._seed_work_units()
+        with self.assertRaises(ProductSpineRunStoreError) as ctx:
+            self.service.get_project("project.missing")
+        self.assertEqual(ctx.exception.code, "project_not_found")
+        with self.assertRaises(ProductSpineRunStoreError) as ctx:
+            self.service.get_project("")
+        self.assertEqual(ctx.exception.code, "invalid_project_id")
+
+    def test_project_read_model_carries_no_rollup(self):
+        self._seed_work_units()
+        project = self.service.get_project("project.alpha")
+        for forbidden in ("health", "status", "score", "latest", "state"):
+            self.assertNotIn(forbidden, project)
+
+
 if __name__ == "__main__":
     unittest.main()

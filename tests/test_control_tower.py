@@ -1493,5 +1493,204 @@ class ControlTowerWorkUnitWithoutAStoreTests(unittest.TestCase):
             )
 
 
+class ControlTowerProjectReadTests(unittest.TestCase):
+    """GET /api/v1/projects/{project_id} (ADR-0021 derived summary)."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        from idkmesh.connector_store import LocalMetadataStore
+        from idkmesh.product_spine_run_store import ProductSpineRunStore
+
+        cls._tmp = tempfile.TemporaryDirectory()
+        cls.store_path = str(Path(cls._tmp.name) / "product-spine.sqlite3")
+        service = ProductSpineRunStore(LocalMetadataStore(cls.store_path))
+        seeds = [
+            ("run/p-1", "work/a", "project.alpha"),
+            ("run/p-2", "work/b", "project.alpha"),
+            ("run/p-3", "work/a", "project.alpha"),
+            ("run/p-4", "work/a", "org/team/project"),
+        ]
+        for index, (run_id, wu, project) in enumerate(seeds):
+            projection = _run_projection(run_id=run_id, project_id=project)
+            projection["work_unit"]["id"] = wu
+            service.create(
+                projection,
+                idempotency_key=f"project-http-{index}",
+                created_at="2026-10-01T00:00:00Z",
+            )
+        service.cancel("run/p-3", updated_at="2026-10-01T01:00:00Z")
+        cls.server = create_server(
+            port=0, product_spine_store_path=cls.store_path
+        )
+        cls.thread = threading.Thread(
+            target=cls.server.serve_forever, daemon=True
+        )
+        cls.thread.start()
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        cls.server.shutdown()
+        cls.server.server_close()
+        cls.thread.join(timeout=2)
+        cls._tmp.cleanup()
+
+    def request(self, method: str, path: str, *, token: bool = True):
+        conn = http.client.HTTPConnection(
+            "127.0.0.1", self.server.server_port, timeout=3
+        )
+        headers = {TOKEN_HEADER: self.server.ui_token} if token else {}
+        conn.request(method, path, headers=headers)
+        response = conn.getresponse()
+        payload = response.read()
+        response_headers = dict(response.getheaders())
+        conn.close()
+        return response.status, response_headers, payload
+
+    @staticmethod
+    def _validate_response(document):
+        from referencing import Registry, Resource
+
+        root = Path(__file__).resolve().parents[1] / "schemas"
+        resource_schema = json.loads(
+            (root / "idkmesh-project-resource-v0.1.schema.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        registry = Registry().with_resource(
+            resource_schema["$id"], Resource.from_contents(resource_schema)
+        )
+        schema = json.loads(
+            (
+                root / "idkmesh-control-tower-project-response-v0.1.schema.json"
+            ).read_text(encoding="utf-8")
+        )
+        Draft202012Validator.check_schema(schema)
+        Draft202012Validator(schema, registry=registry).validate(document)
+
+    def test_returns_a_summary_matching_its_schema(self) -> None:
+        status, _, body = self.request(
+            "GET", "/api/v1/projects/project.alpha"
+        )
+        payload = json.loads(body)
+        self.assertEqual(status, 200)
+        self._validate_response(payload)
+        project = payload["project"]
+        self.assertEqual(project["run_count"], 3)
+        self.assertEqual(project["work_unit_count"], 2)
+        self.assertEqual(project["runs_by_state"]["proposed"], 2)
+        self.assertEqual(project["runs_by_state"]["cancelled"], 1)
+        self.assertEqual(
+            sum(project["runs_by_state"].values()), project["run_count"]
+        )
+
+    def test_schema_state_list_matches_the_code(self) -> None:
+        from idkmesh.product_spine import RUN_STATES
+
+        root = Path(__file__).resolve().parents[1] / "schemas"
+        schema = json.loads(
+            (root / "idkmesh-project-resource-v0.1.schema.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        self.assertEqual(
+            set(schema["properties"]["runs_by_state"]["required"]),
+            set(RUN_STATES),
+        )
+        self.assertEqual(
+            set(schema["properties"]["runs_by_state"]["properties"]),
+            set(RUN_STATES),
+        )
+
+    def test_project_id_containing_slashes_is_one_literal_id(self) -> None:
+        status, _, body = self.request(
+            "GET", "/api/v1/projects/org/team/project"
+        )
+        self.assertEqual(status, 200)
+        self.assertEqual(
+            json.loads(body)["project"]["project_id"], "org/team/project"
+        )
+        status, _, body = self.request("GET", "/api/v1/projects/org/team")
+        self.assertEqual(status, 404)
+        self.assertEqual(json.loads(body)["error"]["code"], "project_not_found")
+
+    def test_unknown_project_is_404(self) -> None:
+        status, _, body = self.request("GET", "/api/v1/projects/nobody")
+        self.assertEqual(status, 404)
+        self.assertEqual(json.loads(body)["error"]["code"], "project_not_found")
+
+    def test_there_is_no_project_list_and_empty_id_is_404(self) -> None:
+        for path in ("/api/v1/projects", "/api/v1/projects/"):
+            status, _, body = self.request("GET", path)
+            self.assertEqual(status, 404, path)
+            self.assertEqual(json.loads(body)["error"]["code"], "not_found")
+
+    def test_query_parameters_are_rejected(self) -> None:
+        status, _, body = self.request(
+            "GET", "/api/v1/projects/project.alpha?limit=1"
+        )
+        self.assertEqual(status, 400)
+        self.assertEqual(
+            json.loads(body)["error"]["code"], "unexpected_query_parameters"
+        )
+
+    def test_missing_token_is_forbidden_and_head_has_no_body(self) -> None:
+        status, _, _ = self.request(
+            "GET", "/api/v1/projects/project.alpha", token=False
+        )
+        self.assertEqual(status, 403)
+        status, headers, body = self.request(
+            "HEAD", "/api/v1/projects/project.alpha"
+        )
+        self.assertEqual(status, 200)
+        self.assertEqual(body, b"")
+        self.assertGreater(int(headers["Content-Length"]), 0)
+
+    def test_every_write_method_is_not_allowed(self) -> None:
+        for method in ("POST", "PUT", "PATCH", "DELETE"):
+            status, headers, _ = self.request(
+                method, "/api/v1/projects/project.alpha"
+            )
+            self.assertEqual(status, 405, method)
+            self.assertEqual(headers.get("Allow"), "GET, HEAD")
+
+    def test_status_and_openapi_document_the_endpoint(self) -> None:
+        _, _, body = self.request("GET", "/api/v1/status")
+        self.assertEqual(
+            json.loads(body)["endpoints"]["read_project"],
+            "GET /api/v1/projects/{project_id}",
+        )
+        _, _, body = self.request("GET", "/api/v1/openapi.json")
+        self.assertIn(
+            "/api/v1/projects/{project_id}", json.loads(body)["paths"]
+        )
+
+    def test_503_without_a_configured_store(self) -> None:
+        server = create_server(port=0)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            conn = http.client.HTTPConnection(
+                "127.0.0.1", server.server_port, timeout=3
+            )
+            conn.request(
+                "GET",
+                "/api/v1/projects/project.alpha",
+                headers={TOKEN_HEADER: server.ui_token},
+            )
+            response = conn.getresponse()
+            status = response.status
+            body = response.read()
+            conn.close()
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join(timeout=2)
+        self.assertEqual(status, 503)
+        self.assertEqual(
+            json.loads(body)["error"]["code"],
+            "product_spine_store_not_configured",
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
