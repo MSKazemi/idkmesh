@@ -83,6 +83,11 @@ some unrelated page but missing from its own index stays invisible.
   in the required PR Gate, with two recognized widenings (`enum` growth,
   `type` widening) and one v0.1 blind spot (`allOf`/`oneOf`, cross-file
   `$ref`) both documented in its module docstring. *(2026-09-27.)*
+- [ADR-0021 — Serve WorkUnits and Projects as Read Models Derived from Stored Runs](ADR-0021-derived-work-unit-and-project-read-models.md)
+  — `GET /api/v1/work-units` and `/projects/{project_id}` are derived on demand
+  from stored run references, with no new store, no WorkUnit body, no "latest
+  revision" selection, and explicit ordering, pagination and 404 behavior.
+  *(2026-10-01.)*
 
 ## Proposed and experimental
 

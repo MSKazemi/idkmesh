@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idkmesh.org/schemas/idkmesh-control-tower-work-unit-response-v0.1.schema.json",
+  "title": "IDKMesh Control Tower WorkUnit Response v0.1",
+  "description": "The success envelope returned by `GET /api/v1/work-units/{work_unit_id}`, wrapping the derived WorkUnit resource (ADR-0021). A 404 means no stored run references the id; it does not assert the WorkUnit does not exist elsewhere.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "api_version",
+    "schema_version",
+    "kind",
+    "ok",
+    "work_unit"
+  ],
+  "properties": {
+    "api_version": {
+      "const": "v1"
+    },
+    "schema_version": {
+      "const": "0.1"
+    },
+    "kind": {
+      "const": "idkmesh-control-tower-work-unit-response"
+    },
+    "ok": {
+      "const": true
+    },
+    "work_unit": {
+      "$ref": "https://idkmesh.org/schemas/idkmesh-work-unit-resource-v0.1.schema.json"
+    }
+  }
+}
