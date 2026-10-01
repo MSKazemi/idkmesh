@@ -765,6 +765,8 @@ def _status_document_base() -> dict[str, Any]:
             "list_work_units": "GET /api/v1/work-units",
             "read_work_unit": "GET /api/v1/work-units/{work_unit_id}",
             "read_project": "GET /api/v1/projects/{project_id}",
+            "list_events": "GET /api/v1/events",
+            "stream_events": "GET /api/v1/events/stream",
             "health": "GET /healthz",
             "readiness": "GET /readyz",
         },
@@ -1314,6 +1316,176 @@ def openapi_document() -> dict[str, Any]:
                             "description": (
                                 "No Product Spine store configured for this "
                                 "server instance"
+                            )
+                        },
+                    },
+                }
+            },
+            "/api/v1/events": {
+                "get": {
+                    "summary": "List canonical events, oldest first",
+                    "description": (
+                        "Pure read-only (ADR-0023). Events are the durable, "
+                        "append-only record written in the same transaction "
+                        "as the Product Spine run change they describe; "
+                        "ordered by sequence, keyset-paginated with an "
+                        "opaque cursor. Scoped run/work-unit queries are "
+                        "the run_id / work_unit_id filters. Coverage is "
+                        "limited to the writers that emit events "
+                        "(run.created, run.cancelled). Returns 503 when no "
+                        "Product Spine store is configured."
+                    ),
+                    "security": [{"LocalSessionToken": []}],
+                    "parameters": [
+                        {
+                            "name": "limit",
+                            "in": "query",
+                            "required": False,
+                            "schema": {"type": "integer", "minimum": 1},
+                        },
+                        {
+                            "name": "cursor",
+                            "in": "query",
+                            "required": False,
+                            "description": (
+                                "Opaque next-page token from a previous "
+                                "response's page.next_cursor."
+                            ),
+                            "schema": {"type": "string"},
+                        },
+                        {
+                            "name": "project_id",
+                            "in": "query",
+                            "required": False,
+                            "schema": {"type": "string"},
+                        },
+                        {
+                            "name": "run_id",
+                            "in": "query",
+                            "required": False,
+                            "schema": {"type": "string"},
+                        },
+                        {
+                            "name": "work_unit_id",
+                            "in": "query",
+                            "required": False,
+                            "schema": {"type": "string"},
+                        },
+                        {
+                            "name": "event_type",
+                            "in": "query",
+                            "required": False,
+                            "description": (
+                                "Exact event type; an unrecognized value "
+                                "fails with 400 invalid_event_type."
+                            ),
+                            "schema": {"type": "string"},
+                        },
+                    ],
+                    "responses": {
+                        "200": {
+                            "description": "One page of events",
+                            "content": {
+                                JSON_MEDIA_TYPE: {
+                                    "schema": {
+                                        "$ref": (
+                                            "https://idkmesh.org/schemas/"
+                                            "idkmesh-list-v0.1.schema.json"
+                                        )
+                                    }
+                                }
+                            },
+                        },
+                        "400": {
+                            "description": (
+                                "Unsupported/duplicate query parameter, or "
+                                "invalid limit/cursor/event_type"
+                            )
+                        },
+                        "403": {"description": "Invalid local session token"},
+                        "503": {
+                            "description": (
+                                "No Product Spine store configured for this "
+                                "server instance"
+                            )
+                        },
+                    },
+                }
+            },
+            "/api/v1/events/stream": {
+                "get": {
+                    "summary": "Resumable Server-Sent Events stream",
+                    "description": (
+                        "Read-only SSE (ADR-0023). Each message is "
+                        "`id: <sequence>`, `event: <event_type>`, `data: "
+                        "<compact JSON event envelope>`. `Last-Event-ID: N` "
+                        "resumes with every event of sequence > N, then "
+                        "follows live; without it the stream starts at the "
+                        "live tail. Delivery is at-least-once: dedupe on "
+                        "event_id. Bounded by max_sse_clients, a heartbeat "
+                        "comment and a maximum stream lifetime after which "
+                        "the client reconnects with Last-Event-ID."
+                    ),
+                    "security": [{"LocalSessionToken": []}],
+                    "parameters": [
+                        {
+                            "name": "Last-Event-ID",
+                            "in": "header",
+                            "required": False,
+                            "description": (
+                                "Last sequence the client processed; a "
+                                "non-integer or negative value fails with "
+                                "400 invalid_last_event_id."
+                            ),
+                            "schema": {"type": "string"},
+                        },
+                        {
+                            "name": "project_id",
+                            "in": "query",
+                            "required": False,
+                            "schema": {"type": "string"},
+                        },
+                        {
+                            "name": "run_id",
+                            "in": "query",
+                            "required": False,
+                            "schema": {"type": "string"},
+                        },
+                        {
+                            "name": "work_unit_id",
+                            "in": "query",
+                            "required": False,
+                            "schema": {"type": "string"},
+                        },
+                        {
+                            "name": "event_type",
+                            "in": "query",
+                            "required": False,
+                            "schema": {"type": "string"},
+                        },
+                    ],
+                    "responses": {
+                        "200": {
+                            "description": "A text/event-stream",
+                            "content": {
+                                "text/event-stream": {
+                                    "schema": {"type": "string"}
+                                }
+                            },
+                        },
+                        "400": {
+                            "description": (
+                                "Unsupported query parameter, invalid "
+                                "Last-Event-ID or event_type"
+                            )
+                        },
+                        "403": {"description": "Invalid local session token"},
+                        "503": {
+                            "description": (
+                                "No Product Spine store configured, the "
+                                "maximum number of streams is open "
+                                "(too_many_streams), or the service is "
+                                "draining; carries Retry-After"
                             )
                         },
                     },

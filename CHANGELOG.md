@@ -14,6 +14,47 @@ and the release notes for that tag.
 
 ### Added
 
+- Canonical append-only event source, event history API and resumable SSE
+  stream (issue #741, API-6)
+  ([ADR-0023](docs/decisions/ADR-0023-canonical-append-only-event-source.md)):
+  a new `events` table in the Product Spine store, written in the same SQLite
+  transaction as the run change it records (`admit_run` / `update_run` take an
+  optional `event`), with a monotonic `sequence`, a unique `event_id`, a
+  producer-supplied `occurred_at` (the store never reads a clock to invent
+  one), a `principal`, a reserved `authority_class` vocabulary
+  (`local_control`, `worker_observation`, `verifier_recommendation`,
+  `human_decision`) and a `payload_digest`. New `GET /api/v1/events` (the
+  `idkmesh-list-v0.1` envelope, ordered by sequence, opaque listing-scoped
+  cursor, `limit` 1-200, exact-match filters `project_id`, `run_id`,
+  `work_unit_id`, `event_type`; unknown parameters or an unknown `event_type`
+  fail with 400) and `GET /api/v1/events/stream` (Server-Sent Events:
+  `id` is the sequence, `Last-Event-ID` resumes with every later event, no
+  header starts at the live tail, a `Last-Event-ID` beyond the newest event of
+  the stream is `400 invalid_last_event_id` with `details.latest_sequence`
+  rather than a silent skip, delivery is at-least-once so clients dedupe on
+  `event_id`; browsers cannot use `EventSource` because the API token travels in
+  a header it cannot set, so they must use `fetch` with a streaming reader).
+  The `events` table is append-only by SQLite triggers (UPDATE and DELETE
+  abort) and `event_id` is derived from `sequence`, not stored. The stream is
+  bounded: `--max-sse-clients N` (1-64, default 8,
+  its own limiter, beyond it `503 too_many_streams` + `Retry-After`), a 15 s
+  heartbeat, a 300 s maximum lifetime after which the client reconnects with
+  `Last-Event-ID`, and prompt end on drain; `operations.limits` on
+  `GET /api/v1/status` reports `max_sse_clients`, `sse_heartbeat_seconds` and
+  `sse_max_stream_seconds` (added as optional properties). New frozen schema
+  `schemas/idkmesh-event-v0.1.schema.json` and `idkmesh events list --store
+  PATH [--limit] [--cursor] [--project-id] [--run-id] [--work-unit-id]
+  [--event-type] [--json]`. The store schema version is now 2: a version 1
+  store gains the `events` table in place, and code that predates version 2
+  refuses a version 2 store through the existing "newer than supported" check.
+  Stated limits: only Product Spine `run create` and `run cancel` emit events
+  (`run.created`, `run.cancelled`); the offline idempotent spine and the GitHub
+  dispatch and status writers do not yet, so the history makes no completeness
+  claim over every writer of the shared `runs` table; nothing prunes the table
+  (a future pruner must answer `410 cursor_expired` rather than leave a silent
+  gap); SSE is poll-based and bounded, one thread per stream, for the local
+  development profile; WebSocket is deferred; the Control Tower UI timeline is
+  not yet rebuilt on this source.
 - Bounded service limits for the Control Tower development server (issue #742,
   API-7) ([ADR-0022](docs/decisions/ADR-0022-control-tower-bounded-service-limits.md)):
   a per-connection request timeout (default 10 s; a stalled request line or

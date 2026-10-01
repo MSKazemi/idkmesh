@@ -93,6 +93,11 @@ some unrelated page but missing from its own index stays invisible.
   drain, the adopted stdlib header/body bounds, and a published
   `operations.limits` document; `429` and SSE limits are deliberately deferred
   until per-client identity and #741 exist. *(2026-10-02.)*
+- [ADR-0023 — Canonical Append-Only Event Source, Event Query API and Resumable SSE](ADR-0023-canonical-append-only-event-source.md)
+  — a durable, ordered `events` table written in the same transaction as the run
+  change, `GET /api/v1/events` with filters and cursors, and a bounded,
+  `Last-Event-ID`-resumable `GET /api/v1/events/stream`; coverage is limited to
+  Product Spine run create/cancel and says so. *(2026-10-02.)*
 
 ## Proposed and experimental
 

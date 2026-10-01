@@ -97,6 +97,15 @@ consumer.
   `Retry-After`, exempts liveness, and does no application work for a rejected
   request. `429` is not part of the baseline until a per-client identity exists.
 
+- A long-lived Server-Sent Events stream is a different resource shape from a
+  request/response call, so it is counted by its **own** `RequestLimiter`
+  (`max_sse_clients`) and does not occupy a slot of the general request cap
+  ([ADR-0023](../decisions/ADR-0023-canonical-append-only-event-source.md)).
+  Beyond that cap the service answers `503` with `Retry-After`; a stream also
+  carries a heartbeat interval and a maximum lifetime so it cannot hold a thread
+  indefinitely, and it ends promptly on drain. A service that drains must begin
+  the drain on both limiters and wait for both.
+
 See [Service limits](CONTROL_TOWER_LOCAL_API_V0_1.md#service-limits) for the
 Control Tower's concrete values and the tests that prove them.
 

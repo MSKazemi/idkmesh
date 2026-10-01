@@ -607,6 +607,79 @@ def build_parser() -> argparse.ArgumentParser:
         help="emit deterministic machine-readable JSON",
     )
 
+    events_cmd = sub.add_parser(
+        "events",
+        help="list durable events from the canonical append-only stream",
+        description=(
+            "Read-only view of the canonical event stream (ADR-0023) kept in "
+            "the same local store as 'idkmesh run'. In v0.1 only Product "
+            "Spine run create and cancel emit events, so this is canonical "
+            "for those events, not a claim of completeness over every "
+            "writer. These commands never dispatch, verify, accept, mutate "
+            "GitHub, push Git, or merge."
+        ),
+    )
+    events_sub = events_cmd.add_subparsers(
+        dest="events_command",
+        required=True,
+    )
+
+    events_list = events_sub.add_parser(
+        "list",
+        help="list events in stream order",
+        description=(
+            "Deterministic keyset-paginated event listing, ordered by "
+            "sequence ascending. Pass the previous page's --cursor value "
+            "verbatim to continue; never construct or parse a cursor by "
+            "hand. Filters are exact matches; an unknown --event-type fails "
+            "explicitly."
+        ),
+    )
+    events_list.add_argument(
+        "--store",
+        required=True,
+        metavar="PATH",
+        help="local SQLite control-state path",
+    )
+    events_list.add_argument(
+        "--limit",
+        type=int,
+        default=DEFAULT_LIST_LIMIT,
+        metavar="N",
+        help=f"page size, 1-{MAX_LIST_LIMIT} (default: {DEFAULT_LIST_LIMIT})",
+    )
+    events_list.add_argument(
+        "--cursor",
+        metavar="TOKEN",
+        help="opaque next-page token from a previous 'events list' call",
+    )
+    events_list.add_argument(
+        "--project-id",
+        metavar="ID",
+        help="only events for this exact project_id",
+    )
+    events_list.add_argument(
+        "--run-id",
+        metavar="ID",
+        help="only events for this exact run_id",
+    )
+    events_list.add_argument(
+        "--work-unit-id",
+        metavar="ID",
+        help="only events for this exact WorkUnit id",
+    )
+    events_list.add_argument(
+        "--event-type",
+        metavar="TYPE",
+        help="only events of this type (for example run.created)",
+    )
+    events_list.add_argument(
+        "--json",
+        action="store_true",
+        dest="json_output",
+        help="emit deterministic machine-readable JSON",
+    )
+
     gui = sub.add_parser(
         "gate-audit-ui",
         help="open the local browser interface for gate-audit",
@@ -653,6 +726,12 @@ def build_parser() -> argparse.ArgumentParser:
         help=(
             "answer 503 with Retry-After beyond N concurrent requests "
             "(1-1024; default: 16); GET /healthz is exempt"))
+    tower.add_argument(
+        "--max-sse-clients", type=int, default=8, metavar="N",
+        help=(
+            "concurrent Server-Sent Events streams on GET "
+            "/api/v1/events/stream (1-64; default: 8); beyond N the server "
+            "answers 503 with Retry-After"))
     tower.add_argument(
         "--product-spine-store", metavar="PATH",
         help=(
@@ -1379,6 +1458,65 @@ def _run_project_control(args: argparse.Namespace) -> int:
     return 0
 
 
+def _run_events_control(args: argparse.Namespace) -> int:
+    from idkmesh.connector_store import (
+        LocalMetadataStore,
+        LocalStoreError,
+    )
+    from idkmesh.product_spine_run_store import (
+        ProductSpineRunStore,
+        ProductSpineRunStoreError,
+    )
+
+    try:
+        service = ProductSpineRunStore(LocalMetadataStore(args.store))
+        if args.events_command == "list":
+            items, next_cursor = service.list_events(
+                limit=args.limit,
+                cursor=args.cursor,
+                project_id=args.project_id,
+                run_id=args.run_id,
+                work_unit_id=args.work_unit_id,
+                event_type=args.event_type,
+            )
+        else:  # pragma: no cover - argparse enforces this
+            return 2
+    except (
+        ProductSpineRunStoreError,
+        LocalStoreError,
+        OSError,
+        ValueError,
+    ) as exc:
+        return _run_control_error(exc, json_output=args.json_output)
+
+    if args.json_output:
+        print(
+            json.dumps(
+                {
+                    "kind": "idkmesh-list",
+                    "schema_version": "0.1",
+                    "items": items,
+                    "page": {"next_cursor": next_cursor, "limit": args.limit},
+                },
+                sort_keys=True,
+                separators=(",", ":"),
+            )
+        )
+        return 0
+
+    if not items:
+        print("no retained events")
+        return 0
+    for item in items:
+        print(
+            f"{item['sequence']}\t{item['occurred_at']}"
+            f"\t{item['event_type']}\t{item['run_id']}"
+        )
+    if next_cursor is not None:
+        print(f"next_cursor: {next_cursor}")
+    return 0
+
+
 def _run_doctor(args: argparse.Namespace) -> int:
     from idkmesh.connector_inspection import doctor_report, inspect_connectors
     from idkmesh.connector_profiles import (
@@ -1508,6 +1646,7 @@ def main(argv: list[str] | None = None) -> int:
                 product_spine_store_path=args.product_spine_store,
                 request_timeout=args.request_timeout,
                 max_concurrent_requests=args.max_concurrent_requests,
+                max_sse_clients=args.max_sse_clients,
             )
         except ValueError as exc:
             return _fail(str(exc))
@@ -1521,6 +1660,8 @@ def main(argv: list[str] | None = None) -> int:
         return _run_product_spine_control(args)
     if args.command == "work-unit":
         return _run_work_unit_control(args)
+    if args.command == "events":
+        return _run_events_control(args)
     if args.command == "project":
         return _run_project_control(args)
     if args.command == "local-loop":
