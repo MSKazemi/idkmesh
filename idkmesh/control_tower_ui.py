@@ -37,12 +37,22 @@ from idkmesh.local_ui_security import (
     send_security_headers,
 )
 from idkmesh.service_runtime import (
+    ADMITTED,
+    DEFAULT_DRAIN_TIMEOUT_SECONDS,
+    DEFAULT_MAX_CONCURRENT_REQUESTS,
+    DEFAULT_REQUEST_TIMEOUT_SECONDS,
+    DEFAULT_RETRY_AFTER_SECONDS,
+    DRAINING,
     REQUEST_ID_HEADER,
+    RequestLimiter,
     access_logging_enabled,
     build_access_log_event,
+    limits_document,
     readiness_document,
     resolve_request_id,
     service_headers,
+    validate_max_concurrent_requests,
+    validate_request_timeout,
     write_access_log,
 )
 
@@ -547,11 +557,15 @@ def _handler(
     token: str,
     *,
     product_spine_store_path: str | None = None,
+    request_timeout: float = DEFAULT_REQUEST_TIMEOUT_SECONDS,
 ):
     page = _app_html(initial_text, token).encode("utf-8")
 
     class Handler(BaseHTTPRequestHandler):
         server_version = "IDKMeshControlTower/0.1"
+        # ADR-0022: socketserver applies this to the connection, so a client
+        # that stalls on the request line, headers or body is dropped.
+        timeout = request_timeout
 
         def handle_one_request(self) -> None:
             self._request_started = time.monotonic()
@@ -1280,7 +1294,19 @@ def _handler(
                     ),
                 )
                 return None
-            raw = self.rfile.read(length)
+            try:
+                raw = self.rfile.read(length)
+            except TimeoutError:
+                self.close_connection = True
+                self._send_json(
+                    408,
+                    error_document(
+                        "request_timeout",
+                        "request body was not received within the "
+                        "service request timeout",
+                    ),
+                )
+                return None
             try:
                 return raw.decode("utf-8")
             except UnicodeDecodeError:
@@ -1306,6 +1332,31 @@ def _handler(
                 error_document(code, message),
                 head_only=head_only,
                 extra_headers={"Allow": allow},
+            )
+
+        def _reject_unavailable(self, verdict: str) -> None:
+            """503 + Retry-After for an overloaded or draining server.
+
+            Does no application work and closes the connection, so a rejected
+            request costs a constant amount regardless of its content.
+            """
+            self.close_connection = True
+            draining = verdict == DRAINING
+            self._send_json(
+                503,
+                error_document(
+                    "shutting_down" if draining else "overloaded",
+                    (
+                        "the service is draining and not accepting new "
+                        "requests"
+                        if draining
+                        else "the service is at its concurrent request "
+                        "limit; retry shortly"
+                    ),
+                    details={"retry_after_seconds": DEFAULT_RETRY_AFTER_SECONDS},
+                ),
+                head_only=self.command == "HEAD",
+                extra_headers={"Retry-After": str(DEFAULT_RETRY_AFTER_SECONDS)},
             )
 
         def _handle_get(self, *, head_only: bool) -> None:
@@ -1354,7 +1405,7 @@ def _handler(
             if path == f"/api/{API_VERSION}/status":
                 self._send_json(
                     200,
-                    status_document(),
+                    status_document(limits=self.server.limits),
                     head_only=head_only,
                 )
                 return
@@ -1523,13 +1574,56 @@ def _handler(
         do_TRACE = _unsupported_write_method
         do_CONNECT = _unsupported_write_method
 
+    def _limited(method):
+        """Admit a request through the server's RequestLimiter (ADR-0022).
+
+        ``GET /healthz`` is exempt so liveness stays cheap under saturation;
+        everything else, including ``/readyz``, is admitted or rejected.
+        """
+
+        def wrapper(self):
+            if self._access_path() == "/healthz":
+                return method(self)
+            limiter = self.server.limiter
+            verdict = limiter.admit()
+            if verdict != ADMITTED:
+                self._reject_unavailable(verdict)
+                return None
+            try:
+                return method(self)
+            finally:
+                limiter.release()
+
+        wrapper.__name__ = method.__name__
+        return wrapper
+
+    for _name in (
+        "do_GET", "do_HEAD", "do_OPTIONS", "do_POST", "do_PUT",
+        "do_PATCH", "do_DELETE", "do_TRACE", "do_CONNECT",
+    ):
+        setattr(Handler, _name, _limited(getattr(Handler, _name)))
+
     return Handler
 
 class ControlTowerServer(ThreadingHTTPServer):
     daemon_threads = True
     allow_reuse_address = True
+    # ADR-0022: an explicit, small listen backlog bounds queued connections.
+    request_queue_size = 16
 
     ui_token: str
+    limiter: RequestLimiter
+    limits: dict[str, Any]
+
+    def drain(self, timeout: float = DEFAULT_DRAIN_TIMEOUT_SECONDS) -> bool:
+        """Stop admitting requests and wait for in-flight ones to finish.
+
+        Returns False if ``timeout`` elapsed with requests still running.
+        Every endpoint is read-only, so abandoning one cannot leave a
+        partially committed mutation (ADR-0022).
+        """
+        self.limiter.begin_drain()
+        return self.limiter.wait_idle(timeout)
 
 
 def create_server(
@@ -1537,6 +1631,8 @@ def create_server(
     *,
     port: int = DEFAULT_PORT,
     product_spine_store_path: str | None = None,
+    request_timeout: float = DEFAULT_REQUEST_TIMEOUT_SECONDS,
+    max_concurrent_requests: int = DEFAULT_MAX_CONCURRENT_REQUESTS,
 ) -> ControlTowerServer:
     """Create, but do not start, the loopback-only Control Tower server.
 
@@ -1546,6 +1642,10 @@ def create_server(
     /api/v1/runs/{run_id}``, read-only, over that same durable state; when
     omitted, that endpoint returns 503 rather than being absent.
     """
+    request_timeout = validate_request_timeout(request_timeout)
+    max_concurrent_requests = validate_max_concurrent_requests(
+        max_concurrent_requests
+    )
     token = _resolve_token()
     server = ControlTowerServer(
         (HOST, port),
@@ -1553,9 +1653,16 @@ def create_server(
             initial_text,
             token,
             product_spine_store_path=product_spine_store_path,
+            request_timeout=request_timeout,
         ),
     )
     server.ui_token = token
+    server.limiter = RequestLimiter(max_concurrent_requests)
+    server.limits = limits_document(
+        request_timeout_seconds=request_timeout,
+        max_concurrent_requests=max_concurrent_requests,
+        max_request_body_bytes=MAX_BODY_BYTES,
+    )
     return server
 
 
@@ -1565,12 +1672,16 @@ def serve_control_tower(
     port: int = DEFAULT_PORT,
     open_browser: bool = True,
     product_spine_store_path: str | None = None,
+    request_timeout: float = DEFAULT_REQUEST_TIMEOUT_SECONDS,
+    max_concurrent_requests: int = DEFAULT_MAX_CONCURRENT_REQUESTS,
 ) -> None:
-    """Serve the local Control Tower until interrupted."""
+    """Serve the local Control Tower until interrupted, then drain."""
     server = create_server(
         initial_text,
         port=port,
         product_spine_store_path=product_spine_store_path,
+        request_timeout=request_timeout,
+        max_concurrent_requests=max_concurrent_requests,
     )
     url = f"http://{HOST}:{server.server_port}/"
     print(f"IDKMesh Control Tower: {url}")
@@ -1590,4 +1701,9 @@ def serve_control_tower(
     except KeyboardInterrupt:
         pass
     finally:
+        if not server.drain():
+            print(
+                "Control Tower: in-flight requests did not finish within "
+                f"{DEFAULT_DRAIN_TIMEOUT_SECONDS:g}s; closing anyway."
+            )
         server.server_close()

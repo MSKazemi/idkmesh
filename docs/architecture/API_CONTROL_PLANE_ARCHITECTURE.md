@@ -189,6 +189,18 @@ stored runs
 not a WorkUnit or project store; `idkmesh work-unit list|status` and
 `idkmesh project status` read through the same service.
 
+The Local HTTP box is a stdlib development server with bounded limits
+([ADR-0022](../decisions/ADR-0022-control-tower-bounded-service-limits.md)):
+a 10 s request timeout, a 16-request concurrency cap that answers
+`503 + Retry-After` instead of queueing, graceful drain, and the stdlib
+parser bounds (request line 65536 bytes, 99 header fields, 2 MiB body), all
+published at `operations.limits` on `GET /api/v1/status`. These bound request
+handling, not accepted connections, and `429` and a maximum SSE client count
+are not implemented (no per-client identity yet; no SSE stream yet). The
+stdlib server must never face the Internet: a network or multi-user
+deployment requires the reviewed production transport adapter, which is the
+Network HTTP box and is not built.
+
 Every box in the bottom row is a transport/client adapter over the same
 application services; none may redefine a domain contract to fit its own
 transport. The Network HTTP adapter is explicitly not built yet -- see

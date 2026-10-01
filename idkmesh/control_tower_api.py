@@ -14,7 +14,7 @@ from collections import Counter
 import hashlib
 import json
 import re
-from typing import Any
+from typing import Any, Mapping
 
 API_VERSION = "v1"
 API_SCHEMA_VERSION = "0.1"
@@ -699,8 +699,22 @@ def build_snapshot(report: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def status_document() -> dict[str, Any]:
-    """Return the stable discovery/status document for API clients."""
+def status_document(
+    limits: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Return the stable discovery/status document for API clients.
+
+    ``limits``, when given, is the server's actual limits document
+    (``idkmesh.service_runtime.limits_document``) and is published under
+    ``operations.limits`` (ADR-0022). A bare call omits it.
+    """
+    document = _status_document_base()
+    if limits is not None:
+        document["operations"]["limits"] = dict(limits)
+    return document
+
+
+def _status_document_base() -> dict[str, Any]:
     return {
         "api_version": API_VERSION,
         "schema_version": API_SCHEMA_VERSION,
