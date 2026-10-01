@@ -131,6 +131,11 @@ on the command line:
 export IDKMESH_CONTROL_TOWER_TOKEN='replace-with-at-least-32-random-characters'
 idkmesh control-tower --no-browser --port 8770
 
+# Optional: bound a stalled client and concurrent load (defaults: 10 s, 16;
+# beyond the cap the server answers 503 with Retry-After).
+idkmesh control-tower --no-browser --port 8770 \
+  --request-timeout 5 --max-concurrent-requests 8
+
 curl \
   -H "X-IDKMesh-UI-Token: $IDKMESH_CONTROL_TOWER_TOKEN" \
   http://127.0.0.1:8770/api/v1/status

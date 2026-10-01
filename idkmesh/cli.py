@@ -644,6 +644,16 @@ def build_parser() -> argparse.ArgumentParser:
         "--no-browser", action="store_true",
         help="serve the Control Tower without opening the default browser")
     tower.add_argument(
+        "--request-timeout", type=float, default=10.0, metavar="SECONDS",
+        help=(
+            "drop a client that stalls mid-request after this many seconds "
+            "(0.1-300; default: 10)"))
+    tower.add_argument(
+        "--max-concurrent-requests", type=int, default=16, metavar="N",
+        help=(
+            "answer 503 with Retry-After beyond N concurrent requests "
+            "(1-1024; default: 16); GET /healthz is exempt"))
+    tower.add_argument(
         "--product-spine-store", metavar="PATH",
         help=(
             "optional path to an existing 'idkmesh run create/status/cancel' "
@@ -1496,6 +1506,8 @@ def main(argv: list[str] | None = None) -> int:
                 port=args.port,
                 open_browser=not args.no_browser,
                 product_spine_store_path=args.product_spine_store,
+                request_timeout=args.request_timeout,
+                max_concurrent_requests=args.max_concurrent_requests,
             )
         except ValueError as exc:
             return _fail(str(exc))

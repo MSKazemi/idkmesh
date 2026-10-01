@@ -715,6 +715,8 @@ class ControlTowerCliTests(unittest.TestCase):
             port=9124,
             open_browser=False,
             product_spine_store_path=None,
+            request_timeout=10.0,
+            max_concurrent_requests=16,
         )
 
     def test_control_tower_preloads_report(self) -> None:
@@ -732,6 +734,8 @@ class ControlTowerCliTests(unittest.TestCase):
             port=8770,
             open_browser=False,
             product_spine_store_path=None,
+            request_timeout=10.0,
+            max_concurrent_requests=16,
         )
 
     def test_control_tower_rejects_oversized_preload_before_server_start(self) -> None:

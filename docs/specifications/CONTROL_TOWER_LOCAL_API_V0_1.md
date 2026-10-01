@@ -225,7 +225,9 @@ Unauthenticated process-liveness check:
 ok
 ```
 
-It reveals no evidence/project state.
+It reveals no evidence/project state. It is exempt from the concurrent-request
+cap and keeps answering `200` while the server drains, so liveness stays cheap
+under saturation (see [Service limits](#service-limits)).
 
 Supported methods:
 
@@ -252,7 +254,11 @@ Representative shape:
 ```
 
 Liveness and readiness are intentionally separate: a future service may be alive
-while a required runtime dependency is not ready.
+while a required runtime dependency is not ready. Today the one concrete
+difference is service pressure: `GET /readyz` is counted against the
+concurrent-request cap and answers `503 overloaded` at the cap or
+`503 shutting_down` while draining, each with `Retry-After`, so an orchestrator
+stops routing to an instance that cannot take work.
 
 Frozen by `schemas/idkmesh-readiness-v0.1.schema.json`. Built by the shared
 `idkmesh/service_runtime.py:readiness_document()`, so any future IDKMesh HTTP
@@ -278,6 +284,8 @@ The response includes:
 - schema URLs;
 - enabled read capabilities;
 - explicitly disabled actuation capabilities;
+- the service limits in force (`operations.limits`, see
+  [Service limits](#service-limits));
 - endpoint list.
 
 Representative shape:
@@ -992,7 +1000,74 @@ Stable v0.1 codes include:
 - `invalid_cursor` (`GET /api/v1/runs` and `GET /api/v1/work-units`,
   `cursor` this service did not itself issue for that listing);
 - `invalid_state` (`GET /api/v1/runs`, `state` not one of the canonical
-  Product Spine lifecycle states).
+  Product Spine lifecycle states);
+- `overloaded` (503, the concurrent-request cap is reached; carries
+  `Retry-After`);
+- `shutting_down` (503, the server is draining; carries `Retry-After`);
+- `request_timeout` (408, a request body was not received within the service
+  request timeout).
+
+## Service limits
+
+The Control Tower is a stdlib development server bound to loopback. Its limits
+([ADR-0022](../decisions/ADR-0022-control-tower-bounded-service-limits.md), issue #742) are published at `operations.limits` on
+`GET /api/v1/status`, validated by `schemas/idkmesh-control-tower-status-v0.1.schema.json`,
+and each is proven by `tests/test_control_tower_limits.py`.
+
+| Limit | Default | Enforcement | Proven by |
+| --- | --- | --- | --- |
+| Request timeout | 10 s (`--request-timeout`, 0.1-300) | socket timeout on every connection; a stalled request line or headers drop the connection, a stalled body answers `408 request_timeout` | `SlowClientTests` |
+| Concurrent requests | 16 (`--max-concurrent-requests`, 1-1024) | non-blocking `RequestLimiter`; beyond the cap `503 overloaded` + `Retry-After`, no application work, connection closed | `OverloadTests`, `RequestLimiterTests` |
+| Queue | listen backlog 16 | `request_queue_size`; there is no application wait queue | `OverloadTests` |
+| Retry hint | `Retry-After: 1` | on every 503 from the cap or a drain | `OverloadTests`, `DrainTests` |
+| Graceful drain | 5 s | `ControlTowerServer.drain()`: new requests `503 shutting_down`, then waits for in-flight requests; `serve_control_tower` calls it on shutdown | `DrainTests` |
+| Request line | 65536 bytes | stdlib parser, `414` above | `ParserBoundTests` |
+| Header line | 65536 bytes | stdlib parser, `431` above | `ParserBoundTests` |
+| Header fields | 99 | stdlib parser, `431` at 100 (the stdlib allows 100 lines but counts the blank line ending the header block) | `ParserBoundTests` |
+| Request body | 2 MiB | `413 payload_too_large`; one global cap, only `POST /api/v1/run-evidence/inspect` reads a body | not proven by an HTTP test (only the CLI preload cap is tested) |
+| Connections | one request each | stdlib HTTP/1.0 default; no keep-alive | `ConnectionPolicyTests` |
+| Per-client rate limit | not implemented | `429` is reserved; see below | status `per_client_rate_limit` |
+
+Semantics:
+
+- `GET /healthz` is exempt from the cap and from drain rejection. Every other
+  request, including `GET /readyz`, is admitted or rejected.
+- A rejection answers with the standard error envelope, `X-Request-ID`, and the
+  security headers, and does no application work, so its cost does not depend on
+  the request. `HEAD` rejections carry headers and no body.
+- A `POST` rejected at the cap is answered without reading its body and the
+  connection is closed, so a client sending a large body may see a connection
+  reset instead of the `503`.
+- Every endpoint is read-only or a pure inspection, so a drain cannot leave a
+  partially committed mutation.
+- The cap bounds concurrent request *handling*, not accepted connections: a
+  connection flood still creates short-lived threads that answer `503`.
+- `429` is not emitted. It signals that one client exceeded its own rate, and a
+  single local token provides no per-client identity. Server-wide saturation is
+  `503`. `429` is reserved for the enterprise identity profile.
+- No maximum SSE client count exists because no SSE stream exists (issue #741).
+- Only the Control Tower server is hardened. `gate-audit-ui` and the steward UIs
+  keep their previous behavior.
+- A public or network deployment must use a reviewed production transport
+  adapter; the stdlib server must not be exposed to the Internet.
+
+Representative `operations.limits`:
+
+```json
+{
+  "request_timeout_seconds": 10.0,
+  "max_concurrent_requests": 16,
+  "retry_after_seconds": 1,
+  "drain_timeout_seconds": 5.0,
+  "max_request_line_bytes": 65536,
+  "max_header_line_bytes": 65536,
+  "max_header_count": 99,
+  "max_request_body_bytes": 2097152,
+  "overload_status": 503,
+  "connection_policy": "close_after_response",
+  "per_client_rate_limit": "not_implemented"
+}
+```
 
 ## HTTP method behavior
 
@@ -1041,6 +1116,13 @@ already writes to):
 ```bash
 idkmesh control-tower --no-browser --port 8770 \
   --product-spine-store path/to/product-spine.sqlite3
+```
+
+Tune the service limits (both are validated before the port is bound):
+
+```bash
+idkmesh control-tower --no-browser --port 8770 \
+  --request-timeout 5 --max-concurrent-requests 8
 ```
 
 Read the same store's derived WorkUnits and project summaries from the CLI:
@@ -1096,6 +1178,10 @@ identity distinction != independence
 
 Issue #739's only unshipped read surfaces are `GET /api/v1/runs/{run_id}/evidence`
 and `/decisions`, blocked on the immutable content store of issue #740.
+
+Issue #741 (canonical event envelope and resumable SSE) will also require a
+maximum SSE client count and an SSE timeout policy under
+[ADR-0022](../decisions/ADR-0022-control-tower-bounded-service-limits.md).
 
 Issue #572 defines later read-first slices:
 
