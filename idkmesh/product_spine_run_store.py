@@ -132,6 +132,22 @@ _CURSOR_KIND = "product-spine-run-list-cursor-v1"
 
 
 _WORK_UNIT_CURSOR_KIND = "product-spine-work-unit-list-cursor-v1"
+_EVENT_CURSOR_KIND = "product-spine-event-list-cursor-v1"
+
+# ADR-0023: the canonical event vocabulary. v0.1 emits only run.created and
+# run.cancelled, both with authority class local_control; the other classes are
+# reserved so a recommendation is never mistaken for a decision.
+EVENT_TYPES = frozenset({"run.created", "run.cancelled"})
+EVENT_AUTHORITY_CLASSES = frozenset(
+    {
+        "local_control",
+        "worker_observation",
+        "verifier_recommendation",
+        "human_decision",
+    }
+)
+_LOCAL_PRINCIPAL = {"type": "unauthenticated_local", "id": "local-cli"}
+DEFAULT_EVENTS_AFTER_LIMIT = 200
 
 
 def _encode_cursor(after_run_id: str, kind: str = _CURSOR_KIND) -> str:
@@ -277,6 +293,44 @@ def _restore(
     return run
 
 
+def _run_event(
+    run: ProductSpineRun,
+    *,
+    event_type: str,
+    occurred_at: str,
+    payload: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Build the producer-side fields of a canonical event for ``run``.
+
+    ``occurred_at`` is the validated timestamp the caller already supplied for
+    the state change, never a clock read (ADR-0023). The store adds the
+    sequence, event id and payload digest.
+    """
+    projection = run.to_dict()
+    return {
+        "occurred_at": occurred_at,
+        "event_type": event_type,
+        "principal": dict(_LOCAL_PRINCIPAL),
+        "authority_class": "local_control",
+        "project_id": projection["project_id"],
+        "work_unit_id": projection["work_unit"]["id"],
+        "run_id": projection["run_id"],
+        "attempt_id": None,
+        "source_revision": projection["work_unit"]["source_revision"],
+        "evidence_reference": None,
+        "payload": dict(payload),
+    }
+
+
+def _sequence_from_cursor(cursor: str) -> int:
+    after = _decode_cursor(cursor, _EVENT_CURSOR_KIND)
+    if not after.isdigit():
+        raise ProductSpineRunStoreError(
+            "invalid_cursor", "cursor is not a value this service issued"
+        )
+    return int(after)
+
+
 class ProductSpineRunStore:
     """Small application service for durable proposed/status/cancel control."""
 
@@ -315,6 +369,15 @@ class ProductSpineRunStore:
                     create_request_digest=digest,
                 ),
                 created_at=timestamp,
+                event=_run_event(
+                    active,
+                    event_type="run.created",
+                    occurred_at=timestamp,
+                    payload={
+                        "state": active.state,
+                        "request_digest": digest,
+                    },
+                ),
             )
         except LocalStoreConflict as exc:
             raise ProductSpineRunStoreError(
@@ -480,6 +543,91 @@ class ProductSpineRunStore:
             "work_unit_count": counts["work_unit_count"],
         }
 
+    @staticmethod
+    def _check_event_type(event_type: str | None) -> None:
+        if event_type is not None and event_type not in EVENT_TYPES:
+            raise ProductSpineRunStoreError(
+                "invalid_event_type",
+                f"event_type must be one of {sorted(EVENT_TYPES)}",
+            )
+
+    def list_events(
+        self,
+        *,
+        limit: int = DEFAULT_LIST_LIMIT,
+        cursor: str | None = None,
+        project_id: str | None = None,
+        run_id: str | None = None,
+        work_unit_id: str | None = None,
+        event_type: str | None = None,
+    ) -> tuple[list[dict[str, Any]], str | None]:
+        """Canonical events (ADR-0023), ascending by sequence.
+
+        Returns ``(events, next_cursor)``. The cursor is opaque, scoped to this
+        listing, and fails closed with ``invalid_cursor``. An unknown
+        ``event_type`` fails with ``invalid_event_type`` rather than matching
+        nothing (API Conventions v0.1 section 11).
+        """
+        self._check_event_type(event_type)
+        after = _sequence_from_cursor(cursor) if cursor is not None else 0
+        try:
+            events, has_more = self._store.list_events(
+                limit=limit,
+                after_sequence=after,
+                project_id=project_id,
+                run_id=run_id,
+                work_unit_id=work_unit_id,
+                event_type=event_type,
+            )
+        except ValueError as exc:
+            raise ProductSpineRunStoreError("invalid_limit", str(exc)) from exc
+        except LocalStoreError as exc:
+            raise ProductSpineRunStoreError("store_error", str(exc)) from exc
+        next_cursor = (
+            _encode_cursor(str(events[-1]["sequence"]), _EVENT_CURSOR_KIND)
+            if has_more
+            else None
+        )
+        return events, next_cursor
+
+    def events_after(
+        self,
+        sequence: int,
+        *,
+        limit: int = DEFAULT_EVENTS_AFTER_LIMIT,
+        project_id: str | None = None,
+        run_id: str | None = None,
+        work_unit_id: str | None = None,
+        event_type: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """Events with ``sequence > sequence`` (the SSE resume primitive)."""
+        self._check_event_type(event_type)
+        if isinstance(sequence, bool) or not isinstance(sequence, int) or sequence < 0:
+            raise ProductSpineRunStoreError(
+                "invalid_sequence", "sequence must be a non-negative integer"
+            )
+        try:
+            events, _ = self._store.list_events(
+                limit=limit,
+                after_sequence=sequence,
+                project_id=project_id,
+                run_id=run_id,
+                work_unit_id=work_unit_id,
+                event_type=event_type,
+            )
+        except ValueError as exc:
+            raise ProductSpineRunStoreError("invalid_limit", str(exc)) from exc
+        except LocalStoreError as exc:
+            raise ProductSpineRunStoreError("store_error", str(exc)) from exc
+        return events
+
+    def latest_event_sequence(self) -> int:
+        """Sequence of the newest event (0 if none): the live-tail position."""
+        try:
+            return self._store.latest_event_sequence()
+        except LocalStoreError as exc:
+            raise ProductSpineRunStoreError("store_error", str(exc)) from exc
+
     def cancel(
         self,
         run_id: str,
@@ -509,6 +657,15 @@ class ProductSpineRunStore:
                     create_request_digest=current.create_request_digest,
                 ),
                 updated_at=timestamp,
+                event=_run_event(
+                    cancelled,
+                    event_type="run.cancelled",
+                    occurred_at=timestamp,
+                    payload={
+                        "previous_state": current.run.state,
+                        "state": cancelled.state,
+                    },
+                ),
             )
         except LocalStoreError as exc:
             raise ProductSpineRunStoreError(

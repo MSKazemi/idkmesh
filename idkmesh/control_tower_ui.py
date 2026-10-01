@@ -6,6 +6,7 @@ import html
 import json
 import os
 import secrets
+import threading
 import time
 import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -40,11 +41,15 @@ from idkmesh.service_runtime import (
     ADMITTED,
     DEFAULT_DRAIN_TIMEOUT_SECONDS,
     DEFAULT_MAX_CONCURRENT_REQUESTS,
+    DEFAULT_MAX_SSE_CLIENTS,
     DEFAULT_REQUEST_TIMEOUT_SECONDS,
     DEFAULT_RETRY_AFTER_SECONDS,
     DRAINING,
     REQUEST_ID_HEADER,
     RequestLimiter,
+    SSE_HEARTBEAT_SECONDS,
+    SSE_MAX_STREAM_SECONDS,
+    SSE_POLL_SECONDS,
     access_logging_enabled,
     build_access_log_event,
     limits_document,
@@ -52,6 +57,7 @@ from idkmesh.service_runtime import (
     resolve_request_id,
     service_headers,
     validate_max_concurrent_requests,
+    validate_max_sse_clients,
     validate_request_timeout,
     write_access_log,
 )
@@ -552,6 +558,11 @@ def _resolve_token() -> str:
     return configured
 
 
+_EVENT_STREAM_PATH = f"/api/{API_VERSION}/events/stream"
+_EVENT_FILTERS = ("project_id", "run_id", "work_unit_id", "event_type")
+_EVENT_BATCH = 200
+
+
 def _handler(
     initial_text: str | None,
     token: str,
@@ -597,13 +608,15 @@ def _handler(
             self,
             status: int,
             content_type: str,
-            length: int,
+            length: int | None,
             *,
             extra_headers: dict[str, str] | None = None,
         ) -> None:
+            # ``length`` is None only for a close-delimited stream (SSE).
             self.send_response(status)
             self.send_header("Content-Type", content_type)
-            self.send_header("Content-Length", str(length))
+            if length is not None:
+                self.send_header("Content-Length", str(length))
             headers = service_headers(
                 service=SERVICE_NAME,
                 service_version=__version__,
@@ -629,7 +642,7 @@ def _handler(
                             method=self.command,
                             path=self._access_path(),
                             status=status,
-                            response_bytes=length,
+                            response_bytes=length or 0,
                             duration_ms=(
                                 time.monotonic() - started
                             ) * 1000.0,
@@ -709,6 +722,10 @@ def _handler(
                 JSON_MEDIA_TYPE,
                 V1_MEDIA_TYPE,
             }
+            if self._access_path() == _EVENT_STREAM_PATH:
+                # ADR-0023: the SSE endpoint is the one place a client
+                # legitimately asks for text/event-stream.
+                accepted |= {"text/*", "text/event-stream"}
             for part in accept.split(","):
                 media_type = part.split(";", 1)[0].strip().lower()
                 if media_type in accepted:
@@ -738,6 +755,8 @@ def _handler(
                 and parsed.path not in (
                     f"/api/{API_VERSION}/runs",
                     f"/api/{API_VERSION}/work-units",
+                    f"/api/{API_VERSION}/events",
+                    _EVENT_STREAM_PATH,
                 )
             ):
                 self._send_json(
@@ -1334,7 +1353,16 @@ def _handler(
                 extra_headers={"Allow": allow},
             )
 
-        def _reject_unavailable(self, verdict: str) -> None:
+        def _reject_unavailable(
+            self,
+            verdict: str,
+            *,
+            overloaded_code: str = "overloaded",
+            overloaded_message: str = (
+                "the service is at its concurrent request limit; retry "
+                "shortly"
+            ),
+        ) -> None:
             """503 + Retry-After for an overloaded or draining server.
 
             Does no application work and closes the connection, so a rejected
@@ -1345,19 +1373,225 @@ def _handler(
             self._send_json(
                 503,
                 error_document(
-                    "shutting_down" if draining else "overloaded",
+                    "shutting_down" if draining else overloaded_code,
                     (
                         "the service is draining and not accepting new "
                         "requests"
                         if draining
-                        else "the service is at its concurrent request "
-                        "limit; retry shortly"
+                        else overloaded_message
                     ),
                     details={"retry_after_seconds": DEFAULT_RETRY_AFTER_SECONDS},
                 ),
                 head_only=self.command == "HEAD",
                 extra_headers={"Retry-After": str(DEFAULT_RETRY_AFTER_SECONDS)},
             )
+
+        def _event_service(self):
+            """The run-store service, or None after sending the 503."""
+            if product_spine_store_path is None:
+                self._send_json(
+                    503,
+                    error_document(
+                        "product_spine_store_not_configured",
+                        "this Control Tower instance was started without a "
+                        "Product Spine store; events cannot be read",
+                    ),
+                    head_only=self.command == "HEAD",
+                )
+                return None
+            from idkmesh.connector_store import LocalMetadataStore
+            from idkmesh.product_spine_run_store import ProductSpineRunStore
+
+            return ProductSpineRunStore(
+                LocalMetadataStore(product_spine_store_path)
+            )
+
+        def _event_list_response(self, query: str, *, head_only: bool) -> None:
+            parsed_query = self._parse_list_query(
+                query,
+                {"limit", "cursor", *_EVENT_FILTERS},
+                head_only=head_only,
+            )
+            if parsed_query is None:
+                return
+            params, limit = parsed_query
+            service = self._event_service()
+            if service is None:
+                return
+
+            from idkmesh.connector_store import LocalStoreError
+            from idkmesh.product_spine_run_store import (
+                ProductSpineRunStoreError,
+            )
+
+            try:
+                items, next_cursor = service.list_events(
+                    limit=limit,
+                    cursor=params.get("cursor"),
+                    **{name: params.get(name) for name in _EVENT_FILTERS},
+                )
+            except ProductSpineRunStoreError as exc:
+                code = getattr(exc, "code", "run_control_error")
+                self._send_json(
+                    400,
+                    error_document(code, str(exc)),
+                    head_only=head_only,
+                )
+                return
+            except (LocalStoreError, OSError, ValueError) as exc:
+                self._send_json(
+                    500,
+                    error_document("store_error", str(exc)),
+                    head_only=head_only,
+                )
+                return
+
+            self._send_json(
+                200,
+                {
+                    "kind": "idkmesh-list",
+                    "schema_version": API_SCHEMA_VERSION,
+                    "items": items,
+                    "page": {"next_cursor": next_cursor, "limit": limit},
+                },
+                head_only=head_only,
+            )
+
+        @staticmethod
+        def _sse_frame(event: dict[str, Any]) -> bytes:
+            data = json.dumps(
+                event, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+            )
+            return (
+                f"id: {event['sequence']}\n"
+                f"event: {event['event_type']}\n"
+                f"data: {data}\n\n"
+            ).encode("utf-8")
+
+        def _sse_write(self, payload: bytes) -> None:
+            self.wfile.write(payload)
+            self.wfile.flush()
+
+        def _event_stream_response(self, query: str) -> None:
+            """Read-only, bounded, resumable SSE stream (ADR-0023)."""
+            parsed_query = self._parse_list_query(
+                query, set(_EVENT_FILTERS), head_only=False
+            )
+            if parsed_query is None:
+                return
+            params, _limit = parsed_query
+
+            raw_id = self.headers.get("Last-Event-ID")
+            resume_from: int | None = None
+            if raw_id is not None:
+                text = raw_id.strip()
+                if not (text.isascii() and text.isdecimal() and len(text) <= 18):
+                    self._send_json(
+                        400,
+                        error_document(
+                            "invalid_last_event_id",
+                            "Last-Event-ID must be a non-negative integer "
+                            "event sequence",
+                        ),
+                    )
+                    return
+                resume_from = int(text)
+
+            service = self._event_service()
+            if service is None:
+                return
+
+            from idkmesh.connector_store import LocalStoreError
+            from idkmesh.product_spine_run_store import (
+                ProductSpineRunStoreError,
+            )
+
+            filters = {name: params.get(name) for name in _EVENT_FILTERS}
+            try:
+                # Validates the filters (invalid_event_type) before any
+                # stream byte is sent, and fixes the live-tail position.
+                service.list_events(limit=1, **filters)
+                latest = service.latest_event_sequence()
+            except ProductSpineRunStoreError as exc:
+                code = getattr(exc, "code", "run_control_error")
+                self._send_json(400, error_document(code, str(exc)))
+                return
+            except (LocalStoreError, OSError, ValueError) as exc:
+                self._send_json(500, error_document("store_error", str(exc)))
+                return
+            if resume_from is not None and resume_from > latest:
+                # A client cannot have seen an event this stream has not
+                # committed. Accepting it would silently skip every event
+                # between the stream head and that id (ADR-0023 decision 8).
+                self._send_json(
+                    400,
+                    error_document(
+                        "invalid_last_event_id",
+                        "Last-Event-ID is beyond the newest event of this "
+                        "stream; it did not come from this store",
+                        details={"latest_sequence": latest},
+                    ),
+                )
+                return
+            last_seq = resume_from if resume_from is not None else latest
+
+            limits = self.server.limits
+            heartbeat = float(limits["sse_heartbeat_seconds"])
+            max_stream = float(limits["sse_max_stream_seconds"])
+            poll = float(self.server.sse_poll_seconds)
+            # The request timeout guards a stalled request; an idle healthy
+            # stream is allowed to outlive it up to the heartbeat interval.
+            self.connection.settimeout(max(self.timeout or 0.0, heartbeat + 5.0))
+            self.close_connection = True
+            self._headers(
+                200,
+                "text/event-stream; charset=utf-8",
+                None,
+                extra_headers={
+                    "Connection": "close",
+                    "X-Accel-Buffering": "no",
+                },
+            )
+
+            limiter = self.server.sse_limiter
+            stop = self.server.stream_stop
+            started = last_write = time.monotonic()
+            try:
+                self._sse_write(b"retry: 3000\n\n")
+                while True:
+                    if limiter.draining or stop.is_set():
+                        self._sse_write(b": stream-ended reason=shutdown\n\n")
+                        return
+                    if time.monotonic() - started >= max_stream:
+                        self._sse_write(
+                            b": stream-ended reason=max-duration\n\n"
+                        )
+                        return
+                    try:
+                        batch = service.events_after(
+                            last_seq, limit=_EVENT_BATCH, **filters
+                        )
+                    except (
+                        ProductSpineRunStoreError,
+                        LocalStoreError,
+                        OSError,
+                        ValueError,
+                    ):
+                        self._sse_write(b": stream-ended reason=store-error\n\n")
+                        return
+                    for event in batch:
+                        self._sse_write(self._sse_frame(event))
+                        last_seq = event["sequence"]
+                        last_write = time.monotonic()
+                    if len(batch) >= _EVENT_BATCH:
+                        continue
+                    if time.monotonic() - last_write >= heartbeat:
+                        self._sse_write(b": keepalive\n\n")
+                        last_write = time.monotonic()
+                    stop.wait(poll)
+            except (BrokenPipeError, ConnectionResetError, TimeoutError, OSError):
+                # The client went away or stalled; nothing to report.
+                return
 
         def _handle_get(self, *, head_only: bool) -> None:
             if not self._host_allowed():
@@ -1424,6 +1658,15 @@ def _handler(
                 return
             if path == f"/api/{API_VERSION}/work-units":
                 self._work_unit_list_response(query, head_only=head_only)
+                return
+            if path == f"/api/{API_VERSION}/events":
+                self._event_list_response(query, head_only=head_only)
+                return
+            if path == _EVENT_STREAM_PATH:
+                if head_only:
+                    self._method_not_allowed("GET", head_only=True)
+                    return
+                self._event_stream_response(query)
                 return
             work_unit_id = self._work_unit_id_from_path(path)
             if work_unit_id is not None:
@@ -1500,8 +1743,12 @@ def _handler(
                 f"/api/{API_VERSION}/openapi.json",
                 f"/api/{API_VERSION}/runs",
                 f"/api/{API_VERSION}/work-units",
+                f"/api/{API_VERSION}/events",
             ):
                 self._method_not_allowed("GET, HEAD")
+                return
+            if path == _EVENT_STREAM_PATH:
+                self._method_not_allowed("GET")
                 return
             if (
                 self._run_id_from_path(path) is not None
@@ -1548,6 +1795,9 @@ def _handler(
             if path == f"/api/{API_VERSION}/run-evidence/inspect":
                 self._method_not_allowed("POST")
                 return
+            if path == _EVENT_STREAM_PATH:
+                self._method_not_allowed("GET")
+                return
             if path in (
                 "/",
                 "/index.html",
@@ -1556,6 +1806,7 @@ def _handler(
                 f"/api/{API_VERSION}/openapi.json",
                 f"/api/{API_VERSION}/runs",
                 f"/api/{API_VERSION}/work-units",
+                f"/api/{API_VERSION}/events",
             ) or (
                 self._run_id_from_path(path) is not None
                 or self._work_unit_id_from_path(path) is not None
@@ -1584,10 +1835,23 @@ def _handler(
         def wrapper(self):
             if self._access_path() == "/healthz":
                 return method(self)
-            limiter = self.server.limiter
+            if self._access_path() == _EVENT_STREAM_PATH:
+                # ADR-0023: streams hold a connection for minutes, so they
+                # use their own cap and never starve the request cap.
+                limiter = self.server.sse_limiter
+                reject = {
+                    "overloaded_code": "too_many_streams",
+                    "overloaded_message": (
+                        "the service is at its open event stream limit; "
+                        "retry shortly"
+                    ),
+                }
+            else:
+                limiter = self.server.limiter
+                reject = {}
             verdict = limiter.admit()
             if verdict != ADMITTED:
-                self._reject_unavailable(verdict)
+                self._reject_unavailable(verdict, **reject)
                 return None
             try:
                 return method(self)
@@ -1613,17 +1877,27 @@ class ControlTowerServer(ThreadingHTTPServer):
 
     ui_token: str
     limiter: RequestLimiter
+    sse_limiter: RequestLimiter
+    stream_stop: threading.Event
+    sse_poll_seconds: float
     limits: dict[str, Any]
 
     def drain(self, timeout: float = DEFAULT_DRAIN_TIMEOUT_SECONDS) -> bool:
         """Stop admitting requests and wait for in-flight ones to finish.
 
-        Returns False if ``timeout`` elapsed with requests still running.
-        Every endpoint is read-only, so abandoning one cannot leave a
-        partially committed mutation (ADR-0022).
+        Open event streams are told to end (``reason=shutdown``) and count as
+        in-flight until they do. Returns False if ``timeout`` elapsed with
+        requests or streams still running. Every endpoint is read-only, so
+        abandoning one cannot leave a partially committed mutation
+        (ADR-0022, ADR-0023).
         """
+        deadline = time.monotonic() + timeout
         self.limiter.begin_drain()
-        return self.limiter.wait_idle(timeout)
+        self.sse_limiter.begin_drain()
+        self.stream_stop.set()
+        idle = self.limiter.wait_idle(timeout)
+        remaining = max(0.0, deadline - time.monotonic())
+        return self.sse_limiter.wait_idle(remaining) and idle
 
 
 def create_server(
@@ -1633,6 +1907,7 @@ def create_server(
     product_spine_store_path: str | None = None,
     request_timeout: float = DEFAULT_REQUEST_TIMEOUT_SECONDS,
     max_concurrent_requests: int = DEFAULT_MAX_CONCURRENT_REQUESTS,
+    max_sse_clients: int = DEFAULT_MAX_SSE_CLIENTS,
 ) -> ControlTowerServer:
     """Create, but do not start, the loopback-only Control Tower server.
 
@@ -1646,6 +1921,7 @@ def create_server(
     max_concurrent_requests = validate_max_concurrent_requests(
         max_concurrent_requests
     )
+    max_sse_clients = validate_max_sse_clients(max_sse_clients)
     token = _resolve_token()
     server = ControlTowerServer(
         (HOST, port),
@@ -1658,10 +1934,16 @@ def create_server(
     )
     server.ui_token = token
     server.limiter = RequestLimiter(max_concurrent_requests)
+    server.sse_limiter = RequestLimiter(max_sse_clients)
+    server.stream_stop = threading.Event()
+    server.sse_poll_seconds = SSE_POLL_SECONDS
     server.limits = limits_document(
         request_timeout_seconds=request_timeout,
         max_concurrent_requests=max_concurrent_requests,
         max_request_body_bytes=MAX_BODY_BYTES,
+        max_sse_clients=max_sse_clients,
+        sse_heartbeat_seconds=SSE_HEARTBEAT_SECONDS,
+        sse_max_stream_seconds=SSE_MAX_STREAM_SECONDS,
     )
     return server
 
@@ -1674,6 +1956,7 @@ def serve_control_tower(
     product_spine_store_path: str | None = None,
     request_timeout: float = DEFAULT_REQUEST_TIMEOUT_SECONDS,
     max_concurrent_requests: int = DEFAULT_MAX_CONCURRENT_REQUESTS,
+    max_sse_clients: int = DEFAULT_MAX_SSE_CLIENTS,
 ) -> None:
     """Serve the local Control Tower until interrupted, then drain."""
     server = create_server(
@@ -1682,6 +1965,7 @@ def serve_control_tower(
         product_spine_store_path=product_spine_store_path,
         request_timeout=request_timeout,
         max_concurrent_requests=max_concurrent_requests,
+        max_sse_clients=max_sse_clients,
     )
     url = f"http://{HOST}:{server.server_port}/"
     print(f"IDKMesh Control Tower: {url}")

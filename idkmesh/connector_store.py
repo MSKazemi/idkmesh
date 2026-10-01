@@ -19,10 +19,49 @@ import re
 import sqlite3
 from typing import Any, Iterator, Mapping
 
+from idkmesh.work_unit_binding import canonical_digest
 
-SCHEMA_VERSION = 1
+
+SCHEMA_VERSION = 2
 DEFAULT_LIST_LIMIT = 50
 MAX_LIST_LIMIT = 200
+
+_EVENTS_DDL = """
+CREATE TABLE IF NOT EXISTS events (
+    sequence INTEGER PRIMARY KEY AUTOINCREMENT,
+    occurred_at TEXT NOT NULL,
+    event_type TEXT NOT NULL,
+    project_id TEXT NOT NULL,
+    work_unit_id TEXT NOT NULL,
+    run_id TEXT NOT NULL,
+    attempt_id TEXT,
+    envelope_json TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS events_by_run ON events(run_id, sequence);
+CREATE INDEX IF NOT EXISTS events_by_project ON events(project_id, sequence);
+CREATE INDEX IF NOT EXISTS events_by_work_unit ON events(work_unit_id, sequence);
+CREATE INDEX IF NOT EXISTS events_by_type ON events(event_type, sequence);
+CREATE TRIGGER IF NOT EXISTS events_no_update
+BEFORE UPDATE ON events
+BEGIN SELECT RAISE(ABORT, 'events are append-only'); END;
+CREATE TRIGGER IF NOT EXISTS events_no_delete
+BEFORE DELETE ON events
+BEGIN SELECT RAISE(ABORT, 'events are append-only'); END;
+"""
+
+# ADR-0023: the envelope fields a producer supplies; the store adds the
+# sequence, the derived event_id, schema_version, kind and payload_digest.
+_EVENT_STRING_FIELDS = (
+    "occurred_at", "event_type", "authority_class",
+    "project_id", "work_unit_id", "run_id",
+)
+_EVENT_FIELDS = frozenset(
+    _EVENT_STRING_FIELDS
+    + ("principal", "attempt_id", "source_revision",
+       "evidence_reference", "payload")
+)
+EVENT_SCHEMA_VERSION = "0.1"
+EVENT_KIND = "idkmesh-event"
 
 _ENV_SECRET_REF = re.compile(r"env:[A-Za-z_][A-Za-z0-9_]{0,127}\Z")
 
@@ -220,6 +259,12 @@ class LocalMetadataStore:
                     );
                     """
                 )
+                conn.executescript(_EVENTS_DDL)
+                conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
+            elif current < SCHEMA_VERSION:
+                # v1 -> v2 (ADR-0023): additive, so an existing store keeps
+                # every row and only gains the append-only events table.
+                conn.executescript(_EVENTS_DDL)
                 conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
 
     @staticmethod
@@ -393,12 +438,17 @@ class LocalMetadataStore:
         state: str,
         metadata: Mapping[str, Any],
         created_at: str,
+        event: Mapping[str, Any] | None = None,
     ) -> tuple[RunRecord, bool]:
         """Atomically admit a run.
 
         Returns (record, created). The same idempotency key with the same request
         digest returns the already-admitted run. The same key with a different
         digest fails closed.
+
+        ``event``, when given, is appended in the same transaction as the new
+        run row (ADR-0023): both commit or neither does. An idempotent replay
+        returns the existing run and appends nothing.
         """
 
         for value, field in (
@@ -410,6 +460,7 @@ class LocalMetadataStore:
         ):
             self._require_text(value, field)
         payload = _dump_metadata(metadata)
+        normalised_event = self._normalise_event(event)
 
         conn = _connect(self.path)
         try:
@@ -461,6 +512,8 @@ class LocalMetadataStore:
             record = self._get_run_with_conn(conn, run_id)
             if record is None:
                 raise LocalStoreError("new run could not be re-read")
+            if normalised_event is not None:
+                self._append_event(conn, normalised_event)
             conn.commit()
             return record, True
         except sqlite3.IntegrityError as exc:
@@ -761,11 +814,13 @@ class LocalMetadataStore:
         state: str,
         metadata: Mapping[str, Any],
         updated_at: str,
+        event: Mapping[str, Any] | None = None,
     ) -> RunRecord:
         self._require_text(run_id, "run_id")
         self._require_text(state, "state")
         self._require_text(updated_at, "updated_at")
         payload = _dump_metadata(metadata)
+        normalised_event = self._normalise_event(event)
 
         with _session(self.path) as conn:
             cursor = conn.execute(
@@ -778,7 +833,187 @@ class LocalMetadataStore:
             )
             if cursor.rowcount != 1:
                 raise LocalStoreError(f"unknown run_id: {run_id}")
+            if normalised_event is not None:
+                self._append_event(conn, normalised_event)
             record = self._get_run_with_conn(conn, run_id)
         if record is None:
             raise LocalStoreError("updated run could not be re-read")
         return record
+
+    # ---- ADR-0023: canonical append-only event source ----------------------
+
+    @classmethod
+    def _normalise_event(
+        cls, event: Mapping[str, Any] | None
+    ) -> dict[str, Any] | None:
+        """Validate a producer-supplied event; ``None`` means "emit nothing".
+
+        Raises ValueError for a malformed event so the caller's transaction
+        rolls back before any row is written. ``occurred_at`` must be supplied:
+        the store never reads a clock to invent a timestamp.
+        """
+        if event is None:
+            return None
+        if not isinstance(event, Mapping):
+            raise ValueError("event must be a mapping")
+        unknown = set(event) - _EVENT_FIELDS
+        missing = _EVENT_FIELDS - set(event)
+        if unknown or missing:
+            raise ValueError(
+                "event fields mismatch: "
+                f"missing={sorted(missing)} unknown={sorted(unknown)}"
+            )
+        result: dict[str, Any] = {}
+        for field in _EVENT_STRING_FIELDS:
+            result[field] = cls._require_text(event[field], f"event.{field}")
+        principal = event["principal"]
+        if (
+            not isinstance(principal, Mapping)
+            or set(principal) != {"type", "id"}
+        ):
+            raise ValueError("event.principal must be {type, id}")
+        result["principal"] = {
+            "type": cls._require_text(principal["type"], "event.principal.type"),
+            "id": cls._require_text(principal["id"], "event.principal.id"),
+        }
+        for field in ("attempt_id", "source_revision"):
+            value = event[field]
+            result[field] = (
+                None if value is None else cls._require_text(value, f"event.{field}")
+            )
+        reference = event["evidence_reference"]
+        if reference is None:
+            result["evidence_reference"] = None
+        else:
+            if not isinstance(reference, Mapping) or set(reference) != {
+                "kind", "digest",
+            }:
+                raise ValueError("event.evidence_reference must be {kind, digest}")
+            result["evidence_reference"] = {
+                "kind": cls._require_text(
+                    reference["kind"], "event.evidence_reference.kind"
+                ),
+                "digest": cls._require_text(
+                    reference["digest"], "event.evidence_reference.digest"
+                ),
+            }
+        payload = event["payload"]
+        if not isinstance(payload, Mapping):
+            raise ValueError("event.payload must be an object")
+        # Reuses the store's secret-free, JSON-safe validation.
+        result["payload"] = json.loads(_dump_metadata(payload))
+        return result
+
+    @staticmethod
+    def _append_event(conn: sqlite3.Connection, event: dict[str, Any]) -> int:
+        envelope = dict(event)
+        envelope["payload_digest"] = canonical_digest(event["payload"])
+        cursor = conn.execute(
+            """
+            INSERT INTO events(
+                occurred_at, event_type, project_id, work_unit_id, run_id,
+                attempt_id, envelope_json
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                event["occurred_at"],
+                event["event_type"],
+                event["project_id"],
+                event["work_unit_id"],
+                event["run_id"],
+                event["attempt_id"],
+                json.dumps(
+                    envelope, sort_keys=True, separators=(",", ":"),
+                    ensure_ascii=False,
+                ),
+            ),
+        )
+        return int(cursor.lastrowid)
+
+    @staticmethod
+    def event_id_for(sequence: int) -> str:
+        """The stable id of the event at ``sequence`` (unique in the stream)."""
+        return f"evt-{sequence:012d}"
+
+    @classmethod
+    def _event_from_row(cls, row: sqlite3.Row) -> dict[str, Any]:
+        try:
+            envelope = json.loads(row["envelope_json"])
+        except ValueError as exc:
+            raise LocalStoreError(f"stored event is not valid JSON: {exc}") from exc
+        if not isinstance(envelope, dict):
+            raise LocalStoreError("stored event is not an object")
+        sequence = int(row["sequence"])
+        return {
+            "schema_version": EVENT_SCHEMA_VERSION,
+            "kind": EVENT_KIND,
+            "event_id": cls.event_id_for(sequence),
+            "sequence": sequence,
+            **envelope,
+        }
+
+    def latest_event_sequence(self) -> int:
+        """Sequence of the newest event, or 0 when the stream is empty."""
+        with _session(self.path) as conn:
+            row = conn.execute(
+                "SELECT COALESCE(MAX(sequence), 0) AS latest FROM events"
+            ).fetchone()
+        return int(row["latest"])
+
+    def list_events(
+        self,
+        *,
+        limit: int = DEFAULT_LIST_LIMIT,
+        after_sequence: int = 0,
+        project_id: str | None = None,
+        run_id: str | None = None,
+        work_unit_id: str | None = None,
+        event_type: str | None = None,
+    ) -> tuple[list[dict[str, Any]], bool]:
+        """Events with ``sequence > after_sequence``, ascending; ``(page, has_more)``.
+
+        Keyset-paginated on the sequence, so a reader that has seen N has seen
+        every committed event up to N (SQLite serialises writers). Filters are
+        exact matches on the indexed columns.
+        """
+        if (
+            isinstance(limit, bool)
+            or not isinstance(limit, int)
+            or not (1 <= limit <= MAX_LIST_LIMIT)
+        ):
+            raise ValueError(
+                f"limit must be an integer between 1 and {MAX_LIST_LIMIT}"
+            )
+        if (
+            isinstance(after_sequence, bool)
+            or not isinstance(after_sequence, int)
+            or after_sequence < 0
+        ):
+            raise ValueError("after_sequence must be a non-negative integer")
+        clauses = ["sequence > ?"]
+        params: list[Any] = [after_sequence]
+        for column, value in (
+            ("project_id", project_id),
+            ("run_id", run_id),
+            ("work_unit_id", work_unit_id),
+            ("event_type", event_type),
+        ):
+            if value is not None:
+                self._require_text(value, column)
+                clauses.append(f"{column} = ?")
+                params.append(value)
+        params.append(limit + 1)
+        with _session(self.path) as conn:
+            rows = conn.execute(
+                f"""
+                SELECT sequence, envelope_json
+                FROM events
+                WHERE {' AND '.join(clauses)}
+                ORDER BY sequence ASC
+                LIMIT ?
+                """,
+                params,
+            ).fetchall()
+        has_more = len(rows) > limit
+        return [self._event_from_row(row) for row in rows[:limit]], has_more

@@ -23,8 +23,10 @@ meaning of an existing version.
   loopback-only read API and presentation contract for Human Control Tower run
   evidence inspection, plus read-only Product Spine run, attempt, and derived
   WorkUnit and project views ([ADR-0021](../decisions/ADR-0021-derived-work-unit-and-project-read-models.md)),
-  and the bounded service limits the development server enforces
-  ([ADR-0022](../decisions/ADR-0022-control-tower-bounded-service-limits.md)).
+  the bounded service limits the development server enforces
+  ([ADR-0022](../decisions/ADR-0022-control-tower-bounded-service-limits.md)),
+  and the canonical event history and resumable SSE stream
+  ([ADR-0023](../decisions/ADR-0023-canonical-append-only-event-source.md)).
 - [HTTP Service Runtime Baseline v0.1](HTTP_SERVICE_RUNTIME_V0_1.md) —
   dependency-free request correlation, liveness/readiness, service metadata,
   payload-free structured access logging, and reusable bounded-limit

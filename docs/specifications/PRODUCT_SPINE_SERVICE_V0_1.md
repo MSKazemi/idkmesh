@@ -599,3 +599,51 @@ the project; this does not claim the project is unknown elsewhere), and
 The summary computes no health, status, or score rollup, selects nothing, and
 carries no authority: it performs no dispatch, verification, acceptance,
 GitHub mutation, Git push, or merge. There is no project list.
+
+## Canonical event source
+
+Issue #741 and [ADR-0023](../decisions/ADR-0023-canonical-append-only-event-source.md)
+add a durable, ordered event record beside the run record.
+
+```text
+idkmesh events list --store PATH [--limit N] [--cursor TOKEN]
+                    [--project-id ID] [--run-id ID] [--work-unit-id ID]
+                    [--event-type TYPE] [--json]
+```
+
+- **Emission.** `ProductSpineRunStore.create` emits `run.created` and
+  `ProductSpineRunStore.cancel` emits `run.cancelled`. The event row is
+  inserted in the same SQLite transaction as the run change (the store's
+  `admit_run` / `update_run` take an optional `event`), so both commit or
+  neither does. An idempotent replay of `create` emits nothing. `occurred_at`
+  is the validated timestamp the caller already supplied; the store never reads
+  a clock to invent one.
+- **Read.** `ProductSpineRunStore.list_events(...)` returns
+  `(events, next_cursor)` ordered by `sequence`, with an opaque listing-scoped
+  cursor and the exact-match filters above; `events_after(sequence, ...)`
+  returns the events strictly after a sequence (the resume primitive the SSE
+  stream uses); `latest_event_sequence()` returns the current tail. These are
+  what `GET /api/v1/events` and `GET /api/v1/events/stream` serve, so the CLI
+  and the HTTP API cannot disagree.
+- **Envelope.** `idkmesh-event` v0.1 (`schemas/idkmesh-event-v0.1.schema.json`):
+  `event_id`, `sequence`, `occurred_at`, `event_type`, `principal`,
+  `authority_class`, `project_id`, `work_unit_id`, `run_id`, `attempt_id`,
+  `source_revision`, `evidence_reference`, `payload`, `payload_digest`.
+  v0.1 emits only `authority_class: local_control` with the principal
+  `unauthenticated_local` / `local-cli`.
+- **Coverage.** Only Product Spine run create and cancel emit events. The
+  offline idempotent spine, GitHub explicit dispatch and GitHub status update
+  also write the shared `runs` table but emit none yet, so the event history
+  makes no completeness claim over every run writer.
+- **Retention.** Every event is kept; nothing prunes the table, and SQLite
+  triggers abort any `UPDATE` or `DELETE` of an event row. `event_id`
+  (`evt-` plus the zero-padded sequence) is derived on read, not stored.
+- **Store version.** `LocalMetadataStore` schema version is 2; a version 1 store
+  gains the `events` table in place, and code that predates version 2 refuses a
+  version 2 store.
+
+Failure codes: `invalid_limit`, `invalid_cursor`, `invalid_event_type`, and
+`store_error`.
+
+Events carry no authority: reading them performs no dispatch, verification,
+acceptance, GitHub mutation, Git push, or merge.

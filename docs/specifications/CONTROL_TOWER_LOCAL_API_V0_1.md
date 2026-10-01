@@ -768,6 +768,171 @@ Supported methods:
 GET, HEAD
 ```
 
+### `GET /api/v1/events`
+
+Authenticated, read-only history of the **canonical event source**
+([ADR-0023](../decisions/ADR-0023-canonical-append-only-event-source.md),
+issue #741), through the same service as `idkmesh events list`. Events live in
+an append-only `events` table of the Product Spine store and are written in the
+same SQLite transaction as the run change they record, so a committed state
+change and its event either both exist or neither does.
+
+Coverage is stated, not implied: in v0.1 only Product Spine `run create` and
+`run cancel` emit events (`run.created`, `run.cancelled`). The offline
+idempotent spine and the GitHub dispatch/status writers emit none yet, so this
+endpoint is canonical for the events that exist and makes no claim of
+completeness over every writer to the shared `runs` table. Nothing prunes the
+table.
+
+Response: the `idkmesh-list-v0.1` envelope, items ordered by `sequence`
+ascending, each item an `idkmesh-event` envelope. Query parameters (anything
+else, or a duplicate, is `400 unexpected_query_parameters`):
+
+| Parameter | Meaning |
+| --- | --- |
+| `limit` | page size, 1-200 (default 50); otherwise `400 invalid_limit` |
+| `cursor` | opaque token from the previous page's `page.next_cursor`; a token this listing did not issue is `400 invalid_cursor` |
+| `project_id`, `run_id`, `work_unit_id` | exact match |
+| `event_type` | exact match, one of `run.created`, `run.cancelled`; any other value is `400 invalid_event_type` rather than silently matching nothing |
+
+Scoped run and work-unit queries are these filters. No new run sub-resource
+suffix is reserved, so [ADR-0019](../decisions/ADR-0019-run-subresource-suffix-reservation.md)
+is unchanged.
+
+Representative event:
+
+```json
+{
+  "schema_version": "0.1",
+  "kind": "idkmesh-event",
+  "event_id": "evt-000000000002",
+  "sequence": 2,
+  "occurred_at": "2026-10-02T09:15:00Z",
+  "event_type": "run.cancelled",
+  "principal": {"type": "unauthenticated_local", "id": "local-cli"},
+  "authority_class": "local_control",
+  "project_id": "project.alpha",
+  "work_unit_id": "work/a",
+  "run_id": "run/alpha-1",
+  "attempt_id": null,
+  "source_revision": "0123456789abcdef0123456789abcdef01234567",
+  "evidence_reference": null,
+  "payload": {"previous_state": "proposed", "state": "cancelled"},
+  "payload_digest": "sha256:<64 hex of the canonical payload JSON>"
+}
+```
+
+Field rules:
+
+- `sequence` is the stream's monotonic position (SQLite `AUTOINCREMENT`).
+  Because SQLite serialises writers, commit order equals sequence order: a
+  reader that has seen sequence N has seen every committed event up to N.
+- `event_id` is `evt-` plus the 12-digit zero-padded sequence and is unique
+  within the stream (the store file).
+- `occurred_at` is supplied by the producer, the validated timestamp the caller
+  passed for the state change. The store never reads a clock to invent one.
+- `principal` is `unauthenticated_local` / `local-cli` because the CLI has no
+  authentication; the field exists so an enterprise profile can supply a real
+  principal without a schema change.
+- `authority_class` is one of `local_control`, `worker_observation`,
+  `verifier_recommendation`, `human_decision`. v0.1 emits only `local_control`;
+  the others are reserved so a recommendation is never mistaken for a decision.
+- `attempt_id`, `source_revision` and `evidence_reference` are nullable.
+  `payload_digest` is the `sha256:` digest of the canonical payload.
+
+An idempotent replay of `run create` emits nothing, so a duplicate emission
+cannot occur at the source. The `events` table is append-only by construction:
+SQLite triggers abort any `UPDATE` or `DELETE` of an event row, and `event_id`
+is derived from `sequence` on read rather than stored, so it cannot drift from
+it.
+
+Without `--product-spine-store` the endpoint returns
+`503 product_spine_store_not_configured`. Any write method answers `405` with
+`Allow: GET, HEAD`. Frozen by `schemas/idkmesh-event-v0.1.schema.json`; the
+list envelope is `schemas/idkmesh-list-v0.1.schema.json`.
+
+Supported methods:
+
+```text
+GET, HEAD
+```
+
+### `GET /api/v1/events/stream`
+
+Authenticated, read-only Server-Sent Events stream of the same events. It is a
+`GET` only; WebSocket is deferred because nothing needs a bidirectional
+channel.
+
+Each message:
+
+```text
+id: 2
+event: run.cancelled
+data: {"schema_version":"0.1","kind":"idkmesh-event", ... }
+
+```
+
+- `id:` is the event `sequence`; `event:` is the `event_type`; `data:` is the
+  compact JSON envelope shown above.
+- **Resume.** `Last-Event-ID: N` resumes with every event whose sequence is
+  greater than N, then follows live events. A value that is not a non-negative
+  integer (ASCII digits, at most 18), or that is **beyond the newest event of
+  this stream**, is `400 invalid_last_event_id`. The second case carries
+  `error.details.latest_sequence`: a client cannot have seen an event this
+  stream has not committed, and accepting such an id would silently skip every
+  event between the stream head and it (for example an id remembered from a
+  different store).
+- **Browsers.** The API requires the `X-IDKMesh-UI-Token` header, which the
+  browser `EventSource` API cannot send. A browser client must use `fetch` with
+  a streaming reader and send `Last-Event-ID` itself; `curl -N` and any client
+  that can set headers work as is.
+- **No header.** The stream starts at the live tail. History is read with
+  `GET /api/v1/events`, so a first connection never silently depends on
+  history it was not asked for.
+- **Filters.** `project_id`, `run_id`, `work_unit_id` and `event_type`, with the
+  same meaning and errors as the history endpoint. `cursor` and `limit` are not
+  accepted on the stream.
+- **Delivery is at-least-once.** A client dedupes on `event_id`.
+- **Framing.** The response is `text/event-stream; charset=utf-8` with no
+  `Content-Length`, `Connection: close` and `X-Accel-Buffering: no`, and may be
+  requested with `Accept: text/event-stream`. The first bytes are `retry: 3000`
+  (a 3 s client reconnect hint). When the server ends a stream it first writes
+  one comment line, `: stream-ended reason=max-duration`,
+  `reason=shutdown` (drain) or `reason=store-error`, then closes; a client
+  treats all three as "reconnect with `Last-Event-ID`".
+- **Bounds** (published in `operations.limits`, see Service limits): at most
+  `max_sse_clients` concurrent streams (default 8, counted by their own
+  limiter; beyond it `503 too_many_streams` with `Retry-After`); a heartbeat
+  comment line (`: keepalive`) every 15 s; a maximum stream lifetime of 300 s
+  after which the server ends the stream and the client reconnects with
+  `Last-Event-ID`; a poll interval of 0.5 s. A stream ends promptly when the
+  server drains.
+- A stream does not occupy a slot of the general concurrent-request cap. The
+  request timeout still guards a stalled request; once the stream is open the
+  connection may stay idle for the heartbeat interval plus a small margin.
+- Only `GET` is supported. `HEAD` answers `405` with `Allow: GET` (an open
+  stream has no meaningful headers-only form), as does every write method.
+
+Example:
+
+```bash
+curl -N \
+  -H "X-IDKMesh-UI-Token: $IDKMESH_CONTROL_TOWER_TOKEN" \
+  -H "Accept: text/event-stream" \
+  -H "Last-Event-ID: 41" \
+  "http://127.0.0.1:8770/api/v1/events/stream?run_id=run/alpha-1"
+```
+
+Retention: v0.1 keeps every event. If a pruner is ever added, a cursor or
+`Last-Event-ID` below the retained floor must answer `410 cursor_expired`,
+never a silent gap. This is a declared contract, not a built feature.
+
+Supported methods:
+
+```text
+GET
+```
+
 ## Snapshot semantics
 
 The snapshot is a deterministic projection, not a decision object.
@@ -944,6 +1109,11 @@ The derived project summary and its single-read response
 - `schemas/idkmesh-project-resource-v0.1.schema.json`
 - `schemas/idkmesh-control-tower-project-response-v0.1.schema.json`
 
+The canonical event envelope returned by `GET /api/v1/events` (as list items)
+and carried in the `data:` field of `GET /api/v1/events/stream` is frozen by:
+
+- `schemas/idkmesh-event-v0.1.schema.json`
+
 ## Error envelope
 
 All API JSON errors use the shape frozen by
@@ -992,20 +1162,29 @@ Stable v0.1 codes include:
   names the project);
 - `product_spine_store_not_configured` (`GET /api/v1/runs/{run_id}`,
   `GET /api/v1/runs`, `GET /api/v1/work-units`,
-  `GET /api/v1/work-units/{work_unit_id}`, and
-  `GET /api/v1/projects/{project_id}`, no `--product-spine-store` given
-  to this server instance);
-- `invalid_limit` (`GET /api/v1/runs` and `GET /api/v1/work-units`, `limit`
-  outside 1-200);
-- `invalid_cursor` (`GET /api/v1/runs` and `GET /api/v1/work-units`,
-  `cursor` this service did not itself issue for that listing);
+  `GET /api/v1/work-units/{work_unit_id}`,
+  `GET /api/v1/projects/{project_id}`, `GET /api/v1/events` and
+  `GET /api/v1/events/stream`, no `--product-spine-store` given to this server
+  instance);
+- `invalid_limit` (`GET /api/v1/runs`, `GET /api/v1/work-units` and
+  `GET /api/v1/events`, `limit` outside 1-200);
+- `invalid_cursor` (`GET /api/v1/runs`, `GET /api/v1/work-units` and
+  `GET /api/v1/events`, `cursor` this service did not itself issue for that
+  listing);
 - `invalid_state` (`GET /api/v1/runs`, `state` not one of the canonical
   Product Spine lifecycle states);
 - `overloaded` (503, the concurrent-request cap is reached; carries
   `Retry-After`);
 - `shutting_down` (503, the server is draining; carries `Retry-After`);
 - `request_timeout` (408, a request body was not received within the service
-  request timeout).
+  request timeout);
+- `invalid_event_type` (`GET /api/v1/events` and `GET /api/v1/events/stream`,
+  `event_type` not one of the known event types);
+- `invalid_last_event_id` (`GET /api/v1/events/stream`, `Last-Event-ID` is not
+  a non-negative integer or is beyond the newest event of this stream;
+  the latter carries `error.details.latest_sequence`);
+- `too_many_streams` (503, `max_sse_clients` streams are already open; carries
+  `Retry-After`).
 
 ## Service limits
 
@@ -1026,6 +1205,9 @@ and each is proven by `tests/test_control_tower_limits.py`.
 | Header fields | 99 | stdlib parser, `431` at 100 (the stdlib allows 100 lines but counts the blank line ending the header block) | `ParserBoundTests` |
 | Request body | 2 MiB | `413 payload_too_large`; one global cap, only `POST /api/v1/run-evidence/inspect` reads a body | not proven by an HTTP test (only the CLI preload cap is tested) |
 | Connections | one request each | stdlib HTTP/1.0 default; no keep-alive | `ConnectionPolicyTests` |
+| SSE clients | 8 (`--max-sse-clients`, 1-64) | a separate non-blocking `RequestLimiter` for `GET /api/v1/events/stream`; beyond it `503 too_many_streams` + `Retry-After` | `EventStreamLimitTests` (`tests/test_control_tower_events.py`) |
+| SSE heartbeat | 15 s | `: keepalive` comment on an idle stream | `EventStreamLimitTests` (`tests/test_control_tower_events.py`) |
+| SSE stream lifetime | 300 s | the server ends the stream; the client resumes with `Last-Event-ID` | `EventStreamLimitTests` (`tests/test_control_tower_events.py`) |
 | Per-client rate limit | not implemented | `429` is reserved; see below | status `per_client_rate_limit` |
 
 Semantics:
@@ -1045,7 +1227,8 @@ Semantics:
 - `429` is not emitted. It signals that one client exceeded its own rate, and a
   single local token provides no per-client identity. Server-wide saturation is
   `503`. `429` is reserved for the enterprise identity profile.
-- No maximum SSE client count exists because no SSE stream exists (issue #741).
+- SSE streams are counted by their own limiter and do not occupy a general
+  request slot; drain ends them promptly and `drain()` waits for both limiters.
 - Only the Control Tower server is hardened. `gate-audit-ui` and the steward UIs
   keep their previous behavior.
 - A public or network deployment must use a reviewed production transport
@@ -1063,6 +1246,9 @@ Representative `operations.limits`:
   "max_header_line_bytes": 65536,
   "max_header_count": 99,
   "max_request_body_bytes": 2097152,
+  "max_sse_clients": 8,
+  "sse_heartbeat_seconds": 15,
+  "sse_max_stream_seconds": 300,
   "overload_status": 503,
   "connection_policy": "close_after_response",
   "per_client_rate_limit": "not_implemented"
@@ -1109,7 +1295,8 @@ Headless server that also serves the run, WorkUnit, and project read endpoints
 (`GET /api/v1/runs`, `GET /api/v1/runs/{run_id}`,
 `GET /api/v1/runs/{run_id}/attempts`, `GET /api/v1/work-units`,
 `GET /api/v1/work-units/{work_unit_id}`,
-`GET /api/v1/projects/{project_id}`) over an
+`GET /api/v1/projects/{project_id}`, `GET /api/v1/events`,
+`GET /api/v1/events/stream`) over an
 existing Product Spine store (the same file `idkmesh run create/status/cancel`
 already writes to):
 
@@ -1122,7 +1309,7 @@ Tune the service limits (both are validated before the port is bound):
 
 ```bash
 idkmesh control-tower --no-browser --port 8770 \
-  --request-timeout 5 --max-concurrent-requests 8
+  --request-timeout 5 --max-concurrent-requests 8 --max-sse-clients 4
 ```
 
 Read the same store's derived WorkUnits and project summaries from the CLI:
@@ -1131,6 +1318,15 @@ Read the same store's derived WorkUnits and project summaries from the CLI:
 idkmesh work-unit list --store path/to/product-spine.sqlite3
 idkmesh work-unit status work/a --store path/to/product-spine.sqlite3
 idkmesh project status project.alpha --store path/to/product-spine.sqlite3
+```
+
+Read the canonical event history from the CLI (the same service as
+`GET /api/v1/events`):
+
+```bash
+idkmesh events list --store path/to/product-spine.sqlite3
+idkmesh events list --store path/to/product-spine.sqlite3 \
+  --run-id run/alpha-1 --event-type run.cancelled --json
 ```
 
 Example status request:
@@ -1179,14 +1375,21 @@ identity distinction != independence
 Issue #739's only unshipped read surfaces are `GET /api/v1/runs/{run_id}/evidence`
 and `/decisions`, blocked on the immutable content store of issue #740.
 
-Issue #741 (canonical event envelope and resumable SSE) will also require a
-maximum SSE client count and an SSE timeout policy under
-[ADR-0022](../decisions/ADR-0022-control-tower-bounded-service-limits.md).
+Issue #741's canonical event source, history query and resumable SSE stream
+are shipped
+([ADR-0023](../decisions/ADR-0023-canonical-append-only-event-source.md)). Not
+yet built: events for the other writers of the shared `runs` table (offline
+spine, GitHub dispatch and status), further event types (attempts, evidence,
+verification, human decisions), an enterprise principal on `principal`, a
+retention pruner with its `410 cursor_expired` contract, and a production
+transport adapter that would replace the poll-based SSE loop.
 
 Issue #572 defines later read-first slices:
 
 1. immutable human-decision recording;
-2. real event-source timeline;
+2. a Control Tower timeline built from the canonical event source (the event
+   source itself exists; the UI still derives its timeline from the posted
+   report);
 3. verification-debt/capacity;
 4. participant/resource/authority matrix;
 5. IDKGraph repository health;
