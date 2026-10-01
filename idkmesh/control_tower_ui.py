@@ -713,14 +713,18 @@ def _handler(
 
         def _path(self) -> tuple[str, str] | None:
             parsed = urlsplit(self.path)
-            # GET /api/v1/runs (list) is the one endpoint with declared,
-            # bounded query parameters (?limit=, ?cursor=; API Conventions
-            # v0.1 sections 10-11). Every other /api/ endpoint keeps
-            # rejecting stray query parameters outright.
+            # GET /api/v1/runs and GET /api/v1/work-units (lists) are the
+            # endpoints with declared, bounded query parameters (?limit=,
+            # ?cursor=, and named filters; API Conventions v0.1 sections
+            # 10-11). Every other /api/ endpoint keeps rejecting stray query
+            # parameters outright.
             if (
                 parsed.query
                 and parsed.path.startswith("/api/")
-                and parsed.path != f"/api/{API_VERSION}/runs"
+                and parsed.path not in (
+                    f"/api/{API_VERSION}/runs",
+                    f"/api/{API_VERSION}/work-units",
+                )
             ):
                 self._send_json(
                     400,
@@ -898,20 +902,19 @@ def _handler(
             }
             self._send_json(200, payload, head_only=head_only)
 
-        def _run_list_response(self, query: str, *, head_only: bool) -> None:
-            if product_spine_store_path is None:
-                self._send_json(
-                    503,
-                    error_document(
-                        "product_spine_store_not_configured",
-                        "this Control Tower instance was started without a "
-                        "Product Spine store; runs cannot be listed",
-                    ),
-                    head_only=head_only,
-                )
-                return
+        def _parse_list_query(
+            self,
+            query: str,
+            allowed: set[str],
+            *,
+            head_only: bool,
+        ) -> tuple[dict[str, str], int] | None:
+            """Validate a list endpoint's bounded query string.
 
-            allowed = {"limit", "cursor", "state", "project_id"}
+            Sends the 400 itself and returns None on an unknown or duplicate
+            parameter or an out-of-range limit (API Conventions v0.1
+            section 11: unknown filters fail explicitly).
+            """
             params: dict[str, str] = {}
             for key, value in parse_qsl(query, keep_blank_values=True):
                 if key not in allowed or key in params:
@@ -924,7 +927,7 @@ def _handler(
                         ),
                         head_only=head_only,
                     )
-                    return
+                    return None
                 params[key] = value
 
             limit = DEFAULT_LIST_LIMIT
@@ -943,7 +946,164 @@ def _handler(
                         ),
                         head_only=head_only,
                     )
-                    return
+                    return None
+            return params, limit
+
+        def _work_unit_id_from_path(self, path: str) -> str | None:
+            """Return the id if path is /api/v1/work-units/<id>.
+
+            ADR-0021: WorkUnit ids share the run-id grammar and may contain
+            "/", so the entire remainder is one literal id. v0.1 reserves no
+            work-unit sub-resource suffix.
+            """
+            prefix = f"/api/{API_VERSION}/work-units/"
+            if not path.startswith(prefix):
+                return None
+            remainder = path[len(prefix):]
+            return remainder or None
+
+        def _work_unit_store_unavailable(self, *, head_only: bool) -> bool:
+            if product_spine_store_path is not None:
+                return False
+            self._send_json(
+                503,
+                error_document(
+                    "product_spine_store_not_configured",
+                    "this Control Tower instance was started without a "
+                    "Product Spine store; work units cannot be read",
+                ),
+                head_only=head_only,
+            )
+            return True
+
+        def _work_unit_read_response(
+            self, work_unit_id: str, *, head_only: bool
+        ) -> None:
+            if self._work_unit_store_unavailable(head_only=head_only):
+                return
+            from idkmesh.connector_store import (
+                LocalMetadataStore,
+                LocalStoreError,
+            )
+            from idkmesh.product_spine_run_store import (
+                ProductSpineRunStore,
+                ProductSpineRunStoreError,
+            )
+
+            try:
+                service = ProductSpineRunStore(
+                    LocalMetadataStore(product_spine_store_path)
+                )
+                resource = service.get_work_unit(work_unit_id)
+            except ProductSpineRunStoreError as exc:
+                code = getattr(exc, "code", "run_control_error")
+                status = 404 if code == "work_unit_not_found" else 400
+                self._send_json(
+                    status,
+                    error_document(code, str(exc)),
+                    head_only=head_only,
+                )
+                return
+            except (LocalStoreError, OSError, ValueError) as exc:
+                self._send_json(
+                    500,
+                    error_document("store_error", str(exc)),
+                    head_only=head_only,
+                )
+                return
+
+            self._send_json(
+                200,
+                {
+                    "api_version": API_VERSION,
+                    "schema_version": API_SCHEMA_VERSION,
+                    "kind": "idkmesh-control-tower-work-unit-response",
+                    "ok": True,
+                    "work_unit": resource,
+                },
+                head_only=head_only,
+            )
+
+        def _work_unit_list_response(
+            self, query: str, *, head_only: bool
+        ) -> None:
+            if self._work_unit_store_unavailable(head_only=head_only):
+                return
+            parsed_query = self._parse_list_query(
+                query,
+                {"limit", "cursor", "project_id"},
+                head_only=head_only,
+            )
+            if parsed_query is None:
+                return
+            params, limit = parsed_query
+
+            from idkmesh.connector_store import (
+                LocalMetadataStore,
+                LocalStoreError,
+            )
+            from idkmesh.product_spine_run_store import (
+                ProductSpineRunStore,
+                ProductSpineRunStoreError,
+            )
+
+            try:
+                service = ProductSpineRunStore(
+                    LocalMetadataStore(product_spine_store_path)
+                )
+                items, next_cursor = service.list_work_units(
+                    limit=limit,
+                    cursor=params.get("cursor"),
+                    project_id=params.get("project_id"),
+                )
+            except ProductSpineRunStoreError as exc:
+                code = getattr(exc, "code", "run_control_error")
+                self._send_json(
+                    400,
+                    error_document(code, str(exc)),
+                    head_only=head_only,
+                )
+                return
+            except (LocalStoreError, OSError, ValueError) as exc:
+                self._send_json(
+                    500,
+                    error_document("store_error", str(exc)),
+                    head_only=head_only,
+                )
+                return
+
+            self._send_json(
+                200,
+                {
+                    "kind": "idkmesh-list",
+                    "schema_version": API_SCHEMA_VERSION,
+                    "items": items,
+                    "page": {"next_cursor": next_cursor, "limit": limit},
+                },
+                head_only=head_only,
+            )
+
+        def _run_list_response(self, query: str, *, head_only: bool) -> None:
+            if product_spine_store_path is None:
+                self._send_json(
+                    503,
+                    error_document(
+                        "product_spine_store_not_configured",
+                        "this Control Tower instance was started without a "
+                        "Product Spine store; runs cannot be listed",
+                    ),
+                    head_only=head_only,
+                )
+                return
+
+            parsed_query = self._parse_list_query(
+                query,
+                {"limit", "cursor", "state", "project_id"},
+                head_only=head_only,
+            )
+            if parsed_query is None:
+                return
+            params, limit = parsed_query
 
             from idkmesh.connector_store import (
                 LocalMetadataStore,
@@ -1142,6 +1302,15 @@ def _handler(
             if path == f"/api/{API_VERSION}/runs":
                 self._run_list_response(query, head_only=head_only)
                 return
+            if path == f"/api/{API_VERSION}/work-units":
+                self._work_unit_list_response(query, head_only=head_only)
+                return
+            work_unit_id = self._work_unit_id_from_path(path)
+            if work_unit_id is not None:
+                self._work_unit_read_response(
+                    work_unit_id, head_only=head_only
+                )
+                return
             subresource = self._run_subresource_from_path(path)
             if subresource is not None:
                 run_id, name = subresource
@@ -1206,10 +1375,14 @@ def _handler(
                 f"/api/{API_VERSION}/status",
                 f"/api/{API_VERSION}/openapi.json",
                 f"/api/{API_VERSION}/runs",
+                f"/api/{API_VERSION}/work-units",
             ):
                 self._method_not_allowed("GET, HEAD")
                 return
-            if self._run_id_from_path(path) is not None:
+            if (
+                self._run_id_from_path(path) is not None
+                or self._work_unit_id_from_path(path) is not None
+            ):
                 self._method_not_allowed("GET, HEAD")
                 return
             if path != f"/api/{API_VERSION}/run-evidence/inspect":
@@ -1257,7 +1430,11 @@ def _handler(
                 f"/api/{API_VERSION}/status",
                 f"/api/{API_VERSION}/openapi.json",
                 f"/api/{API_VERSION}/runs",
-            ) or self._run_id_from_path(path) is not None:
+                f"/api/{API_VERSION}/work-units",
+            ) or (
+                self._run_id_from_path(path) is not None
+                or self._work_unit_id_from_path(path) is not None
+            ):
                 self._method_not_allowed("GET, HEAD")
                 return
             self._send_json(

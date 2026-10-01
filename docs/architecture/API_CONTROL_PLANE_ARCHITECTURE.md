@@ -171,14 +171,20 @@ today (not a target-state sketch):
 | -only + GET    |  | run, local-loop|  | until checked |  | built)  |
 | runs, GET runs/|  |                |  |               |  |         |
 | {id}, GET runs/|  |                |  |               |  |         |
-| {id}/attempts  |  |                |  |               |  |         |
-| (#739)         |  |                |  |               |  |         |
+| {id}/attempts, |  |                |  |               |  |         |
+| GET work-units,|  |                |  |               |  |         |
+| GET work-units/|  |                |  |               |  |         |
+| {id} (#739)    |  |                |  |               |  |         |
 +----------------+  +----------------+  +---------------+  +---------+
 ```
 
-The Local HTTP box's `GET runs/{id}` is opt-in per server instance
-(`idkmesh control-tower --product-spine-store PATH`); the endpoint returns
-503 without it, rather than being conditionally present in this diagram.
+The Local HTTP box's run and WorkUnit read endpoints are opt-in per server
+instance (`idkmesh control-tower --product-spine-store PATH`); they return
+503 without it, rather than being conditionally present in this diagram. The
+WorkUnit endpoints are read models derived from stored run references
+([ADR-0021](../decisions/ADR-0021-derived-work-unit-and-project-read-models.md)),
+not a WorkUnit store; `idkmesh work-unit list|status` read through the same
+service.
 
 Every box in the bottom row is a transport/client adapter over the same
 application services; none may redefine a domain contract to fit its own

@@ -34,6 +34,26 @@ and the release notes for that tag.
   `evaluator-plan-v0.2.schema.json`, both predating this gate) and raises
   nothing else across every schema file's full commit history.
 
+- `GET /api/v1/work-units`, `GET /api/v1/work-units/{work_unit_id}`, and
+  `idkmesh work-unit list|status` (issue #739, `work-units` read surfaces)
+  ([ADR-0021](docs/decisions/ADR-0021-derived-work-unit-and-project-read-models.md)):
+  read-only WorkUnit views **derived on demand** from the WorkUnit reference
+  (`id`, `version`, `digest`, `source_revision`) each stored Product Spine run
+  already carries. One item per distinct id, ordered by id with an opaque
+  keyset cursor scoped to this listing (a `run list` cursor is rejected with
+  `invalid_cursor`) and an exact `project_id` filter that also scopes every
+  `run_count`. Each item lists its distinct revisions with run counts, selects
+  no latest revision, and returns no WorkUnit body -- none is stored; `digest`
+  is the binding. An id no stored run references is `404 work_unit_not_found`,
+  which says only that the retained runs do not mention it. Ids may contain
+  `/`, so the whole path remainder is one literal id. Frozen by
+  `schemas/idkmesh-work-unit-resource-v0.1.schema.json` and
+  `schemas/idkmesh-control-tower-work-unit-response-v0.1.schema.json`; the
+  list reuses `idkmesh-list-v0.1`. Adds `LocalMetadataStore.list_work_units()`
+  / `get_work_unit()` and the matching `ProductSpineRunStore` methods. Not
+  yet built: `GET /api/v1/projects/{project_id}` (the next slice), and
+  `/evidence` / `/decisions`, which wait on the content store of issue #740.
+
 - `GET /api/v1/runs/{run_id}/attempts` (issue #739, `attempts` read
   surface): reads one run's worker/verifier attempts. `attempts` is now a
   reserved trailing path segment alongside `evidence` and `decisions`

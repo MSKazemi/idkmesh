@@ -1248,5 +1248,250 @@ class ControlTowerRunListWithoutAStoreTests(unittest.TestCase):
         )
 
 
+class ControlTowerWorkUnitReadTests(unittest.TestCase):
+    """GET /api/v1/work-units and /work-units/{id} (ADR-0021 read models)."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        from idkmesh.connector_store import LocalMetadataStore
+        from idkmesh.product_spine_run_store import ProductSpineRunStore
+
+        cls._tmp = tempfile.TemporaryDirectory()
+        cls.store_path = str(Path(cls._tmp.name) / "product-spine.sqlite3")
+        service = ProductSpineRunStore(LocalMetadataStore(cls.store_path))
+        seeds = [
+            ("run/wu-1", "work/a", 1, "project.alpha"),
+            ("run/wu-2", "work/a", 2, "project.alpha"),
+            ("run/wu-3", "work/nested/b", 1, "project.alpha"),
+            ("run/wu-4", "work/c", 1, "project.beta"),
+        ]
+        for index, (run_id, wu, version, project) in enumerate(seeds):
+            projection = _run_projection(run_id=run_id, project_id=project)
+            projection["work_unit"]["id"] = wu
+            projection["work_unit"]["version"] = version
+            service.create(
+                projection,
+                idempotency_key=f"wu-http-{index}",
+                created_at="2026-10-01T00:00:00Z",
+            )
+        cls.server = create_server(
+            port=0, product_spine_store_path=cls.store_path
+        )
+        cls.thread = threading.Thread(
+            target=cls.server.serve_forever, daemon=True
+        )
+        cls.thread.start()
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        cls.server.shutdown()
+        cls.server.server_close()
+        cls.thread.join(timeout=2)
+        cls._tmp.cleanup()
+
+    def request(self, method: str, path: str, *, token: bool = True):
+        conn = http.client.HTTPConnection(
+            "127.0.0.1", self.server.server_port, timeout=3
+        )
+        headers = {TOKEN_HEADER: self.server.ui_token} if token else {}
+        conn.request(method, path, headers=headers)
+        response = conn.getresponse()
+        payload = response.read()
+        response_headers = dict(response.getheaders())
+        conn.close()
+        return response.status, response_headers, payload
+
+    @staticmethod
+    def _validate_with_resource_registry(schema_filename, document):
+        from referencing import Registry, Resource
+
+        root = Path(__file__).resolve().parents[1] / "schemas"
+        resource_schema = json.loads(
+            (root / "idkmesh-work-unit-resource-v0.1.schema.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        registry = Registry().with_resource(
+            resource_schema["$id"], Resource.from_contents(resource_schema)
+        )
+        schema = json.loads((root / schema_filename).read_text(encoding="utf-8"))
+        Draft202012Validator.check_schema(schema)
+        Draft202012Validator(schema, registry=registry).validate(document)
+
+    def test_list_returns_derived_resources_matching_their_schemas(self) -> None:
+        status, _, body = self.request("GET", "/api/v1/work-units")
+        payload = json.loads(body)
+        self.assertEqual(status, 200)
+        _validate_against_schema("idkmesh-list-v0.1.schema.json", payload)
+        self.assertEqual(
+            [item["id"] for item in payload["items"]],
+            ["work/a", "work/c", "work/nested/b"],
+        )
+        for item in payload["items"]:
+            self._validate_with_resource_registry(
+                "idkmesh-work-unit-resource-v0.1.schema.json", item
+            )
+        self.assertEqual(payload["items"][0]["run_count"], 2)
+        self.assertIsNone(payload["page"]["next_cursor"])
+
+    def test_list_paginates_with_an_opaque_cursor(self) -> None:
+        _, _, body = self.request("GET", "/api/v1/work-units?limit=2")
+        first = json.loads(body)
+        self.assertEqual([i["id"] for i in first["items"]], ["work/a", "work/c"])
+        cursor = first["page"]["next_cursor"]
+        self.assertIsInstance(cursor, str)
+        _, _, body = self.request(
+            "GET", f"/api/v1/work-units?limit=2&cursor={cursor}"
+        )
+        second = json.loads(body)
+        self.assertEqual([i["id"] for i in second["items"]], ["work/nested/b"])
+        self.assertIsNone(second["page"]["next_cursor"])
+
+    def test_list_filters_by_project_and_scopes_counts(self) -> None:
+        _, _, body = self.request(
+            "GET", "/api/v1/work-units?project_id=project.beta"
+        )
+        self.assertEqual(
+            [i["id"] for i in json.loads(body)["items"]], ["work/c"]
+        )
+        _, _, body = self.request(
+            "GET", "/api/v1/work-units?project_id=nobody"
+        )
+        self.assertEqual(json.loads(body)["items"], [])
+
+    def test_list_rejects_unknown_filters_limits_and_foreign_cursors(self) -> None:
+        for query, code in (
+            ("state=proposed", "unexpected_query_parameters"),
+            ("limit=1&limit=2", "unexpected_query_parameters"),
+            ("limit=0", "invalid_limit"),
+            ("limit=abc", "invalid_limit"),
+            ("cursor=garbage", "invalid_cursor"),
+        ):
+            status, _, body = self.request(
+                "GET", f"/api/v1/work-units?{query}"
+            )
+            self.assertEqual(status, 400, query)
+            self.assertEqual(json.loads(body)["error"]["code"], code, query)
+
+    def test_run_list_cursor_is_not_accepted_by_the_work_unit_list(self) -> None:
+        _, _, body = self.request("GET", "/api/v1/runs?limit=1")
+        run_cursor = json.loads(body)["page"]["next_cursor"]
+        status, _, body = self.request(
+            "GET", f"/api/v1/work-units?cursor={run_cursor}"
+        )
+        self.assertEqual(status, 400)
+        self.assertEqual(json.loads(body)["error"]["code"], "invalid_cursor")
+
+    def test_read_returns_one_resource_matching_its_schema(self) -> None:
+        status, _, body = self.request("GET", "/api/v1/work-units/work/a")
+        payload = json.loads(body)
+        self.assertEqual(status, 200)
+        self._validate_with_resource_registry(
+            "idkmesh-control-tower-work-unit-response-v0.1.schema.json",
+            payload,
+        )
+        self.assertEqual(
+            payload["kind"], "idkmesh-control-tower-work-unit-response"
+        )
+        self.assertEqual(payload["work_unit"]["id"], "work/a")
+        self.assertEqual(
+            [r["version"] for r in payload["work_unit"]["revisions"]], [1, 2]
+        )
+
+    def test_id_containing_a_slash_is_read_as_one_literal_id(self) -> None:
+        status, _, body = self.request("GET", "/api/v1/work-units/work/nested/b")
+        self.assertEqual(status, 200)
+        self.assertEqual(json.loads(body)["work_unit"]["id"], "work/nested/b")
+        status, _, body = self.request("GET", "/api/v1/work-units/work/nested")
+        self.assertEqual(status, 404)
+        self.assertEqual(json.loads(body)["error"]["code"], "work_unit_not_found")
+
+    def test_unknown_id_is_404_and_empty_id_is_the_list_not_a_read(self) -> None:
+        status, _, body = self.request("GET", "/api/v1/work-units/work/missing")
+        self.assertEqual(status, 404)
+        self.assertEqual(json.loads(body)["error"]["code"], "work_unit_not_found")
+        status, _, _ = self.request("GET", "/api/v1/work-units/")
+        self.assertEqual(status, 404)
+
+    def test_single_read_rejects_query_parameters(self) -> None:
+        status, _, body = self.request("GET", "/api/v1/work-units/work/a?limit=1")
+        self.assertEqual(status, 400)
+        self.assertEqual(
+            json.loads(body)["error"]["code"], "unexpected_query_parameters"
+        )
+
+    def test_a_missing_token_is_forbidden(self) -> None:
+        for path in ("/api/v1/work-units", "/api/v1/work-units/work/a"):
+            status, _, _ = self.request("GET", path, token=False)
+            self.assertEqual(status, 403, path)
+
+    def test_head_returns_headers_without_a_body(self) -> None:
+        status, headers, body = self.request("HEAD", "/api/v1/work-units")
+        self.assertEqual(status, 200)
+        self.assertEqual(body, b"")
+        self.assertGreater(int(headers["Content-Length"]), 0)
+
+    def test_every_write_method_is_not_allowed(self) -> None:
+        for method in ("POST", "PUT", "PATCH", "DELETE"):
+            for path in ("/api/v1/work-units", "/api/v1/work-units/work/a"):
+                status, headers, _ = self.request(method, path)
+                self.assertEqual(status, 405, (method, path))
+                self.assertEqual(headers.get("Allow"), "GET, HEAD")
+
+    def test_status_and_openapi_document_the_endpoints(self) -> None:
+        _, _, body = self.request("GET", "/api/v1/status")
+        endpoints = json.loads(body)["endpoints"]
+        self.assertEqual(endpoints["list_work_units"], "GET /api/v1/work-units")
+        self.assertEqual(
+            endpoints["read_work_unit"],
+            "GET /api/v1/work-units/{work_unit_id}",
+        )
+        _, _, body = self.request("GET", "/api/v1/openapi.json")
+        paths = json.loads(body)["paths"]
+        self.assertIn("/api/v1/work-units", paths)
+        self.assertIn("/api/v1/work-units/{work_unit_id}", paths)
+
+    def test_run_endpoints_are_unaffected(self) -> None:
+        status, _, body = self.request("GET", "/api/v1/runs/run/wu-1")
+        self.assertEqual(status, 200)
+        self.assertEqual(json.loads(body)["run"]["run_id"], "run/wu-1")
+
+
+class ControlTowerWorkUnitWithoutAStoreTests(unittest.TestCase):
+    """The work-unit endpoints also require --product-spine-store."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.server = create_server(port=0)
+        cls.thread = threading.Thread(
+            target=cls.server.serve_forever, daemon=True
+        )
+        cls.thread.start()
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        cls.server.shutdown()
+        cls.server.server_close()
+        cls.thread.join(timeout=2)
+
+    def test_both_endpoints_are_503_without_a_configured_store(self) -> None:
+        for path in ("/api/v1/work-units", "/api/v1/work-units/work/a"):
+            conn = http.client.HTTPConnection(
+                "127.0.0.1", self.server.server_port, timeout=3
+            )
+            conn.request(
+                "GET", path, headers={TOKEN_HEADER: self.server.ui_token}
+            )
+            response = conn.getresponse()
+            status = response.status
+            body = response.read()
+            conn.close()
+            self.assertEqual(status, 503, path)
+            self.assertEqual(
+                json.loads(body)["error"]["code"],
+                "product_spine_store_not_configured",
+            )
+
+
 if __name__ == "__main__":
     unittest.main()

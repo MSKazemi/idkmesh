@@ -549,6 +549,79 @@ def build_parser() -> argparse.ArgumentParser:
         help="emit deterministic machine-readable JSON",
     )
 
+    work_unit_cmd = sub.add_parser(
+        "work-unit",
+        help="list or inspect WorkUnits derived from retained runs",
+        description=(
+            "Read-only WorkUnit views derived on demand from the run "
+            "references already stored by 'idkmesh run' (ADR-0021). No "
+            "WorkUnit body is stored, so none is returned; the revision "
+            "digest is the binding. These commands never dispatch, verify, "
+            "accept, mutate GitHub, push Git, or merge."
+        ),
+    )
+    work_unit_sub = work_unit_cmd.add_subparsers(
+        dest="work_unit_command",
+        required=True,
+    )
+
+    work_unit_list = work_unit_sub.add_parser(
+        "list",
+        help="list WorkUnits referenced by retained runs, by id",
+        description=(
+            "Deterministic keyset-paginated WorkUnit listing, ordered by id. "
+            "Pass the previous page's --cursor value verbatim to continue; "
+            "never construct or parse a cursor by hand."
+        ),
+    )
+    work_unit_list.add_argument(
+        "--store",
+        required=True,
+        metavar="PATH",
+        help="local SQLite control-state path",
+    )
+    work_unit_list.add_argument(
+        "--limit",
+        type=int,
+        default=DEFAULT_LIST_LIMIT,
+        metavar="N",
+        help=f"page size, 1-{MAX_LIST_LIMIT} (default: {DEFAULT_LIST_LIMIT})",
+    )
+    work_unit_list.add_argument(
+        "--cursor",
+        metavar="TOKEN",
+        help="opaque next-page token from a previous 'work-unit list' call",
+    )
+    work_unit_list.add_argument(
+        "--project-id",
+        metavar="ID",
+        help="only count and list runs for this exact project_id",
+    )
+    work_unit_list.add_argument(
+        "--json",
+        action="store_true",
+        dest="json_output",
+        help="emit deterministic machine-readable JSON",
+    )
+
+    work_unit_status = work_unit_sub.add_parser(
+        "status",
+        help="inspect one WorkUnit and its distinct revisions",
+    )
+    work_unit_status.add_argument("work_unit_id")
+    work_unit_status.add_argument(
+        "--store",
+        required=True,
+        metavar="PATH",
+        help="local SQLite control-state path",
+    )
+    work_unit_status.add_argument(
+        "--json",
+        action="store_true",
+        dest="json_output",
+        help="emit deterministic machine-readable JSON",
+    )
+
     gui = sub.add_parser(
         "gate-audit-ui",
         help="open the local browser interface for gate-audit",
@@ -1219,6 +1292,70 @@ def _run_product_spine_control(args: argparse.Namespace) -> int:
     return 0
 
 
+def _run_work_unit_control(args: argparse.Namespace) -> int:
+    from idkmesh.connector_store import (
+        LocalMetadataStore,
+        LocalStoreError,
+    )
+    from idkmesh.product_spine_run_store import (
+        ProductSpineRunStore,
+        ProductSpineRunStoreError,
+    )
+
+    try:
+        service = ProductSpineRunStore(LocalMetadataStore(args.store))
+        if args.work_unit_command == "list":
+            items, next_cursor = service.list_work_units(
+                limit=args.limit,
+                cursor=args.cursor,
+                project_id=args.project_id,
+            )
+            payload: object = {
+                "kind": "idkmesh-list",
+                "schema_version": "0.1",
+                "items": items,
+                "page": {"next_cursor": next_cursor, "limit": args.limit},
+            }
+        elif args.work_unit_command == "status":
+            payload = service.get_work_unit(args.work_unit_id)
+        else:  # pragma: no cover - argparse enforces this
+            return 2
+    except (
+        ProductSpineRunStoreError,
+        LocalStoreError,
+        OSError,
+        ValueError,
+    ) as exc:
+        return _run_control_error(exc, json_output=args.json_output)
+
+    if args.json_output:
+        print(json.dumps(payload, sort_keys=True, separators=(",", ":")))
+        return 0
+
+    if args.work_unit_command == "list":
+        if not items:
+            print("no retained work units")
+            return 0
+        for item in items:
+            print(
+                f"{item['id']}\truns={item['run_count']}"
+                f"\trevisions={len(item['revisions'])}"
+            )
+        if next_cursor is not None:
+            print(f"next_cursor: {next_cursor}")
+        return 0
+
+    print(f"work_unit: {payload['id']}\nruns: {payload['run_count']}")
+    for revision in payload["revisions"]:
+        print(
+            f"revision: version={revision['version']} "
+            f"digest={revision['digest']} "
+            f"source_revision={revision['source_revision']} "
+            f"runs={revision['run_count']}"
+        )
+    return 0
+
+
 def _run_doctor(args: argparse.Namespace) -> int:
     from idkmesh.connector_inspection import doctor_report, inspect_connectors
     from idkmesh.connector_profiles import (
@@ -1357,6 +1494,8 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "run":
         return _run_product_spine_control(args)
+    if args.command == "work-unit":
+        return _run_work_unit_control(args)
     if args.command == "local-loop":
         return _run_local_loop(args)
     if args.command == "connections":

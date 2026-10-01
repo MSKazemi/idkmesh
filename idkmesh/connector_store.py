@@ -591,6 +591,132 @@ class LocalMetadataStore:
             has_more,
         )
 
+    # ADR-0021: WorkUnit and project read models are derived on demand from the
+    # run projections already stored. No WorkUnit body or project record exists,
+    # so nothing here may claim more than the stored references say.
+    _WU_ID = "json_extract(metadata_json, '$.projection.work_unit.id')"
+    _WU_VERSION = "json_extract(metadata_json, '$.projection.work_unit.version')"
+    _WU_DIGEST = "json_extract(metadata_json, '$.projection.work_unit.digest')"
+    _WU_SOURCE = (
+        "json_extract(metadata_json, '$.projection.work_unit.source_revision')"
+    )
+    _PROJECT = "json_extract(metadata_json, '$.projection.project_id')"
+
+    def _derived_revisions(
+        self,
+        conn: sqlite3.Connection,
+        work_unit_ids: list[str],
+        project_id: str | None,
+    ) -> dict[str, list[dict[str, Any]]]:
+        if not work_unit_ids:
+            return {}
+        marks = ",".join("?" for _ in work_unit_ids)
+        params: list[Any] = list(work_unit_ids)
+        project_clause = ""
+        if project_id is not None:
+            project_clause = f"AND {self._PROJECT} = ?"
+            params.append(project_id)
+        rows = conn.execute(
+            f"""
+            SELECT {self._WU_ID} AS wu_id,
+                   {self._WU_VERSION} AS version,
+                   {self._WU_DIGEST} AS digest,
+                   {self._WU_SOURCE} AS source_revision,
+                   COUNT(*) AS run_count
+            FROM runs
+            WHERE {self._WU_ID} IN ({marks}) {project_clause}
+            GROUP BY wu_id, version, digest, source_revision
+            ORDER BY wu_id ASC, version ASC, digest ASC, source_revision ASC
+            """,
+            params,
+        ).fetchall()
+        grouped: dict[str, list[dict[str, Any]]] = {}
+        for row in rows:
+            grouped.setdefault(row["wu_id"], []).append(
+                {
+                    "version": row["version"],
+                    "digest": row["digest"],
+                    "source_revision": row["source_revision"],
+                    "run_count": row["run_count"],
+                }
+            )
+        return grouped
+
+    @staticmethod
+    def _work_unit_resource(
+        work_unit_id: str, revisions: list[dict[str, Any]]
+    ) -> dict[str, Any]:
+        return {
+            "id": work_unit_id,
+            "run_count": sum(item["run_count"] for item in revisions),
+            "revisions": revisions,
+        }
+
+    def list_work_units(
+        self,
+        *,
+        limit: int = DEFAULT_LIST_LIMIT,
+        after: str | None = None,
+        project_id: str | None = None,
+    ) -> tuple[list[dict[str, Any]], bool]:
+        """Deterministic keyset-paginated WorkUnit listing, ordered by id.
+
+        One item per distinct WorkUnit id, derived from stored run references
+        (ADR-0021). When ``project_id`` is given, ``run_count`` values count
+        only that project's runs. Returns ``(page, has_more)``.
+        """
+        if (
+            isinstance(limit, bool)
+            or not isinstance(limit, int)
+            or not (1 <= limit <= MAX_LIST_LIMIT)
+        ):
+            raise ValueError(
+                f"limit must be an integer between 1 and {MAX_LIST_LIMIT}"
+            )
+        if after is not None:
+            self._require_text(after, "after")
+        if project_id is not None:
+            self._require_text(project_id, "project_id")
+
+        clauses = [f"{self._WU_ID} IS NOT NULL"]
+        params: list[Any] = []
+        if after is not None:
+            clauses.append(f"{self._WU_ID} > ?")
+            params.append(after)
+        if project_id is not None:
+            clauses.append(f"{self._PROJECT} = ?")
+            params.append(project_id)
+        params.append(limit + 1)
+
+        with _session(self.path) as conn:
+            id_rows = conn.execute(
+                f"""
+                SELECT DISTINCT {self._WU_ID} AS wu_id
+                FROM runs
+                WHERE {' AND '.join(clauses)}
+                ORDER BY wu_id ASC
+                LIMIT ?
+                """,
+                params,
+            ).fetchall()
+            has_more = len(id_rows) > limit
+            ids = [row["wu_id"] for row in id_rows[:limit]]
+            grouped = self._derived_revisions(conn, ids, project_id)
+        return (
+            [self._work_unit_resource(wu, grouped.get(wu, [])) for wu in ids],
+            has_more,
+        )
+
+    def get_work_unit(self, work_unit_id: str) -> dict[str, Any] | None:
+        """The derived WorkUnit resource for one id, or None if no run uses it."""
+        self._require_text(work_unit_id, "work_unit_id")
+        with _session(self.path) as conn:
+            grouped = self._derived_revisions(conn, [work_unit_id], None)
+        revisions = grouped.get(work_unit_id)
+        if not revisions:
+            return None
+        return self._work_unit_resource(work_unit_id, revisions)
+
     def update_run(
         self,
         run_id: str,
