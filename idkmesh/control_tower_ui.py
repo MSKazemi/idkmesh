@@ -1185,6 +1185,67 @@ def _handler(
                 head_only=head_only,
             )
 
+        def _run_evidence_response(
+            self, run_id: str, *, head_only: bool
+        ) -> None:
+            if product_spine_store_path is None:
+                self._send_json(
+                    503,
+                    error_document(
+                        "product_spine_store_not_configured",
+                        "this Control Tower instance was started without a "
+                        "Product Spine store; runs cannot be read",
+                    ),
+                    head_only=head_only,
+                )
+                return
+            from idkmesh.connector_store import (
+                LocalMetadataStore,
+                LocalStoreError,
+            )
+            from idkmesh.product_spine_run_store import (
+                ProductSpineRunStore,
+                ProductSpineRunStoreError,
+            )
+
+            try:
+                service = ProductSpineRunStore(
+                    LocalMetadataStore(product_spine_store_path)
+                )
+                result = service.get_run_evidence(run_id)
+            except ProductSpineRunStoreError as exc:
+                code = getattr(exc, "code", "run_control_error")
+                if code in ("run_not_found", "evidence_not_available"):
+                    status = 404
+                elif code in ("evidence_integrity_error", "store_error"):
+                    status = 500
+                else:
+                    status = 400
+                self._send_json(
+                    status,
+                    error_document(code, str(exc)),
+                    head_only=head_only,
+                )
+                return
+            except (LocalStoreError, OSError, ValueError) as exc:
+                self._send_json(
+                    500,
+                    error_document("store_error", str(exc)),
+                    head_only=head_only,
+                )
+                return
+
+            payload = {
+                "api_version": API_VERSION,
+                "schema_version": API_SCHEMA_VERSION,
+                "kind": "idkmesh-control-tower-run-evidence-response",
+                "ok": True,
+                "run_id": result["run_id"],
+                "evidence_report_digest": result["evidence_report_digest"],
+                "evidence_report": result["evidence_report"],
+            }
+            self._send_json(200, payload, head_only=head_only)
+
         def _run_list_response(self, query: str, *, head_only: bool) -> None:
             if product_spine_store_path is None:
                 self._send_json(
@@ -1683,6 +1744,9 @@ def _handler(
                 run_id, name = subresource
                 if name == "attempts":
                     self._run_attempts_response(run_id, head_only=head_only)
+                    return
+                if name == "evidence":
+                    self._run_evidence_response(run_id, head_only=head_only)
                     return
                 self._send_json(
                     404,

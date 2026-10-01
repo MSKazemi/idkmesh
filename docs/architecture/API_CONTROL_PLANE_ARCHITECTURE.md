@@ -172,6 +172,8 @@ today (not a target-state sketch):
 | runs, GET runs/|  |                |  |               |  |         |
 | {id}, GET runs/|  |                |  |               |  |         |
 | {id}/attempts, |  |                |  |               |  |         |
+| GET runs/{id}/ |  |                |  |               |  |         |
+| evidence,      |  |                |  |               |  |         |
 | GET work-units,|  |                |  |               |  |         |
 | GET work-units/|  |                |  |               |  |         |
 | {id}, GET      |  |                |  |               |  |         |
@@ -217,6 +219,18 @@ GitHub dispatch/status writers do not yet, nothing prunes the table, and
 WebSocket is deferred. `idkmesh events list` reads through the same service.
 A store opened by code that predates schema version 2 is refused by the
 existing "newer than supported" check rather than silently ignoring events.
+
+The Local HTTP box's `GET /api/v1/runs/{run_id}/evidence` serves the Run
+Evidence Report that the idempotent offline spine retains in the run row
+([ADR-0024](../decisions/ADR-0024-retained-evidence-read-and-mixed-store-run-reads.md)).
+It re-verifies `canonical_digest(report)` against the run's
+`evidence_report_digest` on every read and refuses to serve a mismatch
+(`500 evidence_integrity_error`). The run listing selects an explicit set of
+Product Spine row kinds, so the foreign rows that share the `runs` table
+(admission-only, execution-error and GitHub dispatch/status rows) cannot break
+it. `GET /api/v1/runs/{run_id}/decisions` is not built: no decision content is
+retained, and recording a decision needs an authenticated, accountable
+principal (issue #740, enterprise identity), which is a governance gate.
 
 Every box in the bottom row is a transport/client adapter over the same
 application services; none may redefine a domain contract to fit its own

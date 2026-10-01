@@ -563,8 +563,15 @@ class LocalMetadataStore:
         after: str | None = None,
         state: str | None = None,
         project_id: str | None = None,
+        kinds: tuple[str, ...] | None = None,
     ) -> tuple[list[RunRecord], bool]:
         """Deterministic keyset-paginated run listing, ordered by run_id.
+
+        ``kinds``, when given, restricts the listing to rows whose stored
+        ``kind`` is one of those values (ADR-0024). The shared ``runs`` table
+        also holds admission, error and GitHub rows that are not Product Spine
+        runs; an explicit kind set excludes them deterministically instead of
+        letting one foreign row fail the whole page.
 
         Returns ``(page, has_more)``. Ordering by the primary key rather than
         ``created_at`` avoids ties (two runs can share a timestamp; run_id is
@@ -596,9 +603,20 @@ class LocalMetadataStore:
             self._require_text(state, "state")
         if project_id is not None:
             self._require_text(project_id, "project_id")
+        if kinds is not None:
+            if (
+                not isinstance(kinds, tuple)
+                or not kinds
+                or not all(isinstance(kind, str) and kind for kind in kinds)
+            ):
+                raise ValueError("kinds must be a non-empty tuple of strings")
 
         clauses = []
         params: list[Any] = []
+        if kinds is not None:
+            marks = ",".join("?" for _ in kinds)
+            clauses.append(f"json_extract(metadata_json, '$.kind') IN ({marks})")
+            params.extend(kinds)
         if after is not None:
             clauses.append("run_id > ?")
             params.append(after)

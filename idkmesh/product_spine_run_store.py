@@ -45,6 +45,10 @@ from idkmesh.work_unit_binding import canonical_digest
 
 SCHEMA_VERSION = "0.1"
 _RECORD_KIND = "product-spine-cli-run"
+# ADR-0024: the idempotent offline spine's completed rows hold a valid Product
+# Spine projection (and the retained evidence report), so they are readable runs.
+_OFFLINE_RESULT_KIND = "product-spine-idempotency-result"
+_RUN_KINDS = (_RECORD_KIND, _OFFLINE_RESULT_KIND)
 _IDEMPOTENCY_PREFIX = "product-spine-cli:create:"
 
 
@@ -241,16 +245,22 @@ def _restore(
     if (
         not isinstance(metadata, Mapping)
         or metadata.get("schema_version") != SCHEMA_VERSION
-        or metadata.get("kind") != _RECORD_KIND
+        or metadata.get("kind") not in _RUN_KINDS
     ):
         raise ProductSpineRunStoreError(
             "not_product_spine_cli_run",
-            "stored run is not a C7-D Product Spine CLI run",
+            "stored run is not a Product Spine run",
         )
-    if metadata.get("create_request_digest") != record.request_digest:
+    if metadata.get("kind") == _RECORD_KIND:
+        if metadata.get("create_request_digest") != record.request_digest:
+            raise ProductSpineRunStoreError(
+                "persisted_state_corrupt",
+                "stored create request digest does not match atomic run record",
+            )
+    elif metadata.get("idempotency_request_digest") != record.request_digest:
         raise ProductSpineRunStoreError(
             "persisted_state_corrupt",
-            "stored create request digest does not match atomic run record",
+            "stored idempotency digest does not match atomic run record",
         )
     if (
         expected_idempotency_key is not None
@@ -453,7 +463,11 @@ class ProductSpineRunStore:
         after = _decode_cursor(cursor) if cursor is not None else None
         try:
             records, has_more = self._store.list_runs(
-                limit=limit, after=after, state=state, project_id=project_id,
+                limit=limit,
+                after=after,
+                state=state,
+                project_id=project_id,
+                kinds=_RUN_KINDS,
             )
         except ValueError as exc:
             raise ProductSpineRunStoreError("invalid_limit", str(exc)) from exc
@@ -511,6 +525,60 @@ class ProductSpineRunStore:
                 f"no stored run references work unit: {work_unit_id}",
             )
         return resource
+
+    def get_run_evidence(self, run_id: str) -> dict[str, Any]:
+        """The retained evidence report of one run, digest-verified (ADR-0024).
+
+        Fails closed: a report whose canonical digest differs from the run's
+        ``evidence_report_digest`` is never returned. ``evidence_not_available``
+        means the run exists but retains no evidence (distinct from
+        ``run_not_found``).
+        """
+        if not isinstance(run_id, str) or not run_id:
+            raise ProductSpineRunStoreError(
+                "invalid_run_id", "run_id must be a non-empty string"
+            )
+        try:
+            record = self._store.get_run(run_id)
+        except (LocalStoreError, ValueError) as exc:
+            raise ProductSpineRunStoreError("store_error", str(exc)) from exc
+        if record is None:
+            raise ProductSpineRunStoreError(
+                "run_not_found", f"unknown run_id: {run_id}"
+            )
+        metadata = record.metadata
+        projection = (
+            metadata.get("projection") if isinstance(metadata, Mapping) else None
+        )
+        digest = (
+            projection.get("evidence_report_digest")
+            if isinstance(projection, Mapping)
+            else None
+        )
+        report = metadata.get("evidence_report") if isinstance(metadata, Mapping) else None
+        if digest is None or report is None:
+            raise ProductSpineRunStoreError(
+                "evidence_not_available",
+                f"run {run_id} retains no evidence report",
+            )
+        try:
+            projection_from_mapping(projection)
+        except ProductSpineError as exc:
+            raise ProductSpineRunStoreError(
+                "evidence_integrity_error",
+                f"run projection is not a valid Product Spine run: {exc}",
+            ) from exc
+        if not isinstance(report, Mapping) or canonical_digest(report) != digest:
+            raise ProductSpineRunStoreError(
+                "evidence_integrity_error",
+                "retained evidence report does not match the run's "
+                "evidence_report_digest; refusing to serve it",
+            )
+        return {
+            "run_id": record.run_id,
+            "evidence_report_digest": digest,
+            "evidence_report": dict(report),
+        }
 
     def get_project(self, project_id: str) -> dict[str, Any]:
         """One derived project summary (ADR-0021), or ``project_not_found``.

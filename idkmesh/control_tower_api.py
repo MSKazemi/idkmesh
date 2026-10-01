@@ -762,6 +762,7 @@ def _status_document_base() -> dict[str, Any]:
             "list_runs": "GET /api/v1/runs",
             "read_run": "GET /api/v1/runs/{run_id}",
             "read_run_attempts": "GET /api/v1/runs/{run_id}/attempts",
+            "read_run_evidence": "GET /api/v1/runs/{run_id}/evidence",
             "list_work_units": "GET /api/v1/work-units",
             "read_work_unit": "GET /api/v1/work-units/{work_unit_id}",
             "read_project": "GET /api/v1/projects/{project_id}",
@@ -1148,6 +1149,69 @@ def openapi_document() -> dict[str, Any]:
                         },
                         "403": {"description": "Invalid local session token"},
                         "404": {"description": "Unknown run_id"},
+                        "503": {
+                            "description": (
+                                "No Product Spine store configured for this "
+                                "server instance"
+                            )
+                        },
+                    },
+                }
+            },
+            "/api/v1/runs/{run_id}/evidence": {
+                "get": {
+                    "summary": "Read one run's retained evidence report",
+                    "description": (
+                        "Pure read-only (ADR-0024). Serves the evidence "
+                        "report retained in the run row, byte for byte, "
+                        "after verifying its canonical digest against the "
+                        "run's evidence_report_digest; a mismatch is "
+                        "refused with 500 evidence_integrity_error and the "
+                        "report is never served. `evidence` is a reserved "
+                        "trailing path segment (ADR-0019). 404 is either "
+                        "run_not_found (no such run) or "
+                        "evidence_not_available (the run exists but retains "
+                        "no evidence); error.code distinguishes them."
+                    ),
+                    "security": [{"LocalSessionToken": []}],
+                    "parameters": [
+                        {
+                            "name": "run_id",
+                            "in": "path",
+                            "required": True,
+                            "schema": {"type": "string", "minLength": 1},
+                        }
+                    ],
+                    "responses": {
+                        "200": {
+                            "description": "The run's retained evidence report",
+                            "content": {
+                                JSON_MEDIA_TYPE: {
+                                    "schema": {
+                                        "$ref": (
+                                            "https://idkmesh.org/schemas/"
+                                            "idkmesh-control-tower-run-"
+                                            "evidence-response-v0.1."
+                                            "schema.json"
+                                        )
+                                    }
+                                }
+                            },
+                        },
+                        "403": {"description": "Invalid local session token"},
+                        "404": {
+                            "description": (
+                                "run_not_found, or evidence_not_available "
+                                "when the run retains no evidence report"
+                            )
+                        },
+                        "500": {
+                            "description": (
+                                "evidence_integrity_error: the retained "
+                                "report does not match the run's "
+                                "evidence_report_digest"
+                            )
+                        },
                         "503": {
                             "description": (
                                 "No Product Spine store configured for this "

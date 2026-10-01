@@ -141,6 +141,43 @@ and the release notes for that tag.
   no longer be read through the plain single-run `GET`. Frozen by
   `schemas/idkmesh-control-tower-run-attempts-response-v0.1.schema.json`.
 
+- `GET /api/v1/runs/{run_id}/evidence` and `idkmesh run evidence RUN_ID --store
+  PATH [--json]` (issue #739, API-4)
+  ([ADR-0024](docs/decisions/ADR-0024-retained-evidence-read-and-mixed-store-run-reads.md)):
+  serves the Run Evidence Report that the idempotent offline Product Spine
+  already retains in the run row, so a Control Tower client can reconstruct a
+  run and its evidence without repository files and without supplying the
+  evidence document. It is digest-verified and fail-closed: the run projection
+  must be a valid Product Spine run and `canonical_digest(report)` must equal
+  `evidence_report_digest`, otherwise the response is `500
+  evidence_integrity_error` and the report is never served. The report is
+  returned as retained, never synthesised. `404 run_not_found` (no such run) is
+  distinct from `404 evidence_not_available` (the run exists but retains no
+  evidence, for example a run created by `idkmesh run create`). Frozen by
+  `schemas/idkmesh-control-tower-run-evidence-response-v0.1.schema.json`.
+  `GET /api/v1/runs/{run_id}/decisions` and the human-decision API (issue #740)
+  remain unbuilt on purpose: no decision content is retained anywhere, and
+  recording one needs an authenticated, accountable human or governance
+  principal, which a local session token is not. That is a governance gate, not
+  an implementation gap.
+- Product Spine runs written by the idempotent offline spine
+  (`product-spine-idempotency-result` rows) are now readable through
+  `GET /api/v1/runs`, `GET /api/v1/runs/{run_id}` and `idkmesh run
+  list/status` (the run-store restore accepts that kind and checks its
+  `idempotency_request_digest` against the atomic record).
+
+### Fixed
+
+- `GET /api/v1/runs` and `idkmesh run list` no longer fail for the whole page
+  when the store also holds a row that is not a Product Spine run. The shared
+  `runs` table also holds admission-only, execution-error and GitHub
+  dispatch/status rows, and the old listing tried to restore every row. The
+  listing now selects an explicit set of stored kinds
+  (`product-spine-cli-run`, `product-spine-idempotency-result`)
+  ([ADR-0024](docs/decisions/ADR-0024-retained-evidence-read-and-mixed-store-run-reads.md)),
+  which also keeps keyset pagination consistent. The filter is by kind, not by
+  exception: a row of a listed kind that fails to restore still fails loudly.
+
 ### Changed
 
 - `tests/test_replay_run.py`'s five real-orchestration-replay tests (one
