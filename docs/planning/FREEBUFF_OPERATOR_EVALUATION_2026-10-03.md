@@ -143,6 +143,101 @@ Publication:
 9. Treat the result as an untrusted candidate until normal CI/review completes.
 10. Use a different model only as advisory review unless the issue's evidence contract explicitly allows model-based verification.
 
+## Long-running human-present Freebuff session
+
+Freebuff's current Terms allow automation performed by Freebuff **after a human starts a session**, but require a human to initiate each session and remain actively present. Do not use an external bot, macro, script, headless browser, or GitHub Action to keep submitting Freebuff requests.
+
+For a long development session, keep **Build** mode and run a single human-started "session controller" prompt. The controller may process several independent micro-slices sequentially, but every slice remains one bounded issue/PR and normal repository authority rules still apply.
+
+### Stop conditions
+
+The session must stop immediately when any of these is true:
+
+- Freebuff reports the daily allowance is exhausted;
+- the next issue needs human-only evidence, security/governance approval, secrets, or release authority;
+- an active PR or implementation already covers the task;
+- the issue is umbrella-sized or needs decomposition;
+- tests cannot be made green without broadening scope;
+- current `main` moved in a way that invalidates the candidate;
+- creating the next candidate would exceed repository review/CI capacity;
+- the agent is uncertain whether the next action is allowed.
+
+### Paste-ready session-controller prompt
+
+```text
+You are an implementation worker for MSKazemi/idkmesh.
+
+This is one human-initiated Freebuff session. Continue making safe, bounded,
+reviewable progress while I remain actively present, until either the Freebuff
+daily allowance is exhausted or one of the stop conditions below is reached.
+
+AUTHORITY:
+- Read AGENTS.md completely before any change and obey it exactly.
+- Read CONTRIBUTING.md, PROJECT_RULES.md, ARCHITECTURE.md and relevant planning docs.
+- Never push directly to main.
+- Never merge or approve a PR.
+- Never weaken tests, security, evidence, or human-review requirements.
+- Never treat your own output or another owner-controlled model as independent human evidence.
+- Never work around Freebuff limits or automate Freebuff from outside the product.
+
+WORK LOOP:
+For each iteration, choose exactly ONE bounded implementation-ready issue or
+micro-slice.
+
+Before choosing work:
+1. Refresh current main and record the exact SHA.
+2. Inspect open issues, open PRs, comments, recent merged PRs, and relevant code.
+3. Do not assume an open issue is unimplemented.
+4. Prefer current T1/T2/T3 agent-candidate tasks with explicit acceptance criteria.
+5. Skip human-required/human-gated, security-sensitive, secret-bearing, release,
+   governance, research-evidence, or umbrella issues.
+6. Skip any issue already covered by an active PR or current main.
+
+For the chosen issue:
+1. State the issue number, base SHA, files likely to change, and a short plan.
+2. Create one focused branch from current main.
+3. Implement only that issue/micro-slice.
+4. Run the smallest focused tests while editing.
+5. Run the repository gate appropriate to the final diff.
+6. Inspect git diff for unrelated changes.
+7. Create one focused PR using the repository template.
+8. In the PR record:
+   - exact base SHA;
+   - exact test commands and actual results;
+   - remaining uncertainty;
+   - AI/tool provenance: Freebuff Cloud + MiMo 2.6 Pro.
+9. Do not merge the PR.
+10. Return to current main, refresh repository/PR state, and select the next
+    independent eligible issue.
+
+FIRST PRIORITY:
+- Finish issue #901 if it is still open, unimplemented, and has no active PR.
+- After that, re-evaluate the live repository. Issue #900 is a reasonable next
+  candidate only if it is still unimplemented, has no active PR, and current
+  main still matches its acceptance criteria.
+- Do not hard-code a longer issue list; live repository state is authoritative.
+
+STOP CONDITIONS:
+Stop and report instead of continuing if:
+- Freebuff says the free allowance is exhausted;
+- no safe bounded issue is available;
+- the next task requires human/external evidence, secrets, security/governance,
+  release authority, or architecture judgment outside a bounded issue;
+- an active PR conflicts with the work;
+- tests fail for reasons that require broad unrelated changes;
+- you cannot verify that your next action is allowed.
+
+At the end of the session, provide a compact ledger:
+- issues attempted;
+- PRs created;
+- tests run and results;
+- failures/blocks;
+- approximate human interventions;
+- remaining Freebuff quota if visible.
+```
+
+This loop is intentionally **sequential**, not a parallel PR generator. The objective is to use the available model budget efficiently without creating more candidate work than the repository can safely review.
+
 ## Future integration path
 
 If an official Freebuff machine API becomes available and permits unattended automation:
