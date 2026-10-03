@@ -42,8 +42,13 @@ SCHEMAS = REPO_ROOT / "schemas"
 # schema-valid. Asserting that keeps a future schema change from quietly
 # turning a semantic fixture into a structural one.
 VALID_AGAINST = {
+    "examples/api/control-tower-run-attempts-response.example.json": "idkmesh-control-tower-run-attempts-response-v0.1.schema.json",
+    "examples/api/control-tower-run-response.example.json": "idkmesh-control-tower-run-response-v0.1.schema.json",
+    "examples/api/control-tower-status.example.json": "idkmesh-control-tower-status-v0.1.schema.json",
     "examples/api/error-envelope.example.json": "idkmesh-api-error-v0.1.schema.json",
     "examples/api/list-envelope.example.json": "idkmesh-list-v0.1.schema.json",
+    "examples/api/product-spine-run.example.json": "idkmesh-product-spine-run-v0.1.schema.json",
+    "examples/api/readiness.example.json": "idkmesh-readiness-v0.1.schema.json",
     "examples/benchmarks/work-unit-decomposition-v0.1.json": "decomposition-benchmark-v0.1.schema.json",
     "examples/candidate-normalization/c6-equivalence.work-unit.json": "work-unit-v0.2.schema.json",
     "examples/candidate-normalization/local-candidate-reference.json": "candidate-reference-v0.1.schema.json",
@@ -96,6 +101,10 @@ VALID_AGAINST = {
 # test that consumes it still goes green while asserting nothing. That silent
 # failure is what this table prevents.
 INVALID_AGAINST = {
+    "examples/api/invalid-missing-status.readiness.json": (
+        "idkmesh-readiness-v0.1.schema.json",
+        "omits the required 'status' property",
+    ),
     "examples/community/ace-lineage-invalid-missing-verification.example.json": (
         "ace-lineage-v0.1.schema.json",
         "omits the required 'verification' property",

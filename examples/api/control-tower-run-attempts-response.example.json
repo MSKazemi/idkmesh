@@ -1,0 +1,31 @@
+{
+  "api_version": "v1",
+  "schema_version": "0.1",
+  "kind": "idkmesh-control-tower-run-attempts-response",
+  "ok": true,
+  "run_id": "run/example-1",
+  "attempts": [
+    {
+      "attempt_id": "attempt/example-1-1",
+      "order": 1,
+      "connector_id": "local-direct",
+      "state": "worker_error",
+      "provider_reference": null,
+      "candidate_reference_digest": null,
+      "result_manifest_digest": null,
+      "verification_semantic_digest": null,
+      "error_code": "worker_error"
+    },
+    {
+      "attempt_id": "attempt/example-1-2",
+      "order": 2,
+      "connector_id": "local-direct",
+      "state": "verified",
+      "provider_reference": "local:attempt/example-1-2",
+      "candidate_reference_digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "result_manifest_digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "verification_semantic_digest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "error_code": null
+    }
+  ]
+}
