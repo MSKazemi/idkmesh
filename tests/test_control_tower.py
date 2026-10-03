@@ -717,6 +717,7 @@ class ControlTowerCliTests(unittest.TestCase):
             product_spine_store_path=None,
             request_timeout=10.0,
             max_concurrent_requests=16,
+            max_sse_clients=8,
         )
 
     def test_control_tower_preloads_report(self) -> None:
@@ -736,6 +737,7 @@ class ControlTowerCliTests(unittest.TestCase):
             product_spine_store_path=None,
             request_timeout=10.0,
             max_concurrent_requests=16,
+            max_sse_clients=8,
         )
 
     def test_control_tower_rejects_oversized_preload_before_server_start(self) -> None:

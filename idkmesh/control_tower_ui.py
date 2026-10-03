@@ -563,6 +563,23 @@ _EVENT_FILTERS = ("project_id", "run_id", "work_unit_id", "event_type")
 _EVENT_BATCH = 200
 
 
+_SERVER_FAULT_CODES = frozenset({"store_error", "evidence_integrity_error"})
+
+
+def _service_error_status(code: str, *not_found: str) -> int:
+    """HTTP status for a ProductSpineRunStoreError code.
+
+    404 for the endpoint's own not-found codes, 500 for a server-side fault
+    (an unreadable store or a row that failed its integrity check), and 400 for
+    everything else, which is a problem with the request.
+    """
+    if code in not_found:
+        return 404
+    if code in _SERVER_FAULT_CODES:
+        return 500
+    return 400
+
+
 def _handler(
     initial_text: str | None,
     token: str,
@@ -854,7 +871,7 @@ def _handler(
                 result = service.status(run_id)
             except ProductSpineRunStoreError as exc:
                 code = getattr(exc, "code", "run_control_error")
-                status = 404 if code == "run_not_found" else 400
+                status = _service_error_status(code, "run_not_found")
                 self._send_json(
                     status,
                     error_document(code, str(exc)),
@@ -908,7 +925,7 @@ def _handler(
                 result = service.status(run_id)
             except ProductSpineRunStoreError as exc:
                 code = getattr(exc, "code", "run_control_error")
-                status = 404 if code == "run_not_found" else 400
+                status = _service_error_status(code, "run_not_found")
                 self._send_json(
                     status,
                     error_document(code, str(exc)),
@@ -1030,7 +1047,7 @@ def _handler(
                 resource = service.get_work_unit(work_unit_id)
             except ProductSpineRunStoreError as exc:
                 code = getattr(exc, "code", "run_control_error")
-                status = 404 if code == "work_unit_not_found" else 400
+                status = _service_error_status(code, "work_unit_not_found")
                 self._send_json(
                     status,
                     error_document(code, str(exc)),
@@ -1099,7 +1116,7 @@ def _handler(
                 resource = service.get_project(project_id)
             except ProductSpineRunStoreError as exc:
                 code = getattr(exc, "code", "run_control_error")
-                status = 404 if code == "project_not_found" else 400
+                status = _service_error_status(code, "project_not_found")
                 self._send_json(
                     status,
                     error_document(code, str(exc)),
@@ -1161,7 +1178,7 @@ def _handler(
             except ProductSpineRunStoreError as exc:
                 code = getattr(exc, "code", "run_control_error")
                 self._send_json(
-                    400,
+                    _service_error_status(code),
                     error_document(code, str(exc)),
                     head_only=head_only,
                 )
@@ -1290,7 +1307,7 @@ def _handler(
             except ProductSpineRunStoreError as exc:
                 code = getattr(exc, "code", "run_control_error")
                 self._send_json(
-                    400,
+                    _service_error_status(code),
                     error_document(code, str(exc)),
                     head_only=head_only,
                 )
@@ -1441,6 +1458,7 @@ def _handler(
                         if draining
                         else overloaded_message
                     ),
+                    retryable=True,
                     details={"retry_after_seconds": DEFAULT_RETRY_AFTER_SECONDS},
                 ),
                 head_only=self.command == "HEAD",
@@ -1460,12 +1478,26 @@ def _handler(
                     head_only=self.command == "HEAD",
                 )
                 return None
-            from idkmesh.connector_store import LocalMetadataStore
+            from idkmesh.connector_store import (
+                LocalMetadataStore,
+                LocalStoreError,
+            )
             from idkmesh.product_spine_run_store import ProductSpineRunStore
 
-            return ProductSpineRunStore(
-                LocalMetadataStore(product_spine_store_path)
-            )
+            try:
+                return ProductSpineRunStore(
+                    LocalMetadataStore(product_spine_store_path)
+                )
+            except (LocalStoreError, OSError, ValueError) as exc:
+                # Opening the store runs its migration; a locked or corrupt
+                # file is a server fault with an error body, not a dropped
+                # connection.
+                self._send_json(
+                    500,
+                    error_document("store_error", str(exc)),
+                    head_only=self.command == "HEAD",
+                )
+                return None
 
         def _event_list_response(self, query: str, *, head_only: bool) -> None:
             parsed_query = self._parse_list_query(
@@ -1494,7 +1526,7 @@ def _handler(
             except ProductSpineRunStoreError as exc:
                 code = getattr(exc, "code", "run_control_error")
                 self._send_json(
-                    400,
+                    _service_error_status(code),
                     error_document(code, str(exc)),
                     head_only=head_only,
                 )
@@ -1575,7 +1607,9 @@ def _handler(
                 latest = service.latest_event_sequence()
             except ProductSpineRunStoreError as exc:
                 code = getattr(exc, "code", "run_control_error")
-                self._send_json(400, error_document(code, str(exc)))
+                self._send_json(
+                    _service_error_status(code), error_document(code, str(exc))
+                )
                 return
             except (LocalStoreError, OSError, ValueError) as exc:
                 self._send_json(500, error_document("store_error", str(exc)))
@@ -1780,6 +1814,8 @@ def _handler(
             allow = "GET, HEAD"
             if path == f"/api/{API_VERSION}/run-evidence/inspect":
                 allow = "POST"
+            elif path == _EVENT_STREAM_PATH:
+                allow = "GET"
             self._method_not_allowed(
                 allow,
                 code="preflight_not_supported",
@@ -1899,9 +1935,14 @@ def _handler(
         def wrapper(self):
             if self._access_path() == "/healthz":
                 return method(self)
-            if self._access_path() == _EVENT_STREAM_PATH:
+            if (
+                self._access_path() == _EVENT_STREAM_PATH
+                and self.command == "GET"
+            ):
                 # ADR-0023: streams hold a connection for minutes, so they
-                # use their own cap and never starve the request cap.
+                # use their own cap and never starve the request cap. Other
+                # methods on the stream path go through the normal cap and
+                # get their 405.
                 limiter = self.server.sse_limiter
                 reject = {
                     "overloaded_code": "too_many_streams",

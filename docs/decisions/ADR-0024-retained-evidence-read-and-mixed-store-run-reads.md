@@ -117,3 +117,27 @@ an implementation detail.
 Revisit when #740 lands a decision store, when another writer starts retaining
 evidence, or when a run with a restorable kind other than the two listed
 appears.
+
+## Update 2026-10-02 (static review)
+
+A read-only static review of the implementation, before any test had run, found
+that decision 4 ("Product Spine run reads accept the idempotent offline result
+kind") had an unintended consequence, and tightened decision 1. The decisions
+are unchanged; reading is not controlling.
+
+- **Offline-spine runs are read-only for control.** Because `status` now restores
+  offline result rows, `ProductSpineRunStore.cancel` could succeed on one and
+  rewrite its row into the CLI shape (`_metadata`), dropping the retained
+  `evidence_report`, `source_run_record`, the offline idempotency identity and
+  the result kind. `cancel` now refuses any run whose stored kind is not
+  `product-spine-cli-run` with `cancel_not_allowed`; before decision 4 the same
+  call failed closed on the kind check.
+- **Evidence restore is as strict as `status` (decision 1).** `get_run_evidence`
+  first restores the row through the same checks as `status` (kind, run id,
+  state, request digests). A row that is not a Product Spine run is
+  `run_not_found`; a Product Spine row that fails the checks, for example one
+  with another run's metadata swapped in, is `evidence_integrity_error`.
+- **Store faults.** A malformed `metadata_json` row makes the kind-filtered list
+  query (decision 5) raise a SQL error. The store now raises it as
+  `LocalStoreError`, reported as `store_error`, instead of an unhandled raw
+  `sqlite3` error.

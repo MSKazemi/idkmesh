@@ -62,6 +62,22 @@ _EVENT_FIELDS = frozenset(
 )
 EVENT_SCHEMA_VERSION = "0.1"
 EVENT_KIND = "idkmesh-event"
+# The published envelope's vocabulary (schemas/idkmesh-event-v0.1.schema.json),
+# enforced here so a producer cannot persist an event that GET /events would
+# then serve as schema-invalid (ADR-0023).
+EVENT_TYPES = frozenset({"run.created", "run.cancelled"})
+EVENT_AUTHORITY_CLASSES = frozenset(
+    {
+        "local_control",
+        "worker_observation",
+        "verifier_recommendation",
+        "human_decision",
+    }
+)
+_EVENT_TIMESTAMP = re.compile(
+    r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\.[0-9]+)?Z\Z"
+)
+_EVENT_SOURCE_REVISION = re.compile(r"(?:[0-9a-fA-F]{40}|[0-9a-fA-F]{64})\Z")
 
 _ENV_SECRET_REF = re.compile(r"env:[A-Za-z_][A-Za-z0-9_]{0,127}\Z")
 
@@ -113,9 +129,16 @@ class RunRecord:
 
 
 def _connect(path: Path) -> sqlite3.Connection:
-    conn = sqlite3.connect(path, timeout=30.0)
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA foreign_keys = ON")
+    try:
+        conn = sqlite3.connect(path, timeout=30.0)
+    except sqlite3.Error as exc:
+        raise LocalStoreError(f"database error: {exc}") from exc
+    try:
+        conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA foreign_keys = ON")
+    except sqlite3.Error as exc:
+        conn.close()
+        raise LocalStoreError(f"database error: {exc}") from exc
     return conn
 
 
@@ -132,6 +155,10 @@ def _session(path: Path) -> Iterator[sqlite3.Connection]:
     try:
         with conn:
             yield conn
+    except sqlite3.Error as exc:
+        # A locked, unreadable or corrupt database is a store fault; callers
+        # and the HTTP layer handle LocalStoreError, not raw sqlite3 errors.
+        raise LocalStoreError(f"database error: {exc}") from exc
     finally:
         conn.close()
 
@@ -460,7 +487,7 @@ class LocalMetadataStore:
         ):
             self._require_text(value, field)
         payload = _dump_metadata(metadata)
-        normalised_event = self._normalise_event(event)
+        normalised_event = self._normalise_event(event, run_id=run_id)
 
         conn = _connect(self.path)
         try:
@@ -519,6 +546,9 @@ class LocalMetadataStore:
         except sqlite3.IntegrityError as exc:
             conn.rollback()
             raise LocalStoreConflict("run identity conflicts with existing record") from exc
+        except sqlite3.Error as exc:
+            conn.rollback()
+            raise LocalStoreError(f"database error: {exc}") from exc
         except Exception:
             conn.rollback()
             raise
@@ -833,23 +863,45 @@ class LocalMetadataStore:
         metadata: Mapping[str, Any],
         updated_at: str,
         event: Mapping[str, Any] | None = None,
+        expected_state: str | None = None,
     ) -> RunRecord:
+        """Update a run (and optionally append its event) atomically.
+
+        ``expected_state``, when given, makes the update conditional on the run
+        still being in that state: a concurrent writer that already changed it
+        gets ``LocalStoreConflict`` and no event is appended, so two racing
+        callers cannot both record the same transition (ADR-0023).
+        """
         self._require_text(run_id, "run_id")
+        if expected_state is not None:
+            self._require_text(expected_state, "expected_state")
         self._require_text(state, "state")
         self._require_text(updated_at, "updated_at")
         payload = _dump_metadata(metadata)
-        normalised_event = self._normalise_event(event)
+        normalised_event = self._normalise_event(event, run_id=run_id)
 
         with _session(self.path) as conn:
+            where = "run_id = ?"
+            params: list[Any] = [state, payload, updated_at, run_id]
+            if expected_state is not None:
+                where += " AND state = ?"
+                params.append(expected_state)
             cursor = conn.execute(
-                """
+                f"""
                 UPDATE runs
                 SET state = ?, metadata_json = ?, updated_at = ?
-                WHERE run_id = ?
+                WHERE {where}
                 """,
-                (state, payload, updated_at, run_id),
+                params,
             )
             if cursor.rowcount != 1:
+                exists = conn.execute(
+                    "SELECT 1 FROM runs WHERE run_id = ?", (run_id,)
+                ).fetchone()
+                if exists is not None and expected_state is not None:
+                    raise LocalStoreConflict(
+                        f"run {run_id} is no longer in state {expected_state}"
+                    )
                 raise LocalStoreError(f"unknown run_id: {run_id}")
             if normalised_event is not None:
                 self._append_event(conn, normalised_event)
@@ -862,7 +914,10 @@ class LocalMetadataStore:
 
     @classmethod
     def _normalise_event(
-        cls, event: Mapping[str, Any] | None
+        cls,
+        event: Mapping[str, Any] | None,
+        *,
+        run_id: str | None = None,
     ) -> dict[str, Any] | None:
         """Validate a producer-supplied event; ``None`` means "emit nothing".
 
@@ -884,6 +939,19 @@ class LocalMetadataStore:
         result: dict[str, Any] = {}
         for field in _EVENT_STRING_FIELDS:
             result[field] = cls._require_text(event[field], f"event.{field}")
+        if result["event_type"] not in EVENT_TYPES:
+            raise ValueError(f"event.event_type must be one of {sorted(EVENT_TYPES)}")
+        if result["authority_class"] not in EVENT_AUTHORITY_CLASSES:
+            raise ValueError(
+                "event.authority_class must be one of "
+                f"{sorted(EVENT_AUTHORITY_CLASSES)}"
+            )
+        if _EVENT_TIMESTAMP.match(result["occurred_at"]) is None:
+            raise ValueError("event.occurred_at must be a UTC timestamp ending in Z")
+        if run_id is not None and result["run_id"] != run_id:
+            raise ValueError(
+                "event.run_id must equal the run the event is committed with"
+            )
         principal = event["principal"]
         if (
             not isinstance(principal, Mapping)
@@ -898,6 +966,13 @@ class LocalMetadataStore:
             value = event[field]
             result[field] = (
                 None if value is None else cls._require_text(value, f"event.{field}")
+            )
+        if (
+            result["source_revision"] is not None
+            and _EVENT_SOURCE_REVISION.match(result["source_revision"]) is None
+        ):
+            raise ValueError(
+                "event.source_revision must be a 40 or 64 character hex digest"
             )
         reference = event["evidence_reference"]
         if reference is None:

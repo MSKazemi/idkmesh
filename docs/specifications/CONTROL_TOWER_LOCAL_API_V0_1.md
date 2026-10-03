@@ -861,8 +861,8 @@ else, or a duplicate, is `400 unexpected_query_parameters`):
 | Parameter | Meaning |
 | --- | --- |
 | `limit` | page size, 1-200 (default 50); otherwise `400 invalid_limit` |
-| `cursor` | opaque token from the previous page's `page.next_cursor`; a token this listing did not issue is `400 invalid_cursor` |
-| `project_id`, `run_id`, `work_unit_id` | exact match |
+| `cursor` | opaque token from the previous page's `page.next_cursor`; a token this listing did not issue, including a forged one that does not carry a bounded ASCII-decimal sequence (at most 18 digits), is `400 invalid_cursor` |
+| `project_id`, `run_id`, `work_unit_id` | exact match; a blank value is `400 invalid_filter` rather than silently matching nothing |
 | `event_type` | exact match, one of `run.created`, `run.cancelled`; any other value is `400 invalid_event_type` rather than silently matching nothing |
 
 Scoped run and work-unit queries are these filters. No new run sub-resource
@@ -960,7 +960,9 @@ data: {"schema_version":"0.1","kind":"idkmesh-event", ... }
   `GET /api/v1/events`, so a first connection never silently depends on
   history it was not asked for.
 - **Filters.** `project_id`, `run_id`, `work_unit_id` and `event_type`, with the
-  same meaning and errors as the history endpoint. `cursor` and `limit` are not
+  same meaning and errors as the history endpoint (a blank filter is
+  `400 invalid_filter`, an unknown `event_type` is `400 invalid_event_type`, and
+  both are answered before any stream byte is sent). `cursor` and `limit` are not
   accepted on the stream.
 - **Delivery is at-least-once.** A client dedupes on `event_id`.
 - **Framing.** The response is `text/event-stream; charset=utf-8` with no
@@ -969,7 +971,10 @@ data: {"schema_version":"0.1","kind":"idkmesh-event", ... }
   (a 3 s client reconnect hint). When the server ends a stream it first writes
   one comment line, `: stream-ended reason=max-duration`,
   `reason=shutdown` (drain) or `reason=store-error`, then closes; a client
-  treats all three as "reconnect with `Last-Event-ID`".
+  treats all three as "reconnect with `Last-Event-ID`". `reason=store-error`
+  means the store failed while the stream was polling (a locked, unreadable or
+  corrupt database: the store reports a SQL error as a `LocalStoreError`), and
+  the stream says so instead of dropping the connection.
 - **Bounds** (published in `operations.limits`, see Service limits): at most
   `max_sse_clients` concurrent streams (default 8, counted by their own
   limiter; beyond it `503 too_many_streams` with `Retry-After`); a heartbeat
@@ -982,6 +987,11 @@ data: {"schema_version":"0.1","kind":"idkmesh-event", ... }
   connection may stay idle for the heartbeat interval plus a small margin.
 - Only `GET` is supported. `HEAD` answers `405` with `Allow: GET` (an open
   stream has no meaningful headers-only form), as does every write method.
+  Only a `GET` is admitted through the stream limiter; every other method goes
+  through the general request cap, so a wrong-method request is answered `405`
+  even when `max_sse_clients` streams are already open, never with a misleading
+  `503 too_many_streams`. Cross-origin `OPTIONS` on the stream path is still
+  rejected (`405 preflight_not_supported`); its `Allow` header advertises `GET`.
 
 Example:
 
@@ -1215,6 +1225,11 @@ see [API Conventions v0.1](API_CONVENTIONS_V0_1.md) section 5):
 Optional structured `error.details` may be included when a machine-readable
 recovery hint exists, such as supported API versions.
 
+`error.retryable` is `false` for every code below except the three `503`
+capacity responses `overloaded`, `too_many_streams` and `shutting_down`, which
+carry `retryable: true`, a `Retry-After` header and
+`error.details.retry_after_seconds`.
+
 Stable v0.1 codes include:
 
 - `invalid_host`;
@@ -1257,17 +1272,29 @@ Stable v0.1 codes include:
 - `invalid_state` (`GET /api/v1/runs`, `state` not one of the canonical
   Product Spine lifecycle states);
 - `overloaded` (503, the concurrent-request cap is reached; carries
-  `Retry-After`);
-- `shutting_down` (503, the server is draining; carries `Retry-After`);
+  `Retry-After`; `retryable: true`);
+- `shutting_down` (503, the server is draining; carries `Retry-After`;
+  `retryable: true`);
 - `request_timeout` (408, a request body was not received within the service
   request timeout);
 - `invalid_event_type` (`GET /api/v1/events` and `GET /api/v1/events/stream`,
   `event_type` not one of the known event types);
+- `invalid_filter` (`GET /api/v1/events` and `GET /api/v1/events/stream`, a
+  `project_id`, `run_id` or `work_unit_id` filter that is blank);
 - `invalid_last_event_id` (`GET /api/v1/events/stream`, `Last-Event-ID` is not
   a non-negative integer or is beyond the newest event of this stream;
   the latter carries `error.details.latest_sequence`);
 - `too_many_streams` (503, `max_sse_clients` streams are already open; carries
-  `Retry-After`).
+  `Retry-After`; `retryable: true`);
+- `store_error` (the Product Spine store failed: a locked, unreadable or
+  corrupt database. A SQL error is raised by the store as a `LocalStoreError`
+  and reported by the run-store service as `store_error`.
+  Every store-backed read endpoint (`/runs`, `/runs/{run_id}`,
+  `/runs/{run_id}/attempts`, `/runs/{run_id}/evidence`, `/work-units`,
+  `/projects`, `/events` and the stream's pre-stream check) answers it `500`;
+  so does `evidence_integrity_error`. Opening the store (which runs its
+  migration) is guarded as well: a file that cannot be opened is answered with
+  a `500 store_error` body, not a dropped connection).
 
 ## Service limits
 
@@ -1281,7 +1308,7 @@ and each is proven by `tests/test_control_tower_limits.py`.
 | Request timeout | 10 s (`--request-timeout`, 0.1-300) | socket timeout on every connection; a stalled request line or headers drop the connection, a stalled body answers `408 request_timeout` | `SlowClientTests` |
 | Concurrent requests | 16 (`--max-concurrent-requests`, 1-1024) | non-blocking `RequestLimiter`; beyond the cap `503 overloaded` + `Retry-After`, no application work, connection closed | `OverloadTests`, `RequestLimiterTests` |
 | Queue | listen backlog 16 | `request_queue_size`; there is no application wait queue | `OverloadTests` |
-| Retry hint | `Retry-After: 1` | on every 503 from the cap or a drain | `OverloadTests`, `DrainTests` |
+| Retry hint | `Retry-After: 1` | on every 503 from the cap or a drain; the error body also carries `retryable: true` | `OverloadTests`, `DrainTests` |
 | Graceful drain | 5 s | `ControlTowerServer.drain()`: new requests `503 shutting_down`, then waits for in-flight requests; `serve_control_tower` calls it on shutdown | `DrainTests` |
 | Request line | 65536 bytes | stdlib parser, `414` above | `ParserBoundTests` |
 | Header line | 65536 bytes | stdlib parser, `431` above | `ParserBoundTests` |
@@ -1297,9 +1324,10 @@ Semantics:
 
 - `GET /healthz` is exempt from the cap and from drain rejection. Every other
   request, including `GET /readyz`, is admitted or rejected.
-- A rejection answers with the standard error envelope, `X-Request-ID`, and the
-  security headers, and does no application work, so its cost does not depend on
-  the request. `HEAD` rejections carry headers and no body.
+- A rejection answers with the standard error envelope (`retryable: true`),
+  `X-Request-ID`, and the security headers, and does no application work, so its
+  cost does not depend on the request. `HEAD` rejections carry headers and no
+  body.
 - A `POST` rejected at the cap is answered without reading its body and the
   connection is closed, so a client sending a large body may see a connection
   reset instead of the `503`.
@@ -1312,6 +1340,9 @@ Semantics:
   `503`. `429` is reserved for the enterprise identity profile.
 - SSE streams are counted by their own limiter and do not occupy a general
   request slot; drain ends them promptly and `drain()` waits for both limiters.
+  Only a `GET` on the stream path is counted by that limiter: `HEAD`, `POST`
+  and the other write methods use the general cap and are answered `405
+  Allow: GET`.
 - Only the Control Tower server is hardened. `gate-audit-ui` and the steward UIs
   keep their previous behavior.
 - A public or network deployment must use a reviewed production transport

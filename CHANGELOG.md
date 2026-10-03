@@ -177,6 +177,50 @@ and the release notes for that tag.
   ([ADR-0024](docs/decisions/ADR-0024-retained-evidence-read-and-mixed-store-run-reads.md)),
   which also keeps keyset pagination consistent. The filter is by kind, not by
   exception: a row of a listed kind that fails to restore still fails loudly.
+- Corrections to the still-unreleased event, evidence and service-limit code
+  above, found by a read-only static review (no test has run against any of it
+  yet), so they refine entries in this section instead of fixing a released
+  behavior:
+  - **`idkmesh run cancel` no longer destroys retained evidence.** Once
+    offline-spine rows became readable, `cancel` could succeed on one and
+    rewrite its row into the CLI shape, dropping the retained evidence report.
+    `cancel` now refuses any run not created by `idkmesh run create` with
+    `cancel_not_allowed`
+    ([ADR-0024](docs/decisions/ADR-0024-retained-evidence-read-and-mixed-store-run-reads.md)).
+  - **A concurrent double `run cancel` emits exactly one `run.cancelled`.**
+    `LocalMetadataStore.update_run` gained `expected_state`, which makes the
+    update conditional; the losing caller returns the already-cancelled run, or
+    fails with `cancel_conflict` if the run changed to another state
+    ([ADR-0023](docs/decisions/ADR-0023-canonical-append-only-event-source.md)).
+  - **The store enforces the published event envelope**: `event_type`,
+    `authority_class`, the UTC `occurred_at`, a 40/64-hex `source_revision`, and
+    `event.run_id` equal to the run it is committed with are validated before
+    anything is written. This also keeps the SSE `event:` line to the enumerated
+    event types.
+  - **Event history validation.** A blank `project_id`, `run_id` or
+    `work_unit_id` is `400 invalid_filter` (it was reported as
+    `invalid_limit`), and a cursor must be a bounded ASCII-decimal sequence
+    (at most 18 digits) or it is `400 invalid_cursor` (a forged one used to
+    raise an unhandled or mislabelled error, depending on its content).
+  - **`GET /api/v1/runs/{run_id}/evidence` restores the row exactly as
+    `status` does** before verifying the digest, so a foreign or swapped row
+    answers `404 run_not_found` or `500 evidence_integrity_error`.
+  - **Store faults are reported, not dropped.** A SQL error from the store (a
+    locked, unreadable or corrupt database) is raised as `LocalStoreError`
+    instead of a raw `sqlite3` error, so the service reports `store_error` and
+    an open event stream ends with `: stream-ended reason=store-error`. Every
+    store-backed read endpoint now answers a service `store_error` (and the
+    evidence endpoint's `evidence_integrity_error`) with `500` through one
+    shared status helper, instead of the earlier generic `400`; opening the
+    database (including its migration) is guarded too, in the store's
+    connection helper and in the events handlers, so an unopenable file gets a
+    `500 store_error` body rather than a dropped connection.
+  - **503 capacity responses are marked retryable.** `overloaded`,
+    `too_many_streams` and `shutting_down` now carry `retryable: true`. On the
+    stream path only `GET` uses the stream limiter, so `HEAD`, `POST` and the
+    other write methods get `405` (not `503 too_many_streams`) when the stream
+    cap is full, and `OPTIONS` advertises `Allow: GET`. The OpenAPI
+    `Last-Event-ID` text now mentions the beyond-head `400`.
 
 ### Changed
 
