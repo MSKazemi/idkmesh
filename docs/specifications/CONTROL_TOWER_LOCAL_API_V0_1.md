@@ -325,6 +325,7 @@ It describes:
 - status endpoint;
 - OpenAPI endpoint;
 - run-evidence inspection endpoint;
+- run list/read/attempts and WorkUnit list/read endpoints;
 - supported request media types;
 - core response/error status codes;
 - published schema references.
@@ -401,7 +402,8 @@ application service `idkmesh run list` already uses, deterministically
 ordered by `run_id` with keyset (not offset) pagination -- API Conventions
 v0.1 sections 10-11.
 
-This is the one Control Tower endpoint that accepts query parameters:
+This is one of two Control Tower endpoints that accept query parameters
+(the other is `GET /api/v1/work-units`):
 
 - `limit` (optional integer, 1-200, default 50);
 - `cursor` (optional opaque string from a previous response's
@@ -558,6 +560,199 @@ Representative shape:
 
 Unknown `run_id` returns `404` with code `run_not_found`, including when the
 derived `run_id` (path minus the `/attempts` suffix) does not exist.
+
+Supported methods:
+
+```text
+GET, HEAD
+```
+
+### `GET /api/v1/work-units`
+
+Authenticated, read-only WorkUnit listing (issue #739, the `work-units` read
+surface). A **derived read model** ([ADR-0021](../decisions/ADR-0021-derived-work-unit-and-project-read-models.md)):
+no WorkUnit store exists, so each item is computed on demand from the
+WorkUnit reference (`id`, `version`, `digest`, `source_revision`) that every
+retained Product Spine run already stores. Serves the same
+`idkmesh/product_spine_run_store.py:ProductSpineRunStore.list_work_units()`
+application service `idkmesh work-unit list` uses.
+
+Items are one per distinct WorkUnit `id`, ordered by `id` ascending, with
+keyset (not offset) pagination -- API Conventions v0.1 sections 10-11.
+
+Query parameters (every other endpoint except `GET /api/v1/runs` still
+rejects any query string):
+
+- `limit` (optional integer, 1-200, default 50);
+- `cursor` (optional opaque string from a previous response's
+  `page.next_cursor`; a cursor issued by `GET /api/v1/runs` is rejected);
+- `project_id` (optional, an exact match). When given, only that project's
+  runs are considered, so every `run_count` counts only those runs.
+
+Any other query parameter, or any of these repeated, is rejected with
+`400 unexpected_query_parameters`. An out-of-range or non-integer `limit` is
+`400 invalid_limit`; a cursor this service did not issue is
+`400 invalid_cursor`. Without `--product-spine-store` the endpoint returns
+`503 product_spine_store_not_configured`.
+
+What an item does and does not say:
+
+- `revisions` lists the distinct `{version, digest, source_revision}`
+  references seen for the id, each with its own `run_count`, ordered
+  ascending by `(version, digest, source_revision)`;
+- no revision is marked latest, current, or preferred, and no health, status,
+  or score is rolled up -- selecting one is a human/governance decision, not
+  a read-model one;
+- no WorkUnit body is returned because none is stored; `digest` is the
+  binding a caller uses to fetch or verify a body elsewhere;
+- a WorkUnit that has never had a run is not listed.
+
+Representative shape:
+
+```json
+{
+  "kind": "idkmesh-list",
+  "schema_version": "0.1",
+  "items": [
+    {
+      "id": "work/a",
+      "run_count": 3,
+      "revisions": [
+        {
+          "version": 1,
+          "digest": "sha256:...",
+          "source_revision": "0123456789abcdef0123456789abcdef01234567",
+          "run_count": 2
+        },
+        {
+          "version": 2,
+          "digest": "sha256:...",
+          "source_revision": "0123456789abcdef0123456789abcdef01234567",
+          "run_count": 1
+        }
+      ]
+    }
+  ],
+  "page": {
+    "next_cursor": null,
+    "limit": 50
+  }
+}
+```
+
+Frozen by `schemas/idkmesh-list-v0.1.schema.json` wrapping
+`schemas/idkmesh-work-unit-resource-v0.1.schema.json` items.
+
+Counts are consistent per request only: a run created between two page reads
+can change them, the same caveat `GET /api/v1/runs` carries.
+
+Supported methods:
+
+```text
+GET, HEAD
+```
+
+### `GET /api/v1/work-units/{work_unit_id}`
+
+Authenticated, read-only read of one derived WorkUnit resource, through the
+same service as `idkmesh work-unit status`.
+
+WorkUnit ids share the run-id grammar and may contain `/`, so the **entire
+path remainder is one literal id** (`/api/v1/work-units/work/nested/b` reads
+the id `work/nested/b`). v0.1 reserves no work-unit sub-resource suffix;
+adding one needs a new ADR extending ADR-0019's path-only resolution rule.
+Query parameters are rejected with `400 unexpected_query_parameters`.
+
+Representative shape:
+
+```json
+{
+  "api_version": "v1",
+  "schema_version": "0.1",
+  "kind": "idkmesh-control-tower-work-unit-response",
+  "ok": true,
+  "work_unit": {
+    "id": "work/a",
+    "run_count": 1,
+    "revisions": [
+      {
+        "version": 1,
+        "digest": "sha256:...",
+        "source_revision": "0123456789abcdef0123456789abcdef01234567",
+        "run_count": 1
+      }
+    ]
+  }
+}
+```
+
+An id no stored run references returns `404` with code
+`work_unit_not_found`. That states only that the retained runs do not mention
+it, not that the WorkUnit does not exist elsewhere. Without
+`--product-spine-store` the endpoint returns
+`503 product_spine_store_not_configured`.
+
+Frozen by `schemas/idkmesh-control-tower-work-unit-response-v0.1.schema.json`,
+which references `schemas/idkmesh-work-unit-resource-v0.1.schema.json`.
+
+Both work-unit endpoints answer `405` with `Allow: GET, HEAD` to any write
+method.
+
+Supported methods:
+
+```text
+GET, HEAD
+```
+
+### `GET /api/v1/projects/{project_id}`
+
+Authenticated, read-only project summary (issue #739, the `projects` read
+surface), through the same service as `idkmesh project status`. A **derived
+read model** ([ADR-0021](../decisions/ADR-0021-derived-work-unit-and-project-read-models.md)):
+no project record exists, so this is counts over the stored Product Spine runs
+that name the project, and nothing else.
+
+`project_id` is not constrained beyond being non-empty and may contain `/`, so
+the **entire path remainder is one literal id**
+(`/api/v1/projects/org/team/project` reads `org/team/project`). Matching is
+exact. v0.1 reserves no project sub-resource suffix and defines no project
+list. Query parameters are rejected with `400 unexpected_query_parameters`.
+
+Representative shape (all 14 canonical states are always present; only two are
+shown):
+
+```json
+{
+  "api_version": "v1",
+  "schema_version": "0.1",
+  "kind": "idkmesh-control-tower-project-response",
+  "ok": true,
+  "project": {
+    "project_id": "project.alpha",
+    "run_count": 3,
+    "runs_by_state": {
+      "proposed": 2,
+      "cancelled": 1
+    },
+    "work_unit_count": 2
+  }
+}
+```
+
+`runs_by_state` is zero-filled over every canonical run state, so the shape is
+identical for every project, and its values sum to `run_count`.
+`work_unit_count` is the number of distinct WorkUnit ids those runs reference;
+list them with `GET /api/v1/work-units?project_id=`. The summary carries no
+health, status, or score rollup and selects nothing.
+
+A project no stored run names returns `404` with code `project_not_found`.
+That states only that the retained runs do not mention it, not that the
+project does not exist elsewhere. Without `--product-spine-store` the endpoint
+returns `503 product_spine_store_not_configured`. Any write method answers
+`405` with `Allow: GET, HEAD`.
+
+Frozen by `schemas/idkmesh-control-tower-project-response-v0.1.schema.json`,
+which references `schemas/idkmesh-project-resource-v0.1.schema.json`.
 
 Supported methods:
 
@@ -726,6 +921,21 @@ by:
 
 - `schemas/idkmesh-control-tower-run-attempts-response-v0.1.schema.json`
 
+The derived WorkUnit resource and its single-read response
+(`GET /api/v1/work-units`, `GET /api/v1/work-units/{work_unit_id}`) are frozen
+by:
+
+- `schemas/idkmesh-work-unit-resource-v0.1.schema.json`
+- `schemas/idkmesh-control-tower-work-unit-response-v0.1.schema.json`
+
+The list endpoint reuses `schemas/idkmesh-list-v0.1.schema.json`.
+
+The derived project summary and its single-read response
+(`GET /api/v1/projects/{project_id}`) are frozen by:
+
+- `schemas/idkmesh-project-resource-v0.1.schema.json`
+- `schemas/idkmesh-control-tower-project-response-v0.1.schema.json`
+
 ## Error envelope
 
 All API JSON errors use the shape frozen by
@@ -768,12 +978,19 @@ Stable v0.1 codes include:
 - `preflight_not_supported`;
 - `not_found`;
 - `run_not_found` (`GET /api/v1/runs/{run_id}`, unknown `run_id`);
-- `product_spine_store_not_configured` (`GET /api/v1/runs/{run_id}` and
-  `GET /api/v1/runs`, no `--product-spine-store` given to this server
-  instance);
-- `invalid_limit` (`GET /api/v1/runs`, `limit` outside 1-200);
-- `invalid_cursor` (`GET /api/v1/runs`, `cursor` this service did not
-  itself issue);
+- `work_unit_not_found` (`GET /api/v1/work-units/{work_unit_id}`, no
+  stored run references the id);
+- `project_not_found` (`GET /api/v1/projects/{project_id}`, no stored run
+  names the project);
+- `product_spine_store_not_configured` (`GET /api/v1/runs/{run_id}`,
+  `GET /api/v1/runs`, `GET /api/v1/work-units`,
+  `GET /api/v1/work-units/{work_unit_id}`, and
+  `GET /api/v1/projects/{project_id}`, no `--product-spine-store` given
+  to this server instance);
+- `invalid_limit` (`GET /api/v1/runs` and `GET /api/v1/work-units`, `limit`
+  outside 1-200);
+- `invalid_cursor` (`GET /api/v1/runs` and `GET /api/v1/work-units`,
+  `cursor` this service did not itself issue for that listing);
 - `invalid_state` (`GET /api/v1/runs`, `state` not one of the canonical
   Product Spine lifecycle states).
 
@@ -813,13 +1030,25 @@ export IDKMESH_CONTROL_TOWER_TOKEN='replace-with-at-least-32-random-characters'
 idkmesh control-tower --no-browser --port 8770
 ```
 
-Headless server that also serves `GET /api/v1/runs/{run_id}` over an
+Headless server that also serves the run, WorkUnit, and project read endpoints
+(`GET /api/v1/runs`, `GET /api/v1/runs/{run_id}`,
+`GET /api/v1/runs/{run_id}/attempts`, `GET /api/v1/work-units`,
+`GET /api/v1/work-units/{work_unit_id}`,
+`GET /api/v1/projects/{project_id}`) over an
 existing Product Spine store (the same file `idkmesh run create/status/cancel`
 already writes to):
 
 ```bash
 idkmesh control-tower --no-browser --port 8770 \
   --product-spine-store path/to/product-spine.sqlite3
+```
+
+Read the same store's derived WorkUnits and project summaries from the CLI:
+
+```bash
+idkmesh work-unit list --store path/to/product-spine.sqlite3
+idkmesh work-unit status work/a --store path/to/product-spine.sqlite3
+idkmesh project status project.alpha --store path/to/product-spine.sqlite3
 ```
 
 Example status request:
@@ -864,6 +1093,9 @@ identity distinction != independence
 ```
 
 ## Next compatible extensions
+
+Issue #739's only unshipped read surfaces are `GET /api/v1/runs/{run_id}/evidence`
+and `/decisions`, blocked on the immutable content store of issue #740.
 
 Issue #572 defines later read-first slices:
 

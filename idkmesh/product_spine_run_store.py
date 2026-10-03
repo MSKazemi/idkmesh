@@ -131,18 +131,24 @@ def _timestamp(value: str, field: str) -> str:
 _CURSOR_KIND = "product-spine-run-list-cursor-v1"
 
 
-def _encode_cursor(after_run_id: str) -> str:
+_WORK_UNIT_CURSOR_KIND = "product-spine-work-unit-list-cursor-v1"
+
+
+def _encode_cursor(after_run_id: str, kind: str = _CURSOR_KIND) -> str:
     """Opaque next-page cursor: callers must treat this as a token, never
-    construct or parse one themselves (API Conventions v0.1 section 10)."""
+    construct or parse one themselves (API Conventions v0.1 section 10).
+
+    ``kind`` namespaces the token so a cursor issued for one listing is
+    rejected by another."""
     payload = json.dumps(
-        {"kind": _CURSOR_KIND, "after": after_run_id},
+        {"kind": kind, "after": after_run_id},
         sort_keys=True,
         separators=(",", ":"),
     ).encode("utf-8")
     return base64.urlsafe_b64encode(payload).decode("ascii")
 
 
-def _decode_cursor(cursor: str) -> str:
+def _decode_cursor(cursor: str, kind: str = _CURSOR_KIND) -> str:
     if not isinstance(cursor, str) or not cursor:
         raise ProductSpineRunStoreError(
             "invalid_cursor", "cursor must be a non-empty string"
@@ -155,7 +161,7 @@ def _decode_cursor(cursor: str) -> str:
         ) from exc
     if (
         not isinstance(payload, dict)
-        or payload.get("kind") != _CURSOR_KIND
+        or payload.get("kind") != kind
         or not isinstance(payload.get("after"), str)
         or not payload["after"]
     ):
@@ -391,6 +397,88 @@ class ProductSpineRunStore:
         runs = [_restore(record) for record in records]
         next_cursor = _encode_cursor(records[-1].run_id) if has_more else None
         return runs, next_cursor
+
+    def list_work_units(
+        self,
+        *,
+        limit: int = DEFAULT_LIST_LIMIT,
+        cursor: str | None = None,
+        project_id: str | None = None,
+    ) -> tuple[list[dict[str, Any]], str | None]:
+        """Derived WorkUnit listing (ADR-0021), ordered by WorkUnit id.
+
+        Returns ``(work_units, next_cursor)``. The cursor is opaque, namespaced
+        to this listing, and fails closed with ``invalid_cursor`` for anything
+        this service did not issue.
+        """
+        after = (
+            _decode_cursor(cursor, _WORK_UNIT_CURSOR_KIND)
+            if cursor is not None
+            else None
+        )
+        try:
+            items, has_more = self._store.list_work_units(
+                limit=limit, after=after, project_id=project_id,
+            )
+        except ValueError as exc:
+            raise ProductSpineRunStoreError("invalid_limit", str(exc)) from exc
+        except LocalStoreError as exc:
+            raise ProductSpineRunStoreError("store_error", str(exc)) from exc
+        next_cursor = (
+            _encode_cursor(items[-1]["id"], _WORK_UNIT_CURSOR_KIND)
+            if has_more
+            else None
+        )
+        return items, next_cursor
+
+    def get_work_unit(self, work_unit_id: str) -> dict[str, Any]:
+        """One derived WorkUnit resource, or ``work_unit_not_found``."""
+        if not isinstance(work_unit_id, str) or not work_unit_id:
+            raise ProductSpineRunStoreError(
+                "invalid_work_unit_id",
+                "work_unit_id must be a non-empty string",
+            )
+        try:
+            resource = self._store.get_work_unit(work_unit_id)
+        except LocalStoreError as exc:
+            raise ProductSpineRunStoreError("store_error", str(exc)) from exc
+        if resource is None:
+            raise ProductSpineRunStoreError(
+                "work_unit_not_found",
+                f"no stored run references work unit: {work_unit_id}",
+            )
+        return resource
+
+    def get_project(self, project_id: str) -> dict[str, Any]:
+        """One derived project summary (ADR-0021), or ``project_not_found``.
+
+        ``runs_by_state`` lists every canonical run state, zero-filled, so the
+        shape is identical for every project. No health or status rollup is
+        computed: counts only, nothing selected.
+        """
+        if not isinstance(project_id, str) or not project_id:
+            raise ProductSpineRunStoreError(
+                "invalid_project_id",
+                "project_id must be a non-empty string",
+            )
+        try:
+            counts = self._store.get_project_counts(project_id)
+        except LocalStoreError as exc:
+            raise ProductSpineRunStoreError("store_error", str(exc)) from exc
+        if counts is None:
+            raise ProductSpineRunStoreError(
+                "project_not_found",
+                f"no stored run references project: {project_id}",
+            )
+        return {
+            "project_id": counts["project_id"],
+            "run_count": counts["run_count"],
+            "runs_by_state": {
+                state: counts["state_counts"].get(state, 0)
+                for state in sorted(RUN_STATES)
+            },
+            "work_unit_count": counts["work_unit_count"],
+        }
 
     def cancel(
         self,

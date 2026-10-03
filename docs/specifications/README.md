@@ -21,7 +21,8 @@ meaning of an existing version.
   and independent-verification evidence for human inspection.
 - [Control Tower Local API v0.1](CONTROL_TOWER_LOCAL_API_V0_1.md) — versioned,
   loopback-only read API and presentation contract for Human Control Tower run
-  evidence inspection.
+  evidence inspection, plus read-only Product Spine run, attempt, and derived
+  WorkUnit and project views ([ADR-0021](../decisions/ADR-0021-derived-work-unit-and-project-read-models.md)).
 - [HTTP Service Runtime Baseline v0.1](HTTP_SERVICE_RUNTIME_V0_1.md) —
   dependency-free request correlation, liveness/readiness, service metadata,
   and payload-free structured access logging for IDKMesh HTTP surfaces.

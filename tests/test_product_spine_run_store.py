@@ -299,5 +299,135 @@ class ProductSpineRunStoreTests(unittest.TestCase):
         self.assertEqual(runs, [])
 
 
+    def _seed_work_units(self):
+        for index, (run_id, wu, version) in enumerate(
+            [
+                ("run/w-1", "work/a", 1),
+                ("run/w-2", "work/a", 2),
+                ("run/w-3", "work/b", 1),
+                ("run/w-4", "work/c", 1),
+            ]
+        ):
+            self.service.create(
+                _run(
+                    run_id=run_id,
+                    work_unit_id=wu,
+                    work_unit_version=version,
+                    project_id="project.alpha" if wu != "work/c" else "project.beta",
+                ),
+                idempotency_key=f"wu-{index}",
+                created_at="2026-10-01T00:00:00Z",
+            )
+
+    def test_list_work_units_derives_resources_from_runs(self):
+        self._seed_work_units()
+
+        items, next_cursor = self.service.list_work_units()
+
+        self.assertIsNone(next_cursor)
+        self.assertEqual([i["id"] for i in items], ["work/a", "work/b", "work/c"])
+        self.assertEqual(items[0]["run_count"], 2)
+        self.assertEqual(
+            [r["version"] for r in items[0]["revisions"]], [1, 2]
+        )
+
+    def test_list_work_units_paginates_and_filters_by_project(self):
+        self._seed_work_units()
+
+        page1, cursor = self.service.list_work_units(limit=2)
+        page2, last = self.service.list_work_units(limit=2, cursor=cursor)
+
+        self.assertEqual([i["id"] for i in page1], ["work/a", "work/b"])
+        self.assertEqual([i["id"] for i in page2], ["work/c"])
+        self.assertIsNone(last)
+        beta, _ = self.service.list_work_units(project_id="project.beta")
+        self.assertEqual([i["id"] for i in beta], ["work/c"])
+
+    def test_work_unit_cursor_rejects_a_run_list_cursor(self):
+        self._seed_work_units()
+        _, run_cursor = self.service.list(limit=1)
+        self.assertIsNotNone(run_cursor)
+
+        with self.assertRaises(ProductSpineRunStoreError) as ctx:
+            self.service.list_work_units(cursor=run_cursor)
+
+        self.assertEqual(ctx.exception.code, "invalid_cursor")
+
+    def test_list_work_units_rejects_a_bad_limit_and_garbage_cursor(self):
+        with self.assertRaises(ProductSpineRunStoreError) as ctx:
+            self.service.list_work_units(limit=0)
+        self.assertEqual(ctx.exception.code, "invalid_limit")
+        with self.assertRaises(ProductSpineRunStoreError) as ctx:
+            self.service.list_work_units(cursor="not-a-cursor")
+        self.assertEqual(ctx.exception.code, "invalid_cursor")
+
+    def test_get_work_unit_found_and_not_found(self):
+        self._seed_work_units()
+
+        resource = self.service.get_work_unit("work/a")
+        self.assertEqual(resource["run_count"], 2)
+
+        with self.assertRaises(ProductSpineRunStoreError) as ctx:
+            self.service.get_work_unit("work/missing")
+        self.assertEqual(ctx.exception.code, "work_unit_not_found")
+        with self.assertRaises(ProductSpineRunStoreError) as ctx:
+            self.service.get_work_unit("")
+        self.assertEqual(ctx.exception.code, "invalid_work_unit_id")
+
+    def test_work_unit_read_model_carries_no_selection_or_body(self):
+        self._seed_work_units()
+
+        resource = self.service.get_work_unit("work/a")
+
+        self.assertEqual(set(resource), {"id", "run_count", "revisions"})
+        for forbidden in ("latest", "current", "preferred", "body"):
+            self.assertNotIn(forbidden, resource)
+
+
+    def test_get_project_zero_fills_every_canonical_state(self):
+        from idkmesh.product_spine import RUN_STATES
+
+        self._seed_work_units()
+
+        project = self.service.get_project("project.alpha")
+
+        self.assertEqual(
+            set(project),
+            {"project_id", "run_count", "runs_by_state", "work_unit_count"},
+        )
+        self.assertEqual(project["run_count"], 3)
+        self.assertEqual(project["work_unit_count"], 2)
+        self.assertEqual(set(project["runs_by_state"]), set(RUN_STATES))
+        self.assertEqual(project["runs_by_state"]["proposed"], 3)
+        self.assertEqual(project["runs_by_state"]["cancelled"], 0)
+        self.assertEqual(
+            sum(project["runs_by_state"].values()), project["run_count"]
+        )
+
+    def test_get_project_reflects_a_state_change(self):
+        self._seed_work_units()
+        self.service.cancel("run/w-1", updated_at="2026-10-01T01:00:00Z")
+
+        project = self.service.get_project("project.alpha")
+
+        self.assertEqual(project["runs_by_state"]["proposed"], 2)
+        self.assertEqual(project["runs_by_state"]["cancelled"], 1)
+
+    def test_get_project_not_found_and_invalid(self):
+        self._seed_work_units()
+        with self.assertRaises(ProductSpineRunStoreError) as ctx:
+            self.service.get_project("project.missing")
+        self.assertEqual(ctx.exception.code, "project_not_found")
+        with self.assertRaises(ProductSpineRunStoreError) as ctx:
+            self.service.get_project("")
+        self.assertEqual(ctx.exception.code, "invalid_project_id")
+
+    def test_project_read_model_carries_no_rollup(self):
+        self._seed_work_units()
+        project = self.service.get_project("project.alpha")
+        for forbidden in ("health", "status", "score", "latest", "state"):
+            self.assertNotIn(forbidden, project)
+
+
 if __name__ == "__main__":
     unittest.main()

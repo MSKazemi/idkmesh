@@ -532,3 +532,70 @@ claim otherwise.
 
 Like the PS-C store, this is a development/reference surface over a local
 SQLite file, not the hosted multi-tenant durable ledger.
+
+## Derived WorkUnit read model
+
+Issue #739 and [ADR-0021](../decisions/ADR-0021-derived-work-unit-and-project-read-models.md)
+add a read-only WorkUnit view over the runs already retained by the store.
+No WorkUnit store exists: a run records only the reference
+`{id, version, digest, source_revision}`, so the view is derived on demand
+and claims nothing more.
+
+```text
+idkmesh work-unit list --store PATH [--limit N] [--cursor TOKEN] [--project-id ID] [--json]
+idkmesh work-unit status WORK_UNIT_ID --store PATH [--json]
+```
+
+`ProductSpineRunStore.list_work_units(limit, cursor, project_id)` returns
+`(items, next_cursor)` and `ProductSpineRunStore.get_work_unit(id)` returns one
+resource. Both are also what `GET /api/v1/work-units` and
+`GET /api/v1/work-units/{work_unit_id}` serve, so the CLI and the HTTP API
+cannot disagree.
+
+Each resource is `{id, run_count, revisions}`, where `revisions` lists the
+distinct `{version, digest, source_revision, run_count}` references seen for
+the id, ordered ascending by `(version, digest, source_revision)`. Items are
+ordered by `id` with keyset pagination; the cursor is opaque, scoped to this
+listing (a `run list` cursor fails with `invalid_cursor`), and never
+constructed by hand. `--project-id` is an exact match and restricts every
+`run_count` to that project's runs.
+
+Failure codes: `invalid_limit`, `invalid_cursor`, `invalid_work_unit_id`,
+`work_unit_not_found` (no retained run references the id; this does not claim
+the WorkUnit is unknown elsewhere), and `store_error`.
+
+The view selects no latest or preferred revision, returns no WorkUnit body
+(`digest` is the binding for one), and carries no authority: it performs no
+dispatch, verification, acceptance, GitHub mutation, Git push, or merge. It
+derives from stored run projections with `json_extract`, which is adequate at
+this local development-reference scale and not a scalability claim.
+
+## Derived project read model
+
+Issue #739 and [ADR-0021](../decisions/ADR-0021-derived-work-unit-and-project-read-models.md)
+also add a read-only project summary over the retained runs. No project record
+exists: a run carries only a `project_id` string, so the summary is counts
+derived on demand.
+
+```text
+idkmesh project status PROJECT_ID --store PATH [--json]
+```
+
+`ProductSpineRunStore.get_project(project_id)` returns one summary and is also
+what `GET /api/v1/projects/{project_id}` serves, so the CLI and the HTTP API
+cannot disagree.
+
+The summary is `{project_id, run_count, runs_by_state, work_unit_count}`.
+`runs_by_state` lists every canonical run state, zero-filled, so the shape is
+identical for every project and its values sum to `run_count`.
+`work_unit_count` is the number of distinct WorkUnit ids the project's runs
+reference; enumerate them with `idkmesh work-unit list --project-id ID`.
+`project_id` matching is exact (no prefix or case folding).
+
+Failure codes: `invalid_project_id`, `project_not_found` (no retained run names
+the project; this does not claim the project is unknown elsewhere), and
+`store_error`.
+
+The summary computes no health, status, or score rollup, selects nothing, and
+carries no authority: it performs no dispatch, verification, acceptance,
+GitHub mutation, Git push, or merge. There is no project list.
