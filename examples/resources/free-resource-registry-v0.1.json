@@ -18,7 +18,7 @@
       "security_risk": 0.12,
       "activation": "GitHub Actions workflow on a standard public-repository runner",
       "security": {"repo_write_authority": false, "merge_authority": false},
-      "source": {"url": "https://docs.github.com/en/actions/reference/runners/github-hosted-runners", "checked_at": "2026-08-28", "max_age_days": 30}
+      "source": {"url": "https://docs.github.com/en/actions/reference/runners/github-hosted-runners", "checked_at": "2026-10-03", "max_age_days": 30}
     },
     {
       "id": "gemini-api-free",
@@ -36,7 +36,7 @@
       "security_risk": 0.35,
       "activation": "Optional repository secret GEMINI_API_KEY; free-tier access is model-dependent and submitted free-tier content may be used to improve Google products; use only bounded public-data advisory workflows",
       "security": {"repo_write_authority": false, "merge_authority": false},
-      "source": {"url": "https://ai.google.dev/gemini-api/docs/pricing", "checked_at": "2026-09-18", "max_age_days": 14}
+      "source": {"url": "https://ai.google.dev/gemini-api/docs/pricing", "checked_at": "2026-10-03", "max_age_days": 14}
     },
     {
       "id": "google-jules-free",
@@ -126,7 +126,7 @@
       "security_risk": 0.22,
       "activation": "Contributor chooses a personal Codespace; GitHub Free personal accounts currently include 120 core-hours/month",
       "security": {"repo_write_authority": false, "merge_authority": false},
-      "source": {"url": "https://docs.github.com/en/billing/reference/product-usage-included", "checked_at": "2026-08-28", "max_age_days": 30}
+      "source": {"url": "https://docs.github.com/en/billing/reference/product-usage-included", "checked_at": "2026-10-03", "max_age_days": 30}
     },
     {
       "id": "cloudflare-workers-free-control-plane",
@@ -144,7 +144,7 @@
       "security_risk": 0.30,
       "activation": "Optional future broker ingress only; free tier is too CPU-limited for coding agents",
       "security": {"repo_write_authority": false, "merge_authority": false},
-      "source": {"url": "https://developers.cloudflare.com/workers/platform/limits/", "checked_at": "2026-08-28", "max_age_days": 30}
+      "source": {"url": "https://developers.cloudflare.com/workers/platform/limits/", "checked_at": "2026-10-03", "max_age_days": 30}
     },
     {
       "id": "github-models-retired",
