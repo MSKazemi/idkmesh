@@ -228,7 +228,7 @@ You do not need to understand the entire repository before contributing.
 
 1. Read this README.
 2. Read [`CONTRIBUTING.md`](CONTRIBUTING.md).
-3. Pick a live task from the [Contributor Quickstart](docs/community/CONTRIBUTOR_QUICKSTART.md).
+3. Pick a live task from the [Contributor Quickstart](docs/community/CONTRIBUTOR_QUICKSTART.md). Working with an AI coding agent (Claude Code, Codex, Jules)? Start with the [agent contributor guide](docs/community/AGENT_CONTRIBUTOR_GUIDE.md).
 4. Browse the live [`good first issue`](https://github.com/MSKazemi/idkmesh/issues?q=is%3Aissue+state%3Aopen+label%3A%22good+first+issue%22) and [`help wanted`](https://github.com/MSKazemi/idkmesh/issues?q=is%3Aissue+state%3Aopen+label%3A%22help+wanted%22) views.
 5. Before starting, check assignees, recent comments, and linked pull requests, then state the bounded change you intend to make.
 
