@@ -241,7 +241,9 @@ class OverloadTests(_ServerCase):
         for thread in threads:
             thread.join(timeout=5)
         self.assertEqual(sorted(results), [200, 200])
-        self.assertEqual(server.limiter.in_flight, 0)
+        # The server releases its slot after it has sent the response, so the
+        # client can finish first: wait for idle instead of asserting it.
+        self.assertTrue(server.limiter.wait_idle(5.0), "slots were not released")
         status, _, _ = self.get(server, "/api/v1/status")
         self.assertEqual(status, 200)
 
@@ -356,7 +358,7 @@ class SlowClientTests(_ServerCase):
         head, _, body = data.partition(b"\r\n\r\n")
         self.assertTrue(head.startswith(b"HTTP/1.0 408"), head[:40])
         self.assertEqual(json.loads(body)["error"]["code"], "request_timeout")
-        self.assertEqual(server.limiter.in_flight, 0)
+        self.assertTrue(server.limiter.wait_idle(5.0), "slot was not released")
 
 
 class ParserBoundTests(_ServerCase):

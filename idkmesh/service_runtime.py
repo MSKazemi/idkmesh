@@ -48,6 +48,12 @@ MAX_CONCURRENT_REQUESTS_CEILING = 1024
 # pinned by tests rather than re-implemented. http.client allows 100 lines but
 # counts the blank line that ends the header block, so the largest accepted
 # request carries 99 header fields (measured: 99 -> 200, 100 -> 431).
+# ADR-0023: bounded Server-Sent Events streams.
+DEFAULT_MAX_SSE_CLIENTS = 8
+MAX_SSE_CLIENTS_CEILING = 64
+SSE_POLL_SECONDS = 0.5
+SSE_HEARTBEAT_SECONDS = 15.0
+SSE_MAX_STREAM_SECONDS = 300.0
 MAX_REQUEST_LINE_BYTES = 65536
 MAX_HEADER_LINE_BYTES = 65536
 MAX_HEADER_COUNT = 99
@@ -232,6 +238,19 @@ def validate_request_timeout(value: float) -> float:
     return float(value)
 
 
+def validate_max_sse_clients(value: int) -> int:
+    if (
+        isinstance(value, bool)
+        or not isinstance(value, int)
+        or not (1 <= value <= MAX_SSE_CLIENTS_CEILING)
+    ):
+        raise ValueError(
+            "max SSE clients must be an integer between 1 and "
+            f"{MAX_SSE_CLIENTS_CEILING}"
+        )
+    return value
+
+
 def validate_max_concurrent_requests(value: int) -> int:
     if (
         isinstance(value, bool)
@@ -314,6 +333,9 @@ def limits_document(
     max_request_body_bytes: int,
     retry_after_seconds: int = DEFAULT_RETRY_AFTER_SECONDS,
     drain_timeout_seconds: float = DEFAULT_DRAIN_TIMEOUT_SECONDS,
+    max_sse_clients: int = DEFAULT_MAX_SSE_CLIENTS,
+    sse_heartbeat_seconds: float = SSE_HEARTBEAT_SECONDS,
+    sse_max_stream_seconds: float = SSE_MAX_STREAM_SECONDS,
 ) -> dict[str, Any]:
     """The limits actually in force, published as ``operations.limits``.
 
@@ -332,4 +354,7 @@ def limits_document(
         "overload_status": 503,
         "connection_policy": "close_after_response",
         "per_client_rate_limit": "not_implemented",
+        "max_sse_clients": int(max_sse_clients),
+        "sse_heartbeat_seconds": float(sse_heartbeat_seconds),
+        "sse_max_stream_seconds": float(sse_max_stream_seconds),
     }

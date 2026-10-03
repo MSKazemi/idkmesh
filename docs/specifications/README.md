@@ -21,10 +21,13 @@ meaning of an existing version.
   and independent-verification evidence for human inspection.
 - [Control Tower Local API v0.1](CONTROL_TOWER_LOCAL_API_V0_1.md) — versioned,
   loopback-only read API and presentation contract for Human Control Tower run
-  evidence inspection, plus read-only Product Spine run, attempt, and derived
+  evidence inspection, plus read-only Product Spine run, attempt, retained
+  run-evidence ([ADR-0024](../decisions/ADR-0024-retained-evidence-read-and-mixed-store-run-reads.md)), and derived
   WorkUnit and project views ([ADR-0021](../decisions/ADR-0021-derived-work-unit-and-project-read-models.md)),
-  and the bounded service limits the development server enforces
-  ([ADR-0022](../decisions/ADR-0022-control-tower-bounded-service-limits.md)).
+  the bounded service limits the development server enforces
+  ([ADR-0022](../decisions/ADR-0022-control-tower-bounded-service-limits.md)),
+  and the canonical event history and resumable SSE stream
+  ([ADR-0023](../decisions/ADR-0023-canonical-append-only-event-source.md)).
 - [HTTP Service Runtime Baseline v0.1](HTTP_SERVICE_RUNTIME_V0_1.md) —
   dependency-free request correlation, liveness/readiness, service metadata,
   payload-free structured access logging, and reusable bounded-limit

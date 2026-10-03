@@ -137,3 +137,13 @@ Revisit this ADR if:
 Any revision must preserve ADR-0016's authority invariant and issue #739's
 "no hidden winner selection" requirement -- routing must stay a pure
 function of the request path.
+
+## Update 2026-10-02
+
+The decision above is unchanged. Of the three reserved suffixes, `attempts`
+(ADR-0019's first consumer) and now `evidence` are served:
+[ADR-0024](ADR-0024-retained-evidence-read-and-mixed-store-run-reads.md) serves
+`GET /api/v1/runs/{run_id}/evidence` from the report the idempotent offline
+spine retains in the run row. `decisions` stays reserved and unbuilt, because no
+decision content is retained anywhere and recording one needs an authenticated,
+accountable principal (issue #740).

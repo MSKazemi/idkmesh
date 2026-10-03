@@ -194,7 +194,7 @@ class ProductSpineRunStoreTests(unittest.TestCase):
         )
         with self.assertRaisesRegex(
             ProductSpineRunStoreError,
-            "not a C7-D",
+            "not a Product Spine run",
         ):
             self.service.status("run/foreign")
 

@@ -93,9 +93,20 @@ consumer.
   reports configured limits and the measured stdlib parser bounds (request line
   65536 bytes, header line 65536 bytes, 99 header fields) and nothing
   aspirational.
-- A consuming service answers an overload or drain with `503` and
-  `Retry-After`, exempts liveness, and does no application work for a rejected
-  request. `429` is not part of the baseline until a per-client identity exists.
+- A consuming service answers an overload or drain with `503`, `Retry-After`
+  and an error body with `retryable: true`, exempts liveness, and does no
+  application work for a rejected request. `429` is not part of the baseline until a per-client identity exists.
+
+- A long-lived Server-Sent Events stream is a different resource shape from a
+  request/response call, so it is counted by its **own** `RequestLimiter`
+  (`max_sse_clients`) and does not occupy a slot of the general request cap
+  ([ADR-0023](../decisions/ADR-0023-canonical-append-only-event-source.md)).
+  Beyond that cap the service answers `503` with `Retry-After` (`retryable:
+  true`); only a `GET` on the stream path is counted by that limiter, so other
+  methods are answered `405` however many streams are open; a stream also
+  carries a heartbeat interval and a maximum lifetime so it cannot hold a thread
+  indefinitely, and it ends promptly on drain. A service that drains must begin
+  the drain on both limiters and wait for both.
 
 See [Service limits](CONTROL_TOWER_LOCAL_API_V0_1.md#service-limits) for the
 Control Tower's concrete values and the tests that prove them.
