@@ -57,6 +57,23 @@ from idkmesh.connector_store import DEFAULT_LIST_LIMIT, MAX_LIST_LIMIT
 from idkmesh.local_ui_security import MAX_BODY_BYTES
 
 
+class _ExamplesHelpFormatter(argparse.RawDescriptionHelpFormatter):
+    """Keep multi-line ``Examples:`` epilogs copy-pasteable.
+
+    The default argparse formatter would rewrap an epilog into one flat
+    paragraph and destroy the example lines. Only text carrying an
+    ``Examples:`` block is rendered verbatim; descriptions and option help
+    keep the standard wrapping.
+    """
+
+    def _fill_text(self, text: str, width: int, indent: str) -> str:
+        if "Examples:" in text:
+            return "".join(
+                indent + line for line in text.splitlines(keepends=True)
+            )
+        return argparse.HelpFormatter._fill_text(self, text, width, indent)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="idkmesh",
@@ -382,6 +399,17 @@ def build_parser() -> argparse.ArgumentParser:
     run_create = run_sub.add_parser(
         "create",
         help="persist one canonical proposed Product Spine run",
+        formatter_class=_ExamplesHelpFormatter,
+        epilog=(
+            "Examples:\n"
+            "  idkmesh run create run.json --store state.sqlite"
+            " --idempotency-key request-1\n"
+            "  idkmesh run create run.json --store state.sqlite"
+            " --idempotency-key request-1 --json\n"
+            "  idkmesh run create run.json --store state.sqlite"
+            " --idempotency-key request-1"
+            " --created-at 2026-01-01T00:00:00Z"
+        ),
     )
     run_create.add_argument(
         "projection",
@@ -413,6 +441,12 @@ def build_parser() -> argparse.ArgumentParser:
     run_status = run_sub.add_parser(
         "status",
         help="inspect one retained Product Spine run",
+        formatter_class=_ExamplesHelpFormatter,
+        epilog=(
+            "Examples:\n"
+            "  idkmesh run status run-1 --store state.sqlite\n"
+            "  idkmesh run status run-1 --store state.sqlite --json"
+        ),
     )
     run_status.add_argument("run_id")
     run_status.add_argument(
@@ -435,6 +469,13 @@ def build_parser() -> argparse.ArgumentParser:
             "Transition a retained Product Spine run to cancelled when the "
             "canonical lifecycle permits it. This does not terminate an "
             "external/provider process."
+        ),
+        formatter_class=_ExamplesHelpFormatter,
+        epilog=(
+            "Examples:\n"
+            "  idkmesh run cancel run-1 --store state.sqlite\n"
+            "  idkmesh run cancel run-1 --store state.sqlite"
+            " --updated-at 2026-01-01T00:00:00Z --json"
         ),
     )
     run_cancel.add_argument("run_id")
@@ -462,6 +503,15 @@ def build_parser() -> argparse.ArgumentParser:
             "Deterministic keyset-paginated run listing, ordered by run_id. "
             "Pass the previous page's --cursor value verbatim to continue; "
             "never construct or parse a cursor by hand."
+        ),
+        formatter_class=_ExamplesHelpFormatter,
+        epilog=(
+            "Examples:\n"
+            "  idkmesh run list --store state.sqlite\n"
+            "  idkmesh run list --store state.sqlite"
+            " --limit 20 --state proposed\n"
+            "  idkmesh run list --store state.sqlite"
+            " --project-id project.test --json"
         ),
     )
     run_list.add_argument(
@@ -525,6 +575,14 @@ def build_parser() -> argparse.ArgumentParser:
             "existing Run Evidence Report v0.1 documents, recomputes their "
             "human-facing summary, and never runs workers, selects candidates, "
             "pushes Git, or merges."),
+        formatter_class=_ExamplesHelpFormatter,
+        epilog=(
+            "Examples:\n"
+            "  idkmesh control-tower\n"
+            "  idkmesh control-tower evidence-report.json\n"
+            "  idkmesh control-tower --no-browser --port 8770"
+            " --product-spine-store state.sqlite"
+        ),
     )
     tower.add_argument(
         "report", nargs="?",
