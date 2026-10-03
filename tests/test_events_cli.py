@@ -1,14 +1,16 @@
 """`idkmesh events list` over the canonical event stream (ADR-0023, #741)."""
 
+import contextlib
+import io
 import json
-import os
 from pathlib import Path
-import subprocess
-import sys
 import tempfile
+import types
 import unittest
 
 from jsonschema import Draft202012Validator
+
+from idkmesh import cli
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -60,16 +62,21 @@ def _event_schema():
 
 class EventsCliTests(unittest.TestCase):
     def run_cli(self, *args):
-        env = dict(os.environ)
-        env["PYTHONPATH"] = str(ROOT)
-        return subprocess.run(
-            [sys.executable, "-m", "idkmesh.cli", *args],
-            cwd=ROOT,
-            env=env,
-            text=True,
-            capture_output=True,
-            check=False,
-        )
+        """Run the CLI in-process (cheaper than a fresh interpreter per call).
+
+        Returns an object with ``returncode``, ``stdout`` and ``stderr``, like
+        ``subprocess.CompletedProcess``. argparse's ``--help`` and usage errors
+        raise SystemExit, which is turned into the return code.
+        """
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            try:
+                code = cli.main(list(args))
+            except SystemExit as exc:
+                code = exc.code if isinstance(exc.code, int) else (
+                    0 if exc.code is None else 1)
+        return types.SimpleNamespace(
+            returncode=code, stdout=out.getvalue(), stderr=err.getvalue())
 
     def create(self, tmp, store, index, **kwargs):
         path = Path(tmp) / f"projection-{index}.json"
