@@ -8,15 +8,16 @@ this module does not depend on how pytest puts ``tests/`` on ``sys.path``.
 from __future__ import annotations
 
 from copy import deepcopy
+import contextlib
 import importlib.util
+import io
 import json
-import os
 from pathlib import Path
-import subprocess
-import sys
 import tempfile
+import types
 import unittest
 
+from idkmesh import cli
 from idkmesh.connector_store import LocalMetadataStore
 from idkmesh.product_spine import ProductSpineRun
 from idkmesh.product_spine_idempotency import (
@@ -60,16 +61,21 @@ def _cli_run(run_id: str = "run/cli-no-evidence") -> ProductSpineRun:
 
 class RunEvidenceCliTests(unittest.TestCase):
     def run_cli(self, *args):
-        env = dict(os.environ)
-        env["PYTHONPATH"] = str(ROOT)
-        return subprocess.run(
-            [sys.executable, "-m", "idkmesh.cli", *args],
-            cwd=ROOT,
-            env=env,
-            text=True,
-            capture_output=True,
-            check=False,
-        )
+        """Run the CLI in-process (cheaper than a fresh interpreter per call).
+
+        Returns an object with ``returncode``, ``stdout`` and ``stderr``, like
+        ``subprocess.CompletedProcess``. argparse's ``--help`` and usage errors
+        raise SystemExit, which is turned into the return code.
+        """
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            try:
+                code = cli.main(list(args))
+            except SystemExit as exc:
+                code = exc.code if isinstance(exc.code, int) else (
+                    0 if exc.code is None else 1)
+        return types.SimpleNamespace(
+            returncode=code, stdout=out.getvalue(), stderr=err.getvalue())
 
     def seed_offline_run(self, tmp: str, db: Path):
         """Complete one idempotent offline run that retains its evidence."""
