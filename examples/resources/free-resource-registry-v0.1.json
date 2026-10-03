@@ -18,7 +18,7 @@
       "security_risk": 0.12,
       "activation": "GitHub Actions workflow on a standard public-repository runner",
       "security": {"repo_write_authority": false, "merge_authority": false},
-      "source": {"url": "https://docs.github.com/en/actions/reference/runners/github-hosted-runners", "checked_at": "2026-08-28", "max_age_days": 30}
+      "source": {"url": "https://docs.github.com/en/actions/reference/runners/github-hosted-runners", "checked_at": "2026-10-03", "max_age_days": 30}
     },
     {
       "id": "gemini-api-free",

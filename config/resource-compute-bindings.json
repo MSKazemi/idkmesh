@@ -21,7 +21,7 @@
       "enabled": true,
       "terms_eligible": true,
       "authorization_scope": "Legitimate CI, verification, reproducibility, testing, and bounded repository experiments for this public project only; not generic unrelated compute.",
-      "reviewed_at": "2026-08-28",
+      "reviewed_at": "2026-10-03",
       "max_age_days": 30
     }
   ]
