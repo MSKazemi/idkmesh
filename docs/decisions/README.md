@@ -88,6 +88,11 @@ some unrelated page but missing from its own index stays invisible.
   from stored run references, with no new store, no WorkUnit body, no "latest
   revision" selection, and explicit ordering, pagination and 404 behavior.
   *(2026-10-01.)*
+- [ADR-0022 — Bounded Service Limits for the Control Tower Development Server](ADR-0022-control-tower-bounded-service-limits.md)
+  — request timeout, a concurrency cap answering `503 + Retry-After`, graceful
+  drain, the adopted stdlib header/body bounds, and a published
+  `operations.limits` document; `429` and SSE limits are deliberately deferred
+  until per-client identity and #741 exist. *(2026-10-02.)*
 
 ## Proposed and experimental
 

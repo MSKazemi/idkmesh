@@ -21,6 +21,31 @@ and the release notes for that tag.
   agent-assisted change carries. It adds no new rules: `AGENTS.md` and
   `CONTRIBUTING.md` stay the source of truth. The project supplies no keys or
   compute; the guide says so and says which tool behaviours are unverified.
+- Bounded service limits for the Control Tower development server (issue #742,
+  API-7) ([ADR-0022](docs/decisions/ADR-0022-control-tower-bounded-service-limits.md)):
+  a per-connection request timeout (default 10 s; a stalled request line or
+  header drops the connection, a stalled body answers `408 request_timeout`);
+  a concurrent-request cap (default 16) that answers `503 overloaded` with
+  `Retry-After` and the standard error envelope instead of queueing;
+  graceful drain (`503 shutting_down`, including `GET /readyz`, while
+  `GET /healthz` still answers, and `serve_control_tower` waits up to 5 s for
+  in-flight requests on shutdown); an explicit listen backlog of 16; and an
+  optional `operations.limits` object on `GET /api/v1/status` reporting the
+  limits actually in force (added in place to the frozen status schema as an
+  optional property, which the ADR-0020 gate accepts). New flags
+  `idkmesh control-tower --request-timeout SECONDS` (0.1-300) and
+  `--max-concurrent-requests N` (1-1024). The reusable `RequestLimiter`
+  and `limits_document()` live in `idkmesh/service_runtime.py`. The stdlib
+  parser's existing bounds are adopted and pinned by tests: request line
+  65536 bytes (414), header line 65536 bytes and 99 header fields (431;
+  measured -- the stdlib counts the blank line ending the header block
+  against its limit of 100), 2 MiB body, one request per connection.
+  Not implemented, deliberately: `429` (a single local token gives no
+  per-client identity to attribute a rate to) and a maximum SSE client count
+  (no SSE stream exists yet, #741). The cap bounds request *handling*, not
+  accepted connections, and `gate-audit-ui` and the steward UIs are not
+  hardened by this change.
+
 - `tools/schema_compat_check.py` (issue #737, API-2's sixth and last unmet
   CI requirement, "backwards-compatibility diff check for stable v1
   objects") ([ADR-0020](docs/decisions/ADR-0020-schema-backward-compatibility-gate.md)):

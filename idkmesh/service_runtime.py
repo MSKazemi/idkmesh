@@ -20,6 +20,8 @@ from datetime import datetime, timezone
 import json
 import os
 import re
+import threading
+import time
 import secrets
 import sys
 from typing import Any, Mapping, TextIO
@@ -33,6 +35,22 @@ ACCESS_LOG_ENV = "IDKMESH_HTTP_ACCESS_LOG"
 _REQUEST_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
 _HEADER_VALUE_RE = re.compile(r"^[!-~]{1,128}$")
 _TRUE_VALUES = frozenset({"1", "true", "yes", "on"})
+
+# ADR-0022: bounded service limits for the local development servers.
+DEFAULT_REQUEST_TIMEOUT_SECONDS = 10.0
+DEFAULT_MAX_CONCURRENT_REQUESTS = 16
+DEFAULT_RETRY_AFTER_SECONDS = 1
+DEFAULT_DRAIN_TIMEOUT_SECONDS = 5.0
+MIN_REQUEST_TIMEOUT_SECONDS = 0.1
+MAX_REQUEST_TIMEOUT_SECONDS = 300.0
+MAX_CONCURRENT_REQUESTS_CEILING = 1024
+# The stdlib parser's own bounds (http.server / http.client); documented and
+# pinned by tests rather than re-implemented. http.client allows 100 lines but
+# counts the blank line that ends the header block, so the largest accepted
+# request carries 99 header fields (measured: 99 -> 200, 100 -> 431).
+MAX_REQUEST_LINE_BYTES = 65536
+MAX_HEADER_LINE_BYTES = 65536
+MAX_HEADER_COUNT = 99
 _MAX_LOG_PATH = 2048
 _MAX_LOG_METHOD = 32
 _MAX_LOG_SERVICE = 128
@@ -189,3 +207,129 @@ def write_access_log(
         + "\n"
     )
     target.flush()
+
+
+ADMITTED = "admitted"
+OVERLOADED = "overloaded"
+DRAINING = "draining"
+
+
+def validate_request_timeout(value: float) -> float:
+    if (
+        isinstance(value, bool)
+        or not isinstance(value, (int, float))
+        or not (
+            MIN_REQUEST_TIMEOUT_SECONDS
+            <= float(value)
+            <= MAX_REQUEST_TIMEOUT_SECONDS
+        )
+    ):
+        raise ValueError(
+            "request timeout must be between "
+            f"{MIN_REQUEST_TIMEOUT_SECONDS} and "
+            f"{MAX_REQUEST_TIMEOUT_SECONDS} seconds"
+        )
+    return float(value)
+
+
+def validate_max_concurrent_requests(value: int) -> int:
+    if (
+        isinstance(value, bool)
+        or not isinstance(value, int)
+        or not (1 <= value <= MAX_CONCURRENT_REQUESTS_CEILING)
+    ):
+        raise ValueError(
+            "max concurrent requests must be an integer between 1 and "
+            f"{MAX_CONCURRENT_REQUESTS_CEILING}"
+        )
+    return value
+
+
+class RequestLimiter:
+    """Thread-safe concurrency cap with a drain switch (ADR-0022).
+
+    ``admit()`` never blocks: it returns ``ADMITTED``, ``OVERLOADED`` (the cap
+    is reached) or ``DRAINING``. Only an ``ADMITTED`` caller may ``release()``.
+    An unbounded wait queue would be an unbounded memory and latency
+    commitment, so saturation is rejected, not queued.
+    """
+
+    def __init__(self, max_concurrent: int) -> None:
+        self._max = validate_max_concurrent_requests(max_concurrent)
+        self._condition = threading.Condition()
+        self._in_flight = 0
+        self._draining = False
+
+    @property
+    def max_concurrent(self) -> int:
+        return self._max
+
+    @property
+    def in_flight(self) -> int:
+        with self._condition:
+            return self._in_flight
+
+    @property
+    def draining(self) -> bool:
+        with self._condition:
+            return self._draining
+
+    def admit(self) -> str:
+        with self._condition:
+            if self._draining:
+                return DRAINING
+            if self._in_flight >= self._max:
+                return OVERLOADED
+            self._in_flight += 1
+            return ADMITTED
+
+    def release(self) -> None:
+        with self._condition:
+            if self._in_flight <= 0:
+                raise RuntimeError("release() without a matching admit()")
+            self._in_flight -= 1
+            if self._in_flight == 0:
+                self._condition.notify_all()
+
+    def begin_drain(self) -> None:
+        with self._condition:
+            self._draining = True
+
+    def wait_idle(self, timeout: float) -> bool:
+        """Wait until no request is in flight; False if ``timeout`` elapses."""
+        deadline = time.monotonic() + timeout
+        with self._condition:
+            while self._in_flight > 0:
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    return False
+                self._condition.wait(remaining)
+            return True
+
+
+def limits_document(
+    *,
+    request_timeout_seconds: float,
+    max_concurrent_requests: int,
+    max_request_body_bytes: int,
+    retry_after_seconds: int = DEFAULT_RETRY_AFTER_SECONDS,
+    drain_timeout_seconds: float = DEFAULT_DRAIN_TIMEOUT_SECONDS,
+) -> dict[str, Any]:
+    """The limits actually in force, published as ``operations.limits``.
+
+    Every value is either a configured limit or a measured stdlib bound pinned
+    by tests (ADR-0022). Nothing here is aspirational.
+    """
+    return {
+        "request_timeout_seconds": float(request_timeout_seconds),
+        "max_concurrent_requests": int(max_concurrent_requests),
+        "retry_after_seconds": int(retry_after_seconds),
+        "drain_timeout_seconds": float(drain_timeout_seconds),
+        "max_request_line_bytes": MAX_REQUEST_LINE_BYTES,
+        "max_header_line_bytes": MAX_HEADER_LINE_BYTES,
+        "max_header_count": MAX_HEADER_COUNT,
+        "max_request_body_bytes": int(max_request_body_bytes),
+        "overload_status": 503,
+        "connection_policy": "close_after_response",
+        "per_client_rate_limit": "not_implemented",
+    }
