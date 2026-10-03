@@ -282,6 +282,11 @@ class _EventCase(unittest.TestCase):
 
     @staticmethod
     def _stop(server, thread) -> None:
+        # Shutting the accept loop down does not end open event streams: their
+        # handler threads keep polling the store and would write journal files
+        # into the test's temp directory while it is being deleted. drain()
+        # wakes and ends them first.
+        server.drain(timeout=5.0)
         server.shutdown()
         server.server_close()
         thread.join(timeout=2)
