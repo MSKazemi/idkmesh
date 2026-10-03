@@ -1,0 +1,27 @@
+{
+  "schema_version": "0.1",
+  "kind": "idkmesh-product-spine-run",
+  "run_id": "run/example-1",
+  "request_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "project_id": "project.example",
+  "work_unit": {
+    "id": "work/example-1",
+    "version": 1,
+    "digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "source_revision": "0123456789abcdef0123456789abcdef01234567"
+  },
+  "routing": {
+    "policy_version": "c1-v0.1",
+    "authority_mode": "agent_candidate",
+    "admitted_connectors": []
+  },
+  "state": "proposed",
+  "attempts": [],
+  "evidence_report_digest": null,
+  "human_decision_record_digest": null,
+  "authority": {
+    "canonical_state_write": false,
+    "git_push": false,
+    "merge": false
+  }
+}

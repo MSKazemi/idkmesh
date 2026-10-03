@@ -1,0 +1,63 @@
+{
+  "api_version": "v1",
+  "schema_version": "0.1",
+  "kind": "idkmesh-control-tower-run-response",
+  "ok": true,
+  "run": {
+    "schema_version": "0.1",
+    "kind": "idkmesh-product-spine-run",
+    "run_id": "run/example-1",
+    "request_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "project_id": "project.example",
+    "work_unit": {
+      "id": "work/example-1",
+      "version": 1,
+      "digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "source_revision": "0123456789abcdef0123456789abcdef01234567"
+    },
+    "routing": {
+      "policy_version": "c1-v0.1",
+      "authority_mode": "agent_candidate",
+      "admitted_connectors": ["local-direct"]
+    },
+    "state": "evidence_ready",
+    "attempts": [
+      {
+        "attempt_id": "attempt/example-1-1",
+        "order": 1,
+        "connector_id": "local-direct",
+        "state": "worker_error",
+        "provider_reference": null,
+        "candidate_reference_digest": null,
+        "result_manifest_digest": null,
+        "verification_semantic_digest": null,
+        "error_code": "worker_error"
+      },
+      {
+        "attempt_id": "attempt/example-1-2",
+        "order": 2,
+        "connector_id": "local-direct",
+        "state": "verified",
+        "provider_reference": "local:attempt/example-1-2",
+        "candidate_reference_digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "result_manifest_digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "verification_semantic_digest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        "error_code": null
+      }
+    ],
+    "evidence_report_digest": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "human_decision_record_digest": null,
+    "authority": {
+      "canonical_state_write": false,
+      "git_push": false,
+      "merge": false
+    }
+  },
+  "idempotency_key": "example-create-1",
+  "create_request_digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "created": false,
+  "replayed": false,
+  "provider_execution_terminated": false,
+  "candidate_accepted": false,
+  "merge_authority": false
+}
