@@ -702,7 +702,9 @@ class EventStreamLimitTests(_EventCase):
         second = self.stream(server, last_event_id=5)
         self.assertEqual(second.status, 200)
         self.assertEqual(first.status, 200)
-        self.assertEqual(server.limiter.in_flight, 0)
+        # Streams never take a general slot, and the status request's own slot
+        # is released just after its response is sent, so wait for idle.
+        self.assertTrue(server.limiter.wait_idle(5.0), "slot was not released")
 
     def test_drain_ends_open_streams_with_a_shutdown_marker(self) -> None:
         server = self.start()
