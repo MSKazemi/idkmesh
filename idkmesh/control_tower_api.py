@@ -1488,7 +1488,9 @@ def openapi_document() -> dict[str, Any]:
                         "live tail. Delivery is at-least-once: dedupe on "
                         "event_id. Bounded by max_sse_clients, a heartbeat "
                         "comment and a maximum stream lifetime after which "
-                        "the client reconnects with Last-Event-ID."
+                        "the client reconnects with Last-Event-ID. A "
+                        "Last-Event-ID beyond the newest event of the "
+                        "stream is 400 invalid_last_event_id."
                     ),
                     "security": [{"LocalSessionToken": []}],
                     "parameters": [

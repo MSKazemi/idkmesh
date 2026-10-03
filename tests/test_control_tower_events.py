@@ -775,8 +775,10 @@ class EventStreamTimingTests(_EventCase):
 
         # The client reconnects with the last id it saw: nothing is repeated
         # and the next committed event is delivered.
-        second = self.stream(server, last_event_id=ids[-1])
+        # Commit the next event first so it arrives as resume backlog, not as a
+        # live event racing the shortened stream lifetime.
         head = self.append_run()
+        second = self.stream(server, last_event_id=ids[-1])
         event = second.next_event(5)
         self.assertEqual(event["id"], str(head))
         self.assertEqual(int(event["id"]), int(ids[-1]) + 1)

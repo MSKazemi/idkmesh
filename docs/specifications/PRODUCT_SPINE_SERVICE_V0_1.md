@@ -496,7 +496,25 @@ atomic run record.
 
 `cancel` applies the canonical lifecycle transition to `cancelled` and is
 idempotent once cancelled. It refuses a lifecycle-illegal cancellation such as
-a terminal `decided` run.
+a terminal `decided` run with `cancel_not_allowed`.
+
+`cancel` controls only runs created by `create` (stored kind
+`product-spine-cli-run`). `status`, `list` and `evidence` also read the
+completed rows of the idempotent offline spine, but those are read-only here:
+`cancel` on one is refused with `cancel_not_allowed`
+([ADR-0024](../decisions/ADR-0024-retained-evidence-read-and-mixed-store-run-reads.md)),
+because rewriting it into the CLI row shape would destroy its retained evidence
+report and its offline idempotency identity.
+
+The transition is conditional. `cancel` reads the run, then updates it with
+`LocalMetadataStore.update_run(..., expected_state=<the state it read>)`, which
+adds `AND state = ?` to the `UPDATE`. If a concurrent caller changed the run
+in between, the update raises `LocalStoreConflict`, no row and no event is
+written, and `cancel` re-reads the run: if it is now `cancelled` it returns it
+(idempotent, the winner already recorded the transition and emitted the one
+`run.cancelled`), otherwise it fails with `cancel_conflict` and the caller
+retries. Two racing `cancel` calls therefore emit exactly one `run.cancelled`,
+and its `previous_state` is the state the transition really left.
 
 `list` pages every retained run, ordered deterministically by `run_id`
 (issue #739, the read-API program's first "list" surface, and this
@@ -539,7 +557,11 @@ Report retained in a run row together with its digest:
 {"run_id": ..., "evidence_report_digest": "sha256:...", "evidence_report": {...}}
 ```
 
-It verifies that the projection is a valid Product Spine run and that
+It first restores the row exactly as `status` does (stored kind, run id, state,
+and the kind's request digests), so a row that is not a Product Spine run is
+`run_not_found` and a Product Spine row that fails those checks (for example one
+whose metadata was swapped in from another run) is `evidence_integrity_error`.
+It then verifies that the projection is a valid Product Spine run and that
 `canonical_digest(report)` equals the projection's `evidence_report_digest`,
 and otherwise fails with `evidence_integrity_error` without printing the
 report. Failure codes: `invalid_run_id`, `run_not_found`,
@@ -648,9 +670,10 @@ idkmesh events list --store PATH [--limit N] [--cursor TOKEN]
   `ProductSpineRunStore.cancel` emits `run.cancelled`. The event row is
   inserted in the same SQLite transaction as the run change (the store's
   `admit_run` / `update_run` take an optional `event`), so both commit or
-  neither does. An idempotent replay of `create` emits nothing. `occurred_at`
-  is the validated timestamp the caller already supplied; the store never reads
-  a clock to invent one.
+  neither does. An idempotent replay of `create` emits nothing, and `cancel`
+  passes `expected_state` so two concurrent cancels emit one event (see
+  `cancel` above). `occurred_at` is the validated timestamp the caller already
+  supplied; the store never reads a clock to invent one.
 - **Read.** `ProductSpineRunStore.list_events(...)` returns
   `(events, next_cursor)` ordered by `sequence`, with an opaque listing-scoped
   cursor and the exact-match filters above; `events_after(sequence, ...)`
@@ -664,10 +687,23 @@ idkmesh events list --store PATH [--limit N] [--cursor TOKEN]
   `source_revision`, `evidence_reference`, `payload`, `payload_digest`.
   v0.1 emits only `authority_class: local_control` with the principal
   `unauthenticated_local` / `local-cli`.
+- **Envelope enforcement.** The store validates every producer-supplied event
+  before the transaction opens and raises `ValueError` (so neither the run
+  change nor an event is written) unless: `event_type` is
+  `run.created` or `run.cancelled`; `authority_class` is one of
+  `local_control`, `worker_observation`, `verifier_recommendation`,
+  `human_decision`; `occurred_at` is a UTC timestamp ending in `Z`;
+  `source_revision` is `null` or 40 or 64 hex characters; and the event's
+  `run_id` equals the run it is committed with. A producer therefore cannot
+  persist an event that `GET /api/v1/events` would serve as schema-invalid or
+  attach an event to a different run, and the enumerated `event_type` is what
+  keeps the SSE `event:` line free of control characters.
 - **Coverage.** Only Product Spine run create and cancel emit events. The
   offline idempotent spine, GitHub explicit dispatch and GitHub status update
   also write the shared `runs` table but emit none yet, so the event history
-  makes no completeness claim over every run writer.
+  makes no completeness claim over every run writer. A run created before the
+  store reached version 2 has no `run.created` event (the table did not exist),
+  so cancelling it later yields a `run.cancelled` with no earlier event.
 - **Retention.** Every event is kept; nothing prunes the table, and SQLite
   triggers abort any `UPDATE` or `DELETE` of an event row. `event_id`
   (`evt-` plus the zero-padded sequence) is derived on read, not stored.
@@ -675,8 +711,20 @@ idkmesh events list --store PATH [--limit N] [--cursor TOKEN]
   gains the `events` table in place, and code that predates version 2 refuses a
   version 2 store.
 
-Failure codes: `invalid_limit`, `invalid_cursor`, `invalid_event_type`, and
-`store_error`.
+Failure codes: `invalid_limit`, `invalid_cursor` (the cursor must be a value
+this listing issued: a bounded ASCII-decimal sequence, at most 18 digits),
+`invalid_event_type`, `invalid_filter` (a blank `project_id`, `run_id` or
+`work_unit_id`, validated before the store is queried so it is never reported as
+`invalid_limit`), `invalid_sequence` (`events_after`, a sequence that is not a
+non-negative integer), and `store_error`.
+
+`store_error` covers store faults: a SQL error raised while reading or writing
+(a locked, unreadable or corrupt database, including a row whose stored JSON the
+kind filter cannot evaluate) is raised by `LocalMetadataStore` as a
+`LocalStoreError` instead of a raw `sqlite3` error, and the service reports it
+as `store_error`. Opening the database is wrapped too (the connection helper
+and the migration run through it), so a file that cannot be opened is also a
+`LocalStoreError`.
 
 Events carry no authority: reading them performs no dispatch, verification,
 acceptance, GitHub mutation, Git push, or merge.

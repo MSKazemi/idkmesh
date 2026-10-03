@@ -418,7 +418,15 @@ class MixedStoreListTests(_StoreCase):
         self.assertEqual(both, [])
 
         # A foreign row's state never leaks through a state filter.
-        errored, _ = self.service.list(state="execution_error")
+        # (execution_error is not a canonical run state, so the service
+        # rejects it; the store-level filter composes and returns nothing.)
+        with self.assertRaises(ProductSpineRunStoreError) as invalid:
+            self.service.list(state="execution_error")
+        self.assertEqual(invalid.exception.code, "invalid_state")
+        errored, _ = self.store.list_runs(
+            state="execution_error",
+            kinds=("product-spine-cli-run", "product-spine-idempotency-result"),
+        )
         self.assertEqual(errored, [])
 
     def test_list_matches_status_for_every_listed_run(self) -> None:

@@ -29,6 +29,8 @@ from typing import Any, Mapping
 
 from idkmesh.connector_store import (
     DEFAULT_LIST_LIMIT,
+    EVENT_AUTHORITY_CLASSES,
+    EVENT_TYPES,
     LocalMetadataStore,
     LocalStoreConflict,
     LocalStoreError,
@@ -141,15 +143,6 @@ _EVENT_CURSOR_KIND = "product-spine-event-list-cursor-v1"
 # ADR-0023: the canonical event vocabulary. v0.1 emits only run.created and
 # run.cancelled, both with authority class local_control; the other classes are
 # reserved so a recommendation is never mistaken for a decision.
-EVENT_TYPES = frozenset({"run.created", "run.cancelled"})
-EVENT_AUTHORITY_CLASSES = frozenset(
-    {
-        "local_control",
-        "worker_observation",
-        "verifier_recommendation",
-        "human_decision",
-    }
-)
 _LOCAL_PRINCIPAL = {"type": "unauthenticated_local", "id": "local-cli"}
 DEFAULT_EVENTS_AFTER_LIMIT = 200
 
@@ -334,7 +327,9 @@ def _run_event(
 
 def _sequence_from_cursor(cursor: str) -> int:
     after = _decode_cursor(cursor, _EVENT_CURSOR_KIND)
-    if not after.isdigit():
+    # ASCII digits only and bounded: str.isdigit() also accepts characters
+    # int() rejects, and a huge value would overflow SQLite's 64-bit bind.
+    if not (after.isascii() and after.isdecimal() and len(after) <= 18):
         raise ProductSpineRunStoreError(
             "invalid_cursor", "cursor is not a value this service issued"
         )
@@ -546,6 +541,18 @@ class ProductSpineRunStore:
             raise ProductSpineRunStoreError(
                 "run_not_found", f"unknown run_id: {run_id}"
             )
+        # Same strict checks as status(): kind, run id, state and digests, so a
+        # foreign row or a row swapped from another run is never served here.
+        try:
+            _restore(record)
+        except ProductSpineRunStoreError as exc:
+            if exc.code == "not_product_spine_cli_run":
+                raise ProductSpineRunStoreError(
+                    "run_not_found", f"unknown run_id: {run_id}"
+                ) from exc
+            raise ProductSpineRunStoreError(
+                "evidence_integrity_error", str(exc)
+            ) from exc
         metadata = record.metadata
         projection = (
             metadata.get("projection") if isinstance(metadata, Mapping) else None
@@ -612,6 +619,14 @@ class ProductSpineRunStore:
         }
 
     @staticmethod
+    def _check_event_filters(**filters: str | None) -> None:
+        for name, value in filters.items():
+            if value is not None and (not isinstance(value, str) or not value):
+                raise ProductSpineRunStoreError(
+                    "invalid_filter", f"{name} must be a non-empty string"
+                )
+
+    @staticmethod
     def _check_event_type(event_type: str | None) -> None:
         if event_type is not None and event_type not in EVENT_TYPES:
             raise ProductSpineRunStoreError(
@@ -636,6 +651,9 @@ class ProductSpineRunStore:
         ``event_type`` fails with ``invalid_event_type`` rather than matching
         nothing (API Conventions v0.1 section 11).
         """
+        self._check_event_filters(
+            project_id=project_id, run_id=run_id, work_unit_id=work_unit_id
+        )
         self._check_event_type(event_type)
         after = _sequence_from_cursor(cursor) if cursor is not None else 0
         try:
@@ -669,6 +687,9 @@ class ProductSpineRunStore:
         event_type: str | None = None,
     ) -> list[dict[str, Any]]:
         """Events with ``sequence > sequence`` (the SSE resume primitive)."""
+        self._check_event_filters(
+            project_id=project_id, run_id=run_id, work_unit_id=work_unit_id
+        )
         self._check_event_type(event_type)
         if isinstance(sequence, bool) or not isinstance(sequence, int) or sequence < 0:
             raise ProductSpineRunStoreError(
@@ -705,6 +726,17 @@ class ProductSpineRunStore:
         current = self.status(run_id)
         timestamp = _timestamp(updated_at, "updated_at")
 
+        # ADR-0024: offline-spine rows are readable but not controllable here.
+        # Cancelling one would rewrite its row into the CLI shape and destroy
+        # the retained evidence report and the offline idempotency identity.
+        raw = self._store.get_run(run_id)
+        if raw is None or raw.metadata.get("kind") != _RECORD_KIND:
+            raise ProductSpineRunStoreError(
+                "cancel_not_allowed",
+                "only runs created by 'idkmesh run create' can be cancelled "
+                "here; offline-spine runs are read-only",
+            )
+
         if current.run.state == "cancelled":
             return current
 
@@ -725,6 +757,7 @@ class ProductSpineRunStore:
                     create_request_digest=current.create_request_digest,
                 ),
                 updated_at=timestamp,
+                expected_state=current.run.state,
                 event=_run_event(
                     cancelled,
                     event_type="run.cancelled",
@@ -734,6 +767,18 @@ class ProductSpineRunStore:
                         "state": cancelled.state,
                     },
                 ),
+            )
+        except LocalStoreConflict:
+            # A concurrent caller changed the run after we read it. If it is
+            # now cancelled, cancel is idempotent: return it and emit nothing
+            # (the winner already recorded the transition).
+            latest = self.status(run_id)
+            if latest.run.state == "cancelled":
+                return latest
+            raise ProductSpineRunStoreError(
+                "cancel_conflict",
+                f"run {run_id} changed concurrently to state "
+                f"{latest.run.state}; retry",
             )
         except LocalStoreError as exc:
             raise ProductSpineRunStoreError(

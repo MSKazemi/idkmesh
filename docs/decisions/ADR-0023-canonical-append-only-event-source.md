@@ -176,3 +176,33 @@ Issue #741 owns the contract. `connector_store.py` and
 Revisit if events must cover other run-table writers, a pruner is proposed,
 an enterprise principal profile lands, or a production transport adapter
 replaces the stdlib server.
+
+## Update 2026-10-02 (static review)
+
+A read-only static review of the implementation, before any test had run,
+clarified how decisions 2, 4 and 8 are enforced. The decisions are unchanged.
+
+- **Envelope enforcement (decision 4).** The store, not only the schema, rejects
+  an event whose `event_type` is not `run.created` or `run.cancelled`, whose
+  `authority_class` is not one of the four reserved classes, whose `occurred_at`
+  is not a UTC timestamp ending in `Z`, whose `source_revision` is not null or
+  40/64 hex characters, or whose `run_id` differs from the run it is committed
+  with. The rejection is a `ValueError` raised before the transaction opens, so
+  nothing is written and decision 2's atomicity holds. The enumerated `event_type` also keeps the SSE `event:` line
+  free of control characters.
+- **One event per transition (decision 2).** `update_run` takes
+  `expected_state`; a racing second writer gets `LocalStoreConflict` and appends
+  nothing. `cancel` then returns the already-cancelled run, or fails with
+  `cancel_conflict` if the run moved to another state, so two concurrent cancels
+  emit one `run.cancelled` with a true `previous_state`.
+- **Inputs.** A blank `project_id`, `run_id` or `work_unit_id` is
+  `invalid_filter`; cursors are bounded ASCII-decimal sequences (at most 18
+  digits).
+- **Faults and retry semantics.** A SQL error from the store is a
+  `LocalStoreError`; an open stream ends with `: stream-ended reason=store-error`
+  instead of dropping the connection. The 503 capacity responses carry
+  `retryable: true`. Only a `GET` on the stream path uses the stream limiter, so
+  other methods get `405 Allow: GET`.
+- **Coverage (decision 6).** A run created before the store reached version 2
+  has no `run.created` event, so cancelling it later yields a `run.cancelled`
+  with no earlier event for that run.
