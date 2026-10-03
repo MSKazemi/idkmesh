@@ -336,7 +336,7 @@ class EventEnvelopeEnforcementTests(_DbCase):
         for field, value in self.BAD:
             with self.subTest(field=field, value=value):
                 with self.assertRaises(ValueError):
-                    self.admit("run-1", event=store_event("run-1", **{field: value}))
+                    self.admit("run-1", event=dict(store_event("run-1"), **{field: value}))
                 self.assertIsNone(self.store.get_run("run-1"))
                 self.assertEqual(self.store.latest_event_sequence(), 0)
                 self.assertEqual(self.all_events(), [])
@@ -351,7 +351,7 @@ class EventEnvelopeEnforcementTests(_DbCase):
                 bad = (
                     store_event("run-other")
                     if field == "run_id"
-                    else store_event("run-1", **{field: value})
+                    else dict(store_event("run-1"), **{field: value})
                 )
                 with self.assertRaises(ValueError):
                     self.store.update_run(

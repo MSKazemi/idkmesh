@@ -200,7 +200,12 @@ class RunEvidenceServiceTests(_StoreCase):
 
         self.assertEqual(caught.exception.code, "evidence_not_available")
 
-    def test_a_null_projection_digest_means_not_available(self) -> None:
+    def test_a_null_digest_on_an_evidence_state_is_an_integrity_error(self) -> None:
+        # The run is in a state that requires a retained evidence report, so a
+        # projection without its digest is corrupt data, not "no evidence yet":
+        # the strict restore (the same one status() uses) refuses it and the
+        # report is never served. A legitimate run that simply has no evidence
+        # (a CLI-created run) is evidence_not_available; see the test above.
         result = seed_offline_run(self.db, self.root)
 
         def clear_digest(metadata):
@@ -211,7 +216,7 @@ class RunEvidenceServiceTests(_StoreCase):
         with self.assertRaises(ProductSpineRunStoreError) as caught:
             self.service.get_run_evidence(result.run.run_id)
 
-        self.assertEqual(caught.exception.code, "evidence_not_available")
+        self.assertEqual(caught.exception.code, "evidence_integrity_error")
 
     def test_a_missing_retained_report_means_not_available(self) -> None:
         result = seed_offline_run(self.db, self.root)
