@@ -14,6 +14,13 @@ and the release notes for that tag.
 
 ### Added
 
+- [`docs/community/AGENT_CONTRIBUTOR_GUIDE.md`](docs/community/AGENT_CONTRIBUTOR_GUIDE.md):
+  how to contribute with your own AI coding agent (Claude Code, OpenAI Codex,
+  Google Jules). It points each tool at `AGENTS.md`, gives a paste-ready brief,
+  the commands that check your work, and the provenance note every
+  agent-assisted change carries. It adds no new rules: `AGENTS.md` and
+  `CONTRIBUTING.md` stay the source of truth. The project supplies no keys or
+  compute; the guide says so and says which tool behaviours are unverified.
 - `tools/schema_compat_check.py` (issue #737, API-2's sixth and last unmet
   CI requirement, "backwards-compatibility diff check for stable v1
   objects") ([ADR-0020](docs/decisions/ADR-0020-schema-backward-compatibility-gate.md)):

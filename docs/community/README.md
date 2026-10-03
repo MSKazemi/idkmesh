@@ -37,6 +37,7 @@ hardened.
 
 ## Strategy and measurement models
 
+- [Contribute with your own AI coding agent](AGENT_CONTRIBUTOR_GUIDE.md) — how to point Claude Code, OpenAI Codex, or Google Jules at `AGENTS.md` and reach a reviewable pull request, with paste-ready briefs, the checks to run, and the provenance note every agent-assisted change carries.
 - [Contributor Quickstart](CONTRIBUTOR_QUICKSTART.md) — the shortest path from visitor to a bounded first contribution, with live newcomer issues across documentation, testing, reproducibility, and external-machine validation.
 - [Contributor Experience Guidelines](CONTRIBUTOR_EXPERIENCE.md) — practical norms for turning curiosity into autonomous, repeat participation without dark patterns, spam, fake urgency, or deceptive social proof.
 - [Community Growth Strategy](COMMUNITY_GROWTH_STRATEGY.md) — why community
