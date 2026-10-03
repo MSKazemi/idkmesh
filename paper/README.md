@@ -52,6 +52,22 @@ the same bounded change, per the rules below.
 Publisher-generated binaries are optional. Editable source and reproducible
 provenance are the important artifacts.
 
+## Reproducing the figures and PDF
+
+Exact commands, defined by [`Makefile`](Makefile) (run from this directory, or
+as `make -C paper <target>` from the repository root):
+
+- `make figures` — runs [`make_figures.py`](make_figures.py) over the committed
+  experiment artifacts under `experiments/results/` and writes the regenerated
+  `figures/` directory.
+- `make all` — runs `figures` first, then builds `main.pdf` from `main.tex` and
+  `refs.bib` with `pdflatex` and `bibtex` (requires a local LaTeX toolchain).
+
+Inputs: the committed artifacts under `experiments/results/` at the source
+revision being reproduced. Outputs: `paper/figures/` (derived, gitignored) and
+`paper/main.pdf`. Only report a reproduction that actually ran at the recorded
+revision.
+
 ## Evidence classes
 
 Use these labels consistently in the manuscript and claim map:

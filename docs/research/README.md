@@ -23,6 +23,10 @@ policy changes or merge decisions.
 - [Randomness Research Roadmap](RANDOMNESS_ROADMAP.md) and
   [experiment status](RANDOMNESS_EXPERIMENT_STATUS.md) — sequence and current
   state of the bio-inspired scheduling program.
+- [Paper stewardship (`paper/`)](../../paper/README.md) — the canonical
+  manuscript source ([`main.tex`](../../paper/main.tex)) and its
+  [claim-to-evidence map](../../paper/CLAIM_EVIDENCE_MAP.md), the public
+  synchronization point between paper-facing claims and repository evidence.
 
 ## Routing and Orchestration Experiments
 

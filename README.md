@@ -527,6 +527,7 @@ See [`RESEARCH_QUESTIONS.md`](RESEARCH_QUESTIONS.md), [`docs/research/`](docs/re
 ### Research and evidence
 
 - [`docs/research/`](docs/research/README.md) — research programs and evidence.
+- [`paper/`](paper/README.md) — canonical manuscript source and claim-to-evidence map.
 - [`sim/`](sim/) — deterministic simulations/analysis code.
 - [`experiments/`](experiments/) — experiment definitions, harnesses, and results tooling.
 - [`docs/audits/`](docs/audits/) — bounded audits and repository-health evidence.
