@@ -3,7 +3,7 @@
 Why this file exists separately from ``test_resource_compute_admission.py``:
 that suite proves the admission *algorithm* on synthetic fixtures, and
 ``.github/workflows/free-resource-plan.yml`` runs the real files but pins
-``--today 2026-08-28`` so its example assertion stays reproducible. Pinning is
+``--today 2026-10-03`` so its example assertion stays reproducible. Pinning is
 correct for a determinism check and wrong for an expiry check: between them,
 nothing ever evaluates ``config/resource-compute-bindings.json`` against the
 date the project is actually living in.
