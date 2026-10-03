@@ -269,3 +269,24 @@ Before Freebuff model names become formal tier mappings, run a small frozen coho
 - cross-model disagreement on review.
 
 Use that evidence to update routing policy rather than choosing a permanent project-wide model.
+
+
+## Pilot checkpoint — 2026-10-04
+
+The first human-operated Freebuff/MiMo 2.6 Pro session produced two focused candidate PRs:
+
+- PR #904 for issue #901: CLI help examples, 2 changed files, focused tests green.
+- PR #905 for issue #900: CI-validated API examples, 8 changed files, focused tests green.
+
+Both candidates reported the same unrelated repository-wide gate blocker on current main:
+
+`tests/test_resource_compute_bindings_live.py::LiveFreshnessTests`
+
+The enabled GitHub Actions public-standard binding and its source evidence were last reviewed on 2026-08-28 with a 30-day freshness window. The gate is intentionally fail-closed and explicitly says to re-read the upstream source and move `reviewed_at` / `checked_at` only after a real re-review; widening `max_age_days` is not an acceptable repair.
+
+Current upstream GitHub documentation still states that standard GitHub-hosted runners are free for public repositories, and the runner reference states that standard public-repository runners are free and unlimited:
+
+- https://docs.github.com/en/actions/reference/runners/github-hosted-runners
+- https://docs.github.com/en/billing/concepts/product-billing/github-actions
+
+Recommended next action is therefore to restore a current evidence baseline before generating more candidate PRs. A maintainer should personally re-read the upstream GitHub documentation, then authorize a tiny evidence-refresh PR updating only the relevant dates/metadata if the claims still hold. After that PR is green and integrated, re-run CI on #904/#905 and continue the Freebuff task loop from current main.
