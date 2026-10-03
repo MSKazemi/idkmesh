@@ -42,16 +42,47 @@ human decision != merge authority
 
 That boundary remains unchanged when Freebuff is used.
 
+## Current free model allowance (checked 2026-10-03)
+
+Freebuff's public pricing page currently says every account receives 100 Freebucks per day and may spend that allowance on any mix of eligible models. The displayed "hours/day" values are **not additive**: each value is the approximate maximum if the entire daily allowance were spent on that model.
+
+| Freebuff model | Public free allowance | IDKMesh use |
+| --- | ---: | --- |
+| Solar Mini 4 | unlimited | bulk mechanical edits, docs, repetitive low-risk work |
+| Space Bunny Alpha | unlimited | secondary low-risk/bulk lane; calibrate before relying on it |
+| MiMo 2.6 Flash | 10 h/day equivalent | default T1/T2 implementation lane |
+| Solar Pro 4 | 10 h/day equivalent | alternate high-throughput T1/T2 lane |
+| GLM 5.3 Flash | 6 h/day equivalent | alternate coding/review lane |
+| DeepSeek V4.1 Flash | 6 h/day equivalent | strong default for harder T2/T3 coding/debugging |
+| GPT-6 Luna | 5 h/day equivalent | alternate reasoning/coding lane; calibrate on IDKMesh tasks |
+| MiMo 2.6 Pro | 3 h/day equivalent | reserve for the hardest bounded coding/reasoning tasks |
+
+The same public page currently says Gemini 3.8 Flash and Muse Spark require a paid plan. GPT-6.1 Sol is free only in the US and otherwise part of a paid plan, so it should not be treated as a generally free IDKMesh lane.
+
+Reference: https://freebuff.com/
+
+## Recommended free-model strategy
+
+For IDKMesh, do **not** spend the whole daily budget on a single model by default. Use a capability ladder:
+
+1. **MiMo 2.6 Pro** — hardest bounded implementation, architecture-aware debugging, difficult refactors.
+2. **DeepSeek V4.1 Flash** — primary heavy-development model; much more daily capacity than MiMo Pro while still positioned by Freebuff as a frontier coding option.
+3. **MiMo 2.6 Flash / Solar Pro 4** — routine T1/T2 implementation, tests, docs, clear multi-file work.
+4. **Unlimited Solar Mini 4 / Space Bunny Alpha** — repetitive cleanup, documentation, mechanical tests, and first-pass chores.
+5. Use a different strong model for **advisory review** of important patches rather than spending the strongest model twice on generation.
+
+This is a provisional operational strategy, not a benchmark claim. Freebuff itself says DeepSeek and MiMo Pro are strong choices for typical agentic coding, but IDKMesh should calibrate them on its own frozen issue cohort before making a canonical mapping.
+
 ## Provisional model-use guide
 
-The table below is operational guidance only. These Freebuff model names are **not yet calibrated IDKMesh tier declarations** and should not be added to `llm-routing-policy.json` as canonical mappings without measured evidence.
+These Freebuff model names are **not yet calibrated IDKMesh tier declarations** and should not be added to `llm-routing-policy.json` as canonical mappings without measured evidence.
 
 | Work class | Suggested first choice | Alternate | Notes |
 | --- | --- | --- | --- |
-| T1 mechanical/docs/tests | MiMo 2.6 Flash | Solar Mini 4 | Prefer the recommended balanced model for a first pilot; unlimited/cheap models are useful for repetitive edits. |
-| T2 bounded multi-file coding | MiMo 2.6 Flash | GLM 5.3 Flash | Good default lane for clear acceptance criteria and normal regression tests. |
-| T3 architecture-aware/debugging | DeepSeek V4.1 Flash | MiMo 2.6 Pro | Use when the issue needs broader repository reasoning; re-check scope carefully. |
-| T4 control-plane/research/release/security | no single Freebuff model is pre-approved | highest-capability available + separate review | Do not infer T4 from marketing/model naming. Keep the repository's independent-review/human-gate rules. |
+| T1 mechanical/docs/tests | MiMo 2.6 Flash | Solar Mini 4 | Use unlimited/10h lanes for routine work; preserve scarce strong-model allowance. |
+| T2 bounded multi-file coding | DeepSeek V4.1 Flash | MiMo 2.6 Flash | DeepSeek is the preferred quality/capacity balance; fall back to the 10h lane for routine slices. |
+| T3 architecture-aware/debugging | MiMo 2.6 Pro | DeepSeek V4.1 Flash | Reserve MiMo Pro's smaller allowance for genuinely difficult work. |
+| T4 control-plane/research/release/security | no single Freebuff model is pre-approved | strongest available + separate review/human gate | Do not infer T4 authority from model strength. Keep independent-review/human-gate rules. |
 
 A second model can provide useful **advisory review**, but another owner-controlled Freebuff session does not satisfy an issue that explicitly requires independent human/external evidence.
 
