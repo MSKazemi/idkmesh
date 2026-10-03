@@ -69,8 +69,12 @@ the module-level pytest functions and still reports `OK`.
   `human-required`. They ask for something only a person can provide, such as a
   first-run report from a real machine or an independent review, so an agent cannot
   complete them for you. They are still valuable if you do the observing yourself.
-- Skip issues labelled `research-evidence`, `security-sensitive`, `blocked`,
-  `needs-decomposition` or `do-not-automate` unless you have talked to a maintainer.
+- Skip issues labelled `research-evidence`, `security-sensitive`, `blocked` or
+  `needs-decomposition` unless you have talked to a maintainer.
+- `do-not-automate` only keeps the repository's own Jules dispatcher away from an
+  issue (see section 5). Maintainers add it to starter tasks on purpose, so the task
+  stays free for you; on a `good first issue` or `help wanted` task you are welcome
+  to use your own agent.
 - If no bounded, agent-doable task is open when you arrive, say so on the
   [bring-your-own-agent invitation](https://github.com/MSKazemi/idkmesh/issues/407)
   or open an issue describing a small task you would like to take. That is a normal
@@ -189,7 +193,9 @@ The maintainer runs a separate, owner-controlled Jules dispatcher
 driven by labels such as `agent-ready`, `agent:jules-eligible`,
 `agent:jules-dispatched` and `agent:jules-needs-attention`. Those labels are set
 by maintainers and by the repository's router, not by contributors. Please do not
-add them, and do not add the legacy `jules` label. They are queue controls, not a
+add them, and do not add the legacy `jules` label. The router can queue small
+tasks for that automation by itself, which is why maintainers mark starter tasks
+`do-not-automate`. They are queue controls, not a
 way to request review. Output from that automation carries no more authority than
 yours does: it is not independent human review.
 
