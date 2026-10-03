@@ -52,6 +52,36 @@ the same bounded change, per the rules below.
 Publisher-generated binaries are optional. Editable source and reproducible
 provenance are the important artifacts.
 
+## Reproducing the figures and PDF
+
+Exact commands, defined by [`Makefile`](Makefile) (run from this directory, or
+as `make -C paper <target>` from the repository root):
+
+- `make figures` — runs [`make_figures.py`](make_figures.py) from the repository
+  root (`python3 paper/make_figures.py`) over the committed artifacts listed
+  under Inputs below and writes the regenerated `figures/` directory.
+- `make all` — runs `figures` first, then builds `main.pdf` from `main.tex` and
+  `refs.bib` with `pdflatex` and `bibtex` (requires a local LaTeX toolchain).
+  `main.pdf` is a tracked file, so a successful build leaves it modified.
+
+A second generator is not part of the Makefile: the single-factor cells of
+Sec. 7.2 come from [`deconfound_panel.py`](deconfound_panel.py), run from the
+repository root as `PYTHONPATH=. python3 paper/deconfound_panel.py --seeds 100
+--agents 64 --generations 50 --change-at 25 --jobs 4`. By default it writes
+`paper/figures/deconfound-panel.json` (see its `--output` option).
+
+Inputs, at the source revision being reproduced:
+
+- `experiments/results/E017-partial-oracle-votes.jsonl.gz`
+- `experiments/results/E015-verification-phase-diagram.jsonl`
+- `benchmarks/e016-verification-corpus/tasks.jsonl`
+- the analysis module `sim/e020_quorum_frontier.py`, which `make_figures.py`
+  imports (code, not an artifact).
+
+Outputs: `paper/figures/` (derived, gitignored), `paper/main.pdf` for `make all`,
+and the panel file above. Only report a reproduction that actually ran at the
+recorded revision.
+
 ## Evidence classes
 
 Use these labels consistently in the manuscript and claim map:
