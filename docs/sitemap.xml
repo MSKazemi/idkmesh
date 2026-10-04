@@ -1312,6 +1312,11 @@
     <priority>0.3</priority>
   </url>
   <url>
+    <loc>https://mskazemi.com/idkmesh/conversations/2026-10-04-dependency-effort-implementation.html</loc>
+    <lastmod>2026-10-04</lastmod>
+    <priority>0.3</priority>
+  </url>
+  <url>
     <loc>https://mskazemi.com/idkmesh/conversations/2026-10-04-human-agent-coordination-algorithms.html</loc>
     <lastmod>2026-10-04</lastmod>
     <priority>0.3</priority>
@@ -1993,7 +1998,7 @@
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/specifications/</loc>
-    <lastmod>2026-10-03</lastmod>
+    <lastmod>2026-10-04</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
@@ -2019,6 +2024,11 @@
   <url>
     <loc>https://mskazemi.com/idkmesh/specifications/CONTROL_TOWER_LOCAL_API_V0_1.html</loc>
     <lastmod>2026-10-03</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://mskazemi.com/idkmesh/specifications/COORDINATION_PREFLIGHT_V0_1.html</loc>
+    <lastmod>2026-10-04</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
@@ -2123,7 +2133,7 @@
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/specifications/PRODUCT_SPINE_SERVICE_V0_1.html</loc>
-    <lastmod>2026-10-03</lastmod>
+    <lastmod>2026-10-04</lastmod>
     <priority>0.8</priority>
   </url>
   <url>

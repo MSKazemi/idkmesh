@@ -7,11 +7,13 @@ canonical files designated by [`../../PROJECT_RULES.md`](../../PROJECT_RULES.md)
 (decisions, specifications, architecture, findings); this directory keeps the trail
 that produced them.
 
-171 records across 10 dates, newest first.
+172 records across 10 dates, newest first.
 
 ## Index
 
 ### 2026-10-04
+
+- [Human–agent coordination: dependencies and effort preflight](2026-10-04-dependency-effort-implementation.md)
 
 - [Human–agent coordination: first implementation](2026-10-04-coordination-implementation.md)
 
