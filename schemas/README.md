@@ -4,6 +4,8 @@ This directory contains the machine-readable contracts used by the executable re
 
 ## Current versions
 
+- `task-claim-v0.1.schema.json` — local coordinator claim snapshot: scoped logical task, exact execution/input binding, owner, per-slot epoch, four deadlines, occupancy and candidate digest. Snapshot metadata grants no execution, acceptance or merge authority; see [Local Task Claims v0.1](../docs/specifications/LOCAL_TASK_CLAIMS_V0_1.md).
+
 - `enterprise-control-profile-v0.1.schema.json` — experimental enterprise deployment/control posture: deployment/tenant mode, identity and separation of duties, data/egress, secret/workload identity, audit, reliability/DR, supply-chain, and change-management declarations. A valid/declaration-ready profile is not proof of observed enforcement or compliance certification.
 - `enterprise-control-profile-baseline-v0.1.schema.json` — retained baseline declaration contract used by the original control-plane preflight example; kept separate because its field vocabulary is intentionally different from the versioned G0/G1/G2/G3 profile contract above.
 - `work-unit-v0.2.schema.json` — current bounded unit of independently executable/verifiable work. It adds vendor-neutral capability/resource requirements, explicit security/trust classification, independent-verification policy, the `benchmarking` work kind required by issue #3, and an explicit project-spend budget.

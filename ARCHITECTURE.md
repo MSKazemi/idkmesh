@@ -102,7 +102,7 @@ Important current boundaries include:
 
 See [`PROJECT_RULES.md`](PROJECT_RULES.md), [`config/compute-policy.json`](config/compute-policy.json), and the compute architecture documents in [`docs/architecture/`](docs/architecture/README.md).
 
-The proposed [human–agent coordination algorithm plan](docs/planning/HUMAN_AGENT_COORDINATION_ALGORITHMS_2026-10-04.md) connects shared task identity, atomic claims, fenced recovery, bounded competing attempts, prerequisite readiness, and effort/resource allocation to the existing C9/C10/Product Spine owners. It distinguishes local idempotency and provider-specific dispatch controls already present from the common live ownership/recovery protocol still to be implemented; it introduces no new execution or integration authority.
+The proposed [human–agent coordination algorithm plan](docs/planning/HUMAN_AGENT_COORDINATION_ALGORITHMS_2026-10-04.md) connects shared task identity, atomic claims, fenced recovery, bounded competing attempts, prerequisite readiness, and effort/resource allocation to the existing C9/C10/Product Spine owners. Its first executable foundation is [Local Task Claims v0.1](docs/specifications/LOCAL_TASK_CLAIMS_V0_1.md): separate coordinators on one local SQLite database share task slot/lifetime limits, four deadlines, per-slot epochs and retained unknown execution occupancy. This adapter is not yet wired into the live providers, GitHub ledger, dependency scheduler or Product Spine dispatch path; it introduces no execution, acceptance or integration authority.
 
 ## 6. Verification architecture
 

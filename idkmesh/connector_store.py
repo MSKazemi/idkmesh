@@ -22,9 +22,52 @@ from typing import Any, Iterator, Mapping
 from idkmesh.work_unit_binding import canonical_digest
 
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 DEFAULT_LIST_LIMIT = 50
 MAX_LIST_LIMIT = 200
+
+# C10-D/E local coordination metadata. Ownership and external execution
+# occupancy deliberately have different lifetimes (see LOCAL_TASK_CLAIMS_V0_1).
+_CLAIMS_DDL = """
+CREATE TABLE IF NOT EXISTS task_claim_policies (
+    task_key TEXT PRIMARY KEY,
+    policy_json TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS task_claim_slots (
+    task_key TEXT NOT NULL REFERENCES task_claim_policies(task_key),
+    slot INTEGER NOT NULL,
+    epoch INTEGER NOT NULL,
+    PRIMARY KEY (task_key, slot)
+);
+CREATE TABLE IF NOT EXISTS task_claims (
+    task_key TEXT NOT NULL,
+    request_id TEXT NOT NULL,
+    request_digest TEXT NOT NULL,
+    slot INTEGER NOT NULL,
+    epoch INTEGER NOT NULL,
+    owner_json TEXT NOT NULL,
+    binding_json TEXT NOT NULL,
+    authorization_json TEXT NOT NULL,
+    state TEXT NOT NULL CHECK (state IN ('active', 'released', 'expired')),
+    created_at INTEGER NOT NULL,
+    acknowledged_at INTEGER,
+    ack_by INTEGER NOT NULL,
+    lease_until INTEGER NOT NULL,
+    progress_by INTEGER NOT NULL,
+    hard_until INTEGER NOT NULL,
+    occupancy TEXT NOT NULL CHECK (occupancy IN ('none', 'unknown', 'running', 'terminal')),
+    operation_id TEXT,
+    execution_reference TEXT,
+    submission_digest TEXT,
+    PRIMARY KEY (task_key, request_id),
+    UNIQUE (task_key, slot, epoch),
+    FOREIGN KEY (task_key, slot) REFERENCES task_claim_slots(task_key, slot)
+);
+CREATE TABLE IF NOT EXISTS task_claim_clock (
+    singleton INTEGER PRIMARY KEY CHECK (singleton = 1),
+    last_epoch INTEGER NOT NULL
+);
+"""
 
 _EVENTS_DDL = """
 CREATE TABLE IF NOT EXISTS events (
@@ -287,12 +330,24 @@ class LocalMetadataStore:
                     """
                 )
                 conn.executescript(_EVENTS_DDL)
+                conn.executescript(_CLAIMS_DDL)
                 conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
             elif current < SCHEMA_VERSION:
-                # v1 -> v2 (ADR-0023): additive, so an existing store keeps
-                # every row and only gains the append-only events table.
+                # Additive v1/v2 upgrades preserve all existing run/event rows.
                 conn.executescript(_EVENTS_DDL)
+                conn.executescript(_CLAIMS_DDL)
                 conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
+
+    @contextmanager
+    def transaction(self) -> Iterator[sqlite3.Connection]:
+        """Serialize a trusted local metadata composition across processes.
+
+        The adapter must read, validate and mutate within this transaction.
+        This is not a worker-facing SQL interface or a distributed lock.
+        """
+        with _session(self.path) as conn:
+            conn.execute("BEGIN IMMEDIATE")
+            yield conn
 
     @staticmethod
     def _require_text(value: str, field: str) -> str:
