@@ -88,6 +88,11 @@ meaning of an existing version.
 
 ## Project Configuration
 
+- [Coordination Preflight v0.1](COORDINATION_PREFLIGHT_V0_1.md) — read-only
+  exact-input prerequisite readiness, replay/descendant invalidation,
+  declared-effort capability advice and critical-path estimates; reuses the
+  connector resolver and grants no admission/dispatch authority.
+
 - [Local Task Claims v0.1](LOCAL_TASK_CLAIMS_V0_1.md) — local SQLite atomic
   human/agent claims, immutable task limits, four deadlines, per-slot fencing
   and persistent unknown execution occupancy; no live provider or distributed

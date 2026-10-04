@@ -14,6 +14,13 @@ and the release notes for that tag.
 
 ### Added
 
+- Read-only coordination preflight (issue #915): iterative WorkUnit prerequisite
+  graph, exact integrated input pins, replay-safe readiness and transitive stale
+  input detection. Declared-effort shadow recommendations reuse the existing
+  connector resolver, preserve risk/authority floors and prohibit paid fallback.
+  Includes a synthetic stdlib demo and critical-path estimates with review and
+  integration time; live scheduling/routing is unchanged. See [Coordination Preflight v0.1](docs/specifications/COORDINATION_PREFLIGHT_V0_1.md).
+
 - Local atomic task claims and occupancy-safe recovery (C10-D/E, issue #914):
   one implementation slot by default, explicit bounded competition, immutable
   lifetime/deadline budgets, scoped replay, per-slot fencing, fresh authority

@@ -104,6 +104,14 @@ See [`PROJECT_RULES.md`](PROJECT_RULES.md), [`config/compute-policy.json`](confi
 
 The proposed [human–agent coordination algorithm plan](docs/planning/HUMAN_AGENT_COORDINATION_ALGORITHMS_2026-10-04.md) connects shared task identity, atomic claims, fenced recovery, bounded competing attempts, prerequisite readiness, and effort/resource allocation to the existing C9/C10/Product Spine owners. Its first executable foundation is [Local Task Claims v0.1](docs/specifications/LOCAL_TASK_CLAIMS_V0_1.md): separate coordinators on one local SQLite database share task slot/lifetime limits, four deadlines, per-slot epochs and retained unknown execution occupancy. This adapter is not yet wired into the live providers, GitHub ledger, dependency scheduler or Product Spine dispatch path; it introduces no execution, acceptance or integration authority.
 
+[Coordination Preflight v0.1](docs/specifications/COORDINATION_PREFLIGHT_V0_1.md)
+adds a read-only WorkUnit `requires` readiness projection with exact input pins,
+replay-safe observations and descendant invalidation. Declared effort produces
+conservative shadow capability advice through the existing connector resolver;
+critical-path estimates include verification/integration time. It does not
+change live issue routing or compose these observations with authoritative
+claim/resource admission yet.
+
 ## 6. Verification architecture
 
 Verification is not a final boolean attached to worker output. It is a separate evidence-producing system.
