@@ -100,8 +100,9 @@ no` says so explicitly.
 ## Step 5 — read the run over the local API
 
 The Human Control Tower serves a read-only HTTP API over the same store. It
-is headless-token mode here: choose your own token of at least 32 characters
-and keep it out of shell history and version control.
+is headless-token mode here: choose your own token of 32 to 4096 characters made only of letters, digits,
+`-`, `.`, `_` and `~` (for example the output of `openssl rand -hex 32`), and
+keep it out of shell history and version control.
 
 In one terminal, start the server:
 
@@ -124,9 +125,11 @@ Server: IDKMeshControlTower/0.1
 ...
 ```
 
-Then send the token in the `X-IDKMesh-UI-Token` header:
+In this second terminal, set the same value first, then send the token in the
+`X-IDKMesh-UI-Token` header:
 
 ```bash
+export IDKMESH_CONTROL_TOWER_TOKEN='<the token you chose>'
 curl -s -H "X-IDKMesh-UI-Token: $IDKMESH_CONTROL_TOWER_TOKEN" \
   -H "Accept: application/json" \
   http://127.0.0.1:8770/api/v1/runs | python -m json.tool
@@ -179,7 +182,8 @@ same application service the CLI used; the `authority` block is still all
 ### Security and authority boundaries
 
 The Control Tower server binds only to `127.0.0.1` (loopback-only), refuses
-requests without the `X-IDKMesh-UI-Token` header, serves evidence read-only,
+API requests that lack a valid `X-IDKMesh-UI-Token` header (only `/healthz`,
+`/readyz` and the HTML page are exempt), serves evidence read-only,
 and has no merge or push authority. It cannot dispatch workers, select
 candidates, write canonical state, push Git, or merge anything, and the
 responses it serves carry the same fixed `authority` block shown above.
@@ -198,3 +202,6 @@ rm -rf tutorial-demo
   every local API endpoint, including single-run and attempts reads.
 - [`specifications/API_CONVENTIONS_V0_1.md`](specifications/API_CONVENTIONS_V0_1.md) —
   the shared error, pagination, and idempotency conventions.
+- Newer read surfaces on `main`: `idkmesh work-unit list|status`,
+  `idkmesh project status`, `idkmesh events list` and `idkmesh run evidence`
+  (see the two specifications above for what each one does and does not cover).
