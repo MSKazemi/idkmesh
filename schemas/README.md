@@ -4,6 +4,8 @@ This directory contains the machine-readable contracts used by the executable re
 
 ## Current versions
 
+- `coordination-preflight-v0.1.schema.json` — read-only dependency and declared-effort report: exact WorkUnit/graph/observation/input bindings, prerequisite pins, blockers, shadow capability/connector recommendation and zero project spend. It is not a claim, reservation or dispatch authorization; see [Coordination Preflight v0.1](../docs/specifications/COORDINATION_PREFLIGHT_V0_1.md).
+
 - `task-claim-v0.1.schema.json` — local coordinator claim snapshot: scoped logical task, exact execution/input binding, owner, per-slot epoch, four deadlines, occupancy and candidate digest. Snapshot metadata grants no execution, acceptance or merge authority; see [Local Task Claims v0.1](../docs/specifications/LOCAL_TASK_CLAIMS_V0_1.md).
 
 - `enterprise-control-profile-v0.1.schema.json` — experimental enterprise deployment/control posture: deployment/tenant mode, identity and separation of duties, data/egress, secret/workload identity, audit, reliability/DR, supply-chain, and change-management declarations. A valid/declaration-ready profile is not proof of observed enforcement or compliance certification.

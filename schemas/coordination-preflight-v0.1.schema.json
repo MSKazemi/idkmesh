@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idkmesh.org/schemas/coordination-preflight-v0.1.schema.json",
+  "title": "Coordination Preflight v0.1",
+  "description": "Read-only local dependency and declared-effort recommendation. Does not admit, execute, verify, accept or integrate work.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["kind", "schema_version", "scope", "graph_digest", "observation_digest", "binding", "inputs_digest", "ready", "satisfied", "blockers", "prerequisite_pins", "effort", "capability", "routing", "authority"],
+  "properties": {
+    "kind": {"const": "idkmesh-coordination-preflight"},
+    "schema_version": {"const": "0.1"},
+    "scope": {"$ref": "#/$defs/scope"},
+    "graph_digest": {"$ref": "#/$defs/digest"},
+    "observation_digest": {"$ref": "#/$defs/digest"},
+    "binding": {"$ref": "#/$defs/binding"},
+    "inputs_digest": {"oneOf": [{"$ref": "#/$defs/digest"}, {"type": "null"}]},
+    "ready": {"type": "boolean"},
+    "satisfied": {"type": "boolean"},
+    "blockers": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+    "prerequisite_pins": {"type": "array", "items": {"$ref": "#/$defs/observation"}},
+    "effort": {
+      "type": "object", "additionalProperties": false,
+      "required": ["components", "ambiguity", "coupling", "execution_seconds", "verification_minutes", "integration_minutes", "estimate_source", "deterministic_operation"],
+      "properties": {
+        "components": {"type": ["integer", "null"], "minimum": 1, "maximum": 10000},
+        "ambiguity": {"$ref": "#/$defs/effortClass"},
+        "coupling": {"$ref": "#/$defs/effortClass"},
+        "execution_seconds": {"$ref": "#/$defs/duration"},
+        "verification_minutes": {"$ref": "#/$defs/duration"},
+        "integration_minutes": {"$ref": "#/$defs/duration"},
+        "estimate_source": {"$ref": "#/$defs/text"},
+        "deterministic_operation": {"type": "boolean"}
+      }
+    },
+    "capability": {
+      "type": "object", "additionalProperties": false,
+      "required": ["trusted_floor", "recommended_tier", "reasons", "expected_total_seconds", "evidence_class"],
+      "properties": {
+        "trusted_floor": {"$ref": "#/$defs/tier"},
+        "recommended_tier": {"oneOf": [{"$ref": "#/$defs/tier"}, {"type": "null"}]},
+        "reasons": {"type": "array", "items": {"type": "string"}},
+        "expected_total_seconds": {"type": ["number", "null"], "minimum": 0},
+        "evidence_class": {"const": "declared_estimate"}
+      }
+    },
+    "routing": {
+      "type": "object", "additionalProperties": false,
+      "required": ["authority_mode", "risk_class", "project_spend_usd_max", "eligible", "ineligible", "recommended_connection_id", "selection_reason"],
+      "properties": {
+        "authority_mode": {"enum": ["deterministic", "agent_candidate", "human_gate_then_agent", "human_required"]},
+        "risk_class": {"enum": ["low", "medium", "high", "critical"]},
+        "project_spend_usd_max": {"const": 0.0},
+        "eligible": {
+          "type": "array", "items": {
+            "type": "object", "additionalProperties": false,
+            "required": ["connection_id", "supported_tier"],
+            "properties": {"connection_id": {"type": "string", "minLength": 1}, "supported_tier": {"$ref": "#/$defs/tier"}}
+          }
+        },
+        "ineligible": {
+          "type": "array", "items": {
+            "type": "object", "additionalProperties": false,
+            "required": ["connection_id", "reasons"],
+            "properties": {"connection_id": {"type": "string", "minLength": 1}, "reasons": {"type": "array", "items": {"type": "string"}}}
+          }
+        },
+        "recommended_connection_id": {"type": ["string", "null"], "minLength": 1},
+        "selection_reason": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "authority": {
+      "type": "object", "additionalProperties": false,
+      "required": ["dispatch", "executes_worker", "accepts_candidate", "merge"],
+      "properties": {"dispatch": {"const": false}, "executes_worker": {"const": false}, "accepts_candidate": {"const": false}, "merge": {"const": false}}
+    }
+  },
+  "$defs": {
+    "text": {"type": "string", "minLength": 1, "maxLength": 512},
+    "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "revision": {"type": "string", "pattern": "^(?:[0-9a-fA-F]{40}|[0-9a-fA-F]{64})$"},
+    "tier": {"enum": ["T0", "T1", "T2", "T3", "T4"]},
+    "effortClass": {"enum": ["low", "medium", "high", "unknown"]},
+    "duration": {"type": ["number", "null"], "minimum": 0, "maximum": 1000000000},
+    "scope": {
+      "type": "object", "additionalProperties": false, "required": ["tenant_id", "project_id"],
+      "properties": {
+        "tenant_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"},
+        "project_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"}
+      }
+    },
+    "binding": {
+      "type": "object", "additionalProperties": false,
+      "required": ["work_unit_id", "work_unit_version", "work_unit_digest", "source_revision"],
+      "properties": {
+        "work_unit_id": {"type": "string", "minLength": 1},
+        "work_unit_version": {"type": "integer", "minimum": 1},
+        "work_unit_digest": {"$ref": "#/$defs/digest"},
+        "source_revision": {"$ref": "#/$defs/revision"}
+      }
+    },
+    "observation": {
+      "type": "object", "additionalProperties": false,
+      "required": ["scope", "event_id", "sequence", "binding", "state", "inputs_digest", "integrated_revision", "artifacts_digest", "verification_reference", "integration_reference"],
+      "properties": {
+        "scope": {"$ref": "#/$defs/scope"},
+        "event_id": {"$ref": "#/$defs/text"},
+        "sequence": {"type": "integer", "minimum": 1},
+        "binding": {"$ref": "#/$defs/binding"},
+        "state": {"enum": ["pending", "candidate", "integrated", "rejected"]},
+        "inputs_digest": {"$ref": "#/$defs/digest"},
+        "integrated_revision": {"oneOf": [{"$ref": "#/$defs/revision"}, {"type": "null"}]},
+        "artifacts_digest": {"oneOf": [{"$ref": "#/$defs/digest"}, {"type": "null"}]},
+        "verification_reference": {"oneOf": [{"$ref": "#/$defs/text"}, {"type": "null"}]},
+        "integration_reference": {"oneOf": [{"$ref": "#/$defs/text"}, {"type": "null"}]}
+      }
+    }
+  }
+}
