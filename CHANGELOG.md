@@ -14,6 +14,79 @@ and the release notes for that tag.
 
 ### Added
 
+- [`docs/community/AGENT_CONTRIBUTOR_GUIDE.md`](docs/community/AGENT_CONTRIBUTOR_GUIDE.md):
+  how to contribute with your own AI coding agent (Claude Code, OpenAI Codex,
+  Google Jules). It points each tool at `AGENTS.md`, gives a paste-ready brief,
+  the commands that check your work, and the provenance note every
+  agent-assisted change carries. It adds no new rules: `AGENTS.md` and
+  `CONTRIBUTING.md` stay the source of truth. The project supplies no keys or
+  compute; the guide says so and says which tool behaviours are unverified.
+- Canonical append-only event source, event history API and resumable SSE
+  stream (issue #741, API-6)
+  ([ADR-0023](docs/decisions/ADR-0023-canonical-append-only-event-source.md)):
+  a new `events` table in the Product Spine store, written in the same SQLite
+  transaction as the run change it records (`admit_run` / `update_run` take an
+  optional `event`), with a monotonic `sequence`, a unique `event_id`, a
+  producer-supplied `occurred_at` (the store never reads a clock to invent
+  one), a `principal`, a reserved `authority_class` vocabulary
+  (`local_control`, `worker_observation`, `verifier_recommendation`,
+  `human_decision`) and a `payload_digest`. New `GET /api/v1/events` (the
+  `idkmesh-list-v0.1` envelope, ordered by sequence, opaque listing-scoped
+  cursor, `limit` 1-200, exact-match filters `project_id`, `run_id`,
+  `work_unit_id`, `event_type`; unknown parameters or an unknown `event_type`
+  fail with 400) and `GET /api/v1/events/stream` (Server-Sent Events:
+  `id` is the sequence, `Last-Event-ID` resumes with every later event, no
+  header starts at the live tail, a `Last-Event-ID` beyond the newest event of
+  the stream is `400 invalid_last_event_id` with `details.latest_sequence`
+  rather than a silent skip, delivery is at-least-once so clients dedupe on
+  `event_id`; browsers cannot use `EventSource` because the API token travels in
+  a header it cannot set, so they must use `fetch` with a streaming reader).
+  The `events` table is append-only by SQLite triggers (UPDATE and DELETE
+  abort) and `event_id` is derived from `sequence`, not stored. The stream is
+  bounded: `--max-sse-clients N` (1-64, default 8,
+  its own limiter, beyond it `503 too_many_streams` + `Retry-After`), a 15 s
+  heartbeat, a 300 s maximum lifetime after which the client reconnects with
+  `Last-Event-ID`, and prompt end on drain; `operations.limits` on
+  `GET /api/v1/status` reports `max_sse_clients`, `sse_heartbeat_seconds` and
+  `sse_max_stream_seconds` (added as optional properties). New frozen schema
+  `schemas/idkmesh-event-v0.1.schema.json` and `idkmesh events list --store
+  PATH [--limit] [--cursor] [--project-id] [--run-id] [--work-unit-id]
+  [--event-type] [--json]`. The store schema version is now 2: a version 1
+  store gains the `events` table in place, and code that predates version 2
+  refuses a version 2 store through the existing "newer than supported" check.
+  Stated limits: only Product Spine `run create` and `run cancel` emit events
+  (`run.created`, `run.cancelled`); the offline idempotent spine and the GitHub
+  dispatch and status writers do not yet, so the history makes no completeness
+  claim over every writer of the shared `runs` table; nothing prunes the table
+  (a future pruner must answer `410 cursor_expired` rather than leave a silent
+  gap); SSE is poll-based and bounded, one thread per stream, for the local
+  development profile; WebSocket is deferred; the Control Tower UI timeline is
+  not yet rebuilt on this source.
+- Bounded service limits for the Control Tower development server (issue #742,
+  API-7) ([ADR-0022](docs/decisions/ADR-0022-control-tower-bounded-service-limits.md)):
+  a per-connection request timeout (default 10 s; a stalled request line or
+  header drops the connection, a stalled body answers `408 request_timeout`);
+  a concurrent-request cap (default 16) that answers `503 overloaded` with
+  `Retry-After` and the standard error envelope instead of queueing;
+  graceful drain (`503 shutting_down`, including `GET /readyz`, while
+  `GET /healthz` still answers, and `serve_control_tower` waits up to 5 s for
+  in-flight requests on shutdown); an explicit listen backlog of 16; and an
+  optional `operations.limits` object on `GET /api/v1/status` reporting the
+  limits actually in force (added in place to the frozen status schema as an
+  optional property, which the ADR-0020 gate accepts). New flags
+  `idkmesh control-tower --request-timeout SECONDS` (0.1-300) and
+  `--max-concurrent-requests N` (1-1024). The reusable `RequestLimiter`
+  and `limits_document()` live in `idkmesh/service_runtime.py`. The stdlib
+  parser's existing bounds are adopted and pinned by tests: request line
+  65536 bytes (414), header line 65536 bytes and 99 header fields (431;
+  measured -- the stdlib counts the blank line ending the header block
+  against its limit of 100), 2 MiB body, one request per connection.
+  Not implemented, deliberately: `429` (a single local token gives no
+  per-client identity to attribute a rate to) and a maximum SSE client count
+  (no SSE stream exists yet, #741). The cap bounds request *handling*, not
+  accepted connections, and `gate-audit-ui` and the steward UIs are not
+  hardened by this change.
+
 - `tools/schema_compat_check.py` (issue #737, API-2's sixth and last unmet
   CI requirement, "backwards-compatibility diff check for stable v1
   objects") ([ADR-0020](docs/decisions/ADR-0020-schema-backward-compatibility-gate.md)):
@@ -27,6 +100,45 @@ and the release notes for that tag.
   `evaluator-plan-v0.2.schema.json`, both predating this gate) and raises
   nothing else across every schema file's full commit history.
 
+- `GET /api/v1/work-units`, `GET /api/v1/work-units/{work_unit_id}`, and
+  `idkmesh work-unit list|status` (issue #739, `work-units` read surfaces)
+  ([ADR-0021](docs/decisions/ADR-0021-derived-work-unit-and-project-read-models.md)):
+  read-only WorkUnit views **derived on demand** from the WorkUnit reference
+  (`id`, `version`, `digest`, `source_revision`) each stored Product Spine run
+  already carries. One item per distinct id, ordered by id with an opaque
+  keyset cursor scoped to this listing (a `run list` cursor is rejected with
+  `invalid_cursor`) and an exact `project_id` filter that also scopes every
+  `run_count`. Each item lists its distinct revisions with run counts, selects
+  no latest revision, and returns no WorkUnit body -- none is stored; `digest`
+  is the binding. An id no stored run references is `404 work_unit_not_found`,
+  which says only that the retained runs do not mention it. Ids may contain
+  `/`, so the whole path remainder is one literal id. Frozen by
+  `schemas/idkmesh-work-unit-resource-v0.1.schema.json` and
+  `schemas/idkmesh-control-tower-work-unit-response-v0.1.schema.json`; the
+  list reuses `idkmesh-list-v0.1`. Adds `LocalMetadataStore.list_work_units()`
+  / `get_work_unit()` and the matching `ProductSpineRunStore` methods. Not
+  yet built: `/evidence` / `/decisions`, which wait on the content store of
+  issue #740.
+
+- `GET /api/v1/projects/{project_id}` and `idkmesh project status`
+  (issue #739, `projects` read surface)
+  ([ADR-0021](docs/decisions/ADR-0021-derived-work-unit-and-project-read-models.md)):
+  a read-only project summary **derived on demand** from the stored Product
+  Spine runs that name the project. No project record exists, so it is counts
+  only: `run_count`, `runs_by_state` (every one of the 14 canonical run states
+  present and zero-filled, so the shape is identical for every project), and
+  the distinct `work_unit_count`. It computes no health or status rollup and
+  selects nothing; list a project's WorkUnits with
+  `GET /api/v1/work-units?project_id=`. A project no stored run names is
+  `404 project_not_found`, which says only that the retained runs do not
+  mention it. The whole path remainder is one literal `project_id` (it may
+  contain `/`), and there is no project list endpoint. Frozen by
+  `schemas/idkmesh-project-resource-v0.1.schema.json` and
+  `schemas/idkmesh-control-tower-project-response-v0.1.schema.json`. Adds
+  `LocalMetadataStore.get_project_counts()` and
+  `ProductSpineRunStore.get_project()`. Not yet built: `/evidence` /
+  `/decisions` (issue #740).
+
 - `GET /api/v1/runs/{run_id}/attempts` (issue #739, `attempts` read
   surface): reads one run's worker/verifier attempts. `attempts` is now a
   reserved trailing path segment alongside `evidence` and `decisions`
@@ -35,6 +147,87 @@ and the release notes for that tag.
   outcome, so a `run_id` ending in one of those three literal suffixes can
   no longer be read through the plain single-run `GET`. Frozen by
   `schemas/idkmesh-control-tower-run-attempts-response-v0.1.schema.json`.
+
+- `GET /api/v1/runs/{run_id}/evidence` and `idkmesh run evidence RUN_ID --store
+  PATH [--json]` (issue #739, API-4)
+  ([ADR-0024](docs/decisions/ADR-0024-retained-evidence-read-and-mixed-store-run-reads.md)):
+  serves the Run Evidence Report that the idempotent offline Product Spine
+  already retains in the run row, so a Control Tower client can reconstruct a
+  run and its evidence without repository files and without supplying the
+  evidence document. It is digest-verified and fail-closed: the run projection
+  must be a valid Product Spine run and `canonical_digest(report)` must equal
+  `evidence_report_digest`, otherwise the response is `500
+  evidence_integrity_error` and the report is never served. The report is
+  returned as retained, never synthesised. `404 run_not_found` (no such run) is
+  distinct from `404 evidence_not_available` (the run exists but retains no
+  evidence, for example a run created by `idkmesh run create`). Frozen by
+  `schemas/idkmesh-control-tower-run-evidence-response-v0.1.schema.json`.
+  `GET /api/v1/runs/{run_id}/decisions` and the human-decision API (issue #740)
+  remain unbuilt on purpose: no decision content is retained anywhere, and
+  recording one needs an authenticated, accountable human or governance
+  principal, which a local session token is not. That is a governance gate, not
+  an implementation gap.
+- Product Spine runs written by the idempotent offline spine
+  (`product-spine-idempotency-result` rows) are now readable through
+  `GET /api/v1/runs`, `GET /api/v1/runs/{run_id}` and `idkmesh run
+  list/status` (the run-store restore accepts that kind and checks its
+  `idempotency_request_digest` against the atomic record).
+
+### Fixed
+
+- `GET /api/v1/runs` and `idkmesh run list` no longer fail for the whole page
+  when the store also holds a row that is not a Product Spine run. The shared
+  `runs` table also holds admission-only, execution-error and GitHub
+  dispatch/status rows, and the old listing tried to restore every row. The
+  listing now selects an explicit set of stored kinds
+  (`product-spine-cli-run`, `product-spine-idempotency-result`)
+  ([ADR-0024](docs/decisions/ADR-0024-retained-evidence-read-and-mixed-store-run-reads.md)),
+  which also keeps keyset pagination consistent. The filter is by kind, not by
+  exception: a row of a listed kind that fails to restore still fails loudly.
+- Corrections to the still-unreleased event, evidence and service-limit code
+  above, found by a read-only static review (no test has run against any of it
+  yet), so they refine entries in this section instead of fixing a released
+  behavior:
+  - **`idkmesh run cancel` no longer destroys retained evidence.** Once
+    offline-spine rows became readable, `cancel` could succeed on one and
+    rewrite its row into the CLI shape, dropping the retained evidence report.
+    `cancel` now refuses any run not created by `idkmesh run create` with
+    `cancel_not_allowed`
+    ([ADR-0024](docs/decisions/ADR-0024-retained-evidence-read-and-mixed-store-run-reads.md)).
+  - **A concurrent double `run cancel` emits exactly one `run.cancelled`.**
+    `LocalMetadataStore.update_run` gained `expected_state`, which makes the
+    update conditional; the losing caller returns the already-cancelled run, or
+    fails with `cancel_conflict` if the run changed to another state
+    ([ADR-0023](docs/decisions/ADR-0023-canonical-append-only-event-source.md)).
+  - **The store enforces the published event envelope**: `event_type`,
+    `authority_class`, the UTC `occurred_at`, a 40/64-hex `source_revision`, and
+    `event.run_id` equal to the run it is committed with are validated before
+    anything is written. This also keeps the SSE `event:` line to the enumerated
+    event types.
+  - **Event history validation.** A blank `project_id`, `run_id` or
+    `work_unit_id` is `400 invalid_filter` (it was reported as
+    `invalid_limit`), and a cursor must be a bounded ASCII-decimal sequence
+    (at most 18 digits) or it is `400 invalid_cursor` (a forged one used to
+    raise an unhandled or mislabelled error, depending on its content).
+  - **`GET /api/v1/runs/{run_id}/evidence` restores the row exactly as
+    `status` does** before verifying the digest, so a foreign or swapped row
+    answers `404 run_not_found` or `500 evidence_integrity_error`.
+  - **Store faults are reported, not dropped.** A SQL error from the store (a
+    locked, unreadable or corrupt database) is raised as `LocalStoreError`
+    instead of a raw `sqlite3` error, so the service reports `store_error` and
+    an open event stream ends with `: stream-ended reason=store-error`. Every
+    store-backed read endpoint now answers a service `store_error` (and the
+    evidence endpoint's `evidence_integrity_error`) with `500` through one
+    shared status helper, instead of the earlier generic `400`; opening the
+    database (including its migration) is guarded too, in the store's
+    connection helper and in the events handlers, so an unopenable file gets a
+    `500 store_error` body rather than a dropped connection.
+  - **503 capacity responses are marked retryable.** `overloaded`,
+    `too_many_streams` and `shutting_down` now carry `retryable: true`. On the
+    stream path only `GET` uses the stream limiter, so `HEAD`, `POST` and the
+    other write methods get `405` (not `503 too_many_streams`) when the stream
+    cap is full, and `OPTIONS` advertises `Allow: GET`. The OpenAPI
+    `Last-Event-ID` text now mentions the beyond-head `400`.
 
 ### Changed
 

@@ -1,10 +1,14 @@
+import contextlib
+import io
 import json
-import os
 from pathlib import Path
 import subprocess
 import sys
 import tempfile
+import types
 import unittest
+
+from idkmesh import cli
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -12,15 +16,23 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class ConnectorCliTests(unittest.TestCase):
     def run_cli(self, *args):
-        env = dict(os.environ)
-        env["PYTHONPATH"] = str(ROOT)
-        return subprocess.run(
-            [sys.executable, "-m", "idkmesh.cli", *args],
-            capture_output=True,
-            text=True,
-            cwd=ROOT,
-            env=env,
-        )
+        """Run the CLI in-process (cheaper than a fresh interpreter per call).
+
+        Returns an object with ``returncode``, ``stdout`` and ``stderr``, like
+        ``subprocess.CompletedProcess``. The call runs from the repository root,
+        as the subprocess did, and argparse's ``--help`` / usage errors raise
+        SystemExit, which is turned into the return code.
+        """
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.chdir(ROOT), contextlib.redirect_stdout(out), \
+                contextlib.redirect_stderr(err):
+            try:
+                code = cli.main(list(args))
+            except SystemExit as exc:
+                code = exc.code if isinstance(exc.code, int) else (
+                    0 if exc.code is None else 1)
+        return types.SimpleNamespace(
+            returncode=code, stdout=out.getvalue(), stderr=err.getvalue())
 
     def write_profile(self, directory, data):
         path = Path(directory) / "connections.json"

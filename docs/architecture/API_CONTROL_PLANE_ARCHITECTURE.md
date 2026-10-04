@@ -157,7 +157,7 @@ today (not a target-state sketch):
 |  control_tower_api.py     -- read-only evidence inspection      |
 |  connector_store.py       -- connections/routing/run persistence|
 |  connector_routing.py     -- RoutingDecision resolution         |
-|  product_spine_run_store.py -- run create/status/cancel         |
+|  product_spine_run_store.py -- run create/status/cancel/events  |
 |  local_loop.py            -- WorkUnit -> attempts -> evidence   |
 |                               (delegates to experiments/*)      |
 +----------------------------------------------------------------+
@@ -171,14 +171,66 @@ today (not a target-state sketch):
 | -only + GET    |  | run, local-loop|  | until checked |  | built)  |
 | runs, GET runs/|  |                |  |               |  |         |
 | {id}, GET runs/|  |                |  |               |  |         |
-| {id}/attempts  |  |                |  |               |  |         |
-| (#739)         |  |                |  |               |  |         |
+| {id}/attempts, |  |                |  |               |  |         |
+| GET runs/{id}/ |  |                |  |               |  |         |
+| evidence,      |  |                |  |               |  |         |
+| GET work-units,|  |                |  |               |  |         |
+| GET work-units/|  |                |  |               |  |         |
+| {id}, GET      |  |                |  |               |  |         |
+| projects/{id}, |  |                |  |               |  |         |
+| GET events,    |  |                |  |               |  |         |
+| GET events/    |  |                |  |               |  |         |
+| stream (#739,  |  |                |  |               |  |         |
+| #741)          |  |                |  |               |  |         |
 +----------------+  +----------------+  +---------------+  +---------+
 ```
 
-The Local HTTP box's `GET runs/{id}` is opt-in per server instance
-(`idkmesh control-tower --product-spine-store PATH`); the endpoint returns
-503 without it, rather than being conditionally present in this diagram.
+The Local HTTP box's run, WorkUnit, and project read endpoints are opt-in per
+server instance (`idkmesh control-tower --product-spine-store PATH`); they
+return 503 without it, rather than being conditionally present in this
+diagram. The WorkUnit and project endpoints are read models derived from
+stored runs
+([ADR-0021](../decisions/ADR-0021-derived-work-unit-and-project-read-models.md)),
+not a WorkUnit or project store; `idkmesh work-unit list|status` and
+`idkmesh project status` read through the same service.
+
+The Local HTTP box is a stdlib development server with bounded limits
+([ADR-0022](../decisions/ADR-0022-control-tower-bounded-service-limits.md)):
+a 10 s request timeout, a 16-request concurrency cap that answers
+`503 + Retry-After` instead of queueing, graceful drain, and the stdlib
+parser bounds (request line 65536 bytes, 99 header fields, 2 MiB body), all
+published at `operations.limits` on `GET /api/v1/status`. These bound request
+handling, not accepted connections, and `429` is not implemented (no
+per-client identity yet). SSE streams have their own client limit, heartbeat
+and maximum lifetime, published in the same object. The stdlib server must never face the Internet: a network or multi-user
+deployment requires the reviewed production transport adapter, which is the
+Network HTTP box and is not built.
+
+The Local HTTP box's `GET /api/v1/events` and `GET /api/v1/events/stream` read
+the **canonical event source**
+([ADR-0023](../decisions/ADR-0023-canonical-append-only-event-source.md)): an
+append-only `events` table in the same SQLite store (store schema version 2),
+written in the same transaction as the run change it records, with a monotonic
+`sequence`, producer-supplied `occurred_at`, and a `Last-Event-ID`-resumable,
+bounded, poll-based SSE stream (at-least-once; dedupe on `event_id`). Coverage
+is deliberately narrow: only Product Spine `run create` and `run cancel` emit
+events (`run.created`, `run.cancelled`); the offline idempotent spine and the
+GitHub dispatch/status writers do not yet, nothing prunes the table, and
+WebSocket is deferred. `idkmesh events list` reads through the same service.
+A store opened by code that predates schema version 2 is refused by the
+existing "newer than supported" check rather than silently ignoring events.
+
+The Local HTTP box's `GET /api/v1/runs/{run_id}/evidence` serves the Run
+Evidence Report that the idempotent offline spine retains in the run row
+([ADR-0024](../decisions/ADR-0024-retained-evidence-read-and-mixed-store-run-reads.md)).
+It re-verifies `canonical_digest(report)` against the run's
+`evidence_report_digest` on every read and refuses to serve a mismatch
+(`500 evidence_integrity_error`). The run listing selects an explicit set of
+Product Spine row kinds, so the foreign rows that share the `runs` table
+(admission-only, execution-error and GitHub dispatch/status rows) cannot break
+it. `GET /api/v1/runs/{run_id}/decisions` is not built: no decision content is
+retained, and recording a decision needs an authenticated, accountable
+principal (issue #740, enterprise identity), which is a governance gate.
 
 Every box in the bottom row is a transport/client adapter over the same
 application services; none may redefine a domain contract to fit its own

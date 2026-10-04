@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idkmesh.org/schemas/idkmesh-control-tower-run-evidence-response-v0.1.schema.json",
+  "title": "IDKMesh Control Tower Run Evidence Response v0.1",
+  "description": "The success envelope returned by `GET /api/v1/runs/{run_id}/evidence` (ADR-0024). `evidence_report` is the Run Evidence Report retained in the run row, returned as retained after its canonical digest was verified against `evidence_report_digest`; a mismatch is refused with 500 evidence_integrity_error and never served. `evidence` is a reserved trailing path segment (ADR-0019).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "api_version",
+    "schema_version",
+    "kind",
+    "ok",
+    "run_id",
+    "evidence_report_digest",
+    "evidence_report"
+  ],
+  "properties": {
+    "api_version": {
+      "const": "v1"
+    },
+    "schema_version": {
+      "const": "0.1"
+    },
+    "kind": {
+      "const": "idkmesh-control-tower-run-evidence-response"
+    },
+    "ok": {
+      "const": true
+    },
+    "run_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "evidence_report_digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "evidence_report": {
+      "$ref": "https://idkmesh.org/schemas/run-evidence-report-v0.1.schema.json"
+    }
+  }
+}

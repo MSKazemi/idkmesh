@@ -57,6 +57,23 @@ from idkmesh.connector_store import DEFAULT_LIST_LIMIT, MAX_LIST_LIMIT
 from idkmesh.local_ui_security import MAX_BODY_BYTES
 
 
+class _ExamplesHelpFormatter(argparse.RawDescriptionHelpFormatter):
+    """Keep multi-line ``Examples:`` epilogs copy-pasteable.
+
+    The default argparse formatter would rewrap an epilog into one flat
+    paragraph and destroy the example lines. Only text carrying an
+    ``Examples:`` block is rendered verbatim; descriptions and option help
+    keep the standard wrapping.
+    """
+
+    def _fill_text(self, text: str, width: int, indent: str) -> str:
+        if "Examples:" in text:
+            return "".join(
+                indent + line for line in text.splitlines(keepends=True)
+            )
+        return argparse.HelpFormatter._fill_text(self, text, width, indent)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="idkmesh",
@@ -382,6 +399,17 @@ def build_parser() -> argparse.ArgumentParser:
     run_create = run_sub.add_parser(
         "create",
         help="persist one canonical proposed Product Spine run",
+        formatter_class=_ExamplesHelpFormatter,
+        epilog=(
+            "Examples:\n"
+            "  idkmesh run create run.json --store state.sqlite"
+            " --idempotency-key request-1\n"
+            "  idkmesh run create run.json --store state.sqlite"
+            " --idempotency-key request-1 --json\n"
+            "  idkmesh run create run.json --store state.sqlite"
+            " --idempotency-key request-1"
+            " --created-at 2026-01-01T00:00:00Z"
+        ),
     )
     run_create.add_argument(
         "projection",
@@ -413,6 +441,12 @@ def build_parser() -> argparse.ArgumentParser:
     run_status = run_sub.add_parser(
         "status",
         help="inspect one retained Product Spine run",
+        formatter_class=_ExamplesHelpFormatter,
+        epilog=(
+            "Examples:\n"
+            "  idkmesh run status run-1 --store state.sqlite\n"
+            "  idkmesh run status run-1 --store state.sqlite --json"
+        ),
     )
     run_status.add_argument("run_id")
     run_status.add_argument(
@@ -428,6 +462,32 @@ def build_parser() -> argparse.ArgumentParser:
         help="emit deterministic machine-readable JSON",
     )
 
+    run_evidence = run_sub.add_parser(
+        "evidence",
+        help="show the digest-verified evidence report retained for one run",
+        description=(
+            "Read-only. Returns the evidence report retained in the run row "
+            "after verifying that its canonical digest equals the run's "
+            "evidence_report_digest (ADR-0024). A run with no retained "
+            "evidence fails with evidence_not_available; a mismatching report "
+            "fails with evidence_integrity_error and is never printed. This "
+            "command never selects, accepts, pushes, or merges a candidate."
+        ),
+    )
+    run_evidence.add_argument("run_id")
+    run_evidence.add_argument(
+        "--store",
+        required=True,
+        metavar="PATH",
+        help="local SQLite control-state path",
+    )
+    run_evidence.add_argument(
+        "--json",
+        action="store_true",
+        dest="json_output",
+        help="emit deterministic machine-readable JSON",
+    )
+
     run_cancel = run_sub.add_parser(
         "cancel",
         help="record a lifecycle-valid cancellation transition",
@@ -435,6 +495,13 @@ def build_parser() -> argparse.ArgumentParser:
             "Transition a retained Product Spine run to cancelled when the "
             "canonical lifecycle permits it. This does not terminate an "
             "external/provider process."
+        ),
+        formatter_class=_ExamplesHelpFormatter,
+        epilog=(
+            "Examples:\n"
+            "  idkmesh run cancel run-1 --store state.sqlite\n"
+            "  idkmesh run cancel run-1 --store state.sqlite"
+            " --updated-at 2026-01-01T00:00:00Z --json"
         ),
     )
     run_cancel.add_argument("run_id")
@@ -462,6 +529,15 @@ def build_parser() -> argparse.ArgumentParser:
             "Deterministic keyset-paginated run listing, ordered by run_id. "
             "Pass the previous page's --cursor value verbatim to continue; "
             "never construct or parse a cursor by hand."
+        ),
+        formatter_class=_ExamplesHelpFormatter,
+        epilog=(
+            "Examples:\n"
+            "  idkmesh run list --store state.sqlite\n"
+            "  idkmesh run list --store state.sqlite"
+            " --limit 20 --state proposed\n"
+            "  idkmesh run list --store state.sqlite"
+            " --project-id project.test --json"
         ),
     )
     run_list.add_argument(
@@ -499,6 +575,187 @@ def build_parser() -> argparse.ArgumentParser:
         help="emit deterministic machine-readable JSON",
     )
 
+    work_unit_cmd = sub.add_parser(
+        "work-unit",
+        help="list or inspect WorkUnits derived from retained runs",
+        description=(
+            "Read-only WorkUnit views derived on demand from the run "
+            "references already stored by 'idkmesh run' (ADR-0021). No "
+            "WorkUnit body is stored, so none is returned; the revision "
+            "digest is the binding. These commands never dispatch, verify, "
+            "accept, mutate GitHub, push Git, or merge."
+        ),
+    )
+    work_unit_sub = work_unit_cmd.add_subparsers(
+        dest="work_unit_command",
+        required=True,
+    )
+
+    work_unit_list = work_unit_sub.add_parser(
+        "list",
+        help="list WorkUnits referenced by retained runs, by id",
+        description=(
+            "Deterministic keyset-paginated WorkUnit listing, ordered by id. "
+            "Pass the previous page's --cursor value verbatim to continue; "
+            "never construct or parse a cursor by hand."
+        ),
+    )
+    work_unit_list.add_argument(
+        "--store",
+        required=True,
+        metavar="PATH",
+        help="local SQLite control-state path",
+    )
+    work_unit_list.add_argument(
+        "--limit",
+        type=int,
+        default=DEFAULT_LIST_LIMIT,
+        metavar="N",
+        help=f"page size, 1-{MAX_LIST_LIMIT} (default: {DEFAULT_LIST_LIMIT})",
+    )
+    work_unit_list.add_argument(
+        "--cursor",
+        metavar="TOKEN",
+        help="opaque next-page token from a previous 'work-unit list' call",
+    )
+    work_unit_list.add_argument(
+        "--project-id",
+        metavar="ID",
+        help="only count and list runs for this exact project_id",
+    )
+    work_unit_list.add_argument(
+        "--json",
+        action="store_true",
+        dest="json_output",
+        help="emit deterministic machine-readable JSON",
+    )
+
+    work_unit_status = work_unit_sub.add_parser(
+        "status",
+        help="inspect one WorkUnit and its distinct revisions",
+    )
+    work_unit_status.add_argument("work_unit_id")
+    work_unit_status.add_argument(
+        "--store",
+        required=True,
+        metavar="PATH",
+        help="local SQLite control-state path",
+    )
+    work_unit_status.add_argument(
+        "--json",
+        action="store_true",
+        dest="json_output",
+        help="emit deterministic machine-readable JSON",
+    )
+
+    project_cmd = sub.add_parser(
+        "project",
+        help="inspect a project summary derived from retained runs",
+        description=(
+            "Read-only project summary derived on demand from the runs "
+            "already stored by 'idkmesh run' (ADR-0021). No project record "
+            "exists, so only counts are returned: runs, runs per state and "
+            "distinct WorkUnits. Nothing is selected or rolled up into a "
+            "health score. These commands never dispatch, verify, accept, "
+            "mutate GitHub, push Git, or merge."
+        ),
+    )
+    project_sub = project_cmd.add_subparsers(
+        dest="project_command",
+        required=True,
+    )
+
+    project_status = project_sub.add_parser(
+        "status",
+        help="show run counts by state for one project",
+    )
+    project_status.add_argument("project_id")
+    project_status.add_argument(
+        "--store",
+        required=True,
+        metavar="PATH",
+        help="local SQLite control-state path",
+    )
+    project_status.add_argument(
+        "--json",
+        action="store_true",
+        dest="json_output",
+        help="emit deterministic machine-readable JSON",
+    )
+
+    events_cmd = sub.add_parser(
+        "events",
+        help="list durable events from the canonical append-only stream",
+        description=(
+            "Read-only view of the canonical event stream (ADR-0023) kept in "
+            "the same local store as 'idkmesh run'. In v0.1 only Product "
+            "Spine run create and cancel emit events, so this is canonical "
+            "for those events, not a claim of completeness over every "
+            "writer. These commands never dispatch, verify, accept, mutate "
+            "GitHub, push Git, or merge."
+        ),
+    )
+    events_sub = events_cmd.add_subparsers(
+        dest="events_command",
+        required=True,
+    )
+
+    events_list = events_sub.add_parser(
+        "list",
+        help="list events in stream order",
+        description=(
+            "Deterministic keyset-paginated event listing, ordered by "
+            "sequence ascending. Pass the previous page's --cursor value "
+            "verbatim to continue; never construct or parse a cursor by "
+            "hand. Filters are exact matches; an unknown --event-type fails "
+            "explicitly."
+        ),
+    )
+    events_list.add_argument(
+        "--store",
+        required=True,
+        metavar="PATH",
+        help="local SQLite control-state path",
+    )
+    events_list.add_argument(
+        "--limit",
+        type=int,
+        default=DEFAULT_LIST_LIMIT,
+        metavar="N",
+        help=f"page size, 1-{MAX_LIST_LIMIT} (default: {DEFAULT_LIST_LIMIT})",
+    )
+    events_list.add_argument(
+        "--cursor",
+        metavar="TOKEN",
+        help="opaque next-page token from a previous 'events list' call",
+    )
+    events_list.add_argument(
+        "--project-id",
+        metavar="ID",
+        help="only events for this exact project_id",
+    )
+    events_list.add_argument(
+        "--run-id",
+        metavar="ID",
+        help="only events for this exact run_id",
+    )
+    events_list.add_argument(
+        "--work-unit-id",
+        metavar="ID",
+        help="only events for this exact WorkUnit id",
+    )
+    events_list.add_argument(
+        "--event-type",
+        metavar="TYPE",
+        help="only events of this type (for example run.created)",
+    )
+    events_list.add_argument(
+        "--json",
+        action="store_true",
+        dest="json_output",
+        help="emit deterministic machine-readable JSON",
+    )
+
     gui = sub.add_parser(
         "gate-audit-ui",
         help="open the local browser interface for gate-audit",
@@ -525,6 +782,14 @@ def build_parser() -> argparse.ArgumentParser:
             "existing Run Evidence Report v0.1 documents, recomputes their "
             "human-facing summary, and never runs workers, selects candidates, "
             "pushes Git, or merges."),
+        formatter_class=_ExamplesHelpFormatter,
+        epilog=(
+            "Examples:\n"
+            "  idkmesh control-tower\n"
+            "  idkmesh control-tower evidence-report.json\n"
+            "  idkmesh control-tower --no-browser --port 8770"
+            " --product-spine-store state.sqlite"
+        ),
     )
     tower.add_argument(
         "report", nargs="?",
@@ -535,6 +800,22 @@ def build_parser() -> argparse.ArgumentParser:
     tower.add_argument(
         "--no-browser", action="store_true",
         help="serve the Control Tower without opening the default browser")
+    tower.add_argument(
+        "--request-timeout", type=float, default=10.0, metavar="SECONDS",
+        help=(
+            "drop a client that stalls mid-request after this many seconds "
+            "(0.1-300; default: 10)"))
+    tower.add_argument(
+        "--max-concurrent-requests", type=int, default=16, metavar="N",
+        help=(
+            "answer 503 with Retry-After beyond N concurrent requests "
+            "(1-1024; default: 16); GET /healthz is exempt"))
+    tower.add_argument(
+        "--max-sse-clients", type=int, default=8, metavar="N",
+        help=(
+            "concurrent Server-Sent Events streams on GET "
+            "/api/v1/events/stream (1-64; default: 8); beyond N the server "
+            "answers 503 with Retry-After"))
     tower.add_argument(
         "--product-spine-store", metavar="PATH",
         help=(
@@ -1073,6 +1354,27 @@ def _run_local_loop(args: argparse.Namespace) -> int:
     return 0
 
 
+def _print_run_evidence(evidence, *, json_output: bool) -> int:
+    if json_output:
+        print(
+            json.dumps(
+                evidence,
+                sort_keys=True,
+                separators=(",", ":"),
+            )
+        )
+        return 0
+    report = evidence["evidence_report"]
+    attempts = report.get("attempts", [])
+    print(f"run: {evidence['run_id']}")
+    print(f"evidence_report_digest: {evidence['evidence_report_digest']}")
+    print(f"attempts: {len(attempts) if isinstance(attempts, list) else 0}")
+    decision = report.get("human_decision")
+    if isinstance(decision, dict) and "status" in decision:
+        print(f"human_decision_status: {decision['status']}")
+    return 0
+
+
 def _run_product_spine_control(args: argparse.Namespace) -> int:
     from idkmesh.connector_store import (
         LocalMetadataStore,
@@ -1098,6 +1400,11 @@ def _run_product_spine_control(args: argparse.Namespace) -> int:
             return _print_run_list(
                 runs, next_cursor, limit=args.limit,
                 json_output=args.json_output,
+            )
+        if args.run_command == "evidence":
+            evidence = service.get_run_evidence(args.run_id)
+            return _print_run_evidence(
+                evidence, json_output=args.json_output
             )
         if args.run_command == "create":
             projection = _strict_json_file(args.projection)
@@ -1158,6 +1465,165 @@ def _run_product_spine_control(args: argparse.Namespace) -> int:
             "provider_execution_terminated: no\n"
             "merge_authority: no"
         )
+    return 0
+
+
+def _run_work_unit_control(args: argparse.Namespace) -> int:
+    from idkmesh.connector_store import (
+        LocalMetadataStore,
+        LocalStoreError,
+    )
+    from idkmesh.product_spine_run_store import (
+        ProductSpineRunStore,
+        ProductSpineRunStoreError,
+    )
+
+    try:
+        service = ProductSpineRunStore(LocalMetadataStore(args.store))
+        if args.work_unit_command == "list":
+            items, next_cursor = service.list_work_units(
+                limit=args.limit,
+                cursor=args.cursor,
+                project_id=args.project_id,
+            )
+            payload: object = {
+                "kind": "idkmesh-list",
+                "schema_version": "0.1",
+                "items": items,
+                "page": {"next_cursor": next_cursor, "limit": args.limit},
+            }
+        elif args.work_unit_command == "status":
+            payload = service.get_work_unit(args.work_unit_id)
+        else:  # pragma: no cover - argparse enforces this
+            return 2
+    except (
+        ProductSpineRunStoreError,
+        LocalStoreError,
+        OSError,
+        ValueError,
+    ) as exc:
+        return _run_control_error(exc, json_output=args.json_output)
+
+    if args.json_output:
+        print(json.dumps(payload, sort_keys=True, separators=(",", ":")))
+        return 0
+
+    if args.work_unit_command == "list":
+        if not items:
+            print("no retained work units")
+            return 0
+        for item in items:
+            print(
+                f"{item['id']}\truns={item['run_count']}"
+                f"\trevisions={len(item['revisions'])}"
+            )
+        if next_cursor is not None:
+            print(f"next_cursor: {next_cursor}")
+        return 0
+
+    print(f"work_unit: {payload['id']}\nruns: {payload['run_count']}")
+    for revision in payload["revisions"]:
+        print(
+            f"revision: version={revision['version']} "
+            f"digest={revision['digest']} "
+            f"source_revision={revision['source_revision']} "
+            f"runs={revision['run_count']}"
+        )
+    return 0
+
+
+def _run_project_control(args: argparse.Namespace) -> int:
+    from idkmesh.connector_store import (
+        LocalMetadataStore,
+        LocalStoreError,
+    )
+    from idkmesh.product_spine_run_store import (
+        ProductSpineRunStore,
+        ProductSpineRunStoreError,
+    )
+
+    try:
+        service = ProductSpineRunStore(LocalMetadataStore(args.store))
+        payload = service.get_project(args.project_id)
+    except (
+        ProductSpineRunStoreError,
+        LocalStoreError,
+        OSError,
+        ValueError,
+    ) as exc:
+        return _run_control_error(exc, json_output=args.json_output)
+
+    if args.json_output:
+        print(json.dumps(payload, sort_keys=True, separators=(",", ":")))
+        return 0
+
+    print(
+        f"project: {payload['project_id']}\n"
+        f"runs: {payload['run_count']}\n"
+        f"work_units: {payload['work_unit_count']}"
+    )
+    for state, count in payload["runs_by_state"].items():
+        if count:
+            print(f"{state}: {count}")
+    return 0
+
+
+def _run_events_control(args: argparse.Namespace) -> int:
+    from idkmesh.connector_store import (
+        LocalMetadataStore,
+        LocalStoreError,
+    )
+    from idkmesh.product_spine_run_store import (
+        ProductSpineRunStore,
+        ProductSpineRunStoreError,
+    )
+
+    try:
+        service = ProductSpineRunStore(LocalMetadataStore(args.store))
+        if args.events_command == "list":
+            items, next_cursor = service.list_events(
+                limit=args.limit,
+                cursor=args.cursor,
+                project_id=args.project_id,
+                run_id=args.run_id,
+                work_unit_id=args.work_unit_id,
+                event_type=args.event_type,
+            )
+        else:  # pragma: no cover - argparse enforces this
+            return 2
+    except (
+        ProductSpineRunStoreError,
+        LocalStoreError,
+        OSError,
+        ValueError,
+    ) as exc:
+        return _run_control_error(exc, json_output=args.json_output)
+
+    if args.json_output:
+        print(
+            json.dumps(
+                {
+                    "kind": "idkmesh-list",
+                    "schema_version": "0.1",
+                    "items": items,
+                    "page": {"next_cursor": next_cursor, "limit": args.limit},
+                },
+                sort_keys=True,
+                separators=(",", ":"),
+            )
+        )
+        return 0
+
+    if not items:
+        print("no retained events")
+        return 0
+    for item in items:
+        print(
+            f"{item['sequence']}\t{item['occurred_at']}"
+            f"\t{item['event_type']}\t{item['run_id']}"
+        )
+    if next_cursor is not None:
+        print(f"next_cursor: {next_cursor}")
     return 0
 
 
@@ -1288,6 +1754,9 @@ def main(argv: list[str] | None = None) -> int:
                 port=args.port,
                 open_browser=not args.no_browser,
                 product_spine_store_path=args.product_spine_store,
+                request_timeout=args.request_timeout,
+                max_concurrent_requests=args.max_concurrent_requests,
+                max_sse_clients=args.max_sse_clients,
             )
         except ValueError as exc:
             return _fail(str(exc))
@@ -1299,6 +1768,12 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "run":
         return _run_product_spine_control(args)
+    if args.command == "work-unit":
+        return _run_work_unit_control(args)
+    if args.command == "events":
+        return _run_events_control(args)
+    if args.command == "project":
+        return _run_project_control(args)
     if args.command == "local-loop":
         return _run_local_loop(args)
     if args.command == "connections":

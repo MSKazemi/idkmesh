@@ -14,7 +14,7 @@ from collections import Counter
 import hashlib
 import json
 import re
-from typing import Any
+from typing import Any, Mapping
 
 API_VERSION = "v1"
 API_SCHEMA_VERSION = "0.1"
@@ -699,8 +699,22 @@ def build_snapshot(report: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def status_document() -> dict[str, Any]:
-    """Return the stable discovery/status document for API clients."""
+def status_document(
+    limits: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Return the stable discovery/status document for API clients.
+
+    ``limits``, when given, is the server's actual limits document
+    (``idkmesh.service_runtime.limits_document``) and is published under
+    ``operations.limits`` (ADR-0022). A bare call omits it.
+    """
+    document = _status_document_base()
+    if limits is not None:
+        document["operations"]["limits"] = dict(limits)
+    return document
+
+
+def _status_document_base() -> dict[str, Any]:
     return {
         "api_version": API_VERSION,
         "schema_version": API_SCHEMA_VERSION,
@@ -748,6 +762,12 @@ def status_document() -> dict[str, Any]:
             "list_runs": "GET /api/v1/runs",
             "read_run": "GET /api/v1/runs/{run_id}",
             "read_run_attempts": "GET /api/v1/runs/{run_id}/attempts",
+            "read_run_evidence": "GET /api/v1/runs/{run_id}/evidence",
+            "list_work_units": "GET /api/v1/work-units",
+            "read_work_unit": "GET /api/v1/work-units/{work_unit_id}",
+            "read_project": "GET /api/v1/projects/{project_id}",
+            "list_events": "GET /api/v1/events",
+            "stream_events": "GET /api/v1/events/stream",
             "health": "GET /healthz",
             "readiness": "GET /readyz",
         },
@@ -1133,6 +1153,405 @@ def openapi_document() -> dict[str, Any]:
                             "description": (
                                 "No Product Spine store configured for this "
                                 "server instance"
+                            )
+                        },
+                    },
+                }
+            },
+            "/api/v1/runs/{run_id}/evidence": {
+                "get": {
+                    "summary": "Read one run's retained evidence report",
+                    "description": (
+                        "Pure read-only (ADR-0024). Serves the evidence "
+                        "report retained in the run row, byte for byte, "
+                        "after verifying its canonical digest against the "
+                        "run's evidence_report_digest; a mismatch is "
+                        "refused with 500 evidence_integrity_error and the "
+                        "report is never served. `evidence` is a reserved "
+                        "trailing path segment (ADR-0019). 404 is either "
+                        "run_not_found (no such run) or "
+                        "evidence_not_available (the run exists but retains "
+                        "no evidence); error.code distinguishes them."
+                    ),
+                    "security": [{"LocalSessionToken": []}],
+                    "parameters": [
+                        {
+                            "name": "run_id",
+                            "in": "path",
+                            "required": True,
+                            "schema": {"type": "string", "minLength": 1},
+                        }
+                    ],
+                    "responses": {
+                        "200": {
+                            "description": "The run's retained evidence report",
+                            "content": {
+                                JSON_MEDIA_TYPE: {
+                                    "schema": {
+                                        "$ref": (
+                                            "https://idkmesh.org/schemas/"
+                                            "idkmesh-control-tower-run-"
+                                            "evidence-response-v0.1."
+                                            "schema.json"
+                                        )
+                                    }
+                                }
+                            },
+                        },
+                        "403": {"description": "Invalid local session token"},
+                        "404": {
+                            "description": (
+                                "run_not_found, or evidence_not_available "
+                                "when the run retains no evidence report"
+                            )
+                        },
+                        "500": {
+                            "description": (
+                                "evidence_integrity_error: the retained "
+                                "report does not match the run's "
+                                "evidence_report_digest"
+                            )
+                        },
+                        "503": {
+                            "description": (
+                                "No Product Spine store configured for this "
+                                "server instance"
+                            )
+                        },
+                    },
+                }
+            },
+            "/api/v1/work-units": {
+                "get": {
+                    "summary": "List WorkUnits derived from stored runs",
+                    "description": (
+                        "Pure read-only. A derived read model (ADR-0021): "
+                        "one item per distinct WorkUnit id referenced by a "
+                        "stored run, ordered by id, with its distinct "
+                        "{version, digest, source_revision} revisions and "
+                        "run counts. No WorkUnit body is returned and no "
+                        "revision is selected as latest. Returns 503 when "
+                        "no Product Spine store is configured."
+                    ),
+                    "security": [{"LocalSessionToken": []}],
+                    "parameters": [
+                        {
+                            "name": "limit",
+                            "in": "query",
+                            "required": False,
+                            "schema": {"type": "integer", "minimum": 1},
+                        },
+                        {
+                            "name": "cursor",
+                            "in": "query",
+                            "required": False,
+                            "description": (
+                                "Opaque next-page token from a previous "
+                                "response's page.next_cursor."
+                            ),
+                            "schema": {"type": "string"},
+                        },
+                        {
+                            "name": "project_id",
+                            "in": "query",
+                            "required": False,
+                            "description": (
+                                "Only WorkUnits referenced by this "
+                                "project's runs; run counts then count "
+                                "only those runs."
+                            ),
+                            "schema": {"type": "string"},
+                        },
+                    ],
+                    "responses": {
+                        "200": {
+                            "description": "One page of WorkUnits",
+                            "content": {
+                                JSON_MEDIA_TYPE: {
+                                    "schema": {
+                                        "$ref": (
+                                            "https://idkmesh.org/schemas/"
+                                            "idkmesh-list-v0.1.schema.json"
+                                        )
+                                    }
+                                }
+                            },
+                        },
+                        "400": {
+                            "description": (
+                                "Unsupported/duplicate query parameter, or "
+                                "invalid limit/cursor"
+                            )
+                        },
+                        "403": {"description": "Invalid local session token"},
+                        "503": {
+                            "description": (
+                                "No Product Spine store configured for this "
+                                "server instance"
+                            )
+                        },
+                    },
+                }
+            },
+            "/api/v1/work-units/{work_unit_id}": {
+                "get": {
+                    "summary": "Read one WorkUnit derived from stored runs",
+                    "description": (
+                        "Pure read-only (ADR-0021). The whole path "
+                        "remainder is one literal WorkUnit id, which may "
+                        "contain \"/\". 404 means no stored run references "
+                        "this id, not that the WorkUnit does not exist."
+                    ),
+                    "security": [{"LocalSessionToken": []}],
+                    "parameters": [
+                        {
+                            "name": "work_unit_id",
+                            "in": "path",
+                            "required": True,
+                            "schema": {"type": "string", "minLength": 1},
+                        }
+                    ],
+                    "responses": {
+                        "200": {
+                            "description": "The derived WorkUnit",
+                            "content": {
+                                JSON_MEDIA_TYPE: {
+                                    "schema": {
+                                        "$ref": (
+                                            "https://idkmesh.org/schemas/"
+                                            "idkmesh-control-tower-work-"
+                                            "unit-response-v0.1.schema.json"
+                                        )
+                                    }
+                                }
+                            },
+                        },
+                        "403": {"description": "Invalid local session token"},
+                        "404": {"description": "No stored run references this id"},
+                        "503": {
+                            "description": (
+                                "No Product Spine store configured for this "
+                                "server instance"
+                            )
+                        },
+                    },
+                }
+            },
+            "/api/v1/projects/{project_id}": {
+                "get": {
+                    "summary": "Read one project summary derived from stored runs",
+                    "description": (
+                        "Pure read-only (ADR-0021). No project record "
+                        "exists: this is counts over stored runs "
+                        "(run_count, runs_by_state with every canonical "
+                        "state zero-filled, distinct work_unit_count) and "
+                        "carries no health or status rollup. The whole "
+                        "path remainder is one literal project_id. 404 "
+                        "means no stored run names this project, not that "
+                        "the project does not exist."
+                    ),
+                    "security": [{"LocalSessionToken": []}],
+                    "parameters": [
+                        {
+                            "name": "project_id",
+                            "in": "path",
+                            "required": True,
+                            "schema": {"type": "string", "minLength": 1},
+                        }
+                    ],
+                    "responses": {
+                        "200": {
+                            "description": "The derived project summary",
+                            "content": {
+                                JSON_MEDIA_TYPE: {
+                                    "schema": {
+                                        "$ref": (
+                                            "https://idkmesh.org/schemas/"
+                                            "idkmesh-control-tower-project-"
+                                            "response-v0.1.schema.json"
+                                        )
+                                    }
+                                }
+                            },
+                        },
+                        "403": {"description": "Invalid local session token"},
+                        "404": {"description": "No stored run names this project"},
+                        "503": {
+                            "description": (
+                                "No Product Spine store configured for this "
+                                "server instance"
+                            )
+                        },
+                    },
+                }
+            },
+            "/api/v1/events": {
+                "get": {
+                    "summary": "List canonical events, oldest first",
+                    "description": (
+                        "Pure read-only (ADR-0023). Events are the durable, "
+                        "append-only record written in the same transaction "
+                        "as the Product Spine run change they describe; "
+                        "ordered by sequence, keyset-paginated with an "
+                        "opaque cursor. Scoped run/work-unit queries are "
+                        "the run_id / work_unit_id filters. Coverage is "
+                        "limited to the writers that emit events "
+                        "(run.created, run.cancelled). Returns 503 when no "
+                        "Product Spine store is configured."
+                    ),
+                    "security": [{"LocalSessionToken": []}],
+                    "parameters": [
+                        {
+                            "name": "limit",
+                            "in": "query",
+                            "required": False,
+                            "schema": {"type": "integer", "minimum": 1},
+                        },
+                        {
+                            "name": "cursor",
+                            "in": "query",
+                            "required": False,
+                            "description": (
+                                "Opaque next-page token from a previous "
+                                "response's page.next_cursor."
+                            ),
+                            "schema": {"type": "string"},
+                        },
+                        {
+                            "name": "project_id",
+                            "in": "query",
+                            "required": False,
+                            "schema": {"type": "string"},
+                        },
+                        {
+                            "name": "run_id",
+                            "in": "query",
+                            "required": False,
+                            "schema": {"type": "string"},
+                        },
+                        {
+                            "name": "work_unit_id",
+                            "in": "query",
+                            "required": False,
+                            "schema": {"type": "string"},
+                        },
+                        {
+                            "name": "event_type",
+                            "in": "query",
+                            "required": False,
+                            "description": (
+                                "Exact event type; an unrecognized value "
+                                "fails with 400 invalid_event_type."
+                            ),
+                            "schema": {"type": "string"},
+                        },
+                    ],
+                    "responses": {
+                        "200": {
+                            "description": "One page of events",
+                            "content": {
+                                JSON_MEDIA_TYPE: {
+                                    "schema": {
+                                        "$ref": (
+                                            "https://idkmesh.org/schemas/"
+                                            "idkmesh-list-v0.1.schema.json"
+                                        )
+                                    }
+                                }
+                            },
+                        },
+                        "400": {
+                            "description": (
+                                "Unsupported/duplicate query parameter, or "
+                                "invalid limit/cursor/event_type"
+                            )
+                        },
+                        "403": {"description": "Invalid local session token"},
+                        "503": {
+                            "description": (
+                                "No Product Spine store configured for this "
+                                "server instance"
+                            )
+                        },
+                    },
+                }
+            },
+            "/api/v1/events/stream": {
+                "get": {
+                    "summary": "Resumable Server-Sent Events stream",
+                    "description": (
+                        "Read-only SSE (ADR-0023). Each message is "
+                        "`id: <sequence>`, `event: <event_type>`, `data: "
+                        "<compact JSON event envelope>`. `Last-Event-ID: N` "
+                        "resumes with every event of sequence > N, then "
+                        "follows live; without it the stream starts at the "
+                        "live tail. Delivery is at-least-once: dedupe on "
+                        "event_id. Bounded by max_sse_clients, a heartbeat "
+                        "comment and a maximum stream lifetime after which "
+                        "the client reconnects with Last-Event-ID. A "
+                        "Last-Event-ID beyond the newest event of the "
+                        "stream is 400 invalid_last_event_id."
+                    ),
+                    "security": [{"LocalSessionToken": []}],
+                    "parameters": [
+                        {
+                            "name": "Last-Event-ID",
+                            "in": "header",
+                            "required": False,
+                            "description": (
+                                "Last sequence the client processed; a "
+                                "non-integer or negative value fails with "
+                                "400 invalid_last_event_id."
+                            ),
+                            "schema": {"type": "string"},
+                        },
+                        {
+                            "name": "project_id",
+                            "in": "query",
+                            "required": False,
+                            "schema": {"type": "string"},
+                        },
+                        {
+                            "name": "run_id",
+                            "in": "query",
+                            "required": False,
+                            "schema": {"type": "string"},
+                        },
+                        {
+                            "name": "work_unit_id",
+                            "in": "query",
+                            "required": False,
+                            "schema": {"type": "string"},
+                        },
+                        {
+                            "name": "event_type",
+                            "in": "query",
+                            "required": False,
+                            "schema": {"type": "string"},
+                        },
+                    ],
+                    "responses": {
+                        "200": {
+                            "description": "A text/event-stream",
+                            "content": {
+                                "text/event-stream": {
+                                    "schema": {"type": "string"}
+                                }
+                            },
+                        },
+                        "400": {
+                            "description": (
+                                "Unsupported query parameter, invalid "
+                                "Last-Event-ID or event_type"
+                            )
+                        },
+                        "403": {"description": "Invalid local session token"},
+                        "503": {
+                            "description": (
+                                "No Product Spine store configured, the "
+                                "maximum number of streams is open "
+                                "(too_many_streams), or the service is "
+                                "draining; carries Retry-After"
                             )
                         },
                     },

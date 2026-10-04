@@ -1,0 +1,6 @@
+{
+  "service": "idkmesh-control-tower",
+  "service_version": "0.1.0",
+  "mode": "local-read-only",
+  "api_version": "v1"
+}

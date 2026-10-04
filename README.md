@@ -131,6 +131,11 @@ on the command line:
 export IDKMESH_CONTROL_TOWER_TOKEN='replace-with-at-least-32-random-characters'
 idkmesh control-tower --no-browser --port 8770
 
+# Optional: bound a stalled client, concurrent load and event streams
+# (defaults: 10 s, 16, 8; beyond a cap the server answers 503 with Retry-After).
+idkmesh control-tower --no-browser --port 8770 \
+  --request-timeout 5 --max-concurrent-requests 8 --max-sse-clients 4
+
 curl \
   -H "X-IDKMesh-UI-Token: $IDKMESH_CONTROL_TOWER_TOKEN" \
   http://127.0.0.1:8770/api/v1/status
@@ -228,7 +233,7 @@ You do not need to understand the entire repository before contributing.
 
 1. Read this README.
 2. Read [`CONTRIBUTING.md`](CONTRIBUTING.md).
-3. Pick a live task from the [Contributor Quickstart](docs/community/CONTRIBUTOR_QUICKSTART.md).
+3. Pick a live task from the [Contributor Quickstart](docs/community/CONTRIBUTOR_QUICKSTART.md). Working with an AI coding agent (Claude Code, Codex, Jules)? Start with the [agent contributor guide](docs/community/AGENT_CONTRIBUTOR_GUIDE.md).
 4. Browse the live [`good first issue`](https://github.com/MSKazemi/idkmesh/issues?q=is%3Aissue+state%3Aopen+label%3A%22good+first+issue%22) and [`help wanted`](https://github.com/MSKazemi/idkmesh/issues?q=is%3Aissue+state%3Aopen+label%3A%22help+wanted%22) views.
 5. Before starting, check assignees, recent comments, and linked pull requests, then state the bounded change you intend to make.
 
@@ -527,6 +532,7 @@ See [`RESEARCH_QUESTIONS.md`](RESEARCH_QUESTIONS.md), [`docs/research/`](docs/re
 ### Research and evidence
 
 - [`docs/research/`](docs/research/README.md) — research programs and evidence.
+- [`paper/`](paper/README.md) — canonical manuscript source and claim-to-evidence map.
 - [`sim/`](sim/) — deterministic simulations/analysis code.
 - [`experiments/`](experiments/) — experiment definitions, harnesses, and results tooling.
 - [`docs/audits/`](docs/audits/) — bounded audits and repository-health evidence.

@@ -67,7 +67,35 @@
         "readiness": {"type": "string", "minLength": 1},
         "access_log_env": {"type": "string", "minLength": 1},
         "access_logs_include_bodies": {"const": false},
-        "access_logs_include_authentication": {"const": false}
+        "access_logs_include_authentication": {"const": false},
+        "limits": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "The service limits actually in force (ADR-0022). Optional so a bare status document stays valid; the Control Tower server always includes it. `per_client_rate_limit` is `not_implemented`: 429 is reserved until a per-client identity exists.",
+          "required": [
+            "request_timeout_seconds", "max_concurrent_requests",
+            "retry_after_seconds", "drain_timeout_seconds",
+            "max_request_line_bytes", "max_header_line_bytes",
+            "max_header_count", "max_request_body_bytes",
+            "overload_status", "connection_policy", "per_client_rate_limit"
+          ],
+          "properties": {
+            "request_timeout_seconds": {"type": "number", "exclusiveMinimum": 0},
+            "max_concurrent_requests": {"type": "integer", "minimum": 1},
+            "retry_after_seconds": {"type": "integer", "minimum": 0},
+            "drain_timeout_seconds": {"type": "number", "exclusiveMinimum": 0},
+            "max_request_line_bytes": {"type": "integer", "minimum": 1},
+            "max_header_line_bytes": {"type": "integer", "minimum": 1},
+            "max_header_count": {"type": "integer", "minimum": 1},
+            "max_request_body_bytes": {"type": "integer", "minimum": 1},
+            "overload_status": {"const": 503},
+            "connection_policy": {"const": "close_after_response"},
+            "per_client_rate_limit": {"const": "not_implemented"},
+            "max_sse_clients": {"type": "integer", "minimum": 1},
+            "sse_heartbeat_seconds": {"type": "number", "exclusiveMinimum": 0},
+            "sse_max_stream_seconds": {"type": "number", "exclusiveMinimum": 0}
+          }
+        }
       }
     },
     "endpoints": {

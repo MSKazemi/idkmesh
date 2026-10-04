@@ -83,6 +83,28 @@ some unrelated page but missing from its own index stays invisible.
   in the required PR Gate, with two recognized widenings (`enum` growth,
   `type` widening) and one v0.1 blind spot (`allOf`/`oneOf`, cross-file
   `$ref`) both documented in its module docstring. *(2026-09-27.)*
+- [ADR-0021 — Serve WorkUnits and Projects as Read Models Derived from Stored Runs](ADR-0021-derived-work-unit-and-project-read-models.md)
+  — `GET /api/v1/work-units` and `/projects/{project_id}` are derived on demand
+  from stored run references, with no new store, no WorkUnit body, no "latest
+  revision" selection, and explicit ordering, pagination and 404 behavior.
+  *(2026-10-01.)*
+- [ADR-0022 — Bounded Service Limits for the Control Tower Development Server](ADR-0022-control-tower-bounded-service-limits.md)
+  — request timeout, a concurrency cap answering `503 + Retry-After`, graceful
+  drain, the adopted stdlib header/body bounds, and a published
+  `operations.limits` document; `429` and SSE limits are deliberately deferred
+  until per-client identity and #741 exist. *(2026-10-02.)*
+- [ADR-0023 — Canonical Append-Only Event Source, Event Query API and Resumable SSE](ADR-0023-canonical-append-only-event-source.md)
+  — a durable, ordered `events` table written in the same transaction as the run
+  change, `GET /api/v1/events` with filters and cursors, and a bounded,
+  `Last-Event-ID`-resumable `GET /api/v1/events/stream`; coverage is limited to
+  Product Spine run create/cancel and says so. *(2026-10-02.)*
+- [ADR-0024 — Serve Retained Run Evidence, and Read Product Spine Runs From a Mixed Store](ADR-0024-retained-evidence-read-and-mixed-store-run-reads.md)
+  — `GET /api/v1/runs/{run_id}/evidence` returns the digest-verified evidence
+  report the offline spine already retains (fail-closed on mismatch), the run
+  store reads offline-spine rows, and the run list filters by an explicit kind
+  set so one foreign row no longer breaks it; `/decisions` and the
+  human-decision API stay unbuilt pending #740 and an accountable principal.
+  *(2026-10-02.)*
 
 ## Proposed and experimental
 

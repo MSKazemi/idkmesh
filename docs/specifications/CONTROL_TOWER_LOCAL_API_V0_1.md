@@ -225,7 +225,9 @@ Unauthenticated process-liveness check:
 ok
 ```
 
-It reveals no evidence/project state.
+It reveals no evidence/project state. It is exempt from the concurrent-request
+cap and keeps answering `200` while the server drains, so liveness stays cheap
+under saturation (see [Service limits](#service-limits)).
 
 Supported methods:
 
@@ -252,7 +254,11 @@ Representative shape:
 ```
 
 Liveness and readiness are intentionally separate: a future service may be alive
-while a required runtime dependency is not ready.
+while a required runtime dependency is not ready. Today the one concrete
+difference is service pressure: `GET /readyz` is counted against the
+concurrent-request cap and answers `503 overloaded` at the cap or
+`503 shutting_down` while draining, each with `Retry-After`, so an orchestrator
+stops routing to an instance that cannot take work.
 
 Frozen by `schemas/idkmesh-readiness-v0.1.schema.json`. Built by the shared
 `idkmesh/service_runtime.py:readiness_document()`, so any future IDKMesh HTTP
@@ -278,6 +284,8 @@ The response includes:
 - schema URLs;
 - enabled read capabilities;
 - explicitly disabled actuation capabilities;
+- the service limits in force (`operations.limits`, see
+  [Service limits](#service-limits));
 - endpoint list.
 
 Representative shape:
@@ -325,6 +333,7 @@ It describes:
 - status endpoint;
 - OpenAPI endpoint;
 - run-evidence inspection endpoint;
+- run list/read/attempts and WorkUnit list/read endpoints;
 - supported request media types;
 - core response/error status codes;
 - published schema references.
@@ -401,7 +410,8 @@ application service `idkmesh run list` already uses, deterministically
 ordered by `run_id` with keyset (not offset) pagination -- API Conventions
 v0.1 sections 10-11.
 
-This is the one Control Tower endpoint that accepts query parameters:
+This is one of two Control Tower endpoints that accept query parameters
+(the other is `GET /api/v1/work-units`):
 
 - `limit` (optional integer, 1-200, default 50);
 - `cursor` (optional opaque string from a previous response's
@@ -424,6 +434,17 @@ started with `--product-spine-store`.
 
 `state` and `project_id` combine with AND, not OR: passing both narrows to
 runs matching both.
+
+The list contains **Product Spine runs only**, selected by an explicit set of
+stored row kinds (`product-spine-cli-run`, created by `idkmesh run create`,
+and `product-spine-idempotency-result`, the completed rows of the idempotent
+offline Product Spine). The shared `runs` table also holds admission-only,
+execution-error and GitHub dispatch/status rows; those are not Product Spine
+runs and are excluded deterministically, including from keyset pagination
+([ADR-0024](../decisions/ADR-0024-retained-evidence-read-and-mixed-store-run-reads.md)).
+Before this rule a single non-Product-Spine row in the store made the whole
+page fail; that defect is fixed. A row of a listed kind that does not restore
+still fails loudly rather than being skipped.
 
 Representative shape:
 
@@ -563,6 +584,433 @@ Supported methods:
 
 ```text
 GET, HEAD
+```
+
+### `GET /api/v1/runs/{run_id}/evidence`
+
+Authenticated, read-only retrieval of the Run Evidence Report retained in one
+run's row (issue #739's `evidence` read surface;
+[ADR-0024](../decisions/ADR-0024-retained-evidence-read-and-mixed-store-run-reads.md)).
+`evidence` is a reserved trailing path segment
+([ADR-0019](../decisions/ADR-0019-run-subresource-suffix-reservation.md)).
+The idempotent offline Product Spine retains the full report in the run row
+next to the projection whose `evidence_report_digest` it must equal; this
+endpoint serves that report, so a client can reconstruct a run and its
+evidence without repository files and without supplying the evidence document.
+
+The report is returned as retained, never synthesised. Before it is served the
+service verifies that the run projection is a valid Product Spine run and that
+`canonical_digest(report)` equals `evidence_report_digest`. On a mismatch the
+report is **not** served: the response is `500 evidence_integrity_error`
+(fail closed).
+
+This server instance only exposes it when started with
+`--product-spine-store PATH`; otherwise every request returns `503` with code
+`product_spine_store_not_configured`. The endpoint accepts no query parameters.
+
+Representative shape (the report is abbreviated):
+
+```json
+{
+  "api_version": "v1",
+  "schema_version": "0.1",
+  "kind": "idkmesh-control-tower-run-evidence-response",
+  "ok": true,
+  "run_id": "run/example-1",
+  "evidence_report_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "evidence_report": {
+    "kind": "idkmesh-run-evidence-report",
+    "schema_version": "0.1"
+  }
+}
+```
+
+Errors are distinct so a client can tell them apart:
+
+| Condition | Status | Code |
+|---|---|---|
+| no stored run has this `run_id` | `404` | `run_not_found` |
+| the run exists but retains no evidence (a run created by `idkmesh run create`, or one that has not reached `evidence_ready`) | `404` | `evidence_not_available` |
+| the retained report does not match the run's `evidence_report_digest`, or the projection is not a valid Product Spine run | `500` | `evidence_integrity_error` |
+
+`GET /api/v1/runs/{run_id}/decisions` is still not built and answers the generic
+`404 not_found`. It needs a retained decision store and an authenticated,
+accountable human or governance principal (issue #740 and the enterprise
+identity work, issue #670); a local session token is not an accountable person,
+so this is a governance gate and not an implementation detail.
+
+Supported methods:
+
+```text
+GET, HEAD
+```
+
+### `GET /api/v1/work-units`
+
+Authenticated, read-only WorkUnit listing (issue #739, the `work-units` read
+surface). A **derived read model** ([ADR-0021](../decisions/ADR-0021-derived-work-unit-and-project-read-models.md)):
+no WorkUnit store exists, so each item is computed on demand from the
+WorkUnit reference (`id`, `version`, `digest`, `source_revision`) that every
+retained Product Spine run already stores. Serves the same
+`idkmesh/product_spine_run_store.py:ProductSpineRunStore.list_work_units()`
+application service `idkmesh work-unit list` uses.
+
+Items are one per distinct WorkUnit `id`, ordered by `id` ascending, with
+keyset (not offset) pagination -- API Conventions v0.1 sections 10-11.
+
+Query parameters (every other endpoint except `GET /api/v1/runs` still
+rejects any query string):
+
+- `limit` (optional integer, 1-200, default 50);
+- `cursor` (optional opaque string from a previous response's
+  `page.next_cursor`; a cursor issued by `GET /api/v1/runs` is rejected);
+- `project_id` (optional, an exact match). When given, only that project's
+  runs are considered, so every `run_count` counts only those runs.
+
+Any other query parameter, or any of these repeated, is rejected with
+`400 unexpected_query_parameters`. An out-of-range or non-integer `limit` is
+`400 invalid_limit`; a cursor this service did not issue is
+`400 invalid_cursor`. Without `--product-spine-store` the endpoint returns
+`503 product_spine_store_not_configured`.
+
+What an item does and does not say:
+
+- `revisions` lists the distinct `{version, digest, source_revision}`
+  references seen for the id, each with its own `run_count`, ordered
+  ascending by `(version, digest, source_revision)`;
+- no revision is marked latest, current, or preferred, and no health, status,
+  or score is rolled up -- selecting one is a human/governance decision, not
+  a read-model one;
+- no WorkUnit body is returned because none is stored; `digest` is the
+  binding a caller uses to fetch or verify a body elsewhere;
+- a WorkUnit that has never had a run is not listed.
+
+Representative shape:
+
+```json
+{
+  "kind": "idkmesh-list",
+  "schema_version": "0.1",
+  "items": [
+    {
+      "id": "work/a",
+      "run_count": 3,
+      "revisions": [
+        {
+          "version": 1,
+          "digest": "sha256:...",
+          "source_revision": "0123456789abcdef0123456789abcdef01234567",
+          "run_count": 2
+        },
+        {
+          "version": 2,
+          "digest": "sha256:...",
+          "source_revision": "0123456789abcdef0123456789abcdef01234567",
+          "run_count": 1
+        }
+      ]
+    }
+  ],
+  "page": {
+    "next_cursor": null,
+    "limit": 50
+  }
+}
+```
+
+Frozen by `schemas/idkmesh-list-v0.1.schema.json` wrapping
+`schemas/idkmesh-work-unit-resource-v0.1.schema.json` items.
+
+Counts are consistent per request only: a run created between two page reads
+can change them, the same caveat `GET /api/v1/runs` carries.
+
+Supported methods:
+
+```text
+GET, HEAD
+```
+
+### `GET /api/v1/work-units/{work_unit_id}`
+
+Authenticated, read-only read of one derived WorkUnit resource, through the
+same service as `idkmesh work-unit status`.
+
+WorkUnit ids share the run-id grammar and may contain `/`, so the **entire
+path remainder is one literal id** (`/api/v1/work-units/work/nested/b` reads
+the id `work/nested/b`). v0.1 reserves no work-unit sub-resource suffix;
+adding one needs a new ADR extending ADR-0019's path-only resolution rule.
+Query parameters are rejected with `400 unexpected_query_parameters`.
+
+Representative shape:
+
+```json
+{
+  "api_version": "v1",
+  "schema_version": "0.1",
+  "kind": "idkmesh-control-tower-work-unit-response",
+  "ok": true,
+  "work_unit": {
+    "id": "work/a",
+    "run_count": 1,
+    "revisions": [
+      {
+        "version": 1,
+        "digest": "sha256:...",
+        "source_revision": "0123456789abcdef0123456789abcdef01234567",
+        "run_count": 1
+      }
+    ]
+  }
+}
+```
+
+An id no stored run references returns `404` with code
+`work_unit_not_found`. That states only that the retained runs do not mention
+it, not that the WorkUnit does not exist elsewhere. Without
+`--product-spine-store` the endpoint returns
+`503 product_spine_store_not_configured`.
+
+Frozen by `schemas/idkmesh-control-tower-work-unit-response-v0.1.schema.json`,
+which references `schemas/idkmesh-work-unit-resource-v0.1.schema.json`.
+
+Both work-unit endpoints answer `405` with `Allow: GET, HEAD` to any write
+method.
+
+Supported methods:
+
+```text
+GET, HEAD
+```
+
+### `GET /api/v1/projects/{project_id}`
+
+Authenticated, read-only project summary (issue #739, the `projects` read
+surface), through the same service as `idkmesh project status`. A **derived
+read model** ([ADR-0021](../decisions/ADR-0021-derived-work-unit-and-project-read-models.md)):
+no project record exists, so this is counts over the stored Product Spine runs
+that name the project, and nothing else.
+
+`project_id` is not constrained beyond being non-empty and may contain `/`, so
+the **entire path remainder is one literal id**
+(`/api/v1/projects/org/team/project` reads `org/team/project`). Matching is
+exact. v0.1 reserves no project sub-resource suffix and defines no project
+list. Query parameters are rejected with `400 unexpected_query_parameters`.
+
+Representative shape (all 14 canonical states are always present; only two are
+shown):
+
+```json
+{
+  "api_version": "v1",
+  "schema_version": "0.1",
+  "kind": "idkmesh-control-tower-project-response",
+  "ok": true,
+  "project": {
+    "project_id": "project.alpha",
+    "run_count": 3,
+    "runs_by_state": {
+      "proposed": 2,
+      "cancelled": 1
+    },
+    "work_unit_count": 2
+  }
+}
+```
+
+`runs_by_state` is zero-filled over every canonical run state, so the shape is
+identical for every project, and its values sum to `run_count`.
+`work_unit_count` is the number of distinct WorkUnit ids those runs reference;
+list them with `GET /api/v1/work-units?project_id=`. The summary carries no
+health, status, or score rollup and selects nothing.
+
+A project no stored run names returns `404` with code `project_not_found`.
+That states only that the retained runs do not mention it, not that the
+project does not exist elsewhere. Without `--product-spine-store` the endpoint
+returns `503 product_spine_store_not_configured`. Any write method answers
+`405` with `Allow: GET, HEAD`.
+
+Frozen by `schemas/idkmesh-control-tower-project-response-v0.1.schema.json`,
+which references `schemas/idkmesh-project-resource-v0.1.schema.json`.
+
+Supported methods:
+
+```text
+GET, HEAD
+```
+
+### `GET /api/v1/events`
+
+Authenticated, read-only history of the **canonical event source**
+([ADR-0023](../decisions/ADR-0023-canonical-append-only-event-source.md),
+issue #741), through the same service as `idkmesh events list`. Events live in
+an append-only `events` table of the Product Spine store and are written in the
+same SQLite transaction as the run change they record, so a committed state
+change and its event either both exist or neither does.
+
+Coverage is stated, not implied: in v0.1 only Product Spine `run create` and
+`run cancel` emit events (`run.created`, `run.cancelled`). The offline
+idempotent spine and the GitHub dispatch/status writers emit none yet, so this
+endpoint is canonical for the events that exist and makes no claim of
+completeness over every writer to the shared `runs` table. Nothing prunes the
+table.
+
+Response: the `idkmesh-list-v0.1` envelope, items ordered by `sequence`
+ascending, each item an `idkmesh-event` envelope. Query parameters (anything
+else, or a duplicate, is `400 unexpected_query_parameters`):
+
+| Parameter | Meaning |
+| --- | --- |
+| `limit` | page size, 1-200 (default 50); otherwise `400 invalid_limit` |
+| `cursor` | opaque token from the previous page's `page.next_cursor`; a token this listing did not issue, including a forged one that does not carry a bounded ASCII-decimal sequence (at most 18 digits), is `400 invalid_cursor` |
+| `project_id`, `run_id`, `work_unit_id` | exact match; a blank value is `400 invalid_filter` rather than silently matching nothing |
+| `event_type` | exact match, one of `run.created`, `run.cancelled`; any other value is `400 invalid_event_type` rather than silently matching nothing |
+
+Scoped run and work-unit queries are these filters. No new run sub-resource
+suffix is reserved, so [ADR-0019](../decisions/ADR-0019-run-subresource-suffix-reservation.md)
+is unchanged.
+
+Representative event:
+
+```json
+{
+  "schema_version": "0.1",
+  "kind": "idkmesh-event",
+  "event_id": "evt-000000000002",
+  "sequence": 2,
+  "occurred_at": "2026-10-02T09:15:00Z",
+  "event_type": "run.cancelled",
+  "principal": {"type": "unauthenticated_local", "id": "local-cli"},
+  "authority_class": "local_control",
+  "project_id": "project.alpha",
+  "work_unit_id": "work/a",
+  "run_id": "run/alpha-1",
+  "attempt_id": null,
+  "source_revision": "0123456789abcdef0123456789abcdef01234567",
+  "evidence_reference": null,
+  "payload": {"previous_state": "proposed", "state": "cancelled"},
+  "payload_digest": "sha256:<64 hex of the canonical payload JSON>"
+}
+```
+
+Field rules:
+
+- `sequence` is the stream's monotonic position (SQLite `AUTOINCREMENT`).
+  Because SQLite serialises writers, commit order equals sequence order: a
+  reader that has seen sequence N has seen every committed event up to N.
+- `event_id` is `evt-` plus the 12-digit zero-padded sequence and is unique
+  within the stream (the store file).
+- `occurred_at` is supplied by the producer, the validated timestamp the caller
+  passed for the state change. The store never reads a clock to invent one.
+- `principal` is `unauthenticated_local` / `local-cli` because the CLI has no
+  authentication; the field exists so an enterprise profile can supply a real
+  principal without a schema change.
+- `authority_class` is one of `local_control`, `worker_observation`,
+  `verifier_recommendation`, `human_decision`. v0.1 emits only `local_control`;
+  the others are reserved so a recommendation is never mistaken for a decision.
+- `attempt_id`, `source_revision` and `evidence_reference` are nullable.
+  `payload_digest` is the `sha256:` digest of the canonical payload.
+
+An idempotent replay of `run create` emits nothing, so a duplicate emission
+cannot occur at the source. The `events` table is append-only by construction:
+SQLite triggers abort any `UPDATE` or `DELETE` of an event row, and `event_id`
+is derived from `sequence` on read rather than stored, so it cannot drift from
+it.
+
+Without `--product-spine-store` the endpoint returns
+`503 product_spine_store_not_configured`. Any write method answers `405` with
+`Allow: GET, HEAD`. Frozen by `schemas/idkmesh-event-v0.1.schema.json`; the
+list envelope is `schemas/idkmesh-list-v0.1.schema.json`.
+
+Supported methods:
+
+```text
+GET, HEAD
+```
+
+### `GET /api/v1/events/stream`
+
+Authenticated, read-only Server-Sent Events stream of the same events. It is a
+`GET` only; WebSocket is deferred because nothing needs a bidirectional
+channel.
+
+Each message:
+
+```text
+id: 2
+event: run.cancelled
+data: {"schema_version":"0.1","kind":"idkmesh-event", ... }
+
+```
+
+- `id:` is the event `sequence`; `event:` is the `event_type`; `data:` is the
+  compact JSON envelope shown above.
+- **Resume.** `Last-Event-ID: N` resumes with every event whose sequence is
+  greater than N, then follows live events. A value that is not a non-negative
+  integer (ASCII digits, at most 18), or that is **beyond the newest event of
+  this stream**, is `400 invalid_last_event_id`. The second case carries
+  `error.details.latest_sequence`: a client cannot have seen an event this
+  stream has not committed, and accepting such an id would silently skip every
+  event between the stream head and it (for example an id remembered from a
+  different store).
+- **Browsers.** The API requires the `X-IDKMesh-UI-Token` header, which the
+  browser `EventSource` API cannot send. A browser client must use `fetch` with
+  a streaming reader and send `Last-Event-ID` itself; `curl -N` and any client
+  that can set headers work as is.
+- **No header.** The stream starts at the live tail. History is read with
+  `GET /api/v1/events`, so a first connection never silently depends on
+  history it was not asked for.
+- **Filters.** `project_id`, `run_id`, `work_unit_id` and `event_type`, with the
+  same meaning and errors as the history endpoint (a blank filter is
+  `400 invalid_filter`, an unknown `event_type` is `400 invalid_event_type`, and
+  both are answered before any stream byte is sent). `cursor` and `limit` are not
+  accepted on the stream.
+- **Delivery is at-least-once.** A client dedupes on `event_id`.
+- **Framing.** The response is `text/event-stream; charset=utf-8` with no
+  `Content-Length`, `Connection: close` and `X-Accel-Buffering: no`, and may be
+  requested with `Accept: text/event-stream`. The first bytes are `retry: 3000`
+  (a 3 s client reconnect hint). When the server ends a stream it first writes
+  one comment line, `: stream-ended reason=max-duration`,
+  `reason=shutdown` (drain) or `reason=store-error`, then closes; a client
+  treats all three as "reconnect with `Last-Event-ID`". `reason=store-error`
+  means the store failed while the stream was polling (a locked, unreadable or
+  corrupt database: the store reports a SQL error as a `LocalStoreError`), and
+  the stream says so instead of dropping the connection.
+- **Bounds** (published in `operations.limits`, see Service limits): at most
+  `max_sse_clients` concurrent streams (default 8, counted by their own
+  limiter; beyond it `503 too_many_streams` with `Retry-After`); a heartbeat
+  comment line (`: keepalive`) every 15 s; a maximum stream lifetime of 300 s
+  after which the server ends the stream and the client reconnects with
+  `Last-Event-ID`; a poll interval of 0.5 s. A stream ends promptly when the
+  server drains.
+- A stream does not occupy a slot of the general concurrent-request cap. The
+  request timeout still guards a stalled request; once the stream is open the
+  connection may stay idle for the heartbeat interval plus a small margin.
+- Only `GET` is supported. `HEAD` answers `405` with `Allow: GET` (an open
+  stream has no meaningful headers-only form), as does every write method.
+  Only a `GET` is admitted through the stream limiter; every other method goes
+  through the general request cap, so a wrong-method request is answered `405`
+  even when `max_sse_clients` streams are already open, never with a misleading
+  `503 too_many_streams`. Cross-origin `OPTIONS` on the stream path is still
+  rejected (`405 preflight_not_supported`); its `Allow` header advertises `GET`.
+
+Example:
+
+```bash
+curl -N \
+  -H "X-IDKMesh-UI-Token: $IDKMESH_CONTROL_TOWER_TOKEN" \
+  -H "Accept: text/event-stream" \
+  -H "Last-Event-ID: 41" \
+  "http://127.0.0.1:8770/api/v1/events/stream?run_id=run/alpha-1"
+```
+
+Retention: v0.1 keeps every event. If a pruner is ever added, a cursor or
+`Last-Event-ID` below the retained floor must answer `410 cursor_expired`,
+never a silent gap. This is a declared contract, not a built feature.
+
+Supported methods:
+
+```text
+GET
 ```
 
 ## Snapshot semantics
@@ -726,6 +1174,33 @@ by:
 
 - `schemas/idkmesh-control-tower-run-attempts-response-v0.1.schema.json`
 
+The run-evidence response (`GET /api/v1/runs/{run_id}/evidence`) is frozen by:
+
+- `schemas/idkmesh-control-tower-run-evidence-response-v0.1.schema.json`
+
+It references the existing `schemas/run-evidence-report-v0.1.schema.json` for
+the retained report.
+
+The derived WorkUnit resource and its single-read response
+(`GET /api/v1/work-units`, `GET /api/v1/work-units/{work_unit_id}`) are frozen
+by:
+
+- `schemas/idkmesh-work-unit-resource-v0.1.schema.json`
+- `schemas/idkmesh-control-tower-work-unit-response-v0.1.schema.json`
+
+The list endpoint reuses `schemas/idkmesh-list-v0.1.schema.json`.
+
+The derived project summary and its single-read response
+(`GET /api/v1/projects/{project_id}`) are frozen by:
+
+- `schemas/idkmesh-project-resource-v0.1.schema.json`
+- `schemas/idkmesh-control-tower-project-response-v0.1.schema.json`
+
+The canonical event envelope returned by `GET /api/v1/events` (as list items)
+and carried in the `data:` field of `GET /api/v1/events/stream` is frozen by:
+
+- `schemas/idkmesh-event-v0.1.schema.json`
+
 ## Error envelope
 
 All API JSON errors use the shape frozen by
@@ -750,6 +1225,11 @@ see [API Conventions v0.1](API_CONVENTIONS_V0_1.md) section 5):
 Optional structured `error.details` may be included when a machine-readable
 recovery hint exists, such as supported API versions.
 
+`error.retryable` is `false` for every code below except the three `503`
+capacity responses `overloaded`, `too_many_streams` and `shutting_down`, which
+carry `retryable: true`, a `Retry-After` header and
+`error.details.retry_after_seconds`.
+
 Stable v0.1 codes include:
 
 - `invalid_host`;
@@ -767,15 +1247,127 @@ Stable v0.1 codes include:
 - `method_not_allowed`;
 - `preflight_not_supported`;
 - `not_found`;
-- `run_not_found` (`GET /api/v1/runs/{run_id}`, unknown `run_id`);
-- `product_spine_store_not_configured` (`GET /api/v1/runs/{run_id}` and
-  `GET /api/v1/runs`, no `--product-spine-store` given to this server
+- `run_not_found` (`GET /api/v1/runs/{run_id}` and
+  `GET /api/v1/runs/{run_id}/evidence`, unknown `run_id`);
+- `evidence_not_available` (`GET /api/v1/runs/{run_id}/evidence`, 404, the run
+  exists but retains no evidence report);
+- `evidence_integrity_error` (`GET /api/v1/runs/{run_id}/evidence`, 500, the
+  retained report does not match the run's `evidence_report_digest`; the report
+  is never served);
+- `work_unit_not_found` (`GET /api/v1/work-units/{work_unit_id}`, no
+  stored run references the id);
+- `project_not_found` (`GET /api/v1/projects/{project_id}`, no stored run
+  names the project);
+- `product_spine_store_not_configured` (`GET /api/v1/runs/{run_id}`,
+  `GET /api/v1/runs/{run_id}/evidence`, `GET /api/v1/runs`, `GET /api/v1/work-units`,
+  `GET /api/v1/work-units/{work_unit_id}`,
+  `GET /api/v1/projects/{project_id}`, `GET /api/v1/events` and
+  `GET /api/v1/events/stream`, no `--product-spine-store` given to this server
   instance);
-- `invalid_limit` (`GET /api/v1/runs`, `limit` outside 1-200);
-- `invalid_cursor` (`GET /api/v1/runs`, `cursor` this service did not
-  itself issue);
+- `invalid_limit` (`GET /api/v1/runs`, `GET /api/v1/work-units` and
+  `GET /api/v1/events`, `limit` outside 1-200);
+- `invalid_cursor` (`GET /api/v1/runs`, `GET /api/v1/work-units` and
+  `GET /api/v1/events`, `cursor` this service did not itself issue for that
+  listing);
 - `invalid_state` (`GET /api/v1/runs`, `state` not one of the canonical
-  Product Spine lifecycle states).
+  Product Spine lifecycle states);
+- `overloaded` (503, the concurrent-request cap is reached; carries
+  `Retry-After`; `retryable: true`);
+- `shutting_down` (503, the server is draining; carries `Retry-After`;
+  `retryable: true`);
+- `request_timeout` (408, a request body was not received within the service
+  request timeout);
+- `invalid_event_type` (`GET /api/v1/events` and `GET /api/v1/events/stream`,
+  `event_type` not one of the known event types);
+- `invalid_filter` (`GET /api/v1/events` and `GET /api/v1/events/stream`, a
+  `project_id`, `run_id` or `work_unit_id` filter that is blank);
+- `invalid_last_event_id` (`GET /api/v1/events/stream`, `Last-Event-ID` is not
+  a non-negative integer or is beyond the newest event of this stream;
+  the latter carries `error.details.latest_sequence`);
+- `too_many_streams` (503, `max_sse_clients` streams are already open; carries
+  `Retry-After`; `retryable: true`);
+- `store_error` (the Product Spine store failed: a locked, unreadable or
+  corrupt database. A SQL error is raised by the store as a `LocalStoreError`
+  and reported by the run-store service as `store_error`.
+  Every store-backed read endpoint (`/runs`, `/runs/{run_id}`,
+  `/runs/{run_id}/attempts`, `/runs/{run_id}/evidence`, `/work-units`,
+  `/projects`, `/events` and the stream's pre-stream check) answers it `500`;
+  so does `evidence_integrity_error`. Opening the store (which runs its
+  migration) is guarded as well: a file that cannot be opened is answered with
+  a `500 store_error` body, not a dropped connection).
+
+## Service limits
+
+The Control Tower is a stdlib development server bound to loopback. Its limits
+([ADR-0022](../decisions/ADR-0022-control-tower-bounded-service-limits.md), issue #742) are published at `operations.limits` on
+`GET /api/v1/status`, validated by `schemas/idkmesh-control-tower-status-v0.1.schema.json`,
+and each is proven by `tests/test_control_tower_limits.py`.
+
+| Limit | Default | Enforcement | Proven by |
+| --- | --- | --- | --- |
+| Request timeout | 10 s (`--request-timeout`, 0.1-300) | socket timeout on every connection; a stalled request line or headers drop the connection, a stalled body answers `408 request_timeout` | `SlowClientTests` |
+| Concurrent requests | 16 (`--max-concurrent-requests`, 1-1024) | non-blocking `RequestLimiter`; beyond the cap `503 overloaded` + `Retry-After`, no application work, connection closed | `OverloadTests`, `RequestLimiterTests` |
+| Queue | listen backlog 16 | `request_queue_size`; there is no application wait queue | `OverloadTests` |
+| Retry hint | `Retry-After: 1` | on every 503 from the cap or a drain; the error body also carries `retryable: true` | `OverloadTests`, `DrainTests` |
+| Graceful drain | 5 s | `ControlTowerServer.drain()`: new requests `503 shutting_down`, then waits for in-flight requests; `serve_control_tower` calls it on shutdown | `DrainTests` |
+| Request line | 65536 bytes | stdlib parser, `414` above | `ParserBoundTests` |
+| Header line | 65536 bytes | stdlib parser, `431` above | `ParserBoundTests` |
+| Header fields | 99 | stdlib parser, `431` at 100 (the stdlib allows 100 lines but counts the blank line ending the header block) | `ParserBoundTests` |
+| Request body | 2 MiB | `413 payload_too_large`; one global cap, only `POST /api/v1/run-evidence/inspect` reads a body | not proven by an HTTP test (only the CLI preload cap is tested) |
+| Connections | one request each | stdlib HTTP/1.0 default; no keep-alive | `ConnectionPolicyTests` |
+| SSE clients | 8 (`--max-sse-clients`, 1-64) | a separate non-blocking `RequestLimiter` for `GET /api/v1/events/stream`; beyond it `503 too_many_streams` + `Retry-After` | `EventStreamLimitTests` (`tests/test_control_tower_events.py`) |
+| SSE heartbeat | 15 s | `: keepalive` comment on an idle stream | `EventStreamLimitTests` (`tests/test_control_tower_events.py`) |
+| SSE stream lifetime | 300 s | the server ends the stream; the client resumes with `Last-Event-ID` | `EventStreamLimitTests` (`tests/test_control_tower_events.py`) |
+| Per-client rate limit | not implemented | `429` is reserved; see below | status `per_client_rate_limit` |
+
+Semantics:
+
+- `GET /healthz` is exempt from the cap and from drain rejection. Every other
+  request, including `GET /readyz`, is admitted or rejected.
+- A rejection answers with the standard error envelope (`retryable: true`),
+  `X-Request-ID`, and the security headers, and does no application work, so its
+  cost does not depend on the request. `HEAD` rejections carry headers and no
+  body.
+- A `POST` rejected at the cap is answered without reading its body and the
+  connection is closed, so a client sending a large body may see a connection
+  reset instead of the `503`.
+- Every endpoint is read-only or a pure inspection, so a drain cannot leave a
+  partially committed mutation.
+- The cap bounds concurrent request *handling*, not accepted connections: a
+  connection flood still creates short-lived threads that answer `503`.
+- `429` is not emitted. It signals that one client exceeded its own rate, and a
+  single local token provides no per-client identity. Server-wide saturation is
+  `503`. `429` is reserved for the enterprise identity profile.
+- SSE streams are counted by their own limiter and do not occupy a general
+  request slot; drain ends them promptly and `drain()` waits for both limiters.
+  Only a `GET` on the stream path is counted by that limiter: `HEAD`, `POST`
+  and the other write methods use the general cap and are answered `405
+  Allow: GET`.
+- Only the Control Tower server is hardened. `gate-audit-ui` and the steward UIs
+  keep their previous behavior.
+- A public or network deployment must use a reviewed production transport
+  adapter; the stdlib server must not be exposed to the Internet.
+
+Representative `operations.limits`:
+
+```json
+{
+  "request_timeout_seconds": 10.0,
+  "max_concurrent_requests": 16,
+  "retry_after_seconds": 1,
+  "drain_timeout_seconds": 5.0,
+  "max_request_line_bytes": 65536,
+  "max_header_line_bytes": 65536,
+  "max_header_count": 99,
+  "max_request_body_bytes": 2097152,
+  "max_sse_clients": 8,
+  "sse_heartbeat_seconds": 15,
+  "sse_max_stream_seconds": 300,
+  "overload_status": 503,
+  "connection_policy": "close_after_response",
+  "per_client_rate_limit": "not_implemented"
+}
+```
 
 ## HTTP method behavior
 
@@ -813,13 +1405,42 @@ export IDKMESH_CONTROL_TOWER_TOKEN='replace-with-at-least-32-random-characters'
 idkmesh control-tower --no-browser --port 8770
 ```
 
-Headless server that also serves `GET /api/v1/runs/{run_id}` over an
+Headless server that also serves the run, WorkUnit, and project read endpoints
+(`GET /api/v1/runs`, `GET /api/v1/runs/{run_id}`,
+`GET /api/v1/runs/{run_id}/attempts`, `GET /api/v1/work-units`,
+`GET /api/v1/work-units/{work_unit_id}`,
+`GET /api/v1/projects/{project_id}`, `GET /api/v1/events`,
+`GET /api/v1/events/stream`) over an
 existing Product Spine store (the same file `idkmesh run create/status/cancel`
 already writes to):
 
 ```bash
 idkmesh control-tower --no-browser --port 8770 \
   --product-spine-store path/to/product-spine.sqlite3
+```
+
+Tune the service limits (both are validated before the port is bound):
+
+```bash
+idkmesh control-tower --no-browser --port 8770 \
+  --request-timeout 5 --max-concurrent-requests 8 --max-sse-clients 4
+```
+
+Read the same store's derived WorkUnits and project summaries from the CLI:
+
+```bash
+idkmesh work-unit list --store path/to/product-spine.sqlite3
+idkmesh work-unit status work/a --store path/to/product-spine.sqlite3
+idkmesh project status project.alpha --store path/to/product-spine.sqlite3
+```
+
+Read the canonical event history from the CLI (the same service as
+`GET /api/v1/events`):
+
+```bash
+idkmesh events list --store path/to/product-spine.sqlite3
+idkmesh events list --store path/to/product-spine.sqlite3 \
+  --run-id run/alpha-1 --event-type run.cancelled --json
 ```
 
 Example status request:
@@ -865,10 +1486,29 @@ identity distinction != independence
 
 ## Next compatible extensions
 
+Issue #739's only unshipped read surface is `GET /api/v1/runs/{run_id}/decisions`.
+`/evidence` is shipped
+([ADR-0024](../decisions/ADR-0024-retained-evidence-read-and-mixed-store-run-reads.md)):
+the idempotent offline spine already retains the digest-verified report in the
+run row. `/decisions` stays blocked on issue #740: no decision content is
+retained anywhere, and recording one needs an authenticated, accountable human
+or governance principal, which is a governance gate.
+
+Issue #741's canonical event source, history query and resumable SSE stream
+are shipped
+([ADR-0023](../decisions/ADR-0023-canonical-append-only-event-source.md)). Not
+yet built: events for the other writers of the shared `runs` table (offline
+spine, GitHub dispatch and status), further event types (attempts, evidence,
+verification, human decisions), an enterprise principal on `principal`, a
+retention pruner with its `410 cursor_expired` contract, and a production
+transport adapter that would replace the poll-based SSE loop.
+
 Issue #572 defines later read-first slices:
 
 1. immutable human-decision recording;
-2. real event-source timeline;
+2. a Control Tower timeline built from the canonical event source (the event
+   source itself exists; the UI still derives its timeline from the posted
+   report);
 3. verification-debt/capacity;
 4. participant/resource/authority matrix;
 5. IDKGraph repository health;

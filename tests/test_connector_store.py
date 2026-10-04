@@ -305,6 +305,161 @@ class LocalMetadataStoreTests(unittest.TestCase):
             created_at="2026-09-22T14:23:00Z",
         )
 
+    def _admit_wu(
+        self,
+        store,
+        run_id: str,
+        work_unit_id: str,
+        *,
+        version: int = 1,
+        digest: str = "sha256:" + "b" * 64,
+        project_id: str = "project.test",
+    ) -> None:
+        store.admit_run(
+            run_id=run_id,
+            idempotency_key=f"key:{run_id}",
+            request_digest="sha256:same",
+            state="proposed",
+            metadata={
+                "run_id": run_id,
+                "projection": {
+                    "project_id": project_id,
+                    "work_unit": {
+                        "id": work_unit_id,
+                        "version": version,
+                        "digest": digest,
+                        "source_revision": "0" * 40,
+                    },
+                },
+            },
+            created_at="2026-10-01T00:00:00Z",
+        )
+
+    def test_list_work_units_is_empty_for_a_fresh_store(self):
+        page, has_more = self._store().list_work_units()
+        self.assertEqual(page, [])
+        self.assertFalse(has_more)
+
+    def test_list_work_units_derives_one_item_per_id_with_revisions(self):
+        store = self._store()
+        self._admit_wu(store, "run-1", "work/b", version=2)
+        self._admit_wu(store, "run-2", "work/a", version=1)
+        self._admit_wu(store, "run-3", "work/a", version=1)
+        self._admit_wu(store, "run-4", "work/a", version=2)
+
+        page, has_more = store.list_work_units()
+
+        self.assertFalse(has_more)
+        self.assertEqual([item["id"] for item in page], ["work/a", "work/b"])
+        work_a = page[0]
+        self.assertEqual(work_a["run_count"], 3)
+        self.assertEqual(
+            [(r["version"], r["run_count"]) for r in work_a["revisions"]],
+            [(1, 2), (2, 1)],
+        )
+        self.assertEqual(
+            set(work_a["revisions"][0]),
+            {"version", "digest", "source_revision", "run_count"},
+        )
+
+    def test_list_work_units_keeps_distinct_digests_as_distinct_revisions(self):
+        store = self._store()
+        self._admit_wu(store, "run-1", "work/a", digest="sha256:" + "c" * 64)
+        self._admit_wu(store, "run-2", "work/a", digest="sha256:" + "b" * 64)
+
+        (item,), _ = store.list_work_units()
+
+        self.assertEqual(
+            [r["digest"][-1] for r in item["revisions"]], ["b", "c"]
+        )
+
+    def test_list_work_units_pages_with_a_keyset_cursor(self):
+        store = self._store()
+        for index in range(5):
+            self._admit_wu(store, f"run-{index}", f"work/{index}")
+
+        page1, more1 = store.list_work_units(limit=2)
+        page2, more2 = store.list_work_units(limit=2, after=page1[-1]["id"])
+        page3, more3 = store.list_work_units(limit=2, after=page2[-1]["id"])
+
+        self.assertEqual(
+            [i["id"] for i in page1 + page2 + page3],
+            [f"work/{n}" for n in range(5)],
+        )
+        self.assertEqual((more1, more2, more3), (True, True, False))
+
+    def test_list_work_units_project_filter_scopes_run_counts(self):
+        store = self._store()
+        self._admit_wu(store, "run-1", "work/a", project_id="p1")
+        self._admit_wu(store, "run-2", "work/a", project_id="p2")
+        self._admit_wu(store, "run-3", "work/only-p2", project_id="p2")
+
+        page, _ = store.list_work_units(project_id="p1")
+        self.assertEqual([(i["id"], i["run_count"]) for i in page],
+                         [("work/a", 1)])
+        page, _ = store.list_work_units(project_id="p2")
+        self.assertEqual(
+            [(i["id"], i["run_count"]) for i in page],
+            [("work/a", 1), ("work/only-p2", 1)],
+        )
+        page, _ = store.list_work_units(project_id="nobody")
+        self.assertEqual(page, [])
+
+    def test_list_work_units_ignores_runs_without_a_work_unit_reference(self):
+        store = self._store()
+        self._admit(store, "plain-run")
+        self._admit_wu(store, "run-1", "work/a")
+
+        page, _ = store.list_work_units()
+
+        self.assertEqual([i["id"] for i in page], ["work/a"])
+
+    def test_list_work_units_rejects_an_out_of_bounds_limit(self):
+        store = self._store()
+        with self.assertRaises(ValueError):
+            store.list_work_units(limit=0)
+        with self.assertRaises(ValueError):
+            store.list_work_units(limit=201)
+
+    def test_get_work_unit_returns_the_derived_resource_or_none(self):
+        store = self._store()
+        self._admit_wu(store, "run-1", "work/a/b")
+        self._admit_wu(store, "run-2", "work/a/b", version=2)
+
+        resource = store.get_work_unit("work/a/b")
+
+        self.assertEqual(resource["id"], "work/a/b")
+        self.assertEqual(resource["run_count"], 2)
+        self.assertIsNone(store.get_work_unit("work/a"))
+        with self.assertRaises(ValueError):
+            store.get_work_unit("")
+
+    def test_get_project_counts_derives_counts_from_runs(self):
+        store = self._store()
+        self._admit_wu(store, "run-1", "work/a", project_id="p1")
+        self._admit_wu(store, "run-2", "work/a", project_id="p1", version=2)
+        self._admit_wu(store, "run-3", "work/b", project_id="p1")
+        self._admit_wu(store, "run-4", "work/a", project_id="p2")
+        self._admit(store, "run-5", state="cancelled", project_id="p1")
+
+        counts = store.get_project_counts("p1")
+
+        self.assertEqual(counts["project_id"], "p1")
+        self.assertEqual(counts["run_count"], 4)
+        self.assertEqual(
+            counts["state_counts"], {"cancelled": 1, "proposed": 3}
+        )
+        self.assertEqual(counts["work_unit_count"], 2)
+
+    def test_get_project_counts_is_none_for_an_unknown_project(self):
+        store = self._store()
+        self._admit_wu(store, "run-1", "work/a", project_id="project.alpha")
+
+        self.assertIsNone(store.get_project_counts("project.alph"))
+        self.assertIsNone(store.get_project_counts("project.alpha/"))
+        with self.assertRaises(ValueError):
+            store.get_project_counts("")
+
     def test_list_runs_is_empty_for_a_fresh_store(self):
         store = self._store()
         page, has_more = store.list_runs()

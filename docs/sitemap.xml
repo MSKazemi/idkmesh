@@ -128,7 +128,7 @@
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/architecture/API_CONTROL_PLANE_ARCHITECTURE.html</loc>
-    <lastmod>2026-09-27</lastmod>
+    <lastmod>2026-10-01</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
@@ -389,6 +389,11 @@
   <url>
     <loc>https://mskazemi.com/idkmesh/community/ACE_LINEAGE_PROTOCOL.html</loc>
     <lastmod>2026-08-28</lastmod>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://mskazemi.com/idkmesh/community/AGENT_CONTRIBUTOR_GUIDE.html</loc>
+    <lastmod>2026-10-03</lastmod>
     <priority>0.6</priority>
   </url>
   <url>
@@ -1298,7 +1303,7 @@
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/decisions/</loc>
-    <lastmod>2026-09-27</lastmod>
+    <lastmod>2026-10-01</lastmod>
     <priority>0.6</priority>
   </url>
   <url>
@@ -1409,6 +1414,26 @@
   <url>
     <loc>https://mskazemi.com/idkmesh/decisions/ADR-0020-schema-backward-compatibility-gate.html</loc>
     <lastmod>2026-09-27</lastmod>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://mskazemi.com/idkmesh/decisions/ADR-0021-derived-work-unit-and-project-read-models.html</loc>
+    <lastmod>2026-10-01</lastmod>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://mskazemi.com/idkmesh/decisions/ADR-0022-control-tower-bounded-service-limits.html</loc>
+    <lastmod>2026-10-01</lastmod>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://mskazemi.com/idkmesh/decisions/ADR-0023-canonical-append-only-event-source.html</loc>
+    <lastmod>2026-10-01</lastmod>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://mskazemi.com/idkmesh/decisions/ADR-0024-retained-evidence-read-and-mixed-store-run-reads.html</loc>
+    <lastmod>2026-10-01</lastmod>
     <priority>0.6</priority>
   </url>
   <url>
@@ -1943,7 +1968,7 @@
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/specifications/</loc>
-    <lastmod>2026-09-27</lastmod>
+    <lastmod>2026-10-01</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
@@ -1968,7 +1993,7 @@
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/specifications/CONTROL_TOWER_LOCAL_API_V0_1.html</loc>
-    <lastmod>2026-09-27</lastmod>
+    <lastmod>2026-10-01</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
@@ -2023,7 +2048,7 @@
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/specifications/HTTP_SERVICE_RUNTIME_V0_1.html</loc>
-    <lastmod>2026-09-23</lastmod>
+    <lastmod>2026-10-01</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
@@ -2068,7 +2093,7 @@
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/specifications/PRODUCT_SPINE_SERVICE_V0_1.html</loc>
-    <lastmod>2026-09-27</lastmod>
+    <lastmod>2026-10-01</lastmod>
     <priority>0.8</priority>
   </url>
   <url>

@@ -6,6 +6,7 @@ import html
 import json
 import os
 import secrets
+import threading
 import time
 import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -37,12 +38,27 @@ from idkmesh.local_ui_security import (
     send_security_headers,
 )
 from idkmesh.service_runtime import (
+    ADMITTED,
+    DEFAULT_DRAIN_TIMEOUT_SECONDS,
+    DEFAULT_MAX_CONCURRENT_REQUESTS,
+    DEFAULT_MAX_SSE_CLIENTS,
+    DEFAULT_REQUEST_TIMEOUT_SECONDS,
+    DEFAULT_RETRY_AFTER_SECONDS,
+    DRAINING,
     REQUEST_ID_HEADER,
+    RequestLimiter,
+    SSE_HEARTBEAT_SECONDS,
+    SSE_MAX_STREAM_SECONDS,
+    SSE_POLL_SECONDS,
     access_logging_enabled,
     build_access_log_event,
+    limits_document,
     readiness_document,
     resolve_request_id,
     service_headers,
+    validate_max_concurrent_requests,
+    validate_max_sse_clients,
+    validate_request_timeout,
     write_access_log,
 )
 
@@ -542,16 +558,42 @@ def _resolve_token() -> str:
     return configured
 
 
+_EVENT_STREAM_PATH = f"/api/{API_VERSION}/events/stream"
+_EVENT_FILTERS = ("project_id", "run_id", "work_unit_id", "event_type")
+_EVENT_BATCH = 200
+
+
+_SERVER_FAULT_CODES = frozenset({"store_error", "evidence_integrity_error"})
+
+
+def _service_error_status(code: str, *not_found: str) -> int:
+    """HTTP status for a ProductSpineRunStoreError code.
+
+    404 for the endpoint's own not-found codes, 500 for a server-side fault
+    (an unreadable store or a row that failed its integrity check), and 400 for
+    everything else, which is a problem with the request.
+    """
+    if code in not_found:
+        return 404
+    if code in _SERVER_FAULT_CODES:
+        return 500
+    return 400
+
+
 def _handler(
     initial_text: str | None,
     token: str,
     *,
     product_spine_store_path: str | None = None,
+    request_timeout: float = DEFAULT_REQUEST_TIMEOUT_SECONDS,
 ):
     page = _app_html(initial_text, token).encode("utf-8")
 
     class Handler(BaseHTTPRequestHandler):
         server_version = "IDKMeshControlTower/0.1"
+        # ADR-0022: socketserver applies this to the connection, so a client
+        # that stalls on the request line, headers or body is dropped.
+        timeout = request_timeout
 
         def handle_one_request(self) -> None:
             self._request_started = time.monotonic()
@@ -583,13 +625,15 @@ def _handler(
             self,
             status: int,
             content_type: str,
-            length: int,
+            length: int | None,
             *,
             extra_headers: dict[str, str] | None = None,
         ) -> None:
+            # ``length`` is None only for a close-delimited stream (SSE).
             self.send_response(status)
             self.send_header("Content-Type", content_type)
-            self.send_header("Content-Length", str(length))
+            if length is not None:
+                self.send_header("Content-Length", str(length))
             headers = service_headers(
                 service=SERVICE_NAME,
                 service_version=__version__,
@@ -615,7 +659,7 @@ def _handler(
                             method=self.command,
                             path=self._access_path(),
                             status=status,
-                            response_bytes=length,
+                            response_bytes=length or 0,
                             duration_ms=(
                                 time.monotonic() - started
                             ) * 1000.0,
@@ -695,6 +739,10 @@ def _handler(
                 JSON_MEDIA_TYPE,
                 V1_MEDIA_TYPE,
             }
+            if self._access_path() == _EVENT_STREAM_PATH:
+                # ADR-0023: the SSE endpoint is the one place a client
+                # legitimately asks for text/event-stream.
+                accepted |= {"text/*", "text/event-stream"}
             for part in accept.split(","):
                 media_type = part.split(";", 1)[0].strip().lower()
                 if media_type in accepted:
@@ -713,14 +761,20 @@ def _handler(
 
         def _path(self) -> tuple[str, str] | None:
             parsed = urlsplit(self.path)
-            # GET /api/v1/runs (list) is the one endpoint with declared,
-            # bounded query parameters (?limit=, ?cursor=; API Conventions
-            # v0.1 sections 10-11). Every other /api/ endpoint keeps
-            # rejecting stray query parameters outright.
+            # GET /api/v1/runs and GET /api/v1/work-units (lists) are the
+            # endpoints with declared, bounded query parameters (?limit=,
+            # ?cursor=, and named filters; API Conventions v0.1 sections
+            # 10-11). Every other /api/ endpoint keeps rejecting stray query
+            # parameters outright.
             if (
                 parsed.query
                 and parsed.path.startswith("/api/")
-                and parsed.path != f"/api/{API_VERSION}/runs"
+                and parsed.path not in (
+                    f"/api/{API_VERSION}/runs",
+                    f"/api/{API_VERSION}/work-units",
+                    f"/api/{API_VERSION}/events",
+                    _EVENT_STREAM_PATH,
+                )
             ):
                 self._send_json(
                     400,
@@ -817,7 +871,7 @@ def _handler(
                 result = service.status(run_id)
             except ProductSpineRunStoreError as exc:
                 code = getattr(exc, "code", "run_control_error")
-                status = 404 if code == "run_not_found" else 400
+                status = _service_error_status(code, "run_not_found")
                 self._send_json(
                     status,
                     error_document(code, str(exc)),
@@ -871,7 +925,7 @@ def _handler(
                 result = service.status(run_id)
             except ProductSpineRunStoreError as exc:
                 code = getattr(exc, "code", "run_control_error")
-                status = 404 if code == "run_not_found" else 400
+                status = _service_error_status(code, "run_not_found")
                 self._send_json(
                     status,
                     error_document(code, str(exc)),
@@ -898,20 +952,19 @@ def _handler(
             }
             self._send_json(200, payload, head_only=head_only)
 
-        def _run_list_response(self, query: str, *, head_only: bool) -> None:
-            if product_spine_store_path is None:
-                self._send_json(
-                    503,
-                    error_document(
-                        "product_spine_store_not_configured",
-                        "this Control Tower instance was started without a "
-                        "Product Spine store; runs cannot be listed",
-                    ),
-                    head_only=head_only,
-                )
-                return
+        def _parse_list_query(
+            self,
+            query: str,
+            allowed: set[str],
+            *,
+            head_only: bool,
+        ) -> tuple[dict[str, str], int] | None:
+            """Validate a list endpoint's bounded query string.
 
-            allowed = {"limit", "cursor", "state", "project_id"}
+            Sends the 400 itself and returns None on an unknown or duplicate
+            parameter or an out-of-range limit (API Conventions v0.1
+            section 11: unknown filters fail explicitly).
+            """
             params: dict[str, str] = {}
             for key, value in parse_qsl(query, keep_blank_values=True):
                 if key not in allowed or key in params:
@@ -924,7 +977,7 @@ def _handler(
                         ),
                         head_only=head_only,
                     )
-                    return
+                    return None
                 params[key] = value
 
             limit = DEFAULT_LIST_LIMIT
@@ -943,7 +996,294 @@ def _handler(
                         ),
                         head_only=head_only,
                     )
-                    return
+                    return None
+            return params, limit
+
+        def _work_unit_id_from_path(self, path: str) -> str | None:
+            """Return the id if path is /api/v1/work-units/<id>.
+
+            ADR-0021: WorkUnit ids share the run-id grammar and may contain
+            "/", so the entire remainder is one literal id. v0.1 reserves no
+            work-unit sub-resource suffix.
+            """
+            prefix = f"/api/{API_VERSION}/work-units/"
+            if not path.startswith(prefix):
+                return None
+            remainder = path[len(prefix):]
+            return remainder or None
+
+        def _work_unit_store_unavailable(self, *, head_only: bool) -> bool:
+            if product_spine_store_path is not None:
+                return False
+            self._send_json(
+                503,
+                error_document(
+                    "product_spine_store_not_configured",
+                    "this Control Tower instance was started without a "
+                    "Product Spine store; work units cannot be read",
+                ),
+                head_only=head_only,
+            )
+            return True
+
+        def _work_unit_read_response(
+            self, work_unit_id: str, *, head_only: bool
+        ) -> None:
+            if self._work_unit_store_unavailable(head_only=head_only):
+                return
+            from idkmesh.connector_store import (
+                LocalMetadataStore,
+                LocalStoreError,
+            )
+            from idkmesh.product_spine_run_store import (
+                ProductSpineRunStore,
+                ProductSpineRunStoreError,
+            )
+
+            try:
+                service = ProductSpineRunStore(
+                    LocalMetadataStore(product_spine_store_path)
+                )
+                resource = service.get_work_unit(work_unit_id)
+            except ProductSpineRunStoreError as exc:
+                code = getattr(exc, "code", "run_control_error")
+                status = _service_error_status(code, "work_unit_not_found")
+                self._send_json(
+                    status,
+                    error_document(code, str(exc)),
+                    head_only=head_only,
+                )
+                return
+            except (LocalStoreError, OSError, ValueError) as exc:
+                self._send_json(
+                    500,
+                    error_document("store_error", str(exc)),
+                    head_only=head_only,
+                )
+                return
+
+            self._send_json(
+                200,
+                {
+                    "api_version": API_VERSION,
+                    "schema_version": API_SCHEMA_VERSION,
+                    "kind": "idkmesh-control-tower-work-unit-response",
+                    "ok": True,
+                    "work_unit": resource,
+                },
+                head_only=head_only,
+            )
+
+        def _project_id_from_path(self, path: str) -> str | None:
+            """Return the id if path is /api/v1/projects/<project_id>.
+
+            ADR-0021: the entire remainder is one literal project_id; v0.1
+            reserves no project sub-resource suffix and has no project list.
+            """
+            prefix = f"/api/{API_VERSION}/projects/"
+            if not path.startswith(prefix):
+                return None
+            remainder = path[len(prefix):]
+            return remainder or None
+
+        def _project_read_response(
+            self, project_id: str, *, head_only: bool
+        ) -> None:
+            if product_spine_store_path is None:
+                self._send_json(
+                    503,
+                    error_document(
+                        "product_spine_store_not_configured",
+                        "this Control Tower instance was started without a "
+                        "Product Spine store; projects cannot be read",
+                    ),
+                    head_only=head_only,
+                )
+                return
+            from idkmesh.connector_store import (
+                LocalMetadataStore,
+                LocalStoreError,
+            )
+            from idkmesh.product_spine_run_store import (
+                ProductSpineRunStore,
+                ProductSpineRunStoreError,
+            )
+
+            try:
+                service = ProductSpineRunStore(
+                    LocalMetadataStore(product_spine_store_path)
+                )
+                resource = service.get_project(project_id)
+            except ProductSpineRunStoreError as exc:
+                code = getattr(exc, "code", "run_control_error")
+                status = _service_error_status(code, "project_not_found")
+                self._send_json(
+                    status,
+                    error_document(code, str(exc)),
+                    head_only=head_only,
+                )
+                return
+            except (LocalStoreError, OSError, ValueError) as exc:
+                self._send_json(
+                    500,
+                    error_document("store_error", str(exc)),
+                    head_only=head_only,
+                )
+                return
+
+            self._send_json(
+                200,
+                {
+                    "api_version": API_VERSION,
+                    "schema_version": API_SCHEMA_VERSION,
+                    "kind": "idkmesh-control-tower-project-response",
+                    "ok": True,
+                    "project": resource,
+                },
+                head_only=head_only,
+            )
+
+        def _work_unit_list_response(
+            self, query: str, *, head_only: bool
+        ) -> None:
+            if self._work_unit_store_unavailable(head_only=head_only):
+                return
+            parsed_query = self._parse_list_query(
+                query,
+                {"limit", "cursor", "project_id"},
+                head_only=head_only,
+            )
+            if parsed_query is None:
+                return
+            params, limit = parsed_query
+
+            from idkmesh.connector_store import (
+                LocalMetadataStore,
+                LocalStoreError,
+            )
+            from idkmesh.product_spine_run_store import (
+                ProductSpineRunStore,
+                ProductSpineRunStoreError,
+            )
+
+            try:
+                service = ProductSpineRunStore(
+                    LocalMetadataStore(product_spine_store_path)
+                )
+                items, next_cursor = service.list_work_units(
+                    limit=limit,
+                    cursor=params.get("cursor"),
+                    project_id=params.get("project_id"),
+                )
+            except ProductSpineRunStoreError as exc:
+                code = getattr(exc, "code", "run_control_error")
+                self._send_json(
+                    _service_error_status(code),
+                    error_document(code, str(exc)),
+                    head_only=head_only,
+                )
+                return
+            except (LocalStoreError, OSError, ValueError) as exc:
+                self._send_json(
+                    500,
+                    error_document("store_error", str(exc)),
+                    head_only=head_only,
+                )
+                return
+
+            self._send_json(
+                200,
+                {
+                    "kind": "idkmesh-list",
+                    "schema_version": API_SCHEMA_VERSION,
+                    "items": items,
+                    "page": {"next_cursor": next_cursor, "limit": limit},
+                },
+                head_only=head_only,
+            )
+
+        def _run_evidence_response(
+            self, run_id: str, *, head_only: bool
+        ) -> None:
+            if product_spine_store_path is None:
+                self._send_json(
+                    503,
+                    error_document(
+                        "product_spine_store_not_configured",
+                        "this Control Tower instance was started without a "
+                        "Product Spine store; runs cannot be read",
+                    ),
+                    head_only=head_only,
+                )
+                return
+            from idkmesh.connector_store import (
+                LocalMetadataStore,
+                LocalStoreError,
+            )
+            from idkmesh.product_spine_run_store import (
+                ProductSpineRunStore,
+                ProductSpineRunStoreError,
+            )
+
+            try:
+                service = ProductSpineRunStore(
+                    LocalMetadataStore(product_spine_store_path)
+                )
+                result = service.get_run_evidence(run_id)
+            except ProductSpineRunStoreError as exc:
+                code = getattr(exc, "code", "run_control_error")
+                if code in ("run_not_found", "evidence_not_available"):
+                    status = 404
+                elif code in ("evidence_integrity_error", "store_error"):
+                    status = 500
+                else:
+                    status = 400
+                self._send_json(
+                    status,
+                    error_document(code, str(exc)),
+                    head_only=head_only,
+                )
+                return
+            except (LocalStoreError, OSError, ValueError) as exc:
+                self._send_json(
+                    500,
+                    error_document("store_error", str(exc)),
+                    head_only=head_only,
+                )
+                return
+
+            payload = {
+                "api_version": API_VERSION,
+                "schema_version": API_SCHEMA_VERSION,
+                "kind": "idkmesh-control-tower-run-evidence-response",
+                "ok": True,
+                "run_id": result["run_id"],
+                "evidence_report_digest": result["evidence_report_digest"],
+                "evidence_report": result["evidence_report"],
+            }
+            self._send_json(200, payload, head_only=head_only)
+
+        def _run_list_response(self, query: str, *, head_only: bool) -> None:
+            if product_spine_store_path is None:
+                self._send_json(
+                    503,
+                    error_document(
+                        "product_spine_store_not_configured",
+                        "this Control Tower instance was started without a "
+                        "Product Spine store; runs cannot be listed",
+                    ),
+                    head_only=head_only,
+                )
+                return
+
+            parsed_query = self._parse_list_query(
+                query,
+                {"limit", "cursor", "state", "project_id"},
+                head_only=head_only,
+            )
+            if parsed_query is None:
+                return
+            params, limit = parsed_query
 
             from idkmesh.connector_store import (
                 LocalMetadataStore,
@@ -967,7 +1307,7 @@ def _handler(
             except ProductSpineRunStoreError as exc:
                 code = getattr(exc, "code", "run_control_error")
                 self._send_json(
-                    400,
+                    _service_error_status(code),
                     error_document(code, str(exc)),
                     head_only=head_only,
                 )
@@ -1051,7 +1391,19 @@ def _handler(
                     ),
                 )
                 return None
-            raw = self.rfile.read(length)
+            try:
+                raw = self.rfile.read(length)
+            except TimeoutError:
+                self.close_connection = True
+                self._send_json(
+                    408,
+                    error_document(
+                        "request_timeout",
+                        "request body was not received within the "
+                        "service request timeout",
+                    ),
+                )
+                return None
             try:
                 return raw.decode("utf-8")
             except UnicodeDecodeError:
@@ -1078,6 +1430,263 @@ def _handler(
                 head_only=head_only,
                 extra_headers={"Allow": allow},
             )
+
+        def _reject_unavailable(
+            self,
+            verdict: str,
+            *,
+            overloaded_code: str = "overloaded",
+            overloaded_message: str = (
+                "the service is at its concurrent request limit; retry "
+                "shortly"
+            ),
+        ) -> None:
+            """503 + Retry-After for an overloaded or draining server.
+
+            Does no application work and closes the connection, so a rejected
+            request costs a constant amount regardless of its content.
+            """
+            self.close_connection = True
+            draining = verdict == DRAINING
+            self._send_json(
+                503,
+                error_document(
+                    "shutting_down" if draining else overloaded_code,
+                    (
+                        "the service is draining and not accepting new "
+                        "requests"
+                        if draining
+                        else overloaded_message
+                    ),
+                    retryable=True,
+                    details={"retry_after_seconds": DEFAULT_RETRY_AFTER_SECONDS},
+                ),
+                head_only=self.command == "HEAD",
+                extra_headers={"Retry-After": str(DEFAULT_RETRY_AFTER_SECONDS)},
+            )
+
+        def _event_service(self):
+            """The run-store service, or None after sending the 503."""
+            if product_spine_store_path is None:
+                self._send_json(
+                    503,
+                    error_document(
+                        "product_spine_store_not_configured",
+                        "this Control Tower instance was started without a "
+                        "Product Spine store; events cannot be read",
+                    ),
+                    head_only=self.command == "HEAD",
+                )
+                return None
+            from idkmesh.connector_store import (
+                LocalMetadataStore,
+                LocalStoreError,
+            )
+            from idkmesh.product_spine_run_store import ProductSpineRunStore
+
+            try:
+                return ProductSpineRunStore(
+                    LocalMetadataStore(product_spine_store_path)
+                )
+            except (LocalStoreError, OSError, ValueError) as exc:
+                # Opening the store runs its migration; a locked or corrupt
+                # file is a server fault with an error body, not a dropped
+                # connection.
+                self._send_json(
+                    500,
+                    error_document("store_error", str(exc)),
+                    head_only=self.command == "HEAD",
+                )
+                return None
+
+        def _event_list_response(self, query: str, *, head_only: bool) -> None:
+            parsed_query = self._parse_list_query(
+                query,
+                {"limit", "cursor", *_EVENT_FILTERS},
+                head_only=head_only,
+            )
+            if parsed_query is None:
+                return
+            params, limit = parsed_query
+            service = self._event_service()
+            if service is None:
+                return
+
+            from idkmesh.connector_store import LocalStoreError
+            from idkmesh.product_spine_run_store import (
+                ProductSpineRunStoreError,
+            )
+
+            try:
+                items, next_cursor = service.list_events(
+                    limit=limit,
+                    cursor=params.get("cursor"),
+                    **{name: params.get(name) for name in _EVENT_FILTERS},
+                )
+            except ProductSpineRunStoreError as exc:
+                code = getattr(exc, "code", "run_control_error")
+                self._send_json(
+                    _service_error_status(code),
+                    error_document(code, str(exc)),
+                    head_only=head_only,
+                )
+                return
+            except (LocalStoreError, OSError, ValueError) as exc:
+                self._send_json(
+                    500,
+                    error_document("store_error", str(exc)),
+                    head_only=head_only,
+                )
+                return
+
+            self._send_json(
+                200,
+                {
+                    "kind": "idkmesh-list",
+                    "schema_version": API_SCHEMA_VERSION,
+                    "items": items,
+                    "page": {"next_cursor": next_cursor, "limit": limit},
+                },
+                head_only=head_only,
+            )
+
+        @staticmethod
+        def _sse_frame(event: dict[str, Any]) -> bytes:
+            data = json.dumps(
+                event, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+            )
+            return (
+                f"id: {event['sequence']}\n"
+                f"event: {event['event_type']}\n"
+                f"data: {data}\n\n"
+            ).encode("utf-8")
+
+        def _sse_write(self, payload: bytes) -> None:
+            self.wfile.write(payload)
+            self.wfile.flush()
+
+        def _event_stream_response(self, query: str) -> None:
+            """Read-only, bounded, resumable SSE stream (ADR-0023)."""
+            parsed_query = self._parse_list_query(
+                query, set(_EVENT_FILTERS), head_only=False
+            )
+            if parsed_query is None:
+                return
+            params, _limit = parsed_query
+
+            raw_id = self.headers.get("Last-Event-ID")
+            resume_from: int | None = None
+            if raw_id is not None:
+                text = raw_id.strip()
+                if not (text.isascii() and text.isdecimal() and len(text) <= 18):
+                    self._send_json(
+                        400,
+                        error_document(
+                            "invalid_last_event_id",
+                            "Last-Event-ID must be a non-negative integer "
+                            "event sequence",
+                        ),
+                    )
+                    return
+                resume_from = int(text)
+
+            service = self._event_service()
+            if service is None:
+                return
+
+            from idkmesh.connector_store import LocalStoreError
+            from idkmesh.product_spine_run_store import (
+                ProductSpineRunStoreError,
+            )
+
+            filters = {name: params.get(name) for name in _EVENT_FILTERS}
+            try:
+                # Validates the filters (invalid_event_type) before any
+                # stream byte is sent, and fixes the live-tail position.
+                service.list_events(limit=1, **filters)
+                latest = service.latest_event_sequence()
+            except ProductSpineRunStoreError as exc:
+                code = getattr(exc, "code", "run_control_error")
+                self._send_json(
+                    _service_error_status(code), error_document(code, str(exc))
+                )
+                return
+            except (LocalStoreError, OSError, ValueError) as exc:
+                self._send_json(500, error_document("store_error", str(exc)))
+                return
+            if resume_from is not None and resume_from > latest:
+                # A client cannot have seen an event this stream has not
+                # committed. Accepting it would silently skip every event
+                # between the stream head and that id (ADR-0023 decision 8).
+                self._send_json(
+                    400,
+                    error_document(
+                        "invalid_last_event_id",
+                        "Last-Event-ID is beyond the newest event of this "
+                        "stream; it did not come from this store",
+                        details={"latest_sequence": latest},
+                    ),
+                )
+                return
+            last_seq = resume_from if resume_from is not None else latest
+
+            limits = self.server.limits
+            heartbeat = float(limits["sse_heartbeat_seconds"])
+            max_stream = float(limits["sse_max_stream_seconds"])
+            poll = float(self.server.sse_poll_seconds)
+            # The request timeout guards a stalled request; an idle healthy
+            # stream is allowed to outlive it up to the heartbeat interval.
+            self.connection.settimeout(max(self.timeout or 0.0, heartbeat + 5.0))
+            self.close_connection = True
+            self._headers(
+                200,
+                "text/event-stream; charset=utf-8",
+                None,
+                extra_headers={
+                    "Connection": "close",
+                    "X-Accel-Buffering": "no",
+                },
+            )
+
+            limiter = self.server.sse_limiter
+            stop = self.server.stream_stop
+            started = last_write = time.monotonic()
+            try:
+                self._sse_write(b"retry: 3000\n\n")
+                while True:
+                    if limiter.draining or stop.is_set():
+                        self._sse_write(b": stream-ended reason=shutdown\n\n")
+                        return
+                    if time.monotonic() - started >= max_stream:
+                        self._sse_write(
+                            b": stream-ended reason=max-duration\n\n"
+                        )
+                        return
+                    try:
+                        batch = service.events_after(
+                            last_seq, limit=_EVENT_BATCH, **filters
+                        )
+                    except (
+                        ProductSpineRunStoreError,
+                        LocalStoreError,
+                        OSError,
+                        ValueError,
+                    ):
+                        self._sse_write(b": stream-ended reason=store-error\n\n")
+                        return
+                    for event in batch:
+                        self._sse_write(self._sse_frame(event))
+                        last_seq = event["sequence"]
+                        last_write = time.monotonic()
+                    if len(batch) >= _EVENT_BATCH:
+                        continue
+                    if time.monotonic() - last_write >= heartbeat:
+                        self._sse_write(b": keepalive\n\n")
+                        last_write = time.monotonic()
+                    stop.wait(poll)
+            except (BrokenPipeError, ConnectionResetError, TimeoutError, OSError):
+                # The client went away or stalled; nothing to report.
+                return
 
         def _handle_get(self, *, head_only: bool) -> None:
             if not self._host_allowed():
@@ -1125,7 +1734,7 @@ def _handler(
             if path == f"/api/{API_VERSION}/status":
                 self._send_json(
                     200,
-                    status_document(),
+                    status_document(limits=self.server.limits),
                     head_only=head_only,
                 )
                 return
@@ -1142,11 +1751,36 @@ def _handler(
             if path == f"/api/{API_VERSION}/runs":
                 self._run_list_response(query, head_only=head_only)
                 return
+            if path == f"/api/{API_VERSION}/work-units":
+                self._work_unit_list_response(query, head_only=head_only)
+                return
+            if path == f"/api/{API_VERSION}/events":
+                self._event_list_response(query, head_only=head_only)
+                return
+            if path == _EVENT_STREAM_PATH:
+                if head_only:
+                    self._method_not_allowed("GET", head_only=True)
+                    return
+                self._event_stream_response(query)
+                return
+            work_unit_id = self._work_unit_id_from_path(path)
+            if work_unit_id is not None:
+                self._work_unit_read_response(
+                    work_unit_id, head_only=head_only
+                )
+                return
+            project_id = self._project_id_from_path(path)
+            if project_id is not None:
+                self._project_read_response(project_id, head_only=head_only)
+                return
             subresource = self._run_subresource_from_path(path)
             if subresource is not None:
                 run_id, name = subresource
                 if name == "attempts":
                     self._run_attempts_response(run_id, head_only=head_only)
+                    return
+                if name == "evidence":
+                    self._run_evidence_response(run_id, head_only=head_only)
                     return
                 self._send_json(
                     404,
@@ -1180,6 +1814,8 @@ def _handler(
             allow = "GET, HEAD"
             if path == f"/api/{API_VERSION}/run-evidence/inspect":
                 allow = "POST"
+            elif path == _EVENT_STREAM_PATH:
+                allow = "GET"
             self._method_not_allowed(
                 allow,
                 code="preflight_not_supported",
@@ -1206,10 +1842,19 @@ def _handler(
                 f"/api/{API_VERSION}/status",
                 f"/api/{API_VERSION}/openapi.json",
                 f"/api/{API_VERSION}/runs",
+                f"/api/{API_VERSION}/work-units",
+                f"/api/{API_VERSION}/events",
             ):
                 self._method_not_allowed("GET, HEAD")
                 return
-            if self._run_id_from_path(path) is not None:
+            if path == _EVENT_STREAM_PATH:
+                self._method_not_allowed("GET")
+                return
+            if (
+                self._run_id_from_path(path) is not None
+                or self._work_unit_id_from_path(path) is not None
+                or self._project_id_from_path(path) is not None
+            ):
                 self._method_not_allowed("GET, HEAD")
                 return
             if path != f"/api/{API_VERSION}/run-evidence/inspect":
@@ -1250,6 +1895,9 @@ def _handler(
             if path == f"/api/{API_VERSION}/run-evidence/inspect":
                 self._method_not_allowed("POST")
                 return
+            if path == _EVENT_STREAM_PATH:
+                self._method_not_allowed("GET")
+                return
             if path in (
                 "/",
                 "/index.html",
@@ -1257,7 +1905,13 @@ def _handler(
                 f"/api/{API_VERSION}/status",
                 f"/api/{API_VERSION}/openapi.json",
                 f"/api/{API_VERSION}/runs",
-            ) or self._run_id_from_path(path) is not None:
+                f"/api/{API_VERSION}/work-units",
+                f"/api/{API_VERSION}/events",
+            ) or (
+                self._run_id_from_path(path) is not None
+                or self._work_unit_id_from_path(path) is not None
+                or self._project_id_from_path(path) is not None
+            ):
                 self._method_not_allowed("GET, HEAD")
                 return
             self._send_json(
@@ -1271,13 +1925,84 @@ def _handler(
         do_TRACE = _unsupported_write_method
         do_CONNECT = _unsupported_write_method
 
+    def _limited(method):
+        """Admit a request through the server's RequestLimiter (ADR-0022).
+
+        ``GET /healthz`` is exempt so liveness stays cheap under saturation;
+        everything else, including ``/readyz``, is admitted or rejected.
+        """
+
+        def wrapper(self):
+            if self._access_path() == "/healthz":
+                return method(self)
+            if (
+                self._access_path() == _EVENT_STREAM_PATH
+                and self.command == "GET"
+            ):
+                # ADR-0023: streams hold a connection for minutes, so they
+                # use their own cap and never starve the request cap. Other
+                # methods on the stream path go through the normal cap and
+                # get their 405.
+                limiter = self.server.sse_limiter
+                reject = {
+                    "overloaded_code": "too_many_streams",
+                    "overloaded_message": (
+                        "the service is at its open event stream limit; "
+                        "retry shortly"
+                    ),
+                }
+            else:
+                limiter = self.server.limiter
+                reject = {}
+            verdict = limiter.admit()
+            if verdict != ADMITTED:
+                self._reject_unavailable(verdict, **reject)
+                return None
+            try:
+                return method(self)
+            finally:
+                limiter.release()
+
+        wrapper.__name__ = method.__name__
+        return wrapper
+
+    for _name in (
+        "do_GET", "do_HEAD", "do_OPTIONS", "do_POST", "do_PUT",
+        "do_PATCH", "do_DELETE", "do_TRACE", "do_CONNECT",
+    ):
+        setattr(Handler, _name, _limited(getattr(Handler, _name)))
+
     return Handler
 
 class ControlTowerServer(ThreadingHTTPServer):
     daemon_threads = True
     allow_reuse_address = True
+    # ADR-0022: an explicit, small listen backlog bounds queued connections.
+    request_queue_size = 16
 
     ui_token: str
+    limiter: RequestLimiter
+    sse_limiter: RequestLimiter
+    stream_stop: threading.Event
+    sse_poll_seconds: float
+    limits: dict[str, Any]
+
+    def drain(self, timeout: float = DEFAULT_DRAIN_TIMEOUT_SECONDS) -> bool:
+        """Stop admitting requests and wait for in-flight ones to finish.
+
+        Open event streams are told to end (``reason=shutdown``) and count as
+        in-flight until they do. Returns False if ``timeout`` elapsed with
+        requests or streams still running. Every endpoint is read-only, so
+        abandoning one cannot leave a partially committed mutation
+        (ADR-0022, ADR-0023).
+        """
+        deadline = time.monotonic() + timeout
+        self.limiter.begin_drain()
+        self.sse_limiter.begin_drain()
+        self.stream_stop.set()
+        idle = self.limiter.wait_idle(timeout)
+        remaining = max(0.0, deadline - time.monotonic())
+        return self.sse_limiter.wait_idle(remaining) and idle
 
 
 def create_server(
@@ -1285,6 +2010,9 @@ def create_server(
     *,
     port: int = DEFAULT_PORT,
     product_spine_store_path: str | None = None,
+    request_timeout: float = DEFAULT_REQUEST_TIMEOUT_SECONDS,
+    max_concurrent_requests: int = DEFAULT_MAX_CONCURRENT_REQUESTS,
+    max_sse_clients: int = DEFAULT_MAX_SSE_CLIENTS,
 ) -> ControlTowerServer:
     """Create, but do not start, the loopback-only Control Tower server.
 
@@ -1294,6 +2022,11 @@ def create_server(
     /api/v1/runs/{run_id}``, read-only, over that same durable state; when
     omitted, that endpoint returns 503 rather than being absent.
     """
+    request_timeout = validate_request_timeout(request_timeout)
+    max_concurrent_requests = validate_max_concurrent_requests(
+        max_concurrent_requests
+    )
+    max_sse_clients = validate_max_sse_clients(max_sse_clients)
     token = _resolve_token()
     server = ControlTowerServer(
         (HOST, port),
@@ -1301,9 +2034,22 @@ def create_server(
             initial_text,
             token,
             product_spine_store_path=product_spine_store_path,
+            request_timeout=request_timeout,
         ),
     )
     server.ui_token = token
+    server.limiter = RequestLimiter(max_concurrent_requests)
+    server.sse_limiter = RequestLimiter(max_sse_clients)
+    server.stream_stop = threading.Event()
+    server.sse_poll_seconds = SSE_POLL_SECONDS
+    server.limits = limits_document(
+        request_timeout_seconds=request_timeout,
+        max_concurrent_requests=max_concurrent_requests,
+        max_request_body_bytes=MAX_BODY_BYTES,
+        max_sse_clients=max_sse_clients,
+        sse_heartbeat_seconds=SSE_HEARTBEAT_SECONDS,
+        sse_max_stream_seconds=SSE_MAX_STREAM_SECONDS,
+    )
     return server
 
 
@@ -1313,12 +2059,18 @@ def serve_control_tower(
     port: int = DEFAULT_PORT,
     open_browser: bool = True,
     product_spine_store_path: str | None = None,
+    request_timeout: float = DEFAULT_REQUEST_TIMEOUT_SECONDS,
+    max_concurrent_requests: int = DEFAULT_MAX_CONCURRENT_REQUESTS,
+    max_sse_clients: int = DEFAULT_MAX_SSE_CLIENTS,
 ) -> None:
-    """Serve the local Control Tower until interrupted."""
+    """Serve the local Control Tower until interrupted, then drain."""
     server = create_server(
         initial_text,
         port=port,
         product_spine_store_path=product_spine_store_path,
+        request_timeout=request_timeout,
+        max_concurrent_requests=max_concurrent_requests,
+        max_sse_clients=max_sse_clients,
     )
     url = f"http://{HOST}:{server.server_port}/"
     print(f"IDKMesh Control Tower: {url}")
@@ -1338,4 +2090,9 @@ def serve_control_tower(
     except KeyboardInterrupt:
         pass
     finally:
+        if not server.drain():
+            print(
+                "Control Tower: in-flight requests did not finish within "
+                f"{DEFAULT_DRAIN_TIMEOUT_SECONDS:g}s; closing anyway."
+            )
         server.server_close()

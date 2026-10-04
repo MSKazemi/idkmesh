@@ -1,0 +1,48 @@
+{
+  "api_version": "v1",
+  "schema_version": "0.1",
+  "kind": "idkmesh-control-tower-status",
+  "ok": true,
+  "service": "idkmesh-control-tower",
+  "mode": "local-read-only",
+  "media_types": [
+    "application/json",
+    "application/vnd.idkmesh.control-tower.v1+json"
+  ],
+  "source_contracts": [
+    "idkmesh-run-evidence-report/0.1"
+  ],
+  "schemas": {
+    "run_evidence_report": "https://idkmesh.org/schemas/run-evidence-report-v0.1.schema.json",
+    "control_tower_snapshot": "https://idkmesh.org/schemas/control-tower-snapshot-v0.1.schema.json"
+  },
+  "capabilities": {
+    "run_evidence_inspection": true,
+    "semantic_timeline": true,
+    "provenance_chain": true,
+    "human_decision_recording": false,
+    "worker_execution": false,
+    "canonical_state_write": false,
+    "git_push": false,
+    "merge": false,
+    "automatic_candidate_selection": false
+  },
+  "operations": {
+    "request_id_header": "X-Request-ID",
+    "liveness": "GET /healthz",
+    "readiness": "GET /readyz",
+    "access_log_env": "IDKMESH_HTTP_ACCESS_LOG",
+    "access_logs_include_bodies": false,
+    "access_logs_include_authentication": false
+  },
+  "endpoints": {
+    "status": "GET /api/v1/status",
+    "openapi": "GET /api/v1/openapi.json",
+    "inspect_run_evidence": "POST /api/v1/run-evidence/inspect",
+    "list_runs": "GET /api/v1/runs",
+    "read_run": "GET /api/v1/runs/{run_id}",
+    "read_run_attempts": "GET /api/v1/runs/{run_id}/attempts",
+    "health": "GET /healthz",
+    "readiness": "GET /readyz"
+  }
+}

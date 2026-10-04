@@ -73,6 +73,44 @@ credentials, prompts, secrets, or user identity.
 External dependency health should be added only when the service actually
 depends on that dependency to satisfy its declared contract.
 
+## Bounded service limits
+
+`idkmesh/service_runtime.py` provides the reusable limit primitives
+([ADR-0022](../decisions/ADR-0022-control-tower-bounded-service-limits.md)); a service opts in, and the Control Tower is the first
+consumer.
+
+- `RequestLimiter(max_concurrent)` is a thread-safe, non-blocking concurrency
+  cap with a drain switch. `admit()` returns `"admitted"`, `"overloaded"` (the
+  cap is reached) or `"draining"`; only an admitted caller may `release()`.
+  `begin_drain()` makes every later `admit()` return `"draining"`, and
+  `wait_idle(timeout)` waits for in-flight requests and returns `False` if the
+  timeout elapses. Saturation is rejected, never queued, because an unbounded
+  wait queue is an unbounded memory and latency commitment.
+- `validate_request_timeout()` (0.1-300 s) and
+  `validate_max_concurrent_requests()` (1-1024) reject out-of-range or
+  non-numeric values, including booleans.
+- `limits_document()` builds the object a service publishes as its limits. It
+  reports configured limits and the measured stdlib parser bounds (request line
+  65536 bytes, header line 65536 bytes, 99 header fields) and nothing
+  aspirational.
+- A consuming service answers an overload or drain with `503`, `Retry-After`
+  and an error body with `retryable: true`, exempts liveness, and does no
+  application work for a rejected request. `429` is not part of the baseline until a per-client identity exists.
+
+- A long-lived Server-Sent Events stream is a different resource shape from a
+  request/response call, so it is counted by its **own** `RequestLimiter`
+  (`max_sse_clients`) and does not occupy a slot of the general request cap
+  ([ADR-0023](../decisions/ADR-0023-canonical-append-only-event-source.md)).
+  Beyond that cap the service answers `503` with `Retry-After` (`retryable:
+  true`); only a `GET` on the stream path is counted by that limiter, so other
+  methods are answered `405` however many streams are open; a stream also
+  carries a heartbeat interval and a maximum lifetime so it cannot hold a thread
+  indefinitely, and it ends promptly on drain. A service that drains must begin
+  the drain on both limiters and wait for both.
+
+See [Service limits](CONTROL_TOWER_LOCAL_API_V0_1.md#service-limits) for the
+Control Tower's concrete values and the tests that prove them.
+
 ## Structured access logging
 
 Access logging is opt-in through:
@@ -157,4 +195,6 @@ The baseline is ready to reuse when:
 4. access logs are opt-in and payload-free;
 5. direct unit tests cover injection/size boundaries;
 6. at least one real IDKMesh HTTP surface consumes the baseline;
-7. the consuming surface preserves its existing authority and determinism rules.
+7. the consuming surface preserves its existing authority and determinism rules;
+8. a consuming surface that opts into the bounded-limits primitives proves each
+   limit with a behavioural test (overload, drain, slow client, parser bounds).
