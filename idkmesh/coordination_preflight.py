@@ -59,11 +59,15 @@ class DependencyGraph:
         risk_floors: dict[str, str] = {}
         for raw in work_units:
             # Detach from mutable caller input before computing immutable digests.
-            unit = json.loads(json.dumps(raw, allow_nan=False))
+            try:
+                unit = json.loads(json.dumps(raw, allow_nan=False))
+            except (TypeError, ValueError) as exc:
+                raise CoordinationPreflightError("invalid_input", "WorkUnit must be finite JSON") from exc
             if not isinstance(unit, dict) or unit.get("schema_version") != "0.2":
                 raise CoordinationPreflightError("unsupported_work_unit", "requires WorkUnit v0.2")
             unit_id = _text(unit.get("id"), "work_unit.id")
-            risk = unit.get("security", {}).get("risk_class")
+            security = unit.get("security")
+            risk = security.get("risk_class") if isinstance(security, dict) else None
             if not isinstance(risk, str) or risk not in RISK_ORDER:
                 raise CoordinationPreflightError("invalid_work_unit_security", "WorkUnit must declare a risk floor")
             if unit_id in bindings:
@@ -108,7 +112,7 @@ class DependencyGraph:
         while queue:
             node = queue.popleft()
             order.append(node)
-            for dependent in dependents[node]:
+            for dependent in sorted(dependents[node]):
                 remaining[dependent] -= 1
                 if remaining[dependent] == 0:
                     queue.append(dependent)
@@ -200,6 +204,7 @@ class DependencyProjection:
         self.graph = graph
         self.max_events = max_events
         self._events: dict[str, str] = {}
+        self._sequences: dict[tuple[str, int], str] = {}
         self._latest: dict[str, PrerequisiteObservation] = {}
 
     def observe(self, observation: PrerequisiteObservation) -> bool:
@@ -217,11 +222,16 @@ class DependencyProjection:
                 raise CoordinationPreflightError("event_conflict", "event identity has different content")
             return False
         old = self._latest.get(node)
-        if old is not None and observation.sequence == old.sequence:
+        holder = self._sequences.get((node, observation.sequence))
+        if holder is not None and holder != observation.event_id:
+            # Checked against every sequence seen for this WorkUnit, not only the
+            # newest one: a different event at an older sequence is a conflict, not
+            # something to ignore silently.
             raise CoordinationPreflightError("sequence_conflict", "one source sequence has different events")
         if len(self._events) >= self.max_events:
             raise CoordinationPreflightError("event_budget_exhausted", "local replay event budget exhausted")
         self._events[observation.event_id] = digest
+        self._sequences[(node, observation.sequence)] = observation.event_id
         if old is not None and observation.sequence < old.sequence:
             return False
         self._latest[node] = observation

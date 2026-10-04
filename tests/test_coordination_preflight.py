@@ -282,3 +282,79 @@ class CoordinationPreflightTests(unittest.TestCase):
             self.assertTrue(all(value is False for value in report["authority"].values()))
         self.projection.observe(_observation(self.projection))
         validator.validate(coordination_preflight(self.projection, "task-b", _estimate(), self.decision, [_connector()]))
+
+
+class CoordinationPreflightHardeningTests(unittest.TestCase):
+    """Regression tests for review findings: each fails against the code before its fix."""
+
+    def setUp(self):
+        self.units = [_unit("task-a"), _unit("task-b", ("task-a",)), _unit("task-c", ("task-a",)),
+                      _unit("task-d", ("task-b", "task-c")), _unit("task-z")]
+        self.projection = DependencyProjection(_graph(self.units))
+
+    def assert_code(self, code, function, *args, **kwargs):
+        with self.assertRaises(CoordinationPreflightError) as caught:
+            function(*args, **kwargs)
+        self.assertEqual(caught.exception.code, code)
+
+    def test_a_different_event_at_an_older_sequence_is_a_conflict_not_silently_ignored(self):
+        first = _observation(self.projection, sequence=1)
+        newer = _observation(self.projection, sequence=2, state="rejected")
+        self.assertTrue(self.projection.observe(first))
+        self.assertTrue(self.projection.observe(newer))
+        before = self.projection.observation_digest
+
+        self.assert_code("sequence_conflict", self.projection.observe,
+                         replace(first, event_id="other-delivery"))
+
+        self.assertEqual(before, self.projection.observation_digest)
+        # Exact replay of the genuine old event stays a harmless no-op.
+        self.assertFalse(self.projection.observe(first))
+
+    def test_a_rejected_conflicting_event_does_not_consume_the_replay_budget(self):
+        projection = DependencyProjection(_graph(self.units), max_events=2)
+        first = _observation(projection, sequence=1)
+        projection.observe(first)
+        projection.observe(_observation(projection, sequence=2, state="rejected"))
+        self.assert_code("sequence_conflict", projection.observe, replace(first, event_id="other"))
+        # The budget is still exactly full, so a third distinct event still hits it.
+        self.assert_code("event_budget_exhausted", projection.observe,
+                         _observation(projection, sequence=3, state="rejected"))
+
+    def test_ready_order_does_not_depend_on_the_order_units_are_supplied(self):
+        forward = _graph(self.units).topological_order
+        backward = _graph(list(reversed(self.units))).topological_order
+        shuffled = _graph([self.units[3], self.units[0], self.units[4], self.units[2], self.units[1]]).topological_order
+        self.assertEqual(forward, backward)
+        self.assertEqual(forward, shuffled)
+
+    def test_duplicate_work_unit_and_self_dependency_fail_closed(self):
+        self.assert_code("duplicate_work_unit", _graph, [_unit("same"), _unit("same")])
+        self.assert_code("dependency_cycle", _graph, [_unit("loop", ("loop",))])
+
+    def test_malformed_work_units_raise_the_stable_error_not_a_raw_exception(self):
+        bad_security = _unit("bad-security")
+        bad_security["security"] = "restricted"
+        non_finite = _unit("non-finite")
+        non_finite["notes"] = float("nan")
+        not_json = _unit("not-json")
+        not_json["notes"] = object()
+        self.assert_code("invalid_work_unit_security", _graph, [bad_security])
+        self.assert_code("invalid_input", _graph, [non_finite])
+        self.assert_code("invalid_input", _graph, [not_json])
+
+    def test_demo_reports_are_schema_valid(self):
+        import importlib.util
+
+        spec = importlib.util.spec_from_file_location(
+            "preflight_demo", ROOT / "examples/coordination/preflight_demo.py")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        document = module.demo()
+
+        schema = json.loads((ROOT / "schemas/coordination-preflight-v0.1.schema.json").read_text())
+        validator = Draft202012Validator(schema)
+        self.assertEqual(document["evidence_class"], "synthetic_fixture")
+        for name in ("blocked", "ready_small", "ready_strong"):
+            with self.subTest(report=name):
+                self.assertEqual(list(validator.iter_errors(document[name])), [])
