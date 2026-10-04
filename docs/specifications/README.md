@@ -88,6 +88,11 @@ meaning of an existing version.
 
 ## Project Configuration
 
+- [Local Task Claims v0.1](LOCAL_TASK_CLAIMS_V0_1.md) — local SQLite atomic
+  human/agent claims, immutable task limits, four deadlines, per-slot fencing
+  and persistent unknown execution occupancy; no live provider or distributed
+  ledger integration.
+
 - [Enterprise Control Profile v0.1](ENTERPRISE_CONTROL_PROFILE_V0_1.md) —
   experimental machine-readable enterprise posture and deterministic
   declaration-preflight contract for tenancy, identity/SoD, data/egress,
