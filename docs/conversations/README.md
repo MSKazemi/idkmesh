@@ -7,9 +7,13 @@ canonical files designated by [`../../PROJECT_RULES.md`](../../PROJECT_RULES.md)
 (decisions, specifications, architecture, findings); this directory keeps the trail
 that produced them.
 
-169 records across 9 dates, newest first.
+170 records across 10 dates, newest first.
 
 ## Index
+
+### 2026-10-04
+
+- [Human–agent coordination algorithms: ownership, recovery, dependencies, and model allocation](2026-10-04-human-agent-coordination-algorithms.md)
 
 ### 2026-09-24
 

@@ -79,6 +79,7 @@ For a newcomer trying to understand the executable foundation, this order is usu
 
 ### Work, evidence, and interoperability
 
+- [Human–agent coordination algorithms](planning/HUMAN_AGENT_COORDINATION_ALGORITHMS_2026-10-04.md) — proposed ownership, timeout recovery, bounded competition, dependency scheduling, and model/effort allocation; distinguishes current foundations from the missing shared live protocol.
 - [`../schemas/README.md`](../schemas/README.md) — current WorkUnit/ResultManifest/VerificationResult and related schema versions.
 - [WorkUnit composability](specifications/WORK_UNIT_COMPOSABILITY_V0_2.md) — decomposition benchmark and evidence boundary.
 - [A2A/MCP mapping](interoperability/A2A_MCP_MAPPING_V0_1.md) — external protocol bindings without redefining the WorkUnit semantic core.

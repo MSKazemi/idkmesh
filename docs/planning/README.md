@@ -4,6 +4,7 @@ This directory translates the long-range vision into current execution choices.
 
 ## Planning artifacts
 
+- [`HUMAN_AGENT_COORDINATION_ALGORITHMS_2026-10-04.md`](HUMAN_AGENT_COORDINATION_ALGORITHMS_2026-10-04.md) — proposed common human/agent task identity, atomic claims, fenced recovery, bounded competing attempts, prerequisite DAG, effort-aware routing, resource economics, cross-disciplinary alternatives, and staged evaluation under existing component owners.
 - [`API_V1_PROFESSIONALIZATION_PLAN_2026-09-23.md`](API_V1_PROFESSIONALIZATION_PLAN_2026-09-23.md) — canonical API program plan: completeness definition, deployment profiles, resource families, issue ownership, release gates, and v1 beta definition of done.
 - [`API_V1_ISSUE_DEPENDENCY_GRAPH_2026-09-23.md`](API_V1_ISSUE_DEPENDENCY_GRAPH_2026-09-23.md) — dependency/parallelism map for issues #735–#747 and #750 plus existing runtime, identity, persistence, Product Spine, connector, and Control Tower owners.
 - [`API_V1_SURFACE_CATALOG_2026-09-23.md`](API_V1_SURFACE_CATALOG_2026-09-23.md) — planned endpoint/object inventory with status, auth profile, mutation/authority level, owner issue, and first-beta scope guidance.
