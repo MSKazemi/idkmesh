@@ -24,7 +24,7 @@ The proposed limits and timings below are **pilot policy choices**, not measured
 
 ## 2. What the repository already has
 
-This audit inspected applicable contributor rules, current main, relevant issues, the open PRs, recent merged PRs, and coordination-related branch searches. Open documentation PRs 903 and 912 do not implement this shared claim protocol. An open umbrella issue does not mean its constituent mechanisms are missing.
+This audit inspected applicable contributor rules, current main, relevant issues, the open PRs, recent merged PRs, and coordination-related branch searches. Documentation PRs open at inspection time (903, 912) do not implement this shared claim protocol. An open umbrella issue does not mean its constituent mechanisms are missing.
 
 | Current artifact | Implemented or retained behavior | Boundary still needing work |
 | --- | --- | --- |
@@ -371,7 +371,7 @@ This is a slice catalog attached to existing owners, not a new swarm of umbrella
 | 1 | C10-D under issue 598; C9 contract under issue 597 | Shared logical-task/alias, slot, owner, epoch, and request-binding vocabulary. One hundred concurrent requests, including human and agent identities, yield one grant under cap one; rejected requests have inspectable reasons |
 | 2 | C9 issue 597 + C5 issue 578 | Durable claim/admission + dispatch intent + provider-session reconciliation. Restart before/after provider creation cannot silently create another session; unknown create outcomes stay reserved |
 | 3 | C10-E under issue 598 | Expiry, progress/hard deadlines, fenced replacement, cancellation and late-result rules. Old epoch rejected; unknown remote occupancy blocks a cap-violating replacement; validated checkpoint handoff retains attribution |
-| 4 | WorkUnit/DAG owners issues 4, 15, 682 | Ready-task projection using only reviewed prerequisite semantics. Cycle/missing-target rejection, duplicate-event replay, revision invalidation, failed-parent blocking, and independent-branch continuation |
+| 4 | WorkUnit/DAG owners issues 4 and 682 (issue 15, now closed, is the source of the WorkUnit contract) | Ready-task projection using only reviewed prerequisite semantics. Cycle/missing-target rejection, duplicate-event replay, revision invalidation, failed-parent blocking, and independent-branch continuation |
 | 5 | Existing connector router + C5/C6 + issue 682 | Explicit competition/lifetime/resource budgets and comparable evidence reports. Cap two admits two across all connectors; third rejected; total attempts bounded; no automatic selection/merge |
 | 6 | R2/R3/R4, issues 636 and 644, marginal-evidence owner issue 693 | Pre-outcome shadow effort/routing/allocation recommendations. Compare static floors, cheap-first, direct strong, greedy measured quality, Thompson/contextual budgeted policies, and stigmergy with held-out outcomes |
 | 7 | Second-project pilot issue 599 | Two real human actors, heterogeneous worker paths, forced restart/stall, dependency chain and cancellation/reconciliation evidence; normal protected integration |
