@@ -76,9 +76,9 @@ copied from a blog post:
 
 | Quantity | Measurement |
 |---|---|
-| `make test` (unit tier) | **66.8 s wall, 56.5 CPU-s**, 3098 passed / 2 skipped / 428 deselected / 5942 subtests |
+| `make test` (unit tier) | **66.8 s wall, 56.5 CPU-s**, 3098 passed / 2 skipped / 436 deselected / 5942 subtests |
 | Whole suite, no marker filter (`python -m pytest -q`) | 3528 collected |
-| Selected by the nightly leg (`-m "sim or slow"`) | 428 |
+| Selected by the nightly leg (`-m "sim or slow"`) | 436 |
 | Slowest single test in the unit tier | 1.13 s (`test_e016_corpus.py::test_build_returns_deterministic_tasks_with_unique_ids`, setup) |
 | Affected-test run after a one-file edit | **0.1–0.4 s** |
 | CI, mean run / slowest run / daily volume | not re-measured since PR Gate moved from the full suite to the `unit` tier — the figures that stood here predate that change and would understate PR Gate's new speed and overstate its old one |
@@ -89,6 +89,14 @@ tests (one spawning two real `replay_run.py` CLI subprocesses) moved from
 CPU-s budget, which is exactly the margin `gate (3.13)` was failing into on a
 busier CI runner with zero test failures. They still run every night; see the
 `nightly` row below.
+
+On 2026-10-04 `gate (3.13)` on `main` failed with zero failing tests at 91.7 CPU-s
+against the 90 CPU-s ceiling (a re-run of the same commit passed). Eight
+bootstrap-resampling tests in `tests/test_marginal_evidence.py` and
+`tests/test_gate_audit_uncertainty.py` -- about 11 CPU-s together, measured
+19.3 to 8.8 CPU-s for those two files -- moved from `unit` to `slow`. They
+still run every night; the ceiling is unchanged. Re-measure the whole tier at
+idle before trusting the new margin.
 
 This is not a static state — the suite keeps growing, and the response to a
 tight budget is always to make the tier cheaper, never to raise the ceiling.
@@ -131,11 +139,11 @@ one over a few quarters.
 | `nightly` | `integration` + everything marked `sim` or `slow` (`-m "sim or slow"`) | none | scheduled — see `.github/workflows/nightly-full-suite.yml` |
 
 **`nightly` is not equivalent to `integration`.** The two tier markers are in
-use: 311 tests carry `sim`, and `-m "sim or slow"` selects 428 (the other 117
+use: 311 tests carry `sim`, and `-m "sim or slow"` selects 436 (the other 125
 carry `slow` — mostly meta-tests that shell out to `unittest` discovery or
 pytest collection as subprocesses, plus the five `test_replay_run.py` real
 orchestration-replay tests, where the subprocess spawn or the real replay
-rather than the assertion is what's slow) — exactly the 428 the unit tier
+rather than the assertion is what's slow) — exactly the 436 the unit tier
 deselects in the table above. Every one of them runs only in `nightly`, so a
 change that breaks one is invisible to the pre-commit and pre-push gates
 until the scheduled run.

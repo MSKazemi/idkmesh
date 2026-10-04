@@ -211,6 +211,7 @@ class PerfectPanelTests(unittest.TestCase):
 class UndefinedMetricReplicatesTests(unittest.TestCase):
     """A metric undefined in every replicate must say so, not omit itself."""
 
+    @pytest.mark.slow
     def test_single_verifier_leaves_correlation_undefined_throughout(self):
         candidates = [
             {"id": f"c{i}", "ground_truth": "accept" if i % 2 else "reject"}
@@ -334,6 +335,7 @@ class CensoringTests(unittest.TestCase):
             vers.append({"id": f"v{j:02d}", "verdicts": verdicts})
         return panel(cands, vers)
 
+    @pytest.mark.slow
     def test_saturated_point_estimate_can_carry_a_censored_ci_high(self):
         report = gate_audit.audit(
             self._near_independent_panel(),
@@ -408,6 +410,7 @@ class ParameterValidationTests(unittest.TestCase):
 
 
 class SchemaValidationTests(unittest.TestCase):
+    @pytest.mark.slow
     @unittest.skipUnless(HAS_JSONSCHEMA, "jsonschema not installed")
     def test_bootstrap_report_validates_against_v0_2_schema(self):
         schema = json.loads(SCHEMA_V02_PATH.read_text(encoding="utf-8"))
@@ -446,6 +449,7 @@ class SchemaValidationTests(unittest.TestCase):
 
 
 class MarkdownRenderingTests(unittest.TestCase):
+    @pytest.mark.slow
     def test_uncertainty_table_present_when_bootstrap_requested(self):
         report = gate_audit.audit_file(
             EXAMPLE_INPUT, bootstrap={"seed": 0, "replicates": 300})
@@ -539,6 +543,7 @@ class CliTests(unittest.TestCase):
             env={"PYTHONPATH": str(REPO_ROOT), "PATH": "/usr/bin:/bin"},
         )
 
+    @pytest.mark.slow
     def test_bootstrap_flag_emits_v0_2_with_uncertainty(self):
         proc = self.run_cli(
             "gate-audit", str(EXAMPLE_INPUT), "--bootstrap",

@@ -9,6 +9,8 @@ import sys
 import unittest
 from pathlib import Path
 
+import pytest
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT))
 
@@ -341,6 +343,7 @@ class FiniteSampleTests(unittest.TestCase):
         )
         self.assertFalse(row["uncertainty"]["sufficient_for_inference"])
 
+    @pytest.mark.slow
     def test_bootstrap_is_deterministic_for_same_seed(self):
         data = make_matrix(count=20)
         kwargs = {
@@ -374,6 +377,7 @@ class FiniteSampleTests(unittest.TestCase):
         self.assertIsNotNone(section["ci_low"])
         self.assertIsNotNone(section["ci_high"])
 
+    @pytest.mark.slow
     def test_identical_candidates_share_the_same_bootstrap_draws(self):
         data = make_matrix(
             count=20,
@@ -465,6 +469,7 @@ class ProvenanceTests(unittest.TestCase):
 
 
 class SchemaTests(unittest.TestCase):
+    @pytest.mark.slow
     @unittest.skipUnless(HAS_JSONSCHEMA, "jsonschema not installed")
     def test_report_validates_against_schema(self):
         schema = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
