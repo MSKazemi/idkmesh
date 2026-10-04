@@ -163,11 +163,11 @@ class _StoreCase(unittest.TestCase):
 
 
 class EventMigrationTests(_StoreCase):
-    def test_a_fresh_store_is_schema_v2_with_an_events_table(self) -> None:
-        self.assertEqual(SCHEMA_VERSION, 2)
+    def test_a_fresh_store_is_current_schema_with_an_events_table(self) -> None:
+        self.assertGreaterEqual(SCHEMA_VERSION, 2)
         with closing(sqlite3.connect(self.path)) as conn:
             self.assertEqual(
-                conn.execute("PRAGMA user_version").fetchone()[0], 2
+                conn.execute("PRAGMA user_version").fetchone()[0], SCHEMA_VERSION
             )
             names = {
                 row[0]
@@ -201,7 +201,7 @@ class EventMigrationTests(_StoreCase):
 
         with closing(sqlite3.connect(path)) as conn:
             self.assertEqual(
-                conn.execute("PRAGMA user_version").fetchone()[0], 2
+                conn.execute("PRAGMA user_version").fetchone()[0], SCHEMA_VERSION
             )
         self.assertEqual(migrated.get_run("run-legacy").state, "proposed")
         self.assertEqual(migrated.list_events(limit=10), ([], False))

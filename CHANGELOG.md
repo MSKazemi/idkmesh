@@ -14,6 +14,14 @@ and the release notes for that tag.
 
 ### Added
 
+- Local atomic task claims and occupancy-safe recovery (C10-D/E, issue #914):
+  one implementation slot by default, explicit bounded competition, immutable
+  lifetime/deadline budgets, scoped replay, per-slot fencing, fresh authority
+  checks and retained unknown execution across lease expiry/restart.
+  `LocalMetadataStore` migration v3 preserves v2 run/event rows. This is a
+  local coordinator library; provider, GitHub-ledger and public mutation API
+  integration remain separate work. See [Local Task Claims v0.1](docs/specifications/LOCAL_TASK_CLAIMS_V0_1.md).
+
 - [`docs/community/AGENT_CONTRIBUTOR_GUIDE.md`](docs/community/AGENT_CONTRIBUTOR_GUIDE.md):
   how to contribute with your own AI coding agent (Claude Code, OpenAI Codex,
   Google Jules). It points each tool at `AGENTS.md`, gives a paste-ready brief,

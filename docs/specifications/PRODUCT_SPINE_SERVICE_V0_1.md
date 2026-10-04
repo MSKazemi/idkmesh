@@ -707,9 +707,11 @@ idkmesh events list --store PATH [--limit N] [--cursor TOKEN]
 - **Retention.** Every event is kept; nothing prunes the table, and SQLite
   triggers abort any `UPDATE` or `DELETE` of an event row. `event_id`
   (`evt-` plus the zero-padded sequence) is derived on read, not stored.
-- **Store version.** `LocalMetadataStore` schema version is 2; a version 1 store
-  gains the `events` table in place, and code that predates version 2 refuses a
-  version 2 store.
+- **Store version.** `LocalMetadataStore` schema version is 3. The v1-to-v2
+  upgrade added events; v3 additionally adds [local task-claim metadata](LOCAL_TASK_CLAIMS_V0_1.md)
+  while retaining all run/event rows. Older code refuses a newer store through
+  the existing version check. Task claims do not emit run events, so this does
+  not expand the event history's coverage.
 
 Failure codes: `invalid_limit`, `invalid_cursor` (the cursor must be a value
 this listing issued: a bounded ASCII-decimal sequence, at most 18 digits),
