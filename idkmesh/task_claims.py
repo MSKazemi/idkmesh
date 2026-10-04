@@ -408,11 +408,13 @@ class LocalTaskClaims:
                                 approver=approver, approval_reference=approval_reference)
             self._expire(conn, task, now)
             grant = self._get(conn, task, request_id)
+            if grant.operation_id is not None and type(epoch) is int and epoch == grant.epoch \
+                    and grant.owner == _owner(owner):
+                # Retained intent: replay stays readable after expiry; it never authorizes a retry.
+                return grant, False
             self._current(conn, grant, owner, epoch)
             if grant.acknowledged_at is None:
                 raise TaskClaimError("acknowledgement_required", "owner has not acknowledged")
-            if grant.operation_id is not None:
-                return grant, False
             operation_id = canonical_digest({"task": task.storage_key, "slot": grant.slot,
                                              "epoch": grant.epoch, "binding": asdict(grant.binding)})
             conn.execute("UPDATE task_claims SET occupancy = 'unknown', operation_id = ? "

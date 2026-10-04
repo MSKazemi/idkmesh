@@ -103,7 +103,8 @@ provider/CI/donor capacity and zero-project-spend policy before using it.
 No provider call or secret resolution exists in this library.
 
 After a crash/timeout following a possible provider create, a repeated reserve
-returns `created=False`. It cannot authorize a blind second create. The trusted
+returns `created=False` (also after the grant expired, for the recorded owner and
+epoch only). It cannot authorize a blind second create. The trusted
 adapter must reconcile, use proven provider idempotency where available, or
 abstain. This local transaction cannot supply exactly-once external effects.
 
@@ -134,6 +135,24 @@ This assumes a trusted system clock and durable database. It cannot detect
 every bad clock after power loss or make cloned databases authoritative.
 The optional injected clock is only for deterministic coordinator conformance
 tests, never an untrusted worker input.
+
+Known operational risks (v0.1, accepted and documented):
+
+- **Clock lockout.** The watermark is one row shared by every task. If the
+  system clock was ever ahead and is then corrected, every operation fails with
+  `clock_rollback` until real time passes the watermark. There is no reset
+  method; recovery is a deliberate manual edit of the `task_claim_clock` row by
+  the database owner.
+- **Attempt-budget exhaustion.** Every claim, including released and expired
+  ones, counts against `max_attempts` for the task's lifetime and nothing
+  resets it. Workers in scope are trusted not to burn it; a buggy retry loop
+  can retire a task.
+- **Release is not idempotent.** A repeated `release` raises `stale_claim`;
+  clients that retry on timeout must treat that as success after a read.
+- **Free-text fields.** `request_id`, `competition_reason` and
+  `evidence_reference` are length- and control-character-checked only; keeping
+  them secret-free is the adapter's responsibility, and readers with `read`
+  see them.
 
 Every operation freshly evaluates the existing authorization kernel after
 acquiring the write lock. Revoked, expired, wrong-scope or unauthorized actors

@@ -249,6 +249,15 @@ class LocalTaskClaimTests(unittest.TestCase):
         self.assertFalse(created)
         self.assertEqual(replay.operation_id, reserved.operation_id)
 
+    def test_dispatch_replay_after_lease_expiry_returns_the_retained_intent(self):
+        grant = self.update(self.claim(), "acknowledge")
+        reserved, _ = self.reserve(grant)
+        self.now = reserved.hard_until
+        replay, created = self.restart().reserve_dispatch(TASK, self.dispatcher, self.worker,
+                                                         request_id=grant.request_id, epoch=grant.epoch)
+        self.assertFalse(created)
+        self.assertEqual(replay.operation_id, reserved.operation_id)
+
     def test_release_keeps_unknown_execution_charged_until_terminal_confirmation(self):
         grant = self.update(self.claim(), "acknowledge")
         self.reserve(grant)
