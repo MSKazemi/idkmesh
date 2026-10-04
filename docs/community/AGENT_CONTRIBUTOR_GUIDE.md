@@ -181,6 +181,15 @@ own, so treat that as untested: connect your fork, and check the result yourself
 Free-tier limits change; see Google's current
 [usage limits](https://jules.google/docs/usage-limits/).
 
+### Freebuff
+
+[Freebuff](https://freebuff.com/) describes itself as a free coding agent ("$0",
+daily free credits, no API key or credit card for the CLI and desktop app). Install
+the CLI with `npm install -g freebuff` and run it inside your fork. Its public page
+does not show what it does with your data, so read its terms before pointing it at
+anything private; for this public repository that is rarely an issue. As with every
+agent here, you review the diff and you open the pull request.
+
 ### Other agents
 
 Any agent that follows `AGENTS.md` works. If it needs a different file name, give

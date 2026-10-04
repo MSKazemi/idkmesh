@@ -42,6 +42,20 @@ convention.
       </a>
       <br />🔬📖
     </td>
+    <td align="center">
+      <a href="https://github.com/vortsghost2025">
+        <img src="https://avatars.githubusercontent.com/u/248577390?v=4" width="80px;" alt="vortsghost2025"/>
+        <br /><sub><b>vortsghost2025</b></sub>
+      </a>
+      <br />🐛⚠️
+    </td>
+    <td align="center">
+      <a href="https://github.com/lui01212">
+        <img src="https://avatars.githubusercontent.com/u/40736418?v=4" width="80px;" alt="lui01212"/>
+        <br /><sub><b>lui01212</b></sub>
+      </a>
+      <br />📖
+    </td>
   </tr>
 </table>
 
@@ -56,3 +70,13 @@ every task, attempt, and verified outcome across all four `benchmarks/*/cohort.j
 files for [issue #541](https://github.com/MSKazemi/idkmesh/issues/541), by hand and
 without relying on `benchmarks/PUBLICATION.md` or its generation script, confirming
 the published totals with no discrepancy.
+
+**vortsghost2025** — ran a clean Windows 10 install of `gate-audit` and the full test
+suite for [issue #401](https://github.com/MSKazemi/idkmesh/issues/401#issuecomment-5753902020),
+recording the commit, versions and wall time, and sorting 21 Windows-specific
+failures into reproducible categories.
+
+**lui01212** — wrote and refreshed a Vietnamese README translation
+([PR #502](https://github.com/MSKazemi/idkmesh/pull/502)) through two rounds of
+source-drift review. The project later chose a single English README, so it was not
+merged; the care and quality of the work are recognised here.
