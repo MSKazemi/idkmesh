@@ -53,7 +53,7 @@ Freebuff's public pricing page currently says every account receives 100 Freebuc
 | MiMo 2.6 Flash | 10 h/day equivalent | default T1/T2 implementation lane |
 | Solar Pro 4 | 10 h/day equivalent | alternate high-throughput T1/T2 lane |
 | GLM 5.3 Flash | 6 h/day equivalent | alternate coding/review lane |
-| DeepSeek V4.1 Flash | 6 h/day equivalent | strong default for harder T2/T3 coding/debugging |
+| DeepSeek V4.1 Flash | 10 h/day equivalent | default for harder T2/T3 coding/debugging (provisional) |
 | GPT-6 Luna | 5 h/day equivalent | alternate reasoning/coding lane; calibrate on IDKMesh tasks |
 | MiMo 2.6 Pro | 3 h/day equivalent | reserve for the hardest bounded coding/reasoning tasks |
 
@@ -66,12 +66,12 @@ Reference: https://freebuff.com/
 For IDKMesh, do **not** spend the whole daily budget on a single model by default. Use a capability ladder:
 
 1. **MiMo 2.6 Pro** — hardest bounded implementation, architecture-aware debugging, difficult refactors.
-2. **DeepSeek V4.1 Flash** — primary heavy-development model; much more daily capacity than MiMo Pro while still positioned by Freebuff as a frontier coding option.
+2. **DeepSeek V4.1 Flash** — primary heavy-development model; much more daily capacity than MiMo Pro (10 versus 3 hours per day equivalent).
 3. **MiMo 2.6 Flash / Solar Pro 4** — routine T1/T2 implementation, tests, docs, clear multi-file work.
 4. **Unlimited Solar Mini 4 / Space Bunny Alpha** — repetitive cleanup, documentation, mechanical tests, and first-pass chores.
 5. Use a different strong model for **advisory review** of important patches rather than spending the strongest model twice on generation.
 
-This is a provisional operational strategy, not a benchmark claim. Freebuff itself says DeepSeek and MiMo Pro are strong choices for typical agentic coding, but IDKMesh should calibrate them on its own frozen issue cohort before making a canonical mapping.
+This is a provisional operational strategy, not a benchmark claim. The Freebuff pages cited here do not rank these models for coding; using DeepSeek and MiMo Pro as first lanes is this document's provisional judgment, and IDKMesh should calibrate them on its own frozen issue cohort before making a canonical mapping.
 
 ## Provisional model-use guide
 
@@ -87,6 +87,8 @@ These Freebuff model names are **not yet calibrated IDKMesh tier declarations** 
 A second model can provide useful **advisory review**, but another owner-controlled Freebuff session does not satisfy an issue that explicitly requires independent human/external evidence.
 
 ## Recommended first pilot
+
+*Historical:* this pilot was run on 2026-10-03/04 (see "Pilot checkpoint"). Issues #901 and #900 are closed; PRs #904 and #905 merged.
 
 Use open issue **#901 — Usage examples in `--help` for `idkmesh run` and `idkmesh control-tower`**.
 
@@ -130,6 +132,26 @@ Publication:
 - state remaining uncertainty explicitly.
 ```
 
+## Repository access and data handling (checked 2026-10-04)
+
+Connecting this repository to Freebuff Cloud uses the GitHub App `freebuff-web`, owned by the organization `CodebuffAI`. The
+App's public listing (GitHub API) declares these permissions: `actions: read`, `administration: write`, `checks: write`,
+`contents: write`, `deployments: write`, `issues: write`, `metadata: read`, `pull_requests: write`, `repository_hooks: write`,
+`statuses: write`, `workflows: write`, and the event `push`. GitHub's permissions reference lists branch-protection and ruleset
+management under Administration write and changes to `.github/workflows` under Workflows write.
+
+On 2026-10-04 `main` requires the checks `gate (3.11)` and `gate (3.13)`, requires no approving reviews, has
+`enforce_admins=false`, restricts no pushers and has no rulesets. The rules in this document and in the prompts ("never push
+directly to main", "never merge or approve") are instructions to the tool; they are **not** limits enforced by the App's
+permissions. Which repositories the App is installed on is visible only in the repository owner's GitHub settings and is not
+recorded here.
+
+Freebuff's Terms (last updated 10/01/2026) say: "Connecting a GitHub repository to Freebuff Cloud authorizes Codebase Evaluation
+only of code, files, and other content in that connected repository." and grant the company a license to "host, reproduce,
+transmit, modify, and otherwise process your Content only as reasonably necessary to provide, maintain, develop, evaluate,
+improve, secure, and support Service." The pricing page has no data-handling statement. This repository is public; do not
+connect a repository, branch or fork that contains non-public material.
+
 ## Human-operated workflow
 
 1. Connect `MSKazemi/idkmesh` in Freebuff Cloud (or clone locally and run the Freebuff CLI).
@@ -145,7 +167,7 @@ Publication:
 
 ## Long-running human-present Freebuff session
 
-Freebuff's current Terms allow automation performed by Freebuff **after a human starts a session**, but require a human to initiate each session and remain actively present. Do not use an external bot, macro, script, headless browser, or GitHub Action to keep submitting Freebuff requests.
+Freebuff's current Terms allow automation performed by Freebuff **after a human starts a session**, but require a human to initiate each session and remain actively present. State a maximum number of slices for the session before starting it, and repeat that cap in the controller prompt, so that the human-present requirement stays checkable. The daily allowance is not a reason to continue unattended. Do not use an external bot, macro, script, headless browser, or GitHub Action to keep submitting Freebuff requests.
 
 For a long development session, keep **Build** mode and run a single human-started "session controller" prompt. The controller may process several independent micro-slices sequentially, but every slice remains one bounded issue/PR and normal repository authority rules still apply.
 
@@ -205,7 +227,7 @@ For the chosen issue:
    - exact base SHA;
    - exact test commands and actual results;
    - remaining uncertainty;
-   - AI/tool provenance: Freebuff Cloud + MiMo 2.6 Pro.
+   - AI/tool provenance: Freebuff Cloud + <the model actually used, read from the Freebuff UI>.
 9. Do not merge the PR.
 10. Return to current main, refresh repository/PR state, and select the next
     independent eligible issue.
@@ -273,20 +295,19 @@ Use that evidence to update routing policy rather than choosing a permanent proj
 
 ## Pilot checkpoint — 2026-10-04
 
-The first human-operated Freebuff/MiMo 2.6 Pro session produced two focused candidate PRs:
+The first human-operated Freebuff session (model recorded in the PR bodies) produced two focused candidate PRs:
 
-- PR #904 for issue #901: CLI help examples, 2 changed files, focused tests green.
-- PR #905 for issue #900: CI-validated API examples, 8 changed files, focused tests green.
+- PR #904 for issue #901: CLI help examples (2 files); merged as `e00a859`.
+- PR #905 for issue #900: CI-validated API examples (8 files); merged as `abdf644`.
 
-Both candidates reported the same unrelated repository-wide gate blocker on current main:
+Both candidates first reported an unrelated repository-wide gate failure in
+`tests/test_resource_compute_bindings_live.py::LiveFreshnessTests`: the GitHub Actions public-standard binding and its source
+evidence were last reviewed on 2026-08-28 with a 30-day freshness window. The gate is fail-closed and says to re-read the upstream
+source and move `reviewed_at` / `checked_at` only after a real re-review; widening `max_age_days` is not an acceptable repair.
+That was resolved by PR #906 (`52fe9dc`) after a re-read on 2026-10-03 of
+https://docs.github.com/en/actions/reference/runners/github-hosted-runners ("Use of the standard GitHub-hosted runners is free
+and unlimited on public repositories.").
 
-`tests/test_resource_compute_bindings_live.py::LiveFreshnessTests`
-
-The enabled GitHub Actions public-standard binding and its source evidence were last reviewed on 2026-08-28 with a 30-day freshness window. The gate is intentionally fail-closed and explicitly says to re-read the upstream source and move `reviewed_at` / `checked_at` only after a real re-review; widening `max_age_days` is not an acceptable repair.
-
-Current upstream GitHub documentation still states that standard GitHub-hosted runners are free for public repositories, and the runner reference states that standard public-repository runners are free and unlimited:
-
-- https://docs.github.com/en/actions/reference/runners/github-hosted-runners
-- https://docs.github.com/en/billing/concepts/product-billing/github-actions
-
-Recommended next action is therefore to restore a current evidence baseline before generating more candidate PRs. A maintainer should personally re-read the upstream GitHub documentation, then authorize a tiny evidence-refresh PR updating only the relevant dates/metadata if the claims still hold. After that PR is green and integrated, re-run CI on #904/#905 and continue the Freebuff task loop from current main.
+Observations to carry into any further pilot: the work was committed as the repository owner's identity, so it is
+owner-controlled automation and counts as no independent review; and the candidates took two issues that had been filed for
+outside contributors.

@@ -21,6 +21,7 @@ This directory translates the long-range vision into current execution choices.
 - [`CHATGPT_PROJECT_MIGRATION_PACK_2026-09-19.md`](CHATGPT_PROJECT_MIGRATION_PACK_2026-09-19.md) — complete ChatGPT-project migration pack: canonical v3 jobs, full prompts/schedules, historical 34-job archive, replacement map, and recovery procedure.
 - [`CHATGPT_AUTOMATIONS_V3.yaml`](CHATGPT_AUTOMATIONS_V3.yaml) — machine-readable manifest for recreating the nine canonical ChatGPT scheduled agents in a fresh project.
 - [`CHATGPT_FRESH_PROJECT_BOOTSTRAP_PROMPT.md`](CHATGPT_FRESH_PROJECT_BOOTSTRAP_PROMPT.md) — copy/paste bootstrap prompt for recreating the canonical automation set after connecting GitHub.
+- [`FREEBUFF_OPERATOR_EVALUATION_2026-10-03.md`](FREEBUFF_OPERATOR_EVALUATION_2026-10-03.md) — operator guidance for using Freebuff Cloud/CLI as a human-operated external coding worker: free-allowance snapshot, provisional model-use guide, pilot checkpoint, and the limits that keep it out of unattended CI/dispatch. Not a provider calibration or routing declaration.
 
 ## Relationship to other project artifacts
 
