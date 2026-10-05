@@ -1,0 +1,120 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idkmesh.org/schemas/executor-admission-v0.1.schema.json",
+  "title": "Executor Admission v0.1",
+  "description": "Local admission/execution-reservation/submission record bound to one exact ready input snapshot. The report is metadata; the durable claim is the admission. It is not a dispatch credential, verification, acceptance or merge authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["kind", "schema_version", "phase", "scope", "graph_digest", "observation_digest", "work_unit_id", "binding", "inputs_digest", "created", "claim", "authority"],
+  "properties": {
+    "kind": {"const": "idkmesh-executor-admission"},
+    "schema_version": {"const": "0.1"},
+    "phase": {"enum": ["admission", "execution-reservation", "submission"]},
+    "scope": {"$ref": "#/$defs/scope"},
+    "graph_digest": {"$ref": "#/$defs/digest"},
+    "observation_digest": {"$ref": "#/$defs/digest"},
+    "work_unit_id": {"type": "string", "minLength": 1},
+    "binding": {"$ref": "#/$defs/binding"},
+    "inputs_digest": {"oneOf": [{"$ref": "#/$defs/digest"}, {"type": "null"}]},
+    "created": {"type": "boolean"},
+    "claim": {"$ref": "#/$defs/claim"},
+    "authority": {
+      "type": "object", "additionalProperties": false,
+      "required": ["dispatch", "executes_worker", "accepts_candidate", "merge"],
+      "properties": {
+        "dispatch": {"const": false},
+        "executes_worker": {"const": false},
+        "accepts_candidate": {"const": false},
+        "merge": {"const": false}
+      }
+    }
+  },
+  "$defs": {
+    "text": {"type": "string", "minLength": 1, "maxLength": 512},
+    "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "revision": {"type": "string", "pattern": "^(?:[0-9a-fA-F]{40}|[0-9a-fA-F]{64})$"},
+    "epochSeconds": {"type": "integer", "minimum": 0},
+    "scopeId": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"},
+    "scope": {
+      "type": "object", "additionalProperties": false, "required": ["tenant_id", "project_id"],
+      "properties": {
+        "tenant_id": {"$ref": "#/$defs/scopeId"},
+        "project_id": {"$ref": "#/$defs/scopeId"}
+      }
+    },
+    "binding": {
+      "type": "object", "additionalProperties": false,
+      "required": ["work_unit_id", "work_unit_version", "work_unit_digest", "source_revision"],
+      "properties": {
+        "work_unit_id": {"type": "string", "minLength": 1},
+        "work_unit_version": {"type": "integer", "minimum": 1},
+        "work_unit_digest": {"$ref": "#/$defs/digest"},
+        "source_revision": {"$ref": "#/$defs/revision"}
+      }
+    },
+    "claimBinding": {
+      "type": "object", "additionalProperties": false,
+      "required": ["work_unit_digest", "source_revision", "inputs_digest"],
+      "properties": {
+        "work_unit_digest": {"$ref": "#/$defs/digest"},
+        "source_revision": {"type": "string", "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$"},
+        "inputs_digest": {"$ref": "#/$defs/digest"}
+      }
+    },
+    "claim": {
+      "description": "The embedded local task claim snapshot, identical in shape to task-claim-v0.1.",
+      "type": "object", "additionalProperties": false,
+      "required": ["kind", "schema_version", "task", "request_id", "request_digest", "slot", "epoch", "owner", "binding", "state", "created_at", "acknowledged_at", "ack_by", "lease_until", "progress_by", "hard_until", "occupancy", "operation_id", "execution_reference", "submission_digest", "authority"],
+      "properties": {
+        "kind": {"const": "idkmesh-task-claim"},
+        "schema_version": {"const": "0.1"},
+        "task": {
+          "type": "object", "additionalProperties": false,
+          "required": ["kind", "schema_version", "tenant_id", "project_id", "resource_type", "resource_id"],
+          "properties": {
+            "kind": {"const": "idkmesh-enterprise-resource-ref"},
+            "schema_version": {"const": "0.1"},
+            "tenant_id": {"$ref": "#/$defs/scopeId"},
+            "project_id": {"$ref": "#/$defs/scopeId"},
+            "resource_type": {"const": "task"},
+            "resource_id": {"$ref": "#/$defs/scopeId"}
+          }
+        },
+        "request_id": {"$ref": "#/$defs/text"},
+        "request_digest": {"$ref": "#/$defs/digest"},
+        "slot": {"type": "integer", "minimum": 0, "maximum": 2},
+        "epoch": {"type": "integer", "minimum": 1},
+        "owner": {
+          "type": "object", "additionalProperties": false,
+          "required": ["principal_id", "issuer", "actor_type"],
+          "properties": {
+            "principal_id": {"type": "string", "minLength": 1, "maxLength": 256},
+            "issuer": {"type": "string", "minLength": 1, "maxLength": 256},
+            "actor_type": {"enum": ["human", "github_app", "github_actions", "service", "provider", "node"]}
+          }
+        },
+        "binding": {"$ref": "#/$defs/claimBinding"},
+        "state": {"enum": ["active", "released", "expired"]},
+        "created_at": {"$ref": "#/$defs/epochSeconds"},
+        "acknowledged_at": {"oneOf": [{"$ref": "#/$defs/epochSeconds"}, {"type": "null"}]},
+        "ack_by": {"$ref": "#/$defs/epochSeconds"},
+        "lease_until": {"$ref": "#/$defs/epochSeconds"},
+        "progress_by": {"$ref": "#/$defs/epochSeconds"},
+        "hard_until": {"$ref": "#/$defs/epochSeconds"},
+        "occupancy": {"enum": ["none", "unknown", "running", "terminal"]},
+        "operation_id": {"oneOf": [{"$ref": "#/$defs/digest"}, {"type": "null"}]},
+        "execution_reference": {"type": ["string", "null"], "minLength": 1, "maxLength": 512},
+        "submission_digest": {"oneOf": [{"$ref": "#/$defs/digest"}, {"type": "null"}]},
+        "authority": {
+          "type": "object", "additionalProperties": false,
+          "required": ["executes_worker", "accepts_candidate", "merge"],
+          "properties": {
+            "executes_worker": {"const": false},
+            "accepts_candidate": {"const": false},
+            "merge": {"const": false}
+          }
+        }
+      }
+    }
+  }
+}
