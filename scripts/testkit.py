@@ -297,6 +297,9 @@ def integration_gates() -> list[tuple[str, list[str]]]:
     compat_check = ROOT / "tools" / "schema_compat_check.py"
     if compat_check.exists():
         gates.append(("schema-compat", [python(), str(compat_check)]))
+    ref_check = ROOT / "tools" / "openapi_ref_check.py"
+    if ref_check.exists():
+        gates.append(("openapi-refs", [python(), str(ref_check)]))
     for schema in sorted((ROOT / "schemas").glob("*.json")):
         # JSON *syntax* only -- deliberately labelled as such. `json.tool` happily
         # accepts a structurally invalid JSON Schema, so calling this leg

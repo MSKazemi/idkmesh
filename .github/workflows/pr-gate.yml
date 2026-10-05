@@ -113,3 +113,12 @@ jobs:
           PYTHONPATH: .
           BASE_SHA: ${{ github.event.pull_request.base.sha || 'HEAD~1' }}
         run: python tools/schema_compat_check.py --base "${BASE_SHA}"
+
+      # API_CONVENTIONS_V0_1.md section 19: every $ref in the checked-in
+      # OpenAPI catalog and the canonical schemas must resolve; unresolved
+      # references fail CI. Stdlib-only like the two shared steps above, so it
+      # runs on a bare checkout and stays reproducible via
+      # `scripts/testkit.py integration` (`tests/test_ci_local_gate_parity.py`
+      # pins that shape).
+      - name: Check OpenAPI and schema reference resolution
+        run: python tools/openapi_ref_check.py

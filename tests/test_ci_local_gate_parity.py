@@ -7,7 +7,9 @@ step with whatever a developer checks by hand, so the two drift apart silently.
 
 It now lives in `scripts/check_links.py`, which both CI and
 `scripts/testkit.py integration` invoke. This test pins that arrangement so the
-heredoc cannot quietly come back.
+heredoc cannot quietly come back. The same shape applies to every script in
+`SHARED_GATE_SCRIPTS`: shared logic, an explicit workflow step, and a local
+gate that runs the identical file.
 
 Deliberately text-based rather than YAML-parsed: the PR Gate installs only
 `pytest` and `requirements-phase0.txt`, which does not include PyYAML, so an
@@ -24,7 +26,11 @@ ROOT = Path(__file__).resolve().parents[1]
 PR_GATE = ROOT / ".github" / "workflows" / "pr-gate.yml"
 
 # The scripts the PR Gate is expected to delegate to rather than inline.
-SHARED_GATE_SCRIPTS = ("scripts/check_links.py", "tools/schema_compat_check.py")
+SHARED_GATE_SCRIPTS = (
+    "scripts/check_links.py",
+    "tools/schema_compat_check.py",
+    "tools/openapi_ref_check.py",
+)
 
 HEREDOC = re.compile(r"python3?\s+-\s+<<", re.M)
 
