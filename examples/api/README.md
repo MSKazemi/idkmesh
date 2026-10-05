@@ -56,3 +56,9 @@ appear here.
 directory against its schema (or records why it has none), so a future
 incompatible change to any contract shape fails CI here rather than silently
 drifting from the frozen specification.
+
+`tests/test_api_contract_conformance.py` additionally binds each fixture to
+the exact response it documents and resolves the target schema from
+`openapi.yaml`, so the endpoint, the advertised contract, and the schema this
+README names must all agree — a fixture cannot keep validating against a
+schema the API no longer advertises.

@@ -178,6 +178,13 @@ explicit, stdlib-only step (`tests/test_ci_local_gate_parity.py` pins that
 shape for all of them) so they can run before `pip install` and cannot
 silently diverge into a second, inline copy.
 
+Inside that `unit` tier, `tests/test_api_contract_conformance.py` is the API
+contract conformance suite (issue #737): every documented `examples/api/`
+fixture is bound to the exact response it documents and validated against the
+schema `openapi.yaml` advertises for it (the catalog is text-scanned, so no
+YAML parser is required), keeping catalog, example, and test from drifting
+apart silently.
+
 **The complete suite — `nightly`, everything `unit` excludes included — runs
 on a schedule** in `.github/workflows/nightly-full-suite.yml`, decoupled from
 the merge path. A failure there means the research content regressed, not

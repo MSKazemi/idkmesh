@@ -14,6 +14,17 @@ and the release notes for that tag.
 
 ### Added
 
+- API contract conformance, documented-examples leg (issue #737):
+  `tests/test_api_contract_conformance.py` binds every `examples/api/`
+  fixture to the exact response it documents and resolves that response's
+  target schema from `openapi.yaml` itself (text-scanned, stdlib-only, like
+  the PR Gate's shared scripts), then validates the fixture against that
+  advertised contract. A cross-check keeps the catalog, the example/schema
+  pairing in `tests/test_example_contract_coverage.py`, and the endpoint
+  binding in agreement, so the catalog cannot drift away from the tests
+  without one of them failing (API Conventions section 19: "examples
+  validate in CI").
+
 - Checked-in OpenAPI 3.1 catalog (issue #737): `openapi.yaml` at the repository
   root describes the shipped v1 surfaces (status, readiness, run-evidence
   inspection, runs/WorkUnits/projects reads, events and the resumable SSE
