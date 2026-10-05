@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idkmesh.org/schemas/idkmesh-idempotency-v0.1.schema.json",
+  "title": "IDKMesh Idempotency and Conflict Metadata v0.1",
+  "description": "Request-identity reservation and conflict metadata for externally retried mutations (docs/specifications/API_CONVENTIONS_V0_1.md section 12, ADR-0018). The admission form is retained before any external side effect: the same idempotency key with the same canonical request digest replays the original logical result, and the same key with a different digest produces the conflict form (the 409 error code contract is idkmesh-api-error-v0.1 `code: idempotency_conflict`). idempotency_key, request_id and run_id are identity metadata only: they deduplicate operations and must not create fresh work slots, task ownership or execution authority. The record grants no dispatch, worker execution, candidate acceptance or merge authority, and it is not verification evidence.",
+  "oneOf": [
+    {"$ref": "#/$defs/admission"},
+    {"$ref": "#/$defs/conflict"}
+  ],
+  "$defs": {
+    "text": {"type": "string", "minLength": 1, "maxLength": 512},
+    "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "authority": {
+      "type": "object", "additionalProperties": false,
+      "required": ["dispatch", "executes_worker", "accepts_candidate", "merge"],
+      "properties": {
+        "dispatch": {"const": false},
+        "executes_worker": {"const": false},
+        "accepts_candidate": {"const": false},
+        "merge": {"const": false}
+      }
+    },
+    "admission": {
+      "description": "One idempotency key reserved against one canonical request digest before side effects. created and replayed are exact complements: a fresh reservation reports created=true/replayed=false, an exact replay reports created=false/replayed=true and never renews or re-executes.",
+      "type": "object", "additionalProperties": false,
+      "required": ["schema_version", "kind", "idempotency_key", "request_id", "request_digest", "run_id", "created", "replayed", "authority"],
+      "properties": {
+        "schema_version": {"const": "0.1"},
+        "kind": {"const": "idkmesh-idempotency-admission"},
+        "idempotency_key": {"$ref": "#/$defs/text"},
+        "request_id": {"oneOf": [{"$ref": "#/$defs/text"}, {"type": "null"}]},
+        "request_digest": {"$ref": "#/$defs/digest"},
+        "run_id": {"$ref": "#/$defs/text"},
+        "state": {"$ref": "#/$defs/text"},
+        "created": {"type": "boolean"},
+        "replayed": {"type": "boolean"},
+        "authority": {"$ref": "#/$defs/authority"}
+      },
+      "allOf": [
+        {
+          "if": {"required": ["created"], "properties": {"created": {"const": true}}},
+          "then": {"properties": {"replayed": {"const": false}}}
+        },
+        {
+          "if": {"required": ["created"], "properties": {"created": {"const": false}}},
+          "then": {"properties": {"replayed": {"const": true}}}
+        }
+      ]
+    },
+    "conflict": {
+      "description": "Same idempotency key presented with a different canonical request digest. Fail closed with the standard error envelope code `idempotency_conflict`; the retained digest is immutable and a deliberate new request needs a new key.",
+      "type": "object", "additionalProperties": false,
+      "required": ["schema_version", "kind", "idempotency_key", "retained_request_digest", "presented_request_digest", "code", "message", "authority"],
+      "properties": {
+        "schema_version": {"const": "0.1"},
+        "kind": {"const": "idkmesh-idempotency-conflict"},
+        "idempotency_key": {"$ref": "#/$defs/text"},
+        "retained_request_digest": {"$ref": "#/$defs/digest"},
+        "presented_request_digest": {"$ref": "#/$defs/digest"},
+        "code": {"const": "idempotency_conflict"},
+        "message": {"$ref": "#/$defs/text"},
+        "authority": {"$ref": "#/$defs/authority"}
+      }
+    }
+  }
+}
