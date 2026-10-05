@@ -172,3 +172,14 @@ See `PROJECT_RULES.md`, `docs/decisions/ADR-0006-zero-project-spend-compute.md`,
 The WorkUnit composability benchmark and its strict synthetic-versus-observed
 evidence boundary are documented in
 `docs/specifications/WORK_UNIT_COMPOSABILITY_V0_2.md`.
+
+## Closed-object policy
+
+Every top-level object schema in this directory declares its
+`additionalProperties` policy explicitly, and is closed (`false`) by default —
+issue #737's "`additionalProperties: false` used where intentional". The only
+open documents are the four legacy unversioned contracts recorded with reasons
+in `tests/test_schema_validity.py`, which shipped open before the policy and
+cannot be closed in place under [ADR-0020](../docs/decisions/ADR-0020-schema-backward-compatibility-gate.md);
+where a strict versioned successor exists, closure lives there. New public
+objects ship closed; the same test module enforces the policy in CI.

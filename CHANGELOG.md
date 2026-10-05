@@ -25,6 +25,15 @@ and the release notes for that tag.
   without one of them failing (API Conventions section 19: "examples
   validate in CI").
 
+- Closed-object schema policy (issue #737, "`additionalProperties: false`
+  used where intentional"): every top-level object schema in `schemas/`
+  must now declare its `additionalProperties` policy explicitly and is
+  closed by default, enforced by `tests/test_schema_validity.py` in CI. The
+  only open documents are the four legacy unversioned contracts recorded
+  with reasons (`experiment-result`, `goal-graph`, `result-manifest`,
+  `work-unit`), which shipped open before the policy and cannot be closed
+  in place under ADR-0020; strictness lives in their versioned successors.
+
 - API contract conformance, runtime leg (issue #737): the same
   `tests/test_api_contract_conformance.py` serves representative responses
   over real loopback HTTP (the shipped `create_server` entry point, one
