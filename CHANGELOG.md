@@ -25,6 +25,21 @@ and the release notes for that tag.
   without one of them failing (API Conventions section 19: "examples
   validate in CI").
 
+- API contract conformance, runtime leg (issue #737): the same
+  `tests/test_api_contract_conformance.py` serves representative responses
+  over real loopback HTTP (the shipped `create_server` entry point, one
+  server with a Product Spine store and one without) and validates each
+  against the schema `openapi.yaml` advertises for it. An exhaustiveness
+  guard requires every advertised response to have a representative or a
+  recorded reason it carries no canonical schema (API Conventions section
+  19: "representative runtime responses validate in CI"). The suite also
+  pins the envelopes the runtime serves that the catalog does not yet
+  advertise -- `product_spine_store_not_configured` 503s on the work-unit,
+  project, and events surfaces, and api-error bodies for the inspect
+  endpoint's 406/413/415 -- each validated against its canonical schema, so
+  the gap cannot widen silently and closes the moment the catalog advertises
+  those responses.
+
 - Checked-in OpenAPI 3.1 catalog (issue #737): `openapi.yaml` at the repository
   root describes the shipped v1 surfaces (status, readiness, run-evidence
   inspection, runs/WorkUnits/projects reads, events and the resumable SSE

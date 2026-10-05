@@ -183,7 +183,11 @@ contract conformance suite (issue #737): every documented `examples/api/`
 fixture is bound to the exact response it documents and validated against the
 schema `openapi.yaml` advertises for it (the catalog is text-scanned, so no
 YAML parser is required), keeping catalog, example, and test from drifting
-apart silently.
+apart silently. Its runtime leg serves representative responses over real
+loopback HTTP and validates them against the advertised schema, with an
+exhaustiveness guard over every response the catalog advertises and a pinned
+record of the envelopes the runtime serves that the catalog does not yet
+advertise.
 
 **The complete suite — `nightly`, everything `unit` excludes included — runs
 on a schedule** in `.github/workflows/nightly-full-suite.yml`, decoupled from

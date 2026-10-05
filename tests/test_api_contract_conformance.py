@@ -20,18 +20,39 @@ installs no YAML parser (see ``tests/test_openapi_document.py`` and
 ``tests/test_workflow_tool_contracts.py``) -- and only then validates the
 document against that advertised contract.
 
+Two legs, both bound to the advertisement:
+
+- documented examples are validated against the schema the catalog advertises
+  for the response they document;
+- representative runtime responses -- served over real loopback HTTP by the
+  same ``create_server`` entry point the Control Tower ships -- are validated
+  against the schema the catalog advertises for that response, and every
+  advertised response must have a representative or a recorded reason it has
+  no canonical schema. Runtime envelopes the catalog does *not* advertise are
+  pinned too, so the gap cannot widen silently.
+
 Only ``jsonschema`` (a Phase 0 dependency) is needed, and its import is
 guarded the way ``tests/test_example_contract_coverage.py`` guards it.
 """
 
 from __future__ import annotations
 
+import http.client
 import importlib.util
 import json
 from pathlib import Path
 import re
+import socket
 import subprocess
+import sys
+import tempfile
+import threading
 import unittest
+
+from idkmesh.connector_store import LocalMetadataStore
+from idkmesh.control_tower_ui import SAMPLE_REPORT, create_server
+from idkmesh.local_ui_security import MAX_BODY_BYTES, TOKEN_HEADER
+from idkmesh.product_spine_run_store import ProductSpineRunStore
 
 # The randomness-lab test job installs a minimal dependency set without
 # jsonschema, so an unguarded module-scope import would break collection.
@@ -173,14 +194,18 @@ def validator_for(schema_key: str):
     return jsonschema.Draft202012Validator(schema, registry=registry)
 
 
-def validation_errors(validator, example_path: str) -> list[str]:
-    document = json.loads((REPO_ROOT / example_path).read_text(encoding="utf-8"))
+def errors_for_document(validator, document) -> list[str]:
     return [
         f"{'/'.join(str(part) for part in error.path) or '<root>'}: {error.message}"
         for error in sorted(
             validator.iter_errors(document), key=lambda e: list(e.path)
         )
     ]
+
+
+def validation_errors(validator, example_path: str) -> list[str]:
+    document = json.loads((REPO_ROOT / example_path).read_text(encoding="utf-8"))
+    return errors_for_document(validator, document)
 
 
 # Each documented example of a response body, bound to the exact response it
@@ -430,6 +455,465 @@ class DocumentedExampleConformanceTests(unittest.TestCase):
 
     def document_components(self) -> dict:
         return load_catalog().get("components") or {}
+
+
+# ---------------------------------------------------------------------------
+# Representative runtime responses (API Conventions section 19:
+# "representative runtime responses validate in CI").
+#
+# The requests below are issued against real loopback servers built by the
+# same `create_server` entry point the Control Tower ships: one seeded with a
+# Product Spine store (the `seeded` server) and one deliberately without one
+# (the `bare` server), which is how the Unavailable surfaces are produced.
+# ---------------------------------------------------------------------------
+
+
+def load_sibling_test_module(name: str):
+    """Load a sibling tests/ module for its shared seeding helpers.
+
+    Same shape as `tests/test_control_tower_run_evidence.py`'s `_load_sibling`:
+    the fixture builders in `tests/test_run_evidence_store.py` seed a run with
+    a retained evidence report and attempts, which is exactly the realistic
+    input the evidence and attempts responses need.
+    """
+    path = Path(__file__).resolve().parent / f"{name}.py"
+    spec = importlib.util.spec_from_file_location(f"_sibling_{name}", path)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+# Identities the path templates are filled with. The run id comes from the
+# seeded offline run (its identity is content-derived), the rest are the fixed
+# identities `tests/test_run_evidence_store.py`'s `cli_run` uses.
+WORK_UNIT_ID = "work/test-1"
+PROJECT_ID = "project.test"
+MISSING_RUN_ID = "run/does-not-exist"
+
+# Every advertised response that names a canonical schema, with the request
+# that produces it. Key: (METHOD, path template, status). Value: overrides for
+# the default request (the `seeded` server, with the session token, the
+# template filled with the identities above). `sse` reads the first event of
+# the stream instead of a whole JSON body.
+REPRESENTATIVES = {
+    ("GET", "/readyz", "200"): {"token": False},
+    ("GET", "/api/v1/status", "200"): {},
+    ("GET", "/api/v1/status", "403"): {"token": False},
+    ("GET", "/api/v1/openapi.json", "403"): {"token": False},
+    ("POST", "/api/v1/run-evidence/inspect", "200"): {
+        "headers": {"Content-Type": "application/json"},
+        "body": SAMPLE_REPORT,
+    },
+    ("POST", "/api/v1/run-evidence/inspect", "400"): {
+        "headers": {"Content-Type": "application/json"},
+        "body": "{not json",
+    },
+    ("POST", "/api/v1/run-evidence/inspect", "403"): {
+        "token": False,
+        "headers": {"Content-Type": "application/json"},
+        "body": SAMPLE_REPORT,
+    },
+    ("GET", "/api/v1/runs", "200"): {},
+    ("GET", "/api/v1/runs", "400"): {
+        "request_path": "/api/v1/runs?state=bogus"
+    },
+    ("GET", "/api/v1/runs", "403"): {"token": False},
+    ("GET", "/api/v1/runs", "503"): {"server": "bare"},
+    ("GET", "/api/v1/runs/{run_id}", "200"): {},
+    ("GET", "/api/v1/runs/{run_id}", "403"): {"token": False},
+    ("GET", "/api/v1/runs/{run_id}", "404"): {
+        "path_values": {"run_id": MISSING_RUN_ID}
+    },
+    ("GET", "/api/v1/runs/{run_id}", "503"): {"server": "bare"},
+    ("GET", "/api/v1/runs/{run_id}/attempts", "200"): {},
+    ("GET", "/api/v1/runs/{run_id}/attempts", "403"): {"token": False},
+    ("GET", "/api/v1/runs/{run_id}/attempts", "404"): {
+        "path_values": {"run_id": MISSING_RUN_ID}
+    },
+    ("GET", "/api/v1/runs/{run_id}/attempts", "503"): {"server": "bare"},
+    ("GET", "/api/v1/runs/{run_id}/evidence", "200"): {},
+    ("GET", "/api/v1/runs/{run_id}/evidence", "403"): {"token": False},
+    ("GET", "/api/v1/runs/{run_id}/evidence", "404"): {
+        "path_values": {"run_id": MISSING_RUN_ID}
+    },
+    ("GET", "/api/v1/runs/{run_id}/evidence", "503"): {"server": "bare"},
+    ("GET", "/api/v1/work-units", "200"): {},
+    ("GET", "/api/v1/work-units", "400"): {
+        "request_path": "/api/v1/work-units?limit=0"
+    },
+    ("GET", "/api/v1/work-units", "403"): {"token": False},
+    ("GET", "/api/v1/work-units/{work_unit_id}", "200"): {},
+    ("GET", "/api/v1/work-units/{work_unit_id}", "403"): {"token": False},
+    ("GET", "/api/v1/work-units/{work_unit_id}", "404"): {
+        "path_values": {"work_unit_id": "work/does-not-exist"}
+    },
+    ("GET", "/api/v1/projects/{project_id}", "200"): {},
+    ("GET", "/api/v1/projects/{project_id}", "403"): {"token": False},
+    ("GET", "/api/v1/projects/{project_id}", "404"): {
+        "path_values": {"project_id": "project.missing"}
+    },
+    ("GET", "/api/v1/events", "200"): {},
+    ("GET", "/api/v1/events", "400"): {
+        "request_path": "/api/v1/events?limit=0"
+    },
+    ("GET", "/api/v1/events", "403"): {"token": False},
+    ("GET", "/api/v1/events/stream", "200"): {"sse": True},
+    ("GET", "/api/v1/events/stream", "403"): {
+        "token": False,
+        "headers": {"Accept": "text/event-stream"},
+    },
+}
+
+# Advertised responses that declare no canonical schema to validate against.
+# Recording them keeps "no schema" a decision rather than an oversight, and
+# the guard below fails if one of them ever gains a schema without gaining a
+# representative.
+NO_CANONICAL_SCHEMA = {
+    ("GET", "/healthz", "200"): (
+        "text/plain liveness string; there is no JSON contract to validate against"
+    ),
+    ("GET", "/api/v1/openapi.json", "200"): (
+        "inline `type: object`; the document is its own contract"
+    ),
+    ("POST", "/api/v1/run-evidence/inspect", "406"): (
+        "the catalog declares a description only, though the runtime returns an "
+        "api-error envelope; the discrepancy is pinned below"
+    ),
+    ("POST", "/api/v1/run-evidence/inspect", "413"): (
+        "the catalog declares a description only, though the runtime returns an "
+        "api-error envelope; the discrepancy is pinned below"
+    ),
+    ("POST", "/api/v1/run-evidence/inspect", "415"): (
+        "the catalog declares a description only, though the runtime returns an "
+        "api-error envelope; the discrepancy is pinned below"
+    ),
+}
+
+# JSON envelopes the runtime really serves but `openapi.yaml` does not
+# advertise a schema for. Each is captured anyway and validated against the
+# canonical schema its body conforms to, so the gap stays visible instead of
+# widening: when the catalog starts advertising one of these responses, the
+# guard below fails with an instruction to move it into REPRESENTATIVES.
+UNADVERTISED_RUNTIME_RESPONSES = {
+    ("POST", "/api/v1/run-evidence/inspect", "406"): {
+        "trigger": {
+            "headers": {
+                "Content-Type": "application/json",
+                "Accept": "application/xml",
+            },
+            "body": SAMPLE_REPORT,
+        },
+        "schema": "idkmesh-api-error-v0.1",
+        "reason": "the catalog gives 406 a description but no content",
+    },
+    ("POST", "/api/v1/run-evidence/inspect", "413"): {
+        "trigger": {
+            "headers": {"Content-Type": "application/json"},
+            "body": "x" * (MAX_BODY_BYTES + 1024),
+        },
+        "schema": "idkmesh-api-error-v0.1",
+        "reason": "the catalog gives 413 a description but no content",
+    },
+    ("POST", "/api/v1/run-evidence/inspect", "415"): {
+        "trigger": {
+            "headers": {"Content-Type": "text/plain"},
+            "body": SAMPLE_REPORT,
+        },
+        "schema": "idkmesh-api-error-v0.1",
+        "reason": "the catalog gives 415 a description but no content",
+    },
+    ("GET", "/api/v1/work-units", "503"): {
+        "trigger": {"server": "bare"},
+        "schema": "idkmesh-api-error-v0.1",
+        "reason": "the runtime returns product_spine_store_not_configured; the "
+        "catalog omits the Unavailable response this endpoint really serves",
+    },
+    ("GET", "/api/v1/work-units/{work_unit_id}", "503"): {
+        "trigger": {"server": "bare"},
+        "schema": "idkmesh-api-error-v0.1",
+        "reason": "the runtime returns product_spine_store_not_configured; the "
+        "catalog omits the Unavailable response this endpoint really serves",
+    },
+    ("GET", "/api/v1/projects/{project_id}", "503"): {
+        "trigger": {"server": "bare"},
+        "schema": "idkmesh-api-error-v0.1",
+        "reason": "the runtime returns product_spine_store_not_configured; the "
+        "catalog omits the Unavailable response this endpoint really serves",
+    },
+    ("GET", "/api/v1/events", "503"): {
+        "trigger": {"server": "bare"},
+        "schema": "idkmesh-api-error-v0.1",
+        "reason": "the runtime returns product_spine_store_not_configured; the "
+        "catalog omits the Unavailable response this endpoint really serves",
+    },
+}
+
+
+class RepresentativeCoverageTests(unittest.TestCase):
+    """The catalog and the two runtime tables must cover each other exactly."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.advertised = advertised_response_schemas(load_catalog())
+
+    def test_every_advertised_response_is_represented_or_recorded(self) -> None:
+        advertised = set(self.advertised)
+        covered = set(REPRESENTATIVES) | set(NO_CANONICAL_SCHEMA)
+        self.assertEqual(
+            set(),
+            advertised - covered,
+            "openapi.yaml advertises responses with no representative runtime "
+            "capture and no recorded reason; add one of the two",
+        )
+        self.assertEqual(
+            set(),
+            covered - advertised,
+            "the runtime tables name responses openapi.yaml no longer advertises",
+        )
+        self.assertEqual(
+            set(),
+            set(REPRESENTATIVES) & set(NO_CANONICAL_SCHEMA),
+            "a response cannot both have and lack a canonical schema",
+        )
+
+    def test_the_representative_table_is_not_vacuous(self) -> None:
+        self.assertGreaterEqual(
+            len(REPRESENTATIVES),
+            30,
+            "the representative table shrank; it must cover the whole API surface",
+        )
+
+    def test_recorded_no_schema_responses_really_declare_none(self) -> None:
+        for key in sorted(NO_CANONICAL_SCHEMA):
+            with self.subTest(response=key):
+                named = {
+                    name
+                    for name in (self.advertised.get(key) or {}).values()
+                    if name is not None
+                }
+                self.assertEqual(
+                    set(),
+                    named,
+                    f"{key} now advertises a canonical schema {sorted(named)}; "
+                    "move it into REPRESENTATIVES and validate it",
+                )
+
+    def test_unadvertised_runtime_envelopes_stay_unadvertised(self) -> None:
+        for key, entry in sorted(UNADVERTISED_RUNTIME_RESPONSES.items()):
+            with self.subTest(response=key):
+                named = {
+                    name
+                    for name in (self.advertised.get(key) or {}).values()
+                    if name is not None
+                }
+                self.assertEqual(
+                    set(),
+                    named,
+                    f"{key} is now advertised as {sorted(named)}; move it into "
+                    "REPRESENTATIVES, where the body is validated as a first-class "
+                    "representative response",
+                )
+
+
+@unittest.skipUnless(HAS_JSONSCHEMA, "response validation requires jsonschema")
+class RuntimeResponseConformanceTests(unittest.TestCase):
+    """Real served responses validate against the schema the catalog advertises."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls._tmp = tempfile.TemporaryDirectory(prefix="idkmesh-api-conformance-")
+        root = Path(cls._tmp.name)
+        db = root / "product-spine.sqlite3"
+        helpers = load_sibling_test_module("test_run_evidence_store")
+        # One offline run with a retained evidence report and attempts, plus two
+        # plain runs so the event stream has real events to replay.
+        cls.good = helpers.seed_offline_run(db, root, key="idem/conformance")
+        service = ProductSpineRunStore(LocalMetadataStore(db))
+        for index, run_id in enumerate(("run/evt-1", "run/evt-2"), start=1):
+            service.create(
+                helpers.cli_run(run_id, project_id=PROJECT_ID),
+                idempotency_key=f"conformance-{run_id}",
+                created_at=f"2026-10-01T00:00:{index:02d}Z",
+            )
+        cls.run_id = cls.good.run.run_id
+        cls.servers = {
+            "seeded": create_server(port=0, product_spine_store_path=str(db)),
+            "bare": create_server(port=0),
+        }
+        cls._threads = []
+        for server in cls.servers.values():
+            thread = threading.Thread(target=server.serve_forever, daemon=True)
+            thread.start()
+            cls._threads.append(thread)
+        cls.advertised = advertised_response_schemas(load_catalog())
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        # Like tests/test_control_tower_events.py: open event streams keep
+        # handler threads polling after the accept loop stops, so drain() wakes
+        # and ends them before shutdown.
+        for server in cls.servers.values():
+            server.drain(timeout=5.0)
+            server.shutdown()
+            server.server_close()
+        for thread in cls._threads:
+            thread.join(timeout=2)
+        cls._tmp.cleanup()
+
+    def _http(self, server_name, method, path, *, token=True, headers=None, body=None):
+        server = self.servers[server_name]
+        conn = http.client.HTTPConnection("127.0.0.1", server.server_port, timeout=5)
+        sent = {TOKEN_HEADER: server.ui_token} if token else {}
+        sent.update(headers or {})
+        conn.request(method, path, headers=sent, body=body)
+        response = conn.getresponse()
+        payload = response.read()
+        status = response.status
+        content_type = dict(response.getheaders()).get("Content-Type", "")
+        conn.close()
+        return status, content_type, payload
+
+    def _first_sse_event(self, server_name, *, token=True):
+        server = self.servers[server_name]
+        sock = socket.create_connection(("127.0.0.1", server.server_port), timeout=5)
+        try:
+            lines = [
+                "GET /api/v1/events/stream HTTP/1.1",
+                f"Host: 127.0.0.1:{server.server_port}",
+                "Accept: text/event-stream",
+                # A fresh connection without this header is a live tail (ADR-0023);
+                # 0 replays the retained history, so the first frame is a real
+                # committed event rather than a wait for the next one.
+                "Last-Event-ID: 0",
+            ]
+            if token:
+                lines.append(f"{TOKEN_HEADER}: {server.ui_token}")
+            sock.sendall(("\r\n".join(lines) + "\r\n\r\n").encode("ascii"))
+            stream = sock.makefile("rb")
+            status = int(stream.readline().split()[1])
+            while True:
+                line = stream.readline()
+                if not line or line in (b"\r\n", b"\n"):
+                    break
+            data = None
+            while data is None:
+                line = stream.readline()
+                if not line:
+                    break
+                text = line.decode("utf-8").rstrip("\r\n")
+                if text.startswith("data:"):
+                    data = text[5:].strip()
+            return status, json.loads(data) if data else None
+        finally:
+            try:
+                sock.close()
+            except OSError:
+                pass
+
+    def _request_path(self, template: str, trigger: dict) -> str:
+        values = {
+            "run_id": self.run_id,
+            "work_unit_id": WORK_UNIT_ID,
+            "project_id": PROJECT_ID,
+        }
+        values.update(trigger.get("path_values", {}))
+        return trigger.get("request_path") or template.format_map(values)
+
+    def test_the_representative_seeds_are_populated(self) -> None:
+        """A representative response must not be an empty one."""
+        for path in ("/api/v1/runs", "/api/v1/work-units", "/api/v1/events"):
+            with self.subTest(path=path):
+                status, _, body = self._http("seeded", "GET", path)
+                self.assertEqual(200, status)
+                self.assertGreaterEqual(
+                    len(json.loads(body)["items"]),
+                    2,
+                    f"{path} served an empty list; the representatives would "
+                    "validate nothing",
+                )
+
+    def test_representative_runtime_responses_validate_against_their_advertised_schema(self) -> None:
+        for (method, path, status), trigger in sorted(REPRESENTATIVES.items()):
+            if trigger.get("sse"):
+                continue
+            with self.subTest(response=f"{method} {path} {status}"):
+                observed, content_type, body = self._http(
+                    trigger.get("server", "seeded"),
+                    method,
+                    self._request_path(path, trigger),
+                    token=trigger.get("token", True),
+                    headers=trigger.get("headers"),
+                    body=trigger.get("body"),
+                )
+                self.assertEqual(
+                    int(status),
+                    observed,
+                    "the runtime no longer produces the advertised response",
+                )
+                media = content_type.split(";")[0].strip()
+                media_map = self.advertised[(method, path, status)]
+                self.assertIn(
+                    media,
+                    media_map,
+                    f"the runtime serves {media}, which the catalog does not "
+                    f"advertise for {method} {path} {status}",
+                )
+                key = media_map[media]
+                self.assertIsNotNone(key, f"no named schema advertised for {media}")
+                self.assertEqual(
+                    [],
+                    errors_for_document(
+                        validator_for(key), json.loads(body.decode("utf-8"))
+                    ),
+                    f"the runtime response for {method} {path} {status} does not "
+                    f"validate against {key}.schema.json, the schema openapi.yaml "
+                    "advertises for it",
+                )
+
+    def test_sse_stream_events_validate_against_their_advertised_schema(self) -> None:
+        method, path, status = ("GET", "/api/v1/events/stream", "200")
+        key = self.advertised[(method, path, status)]["text/event-stream"]
+        self.assertIsNotNone(key)
+        observed, payload = self._first_sse_event("seeded")
+        self.assertEqual(200, observed)
+        self.assertIsNotNone(payload, "the stream produced no event to validate")
+        self.assertEqual(
+            [],
+            errors_for_document(validator_for(key), payload),
+            f"the first event of the SSE stream does not validate against "
+            f"{key}.schema.json, the schema openapi.yaml advertises for it",
+        )
+
+    def test_unadvertised_runtime_envelopes_still_validate_as_canonical_objects(self) -> None:
+        for (method, path, status), entry in sorted(
+            UNADVERTISED_RUNTIME_RESPONSES.items()
+        ):
+            trigger = entry["trigger"]
+            with self.subTest(response=f"{method} {path} {status}"):
+                observed, _, body = self._http(
+                    trigger.get("server", "seeded"),
+                    method,
+                    self._request_path(path, trigger),
+                    token=trigger.get("token", True),
+                    headers=trigger.get("headers"),
+                    body=trigger.get("body"),
+                )
+                self.assertEqual(
+                    int(status),
+                    observed,
+                    f"the runtime no longer produces {method} {path} {status}; "
+                    f"update the recorded entry ({entry['reason']})",
+                )
+                self.assertEqual(
+                    [],
+                    errors_for_document(
+                        validator_for(entry["schema"]),
+                        json.loads(body.decode("utf-8")),
+                    ),
+                    f"the body of {method} {path} {status} no longer conforms to "
+                    f"{entry['schema']}, which its entry claims",
+                )
 
 
 if __name__ == "__main__":
