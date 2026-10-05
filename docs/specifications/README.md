@@ -88,6 +88,12 @@ meaning of an existing version.
 
 ## Project Configuration
 
+- [Executor Admission v0.1](EXECUTOR_ADMISSION_V0_1.md) — readiness-checked
+  atomic claims: the exact execution binding is derived and claimed in one
+  operation, dispatch intent and submission revalidate the admission-time
+  input snapshot, and changed upstream inputs fail closed. Local composition
+  only; no dispatch, verification, acceptance or merge authority.
+
 - [Coordination Preflight v0.1](COORDINATION_PREFLIGHT_V0_1.md) — read-only
   exact-input prerequisite readiness, replay/descendant invalidation,
   declared-effort capability advice and critical-path estimates; reuses the

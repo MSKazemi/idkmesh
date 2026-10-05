@@ -14,6 +14,43 @@ and the release notes for that tag.
 
 ### Added
 
+- Checked-in OpenAPI 3.1 catalog (issue #737): `openapi.yaml` at the repository
+  root describes the shipped v1 surfaces (status, readiness, run-evidence
+  inspection, runs/WorkUnits/projects reads, events and the resumable SSE
+  stream) and references every public contract in `schemas/` — including
+  `idkmesh-idempotency-v0.1` — by its canonical `$id`, so no public API object
+  is defined only by prose or an inline Python dictionary. Discovery/transport
+  contract only; domain truth stays in `schemas/` (API Conventions section 19).
+  Guarded by reference-coverage and resolution tests.
+
+- OpenAPI/schema reference resolution gate (issue #737):
+  `tools/openapi_ref_check.py` resolves every `$ref` in `openapi.yaml` and
+  `schemas/*.schema.json` — internal JSON pointers, `#/components/...`
+  component references, and cross-file schema references (matched by `$id`
+  basename, per `tests/test_schema_identity.py`) — and exits non-zero on any
+  unresolved reference (API Conventions section 19: "unresolved refs fail
+  CI"). Stdlib-only and executable like `tools/schema_compat_check.py`; wired
+  into the PR Gate and `scripts/testkit.py integration` with negative-path
+  regression tests in `tests/test_openapi_ref_check.py`.
+
+- Idempotency/conflict metadata contract (issue #737):
+  `idkmesh-idempotency-v0.1.schema.json` freezes the request-identity
+  reservation vocabulary used by the Product Spine and GitHub delivery
+  idempotency adapters (API Conventions section 12): exact-digest replay of
+  the original logical result, a strict `created`/`replayed` complement, and
+  the 409 `idempotency_conflict` record for a reused key under a different
+  digest. Identity metadata only; no execution, acceptance or merge authority.
+
+- Executor admission gate (issue #921): one operation derives the exact
+  execution binding from the ready input snapshot and acquires the atomic
+  claim, the external dispatch intent is retained only on still-current
+  inputs, and the snapshot is rechecked at canonical candidate submission.
+  Changed upstream inputs fail closed (`inputs_changed`) before any dispatch
+  intent or submission digest is written; logical task identity stays
+  separate from the execution binding. Local conformance composition only;
+  live provider wiring and the GitHub ledger remain separate work. See
+  [Executor Admission v0.1](docs/specifications/EXECUTOR_ADMISSION_V0_1.md).
+
 - Read-only coordination preflight (issue #915): iterative WorkUnit prerequisite
   graph, exact integrated input pins, replay-safe readiness and transitive stale
   input detection. Declared-effort shadow recommendations reuse the existing

@@ -1317,6 +1317,11 @@
     <priority>0.3</priority>
   </url>
   <url>
+    <loc>https://mskazemi.com/idkmesh/conversations/2026-10-04-executor-admission-implementation.html</loc>
+    <lastmod>2026-10-04</lastmod>
+    <priority>0.3</priority>
+  </url>
+  <url>
     <loc>https://mskazemi.com/idkmesh/conversations/2026-10-04-human-agent-coordination-algorithms.html</loc>
     <lastmod>2026-10-04</lastmod>
     <priority>0.3</priority>
@@ -2059,6 +2064,11 @@
   <url>
     <loc>https://mskazemi.com/idkmesh/specifications/EVALUATOR_PLAN_V0_4_TRANSITION_SEMANTICS.html</loc>
     <lastmod>2026-08-28</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://mskazemi.com/idkmesh/specifications/EXECUTOR_ADMISSION_V0_1.html</loc>
+    <lastmod>2026-10-04</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
