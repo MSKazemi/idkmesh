@@ -766,7 +766,18 @@ class RuntimeResponseConformanceTests(unittest.TestCase):
         conn = http.client.HTTPConnection("127.0.0.1", server.server_port, timeout=5)
         sent = {TOKEN_HEADER: server.ui_token} if token else {}
         sent.update(headers or {})
-        conn.request(method, path, headers=sent, body=body)
+        try:
+            conn.request(method, path, headers=sent, body=body)
+        except (BrokenPipeError, ConnectionResetError):
+            # The server rejects an oversized body from the Content-Length
+            # header alone and closes without reading the upload, so a body
+            # still in flight legitimately races the connection close and its
+            # write fails. That is the transport rejecting the rest of the
+            # upload, not the request failing: the response is already on the
+            # wire (the recorded 413 case depends on exactly this). Tolerate the
+            # write-side race and read the response; a genuinely unanswered
+            # request still fails in getresponse() and below.
+            pass
         response = conn.getresponse()
         payload = response.read()
         status = response.status

@@ -3,37 +3,51 @@
 Issue #737 / API_CONVENTIONS_V0_1.md section 19: OpenAPI references the
 canonical JSON Schemas instead of redefining them, and unresolved references
 must fail CI. `openapi.yaml` is that checked-in document; these tests keep it
-present, valid, and covering every public contract in `schemas/`.
+present, structured, and covering every public contract in `schemas/`.
 
-Two layers, deliberately. The text scan needs only the standard library and
-runs in every test job — the PR Gate installs jsonschema but no YAML parser,
-and `tests/test_workflow_tool_contracts.py` documents why importing one at
-module scope would break that gate. The structural checks guard `import yaml`
-the way schema tests guard `import jsonschema`, so they skip where the parser
-is absent rather than breaking collection.
+Deliberately text-based rather than YAML-parsed, the same constraint recorded in
+``tests/test_evolution_observer_concurrency.py`` and
+``tests/test_ci_local_gate_parity.py``: the PR Gate installs only ``pytest`` and
+``requirements-phase0.txt`` (jsonschema alone), so ``import yaml`` would pass
+locally and silently skip in the gate -- and a whole-tree job that skips a check
+is exactly the coverage loss ``tests/test_full_suite_jobs_install_requirements.py``
+exists to prevent. An earlier form of this file guarded ``import yaml`` and was
+therefore skipped in every CI job while reporting green; these checks now run
+wherever the tree runs.
+
+Structure is read through ``parse_block_mapping``, the standard-library
+block-mapping parser that ``tests/test_api_contract_conformance.py`` already
+uses to read this same document in CI. Reusing that parser rather than
+``tools/openapi_ref_check.py`` is deliberate: the two scan the document
+differently, so they fail differently rather than agreeing by construction.
 """
 
 from __future__ import annotations
 
-import importlib.util
-import json
 import re
+import sys
 import unittest
 from pathlib import Path
 
-HAS_YAML = importlib.util.find_spec("yaml") is not None
-if HAS_YAML:
-    import yaml
-
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from test_api_contract_conformance import parse_block_mapping
+
 OPENAPI = ROOT / "openapi.yaml"
 SCHEMAS = ROOT / "schemas"
 
 EXTERNAL_REF = re.compile(r"https://idkmesh\.org/schemas/([A-Za-z0-9._-]+\.schema\.json)")
+# Any internal JSON pointer this document declares, from any nesting.
+INTERNAL_REF_VALUE = re.compile(r"\$ref\s*:\s*[\"']?(#/[^^\s\"'\}]+)")
 
 
 def schema_filenames() -> set[str]:
     return {path.name for path in SCHEMAS.glob("*.schema.json")}
+
+
+def load_document() -> dict:
+    return parse_block_mapping(OPENAPI.read_text(encoding="utf-8"))
 
 
 class OpenapiDocumentPresenceTests(unittest.TestCase):
@@ -66,50 +80,55 @@ class OpenapiDocumentPresenceTests(unittest.TestCase):
         )
 
 
-@unittest.skipUnless(HAS_YAML, "structural OpenAPI checks require a YAML parser")
 class OpenapiDocumentStructureTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        cls.document = yaml.safe_load(OPENAPI.read_text(encoding="utf-8"))
+        cls.document = load_document()
 
-    def test_document_is_valid_yaml_and_openapi_3_1(self) -> None:
-        self.assertEqual("3.1.0", self.document["openapi"])
-        self.assertTrue(self.document["info"]["title"])
+    def test_document_declares_openapi_3_1_with_info_and_paths(self) -> None:
+        self.assertEqual("3.1.0", self.document.get("openapi"))
+        self.assertTrue(self.document.get("info", {}).get("title"))
         self.assertIn("paths", self.document)
 
     def test_component_entries_cover_the_schema_directory_exactly(self) -> None:
-        components = self.document["components"]["schemas"]
+        components = self.document.get("components", {}).get("schemas", {})
+        self.assertTrue(components, "components.schemas is empty; this guard is vacuous")
         expected = {name[: -len(".schema.json")] for name in schema_filenames()}
         self.assertEqual(expected, set(components))
         for key, entry in components.items():
             with self.subTest(schema=key):
+                # A block-mapping entry is a ``$ref`` mapping; the one-line flow
+                # form this document uses is returned as its raw text instead.
+                raw = entry.get("$ref", "") if isinstance(entry, dict) else str(entry)
+                match = EXTERNAL_REF.search(raw)
+                self.assertIsNotNone(
+                    match,
+                    f"components.schemas[{key!r}] carries no schemas/ $ref: {raw!r}",
+                )
                 self.assertEqual(
                     f"{key}.schema.json",
-                    EXTERNAL_REF.search(entry["$ref"]).group(1),
+                    match.group(1),
                     "component key and referenced schema file must agree",
                 )
 
     def test_idempotency_contract_is_in_the_catalog(self) -> None:
-        self.assertIn("idkmesh-idempotency-v0.1", self.document["components"]["schemas"])
+        self.assertIn(
+            "idkmesh-idempotency-v0.1",
+            self.document.get("components", {}).get("schemas", {}),
+        )
 
     def test_every_internal_reference_resolves(self) -> None:
-        def walk(node, found):
-            if isinstance(node, dict):
-                for key, value in node.items():
-                    if key == "$ref" and isinstance(value, str) and value.startswith("#/"):
-                        found.append(value)
-                    else:
-                        walk(value, found)
-            elif isinstance(node, list):
-                for item in node:
-                    walk(item, found)
-
-        refs: list[str] = []
-        walk(self.document, refs)
+        # Collected from the raw text rather than the parsed tree on purpose:
+        # the block-mapping parser skips YAML list items, and `parameters:`
+        # entries are referenced from lists (`- $ref: "#/components/..."`), so
+        # a tree walk would silently miss exactly those. Text collection keeps
+        # every internal pointer under review, whichever nesting it sits in.
+        text = OPENAPI.read_text(encoding="utf-8")
+        refs = sorted(INTERNAL_REF_VALUE.findall(text))
         self.assertTrue(refs, "no internal references found; this guard is vacuous")
         for ref in refs:
             with self.subTest(ref=ref):
-                target = self.document
+                target: object = self.document
                 for part in ref[2:].split("/"):
                     self.assertIn(part, target, f"unresolved internal reference {ref}")
                     target = target[part]
