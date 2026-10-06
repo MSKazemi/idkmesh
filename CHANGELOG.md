@@ -188,6 +188,18 @@ and the release notes for that tag.
   `evaluator-plan-v0.2.schema.json`, both predating this gate) and raises
   nothing else across every schema file's full commit history.
 
+- `tools/schema_migration_note_check.py` (issue #737, the "migration note"
+  half of "breaking changes require explicit version bump/migration note";
+  ADR-0020 enforces the version bump): a required PR Gate step that fails
+  when a schema version successor ships without an explicit migration note
+  in the `Schema migrations` section of `schemas/README.md` naming the exact
+  file it supersedes. The ledger seeds all five successors already in the
+  tree (`evaluator-plan` v0.2/v0.3/v0.4, `gate-audit-report` v0.2,
+  `work-unit` v0.2) with mechanically derived notes, so a consumer of any
+  older contract can always find what changed and how to move. Stdlib-only,
+  wired into the PR Gate and `scripts/testkit.py integration`, with
+  negative-path regression tests in `tests/test_schema_migration_notes.py`.
+
 - `GET /api/v1/work-units`, `GET /api/v1/work-units/{work_unit_id}`, and
   `idkmesh work-unit list|status` (issue #739, `work-units` read surfaces)
   ([ADR-0021](docs/decisions/ADR-0021-derived-work-unit-and-project-read-models.md)):

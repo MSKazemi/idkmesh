@@ -30,6 +30,7 @@ SHARED_GATE_SCRIPTS = (
     "scripts/check_links.py",
     "tools/schema_compat_check.py",
     "tools/openapi_ref_check.py",
+    "tools/schema_migration_note_check.py",
 )
 
 HEREDOC = re.compile(r"python3?\s+-\s+<<", re.M)

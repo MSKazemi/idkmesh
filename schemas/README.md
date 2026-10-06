@@ -143,6 +143,22 @@ That rule is why issue #3 is completed through `work-unit-v0.2.schema.json` inst
 
 Additive research-specific data should normally go in the `extensions` object, using a namespaced key such as `org.example.my_metric`, until there is evidence that the field belongs in the shared core.
 
+## Schema migrations
+
+Breaking changes ship as new, separately versioned files (the versioning rule
+above and [ADR-0020](../docs/decisions/ADR-0020-schema-backward-compatibility-gate.md));
+this ledger is the explicit migration note issue #737 requires alongside each
+one. Every entry names the exact file superseded and what its consumers must
+change. `tools/schema_migration_note_check.py` fails CI when a version
+successor has no entry here, when an entry names the wrong predecessor, or
+when an entry names a file that is not a successor.
+
+- `evaluator-plan-v0.2.schema.json` supersedes `evaluator-plan-v0.1.schema.json`: replaces the file-content checks (`allowed_files`, `max_candidate_bytes`, `required_json`) with a declared `backend` object and re-pins the verifier adapter consts; consumers must dispatch on `backend.type` instead of the removed top-level fields.
+- `evaluator-plan-v0.3.schema.json` supersedes `evaluator-plan-v0.2.schema.json`: renames `backend.required_added_text` to `backend.required_added_substrings`, so a required source change is a list of substrings rather than one exact added text; wrap single-text expectations in a one-element list.
+- `evaluator-plan-v0.4.schema.json` supersedes `evaluator-plan-v0.3.schema.json`: adds required `backend.required_removed_substrings`, so producers must state what must be removed; use an empty list when nothing must be removed.
+- `gate-audit-report-v0.2.schema.json` supersedes `gate-audit-report-v0.1.schema.json`: adds the required `uncertainty` section (finite-sample bootstrap, issue #520) and pins `provenance.input_digest_sha256` to `sha256:<64 lowercase hex>`; only `idkmesh gate-audit --bootstrap` emits v0.2, so reports produced without it remain v0.1.
+- `work-unit-v0.2.schema.json` supersedes `work-unit-v0.1.schema.json`: adds required `requirements`, `security`, and `verification_policy` sections plus required `budget.project_spend_usd_max` and `budget.paid_fallback_allowed`, widens `kind` with `benchmarking`, and optionally records `provenance.source_revision`/`created_at`; migrate by filling the new required sections (zero spend with `paid_fallback_allowed: false` under the current project policy).
+
 ## Compatibility notes
 
 - WorkUnit v0.1 remains available for historical Phase 0 artifacts.

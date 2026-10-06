@@ -169,9 +169,10 @@ hooks, and CI execute the same code path and cannot drift apart.
 
 **PR Gate runs `unit` (`scripts/testkit.py unit`) plus the same Markdown-link
 check (`scripts/check_links.py`), schema backward-compatibility check
-(`tools/schema_compat_check.py`, ADR-0020), and OpenAPI/schema reference
-resolution check (`tools/openapi_ref_check.py`, API Conventions section 19) as
-its required, always-on checks** — seconds, not minutes, so a documentation fix
+(`tools/schema_compat_check.py`, ADR-0020), schema migration-note check
+(`tools/schema_migration_note_check.py`, the ledger in `schemas/README.md`),
+and OpenAPI/schema reference resolution check (`tools/openapi_ref_check.py`,
+API Conventions section 19) as its required, always-on checks** — seconds, not minutes, so a documentation fix
 isn't held up by the health of an unrelated simulation. It does not run
 `integration` as a single delegated call: each shared script stays its own
 explicit, stdlib-only step (`tests/test_ci_local_gate_parity.py` pins that
