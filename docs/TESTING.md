@@ -185,9 +185,11 @@ schema `openapi.yaml` advertises for it (the catalog is text-scanned, so no
 YAML parser is required), keeping catalog, example, and test from drifting
 apart silently. Its runtime leg serves representative responses over real
 loopback HTTP and validates them against the advertised schema, with an
-exhaustiveness guard over every response the catalog advertises and a pinned
-record of the envelopes the runtime serves that the catalog does not yet
-advertise.
+exhaustiveness guard over every response the catalog advertises. Every
+envelope the runtime serves -- including the store-unavailable 503s and the
+inspect endpoint's api-error 406/413/415 bodies -- is advertised and
+validated through its representative, so catalog and runtime cannot drift
+apart silently.
 
 **The complete suite — `nightly`, everything `unit` excludes included — runs
 on a schedule** in `.github/workflows/nightly-full-suite.yml`, decoupled from

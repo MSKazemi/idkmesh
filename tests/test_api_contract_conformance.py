@@ -28,8 +28,10 @@ Two legs, both bound to the advertisement:
   same ``create_server`` entry point the Control Tower ships -- are validated
   against the schema the catalog advertises for that response, and every
   advertised response must have a representative or a recorded reason it has
-  no canonical schema. Runtime envelopes the catalog does *not* advertise are
-  pinned too, so the gap cannot widen silently.
+  no canonical schema. Every envelope the runtime serves is advertised: the
+  store-unavailable 503s and the inspect endpoint's api-error 406/413/415
+  bodies were the last served-but-unadvertised envelopes, and the ledger that
+  pinned them retired once the catalog declared them all.
 
 Only ``jsonschema`` (a Phase 0 dependency) is needed, and its import is
 guarded the way ``tests/test_example_contract_coverage.py`` guards it.
@@ -514,6 +516,21 @@ REPRESENTATIVES = {
         "headers": {"Content-Type": "application/json"},
         "body": SAMPLE_REPORT,
     },
+    ("POST", "/api/v1/run-evidence/inspect", "406"): {
+        "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/xml",
+        },
+        "body": SAMPLE_REPORT,
+    },
+    ("POST", "/api/v1/run-evidence/inspect", "413"): {
+        "headers": {"Content-Type": "application/json"},
+        "body": "x" * (MAX_BODY_BYTES + 1024),
+    },
+    ("POST", "/api/v1/run-evidence/inspect", "415"): {
+        "headers": {"Content-Type": "text/plain"},
+        "body": SAMPLE_REPORT,
+    },
     ("GET", "/api/v1/runs", "200"): {},
     ("GET", "/api/v1/runs", "400"): {
         "request_path": "/api/v1/runs?state=bogus"
@@ -543,21 +560,25 @@ REPRESENTATIVES = {
         "request_path": "/api/v1/work-units?limit=0"
     },
     ("GET", "/api/v1/work-units", "403"): {"token": False},
+    ("GET", "/api/v1/work-units", "503"): {"server": "bare"},
     ("GET", "/api/v1/work-units/{work_unit_id}", "200"): {},
     ("GET", "/api/v1/work-units/{work_unit_id}", "403"): {"token": False},
     ("GET", "/api/v1/work-units/{work_unit_id}", "404"): {
         "path_values": {"work_unit_id": "work/does-not-exist"}
     },
+    ("GET", "/api/v1/work-units/{work_unit_id}", "503"): {"server": "bare"},
     ("GET", "/api/v1/projects/{project_id}", "200"): {},
     ("GET", "/api/v1/projects/{project_id}", "403"): {"token": False},
     ("GET", "/api/v1/projects/{project_id}", "404"): {
         "path_values": {"project_id": "project.missing"}
     },
+    ("GET", "/api/v1/projects/{project_id}", "503"): {"server": "bare"},
     ("GET", "/api/v1/events", "200"): {},
     ("GET", "/api/v1/events", "400"): {
         "request_path": "/api/v1/events?limit=0"
     },
     ("GET", "/api/v1/events", "403"): {"token": False},
+    ("GET", "/api/v1/events", "503"): {"server": "bare"},
     ("GET", "/api/v1/events/stream", "200"): {"sse": True},
     ("GET", "/api/v1/events/stream", "403"): {
         "token": False,
@@ -576,78 +597,8 @@ NO_CANONICAL_SCHEMA = {
     ("GET", "/api/v1/openapi.json", "200"): (
         "inline `type: object`; the document is its own contract"
     ),
-    ("POST", "/api/v1/run-evidence/inspect", "406"): (
-        "the catalog declares a description only, though the runtime returns an "
-        "api-error envelope; the discrepancy is pinned below"
-    ),
-    ("POST", "/api/v1/run-evidence/inspect", "413"): (
-        "the catalog declares a description only, though the runtime returns an "
-        "api-error envelope; the discrepancy is pinned below"
-    ),
-    ("POST", "/api/v1/run-evidence/inspect", "415"): (
-        "the catalog declares a description only, though the runtime returns an "
-        "api-error envelope; the discrepancy is pinned below"
-    ),
 }
 
-# JSON envelopes the runtime really serves but `openapi.yaml` does not
-# advertise a schema for. Each is captured anyway and validated against the
-# canonical schema its body conforms to, so the gap stays visible instead of
-# widening: when the catalog starts advertising one of these responses, the
-# guard below fails with an instruction to move it into REPRESENTATIVES.
-UNADVERTISED_RUNTIME_RESPONSES = {
-    ("POST", "/api/v1/run-evidence/inspect", "406"): {
-        "trigger": {
-            "headers": {
-                "Content-Type": "application/json",
-                "Accept": "application/xml",
-            },
-            "body": SAMPLE_REPORT,
-        },
-        "schema": "idkmesh-api-error-v0.1",
-        "reason": "the catalog gives 406 a description but no content",
-    },
-    ("POST", "/api/v1/run-evidence/inspect", "413"): {
-        "trigger": {
-            "headers": {"Content-Type": "application/json"},
-            "body": "x" * (MAX_BODY_BYTES + 1024),
-        },
-        "schema": "idkmesh-api-error-v0.1",
-        "reason": "the catalog gives 413 a description but no content",
-    },
-    ("POST", "/api/v1/run-evidence/inspect", "415"): {
-        "trigger": {
-            "headers": {"Content-Type": "text/plain"},
-            "body": SAMPLE_REPORT,
-        },
-        "schema": "idkmesh-api-error-v0.1",
-        "reason": "the catalog gives 415 a description but no content",
-    },
-    ("GET", "/api/v1/work-units", "503"): {
-        "trigger": {"server": "bare"},
-        "schema": "idkmesh-api-error-v0.1",
-        "reason": "the runtime returns product_spine_store_not_configured; the "
-        "catalog omits the Unavailable response this endpoint really serves",
-    },
-    ("GET", "/api/v1/work-units/{work_unit_id}", "503"): {
-        "trigger": {"server": "bare"},
-        "schema": "idkmesh-api-error-v0.1",
-        "reason": "the runtime returns product_spine_store_not_configured; the "
-        "catalog omits the Unavailable response this endpoint really serves",
-    },
-    ("GET", "/api/v1/projects/{project_id}", "503"): {
-        "trigger": {"server": "bare"},
-        "schema": "idkmesh-api-error-v0.1",
-        "reason": "the runtime returns product_spine_store_not_configured; the "
-        "catalog omits the Unavailable response this endpoint really serves",
-    },
-    ("GET", "/api/v1/events", "503"): {
-        "trigger": {"server": "bare"},
-        "schema": "idkmesh-api-error-v0.1",
-        "reason": "the runtime returns product_spine_store_not_configured; the "
-        "catalog omits the Unavailable response this endpoint really serves",
-    },
-}
 
 
 class RepresentativeCoverageTests(unittest.TestCase):
@@ -699,21 +650,7 @@ class RepresentativeCoverageTests(unittest.TestCase):
                     "move it into REPRESENTATIVES and validate it",
                 )
 
-    def test_unadvertised_runtime_envelopes_stay_unadvertised(self) -> None:
-        for key, entry in sorted(UNADVERTISED_RUNTIME_RESPONSES.items()):
-            with self.subTest(response=key):
-                named = {
-                    name
-                    for name in (self.advertised.get(key) or {}).values()
-                    if name is not None
-                }
-                self.assertEqual(
-                    set(),
-                    named,
-                    f"{key} is now advertised as {sorted(named)}; move it into "
-                    "REPRESENTATIVES, where the body is validated as a first-class "
-                    "representative response",
-                )
+
 
 
 @unittest.skipUnless(HAS_JSONSCHEMA, "response validation requires jsonschema")
@@ -896,35 +833,7 @@ class RuntimeResponseConformanceTests(unittest.TestCase):
             f"{key}.schema.json, the schema openapi.yaml advertises for it",
         )
 
-    def test_unadvertised_runtime_envelopes_still_validate_as_canonical_objects(self) -> None:
-        for (method, path, status), entry in sorted(
-            UNADVERTISED_RUNTIME_RESPONSES.items()
-        ):
-            trigger = entry["trigger"]
-            with self.subTest(response=f"{method} {path} {status}"):
-                observed, _, body = self._http(
-                    trigger.get("server", "seeded"),
-                    method,
-                    self._request_path(path, trigger),
-                    token=trigger.get("token", True),
-                    headers=trigger.get("headers"),
-                    body=trigger.get("body"),
-                )
-                self.assertEqual(
-                    int(status),
-                    observed,
-                    f"the runtime no longer produces {method} {path} {status}; "
-                    f"update the recorded entry ({entry['reason']})",
-                )
-                self.assertEqual(
-                    [],
-                    errors_for_document(
-                        validator_for(entry["schema"]),
-                        json.loads(body.decode("utf-8")),
-                    ),
-                    f"the body of {method} {path} {status} no longer conforms to "
-                    f"{entry['schema']}, which its entry claims",
-                )
+
 
 
 if __name__ == "__main__":

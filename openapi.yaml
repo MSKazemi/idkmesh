@@ -118,11 +118,11 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
         "406":
-          description: Requested response type unsupported
+          $ref: "#/components/responses/NotAcceptable"
         "413":
-          description: Request body too large
+          $ref: "#/components/responses/PayloadTooLarge"
         "415":
-          description: Request content type unsupported
+          $ref: "#/components/responses/UnsupportedMediaType"
   /api/v1/runs:
     get:
       summary: List durable Product Spine runs
@@ -246,7 +246,9 @@ paths:
   /api/v1/work-units:
     get:
       summary: List canonical Work Units
-      description: Pure read-only, deterministic keyset pagination.
+      description: >
+        Pure read-only, deterministic keyset pagination. Returns 503 when no
+        Product Spine store is configured for this server instance.
       security:
         - LocalSessionToken: []
       responses:
@@ -260,6 +262,8 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "403":
           $ref: "#/components/responses/Forbidden"
+        "503":
+          $ref: "#/components/responses/Unavailable"
   /api/v1/work-units/{work_unit_id}:
     get:
       summary: Read one canonical Work Unit
@@ -283,6 +287,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/Unavailable"
   /api/v1/projects/{project_id}:
     get:
       summary: Read one project's resource projection
@@ -306,10 +312,15 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/Unavailable"
   /api/v1/events:
     get:
       summary: Query the canonical append-only event stream
-      description: Pure read-only, deterministic keyset pagination over retained events.
+      description: >
+        Pure read-only, deterministic keyset pagination over retained events.
+        Returns 503 when no Product Spine store is configured for this server
+        instance.
       security:
         - LocalSessionToken: []
       responses:
@@ -323,6 +334,8 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "403":
           $ref: "#/components/responses/Forbidden"
+        "503":
+          $ref: "#/components/responses/Unavailable"
   /api/v1/events/stream:
     get:
       summary: Stream canonical events (resumable SSE)
@@ -371,14 +384,32 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/idkmesh-api-error-v0.1"
+    NotAcceptable:
+      description: Requested response type unsupported
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/idkmesh-api-error-v0.1"
     NotFound:
       description: Unknown resource identity
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/idkmesh-api-error-v0.1"
+    PayloadTooLarge:
+      description: Request body too large
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/idkmesh-api-error-v0.1"
     Unavailable:
       description: No Product Spine store configured for this server instance
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/idkmesh-api-error-v0.1"
+    UnsupportedMediaType:
+      description: Request content type unsupported
       content:
         application/json:
           schema:

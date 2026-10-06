@@ -41,13 +41,14 @@ and the release notes for that tag.
   against the schema `openapi.yaml` advertises for it. An exhaustiveness
   guard requires every advertised response to have a representative or a
   recorded reason it carries no canonical schema (API Conventions section
-  19: "representative runtime responses validate in CI"). The suite also
-  pins the envelopes the runtime serves that the catalog does not yet
-  advertise -- `product_spine_store_not_configured` 503s on the work-unit,
-  project, and events surfaces, and api-error bodies for the inspect
-  endpoint's 406/413/415 -- each validated against its canonical schema, so
-  the gap cannot widen silently and closes the moment the catalog advertises
-  those responses.
+  19: "representative runtime responses validate in CI"). Every envelope the
+  runtime serves is now advertised and validated through its representative:
+  the `product_spine_store_not_configured` 503s on the work-unit, project,
+  and events surfaces and the inspect endpoint's api-error 406/413/415
+  bodies were the last served-but-unadvertised envelopes; `openapi.yaml` now
+  declares all of them against `idkmesh-api-error-v0.1`, and the
+  pinned-gap ledger retired when its last entries moved into the
+  representatives. No public API object is served outside the catalog.
 
 - Checked-in OpenAPI 3.1 catalog (issue #737): `openapi.yaml` at the repository
   root describes the shipped v1 surfaces (status, readiness, run-evidence
