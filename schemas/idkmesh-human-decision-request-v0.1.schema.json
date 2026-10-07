@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idkmesh.org/schemas/idkmesh-human-decision-request-v0.1.schema.json",
+  "title": "IDKMesh Human Decision Request v0.1",
+  "description": "Transport request body for recording an immutable Human Decision Record. The caller supplies only the explicit decision, rationale, selected attempt and exact evidence-report binding. Authenticated principal identity, decision_id, decided_at and authority are trusted server/domain outputs and cannot be supplied by this request. Idempotency-Key is an HTTP header governed by API_CONVENTIONS_V0_1 section 12, not a body field. This contract does not itself execute integration, Git push or merge.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "kind",
+    "evidence_report",
+    "selected_attempt_id",
+    "decision",
+    "rationale"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "0.1"
+    },
+    "kind": {
+      "const": "idkmesh-human-decision-request"
+    },
+    "evidence_report": {
+      "$ref": "https://idkmesh.org/schemas/human-decision-record-v0.1.schema.json#/properties/evidence_report"
+    },
+    "selected_attempt_id": {
+      "$ref": "https://idkmesh.org/schemas/human-decision-record-v0.1.schema.json#/properties/selected_attempt_id"
+    },
+    "decision": {
+      "$ref": "https://idkmesh.org/schemas/human-decision-record-v0.1.schema.json#/properties/decision"
+    },
+    "rationale": {
+      "$ref": "https://idkmesh.org/schemas/human-decision-record-v0.1.schema.json#/properties/rationale"
+    }
+  }
+}
