@@ -47,6 +47,12 @@ from idkmesh.marginal_evidence_benchmark import (
     referenced_paths as marginal_benchmark_referenced_paths,
     render_json as render_marginal_benchmark_json,
 )
+from idkmesh.marginal_evidence_synthesis import (
+    MarginalEvidenceSynthesisInputError,
+    referenced_paths as marginal_synthesis_referenced_paths,
+    render_json as render_marginal_synthesis_json,
+    synthesis_file as synthesize_marginal_file,
+)
 from idkmesh.local_loop import (
     LocalLoopError,
     LocalLoopSetupError,
@@ -192,6 +198,31 @@ def build_parser() -> argparse.ArgumentParser:
         help="write the benchmark JSON report here (default: stdout)",
     )
     gmb.add_argument(
+        "--pretty",
+        action="store_true",
+        help="pretty-print the JSON report",
+    )
+
+    gms = sub.add_parser(
+        "gate-marginal-synthesis",
+        help="synthesize multiple held-out marginal benchmark reports",
+        description=(
+            "Aggregate a frozen set of marginal-evidence benchmark reports "
+            "descriptively across cohorts. Diagnostic only: no strategy "
+            "ranking, threshold tuning, live routing, EvaluatorPlan, "
+            "acceptance, or merge authority."
+        ),
+    )
+    gms.add_argument(
+        "input",
+        help="path to marginal-evidence-synthesis-config-v0.1 JSON",
+    )
+    gms.add_argument(
+        "--out",
+        metavar="PATH",
+        help="write the synthesis JSON report here (default: stdout)",
+    )
+    gms.add_argument(
         "--pretty",
         action="store_true",
         help="pretty-print the JSON report",
@@ -1908,6 +1939,70 @@ def main(argv: list[str] | None = None) -> int:
             failure = _write(
                 args.out, rendered + "\n",
                 "gate-audit-dependence JSON report")
+            if failure is not None:
+                return failure
+        else:
+            print(rendered)
+        return 0
+
+    if args.command == "gate-marginal-synthesis":
+        try:
+            protected_paths = marginal_synthesis_referenced_paths(args.input)
+        except FileNotFoundError:
+            return _fail(f"input file not found: {args.input}")
+        except IsADirectoryError:
+            return _fail(
+                f"input path is a directory, not a synthesis config file: "
+                f"{args.input}"
+            )
+        except OSError as exc:
+            return _fail(
+                f"cannot read synthesis input {args.input}: {_reason(exc)}"
+            )
+        except MarginalEvidenceSynthesisInputError as exc:
+            return _fail(str(exc))
+
+        if args.out:
+            out_key = os.path.realpath(args.out)
+            for index, protected in enumerate(protected_paths):
+                label = (
+                    "synthesis config"
+                    if index == 0
+                    else "referenced benchmark report"
+                )
+                if out_key == os.path.realpath(protected):
+                    return _fail(
+                        f"--out {args.out} is the {label}; writing the report "
+                        "there would overwrite synthesis evidence"
+                    )
+
+        try:
+            report = synthesize_marginal_file(args.input)
+        except FileNotFoundError as exc:
+            return _fail(
+                f"synthesis referenced file not found: {exc.filename}"
+            )
+        except IsADirectoryError as exc:
+            return _fail(
+                f"synthesis referenced path is a directory: {exc.filename}"
+            )
+        except OSError as exc:
+            return _fail(
+                f"cannot read synthesis evidence: {_reason(exc)}"
+            )
+        except MarginalEvidenceSynthesisInputError as exc:
+            return _fail(str(exc))
+
+        rendered = render_marginal_synthesis_json(
+            report,
+            pretty=args.pretty,
+        )
+        if args.out:
+            failure = _write(
+                args.out,
+                rendered + "\n",
+                "marginal-evidence synthesis JSON report",
+            )
             if failure is not None:
                 return failure
         else:

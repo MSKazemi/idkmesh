@@ -58,6 +58,10 @@ meaning of an existing version.
   the `idkmesh gate-marginal-benchmark` contract: freezes five design-only
   verifier-selection rules and evaluates them on disjoint holdout rows without
   emitting a production winner or routing decision.
+- [Marginal Evidence Cross-Cohort Synthesis v0.1](MARGINAL_EVIDENCE_SYNTHESIS_V0_1.md) —
+  the `idkmesh gate-marginal-synthesis` contract: aggregates a frozen set of
+  held-out benchmark reports descriptively across cohorts while refusing
+  duplicate evidence and emitting no strategy ranking or routing authority.
 - [Bound Unified-Diff Evaluator Backend](PATCH_EVALUATOR_BACKEND.md) — verifies
   untrusted patch bundles against an evaluator-owned plan.
 - [EvaluatorPlan v0.3 Semantic Matching](EVALUATOR_PLAN_V0_3_SEMANTIC_MATCHING.md)
