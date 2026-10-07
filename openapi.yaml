@@ -435,6 +435,7 @@ components:
     "domain-pack": {$ref: "https://idkmesh.org/schemas/domain-pack.schema.json"}
     "e025-learned-verifier-result": {$ref: "https://idkmesh.org/schemas/e025-learned-verifier-result.schema.json"}
     "enterprise-actor-context-v0.1": {$ref: "https://idkmesh.org/schemas/enterprise-actor-context-v0.1.schema.json"}
+    "enterprise-audit-event-v0.1": {$ref: "https://idkmesh.org/schemas/enterprise-audit-event-v0.1.schema.json"}
     "enterprise-authorization-decision-v0.1": {$ref: "https://idkmesh.org/schemas/enterprise-authorization-decision-v0.1.schema.json"}
     "enterprise-control-profile-baseline-v0.1": {$ref: "https://idkmesh.org/schemas/enterprise-control-profile-baseline-v0.1.schema.json"}
     "enterprise-control-profile-v0.1": {$ref: "https://idkmesh.org/schemas/enterprise-control-profile-v0.1.schema.json"}
