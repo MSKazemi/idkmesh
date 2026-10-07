@@ -70,6 +70,7 @@ policy changes or merge decisions.
 ## Verification Research
 
 - [E017 Verifier-Panel Reproducibility](E017_VERIFIER_PANEL_REPRODUCIBILITY.md) — shortest path to the retained 25-verifier vote artifact, analysis commands, expected metrics, limitations, and falsification criteria.
+- [Verifier-Panel External-Validity Replication — Preregistration v1](VERIFIER_PANEL_EXTERNAL_VALIDITY_PREREG_V1.md) — freezes a two-stage, held-out replication of E017's dependence-shape result on a materially different verifier/task family; calibration may select competent verifiers, but confirmatory tasks cannot influence panel membership or analysis rules.
 - [Coordination Criticality and Finite-Difference Response](CRITICALITY_AND_FLUCTUATION_RESPONSE.md)
   — matched small-load probes compared with utilization and backlog baselines.
 - [Evaluator Plan Binding](EVALUATOR_PLAN_BINDING.md) — binds verifier-owned
