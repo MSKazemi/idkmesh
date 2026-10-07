@@ -7,12 +7,13 @@ canonical files designated by [`../../PROJECT_RULES.md`](../../PROJECT_RULES.md)
 (decisions, specifications, architecture, findings); this directory keeps the trail
 that produced them.
 
-174 records across 11 dates, newest first.
+175 records across 11 dates, newest first.
 
 ## Index
 
 ### 2026-10-07
 
+- [C14-A GitHub Actions run summary](2026-10-07-c14a-github-actions-summary.md)
 - [Marginal evidence cross-cohort synthesis](2026-10-07-marginal-evidence-cross-cohort-synthesis.md)
 
 ### 2026-10-04
