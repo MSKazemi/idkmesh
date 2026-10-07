@@ -1,0 +1,149 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idkmesh.org/schemas/idkmesh-api-operational-metrics-v0.1.schema.json",
+  "title": "IDKMesh API Operational Metrics v0.1",
+  "description": "Privacy-safe, process-lifetime aggregate HTTP service telemetry. The contract deliberately has no request path, query, request-id, identity, authentication, prompt, evidence, run, WorkUnit, or arbitrary-label fields.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "kind", "service", "service_version", "scope",
+    "requests", "latency_ms", "concurrency", "admission", "operations",
+    "dependencies", "telemetry", "authority"
+  ],
+  "properties": {
+    "schema_version": {"const": "0.1"},
+    "kind": {"const": "idkmesh-api-operational-metrics"},
+    "service": {"type": "string", "minLength": 1},
+    "service_version": {"type": "string", "minLength": 1},
+    "scope": {"const": "process_lifetime"},
+    "requests": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["total", "client_errors_total", "server_errors_total", "by_status_class"],
+      "properties": {
+        "total": {"type": "integer", "minimum": 0},
+        "client_errors_total": {"type": "integer", "minimum": 0},
+        "server_errors_total": {"type": "integer", "minimum": 0},
+        "by_status_class": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["1xx", "2xx", "3xx", "4xx", "5xx"],
+          "properties": {
+            "1xx": {"type": "integer", "minimum": 0},
+            "2xx": {"type": "integer", "minimum": 0},
+            "3xx": {"type": "integer", "minimum": 0},
+            "4xx": {"type": "integer", "minimum": 0},
+            "5xx": {"type": "integer", "minimum": 0}
+          }
+        }
+      }
+    },
+    "latency_ms": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["count", "sum", "max", "buckets"],
+      "properties": {
+        "count": {"type": "integer", "minimum": 0},
+        "sum": {"type": "number", "minimum": 0},
+        "max": {"type": "number", "minimum": 0},
+        "buckets": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["le_ms", "count"],
+            "properties": {
+              "le_ms": {"type": "number", "exclusiveMinimum": 0},
+              "count": {"type": "integer", "minimum": 0}
+            }
+          }
+        }
+      }
+    },
+    "concurrency": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "in_flight_requests", "max_concurrent_requests",
+        "event_stream_clients", "max_event_stream_clients"
+      ],
+      "properties": {
+        "in_flight_requests": {"type": "integer", "minimum": 0},
+        "max_concurrent_requests": {"type": "integer", "minimum": 1},
+        "event_stream_clients": {"type": "integer", "minimum": 0},
+        "max_event_stream_clients": {"type": "integer", "minimum": 1}
+      }
+    },
+    "admission": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "overload_rejections_total", "draining_rejections_total",
+        "rate_limit_rejections_total", "rate_limit_status"
+      ],
+      "properties": {
+        "overload_rejections_total": {"type": "integer", "minimum": 0},
+        "draining_rejections_total": {"type": "integer", "minimum": 0},
+        "rate_limit_rejections_total": {"const": 0},
+        "rate_limit_status": {"const": "not_implemented"}
+      }
+    },
+    "operations": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "run_evidence_inspections_total",
+        "human_decision_ingestions_total",
+        "human_decision_ingestion_status"
+      ],
+      "properties": {
+        "run_evidence_inspections_total": {"type": "integer", "minimum": 0},
+        "human_decision_ingestions_total": {"const": 0},
+        "human_decision_ingestion_status": {"const": "not_implemented"}
+      }
+    },
+    "dependencies": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["product_spine_store"],
+      "properties": {
+        "product_spine_store": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["state", "required_for_core_readiness"],
+          "properties": {
+            "state": {"enum": ["not_configured", "configured_unprobed"]},
+            "required_for_core_readiness": {"const": false}
+          }
+        }
+      }
+    },
+    "telemetry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "trace_context", "path_labels", "query_labels", "request_id_labels",
+        "authentication_labels", "payload_labels"
+      ],
+      "properties": {
+        "trace_context": {"const": "w3c-traceparent-v00-pass-through"},
+        "path_labels": {"const": false},
+        "query_labels": {"const": false},
+        "request_id_labels": {"const": false},
+        "authentication_labels": {"const": false},
+        "payload_labels": {"const": false}
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["canonical_state_write", "git_push", "merge"],
+      "properties": {
+        "canonical_state_write": {"const": false},
+        "git_push": {"const": false},
+        "merge": {"const": false}
+      }
+    }
+  }
+}

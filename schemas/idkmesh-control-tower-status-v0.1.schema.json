@@ -63,6 +63,8 @@
       ],
       "properties": {
         "request_id_header": {"const": "X-Request-ID"},
+        "traceparent_header": {"const": "traceparent"},
+        "metrics_include_payload_labels": {"const": false},
         "liveness": {"type": "string", "minLength": 1},
         "readiness": {"type": "string", "minLength": 1},
         "access_log_env": {"type": "string", "minLength": 1},

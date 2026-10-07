@@ -348,6 +348,7 @@ class CatalogScanTests(unittest.TestCase):
             "/healthz",
             "/readyz",
             "/api/v1/status",
+            "/api/v1/metrics",
             "/api/v1/openapi.json",
             "/api/v1/run-evidence/inspect",
             "/api/v1/runs",
@@ -670,6 +671,8 @@ REPRESENTATIVES = {
     ("GET", "/readyz", "200"): {"token": False},
     ("GET", "/api/v1/status", "200"): {},
     ("GET", "/api/v1/status", "403"): {"token": False},
+    ("GET", "/api/v1/metrics", "200"): {},
+    ("GET", "/api/v1/metrics", "403"): {"token": False},
     ("GET", "/api/v1/openapi.json", "403"): {"token": False},
     ("POST", "/api/v1/run-evidence/inspect", "200"): {
         "headers": {"Content-Type": "application/json"},
