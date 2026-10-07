@@ -46,7 +46,8 @@ listed here fails the suite rather than becoming quietly undiscoverable.
 | **E044** | [Review capacity as a carrying-capacity governor](E044-review-capacity-governor.md) |
 
 The Physarum routing research records are also indexed here:
-[PHY-0 reference routing](PHY-0-physarum-compute-routing.md) and
+[PHY-0 reference routing](PHY-0-physarum-compute-routing.md),
+[PHY-0A stationary falsification](PHY-0A-physarum-stationary-routing.md), and
 [PHY-1 stress matrix](PHY-1-stress-matrix.md).
 
 The Adaptive Verification Ecology records are indexed here:

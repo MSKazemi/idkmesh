@@ -15,6 +15,11 @@ from typing import Dict, Iterable, List, Mapping, Sequence, Tuple
 
 EPS = 1e-12
 
+SCENARIOS = (
+    "abrupt-shift",
+    "stationary",
+)
+
 
 @dataclass(frozen=True)
 class Edge:
@@ -101,7 +106,16 @@ def beta_mean(ab: Sequence[float]) -> float:
     return float(ab[0]) / (float(ab[0]) + float(ab[1]))
 
 
-def true_reliability(edge: Edge, epoch: int, cfg: Config) -> float:
+def true_reliability(
+    edge: Edge,
+    epoch: int,
+    cfg: Config,
+    scenario: str = "abrupt-shift",
+) -> float:
+    if scenario == "stationary":
+        return edge.reliability_before
+    if scenario != "abrupt-shift":
+        raise ValueError(f"unknown scenario: {scenario}")
     return (
         edge.reliability_before
         if epoch < cfg.shift_epoch
@@ -223,11 +237,17 @@ def observe_path(
     reliability_posteriors: Dict[Tuple[str, str], List[float]],
     cfg: Config,
     rng: random.Random,
+    scenario: str = "abrupt-shift",
 ) -> Tuple[bool, Tuple[Tuple[str, str], ...]]:
     failed: List[Tuple[str, str]] = []
     for edge_key in path_edges(path):
         edge = EDGE_BY_KEY[edge_key]
-        ok = rng.random() < true_reliability(edge, epoch, cfg)
+        ok = rng.random() < true_reliability(
+            edge,
+            epoch,
+            cfg,
+            scenario,
+        )
         reliability_posteriors[edge_key][0 if ok else 1] += 1.0
         if not ok:
             failed.append(edge_key)
@@ -283,10 +303,13 @@ def run_strategy(
     epochs: int = 80,
     tasks_per_epoch: int = 20,
     cfg: Config | None = None,
+    scenario: str = "abrupt-shift",
 ) -> Dict[str, object]:
     cfg = cfg or Config()
     if epochs <= 0 or tasks_per_epoch <= 0:
         raise ValueError("epochs and tasks_per_epoch must be positive")
+    if scenario not in SCENARIOS:
+        raise ValueError(f"unknown scenario: {scenario}")
 
     rng = random.Random(seed)
     paths = enumerate_paths(max_hops=cfg.max_hops)
@@ -327,6 +350,7 @@ def run_strategy(
                 reliability_posteriors,
                 cfg,
                 rng,
+                scenario,
             )
             attempts += 1
             path_id = ">".join(path)
@@ -367,6 +391,7 @@ def run_strategy(
 
     return {
         "strategy": strategy,
+        "scenario": scenario,
         "attempts": attempts,
         "success_rate": round(successes / attempts, 6),
         "pre_shift_success_rate": round(
@@ -411,9 +436,12 @@ def compare(
     epochs: int = 80,
     tasks_per_epoch: int = 20,
     cfg: Config | None = None,
+    scenario: str = "abrupt-shift",
 ) -> Dict[str, object]:
     if seeds <= 0:
         raise ValueError("seeds must be positive")
+    if scenario not in SCENARIOS:
+        raise ValueError(f"unknown scenario: {scenario}")
     cfg = cfg or Config()
     rows = {
         strategy: [
@@ -423,6 +451,7 @@ def compare(
                 epochs=epochs,
                 tasks_per_epoch=tasks_per_epoch,
                 cfg=cfg,
+                scenario=scenario,
             )
             for offset in range(seeds)
         ]
@@ -453,6 +482,7 @@ def compare(
         "model_warning": (
             "Synthetic admitted-network routing model; not empirical evidence."
         ),
+        "scenario": scenario,
         "seed_start": seed_start,
         "seeds": seeds,
         "epochs": epochs,
@@ -468,6 +498,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         "--strategy",
         choices=("all",) + STRATEGIES,
         default="all",
+    )
+    parser.add_argument(
+        "--scenario",
+        choices=SCENARIOS,
+        default="abrupt-shift",
     )
     parser.add_argument("--seed", type=int, default=7)
     parser.add_argument("--seed-start", type=int, default=1)
@@ -486,6 +521,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             seeds=args.seeds,
             epochs=args.epochs,
             tasks_per_epoch=args.tasks_per_epoch,
+            scenario=args.scenario,
         )
         if args.strategy == "all"
         else run_strategy(
@@ -493,6 +529,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             seed=args.seed,
             epochs=args.epochs,
             tasks_per_epoch=args.tasks_per_epoch,
+            scenario=args.scenario,
         )
     )
     print(json.dumps(payload, indent=args.indent, sort_keys=True))

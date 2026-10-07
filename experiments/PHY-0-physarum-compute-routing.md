@@ -99,7 +99,7 @@ The next experiments must determine whether that resilience premium remains wort
 
 Before any integration, vary:
 
-- no environment shift;
+- **no environment shift — completed as [PHY-0A](PHY-0A-physarum-stationary-routing.md);**
 - gradual rather than abrupt degradation;
 - transient failures rather than persistent shift;
 - sparse vs dense graphs;
