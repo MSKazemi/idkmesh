@@ -217,6 +217,55 @@ def build_parser() -> argparse.ArgumentParser:
         "--pretty", action="store_true",
         help="pretty-print the JSON report")
 
+    init_cmd = sub.add_parser(
+        "init",
+        help="plan GitHub-first IDKMesh bootstrap",
+        description=(
+            "Expose the deterministic GitHub-first bootstrap plan without "
+            "writing repository files or mutating GitHub. C8-B supports "
+            "--github --dry-run only; apply mode remains fail-closed until "
+            "the rendering and safe re-run slices land."
+        ),
+        formatter_class=_ExamplesHelpFormatter,
+        epilog=(
+            "Examples:\n"
+            "  idkmesh init --github --dry-run --idkmesh-ref v0.1.0\n"
+            "  idkmesh init --github --dry-run --idkmesh-ref"
+            " 0123456789abcdef0123456789abcdef01234567 --json"
+        ),
+    )
+    init_cmd.add_argument(
+        "--github",
+        action="store_true",
+        help="plan the server-optional GitHub-first bootstrap profile",
+    )
+    init_cmd.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="print the deterministic bootstrap plan; perform no writes",
+    )
+    init_cmd.add_argument(
+        "--idkmesh-ref",
+        required=True,
+        metavar="REF",
+        help=(
+            "pinned IDKMesh release tag (vMAJOR.MINOR.PATCH) or full "
+            "40-character lowercase Git SHA"
+        ),
+    )
+    init_cmd.add_argument(
+        "--default-branch",
+        default="main",
+        metavar="BRANCH",
+        help="target repository integration branch (default: main)",
+    )
+    init_cmd.add_argument(
+        "--json",
+        action="store_true",
+        dest="json_output",
+        help="emit deterministic machine-readable dry-run JSON",
+    )
+
     connections = sub.add_parser(
         "connections",
         help="validate, list, import, store, or inspect connector configuration",
@@ -1716,6 +1765,62 @@ def _run_route(args: argparse.Namespace) -> int:
     return 0
 
 
+def _run_github_init(args: argparse.Namespace) -> int:
+    """Render the C8-B bootstrap plan without any side effect."""
+
+    if not args.github:
+        return _fail("init currently supports only the --github profile")
+    if not args.dry_run:
+        return _fail(
+            "GitHub bootstrap apply mode is not implemented; pass --dry-run"
+        )
+
+    from idkmesh.github_bootstrap import (
+        BootstrapPlanError,
+        build_github_bootstrap_plan,
+    )
+
+    try:
+        plan = build_github_bootstrap_plan(
+            idkmesh_ref=args.idkmesh_ref,
+            default_branch=args.default_branch,
+        )
+    except BootstrapPlanError as exc:
+        return _fail(str(exc))
+
+    payload = {
+        "kind": "idkmesh-github-bootstrap-dry-run",
+        "schema_version": "0.1",
+        "dry_run": True,
+        "writes_performed": False,
+        "github_mutation_performed": False,
+        "secret_values_accessed": False,
+        "plan": plan.to_dict(),
+    }
+
+    if args.json_output:
+        print(json.dumps(payload, sort_keys=True, separators=(",", ":")))
+        return 0
+
+    print("GitHub bootstrap dry-run")
+    print(f"IDKMesh ref: {plan.idkmesh_ref}")
+    print(f"default branch: {plan.default_branch}")
+    print("planned files:")
+    for item in plan.files:
+        print(
+            f"- {item.path} "
+            f"[{item.ownership}; {item.overwrite_policy}; "
+            f"phase={item.phase}; effect={item.execution_effect}]"
+        )
+    print("owner-only actions:")
+    for action in plan.owner_actions:
+        print(f"- {action.code}: {action.summary}")
+    print("filesystem writes: no")
+    print("GitHub mutations: no")
+    print("secret values accessed: no")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     if args.command == "control-tower":
@@ -1766,6 +1871,8 @@ def main(argv: list[str] | None = None) -> int:
                 f"{_reason(exc)}")
         return 0
 
+    if args.command == "init":
+        return _run_github_init(args)
     if args.command == "run":
         return _run_product_spine_control(args)
     if args.command == "work-unit":

@@ -60,6 +60,20 @@ Target command:
 idkmesh init --github
 ```
 
+Current C8-B safe surface:
+
+```bash
+idkmesh init --github --dry-run --idkmesh-ref v0.1.0
+idkmesh init --github --dry-run \
+  --idkmesh-ref 0123456789abcdef0123456789abcdef01234567 --json
+```
+
+The current implementation exposes the deterministic bootstrap plan only. It
+performs no filesystem writes, GitHub mutations, secret access, workflow
+execution, or repository administration. Omitting `--dry-run` fails closed
+until C8-C/C8-D rendering and C8-F safe re-run/conflict handling are
+implemented.
+
 Required behavior:
 
 1. detect Git repository/default branch/remotes;
