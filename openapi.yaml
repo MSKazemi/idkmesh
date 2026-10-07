@@ -72,6 +72,26 @@ paths:
                 $ref: "#/components/schemas/idkmesh-control-tower-status-v0.1"
         "403":
           $ref: "#/components/responses/Forbidden"
+  /api/v1/metrics:
+    get:
+      summary: Read privacy-safe aggregate operational metrics
+      description: >
+        Process-lifetime counters, latency buckets, bounded concurrency gauges,
+        and coarse dependency state. Contains no request/evidence payload labels.
+      security:
+        - LocalSessionToken: []
+      responses:
+        "200":
+          description: Aggregate operational metrics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/idkmesh-api-operational-metrics-v0.1"
+            application/vnd.idkmesh.control-tower.v1+json:
+              schema:
+                $ref: "#/components/schemas/idkmesh-api-operational-metrics-v0.1"
+        "403":
+          $ref: "#/components/responses/Forbidden"
   /api/v1/openapi.json:
     get:
       summary: Read this OpenAPI contract
@@ -460,6 +480,7 @@ components:
     "identity-binding-v0.1": {$ref: "https://idkmesh.org/schemas/identity-binding-v0.1.schema.json"}
     "idkgraph": {$ref: "https://idkmesh.org/schemas/idkgraph.schema.json"}
     "idkmesh-api-error-v0.1": {$ref: "https://idkmesh.org/schemas/idkmesh-api-error-v0.1.schema.json"}
+    "idkmesh-api-operational-metrics-v0.1": {$ref: "https://idkmesh.org/schemas/idkmesh-api-operational-metrics-v0.1.schema.json"}
     "idkmesh-control-tower-inspection-response-v0.1": {$ref: "https://idkmesh.org/schemas/idkmesh-control-tower-inspection-response-v0.1.schema.json"}
     "idkmesh-control-tower-project-response-v0.1": {$ref: "https://idkmesh.org/schemas/idkmesh-control-tower-project-response-v0.1.schema.json"}
     "idkmesh-control-tower-run-attempts-response-v0.1": {$ref: "https://idkmesh.org/schemas/idkmesh-control-tower-run-attempts-response-v0.1.schema.json"}

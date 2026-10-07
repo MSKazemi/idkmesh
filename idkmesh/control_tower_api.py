@@ -735,6 +735,10 @@ def _status_document_base() -> dict[str, Any]:
                 "https://idkmesh.org/schemas/"
                 "control-tower-snapshot-v0.1.schema.json"
             ),
+            "api_operational_metrics": (
+                "https://idkmesh.org/schemas/"
+                "idkmesh-api-operational-metrics-v0.1.schema.json"
+            ),
         },
         "capabilities": {
             "run_evidence_inspection": True,
@@ -749,6 +753,8 @@ def _status_document_base() -> dict[str, Any]:
         },
         "operations": {
             "request_id_header": "X-Request-ID",
+            "traceparent_header": "traceparent",
+            "metrics_include_payload_labels": False,
             "liveness": "GET /healthz",
             "readiness": "GET /readyz",
             "access_log_env": "IDKMESH_HTTP_ACCESS_LOG",
@@ -758,6 +764,7 @@ def _status_document_base() -> dict[str, Any]:
         "endpoints": {
             "status": "GET /api/v1/status",
             "openapi": "GET /api/v1/openapi.json",
+            "metrics": "GET /api/v1/metrics",
             "inspect_run_evidence": "POST /api/v1/run-evidence/inspect",
             "list_runs": "GET /api/v1/runs",
             "read_run": "GET /api/v1/runs/{run_id}",
@@ -884,6 +891,47 @@ def openapi_document() -> dict[str, Any]:
                                 },
                             },
                         }
+                    },
+                }
+            },
+            "/api/v1/metrics": {
+                "get": {
+                    "summary": (
+                        "Read privacy-safe aggregate operational metrics"
+                    ),
+                    "description": (
+                        "Process-lifetime counters, latency buckets, bounded "
+                        "concurrency gauges, and coarse dependency state. "
+                        "Contains no request/evidence payload labels."
+                    ),
+                    "security": [{"LocalSessionToken": []}],
+                    "responses": {
+                        "200": {
+                            "description": "Aggregate operational metrics",
+                            "content": {
+                                JSON_MEDIA_TYPE: {
+                                    "schema": {
+                                        "$ref": (
+                                            "https://idkmesh.org/schemas/"
+                                            "idkmesh-api-operational-metrics-"
+                                            "v0.1.schema.json"
+                                        )
+                                    }
+                                },
+                                V1_MEDIA_TYPE: {
+                                    "schema": {
+                                        "$ref": (
+                                            "https://idkmesh.org/schemas/"
+                                            "idkmesh-api-operational-metrics-"
+                                            "v0.1.schema.json"
+                                        )
+                                    }
+                                },
+                            },
+                        },
+                        "403": {
+                            "description": "Invalid local session token"
+                        },
                     },
                 }
             },

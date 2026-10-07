@@ -14,6 +14,11 @@ from typing import Any
 from urllib.parse import parse_qsl, urlsplit
 
 from idkmesh import __version__
+from idkmesh.api_observability import (
+    ApiMetrics,
+    TRACEPARENT_HEADER,
+    resolve_traceparent,
+)
 from idkmesh.control_tower_api import (
     API_SCHEMA_VERSION,
     API_VERSION,
@@ -598,6 +603,7 @@ def _handler(
         def handle_one_request(self) -> None:
             self._request_started = time.monotonic()
             self._request_id_value = None
+            self._traceparent_value = None
             super().handle_one_request()
 
         def version_string(self) -> str:
@@ -613,6 +619,15 @@ def _handler(
                     self.headers.get(REQUEST_ID_HEADER)
                 )
                 self._request_id_value = value
+            return value
+
+        def _traceparent(self) -> str | None:
+            value = getattr(self, "_traceparent_value", None)
+            if value is None:
+                value = resolve_traceparent(
+                    self.headers.get(TRACEPARENT_HEADER)
+                )
+                self._traceparent_value = value
             return value
 
         def _access_path(self) -> str:
@@ -641,16 +656,26 @@ def _handler(
                 read_only=True,
                 api_version=API_VERSION,
             )
+            traceparent = self._traceparent()
+            if traceparent is not None:
+                headers[TRACEPARENT_HEADER] = traceparent
             if extra_headers:
                 headers.update(extra_headers)
+
+            started = getattr(
+                self, "_request_started", time.monotonic()
+            )
+            duration_ms = (time.monotonic() - started) * 1000.0
+            self.server.metrics.record_response(
+                status=status,
+                duration_ms=duration_ms,
+            )
+
             for name, value in headers.items():
                 self.send_header(name, value)
             send_security_headers(self)
             self.end_headers()
             if access_logging_enabled():
-                started = getattr(
-                    self, "_request_started", time.monotonic()
-                )
                 try:
                     write_access_log(
                         build_access_log_event(
@@ -660,9 +685,7 @@ def _handler(
                             path=self._access_path(),
                             status=status,
                             response_bytes=length or 0,
-                            duration_ms=(
-                                time.monotonic() - started
-                            ) * 1000.0,
+                            duration_ms=duration_ms,
                         )
                     )
                 except OSError:
@@ -1448,6 +1471,9 @@ def _handler(
             """
             self.close_connection = True
             draining = verdict == DRAINING
+            self.server.metrics.note_admission_rejection(
+                "draining" if draining else "overloaded"
+            )
             self._send_json(
                 503,
                 error_document(
@@ -1745,6 +1771,29 @@ def _handler(
                     head_only=head_only,
                 )
                 return
+            if path == f"/api/{API_VERSION}/metrics":
+                self._send_json(
+                    200,
+                    self.server.metrics.document(
+                        service=SERVICE_NAME,
+                        service_version=__version__,
+                        in_flight_requests=self.server.limiter.in_flight,
+                        max_concurrent_requests=(
+                            self.server.limiter.max_concurrent
+                        ),
+                        event_stream_clients=(
+                            self.server.sse_limiter.in_flight
+                        ),
+                        max_event_stream_clients=(
+                            self.server.sse_limiter.max_concurrent
+                        ),
+                        product_spine_store_configured=(
+                            product_spine_store_path is not None
+                        ),
+                    ),
+                    head_only=head_only,
+                )
+                return
             if path == f"/api/{API_VERSION}/run-evidence/inspect":
                 self._method_not_allowed("POST", head_only=head_only)
                 return
@@ -1841,6 +1890,7 @@ def _handler(
                 "/readyz",
                 f"/api/{API_VERSION}/status",
                 f"/api/{API_VERSION}/openapi.json",
+                f"/api/{API_VERSION}/metrics",
                 f"/api/{API_VERSION}/runs",
                 f"/api/{API_VERSION}/work-units",
                 f"/api/{API_VERSION}/events",
@@ -1866,6 +1916,7 @@ def _handler(
             body = self._read_json_text()
             if body is None:
                 return
+            self.server.metrics.note_run_evidence_inspection()
             try:
                 report = parse_report_text(
                     body,
@@ -1904,6 +1955,7 @@ def _handler(
                 "/healthz",
                 f"/api/{API_VERSION}/status",
                 f"/api/{API_VERSION}/openapi.json",
+                f"/api/{API_VERSION}/metrics",
                 f"/api/{API_VERSION}/runs",
                 f"/api/{API_VERSION}/work-units",
                 f"/api/{API_VERSION}/events",
@@ -1986,6 +2038,7 @@ class ControlTowerServer(ThreadingHTTPServer):
     stream_stop: threading.Event
     sse_poll_seconds: float
     limits: dict[str, Any]
+    metrics: ApiMetrics
 
     def drain(self, timeout: float = DEFAULT_DRAIN_TIMEOUT_SECONDS) -> bool:
         """Stop admitting requests and wait for in-flight ones to finish.
@@ -2038,6 +2091,7 @@ def create_server(
         ),
     )
     server.ui_token = token
+    server.metrics = ApiMetrics()
     server.limiter = RequestLimiter(max_concurrent_requests)
     server.sse_limiter = RequestLimiter(max_sse_clients)
     server.stream_stop = threading.Event()

@@ -1,0 +1,73 @@
+{
+  "schema_version": "0.1",
+  "kind": "idkmesh-api-operational-metrics",
+  "service": "idkmesh-control-tower",
+  "service_version": "0.1",
+  "scope": "process_lifetime",
+  "requests": {
+    "total": 3,
+    "client_errors_total": 1,
+    "server_errors_total": 0,
+    "by_status_class": {
+      "1xx": 0,
+      "2xx": 2,
+      "3xx": 0,
+      "4xx": 1,
+      "5xx": 0
+    }
+  },
+  "latency_ms": {
+    "count": 3,
+    "sum": 37.0,
+    "max": 24.0,
+    "buckets": [
+      {"le_ms": 5.0, "count": 1},
+      {"le_ms": 10.0, "count": 1},
+      {"le_ms": 25.0, "count": 3},
+      {"le_ms": 50.0, "count": 3},
+      {"le_ms": 100.0, "count": 3},
+      {"le_ms": 250.0, "count": 3},
+      {"le_ms": 500.0, "count": 3},
+      {"le_ms": 1000.0, "count": 3},
+      {"le_ms": 2500.0, "count": 3},
+      {"le_ms": 5000.0, "count": 3},
+      {"le_ms": 10000.0, "count": 3}
+    ]
+  },
+  "concurrency": {
+    "in_flight_requests": 1,
+    "max_concurrent_requests": 16,
+    "event_stream_clients": 0,
+    "max_event_stream_clients": 8
+  },
+  "admission": {
+    "overload_rejections_total": 0,
+    "draining_rejections_total": 0,
+    "rate_limit_rejections_total": 0,
+    "rate_limit_status": "not_implemented"
+  },
+  "operations": {
+    "run_evidence_inspections_total": 1,
+    "human_decision_ingestions_total": 0,
+    "human_decision_ingestion_status": "not_implemented"
+  },
+  "dependencies": {
+    "product_spine_store": {
+      "state": "configured_unprobed",
+      "required_for_core_readiness": false
+    }
+  },
+  "telemetry": {
+    "trace_context": "w3c-traceparent-v00-pass-through",
+    "path_labels": false,
+    "query_labels": false,
+    "request_id_labels": false,
+    "authentication_labels": false,
+    "payload_labels": false
+  },
+  "authority": {
+    "canonical_state_write": false,
+    "git_push": false,
+    "merge": false
+  }
+}

@@ -32,6 +32,11 @@ meaning of an existing version.
   dependency-free request correlation, liveness/readiness, service metadata,
   payload-free structured access logging, and reusable bounded-limit
   primitives for IDKMesh HTTP surfaces.
+- [API Observability v0.1](API_OBSERVABILITY_V0_1.md) —
+  privacy-safe, fixed-cardinality request/status/latency/admission/concurrency
+  telemetry, W3C traceparent v00 pass-through, and explicit local-profile
+  SLO/alert targets. The OpenTelemetry exporter remains follow-up work under
+  #744.
 - [Verification Provenance Integrity](VERIFICATION_PROVENANCE_INTEGRITY.md) —
   binds WorkUnit, result, and verification objects with canonical digests.
 

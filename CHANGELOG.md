@@ -14,6 +14,18 @@ and the release notes for that tag.
 
 ### Added
 
+- Privacy-safe API observability slice for issue #744: the loopback Control
+  Tower now exposes authenticated `GET /api/v1/metrics` with fixed-cardinality
+  request/status/error counters, cumulative latency buckets, concurrency and
+  overload/drain signals, evidence-inspection counts, and coarse optional-store
+  configuration state. Valid W3C `traceparent` v00 is passed through without
+  treating trace context as identity. The schema deliberately has no path,
+  query, request-id, authentication, prompt, evidence, run, or WorkUnit label
+  fields. Local-profile SLO/alert targets are documented in
+  [API Observability v0.1](docs/specifications/API_OBSERVABILITY_V0_1.md).
+  OpenTelemetry export and Human Decision ingestion metrics remain follow-up
+  work; no new runtime dependency or actuation authority is introduced.
+
 - Enterprise Audit Ledger v0.1 (issue #671): a dedicated SQLite append-only
   security/audit stream separate from ordinary logs and Product Spine events.
   Each fixed-shape event binds tenant/project, request/run correlation,

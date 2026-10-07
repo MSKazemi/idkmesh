@@ -44,6 +44,7 @@ SCHEMAS = REPO_ROOT / "schemas"
 # turning a semantic fixture into a structural one.
 VALID_AGAINST = {
     "examples/api/control-tower-inspection-response.example.json": "idkmesh-control-tower-inspection-response-v0.1.schema.json",
+    "examples/api/control-tower-metrics.example.json": "idkmesh-api-operational-metrics-v0.1.schema.json",
     "examples/api/control-tower-project-response.example.json": "idkmesh-control-tower-project-response-v0.1.schema.json",
     "examples/api/control-tower-run-attempts-response.example.json": "idkmesh-control-tower-run-attempts-response-v0.1.schema.json",
     "examples/api/control-tower-run-evidence-response.example.json": "idkmesh-control-tower-run-evidence-response-v0.1.schema.json",

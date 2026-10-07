@@ -30,6 +30,11 @@ domain specification that emits them, not by these two schemas.
   `docs/specifications/CONTROL_TOWER_LOCAL_API_V0_1.md`, validated against
   `schemas/idkmesh-control-tower-status-v0.1.schema.json`. Its values mirror
   `idkmesh.control_tower_api.status_document()`.
+- `control-tower-metrics.example.json` — a privacy-safe aggregate
+  `GET /api/v1/metrics` response, validated against
+  `schemas/idkmesh-api-operational-metrics-v0.1.schema.json`. It demonstrates
+  fixed-cardinality counters, latency buckets, bounded concurrency/admission
+  state, and the explicit absence of payload- or identity-derived labels.
 - `readiness.example.json` — a `GET /readyz` readiness document, validated
   against `schemas/idkmesh-readiness-v0.1.schema.json`.
 - `control-tower-run-response.example.json` — the success envelope returned
