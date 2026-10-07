@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idkmesh.org/schemas/marginal-evidence-synthesis-config-v0.1.schema.json",
+  "title": "IDKMesh Marginal Evidence Synthesis Config v0.1",
+  "description": "Frozen manifest for descriptive synthesis of at least two already-produced marginal-evidence benchmark reports. It grants no routing, selection, acceptance, or merge authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "synthesis_id",
+    "evidence_class",
+    "selection_rule_version",
+    "benchmark_reports"
+  ],
+  "properties": {
+    "schema": {"const": "marginal-evidence-synthesis-config-v0.1"},
+    "synthesis_id": {"type": "string", "minLength": 1},
+    "evidence_class": {"type": "string", "minLength": 1},
+    "selection_rule_version": {
+      "const": "marginal-selection-interval-dominance-v0.1"
+    },
+    "benchmark_reports": {
+      "type": "array",
+      "minItems": 2,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    }
+  }
+}

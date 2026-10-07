@@ -1,0 +1,231 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idkmesh.org/schemas/marginal-evidence-synthesis-report-v0.1.schema.json",
+  "title": "IDKMesh Marginal Evidence Synthesis Report v0.1",
+  "description": "Descriptive cross-cohort aggregation of frozen held-out marginal-evidence benchmark reports. The report intentionally contains no winner, ranking, routing recommendation, EvaluatorPlan, acceptance verdict, or merge authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "synthesis_id",
+    "evidence_class",
+    "authority",
+    "analysis",
+    "cohorts",
+    "strategies",
+    "warnings",
+    "provenance"
+  ],
+  "properties": {
+    "schema": {"const": "marginal-evidence-synthesis-report-v0.1"},
+    "synthesis_id": {"type": "string", "minLength": 1},
+    "evidence_class": {"type": "string", "minLength": 1},
+    "authority": {"const": "diagnostic_only"},
+    "analysis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "selection_rule_version",
+        "benchmark_count",
+        "total_holdout_non_probe_candidates"
+      ],
+      "properties": {
+        "mode": {"const": "descriptive-cross-cohort-v0.1"},
+        "selection_rule_version": {
+          "const": "marginal-selection-interval-dominance-v0.1"
+        },
+        "benchmark_count": {"type": "integer", "minimum": 2},
+        "total_holdout_non_probe_candidates": {"type": "integer", "minimum": 2}
+      }
+    },
+    "cohorts": {
+      "type": "array",
+      "minItems": 2,
+      "items": {"$ref": "#/$defs/cohort"}
+    },
+    "strategies": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 5,
+      "prefixItems": [
+        {"allOf": [{"$ref": "#/$defs/strategy"}, {"properties": {"strategy": {"const": "marginal_effective_votes"}}}]},
+        {"allOf": [{"$ref": "#/$defs/strategy"}, {"properties": {"strategy": {"const": "random_eligible"}}}]},
+        {"allOf": [{"$ref": "#/$defs/strategy"}, {"properties": {"strategy": {"const": "highest_standalone_accuracy"}}}]},
+        {"allOf": [{"$ref": "#/$defs/strategy"}, {"properties": {"strategy": {"const": "different_family_first"}}}]},
+        {"allOf": [{"$ref": "#/$defs/strategy"}, {"properties": {"strategy": {"const": "minimum_mean_pairwise_error_correlation"}}}]}
+      ],
+      "items": false
+    },
+    "warnings": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tool",
+        "tool_version",
+        "config_digest_sha256",
+        "synthesis_input_digest_sha256"
+      ],
+      "properties": {
+        "tool": {"const": "idkmesh marginal-evidence-synthesis"},
+        "tool_version": {"type": "string", "minLength": 1},
+        "config_digest_sha256": {"$ref": "#/$defs/sha256hex"},
+        "synthesis_input_digest_sha256": {"$ref": "#/$defs/sha256hex"}
+      }
+    }
+  },
+  "$defs": {
+    "sha256hex": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "finiteNumberOrNull": {
+      "type": ["number", "null"]
+    },
+    "cohort": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "benchmark_id",
+        "gate_id",
+        "report",
+        "report_digest_sha256",
+        "design_input_digest_sha256",
+        "holdout_input_digest_sha256",
+        "holdout_non_probe_candidates"
+      ],
+      "properties": {
+        "benchmark_id": {"type": "string", "minLength": 1},
+        "gate_id": {"type": "string", "minLength": 1},
+        "report": {"type": "string", "minLength": 1},
+        "report_digest_sha256": {"$ref": "#/$defs/sha256hex"},
+        "design_input_digest_sha256": {"$ref": "#/$defs/sha256hex"},
+        "holdout_input_digest_sha256": {"$ref": "#/$defs/sha256hex"},
+        "holdout_non_probe_candidates": {"type": "integer", "minimum": 1}
+      }
+    },
+    "metricPanelError": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "measured",
+        "unresolved",
+        "improved",
+        "unchanged",
+        "worsened",
+        "macro_mean",
+        "holdout_row_weighted_mean"
+      ],
+      "properties": {
+        "measured": {"type": "integer", "minimum": 0},
+        "unresolved": {"type": "integer", "minimum": 0},
+        "improved": {"type": "integer", "minimum": 0},
+        "unchanged": {"type": "integer", "minimum": 0},
+        "worsened": {"type": "integer", "minimum": 0},
+        "macro_mean": {"$ref": "#/$defs/finiteNumberOrNull"},
+        "holdout_row_weighted_mean": {"$ref": "#/$defs/finiteNumberOrNull"}
+      }
+    },
+    "metricEffectiveVotes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "measured",
+        "unresolved",
+        "positive",
+        "unchanged",
+        "negative",
+        "macro_mean"
+      ],
+      "properties": {
+        "measured": {"type": "integer", "minimum": 0},
+        "unresolved": {"type": "integer", "minimum": 0},
+        "positive": {"type": "integer", "minimum": 0},
+        "unchanged": {"type": "integer", "minimum": 0},
+        "negative": {"type": "integer", "minimum": 0},
+        "macro_mean": {"$ref": "#/$defs/finiteNumberOrNull"}
+      }
+    },
+    "outcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "benchmark_id",
+        "holdout_non_probe_candidates",
+        "strategy",
+        "selection_status",
+        "selected_verifier_id",
+        "status",
+        "panel_error_delta",
+        "delta_effective_votes"
+      ],
+      "properties": {
+        "benchmark_id": {"type": "string", "minLength": 1},
+        "holdout_non_probe_candidates": {"type": "integer", "minimum": 1},
+        "strategy": {
+          "enum": [
+            "marginal_effective_votes",
+            "random_eligible",
+            "highest_standalone_accuracy",
+            "different_family_first",
+            "minimum_mean_pairwise_error_correlation"
+          ]
+        },
+        "selection_status": {"enum": ["selected", "unresolved"]},
+        "selected_verifier_id": {"type": ["string", "null"]},
+        "status": {
+          "enum": [
+            "not_evaluated",
+            "evaluated",
+            "evaluated_with_unresolved_metrics"
+          ]
+        },
+        "panel_error_delta": {"$ref": "#/$defs/finiteNumberOrNull"},
+        "delta_effective_votes": {"$ref": "#/$defs/finiteNumberOrNull"}
+      }
+    },
+    "strategy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "strategy",
+        "cohorts_total",
+        "selection_resolved",
+        "selection_unresolved",
+        "holdout_evaluated",
+        "holdout_not_evaluated",
+        "panel_error_delta",
+        "effective_votes_delta",
+        "cohort_outcomes"
+      ],
+      "properties": {
+        "strategy": {
+          "enum": [
+            "marginal_effective_votes",
+            "random_eligible",
+            "highest_standalone_accuracy",
+            "different_family_first",
+            "minimum_mean_pairwise_error_correlation"
+          ]
+        },
+        "cohorts_total": {"type": "integer", "minimum": 2},
+        "selection_resolved": {"type": "integer", "minimum": 0},
+        "selection_unresolved": {"type": "integer", "minimum": 0},
+        "holdout_evaluated": {"type": "integer", "minimum": 0},
+        "holdout_not_evaluated": {"type": "integer", "minimum": 0},
+        "panel_error_delta": {"$ref": "#/$defs/metricPanelError"},
+        "effective_votes_delta": {"$ref": "#/$defs/metricEffectiveVotes"},
+        "cohort_outcomes": {
+          "type": "array",
+          "minItems": 2,
+          "items": {"$ref": "#/$defs/outcome"}
+        }
+      }
+    }
+  }
+}

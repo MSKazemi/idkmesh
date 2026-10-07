@@ -7,9 +7,13 @@ canonical files designated by [`../../PROJECT_RULES.md`](../../PROJECT_RULES.md)
 (decisions, specifications, architecture, findings); this directory keeps the trail
 that produced them.
 
-173 records across 10 dates, newest first.
+174 records across 11 dates, newest first.
 
 ## Index
+
+### 2026-10-07
+
+- [Marginal evidence cross-cohort synthesis](2026-10-07-marginal-evidence-cross-cohort-synthesis.md)
 
 ### 2026-10-04
 

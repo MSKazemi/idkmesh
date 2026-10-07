@@ -606,6 +606,14 @@ The next evidence gate is the held-out benchmark documented in
 It freezes the marginal selector plus four simpler baselines from design rows
 only, then evaluates those frozen selections on disjoint holdout rows.
 
+The cross-cohort synthesis layer is documented in
+[MARGINAL_EVIDENCE_SYNTHESIS_V0_1.md](../specifications/MARGINAL_EVIDENCE_SYNTHESIS_V0_1.md).
+It aggregates multiple already-frozen benchmark reports descriptively, rejects
+exact duplicate cohort evidence, and preserves unresolved outcomes without
+emitting a winner or promotion decision. This closes the tooling gap between a
+single held-out fixture and a broader preregistered cohort, but observed cohort
+collection remains a separate research gate.
+
 This progression deliberately moves through:
 
 ```text
@@ -616,6 +624,12 @@ compare against simple baselines
         |
         v
 require held-out stability
+        |
+        v
+synthesize multiple frozen cohorts
+        |
+        v
+require broader observed evidence
         |
         v
 only then consider AVE / Connector Control Plane dry-run integration
