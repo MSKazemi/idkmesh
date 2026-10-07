@@ -48,6 +48,21 @@ compilation.
 The full repository gate remains authoritative after publication because the
 isolated environment cannot clone GitHub or execute the complete IDKMesh tree.
 
+## CI follow-up
+
+The first PR Gate attempt stopped before tests because the pull-request body
+contained the prose sentence `This PR does not close #693`. The repository's
+closing-keyword guard correctly treats any `close #<n>` phrase as a potential
+auto-closure signal even when it is negated in English.
+
+The PR body was corrected to `This PR leaves issue 693 open`. Re-running the
+failed jobs reused GitHub's original pull-request event payload, so the guard
+still saw the old body. A fresh branch-head event is therefore required; this
+append-only record update is the only code-tree change in that follow-up commit.
+
+No product code, schema, selector rule, or authority boundary changed during
+this CI repair.
+
 ## Research boundary
 
 This slice closes a tooling gap, not the scientific question. A broader
