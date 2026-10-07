@@ -5,8 +5,8 @@ and the repository evidence that can support them.
 
 ## Current manuscript status
 
-The canonical manuscript source is [`main.tex`](main.tex) ("Reviewer Count Is
-Not Evidence Count: Measured Error Dependence in an Executable Verification
+The canonical manuscript source is [`main.tex`](main.tex) ("Dependence Shape Matters:
+Partial Failures, Blind Spots, and Quorum Limits in an Executable Verification
 Panel"), built with [`Makefile`](Makefile) against [`refs.bib`](refs.bib) and
 the figures [`make_figures.py`](make_figures.py) regenerates from committed
 experiment artifacts under `experiments/results/`. The built PDF is committed

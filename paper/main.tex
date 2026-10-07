@@ -24,8 +24,8 @@
 \newcommand{\neff}{n_{\mathrm{eff}}}
 \newcommand{\code}[1]{\texttt{#1}}
 
-\title{\bfseries Reviewer Count Is Not Evidence Count:\\
-Measured Error Dependence in an Executable Verification Panel}
+\title{\bfseries Dependence Shape Matters:\\
+Partial Failures, Blind Spots, and Quorum Limits in an Executable Verification Panel}
 
 \author{Mohsen Seyedkazemi Ardebili\\
   \small\href{https://mskazemi.github.io}{mskazemi.github.io}\\
@@ -38,48 +38,48 @@ Measured Error Dependence in an Executable Verification Panel}
 
 \begin{abstract}
 \noindent
-Panels of automated verifiers --- test oracles, static analysers, and increasingly
-LLM reviewers --- are routinely sized by head count, on the implicit assumption
-that adding a verifier adds evidence. We measure that assumption on a panel whose
-ground truth is decided by execution rather than by judgement: 25 partial test
-oracles voting on 72 program candidates drawn from 24 problems, where a
+Recent LLM-judge studies already show that nominal panel size can substantially
+overstate independent evidence when errors are correlated. We ask a different
+operational question: \emph{is a panel's accuracy and pairwise error correlation
+enough to predict how it fails, or does the shape of that dependence change the
+conclusions?} We study a panel with execution-decided ground truth: 25 partial
+test oracles voting on 72 program candidates drawn from 24 problems, where a
 candidate's viability is the exit status of a hidden test suite. Every verifier
 discriminates significantly above chance (mean accuracy $p = 0.7956$, 25/25
-significant Youden's $J$ after Bonferroni correction), so the panel's dependence
+significant Youden's $J$ after Bonferroni correction), so the dependence
 structure is interpretable rather than an artifact of incompetent members.
 
-Three results follow. First, the panel buys nothing over its own members:
-majority-vote error is $0.2083$ (95\% CI $[0.131, 0.316]$) against a mean
-member's $0.2044$ and a \emph{best} member's $0.1389$ --- so the panel is not
-worth one verifier, it is worse than one, and its effective independent size
-falls below the metric's floor of 1 rather than landing on it. On 72 items that
-ordering is directional, not significant (panel vs.\ best member, exact McNemar
-$p = 0.18$), and we report it as such. The design-effect heuristic
-$N/(1+(N-1)\rho)$, widely reused to discount correlated voters, reports $1.66$
-for this panel; under the dependence shape our data support it overstates
-available independence in $441/441$ cells of a $63{,}000$-run simulation grid,
-though a contemporaneous LLM-judge panel finds the same heuristic accurate at a
-lower correlation, so the failure is regime-specific rather than universal. Second, that shape is not the shared-shock
-mixture that recent multi-agent work assumes. Real panels fail \emph{partially}
---- 11 of the 15 observed panel failures had a majority wrong while a
-minority was still right --- an outcome shared shock assigns essentially zero
-probability. A per-item difficulty model in the family proposed by
-Eckhardt and Lee in 1985, at identical parameter count, reproduces the partial
-failures ($11.1$ predicted against $11$ observed) and lands $3.7\times$ closer on
-panel error. Third, neither two-parameter model gets the high-quorum limit right,
-because the real panel has an \emph{irreducible blind spot}: four of 72
-candidates are missed by all 25 verifiers, a floor of $\lambda = 0.0556$
-(95\% CI $[0.022, 0.134]$) that no acceptance threshold and no panel size can
-cross. Shared shock over-predicts
-that floor by $2.13\times$ and per-item difficulty promises it away entirely.
+The familiar effective-votes result replicates on this instrument but is not our
+novelty claim. Majority-vote error is $0.2083$ (95\% CI $[0.131, 0.316]$)
+against a mean member's $0.2044$ and a best member's $0.1389$; the panel's
+effective independent size therefore falls below the metric's floor of 1, while
+the design-effect heuristic $N/(1+(N-1)\rho)$ reports $1.66$. On 72 items the
+panel--best-member ordering is directional, not significant (exact McNemar
+$p = 0.18$). The stronger result is structural. Eleven of the 15 observed
+majority failures are \emph{partial}: a majority is wrong while a minority
+remains right. The shared-shock mixture used in earlier IDKMesh simulations
+assigns essentially zero probability to that region. A per-item difficulty model
+in the Eckhardt--Lee family, with the same parameter count, predicts $11.1$
+partial failures against 11 observed and lands $3.7\times$ closer on majority
+error.
 
-The practical consequence is that a verification panel must be characterised by
-measurement, not by declared diversity: verifiers sharing no declared attribute
-in our panel still shared $53\%$ of their errors, and weighting votes by
-declared independence groups --- an intuitively safe defence --- never wins when
-that declared structure is not real. Every finding rests on one constructed
-panel of 25 oracles over 72 items; all code, artifacts, and the analysis
-pipeline are public.
+Dependence shape also changes the action a panel designer should take. The real
+panel contains four candidates missed by all 25 verifiers, an empirical
+blind-spot floor of $\lambda = 0.0556$ (95\% CI $[0.022, 0.134]$). A
+two-parameter shared-shock model over-predicts that floor by $2.13\times$; the
+two-parameter per-item model eventually predicts it away. Across the full quorum
+frontier, the real panel keeps improving after shared shock says improvement has
+stopped and then plateaus where the per-item model says improvement should
+continue. Thus the same scalar correlation is insufficient for panel sizing,
+aggregation, or quorum choice unless the dependence mechanism is also checked.
+
+The practical conclusion is deliberately scoped: measure discrimination,
+failure-count structure, and blind spots on the panel you actually have rather
+than inferring independence from head count or declared diversity. Verifiers
+sharing no declared region in this constructed panel still share $53\%$ of their
+errors. Every quantitative finding rests on one 25-oracle, 72-item instrument;
+it does not establish that LLM judges or other verifier families share the same
+dependence shape. Code, artifacts, and the analysis pipeline are public.
 \end{abstract}
 
 \section{Introduction}
@@ -123,40 +123,39 @@ This paper asks the quantitative version of the question on a panel where the
 answer can be checked:
 
 \begin{quote}
-Given $n$ verifiers with per-verifier accuracy $p$ and measured error
-correlation $\rho$, how many statistically independent verifiers is that panel
-actually worth --- and does any standard model of verifier dependence predict
-what a real panel does?
+Given a verifier panel with measured member accuracy and pairwise error
+correlation, is that summary sufficient to predict the panel's failure
+distribution and quorum frontier --- or do different dependence shapes with
+similar summaries imply different operational decisions?
 \end{quote}
 
 \paragraph{Contributions.}
 \begin{enumerate}
-\item \textbf{An instrument where dependence is measurable} (\S\ref{sec:instrument}).
-  A 25-verifier panel of partial test oracles over 72 candidates with
-  execution-decided ground truth. We first report the negative result that
-  motivated it: a 20-member panel of four small open-weight LLMs across five
-  prompt templates produced no member that discriminated above chance, making
-  its correlation structure uninterpretable.
-\item \textbf{A panel that loses to its own members} (\S\ref{sec:measure}).
-  Majority vote errs on $0.2083$ of items against the best member's $0.1389$, so
-  the panel's effective independent size falls \emph{below} the metric's floor of
-  1. Declared independence labels carry real but partial signal ($\rho = 0.892$
-  within group against $0.526$ across). \citet{kohli2026} reported the same
-  headline on an LLM-judge panel while this work was in preparation, and has
-  priority on that framing; \S\ref{sec:related-panels} reconciles the two,
-  including where they disagree.
-\item \textbf{A model-shape result} (\S\ref{sec:shape}). The shared-shock mixture
-  is not merely mis-parameterised but structurally wrong: it cannot produce
-  partial panel failure, which is the dominant real failure mode. A per-item
-  difficulty (beta-binomial) model at equal parameter count fits.
-\item \textbf{An irreducible blind spot} (\S\ref{sec:quorum}). The real quorum
-  frontier bottoms out at $\lambda = 0.0556$ and stops. Neither two-parameter
-  model expresses this; a one-inflated extension does. Escaping a correlation and
-  escaping a blind spot require different interventions.
-\item \textbf{Design consequences} (\S\ref{sec:consequences}): a negative result
-  on group-balanced aggregation, and a single-factor decomposition showing that
-  panel \emph{correlation} --- not accuracy, and not the blind spot --- carries
-  $53$ of the $58$ catastrophic outcomes an optimising adversary induces.
+\item \textbf{An executable-ground-truth instrument} (\S\ref{sec:instrument}).
+  A 25-verifier panel of partial test oracles over 72 candidates whose labels
+  are decided by hidden-test execution. We also retain the negative precursor:
+  a 20-member small-LLM panel in which no verifier discriminated significantly
+  above chance, showing why competence must be screened before dependence is
+  interpreted.
+\item \textbf{A replication of the effective-votes failure, not a priority claim}
+  (\S\ref{sec:measure}). Our 25-verifier panel is no better than its own members,
+  consistent with contemporary LLM-judge evidence. We use that result as a
+  starting point and explicitly give \citet{kohli2026} priority on the
+  effective-votes framing for judge panels.
+\item \textbf{A dependence-shape falsification} (\S\ref{sec:shape}). Matching a
+  panel on average accuracy and pairwise correlation is not enough: the
+  shared-shock mechanism cannot generate the observed partial-majority failures.
+  A per-item difficulty model with equal parameter count reproduces that region
+  and the panel error substantially better.
+\item \textbf{A measured blind-spot floor and quorum consequence}
+  (\S\ref{sec:quorum}). Four candidates are missed by all 25 verifiers. This
+  separates reducible correlation from a verifier-set blind spot and shows that
+  the wrong dependence model can recommend the wrong stopping point or quorum.
+\item \textbf{Bounded design consequences} (\S\ref{sec:consequences}). Declared
+  group balancing is not robust when the group labels fail to capture real
+  independence; in a separate simulation parameterised from this panel,
+  correlation carries most of the measured adversarial degradation. The latter
+  remains synthetic evidence, not a second panel measurement.
 \end{enumerate}
 
 Everything reported here is reproducible from committed artifacts in the IDKMesh
@@ -226,6 +225,23 @@ echo: such measures track ensemble gain less reliably than intuition suggests --
 in their controlled simulations all ten relate similarly to majority-vote
 improvement, but they close with doubts about the measures' usefulness for
 building ensembles on real problems.
+
+
+\paragraph{Correlated errors in modern LLM verification.}
+The modern literature now makes the existence of correlated model errors a
+starting point rather than a novelty claim. \citet{kim2025correlated} measure
+substantial error correlation across more than 350 LLMs and show downstream
+effects in LLM-as-judge evaluation. \citet{goel2025great} likewise report that
+mistakes become more similar as model capability increases, with direct
+implications for AI oversight. \citet{denisov2026truthfulness} find that polling
+multiple models is not a robust proxy verifier when errors remain correlated.
+Method work has moved accordingly: \citet{zhao2026care} model shared latent
+confounders explicitly and improve judge aggregation across multiple benchmark
+types. Together with \citet{kohli2026}'s direct effective-vote measurement,
+these results mean this paper does \emph{not} claim that correlated automated
+judges are newly discovered here. Our narrower question is whether one scalar
+correlation, once measured, is sufficient to predict the failure-count
+distribution and the quorum decisions of an executable verification panel.
 
 \paragraph{Review panels in practice.}
 In three large open-source projects, review \emph{coverage} and
@@ -555,8 +571,12 @@ designed at all --- it is whatever seven model families happen to share.
 
 The defensible summary is therefore not that one paper is right, but that
 \textbf{dependence shape is a property of how a panel was assembled and must be
-measured per panel rather than assumed}. That is a weaker claim than either paper
-makes alone, and better supported than either.
+measured per panel rather than assumed}. That conclusion is deliberately narrower
+than the broad fact that model errors are correlated, which is independently
+established by recent LLM studies \citep{kim2025correlated,goel2025great,
+denisov2026truthfulness,zhao2026care}. What this instrument contributes is a
+failure-shape and quorum analysis under executable ground truth, not a claim that
+its item-difficulty mechanism is universal.
 
 \section{The shape of verifier dependence}
 \label{sec:shape}
@@ -919,7 +939,11 @@ sample of the diversity structures found in deployed review panels, and the
 measured $\rho = 0.5873$ should be read as one real value, not as an estimate of
 a population parameter. The qualitative findings --- that a declared label
 under-predicts dependence, that failures are partial, that a blind spot exists ---
-are the transferable claims; the specific numbers are not.
+are the transferable claims; the specific numbers are not. Even those qualitative
+features require replication before being generalized to LLM-judge panels:
+recent LLM work identifies architecture/provider similarity and latent
+confounders as additional dependence mechanisms \citep{kim2025correlated,
+zhao2026care}.
 
 \paragraph{The per-item difficulty model is validated against one panel.} It fits
 far better than shared shock, which is a low bar. A Beta difficulty distribution
@@ -989,25 +1013,28 @@ falsified, are in \code{experiments/E015}--\code{E020}.
 
 \section{Conclusion}
 
-A verification panel's head count is a budget, not a measurement. On a panel
-where every member demonstrably works and every error is a genuine missed defect,
-25 verifiers delivered less evidence than the best one of them, the standard
-independence discount overstated what was available \emph{on this panel}, and the
-dependence model in common use was wrong in shape rather than in parameter --- unable to produce the partial failures that
-are how real panels actually fail. Beneath all of that sat a floor no aggregation
-rule could reach: defects invisible to every verifier in the panel, escapable
-only by adding a verifier of a different kind.
+Correlated verifier errors are no longer the surprising result. The result of
+this study is that \emph{the shape of that dependence changes what a panel
+designer should conclude}. On one executable-ground-truth panel, a shared-shock
+model matched to measured correlation cannot reproduce the dominant partial
+failure mode; an equal-parameter item-difficulty model does substantially better.
+Yet that model also misses a different phenomenon: four candidates invisible to
+all 25 verifiers, producing a blind-spot floor that quorum tuning cannot cross.
+The same panel therefore contains both reducible dependence and an irreducible
+verifier-set limitation, and models that collapse them into one scalar recommend
+different panel-size and quorum behavior.
 
-The operational summary is short. Screen your verifiers for discrimination before
-you trust any statistic about them. Estimate independence from observed error
-vectors, never from declared diversity. Establish the dependence \emph{shape}
-before applying $N/(1+(N-1)\rho)$, which overstates independence when difficulty
-is shared across items. Check your panel against a rule that ignores the
-artifact. Measure your quorum, since it is likely a larger lever than your panel
-size. And treat the dependence structure, not accuracy, as the property an
-adversary will find. Every one of these is a measurement instruction, which is
-the paper's real conclusion: a panel's evidentiary value is not a property you
-can assume from its size, its members' accuracy, or its declared diversity.
+The effective-votes result is important but not unique to this paper: contemporary
+LLM-judge work reaches the same high-level warning. Our narrower operational
+recommendation is to measure four things on the actual panel: verifier
+discrimination, observed error dependence, the full failure-count distribution,
+and shared blind spots. Only then should a scalar discount such as
+$N/(1+(N-1)\rho)$ or a quorum rule be used for resource allocation. Declared
+diversity is not a substitute for those measurements. The external-validity
+boundary is equally important: this 25-oracle instrument does not establish the
+dependence shape of LLM judges, human reviewers, or static analysers. Replicating
+the failure-shape analysis on materially different verifier families is the next
+scientific test, not an assumption made by this conclusion.
 
 \paragraph{Data availability.} Code, artifacts, and experiment records:
 \url{https://github.com/MSKazemi/idkmesh}.
