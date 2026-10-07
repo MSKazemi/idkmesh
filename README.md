@@ -141,6 +141,33 @@ curl \
   http://127.0.0.1:8770/api/v1/status
 ```
 
+Python callers can use the dependency-free read-only client instead of
+hand-coding HTTP:
+
+```python
+import os
+
+from idkmesh.api_client import ControlTowerClient
+
+client = ControlTowerClient(
+    "http://127.0.0.1:8770",
+    os.environ["IDKMESH_CONTROL_TOWER_TOKEN"],
+    timeout=5.0,
+)
+
+status = client.status()
+print(status.request_id, status.value["mode"])
+
+events = client.list_events(limit=50)
+print(len(events.value.items))
+```
+
+The client requires an explicit timeout, refuses non-loopback destinations,
+exposes the server request ID, verifies response content digests, and performs
+no automatic retries. This first client slice is read/inspect only;
+human-decision recording remains unavailable until its authenticated mutation
+contract is implemented.
+
 Machine-readable discovery is available at
 `/api/v1/openapi.json`, and successful inspection snapshots are frozen by
 [`control-tower-snapshot-v0.1.schema.json`](schemas/control-tower-snapshot-v0.1.schema.json).
