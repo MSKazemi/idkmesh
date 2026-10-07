@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idkmesh.org/schemas/idkmesh-human-decision-response-v0.1.schema.json",
+  "title": "IDKMesh Human Decision Response v0.1",
+  "description": "Successful transport response for immutable human-decision recording. Fresh creation and exact idempotent replay return the same decision record and canonical digest. The nested Human Decision Record carries no canonical-state-write, Git-push or merge authority; recording a decision remains separate from integration execution.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "api_version",
+    "schema_version",
+    "kind",
+    "ok",
+    "decision_record",
+    "decision_record_digest"
+  ],
+  "properties": {
+    "api_version": {
+      "const": "v1"
+    },
+    "schema_version": {
+      "const": "0.1"
+    },
+    "kind": {
+      "const": "idkmesh-human-decision-response"
+    },
+    "ok": {
+      "const": true
+    },
+    "decision_record": {
+      "$ref": "https://idkmesh.org/schemas/human-decision-record-v0.1.schema.json"
+    },
+    "decision_record_digest": {
+      "$ref": "https://idkmesh.org/schemas/human-decision-record-v0.1.schema.json#/$defs/digest"
+    }
+  }
+}
