@@ -127,6 +127,12 @@ meaning of an existing version.
   carries the trusted identity adapter contracts that may produce an
   ActorContext: E3-B from GitHub actor claims, E3-C from enterprise IdP
   (OIDC/SAML/SSO) claims. Neither adapter verifies a live credential.
+- [Enterprise Audit Ledger v0.1](ENTERPRISE_AUDIT_LEDGER_V0_1.md) —
+  dedicated append-only SQLite security/audit evidence stream for E4: exact
+  tenant/project, actor/service identity, authorization decision digest,
+  immutable resource revision, outcome, retention, hash-chain integrity,
+  checkpoint-based truncation detection, and a vendor-neutral SIEM/archive
+  export sink. Audit evidence grants no action or integration authority.
 
 When modifying a contract, update its schema, fixtures, implementation, and
 tests together. Introduce a new explicit version when behavior changes; keep

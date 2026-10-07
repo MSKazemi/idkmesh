@@ -259,6 +259,15 @@ A privileged audit event should bind:
 
 The baseline requires append-only semantics. G2/G3 production deployments should support export to an organization-controlled archive/SIEM.
 
+The first executable E4 reference is
+[Enterprise Audit Ledger v0.1](../specifications/ENTERPRISE_AUDIT_LEDGER_V0_1.md).
+It is intentionally separate from Product Spine lifecycle events: a fixed-shape
+SQLite audit store derives records from the E3 `AuthorizationDecision` plus
+trusted actor/service identity, hash-chains every event, exposes saved-head
+checkpoint verification for suffix-truncation evidence, and exports only
+through an explicit tenant-scoped sink boundary. It has no update/delete API
+and no execution or merge authority.
+
 Audit evidence records decisions; it does not grant authority by existing.
 
 Issue #671 owns the audit ledger/export contract.
