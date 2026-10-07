@@ -2,8 +2,8 @@
 
 Status: paper-maintenance artifact, not a manuscript
 
-Last repository audit: 2026-09-19 against
-`main@d03bf2f048f7280e8e908193bd4158418b87183f`.
+Last manuscript-positioning audit: 2026-10-07 against
+`main@237d3bc61564d489f37aad46bee0aff6ca5b3a29`.
 
 This map prevents paper-facing statements from becoming detached from the code,
 experiments, and limitations that support them. Wording below is deliberately
@@ -33,7 +33,10 @@ Evidence classes follow [`README.md`](README.md).
 | `P-GATE-001` | The packaged `idkmesh gate-audit` v0.1 path fails closed on malformed or ambiguous verdict matrices (including duplicate JSON keys, non-finite JSON constants, boolean/non-finite quorum values, incomplete matrices, and inconsistent probe labeling), emits strict JSON, prevents destructive output-path collisions, and renders comparison-table saturation in `effective_votes` as a censored lower bound instead of a resolved point estimate while preserving the v0.1 estimand. | `implemented` | [`../idkmesh/gate_audit.py`](../idkmesh/gate_audit.py), [`../idkmesh/cli.py`](../idkmesh/cli.py), [`../docs/specifications/GATE_AUDIT_V0_1.md`](../docs/specifications/GATE_AUDIT_V0_1.md), [`../tests/test_gate_audit.py`](../tests/test_gate_audit.py) | This is input/output and measurement-interpretation hardening for a supplied verdict matrix. It does not prove verifier independence, estimate population/sampling uncertainty, validate the ground truth, establish external generalization, or grant acceptance/integration authority. A censored lower bound such as `>=199` is a comparison-table resolution statement, not a confidence or credible interval. |
 | `P-GOV-001` | Project-operated or owner-controlled AI automation does not count as independent human/external review. | `implemented` | [`../PROJECT_RULES.md`](../PROJECT_RULES.md), [`../CONTRIBUTING.md`](../CONTRIBUTING.md) | Do not use agent count, bot activity, or owner-controlled automated review as evidence of independent community validation. |
 | `P-SCALE-001` | Internet-scale, multi-organization production behavior remains unresolved/staged rather than demonstrated by the repository evidence. | `unresolved` | [`../ROADMAP.md`](../ROADMAP.md), [`../docs/research/FIRST_RESEARCH_PROGRAM.md`](../docs/research/FIRST_RESEARCH_PROGRAM.md) | Present this as a limitation/future-work boundary, not as achieved scale. |
-| `P-PAPER-001` | A canonical editable manuscript source ([`main.tex`](main.tex), "Reviewer Count Is Not Evidence Count") is versioned in this repository at `paper/main.tex`, revised against a prior adversarial review whose findings were independently re-verified against the current text and underlying artifacts. | `implemented` | [`main.tex`](main.tex), [`README.md`](README.md), [`review_reviewer-count-is-not-evidence-count_2026-09-09.md`](review_reviewer-count-is-not-evidence-count_2026-09-09.md), [issue #478](https://github.com/MSKazemi/idkmesh/issues/478) | This resolves the manuscript-source gap issue #478 tracked; it does not by itself constitute independent venue peer review, which the manuscript's own AI/tool provenance paragraph states has not occurred. |
+| `P-PANEL-001` | On the retained E017 executable panel, 25 partial-oracle verifiers have mean accuracy 0.7956, majority-vote error 0.2083, substantial observed error dependence, and an effective independent size below the metric's floor of 1; the best single member has error 0.1389. | `observed-real-run` | [`../experiments/E017-item-difficulty-and-quorum.md`](../experiments/E017-item-difficulty-and-quorum.md), [`../experiments/results/E017-partial-oracle-votes.jsonl.gz`](../experiments/results/E017-partial-oracle-votes.jsonl.gz), [`main.tex`](main.tex) | This is one constructed 25-verifier, 72-item panel. The panel-vs-best ordering is directional rather than significant on this sample; the result is not a population claim about LLM judges or reviewers generally. |
+| `P-PANEL-002` | On that panel, the observed failure-count distribution falsifies the fitted shared-shock mechanism as an adequate shape model: 11 of 15 majority failures are partial, while the equal-parameter item-difficulty model predicts 11.1 partial failures and is substantially closer on majority error. | `observed-real-run` / `synthetic` | [`../experiments/E017-item-difficulty-and-quorum.md`](../experiments/E017-item-difficulty-and-quorum.md), [`../experiments/E018-dependence-model-shape.md`](../experiments/E018-dependence-model-shape.md), [`main.tex`](main.tex) | The item-difficulty model is a fitted parametric explanation for this instrument, not a universal model of verifier dependence. Modern LLM-judge studies report other dependence mechanisms. |
+| `P-PANEL-003` | Four of the 72 E017 candidates are missed by all 25 verifiers, producing an observed blind-spot floor of 0.0556 on this panel; the measured quorum frontier therefore differs qualitatively from both the two-parameter shared-shock and per-item models at high thresholds. | `observed-real-run` / `synthetic` | [`../experiments/E017-item-difficulty-and-quorum.md`](../experiments/E017-item-difficulty-and-quorum.md), [`../experiments/E020-quorum-frontier-under-measured-shape.md`](../experiments/E020-quorum-frontier-under-measured-shape.md), [`main.tex`](main.tex) | The floor rests on four observed items and has wide finite-sample uncertainty. It is a property of the measured verifier set/corpus, not proof that all verification panels have a non-zero irreducible floor. |
+| `P-PAPER-001` | A canonical editable manuscript source ([`main.tex`](main.tex), "Dependence Shape Matters") is versioned in this repository at `paper/main.tex`, revised against a prior adversarial review and now positioned explicitly against contemporary correlated-LLM/judge-panel literature. | `implemented` | [`main.tex`](main.tex), [`README.md`](README.md), [`review_reviewer-count-is-not-evidence-count_2026-09-09.md`](review_reviewer-count-is-not-evidence-count_2026-09-09.md), [issue #478](https://github.com/MSKazemi/idkmesh/issues/478), [issue #936](https://github.com/MSKazemi/idkmesh/issues/936) | Manuscript maintenance and literature positioning do not constitute independent venue peer review or external replication. |
 
 ## Quantitative-claim rule
 
@@ -92,8 +95,11 @@ Use this when code, documentation, or experiments move:
 - **Roadmap completion:** change `unresolved` only when the required evidence has
   actually landed, not when an issue or PR merely proposes it.
 
-## Known gap
+## Current publication gap
 
-This map can be maintained and link-checked now, but it cannot be reconciled
-section-by-section against manuscript prose until issue #478 supplies the
-canonical manuscript source or an explicit external synchronization procedure.
+The canonical manuscript source now exists and this map can be reconciled against
+it directly. The main unresolved scientific gap is external validity: the
+dependence-shape, partial-failure, and blind-spot findings are measured on one
+constructed verifier panel. Issue #936 tracks the ordered publication plan, whose
+next step after the present manuscript-positioning change is a preregistered
+replication on a materially different verifier/task family.
