@@ -44,7 +44,12 @@ version of the *same file* accepted, or silently reinterpret what a client
 validating against it can rely on. The only sanctioned way to make a
 breaking change is to add a new, separately versioned file -- exactly what
 `work-unit-v0.1.schema.json` -> `work-unit-v0.2.schema.json` already did
-correctly.
+correctly -- and to land it with an explicit migration note in the
+`Schema migrations` section of `schemas/README.md` naming the exact file it
+supersedes. `tools/schema_compat_check.py` enforces the version bump;
+`tools/schema_migration_note_check.py` enforces the note (issue #737's
+"migration note" half), against a ledger that already documents every
+successor in the tree.
 
 `tools/schema_compat_check.py` enforces this mechanically. It walks both the
 old (at a `--base` git ref, default the merge-base of `HEAD` and
@@ -127,7 +132,10 @@ ones.
   previously unmet CI requirement.
 - `tools/schema_compat_check.py` and `tests/test_schema_compat_check.py`
   are the implementation and its test suite.
-- `.github/workflows/pr-gate.yml`'s `gate` job runs it as a required step
+- `tools/schema_migration_note_check.py` and
+  `tests/test_schema_migration_notes.py` enforce the migration-note half
+  against the `Schema migrations` ledger in `schemas/README.md`.
+- `.github/workflows/pr-gate.yml`'s `gate` job runs both as required steps
   alongside the existing unit tier and Markdown-link check.
 
 ## Revisit conditions

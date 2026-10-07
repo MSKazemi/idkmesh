@@ -4,6 +4,8 @@ This directory contains the machine-readable contracts used by the executable re
 
 ## Current versions
 
+- `executor-admission-v0.1.schema.json` — admission/execution-reservation/submission record bound to one exact ready input snapshot, embedding the local task claim snapshot. The report is metadata; the durable claim is the admission, and it is not a dispatch credential, verification, acceptance or merge authority; see [Executor Admission v0.1](../docs/specifications/EXECUTOR_ADMISSION_V0_1.md).
+
 - `coordination-preflight-v0.1.schema.json` — read-only dependency and declared-effort report: exact WorkUnit/graph/observation/input bindings, prerequisite pins, blockers, shadow capability/connector recommendation and zero project spend. It is not a claim, reservation or dispatch authorization; see [Coordination Preflight v0.1](../docs/specifications/COORDINATION_PREFLIGHT_V0_1.md).
 
 - `task-claim-v0.1.schema.json` — local coordinator claim snapshot: scoped logical task, exact execution/input binding, owner, per-slot epoch, four deadlines, occupancy and candidate digest. Snapshot metadata grants no execution, acceptance or merge authority; see [Local Task Claims v0.1](../docs/specifications/LOCAL_TASK_CLAIMS_V0_1.md).
@@ -30,6 +32,8 @@ This directory contains the machine-readable contracts used by the executable re
 - `marginal-evidence-benchmark-report-v0.1.schema.json` — diagnostic held-out comparison of the marginal effective-vote selector against random, highest-accuracy, different-family-first, and minimum-correlation baselines. The report binds the frozen design-only selection plan and both split digests and grants no routing or integration authority.
 - `ci-evaluation-v0.1.schema.json` — shadow plan/outcome comparison recording mapped misses, attribution gaps, modeled savings, and permanent v0.1 promotion ineligibility.
 - `human-decision-record-v0.1.schema.json` — a recorded, accountable human integration decision (`accept`/`reject`/`escalate`) against one Run Evidence Report: who decided, what they decided, when, and why, bound to the exact report by content digest. It is deliberately a record of a decision, not an executor of one: it carries no canonical-state-write, git-push, or merge authority. Produced by `experiments/record_human_decision.py`.
+- `idkmesh-human-decision-request-v0.1.schema.json` — HTTP request-body contract reserved for #740: the caller may provide only the explicit decision, rationale, selected attempt and exact evidence-report binding. Authenticated principal identity, decision ID, timestamp and authority are server/trusted-context derived; `Idempotency-Key` remains an HTTP header under API Conventions v0.1.
+- `idkmesh-human-decision-response-v0.1.schema.json` — successful immutable decision-recording response wrapper: returns the canonical Human Decision Record plus its digest. Exact idempotent replay returns the same record; the wrapper does not execute integration, Git push or merge.
 - `search-visibility-observation-v0.1.schema.json` — evidence contract for dated Google/Bing/ChatGPT/Gemini/Claude/Perplexity/Copilot/Yahoo visibility observations. It records surface, query, mapped intent, target URL, whether IDKMesh surfaced, and optional citation/position evidence without manufacturing a cross-engine ranking score.
 - `enterprise-resource-ref-v0.1.schema.json` — tenant/project-scoped enterprise resource reference. Scope is part of resource identity and is not inferred from an unscoped resource id.
 - `enterprise-actor-context-v0.1.schema.json` — normalized trusted human/service/provider/node identity claims for E3 authorization. It is an authorization input only when produced by a trusted authentication adapter; issue/task/model text is not an identity source.
@@ -37,6 +41,8 @@ This directory contains the machine-readable contracts used by the executable re
 - `enterprise-github-identity-binding-v0.1.schema.json` — maintainer-reviewed table binding trusted numeric GitHub actor ids to enterprise `ActorContext` roles, tenant/project scopes, and data clearance (E3-B, issue #670). The numeric actor id is the primary trust key; issue/PR/comment text is never a binding source.
 - `enterprise-oidc-identity-binding-v0.1.schema.json` — maintainer-reviewed table binding trusted `(issuer, subject)` enterprise IdP (OIDC/SAML/SSO) claim pairs to enterprise `ActorContext` roles, tenant/project scopes, data clearance, and expected relying-party audience (E3-C, issue #670). The `(issuer, subject)` pair is the primary trust key; issue/PR/comment text is never a binding source.
 - `idkmesh-api-error-v0.1.schema.json` — the frozen standard error envelope every IDKMesh JSON API returns (`docs/specifications/API_CONVENTIONS_V0_1.md` section 5, [ADR-0018](../docs/decisions/ADR-0018-freeze-api-conventions-v0-1.md)). `code` is the compatibility-sensitive contract; `message` is explanatory only.
+- `idkmesh-idempotency-v0.1.schema.json` — idempotency and conflict metadata for externally retried mutations (`docs/specifications/API_CONVENTIONS_V0_1.md` section 12, issue #737): the admission form reserves one idempotency key against one canonical request digest before any side effect (exact replay returns the original logical result, never a second attempt), and the conflict form records a 409 `idempotency_conflict` when the same key is presented with a different digest. Key/request/run ids are deduplication metadata, never work slots or authority; see [API Conventions v0.1](../docs/specifications/API_CONVENTIONS_V0_1.md).
+
 - `idkmesh-list-v0.1.schema.json` — the frozen standard paginated list envelope for IDKMesh JSON list endpoints (`docs/specifications/API_CONVENTIONS_V0_1.md` section 10, ADR-0018). Uses an opaque cursor, never an offset, so mutable event/run streams stay safe to page.
 - `control-tower-snapshot-v0.1.schema.json` — the deterministic, read-only human-facing projection of one validated Run Evidence Report returned by the Control Tower Local API's inspection endpoint (`docs/specifications/CONTROL_TOWER_LOCAL_API_V0_1.md`). Grants no actuation authority.
 - `idkmesh-control-tower-status-v0.1.schema.json` — the authenticated discovery/status document from `GET /api/v1/status`: accepted media types, published schema URLs, and explicitly enabled/disabled capabilities (issue #737).
@@ -139,6 +145,22 @@ That rule is why issue #3 is completed through `work-unit-v0.2.schema.json` inst
 
 Additive research-specific data should normally go in the `extensions` object, using a namespaced key such as `org.example.my_metric`, until there is evidence that the field belongs in the shared core.
 
+## Schema migrations
+
+Breaking changes ship as new, separately versioned files (the versioning rule
+above and [ADR-0020](../docs/decisions/ADR-0020-schema-backward-compatibility-gate.md));
+this ledger is the explicit migration note issue #737 requires alongside each
+one. Every entry names the exact file superseded and what its consumers must
+change. `tools/schema_migration_note_check.py` fails CI when a version
+successor has no entry here, when an entry names the wrong predecessor, or
+when an entry names a file that is not a successor.
+
+- `evaluator-plan-v0.2.schema.json` supersedes `evaluator-plan-v0.1.schema.json`: replaces the file-content checks (`allowed_files`, `max_candidate_bytes`, `required_json`) with a declared `backend` object and re-pins the verifier adapter consts; consumers must dispatch on `backend.type` instead of the removed top-level fields.
+- `evaluator-plan-v0.3.schema.json` supersedes `evaluator-plan-v0.2.schema.json`: renames `backend.required_added_text` to `backend.required_added_substrings`, so a required source change is a list of substrings rather than one exact added text; wrap single-text expectations in a one-element list.
+- `evaluator-plan-v0.4.schema.json` supersedes `evaluator-plan-v0.3.schema.json`: adds required `backend.required_removed_substrings`, so producers must state what must be removed; use an empty list when nothing must be removed.
+- `gate-audit-report-v0.2.schema.json` supersedes `gate-audit-report-v0.1.schema.json`: adds the required `uncertainty` section (finite-sample bootstrap, issue #520) and pins `provenance.input_digest_sha256` to `sha256:<64 lowercase hex>`; only `idkmesh gate-audit --bootstrap` emits v0.2, so reports produced without it remain v0.1.
+- `work-unit-v0.2.schema.json` supersedes `work-unit-v0.1.schema.json`: adds required `requirements`, `security`, and `verification_policy` sections plus required `budget.project_spend_usd_max` and `budget.paid_fallback_allowed`, widens `kind` with `benchmarking`, and optionally records `provenance.source_revision`/`created_at`; migrate by filling the new required sections (zero spend with `paid_fallback_allowed: false` under the current project policy).
+
 ## Compatibility notes
 
 - WorkUnit v0.1 remains available for historical Phase 0 artifacts.
@@ -168,3 +190,14 @@ See `PROJECT_RULES.md`, `docs/decisions/ADR-0006-zero-project-spend-compute.md`,
 The WorkUnit composability benchmark and its strict synthetic-versus-observed
 evidence boundary are documented in
 `docs/specifications/WORK_UNIT_COMPOSABILITY_V0_2.md`.
+
+## Closed-object policy
+
+Every top-level object schema in this directory declares its
+`additionalProperties` policy explicitly, and is closed (`false`) by default —
+issue #737's "`additionalProperties: false` used where intentional". The only
+open documents are the four legacy unversioned contracts recorded with reasons
+in `tests/test_schema_validity.py`, which shipped open before the policy and
+cannot be closed in place under [ADR-0020](../docs/decisions/ADR-0020-schema-backward-compatibility-gate.md);
+where a strict versioned successor exists, closure lives there. New public
+objects ship closed; the same test module enforces the policy in CI.

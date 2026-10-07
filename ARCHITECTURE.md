@@ -109,8 +109,16 @@ adds a read-only WorkUnit `requires` readiness projection with exact input pins,
 replay-safe observations and descendant invalidation. Declared effort produces
 conservative shadow capability advice through the existing connector resolver;
 critical-path estimates include verification/integration time. It does not
-change live issue routing or compose these observations with authoritative
-claim/resource admission yet.
+change live issue routing.
+
+[Executor Admission v0.1](docs/specifications/EXECUTOR_ADMISSION_V0_1.md)
+then composes those two slices: one operation derives the exact execution
+binding from the ready input snapshot and acquires the atomic claim, the
+external dispatch intent is retained only on still-current inputs, and the
+same snapshot is rechecked at canonical candidate submission so upstream
+changes fail closed instead of racing a claim. It is a local adapter with an
+all-false authority ceiling; live provider wiring, the GitHub ledger and
+authenticated event production remain separate work.
 
 ## 6. Verification architecture
 

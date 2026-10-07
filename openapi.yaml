@@ -1,0 +1,492 @@
+openapi: 3.1.0
+info:
+  title: IDKMesh API v1
+  version: "0.1"
+  summary: Canonical public API schema catalog and transport contract for IDKMesh v1.
+  description: >
+    Checked-in OpenAPI 3.1 description of the IDKMesh public JSON API, issue
+    #737. Per docs/specifications/API_CONVENTIONS_V0_1.md section 19, OpenAPI
+    is the discovery/transport contract and not the sole source of domain
+    truth: every public object has a canonical JSON Schema in ./schemas/ and
+    this document references those schemas instead of redefining them.
+    `components.schemas` maps every contract in that directory to its
+    canonical `$id`, so no public API object is defined only by prose or an
+    inline Python dictionary. Unresolved references must fail CI.
+
+    Authority ceiling: these surfaces are read/inspect/record only. They
+    cannot execute workers, dispatch providers, select candidates, verify,
+    accept, push, or merge. Idempotency metadata (idkmesh-idempotency-v0.1)
+    deduplicates operations; it never creates work slots or authority
+    (section 12). Stable objects are compatibility-gated; breaking changes
+    require a version bump and migration note (ADR-0020).
+  license:
+    name: MIT
+x-idkmesh:
+  conventions: docs/specifications/API_CONVENTIONS_V0_1.md
+  schema_directory: ./schemas
+  authority_ceiling: read-inspect-record-only
+servers:
+  - url: /
+paths:
+  /healthz:
+    get:
+      summary: Process liveness probe
+      description: Returns a minimal liveness response and no project state.
+      security: []
+      responses:
+        "200":
+          description: Process is alive
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "ok\n"
+  /readyz:
+    get:
+      summary: Service readiness probe
+      description: >
+        Returns minimal service/API readiness metadata and no project, run,
+        evidence, secret, or identity state.
+      security: []
+      responses:
+        "200":
+          description: Service is ready
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/idkmesh-readiness-v0.1"
+  /api/v1/status:
+    get:
+      summary: Discover API capabilities and authority limits
+      security:
+        - LocalSessionToken: []
+      responses:
+        "200":
+          description: Control Tower status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/idkmesh-control-tower-status-v0.1"
+            application/vnd.idkmesh.control-tower.v1+json:
+              schema:
+                $ref: "#/components/schemas/idkmesh-control-tower-status-v0.1"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+  /api/v1/openapi.json:
+    get:
+      summary: Read this OpenAPI contract
+      security:
+        - LocalSessionToken: []
+      responses:
+        "200":
+          description: OpenAPI 3.1 document
+          content:
+            application/json:
+              schema:
+                type: object
+        "403":
+          $ref: "#/components/responses/Forbidden"
+  /api/v1/run-evidence/inspect:
+    post:
+      summary: Validate and render one Run Evidence Report v0.1
+      description: >
+        Pure read-only inspection. The same valid input produces the same
+        response body and content digest.
+      security:
+        - LocalSessionToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/run-evidence-report-v0.1"
+          application/vnd.idkmesh.control-tower.v1+json:
+            schema:
+              $ref: "#/components/schemas/run-evidence-report-v0.1"
+      responses:
+        "200":
+          description: Validated read-only snapshot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/idkmesh-control-tower-inspection-response-v0.1"
+            application/vnd.idkmesh.control-tower.v1+json:
+              schema:
+                $ref: "#/components/schemas/idkmesh-control-tower-inspection-response-v0.1"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "406":
+          $ref: "#/components/responses/NotAcceptable"
+        "413":
+          $ref: "#/components/responses/PayloadTooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+  /api/v1/runs:
+    get:
+      summary: List durable Product Spine runs
+      description: >
+        Pure read-only, deterministic keyset pagination ordered by run_id.
+        Serves the same application service `idkmesh run list` uses. Returns
+        503 when no Product Spine store is configured for this server
+        instance.
+      security:
+        - LocalSessionToken: []
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+        - name: cursor
+          in: query
+          required: false
+          description: >
+            Opaque next-page token from a previous response's page.next_cursor.
+            Never constructed or parsed by the caller.
+          schema:
+            type: string
+        - name: state
+          in: query
+          required: false
+          description: >
+            Exact lifecycle state; an unrecognized value fails with 400
+            invalid_state rather than silently matching zero rows.
+          schema:
+            type: string
+        - name: project_id
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: One page of runs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/idkmesh-list-v0.1"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "503":
+          $ref: "#/components/responses/Unavailable"
+  /api/v1/runs/{run_id}:
+    get:
+      summary: Read one durable Product Spine run's current state
+      description: >
+        Pure read-only. Serves the same application service `idkmesh run
+        status` uses, so the CLI and this endpoint can never disagree about a
+        run's state.
+      security:
+        - LocalSessionToken: []
+      parameters:
+        - $ref: "#/components/parameters/RunId"
+      responses:
+        "200":
+          description: The run's current state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/idkmesh-control-tower-run-response-v0.1"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/Unavailable"
+  /api/v1/runs/{run_id}/attempts:
+    get:
+      summary: Read one run's worker/verifier attempts
+      description: >
+        Pure read-only. `attempts` is a reserved trailing path segment
+        (ADR-0019): resolution is a pure function of the path string, never a
+        lookup outcome.
+      security:
+        - LocalSessionToken: []
+      parameters:
+        - $ref: "#/components/parameters/RunId"
+      responses:
+        "200":
+          description: The run's attempts, in order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/idkmesh-control-tower-run-attempts-response-v0.1"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/Unavailable"
+  /api/v1/runs/{run_id}/evidence:
+    get:
+      summary: Read one run's retained evidence references
+      description: Pure read-only. `evidence` is a reserved trailing path segment (ADR-0019).
+      security:
+        - LocalSessionToken: []
+      parameters:
+        - $ref: "#/components/parameters/RunId"
+      responses:
+        "200":
+          description: The run's evidence, in order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/idkmesh-control-tower-run-evidence-response-v0.1"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/Unavailable"
+  /api/v1/work-units:
+    get:
+      summary: List canonical Work Units
+      description: >
+        Pure read-only, deterministic keyset pagination. Returns 503 when no
+        Product Spine store is configured for this server instance.
+      security:
+        - LocalSessionToken: []
+      responses:
+        "200":
+          description: One page of work units
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/idkmesh-list-v0.1"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "503":
+          $ref: "#/components/responses/Unavailable"
+  /api/v1/work-units/{work_unit_id}:
+    get:
+      summary: Read one canonical Work Unit
+      security:
+        - LocalSessionToken: []
+      parameters:
+        - name: work_unit_id
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 1
+      responses:
+        "200":
+          description: The work unit's current state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/idkmesh-control-tower-work-unit-response-v0.1"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/Unavailable"
+  /api/v1/projects/{project_id}:
+    get:
+      summary: Read one project's resource projection
+      security:
+        - LocalSessionToken: []
+      parameters:
+        - name: project_id
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 1
+      responses:
+        "200":
+          description: The project's current state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/idkmesh-control-tower-project-response-v0.1"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/Unavailable"
+  /api/v1/events:
+    get:
+      summary: Query the canonical append-only event stream
+      description: >
+        Pure read-only, deterministic keyset pagination over retained events.
+        Returns 503 when no Product Spine store is configured for this server
+        instance.
+      security:
+        - LocalSessionToken: []
+      responses:
+        "200":
+          description: One page of events
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/idkmesh-list-v0.1"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "503":
+          $ref: "#/components/responses/Unavailable"
+  /api/v1/events/stream:
+    get:
+      summary: Stream canonical events (resumable SSE)
+      description: >
+        Server-sent events of the append-only event source. Each event payload
+        conforms to the canonical event envelope.
+      security:
+        - LocalSessionToken: []
+      responses:
+        "200":
+          description: An SSE stream of event envelopes
+          content:
+            text/event-stream:
+              schema:
+                $ref: "#/components/schemas/idkmesh-event-v0.1"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+components:
+  securitySchemes:
+    LocalSessionToken:
+      type: apiKey
+      in: header
+      name: X-IDKMesh-UI-Token
+      description: >
+        Loopback-only local session token. No network/multi-user authentication
+        is claimed by this contract (see API_CONVENTIONS_V0_1.md).
+  parameters:
+    RunId:
+      name: run_id
+      in: path
+      required: true
+      description: Exact literal run identity; never percent-decoded into sub-resources (ADR-0019).
+      schema:
+        type: string
+        minLength: 1
+  responses:
+    BadRequest:
+      description: Invalid request (unsupported parameter, invalid limit/cursor/state, or invalid body)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/idkmesh-api-error-v0.1"
+    Forbidden:
+      description: Invalid local session token
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/idkmesh-api-error-v0.1"
+    NotAcceptable:
+      description: Requested response type unsupported
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/idkmesh-api-error-v0.1"
+    NotFound:
+      description: Unknown resource identity
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/idkmesh-api-error-v0.1"
+    PayloadTooLarge:
+      description: Request body too large
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/idkmesh-api-error-v0.1"
+    Unavailable:
+      description: No Product Spine store configured for this server instance
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/idkmesh-api-error-v0.1"
+    UnsupportedMediaType:
+      description: Request content type unsupported
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/idkmesh-api-error-v0.1"
+  schemas:
+    "ace-lineage-v0.1": {$ref: "https://idkmesh.org/schemas/ace-lineage-v0.1.schema.json"}
+    "adaptive-policy-cohort-summary-v0.1": {$ref: "https://idkmesh.org/schemas/adaptive-policy-cohort-summary-v0.1.schema.json"}
+    "adaptive-policy-outcome-v0.1": {$ref: "https://idkmesh.org/schemas/adaptive-policy-outcome-v0.1.schema.json"}
+    "adaptive-policy-plan-v0.1": {$ref: "https://idkmesh.org/schemas/adaptive-policy-plan-v0.1.schema.json"}
+    "auto-draft-pr-steward-history-v0.1": {$ref: "https://idkmesh.org/schemas/auto-draft-pr-steward-history-v0.1.schema.json"}
+    "auto-draft-pr-steward-report-v0.1": {$ref: "https://idkmesh.org/schemas/auto-draft-pr-steward-report-v0.1.schema.json"}
+    "benchmark-cohort-v0.1": {$ref: "https://idkmesh.org/schemas/benchmark-cohort-v0.1.schema.json"}
+    "candidate-reference-v0.1": {$ref: "https://idkmesh.org/schemas/candidate-reference-v0.1.schema.json"}
+    "ci-evaluation-v0.1": {$ref: "https://idkmesh.org/schemas/ci-evaluation-v0.1.schema.json"}
+    "ci-observation-v0.1": {$ref: "https://idkmesh.org/schemas/ci-observation-v0.1.schema.json"}
+    "ci-plan-v0.1": {$ref: "https://idkmesh.org/schemas/ci-plan-v0.1.schema.json"}
+    "ci-receipt-v0.1": {$ref: "https://idkmesh.org/schemas/ci-receipt-v0.1.schema.json"}
+    "compute-offer-pool-v0.1": {$ref: "https://idkmesh.org/schemas/compute-offer-pool-v0.1.schema.json"}
+    "compute-policy-v0.1": {$ref: "https://idkmesh.org/schemas/compute-policy-v0.1.schema.json"}
+    "control-tower-snapshot-v0.1": {$ref: "https://idkmesh.org/schemas/control-tower-snapshot-v0.1.schema.json"}
+    "coordination-preflight-v0.1": {$ref: "https://idkmesh.org/schemas/coordination-preflight-v0.1.schema.json"}
+    "decomposition-benchmark-v0.1": {$ref: "https://idkmesh.org/schemas/decomposition-benchmark-v0.1.schema.json"}
+    "domain-pack": {$ref: "https://idkmesh.org/schemas/domain-pack.schema.json"}
+    "e025-learned-verifier-result": {$ref: "https://idkmesh.org/schemas/e025-learned-verifier-result.schema.json"}
+    "enterprise-actor-context-v0.1": {$ref: "https://idkmesh.org/schemas/enterprise-actor-context-v0.1.schema.json"}
+    "enterprise-authorization-decision-v0.1": {$ref: "https://idkmesh.org/schemas/enterprise-authorization-decision-v0.1.schema.json"}
+    "enterprise-control-profile-baseline-v0.1": {$ref: "https://idkmesh.org/schemas/enterprise-control-profile-baseline-v0.1.schema.json"}
+    "enterprise-control-profile-v0.1": {$ref: "https://idkmesh.org/schemas/enterprise-control-profile-v0.1.schema.json"}
+    "enterprise-github-identity-binding-v0.1": {$ref: "https://idkmesh.org/schemas/enterprise-github-identity-binding-v0.1.schema.json"}
+    "enterprise-oidc-identity-binding-v0.1": {$ref: "https://idkmesh.org/schemas/enterprise-oidc-identity-binding-v0.1.schema.json"}
+    "enterprise-resource-ref-v0.1": {$ref: "https://idkmesh.org/schemas/enterprise-resource-ref-v0.1.schema.json"}
+    "evaluator-plan-v0.1": {$ref: "https://idkmesh.org/schemas/evaluator-plan-v0.1.schema.json"}
+    "evaluator-plan-v0.2": {$ref: "https://idkmesh.org/schemas/evaluator-plan-v0.2.schema.json"}
+    "evaluator-plan-v0.3": {$ref: "https://idkmesh.org/schemas/evaluator-plan-v0.3.schema.json"}
+    "evaluator-plan-v0.4": {$ref: "https://idkmesh.org/schemas/evaluator-plan-v0.4.schema.json"}
+    "executor-admission-v0.1": {$ref: "https://idkmesh.org/schemas/executor-admission-v0.1.schema.json"}
+    "experiment-manifest-v0.1": {$ref: "https://idkmesh.org/schemas/experiment-manifest-v0.1.schema.json"}
+    "experiment-result": {$ref: "https://idkmesh.org/schemas/experiment-result.schema.json"}
+    "experiment-result-v0.1": {$ref: "https://idkmesh.org/schemas/experiment-result-v0.1.schema.json"}
+    "gate-audit-dependence-v0.1": {$ref: "https://idkmesh.org/schemas/gate-audit-dependence-v0.1.schema.json"}
+    "gate-audit-report-v0.1": {$ref: "https://idkmesh.org/schemas/gate-audit-report-v0.1.schema.json"}
+    "gate-audit-report-v0.2": {$ref: "https://idkmesh.org/schemas/gate-audit-report-v0.2.schema.json"}
+    "goal-graph": {$ref: "https://idkmesh.org/schemas/goal-graph.schema.json"}
+    "human-decision-record-v0.1": {$ref: "https://idkmesh.org/schemas/human-decision-record-v0.1.schema.json"}
+    "idkmesh-human-decision-request-v0.1": {$ref: "https://idkmesh.org/schemas/idkmesh-human-decision-request-v0.1.schema.json"}
+    "idkmesh-human-decision-response-v0.1": {$ref: "https://idkmesh.org/schemas/idkmesh-human-decision-response-v0.1.schema.json"}
+    "identity-binding-v0.1": {$ref: "https://idkmesh.org/schemas/identity-binding-v0.1.schema.json"}
+    "idkgraph": {$ref: "https://idkmesh.org/schemas/idkgraph.schema.json"}
+    "idkmesh-api-error-v0.1": {$ref: "https://idkmesh.org/schemas/idkmesh-api-error-v0.1.schema.json"}
+    "idkmesh-control-tower-inspection-response-v0.1": {$ref: "https://idkmesh.org/schemas/idkmesh-control-tower-inspection-response-v0.1.schema.json"}
+    "idkmesh-control-tower-project-response-v0.1": {$ref: "https://idkmesh.org/schemas/idkmesh-control-tower-project-response-v0.1.schema.json"}
+    "idkmesh-control-tower-run-attempts-response-v0.1": {$ref: "https://idkmesh.org/schemas/idkmesh-control-tower-run-attempts-response-v0.1.schema.json"}
+    "idkmesh-control-tower-run-evidence-response-v0.1": {$ref: "https://idkmesh.org/schemas/idkmesh-control-tower-run-evidence-response-v0.1.schema.json"}
+    "idkmesh-control-tower-run-response-v0.1": {$ref: "https://idkmesh.org/schemas/idkmesh-control-tower-run-response-v0.1.schema.json"}
+    "idkmesh-control-tower-status-v0.1": {$ref: "https://idkmesh.org/schemas/idkmesh-control-tower-status-v0.1.schema.json"}
+    "idkmesh-control-tower-work-unit-response-v0.1": {$ref: "https://idkmesh.org/schemas/idkmesh-control-tower-work-unit-response-v0.1.schema.json"}
+    "idkmesh-event-v0.1": {$ref: "https://idkmesh.org/schemas/idkmesh-event-v0.1.schema.json"}
+    "idkmesh-idempotency-v0.1": {$ref: "https://idkmesh.org/schemas/idkmesh-idempotency-v0.1.schema.json"}
+    "idkmesh-list-v0.1": {$ref: "https://idkmesh.org/schemas/idkmesh-list-v0.1.schema.json"}
+    "idkmesh-product-spine-run-v0.1": {$ref: "https://idkmesh.org/schemas/idkmesh-product-spine-run-v0.1.schema.json"}
+    "idkmesh-project-resource-v0.1": {$ref: "https://idkmesh.org/schemas/idkmesh-project-resource-v0.1.schema.json"}
+    "idkmesh-readiness-v0.1": {$ref: "https://idkmesh.org/schemas/idkmesh-readiness-v0.1.schema.json"}
+    "idkmesh-work-unit-resource-v0.1": {$ref: "https://idkmesh.org/schemas/idkmesh-work-unit-resource-v0.1.schema.json"}
+    "marginal-evidence-benchmark-config-v0.1": {$ref: "https://idkmesh.org/schemas/marginal-evidence-benchmark-config-v0.1.schema.json"}
+    "marginal-evidence-benchmark-report-v0.1": {$ref: "https://idkmesh.org/schemas/marginal-evidence-benchmark-report-v0.1.schema.json"}
+    "marginal-evidence-report-v0.1": {$ref: "https://idkmesh.org/schemas/marginal-evidence-report-v0.1.schema.json"}
+    "project-manifest": {$ref: "https://idkmesh.org/schemas/project-manifest.schema.json"}
+    "resource-compute-bindings-v0.1": {$ref: "https://idkmesh.org/schemas/resource-compute-bindings-v0.1.schema.json"}
+    "resource-offer-registry-v0.1": {$ref: "https://idkmesh.org/schemas/resource-offer-registry-v0.1.schema.json"}
+    "result-manifest": {$ref: "https://idkmesh.org/schemas/result-manifest.schema.json"}
+    "result-manifest-v0.1": {$ref: "https://idkmesh.org/schemas/result-manifest-v0.1.schema.json"}
+    "routing-replay-v0": {$ref: "https://idkmesh.org/schemas/routing-replay-v0.schema.json"}
+    "run-evidence-report-v0.1": {$ref: "https://idkmesh.org/schemas/run-evidence-report-v0.1.schema.json"}
+    "search-visibility-observation-v0.1": {$ref: "https://idkmesh.org/schemas/search-visibility-observation-v0.1.schema.json"}
+    "task-claim-v0.1": {$ref: "https://idkmesh.org/schemas/task-claim-v0.1.schema.json"}
+    "verification-result-v0.1": {$ref: "https://idkmesh.org/schemas/verification-result-v0.1.schema.json"}
+    "verifier-observation-pool-v0.1": {$ref: "https://idkmesh.org/schemas/verifier-observation-pool-v0.1.schema.json"}
+    "work-unit": {$ref: "https://idkmesh.org/schemas/work-unit.schema.json"}
+    "work-unit-v0.1": {$ref: "https://idkmesh.org/schemas/work-unit-v0.1.schema.json"}
+    "work-unit-v0.2": {$ref: "https://idkmesh.org/schemas/work-unit-v0.2.schema.json"}

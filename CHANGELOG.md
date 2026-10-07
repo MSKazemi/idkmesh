@@ -14,6 +14,94 @@ and the release notes for that tag.
 
 ### Added
 
+- Documented examples for every advertised API surface (issue #737):
+  `examples/api/` gains nine fixtures — the inspection, project, WorkUnit and
+  run-evidence response envelopes, one SSE event, the inspect request body
+  (`run-evidence-report`), both `idkmesh-idempotency-v0.1` forms, and a
+  `human-decision-record` — so every schema `openapi.yaml` serves or accepts
+  now has a committed, CI-validated example. A completeness guard fails if a
+  future response or request body loses its example. Digest fields that name
+  embedded fixture content carry the real canonical digest of it and are
+  recomputed in CI (digests naming unembedded content stay deterministic
+  placeholders, per `examples/api/README.md`). As part of this,
+  `tests/test_example_contract_coverage.py` now resolves cross-file `$ref`s
+  through a schema registry: the resource-referencing response contracts
+  could not be validated at all without it, and a guard test proves
+  corruptions inside a `$ref`'d member are seen rather than skipped.
+
+- API contract conformance, documented-examples leg (issue #737):
+  `tests/test_api_contract_conformance.py` binds every `examples/api/`
+  fixture to the exact response it documents and resolves that response's
+  target schema from `openapi.yaml` itself (text-scanned, stdlib-only, like
+  the PR Gate's shared scripts), then validates the fixture against that
+  advertised contract. A cross-check keeps the catalog, the example/schema
+  pairing in `tests/test_example_contract_coverage.py`, and the endpoint
+  binding in agreement, so the catalog cannot drift away from the tests
+  without one of them failing (API Conventions section 19: "examples
+  validate in CI").
+
+- Closed-object schema policy (issue #737, "`additionalProperties: false`
+  used where intentional"): every top-level object schema in `schemas/`
+  must now declare its `additionalProperties` policy explicitly and is
+  closed by default, enforced by `tests/test_schema_validity.py` in CI. The
+  only open documents are the four legacy unversioned contracts recorded
+  with reasons (`experiment-result`, `goal-graph`, `result-manifest`,
+  `work-unit`), which shipped open before the policy and cannot be closed
+  in place under ADR-0020; strictness lives in their versioned successors.
+
+- API contract conformance, runtime leg (issue #737): the same
+  `tests/test_api_contract_conformance.py` serves representative responses
+  over real loopback HTTP (the shipped `create_server` entry point, one
+  server with a Product Spine store and one without) and validates each
+  against the schema `openapi.yaml` advertises for it. An exhaustiveness
+  guard requires every advertised response to have a representative or a
+  recorded reason it carries no canonical schema (API Conventions section
+  19: "representative runtime responses validate in CI"). Every envelope the
+  runtime serves is now advertised and validated through its representative:
+  the `product_spine_store_not_configured` 503s on the work-unit, project,
+  and events surfaces and the inspect endpoint's api-error 406/413/415
+  bodies were the last served-but-unadvertised envelopes; `openapi.yaml` now
+  declares all of them against `idkmesh-api-error-v0.1`, and the
+  pinned-gap ledger retired when its last entries moved into the
+  representatives. No public API object is served outside the catalog.
+
+- Checked-in OpenAPI 3.1 catalog (issue #737): `openapi.yaml` at the repository
+  root describes the shipped v1 surfaces (status, readiness, run-evidence
+  inspection, runs/WorkUnits/projects reads, events and the resumable SSE
+  stream) and references every public contract in `schemas/` — including
+  `idkmesh-idempotency-v0.1` — by its canonical `$id`, so no public API object
+  is defined only by prose or an inline Python dictionary. Discovery/transport
+  contract only; domain truth stays in `schemas/` (API Conventions section 19).
+  Guarded by reference-coverage and resolution tests.
+
+- OpenAPI/schema reference resolution gate (issue #737):
+  `tools/openapi_ref_check.py` resolves every `$ref` in `openapi.yaml` and
+  `schemas/*.schema.json` — internal JSON pointers, `#/components/...`
+  component references, and cross-file schema references (matched by `$id`
+  basename, per `tests/test_schema_identity.py`) — and exits non-zero on any
+  unresolved reference (API Conventions section 19: "unresolved refs fail
+  CI"). Stdlib-only and executable like `tools/schema_compat_check.py`; wired
+  into the PR Gate and `scripts/testkit.py integration` with negative-path
+  regression tests in `tests/test_openapi_ref_check.py`.
+
+- Idempotency/conflict metadata contract (issue #737):
+  `idkmesh-idempotency-v0.1.schema.json` freezes the request-identity
+  reservation vocabulary used by the Product Spine and GitHub delivery
+  idempotency adapters (API Conventions section 12): exact-digest replay of
+  the original logical result, a strict `created`/`replayed` complement, and
+  the 409 `idempotency_conflict` record for a reused key under a different
+  digest. Identity metadata only; no execution, acceptance or merge authority.
+
+- Executor admission gate (issue #921): one operation derives the exact
+  execution binding from the ready input snapshot and acquires the atomic
+  claim, the external dispatch intent is retained only on still-current
+  inputs, and the snapshot is rechecked at canonical candidate submission.
+  Changed upstream inputs fail closed (`inputs_changed`) before any dispatch
+  intent or submission digest is written; logical task identity stays
+  separate from the execution binding. Local conformance composition only;
+  live provider wiring and the GitHub ledger remain separate work. See
+  [Executor Admission v0.1](docs/specifications/EXECUTOR_ADMISSION_V0_1.md).
+
 - Read-only coordination preflight (issue #915): iterative WorkUnit prerequisite
   graph, exact integrated input pins, replay-safe readiness and transitive stale
   input detection. Declared-effort shadow recommendations reuse the existing
@@ -114,6 +202,18 @@ and the release notes for that tag.
   already on `main` (`work-unit-v0.2.schema.json`,
   `evaluator-plan-v0.2.schema.json`, both predating this gate) and raises
   nothing else across every schema file's full commit history.
+
+- `tools/schema_migration_note_check.py` (issue #737, the "migration note"
+  half of "breaking changes require explicit version bump/migration note";
+  ADR-0020 enforces the version bump): a required PR Gate step that fails
+  when a schema version successor ships without an explicit migration note
+  in the `Schema migrations` section of `schemas/README.md` naming the exact
+  file it supersedes. The ledger seeds all five successors already in the
+  tree (`evaluator-plan` v0.2/v0.3/v0.4, `gate-audit-report` v0.2,
+  `work-unit` v0.2) with mechanically derived notes, so a consumer of any
+  older contract can always find what changed and how to move. Stdlib-only,
+  wired into the PR Gate and `scripts/testkit.py integration`, with
+  negative-path regression tests in `tests/test_schema_migration_notes.py`.
 
 - `GET /api/v1/work-units`, `GET /api/v1/work-units/{work_unit_id}`, and
   `idkmesh work-unit list|status` (issue #739, `work-units` read surfaces)

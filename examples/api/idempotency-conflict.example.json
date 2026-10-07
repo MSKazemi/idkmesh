@@ -1,0 +1,15 @@
+{
+  "schema_version": "0.1",
+  "kind": "idkmesh-idempotency-conflict",
+  "idempotency_key": "example-create-1",
+  "retained_request_digest": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+  "presented_request_digest": "sha256:5555555555555555555555555555555555555555555555555555555555555555",
+  "code": "idempotency_conflict",
+  "message": "Idempotency-Key was reused with a different request body.",
+  "authority": {
+    "dispatch": false,
+    "executes_worker": false,
+    "accepts_candidate": false,
+    "merge": false
+  }
+}

@@ -113,3 +113,22 @@ jobs:
           PYTHONPATH: .
           BASE_SHA: ${{ github.event.pull_request.base.sha || 'HEAD~1' }}
         run: python tools/schema_compat_check.py --base "${BASE_SHA}"
+
+      # Issue #737 / ADR-0020: a breaking change ships as a new, separately
+      # versioned file *and* an explicit migration note. The compat check
+      # above enforces the version bump; this enforces the note: every schema
+      # version successor must be listed in the Schema migrations section of
+      # schemas/README.md naming the exact file it supersedes. Stdlib-only
+      # like the shared steps above (`tests/test_ci_local_gate_parity.py`
+      # pins that shape).
+      - name: Check schema migration notes
+        run: python tools/schema_migration_note_check.py
+
+      # API_CONVENTIONS_V0_1.md section 19: every $ref in the checked-in
+      # OpenAPI catalog and the canonical schemas must resolve; unresolved
+      # references fail CI. Stdlib-only like the two shared steps above, so it
+      # runs on a bare checkout and stays reproducible via
+      # `scripts/testkit.py integration` (`tests/test_ci_local_gate_parity.py`
+      # pins that shape).
+      - name: Check OpenAPI and schema reference resolution
+        run: python tools/openapi_ref_check.py

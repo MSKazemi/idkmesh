@@ -1,0 +1,18 @@
+{
+  "api_version": "v1",
+  "schema_version": "0.1",
+  "kind": "idkmesh-control-tower-work-unit-response",
+  "ok": true,
+  "work_unit": {
+    "id": "work/example-1",
+    "run_count": 1,
+    "revisions": [
+      {
+        "version": 1,
+        "digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "source_revision": "0123456789abcdef0123456789abcdef01234567",
+        "run_count": 1
+      }
+    ]
+  }
+}

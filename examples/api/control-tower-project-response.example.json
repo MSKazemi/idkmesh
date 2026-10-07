@@ -1,0 +1,27 @@
+{
+  "api_version": "v1",
+  "schema_version": "0.1",
+  "kind": "idkmesh-control-tower-project-response",
+  "ok": true,
+  "project": {
+    "project_id": "project.example",
+    "run_count": 1,
+    "runs_by_state": {
+      "proposed": 0,
+      "previewed": 0,
+      "admission_blocked": 0,
+      "admitted": 0,
+      "dispatched": 0,
+      "attempt_failed": 0,
+      "candidate_observed": 0,
+      "normalized": 0,
+      "verification_requested": 0,
+      "verification_error": 0,
+      "evidence_ready": 1,
+      "awaiting_human_decision": 0,
+      "decided": 0,
+      "cancelled": 0
+    },
+    "work_unit_count": 1
+  }
+}

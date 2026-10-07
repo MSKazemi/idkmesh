@@ -135,7 +135,7 @@ one over a few quarters.
 |---|---|---|---|
 | `smoke` | only tests affected by your uncommitted changes | 25 CPU-s | after every edit |
 | `unit` | the whole suite except what's marked `sim` or `slow` (`-m "not sim and not slow"`) | 90 CPU-s | before every commit, and the PR Gate's required check |
-| `integration` | `unit` + schema JSON syntax + Markdown link integrity | 600 CPU-s | before every push |
+| `integration` | `unit` + schema JSON syntax + Markdown link integrity + reference resolution | 600 CPU-s | before every push |
 | `nightly` | `integration` + everything marked `sim` or `slow` (`-m "sim or slow"`) | none | scheduled — see `.github/workflows/nightly-full-suite.yml` |
 
 **`nightly` is not equivalent to `integration`.** The two tier markers are in
@@ -158,7 +158,7 @@ than retyped here.
 ```bash
 make smoke          # ~0.4 s   what you just changed
 make test           #          the real gate (unit tier)
-make integration    #          unit + link/schema checks
+make integration    #          unit + link/schema/reference checks
 make nightly        #          the long tail
 make gate           #          picks the cheapest tier that covers your changes
 make profile        #          the 25 slowest tests, when a budget is exceeded
@@ -168,14 +168,35 @@ All of them delegate to `scripts/testkit.py`, so the Makefile, the Claude Code
 hooks, and CI execute the same code path and cannot drift apart.
 
 **PR Gate runs `unit` (`scripts/testkit.py unit`) plus the same Markdown-link
-check (`scripts/check_links.py`) and schema backward-compatibility check
-(`tools/schema_compat_check.py`, ADR-0020) as its required, always-on
-checks** — seconds, not minutes, so a documentation fix isn't held up by the
-health of an unrelated simulation. It does not run `integration` as a single
-delegated call: both shared scripts stay their own explicit, stdlib-only
-steps (`tests/test_ci_local_gate_parity.py` pins that shape for both) so
-they can run before `pip install` and cannot silently diverge into a second,
-inline copy.
+check (`scripts/check_links.py`), schema backward-compatibility check
+(`tools/schema_compat_check.py`, ADR-0020), schema migration-note check
+(`tools/schema_migration_note_check.py`, the ledger in `schemas/README.md`),
+and OpenAPI/schema reference resolution check (`tools/openapi_ref_check.py`,
+API Conventions section 19) as its required, always-on checks** — seconds, not minutes, so a documentation fix
+isn't held up by the health of an unrelated simulation. It does not run
+`integration` as a single delegated call: each shared script stays its own
+explicit, stdlib-only step (`tests/test_ci_local_gate_parity.py` pins that
+shape for all of them) so they can run before `pip install` and cannot
+silently diverge into a second, inline copy.
+
+Inside that `unit` tier, `tests/test_api_contract_conformance.py` is the API
+contract conformance suite (issue #737): every documented `examples/api/`
+fixture is bound to the exact response it documents and validated against the
+schema `openapi.yaml` advertises for it (the catalog is text-scanned, so no
+YAML parser is required), keeping catalog, example, and test from drifting
+apart silently. Its runtime leg serves representative responses over real
+loopback HTTP and validates them against the advertised schema, with an
+exhaustiveness guard over every response the catalog advertises. Every
+envelope the runtime serves -- including the store-unavailable 503s and the
+inspect endpoint's api-error 406/413/415 bodies -- is advertised and
+validated through its representative, so catalog and runtime cannot drift
+apart silently. The documented-examples leg is exhaustive in both
+directions: every schema the catalog advertises on a request or response
+body must have a committed example in `examples/api/`, and digest fields
+that name embedded fixture content must recompute to the real canonical
+digest of it. `tests/test_example_contract_coverage.py` resolves cross-file
+`$ref`s through a schema registry, so the resource-referencing response
+contracts validate in depth rather than being skipped or crashing.
 
 **The complete suite — `nightly`, everything `unit` excludes included — runs
 on a schedule** in `.github/workflows/nightly-full-suite.yml`, decoupled from
