@@ -92,8 +92,16 @@ Use this when code, documentation, or experiments move:
 - **Roadmap completion:** change `unresolved` only when the required evidence has
   actually landed, not when an issue or PR merely proposes it.
 
-## Known gap
+## Manuscript synchronization status
 
-This map can be maintained and link-checked now, but it cannot be reconciled
-section-by-section against manuscript prose until issue #478 supplies the
-canonical manuscript source or an explicit external synchronization procedure.
+Issue #478's canonical-source prerequisite is now satisfied by
+[`main.tex`](main.tex), with discoverability and repository-relative claim-map
+links pinned by
+[`../tests/test_paper_stewardship_index.py`](../tests/test_paper_stewardship_index.py).
+The map can therefore be reconciled section-by-section against manuscript prose
+during normal paper-stewardship changes.
+
+This does not mean every claim is permanently synchronized. Each material
+manuscript change still requires checking the relevant map row, exact evidence
+revision or artifact, evidence class, negative results, and limitations.
+Unresolved claims remain unresolved until the required evidence lands.
