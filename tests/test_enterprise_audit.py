@@ -440,7 +440,11 @@ class EnterpriseAuditLedgerTests(unittest.TestCase):
             ledger.append(self.item())
             before = ledger.checkpoint()
             with self.assertRaises(OSError):
-                ledger.export_to_sink(FailingSink())
+                ledger.export_to_sink(
+                    FailingSink(),
+                    tenant_id="tenant-a",
+                    project_id="project-main",
+                )
             after = ledger.checkpoint()
         self.assertEqual(before, after)
 
