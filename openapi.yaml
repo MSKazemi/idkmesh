@@ -476,6 +476,8 @@ components:
     "marginal-evidence-benchmark-config-v0.1": {$ref: "https://idkmesh.org/schemas/marginal-evidence-benchmark-config-v0.1.schema.json"}
     "marginal-evidence-benchmark-report-v0.1": {$ref: "https://idkmesh.org/schemas/marginal-evidence-benchmark-report-v0.1.schema.json"}
     "marginal-evidence-report-v0.1": {$ref: "https://idkmesh.org/schemas/marginal-evidence-report-v0.1.schema.json"}
+    "marginal-evidence-synthesis-config-v0.1": {$ref: "https://idkmesh.org/schemas/marginal-evidence-synthesis-config-v0.1.schema.json"}
+    "marginal-evidence-synthesis-report-v0.1": {$ref: "https://idkmesh.org/schemas/marginal-evidence-synthesis-report-v0.1.schema.json"}
     "project-manifest": {$ref: "https://idkmesh.org/schemas/project-manifest.schema.json"}
     "resource-compute-bindings-v0.1": {$ref: "https://idkmesh.org/schemas/resource-compute-bindings-v0.1.schema.json"}
     "resource-offer-registry-v0.1": {$ref: "https://idkmesh.org/schemas/resource-offer-registry-v0.1.schema.json"}

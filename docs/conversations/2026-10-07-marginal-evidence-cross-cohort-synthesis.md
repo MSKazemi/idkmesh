@@ -63,6 +63,17 @@ append-only record update is the only code-tree change in that follow-up commit.
 No product code, schema, selector rule, or authority boundary changed during
 this CI repair.
 
+The fresh exact-head run then reached the repository unit tier on Python 3.11
+and 3.13. The synthesis tests were not reported as failures; the gate found
+three catalog/publication integration failures:
+
+- the two new public JSON Schemas were absent from `openapi.yaml`'s complete
+  schema catalog;
+- the new published conversation page was absent from `docs/sitemap.xml`.
+
+The repair adds only those catalog entries, updates the conversations sitemap
+date, and preserves this diagnosis. It does not change synthesis behavior.
+
 ## Research boundary
 
 This slice closes a tooling gap, not the scientific question. A broader
