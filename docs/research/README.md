@@ -27,6 +27,10 @@ policy changes or merge decisions.
   manuscript source ([`main.tex`](../../paper/main.tex)) and its
   [claim-to-evidence map](../../paper/CLAIM_EVIDENCE_MAP.md), the public
   synchronization point between paper-facing claims and repository evidence.
+- [Publication-Oriented Scientific Questions](PUBLICATION_RESEARCH_QUESTIONS_2026-10-07.md)
+  — maps ten falsifiable IDKMesh questions to current evidence, publication
+  readiness, novelty boundaries, matched-budget requirements, and explicit
+  kill criteria; separates publishable evidence from hypotheses and future work.
 
 ## Routing and Orchestration Experiments
 
