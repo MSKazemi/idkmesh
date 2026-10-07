@@ -120,3 +120,37 @@ def test_physarum_recovers_better_than_static_after_shift_fixture():
         > static["post_shift_success_rate"]
     )
     assert physarum["max_path_share"] < static["max_path_share"]
+
+
+def test_stationary_scenario_keeps_pre_shift_reliability():
+    edge = sim.EDGE_BY_KEY[sim.key("coordinator", "a")]
+    config = sim.Config(shift_epoch=1)
+
+    assert sim.true_reliability(
+        edge,
+        epoch=2,
+        cfg=config,
+        scenario="stationary",
+    ) == edge.reliability_before
+    assert sim.true_reliability(
+        edge,
+        epoch=2,
+        cfg=config,
+        scenario="abrupt-shift",
+    ) == edge.reliability_after
+
+
+def test_stationary_comparison_records_scenario_and_pays_diversity_burden():
+    result = sim.compare(
+        seed_start=1,
+        seeds=3,
+        epochs=20,
+        tasks_per_epoch=8,
+        scenario="stationary",
+    )
+
+    assert result["scenario"] == "stationary"
+    assert (
+        result["summary"]["physarum"]["mean_route_burden"]
+        > result["summary"]["shortest-static"]["mean_route_burden"]
+    )
