@@ -52,6 +52,7 @@ import threading
 import unittest
 
 from idkmesh.connector_store import LocalMetadataStore
+from idkmesh.control_tower_api import canonical_digest
 from idkmesh.control_tower_ui import SAMPLE_REPORT, create_server
 from idkmesh.local_ui_security import MAX_BODY_BYTES, TOKEN_HEADER
 from idkmesh.product_spine_run_store import ProductSpineRunStore
@@ -169,6 +170,35 @@ def advertised_response_schemas(document: dict) -> dict:
     return advertised
 
 
+def advertised_request_schemas(document: dict) -> dict:
+    """Map (METHOD, path) to {media type: advertised schema key} for request bodies.
+
+    The only request body the catalog advertises today is the inspect
+    endpoint's Run Evidence Report, but the scan is generic: a documented
+    surface needs a documented example whether it is read or written.
+    """
+    advertised: dict = {}
+    for path, item in (document.get("paths") or {}).items():
+        if not isinstance(item, dict):
+            continue
+        for verb, operation in item.items():
+            if verb.lower() not in HTTP_METHODS or not isinstance(operation, dict):
+                continue
+            body = operation.get("requestBody") or {}
+            if not isinstance(body, dict):
+                continue
+            media_map: dict = {}
+            for media_type, media in (body.get("content") or {}).items():
+                schema = media.get("schema") if isinstance(media, dict) else None
+                if isinstance(schema, dict) and "$ref" in schema:
+                    media_map[media_type] = str(schema["$ref"]).rsplit("/", 1)[-1]
+                else:
+                    media_map[media_type] = None
+            if media_map:
+                advertised[(verb.upper(), path)] = media_map
+    return advertised
+
+
 def tracked_api_examples() -> set[str]:
     """Tracked JSON under examples/api/. Tracked-only, like the coverage module."""
     output = subprocess.run(
@@ -215,9 +245,27 @@ def validation_errors(validator, example_path: str) -> list[str]:
 # is what ties the example to the advertisement; without it a name-based table
 # can pair an example with a schema the API serves somewhere else, or nowhere.
 API_EXAMPLES = {
+    "examples/api/control-tower-inspection-response.example.json": (
+        "POST",
+        "/api/v1/run-evidence/inspect",
+        "200",
+        "application/json",
+    ),
+    "examples/api/control-tower-project-response.example.json": (
+        "GET",
+        "/api/v1/projects/{project_id}",
+        "200",
+        "application/json",
+    ),
     "examples/api/control-tower-run-attempts-response.example.json": (
         "GET",
         "/api/v1/runs/{run_id}/attempts",
+        "200",
+        "application/json",
+    ),
+    "examples/api/control-tower-run-evidence-response.example.json": (
+        "GET",
+        "/api/v1/runs/{run_id}/evidence",
         "200",
         "application/json",
     ),
@@ -232,6 +280,18 @@ API_EXAMPLES = {
         "/api/v1/status",
         "200",
         "application/json",
+    ),
+    "examples/api/control-tower-work-unit-response.example.json": (
+        "GET",
+        "/api/v1/work-units/{work_unit_id}",
+        "200",
+        "application/json",
+    ),
+    "examples/api/event.example.json": (
+        "GET",
+        "/api/v1/events/stream",
+        "200",
+        "text/event-stream",
     ),
     # The standard error envelope is advertised by every 4xx/5xx component
     # response; one representative endpoint is bound here and the component
@@ -256,10 +316,15 @@ API_EXAMPLES = {
     ),
 }
 
-# Examples that document a schema object rather than a whole response body.
-# The component key must still be one the catalog advertises.
+# Examples that document a schema object rather than a whole response body:
+# an embedded resource, a request body, or a record contract. The component
+# key must still be one the catalog advertises.
 SCHEMA_DOCUMENT_EXAMPLES = {
+    "examples/api/human-decision-record.example.json": "human-decision-record-v0.1",
+    "examples/api/idempotency-admission.example.json": "idkmesh-idempotency-v0.1",
+    "examples/api/idempotency-conflict.example.json": "idkmesh-idempotency-v0.1",
     "examples/api/product-spine-run.example.json": "idkmesh-product-spine-run-v0.1",
+    "examples/api/run-evidence-report.example.json": "run-evidence-report-v0.1",
 }
 
 # Semantic-invalid fixtures: their rejection by the schema is asserted in
@@ -399,6 +464,14 @@ class DocumentedExampleConformanceTests(unittest.TestCase):
                     "the coverage table but the API advertises "
                     f"{key}.schema.json for {method} {path} {status}",
                 )
+        for example, key in sorted(SCHEMA_DOCUMENT_EXAMPLES.items()):
+            with self.subTest(example=example):
+                self.assertEqual(
+                    f"{key}.schema.json",
+                    module.VALID_AGAINST.get(example),
+                    f"{example} is paired with {module.VALID_AGAINST.get(example)} by "
+                    f"the coverage table but this table names {key}.schema.json",
+                )
 
     def test_schema_document_example_names_an_advertised_component(self) -> None:
         components = (self.document_components()).get("schemas") or {}
@@ -418,6 +491,101 @@ class DocumentedExampleConformanceTests(unittest.TestCase):
                     [], validation_errors(validator_for(key), example),
                     f"{example} no longer validates against {key}.schema.json",
                 )
+
+    def test_every_advertised_schema_is_demonstrated_by_an_example(self) -> None:
+        """Every contract the catalog serves or accepts has an example of it.
+
+        Five response contracts (the inspection, project, WorkUnit and
+        run-evidence responses, and the SSE event) and the inspect request
+        body were advertised, served, and runtime-validated but had no
+        committed example at all -- a reader of examples/api/ could not see
+        one. This fails whenever a response or request body names a canonical
+        schema that no documented example demonstrates, so the gap cannot
+        reopen by omission.
+        """
+        demonstrated = {
+            self.advertised[(method, path, status)][media_type]
+            for method, path, status, media_type in API_EXAMPLES.values()
+        }
+        demonstrated.update(SCHEMA_DOCUMENT_EXAMPLES.values())
+        advertised = {
+            key
+            for media_map in self.advertised.values()
+            for key in media_map.values()
+            if key is not None
+        }
+        for media_map in advertised_request_schemas(load_catalog()).values():
+            advertised.update(key for key in media_map.values() if key is not None)
+        self.assertTrue(advertised, "the advertisement scan found no schemas; this guards nothing")
+        self.assertEqual(
+            set(),
+            advertised - demonstrated,
+            "openapi.yaml advertises these schemas on a request or response but "
+            "no committed example demonstrates them; add one to examples/api/ "
+            "and classify it in this module and in "
+            "tests/test_example_contract_coverage.py",
+        )
+
+    def test_digest_fields_that_name_embedded_content_recompute(self) -> None:
+        """A digest naming content these fixtures embed is the real digest of it.
+
+        The digest binding is the trust property these envelopes advertise --
+        "a caller can detect a swapped or corrupted snapshot without
+        re-deriving it" -- so the fixtures must demonstrate the binding rather
+        than carry decorative placeholder hex in these fields. Digests that
+        name content the fixtures do not embed (a WorkUnit document, a result
+        manifest) stay deterministic placeholders; the rule is recorded in
+        examples/api/README.md. The same report is named from three fixtures,
+        so its digest also pins the set to one shared document.
+        """
+        def load(example: str) -> dict:
+            return json.loads((REPO_ROOT / example).read_text(encoding="utf-8"))
+
+        report = load("examples/api/run-evidence-report.example.json")
+        report_digest = canonical_digest(report)
+
+        evidence = load("examples/api/control-tower-run-evidence-response.example.json")
+        with self.subTest(binding="run-evidence-response.evidence_report_digest"):
+            self.assertEqual(report_digest, evidence["evidence_report_digest"])
+        with self.subTest(binding="run-evidence-response.evidence_report"):
+            self.assertEqual(report_digest, canonical_digest(evidence["evidence_report"]))
+        run = load("examples/api/control-tower-run-response.example.json")
+        with self.subTest(binding="run-response.run.evidence_report_digest"):
+            self.assertEqual(report_digest, run["run"]["evidence_report_digest"])
+        decision = load("examples/api/human-decision-record.example.json")
+        with self.subTest(binding="human-decision-record.evidence_report.digest"):
+            self.assertEqual(report_digest, decision["evidence_report"]["digest"])
+        inspection = load("examples/api/control-tower-inspection-response.example.json")
+        with self.subTest(binding="inspection-response.snapshot_digest"):
+            self.assertEqual(
+                canonical_digest(inspection["snapshot"]), inspection["snapshot_digest"]
+            )
+        event = load("examples/api/event.example.json")
+        with self.subTest(binding="event.payload_digest"):
+            self.assertEqual(canonical_digest(event["payload"]), event["payload_digest"])
+
+    @unittest.skipUnless(HAS_JSONSCHEMA, "response validation requires jsonschema")
+    def test_inspection_example_snapshot_validates_against_its_frozen_contract(self) -> None:
+        """The embedded snapshot is a real one, not a shapeless placeholder.
+
+        The inspection response schema pins only the snapshot's identity
+        fields because the full snapshot shape is its own frozen contract
+        (control-tower-snapshot-v0.1), so nothing else checked that the
+        embedded snapshot is a document the API would actually produce.
+        """
+        inspection = json.loads(
+            (REPO_ROOT / "examples/api/control-tower-inspection-response.example.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        self.assertEqual(
+            [],
+            errors_for_document(
+                validator_for("control-tower-snapshot-v0.1"), inspection["snapshot"]
+            ),
+            "the inspection example's embedded snapshot no longer validates "
+            "against control-tower-snapshot-v0.1.schema.json",
+        )
 
     def test_negative_fixtures_are_bound_to_their_response_too(self) -> None:
         """The rejected fixtures document a real response shape.

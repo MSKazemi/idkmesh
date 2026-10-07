@@ -1,0 +1,95 @@
+{
+  "api_version": "v1",
+  "schema_version": "0.1",
+  "kind": "idkmesh-control-tower-run-evidence-response",
+  "ok": true,
+  "run_id": "run/example-1",
+  "evidence_report_digest": "sha256:074e0ceef724000e6f628f854fedc6d918ced24d4caea73f8cc31b1f0ac4edd8",
+  "evidence_report": {
+    "schema_version": "0.1",
+    "kind": "idkmesh-run-evidence-report",
+    "run_id": "run/example-1",
+    "source_run_kind": "idkmesh-two-attempt-run",
+    "source_run_digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+    "source_config_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+    "orchestrator_version": "0.2",
+    "work_unit": {
+      "id": "work/example-1",
+      "version": 1,
+      "digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    },
+    "verifier_policy_digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+    "attempts": [
+      {
+        "attempt_id": "attempt/example-1-1",
+        "order": 1,
+        "worker_adapter": "local-direct",
+        "state": "worker_error",
+        "evidence_state": "worker_error",
+        "worker": null,
+        "verifier": null,
+        "error": "the worker exited before producing a ResultManifest"
+      },
+      {
+        "attempt_id": "attempt/example-1-2",
+        "order": 2,
+        "worker_adapter": "local-direct",
+        "state": "verified",
+        "evidence_state": "supported",
+        "worker": {
+          "id": "local/example-worker",
+          "status": "succeeded",
+          "result_manifest_id": "result/example-1-2",
+          "result_manifest_digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+        },
+        "verifier": {
+          "id": "local/example-verifier",
+          "status": "passed",
+          "recommendation": "accept_candidate",
+          "verification_semantic_digest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+          "checks": [
+            {
+              "id": "artifact-digest",
+              "required": true,
+              "status": "passed"
+            },
+            {
+              "id": "candidate-scope",
+              "required": true,
+              "status": "passed"
+            },
+            {
+              "id": "independent-acceptance",
+              "required": true,
+              "status": "passed"
+            }
+          ]
+        },
+        "error": null
+      }
+    ],
+    "summary": {
+      "attempt_count": 2,
+      "supported": 1,
+      "rejected": 0,
+      "inconclusive": 0,
+      "control_errors": 1,
+      "verification_disagreement": false,
+      "control_failure_present": true
+    },
+    "warnings": [
+      "Generated evidence is decision support only; this report does not select, accept, merge, or integrate a candidate."
+    ],
+    "human_decision": {
+      "status": "pending",
+      "selected_attempt_id": null,
+      "integration_authority": "external_human_or_governance"
+    },
+    "authority": {
+      "canonical_state_write": false,
+      "git_push": false,
+      "merge": false,
+      "automatic_candidate_selection": false
+    }
+  }
+}

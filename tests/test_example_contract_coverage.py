@@ -30,6 +30,7 @@ import unittest
 HAS_JSONSCHEMA = importlib.util.find_spec("jsonschema") is not None
 if HAS_JSONSCHEMA:
     import jsonschema
+    from referencing import Registry, Resource
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 EXAMPLES = "examples"
@@ -42,13 +43,22 @@ SCHEMAS = REPO_ROOT / "schemas"
 # schema-valid. Asserting that keeps a future schema change from quietly
 # turning a semantic fixture into a structural one.
 VALID_AGAINST = {
+    "examples/api/control-tower-inspection-response.example.json": "idkmesh-control-tower-inspection-response-v0.1.schema.json",
+    "examples/api/control-tower-project-response.example.json": "idkmesh-control-tower-project-response-v0.1.schema.json",
     "examples/api/control-tower-run-attempts-response.example.json": "idkmesh-control-tower-run-attempts-response-v0.1.schema.json",
+    "examples/api/control-tower-run-evidence-response.example.json": "idkmesh-control-tower-run-evidence-response-v0.1.schema.json",
     "examples/api/control-tower-run-response.example.json": "idkmesh-control-tower-run-response-v0.1.schema.json",
     "examples/api/control-tower-status.example.json": "idkmesh-control-tower-status-v0.1.schema.json",
+    "examples/api/control-tower-work-unit-response.example.json": "idkmesh-control-tower-work-unit-response-v0.1.schema.json",
     "examples/api/error-envelope.example.json": "idkmesh-api-error-v0.1.schema.json",
+    "examples/api/event.example.json": "idkmesh-event-v0.1.schema.json",
+    "examples/api/human-decision-record.example.json": "human-decision-record-v0.1.schema.json",
+    "examples/api/idempotency-admission.example.json": "idkmesh-idempotency-v0.1.schema.json",
+    "examples/api/idempotency-conflict.example.json": "idkmesh-idempotency-v0.1.schema.json",
     "examples/api/list-envelope.example.json": "idkmesh-list-v0.1.schema.json",
     "examples/api/product-spine-run.example.json": "idkmesh-product-spine-run-v0.1.schema.json",
     "examples/api/readiness.example.json": "idkmesh-readiness-v0.1.schema.json",
+    "examples/api/run-evidence-report.example.json": "run-evidence-report-v0.1.schema.json",
     "examples/benchmarks/work-unit-decomposition-v0.1.json": "decomposition-benchmark-v0.1.schema.json",
     "examples/candidate-normalization/c6-equivalence.work-unit.json": "work-unit-v0.2.schema.json",
     "examples/candidate-normalization/local-candidate-reference.json": "candidate-reference-v0.1.schema.json",
@@ -164,13 +174,39 @@ def load_schema(name: str) -> dict:
     return json.loads((SCHEMAS / name).read_text(encoding="utf-8"))
 
 
-def errors_for(example: str, schema_name: str) -> list[str]:
-    document = json.loads((REPO_ROOT / example).read_text(encoding="utf-8"))
-    validator = jsonschema.Draft202012Validator(load_schema(schema_name))
+def validator_for(schema_name: str):
+    """A Draft 2020-12 validator with every cross-file ``$ref`` resolvable.
+
+    Without the registry this module validated only self-contained schemas:
+    a contract whose member ``$ref``s a sibling file -- the project, WorkUnit
+    and run-evidence response envelopes -- cannot be validated at all by a
+    bare ``Draft202012Validator``, which raises ``Unresolvable`` the moment
+    it descends into the reference. Registering every schema in ``schemas/``
+    by its ``$id`` is what lets the tables below name those contracts
+    instead of quietly avoiding them.
+    """
+    registry = Registry()
+    for path in sorted(SCHEMAS.glob("*.json")):
+        contents = json.loads(path.read_text(encoding="utf-8"))
+        registry = registry.with_resource(
+            contents.get("$id", path.name), Resource.from_contents(contents)
+        )
+    return jsonschema.Draft202012Validator(load_schema(schema_name), registry=registry)
+
+
+def errors_for_document(document, schema_name: str) -> list[str]:
     return [
         f"{'/'.join(str(part) for part in error.path) or '<root>'}: {error.message}"
-        for error in sorted(validator.iter_errors(document), key=lambda e: list(e.path))
+        for error in sorted(
+            validator_for(schema_name).iter_errors(document),
+            key=lambda e: list(e.path),
+        )
     ]
+
+
+def errors_for(example: str, schema_name: str) -> list[str]:
+    document = json.loads((REPO_ROOT / example).read_text(encoding="utf-8"))
+    return errors_for_document(document, schema_name)
 
 
 @unittest.skipUnless(HAS_JSONSCHEMA, "example contract coverage requires jsonschema")
@@ -252,6 +288,33 @@ class ExampleContractCoverageTests(unittest.TestCase):
         # 40 examples were tracked at 31b8f18; the floor guards against an
         # enumeration that silently returns nothing.
         self.assertGreaterEqual(len(tracked_examples()), 35)
+
+    @unittest.skipUnless(HAS_JSONSCHEMA, "example contract coverage requires jsonschema")
+    def test_cross_file_references_are_resolved_not_skipped(self) -> None:
+        """A validator that cannot reach a ``$ref`` must not read as a pass.
+
+        ``validator_for`` exists because a bare validator raises ``Unresolvable``
+        on the first cross-file reference, and the tables above legitimately
+        name contracts with such references. If the registry wiring went
+        missing the failure would surface as a crash far from its cause -- or,
+        worse, as tables quietly dropping the referencing examples. This
+        corrupts an example only inside its ``$ref``'d member and asserts the
+        validator reaches that member at all.
+        """
+        example = "examples/api/control-tower-project-response.example.json"
+        schema_name = "idkmesh-control-tower-project-response-v0.1.schema.json"
+        document = json.loads((REPO_ROOT / example).read_text(encoding="utf-8"))
+        self.assertEqual(
+            [], errors_for_document(document, schema_name),
+            "the uncorrupted example must validate before the mutation means anything",
+        )
+        document["project"]["run_count"] = "not-an-integer"
+        self.assertNotEqual(
+            [],
+            errors_for_document(document, schema_name),
+            "a bad value inside a $ref'd member went unseen, so cross-file "
+            "references are being skipped rather than resolved",
+        )
 
 
 if __name__ == "__main__":

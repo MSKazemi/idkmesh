@@ -14,6 +14,21 @@ and the release notes for that tag.
 
 ### Added
 
+- Documented examples for every advertised API surface (issue #737):
+  `examples/api/` gains nine fixtures — the inspection, project, WorkUnit and
+  run-evidence response envelopes, one SSE event, the inspect request body
+  (`run-evidence-report`), both `idkmesh-idempotency-v0.1` forms, and a
+  `human-decision-record` — so every schema `openapi.yaml` serves or accepts
+  now has a committed, CI-validated example. A completeness guard fails if a
+  future response or request body loses its example. Digest fields that name
+  embedded fixture content carry the real canonical digest of it and are
+  recomputed in CI (digests naming unembedded content stay deterministic
+  placeholders, per `examples/api/README.md`). As part of this,
+  `tests/test_example_contract_coverage.py` now resolves cross-file `$ref`s
+  through a schema registry: the resource-referencing response contracts
+  could not be validated at all without it, and a guard test proves
+  corruptions inside a `$ref`'d member are seen rather than skipped.
+
 - API contract conformance, documented-examples leg (issue #737):
   `tests/test_api_contract_conformance.py` binds every `examples/api/`
   fixture to the exact response it documents and resolves that response's

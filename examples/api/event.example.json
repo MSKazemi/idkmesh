@@ -1,0 +1,24 @@
+{
+  "schema_version": "0.1",
+  "kind": "idkmesh-event",
+  "event_id": "evt-000000000001",
+  "sequence": 1,
+  "occurred_at": "2026-10-01T00:00:01Z",
+  "event_type": "run.created",
+  "principal": {
+    "type": "unauthenticated_local",
+    "id": "local-cli"
+  },
+  "authority_class": "local_control",
+  "project_id": "project.example",
+  "work_unit_id": "work/example-1",
+  "run_id": "run/example-1",
+  "attempt_id": null,
+  "source_revision": "0123456789abcdef0123456789abcdef01234567",
+  "evidence_reference": null,
+  "payload": {
+    "request_digest": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+    "state": "proposed"
+  },
+  "payload_digest": "sha256:984579427c11005f30c9c70b0217984ae013ce80f40150af50d2ad9fe9218dd9"
+}

@@ -1,0 +1,17 @@
+{
+  "schema_version": "0.1",
+  "kind": "idkmesh-idempotency-admission",
+  "idempotency_key": "example-create-1",
+  "request_id": "req/example-1",
+  "request_digest": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+  "run_id": "run/example-1",
+  "state": "proposed",
+  "created": true,
+  "replayed": false,
+  "authority": {
+    "dispatch": false,
+    "executes_worker": false,
+    "accepts_candidate": false,
+    "merge": false
+  }
+}

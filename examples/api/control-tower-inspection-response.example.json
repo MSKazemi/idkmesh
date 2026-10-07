@@ -1,0 +1,251 @@
+{
+  "api_version": "v1",
+  "schema_version": "0.1",
+  "kind": "idkmesh-control-tower-inspection-response",
+  "ok": true,
+  "snapshot_digest": "sha256:b0a97feece4ee8da78a231381eb8096c6e8e21eb2f4718feff4071b65f9380c0",
+  "snapshot": {
+    "api_version": "v1",
+    "schema_version": "0.1",
+    "kind": "idkmesh-control-tower-snapshot",
+    "source": {
+      "kind": "idkmesh-run-evidence-report",
+      "evidence_report_digest": "sha256:074e0ceef724000e6f628f854fedc6d918ced24d4caea73f8cc31b1f0ac4edd8",
+      "schema_version": "0.1",
+      "run_id": "run/example-1",
+      "source_run_digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+      "source_config_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+      "verifier_policy_digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333"
+    },
+    "work_unit": {
+      "id": "work/example-1",
+      "version": 1,
+      "digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    },
+    "summary": {
+      "attempt_count": 2,
+      "supported": 1,
+      "rejected": 0,
+      "inconclusive": 0,
+      "control_errors": 1,
+      "verification_disagreement": false,
+      "control_failure_present": true
+    },
+    "attention": [
+      {
+        "severity": "high",
+        "code": "control_failure_present",
+        "title": "A worker/verifier control path failed",
+        "why": "The failed attempt remains visible while peer evidence is preserved."
+      },
+      {
+        "severity": "action",
+        "code": "human_decision_pending",
+        "title": "Human integration decision is pending",
+        "why": "This report intentionally carries no selected candidate and no merge authority."
+      }
+    ],
+    "attempts": [
+      {
+        "attempt_id": "attempt/example-1-1",
+        "order": 1,
+        "state": "worker_error",
+        "evidence_state": "worker_error",
+        "worker_adapter": "local-direct",
+        "claim": null,
+        "evidence": null,
+        "error": "the worker exited before producing a ResultManifest"
+      },
+      {
+        "attempt_id": "attempt/example-1-2",
+        "order": 2,
+        "state": "verified",
+        "evidence_state": "supported",
+        "worker_adapter": "local-direct",
+        "claim": {
+          "worker_id": "local/example-worker",
+          "worker_status": "succeeded",
+          "result_manifest_id": "result/example-1-2",
+          "result_manifest_digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+        },
+        "evidence": {
+          "verifier_id": "local/example-verifier",
+          "verifier_status": "passed",
+          "recommendation": "accept_candidate",
+          "verification_digest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+          "checks": [
+            {
+              "id": "artifact-digest",
+              "required": true,
+              "status": "passed"
+            },
+            {
+              "id": "candidate-scope",
+              "required": true,
+              "status": "passed"
+            },
+            {
+              "id": "independent-acceptance",
+              "required": true,
+              "status": "passed"
+            }
+          ]
+        },
+        "error": null
+      }
+    ],
+    "provenance": {
+      "work_unit": {
+        "id": "work/example-1",
+        "version": 1,
+        "digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      "run": {
+        "run_id": "run/example-1",
+        "source_run_digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+        "source_config_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+        "verifier_policy_digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+        "orchestrator_version": "0.2"
+      },
+      "attempts": [
+        {
+          "attempt_id": "attempt/example-1-1",
+          "order": 1,
+          "worker_adapter": "local-direct",
+          "result_manifest": null,
+          "verification": null,
+          "evidence_state": "worker_error",
+          "error": "the worker exited before producing a ResultManifest"
+        },
+        {
+          "attempt_id": "attempt/example-1-2",
+          "order": 2,
+          "worker_adapter": "local-direct",
+          "result_manifest": {
+            "worker_id": "local/example-worker",
+            "worker_status": "succeeded",
+            "result_manifest_id": "result/example-1-2",
+            "result_manifest_digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          },
+          "verification": {
+            "verifier_id": "local/example-verifier",
+            "verifier_status": "passed",
+            "recommendation": "accept_candidate",
+            "verification_semantic_digest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+            "required_checks": [
+              {
+                "id": "artifact-digest",
+                "status": "passed"
+              },
+              {
+                "id": "candidate-scope",
+                "status": "passed"
+              },
+              {
+                "id": "independent-acceptance",
+                "status": "passed"
+              }
+            ],
+            "identity_distinct_from_worker": true,
+            "independence_claim": "identity distinction is visible; statistical or organizational independence is not inferred by this view"
+          },
+          "evidence_state": "supported",
+          "error": null
+        }
+      ],
+      "authority": {
+        "canonical_state_write": false,
+        "git_push": false,
+        "merge": false,
+        "automatic_candidate_selection": false,
+        "human_decision_status": "pending",
+        "integration_authority": "external_human_or_governance"
+      }
+    },
+    "timeline": [
+      {
+        "sequence": 1,
+        "type": "observation",
+        "title": "Run evidence loaded",
+        "detail": "Run run/example-1 describes WorkUnit work/example-1 v1.",
+        "actor": null,
+        "attempt_id": null,
+        "evidence_ref": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+      },
+      {
+        "sequence": 2,
+        "type": "control_error",
+        "title": "Worker attempt failed",
+        "detail": "the worker exited before producing a ResultManifest",
+        "actor": null,
+        "attempt_id": "attempt/example-1-1",
+        "evidence_ref": null
+      },
+      {
+        "sequence": 3,
+        "type": "claim",
+        "title": "Worker ResultManifest recorded",
+        "detail": "Worker reports status 'succeeded' through adapter 'local-direct'.",
+        "actor": "local/example-worker",
+        "attempt_id": "attempt/example-1-2",
+        "evidence_ref": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+      },
+      {
+        "sequence": 4,
+        "type": "evidence",
+        "title": "Independent checks recorded",
+        "detail": "3/3 required checks passed",
+        "actor": "local/example-verifier",
+        "attempt_id": "attempt/example-1-2",
+        "evidence_ref": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+      },
+      {
+        "sequence": 5,
+        "type": "recommendation",
+        "title": "Verifier recommendation recorded",
+        "detail": "accept_candidate \u2192 evidence state supported.",
+        "actor": "local/example-verifier",
+        "attempt_id": "attempt/example-1-2",
+        "evidence_ref": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+      },
+      {
+        "sequence": 6,
+        "type": "attention",
+        "title": "Control-path failure preserved",
+        "detail": "At least one attempt failed in the worker/result/verifier control path; surviving peer evidence remains visible.",
+        "actor": null,
+        "attempt_id": null,
+        "evidence_ref": null
+      },
+      {
+        "sequence": 7,
+        "type": "authority",
+        "title": "Human integration decision remains pending",
+        "detail": "No candidate is selected automatically. Integration authority remains external human or governance.",
+        "actor": null,
+        "attempt_id": null,
+        "evidence_ref": null
+      }
+    ],
+    "warnings": [
+      "Generated evidence is decision support only; this report does not select, accept, merge, or integrate a candidate."
+    ],
+    "human_decision": {
+      "status": "pending",
+      "selected_attempt_id": null,
+      "integration_authority": "external_human_or_governance"
+    },
+    "authority": {
+      "canonical_state_write": false,
+      "git_push": false,
+      "merge": false,
+      "automatic_candidate_selection": false
+    },
+    "interpretation_rules": [
+      "worker success != verified correctness",
+      "verifier recommendation != human integration decision",
+      "multiple recommendations != majority truth",
+      "replay equality != correctness"
+    ]
+  }
+}

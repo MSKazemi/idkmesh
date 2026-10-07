@@ -190,7 +190,13 @@ exhaustiveness guard over every response the catalog advertises. Every
 envelope the runtime serves -- including the store-unavailable 503s and the
 inspect endpoint's api-error 406/413/415 bodies -- is advertised and
 validated through its representative, so catalog and runtime cannot drift
-apart silently.
+apart silently. The documented-examples leg is exhaustive in both
+directions: every schema the catalog advertises on a request or response
+body must have a committed example in `examples/api/`, and digest fields
+that name embedded fixture content must recompute to the real canonical
+digest of it. `tests/test_example_contract_coverage.py` resolves cross-file
+`$ref`s through a schema registry, so the resource-referencing response
+contracts validate in depth rather than being skipped or crashing.
 
 **The complete suite — `nightly`, everything `unit` excludes included — runs
 on a schedule** in `.github/workflows/nightly-full-suite.yml`, decoupled from
