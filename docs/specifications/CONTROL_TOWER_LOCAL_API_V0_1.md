@@ -1313,7 +1313,7 @@ and each is proven by `tests/test_control_tower_limits.py`.
 | Request line | 65536 bytes | stdlib parser, `414` above | `ParserBoundTests` |
 | Header line | 65536 bytes | stdlib parser, `431` above | `ParserBoundTests` |
 | Header fields | 99 | stdlib parser, `431` at 100 (the stdlib allows 100 lines but counts the blank line ending the header block) | `ParserBoundTests` |
-| Request body | 2 MiB | `413 payload_too_large`; one global cap, only `POST /api/v1/run-evidence/inspect` reads a body | not proven by an HTTP test (only the CLI preload cap is tested) |
+| Request body | 2 MiB | `413 payload_too_large`; one global cap, only `POST /api/v1/run-evidence/inspect` reads a body; an oversized declared length is rejected before body read | `RequestBodyBoundTests` |
 | Connections | one request each | stdlib HTTP/1.0 default; no keep-alive | `ConnectionPolicyTests` |
 | SSE clients | 8 (`--max-sse-clients`, 1-64) | a separate non-blocking `RequestLimiter` for `GET /api/v1/events/stream`; beyond it `503 too_many_streams` + `Retry-After` | `EventStreamLimitTests` (`tests/test_control_tower_events.py`) |
 | SSE heartbeat | 15 s | `: keepalive` comment on an idle stream | `EventStreamLimitTests` (`tests/test_control_tower_events.py`) |

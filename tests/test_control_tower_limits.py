@@ -361,6 +361,32 @@ class SlowClientTests(_ServerCase):
         self.assertTrue(server.limiter.wait_idle(5.0), "slot was not released")
 
 
+class RequestBodyBoundTests(_ServerCase):
+    def test_oversized_inspection_body_is_rejected_before_body_read(self) -> None:
+        server = self.start()
+        body_limit = server.limits["max_request_body_bytes"]
+        request = (
+            "POST /api/v1/run-evidence/inspect HTTP/1.1\r\n"
+            f"Host: {self.host(server)}\r\n"
+            f"{TOKEN_HEADER}: {server.ui_token}\r\n"
+            "Accept: application/json\r\n"
+            "Content-Type: application/json\r\n"
+            f"Content-Length: {body_limit + 1}\r\n\r\n"
+        ).encode("ascii")
+
+        # Send no body bytes. A 413 response therefore proves the declared
+        # Content-Length is rejected before the handler tries to read/allocate
+        # the oversized request body; a read would instead stall until 408.
+        data = self.raw(server, request, timeout=5.0)
+        head, _, body = data.partition(b"\r\n\r\n")
+        self.assertTrue(head.startswith(b"HTTP/1.0 413"), head[:40])
+        document = json.loads(body)
+        self.assertEqual(document["error"]["code"], "payload_too_large")
+        self.assertFalse(document["error"]["retryable"])
+        _validate("idkmesh-api-error-v0.1.schema.json", document)
+        self.assertTrue(server.limiter.wait_idle(5.0), "slot was not released")
+
+
 class ParserBoundTests(_ServerCase):
     """The documented stdlib bounds, pinned so a change cannot go unnoticed."""
 
