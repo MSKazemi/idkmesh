@@ -251,6 +251,12 @@ API_EXAMPLES = {
         "200",
         "application/json",
     ),
+    "examples/api/control-tower-metrics.example.json": (
+        "GET",
+        "/api/v1/metrics",
+        "200",
+        "application/json",
+    ),
     "examples/api/control-tower-project-response.example.json": (
         "GET",
         "/api/v1/projects/{project_id}",
