@@ -1,0 +1,253 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idkmesh.org/schemas/enterprise-audit-event-v0.1.schema.json",
+  "title": "IDKMesh Enterprise Audit Event v0.1",
+  "description": "Compact tamper-evident enterprise security/audit evidence. Events are append-only, hash-chained and evidence-only; they grant no execution, canonical-state-write, Git-push, or merge authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "kind",
+    "schema_version",
+    "event_id",
+    "sequence",
+    "occurred_at_epoch",
+    "scope",
+    "correlation",
+    "actor",
+    "service",
+    "action",
+    "resource",
+    "authorization",
+    "outcome",
+    "evidence_digest",
+    "retention",
+    "previous_event_digest",
+    "event_digest",
+    "authority"
+  ],
+  "properties": {
+    "kind": {"const": "idkmesh-enterprise-audit-event"},
+    "schema_version": {"const": "0.1"},
+    "event_id": {
+      "type": "string",
+      "pattern": "^audit-[0-9]{12}$"
+    },
+    "sequence": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "occurred_at_epoch": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tenant_id", "project_id"],
+      "properties": {
+        "tenant_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,255}$"
+        },
+        "project_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,255}$"
+        }
+      }
+    },
+    "correlation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["request_id", "run_id"],
+      "properties": {
+        "request_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,255}$"
+        },
+        "run_id": {
+          "type": ["string", "null"],
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,255}$"
+        }
+      }
+    },
+    "actor": {"$ref": "#/$defs/identity"},
+    "service": {
+      "allOf": [
+        {"$ref": "#/$defs/identity"},
+        {
+          "type": "object",
+          "properties": {
+            "actor_type": {
+              "enum": ["github_app", "github_actions", "service", "node"]
+            }
+          }
+        }
+      ]
+    },
+    "action": {
+      "enum": [
+        "read",
+        "claim",
+        "release",
+        "dispatch",
+        "execute",
+        "verify",
+        "integrate",
+        "manage_policy",
+        "audit_export"
+      ]
+    },
+    "resource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["resource_type", "resource_id", "revision"],
+      "properties": {
+        "resource_type": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,255}$"
+        },
+        "resource_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,255}$"
+        },
+        "revision": {
+          "type": "string",
+          "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64}|sha256:[0-9a-f]{64}|[A-Za-z0-9][A-Za-z0-9._:/@-]{0,255})$"
+        }
+      }
+    },
+    "authorization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "effect",
+        "reason_code",
+        "approved_by",
+        "approval_reference",
+        "policy_id",
+        "policy_revision",
+        "decision_digest"
+      ],
+      "properties": {
+        "effect": {
+          "enum": ["allow", "deny", "requires_approval"]
+        },
+        "reason_code": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,255}$"
+        },
+        "approved_by": {
+          "type": ["string", "null"],
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,255}$"
+        },
+        "approval_reference": {
+          "type": ["string", "null"],
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,255}$"
+        },
+        "policy_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,255}$"
+        },
+        "policy_revision": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,255}$"
+        },
+        "decision_digest": {
+          "$ref": "#/$defs/digest"
+        }
+      }
+    },
+    "outcome": {
+      "enum": ["succeeded", "failed", "denied", "not_executed"]
+    },
+    "evidence_digest": {
+      "oneOf": [
+        {"$ref": "#/$defs/digest"},
+        {"type": "null"}
+      ]
+    },
+    "retention": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["minimum_days", "eligible_after_epoch"],
+      "properties": {
+        "minimum_days": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 36500
+        },
+        "eligible_after_epoch": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "previous_event_digest": {
+      "oneOf": [
+        {"$ref": "#/$defs/digest"},
+        {"type": "null"}
+      ]
+    },
+    "event_digest": {
+      "$ref": "#/$defs/digest"
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "audit_only",
+        "authorizes_action",
+        "canonical_state_write",
+        "git_push",
+        "merge"
+      ],
+      "properties": {
+        "audit_only": {"const": true},
+        "authorizes_action": {"const": false},
+        "canonical_state_write": {"const": false},
+        "git_push": {"const": false},
+        "merge": {"const": false}
+      }
+    }
+  },
+  "$defs": {
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "principal_id",
+        "actor_type",
+        "issuer",
+        "identity_revision"
+      ],
+      "properties": {
+        "principal_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,255}$"
+        },
+        "actor_type": {
+          "enum": [
+            "human",
+            "github_app",
+            "github_actions",
+            "service",
+            "provider",
+            "node"
+          ]
+        },
+        "issuer": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,255}$"
+        },
+        "identity_revision": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,255}$"
+        }
+      }
+    }
+  }
+}

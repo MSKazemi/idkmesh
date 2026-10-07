@@ -14,6 +14,19 @@ and the release notes for that tag.
 
 ### Added
 
+- Enterprise Audit Ledger v0.1 (issue #671): a dedicated SQLite append-only
+  security/audit stream separate from ordinary logs and Product Spine events.
+  Each fixed-shape event binds tenant/project, request/run correlation,
+  normalized actor + audit-writer identity, exact resource revision, the
+  canonical Enterprise Authorization Decision digest, stable reason/approval
+  references, outcome, evidence digest, retention eligibility, and SHA-256
+  previous/current chain links. UPDATE/DELETE triggers enforce append-only
+  storage; replay verification detects rewrites/gaps and saved head checkpoints
+  detect suffix truncation. A tenant-scoped `AuditExportSink` contract and
+  deterministic NDJSON sink support governed SIEM/archive adapters; retention
+  exposes a legal-hold hook but no delete authority. See
+  [Enterprise Audit Ledger v0.1](docs/specifications/ENTERPRISE_AUDIT_LEDGER_V0_1.md).
+
 - Documented examples for every advertised API surface (issue #737):
   `examples/api/` gains nine fixtures — the inspection, project, WorkUnit and
   run-evidence response envelopes, one SSE event, the inspect request body
