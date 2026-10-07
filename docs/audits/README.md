@@ -18,6 +18,11 @@ declare no explicit baseline revision; that is noted rather than invented.
 
 Whole-repository snapshots, ordered by date.
 
+- [Engineering Questions and Product-Answer Assessment](2026-10-07-engineering-question-and-product-answer-assessment.md)
+  — 2026-10-07; baseline `7ac46d39`. Reviews the engineering questions IDKMesh
+  needs to answer, grades the current repository/product evidence, and separates
+  strong verification-first capabilities from still-open end-to-end, sandbox,
+  multi-user, scaling, and external-validation gaps.
 - [IDKMesh Repository Audit](2026-08-28-repository-audit.md) — 2026-08-28;
   no declared baseline revision. Coherence and contributor-readiness review at
   the transition from research/design toward an executable system.
