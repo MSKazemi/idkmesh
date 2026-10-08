@@ -20,6 +20,7 @@ from unittest import mock
 from jsonschema import Draft202012Validator
 
 from idkmesh import cli
+import idkmesh.control_tower_ui as control_tower_ui
 from idkmesh.control_tower_api import status_document
 from idkmesh.control_tower_ui import SAMPLE_REPORT, create_server
 from idkmesh.local_ui_security import TOKEN_HEADER
@@ -221,7 +222,7 @@ class ConcurrentInspectionTests(_ServerCase):
     def test_two_run_evidence_inspections_execute_concurrently(self) -> None:
         server = self.start(max_concurrent_requests=2)
         barrier = threading.Barrier(2, timeout=5.0)
-        real = __import__("idkmesh.control_tower_ui", fromlist=["build_snapshot"]).build_snapshot
+        real = control_tower_ui.build_snapshot
         results: list[tuple[int, dict[str, str], bytes]] = []
         errors: list[BaseException] = []
 
