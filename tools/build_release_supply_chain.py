@@ -68,6 +68,7 @@ def build_metadata(
     workflow_sha: str,
     run_id: str,
     run_attempt: str,
+    created_at: str,
 ) -> tuple[dict[str, Any], dict[str, Any], str]:
     project = _load_project(pyproject)
     source_sha = _required_sha(source_sha, "source_sha")
@@ -93,7 +94,7 @@ def build_metadata(
         ),
         "creationInfo": {
             "creators": ["Tool: idkmesh-build-release-supply-chain/0.1"],
-            "created": "1970-01-01T00:00:00Z",
+            "created": created_at,
         },
         "packages": [
             {
@@ -109,7 +110,7 @@ def build_metadata(
                     {
                         "annotationType": "OTHER",
                         "annotator": "Tool: idkmesh-build-release-supply-chain/0.1",
-                        "annotationDate": "1970-01-01T00:00:00Z",
+                        "annotationDate": created_at,
                         "comment": json.dumps(
                             {
                                 "runtime_dependencies": project["dependencies"],
@@ -171,6 +172,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--workflow-sha", default=os.environ.get("GITHUB_WORKFLOW_SHA", ""))
     parser.add_argument("--run-id", default=os.environ.get("GITHUB_RUN_ID", ""))
     parser.add_argument("--run-attempt", default=os.environ.get("GITHUB_RUN_ATTEMPT", ""))
+    parser.add_argument("--created-at", required=True)
     args = parser.parse_args(argv)
 
     sbom, provenance, checksums = build_metadata(
@@ -182,6 +184,7 @@ def main(argv: list[str] | None = None) -> int:
         workflow_sha=args.workflow_sha,
         run_id=args.run_id,
         run_attempt=args.run_attempt,
+        created_at=args.created_at,
     )
     args.output.mkdir(parents=True, exist_ok=True)
     _write_json(args.output / "sbom.spdx.json", sbom)
