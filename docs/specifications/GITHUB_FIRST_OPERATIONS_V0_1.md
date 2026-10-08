@@ -388,10 +388,10 @@ Status-comment idempotency rules are:
 6. an ambiguous first POST is not retried automatically because doing so could
    create a duplicate comment; reconciliation is required first.
 
-An optional durable-evidence link is accepted only when it is an HTTPS
-`github.com` or `raw.githubusercontent.com` URL inside the configured
-repository. This is a presentation link, not evidence that the referenced
-artifact is correct or independently verified.
+An optional durable-evidence link is accepted only through the C14-C immutable
+GitHub evidence-link contract described below. A GitHub-hosted URL by itself is
+not sufficient: moving branch/tag links and Actions artifacts are not durable
+canonical evidence.
 
 The REST transport accepts both normal issue-comment HTML URLs and pull-request
 conversation comment URLs because GitHub exposes both through the Issues
@@ -399,6 +399,55 @@ comments API.
 
 Neither Actions summaries nor status comments can select/accept a candidate,
 record a human decision, write canonical application state, push Git, or merge.
+
+### 14.2 Durable evidence links after runner teardown (C14-C)
+
+The canonical implementation is
+`idkmesh.github_evidence_link.DurableGitHubEvidenceReference` plus
+`validate_durable_github_evidence_url()`.
+
+For a Git-backed evidence file to be called **durable** by GitHub-native
+presentation surfaces, the link must identify all three parts of the immutable
+Git object location:
+
+1. repository in `OWNER/REPO` form;
+2. an exact 40- or 64-hex Git commit revision;
+3. a non-traversing repository-relative file path.
+
+Accepted canonical URL forms are:
+
+```text
+https://github.com/OWNER/REPO/blob/<exact-commit>/path/to/evidence.json
+https://raw.githubusercontent.com/OWNER/REPO/<exact-commit>/path/to/evidence.json
+```
+
+The contract deliberately rejects:
+
+- `/blob/main/...`, `/blob/master/...`, release/tag names, or any other
+  moving symbolic ref;
+- GitHub Actions run/artifact URLs and caches;
+- commit landing pages that do not identify an evidence file;
+- query strings, fragments, embedded credentials, alternate ports, and
+  non-HTTPS URLs;
+- non-canonical percent encoding, empty/dot/traversal path segments, or
+  backslash-separated paths;
+- a different repository when the publishing surface has an explicit
+  repository binding.
+
+The helper performs **structural provenance validation only**. It does not fetch
+the file, prove that the commit is still reachable from a branch, verify the
+evidence contents, or convert a presentation link into correctness evidence.
+
+Actions artifacts and caches remain useful transport/diagnostic surfaces but
+must never be the only retained copy of canonical evidence. Essential evidence
+must first be stored in the durable Git/ledger retention path owned by C9; C14
+then links to that retained object. A runner may terminate after publication
+without invalidating the exact-commit permalink.
+
+C14-C does not grant repository-write authority. Producing/retaining the
+evidence file is a separate trusted ledger/publication responsibility; this
+slice only constructs and validates immutable references to already-retained
+files.
 
 ## 15. Pages
 
