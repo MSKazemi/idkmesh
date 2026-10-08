@@ -575,8 +575,14 @@ conforming production backend.
 
 ### Slices
 
-- **C14-A — Actions step/job summary renderer.**
-- **C14-B — one idempotent issue/PR status comment.**
+- **C14-A — Actions step/job summary renderer.** Implemented on `main` by
+  `idkmesh/github_actions_summary.py`; presentation only, with exact
+  candidate/evidence digest binding.
+- **C14-B — one idempotent issue/PR status comment.** Implemented by
+  `idkmesh/github_status_comment.py`: reserve-before-create, exact-replay
+  no-op, same-comment PATCH for changed canonical status, safe retry of the
+  same interrupted PATCH, and fail-closed reconciliation for ambiguous first
+  creation or an overtaking update.
 - **C14-C — durable evidence links after runner teardown.**
 - **C14-D — public-safe evidence projection/filter.**
 - **C14-E — read-only GitHub Pages generator.**
