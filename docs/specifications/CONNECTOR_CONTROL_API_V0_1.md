@@ -9,8 +9,10 @@ mapping, pagination, idempotency, concurrency, deprecation —
 [ADR-0018](../decisions/ADR-0018-freeze-api-conventions-v0-1.md)). This
 document's paths were drafted 2026-09-22, one day before ADR-0016 settled the
 `/api/v1` product namespace; they are corrected here to that namespace so this
-specification does not describe a second, undocumented one. None of the
-paths below are implemented.
+specification does not describe a second, undocumented one. The bounded
+read-only `GET /api/v1/connections` slice in section 13 is now implemented
+through the existing Control Tower service. Mutations, live probes, and
+provider calls below remain design targets.
 
 This specification defines the first product-facing API for connecting repositories, coding agents, model providers and execution backends to IDKMesh.
 
@@ -396,7 +398,14 @@ Cancellation is best effort for external systems whose API cannot guarantee imme
 
 ### List
 
-`GET /api/v1/connections`
+`GET /api/v1/connections` is implemented for the local read-only service.
+
+It reads the same SQLite connection records used by `idkmesh connections
+stored`, applies a strict public-safe resource projection, orders by persisted
+connection id, and uses bounded opaque-cursor pagination. A legacy/free-form
+row that does not match the public connection-resource contract fails closed
+rather than returning arbitrary stored metadata. The endpoint performs no
+probe, secret resolution, dispatch, or provider call.
 
 ### Create
 
