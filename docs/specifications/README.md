@@ -37,6 +37,10 @@ meaning of an existing version.
   telemetry, W3C traceparent v00 pass-through, and explicit local-profile
   SLO/alert targets. The OpenTelemetry exporter remains follow-up work under
   #744.
+- [Release Supply-Chain Baseline v0.1](RELEASE_SUPPLY_CHAIN_V0_1.md) —
+  release SBOM/checksum/source-workflow identity evidence, immutable-pinned
+  GitHub build provenance, consumer verification, and vulnerability/update
+  policy for enterprise release integrity (#674).
 - [Verification Provenance Integrity](VERIFICATION_PROVENANCE_INTEGRITY.md) —
   binds WorkUnit, result, and verification objects with canonical digests.
 
