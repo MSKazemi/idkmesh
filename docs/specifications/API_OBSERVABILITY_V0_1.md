@@ -107,19 +107,52 @@ Suggested alerts:
 A 4xx is not itself a service failure. `configured_unprobed` is not a health
 claim.
 
-## OpenTelemetry boundary
+## OpenTelemetry / OTLP JSON adapter
 
-The repository still has no OpenTelemetry SDK dependency and this slice does
-not claim OTLP export. #744 remains open for a reviewed optional adapter and for
-decision-ingestion telemetry after #740 exists.
+The repository still has no OpenTelemetry SDK runtime dependency. The
+dependency-free `idkmesh.otlp_metrics` module converts one validated aggregate
+metrics document into the JSON-Protobuf shape of an OTLP
+`ExportMetricsServiceRequest`.
 
-Any future adapter must preserve these invariants:
+The adapter is deliberately a **serializer, not a network exporter**:
+
+- it performs no collector discovery, HTTP connection, retries, compression,
+  credential handling, or environment-variable interpretation;
+- the caller supplies both process-start and observation timestamps, so replay
+  does not fabricate timing evidence or depend on the local clock;
+- monotonic counters and the request-latency histogram use cumulative
+  aggregation temporality;
+- OTLP enum values are emitted as integers, and 64-bit integer fields are
+  emitted as decimal strings as required by OTLP JSON encoding;
+- the source document's cumulative latency buckets are converted into OTLP
+  per-bucket counts, including the implicit +Inf bucket;
+- only fixed, reviewed attributes are emitted: service identity, five HTTP
+  status classes, two feature-status rows, and one Product Spine configuration
+  state;
+- `configured_unprobed` remains configuration evidence only and is not
+  translated into a health claim.
+
+The adapter fails closed if the source document relaxes the v0.1 privacy flags
+or authority ceiling, has malformed/non-monotonic histogram data, or receives
+invalid/reversed timestamps.
+
+This provides an OpenTelemetry-compatible collection boundary without changing
+the dependency-free `pip install .` profile. It does **not** create spans,
+implement an OpenTelemetry SDK, or claim a reliable OTLP transport/exporter.
+Those remain deployment/integration concerns outside the local v0.1 service
+runtime.
+
+The following invariants remain mandatory:
 
 - no payload-derived span/metric attributes;
 - no auth/session token attributes;
 - bounded, reviewed attribute cardinality;
 - W3C trace context is correlation input, never identity or authorization;
 - telemetry failure cannot change domain/API correctness.
+
+#744 remains open for Human Decision ingestion telemetry after #740 provides
+that endpoint/store. Per-client rate limiting also remains explicitly
+`not_implemented` under the current local single-token profile.
 
 ## Authority
 
