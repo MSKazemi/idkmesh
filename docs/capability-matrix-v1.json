@@ -1,0 +1,422 @@
+{
+  "schema_version": "1.0",
+  "evidence_levels": {
+    "0": "planned",
+    "1": "implemented",
+    "2": "observed internal real run",
+    "3": "controlled benchmark evidence",
+    "4": "external reproduction/pilot",
+    "5": "production-qualified"
+  },
+  "verified_revision": "110f0307ad36d4cca554c19465d7cdc0605d3f21",
+  "capabilities": [
+    {
+      "id": "CAP-001",
+      "question": "What exact task ran?",
+      "status": "implemented",
+      "evidence_level": 1,
+      "implementation_paths": [
+        "schemas/work-unit-v0.2.schema.json"
+      ],
+      "specification_paths": [
+        "docs/specifications/WORK_UNIT_COMPOSABILITY_V0_2.md"
+      ],
+      "cli_commands": [],
+      "evidence_paths": [
+        "tests/test_schema_validity.py"
+      ],
+      "known_limitation": "A WorkUnit describes the bounded task; this does not prove the worker executed it correctly.",
+      "last_verified_revision": "110f0307ad36d4cca554c19465d7cdc0605d3f21",
+      "public_wording": "IDKMesh has a versioned WorkUnit contract for bounded task semantics.",
+      "qualification_artifact": null
+    },
+    {
+      "id": "CAP-002",
+      "question": "What exact source/input revision was used?",
+      "status": "implemented",
+      "evidence_level": 1,
+      "implementation_paths": [
+        "experiments/provenance_integrity.py"
+      ],
+      "specification_paths": [
+        "docs/specifications/VERIFICATION_PROVENANCE_INTEGRITY.md"
+      ],
+      "cli_commands": [],
+      "evidence_paths": [
+        "tests/test_open_model_provenance_binding.py"
+      ],
+      "known_limitation": "Binding contracts exist, but end-to-end atomic executor admission against changing inputs is still tracked by issue 921.",
+      "last_verified_revision": "110f0307ad36d4cca554c19465d7cdc0605d3f21",
+      "public_wording": "IDKMesh validates provenance and revision bindings; atomic stale-input-safe execution is not yet claimed.",
+      "qualification_artifact": null
+    },
+    {
+      "id": "CAP-003",
+      "question": "Why was a worker/connector eligible?",
+      "status": "experimental",
+      "evidence_level": 1,
+      "implementation_paths": [
+        "idkmesh/connector_routing.py"
+      ],
+      "specification_paths": [
+        "docs/specifications/CONNECTOR_CONTROL_API_V0_1.md"
+      ],
+      "cli_commands": [
+        "connections"
+      ],
+      "evidence_paths": [
+        "tests/test_connector_routing.py"
+      ],
+      "known_limitation": "Routing/admission foundations exist; the fully converged golden path is still under development.",
+      "last_verified_revision": "110f0307ad36d4cca554c19465d7cdc0605d3f21",
+      "public_wording": "IDKMesh implements inspectable connector eligibility/routing foundations.",
+      "qualification_artifact": null
+    },
+    {
+      "id": "CAP-004",
+      "question": "What authority did the worker have?",
+      "status": "implemented",
+      "evidence_level": 1,
+      "implementation_paths": [
+        "schemas/work-unit-v0.2.schema.json",
+        "schemas/result-manifest-v0.1.schema.json"
+      ],
+      "specification_paths": [
+        "ARCHITECTURE.md"
+      ],
+      "cli_commands": [],
+      "evidence_paths": [
+        "tests/test_schema_validity.py"
+      ],
+      "known_limitation": "Contracts bound authority, but deployment-specific enforcement still depends on the execution profile.",
+      "last_verified_revision": "110f0307ad36d4cca554c19465d7cdc0605d3f21",
+      "public_wording": "IDKMesh contracts separate worker execution claims from acceptance and integration authority.",
+      "qualification_artifact": null
+    },
+    {
+      "id": "CAP-005",
+      "question": "Was local execution sandboxed?",
+      "status": "planned",
+      "evidence_level": 0,
+      "implementation_paths": [],
+      "specification_paths": [
+        "docs/planning/ENGINEERING_ANSWER_STRENGTHENING_PLAN_2026-10-07.md"
+      ],
+      "cli_commands": [],
+      "evidence_paths": [],
+      "known_limitation": "A production hostile-code sandbox backend is not complete; issue 804 is the gate.",
+      "last_verified_revision": "110f0307ad36d4cca554c19465d7cdc0605d3f21",
+      "public_wording": "IDKMesh does not yet claim production-safe hostile local-code sandboxing.",
+      "qualification_artifact": null
+    },
+    {
+      "id": "CAP-006",
+      "question": "What exact candidate was produced?",
+      "status": "implemented",
+      "evidence_level": 1,
+      "implementation_paths": [
+        "schemas/result-manifest-v0.1.schema.json"
+      ],
+      "specification_paths": [
+        "docs/decisions/ADR-0015-candidate-reference-result-manifest-normalization.md"
+      ],
+      "cli_commands": [],
+      "evidence_paths": [
+        "tests/test_schema_validity.py"
+      ],
+      "known_limitation": "A ResultManifest records a candidate claim; it is not acceptance.",
+      "last_verified_revision": "110f0307ad36d4cca554c19465d7cdc0605d3f21",
+      "public_wording": "IDKMesh has a versioned ResultManifest contract for candidate outputs.",
+      "qualification_artifact": null
+    },
+    {
+      "id": "CAP-007",
+      "question": "Was candidate normalization/provenance verified?",
+      "status": "implemented",
+      "evidence_level": 1,
+      "implementation_paths": [
+        "experiments/provenance_integrity.py",
+        "schemas/result-manifest-v0.1.schema.json"
+      ],
+      "specification_paths": [
+        "docs/specifications/VERIFICATION_PROVENANCE_INTEGRITY.md"
+      ],
+      "cli_commands": [],
+      "evidence_paths": [
+        "tests/test_open_model_provenance_binding.py"
+      ],
+      "known_limitation": "Validation proves contract/integrity checks, not semantic correctness of the candidate.",
+      "last_verified_revision": "110f0307ad36d4cca554c19465d7cdc0605d3f21",
+      "public_wording": "IDKMesh implements candidate provenance and integrity validation.",
+      "qualification_artifact": null
+    },
+    {
+      "id": "CAP-008",
+      "question": "What independent verification occurred?",
+      "status": "implemented",
+      "evidence_level": 2,
+      "implementation_paths": [
+        "schemas/verification-result-v0.1.schema.json",
+        "experiments/local_verifier.py"
+      ],
+      "specification_paths": [
+        "docs/specifications/VERIFICATION_PROVENANCE_INTEGRITY.md"
+      ],
+      "cli_commands": [],
+      "evidence_paths": [
+        "tests/test_local_verifier_missing_jsonschema.py",
+        "results/verification/node-e2e-replay-2026-08-30/verification-result.json"
+      ],
+      "known_limitation": "Observed repository runs are internal evidence, not external reproduction.",
+      "last_verified_revision": "110f0307ad36d4cca554c19465d7cdc0605d3f21",
+      "public_wording": "IDKMesh records verifier-owned VerificationResult evidence and has internal real-run evidence.",
+      "qualification_artifact": null
+    },
+    {
+      "id": "CAP-009",
+      "question": "How independent was the verifier panel?",
+      "status": "implemented",
+      "evidence_level": 3,
+      "implementation_paths": [
+        "idkmesh/gate_audit.py",
+        "idkmesh/gate_audit_dependence.py"
+      ],
+      "specification_paths": [
+        "docs/specifications/GATE_AUDIT_V0_1.md"
+      ],
+      "cli_commands": [
+        "gate-audit",
+        "gate-audit-dependence"
+      ],
+      "evidence_paths": [
+        "tests/test_gate_audit.py",
+        "experiments/E017-item-difficulty-and-quorum.md"
+      ],
+      "known_limitation": "Measured dependence is corpus- and gate-specific; it is not intrinsic verifier independence.",
+      "last_verified_revision": "110f0307ad36d4cca554c19465d7cdc0605d3f21",
+      "public_wording": "IDKMesh measures effective votes and verifier error dependence on ground-truthed verdict data.",
+      "qualification_artifact": null
+    },
+    {
+      "id": "CAP-010",
+      "question": "What evidence supports/rejects the candidate?",
+      "status": "implemented",
+      "evidence_level": 1,
+      "implementation_paths": [
+        "schemas/run-evidence-report-v0.1.schema.json"
+      ],
+      "specification_paths": [
+        "docs/specifications/RUN_EVIDENCE_REPORT_V0_1.md"
+      ],
+      "cli_commands": [
+        "control-tower"
+      ],
+      "evidence_paths": [
+        "tests/test_control_tower_run_evidence.py"
+      ],
+      "known_limitation": "The evidence report is non-selecting and does not make the human decision.",
+      "last_verified_revision": "110f0307ad36d4cca554c19465d7cdc0605d3f21",
+      "public_wording": "IDKMesh has a non-selecting Run Evidence Report and local inspection surface.",
+      "qualification_artifact": null
+    },
+    {
+      "id": "CAP-011",
+      "question": "Who can record a human decision?",
+      "status": "planned",
+      "evidence_level": 0,
+      "implementation_paths": [],
+      "specification_paths": [
+        "docs/planning/API_V1_PROFESSIONALIZATION_PLAN_2026-09-23.md"
+      ],
+      "cli_commands": [],
+      "evidence_paths": [],
+      "known_limitation": "Transport schemas exist, but the authenticated immutable decision endpoint is still issue 740.",
+      "last_verified_revision": "110f0307ad36d4cca554c19465d7cdc0605d3f21",
+      "public_wording": "Human-decision recording is planned; the current Control Tower cannot record it.",
+      "qualification_artifact": null
+    },
+    {
+      "id": "CAP-012",
+      "question": "Who can integrate/merge?",
+      "status": "implemented",
+      "evidence_level": 1,
+      "implementation_paths": [
+        "GOVERNANCE.md",
+        "CONSTITUTION.md"
+      ],
+      "specification_paths": [
+        "ARCHITECTURE.md"
+      ],
+      "cli_commands": [],
+      "evidence_paths": [
+        "tests/test_schema_validity.py"
+      ],
+      "known_limitation": "Repository protection and organization policy remain deployment-specific; worker/verifier evidence never grants merge authority.",
+      "last_verified_revision": "110f0307ad36d4cca554c19465d7cdc0605d3f21",
+      "public_wording": "IDKMesh explicitly keeps integration authority separate from worker and verifier claims.",
+      "qualification_artifact": null
+    },
+    {
+      "id": "CAP-013",
+      "question": "Can the run be replayed/audited?",
+      "status": "experimental",
+      "evidence_level": 2,
+      "implementation_paths": [
+        "experiments/replay_run.py"
+      ],
+      "specification_paths": [
+        "docs/research/R1_REAL_RESULT_REPLAY.md"
+      ],
+      "cli_commands": [],
+      "evidence_paths": [
+        "tests/test_replay_run.py",
+        "results/verification/node-e2e-replay-2026-08-30/README.md"
+      ],
+      "known_limitation": "Replay evidence exists for bounded internal fixtures/runs; this is not a universal deterministic replay guarantee.",
+      "last_verified_revision": "110f0307ad36d4cca554c19465d7cdc0605d3f21",
+      "public_wording": "IDKMesh has bounded internal replay and audit evidence.",
+      "qualification_artifact": null
+    },
+    {
+      "id": "CAP-014",
+      "question": "Are duplicate dispatches/idempotent retries safe?",
+      "status": "experimental",
+      "evidence_level": 1,
+      "implementation_paths": [
+        "idkmesh/product_spine_idempotency.py",
+        "idkmesh/github_delivery_idempotency.py"
+      ],
+      "specification_paths": [
+        "docs/specifications/PRODUCT_SPINE_SERVICE_V0_1.md"
+      ],
+      "cli_commands": [
+        "run"
+      ],
+      "evidence_paths": [
+        "tests/test_product_spine_idempotency.py",
+        "tests/test_github_delivery_idempotency.py"
+      ],
+      "known_limitation": "Idempotency exists on specific Product Spine/GitHub paths; it is not yet a universal exactly-once guarantee.",
+      "last_verified_revision": "110f0307ad36d4cca554c19465d7cdc0605d3f21",
+      "public_wording": "IDKMesh implements idempotency controls on specific dispatch/state paths.",
+      "qualification_artifact": null
+    },
+    {
+      "id": "CAP-015",
+      "question": "Are stale inputs rejected?",
+      "status": "experimental",
+      "evidence_level": 1,
+      "implementation_paths": [
+        "idkmesh/executor_admission.py"
+      ],
+      "specification_paths": [
+        "docs/specifications/EXECUTOR_ADMISSION_V0_1.md"
+      ],
+      "cli_commands": [],
+      "evidence_paths": [
+        "tests/test_executor_admission.py"
+      ],
+      "known_limitation": "The local executor-admission composition rejects changed upstream inputs before dispatch intent and candidate submission, but live provider/GitHub execution-path integration remains separate work.",
+      "last_verified_revision": "110f0307ad36d4cca554c19465d7cdc0605d3f21",
+      "public_wording": "IDKMesh implements scoped stale-input rejection in the local executor-admission boundary; this is not yet a claim about every live provider execution path.",
+      "qualification_artifact": null
+    },
+    {
+      "id": "CAP-016",
+      "question": "Can another repository adopt the workflow?",
+      "status": "experimental",
+      "evidence_level": 1,
+      "implementation_paths": [
+        "idkmesh/github_bootstrap.py",
+        "idkmesh/github_bootstrap_render.py"
+      ],
+      "specification_paths": [
+        "docs/specifications/GITHUB_BOOTSTRAP_CONFIG_RENDERING_V0_1.md",
+        "docs/PROJECT_ADOPTION_GUIDE.md"
+      ],
+      "cli_commands": [
+        "init"
+      ],
+      "evidence_paths": [
+        "tests/test_github_bootstrap.py",
+        "tests/test_github_bootstrap_cli.py",
+        "tests/test_github_bootstrap_render.py"
+      ],
+      "known_limitation": "GitHub-first bootstrap planning and deterministic config rendering are implemented in dry-run mode; workflow wrappers, safe apply/re-run, and the external second-project pilot remain incomplete.",
+      "last_verified_revision": "110f0307ad36d4cca554c19465d7cdc0605d3f21",
+      "public_wording": "IDKMesh provides a deterministic GitHub-first bootstrap dry-run that renders project/config content and digests; apply/workflow-pack and external reproduction remain unfinished.",
+      "qualification_artifact": null
+    },
+    {
+      "id": "CAP-017",
+      "question": "Is the API localhost-only or network/multi-user qualified?",
+      "status": "experimental",
+      "evidence_level": 1,
+      "implementation_paths": [
+        "idkmesh/control_tower_ui.py",
+        "idkmesh/control_tower_api.py"
+      ],
+      "specification_paths": [
+        "docs/specifications/CONTROL_TOWER_LOCAL_API_V0_1.md"
+      ],
+      "cli_commands": [
+        "control-tower"
+      ],
+      "evidence_paths": [
+        "tests/test_control_tower.py"
+      ],
+      "known_limitation": "The implemented Control Tower API is loopback/local. Network multi-user production qualification remains in issue 713.",
+      "last_verified_revision": "110f0307ad36d4cca554c19465d7cdc0605d3f21",
+      "public_wording": "IDKMesh currently provides a loopback-only local Control Tower API, not a production multi-user service.",
+      "qualification_artifact": null
+    },
+    {
+      "id": "CAP-018",
+      "question": "Has a capability been externally reproduced?",
+      "status": "planned",
+      "evidence_level": 0,
+      "implementation_paths": [],
+      "specification_paths": [
+        "docs/planning/ENGINEERING_ANSWER_STRENGTHENING_PLAN_2026-10-07.md"
+      ],
+      "cli_commands": [],
+      "evidence_paths": [],
+      "known_limitation": "The required second-repository/external pilot evidence level has not been reached.",
+      "last_verified_revision": "110f0307ad36d4cca554c19465d7cdc0605d3f21",
+      "public_wording": "External reproduction is an explicit evidence gate, not a current project-wide claim.",
+      "qualification_artifact": null
+    },
+    {
+      "id": "CAP-019",
+      "question": "Has swarm value been benchmarked against simpler baselines?",
+      "status": "planned",
+      "evidence_level": 0,
+      "implementation_paths": [],
+      "specification_paths": [
+        "docs/planning/ENGINEERING_ANSWER_STRENGTHENING_PLAN_2026-10-07.md"
+      ],
+      "cli_commands": [],
+      "evidence_paths": [],
+      "known_limitation": "Issues 1 and 5 / the strengthening plan require matched real-task baselines before broad superiority claims.",
+      "last_verified_revision": "110f0307ad36d4cca554c19465d7cdc0605d3f21",
+      "public_wording": "IDKMesh does not yet claim broad swarm superiority over strong simpler baselines.",
+      "qualification_artifact": null
+    },
+    {
+      "id": "CAP-020",
+      "question": "Is a production claim supported by qualification evidence?",
+      "status": "planned",
+      "evidence_level": 0,
+      "implementation_paths": [],
+      "specification_paths": [
+        "docs/planning/API_V1_PROFESSIONALIZATION_PLAN_2026-09-23.md"
+      ],
+      "cli_commands": [],
+      "evidence_paths": [],
+      "known_limitation": "No project-wide evidence-level-5 production qualification is declared; API/release qualification gates remain open.",
+      "last_verified_revision": "110f0307ad36d4cca554c19465d7cdc0605d3f21",
+      "public_wording": "IDKMesh is a research/engineering preview and does not claim project-wide production qualification.",
+      "qualification_artifact": null
+    }
+  ]
+}
