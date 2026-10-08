@@ -143,6 +143,41 @@ paths:
           $ref: "#/components/responses/PayloadTooLarge"
         "415":
           $ref: "#/components/responses/UnsupportedMediaType"
+  /api/v1/connections:
+    get:
+      summary: List persisted connector control metadata
+      description: >
+        Pure read-only deterministic keyset pagination over the same
+        secret-free connection metadata persisted by `idkmesh connections import`.
+      security:
+        - LocalSessionToken: []
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+        - name: cursor
+          in: query
+          required: false
+          description: Opaque next-page token issued by this endpoint.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: One page of public-safe connector resources
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/idkmesh-list-v0.1"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "503":
+          $ref: "#/components/responses/Unavailable"
   /api/v1/runs:
     get:
       summary: List durable Product Spine runs
@@ -481,6 +516,7 @@ components:
     "idkgraph": {$ref: "https://idkmesh.org/schemas/idkgraph.schema.json"}
     "idkmesh-api-error-v0.1": {$ref: "https://idkmesh.org/schemas/idkmesh-api-error-v0.1.schema.json"}
     "idkmesh-api-operational-metrics-v0.1": {$ref: "https://idkmesh.org/schemas/idkmesh-api-operational-metrics-v0.1.schema.json"}
+    "idkmesh-connection-resource-v0.1": {$ref: "https://idkmesh.org/schemas/idkmesh-connection-resource-v0.1.schema.json"}
     "idkmesh-control-tower-inspection-response-v0.1": {$ref: "https://idkmesh.org/schemas/idkmesh-control-tower-inspection-response-v0.1.schema.json"}
     "idkmesh-control-tower-project-response-v0.1": {$ref: "https://idkmesh.org/schemas/idkmesh-control-tower-project-response-v0.1.schema.json"}
     "idkmesh-control-tower-run-attempts-response-v0.1": {$ref: "https://idkmesh.org/schemas/idkmesh-control-tower-run-attempts-response-v0.1.schema.json"}
