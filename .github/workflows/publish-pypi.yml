@@ -67,7 +67,15 @@ jobs:
 
       - name: Build SBOM, checksums, and release identity manifest
         run: |
-          python tools/build_release_supply_chain.py
+          set -eu
+          SOURCE_SHA="$(git rev-parse HEAD)"
+          TAG_SHA="$(git rev-parse "$RELEASE_TAG^{commit}")"
+          test "$SOURCE_SHA" = "$TAG_SHA"
+          CREATED_AT="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          python tools/build_release_supply_chain.py \
+            --source-sha "$SOURCE_SHA" \
+            --source-ref "refs/tags/$RELEASE_TAG" \
+            --created-at "$CREATED_AT"
           (cd dist && sha256sum -c ../release-metadata/checksums.txt)
 
       - name: Detect artifact-attestation availability
