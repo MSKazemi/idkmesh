@@ -7,9 +7,13 @@ canonical files designated by [`../../PROJECT_RULES.md`](../../PROJECT_RULES.md)
 (decisions, specifications, architecture, findings); this directory keeps the trail
 that produced them.
 
-175 records across 11 dates, newest first.
+176 records across 12 dates, newest first.
 
 ## Index
+
+### 2026-10-08
+
+- [IDKMesh SEO, discoverability, and traffic assessment](2026-10-08-visibility-seo-traffic-assessment.md)
 
 ### 2026-10-07
 

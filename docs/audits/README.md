@@ -53,6 +53,11 @@ Each answers one bounded question rather than surveying the repository.
   (`test_local_agent_boundary_rejects_implicit_host_env_and_repo_artifacts`)
   failed on the reviewer's machine before any change.
 
+- [Visibility, SEO, and Traffic Evidence Audit](2026-10-08-visibility-seo-traffic-audit.md) —
+  2026-10-08; baseline `110f0307`. Finds a good technical discovery
+  foundation but no verified first-party search/visitor baseline. Confirms 2 stars,
+  3 forks, 0 subscribers; recommends activating #807 before SEO expansion.
+
 - [SEO + AI-Visibility Audit](2026-09-20-seo-ai-visibility-audit.md) —
   2026-09-20; baseline `999bc26d`. Is `mskazemi.com/idkmesh/` visible to search
   engines and AI answer engines, and if not, why? Zero P0 blockers found; robots
