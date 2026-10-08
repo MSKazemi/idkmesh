@@ -359,6 +359,47 @@ Minimum visible information:
 
 Avoid one comment per event.
 
+### 14.1 Current GitHub-native projections
+
+Two bounded implementation layers intentionally have different responsibilities:
+
+- `idkmesh.github_actions_summary.render_github_actions_summary()` renders the
+  richer read-only Actions step summary from digest-bound Product Spine,
+  candidate, and Run Evidence Report projections. It performs no GitHub
+  mutation.
+- `idkmesh.github_status_comment.sync_github_run_status_comment()` maintains
+  one concise issue/PR comment per run. Its stable marker/comment identity is
+  independent of run lifecycle state, so later canonical states update the
+  retained comment rather than appending another comment.
+
+The mutable C14-B status comment preserves the earlier C5-H immutable dispatch
+receipt as a separate compatibility surface; C14-B does not change C5-H replay
+semantics.
+
+Status-comment idempotency rules are:
+
+1. reserve the stable run/comment identity before the first GitHub POST;
+2. exact replay of the same rendered projection performs no GitHub request;
+3. a changed projection reserves an update and PATCHes the retained comment ID;
+4. an interrupted PATCH may retry the **same** desired projection because
+   writing the same body to the same comment is idempotent;
+5. a different desired projection is blocked while an earlier PATCH reservation
+   is unresolved, preventing lifecycle updates from overtaking each other;
+6. an ambiguous first POST is not retried automatically because doing so could
+   create a duplicate comment; reconciliation is required first.
+
+An optional durable-evidence link is accepted only when it is an HTTPS
+`github.com` or `raw.githubusercontent.com` URL inside the configured
+repository. This is a presentation link, not evidence that the referenced
+artifact is correct or independently verified.
+
+The REST transport accepts both normal issue-comment HTML URLs and pull-request
+conversation comment URLs because GitHub exposes both through the Issues
+comments API.
+
+Neither Actions summaries nor status comments can select/accept a candidate,
+record a human decision, write canonical application state, push Git, or merge.
+
 ## 15. Pages
 
 Optional read-only Control Tower projection may show:
