@@ -1048,21 +1048,32 @@ def _handler(
                 ConnectorControlReadError,
                 ConnectorControlReadService,
             )
-            from idkmesh.connector_store import LocalMetadataStore, LocalStoreError
+            from idkmesh.connector_store import (
+                LocalMetadataStore,
+                LocalStoreError,
+            )
 
             try:
                 items, next_cursor = ConnectorControlReadService(
                     LocalMetadataStore(product_spine_store_path)
                 ).list_connections(limit=limit, cursor=params.get("cursor"))
             except ConnectorControlReadError as exc:
-                status = 400 if exc.code in {"invalid_cursor", "invalid_limit"} else 500
+                status = (
+                    400
+                    if exc.code in {"invalid_cursor", "invalid_limit"}
+                    else 500
+                )
                 self._send_json(
-                    status, error_document(exc.code, str(exc)), head_only=head_only
+                    status,
+                    error_document(exc.code, str(exc)),
+                    head_only=head_only,
                 )
                 return
             except (LocalStoreError, OSError, ValueError) as exc:
                 self._send_json(
-                    500, error_document("store_error", str(exc)), head_only=head_only
+                    500,
+                    error_document("store_error", str(exc)),
+                    head_only=head_only,
                 )
                 return
 
@@ -1076,6 +1087,7 @@ def _handler(
                 },
                 head_only=head_only,
             )
+
         def _work_unit_id_from_path(self, path: str) -> str | None:
             """Return the id if path is /api/v1/work-units/<id>.
 
