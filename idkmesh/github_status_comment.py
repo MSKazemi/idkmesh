@@ -23,6 +23,10 @@ from idkmesh.connector_store import (
     LocalStoreConflict,
     RunRecord,
 )
+from idkmesh.github_evidence_link import (
+    DurableGitHubEvidenceLinkError,
+    validate_durable_github_evidence_url,
+)
 from idkmesh.github_status_update import (
     GitHubIssueComment,
     GitHubRestIssueCommentTransport,
@@ -74,21 +78,15 @@ class GitHubStatusCommentTransport(Protocol):
 def _safe_durable_url(repository: str, value: str | None) -> str | None:
     if value is None:
         return None
-    if not isinstance(value, str) or not value:
-        raise ValueError("durable_evidence_url must be a non-empty string")
-    if len(value) > 2048:
-        raise ValueError("durable_evidence_url exceeds maximum length")
-    if any(ord(char) < 32 or ord(char) == 127 for char in value):
-        raise ValueError("durable_evidence_url contains control characters")
-    allowed = (
-        f"https://github.com/{repository}/",
-        f"https://raw.githubusercontent.com/{repository}/",
-    )
-    if not value.startswith(allowed):
-        raise ValueError(
-            "durable_evidence_url must be an HTTPS URL inside the configured repository"
+    try:
+        return validate_durable_github_evidence_url(
+            value,
+            expected_repository=repository,
         )
-    return value
+    except DurableGitHubEvidenceLinkError as exc:
+        raise ValueError(
+            f"durable_evidence_url is not immutable: {exc}"
+        ) from exc
 
 
 def render_github_run_status_comment(

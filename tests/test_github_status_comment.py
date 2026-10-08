@@ -161,7 +161,8 @@ class GitHubStatusCommentSyncTests(unittest.TestCase):
         )
         url = (
             "https://github.com/MSKazemi/idkmesh/blob/"
-            "main/evidence/run-001.json"
+            + "1" * 40
+            + "/evidence/run-001.json"
         )
         result = sync_github_run_status_comment(
             store=self.store,
@@ -174,11 +175,25 @@ class GitHubStatusCommentSyncTests(unittest.TestCase):
 
         self.assertEqual(result.action, "updated")
         self.assertIn(url, transport.update_calls[-1][3])
-        with self.assertRaises(ValueError):
-            render_github_run_status_comment(
-                _status(),
-                durable_evidence_url="https://example.com/private/evidence",
-            )
+        bad_urls = (
+            "https://example.com/private/evidence",
+            (
+                "https://github.com/MSKazemi/idkmesh/blob/"
+                "main/evidence/run-001.json"
+            ),
+            (
+                "https://github.com/MSKazemi/other/blob/"
+                + "1" * 40
+                + "/evidence/run-001.json"
+            ),
+        )
+        for bad_url in bad_urls:
+            with self.subTest(bad_url=bad_url):
+                with self.assertRaises(ValueError):
+                    render_github_run_status_comment(
+                        _status(),
+                        durable_evidence_url=bad_url,
+                    )
 
     def test_ambiguous_create_failure_never_automatically_posts_again(self):
         transport = FakeTransport()
