@@ -1,0 +1,264 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idkmesh.org/schemas/github-public-evidence-v0.1.schema.json",
+  "title": "IDKMesh GitHub Public Evidence Projection v0.1",
+  "description": "A strict public-safe projection of digest-bound Product Spine run/evidence state for read-only GitHub publication. It contains no raw evidence, logs, prompts, provider payloads, secrets, artifact locators, worker/verifier identity, or actuation authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "kind",
+    "repository",
+    "run",
+    "attempts",
+    "evidence_summary",
+    "human_decision_status",
+    "authority",
+    "privacy"
+  ],
+  "properties": {
+    "schema_version": {"const": "0.1"},
+    "kind": {"const": "idkmesh-github-public-evidence"},
+    "repository": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+    },
+    "run": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "run_id",
+        "state",
+        "work_unit_id",
+        "work_unit_version",
+        "work_unit_digest",
+        "source_revision",
+        "evidence_report_digest",
+        "human_decision_record_digest"
+      ],
+      "properties": {
+        "run_id": {"type": "string", "minLength": 1},
+        "state": {
+          "enum": [
+            "proposed",
+            "previewed",
+            "admission_blocked",
+            "admitted",
+            "dispatched",
+            "attempt_failed",
+            "candidate_observed",
+            "normalized",
+            "verification_requested",
+            "verification_error",
+            "evidence_ready",
+            "awaiting_human_decision",
+            "decided",
+            "cancelled"
+          ]
+        },
+        "work_unit_id": {"type": "string", "minLength": 1},
+        "work_unit_version": {"type": "integer", "minimum": 1},
+        "work_unit_digest": {"$ref": "#/$defs/digest"},
+        "source_revision": {
+          "type": "string",
+          "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$"
+        },
+        "evidence_report_digest": {
+          "anyOf": [{"$ref": "#/$defs/digest"}, {"type": "null"}]
+        },
+        "human_decision_record_digest": {
+          "anyOf": [{"$ref": "#/$defs/digest"}, {"type": "null"}]
+        }
+      }
+    },
+    "attempts": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/attempt"}
+    },
+    "evidence_summary": {
+      "anyOf": [
+        {"type": "null"},
+        {"$ref": "#/$defs/evidenceSummary"}
+      ]
+    },
+    "human_decision_status": {
+      "enum": ["not_recorded", "pending", "recorded"]
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "dispatch",
+        "verification",
+        "human_decision",
+        "canonical_state_write",
+        "git_push",
+        "integration",
+        "merge"
+      ],
+      "properties": {
+        "dispatch": {"const": false},
+        "verification": {"const": false},
+        "human_decision": {"const": false},
+        "canonical_state_write": {"const": false},
+        "git_push": {"const": false},
+        "integration": {"const": false},
+        "merge": {"const": false}
+      }
+    },
+    "privacy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "data_classification",
+        "projection_only",
+        "raw_evidence_included",
+        "raw_logs_included",
+        "raw_prompts_included",
+        "provider_payloads_included",
+        "secret_material_included",
+        "artifact_locator_included",
+        "worker_or_verifier_identity_included"
+      ],
+      "properties": {
+        "data_classification": {"const": "public"},
+        "projection_only": {"const": true},
+        "raw_evidence_included": {"const": false},
+        "raw_logs_included": {"const": false},
+        "raw_prompts_included": {"const": false},
+        "provider_payloads_included": {"const": false},
+        "secret_material_included": {"const": false},
+        "artifact_locator_included": {"const": false},
+        "worker_or_verifier_identity_included": {"const": false}
+      }
+    }
+  },
+  "$defs": {
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "candidate": {
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "repository", "number", "head_sha", "url"],
+          "properties": {
+            "type": {"const": "github_pull_request"},
+            "repository": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+            },
+            "number": {"type": "integer", "minimum": 1},
+            "head_sha": {
+              "type": "string",
+              "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$"
+            },
+            "url": {
+              "type": "string",
+              "pattern": "^https://github\\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/pull/[1-9][0-9]*$"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "digest"],
+          "properties": {
+            "type": {"const": "artifact_bundle"},
+            "digest": {"$ref": "#/$defs/digest"}
+          }
+        }
+      ]
+    },
+    "attempt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "attempt_id",
+        "order",
+        "connector_id",
+        "state",
+        "candidate_reference_digest",
+        "candidate",
+        "result_manifest_digest",
+        "verification_semantic_digest",
+        "evidence_state",
+        "verifier_recommendation"
+      ],
+      "properties": {
+        "attempt_id": {"type": "string", "minLength": 1},
+        "order": {"type": "integer", "minimum": 1},
+        "connector_id": {"type": "string", "minLength": 1},
+        "state": {
+          "enum": [
+            "created",
+            "dispatched",
+            "worker_error",
+            "candidate_observed",
+            "normalization_error",
+            "normalized",
+            "verification_requested",
+            "verification_error",
+            "verified",
+            "cancelled"
+          ]
+        },
+        "candidate_reference_digest": {
+          "anyOf": [{"$ref": "#/$defs/digest"}, {"type": "null"}]
+        },
+        "candidate": {"$ref": "#/$defs/candidate"},
+        "result_manifest_digest": {
+          "anyOf": [{"$ref": "#/$defs/digest"}, {"type": "null"}]
+        },
+        "verification_semantic_digest": {
+          "anyOf": [{"$ref": "#/$defs/digest"}, {"type": "null"}]
+        },
+        "evidence_state": {
+          "enum": [
+            null,
+            "supported",
+            "rejected",
+            "inconclusive",
+            "worker_error",
+            "result_manifest_error",
+            "verification_error"
+          ]
+        },
+        "verifier_recommendation": {
+          "enum": [
+            null,
+            "accept_candidate",
+            "reject_candidate",
+            "escalate",
+            "insufficient_evidence"
+          ]
+        }
+      }
+    },
+    "evidenceSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "attempt_count",
+        "supported",
+        "rejected",
+        "inconclusive",
+        "control_errors",
+        "verification_disagreement",
+        "control_failure_present"
+      ],
+      "properties": {
+        "attempt_count": {"type": "integer", "minimum": 0},
+        "supported": {"type": "integer", "minimum": 0},
+        "rejected": {"type": "integer", "minimum": 0},
+        "inconclusive": {"type": "integer", "minimum": 0},
+        "control_errors": {"type": "integer", "minimum": 0},
+        "verification_disagreement": {"type": "boolean"},
+        "control_failure_present": {"type": "boolean"}
+      }
+    }
+  }
+}

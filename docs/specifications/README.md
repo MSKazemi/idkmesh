@@ -37,7 +37,7 @@ meaning of an existing version.
   telemetry, W3C traceparent v00 pass-through, and explicit local-profile
   SLO/alert targets. The OpenTelemetry exporter remains follow-up work under
   #744.
-- [Verification Provenance Integrity](VERIFICATION_PROVENANCE_INTEGRITY.md) —
+- [GitHub Public Evidence Projection v0.1](GITHUB_PUBLIC_EVIDENCE_V0_1.md) — strict C14-D whitelist for public GitHub publication: exact digest-bound run/candidate/verification metadata only, with raw evidence, logs, prompts, provider payloads, identities, artifact locators, secrets, and all actuation authority excluded.\n- [Verification Provenance Integrity](VERIFICATION_PROVENANCE_INTEGRITY.md) —
   binds WorkUnit, result, and verification objects with canonical digests.
 
 - [Work Unit Composability Profile v0.2](WORK_UNIT_COMPOSABILITY_V0_2.md) —
