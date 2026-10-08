@@ -1698,5 +1698,175 @@ class ControlTowerProjectReadTests(unittest.TestCase):
         )
 
 
+class ControlTowerConnectionReadTests(unittest.TestCase):
+    """GET /api/v1/connections reuses local connector metadata."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        from idkmesh.connector_store import LocalMetadataStore
+
+        cls._tmp = tempfile.TemporaryDirectory()
+        cls.store_path = str(Path(cls._tmp.name) / "connections.sqlite3")
+        store = LocalMetadataStore(cls.store_path)
+        base = {
+            "kind": "agent",
+            "driver": "fake-agent",
+            "enabled": True,
+            "auth_ref_configured": False,
+            "capability_tiers": ["T1", "T2"],
+            "task_classes": ["coding"],
+            "tools": ["git"],
+            "candidate_types": ["artifact_bundle"],
+            "max_risk": "medium",
+            "external_processing": False,
+            "project_spend_usd_max": 0.0,
+            "max_concurrency": 1,
+        }
+        for connection_id in ("beta-agent", "alpha-agent", "gamma-agent"):
+            store.record_connection(
+                connection_id,
+                metadata={"id": connection_id, **base},
+                updated_at="2026-10-08T00:00:00Z",
+            )
+        cls.server = create_server(
+            port=0, product_spine_store_path=cls.store_path
+        )
+        cls.thread = threading.Thread(
+            target=cls.server.serve_forever, daemon=True
+        )
+        cls.thread.start()
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        cls.server.shutdown()
+        cls.server.server_close()
+        cls.thread.join(timeout=2)
+        cls._tmp.cleanup()
+
+    def request(self, method: str, path: str, *, server=None):
+        server = server or self.server
+        conn = http.client.HTTPConnection(
+            "127.0.0.1", server.server_port, timeout=3
+        )
+        conn.request(method, path, headers={TOKEN_HEADER: server.ui_token})
+        response = conn.getresponse()
+        body = response.read()
+        headers = dict(response.getheaders())
+        conn.close()
+        return response.status, headers, body
+
+    def test_list_is_secret_free_schema_bound_and_deterministic(self) -> None:
+        status, _, body = self.request("GET", "/api/v1/connections")
+        self.assertEqual(status, 200)
+        payload = json.loads(body)
+        _validate_against_schema("idkmesh-list-v0.1.schema.json", payload)
+        self.assertEqual(
+            [item["id"] for item in payload["items"]],
+            ["alpha-agent", "beta-agent", "gamma-agent"],
+        )
+        for item in payload["items"]:
+            _validate_against_schema(
+                "idkmesh-connection-resource-v0.1.schema.json", item
+            )
+            self.assertNotIn("secret_ref", item)
+            self.assertNotIn("settings", item)
+
+    def test_list_uses_opaque_keyset_pagination(self) -> None:
+        status, _, body = self.request(
+            "GET", "/api/v1/connections?limit=2"
+        )
+        self.assertEqual(status, 200)
+        page1 = json.loads(body)
+        self.assertEqual(
+            [item["id"] for item in page1["items"]],
+            ["alpha-agent", "beta-agent"],
+        )
+        cursor = page1["page"]["next_cursor"]
+        self.assertIsInstance(cursor, str)
+        status, _, body = self.request(
+            "GET", f"/api/v1/connections?limit=2&cursor={cursor}"
+        )
+        self.assertEqual(status, 200)
+        page2 = json.loads(body)
+        self.assertEqual(
+            [item["id"] for item in page2["items"]], ["gamma-agent"]
+        )
+        self.assertIsNone(page2["page"]["next_cursor"])
+
+    def test_invalid_cursor_fails_closed(self) -> None:
+        status, _, body = self.request(
+            "GET", "/api/v1/connections?cursor=not-a-service-cursor"
+        )
+        self.assertEqual(status, 400)
+        self.assertEqual(
+            json.loads(body)["error"]["code"], "invalid_cursor"
+        )
+
+    def test_free_form_legacy_row_is_not_serialized(self) -> None:
+        from idkmesh.connector_store import LocalMetadataStore
+
+        with tempfile.TemporaryDirectory() as tmp:
+            store_path = str(Path(tmp) / "legacy.sqlite3")
+            LocalMetadataStore(store_path).record_connection(
+                "legacy",
+                metadata={
+                    "id": "legacy",
+                    "secret_ref": "sentinel-must-not-leak",
+                },
+                updated_at="2026-10-08T00:00:00Z",
+            )
+            server = create_server(
+                port=0, product_spine_store_path=store_path
+            )
+            thread = threading.Thread(
+                target=server.serve_forever, daemon=True
+            )
+            thread.start()
+            try:
+                status, _, body = self.request(
+                    "GET", "/api/v1/connections", server=server
+                )
+            finally:
+                server.shutdown()
+                server.server_close()
+                thread.join(timeout=2)
+        self.assertEqual(status, 500)
+        self.assertEqual(
+            json.loads(body)["error"]["code"],
+            "connection_record_invalid",
+        )
+        self.assertNotIn(b"sentinel-must-not-leak", body)
+
+    def test_discovery_openapi_and_method_boundary_are_consistent(self) -> None:
+        _, _, body = self.request("GET", "/api/v1/status")
+        self.assertEqual(
+            json.loads(body)["endpoints"]["list_connections"],
+            "GET /api/v1/connections",
+        )
+        _, _, body = self.request("GET", "/api/v1/openapi.json")
+        self.assertIn("/api/v1/connections", json.loads(body)["paths"])
+        status, headers, _ = self.request("POST", "/api/v1/connections")
+        self.assertEqual(status, 405)
+        self.assertEqual(headers.get("Allow"), "GET, HEAD")
+
+    def test_503_without_configured_store(self) -> None:
+        server = create_server(port=0)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            status, _, body = self.request(
+                "GET", "/api/v1/connections", server=server
+            )
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join(timeout=2)
+        self.assertEqual(status, 503)
+        self.assertEqual(
+            json.loads(body)["error"]["code"],
+            "product_spine_store_not_configured",
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
