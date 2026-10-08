@@ -460,9 +460,16 @@ conforming production backend.
 
 ### Slices
 
-- **C8-A — ProjectManifest/bootstrap file plan:** exact generated files and ownership rules.
-- **C8-B — `init --github --dry-run`:** planned file diff only.
-- **C8-C — idempotent file generation:** project config + connector template.
+- **C8-A — ProjectManifest/bootstrap file plan:** implemented by
+  `idkmesh/github_bootstrap.py` (PR #678); exact file inventory, ownership,
+  overwrite policy, pinned IDKMesh ref, and owner-only actions.
+- **C8-B — `init --github --dry-run`:** implemented by PR #928; deterministic
+  CLI/JSON plan projection with explicit zero-write/zero-GitHub-mutation claims.
+- **C8-C — idempotent config generation:** implemented by
+  `idkmesh/github_bootstrap_render.py`; deterministic ProjectManifest seed,
+  disabled secret-reference connector template, repository-local
+  software-engineering DomainPack, generated ownership README, and SHA-256
+  content identities. Rendering only; apply remains disabled.
 - **C8-D — workflow wrapper generation:** thin pinned preview/dispatch/verify/status workflows.
 - **C8-E — owner-action checklist:** secrets, branch protection, environments, app install.
 - **C8-F — re-run/update behavior:** preserve user edits and report conflicts.
