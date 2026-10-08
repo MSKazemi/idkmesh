@@ -402,6 +402,36 @@ POST
 Wrong methods return HTTP 405 with an `Allow` header. `HEAD` on a POST-only
 resource also returns no body.
 
+### `GET /api/v1/connections`
+
+Authenticated, read-only connector-control listing (API-3, issue #738). This
+is the first implemented HTTP slice from the Connector Control API contract
+and deliberately lives in the existing Control Tower service rather than
+creating a second HTTP server.
+
+The endpoint reads the same `LocalMetadataStore` connection table used by
+`idkmesh connections stored`. Only the canonical secret-free import summary is
+projected. It never returns a secret reference or `settings`. A legacy/free-
+form row with missing, mismatched, or extra fields fails closed with
+`500 connection_record_invalid` rather than being serialized as an API resource.
+
+Query parameters are `limit` (1-200, default 50) and an opaque `cursor`.
+Ordering is by persisted connection id with keyset pagination. Unknown or
+duplicate parameters fail with `400 unexpected_query_parameters`; a cursor
+not issued by this connection-list service fails with `400 invalid_cursor`.
+
+The server must be started with `--product-spine-store PATH`, the shared local
+metadata database; otherwise the endpoint returns
+`503 product_spine_store_not_configured`.
+
+Each item conforms to `schemas/idkmesh-connection-resource-v0.1.schema.json`,
+wrapped by the shared `idkmesh-list-v0.1` envelope.
+
+Supported methods:
+
+```text
+GET, HEAD
+```
 ### `GET /api/v1/runs`
 
 Authenticated, read-only Product Spine run listing (issue #739). Serves the
