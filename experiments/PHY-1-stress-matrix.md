@@ -3,7 +3,8 @@
 **Status:** executable synthetic falsification matrix  
 **Date:** 2026-09-22  
 **Tracker:** #630  
-**Implementation:** `sim/physarum_compute_routing_stress.py`
+**Implementation:** `sim/physarum_compute_routing_stress.py`  
+**Retained completion sweep:** `experiments/results/PHY-1-completion-sweep.json`
 
 ## Purpose
 
@@ -138,3 +139,55 @@ resource evidence
 
 The experiment cannot grant eligibility, permissions, money, trust, or merge
 authority.
+
+
+## Completion sweep — 2026-10-08
+
+Issue #630's remaining synthetic gates were completed with two explicit graph
+views:
+
+- `sparse`: the three independent coordinator-to-worker corridors only;
+- `dense`: the same admitted nodes plus all three cross-corridor edges already
+  present in PHY-0/PHY-1.
+
+No synthetic edge is treated as production topology. These are deterministic
+falsification fixtures only.
+
+The retained bounded sweep uses seeds 1–6, 50 epochs, and 10 tasks per epoch.
+It is intentionally smaller than the exploratory default so review and CI can
+reproduce it cheaply. The machine-readable summary is
+`experiments/results/PHY-1-completion-sweep.json`.
+
+Reproduce the topology matrix with:
+
+```bash
+python sim/physarum_compute_routing_stress.py \
+  --topology all --seeds 6 --epochs 50 --tasks-per-epoch 10
+```
+
+The explicit sensitivity sweep varies the conductance floor (`d_min`),
+evaporation, and exploration independently around the frozen baseline:
+
+```bash
+python sim/physarum_compute_routing_stress.py \
+  --parameter-sweep --topology dense --environment abrupt-shift \
+  --seeds 6 --epochs 50 --tasks-per-epoch 10
+```
+
+### Outcome
+
+**Recommendation: reject promotion to a dry-run product planner at this stage.**
+
+The result is negative, not a fabricated success. Across both topology views,
+explicit multipath failover has higher synthetic success than Physarum in every
+tested environment in the retained sweep, although it often pays more route
+burden. Discounted Thompson is also better on the success/burden pair in
+several dense scenarios. The parameter sweep materially changes Physarum's
+success/burden trade-off, so the favorable behavior is not robust to its
+control settings.
+
+This does not prove failover is universally superior, and it is not real
+network evidence. It does satisfy the issue's decision purpose: the current
+synthetic evidence is insufficient to justify adding a Physarum production
+integration surface. Keep the simulator as research evidence; prefer simpler
+routing until a materially different experiment falsifies this conclusion.

@@ -1,4 +1,5 @@
 import importlib.util
+import json
 import sys
 from pathlib import Path
 
@@ -123,3 +124,108 @@ def test_small_matrix_reports_all_strong_baselines():
         for row in environment.values():
             assert 0.0 <= row["success_rate"] <= 1.0
             assert row["mean_route_burden_per_task"] > 0.0
+
+
+
+def test_sparse_and_dense_topologies_are_distinct_and_replayable():
+    sparse = stress.topology_by_name("sparse")
+    dense = stress.topology_by_name("dense")
+    sparse_paths = stress.topology_paths(sparse, max_hops=5)
+    dense_paths = stress.topology_paths(dense, max_hops=5)
+
+    assert len(sparse_paths) == 3
+    assert len(dense_paths) > len(sparse_paths)
+
+    environment = stress.environment_by_name("abrupt-shift")
+    first = stress.run_strategy(
+        "physarum",
+        environment,
+        seed=11,
+        epochs=16,
+        tasks_per_epoch=6,
+        topology=sparse,
+    )
+    second = stress.run_strategy(
+        "physarum",
+        environment,
+        seed=11,
+        epochs=16,
+        tasks_per_epoch=6,
+        topology=sparse,
+    )
+    assert first == second
+    assert first["topology"] == "sparse"
+
+
+def test_topology_sweep_covers_both_graph_shapes():
+    result = stress.compare_topologies(
+        seed_start=1,
+        seeds=1,
+        epochs=10,
+        tasks_per_epoch=4,
+        environment_names=["stationary"],
+    )
+    assert set(result["topologies"]) == {"sparse", "dense"}
+    for summary in result["topologies"].values():
+        assert set(summary["stationary"]) == set(stress.STRATEGIES)
+
+
+def test_parameter_sweep_varies_only_declared_physarum_controls():
+    result = stress.parameter_sweep(
+        seed_start=1,
+        seeds=1,
+        epochs=10,
+        tasks_per_epoch=4,
+    )
+    rows = result["parameters"]
+    assert {
+        "baseline",
+        "conductance-floor-low",
+        "conductance-floor-high",
+        "evaporation-low",
+        "evaporation-high",
+        "exploration-low",
+        "exploration-high",
+    } == set(rows)
+
+    baseline = rows["baseline"]["config"]
+    assert rows["conductance-floor-low"]["config"]["d_min"] != baseline["d_min"]
+    assert rows["evaporation-high"]["config"]["evaporation"] != baseline["evaporation"]
+    assert rows["exploration-low"]["config"]["exploration"] != baseline["exploration"]
+    for row in rows.values():
+        assert 0.0 <= row["summary"]["success_rate"] <= 1.0
+
+
+def test_unknown_topology_fails_closed():
+    try:
+        stress.topology_by_name("invented")
+    except ValueError as exc:
+        assert "unknown topology" in str(exc)
+    else:
+        raise AssertionError("unknown topology must fail closed")
+
+
+def test_retained_completion_artifact_marks_synthetic_scope():
+    result_path = (
+        Path(__file__).parents[1]
+        / "experiments"
+        / "results"
+        / "PHY-1-completion-sweep.json"
+    )
+    payload = json.loads(result_path.read_text(encoding="utf-8"))
+
+    assert payload["recommendation"] == "reject-promotion"
+    assert "Synthetic" in payload["model_warning"]
+    assert payload["seeds"] == 6
+    assert payload["epochs"] == 50
+    assert payload["tasks_per_epoch"] == 10
+    assert set(payload["topology_summary"]) == {"sparse", "dense"}
+    assert set(payload["parameter_sweep"]) == {
+        "baseline",
+        "conductance-floor-low",
+        "conductance-floor-high",
+        "evaporation-low",
+        "evaporation-high",
+        "exploration-low",
+        "exploration-high",
+    }
