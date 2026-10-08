@@ -784,7 +784,7 @@ def _handler(
 
         def _path(self) -> tuple[str, str] | None:
             parsed = urlsplit(self.path)
-            # GET /api/v1/runs and GET /api/v1/work-units (lists) are the
+            # GET /api/v1/runs, /connections, and /work-units (lists) are
             # endpoints with declared, bounded query parameters (?limit=,
             # ?cursor=, and named filters; API Conventions v0.1 sections
             # 10-11). Every other /api/ endpoint keeps rejecting stray query
@@ -794,6 +794,7 @@ def _handler(
                 and parsed.path.startswith("/api/")
                 and parsed.path not in (
                     f"/api/{API_VERSION}/runs",
+                    f"/api/{API_VERSION}/connections",
                     f"/api/{API_VERSION}/work-units",
                     f"/api/{API_VERSION}/events",
                     _EVENT_STREAM_PATH,
@@ -1022,6 +1023,59 @@ def _handler(
                     return None
             return params, limit
 
+        def _connection_list_response(
+            self, query: str, *, head_only: bool
+        ) -> None:
+            if product_spine_store_path is None:
+                self._send_json(
+                    503,
+                    error_document(
+                        "product_spine_store_not_configured",
+                        "this Control Tower instance was started without a "
+                        "Product Spine store; connections cannot be read",
+                    ),
+                    head_only=head_only,
+                )
+                return
+            parsed_query = self._parse_list_query(
+                query, {"limit", "cursor"}, head_only=head_only
+            )
+            if parsed_query is None:
+                return
+            params, limit = parsed_query
+
+            from idkmesh.connector_control_read import (
+                ConnectorControlReadError,
+                ConnectorControlReadService,
+            )
+            from idkmesh.connector_store import LocalMetadataStore, LocalStoreError
+
+            try:
+                items, next_cursor = ConnectorControlReadService(
+                    LocalMetadataStore(product_spine_store_path)
+                ).list_connections(limit=limit, cursor=params.get("cursor"))
+            except ConnectorControlReadError as exc:
+                status = 400 if exc.code in {"invalid_cursor", "invalid_limit"} else 500
+                self._send_json(
+                    status, error_document(exc.code, str(exc)), head_only=head_only
+                )
+                return
+            except (LocalStoreError, OSError, ValueError) as exc:
+                self._send_json(
+                    500, error_document("store_error", str(exc)), head_only=head_only
+                )
+                return
+
+            self._send_json(
+                200,
+                {
+                    "kind": "idkmesh-list",
+                    "schema_version": API_SCHEMA_VERSION,
+                    "items": items,
+                    "page": {"next_cursor": next_cursor, "limit": limit},
+                },
+                head_only=head_only,
+            )
         def _work_unit_id_from_path(self, path: str) -> str | None:
             """Return the id if path is /api/v1/work-units/<id>.
 
@@ -1800,6 +1854,9 @@ def _handler(
             if path == f"/api/{API_VERSION}/runs":
                 self._run_list_response(query, head_only=head_only)
                 return
+            if path == f"/api/{API_VERSION}/connections":
+                self._connection_list_response(query, head_only=head_only)
+                return
             if path == f"/api/{API_VERSION}/work-units":
                 self._work_unit_list_response(query, head_only=head_only)
                 return
@@ -1892,6 +1949,7 @@ def _handler(
                 f"/api/{API_VERSION}/openapi.json",
                 f"/api/{API_VERSION}/metrics",
                 f"/api/{API_VERSION}/runs",
+                f"/api/{API_VERSION}/connections",
                 f"/api/{API_VERSION}/work-units",
                 f"/api/{API_VERSION}/events",
             ):
@@ -1957,6 +2015,7 @@ def _handler(
                 f"/api/{API_VERSION}/openapi.json",
                 f"/api/{API_VERSION}/metrics",
                 f"/api/{API_VERSION}/runs",
+                f"/api/{API_VERSION}/connections",
                 f"/api/{API_VERSION}/work-units",
                 f"/api/{API_VERSION}/events",
             ) or (
