@@ -11,7 +11,7 @@ name: Publish to PyPI
 #     repository: idkmesh
 #     workflow:   publish-pypi.yml
 #     environment: pypi
-# Until that exists, a release simply fails this job and publishes nothing.
+# Until that exists, a release simply fails the publish job and publishes nothing.
 
 on:
   release:
@@ -35,9 +35,13 @@ concurrency:
 
 jobs:
   build:
-    name: Build distributions
+    name: Build distributions and provenance
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
     env:
       RELEASE_TAG: ${{ github.event.release.tag_name || inputs.release_tag }}
     steps:
@@ -61,11 +65,56 @@ jobs:
           python -m build
           python -m twine check dist/*
 
+      - name: Build SBOM, checksums, and release identity manifest
+        run: |
+          python tools/build_release_supply_chain.py
+          (cd dist && sha256sum -c ../release-metadata/checksums.txt)
+
+      - name: Detect artifact-attestation availability
+        env:
+          REPOSITORY_VISIBILITY: ${{ github.event.repository.visibility }}
+          PRIVATE_ATTESTATIONS_ENABLED: ${{ vars.IDKMESH_ATTESTATIONS_ENABLED }}
+        run: |
+          set -eu
+          if [ "$REPOSITORY_VISIBILITY" = "public" ]; then
+            echo "Artifact attestations are supported for public repositories."
+            exit 0
+          fi
+          if [ "$PRIVATE_ATTESTATIONS_ENABLED" = "true" ]; then
+            echo "Private/internal attestation support was explicitly verified by the repository owner."
+            exit 0
+          fi
+          echo "::error::Artifact attestation availability has not been verified for this private/internal repository plan."
+          echo "::error::After verifying GitHub artifact-attestation support, set repository variable IDKMESH_ATTESTATIONS_ENABLED=true."
+          exit 1
+
+      - name: Attest built distributions
+        id: provenance
+        uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2.4.0
+        with:
+          subject-path: dist/*
+
+      - name: Verify registered build attestations
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -eu
+          for artifact in dist/*; do
+            gh attestation verify "$artifact" --repo "$GITHUB_REPOSITORY"
+          done
+
       - name: Upload distributions
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: python-distributions
           path: dist/
+          if-no-files-found: error
+
+      - name: Upload release supply-chain evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-supply-chain
+          path: release-metadata/
           if-no-files-found: error
 
   publish:
@@ -79,8 +128,11 @@ jobs:
       name: pypi
       url: https://pypi.org/p/idkmesh
     permissions:
+      contents: write
       # Mints the OIDC token trusted publishing exchanges for an upload token.
       id-token: write
+    env:
+      RELEASE_TAG: ${{ github.event.release.tag_name || inputs.release_tag }}
     steps:
       - name: Download distributions
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
@@ -88,5 +140,22 @@ jobs:
           name: python-distributions
           path: dist/
 
+      - name: Download release supply-chain evidence
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: release-supply-chain
+          path: release-metadata/
+
+      - name: Re-verify artifact checksums before publication
+        run: (cd dist && sha256sum -c ../release-metadata/checksums.txt)
+
       - name: Publish
         uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
+
+      - name: Attach SBOM and release evidence to the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -eu
+          gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null
+          gh release upload "$RELEASE_TAG"             release-metadata/checksums.txt             release-metadata/release-provenance.json             release-metadata/sbom.spdx.json             --clobber             --repo "$GITHUB_REPOSITORY"
