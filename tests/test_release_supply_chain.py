@@ -44,6 +44,7 @@ verify = ["jsonschema>=4.26,<5"]
             workflow_sha=WORKFLOW_SHA,
             run_id="123",
             run_attempt="2",
+            created_at="2026-10-08T00:00:00Z",
         )
         self.assertEqual(sbom["spdxVersion"], "SPDX-2.3")
         annotation = json.loads(sbom["packages"][0]["annotations"][0]["comment"])
@@ -70,6 +71,7 @@ verify = ["jsonschema>=4.26,<5"]
             workflow_sha=WORKFLOW_SHA,
             run_id="123",
             run_attempt="1",
+            created_at="2026-10-08T00:00:00Z",
         )
         self.assertEqual(build_metadata(**kwargs), build_metadata(**kwargs))
 
@@ -84,6 +86,7 @@ verify = ["jsonschema>=4.26,<5"]
                 workflow_sha=WORKFLOW_SHA,
                 run_id="1",
                 run_attempt="1",
+                created_at="2026-10-08T00:00:00Z",
             )
         for path in self.dist.iterdir():
             path.unlink()
@@ -97,6 +100,7 @@ verify = ["jsonschema>=4.26,<5"]
                 workflow_sha=WORKFLOW_SHA,
                 run_id="1",
                 run_attempt="1",
+                created_at="2026-10-08T00:00:00Z",
             )
 
     def test_cli_writes_expected_files(self) -> None:
@@ -111,6 +115,7 @@ verify = ["jsonschema>=4.26,<5"]
             "--workflow-sha", WORKFLOW_SHA,
             "--run-id", "1",
             "--run-attempt", "1",
+            "--created-at", "2026-10-08T00:00:00Z",
         ])
         self.assertEqual(rc, 0)
         self.assertEqual(
