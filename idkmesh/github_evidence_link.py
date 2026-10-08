@@ -141,11 +141,17 @@ def parse_durable_github_evidence_url(
         )
 
     parsed = urlsplit(value)
+    try:
+        parsed_port = parsed.port
+    except ValueError as exc:
+        raise DurableGitHubEvidenceLinkError(
+            "durable evidence URL has an invalid port"
+        ) from exc
     if (
         parsed.scheme != "https"
         or parsed.username is not None
         or parsed.password is not None
-        or parsed.port is not None
+        or parsed_port is not None
         or parsed.query
         or parsed.fragment
     ):
@@ -159,7 +165,7 @@ def parse_durable_github_evidence_url(
     form: str
     if host == "github.com":
         if (
-            len(segments) < 7
+            len(segments) < 6
             or segments[0] != ""
             or segments[3] != "blob"
         ):
@@ -171,7 +177,7 @@ def parse_durable_github_evidence_url(
         encoded_path = "/".join(segments[5:])
         form = "html"
     elif host == "raw.githubusercontent.com":
-        if len(segments) < 6 or segments[0] != "":
+        if len(segments) < 5 or segments[0] != "":
             raise DurableGitHubEvidenceLinkError(
                 "raw GitHub durable evidence URL must use "
                 "/OWNER/REPO/<commit>/<path>"

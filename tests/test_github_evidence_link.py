@@ -102,6 +102,16 @@ class DurableGitHubEvidenceUrlTests(unittest.TestCase):
         self.assertEqual(validate_durable_github_evidence_url(html), html)
         self.assertEqual(validate_durable_github_evidence_url(raw), raw)
 
+        root_file = (
+            "https://github.com/MSKazemi/idkmesh/blob/"
+            + SHA40
+            + "/report.json"
+        )
+        self.assertEqual(
+            parse_durable_github_evidence_url(root_file).path,
+            "report.json",
+        )
+
     def test_rejects_branch_tag_actions_and_non_file_urls(self) -> None:
         bad_urls = (
             "https://github.com/MSKazemi/idkmesh/blob/main/evidence/report.json",
@@ -126,6 +136,11 @@ class DurableGitHubEvidenceUrlTests(unittest.TestCase):
             base + "#L1",
             (
                 "https://user@github.com/MSKazemi/idkmesh/blob/"
+                + SHA40
+                + "/evidence/report.json"
+            ),
+            (
+                "https://github.com:bad/MSKazemi/idkmesh/blob/"
                 + SHA40
                 + "/evidence/report.json"
             ),
