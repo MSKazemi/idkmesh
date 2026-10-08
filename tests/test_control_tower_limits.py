@@ -2,8 +2,9 @@
 
 Each documented limit is proven by behaviour, not by reading a constant: the
 overload and drain tests hold a handler open on an Event so the outcome is
-deterministic, and the stdlib parser bounds are probed with raw sockets so the
-documented numbers fail loudly if the stdlib ever changes them.
+deterministic, concurrent inspection is synchronized with a barrier, abrupt
+client cancellation must release capacity, and the stdlib parser bounds are
+probed with raw sockets so documented numbers fail loudly if the stdlib changes.
 """
 
 from __future__ import annotations
