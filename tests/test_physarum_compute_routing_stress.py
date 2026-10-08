@@ -205,6 +205,15 @@ def test_unknown_topology_fails_closed():
         raise AssertionError("unknown topology must fail closed")
 
 
+def test_parameter_sweep_rejects_non_positive_sample_counts():
+    try:
+        stress.parameter_sweep(seeds=0)
+    except ValueError as exc:
+        assert "seeds must be positive" in str(exc)
+    else:
+        raise AssertionError("non-positive sample counts must fail closed")
+
+
 def test_retained_completion_artifact_marks_synthetic_scope():
     result_path = (
         Path(__file__).parents[1]
