@@ -47,6 +47,7 @@ verify = ["jsonschema>=4.26,<5"]
             created_at="2026-10-08T00:00:00Z",
         )
         self.assertEqual(sbom["spdxVersion"], "SPDX-2.3")
+        self.assertEqual(sbom["creationInfo"]["created"], "2026-10-08T00:00:00Z")
         annotation = json.loads(sbom["packages"][0]["annotations"][0]["comment"])
         self.assertEqual(annotation["runtime_dependencies"], [])
         self.assertEqual(
