@@ -257,7 +257,7 @@ class CancellationTests(_ServerCase):
         server = self.start(max_concurrent_requests=1)
         entered = threading.Event()
         release = threading.Event()
-        real = __import__("idkmesh.control_tower_ui", fromlist=["build_snapshot"]).build_snapshot
+        real = control_tower_ui.build_snapshot
 
         def blocked(report):
             entered.set()
