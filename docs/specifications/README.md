@@ -40,6 +40,8 @@ meaning of an existing version.
 - [Verification Provenance Integrity](VERIFICATION_PROVENANCE_INTEGRITY.md) —
   binds WorkUnit, result, and verification objects with canonical digests.
 
+- [GitHub WorkUnit Intake v0.1](GITHUB_WORKUNIT_INTAKE_V0_1.md) — structured, untrusted GitHub Issue Form intake contract whose scope/risk/review/connector fields may only narrow or raise trusted project policy and never grant execution or integration authority.
+
 - [Work Unit Composability Profile v0.2](WORK_UNIT_COMPOSABILITY_V0_2.md) —
   experimental reference profile adding the five-arm decomposition benchmark
   contract and a canonical WorkUnit DAG without changing either historical
