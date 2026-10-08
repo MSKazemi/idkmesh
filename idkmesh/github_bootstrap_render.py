@@ -437,10 +437,10 @@ Protected integration branch target: {plan.default_branch}
 
 ## Authority
 
-These files configure or narrow project behavior only. They do not grant
-dispatch, verification acceptance, repository administration, Git push, or
-merge authority. Worker success is not acceptance, and verification
-recommendation is not integration authority.
+These files configure or narrow project behavior only. This generated
+configuration does not grant dispatch, verification acceptance, repository
+administration, Git push, or merge authority. Worker success is not acceptance,
+and verification recommendation is not integration authority.
 
 C8-C renders bytes and digests only. It performs no filesystem or GitHub
 mutation. Workflow wrappers and apply/re-run behavior are separate C8-D/C8-F

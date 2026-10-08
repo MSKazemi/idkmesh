@@ -252,10 +252,11 @@ def build_parser() -> argparse.ArgumentParser:
         "init",
         help="plan GitHub-first IDKMesh bootstrap",
         description=(
-            "Expose the deterministic GitHub-first bootstrap plan plus C8-C "
-            "rendered configuration content/digests without writing repository "
-            "files or mutating GitHub. --github --dry-run remains the only "
-            "supported mode; apply mode remains fail-closed until C8-F."
+            "apply mode remains fail-closed until C8-F. Expose the "
+            "deterministic GitHub-first bootstrap plan plus C8-C rendered "
+            "configuration content/digests without writing repository files "
+            "or mutating GitHub. --github --dry-run remains the only "
+            "supported mode."
         ),
         formatter_class=_ExamplesHelpFormatter,
         epilog=(
