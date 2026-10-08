@@ -252,10 +252,10 @@ def build_parser() -> argparse.ArgumentParser:
         "init",
         help="plan GitHub-first IDKMesh bootstrap",
         description=(
-            "Expose the deterministic GitHub-first bootstrap plan without "
-            "writing repository files or mutating GitHub. C8-B supports "
-            "--github --dry-run only; apply mode remains fail-closed until "
-            "the rendering and safe re-run slices land."
+            "Expose the deterministic GitHub-first bootstrap plan plus C8-C "
+            "rendered configuration content/digests without writing repository "
+            "files or mutating GitHub. --github --dry-run remains the only "
+            "supported mode; apply mode remains fail-closed until C8-F."
         ),
         formatter_class=_ExamplesHelpFormatter,
         epilog=(
@@ -1810,13 +1810,18 @@ def _run_github_init(args: argparse.Namespace) -> int:
         BootstrapPlanError,
         build_github_bootstrap_plan,
     )
+    from idkmesh.github_bootstrap_render import (
+        BootstrapRenderError,
+        render_github_bootstrap_config,
+    )
 
     try:
         plan = build_github_bootstrap_plan(
             idkmesh_ref=args.idkmesh_ref,
             default_branch=args.default_branch,
         )
-    except BootstrapPlanError as exc:
+        rendered_config = render_github_bootstrap_config(plan)
+    except (BootstrapPlanError, BootstrapRenderError) as exc:
         return _fail(str(exc))
 
     payload = {
@@ -1827,6 +1832,10 @@ def _run_github_init(args: argparse.Namespace) -> int:
         "github_mutation_performed": False,
         "secret_values_accessed": False,
         "plan": plan.to_dict(),
+        "rendered_config_files": [
+            item.to_dict(include_content=True)
+            for item in rendered_config
+        ],
     }
 
     if args.json_output:
@@ -1842,6 +1851,12 @@ def _run_github_init(args: argparse.Namespace) -> int:
             f"- {item.path} "
             f"[{item.ownership}; {item.overwrite_policy}; "
             f"phase={item.phase}; effect={item.execution_effect}]"
+        )
+    print("rendered C8-C config files:")
+    for item in rendered_config:
+        print(
+            f"- {item.path} [{item.content_digest}; "
+            f"{item.size_bytes} bytes]"
         )
     print("owner-only actions:")
     for action in plan.owner_actions:
