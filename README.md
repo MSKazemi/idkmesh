@@ -65,6 +65,11 @@ IDKMesh treats that as an empirical question. More agents, more activity, more c
 
 ## Current status
 
+For the claim-by-claim source of truth, see the
+[Capability Truth Matrix](docs/CAPABILITY_MATRIX.md). Its canonical JSON is
+validated in normal CI against repository paths and the real CLI command tree,
+and uses the evidence ladder from planned (0) through production-qualified (5).
+
 **Executable research foundation; reference runner still incomplete.**
 
 What is already present on `main`:
