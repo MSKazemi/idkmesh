@@ -26,7 +26,12 @@ _RESOURCE_FIELDS = frozenset({
     "max_risk", "external_processing", "project_spend_usd_max",
     "max_concurrency",
 })
-_ARRAY_FIELDS = ("capability_tiers", "task_classes", "tools", "candidate_types")
+_ARRAY_FIELDS = (
+    "capability_tiers",
+    "task_classes",
+    "tools",
+    "candidate_types",
+)
 
 
 class ConnectorControlReadError(RuntimeError):
@@ -40,7 +45,8 @@ class ConnectorControlReadError(RuntimeError):
 def _invalid_record() -> None:
     raise ConnectorControlReadError(
         "connection_record_invalid",
-        "stored connection metadata is not a canonical public connection resource",
+        "stored connection metadata is not a canonical public connection "
+        "resource",
     )
 
 
