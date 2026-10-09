@@ -2,8 +2,9 @@
 
 Each documented limit is proven by behaviour, not by reading a constant: the
 overload and drain tests hold a handler open on an Event so the outcome is
-deterministic, and the stdlib parser bounds are probed with raw sockets so the
-documented numbers fail loudly if the stdlib ever changes them.
+deterministic, concurrent inspection is synchronized with a barrier, abrupt
+client cancellation must release capacity, and the stdlib parser bounds are
+probed with raw sockets so documented numbers fail loudly if the stdlib changes.
 """
 
 from __future__ import annotations
@@ -20,8 +21,9 @@ from unittest import mock
 from jsonschema import Draft202012Validator
 
 from idkmesh import cli
+import idkmesh.control_tower_ui as control_tower_ui
 from idkmesh.control_tower_api import status_document
-from idkmesh.control_tower_ui import create_server
+from idkmesh.control_tower_ui import SAMPLE_REPORT, create_server
 from idkmesh.local_ui_security import TOKEN_HEADER
 from idkmesh.service_runtime import (
     ADMITTED,
@@ -143,6 +145,28 @@ class _ServerCase(unittest.TestCase):
         return result
 
     @staticmethod
+    def inspect(server):
+        conn = http.client.HTTPConnection(
+            "127.0.0.1", server.server_port, timeout=5
+        )
+        payload = SAMPLE_REPORT.encode("utf-8")
+        conn.request(
+            "POST",
+            "/api/v1/run-evidence/inspect",
+            body=payload,
+            headers={
+                TOKEN_HEADER: server.ui_token,
+                "Accept": "application/json",
+                "Content-Type": "application/json; charset=utf-8",
+            },
+        )
+        response = conn.getresponse()
+        body = response.read()
+        result = (response.status, dict(response.getheaders()), body)
+        conn.close()
+        return result
+
+    @staticmethod
     def raw(server, payload: bytes, *, timeout: float = 5.0) -> bytes:
         """Send raw bytes and read until the server closes the connection."""
         with socket.create_connection(
@@ -193,6 +217,80 @@ class StatusPublishesLimitsTests(_ServerCase):
                     ["control-tower", "--no-browser", "--port", "0", flag, value]
                 )
             self.assertNotEqual(rc, 0, flag)
+
+
+class ConcurrentInspectionTests(_ServerCase):
+    def test_two_run_evidence_inspections_execute_concurrently(self) -> None:
+        server = self.start(max_concurrent_requests=2)
+        barrier = threading.Barrier(2, timeout=5.0)
+        real = control_tower_ui.build_snapshot
+        results: list[tuple[int, dict[str, str], bytes]] = []
+        errors: list[BaseException] = []
+
+        def blocked(report):
+            barrier.wait()
+            return real(report)
+
+        def call() -> None:
+            try:
+                results.append(self.inspect(server))
+            except BaseException as exc:  # pragma: no cover - asserted below
+                errors.append(exc)
+
+        with mock.patch("idkmesh.control_tower_ui.build_snapshot", blocked):
+            threads = [threading.Thread(target=call) for _ in range(2)]
+            for thread in threads:
+                thread.start()
+            for thread in threads:
+                thread.join(timeout=10)
+
+        self.assertEqual(errors, [])
+        self.assertEqual(len(results), 2)
+        self.assertEqual(sorted(status for status, _, _ in results), [200, 200])
+        documents = [json.loads(body) for _, _, body in results]
+        self.assertEqual(documents[0]["snapshot"], documents[1]["snapshot"])
+        self.assertTrue(server.limiter.wait_idle(5.0), "inspection slots leaked")
+
+
+class CancellationTests(_ServerCase):
+    def test_abrupt_inspection_disconnect_releases_capacity(self) -> None:
+        server = self.start(max_concurrent_requests=1)
+        entered = threading.Event()
+        release = threading.Event()
+        real = control_tower_ui.build_snapshot
+
+        def blocked(report):
+            entered.set()
+            release.wait(5.0)
+            return real(report)
+
+        payload = SAMPLE_REPORT.encode("utf-8")
+        request = (
+            "POST /api/v1/run-evidence/inspect HTTP/1.1\r\n"
+            f"Host: {self.host(server)}\r\n"
+            f"{TOKEN_HEADER}: {server.ui_token}\r\n"
+            "Accept: application/json\r\n"
+            "Content-Type: application/json; charset=utf-8\r\n"
+            f"Content-Length: {len(payload)}\r\n\r\n"
+        ).encode("ascii") + payload
+
+        with mock.patch("idkmesh.control_tower_ui.build_snapshot", blocked):
+            sock = socket.create_connection(
+                ("127.0.0.1", server.server_port), timeout=5
+            )
+            sock.sendall(request)
+            self.assertTrue(entered.wait(5.0), "inspection never reached application work")
+            self.assertEqual(server.limiter.in_flight, 1)
+            sock.close()
+            release.set()
+            self.assertTrue(
+                server.limiter.wait_idle(5.0),
+                "aborted client retained its concurrency slot",
+            )
+
+        status, _, body = self.inspect(server)
+        self.assertEqual(status, 200)
+        self.assertTrue(json.loads(body)["ok"])
 
 
 class OverloadTests(_ServerCase):

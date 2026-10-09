@@ -42,6 +42,29 @@ High-priority areas include:
 - Sybil/collusion attacks on reputation or verification;
 - privacy leakage in distributed workloads.
 
+## Vulnerability response targets
+
+These are response **targets**, not guarantees or claims that every report is
+valid. Severity is assigned after triage using exploitability, impact, affected
+deployment profiles, and exposure.
+
+| Severity | Initial acknowledgement | Triage target | Remediation / mitigation target |
+| --- | --- | --- | --- |
+| Critical | 1 business day | 2 business days | 7 calendar days |
+| High | 2 business days | 5 business days | 14 calendar days |
+| Medium | 5 business days | 10 business days | 30 calendar days |
+| Low | 10 business days | 20 business days | next planned release or 90 days |
+
+A credible actively exploited issue may trigger an emergency release outside
+the normal dependency/update cadence. If a complete fix cannot safely meet the
+target, maintainers should document a temporary mitigation, affected versions,
+and the next review date in the private security record before public
+disclosure.
+
+Routine dependency updates do not automatically receive release authority.
+Major-version changes and security-sensitive build/release changes require
+focused compatibility and trust-boundary review.
+
 ## Automated repository checks
 
 GitHub secret scanning and push protection are enabled in repository settings.
@@ -53,6 +76,7 @@ major migrations require a focused compatibility and trust-boundary review. A
 pinned weekly OpenSSF Scorecard workflow uploads SARIF to GitHub code scanning
 and retains a five-day diagnostic artifact. It deliberately does not publish
 results to the external Scorecard service or request an OIDC token.
+
 Every third-party GitHub Action is pinned to an immutable commit SHA rather
 than a floating tag. A tag resolves at run time to whatever it points at then,
 so whoever controls it can change what executes in CI without any change landing
@@ -61,8 +85,13 @@ fails with the offending file and line if a tag reappears, and also fails if one
 version comment maps to two different SHAs, which would mean one of them is
 stale.
 
-These controls supplement review; they do not establish that a candidate,
-dependency update, or release is safe.
+The PyPI release workflow additionally emits checksums, an SPDX 2.3 SBOM, an
+exact source/workflow identity manifest, and GitHub build-provenance
+attestations for release distributions. See
+`docs/specifications/RELEASE_SUPPLY_CHAIN_V0_1.md` for generation and consumer
+verification. These controls supplement review; a valid signature, checksum,
+SBOM, or attestation does not establish that a candidate, dependency update, or
+release is correct or vulnerability-free.
 
 ## Supported versions
 

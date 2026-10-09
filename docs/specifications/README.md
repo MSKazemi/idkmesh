@@ -8,6 +8,7 @@ meaning of an existing version.
 ## GitHub-First Product Operations
 
 - [GitHub-First Operations v0.1](GITHUB_FIRST_OPERATIONS_V0_1.md) — implementation contract for no-server GitHub coordination: bootstrap, durable run ledger, idempotency/recovery, multi-user claims/authority, Actions security, optional Projects/Pages/OIDC/attestations, and the pilot test matrix.
+- [GitHub Bootstrap Config Rendering v0.1](GITHUB_BOOTSTRAP_CONFIG_RENDERING_V0_1.md) — deterministic C8-C rendering of the ProjectManifest seed, disabled secret-reference connector template, repository-local software-engineering DomainPack, generated ownership README, and content digests; rendering only, with no apply or GitHub mutation authority.
 - [GitHub Webhook Ingress v0.1](GITHUB_WEBHOOK_INGRESS_V0_1.md) — authenticated bounded webhook envelope: raw-body HMAC-SHA256, event/action allowlists, repository binding, delivery provenance, and no dispatch authority.
 
 ## Work and Evidence Contracts
@@ -38,6 +39,10 @@ meaning of an existing version.
   targets, and a dependency-free transport-neutral OTLP/HTTP JSON mapping
   adapter. Collector transport and Human Decision ingestion telemetry remain
   separate follow-up work under #744.
+- [Release Supply-Chain Baseline v0.1](RELEASE_SUPPLY_CHAIN_V0_1.md) —
+  release SBOM/checksum/source-workflow identity evidence, immutable-pinned
+  GitHub build provenance, consumer verification, and vulnerability/update
+  policy for enterprise release integrity (#674).
 - [Verification Provenance Integrity](VERIFICATION_PROVENANCE_INTEGRITY.md) —
   binds WorkUnit, result, and verification objects with canonical digests.
 
