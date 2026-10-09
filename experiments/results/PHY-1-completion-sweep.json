@@ -1,0 +1,41 @@
+{
+  "epochs": 50,
+  "experiment": "PHY-1-completion-sweep-v0",
+  "model_warning": "Synthetic admitted-network stress matrix; not empirical evidence.",
+  "parameter_sweep": {
+    "baseline": {"d_min": 0.08, "evaporation": 0.1, "exploration": 0.06, "mean_route_burden_per_task": 2.158233333, "post_event_success_rate": 0.738666667, "success_rate": 0.850333333},
+    "conductance-floor-high": {"d_min": 0.2, "evaporation": 0.1, "exploration": 0.06, "mean_route_burden_per_task": 2.2209, "post_event_success_rate": 0.788, "success_rate": 0.876},
+    "conductance-floor-low": {"d_min": 0.02, "evaporation": 0.1, "exploration": 0.06, "mean_route_burden_per_task": 2.263966667, "post_event_success_rate": 0.822, "success_rate": 0.892},
+    "evaporation-high": {"d_min": 0.08, "evaporation": 0.2, "exploration": 0.06, "mean_route_burden_per_task": 2.286916667, "post_event_success_rate": 0.892666667, "success_rate": 0.923666667},
+    "evaporation-low": {"d_min": 0.08, "evaporation": 0.04, "exploration": 0.06, "mean_route_burden_per_task": 2.104216667, "post_event_success_rate": 0.650666667, "success_rate": 0.805},
+    "exploration-high": {"d_min": 0.08, "evaporation": 0.1, "exploration": 0.15, "mean_route_burden_per_task": 2.455283333, "post_event_success_rate": 0.887333333, "success_rate": 0.926},
+    "exploration-low": {"d_min": 0.08, "evaporation": 0.1, "exploration": 0.01, "mean_route_burden_per_task": 2.21035, "post_event_success_rate": 0.818666667, "success_rate": 0.883666667}
+  },
+  "recommendation": "reject-promotion",
+  "seed_start": 1,
+  "seeds": 6,
+  "tasks_per_epoch": 10,
+  "topology_summary": {
+    "dense": {
+      "stationary": {"discounted-thompson": [0.964666667, 2.0018], "multipath-failover": [0.998, 2.0704], "physarum": [0.967, 2.102716667], "shortest-static": [0.971666667, 2.0]},
+      "abrupt-shift": {"discounted-thompson": [0.878666667, 2.107266667], "multipath-failover": [0.997666667, 2.450533333], "physarum": [0.850333333, 2.158233333], "shortest-static": [0.789333333, 2.0]},
+      "gradual-shift": {"discounted-thompson": [0.87, 2.105], "multipath-failover": [0.993666667, 2.481866667], "physarum": [0.838666667, 2.154766667], "shortest-static": [0.783666667, 2.0]},
+      "transient-a-outage": {"discounted-thompson": [0.862, 2.118566667], "multipath-failover": [0.986666667, 2.423866667], "physarum": [0.920333333, 2.288666667], "shortest-static": [0.835333333, 2.0]},
+      "permanent-a-node-loss": {"discounted-thompson": [0.840333333, 2.158966667], "multipath-failover": [0.951, 2.5964], "physarum": [0.902333333, 2.29425], "shortest-static": [0.485333333, 2.0]},
+      "correlated-ab-region-shocks": {"discounted-thompson": [0.819666667, 2.089133333], "multipath-failover": [0.993333333, 2.551466667], "physarum": [0.914333333, 2.66225], "shortest-static": [0.833666667, 2.0]},
+      "donor-burden-asymmetry": {"discounted-thompson": [0.878666667, 2.107266667], "multipath-failover": [0.997666667, 2.450533333], "physarum": [0.851, 2.266866667], "shortest-static": [0.789333333, 2.0]},
+      "noisy-failure-attribution": {"discounted-thompson": [0.878666667, 2.107266667], "multipath-failover": [0.997666667, 2.450533333], "physarum": [0.898666667, 2.273333333], "shortest-static": [0.789333333, 2.0]}
+    },
+    "sparse": {
+      "stationary": {"discounted-thompson": [0.964, 2.003466667], "multipath-failover": [0.998, 2.0704], "physarum": [0.959333333, 2.099933333], "shortest-static": [0.971666667, 2.0]},
+      "abrupt-shift": {"discounted-thompson": [0.872333333, 2.102266667], "multipath-failover": [0.997666667, 2.450533333], "physarum": [0.916333333, 2.2042], "shortest-static": [0.789333333, 2.0]},
+      "gradual-shift": {"discounted-thompson": [0.866333333, 2.108666667], "multipath-failover": [0.993666667, 2.481866667], "physarum": [0.879666667, 2.171266667], "shortest-static": [0.783666667, 2.0]},
+      "transient-a-outage": {"discounted-thompson": [0.852333333, 2.1072], "multipath-failover": [0.986666667, 2.423866667], "physarum": [0.930333333, 2.223533333], "shortest-static": [0.835333333, 2.0]},
+      "permanent-a-node-loss": {"discounted-thompson": [0.829333333, 2.1578], "multipath-failover": [0.951, 2.5964], "physarum": [0.919666667, 2.2938], "shortest-static": [0.485333333, 2.0]},
+      "correlated-ab-region-shocks": {"discounted-thompson": [0.827, 2.024466667], "multipath-failover": [0.993333333, 2.550466667], "physarum": [0.884666667, 2.399066667], "shortest-static": [0.833666667, 2.0]},
+      "donor-burden-asymmetry": {"discounted-thompson": [0.872333333, 2.102266667], "multipath-failover": [0.997666667, 2.450533333], "physarum": [0.898333333, 2.253066667], "shortest-static": [0.789333333, 2.0]},
+      "noisy-failure-attribution": {"discounted-thompson": [0.872333333, 2.102266667], "multipath-failover": [0.997666667, 2.450533333], "physarum": [0.891, 2.2368], "shortest-static": [0.789333333, 2.0]}
+    }
+  },
+  "topology_value_format": ["success_rate", "mean_route_burden_per_task"]
+}

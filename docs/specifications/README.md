@@ -8,8 +8,10 @@ meaning of an existing version.
 ## GitHub-First Product Operations
 
 - [GitHub-First Operations v0.1](GITHUB_FIRST_OPERATIONS_V0_1.md) — implementation contract for no-server GitHub coordination: bootstrap, durable run ledger, idempotency/recovery, multi-user claims/authority, Actions security, optional Projects/Pages/OIDC/attestations, and the pilot test matrix.
+- [GitHub Durable Ledger Record v0.1](GITHUB_LEDGER_RECORD_V0_1.md) — C9-A compact append-only run/event/route/idempotency/attempt/evidence-reference contract for restart-safe GitHub-first coordination; secret-free and structurally without dispatch, verification, integration, or merge authority.
 - [GitHub Bootstrap Config Rendering v0.1](GITHUB_BOOTSTRAP_CONFIG_RENDERING_V0_1.md) — deterministic C8-C rendering of the ProjectManifest seed, disabled secret-reference connector template, repository-local software-engineering DomainPack, generated ownership README, and content digests; rendering only, with no apply or GitHub mutation authority.
 - [GitHub Webhook Ingress v0.1](GITHUB_WEBHOOK_INGRESS_V0_1.md) — authenticated bounded webhook envelope: raw-body HMAC-SHA256, event/action allowlists, repository binding, delivery provenance, and no dispatch authority.
+- [GitHub WorkUnit Intake v0.1](GITHUB_WORKUNIT_INTAKE_V0_1.md) — normalized untrusted GitHub Issue Form planning hints with an explicit all-false authority ceiling; requested paths, risk, review, processing, and connector values cannot broaden trusted project policy. The C13-B WorkUnit request Issue Form uses exactly these field ids and enums.
 
 ## Work and Evidence Contracts
 
@@ -35,13 +37,19 @@ meaning of an existing version.
   primitives for IDKMesh HTTP surfaces.
 - [API Observability v0.1](API_OBSERVABILITY_V0_1.md) —
   privacy-safe, fixed-cardinality request/status/latency/admission/concurrency
-  telemetry, W3C traceparent v00 pass-through, and explicit local-profile
-  SLO/alert targets. The OpenTelemetry exporter remains follow-up work under
-  #744.
+  telemetry, W3C traceparent v00 pass-through, explicit local-profile SLO/alert
+  targets, and a dependency-free transport-neutral OTLP/HTTP JSON mapping
+  adapter. Collector transport and Human Decision ingestion telemetry remain
+  separate follow-up work under #744.
 - [Release Supply-Chain Baseline v0.1](RELEASE_SUPPLY_CHAIN_V0_1.md) —
   release SBOM/checksum/source-workflow identity evidence, immutable-pinned
   GitHub build provenance, consumer verification, and vulnerability/update
   policy for enterprise release integrity (#674).
+- [GitHub Public Evidence Projection v0.1](GITHUB_PUBLIC_EVIDENCE_V0_1.md) —
+  strict C14-D whitelist for public GitHub publication: exact digest-bound
+  run/candidate/verification metadata only, with raw evidence, logs, prompts,
+  provider payloads, identities, artifact locators, secrets, and all actuation
+  authority excluded.
 - [Verification Provenance Integrity](VERIFICATION_PROVENANCE_INTEGRITY.md) —
   binds WorkUnit, result, and verification objects with canonical digests.
 
