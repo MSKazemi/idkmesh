@@ -485,7 +485,7 @@ conforming production backend.
 
 ### Slices
 
-- **C9-A — ledger record schema:** run/event/attempt/idempotency references.
+- **C9-A — [ledger record schema](../specifications/GITHUB_LEDGER_RECORD_V0_1.md):** run/event/route/attempt/idempotency/evidence references with exact WorkUnit/source binding and no authority.
 - **C9-B — append-only local Git fixture:** deterministic event serialization.
 - **C9-C — optimistic append protocol:** concurrent writer conflict/retry semantics.
 - **C9-D — idempotent admission record:** duplicate dispatch -> existing run.

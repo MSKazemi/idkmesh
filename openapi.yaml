@@ -473,6 +473,7 @@ components:
     "gate-audit-dependence-v0.1": {$ref: "https://idkmesh.org/schemas/gate-audit-dependence-v0.1.schema.json"}
     "gate-audit-report-v0.1": {$ref: "https://idkmesh.org/schemas/gate-audit-report-v0.1.schema.json"}
     "gate-audit-report-v0.2": {$ref: "https://idkmesh.org/schemas/gate-audit-report-v0.2.schema.json"}
+    "github-ledger-record-v0.1": {$ref: "https://idkmesh.org/schemas/github-ledger-record-v0.1.schema.json"}
     "github-public-evidence-v0.1": {$ref: "https://idkmesh.org/schemas/github-public-evidence-v0.1.schema.json"}
     "goal-graph": {$ref: "https://idkmesh.org/schemas/goal-graph.schema.json"}
     "human-decision-record-v0.1": {$ref: "https://idkmesh.org/schemas/human-decision-record-v0.1.schema.json"}
