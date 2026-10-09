@@ -258,6 +258,13 @@ class PagesSEOTests(unittest.TestCase):
         for entry in required:
             self.assertIn(entry, config)
 
+    def test_jekyll_layout_renders_site_title_as_non_heading(self) -> None:
+        layout_path = DOCS / "_layouts" / "default.html"
+        self.assertTrue(layout_path.exists(), "docs/_layouts/default.html must exist")
+        layout = layout_path.read_text(encoding="utf-8")
+        self.assertNotIn("<h1><a href=", layout)
+        self.assertIn('<p class="site-title h1">', layout)
+
 
 if __name__ == "__main__":  # pragma: no cover
     unittest.main()
