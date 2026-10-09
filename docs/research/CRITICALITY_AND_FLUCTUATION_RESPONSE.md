@@ -28,7 +28,7 @@ thermodynamic phase transition.
 
 ## Model
 
-[`../../experiments/criticality_susceptibility.py`](../../experiments/criticality_susceptibility.py)
+[`../../experiments/criticality_susceptibility.py`](https://github.com/MSKazemi/idkmesh/blob/main/experiments/criticality_susceptibility.py)
 is a discrete two-stage queue:
 
 ```text

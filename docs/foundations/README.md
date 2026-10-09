@@ -5,7 +5,7 @@ Durable statements of **what IDKMesh is for** and **which questions it exists to
 These documents change slowly. They describe intent and open problems, not
 implementation. Architecture lives in [`../../ARCHITECTURE.md`](../../ARCHITECTURE.md),
 staged delivery in [`../../ROADMAP.md`](../../ROADMAP.md), and measurable results in
-[`../../results`](../../results).
+[`../../results`](https://github.com/MSKazemi/idkmesh/tree/main/results).
 
 ## Documents
 

@@ -375,8 +375,8 @@ Repository sources:
 - [WHAT_IS_IDKMESH.md](../WHAT_IS_IDKMESH.md)
 - [PRODUCT_DIFFERENTIATION_AND_KILLER_POINT.md](../product/PRODUCT_DIFFERENTIATION_AND_KILLER_POINT.md)
 - [END_TO_END_PRODUCT_SPINE_PLAN_2026-09-22.md](../planning/END_TO_END_PRODUCT_SPINE_PLAN_2026-09-22.md)
-- [pyproject.toml](../../pyproject.toml)
-- [idkmesh/cli.py](../../idkmesh/cli.py)
+- [pyproject.toml](https://github.com/MSKazemi/idkmesh/blob/main/pyproject.toml)
+- [idkmesh/cli.py](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/cli.py)
 
 Open engineering gates considered:
 

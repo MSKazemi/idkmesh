@@ -3,7 +3,7 @@
 **Parent research track:** [#20 — Implement P0 IDKGraph repository observatory](https://github.com/MSKazemi/idkmesh/issues/20)  
 **Growth Seed:** [#28 — decompose one research track into 5 claimable microtasks](https://github.com/MSKazemi/idkmesh/issues/28)  
 **Architecture:** [`docs/architecture/IDKGRAPH_TASK_AND_EVOLUTION_MODEL.md`](../../architecture/IDKGRAPH_TASK_AND_EVOLUTION_MODEL.md)  
-**Schema:** [`schemas/idkgraph.schema.json`](../../../schemas/idkgraph.schema.json)  
+**Schema:** [`schemas/idkgraph.schema.json`](https://github.com/MSKazemi/idkmesh/blob/main/schemas/idkgraph.schema.json)  
 **Decision:** [`docs/decisions/ADR-0005-idkgraph-and-guarded-self-evolution.md`](../../decisions/ADR-0005-idkgraph-and-guarded-self-evolution.md)
 
 ## Purpose

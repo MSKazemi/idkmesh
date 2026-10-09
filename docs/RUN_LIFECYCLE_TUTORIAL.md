@@ -31,7 +31,7 @@ below use the installed command.)
 
 `idkmesh run create` persists one canonical Product Spine run projection in a
 local SQLite store. The projection file is the committed example fixture
-[`../examples/api/product-spine-run.example.json`](../examples/api/product-spine-run.example.json)
+[`../examples/api/product-spine-run.example.json`](https://github.com/MSKazemi/idkmesh/blob/main/examples/api/product-spine-run.example.json)
 (a `state="proposed"` run for `run/example-1`), and `--idempotency-key` is a
 caller-chosen identity for this create request.
 

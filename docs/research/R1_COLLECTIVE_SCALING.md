@@ -84,15 +84,15 @@ verification before execution.
 
 ## Outputs
 
-- [machine-readable seeded results, flat arm](../../results/experiments/r1/collective-scaling-seeds42-51.json.gz)
+- [machine-readable seeded results, flat arm](https://github.com/MSKazemi/idkmesh/blob/main/results/experiments/r1/collective-scaling-seeds42-51.json.gz)
 - [compact generated table, flat arm](../../results/experiments/r1/collective-scaling-seeds42-51.md)
-- [machine-readable seeded results, three topologies](../../results/experiments/r1/coordination-topology-seeds42-51.json.gz)
+- [machine-readable seeded results, three topologies](https://github.com/MSKazemi/idkmesh/blob/main/results/experiments/r1/coordination-topology-seeds42-51.json.gz)
 - [compact generated table, three topologies](../../results/experiments/r1/coordination-topology-seeds42-51.md)
-- [machine-readable seeded results, correlation sweep](../../results/experiments/r1/diversity-correlation-threshold-seeds42-51.json.gz)
+- [machine-readable seeded results, correlation sweep](https://github.com/MSKazemi/idkmesh/blob/main/results/experiments/r1/diversity-correlation-threshold-seeds42-51.json.gz)
 - [compact generated table, correlation sweep](../../results/experiments/r1/diversity-correlation-threshold-seeds42-51.md)
-- [runner](../../randomness_lab/r1_scaling.py)
-- [low-diversity threshold analyzer](../../randomness_lab/r1_low_diversity_threshold.py)
-- [correlation-sweep runner](../../randomness_lab/r1_correlation_threshold.py)
+- [runner](https://github.com/MSKazemi/idkmesh/blob/main/randomness_lab/r1_scaling.py)
+- [low-diversity threshold analyzer](https://github.com/MSKazemi/idkmesh/blob/main/randomness_lab/r1_low_diversity_threshold.py)
+- [correlation-sweep runner](https://github.com/MSKazemi/idkmesh/blob/main/randomness_lab/r1_correlation_threshold.py)
 
 Reproduce from the repository root:
 

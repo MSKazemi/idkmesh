@@ -2,7 +2,7 @@
 
 **Date:** 2026-08-29
 **Source run:** `collaboration-observables.yml` run `33229934255`, head `16f4ba59`, conclusion `success`, cutoff `2026-08-29T02:50:35.294099Z`
-**Committed evidence:** [`results/collaboration/observables-2026-08-29T02-50-35Z.json`](../../results/collaboration/observables-2026-08-29T02-50-35Z.json), [`results/collaboration/snapshot-2026-08-29T02-50-35Z.json`](../../results/collaboration/snapshot-2026-08-29T02-50-35Z.json)
+**Committed evidence:** [`results/collaboration/observables-2026-08-29T02-50-35Z.json`](https://github.com/MSKazemi/idkmesh/blob/main/results/collaboration/observables-2026-08-29T02-50-35Z.json), [`results/collaboration/snapshot-2026-08-29T02-50-35Z.json`](https://github.com/MSKazemi/idkmesh/blob/main/results/collaboration/snapshot-2026-08-29T02-50-35Z.json)
 
 This is a snapshot of one run, not a current status. It is a review candidate for interpretation, not a proven claim about the project's trajectory.
 
