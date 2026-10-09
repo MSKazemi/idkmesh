@@ -105,11 +105,6 @@ def _has_front_matter(path: Path) -> bool:
         return False
 
 
-def _jekyll_private(path: Path) -> bool:
-    """True for sources Jekyll does not publish (any path part starting with ``_``)."""
-    return any(part.startswith("_") for part in path.relative_to(DOCS).parts)
-
-
 def published_pages() -> list[tuple[str, Path]]:
     """Every URL Pages publishes as an HTML page, paired with its source file.
 
@@ -125,21 +120,15 @@ def published_pages() -> list[tuple[str, Path]]:
     * every other Markdown document renders at its ``.html`` path.
 
     Hand-written ``.html`` files other than ``index.html`` are published as-is.
-    Jekyll never publishes paths with a component starting with ``_`` (``_layouts``,
-    ``_includes``, ...), so those sources are skipped.
     """
     pages: list[tuple[str, Path]] = [(BASE, DOCS / "index.html")]
 
     for source in sorted(DOCS.rglob("*.html")):
-        if _jekyll_private(source):
-            continue
         if source.name == "index.html":
             continue
         pages.append((BASE + source.relative_to(DOCS).as_posix(), source))
 
     for source in sorted(DOCS.rglob("*.md")):
-        if _jekyll_private(source):
-            continue
         relative = source.relative_to(DOCS)
         if source.name == "index.md":
             parent = relative.parent.as_posix()
