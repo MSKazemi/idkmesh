@@ -14,6 +14,15 @@ and the release notes for that tag.
 
 ### Added
 
+- Canonical capability truth matrix for issue #944:
+  `docs/capability-matrix-v1.json` is the machine-readable public claim
+  boundary, with generated human/site projections and a normal-CI drift guard.
+  Release wording must use the matrix's `verified_revision` and the #943
+  evidence level (0 planned through 5 production-qualified) rather than
+  inferring maturity from code presence alone. This matrix/drift mechanism is
+  evidence level 1 (implemented); it does not promote the project itself to
+  production-qualified.
+
 - Privacy-safe API observability slice for issue #744: the loopback Control
   Tower now exposes authenticated `GET /api/v1/metrics` with fixed-cardinality
   request/status/error counters, cumulative latency buckets, concurrency and
