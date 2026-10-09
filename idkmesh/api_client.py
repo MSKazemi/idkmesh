@@ -1,6 +1,11 @@
 """Dependency-free Python client for the local IDKMesh Control Tower API.
 
-API-11A (#746) intentionally covers the stable read/inspection surfaces only.
+API-11A (#746) intentionally covers the stable read/inspection surfaces only:
+capability status, evidence inspection, the resource-oriented read model
+(runs, run attempts, retained run evidence, derived WorkUnits and projects),
+and keyset-paginated event listings. Human-decision recording is deliberately
+absent until the authenticated mutation adapter (#740) exists.
+
 The current Control Tower is loopback-only, so this client refuses non-loopback
 base URLs rather than risking disclosure of the local session token.
 
@@ -105,12 +110,20 @@ class ApiResult(Generic[T]):
 
 
 @dataclass(frozen=True)
-class EventPage:
-    """One bounded keyset-paginated page from the event-list endpoint."""
+class ListPage:
+    """One bounded keyset-paginated page from a list endpoint.
+
+    ``next_cursor`` stays opaque: clients must echo it verbatim and never
+    construct or interpret cursors themselves.
+    """
 
     items: tuple[dict[str, Any], ...]
     next_cursor: str | None
     limit: int
+
+
+# The first list surface was the event listing; keep the name as a stable alias.
+EventPage = ListPage
 
 
 def _reject_json_constant(token: str) -> Any:
@@ -160,6 +173,39 @@ def _optional_filter(value: str | None, field: str) -> str | None:
     if value is None:
         return None
     return _resource_id(value, field)
+
+
+def _list_limit(limit: int) -> int:
+    if (
+        isinstance(limit, bool)
+        or not isinstance(limit, int)
+        or not (1 <= limit <= MAX_LIST_LIMIT)
+    ):
+        raise ClientConfigurationError(
+            f"limit must be an integer between 1 and {MAX_LIST_LIMIT}"
+        )
+    return limit
+
+
+def _list_query(
+    *,
+    limit: int,
+    cursor: str | None,
+    filters: Mapping[str, str | None],
+) -> list[tuple[str, str]]:
+    """Build one bounded list query string; validation happens before I/O."""
+    query_items: list[tuple[str, str]] = [("limit", str(_list_limit(limit)))]
+    if cursor is not None:
+        query_items.append(("cursor", _resource_id(cursor, "cursor")))
+    query_items.extend(
+        (name, value)
+        for name, value in (
+            (name, _optional_filter(value, name))
+            for name, value in filters.items()
+        )
+        if value is not None
+    )
+    return query_items
 
 
 class ControlTowerClient:
@@ -362,6 +408,62 @@ class ControlTowerClient:
             )
         return result
 
+    @staticmethod
+    def _expect_identity(actual: Any, expected: str, field: str) -> None:
+        """Fail closed unless the response names the requested resource."""
+        if actual != expected:
+            raise ProtocolError(
+                f"response {field} does not match the request: "
+                f"expected {expected!r}, got {actual!r}"
+            )
+
+    def _list_document(
+        self,
+        resource: str,
+        query_items: list[tuple[str, str]],
+    ) -> ApiResult[ListPage]:
+        """Fetch and strictly parse one ``idkmesh-list`` page document."""
+        raw = self._request(
+            "GET",
+            f"/api/{API_VERSION}/{resource}?{urlencode(query_items)}",
+        )
+        document = raw.value
+        if document.get("kind") != "idkmesh-list":
+            raise ProtocolError(
+                f"expected response kind 'idkmesh-list', got {document.get('kind')!r}"
+            )
+        items = document.get("items")
+        page = document.get("page")
+        if not isinstance(items, list) or not isinstance(page, Mapping):
+            raise ProtocolError("list response has invalid page structure")
+        next_cursor = page.get("next_cursor")
+        applied_limit = page.get("limit")
+        if next_cursor is not None and (
+            not isinstance(next_cursor, str) or not next_cursor
+        ):
+            raise ProtocolError("list next_cursor must be null or non-empty")
+        if (
+            isinstance(applied_limit, bool)
+            or not isinstance(applied_limit, int)
+            or applied_limit < 1
+        ):
+            raise ProtocolError("list limit is invalid")
+        normalized_items: list[dict[str, Any]] = []
+        for index, item in enumerate(items):
+            if not isinstance(item, dict):
+                raise ProtocolError(
+                    f"list item {index} must be a JSON object"
+                )
+            normalized_items.append(dict(item))
+        return ApiResult(
+            value=ListPage(
+                items=tuple(normalized_items),
+                next_cursor=next_cursor,
+                limit=applied_limit,
+            ),
+            metadata=raw.metadata,
+        )
+
     def status(self) -> ApiResult[dict[str, Any]]:
         """Return authenticated capability/status discovery plus request ID."""
         return self._expect_kind(
@@ -405,10 +507,15 @@ class ControlTowerClient:
     def get_run(self, run_id: str) -> ApiResult[dict[str, Any]]:
         """Read one durable Product Spine run without altering it."""
         encoded = quote(_resource_id(run_id, "run_id"), safe="/:")
-        return self._expect_kind(
+        result = self._expect_kind(
             self._request("GET", f"/api/{API_VERSION}/runs/{encoded}"),
             kind="idkmesh-control-tower-run-response",
         )
+        run = result.value.get("run")
+        if not isinstance(run, Mapping):
+            raise ProtocolError("run response is missing its run resource")
+        self._expect_identity(run.get("run_id"), run_id, "run.run_id")
+        return result
 
     def get_run_evidence(
         self,
@@ -423,6 +530,7 @@ class ControlTowerClient:
             ),
             kind="idkmesh-control-tower-run-evidence-response",
         )
+        self._expect_identity(result.value.get("run_id"), run_id, "run_id")
         report = result.value.get("evidence_report")
         expected = result.value.get("evidence_report_digest")
         if (
@@ -441,6 +549,93 @@ class ControlTowerClient:
             )
         return result
 
+    def get_run_attempts(self, run_id: str) -> ApiResult[dict[str, Any]]:
+        """Read one run's attempt rows without altering the run."""
+        encoded = quote(_resource_id(run_id, "run_id"), safe="/:")
+        result = self._expect_kind(
+            self._request(
+                "GET",
+                f"/api/{API_VERSION}/runs/{encoded}/attempts",
+            ),
+            kind="idkmesh-control-tower-run-attempts-response",
+        )
+        self._expect_identity(result.value.get("run_id"), run_id, "run_id")
+        if not isinstance(result.value.get("attempts"), list):
+            raise ProtocolError("run attempts response has invalid attempts")
+        return result
+
+    def list_runs(
+        self,
+        *,
+        limit: int = 50,
+        cursor: str | None = None,
+        state: str | None = None,
+        project_id: str | None = None,
+    ) -> ApiResult[ListPage]:
+        """Return one bounded run page; exact-match filters, opaque cursors.
+
+        ``state`` is matched exactly and an unrecognized value fails with
+        ``invalid_state`` from the server (API Conventions v0.1 section 11);
+        the client deliberately keeps no state vocabulary of its own.
+        """
+        return self._list_document(
+            "runs",
+            _list_query(
+                limit=limit,
+                cursor=cursor,
+                filters={"state": state, "project_id": project_id},
+            ),
+        )
+
+    def get_work_unit(self, work_unit_id: str) -> ApiResult[dict[str, Any]]:
+        """Read one derived WorkUnit resource (counts and revisions only)."""
+        encoded = quote(_resource_id(work_unit_id, "work_unit_id"), safe="/:")
+        result = self._expect_kind(
+            self._request("GET", f"/api/{API_VERSION}/work-units/{encoded}"),
+            kind="idkmesh-control-tower-work-unit-response",
+        )
+        resource = result.value.get("work_unit")
+        if not isinstance(resource, Mapping):
+            raise ProtocolError(
+                "work-unit response is missing its work_unit resource"
+            )
+        self._expect_identity(resource.get("id"), work_unit_id, "work_unit.id")
+        return result
+
+    def list_work_units(
+        self,
+        *,
+        limit: int = 50,
+        cursor: str | None = None,
+        project_id: str | None = None,
+    ) -> ApiResult[ListPage]:
+        """Return one bounded WorkUnit page; ordered by WorkUnit id."""
+        return self._list_document(
+            "work-units",
+            _list_query(
+                limit=limit,
+                cursor=cursor,
+                filters={"project_id": project_id},
+            ),
+        )
+
+    def get_project(self, project_id: str) -> ApiResult[dict[str, Any]]:
+        """Read one derived project summary (zero-filled run-state counts)."""
+        encoded = quote(_resource_id(project_id, "project_id"), safe="/:")
+        result = self._expect_kind(
+            self._request("GET", f"/api/{API_VERSION}/projects/{encoded}"),
+            kind="idkmesh-control-tower-project-response",
+        )
+        resource = result.value.get("project")
+        if not isinstance(resource, Mapping):
+            raise ProtocolError(
+                "project response is missing its project resource"
+            )
+        self._expect_identity(
+            resource.get("project_id"), project_id, "project.project_id"
+        )
+        return result
+
     def list_events(
         self,
         *,
@@ -450,71 +645,20 @@ class ControlTowerClient:
         run_id: str | None = None,
         work_unit_id: str | None = None,
         event_type: str | None = None,
-    ) -> ApiResult[EventPage]:
+    ) -> ApiResult[ListPage]:
         """Return one bounded event page; cursors stay opaque to the client."""
-        if (
-            isinstance(limit, bool)
-            or not isinstance(limit, int)
-            or not (1 <= limit <= MAX_LIST_LIMIT)
-        ):
-            raise ClientConfigurationError(
-                f"limit must be an integer between 1 and {MAX_LIST_LIMIT}"
-            )
-        if cursor is not None:
-            cursor = _resource_id(cursor, "cursor")
-        filters = {
-            "project_id": _optional_filter(project_id, "project_id"),
-            "run_id": _optional_filter(run_id, "run_id"),
-            "work_unit_id": _optional_filter(work_unit_id, "work_unit_id"),
-            "event_type": _optional_filter(event_type, "event_type"),
-        }
-        query_items: list[tuple[str, str]] = [("limit", str(limit))]
-        if cursor is not None:
-            query_items.append(("cursor", cursor))
-        query_items.extend(
-            (name, value)
-            for name, value in filters.items()
-            if value is not None
-        )
-        raw = self._request(
-            "GET",
-            f"/api/{API_VERSION}/events?{urlencode(query_items)}",
-        )
-        document = raw.value
-        if document.get("kind") != "idkmesh-list":
-            raise ProtocolError(
-                f"expected response kind 'idkmesh-list', got {document.get('kind')!r}"
-            )
-        items = document.get("items")
-        page = document.get("page")
-        if not isinstance(items, list) or not isinstance(page, Mapping):
-            raise ProtocolError("event list response has invalid page structure")
-        next_cursor = page.get("next_cursor")
-        applied_limit = page.get("limit")
-        if next_cursor is not None and (
-            not isinstance(next_cursor, str) or not next_cursor
-        ):
-            raise ProtocolError("event list next_cursor must be null or non-empty")
-        if (
-            isinstance(applied_limit, bool)
-            or not isinstance(applied_limit, int)
-            or applied_limit < 1
-        ):
-            raise ProtocolError("event list limit is invalid")
-        normalized_items: list[dict[str, Any]] = []
-        for index, item in enumerate(items):
-            if not isinstance(item, dict):
-                raise ProtocolError(
-                    f"event list item {index} must be a JSON object"
-                )
-            normalized_items.append(dict(item))
-        return ApiResult(
-            value=EventPage(
-                items=tuple(normalized_items),
-                next_cursor=next_cursor,
-                limit=applied_limit,
+        return self._list_document(
+            "events",
+            _list_query(
+                limit=limit,
+                cursor=cursor,
+                filters={
+                    "project_id": project_id,
+                    "run_id": run_id,
+                    "work_unit_id": work_unit_id,
+                    "event_type": event_type,
+                },
             ),
-            metadata=raw.metadata,
         )
 
 
@@ -526,6 +670,7 @@ __all__ = [
     "ControlTowerClientError",
     "EventPage",
     "IntegrityError",
+    "ListPage",
     "ProtocolError",
     "ResponseMetadata",
     "TransportError",

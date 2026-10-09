@@ -14,6 +14,43 @@ and the release notes for that tag.
 
 ### Added
 
+- API-11A client read-model completion for issue #746: the official
+  dependency-free Python client (`idkmesh.api_client.ControlTowerClient`) now
+  covers the whole resource-oriented Control Tower read model — `list_runs`
+  (bounded `state`/`project_id` filters, keyset pagination), `get_run_attempts`,
+  `get_work_unit`, `list_work_units`, and `get_project` alongside the existing
+  status/inspection/run/evidence/event methods. Every resource response is
+  identity-bound to the requested id and fails closed with `ProtocolError` on a
+  mismatch; list validation happens before any transport I/O; cursors stay
+  opaque. The client surface is documented in
+  [Control Tower Local API v0.1](docs/specifications/CONTROL_TOWER_LOCAL_API_V0_1.md).
+  Human-decision recording remains absent until the authenticated mutation
+  adapter (issue #740) exists; health/readiness probes, `openapi.json`,
+  `metrics`, and the `events/stream` SSE stream stay plain HTTP.
+- Read-only connector listing on the Control Tower for API-3 / issue #738:
+  authenticated `GET`/`HEAD /api/v1/connections` serves the connection rows
+  `idkmesh connections import` persists, through the existing `/api/v1`
+  service rather than a second HTTP server. Items are a strict public-safe
+  projection (`schemas/idkmesh-connection-resource-v0.1.schema.json`) in the
+  shared `idkmesh-list-v0.1` envelope with bounded keyset pagination and an
+  opaque cursor; secret references and settings are never returned, and a
+  legacy/free-form row fails closed with `500 connection_record_invalid`
+  instead of being serialized. The endpoint is advertised in `openapi.yaml`,
+  the runtime OpenAPI document, and `GET /api/v1/status`, and its 200/400/403/
+  503 responses are runtime representatives in
+  `tests/test_api_contract_conformance.py`. No connector create, probe,
+  enable/disable, secret resolution, dispatch, or provider call is added.
+- Public-safe GitHub evidence projection for issue #609 (C14-D):
+  `idkmesh/github_public_evidence.py` builds a strict whitelist over
+  digest-bound Product Spine, CandidateReference, and Run Evidence Report
+  state, gated by a trusted public-classification policy, and its JSON
+  renderer rejects any mapping outside that whitelist. Raw prompts, logs,
+  provider payloads, warnings, identities, artifact locators, and secrets are
+  never projected, and every authority flag is fixed to `false`. See
+  [GitHub Public Evidence Projection v0.1](docs/specifications/GITHUB_PUBLIC_EVIDENCE_V0_1.md).
+  No Pages generator, GitHub mutation, or repository-visibility probe is
+  included.
+
 - Canonical capability truth matrix for issue #944:
   `docs/capability-matrix-v1.json` is the machine-readable public claim
   boundary, with generated human/site projections and a normal-CI drift guard.
@@ -34,6 +71,19 @@ and the release notes for that tag.
   [API Observability v0.1](docs/specifications/API_OBSERVABILITY_V0_1.md).
   OpenTelemetry export and Human Decision ingestion metrics remain follow-up
   work; no new runtime dependency or actuation authority is introduced.
+
+- Dependency-free OTLP metrics mapping for issue #744:
+  `idkmesh.otel_metrics.build_otlp_metrics_request()` converts one validated
+  API operational-metrics document into an OTLP `ExportMetricsServiceRequest`
+  JSON object (cumulative monotonic sums, gauges, and a histogram whose
+  cumulative source buckets are differenced into OTLP per-bucket counts), and
+  `render_otlp_metrics_json()` renders it as deterministic strict JSON. The
+  adapter is transport-free (no network I/O, credentials, retries, spans, or
+  clock reads) and fails closed if the source document is inconsistent,
+  relaxes its privacy flags or authority ceiling, or manufactures a
+  `not_implemented` counter. A collector transport and Human Decision
+  ingestion telemetry remain follow-up work under #744. See
+  [API Observability v0.1](docs/specifications/API_OBSERVABILITY_V0_1.md).
 
 - Enterprise Audit Ledger v0.1 (issue #671): a dedicated SQLite append-only
   security/audit stream separate from ordinary logs and Product Spine events.

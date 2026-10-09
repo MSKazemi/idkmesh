@@ -179,6 +179,120 @@ class LiveServerTests(ClientServerCase):
                 second.value.items[0]["event_id"],
             )
 
+    def test_list_runs_pages_and_filters_by_exact_state(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            store = str(Path(tmp) / "state.sqlite")
+            self.seed(store, "run/client-one", "run/client-two")
+            _server, client = self.start_server(store)
+
+            first = client.list_runs(limit=1, project_id="project.client")
+            self.assertEqual(len(first.value.items), 1)
+            self.assertIsNotNone(first.value.next_cursor)
+
+            second = client.list_runs(
+                limit=1,
+                cursor=first.value.next_cursor,
+                project_id="project.client",
+            )
+            self.assertEqual(len(second.value.items), 1)
+            self.assertIsNone(second.value.next_cursor)
+            self.assertNotEqual(
+                first.value.items[0]["run_id"],
+                second.value.items[0]["run_id"],
+            )
+
+            matched = client.list_runs(
+                state="proposed",
+                project_id="project.client",
+            )
+            self.assertEqual(len(matched.value.items), 2)
+
+            empty = client.list_runs(
+                state="cancelled",
+                project_id="project.client",
+            )
+            self.assertEqual(empty.value.items, ())
+
+            with self.assertRaises(ApiResponseError) as caught:
+                client.list_runs(state="not-a-state")
+            self.assertEqual(caught.exception.code, "invalid_state")
+            self.assertEqual(caught.exception.status_code, 400)
+
+    def test_get_run_attempts_echoes_the_requested_run(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            store = str(Path(tmp) / "state.sqlite")
+            self.seed(store, "run/client-one")
+            _server, client = self.start_server(store)
+            result = client.get_run_attempts("run/client-one")
+
+        self.assertEqual(
+            result.value["kind"],
+            "idkmesh-control-tower-run-attempts-response",
+        )
+        self.assertEqual(result.value["run_id"], "run/client-one")
+        self.assertEqual(result.value["attempts"], [])
+
+    def test_work_unit_and_project_reads_expose_derived_resources(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            store = str(Path(tmp) / "state.sqlite")
+            self.seed(store, "run/client-one")
+            _server, client = self.start_server(store)
+
+            work_unit = client.get_work_unit("work/client-one")
+            resource = work_unit.value["work_unit"]
+            self.assertEqual(resource["id"], "work/client-one")
+            self.assertEqual(resource["run_count"], 1)
+            self.assertEqual(resource["revisions"][0]["source_revision"], SHA)
+
+            page = client.list_work_units(project_id="project.client")
+            self.assertEqual(
+                [item["id"] for item in page.value.items],
+                ["work/client-one"],
+            )
+
+            project = client.get_project("project.client")
+            summary = project.value["project"]
+            self.assertEqual(summary["project_id"], "project.client")
+            self.assertEqual(summary["run_count"], 1)
+            self.assertEqual(summary["work_unit_count"], 1)
+            self.assertEqual(summary["runs_by_state"]["proposed"], 1)
+            self.assertEqual(sum(summary["runs_by_state"].values()), 1)
+
+    def test_unknown_resources_fail_with_stable_error_codes(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            store = str(Path(tmp) / "state.sqlite")
+            self.seed(store, "run/client-one")
+            _server, client = self.start_server(store)
+
+            cases = [
+                (
+                    "get_run",
+                    "run_not_found",
+                    lambda: client.get_run("run/missing"),
+                ),
+                (
+                    "get_run_attempts",
+                    "run_not_found",
+                    lambda: client.get_run_attempts("run/missing"),
+                ),
+                (
+                    "get_work_unit",
+                    "work_unit_not_found",
+                    lambda: client.get_work_unit("work/missing"),
+                ),
+                (
+                    "get_project",
+                    "project_not_found",
+                    lambda: client.get_project("project.missing"),
+                ),
+            ]
+            for name, expected_code, call in cases:
+                with self.subTest(method=name):
+                    with self.assertRaises(ApiResponseError) as caught:
+                        call()
+                    self.assertEqual(caught.exception.code, expected_code)
+                    self.assertEqual(caught.exception.status_code, 404)
+
     def test_api_error_exposes_stable_code_retryability_and_request_id(self):
         server, _client = self.start_server()
         wrong = ControlTowerClient(
@@ -335,14 +449,86 @@ class FailClosedTransportTests(unittest.TestCase):
                     {"kind": "idkmesh-run-evidence-report"}
                 )
 
-    def test_event_limit_validation_happens_before_transport(self):
+    def test_list_limit_validation_happens_before_transport(self):
         client = self.client()
-        with mock.patch(
-            "idkmesh.api_client.http.client.HTTPConnection"
-        ) as factory:
-            with self.assertRaises(ClientConfigurationError):
-                client.list_events(limit=0)
-        factory.assert_not_called()
+        for method in (
+            client.list_events,
+            client.list_runs,
+            client.list_work_units,
+        ):
+            with self.subTest(method=method.__name__):
+                with mock.patch(
+                    "idkmesh.api_client.http.client.HTTPConnection"
+                ) as factory:
+                    with self.assertRaises(ClientConfigurationError):
+                        method(limit=0)
+                factory.assert_not_called()
+
+    def test_resource_identity_mismatch_fails_closed(self):
+        client = self.client()
+        # A well-formed, digest-consistent evidence binding, so only the
+        # run_id identity check can reject the evidence response below.
+        report = {"kind": "idkmesh-run-evidence-report"}
+        cases = [
+            (
+                client.get_run,
+                "run/example",
+                {
+                    "kind": "idkmesh-control-tower-run-response",
+                    "run": {"run_id": "run/other"},
+                },
+            ),
+            (
+                client.get_run_evidence,
+                "run/example",
+                {
+                    "kind": "idkmesh-control-tower-run-evidence-response",
+                    "run_id": "run/other",
+                    "evidence_report_digest": canonical_digest(report),
+                    "evidence_report": report,
+                },
+            ),
+            (
+                client.get_run_attempts,
+                "run/example",
+                {
+                    "kind": "idkmesh-control-tower-run-attempts-response",
+                    "run_id": "run/other",
+                    "attempts": [],
+                },
+            ),
+            (
+                client.get_work_unit,
+                "work/example",
+                {
+                    "kind": "idkmesh-control-tower-work-unit-response",
+                    "work_unit": {"id": "work/other"},
+                },
+            ),
+            (
+                client.get_project,
+                "project.example",
+                {
+                    "kind": "idkmesh-control-tower-project-response",
+                    "project": {"project_id": "project.other"},
+                },
+            ),
+        ]
+        for method, resource_id, document in cases:
+            with self.subTest(method=method.__name__):
+                result = ApiResult(
+                    value=document,
+                    metadata=ResponseMetadata(
+                        status_code=200,
+                        request_id="req_test",
+                        content_digest=canonical_digest(document),
+                    ),
+                )
+                with mock.patch.object(client, "_request", return_value=result):
+                    with self.assertRaisesRegex(
+                        ProtocolError, "does not match the request"
+                    ):
+                        method(resource_id)
 
 
 if __name__ == "__main__":

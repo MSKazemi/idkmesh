@@ -7,9 +7,13 @@ canonical files designated by [`../../PROJECT_RULES.md`](../../PROJECT_RULES.md)
 (decisions, specifications, architecture, findings); this directory keeps the trail
 that produced them.
 
-175 records across 11 dates, newest first.
+176 records across 12 dates, newest first.
 
 ## Index
+
+### 2026-10-08
+
+- [Parallel worker 01 — issue #630 completion](2026-10-08-parallel-worker-01-issue-630.md)
 
 ### 2026-10-07
 

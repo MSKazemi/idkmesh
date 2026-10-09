@@ -595,7 +595,12 @@ conforming production backend.
   must bind repository + exact 40/64-hex commit + safe file path; moving
   branch/tag links, Actions artifacts, and ambiguous URL forms fail closed.
   Both the Actions summary and C14-B status comment use the shared validator.
-- **C14-D — public-safe evidence projection/filter.**
+- **C14-D — public-safe evidence projection/filter.** Implemented by
+  `idkmesh/github_public_evidence.py`
+  ([contract](../specifications/GITHUB_PUBLIC_EVIDENCE_V0_1.md)): strict
+  whitelist over digest-bound Product Spine/evidence metadata; raw
+  prompts/logs/provider payloads/secrets and all actuation authority stay
+  excluded, and the renderer rejects any mapping outside the whitelist.
 - **C14-E — read-only GitHub Pages generator.**
 - **C14-F — pilot release metadata/provenance.**
 - **C14-G — optional artifact attestation integration.**
