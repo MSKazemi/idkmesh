@@ -17,6 +17,7 @@ green. This module resolves those links instead.
 Three link kinds are checked:
 
 ``assets/site.css``, ``start.html``      page-relative, must exist under ``docs/``
+``research/R2_….html``                   page-relative, a page Jekyll renders from tracked Markdown
 ``#main``                                a fragment, whose ``id`` must exist on the page
 ``.../blob/main/README.md``              a repository file, which must be tracked
 
@@ -24,6 +25,12 @@ Resolution is against the git **index**, not the filesystem, for the same
 reason ``test_local_asset_link_integrity`` gives: an untracked file exists on a
 developer machine and not in a fresh CI checkout, and a link to one must not
 pass locally and fail the gate.
+
+A rendered page has no ``.html`` file in the tree, so it resolves through
+``tools.build_sitemap.published_pages()`` — the same publication rules the
+sitemap is built from — and its Markdown source must be tracked. That is what
+lets the hubs link to the site's own pages rather than to GitHub source, which
+left most of the site unreachable from the homepage by links.
 """
 
 from __future__ import annotations
@@ -33,6 +40,8 @@ from pathlib import Path
 from urllib.parse import unquote, urlsplit
 import subprocess
 import unittest
+
+from tools.build_sitemap import BASE as SITE_BASE, published_pages
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DOCS = REPO_ROOT / "docs"
@@ -120,6 +129,32 @@ def tracked_paths(root: Path) -> frozenset[str]:
     return frozenset(known)
 
 
+def rendered_pages() -> dict[str, str]:
+    """Repo path of each page Jekyll renders from Markdown -> its tracked-or-not source.
+
+    Keyed by the path the page *would* have under ``docs/`` (``docs/X.html``),
+    because that is what a page-relative ``X.html`` href resolves to.
+    """
+
+    rendered: dict[str, str] = {}
+    for url, source in published_pages():
+        if source.suffix != ".md" or url.endswith("/"):
+            continue
+        page = "docs/" + url[len(SITE_BASE):]
+        rendered[page] = str(source.resolve().relative_to(REPO_ROOT.resolve()))
+    return rendered
+
+
+_RENDERED: dict[str, str] | None = None
+
+
+def rendered_source(resolved: str) -> str | None:
+    global _RENDERED
+    if _RENDERED is None:
+        _RENDERED = rendered_pages()
+    return _RENDERED.get(resolved)
+
+
 def site_pages(docs: Path) -> list[Path]:
     return sorted(docs.glob("*.html"))
 
@@ -169,6 +204,11 @@ def classify(page: Path, href: str, known: frozenset[str]) -> tuple[str, str]:
         return "ok", resolved
     # A directory link such as "./" resolves to docs/ itself.
     if resolved not in known:
+        # A page Jekyll renders from Markdown: published, but only from a
+        # tracked source. Its fragments are kramdown ids and are not resolved.
+        source = rendered_source(resolved)
+        if source is not None and source in known:
+            return "ok", f"{resolved} (rendered from {source})"
         return "missing", resolved
     # A fragment on another *site* page is resolvable, so resolve it: a
     # renamed section id is exactly the kind of rot that reaches a reader as a

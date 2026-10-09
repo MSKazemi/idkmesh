@@ -73,7 +73,7 @@ Provider-specific coordinator branches duplicate policy and make trust behavior 
 <a id="q-where-is-the-idkmesh-mapping-documented"></a>
 ### Where is the IDKMesh mapping documented?
 
-Read the [A2A/MCP mapping](https://github.com/MSKazemi/idkmesh/blob/main/docs/interoperability/A2A_MCP_MAPPING_V0_1.md) and [connector-control-plane architecture](https://github.com/MSKazemi/idkmesh/blob/main/docs/architecture/AGENT_MODEL_CONNECTOR_CONTROL_PLANE.md).
+Read the [A2A/MCP mapping](https://mskazemi.com/idkmesh/interoperability/A2A_MCP_MAPPING_V0_1.html) and [connector-control-plane architecture](https://mskazemi.com/idkmesh/architecture/AGENT_MODEL_CONNECTOR_CONTROL_PLANE.html).
 
 <a id="q-when-should-i-use-mcp-instead-of-a2a"></a>
 ### When should I use MCP instead of A2A?

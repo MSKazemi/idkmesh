@@ -58,7 +58,7 @@ CI provides deterministic evidence about declared checks. It does not establish 
 <a id="q-where-does-idkmesh-automate-coding-agent-work"></a>
 ### Where does IDKMesh automate coding-agent work?
 
-See [Jules automation](https://github.com/MSKazemi/idkmesh/blob/main/docs/operations/JULES_AUTOMATION.md), the [connector control plane](https://github.com/MSKazemi/idkmesh/blob/main/docs/architecture/AGENT_MODEL_CONNECTOR_CONTROL_PLANE.md), and the repository [contribution rules](https://github.com/MSKazemi/idkmesh/blob/main/CONTRIBUTING.md).
+See [Jules automation](https://mskazemi.com/idkmesh/operations/JULES_AUTOMATION.html), the [connector control plane](https://mskazemi.com/idkmesh/architecture/AGENT_MODEL_CONNECTOR_CONTROL_PLANE.html), and the repository [contribution rules](https://github.com/MSKazemi/idkmesh/blob/main/CONTRIBUTING.md).
 
 <a id="q-can-ai-code-review-replace-human-code-review"></a>
 ### Can AI code review replace human code review?
