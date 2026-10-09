@@ -43,6 +43,11 @@ meaning of an existing version.
   release SBOM/checksum/source-workflow identity evidence, immutable-pinned
   GitHub build provenance, consumer verification, and vulnerability/update
   policy for enterprise release integrity (#674).
+- [GitHub Public Evidence Projection v0.1](GITHUB_PUBLIC_EVIDENCE_V0_1.md) —
+  strict C14-D whitelist for public GitHub publication: exact digest-bound
+  run/candidate/verification metadata only, with raw evidence, logs, prompts,
+  provider payloads, identities, artifact locators, secrets, and all actuation
+  authority excluded.
 - [Verification Provenance Integrity](VERIFICATION_PROVENANCE_INTEGRITY.md) —
   binds WorkUnit, result, and verification objects with canonical digests.
 
