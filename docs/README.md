@@ -30,6 +30,7 @@ Different documents serve different roles. When two files appear to disagree, pr
 | Role | Primary source |
 | --- | --- |
 | project identity and current public status | [`../README.md`](../README.md) |
+| canonical capability/claim truth | [`CAPABILITY_MATRIX.md`](CAPABILITY_MATRIX.md), [`capability-matrix-v1.json`](capability-matrix-v1.json) |
 | canonical evolution vocabulary / authority lifecycle | [`../ITERATION_MODEL.md`](../ITERATION_MODEL.md) |
 | high-level current architecture | [`../ARCHITECTURE.md`](../ARCHITECTURE.md) |
 | machine-readable protocol truth | [`../schemas/`](../schemas/README.md) |

@@ -1307,6 +1307,7 @@ and each is proven by `tests/test_control_tower_limits.py`.
 | --- | --- | --- | --- |
 | Request timeout | 10 s (`--request-timeout`, 0.1-300) | socket timeout on every connection; a stalled request line or headers drop the connection, a stalled body answers `408 request_timeout` | `SlowClientTests` |
 | Concurrent requests | 16 (`--max-concurrent-requests`, 1-1024) | non-blocking `RequestLimiter`; beyond the cap `503 overloaded` + `Retry-After`, no application work, connection closed | `OverloadTests`, `RequestLimiterTests` |
+| Concurrent evidence inspection | same general cap | independent `POST /api/v1/run-evidence/inspect` requests execute concurrently inside the cap and remain deterministic for the same evidence | `ConcurrentInspectionTests` |
 | Queue | listen backlog 16 | `request_queue_size`; there is no application wait queue | `OverloadTests` |
 | Retry hint | `Retry-After: 1` | on every 503 from the cap or a drain; the error body also carries `retryable: true` | `OverloadTests`, `DrainTests` |
 | Graceful drain | 5 s | `ControlTowerServer.drain()`: new requests `503 shutting_down`, then waits for in-flight requests; `serve_control_tower` calls it on shutdown | `DrainTests` |
@@ -1315,6 +1316,7 @@ and each is proven by `tests/test_control_tower_limits.py`.
 | Header fields | 99 | stdlib parser, `431` at 100 (the stdlib allows 100 lines but counts the blank line ending the header block) | `ParserBoundTests` |
 | Request body | 2 MiB | `413 payload_too_large`; one global cap, only `POST /api/v1/run-evidence/inspect` reads a body; an oversized declared length is rejected before body read | `RequestBodyBoundTests` |
 | Connections | one request each | stdlib HTTP/1.0 default; no keep-alive | `ConnectionPolicyTests` |
+| Client cancellation/disconnect | n/a | an admitted request always releases its limiter slot in `finally`; interrupted work is not retried, and a later request can immediately reuse the capacity | `CancellationTests` |
 | SSE clients | 8 (`--max-sse-clients`, 1-64) | a separate non-blocking `RequestLimiter` for `GET /api/v1/events/stream`; beyond it `503 too_many_streams` + `Retry-After` | `EventStreamLimitTests` (`tests/test_control_tower_events.py`) |
 | SSE heartbeat | 15 s | `: keepalive` comment on an idle stream | `EventStreamLimitTests` (`tests/test_control_tower_events.py`) |
 | SSE stream lifetime | 300 s | the server ends the stream; the client resumes with `Last-Event-ID` | `EventStreamLimitTests` (`tests/test_control_tower_events.py`) |
@@ -1331,6 +1333,10 @@ Semantics:
 - A `POST` rejected at the cap is answered without reading its body and the
   connection is closed, so a client sending a large body may see a connection
   reset instead of the `503`.
+- If a client disconnects after admission, the handler may finish the
+  read-only/inspection work but never retries it; the general or SSE limiter
+  slot is released even when writing the response fails. A disconnect therefore
+  abandons only that response, not server capacity.
 - Every endpoint is read-only or a pure inspection, so a drain cannot leave a
   partially committed mutation.
 - The cap bounds concurrent request *handling*, not accepted connections: a
