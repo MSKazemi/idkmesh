@@ -157,6 +157,96 @@ class GitHubLedgerRecordContractTests(unittest.TestCase):
         document["previous_record_digest"] = None
         self.validator.validate(document)
 
+    def test_chain_link_must_match_sequence_position(self):
+        first_with_link = copy.deepcopy(self.example)
+        first_with_link["ledger_sequence"] = 1
+        self.assert_invalid(first_with_link)
+
+        later_without_link = copy.deepcopy(self.example)
+        later_without_link["previous_record_digest"] = None
+        self.assert_invalid(later_without_link)
+
+    def test_evidence_path_matches_durable_link_path_rules(self):
+        # Same safe-path rules as idkmesh.github_evidence_link (C14-C), so a
+        # retained ledger path can later become an exact-commit permalink.
+        for path in (
+            "/etc/passwd",
+            "ledger//candidate.json",
+            "ledger/./candidate.json",
+            "ledger/evidence/",
+            "./candidate.json",
+            "..",
+            "ledger\\candidate.json",
+        ):
+            with self.subTest(path=path):
+                document = copy.deepcopy(self.example)
+                document["candidate_reference"] = {
+                    "kind": "candidate_reference",
+                    "digest": "sha256:" + "d" * 64,
+                    "storage_path": path,
+                }
+                self.assert_invalid(document)
+
+        document = copy.deepcopy(self.example)
+        document["candidate_reference"] = {
+            "kind": "candidate_reference",
+            "digest": "sha256:" + "d" * 64,
+            "storage_path": "candidate.v1.json",
+        }
+        self.validator.validate(document)
+
+    def test_evidence_kind_must_match_its_slot(self):
+        mismatched = {
+            "kind": "verification_result",
+            "digest": "sha256:" + "d" * 64,
+            "storage_path": None,
+        }
+        for slot in ("candidate_reference", "result_manifest"):
+            with self.subTest(slot=slot):
+                document = copy.deepcopy(self.example)
+                document[slot] = dict(mismatched)
+                self.assert_invalid(document)
+
+        document = copy.deepcopy(self.example)
+        document["verification_results"] = [
+            dict(mismatched, kind="result_manifest")
+        ]
+        self.assert_invalid(document)
+
+        document = copy.deepcopy(self.example)
+        document["human_decision"] = {
+            "state": "recorded",
+            "record": dict(mismatched, kind="candidate_reference"),
+        }
+        self.assert_invalid(document)
+
+    def test_human_decision_record_requires_recorded_state(self):
+        record = {
+            "kind": "human_decision_record",
+            "digest": "sha256:" + "d" * 64,
+            "storage_path": "ledger/decisions/decision-1.json",
+        }
+        for state in ("not_recorded", "pending"):
+            with self.subTest(state=state):
+                document = copy.deepcopy(self.example)
+                document["human_decision"] = {"state": state, "record": record}
+                self.assert_invalid(document)
+
+        document = copy.deepcopy(self.example)
+        document["human_decision"] = {"state": "recorded", "record": record}
+        self.validator.validate(document)
+
+    def test_github_delivery_id_matches_webhook_ingress_form(self):
+        for value in ("", "delivery 003", "-leading", "x" * 129, "id/slash"):
+            with self.subTest(value=value):
+                document = copy.deepcopy(self.example)
+                document["event"]["github_delivery_id"] = value
+                self.assert_invalid(document)
+
+        document = copy.deepcopy(self.example)
+        document["event"]["github_delivery_id"] = None
+        self.validator.validate(document)
+
     def test_record_is_closed_at_every_security_sensitive_object(self):
         self.assertFalse(self.schema["additionalProperties"])
         for definition in (

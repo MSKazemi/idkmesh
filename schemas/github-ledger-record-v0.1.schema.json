@@ -27,6 +27,20 @@
     "failure",
     "authority"
   ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {"ledger_sequence": {"const": 1}},
+        "required": ["ledger_sequence"]
+      },
+      "then": {
+        "properties": {"previous_record_digest": {"type": "null"}}
+      },
+      "else": {
+        "properties": {"previous_record_digest": {"$ref": "#/$defs/digest"}}
+      }
+    }
+  ],
   "properties": {
     "schema_version": {"const": "0.1"},
     "kind": {"const": "idkmesh-github-ledger-record"},
@@ -66,19 +80,28 @@
     "candidate_reference": {
       "anyOf": [
         {"type": "null"},
-        {"$ref": "#/$defs/evidenceRef"}
+        {
+          "$ref": "#/$defs/evidenceRef",
+          "properties": {"kind": {"const": "candidate_reference"}}
+        }
       ]
     },
     "result_manifest": {
       "anyOf": [
         {"type": "null"},
-        {"$ref": "#/$defs/evidenceRef"}
+        {
+          "$ref": "#/$defs/evidenceRef",
+          "properties": {"kind": {"const": "result_manifest"}}
+        }
       ]
     },
     "verification_results": {
       "type": "array",
       "maxItems": 32,
-      "items": {"$ref": "#/$defs/evidenceRef"}
+      "items": {
+        "$ref": "#/$defs/evidenceRef",
+        "properties": {"kind": {"const": "verification_result"}}
+      }
     },
     "human_decision": {"$ref": "#/$defs/humanDecision"},
     "failure": {
@@ -113,9 +136,9 @@
       "type": "string",
       "minLength": 1,
       "maxLength": 1024,
-      "pattern": "^[A-Za-z0-9._/-]+$",
+      "pattern": "^[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)*$",
       "not": {
-        "pattern": "(^|/)\\.\\.(/|$)"
+        "pattern": "(^|/)\\.{1,2}(/|$)"
       }
     },
     "event": {
@@ -186,9 +209,13 @@
           }
         },
         "github_delivery_id": {
-          "type": ["string", "null"],
-          "minLength": 1,
-          "maxLength": 128
+          "anyOf": [
+            {"type": "null"},
+            {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+            }
+          ]
         }
       }
     },
@@ -417,9 +444,19 @@
         "record": {
           "anyOf": [
             {"type": "null"},
-            {"$ref": "#/$defs/evidenceRef"}
+            {
+              "$ref": "#/$defs/evidenceRef",
+              "properties": {"kind": {"const": "human_decision_record"}}
+            }
           ]
         }
+      },
+      "if": {
+        "properties": {"state": {"enum": ["not_recorded", "pending"]}},
+        "required": ["state"]
+      },
+      "then": {
+        "properties": {"record": {"type": "null"}}
       }
     },
     "failure": {

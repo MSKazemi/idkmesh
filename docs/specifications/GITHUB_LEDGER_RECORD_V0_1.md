@@ -32,7 +32,8 @@ One ledger record is one immutable event observation. It contains:
 1. repository/project/run identity;
 2. a monotonic ledger sequence and previous-record digest reference;
 3. event identity, timestamp, state, trigger, initiating GitHub actor, and
-   optional delivery ID;
+   optional delivery ID in the same canonical form accepted by
+   [GitHub Webhook Ingress v0.1](GITHUB_WEBHOOK_INGRESS_V0_1.md);
 4. exact WorkUnit ID/version/digest and 40/64-hex source revision;
 5. route/policy evidence;
 6. deterministic dispatch idempotency identity;
@@ -73,6 +74,10 @@ Every record carries:
 - `dispatch_key`;
 - canonical `request_digest`;
 - `attempt_number`.
+
+When an `attempt` object is present, its `attempt_number` must equal
+`idempotency.attempt_number`. JSON Schema cannot express that cross-field
+equality, so C9-B/C9-E writers and readers must enforce it.
 
 The schema does not itself reserve or execute that key. C9-D must define atomic
 admission semantics so:
@@ -117,8 +122,23 @@ A retained reference contains only:
 - canonical SHA-256 digest;
 - optional repository-relative storage path.
 
-Repository-relative paths are bounded and reject `..` traversal. They are
-references to separately retained evidence; a digest/reference is not a verdict.
+The evidence kind is bound to its slot: `candidate_reference` holds only a
+`candidate_reference`, `result_manifest` only a `result_manifest`, every
+`verification_results` item only a `verification_result`, and
+`human_decision.record` only a `human_decision_record`. A recovery reader can
+therefore trust the slot without re-deriving the kind.
+
+Repository-relative paths are bounded and follow the same safe-path rules as the
+C14-C durable evidence-link contract (`idkmesh.github_evidence_link`): no
+leading or trailing `/`, no empty, `.` or `..` segments, and no backslashes.
+They are references to separately retained evidence; a digest/reference is not
+a verdict.
+
+A `storage_path` is not by itself a durable link. Presentation surfaces that
+want a GitHub permalink must combine it with the repository and the exact
+40/64-hex commit that retains the file, as required by
+[GitHub-First Operations §14.2](GITHUB_FIRST_OPERATIONS_V0_1.md); a moving
+branch/tag link to the ledger branch is not durable evidence.
 
 The ledger record intentionally does not use Actions artifacts/caches as a
 canonical evidence locator because those have finite retention. C9-H will
@@ -133,7 +153,8 @@ Human decision state is explicit:
 - `recorded`.
 
 When recorded, the ledger may carry the retained Human Decision Record digest
-and repository-relative reference. It does not execute the decision or grant
+and repository-relative reference. A `not_recorded` or `pending` state must not
+carry a record reference. It does not execute the decision or grant
 integration authority.
 
 ## Failures and negative evidence
@@ -152,8 +173,10 @@ C9-B/C9-E must never reconstruct state by silently dropping negative events.
 `ledger_sequence` and `previous_record_digest` prepare the contract for an
 append-only chain:
 
-- the first record may use `previous_record_digest = null`;
-- each later record points at the canonical digest of the previous record;
+- the first record (`ledger_sequence = 1`) must use
+  `previous_record_digest = null`;
+- each later record must carry a digest pointing at the canonical digest of the
+  previous record (the schema enforces both rules structurally);
 - C9-B defines canonical serialization/digest calculation;
 - C9-C defines compare-and-set/optimistic write semantics.
 
@@ -205,6 +228,15 @@ C9-A does not implement:
 - repository mutation.
 
 Those remain C9-B through C9-H.
+
+## Relationship to other ledgers
+
+This record is the C9 GitHub-native run/dispatch ledger. It is distinct from the
+[Enterprise Audit Ledger v0.1](ENTERPRISE_AUDIT_LEDGER_V0_1.md), which records
+tamper-evident enterprise control-plane audit events in a local store. The two
+share the sequence + previous-digest chain idea but neither replaces the other:
+an enterprise audit event is not a dispatch/idempotency record, and a GitHub
+ledger record is not an enterprise audit event.
 
 ## Compatibility
 
