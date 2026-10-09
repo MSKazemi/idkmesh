@@ -767,6 +767,7 @@ def _status_document_base() -> dict[str, Any]:
             "metrics": "GET /api/v1/metrics",
             "inspect_run_evidence": "POST /api/v1/run-evidence/inspect",
             "list_runs": "GET /api/v1/runs",
+            "list_connections": "GET /api/v1/connections",
             "read_run": "GET /api/v1/runs/{run_id}",
             "read_run_attempts": "GET /api/v1/runs/{run_id}/attempts",
             "read_run_evidence": "GET /api/v1/runs/{run_id}/evidence",
@@ -1033,6 +1034,25 @@ def openapi_document() -> dict[str, Any]:
                         "406": {"description": "Requested response type unsupported"},
                         "413": {"description": "Request body too large"},
                         "415": {"description": "Request content type unsupported"},
+                    },
+                }
+            },
+            "/api/v1/connections": {
+                "get": {
+                    "summary": "List persisted connector control metadata",
+                    "description": "Read-only keyset pagination over secret-free connector records.",
+                    "security": [{"LocalSessionToken": []}],
+                    "parameters": [
+                        {"name": "limit", "in": "query", "required": False,
+                         "schema": {"type": "integer", "minimum": 1, "maximum": 200}},
+                        {"name": "cursor", "in": "query", "required": False,
+                         "schema": {"type": "string"}},
+                    ],
+                    "responses": {
+                        "200": {"description": "One page of connections"},
+                        "400": {"description": "Invalid list query or cursor"},
+                        "403": {"description": "Invalid local session token"},
+                        "503": {"description": "Store not configured"},
                     },
                 }
             },
