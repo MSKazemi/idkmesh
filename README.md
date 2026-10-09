@@ -169,9 +169,13 @@ print(len(events.value.items))
 
 The client requires an explicit timeout, refuses non-loopback destinations,
 exposes the server request ID, verifies response content digests, and performs
-no automatic retries. This first client slice is read/inspect only;
-human-decision recording remains unavailable until its authenticated mutation
-contract is implemented.
+no automatic retries. It covers status, evidence inspection, and the
+resource-oriented read model (runs, run attempts, retained run evidence,
+derived WorkUnits and projects, events); see the
+[Python client section](docs/specifications/CONTROL_TOWER_LOCAL_API_V0_1.md#python-client)
+of the API specification. The client is read/inspect only: human-decision
+recording remains unavailable until its authenticated mutation contract is
+implemented.
 
 Machine-readable discovery is available at
 `/api/v1/openapi.json`, and successful inspection snapshots are frozen by

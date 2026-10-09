@@ -361,6 +361,7 @@ class CatalogScanTests(unittest.TestCase):
             "/api/v1/runs/{run_id}",
             "/api/v1/runs/{run_id}/attempts",
             "/api/v1/runs/{run_id}/evidence",
+            "/api/v1/connections",
             "/api/v1/work-units",
             "/api/v1/work-units/{work_unit_id}",
             "/api/v1/projects/{project_id}",
@@ -732,6 +733,12 @@ REPRESENTATIVES = {
         "path_values": {"run_id": MISSING_RUN_ID}
     },
     ("GET", "/api/v1/runs/{run_id}/evidence", "503"): {"server": "bare"},
+    ("GET", "/api/v1/connections", "200"): {},
+    ("GET", "/api/v1/connections", "400"): {
+        "request_path": "/api/v1/connections?limit=0"
+    },
+    ("GET", "/api/v1/connections", "403"): {"token": False},
+    ("GET", "/api/v1/connections", "503"): {"server": "bare"},
     ("GET", "/api/v1/work-units", "200"): {},
     ("GET", "/api/v1/work-units", "400"): {
         "request_path": "/api/v1/work-units?limit=0"
@@ -850,6 +857,30 @@ class RuntimeResponseConformanceTests(unittest.TestCase):
                 idempotency_key=f"conformance-{run_id}",
                 created_at=f"2026-10-01T00:00:{index:02d}Z",
             )
+        # Two canonical connector summaries in the same store, shaped exactly
+        # like the rows `idkmesh connections import` persists, so the
+        # connections representative is a populated page, not an empty one.
+        connections = LocalMetadataStore(db)
+        for connection_id in ("agent.alpha", "agent.beta"):
+            connections.record_connection(
+                connection_id,
+                metadata={
+                    "id": connection_id,
+                    "kind": "agent",
+                    "driver": "fake-agent",
+                    "enabled": True,
+                    "auth_ref_configured": False,
+                    "capability_tiers": ["T1"],
+                    "task_classes": ["coding"],
+                    "tools": ["shell"],
+                    "candidate_types": ["artifact_bundle"],
+                    "max_risk": "low",
+                    "external_processing": False,
+                    "project_spend_usd_max": 0.0,
+                    "max_concurrency": 1,
+                },
+                updated_at="2026-10-01T00:00:00Z",
+            )
         cls.run_id = cls.good.run.run_id
         cls.servers = {
             "seeded": create_server(port=0, product_spine_store_path=str(db)),
@@ -947,7 +978,12 @@ class RuntimeResponseConformanceTests(unittest.TestCase):
 
     def test_the_representative_seeds_are_populated(self) -> None:
         """A representative response must not be an empty one."""
-        for path in ("/api/v1/runs", "/api/v1/work-units", "/api/v1/events"):
+        for path in (
+            "/api/v1/runs",
+            "/api/v1/connections",
+            "/api/v1/work-units",
+            "/api/v1/events",
+        ):
             with self.subTest(path=path):
                 status, _, body = self._http("seeded", "GET", path)
                 self.assertEqual(200, status)
