@@ -27,9 +27,11 @@ PAPER_GUIDE = PAPER_DIR / "README.md"
 # as (index file, link target) pairs. Relative targets are resolved relative to
 # the index file, so a wrong number of ".." segments fails here too. A target
 # under BLOB_PREFIX is resolved against the repository root instead: GitHub
-# Pages publishes only docs/, so a relative link from docs/ to a non-Markdown
-# file outside it (paper/main.tex) is a 404 on the site and must use the
-# repository URL.
+# Pages publishes only docs/, so a relative link from docs/ to any file outside
+# it is a 404 on the site and must use the repository URL. That holds for
+# Markdown targets too (paper/CLAIM_EVIDENCE_MAP.md): jekyll-relative-links only
+# rewrites links whose target is inside the site source. The general rule is
+# guarded by tests/test_docs_links_stay_in_site.py.
 BLOB_PREFIX = "https://github.com/MSKazemi/idkmesh/blob/main/"
 INDEX_LINKS = (
     (
@@ -38,7 +40,7 @@ INDEX_LINKS = (
     ),
     (
         REPO_ROOT / "docs" / "research" / "README.md",
-        "../../paper/CLAIM_EVIDENCE_MAP.md",
+        BLOB_PREFIX + "paper/CLAIM_EVIDENCE_MAP.md",
     ),
     (REPO_ROOT / "README.md", "paper/README.md"),
 )
