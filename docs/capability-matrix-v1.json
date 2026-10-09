@@ -230,7 +230,7 @@
       ],
       "cli_commands": [],
       "evidence_paths": [],
-      "known_limitation": "Transport schemas exist, but the authenticated immutable decision endpoint is still issue 740.",
+      "known_limitation": "Transport schemas and a transport-neutral immutable decision core (idkmesh/human_decision_service.py) exist, but no endpoint or CLI calls it and it performs no policy authorization; the authenticated, authorized decision endpoint is still issue 740.",
       "last_verified_revision": "110f0307ad36d4cca554c19465d7cdc0605d3f21",
       "public_wording": "Human-decision recording is planned; the current Control Tower cannot record it.",
       "qualification_artifact": null
