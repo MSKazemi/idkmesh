@@ -11,6 +11,7 @@ meaning of an existing version.
 - [GitHub Durable Ledger Record v0.1](GITHUB_LEDGER_RECORD_V0_1.md) — C9-A compact append-only run/event/route/idempotency/attempt/evidence-reference contract for restart-safe GitHub-first coordination; secret-free and structurally without dispatch, verification, integration, or merge authority.
 - [GitHub Bootstrap Config Rendering v0.1](GITHUB_BOOTSTRAP_CONFIG_RENDERING_V0_1.md) — deterministic C8-C rendering of the ProjectManifest seed, disabled secret-reference connector template, repository-local software-engineering DomainPack, generated ownership README, and content digests; rendering only, with no apply or GitHub mutation authority.
 - [GitHub Webhook Ingress v0.1](GITHUB_WEBHOOK_INGRESS_V0_1.md) — authenticated bounded webhook envelope: raw-body HMAC-SHA256, event/action allowlists, repository binding, delivery provenance, and no dispatch authority.
+- [GitHub WorkUnit Intake v0.1](GITHUB_WORKUNIT_INTAKE_V0_1.md) — normalized untrusted GitHub Issue Form planning hints with an explicit all-false authority ceiling; requested paths, risk, review, processing, and connector values cannot broaden trusted project policy. The C13-B WorkUnit request Issue Form uses exactly these field ids and enums.
 
 ## Work and Evidence Contracts
 
