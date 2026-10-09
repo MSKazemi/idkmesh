@@ -14,6 +14,17 @@ and the release notes for that tag.
 
 ### Added
 
+- Public-safe GitHub evidence projection for issue #609 (C14-D):
+  `idkmesh/github_public_evidence.py` builds a strict whitelist over
+  digest-bound Product Spine, CandidateReference, and Run Evidence Report
+  state, gated by a trusted public-classification policy, and its JSON
+  renderer rejects any mapping outside that whitelist. Raw prompts, logs,
+  provider payloads, warnings, identities, artifact locators, and secrets are
+  never projected, and every authority flag is fixed to `false`. See
+  [GitHub Public Evidence Projection v0.1](docs/specifications/GITHUB_PUBLIC_EVIDENCE_V0_1.md).
+  No Pages generator, GitHub mutation, or repository-visibility probe is
+  included.
+
 - Canonical capability truth matrix for issue #944:
   `docs/capability-matrix-v1.json` is the machine-readable public claim
   boundary, with generated human/site projections and a normal-CI drift guard.

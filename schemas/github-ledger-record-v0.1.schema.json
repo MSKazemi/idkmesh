@@ -1,0 +1,512 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idkmesh.org/schemas/github-ledger-record-v0.1.schema.json",
+  "title": "IDKMesh GitHub Durable Ledger Record v0.1",
+  "description": "One compact, secret-free, append-only GitHub-first ledger event. The record preserves run, WorkUnit/source, route, idempotency, attempt/provider, candidate/result/verification/human-decision references needed for restart-safe reconstruction. It grants no dispatch, verification, acceptance, integration, Git-push, or merge authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "kind",
+    "record_id",
+    "repository",
+    "project_id",
+    "run_id",
+    "ledger_sequence",
+    "previous_record_digest",
+    "event",
+    "work_unit",
+    "routing",
+    "idempotency",
+    "attempt",
+    "provider",
+    "candidate_reference",
+    "result_manifest",
+    "verification_results",
+    "human_decision",
+    "failure",
+    "authority"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {"ledger_sequence": {"const": 1}},
+        "required": ["ledger_sequence"]
+      },
+      "then": {
+        "properties": {"previous_record_digest": {"type": "null"}}
+      },
+      "else": {
+        "properties": {"previous_record_digest": {"$ref": "#/$defs/digest"}}
+      }
+    }
+  ],
+  "properties": {
+    "schema_version": {"const": "0.1"},
+    "kind": {"const": "idkmesh-github-ledger-record"},
+    "record_id": {"$ref": "#/$defs/id"},
+    "repository": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+    },
+    "project_id": {"$ref": "#/$defs/id"},
+    "run_id": {"$ref": "#/$defs/id"},
+    "ledger_sequence": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "previous_record_digest": {
+      "anyOf": [
+        {"type": "null"},
+        {"$ref": "#/$defs/digest"}
+      ]
+    },
+    "event": {"$ref": "#/$defs/event"},
+    "work_unit": {"$ref": "#/$defs/workUnit"},
+    "routing": {"$ref": "#/$defs/routing"},
+    "idempotency": {"$ref": "#/$defs/idempotency"},
+    "attempt": {
+      "anyOf": [
+        {"type": "null"},
+        {"$ref": "#/$defs/attempt"}
+      ]
+    },
+    "provider": {
+      "anyOf": [
+        {"type": "null"},
+        {"$ref": "#/$defs/provider"}
+      ]
+    },
+    "candidate_reference": {
+      "anyOf": [
+        {"type": "null"},
+        {
+          "$ref": "#/$defs/evidenceRef",
+          "properties": {"kind": {"const": "candidate_reference"}}
+        }
+      ]
+    },
+    "result_manifest": {
+      "anyOf": [
+        {"type": "null"},
+        {
+          "$ref": "#/$defs/evidenceRef",
+          "properties": {"kind": {"const": "result_manifest"}}
+        }
+      ]
+    },
+    "verification_results": {
+      "type": "array",
+      "maxItems": 32,
+      "items": {
+        "$ref": "#/$defs/evidenceRef",
+        "properties": {"kind": {"const": "verification_result"}}
+      }
+    },
+    "human_decision": {"$ref": "#/$defs/humanDecision"},
+    "failure": {
+      "anyOf": [
+        {"type": "null"},
+        {"$ref": "#/$defs/failure"}
+      ]
+    },
+    "authority": {"$ref": "#/$defs/authority"}
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 192,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]*$"
+    },
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "gitRevision": {
+      "type": "string",
+      "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$"
+    },
+    "utcTimestamp": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    },
+    "repoPath": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1024,
+      "pattern": "^[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)*$",
+      "not": {
+        "pattern": "(^|/)\\.{1,2}(/|$)"
+      }
+    },
+    "event": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "event_id",
+        "event_type",
+        "occurred_at",
+        "state",
+        "trigger",
+        "actor",
+        "github_delivery_id"
+      ],
+      "properties": {
+        "event_id": {"$ref": "#/$defs/id"},
+        "event_type": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-z][a-z0-9_.-]*$"
+        },
+        "occurred_at": {"$ref": "#/$defs/utcTimestamp"},
+        "state": {
+          "enum": [
+            "proposed",
+            "previewed",
+            "admission_blocked",
+            "admitted",
+            "dispatched",
+            "attempt_failed",
+            "candidate_observed",
+            "normalized",
+            "verification_requested",
+            "verification_error",
+            "evidence_ready",
+            "awaiting_human_decision",
+            "decided",
+            "cancelled"
+          ]
+        },
+        "trigger": {
+          "enum": [
+            "issue",
+            "workflow_dispatch",
+            "workflow_call",
+            "webhook",
+            "schedule",
+            "recovery",
+            "provider_observation",
+            "system"
+          ]
+        },
+        "actor": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["github_actor_id", "login"],
+          "properties": {
+            "github_actor_id": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "login": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            }
+          }
+        },
+        "github_delivery_id": {
+          "anyOf": [
+            {"type": "null"},
+            {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+            }
+          ]
+        }
+      }
+    },
+    "workUnit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version", "digest", "source_revision"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "digest": {"$ref": "#/$defs/digest"},
+        "source_revision": {"$ref": "#/$defs/gitRevision"}
+      }
+    },
+    "routing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "routing_digest",
+        "policy_version",
+        "required_capability_tier",
+        "authority_mode",
+        "risk_class",
+        "eligible_connectors",
+        "ineligible_connectors",
+        "selected_connection_id",
+        "selection_reason"
+      ],
+      "properties": {
+        "routing_digest": {"$ref": "#/$defs/digest"},
+        "policy_version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "required_capability_tier": {
+          "enum": ["T0", "T1", "T2", "T3", "T4"]
+        },
+        "authority_mode": {
+          "enum": [
+            "deterministic",
+            "agent_candidate",
+            "human_gate_then_agent",
+            "human_required"
+          ]
+        },
+        "risk_class": {
+          "enum": ["low", "medium", "high", "critical"]
+        },
+        "eligible_connectors": {
+          "type": "array",
+          "maxItems": 128,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["connection_id", "supported_tier"],
+            "properties": {
+              "connection_id": {"$ref": "#/$defs/id"},
+              "supported_tier": {
+                "enum": ["T0", "T1", "T2", "T3", "T4"]
+              }
+            }
+          }
+        },
+        "ineligible_connectors": {
+          "type": "array",
+          "maxItems": 128,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["connection_id", "reasons"],
+            "properties": {
+              "connection_id": {"$ref": "#/$defs/id"},
+              "reasons": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 64,
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 256
+                }
+              }
+            }
+          }
+        },
+        "selected_connection_id": {
+          "anyOf": [
+            {"type": "null"},
+            {"$ref": "#/$defs/id"}
+          ]
+        },
+        "selection_reason": {
+          "type": "array",
+          "maxItems": 64,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          }
+        }
+      }
+    },
+    "idempotency": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "dispatch_key",
+        "request_digest",
+        "attempt_number"
+      ],
+      "properties": {
+        "dispatch_key": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "request_digest": {"$ref": "#/$defs/digest"},
+        "attempt_number": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "attempt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "attempt_id",
+        "attempt_number",
+        "reason",
+        "connector_id"
+      ],
+      "properties": {
+        "attempt_id": {"$ref": "#/$defs/id"},
+        "attempt_number": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "reason": {
+          "enum": ["initial", "retry", "escalation", "recovery"]
+        },
+        "connector_id": {"$ref": "#/$defs/id"}
+      }
+    },
+    "provider": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "driver",
+        "driver_version",
+        "submission_state",
+        "external_run_id",
+        "external_session_id",
+        "external_job_id"
+      ],
+      "properties": {
+        "driver": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "driver_version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "submission_state": {
+          "enum": [
+            "not_submitted",
+            "submitted",
+            "ambiguous",
+            "definite_failure"
+          ]
+        },
+        "external_run_id": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "external_session_id": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "external_job_id": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 256
+        }
+      }
+    },
+    "evidenceRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "digest", "storage_path"],
+      "properties": {
+        "kind": {
+          "enum": [
+            "candidate_reference",
+            "result_manifest",
+            "verification_result",
+            "human_decision_record"
+          ]
+        },
+        "digest": {"$ref": "#/$defs/digest"},
+        "storage_path": {
+          "anyOf": [
+            {"type": "null"},
+            {"$ref": "#/$defs/repoPath"}
+          ]
+        }
+      }
+    },
+    "humanDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "record"],
+      "properties": {
+        "state": {
+          "enum": ["not_recorded", "pending", "recorded"]
+        },
+        "record": {
+          "anyOf": [
+            {"type": "null"},
+            {
+              "$ref": "#/$defs/evidenceRef",
+              "properties": {"kind": {"const": "human_decision_record"}}
+            }
+          ]
+        }
+      },
+      "if": {
+        "properties": {"state": {"enum": ["not_recorded", "pending"]}},
+        "required": ["state"]
+      },
+      "then": {
+        "properties": {"record": {"type": "null"}}
+      }
+    },
+    "failure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "classification", "retryable"],
+      "properties": {
+        "code": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-z][a-z0-9_.-]*$"
+        },
+        "classification": {
+          "enum": [
+            "policy_denied",
+            "configuration",
+            "provider",
+            "candidate_normalization",
+            "verification",
+            "timeout",
+            "cancelled",
+            "recovery_required",
+            "internal"
+          ]
+        },
+        "retryable": {"type": "boolean"}
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "dispatch",
+        "verification",
+        "acceptance",
+        "canonical_state_write",
+        "git_push",
+        "integration",
+        "merge"
+      ],
+      "properties": {
+        "dispatch": {"const": false},
+        "verification": {"const": false},
+        "acceptance": {"const": false},
+        "canonical_state_write": {"const": false},
+        "git_push": {"const": false},
+        "integration": {"const": false},
+        "merge": {"const": false}
+      }
+    }
+  }
+}
