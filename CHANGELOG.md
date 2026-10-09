@@ -14,6 +14,14 @@ and the release notes for that tag.
 
 ### Added
 
+- T1 / E047 (`experiments/submission_provenance.py`) adds provenance for public
+  SWE-bench submissions: model, model organisation, scaffold and attempts,
+  with canonicalised model names. Verified's 169 competent submissions come
+  from 66 identifiable models and 12 organisations; 81 are multi-attempt. In
+  an exploratory re-run with one submission per model, H1 still holds on both
+  Verified and Lite. Choosing one agent per model organisation loses to
+  complementarity selection (Lite, k = 5, p = 0.0026).
+
 - E046 confirmatory results (`experiments/E046-agent-value-forecast.md`). The
   analysis frozen by PREREG_AGENT_VALUE_FORECAST_V1 was run unchanged on the
   held-out SWE-bench Lite split (78 agents × 300 tasks). Per-item difficulty
