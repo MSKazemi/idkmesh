@@ -27,8 +27,9 @@ Measured state of `idkmesh/control_tower_ui.py` before this decision:
   bytes; the stdlib allows 100 lines but counts the terminating blank line).
   Nothing documented or tested this.
 - The service has no per-client identity: it authenticates one loopback
-  session token. There is no SSE stream yet (#741), so `max SSE clients` has
-  nothing to bound.
+  session token. At the time of this decision there was no SSE stream. ADR-0023
+  later added the event stream with its own bounded client limiter, heartbeat,
+  maximum lifetime, and drain behavior; those limits now compose with this ADR.
 
 ## Decision
 
@@ -68,6 +69,17 @@ them, and prove each one with a test.
    `operations.limits` object reporting the limits actually in force.
    Adding an optional property is a non-breaking change under ADR-0020, so the
    frozen status schema is extended in place rather than versioned.
+9. **Cancellation/disconnect behavior.** Every admitted request releases its
+   limiter slot in a `finally` path even when the client disconnects before
+   the response is written. The server does not retry interrupted application
+   work. SSE disconnects terminate the stream on broken-pipe/reset/timeout and
+   release the separate stream slot. Because this local profile is read-only
+   plus pure inspection, an abandoned response cannot leave a partially
+   committed mutation.
+10. **Bounded SSE clients.** ADR-0023 adds a separate non-blocking limiter
+    (default 8, configurable 1-64), heartbeat, maximum stream lifetime, and
+    drain integration. SSE clients therefore cannot consume the general
+    request pool or hold a worker thread indefinitely.
 
 Tunables are exposed as `idkmesh control-tower --request-timeout SECONDS` and
 `--max-concurrent-requests N`, validated to sane ranges.
@@ -89,8 +101,9 @@ Tunables are exposed as `idkmesh control-tower --request-timeout SECONDS` and
 - A POST rejected at the cap is answered without reading its body and the
   connection is closed, so a large body may see a connection reset instead of
   the `503`.
-- `max SSE clients` and `429` remain unimplemented until their prerequisites
-  (#741, enterprise identity) exist.
+- Per-client `429` remains unimplemented until a trustworthy per-client
+  identity exists. SSE capacity is now implemented under ADR-0023 with a
+  separate limiter so long-lived streams do not consume general request slots.
 - The same hardening is not applied to the other local stdlib servers
   (`gate-audit-ui`, steward UIs); they stay as before.
 
@@ -129,8 +142,8 @@ standard envelope with the request id and security headers.
 
 Revisit this ADR if:
 
-- #741 adds SSE (a maximum SSE client count and its own timeout policy become
-  mandatory);
+- the SSE/event-stream contract changes in a way that needs a different
+  capacity, heartbeat, lifetime, or cancellation policy;
 - a network or multi-user profile introduces per-principal identity (add
   `429` and per-principal quotas) or a production transport adapter (move the
   limits there);
