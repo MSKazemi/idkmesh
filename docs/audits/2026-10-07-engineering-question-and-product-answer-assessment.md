@@ -368,8 +368,8 @@ That boundary should remain visible in README, website, releases, papers, and ex
 
 Repository sources:
 
-- [README.md](../../README.md)
-- [RESEARCH_QUESTIONS.md](../../RESEARCH_QUESTIONS.md)
+- [README.md](https://github.com/MSKazemi/idkmesh/blob/main/README.md)
+- [RESEARCH_QUESTIONS.md](https://github.com/MSKazemi/idkmesh/blob/main/RESEARCH_QUESTIONS.md)
 - [FIELD_DEFINING_QUESTIONS.md](../foundations/FIELD_DEFINING_QUESTIONS.md)
 - [GOALS.md](../foundations/GOALS.md)
 - [WHAT_IS_IDKMESH.md](../WHAT_IS_IDKMESH.md)

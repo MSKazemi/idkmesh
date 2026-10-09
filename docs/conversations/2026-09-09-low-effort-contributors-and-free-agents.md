@@ -4,7 +4,7 @@ Date: 2026-09-09
 
 Status: **Research-backed proposal and conversation record, not an activated service or a governance change.** No agent installation, account subscription, external recruitment, spending authorization, or merge-policy change is made by this record.
 
-Related guidance: [Project rules](../../PROJECT_RULES.md), [Community growth strategy](../community/COMMUNITY_GROWTH_STRATEGY.md), [Contribution guide](../../CONTRIBUTING.md).
+Related guidance: [Project rules](https://github.com/MSKazemi/idkmesh/blob/main/PROJECT_RULES.md), [Community growth strategy](../community/COMMUNITY_GROWTH_STRATEGY.md), [Contribution guide](https://github.com/MSKazemi/idkmesh/blob/main/CONTRIBUTING.md).
 
 ## Owner request
 
@@ -154,12 +154,12 @@ Verification in this session consisted of reading repository files/issues/PRs th
 
 ### Repository evidence
 
-- [R1] [Repository metadata](https://api.github.com/repos/MSKazemi/idkmesh) and [README](../../README.md).
-- [R2] [Project rules](../../PROJECT_RULES.md) and [agent guidance](../../AGENTS.md).
+- [R1] [Repository metadata](https://api.github.com/repos/MSKazemi/idkmesh) and [README](https://github.com/MSKazemi/idkmesh/blob/main/README.md).
+- [R2] [Project rules](https://github.com/MSKazemi/idkmesh/blob/main/PROJECT_RULES.md) and [agent guidance](https://github.com/MSKazemi/idkmesh/blob/main/AGENTS.md).
 - [R3] [ACE bootstrap observer, issue 109](https://github.com/MSKazemi/idkmesh/issues/109).
 - [R4] [Advisory reviewer proposal, PR 404](https://github.com/MSKazemi/idkmesh/pull/404).
 - [R5] [Local gate correction, PR 396](https://github.com/MSKazemi/idkmesh/pull/396) and [related PR 386](https://github.com/MSKazemi/idkmesh/pull/386).
-- [R6] [Current contribution guide](../../CONTRIBUTING.md).
+- [R6] [Current contribution guide](https://github.com/MSKazemi/idkmesh/blob/main/CONTRIBUTING.md).
 - [R7] [Interoperability documentation, issue 402](https://github.com/MSKazemi/idkmesh/issues/402).
 - [R8] [First-run feedback, issue 403](https://github.com/MSKazemi/idkmesh/issues/403), [machine setup reports, issue 401](https://github.com/MSKazemi/idkmesh/issues/401), [independent node review, issue 138](https://github.com/MSKazemi/idkmesh/issues/138), and [independent control-plane audit, issue 151](https://github.com/MSKazemi/idkmesh/issues/151).
 - [R9] [Gate-audit Action proposal, PR 395](https://github.com/MSKazemi/idkmesh/pull/395).

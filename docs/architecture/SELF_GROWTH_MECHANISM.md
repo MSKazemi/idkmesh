@@ -1,9 +1,9 @@
 # IDKMesh Self-Growth Mechanism
 
 **Status:** current plain-language explainer. Canonical authority rules remain in
-[`EVOLUTION.md`](../../EVOLUTION.md),
-[`ITERATION_MODEL.md`](../../ITERATION_MODEL.md),
-[`CONSTITUTION.md`](../../CONSTITUTION.md), and the linked executable workflows.
+[`EVOLUTION.md`](https://github.com/MSKazemi/idkmesh/blob/main/EVOLUTION.md),
+[`ITERATION_MODEL.md`](https://github.com/MSKazemi/idkmesh/blob/main/ITERATION_MODEL.md),
+[`CONSTITUTION.md`](https://github.com/MSKazemi/idkmesh/blob/main/CONSTITUTION.md), and the linked executable workflows.
 
 IDKMesh "self-growth" is a **guarded feedback loop for increasing verified project
 capacity**. It does not mean that one AI agent can rewrite the repository and approve

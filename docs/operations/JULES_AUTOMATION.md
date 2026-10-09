@@ -587,7 +587,7 @@ explicitly redefining the next bounded agent task and re-triaging the issue.
 - dispatcher: [`tools/jules_dispatcher.py`](https://github.com/MSKazemi/idkmesh/blob/main/tools/jules_dispatcher.py)
 - atomic commit helper: [`tools/github_atomic_commit.py`](https://github.com/MSKazemi/idkmesh/blob/main/tools/github_atomic_commit.py)
 - tests: [`tests/test_jules_dispatcher.py`](https://github.com/MSKazemi/idkmesh/blob/main/tests/test_jules_dispatcher.py), [`tests/test_github_atomic_commit.py`](https://github.com/MSKazemi/idkmesh/blob/main/tests/test_github_atomic_commit.py)
-- agent instructions: [`AGENTS.md`](../../AGENTS.md)
+- agent instructions: [`AGENTS.md`](https://github.com/MSKazemi/idkmesh/blob/main/AGENTS.md)
 
 ## Changing the policy
 

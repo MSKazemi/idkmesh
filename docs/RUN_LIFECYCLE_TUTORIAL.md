@@ -17,7 +17,7 @@ end.
 
 ## Prerequisites
 
-- Python 3.11 or 3.13 (see [`../CONTRIBUTING.md`](../CONTRIBUTING.md) for the
+- Python 3.11 or 3.13 (see [`../CONTRIBUTING.md`](https://github.com/MSKazemi/idkmesh/blob/main/CONTRIBUTING.md) for the
   environment setup used by the project);
 - a clone of this repository, with all commands run from the repository root;
 - the `idkmesh` CLI on your `PATH`, which one editable install provides:

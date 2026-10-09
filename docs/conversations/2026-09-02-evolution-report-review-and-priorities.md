@@ -10,7 +10,7 @@ The project owner asked for a review of the entire report, an opinion on its qua
 
 ## Executive assessment
 
-IDKMesh has a stronger implementation and evidence foundation than [`EVOLUTION_REPORT.md`](../../EVOLUTION_REPORT.md) currently communicates. The core project discipline is sound: bounded work, independent verification, explicit authority separation, reproducibility, and an insistence that synthetic mechanisms are not scientific proof.
+IDKMesh has a stronger implementation and evidence foundation than [`EVOLUTION_REPORT.md`](https://github.com/MSKazemi/idkmesh/blob/main/EVOLUTION_REPORT.md) currently communicates. The core project discipline is sound: bounded work, independent verification, explicit authority separation, reproducibility, and an insistence that synthetic mechanisms are not scientific proof.
 
 The immediate project risk is no longer lack of concepts. It is **convergence debt**: architecture, experiments, control mechanisms, documentation, and historical tracker text can accumulate faster than real observed evidence, independent human review, and a newcomer-usable product path.
 
@@ -205,10 +205,10 @@ If IDKMesh can repeatedly turn those into verified useful work while keeping rev
 
 ## Durable links
 
-- [`EVOLUTION_REPORT.md`](../../EVOLUTION_REPORT.md)
-- [`EVOLUTION.md`](../../EVOLUTION.md)
-- [`ROADMAP.md`](../../ROADMAP.md)
-- [`ITERATION_MODEL.md`](../../ITERATION_MODEL.md)
-- [`README.md`](../../README.md)
+- [`EVOLUTION_REPORT.md`](https://github.com/MSKazemi/idkmesh/blob/main/EVOLUTION_REPORT.md)
+- [`EVOLUTION.md`](https://github.com/MSKazemi/idkmesh/blob/main/EVOLUTION.md)
+- [`ROADMAP.md`](https://github.com/MSKazemi/idkmesh/blob/main/ROADMAP.md)
+- [`ITERATION_MODEL.md`](https://github.com/MSKazemi/idkmesh/blob/main/ITERATION_MODEL.md)
+- [`README.md`](https://github.com/MSKazemi/idkmesh/blob/main/README.md)
 - #373 — report-current-state gate
 - #374 — reproducible-release gate

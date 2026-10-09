@@ -3,7 +3,7 @@
 Append-only records of working sessions: what was asked, what was decided, and what
 changed. They are historical evidence, not living documentation — a record is not
 rewritten when the project later moves on. Durable outcomes are promoted into the
-canonical files designated by [`../../PROJECT_RULES.md`](../../PROJECT_RULES.md)
+canonical files designated by [`../../PROJECT_RULES.md`](https://github.com/MSKazemi/idkmesh/blob/main/PROJECT_RULES.md)
 (decisions, specifications, architecture, findings); this directory keeps the trail
 that produced them.
 

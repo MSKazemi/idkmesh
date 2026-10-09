@@ -3,11 +3,11 @@
 This directory holds the project's Architecture Decision Records. An ADR states a
 decision, the context that forced it, and the consequences accepted with it, **as
 of its stated date**. Together with
-[`../../PROJECT_RULES.md`](../../PROJECT_RULES.md) these are the canonical
+[`../../PROJECT_RULES.md`](https://github.com/MSKazemi/idkmesh/blob/main/PROJECT_RULES.md) these are the canonical
 current authority: where a finding, audit, or research note disagrees with an
 ADR, the ADR wins.
 
-[`../../DECISIONS.md`](../../DECISIONS.md) is a different artifact — a
+[`../../DECISIONS.md`](https://github.com/MSKazemi/idkmesh/blob/main/DECISIONS.md) is a different artifact — a
 chronological prose log of project decisions, including many too small to need an
 ADR. It is not an index of this directory.
 
@@ -44,7 +44,7 @@ some unrelated page but missing from its own index stays invisible.
 - [ADR-0009 — Evaluator Sovereignty](ADR-0009-evaluator-sovereignty.md)
   — adopts the same invariant with an expanded set of binding requirements, added
   after PR #72 established the first executable local verifier. This is the
-  version cited by [`../../DECISIONS.md`](../../DECISIONS.md). *(2026-08-28.)*
+  version cited by [`../../DECISIONS.md`](https://github.com/MSKazemi/idkmesh/blob/main/DECISIONS.md). *(2026-08-28.)*
 - [ADR-0011 — Discovery Surface Completion Without a Pinning Gate](ADR-0011-discovery-surface-completion.md)
   — supersedes the pinned-welcome-discussion requirement as a P0 completion gate
   for issue #173, without weakening any gate that carries real authority or

@@ -9,7 +9,7 @@ description: "IDKMesh is an open research program building verification-first co
 
 It is intended to become reusable infrastructure, not only one application. That generality is a design target, not a capability already proven at scale.
 
-The framework, research program, community, reference implementation, and self-hosting experiment are different layers of one system. [`../ITERATION_MODEL.md`](../ITERATION_MODEL.md) defines their shared lifecycle and authority vocabulary.
+The framework, research program, community, reference implementation, and self-hosting experiment are different layers of one system. [`../ITERATION_MODEL.md`](https://github.com/MSKazemi/idkmesh/blob/main/ITERATION_MODEL.md) defines their shared lifecycle and authority vocabulary.
 
 The first major use case is collaborative software engineering because software gives unusually strong verification tools: tests, compilers, static analysis, reproducible builds, benchmarks, code review, and version control.
 
@@ -172,8 +172,8 @@ The immediate task is not to generalize everything. It is to make the current lo
 
 For the current truth and next gates, see:
 
-- [`../README.md`](../README.md);
-- [`../ARCHITECTURE.md`](../ARCHITECTURE.md);
-- [`../schemas/README.md`](../schemas/README.md);
-- [`../ROADMAP.md`](../ROADMAP.md);
+- [`../README.md`](https://github.com/MSKazemi/idkmesh/blob/main/README.md);
+- [`../ARCHITECTURE.md`](https://github.com/MSKazemi/idkmesh/blob/main/ARCHITECTURE.md);
+- [`../schemas/README.md`](https://github.com/MSKazemi/idkmesh/blob/main/schemas/README.md);
+- [`../ROADMAP.md`](https://github.com/MSKazemi/idkmesh/blob/main/ROADMAP.md);
 - [`README.md`](README.md) for documentation navigation.

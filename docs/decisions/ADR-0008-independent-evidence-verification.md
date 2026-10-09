@@ -131,7 +131,7 @@ implementation:
    first one this project wrote down was wrong in the unsafe direction.
 
 Reference implementation: `effective_n_ceiling` in `sim/e015_analyze.py`.
-Full result: [`../../experiments/E015-verification-phase-diagram.md`](../../experiments/E015-verification-phase-diagram.md).
+Full result: [`../../experiments/E015-verification-phase-diagram.md`](https://github.com/MSKazemi/idkmesh/blob/main/experiments/E015-verification-phase-diagram.md).
 
 ## Follow-up — E016 tried to measure `rho` on real verifiers and could not
 
@@ -161,7 +161,7 @@ Practical consequence: any aggregation rule this ADR eventually specifies must
 be gated on a per-verifier discrimination check, not on accuracy. On an
 imbalanced corpus a constant verifier can post the panel's best accuracy score.
 
-See [`../../experiments/E016-live-verifier-correlation.md`](../../experiments/E016-live-verifier-correlation.md).
+See [`../../experiments/E016-live-verifier-correlation.md`](https://github.com/MSKazemi/idkmesh/blob/main/experiments/E016-live-verifier-correlation.md).
 
 ## Follow-up — E017 measured `rho`, and found the model shape wrong
 
@@ -188,7 +188,7 @@ oracles that pass the discrimination screen. Three consequences for this ADR:
    changed nothing (effective size 1.00). The ADR should therefore require
    measuring error sidedness before choosing a quorum.
 
-See [`../../experiments/E017-item-difficulty-and-quorum.md`](../../experiments/E017-item-difficulty-and-quorum.md).
+See [`../../experiments/E017-item-difficulty-and-quorum.md`](https://github.com/MSKazemi/idkmesh/blob/main/experiments/E017-item-difficulty-and-quorum.md).
 
 ## Follow-up — E020 found the shape decides the aggregation rule, and both models miss the floor
 
@@ -221,7 +221,7 @@ decorrelating or by adding more of the same.
 
 Consequence for this ADR: `lambda` joins `rho` as a quantity to measure, and it bounds
 what any aggregation rule can deliver. See
-[`E020-quorum-frontier-under-measured-shape.md`](../../experiments/E020-quorum-frontier-under-measured-shape.md).
+[`E020-quorum-frontier-under-measured-shape.md`](https://github.com/MSKazemi/idkmesh/blob/main/experiments/E020-quorum-frontier-under-measured-shape.md).
 
 ## Implementation references
 

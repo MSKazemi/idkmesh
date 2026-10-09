@@ -16,7 +16,7 @@ It combines:
 - diversity-aware resource allocation;
 - staged, reversible self-improvement.
 
-The constitution is defined in [`../../CONSTITUTION.md`](../../CONSTITUTION.md).
+The constitution is defined in [`../../CONSTITUTION.md`](https://github.com/MSKazemi/idkmesh/blob/main/CONSTITUTION.md).
 
 ## Control loop
 
@@ -176,7 +176,7 @@ See:
 
 - [`../../sim/emergence_sim.py`](https://github.com/MSKazemi/idkmesh/blob/main/sim/emergence_sim.py)
 - [`../../tests/test_emergence_sim.py`](https://github.com/MSKazemi/idkmesh/blob/main/tests/test_emergence_sim.py)
-- [`../../experiments/E011-emergence-vague-goals.md`](../../experiments/E011-emergence-vague-goals.md)
+- [`../../experiments/E011-emergence-vague-goals.md`](https://github.com/MSKazemi/idkmesh/blob/main/experiments/E011-emergence-vague-goals.md)
 - [`../../experiments/results/E011-reference-seed7.json`](https://github.com/MSKazemi/idkmesh/blob/main/experiments/results/E011-reference-seed7.json)
 
 The model is intentionally small. Its value is that IDKMesh now has a concrete mechanism that can be attacked, compared, improved, or disproved.

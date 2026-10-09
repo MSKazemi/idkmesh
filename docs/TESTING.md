@@ -20,7 +20,7 @@ Everything else is automation around those two commands.
 
 For contributor setup and testing, use the **current repository state** rather
 than historical issue or pull-request prose. The maintained source of truth is
-the combination of [`CONTRIBUTING.md`](../CONTRIBUTING.md), this document, the
+the combination of [`CONTRIBUTING.md`](https://github.com/MSKazemi/idkmesh/blob/main/CONTRIBUTING.md), this document, the
 executable `Makefile` targets, `scripts/testkit.py`, and `pytest.ini`. If an older
 issue says a Makefile target is unmerged or should not be assumed, keep that text
 as provenance but follow the current files above.
