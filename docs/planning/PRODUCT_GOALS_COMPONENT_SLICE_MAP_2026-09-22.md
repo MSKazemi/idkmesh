@@ -485,7 +485,7 @@ conforming production backend.
 
 ### Slices
 
-- **C9-A — ledger record schema:** run/event/attempt/idempotency references.
+- **C9-A — [ledger record schema](../specifications/GITHUB_LEDGER_RECORD_V0_1.md):** run/event/route/attempt/idempotency/evidence references with exact WorkUnit/source binding and no authority.
 - **C9-B — append-only local Git fixture:** deterministic event serialization.
 - **C9-C — optimistic append protocol:** concurrent writer conflict/retry semantics.
 - **C9-D — idempotent admission record:** duplicate dispatch -> existing run.
@@ -595,7 +595,12 @@ conforming production backend.
   must bind repository + exact 40/64-hex commit + safe file path; moving
   branch/tag links, Actions artifacts, and ambiguous URL forms fail closed.
   Both the Actions summary and C14-B status comment use the shared validator.
-- **C14-D — public-safe evidence projection/filter.**
+- **C14-D — public-safe evidence projection/filter.** Implemented by
+  `idkmesh/github_public_evidence.py`
+  ([contract](../specifications/GITHUB_PUBLIC_EVIDENCE_V0_1.md)): strict
+  whitelist over digest-bound Product Spine/evidence metadata; raw
+  prompts/logs/provider payloads/secrets and all actuation authority stay
+  excluded, and the renderer rejects any mapping outside the whitelist.
 - **C14-E — read-only GitHub Pages generator.**
 - **C14-F — pilot release metadata/provenance.**
 - **C14-G — optional artifact attestation integration.**

@@ -393,6 +393,45 @@ class LocalMetadataStore:
             ).fetchall()
         return [_load_metadata(row["metadata_json"]) for row in rows]
 
+    def list_connections_page(
+        self,
+        *,
+        limit: int = DEFAULT_LIST_LIMIT,
+        after: str | None = None,
+    ) -> tuple[list[tuple[str, Mapping[str, Any]]], bool]:
+        """Return one bounded page ordered by persisted connection id.
+
+        The database identity is returned with each decoded metadata object
+        so an API projection can reject legacy/free-form rows whose public
+        id disagrees with the key under which the row was persisted.
+        """
+        if (
+            not isinstance(limit, int)
+            or isinstance(limit, bool)
+            or not (1 <= limit <= MAX_LIST_LIMIT)
+        ):
+            raise ValueError(
+                f"limit must be an integer between 1 and {MAX_LIST_LIMIT}"
+            )
+        if after is not None:
+            self._require_text(after, "after")
+
+        sql = "SELECT connection_id, metadata_json FROM connections "
+        params: list[Any] = []
+        if after is not None:
+            sql += "WHERE connection_id > ? "
+            params.append(after)
+        sql += "ORDER BY connection_id ASC LIMIT ?"
+        params.append(limit + 1)
+        with _session(self.path) as conn:
+            rows = conn.execute(sql, tuple(params)).fetchall()
+
+        has_more = len(rows) > limit
+        return [
+            (row["connection_id"], _load_metadata(row["metadata_json"]))
+            for row in rows[:limit]
+        ], has_more
+
     def record_probe(
         self,
         connection_id: str,
