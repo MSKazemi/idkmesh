@@ -14,6 +14,19 @@ and the release notes for that tag.
 
 ### Added
 
+- API-11A client read-model completion for issue #746: the official
+  dependency-free Python client (`idkmesh.api_client.ControlTowerClient`) now
+  covers the whole resource-oriented Control Tower read model — `list_runs`
+  (bounded `state`/`project_id` filters, keyset pagination), `get_run_attempts`,
+  `get_work_unit`, `list_work_units`, and `get_project` alongside the existing
+  status/inspection/run/evidence/event methods. Every resource response is
+  identity-bound to the requested id and fails closed with `ProtocolError` on a
+  mismatch; list validation happens before any transport I/O; cursors stay
+  opaque. The client surface is documented in
+  [Control Tower Local API v0.1](docs/specifications/CONTROL_TOWER_LOCAL_API_V0_1.md).
+  Human-decision recording remains absent until the authenticated mutation
+  adapter (issue #740) exists; health/readiness probes, `openapi.json`,
+  `metrics`, and the `events/stream` SSE stream stay plain HTTP.
 - Read-only connector listing on the Control Tower for API-3 / issue #738:
   authenticated `GET`/`HEAD /api/v1/connections` serves the connection rows
   `idkmesh connections import` persists, through the existing `/api/v1`
