@@ -36,9 +36,10 @@ meaning of an existing version.
   primitives for IDKMesh HTTP surfaces.
 - [API Observability v0.1](API_OBSERVABILITY_V0_1.md) —
   privacy-safe, fixed-cardinality request/status/latency/admission/concurrency
-  telemetry, W3C traceparent v00 pass-through, and explicit local-profile
-  SLO/alert targets. The OpenTelemetry exporter remains follow-up work under
-  #744.
+  telemetry, W3C traceparent v00 pass-through, explicit local-profile SLO/alert
+  targets, and a dependency-free transport-neutral OTLP/HTTP JSON mapping
+  adapter. Collector transport and Human Decision ingestion telemetry remain
+  separate follow-up work under #744.
 - [Release Supply-Chain Baseline v0.1](RELEASE_SUPPLY_CHAIN_V0_1.md) —
   release SBOM/checksum/source-workflow identity evidence, immutable-pinned
   GitHub build provenance, consumer verification, and vulnerability/update

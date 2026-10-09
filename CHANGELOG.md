@@ -72,6 +72,19 @@ and the release notes for that tag.
   OpenTelemetry export and Human Decision ingestion metrics remain follow-up
   work; no new runtime dependency or actuation authority is introduced.
 
+- Dependency-free OTLP metrics mapping for issue #744:
+  `idkmesh.otel_metrics.build_otlp_metrics_request()` converts one validated
+  API operational-metrics document into an OTLP `ExportMetricsServiceRequest`
+  JSON object (cumulative monotonic sums, gauges, and a histogram whose
+  cumulative source buckets are differenced into OTLP per-bucket counts), and
+  `render_otlp_metrics_json()` renders it as deterministic strict JSON. The
+  adapter is transport-free (no network I/O, credentials, retries, spans, or
+  clock reads) and fails closed if the source document is inconsistent,
+  relaxes its privacy flags or authority ceiling, or manufactures a
+  `not_implemented` counter. A collector transport and Human Decision
+  ingestion telemetry remain follow-up work under #744. See
+  [API Observability v0.1](docs/specifications/API_OBSERVABILITY_V0_1.md).
+
 - Enterprise Audit Ledger v0.1 (issue #671): a dedicated SQLite append-only
   security/audit stream separate from ordinary logs and Product Spine events.
   Each fixed-shape event binds tenant/project, request/run correlation,
