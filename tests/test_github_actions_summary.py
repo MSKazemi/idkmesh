@@ -136,8 +136,11 @@ class GitHubActionsSummaryTests(unittest.TestCase):
             candidates={"attempt-1": candidate},
             evidence_report=report,
             durable_evidence_url=(
-                "https://github.com/MSKazemi/idkmesh/blob/main/"
-                "results/example/evidence-report.json"
+                (
+                "https://github.com/MSKazemi/idkmesh/blob/"
+                + SOURCE_REVISION
+                + "/results/example/evidence-report.json"
+            )
             ),
         )
 
@@ -217,15 +220,28 @@ class GitHubActionsSummaryTests(unittest.TestCase):
         self.assertIn("&lt;script&gt;alert(1)&lt;/script&gt;\\|line next", rendered)
         self.assertIn("pass\\|ok", rendered)
 
-    def test_non_github_durable_link_fails_closed(self):
+    def test_non_durable_evidence_links_fail_closed(self):
         report = _report()
         run = _run(report=report)
-        with self.assertRaises(GitHubActionsSummaryError):
-            render_github_actions_summary(
-                run,
-                evidence_report=report,
-                durable_evidence_url="https://example.com/evidence.json",
-            )
+        bad_urls = (
+            "https://example.com/evidence.json",
+            (
+                "https://github.com/MSKazemi/idkmesh/blob/"
+                "main/results/example/evidence-report.json"
+            ),
+            (
+                "https://github.com/MSKazemi/idkmesh/actions/"
+                "runs/123/artifacts/456"
+            ),
+        )
+        for url in bad_urls:
+            with self.subTest(url=url):
+                with self.assertRaises(GitHubActionsSummaryError):
+                    render_github_actions_summary(
+                        run,
+                        evidence_report=report,
+                        durable_evidence_url=url,
+                    )
 
     def test_summary_without_optional_details_remains_truthful(self):
         run = ProductSpineRun(

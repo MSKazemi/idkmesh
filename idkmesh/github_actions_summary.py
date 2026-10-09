@@ -20,6 +20,10 @@ from idkmesh.candidate_reference import (
     CandidateReference,
     GitHubPullRequestCandidateReference,
 )
+from idkmesh.github_evidence_link import (
+    DurableGitHubEvidenceLinkError,
+    validate_durable_github_evidence_url,
+)
 from idkmesh.product_spine import ProductSpineRun
 from idkmesh.work_unit_binding import canonical_digest
 
@@ -209,11 +213,16 @@ def render_github_actions_summary(
 
     bound_candidates = _normalize_candidates(run, candidates)
     bound_report = _normalize_evidence_report(run, evidence_report)
-    evidence_url = (
-        _safe_url(durable_evidence_url, field="durable_evidence_url")
-        if durable_evidence_url is not None
-        else None
-    )
+    evidence_url = None
+    if durable_evidence_url is not None:
+        try:
+            evidence_url = validate_durable_github_evidence_url(
+                durable_evidence_url
+            )
+        except DurableGitHubEvidenceLinkError as exc:
+            raise GitHubActionsSummaryError(
+                f"durable_evidence_url is not immutable: {exc}"
+            ) from exc
 
     lines = [
         "## IDKMesh run summary",
