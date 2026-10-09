@@ -1,6 +1,6 @@
 ---
-title: "Verified Swarm and Agentic Software Engineering — IDKMesh"
-description: "Verified swarm engineering combines collaborative AI agents with bounded work, heterogeneous routing, independent verification, provenance, and protected Git-based integration."
+title: "Verified Swarm and Agentic Software Engineering"
+description: "Verified swarm engineering: collaborative AI agents with bounded work, heterogeneous routing, independent verification, provenance, and Git integration."
 image: "/assets/idkmesh-social.png"
 ---
 

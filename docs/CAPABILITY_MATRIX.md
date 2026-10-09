@@ -1,3 +1,8 @@
+---
+title: "IDKMesh Capability Truth Matrix"
+description: "The public claim boundary for IDKMesh: 20 engineering capabilities, each with status, evidence level 0-5, allowed public wording, and known limitation."
+---
+
 # IDKMesh Capability Truth Matrix
 
 > Generated from `docs/capability-matrix-v1.json` by `scripts/check_capability_matrix.py`. Do not edit this table by hand.

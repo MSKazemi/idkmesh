@@ -1,3 +1,6 @@
+---
+description: "IDKMesh is an open research program building verification-first coordination for human and AI work; its first reference app is a Git-native swarm runner."
+---
 # What Is IDKMesh?
 
 ## Short answer

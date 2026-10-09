@@ -1,3 +1,6 @@
+---
+description: "Use IDKMesh contracts in a new repository: Git as canonical state, bounded Work Units, separately verified candidates, and separate integration authority."
+---
 # Use IDKMesh to Build Another Software Project
 
 **Status:** practical adoption guide for the current alpha framework  

@@ -55,6 +55,28 @@ class MarkdownIdentityTests(unittest.TestCase):
             )
             self.assertNotEqual(headings[1]["heading_id"], headings[2]["heading_id"])
 
+    def test_yaml_front_matter_is_not_a_setext_heading(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            path = self._write(
+                root,
+                "docs/page.md",
+                '---\ntitle: "Short"\ndescription: "Snippet"\n---\n\n# Real Title\n\nBody\n',
+            )
+
+            headings = parse_markdown(path, root)["headings"]
+
+            self.assertEqual([(h["text"], h["level"], h["line"]) for h in headings], [("Real Title", 1, 6)])
+
+    def test_unclosed_leading_rule_is_still_parsed_as_markdown(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            path = self._write(root, "docs/rule.md", "---\n# First\nSetext\n=====\n")
+
+            texts = [h["text"] for h in parse_markdown(path, root)["headings"]]
+
+            self.assertEqual(texts, ["First", "Setext"])
+
     def test_line_number_is_not_part_of_identity(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

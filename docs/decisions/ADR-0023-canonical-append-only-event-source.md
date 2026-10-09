@@ -1,3 +1,7 @@
+---
+title: "ADR-0023: Append-Only Event Source and Resumable SSE"
+description: "Accepted ADR: one append-only SQLite event stream per store, written atomically with each state change, with a paged query API and resumable read-only SSE."
+---
 # ADR-0023 — Canonical Append-Only Event Source, Event Query API and Resumable SSE
 
 **Status:** Accepted

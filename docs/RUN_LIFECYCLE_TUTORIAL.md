@@ -1,3 +1,7 @@
+---
+title: "Tutorial: Create and Read Back an IDKMesh Run"
+description: "Create a Product Spine run with the idkmesh run CLI, inspect and cancel it, then read it back over the Control Tower local HTTP API. Nothing is merged."
+---
 # Tutorial: create a run and read it back (CLI and local API)
 
 This walkthrough creates one Product Spine run through the `idkmesh run` CLI,

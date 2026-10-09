@@ -1,6 +1,6 @@
 ---
-title: "AI Agent Verification and Validation — IDKMesh"
-description: "How to verify AI agents with bounded tasks, independent evaluation, provenance, acceptance criteria, and explicit integration authority instead of trusting agent self-reports."
+title: "AI Agent Verification and Validation"
+description: "Verify AI agents with bounded tasks, independent evaluation, provenance, acceptance criteria, and explicit integration authority, not self-reports."
 image: "/assets/idkmesh-social.png"
 ---
 
