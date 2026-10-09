@@ -124,12 +124,15 @@ def published_pages() -> list[tuple[str, Path]]:
     pages: list[tuple[str, Path]] = [(BASE, DOCS / "index.html")]
 
     for source in sorted(DOCS.rglob("*.html")):
-        if source.name == "index.html":
+        relative = source.relative_to(DOCS)
+        if source.name == "index.html" or any(part.startswith("_") for part in relative.parts):
             continue
-        pages.append((BASE + source.relative_to(DOCS).as_posix(), source))
+        pages.append((BASE + relative.as_posix(), source))
 
     for source in sorted(DOCS.rglob("*.md")):
         relative = source.relative_to(DOCS)
+        if any(part.startswith("_") for part in relative.parts):
+            continue
         if source.name == "index.md":
             parent = relative.parent.as_posix()
             if parent == ".":
