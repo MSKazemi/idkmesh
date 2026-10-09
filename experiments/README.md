@@ -48,7 +48,8 @@ listed here fails the suite rather than becoming quietly undiscoverable.
 The Physarum routing research records are also indexed here:
 [PHY-0 reference routing](PHY-0-physarum-compute-routing.md),
 [PHY-0A stationary falsification](PHY-0A-physarum-stationary-routing.md), and
-[PHY-1 stress matrix](PHY-1-stress-matrix.md).
+[PHY-1 stress matrix](PHY-1-stress-matrix.md), with its retained
+[completion sweep](results/PHY-1-completion-sweep.json).
 
 The Adaptive Verification Ecology records are indexed here:
 [AVE-0 foundation](AVE-0-adaptive-verification-ecology.md),
