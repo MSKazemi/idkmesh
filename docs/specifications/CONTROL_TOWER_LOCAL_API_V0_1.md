@@ -402,6 +402,37 @@ POST
 Wrong methods return HTTP 405 with an `Allow` header. `HEAD` on a POST-only
 resource also returns no body.
 
+### `GET /api/v1/connections`
+
+Authenticated, read-only connector-control listing (API-3, issue #738). This
+is the first implemented HTTP slice from the Connector Control API contract
+and deliberately lives in the existing Control Tower service rather than
+creating a second HTTP server.
+
+The endpoint reads the same `LocalMetadataStore` connection table used by
+`idkmesh connections stored`. Only the canonical secret-free import summary is
+projected. It never returns a secret reference or `settings`. A legacy/free-
+form row with missing, mismatched, or extra fields fails closed with
+`500 connection_record_invalid` rather than being serialized as an API resource.
+
+Query parameters are `limit` (1-200, default 50) and an opaque `cursor`.
+Ordering is by persisted connection id with keyset pagination. Unknown or
+duplicate parameters fail with `400 unexpected_query_parameters`; a cursor
+not issued by this connection-list service fails with `400 invalid_cursor`.
+
+The server must be started with `--product-spine-store PATH`, the shared local
+metadata database; otherwise the endpoint returns
+`503 product_spine_store_not_configured`.
+
+Each item conforms to `schemas/idkmesh-connection-resource-v0.1.schema.json`,
+wrapped by the shared `idkmesh-list-v0.1` envelope.
+
+Supported methods:
+
+```text
+GET, HEAD
+```
+
 ### `GET /api/v1/runs`
 
 Authenticated, read-only Product Spine run listing (issue #739). Serves the
@@ -1460,6 +1491,60 @@ curl \
 
 The environment token is an ephemeral local API session credential. It is not a
 provider secret or repository credential and should not be committed.
+
+### Python client
+
+`idkmesh.api_client.ControlTowerClient` is the supported Python surface for the
+read/inspection endpoints above. It covers `status`,
+`run-evidence/inspect`, `runs`, `runs/{run_id}`, `runs/{run_id}/attempts`,
+`runs/{run_id}/evidence`, `work-units`, `work-units/{work_unit_id}`,
+`projects/{project_id}`, and `events`; human-decision recording is deliberately
+absent until the authenticated mutation adapter (issue #740) exists. The
+`/healthz` and `/readyz` probes, `openapi.json` discovery, and the
+`events/stream` Server-Sent Events stream are not wrapped by the client and
+remain plain HTTP.
+
+```python
+import os
+
+from idkmesh.api_client import ControlTowerClient
+
+client = ControlTowerClient(
+    "http://127.0.0.1:8770",
+    os.environ["IDKMESH_CONTROL_TOWER_TOKEN"],
+    timeout=5.0,  # mandatory by construction
+)
+run = client.get_run("run/alpha-1")
+print(run.request_id, run.value["run"]["state"])
+
+page = client.list_runs(limit=50, project_id="project.alpha")
+while page.value.next_cursor is not None:
+    page = client.list_runs(
+        limit=50,
+        project_id="project.alpha",
+        cursor=page.value.next_cursor,  # cursors stay opaque
+    )
+```
+
+Client guarantees, each fail-closed:
+
+- exactly one HTTP request per method call: no retries, redirects, or hidden
+  idempotent replay;
+- loopback-only `http` base URLs, so the local session token cannot leak to a
+  remote host;
+- the response content digest is recomputed and compared before the document
+  is returned, and embedded evidence/snapshot digests are verified
+  independently of the outer envelope (`IntegrityError` on mismatch);
+- every resource read is bound to the requested identity: a response naming a
+  different `run_id`/`work_unit`/`project` raises `ProtocolError`;
+- request IDs and response metadata are exposed on every
+  `ApiResult` for correlation and bug reports;
+- failures use the stable taxonomy `ClientConfigurationError`, `TransportError`,
+  `ProtocolError`/`IntegrityError`, and `ApiResponseError` (which carries the
+  server's stable error `code`, `retryable` flag, and HTTP status);
+- list methods validate `limit`, `cursor`, and filters before any transport
+  I/O, and unknown query parameters fail explicitly on the server
+  (API Conventions v0.1 section 11).
 
 ## Relationship to Gate Audit
 

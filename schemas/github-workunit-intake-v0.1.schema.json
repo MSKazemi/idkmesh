@@ -1,0 +1,193 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idkmesh.org/schemas/github-workunit-intake-v0.1.schema.json",
+  "title": "IDKMesh GitHub WorkUnit Intake v0.1",
+  "description": "Normalized untrusted planning hints collected from a GitHub WorkUnit request. This object is not a WorkUnit, routing decision, authorization decision, dispatch instruction, verification result, or integration decision.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "kind",
+    "objective",
+    "task_class",
+    "expected_outputs",
+    "requested_allowed_paths",
+    "requested_forbidden_paths",
+    "dependencies",
+    "acceptance_checks",
+    "risk_hint",
+    "external_processing_hint",
+    "data_sensitivity_hint",
+    "human_review_hint",
+    "preferred_connector_hint",
+    "authority_ceiling"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "0.1"
+    },
+    "kind": {
+      "const": "idkmesh-github-workunit-intake"
+    },
+    "objective": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 12000
+    },
+    "task_class": {
+      "enum": [
+        "coding",
+        "testing",
+        "review",
+        "benchmarking",
+        "documentation",
+        "research",
+        "integration",
+        "governance",
+        "other"
+      ]
+    },
+    "expected_outputs": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 32,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 500
+      }
+    },
+    "requested_allowed_paths": {
+      "type": "array",
+      "maxItems": 64,
+      "uniqueItems": true,
+      "description": "Untrusted requested write scope. Later trusted policy may narrow or reject it; this field cannot broaden canonical WorkUnit permissions.",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 512
+      }
+    },
+    "requested_forbidden_paths": {
+      "type": "array",
+      "maxItems": 64,
+      "uniqueItems": true,
+      "description": "Untrusted requested exclusions. Later trusted policy may add stricter forbidden paths.",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 512
+      }
+    },
+    "dependencies": {
+      "type": "array",
+      "maxItems": 32,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "reference",
+          "relation"
+        ],
+        "properties": {
+          "reference": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          },
+          "relation": {
+            "enum": [
+              "requires",
+              "blocked_by",
+              "informs"
+            ]
+          }
+        }
+      }
+    },
+    "acceptance_checks": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 32,
+      "uniqueItems": true,
+      "description": "Requested acceptance checks. They are planning content, not executable command authority.",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 1000
+      }
+    },
+    "risk_hint": {
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical",
+        "unspecified"
+      ],
+      "description": "Requester hint only. Trusted policy/risk analysis may raise risk and may never be weakened by this value."
+    },
+    "external_processing_hint": {
+      "enum": [
+        "forbidden",
+        "allowed",
+        "unspecified"
+      ],
+      "description": "Requester preference only. 'allowed' never grants external-processing authority."
+    },
+    "data_sensitivity_hint": {
+      "enum": [
+        "public",
+        "internal",
+        "confidential",
+        "restricted",
+        "unspecified"
+      ],
+      "description": "Requester hint only. Trusted classification may raise sensitivity and may never be downgraded by this value."
+    },
+    "human_review_hint": {
+      "enum": [
+        "required",
+        "preferred",
+        "unspecified"
+      ],
+      "description": "Requester hint only. It cannot waive a review or human-decision requirement imposed by policy."
+    },
+    "preferred_connector_hint": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1,
+      "maxLength": 128,
+      "description": "Advisory connector identifier only. It cannot select a connector, resolve a secret, or authorize dispatch."
+    },
+    "authority_ceiling": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "policy_authority",
+        "secret_authority",
+        "command_authority",
+        "network_authority",
+        "filesystem_authority",
+        "connector_selection_authority",
+        "dispatch_authority",
+        "verification_authority",
+        "integration_authority"
+      ],
+      "properties": {
+        "policy_authority": {"const": false},
+        "secret_authority": {"const": false},
+        "command_authority": {"const": false},
+        "network_authority": {"const": false},
+        "filesystem_authority": {"const": false},
+        "connector_selection_authority": {"const": false},
+        "dispatch_authority": {"const": false},
+        "verification_authority": {"const": false},
+        "integration_authority": {"const": false}
+      }
+    }
+  }
+}
