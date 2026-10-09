@@ -8,7 +8,7 @@ and how the product proves its engineering claims by
 [`ENGINEERING_ANSWER_STRENGTHENING_PLAN_2026-10-07.md`](../planning/ENGINEERING_ANSWER_STRENGTHENING_PLAN_2026-10-07.md).
 **Umbrella issue:** [#968](https://github.com/MSKazemi/idkmesh/issues/968) — epics #969 (S1–S2), #971 (S3), #972 (S4)
 
-[`RESEARCH_QUESTIONS.md`](../../RESEARCH_QUESTIONS.md) remains the long-horizon
+[`RESEARCH_QUESTIONS.md`](https://github.com/MSKazemi/idkmesh/blob/main/RESEARCH_QUESTIONS.md) remains the long-horizon
 idea backlog: about ninety questions, from consensus to quantum annealing.
 Those questions are **not** current targets. A question becomes a target only when
 this document names it, gives it a falsifier, and links an issue.
@@ -98,7 +98,7 @@ when backpressure turns out to be the binding constraint in H4.
 | **Adversaries** (E036–E039, AVE-3) | Correlation is the attack surface; attacker effort matters more than attacker fraction; probe trust can be gamed | "Coordination always helps the attacker" (E039) | Real plausibly-wrong candidates |
 | **Real producers** (E016, E029) | 1–2B models can neither verify (0/20 discriminate) nor produce (0/60 accepted) on the frozen benchmark | — | A producer strong enough to measure |
 
-The full per-experiment ledger is the [experiment index](../../experiments/README.md).
+The full per-experiment ledger is the [experiment index](https://github.com/MSKazemi/idkmesh/blob/main/experiments/README.md).
 
 ---
 
@@ -109,7 +109,7 @@ plus local CPU or Docker.
 
 | ID | question | tests | instrument | needs | issue |
 |---|---|---|---|---|---|
-| **X1** | Is worker dependence large in a real population? | (pilot) | SWE-bench Verified, 169 systems | — | **Done: [E045](../../experiments/E045-public-agent-dependence-pilot.md)** (exploratory) |
+| **X1** | Is worker dependence large in a real population? | (pilot) | SWE-bench Verified, 169 systems | — | **Done: [E045](https://github.com/MSKazemi/idkmesh/blob/main/experiments/E045-public-agent-dependence-pilot.md)** (exploratory) |
 | **X2** | Freeze the confirmatory analysis before any held-out data is opened | H1–H3 | Preregistration naming the Lite, Test, Multilingual and Multimodal splits and a post-freeze temporal holdout | X1 | #973 |
 | **X3** | Which dependence shape forecasts held-out ensemble behaviour? | H1 | Held-out public splits | X2, A1 | #975 |
 | **X4** | Can a k-agent pilot forecast population coverage and the floor? | H2 | Held-out public splits | X2, A2 | #976 |
@@ -259,4 +259,4 @@ exit gate is met.
 - When a hypothesis is falsified, keep the row, mark it **falsified**, and link
   the evidence. Do not delete it.
 - New targets enter only with a falsifier and an issue. Ideas without both go
-  to [`RESEARCH_QUESTIONS.md`](../../RESEARCH_QUESTIONS.md).
+  to [`RESEARCH_QUESTIONS.md`](https://github.com/MSKazemi/idkmesh/blob/main/RESEARCH_QUESTIONS.md).
