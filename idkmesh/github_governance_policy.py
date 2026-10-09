@@ -7,6 +7,7 @@ acceptance, integration, or merge authority.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from typing import Any
 
@@ -49,6 +50,7 @@ CONDITIONS = frozenset(
 AVAILABILITY = frozenset(
     {"universal", "plan_or_repository_dependent", "provider_dependent"}
 )
+_GUARD_CODE = re.compile(r"[a-z][a-z0-9]*(?:-[a-z0-9]+)*")
 
 
 class GitHubGovernancePolicyError(ValueError):
@@ -73,6 +75,10 @@ def _validate_values(
     if not allow_empty and not values:
         raise GitHubGovernancePolicyError(
             "invalid_policy_field", f"{field} must not be empty"
+        )
+    if not all(isinstance(value, str) for value in values):
+        raise GitHubGovernancePolicyError(
+            "invalid_policy_field", f"{field} must contain only strings"
         )
     if len(values) != len(set(values)):
         raise GitHubGovernancePolicyError(
@@ -100,9 +106,7 @@ class GitHubGovernanceGuard:
         if (
             not isinstance(self.code, str)
             or len(self.code) < 3
-            or not self.code.replace("-", "").isalnum()
-            or self.code.lower() != self.code
-            or self.code[0].isdigit()
+            or _GUARD_CODE.fullmatch(self.code) is None
         ):
             raise GitHubGovernancePolicyError(
                 "invalid_guard_code", "guard code must be lowercase kebab-case"
@@ -164,9 +168,20 @@ class GitHubGovernancePolicy:
             raise GitHubGovernancePolicyError(
                 "unsupported_policy_profile", f"expected {PROFILE}"
             )
+        if not isinstance(self.guards, tuple):
+            raise GitHubGovernancePolicyError(
+                "invalid_policy_field", "guards must be a tuple"
+            )
         if not self.guards:
             raise GitHubGovernancePolicyError(
                 "empty_governance_policy", "at least one guard is required"
+            )
+        if not all(
+            isinstance(guard, GitHubGovernanceGuard) for guard in self.guards
+        ):
+            raise GitHubGovernancePolicyError(
+                "invalid_governance_guard",
+                "guards must contain only GitHubGovernanceGuard objects",
             )
         codes = [guard.code for guard in self.guards]
         if len(codes) != len(set(codes)):

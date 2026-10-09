@@ -23,6 +23,15 @@ and the release notes for that tag.
   evidence level 1 (implemented); it does not promote the project itself to
   production-qualified.
 
+- GitHub governance baseline policy object for issue #607 (C12-A):
+  `idkmesh/github_governance_policy.py` defines deterministic
+  required/warn/optional guards for read-only, candidate, secret-bearing,
+  high-risk, and cloud dispatch and for integration. Automatic GitHub admin
+  mutation and treating ruleset metadata as proof of independent review are
+  structurally forbidden. Policy only: no GitHub API call, ruleset evaluation,
+  workflow lint, or `doctor --github` output is added yet. See
+  [Main protection](docs/admin/MAIN_PROTECTION.md).
+
 - Privacy-safe API observability slice for issue #744: the loopback Control
   Tower now exposes authenticated `GET /api/v1/metrics` with fixed-cardinality
   request/status/error counters, cumulative latency buckets, concurrency and

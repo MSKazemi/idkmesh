@@ -198,7 +198,9 @@ Two ceilings are structural:
    metadata does not prove that a reviewer is independent of a worker.
 
 C12-B should consume this exact policy object when mapping observed ruleset and
-branch-protection fixtures to PASS, WARN, or FAIL. C12-C and later security
+branch-protection fixtures to PASS, WARN, or FAIL, plus the UNKNOWN state that
+[GitHub-First Operations v0.1](../specifications/GITHUB_FIRST_OPERATIONS_V0_1.md)
+section 12 requires when GitHub permissions or API visibility are insufficient.
+UNKNOWN must never be reported as PASS. C12-C and later security
 slices should reuse the same guard vocabulary rather than copy policy rules
 into workflow-specific code.
-

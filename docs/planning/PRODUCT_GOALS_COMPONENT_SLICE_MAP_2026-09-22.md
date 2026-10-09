@@ -544,7 +544,11 @@ conforming production backend.
 
 ### Slices
 
-- **C12-A — governance policy object:** required/warn/optional GitHub guards.
+- **C12-A — governance policy object:** implemented by
+  `idkmesh/github_governance_policy.py`; deterministic required/warn/optional
+  GitHub guards per governed operation, with structural false ceilings for
+  automatic admin mutation and ruleset-as-independent-review. Policy only; no
+  GitHub observation or evaluation yet.
 - **C12-B — branch/ruleset fixture evaluator:** pure metadata -> PASS/WARN/FAIL.
 - **C12-C — workflow-permission linter:** generated workflows use least privilege.
 - **C12-D — secret-bearing job rules:** trusted event + environment approval boundary.

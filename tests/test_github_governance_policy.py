@@ -187,6 +187,61 @@ class GitHubGovernancePolicyTests(unittest.TestCase):
                     GitHubGovernanceGuard(**values)
                 self.assertEqual(caught.exception.code, code)
 
+    def test_guard_code_must_be_ascii_lowercase_kebab_case(self) -> None:
+        for code in (
+            "-leading",
+            "trailing-",
+            "double--hyphen",
+            "snake_case",
+            "Upper-case",
+            "1digit-first",
+            "été-guard",
+            "sup²-guard",
+            "ab",
+            "newline-guard\n",
+        ):
+            with self.subTest(code=code):
+                with self.assertRaises(GitHubGovernancePolicyError) as caught:
+                    GitHubGovernanceGuard(
+                        code=code,
+                        requirement="required",
+                        summary="Example guard.",
+                        applies_to=("read_only",),
+                        observation_sources=("workflow_source",),
+                    )
+                self.assertEqual(caught.exception.code, "invalid_guard_code")
+        for guard in build_github_governance_policy().guards:
+            with self.subTest(canonical=guard.code):
+                self.assertRegex(guard.code, r"\A[a-z][a-z0-9]*(-[a-z0-9]+)*\Z")
+
+    def test_non_string_vocabulary_fails_with_stable_error(self) -> None:
+        with self.assertRaises(GitHubGovernancePolicyError) as caught:
+            GitHubGovernanceGuard(
+                code="example-guard",
+                requirement="required",
+                summary="Example guard.",
+                applies_to=(1, "read_only"),
+                observation_sources=("workflow_source",),
+            )
+        self.assertEqual(caught.exception.code, "invalid_policy_field")
+
+    def test_policy_rejects_non_guard_members(self) -> None:
+        guard = build_github_governance_policy().guards[0]
+        cases = (
+            ([guard], "invalid_policy_field"),
+            (({"code": "example-guard"},), "invalid_governance_guard"),
+            ((guard, "example-guard"), "invalid_governance_guard"),
+        )
+        for guards, code in cases:
+            with self.subTest(code=code, guards=type(guards).__name__):
+                with self.assertRaises(GitHubGovernancePolicyError) as caught:
+                    GitHubGovernancePolicy(
+                        version="0.1",
+                        profile="github-first-governance-v0.1",
+                        guards=guards,
+                    )
+                self.assertEqual(caught.exception.code, code)
+
 
 if __name__ == "__main__":
     unittest.main()
