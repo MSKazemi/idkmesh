@@ -11,6 +11,7 @@ deployment may hand the returned object to a reviewed OTLP/HTTP JSON transport.
 
 from __future__ import annotations
 
+import json
 import math
 from typing import Any, Mapping
 
@@ -20,16 +21,32 @@ from idkmesh.api_observability import (
     METRICS_SCHEMA_VERSION,
 )
 
+# opentelemetry.proto.metrics.v1.AggregationTemporality: CUMULATIVE = 2.
+# OTLP JSON encodes enum fields as their integer values.
 AGGREGATION_TEMPORALITY_CUMULATIVE = 2
 OTEL_SCOPE_NAME = "idkmesh.api_observability"
 OTEL_SCOPE_VERSION = "0.1"
+OTLP_HTTP_METRICS_PATH = "/v1/metrics"
+OTLP_HTTP_JSON_CONTENT_TYPE = "application/json"
 
 _STATUS_CLASSES = ("1xx", "2xx", "3xx", "4xx", "5xx")
+# (reason attribute, source field, implementation status). Rate limiting is
+# pinned to zero and ``not_implemented`` in the local single-token profile, so
+# its exported point carries that status rather than implying a limiter exists.
 _ADMISSION_REASONS = (
-    ("overloaded", "overload_rejections_total"),
-    ("draining", "draining_rejections_total"),
-    ("rate_limited", "rate_limit_rejections_total"),
+    ("overloaded", "overload_rejections_total", "implemented"),
+    ("draining", "draining_rejections_total", "implemented"),
+    ("rate_limited", "rate_limit_rejections_total", "not_implemented"),
 )
+_TRACE_CONTEXT_CONTRACT = "w3c-traceparent-v00-pass-through"
+_PRIVACY_FLAGS = (
+    "path_labels",
+    "query_labels",
+    "request_id_labels",
+    "authentication_labels",
+    "payload_labels",
+)
+_AUTHORITY_FLAGS = ("canonical_state_write", "git_push", "merge")
 
 
 class OtlpMetricsInputError(ValueError):
@@ -157,11 +174,34 @@ def _validate_canonical_document(document: Mapping[str, Any]) -> dict[str, Any]:
         document.get("service_version"), "service_version"
     )
 
+    # Fail closed if the source no longer asserts the v0.1 privacy boundary or
+    # authority ceiling; the adapter must not launder a relaxed document.
+    telemetry = _mapping(document.get("telemetry"), "telemetry")
+    if telemetry.get("trace_context") != _TRACE_CONTEXT_CONTRACT:
+        raise OtlpMetricsInputError(
+            f"telemetry.trace_context must be {_TRACE_CONTEXT_CONTRACT!r}"
+        )
+    for flag in _PRIVACY_FLAGS:
+        if telemetry.get(flag) is not False:
+            raise OtlpMetricsInputError(
+                f"telemetry.{flag} must be false for OTLP export"
+            )
+    authority = _mapping(document.get("authority"), "authority")
+    for flag in _AUTHORITY_FLAGS:
+        if authority.get(flag) is not False:
+            raise OtlpMetricsInputError(
+                f"authority.{flag} must be false for operational telemetry"
+            )
+
     requests = _mapping(document.get("requests"), "requests")
     request_total = _count(requests.get("total"), "requests.total")
     status_classes = _mapping(
         requests.get("by_status_class"), "requests.by_status_class"
     )
+    if set(status_classes) != set(_STATUS_CLASSES):
+        raise OtlpMetricsInputError(
+            "requests.by_status_class must contain exactly 1xx through 5xx"
+        )
     status_counts = {
         status_class: _count(
             status_classes.get(status_class),
@@ -180,6 +220,14 @@ def _validate_canonical_document(document: Mapping[str, Any]) -> dict[str, Any]:
     server_errors = _count(
         requests.get("server_errors_total"), "requests.server_errors_total"
     )
+    if client_errors != status_counts["4xx"]:
+        raise OtlpMetricsInputError(
+            "requests.client_errors_total must equal the 4xx status-class count"
+        )
+    if server_errors != status_counts["5xx"]:
+        raise OtlpMetricsInputError(
+            "requests.server_errors_total must equal the 5xx status-class count"
+        )
 
     latency = _mapping(document.get("latency_ms"), "latency_ms")
     latency_count = _count(latency.get("count"), "latency_ms.count")
@@ -250,7 +298,7 @@ def _validate_canonical_document(document: Mapping[str, Any]) -> dict[str, Any]:
     admission = _mapping(document.get("admission"), "admission")
     admission_values = {
         field: _count(admission.get(field), f"admission.{field}")
-        for _reason, field in _ADMISSION_REASONS
+        for _reason, field, _status in _ADMISSION_REASONS
     }
     if admission.get("rate_limit_status") != "not_implemented":
         raise OtlpMetricsInputError(
@@ -345,9 +393,12 @@ def build_otlp_metrics_request(
             canonical["admission"][field],
             start_time_unix_nano=start,
             time_unix_nano=end,
-            attributes=[_attribute("idkmesh.admission.reason", reason)],
+            attributes=[
+                _attribute("idkmesh.admission.reason", reason),
+                _attribute("idkmesh.implementation_status", status),
+            ],
         )
-        for reason, field in _ADMISSION_REASONS
+        for reason, field, status in _ADMISSION_REASONS
     ]
 
     operation_points = [
@@ -371,15 +422,18 @@ def build_otlp_metrics_request(
         ),
     ]
 
-    histogram_point = {
+    histogram_point: dict[str, Any] = {
         "startTimeUnixNano": str(start),
         "timeUnixNano": str(end),
         "count": str(canonical["latency_count"]),
         "sum": canonical["latency_sum"],
-        "max": canonical["latency_max"],
         "bucketCounts": [str(value) for value in canonical["per_bucket_counts"]],
         "explicitBounds": list(LATENCY_BUCKETS_MS),
     }
+    # OTLP ``max`` is optional; with no observations there is no maximum to
+    # report, so the adapter omits it instead of fabricating a 0 ms sample.
+    if canonical["latency_count"]:
+        histogram_point["max"] = canonical["latency_max"]
 
     metrics: list[dict[str, Any]] = [
         _counter_metric(
@@ -493,3 +547,36 @@ def build_otlp_metrics_request(
             }
         ]
     }
+
+
+def render_otlp_metrics_json(
+    document: Mapping[str, Any],
+    *,
+    start_time_unix_nano: int,
+    time_unix_nano: int,
+    pretty: bool = False,
+) -> str:
+    """Render one deterministic, strict OTLP/HTTP JSON request body.
+
+    Keys are sorted and non-finite floats are rejected, so identical inputs
+    produce byte-identical output suitable for replay or digesting. The body is
+    meant for ``POST`` to :data:`OTLP_HTTP_METRICS_PATH` with
+    :data:`OTLP_HTTP_JSON_CONTENT_TYPE`; this module never sends it.
+    """
+
+    request = build_otlp_metrics_request(
+        document,
+        start_time_unix_nano=start_time_unix_nano,
+        time_unix_nano=time_unix_nano,
+    )
+    if pretty:
+        return json.dumps(
+            request, indent=2, sort_keys=True, ensure_ascii=True, allow_nan=False
+        ) + "\n"
+    return json.dumps(
+        request,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=True,
+        allow_nan=False,
+    ) + "\n"

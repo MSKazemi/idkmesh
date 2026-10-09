@@ -9,6 +9,7 @@ from idkmesh.api_observability import ApiMetrics, LATENCY_BUCKETS_MS
 from idkmesh.otel_metrics import (
     OtlpMetricsInputError,
     build_otlp_metrics_request,
+    render_otlp_metrics_json,
 )
 
 START = 1_000_000_000
@@ -184,6 +185,148 @@ class OtlpMetricsAdapterTests(unittest.TestCase):
                 start_time_unix_nano=START,
                 time_unix_nano=END,
             )
+
+    def test_relaxed_privacy_or_authority_contract_fails_closed(self) -> None:
+        mutations = (
+            ("telemetry", "payload_labels", True, "payload_labels"),
+            ("telemetry", "path_labels", True, "path_labels"),
+            ("telemetry", "query_labels", None, "query_labels"),
+            ("telemetry", "trace_context", "w3c-tracestate", "trace_context"),
+            ("authority", "merge", True, "authority.merge"),
+            ("authority", "git_push", True, "authority.git_push"),
+        )
+        for section, field, value, message in mutations:
+            with self.subTest(section=section, field=field):
+                document = _document()
+                document[section][field] = value
+                with self.assertRaisesRegex(OtlpMetricsInputError, message):
+                    build_otlp_metrics_request(
+                        document,
+                        start_time_unix_nano=START,
+                        time_unix_nano=END,
+                    )
+
+    def test_unreviewed_status_class_dimension_fails_closed(self) -> None:
+        document = _document()
+        document["requests"]["by_status_class"]["/api/v1/secret"] = 0
+        with self.assertRaisesRegex(OtlpMetricsInputError, "exactly 1xx"):
+            build_otlp_metrics_request(
+                document,
+                start_time_unix_nano=START,
+                time_unix_nano=END,
+            )
+
+    def test_error_totals_must_match_status_classes(self) -> None:
+        for field in ("client_errors_total", "server_errors_total"):
+            with self.subTest(field=field):
+                document = _document()
+                document["requests"][field] += 1
+                with self.assertRaisesRegex(OtlpMetricsInputError, field):
+                    build_otlp_metrics_request(
+                        document,
+                        start_time_unix_nano=START,
+                        time_unix_nano=END,
+                    )
+
+    def test_not_implemented_admission_reason_is_labelled(self) -> None:
+        payload = build_otlp_metrics_request(
+            _document(),
+            start_time_unix_nano=START,
+            time_unix_nano=END,
+        )
+        points = _metrics_by_name(payload)["idkmesh.api.admission_rejections"][
+            "sum"
+        ]["dataPoints"]
+        rows = {}
+        for point in points:
+            attrs = {
+                item["key"]: item["value"]["stringValue"]
+                for item in point["attributes"]
+            }
+            rows[attrs["idkmesh.admission.reason"]] = (
+                int(point["asInt"]),
+                attrs["idkmesh.implementation_status"],
+            )
+        self.assertEqual(
+            rows,
+            {
+                "overloaded": (1, "implemented"),
+                "draining": (0, "implemented"),
+                "rate_limited": (0, "not_implemented"),
+            },
+        )
+
+    def test_empty_histogram_omits_fabricated_max(self) -> None:
+        document = ApiMetrics().document(
+            service="idkmesh-control-tower",
+            service_version="0.1",
+            in_flight_requests=0,
+            max_concurrent_requests=16,
+            event_stream_clients=0,
+            max_event_stream_clients=8,
+            product_spine_store_configured=True,
+        )
+        payload = build_otlp_metrics_request(
+            document,
+            start_time_unix_nano=START,
+            time_unix_nano=START,
+        )
+        metrics = _metrics_by_name(payload)
+        point = metrics["idkmesh.api.request.duration"]["histogram"][
+            "dataPoints"
+        ][0]
+        self.assertEqual(point["count"], "0")
+        self.assertNotIn("max", point)
+        self.assertEqual(
+            point["bucketCounts"], ["0"] * (len(LATENCY_BUCKETS_MS) + 1)
+        )
+        dependency = metrics["idkmesh.api.dependency_state"]["gauge"][
+            "dataPoints"
+        ][0]
+        states = {
+            item["key"]: next(iter(item["value"].values()))
+            for item in dependency["attributes"]
+        }
+        self.assertEqual(states["idkmesh.dependency.state"], "configured_unprobed")
+        self.assertNotIn("healthy", json.dumps(dependency).lower())
+        # Non-empty histograms still carry the observed maximum.
+        populated = build_otlp_metrics_request(
+            _document(),
+            start_time_unix_nano=START,
+            time_unix_nano=END,
+        )
+        self.assertEqual(
+            _metrics_by_name(populated)["idkmesh.api.request.duration"][
+                "histogram"
+            ]["dataPoints"][0]["max"],
+            1200.0,
+        )
+
+    def test_rendered_json_is_deterministic_and_strict(self) -> None:
+        document = _document()
+        first = render_otlp_metrics_json(
+            document, start_time_unix_nano=START, time_unix_nano=END
+        )
+        second = render_otlp_metrics_json(
+            document, start_time_unix_nano=START, time_unix_nano=END
+        )
+        self.assertEqual(first, second)
+        self.assertTrue(first.endswith("\n"))
+        self.assertNotIn("\n", first[:-1])
+        self.assertNotIn('": ', first)
+        self.assertEqual(
+            json.loads(first),
+            build_otlp_metrics_request(
+                document, start_time_unix_nano=START, time_unix_nano=END
+            ),
+        )
+        pretty = render_otlp_metrics_json(
+            document,
+            start_time_unix_nano=START,
+            time_unix_nano=END,
+            pretty=True,
+        )
+        self.assertEqual(json.loads(pretty), json.loads(first))
 
 
 if __name__ == "__main__":

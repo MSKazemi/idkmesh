@@ -117,7 +117,10 @@ metrics document into the OTLP metrics JSON shape used by an
 The adapter is intentionally **transport-free**. It performs no collector
 network I/O, owns no endpoint or credential, retries nothing, and creates no
 spans. A deployment may hand the returned object to a separately reviewed
-OTLP/HTTP JSON transport.
+OTLP/HTTP JSON transport. `render_otlp_metrics_json()` renders the same request
+as deterministic strict JSON (sorted keys, no `NaN`/`Infinity`) intended for a
+`POST` to the OTLP `/v1/metrics` path with `Content-Type: application/json`;
+the module itself never sends it.
 
 Mapping rules:
 
@@ -126,7 +129,12 @@ Mapping rules:
 - the source latency buckets are cumulative, so the adapter differences them
   into OTLP per-bucket `bucketCounts` and appends the required overflow bucket;
 - concurrency values become gauges;
-- admission and operation labels use closed vocabularies only;
+- admission and operation labels use closed vocabularies only, and each point
+  carries `idkmesh.implementation_status`; rate limiting and Human Decision
+  ingestion are exported as zero-valued `not_implemented` points so a
+  collector cannot mistake them for a working limiter or ingestion path;
+- the latency histogram omits the optional `max` field when it has no
+  observations instead of reporting a fabricated 0 ms maximum;
 - Product Spine dependency state is exported as a coarse gauge with the
   existing `not_configured | configured_unprobed` vocabulary and is not
   promoted into a health claim;
@@ -138,9 +146,14 @@ This keeps the mapping deterministic and prevents the adapter from owning a
 clock or lifecycle policy.
 
 The adapter fails closed when the source document is internally inconsistent
-(for example, request totals do not equal status-class totals, cumulative
-histogram buckets decrease, canonical boundaries change, or a
-`not_implemented` counter is manufactured).
+(for example, request totals do not equal status-class totals, client/server
+error totals disagree with the `4xx`/`5xx` classes, a status-class key outside
+`1xx..5xx` appears, cumulative histogram buckets decrease, canonical boundaries
+change, or a `not_implemented` counter is manufactured). It also fails closed
+when the source no longer asserts the v0.1 privacy boundary or authority
+ceiling: every `telemetry.*_labels` flag must be `false`, `trace_context` must
+remain `w3c-traceparent-v00-pass-through`, and every `authority` flag must be
+`false`. The adapter never relaxes these checks to produce partial output.
 
 This adapter preserves the v0.1 invariants:
 
