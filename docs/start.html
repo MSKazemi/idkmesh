@@ -123,7 +123,7 @@ pip install .</code></pre>
           <p><strong>These particular numbers are synthetic, and the report says so.</strong> Its first fields are <code>"evidence_class": "synthetic"</code>, because the bundled input is fifteen hand-authored candidates judged by five invented reviewers. It exists to show you the shape of the answer in one command. Replace the verdicts with ones you collected and the same fields become an observed measurement of your own panel. For an observed result the project already has, see <a href="research.html">E017</a>: 25 independently seeded test oracles over a real corpus, measured at an effective panel size of 1.00.</p>
           <div class="callout">
             <div class="kicker">What this tool is not</div>
-            <p>The audit is <strong>diagnostic only</strong>. It consumes verdicts you collected and grants no acceptance or merge authority to anything. The contract is <a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/specifications/GATE_AUDIT_V0_1.md">Gate Audit v0.1</a>; the report shape is <a href="https://github.com/MSKazemi/idkmesh/blob/main/schemas/gate-audit-report-v0.1.schema.json"><code>gate-audit-report-v0.1.schema.json</code></a>. To point it at your own panel, copy <a href="https://github.com/MSKazemi/idkmesh/blob/main/examples/gate-audit/panel-votes.example.json">the example input</a> and replace the verdicts.</p>
+            <p>The audit is <strong>diagnostic only</strong>. It consumes verdicts you collected and grants no acceptance or merge authority to anything. The contract is <a href="specifications/GATE_AUDIT_V0_1.html">Gate Audit v0.1</a>; the report shape is <a href="https://github.com/MSKazemi/idkmesh/blob/main/schemas/gate-audit-report-v0.1.schema.json"><code>gate-audit-report-v0.1.schema.json</code></a>. To point it at your own panel, copy <a href="https://github.com/MSKazemi/idkmesh/blob/main/examples/gate-audit/panel-votes.example.json">the example input</a> and replace the verdicts.</p>
           </div>
         </li>
 
@@ -156,7 +156,7 @@ self-acceptance / non-independent fixtures rejected as expected</b></code></pre>
           <h3>Run a simulation, seeded and reproducible</h3>
           <p class="muted">Every experiment in this repository is deterministic given its seed. Run the randomised-scheduling lab and you get the same JSON anyone else gets from the same command.</p>
 <pre><code>python -m randomness_lab --policy thompson --rounds 100 --seed 42</code></pre>
-          <p class="muted">Then read what the lab is for in <a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/research/R2_SCHEDULING_CHURN_EXPERIMENT.md">R2 — randomised scheduling under churn</a>, or browse <a href="research.html">the whole experiment atlas</a>.</p>
+          <p class="muted">Then read what the lab is for in <a href="research/R2_SCHEDULING_CHURN_EXPERIMENT.html">R2 — randomised scheduling under churn</a>, or browse <a href="research.html">the whole experiment atlas</a>.</p>
         </li>
 
         <li>
@@ -185,7 +185,7 @@ self-acceptance / non-independent fixtures rejected as expected</b></code></pre>
           </tbody>
         </table>
       </div>
-      <p class="muted" style="margin-top:1.2rem">Use <code>Refs: #N</code> rather than a closing keyword unless the merge really should close the issue. Full contribution rules are in <a href="https://github.com/MSKazemi/idkmesh/blob/main/CONTRIBUTING.md">CONTRIBUTING.md</a>, and the merge-safety policy — never bulk-merge stale branches, always a bounded PR reviewed against its exact diff — is in <a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/planning/BRANCH_CONVERGENCE_POLICY.md">the branch convergence policy</a>.</p>
+      <p class="muted" style="margin-top:1.2rem">Use <code>Refs: #N</code> rather than a closing keyword unless the merge really should close the issue. Full contribution rules are in <a href="https://github.com/MSKazemi/idkmesh/blob/main/CONTRIBUTING.md">CONTRIBUTING.md</a>, and the merge-safety policy — never bulk-merge stale branches, always a bounded PR reviewed against its exact diff — is in <a href="planning/BRANCH_CONVERGENCE_POLICY.html">the branch convergence policy</a>.</p>
     </section>
 
     <section>
@@ -230,8 +230,8 @@ self-acceptance / non-independent fixtures rejected as expected</b></code></pre>
           <h3>Contracts</h3>
           <ul>
             <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/schemas/README.md">Schema index</a></li>
-            <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/specifications/README.md">Specifications</a></li>
-            <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/docs/decisions/README.md">Decision records</a></li>
+            <li><a href="specifications/">Specifications</a></li>
+            <li><a href="decisions/">Decision records</a></li>
             <li><a href="https://github.com/MSKazemi/idkmesh/blob/main/IDKIPS.md">Improvement proposals</a></li>
           </ul>
         </div>

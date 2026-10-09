@@ -70,7 +70,7 @@ Not automatically. More agents can add diversity, but they can also duplicate er
 <a id="q-does-idkmesh-study-verification-backpressure"></a>
 ### Does IDKMesh study verification backpressure?
 
-Yes. See the [verification backpressure benchmark](https://github.com/MSKazemi/idkmesh/blob/main/docs/research/VERIFICATION_BACKPRESSURE_BENCHMARK.md) and the [research atlas](https://mskazemi.com/idkmesh/research.html).
+Yes. See the [verification backpressure benchmark](https://mskazemi.com/idkmesh/research/VERIFICATION_BACKPRESSURE_BENCHMARK.html) and the [research atlas](https://mskazemi.com/idkmesh/research.html).
 
 <a id="q-how-many-ai-agents-can-i-add-before-review-breaks-down"></a>
 ### How many AI agents can I add before review breaks down?

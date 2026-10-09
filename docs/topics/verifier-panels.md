@@ -89,7 +89,7 @@ A quorum is the threshold or rule used to turn individual verification results i
 <a id="q-how-can-i-try-this-in-idkmesh"></a>
 ### How can I try this in IDKMesh?
 
-Run the [gate-audit quickstart](https://mskazemi.com/idkmesh/start.html) and read the [Gate Audit v0.1 specification](https://github.com/MSKazemi/idkmesh/blob/main/docs/specifications/GATE_AUDIT_V0_1.md).
+Run the [gate-audit quickstart](https://mskazemi.com/idkmesh/start.html) and read the [Gate Audit v0.1 specification](https://mskazemi.com/idkmesh/specifications/GATE_AUDIT_V0_1.html).
 
 <a id="q-how-do-i-choose-diverse-verifiers"></a>
 ### How do I choose diverse verifiers?

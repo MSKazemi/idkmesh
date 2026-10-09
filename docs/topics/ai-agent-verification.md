@@ -66,7 +66,7 @@ In practical software-agent workflows, verification asks whether the candidate s
 <a id="q-where-are-the-executable-contracts"></a>
 ### Where are the executable contracts?
 
-Start with the [schema index](https://github.com/MSKazemi/idkmesh/blob/main/schemas/README.md), [architecture](https://github.com/MSKazemi/idkmesh/blob/main/ARCHITECTURE.md), and [getting-started guide](https://github.com/MSKazemi/idkmesh/blob/main/docs/GETTING_STARTED.md).
+Start with the [schema index](https://github.com/MSKazemi/idkmesh/blob/main/schemas/README.md), [architecture](https://github.com/MSKazemi/idkmesh/blob/main/ARCHITECTURE.md), and [getting-started guide](https://mskazemi.com/idkmesh/GETTING_STARTED.html).
 
 <a id="q-how-do-you-verify-an-ai-agent-in-production"></a>
 ### How do you verify an AI agent in production?
