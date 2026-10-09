@@ -4,6 +4,8 @@ This directory contains the machine-readable contracts used by the executable re
 
 ## Current versions
 
+- `github-ledger-record-v0.1.schema.json` — C9-A compact GitHub-first durable ledger event: exact WorkUnit/source, route rationale, deterministic dispatch idempotency, attempt/provider identity, candidate/result/verification/human-decision references, negative-state retention, previous-record digest linkage, and an all-false authority ceiling. See [GitHub Durable Ledger Record v0.1](../docs/specifications/GITHUB_LEDGER_RECORD_V0_1.md).
+
 - `executor-admission-v0.1.schema.json` — admission/execution-reservation/submission record bound to one exact ready input snapshot, embedding the local task claim snapshot. The report is metadata; the durable claim is the admission, and it is not a dispatch credential, verification, acceptance or merge authority; see [Executor Admission v0.1](../docs/specifications/EXECUTOR_ADMISSION_V0_1.md).
 
 - `coordination-preflight-v0.1.schema.json` — read-only dependency and declared-effort report: exact WorkUnit/graph/observation/input bindings, prerequisite pins, blockers, shadow capability/connector recommendation and zero project spend. It is not a claim, reservation or dispatch authorization; see [Coordination Preflight v0.1](../docs/specifications/COORDINATION_PREFLIGHT_V0_1.md).
