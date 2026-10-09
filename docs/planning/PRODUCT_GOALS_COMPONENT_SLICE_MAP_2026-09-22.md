@@ -460,9 +460,16 @@ conforming production backend.
 
 ### Slices
 
-- **C8-A — ProjectManifest/bootstrap file plan:** exact generated files and ownership rules.
-- **C8-B — `init --github --dry-run`:** planned file diff only.
-- **C8-C — idempotent file generation:** project config + connector template.
+- **C8-A — ProjectManifest/bootstrap file plan:** implemented by
+  `idkmesh/github_bootstrap.py` (PR #678); exact file inventory, ownership,
+  overwrite policy, pinned IDKMesh ref, and owner-only actions.
+- **C8-B — `init --github --dry-run`:** implemented by PR #928; deterministic
+  CLI/JSON plan projection with explicit zero-write/zero-GitHub-mutation claims.
+- **C8-C — idempotent config generation:** implemented by
+  `idkmesh/github_bootstrap_render.py`; deterministic ProjectManifest seed,
+  disabled secret-reference connector template, repository-local
+  software-engineering DomainPack, generated ownership README, and SHA-256
+  content identities. Rendering only; apply remains disabled.
 - **C8-D — workflow wrapper generation:** thin pinned preview/dispatch/verify/status workflows.
 - **C8-E — owner-action checklist:** secrets, branch protection, environments, app install.
 - **C8-F — re-run/update behavior:** preserve user edits and report conflicts.
@@ -575,9 +582,19 @@ conforming production backend.
 
 ### Slices
 
-- **C14-A — Actions step/job summary renderer.**
-- **C14-B — one idempotent issue/PR status comment.**
-- **C14-C — durable evidence links after runner teardown.**
+- **C14-A — Actions step/job summary renderer.** Implemented on `main` by
+  `idkmesh/github_actions_summary.py`; presentation only, with exact
+  candidate/evidence digest binding.
+- **C14-B — one idempotent issue/PR status comment.** Implemented by
+  `idkmesh/github_status_comment.py`: reserve-before-create, exact-replay
+  no-op, same-comment PATCH for changed canonical status, safe retry of the
+  same interrupted PATCH, and fail-closed reconciliation for ambiguous first
+  creation or an overtaking update.
+- **C14-C — durable evidence links after runner teardown.** Implemented by
+  `idkmesh/github_evidence_link.py`: canonical GitHub blob/raw evidence URLs
+  must bind repository + exact 40/64-hex commit + safe file path; moving
+  branch/tag links, Actions artifacts, and ambiguous URL forms fail closed.
+  Both the Actions summary and C14-B status comment use the shared validator.
 - **C14-D — public-safe evidence projection/filter.**
 - **C14-E — read-only GitHub Pages generator.**
 - **C14-F — pilot release metadata/provenance.**
