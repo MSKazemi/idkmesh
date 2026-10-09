@@ -1805,13 +1805,17 @@ class ControlTowerConnectionReadTests(unittest.TestCase):
     def test_free_form_legacy_row_is_not_serialized(self) -> None:
         from idkmesh.connector_store import LocalMetadataStore
 
+        # The store itself only accepts an `env:NAME` secret reference, so a
+        # persistable free-form row carries a well-formed one. Both it and an
+        # arbitrary settings payload are row data HTTP must never echo.
         with tempfile.TemporaryDirectory() as tmp:
             store_path = str(Path(tmp) / "legacy.sqlite3")
             LocalMetadataStore(store_path).record_connection(
                 "legacy",
                 metadata={
                     "id": "legacy",
-                    "secret_ref": "sentinel-must-not-leak",
+                    "secret_ref": "env:SENTINEL_REF_MUST_NOT_LEAK",
+                    "settings": {"note": "sentinel-must-not-leak"},
                 },
                 updated_at="2026-10-08T00:00:00Z",
             )
@@ -1835,6 +1839,7 @@ class ControlTowerConnectionReadTests(unittest.TestCase):
             json.loads(body)["error"]["code"],
             "connection_record_invalid",
         )
+        self.assertNotIn(b"SENTINEL_REF_MUST_NOT_LEAK", body)
         self.assertNotIn(b"sentinel-must-not-leak", body)
 
     def test_discovery_openapi_and_method_boundary_are_consistent(self) -> None:
