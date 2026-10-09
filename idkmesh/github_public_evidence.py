@@ -28,7 +28,7 @@ from idkmesh.work_unit_binding import canonical_digest
 
 _SCHEMA_VERSION = "0.1"
 _KIND = "idkmesh-github-public-evidence"
-_REPOSITORY_RE = re.compile(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+\\Z")
+_REPOSITORY_RE = re.compile(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+\Z")
 _RECOMMENDATIONS = frozenset(
     {
         "accept_candidate",
@@ -48,6 +48,78 @@ _EVIDENCE_STATES = frozenset(
     }
 )
 _MAX_JSON_BYTES = 128 * 1024
+_TOP_LEVEL_KEYS = frozenset(
+    {
+        "schema_version",
+        "kind",
+        "repository",
+        "run",
+        "attempts",
+        "evidence_summary",
+        "human_decision_status",
+        "authority",
+        "privacy",
+    }
+)
+_RUN_KEYS = frozenset(
+    {
+        "run_id",
+        "state",
+        "work_unit_id",
+        "work_unit_version",
+        "work_unit_digest",
+        "source_revision",
+        "evidence_report_digest",
+        "human_decision_record_digest",
+    }
+)
+_ATTEMPT_KEYS = frozenset(
+    {
+        "attempt_id",
+        "order",
+        "connector_id",
+        "state",
+        "candidate_reference_digest",
+        "candidate",
+        "result_manifest_digest",
+        "verification_semantic_digest",
+        "evidence_state",
+        "verifier_recommendation",
+    }
+)
+_PR_CANDIDATE_KEYS = frozenset({"type", "repository", "number", "head_sha", "url"})
+_BUNDLE_CANDIDATE_KEYS = frozenset({"type", "digest"})
+_SUMMARY_KEYS = frozenset(
+    {
+        "attempt_count",
+        "supported",
+        "rejected",
+        "inconclusive",
+        "control_errors",
+        "verification_disagreement",
+        "control_failure_present",
+    }
+)
+_AUTHORITY = {
+    "dispatch": False,
+    "verification": False,
+    "human_decision": False,
+    "canonical_state_write": False,
+    "git_push": False,
+    "integration": False,
+    "merge": False,
+}
+_PRIVACY = {
+    "data_classification": "public",
+    "projection_only": True,
+    "raw_evidence_included": False,
+    "raw_logs_included": False,
+    "raw_prompts_included": False,
+    "provider_payloads_included": False,
+    "secret_material_included": False,
+    "artifact_locator_included": False,
+    "worker_or_verifier_identity_included": False,
+}
 
 
 class GitHubPublicEvidenceError(ValueError):
@@ -415,27 +487,73 @@ def build_github_public_evidence_projection(
         "attempts": attempts,
         "evidence_summary": _safe_summary(report_summary),
         "human_decision_status": decision_status,
-        "authority": {
-            "dispatch": False,
-            "verification": False,
-            "human_decision": False,
-            "canonical_state_write": False,
-            "git_push": False,
-            "integration": False,
-            "merge": False,
-        },
-        "privacy": {
-            "data_classification": "public",
-            "projection_only": True,
-            "raw_evidence_included": False,
-            "raw_logs_included": False,
-            "raw_prompts_included": False,
-            "provider_payloads_included": False,
-            "secret_material_included": False,
-            "artifact_locator_included": False,
-            "worker_or_verifier_identity_included": False,
-        },
+        "authority": dict(_AUTHORITY),
+        "privacy": dict(_PRIVACY),
     }
+
+
+def _require_exact_keys(
+    value: Any,
+    expected: frozenset[str],
+    path: str,
+) -> Mapping[str, Any]:
+    if not isinstance(value, Mapping) or set(value) != expected:
+        raise GitHubPublicEvidenceError(
+            f"projection {path} does not match the v0.1 public whitelist"
+        )
+    return value
+
+
+def _require_whitelisted_shape(projection: Mapping[str, Any]) -> None:
+    """Reject any mapping that is not exactly the v0.1 whitelist shape.
+
+    The renderer is the publication boundary, so it must not serialize a
+    hand-built or mutated mapping that smuggles extra fields, relaxed
+    authority, or weakened privacy flags past the projection builder.
+    """
+
+    _require_exact_keys(projection, _TOP_LEVEL_KEYS, "root")
+    _require_exact_keys(projection["run"], _RUN_KEYS, "run")
+    attempts = projection["attempts"]
+    if not isinstance(attempts, list):
+        raise GitHubPublicEvidenceError("projection attempts must be a list")
+    for index, attempt in enumerate(attempts):
+        attempt = _require_exact_keys(
+            attempt, _ATTEMPT_KEYS, f"attempts[{index}]"
+        )
+        candidate = attempt["candidate"]
+        if candidate is not None:
+            expected = (
+                _PR_CANDIDATE_KEYS
+                if isinstance(candidate, Mapping)
+                and candidate.get("type") == "github_pull_request"
+                else _BUNDLE_CANDIDATE_KEYS
+            )
+            _require_exact_keys(
+                candidate, expected, f"attempts[{index}].candidate"
+            )
+    if projection["evidence_summary"] is not None:
+        _require_exact_keys(
+            projection["evidence_summary"], _SUMMARY_KEYS, "evidence_summary"
+        )
+    if dict(_require_exact_keys(
+        projection["authority"], frozenset(_AUTHORITY), "authority"
+    )) != _AUTHORITY or any(
+        type(flag) is not bool for flag in projection["authority"].values()
+    ):
+        raise GitHubPublicEvidenceError(
+            "projection authority must be the fixed all-false ceiling"
+        )
+    if dict(_require_exact_keys(
+        projection["privacy"], frozenset(_PRIVACY), "privacy"
+    )) != _PRIVACY or any(
+        type(projection["privacy"][key]) is not bool
+        for key in _PRIVACY
+        if key != "data_classification"
+    ):
+        raise GitHubPublicEvidenceError(
+            "projection privacy flags must match the fixed public profile"
+        )
 
 
 def render_github_public_evidence_json(
@@ -452,6 +570,7 @@ def render_github_public_evidence_json(
         raise GitHubPublicEvidenceError(
             "projection is not GitHub public evidence v0.1"
         )
+    _require_whitelisted_shape(projection)
     rendered = json.dumps(
         projection,
         sort_keys=True,

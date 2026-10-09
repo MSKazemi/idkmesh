@@ -387,6 +387,60 @@ class GitHubPublicEvidenceTests(unittest.TestCase):
         second = render_github_public_evidence_json(projection)
         self.assertEqual(first, second)
 
+    def test_policy_accepts_owner_name_and_rejects_malformed_repository(self):
+        self.assertEqual(_policy().repository, "MSKazemi/idkmesh")
+        for repository in (
+            "MSKazemi",
+            "MSKazemi/idkmesh/extra",
+            "MSKazemi/idkmesh\n",
+            "MSKazemi/idkmesh\\Z",
+            "",
+        ):
+            with self.subTest(repository=repository):
+                with self.assertRaises(ValueError):
+                    _policy(repository=repository)
+
+    def test_renderer_rejects_mapping_outside_public_whitelist(self):
+        candidate = _candidate()
+        report = _report()
+        projection = build_github_public_evidence_projection(
+            _run(candidate=candidate, report=report),
+            policy=_policy(),
+            candidates={"attempt-1": candidate},
+            evidence_report=report,
+        )
+
+        def mutated(mutate):
+            copy = json.loads(json.dumps(projection))
+            mutate(copy)
+            return copy
+
+        cases = {
+            "root_extra": lambda p: p.update(raw_logs="PRIVATE LOG"),
+            "run_extra": lambda p: p["run"].update(prompt="PRIVATE PROMPT"),
+            "attempt_extra": lambda p: p["attempts"][0].update(
+                provider_reference="private-provider-session"
+            ),
+            "candidate_extra": lambda p: p["attempts"][0]["candidate"].update(
+                locator="file:///home/private/out.patch"
+            ),
+            "summary_extra": lambda p: p["evidence_summary"].update(
+                warnings=["private warning"]
+            ),
+            "authority_raised": lambda p: p["authority"].update(merge=True),
+            "authority_falsy_int": lambda p: p["authority"].update(merge=0),
+            "privacy_weakened": lambda p: p["privacy"].update(
+                raw_logs_included=True
+            ),
+            "privacy_reclassified": lambda p: p["privacy"].update(
+                data_classification="internal"
+            ),
+        }
+        for name, mutate in cases.items():
+            with self.subTest(case=name):
+                with self.assertRaises(GitHubPublicEvidenceError):
+                    render_github_public_evidence_json(mutated(mutate))
+
 
 if __name__ == "__main__":
     unittest.main()

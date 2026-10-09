@@ -2137,6 +2137,11 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://mskazemi.com/idkmesh/specifications/GITHUB_PUBLIC_EVIDENCE_V0_1.html</loc>
+    <lastmod>2026-10-08</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://mskazemi.com/idkmesh/specifications/GITHUB_WEBHOOK_INGRESS_V0_1.html</loc>
     <lastmod>2026-09-24</lastmod>
     <priority>0.8</priority>

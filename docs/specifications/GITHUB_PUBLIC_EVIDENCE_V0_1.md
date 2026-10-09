@@ -119,13 +119,21 @@ Publishing a digest or verifier recommendation does not accept a candidate.
 sorted keys, no NaN values, and a 128 KiB UTF-8 ceiling. It performs no file,
 network, GitHub, verification, decision, or repository mutation.
 
+The renderer is itself a publication boundary: before serializing, it rejects
+any mapping whose root, run, attempt, candidate, or summary objects carry a key
+outside the v0.1 whitelist, and any mapping whose authority ceiling or privacy
+flags differ from the fixed values above. A hand-built or mutated mapping
+therefore cannot smuggle extra fields past the projection builder.
+
 ## Relationship to other C14 slices
 
 - C14-A (PR #932) renders a richer ephemeral Actions summary for operators.
 - C14-D (this contract) is the narrower public-safe data boundary.
 - C14-E should generate read-only Pages **from this projection or an equally
   strict reviewed successor**, not from raw provider/evidence JSON.
-- C14-C still owns durable evidence links after runner teardown.
+- C14-C (`idkmesh/github_evidence_link.py`) owns durable, commit-pinned
+  evidence links after runner teardown; this projection carries no links
+  beyond the canonical same-repository PR URL.
 - Pages availability must never become a coordination or authority dependency.
 
 ## Non-goals
