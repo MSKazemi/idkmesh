@@ -14,6 +14,9 @@ policy changes or merge decisions.
 - [Preregistration v1: forecasting the value of the next coding agent](PREREG_AGENT_VALUE_FORECAST_V1.md) —
   frozen analysis (code SHA-256), estimands, tests and decision rules for H1–H3,
   registered before the four held-out SWE-bench splits were opened.
+- [Preregistration v2: temporal holdout for the agent-value forecast](PREREG_AGENT_VALUE_FORECAST_V2.md) —
+  registers, before any data exists, the replication on SWE-bench submissions
+  added after the pinned commit; none exist yet.
 - [First Research Program](FIRST_RESEARCH_PROGRAM.md) — staged path from
   deterministic foundations to held-out real-task evidence.
 - [Top 20 Questions](TOP_20_QUESTIONS.md) — prioritized open questions about
