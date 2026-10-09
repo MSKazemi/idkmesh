@@ -14,6 +14,19 @@ and the release notes for that tag.
 
 ### Added
 
+- The scientific program (`docs/research/SCIENTIFIC_PROGRAM.md`, umbrella
+  issue #968) states the one question IDKMesh is organised around: *when does
+  adding another AI agent, as worker or verifier, increase independently
+  verified useful work, and can that be predicted from a small pilot?* It also
+  defines the audience, hypotheses H1–H6, experiments X1–X10, algorithms
+  A1–A7, engineering targets T1–T6, the checked novelty boundary, and phases
+  S0–S5. `RESEARCH_QUESTIONS.md` is now labelled as the long-horizon backlog.
+- E045, an exploratory pilot (`experiments/public_agent_dependence.py`). It
+  reads public execution-graded SWE-bench Verified results, at a pinned
+  upstream commit, for 169 competent coding systems × 500 tasks. Mean pairwise
+  φ is 0.4763, 26/500 tasks are solved by no system, and oracle best-of-10
+  covers 0.8521 where independence predicts 0.9997.
+
 - Transport-neutral Human Decision service core for issue #740
   (`idkmesh/human_decision_service.py`). It records an `accept` / `reject` /
   `escalate` decision with a rationale into an append-only SQLite store whose
@@ -30,6 +43,7 @@ and the release notes for that tag.
   core, it performs no tenant/role policy authorization (`decisions:write`), and
   it emits no audit-ledger event; those remain owned by #740 with #670/#671/#743,
   so a local session token still cannot record a decision.
+||||||| parent of 91d5a48 (research: define the scientific program and add the E045 public agent-dependence pilot)
 - API-11A client read-model completion for issue #746: the official
   dependency-free Python client (`idkmesh.api_client.ControlTowerClient`) now
   covers the whole resource-oriented Control Tower read model — `list_runs`

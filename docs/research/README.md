@@ -6,10 +6,16 @@ policy changes or merge decisions.
 
 ## Program and Measurement
 
+- **[Scientific Program](SCIENTIFIC_PROGRAM.md)** — the canonical statement of
+  what IDKMesh is trying to find out: one question, six falsifiable hypotheses,
+  the experiments still to run (X1–X10), the algorithms they must deliver
+  (A1–A7), the engineering targets that serve them, the audience, and the
+  verified novelty boundary. Start here.
 - [First Research Program](FIRST_RESEARCH_PROGRAM.md) — staged path from
   deterministic foundations to held-out real-task evidence.
 - [Top 20 Questions](TOP_20_QUESTIONS.md) — prioritized open questions about
-  scaling, verification, governance, and community growth.
+  scaling, verification, governance, and community growth. A question here is a
+  current target only when the Scientific Program names it.
 - [Metric Uncertainty v0.1](METRIC_UNCERTAINTY_V0_1.md) — uncertainty and
   reporting rules for repository metrics.
 - [Collaboration Observables v0.1](COLLABORATION_OBSERVABLES_V0_1.md) —
