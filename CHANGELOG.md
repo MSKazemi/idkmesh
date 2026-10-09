@@ -14,6 +14,15 @@ and the release notes for that tag.
 
 ### Added
 
+- E046 confirmatory results (`experiments/E046-agent-value-forecast.md`). The
+  analysis frozen by PREREG_AGENT_VALUE_FORECAST_V1 was run unchanged on the
+  held-out SWE-bench Lite split (78 agents × 300 tasks). Per-item difficulty
+  (beta-binomial) forecast team coverage with error 0.0316, against 0.1619 for
+  the Kish design effect and 0.0816 for shared shock (H1 supported). H2 and H3
+  passed the registered rule but are fragile under a disclosed post-hoc check
+  on tasks disjoint from Verified. Test, Multilingual and Multimodal were
+  infeasible (fewer than 20 competent agents).
+
 - Preregistration v1 for forecasting the value of the next coding agent
   (`docs/research/PREREG_AGENT_VALUE_FORECAST_V1.md`, issue #973). It freezes
   the E046 analysis (`experiments/agent_value_forecast.py`, SHA-256 recorded)

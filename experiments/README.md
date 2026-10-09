@@ -45,6 +45,7 @@ listed here fails the suite rather than becoming quietly undiscoverable.
 | **E043** | [A verifier panel does not pay for itself, and its one advantage needs real independence](E043-panel-frontier.md) |
 | **E044** | [Review capacity as a carrying-capacity governor](E044-review-capacity-governor.md) |
 | **E045** | [169 real coding agents fail together, and a 10-agent pilot underestimates what the population covers](E045-public-agent-dependence-pilot.md) |
+| **E046** | [Per-item difficulty forecasts how many tasks a team of coding agents will cover; correlation-only models do not](E046-agent-value-forecast.md) |
 
 The Physarum routing research records are also indexed here:
 [PHY-0 reference routing](PHY-0-physarum-compute-routing.md),
