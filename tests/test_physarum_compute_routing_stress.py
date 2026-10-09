@@ -3,6 +3,8 @@ import json
 import sys
 from pathlib import Path
 
+import pytest
+
 SIM_DIR = Path(__file__).parents[1] / "sim"
 
 BASE_PATH = SIM_DIR / "physarum_compute_routing_sim.py"
@@ -238,3 +240,88 @@ def test_retained_completion_artifact_marks_synthetic_scope():
         "exploration-low",
         "exploration-high",
     }
+
+
+RETAINED_PATH = (
+    Path(__file__).parents[1]
+    / "experiments"
+    / "results"
+    / "PHY-1-completion-sweep.json"
+)
+# The retained artifact is rounded to 9 decimals. Compare by value, not bytes:
+# libm rounding may differ across platforms; a changed result may not.
+REPLAY_TOLERANCE = 1e-6
+
+
+def _retained_completion_sweep():
+    return json.loads(RETAINED_PATH.read_text(encoding="utf-8"))
+
+
+def _assert_close(expected, observed, context):
+    assert len(expected) == len(observed), context
+    for want, got in zip(expected, observed):
+        assert abs(want - got) <= REPLAY_TOLERANCE, (context, expected, observed)
+
+
+def test_retained_completion_cell_replays_from_committed_code():
+    """One cheap cell of the retained sweep must replay from committed code."""
+    retained = _retained_completion_sweep()
+    recomputed = stress.compare(
+        seed_start=retained["seed_start"],
+        seeds=retained["seeds"],
+        epochs=retained["epochs"],
+        tasks_per_epoch=retained["tasks_per_epoch"],
+        environment_names=["abrupt-shift"],
+        strategy_names=["physarum"],
+        topology_name="sparse",
+    )["summary"]["abrupt-shift"]["physarum"]
+    _assert_close(
+        retained["topology_summary"]["sparse"]["abrupt-shift"]["physarum"],
+        [recomputed[metric] for metric in retained["topology_value_format"]],
+        ("sparse", "abrupt-shift", "physarum"),
+    )
+
+
+@pytest.mark.sim
+def test_retained_completion_sweep_replays_from_committed_code():
+    """Every retained number must be recomputed by committed code and seeds."""
+    retained = _retained_completion_sweep()
+    window = {
+        "seed_start": retained["seed_start"],
+        "seeds": retained["seeds"],
+        "epochs": retained["epochs"],
+        "tasks_per_epoch": retained["tasks_per_epoch"],
+    }
+    topologies = stress.compare_topologies(**window)["topologies"]
+    assert set(topologies) == set(retained["topology_summary"])
+    for topology, environments in retained["topology_summary"].items():
+        assert set(topologies[topology]) == set(environments)
+        for environment, strategies in environments.items():
+            assert set(topologies[topology][environment]) == set(strategies)
+            for strategy, expected in strategies.items():
+                row = topologies[topology][environment][strategy]
+                _assert_close(
+                    expected,
+                    [row[metric] for metric in retained["topology_value_format"]],
+                    (topology, environment, strategy),
+                )
+
+    sweep = stress.parameter_sweep(
+        environment_name="abrupt-shift",
+        topology_name="dense",
+        **window,
+    )["parameters"]
+    assert set(sweep) == set(retained["parameter_sweep"])
+    metrics = (
+        "success_rate",
+        "post_event_success_rate",
+        "mean_route_burden_per_task",
+    )
+    for name, expected in retained["parameter_sweep"].items():
+        for control in ("d_min", "evaporation", "exploration"):
+            assert sweep[name]["config"][control] == expected[control], (name, control)
+        _assert_close(
+            [expected[metric] for metric in metrics],
+            [sweep[name]["summary"][metric] for metric in metrics],
+            ("parameter-sweep", name),
+        )

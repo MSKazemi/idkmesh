@@ -179,12 +179,34 @@ python sim/physarum_compute_routing_stress.py \
 **Recommendation: reject promotion to a dry-run product planner at this stage.**
 
 The result is negative, not a fabricated success. Across both topology views,
-explicit multipath failover has higher synthetic success than Physarum in every
-tested environment in the retained sweep, although it often pays more route
-burden. Discounted Thompson is also better on the success/burden pair in
-several dense scenarios. The parameter sweep materially changes Physarum's
-success/burden trade-off, so the favorable behavior is not robust to its
-control settings.
+explicit multipath failover has higher synthetic success than Physarum in all
+16 topology/environment cells of the retained sweep. It pays more route burden
+in 12 of them; in the remaining 4 (`stationary` on both views, and `dense`
+`correlated-ab-region-shocks`) failover is better on both success and burden.
+Discounted Thompson is better than Physarum on both success and burden in three
+dense scenarios (`abrupt-shift`, `gradual-shift`, `donor-burden-asymmetry`).
+The parameter sweep (dense, `abrupt-shift` only) moves Physarum's success
+between 0.805 (`evaporation-low`) and 0.926 (`exploration-high`) around a
+frozen baseline of 0.850, so its trade-off is materially parameter-sensitive.
+The best tested settings still trail failover's 0.998: `evaporation-high`
+reaches 0.924 at burden 2.287, and `exploration-high` reaches 0.926 at burden
+2.455, against failover's burden of 2.451. The negative result therefore does
+not come from an unluckily tuned baseline alone.
+
+What the data does **not** show: on the `sparse` view, Physarum is not
+Pareto-dominated by any single tested baseline in any of the seven
+non-stationary environments. It sits between discounted Thompson (lower
+success, lower burden) and failover (higher success, higher burden). The
+rejection is therefore a decision-rule judgement and not a dominance result.
+Rule 2 requires a resilience advantage against explicit failover, and Physarum
+has none in success. A failover variant matched on burden was not tested. The
+sensitivity sweep covers one environment and one topology, and it reuses the
+evaluation seeds.
+
+Every retained number is recomputed from the committed code and seeds by
+`tests/test_physarum_compute_routing_stress.py`. The full replay is the
+`sim`-marked (nightly) test, and one cheap cell replays in the unit tier. Both
+compare values within `1e-6`, never bytes.
 
 This does not prove failover is universally superior, and it is not real
 network evidence. It does satisfy the issue's decision purpose: the current
