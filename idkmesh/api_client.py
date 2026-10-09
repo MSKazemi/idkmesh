@@ -619,6 +619,22 @@ class ControlTowerClient:
             ),
         )
 
+    def list_connections(
+        self,
+        *,
+        limit: int = 50,
+        cursor: str | None = None,
+    ) -> ApiResult[ListPage]:
+        """Return one bounded page of secret-free connector metadata.
+
+        Items are the public-safe connection resources persisted by
+        ``idkmesh connections import``, ordered by connection id; no filters.
+        """
+        return self._list_document(
+            "connections",
+            _list_query(limit=limit, cursor=cursor, filters={}),
+        )
+
     def get_project(self, project_id: str) -> ApiResult[dict[str, Any]]:
         """Read one derived project summary (zero-filled run-state counts)."""
         encoded = quote(_resource_id(project_id, "project_id"), safe="/:")
