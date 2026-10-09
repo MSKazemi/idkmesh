@@ -1,3 +1,6 @@
+---
+description: "Contribution tracks for IDKMesh across software engineering, distributed systems, AI/ML, security, and more, with disagreements recorded explicitly."
+---
 # Multidisciplinary Collaboration in IDKMesh
 
 IDKMesh should be designed so contributors can participate from different professional, scientific, cultural, and technical perspectives without needing to understand the entire system.

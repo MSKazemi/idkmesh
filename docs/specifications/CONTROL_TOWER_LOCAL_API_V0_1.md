@@ -1,3 +1,6 @@
+---
+description: "Local, read-only /api/v1 HTTP API exposing produced IDKMesh evidence to human-facing clients, without scheduling, verifying, writing to repos, or merging."
+---
 # Control Tower Local API v0.1
 
 **Status:** experimental, local-only, read-only  

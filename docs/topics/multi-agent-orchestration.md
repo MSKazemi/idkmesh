@@ -1,6 +1,6 @@
 ---
-title: "Multi-Agent Orchestration and Coordination — IDKMesh"
-description: "A verification-first approach to multi-agent orchestration: bounded decomposition, capability routing, candidate isolation, independent verification, and protected integration."
+title: "Multi-Agent Orchestration and Coordination"
+description: "Verification-first multi-agent orchestration: bounded decomposition, capability routing, candidate isolation, independent review, and protected merges."
 image: "/assets/idkmesh-social.png"
 ---
 

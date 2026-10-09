@@ -1,3 +1,7 @@
+---
+title: "ADR-0008: Independent Evidence, Not Raw Vote Count"
+description: "Accepted ADR: IDKMesh verification weighs estimated independent information, not raw reviewer count, following synthetic experiments E012 and E013."
+---
 # ADR-0008 — Verification Uses Independent Evidence, Not Raw Vote Count
 
 - **Status:** Accepted

@@ -1,3 +1,6 @@
+---
+description: "How IDKMesh tests run: make setup and make test, the testkit tiers and their budgets, CI parity, automation hooks, adding tests, and troubleshooting gates."
+---
 # Testing and CI Practice
 
 How tests run in IDKMesh, why the tiers are drawn where they are, and what to do

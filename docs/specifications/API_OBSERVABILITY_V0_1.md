@@ -1,3 +1,6 @@
+---
+description: "Privacy-safe telemetry contract for the IDKMesh HTTP service: is it answering, slow, overloaded or draining, and are concurrency limits saturated."
+---
 # API Observability v0.1
 
 **Status:** experimental, local-service profile  

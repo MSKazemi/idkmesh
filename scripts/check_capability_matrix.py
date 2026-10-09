@@ -277,7 +277,16 @@ def _md_cell(value: object) -> str:
 
 
 def render_markdown(document: dict[str, Any]) -> str:
+    count = len(document["capabilities"])
     lines = [
+        # Jekyll front matter: the published page's search snippet.
+        "---",
+        'title: "IDKMesh Capability Truth Matrix"',
+        f'description: "The public claim boundary for IDKMesh: {count} engineering '
+        "capabilities, each with status, evidence level 0-5, allowed public "
+        'wording, and known limitation."',
+        "---",
+        "",
         "# IDKMesh Capability Truth Matrix",
         "",
         "> Generated from `docs/capability-matrix-v1.json` by "

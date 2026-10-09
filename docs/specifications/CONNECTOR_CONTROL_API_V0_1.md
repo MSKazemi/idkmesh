@@ -1,3 +1,6 @@
+---
+description: "Design contract for configuring and dispatching IDKMesh agent connectors under /api/v1; only the read-only connections slice is implemented so far."
+---
 # Connector Control API v0.1
 
 **Status:** experimental design contract  

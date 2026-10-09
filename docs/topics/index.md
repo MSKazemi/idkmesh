@@ -1,6 +1,6 @@
 ---
-title: "AI Agent Verification, Orchestration, and Trust — IDKMesh Topics"
-description: "Topic guides for AI agent verification, multi-agent orchestration, AI code review, LLM evaluator reliability, provenance, governance, MCP/A2A interoperability, and verified swarm engineering."
+title: "AI Agent Verification, Orchestration, and Trust Guides"
+description: "Guides to AI agent verification, multi-agent orchestration, AI code review, LLM-judge reliability, provenance, governance, MCP/A2A, and verified swarms."
 image: "/assets/idkmesh-social.png"
 ---
 

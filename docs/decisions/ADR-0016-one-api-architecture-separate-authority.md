@@ -1,3 +1,7 @@
+---
+title: "ADR-0016: One API Architecture, Separate Authority"
+description: "Accepted ADR: IDKMesh product APIs share one domain model, one service layer, and one /api/v1 namespace, while authority boundaries stay separate."
+---
 # ADR-0016 — One API Architecture, Separate Authority Boundaries
 
 **Status:** Accepted for API planning and implementation  

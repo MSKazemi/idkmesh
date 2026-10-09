@@ -1,3 +1,6 @@
+---
+description: "Proposed service contract connecting WorkUnit, routing, attempts, candidates, verification, and evidence into one provider-neutral run lifecycle."
+---
 # Product Spine Service v0.1
 
 **Status:** proposed application-service contract  

@@ -399,6 +399,13 @@ and the release notes for that tag.
 
 ### Fixed
 
+- The IDKGraph Markdown index (`tools/idkgraph_markdown_index.py`) now skips a
+  leading YAML front-matter block. Previously the last metadata line followed by
+  the closing `---` parsed as a setext H2, so every page with front matter (all
+  topic guides) got a metadata line such as `image: "/assets/idkmesh-social.png"`
+  as its first heading and IDKGraph title. This unblocks adding search
+  `description:` front matter to specifications and ADRs without corrupting
+  their IDKGraph titles.
 - `GET /api/v1/runs` and `idkmesh run list` no longer fail for the whole page
   when the store also holds a row that is not a Product Spine run. The shared
   `runs` table also holds admission-only, execution-error and GitHub

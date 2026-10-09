@@ -1,3 +1,6 @@
+---
+description: "WorkUnit v0.2 composability profile: a five-arm decomposition benchmark contract, a reference task DAG, and graph validation. Its fixtures are synthetic."
+---
 # Work Unit composability profile v0.2
 
 **Status:** experimental reference profile

@@ -1,3 +1,7 @@
+---
+title: "ADR-0021: WorkUnit and Project Read Models"
+description: "Accepted ADR: the work-units and projects API resources are read models derived on demand from stored runs, adding no new store or write path."
+---
 # ADR-0021 — Serve WorkUnits and Projects as Read Models Derived from Stored Runs
 
 **Status:** Accepted

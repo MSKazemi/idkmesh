@@ -1,6 +1,6 @@
 ---
-title: "MCP, A2A, and AI Agent Interoperability — IDKMesh"
-description: "How MCP and Agent2Agent (A2A) complement each other, and how IDKMesh adds bounded work, evidence, provenance, routing, and verification across heterogeneous agents."
+title: "MCP, A2A, and AI Agent Interoperability"
+description: "How MCP and Agent2Agent (A2A) complement each other, and how IDKMesh adds bounded work, evidence, provenance, and verification across agents."
 image: "/assets/idkmesh-social.png"
 ---
 
