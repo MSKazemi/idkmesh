@@ -160,3 +160,47 @@ proposal
 ```
 
 The same separation should later exist between workers, verifiers, coordinators, and integrators in the Verified Swarm Runner.
+
+## C12 executable governance-policy contract
+
+Issue #607 now has a machine-readable C12-A policy object in
+`idkmesh/github_governance_policy.py`. It converts the governance assumptions
+above into deterministic guard metadata for later preflight evaluation.
+
+The policy separates three requirement levels:
+
+- required: when the guard applies to the requested operation, absence or
+  misconfiguration must block that operation;
+- warn: the gap must be visible but is not by itself a baseline blocker;
+- optional: additive hardening that must never become an implicit dependency.
+
+The policy is operation-specific. A read-only workflow needs least-privilege
+Actions settings, but does not fail merely because branch-deletion protection
+cannot be observed. Candidate dispatch and integration require the protected
+integration boundary. Secret-bearing and high-risk dispatch add environment
+approval, untrusted-PR secret isolation, and immutable action-reference
+requirements.
+
+Some guards are conditional on trusted context such as whether stable required
+checks are declared, whether CODEOWNERS is configured, whether sensitive paths
+are touched, whether a lane is security-sensitive, or whether untrusted PR code
+runs. Free-form issue or PR text is not authority to set those conditions.
+
+The policy also records capability classes so future preflight can distinguish
+a repository/plan limitation from a configuration error. Capability limits do
+not silently downgrade a required invariant.
+
+Two ceilings are structural:
+
+1. `automatic_admin_mutation` is always false; observing a failed guard never
+   authorizes IDKMesh to repair GitHub settings automatically;
+2. `ruleset_proves_independent_review` is always false; GitHub enforcement
+   metadata does not prove that a reviewer is independent of a worker.
+
+C12-B should consume this exact policy object when mapping observed ruleset and
+branch-protection fixtures to PASS, WARN, or FAIL, plus the UNKNOWN state that
+[GitHub-First Operations v0.1](../specifications/GITHUB_FIRST_OPERATIONS_V0_1.md)
+section 12 requires when GitHub permissions or API visibility are insufficient.
+UNKNOWN must never be reported as PASS. C12-C and later security
+slices should reuse the same guard vocabulary rather than copy policy rules
+into workflow-specific code.
