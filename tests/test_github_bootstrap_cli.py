@@ -65,6 +65,36 @@ class GitHubBootstrapCliTests(unittest.TestCase):
                 for item in payload["plan"]["files"]
             )
         )
+        rendered = payload["rendered_config_files"]
+        self.assertEqual(len(rendered), 4)
+        self.assertEqual(
+            {item["path"] for item in rendered},
+            {
+                ".idkmesh/README.md",
+                ".idkmesh/project.json",
+                ".idkmesh/connections.json",
+                (
+                    ".idkmesh/domain-packs/"
+                    "software-engineering-v0.1.domain-pack.json"
+                ),
+            },
+        )
+        self.assertTrue(
+            all(item["content_digest"].startswith("sha256:") for item in rendered)
+        )
+        self.assertTrue(all("content" in item for item in rendered))
+        project = next(
+            item for item in rendered
+            if item["path"] == ".idkmesh/project.json"
+        )
+        project_doc = json.loads(project["content"])
+        self.assertEqual(
+            project_doc["integration_policy"]["target_branch"],
+            "trunk",
+        )
+        self.assertFalse(
+            project_doc["integration_policy"]["automatic_merge_allowed"]
+        )
 
     def test_dry_run_creates_no_files_in_the_current_directory(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -89,6 +119,8 @@ class GitHubBootstrapCliTests(unittest.TestCase):
         self.assertIn("GitHub mutations: no", result.stdout)
         self.assertIn("secret values accessed: no", result.stdout)
         self.assertIn(".idkmesh/project.json", result.stdout)
+        self.assertIn("rendered C8-C config files:", result.stdout)
+        self.assertIn("sha256:", result.stdout)
         self.assertIn("configure-branch-protection", result.stdout)
 
     def test_apply_mode_fails_closed_before_any_write(self):
