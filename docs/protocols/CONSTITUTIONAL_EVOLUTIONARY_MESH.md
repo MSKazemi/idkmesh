@@ -174,9 +174,9 @@ Every mechanism remains a falsifiable hypothesis.
 
 See:
 
-- [`../../sim/emergence_sim.py`](../../sim/emergence_sim.py)
-- [`../../tests/test_emergence_sim.py`](../../tests/test_emergence_sim.py)
+- [`../../sim/emergence_sim.py`](https://github.com/MSKazemi/idkmesh/blob/main/sim/emergence_sim.py)
+- [`../../tests/test_emergence_sim.py`](https://github.com/MSKazemi/idkmesh/blob/main/tests/test_emergence_sim.py)
 - [`../../experiments/E011-emergence-vague-goals.md`](../../experiments/E011-emergence-vague-goals.md)
-- [`../../experiments/results/E011-reference-seed7.json`](../../experiments/results/E011-reference-seed7.json)
+- [`../../experiments/results/E011-reference-seed7.json`](https://github.com/MSKazemi/idkmesh/blob/main/experiments/results/E011-reference-seed7.json)
 
 The model is intentionally small. Its value is that IDKMesh now has a concrete mechanism that can be attacked, compared, improved, or disproved.

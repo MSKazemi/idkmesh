@@ -24,7 +24,7 @@ policy changes or merge decisions.
   [experiment status](RANDOMNESS_EXPERIMENT_STATUS.md) — sequence and current
   state of the bio-inspired scheduling program.
 - [Paper stewardship (`paper/`)](../../paper/README.md) — the canonical
-  manuscript source ([`main.tex`](../../paper/main.tex)) and its
+  manuscript source ([`main.tex`](https://github.com/MSKazemi/idkmesh/blob/main/paper/main.tex)) and its
   [claim-to-evidence map](../../paper/CLAIM_EVIDENCE_MAP.md), the public
   synchronization point between paper-facing claims and repository evidence.
 - [Publication-Oriented Scientific Questions](PUBLICATION_RESEARCH_QUESTIONS_2026-10-07.md)

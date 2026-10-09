@@ -33,7 +33,7 @@ Store one compact JSON object inside an HTML comment in an issue or pull-request
 ACE_LINEAGE -->
 ```
 
-The machine-readable schema is [`schemas/ace-lineage-v0.1.schema.json`](../../schemas/ace-lineage-v0.1.schema.json).
+The machine-readable schema is [`schemas/ace-lineage-v0.1.schema.json`](https://github.com/MSKazemi/idkmesh/blob/main/schemas/ace-lineage-v0.1.schema.json).
 
 Multiple `ACE_LINEAGE` blocks MAY appear in one artifact. This permits one parent to have several descendants without a central mutable table.
 

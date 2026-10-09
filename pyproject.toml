@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "idkmesh"
 version = "0.1.0"
-description = "Evidence-first review-gate toolkit for verifier independence, correlated errors, and swarm run inspection with provenance and authority boundaries."
+description = "Open-source toolkit for AI agent verification: measure how many independent votes your review panel (LLM judges, CI checks, human reviewers) is really worth, audit review gates for correlated errors, and keep reproducible evidence for every accept/reject. Ships the idkmesh gate-audit CLI for review-gate and verifier-panel audits."
 readme = "README.md"
 requires-python = ">=3.11"
 license = "Apache-2.0"

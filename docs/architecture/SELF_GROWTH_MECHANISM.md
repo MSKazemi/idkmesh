@@ -47,7 +47,7 @@ The evolution workflow observes bounded metadata such as:
 - review load and carrying capacity.
 
 The canonical workflow is
-[`.github/workflows/evolution-loop.yml`](../../.github/workflows/evolution-loop.yml).
+[`.github/workflows/evolution-loop.yml`](https://github.com/MSKazemi/idkmesh/blob/main/.github/workflows/evolution-loop.yml).
 It runs on trusted repository events, manual dispatch, and a daily scheduled audit.
 
 ## 2. Remember
@@ -170,7 +170,7 @@ reproduce, challenge, extend, or explain the result. Recovery is capped so an
 unexpected backlog cannot cause mass issue creation.
 
 The executable implementation is
-[`.github/workflows/ace-community-growth.yml`](../../.github/workflows/ace-community-growth.yml).
+[`.github/workflows/ace-community-growth.yml`](https://github.com/MSKazemi/idkmesh/blob/main/.github/workflows/ace-community-growth.yml).
 
 ## 6. Execute with replaceable humans and agents
 

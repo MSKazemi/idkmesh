@@ -1,6 +1,6 @@
 # IDKMesh
 
-> Open-source verification-first coordination fabric for humans, AI agents, and heterogeneous compute working on uncertain goals.
+> Open-source toolkit for AI agent verification: measure how many independent votes your review panel (LLM judges, CI checks, human reviewers) is really worth, audit review gates for correlated errors, and keep reproducible evidence for every accept/reject.
 
 Canonical site: https://mskazemi.com/idkmesh/
 Canonical repository: https://github.com/MSKazemi/idkmesh

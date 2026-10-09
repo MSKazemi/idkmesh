@@ -4,7 +4,7 @@
 **Owners:** [C10](https://github.com/MSKazemi/idkmesh/issues/598) and
 [C9](https://github.com/MSKazemi/idkmesh/issues/597).
 
-[`idkmesh/task_claims.py`](../../idkmesh/task_claims.py) composes the existing
+[`idkmesh/task_claims.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/task_claims.py) composes the existing
 SQLite `LocalMetadataStore`, `TenantScope` and enterprise authorization kernel.
 It implements the first correctness slice of the
 [coordination algorithm plan](../planning/HUMAN_AGENT_COORDINATION_ALGORITHMS_2026-10-04.md).
@@ -182,4 +182,4 @@ coordinator processes, replay/rebase conflicts, cross-tenant isolation, role
 and revocation checks, four deadlines, per-slot epochs, lifetime budgets,
 unknown execution after restart, absorbing terminal evidence, rollback and
 v2-to-v3 preservation. Runtime snapshots conform to
-[`task-claim-v0.1.schema.json`](../../schemas/task-claim-v0.1.schema.json).
+[`task-claim-v0.1.schema.json`](https://github.com/MSKazemi/idkmesh/blob/main/schemas/task-claim-v0.1.schema.json).
