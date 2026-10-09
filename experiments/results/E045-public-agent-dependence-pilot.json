@@ -1,0 +1,97 @@
+{
+  "experiment": "E045",
+  "evidence_class": "observed public data; exploratory pilot, not confirmatory",
+  "upstream": {
+    "repository": "SWE-bench/experiments",
+    "commit": "40f164d5b8f1d249bf95a6df8b74b577fd8e519d",
+    "split": "evaluation/verified",
+    "files_read": 174,
+    "files_sha256": "adfec04c1fae9c06f2fe5518a3856b21bef3d249a5c74a679203842969e4e87c"
+  },
+  "agents_with_results": 174,
+  "competent_agents": 169,
+  "competence_floor": 0.05,
+  "instances": 500,
+  "solve_rate": {
+    "min": 0.07,
+    "median": 0.57,
+    "max": 0.792
+  },
+  "population_coverage": 0.948,
+  "blind_spot_floor": {
+    "unsolved_by_every_agent": 26,
+    "fraction": 0.052,
+    "wilson_95": [
+      0.0357,
+      0.0751
+    ]
+  },
+  "solved_by_exactly_one_agent": 10,
+  "mean_pairwise_phi": 0.4763,
+  "pairs": 14196,
+  "oracle_coverage_curve": [
+    {
+      "k": 1,
+      "oracle_coverage_mean": 0.539,
+      "independence_prediction_mean": 0.539
+    },
+    {
+      "k": 2,
+      "oracle_coverage_mean": 0.7097,
+      "independence_prediction_mean": 0.8168
+    },
+    {
+      "k": 3,
+      "oracle_coverage_mean": 0.7528,
+      "independence_prediction_mean": 0.9083
+    },
+    {
+      "k": 5,
+      "oracle_coverage_mean": 0.8051,
+      "independence_prediction_mean": 0.9802
+    },
+    {
+      "k": 10,
+      "oracle_coverage_mean": 0.8521,
+      "independence_prediction_mean": 0.9997
+    },
+    {
+      "k": 20,
+      "oracle_coverage_mean": 0.8859,
+      "independence_prediction_mean": 1.0
+    },
+    {
+      "k": 40,
+      "oracle_coverage_mean": 0.9091,
+      "independence_prediction_mean": 1.0
+    }
+  ],
+  "chao2_extrapolation": [
+    {
+      "pilot_agents": 5,
+      "observed_gap_to_population_mean": 0.1424,
+      "chao2_bias_mean": 0.1018,
+      "chao2_mean_abs_error": 0.1025
+    },
+    {
+      "pilot_agents": 10,
+      "observed_gap_to_population_mean": 0.0965,
+      "chao2_bias_mean": 0.0607,
+      "chao2_mean_abs_error": 0.0609
+    },
+    {
+      "pilot_agents": 20,
+      "observed_gap_to_population_mean": 0.0627,
+      "chao2_bias_mean": 0.0327,
+      "chao2_mean_abs_error": 0.0342
+    },
+    {
+      "pilot_agents": 40,
+      "observed_gap_to_population_mean": 0.0386,
+      "chao2_bias_mean": 0.0079,
+      "chao2_mean_abs_error": 0.0205
+    }
+  ],
+  "seed": 45,
+  "draws": 200
+}

@@ -522,7 +522,7 @@ vs task/evidence DAG teams
 
 Important outcomes include correctness, hidden-test success, regressions, error correlation, reviewer time, compute/resource use, latency, integration conflict, provenance quality, and verified useful work per unit of scarce attention/cost.
 
-See [`RESEARCH_QUESTIONS.md`](RESEARCH_QUESTIONS.md), [`docs/research/`](docs/research/README.md), and [`experiments/`](experiments/).
+The one question the research is organised around — *when does adding another AI agent, as worker or verifier, increase independently verified useful work, and can that be predicted from a small pilot?* — and its hypotheses, experiments, algorithms and audience are set out in the [Scientific Program](docs/research/SCIENTIFIC_PROGRAM.md). [`RESEARCH_QUESTIONS.md`](RESEARCH_QUESTIONS.md) is the longer idea backlog; see also [`docs/research/`](docs/research/README.md) and [`experiments/`](experiments/).
 
 ## Project principles
 
