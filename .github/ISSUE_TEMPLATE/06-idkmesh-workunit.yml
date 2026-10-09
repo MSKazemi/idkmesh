@@ -52,7 +52,7 @@ body:
       required: true
 
   - type: textarea
-    id: allowed_paths
+    id: requested_allowed_paths
     attributes:
       label: Requested allowed paths
       description: One repository-relative path/glob per line. These are restrictive hints only and can never broaden trusted project policy.
@@ -63,21 +63,19 @@ body:
       required: true
 
   - type: textarea
-    id: forbidden_paths
+    id: requested_forbidden_paths
     attributes:
       label: Forbidden or sensitive paths
-      description: List paths that should not be touched. Enter "none known" if none are known.
+      description: One repository-relative path/glob per line that should not be touched. Leave empty when none are known; trusted project policy still applies its own exclusions.
       placeholder: |
         .github/workflows/**
         SECURITY.md
-    validations:
-      required: true
 
   - type: textarea
-    id: dependencies_blockers
+    id: dependencies
     attributes:
       label: Dependencies or blockers
-      description: Link blocking issues/PRs or describe prerequisites. Leave empty when none are known.
+      description: One issue, PR, WorkUnit, or URL reference per line that this request requires, is blocked by, or is informed by. Leave empty when none are known.
       placeholder: "#123 must merge first"
 
   - type: textarea
@@ -101,12 +99,12 @@ body:
         - medium
         - high
         - critical
-        - unsure
+        - unspecified
     validations:
       required: true
 
   - type: dropdown
-    id: data_sensitivity
+    id: data_sensitivity_hint
     attributes:
       label: Data sensitivity hint
       description: Advisory only. Choose the most restrictive plausible classification; policy may raise it further.
@@ -115,7 +113,7 @@ body:
         - internal
         - confidential
         - restricted
-        - unsure
+        - unspecified
     validations:
       required: true
 
@@ -123,30 +121,28 @@ body:
     id: external_processing_hint
     attributes:
       label: External processing hint
-      description: Advisory restriction only. This cannot authorize sending data to an external provider.
+      description: Advisory preference only. Choosing allowed cannot authorize sending data to an external provider; forbidden may only restrict trusted project policy.
       options:
-        - local-only
-        - allowed-by-project-policy
-        - requires-human-review
-        - unsure
+        - forbidden
+        - allowed
+        - unspecified
     validations:
       required: true
 
   - type: dropdown
-    id: human_review_requirement
+    id: human_review_hint
     attributes:
       label: Human review or decision requirement
       description: Advisory floor only. It cannot remove any reviewer or human-decision requirement imposed by project policy.
       options:
-        - explicit-human-decision-required
-        - independent-human-review-required
-        - project-policy-decides
-        - unsure
+        - required
+        - preferred
+        - unspecified
     validations:
       required: true
 
   - type: input
-    id: preferred_connector
+    id: preferred_connector_hint
     attributes:
       label: Preferred connector
       description: Optional advisory preference. It may only rank connectors that are already eligible under trusted policy.

@@ -10,7 +10,7 @@ meaning of an existing version.
 - [GitHub-First Operations v0.1](GITHUB_FIRST_OPERATIONS_V0_1.md) — implementation contract for no-server GitHub coordination: bootstrap, durable run ledger, idempotency/recovery, multi-user claims/authority, Actions security, optional Projects/Pages/OIDC/attestations, and the pilot test matrix.
 - [GitHub Bootstrap Config Rendering v0.1](GITHUB_BOOTSTRAP_CONFIG_RENDERING_V0_1.md) — deterministic C8-C rendering of the ProjectManifest seed, disabled secret-reference connector template, repository-local software-engineering DomainPack, generated ownership README, and content digests; rendering only, with no apply or GitHub mutation authority.
 - [GitHub Webhook Ingress v0.1](GITHUB_WEBHOOK_INGRESS_V0_1.md) — authenticated bounded webhook envelope: raw-body HMAC-SHA256, event/action allowlists, repository binding, delivery provenance, and no dispatch authority.
-- [GitHub WorkUnit Intake v0.1](GITHUB_WORKUNIT_INTAKE_V0_1.md) — normalized untrusted GitHub Issue Form planning hints with an explicit all-false authority ceiling; requested paths, risk, review, processing, and connector values cannot broaden trusted project policy.
+- [GitHub WorkUnit Intake v0.1](GITHUB_WORKUNIT_INTAKE_V0_1.md) — normalized untrusted GitHub Issue Form planning hints with an explicit all-false authority ceiling; requested paths, risk, review, processing, and connector values cannot broaden trusted project policy. The C13-B WorkUnit request Issue Form uses exactly these field ids and enums.
 
 ## Work and Evidence Contracts
 

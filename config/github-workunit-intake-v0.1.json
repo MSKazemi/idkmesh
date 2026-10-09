@@ -2,8 +2,9 @@
   "schema_version": "0.1",
   "contract_id": "github-workunit-intake-v0.1",
   "work_unit_schema": "schemas/work-unit-v0.2.schema.json",
+  "intake_schema": "schemas/github-workunit-intake-v0.1.schema.json",
   "issue_form_path": ".github/ISSUE_TEMPLATE/06-idkmesh-workunit.yml",
-  "purpose": "Capture structured, untrusted GitHub issue intent for a later policy-bounded WorkUnit preview.",
+  "purpose": "Map the structured, untrusted GitHub Issue Form onto the frozen GitHub WorkUnit intake schema for a later policy-bounded WorkUnit preview. Field ids are intake-schema property names; dropdown options are the schema enums.",
   "fields": [
     {
       "id": "objective",
@@ -18,17 +19,6 @@
       "label": "Task class",
       "input_type": "dropdown",
       "required": true,
-      "allowed_values": [
-        "coding",
-        "testing",
-        "review",
-        "benchmarking",
-        "documentation",
-        "research",
-        "integration",
-        "governance",
-        "other"
-      ],
       "canonical_effect": "advisory_task_class",
       "direct_authority": false
     },
@@ -41,7 +31,7 @@
       "direct_authority": false
     },
     {
-      "id": "allowed_paths",
+      "id": "requested_allowed_paths",
       "label": "Requested allowed paths",
       "input_type": "textarea",
       "required": true,
@@ -49,15 +39,15 @@
       "direct_authority": false
     },
     {
-      "id": "forbidden_paths",
+      "id": "requested_forbidden_paths",
       "label": "Forbidden or sensitive paths",
       "input_type": "textarea",
-      "required": true,
+      "required": false,
       "canonical_effect": "restrictive_scope_hint_only",
       "direct_authority": false
     },
     {
-      "id": "dependencies_blockers",
+      "id": "dependencies",
       "label": "Dependencies or blockers",
       "input_type": "textarea",
       "required": false,
@@ -77,28 +67,14 @@
       "label": "Risk hint",
       "input_type": "dropdown",
       "required": true,
-      "allowed_values": [
-        "low",
-        "medium",
-        "high",
-        "critical",
-        "unsure"
-      ],
       "canonical_effect": "risk_floor_hint_only",
       "direct_authority": false
     },
     {
-      "id": "data_sensitivity",
+      "id": "data_sensitivity_hint",
       "label": "Data sensitivity hint",
       "input_type": "dropdown",
       "required": true,
-      "allowed_values": [
-        "public",
-        "internal",
-        "confidential",
-        "restricted",
-        "unsure"
-      ],
       "canonical_effect": "classification_floor_hint_only",
       "direct_authority": false
     },
@@ -107,31 +83,19 @@
       "label": "External processing hint",
       "input_type": "dropdown",
       "required": true,
-      "allowed_values": [
-        "local-only",
-        "allowed-by-project-policy",
-        "requires-human-review",
-        "unsure"
-      ],
       "canonical_effect": "processing_restriction_hint_only",
       "direct_authority": false
     },
     {
-      "id": "human_review_requirement",
+      "id": "human_review_hint",
       "label": "Human review or decision requirement",
       "input_type": "dropdown",
       "required": true,
-      "allowed_values": [
-        "explicit-human-decision-required",
-        "independent-human-review-required",
-        "project-policy-decides",
-        "unsure"
-      ],
       "canonical_effect": "review_floor_hint_only",
       "direct_authority": false
     },
     {
-      "id": "preferred_connector",
+      "id": "preferred_connector_hint",
       "label": "Preferred connector",
       "input_type": "input",
       "required": false,
