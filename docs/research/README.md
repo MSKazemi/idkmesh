@@ -11,6 +11,9 @@ policy changes or merge decisions.
   the experiments still to run (X1–X10), the algorithms they must deliver
   (A1–A7), the engineering targets that serve them, the audience, and the
   verified novelty boundary. Start here.
+- [Preregistration v1: forecasting the value of the next coding agent](PREREG_AGENT_VALUE_FORECAST_V1.md) —
+  frozen analysis (code SHA-256), estimands, tests and decision rules for H1–H3,
+  registered before the four held-out SWE-bench splits were opened.
 - [First Research Program](FIRST_RESEARCH_PROGRAM.md) — staged path from
   deterministic foundations to held-out real-task evidence.
 - [Top 20 Questions](TOP_20_QUESTIONS.md) — prioritized open questions about

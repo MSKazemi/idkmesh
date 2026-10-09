@@ -14,6 +14,14 @@ and the release notes for that tag.
 
 ### Added
 
+- Preregistration v1 for forecasting the value of the next coding agent
+  (`docs/research/PREREG_AGENT_VALUE_FORECAST_V1.md`, issue #973). It freezes
+  the E046 analysis (`experiments/agent_value_forecast.py`, SHA-256 recorded)
+  before the four held-out SWE-bench splits are opened. The analysis covers
+  dependence models, coverage forecasters and complementarity selection,
+  with H1–H3 decision rules. The exploratory output on the already-seen
+  Verified split is retained and labelled as such.
+
 - The scientific program (`docs/research/SCIENTIFIC_PROGRAM.md`, umbrella
   issue #968) states the one question IDKMesh is organised around: *when does
   adding another AI agent, as worker or verifier, increase independently

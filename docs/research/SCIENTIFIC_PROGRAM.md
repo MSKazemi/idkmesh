@@ -110,7 +110,7 @@ plus local CPU or Docker.
 | ID | question | tests | instrument | needs | issue |
 |---|---|---|---|---|---|
 | **X1** | Is worker dependence large in a real population? | (pilot) | SWE-bench Verified, 169 systems | — | **Done: [E045](https://github.com/MSKazemi/idkmesh/blob/main/experiments/E045-public-agent-dependence-pilot.md)** (exploratory) |
-| **X2** | Freeze the confirmatory analysis before any held-out data is opened | H1–H3 | Preregistration naming the Lite, Test, Multilingual and Multimodal splits and a post-freeze temporal holdout | X1 | #973 |
+| **X2** | Freeze the confirmatory analysis before any held-out data is opened | H1–H3 | Preregistration naming the Lite, Test, Multilingual and Multimodal splits (a post-freeze temporal holdout is deferred to a later registration) | X1 | **Frozen: [PREREG_AGENT_VALUE_FORECAST_V1](PREREG_AGENT_VALUE_FORECAST_V1.md)** (#973) |
 | **X3** | Which dependence shape forecasts held-out ensemble behaviour? | H1 | Held-out public splits | X2, A1 | #975 |
 | **X4** | Can a k-agent pilot forecast population coverage and the floor? | H2 | Held-out public splits | X2, A2 | #976 |
 | **X5** | Does complementarity-aware selection beat accuracy and diversity labels? | H3 | Held-out public splits | X2, A4 | #977 |
