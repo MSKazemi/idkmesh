@@ -91,7 +91,7 @@ This sweep was written for issue #30. It also, without saying so, tested issue
 budget — because that is exactly the `structural_diversity` versus
 `identical_replication` contrast it classifies. That connection went unrecorded
 long enough for
-[E040](../../experiments/E040-diversity-correlation-threshold.md) to claim the
+[E040](https://github.com/MSKazemi/idkmesh/blob/main/experiments/E040-diversity-correlation-threshold.md) to claim the
 hypothesis had no test at all before finding this page.
 
 Read together, the two runners say something neither says alone. E040 fits the

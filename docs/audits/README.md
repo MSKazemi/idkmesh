@@ -9,7 +9,7 @@ retained because it preserves what was inspected and why a decision changed, not
 because its situational claims are still true. Current authority lives in
 [`../decisions/`](../decisions/), [`../specifications/README.md`](../specifications/README.md),
 [`../architecture/README.md`](../architecture/README.md), and
-[`../../PROJECT_RULES.md`](../../PROJECT_RULES.md).
+[`../../PROJECT_RULES.md`](https://github.com/MSKazemi/idkmesh/blob/main/PROJECT_RULES.md).
 
 Each entry below carries the baseline the record itself declares. Five records
 declare no explicit baseline revision; that is noted rather than invented.

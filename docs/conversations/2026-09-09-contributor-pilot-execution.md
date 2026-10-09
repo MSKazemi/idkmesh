@@ -49,7 +49,7 @@ that request. A label is not confirmation of app authorization or execution.
 
 [PR 408](https://github.com/MSKazemi/idkmesh/pull/408) contains the discoverable
 [operating pilot](../community/CONTRIBUTOR_PILOT_2026_09.md), small additions to
-[CONTRIBUTING.md](../../CONTRIBUTING.md), this record, and a
+[CONTRIBUTING.md](https://github.com/MSKazemi/idkmesh/blob/main/CONTRIBUTING.md), this record, and a
 [prepared directory entry](../community/up-for-grabs-idkmesh.yml).
 The first coding-agent task remains issue 402; it is not implemented by this
 pilot documentation change. Human-only feedback tasks remain distinct.
@@ -95,9 +95,9 @@ new autonomous controller.
 
 ## References
 
-- [Current contribution guide](../../CONTRIBUTING.md)
+- [Current contribution guide](https://github.com/MSKazemi/idkmesh/blob/main/CONTRIBUTING.md)
 - [Existing community strategy](../community/COMMUNITY_GROWTH_STRATEGY.md)
-- [Project rules](../../PROJECT_RULES.md)
+- [Project rules](https://github.com/MSKazemi/idkmesh/blob/main/PROJECT_RULES.md)
 - [Jules issue integration](https://jules.google/docs/running-tasks/)
 - [Jules limits](https://jules.google/docs/usage-limits/)
 - [CodeRabbit OSS plans](https://docs.coderabbit.ai/management/plans)

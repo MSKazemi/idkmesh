@@ -23,9 +23,9 @@ policy changes or merge decisions.
 - [Randomness Research Roadmap](RANDOMNESS_ROADMAP.md) and
   [experiment status](RANDOMNESS_EXPERIMENT_STATUS.md) — sequence and current
   state of the bio-inspired scheduling program.
-- [Paper stewardship (`paper/`)](../../paper/README.md) — the canonical
+- [Paper stewardship (`paper/`)](https://github.com/MSKazemi/idkmesh/blob/main/paper/README.md) — the canonical
   manuscript source ([`main.tex`](https://github.com/MSKazemi/idkmesh/blob/main/paper/main.tex)) and its
-  [claim-to-evidence map](../../paper/CLAIM_EVIDENCE_MAP.md), the public
+  [claim-to-evidence map](https://github.com/MSKazemi/idkmesh/blob/main/paper/CLAIM_EVIDENCE_MAP.md), the public
   synchronization point between paper-facing claims and repository evidence.
 - [Publication-Oriented Scientific Questions](PUBLICATION_RESEARCH_QUESTIONS_2026-10-07.md)
   — maps ten falsifiable IDKMesh questions to current evidence, publication
@@ -64,7 +64,7 @@ policy changes or merge decisions.
   policies on training tasks and confirm on held-out work.
 - [R4 Verified Stigmergic Routing](R4_STIGMERGIC_ROUTING.md) — route from
   verified outcomes with evaporation and newcomer exploration.
-- [Adaptive Verification Ecology](../algorithms/ADAPTIVE_VERIFICATION_ECOLOGY.md) — experimental cross-disciplinary control policy joining niche-aware routing, correlation-aware verifier portfolios, risk-adaptive verification, bounded exploration, and review-capacity shadow-price backpressure. Retained synthetic evidence now includes [AVE-0](../../experiments/AVE-0-adaptive-verification-ecology.md), the [AVE-1 cumulative component ablation](../../experiments/AVE-1-adaptive-verification-ecology-ablation.md), and the [AVE-2 targeted AVE-core study](../../experiments/AVE-2-adaptive-verification-ecology-targeted.md). Remaining environment grids and real WorkUnit evidence are tracked by [#621](https://github.com/MSKazemi/idkmesh/issues/621).
+- [Adaptive Verification Ecology](../algorithms/ADAPTIVE_VERIFICATION_ECOLOGY.md) — experimental cross-disciplinary control policy joining niche-aware routing, correlation-aware verifier portfolios, risk-adaptive verification, bounded exploration, and review-capacity shadow-price backpressure. Retained synthetic evidence now includes [AVE-0](https://github.com/MSKazemi/idkmesh/blob/main/experiments/AVE-0-adaptive-verification-ecology.md), the [AVE-1 cumulative component ablation](https://github.com/MSKazemi/idkmesh/blob/main/experiments/AVE-1-adaptive-verification-ecology-ablation.md), and the [AVE-2 targeted AVE-core study](https://github.com/MSKazemi/idkmesh/blob/main/experiments/AVE-2-adaptive-verification-ecology-targeted.md). Remaining environment grids and real WorkUnit evidence are tracked by [#621](https://github.com/MSKazemi/idkmesh/issues/621).
 
 - [Work Unit Research Track — protocol status map](WORK_UNIT_RESEARCH_TRACK_COMPLETION.md)
   — maps the formal Work Unit research questions onto current executable
@@ -85,29 +85,29 @@ policy changes or merge decisions.
   — controller model for limiting unverified work.
 - [Verification Backpressure Temporal Benchmark](VERIFICATION_BACKPRESSURE_BENCHMARK.md)
   — multi-window benchmark for that controller.
-- [E022 Seven-Mode Verification Scaling Matrix](../../experiments/E022-verification-scaling-matrix.md)
+- [E022 Seven-Mode Verification Scaling Matrix](https://github.com/MSKazemi/idkmesh/blob/main/experiments/E022-verification-scaling-matrix.md)
   — matched comparison of every verification condition required by issue #14.
-- [E024 Matched-Budget Emergence](../../experiments/E024-matched-budget-emergence.md)
+- [E024 Matched-Budget Emergence](https://github.com/MSKazemi/idkmesh/blob/main/experiments/E024-matched-budget-emergence.md)
   — equal-evaluation comparison of random, fixed-scalar, and Quality-Diversity search.
-- [E026 Imperfect Verifier Panel](../../experiments/E026-imperfect-verifier-panel.md)
+- [E026 Imperfect Verifier Panel](https://github.com/MSKazemi/idkmesh/blob/main/experiments/E026-imperfect-verifier-panel.md)
   — E024 rerun with E017/E020's measured correlated panel and blind-spot floor.
-- [E027 Defect Propagation](../../experiments/E027-defect-propagation.md)
+- [E027 Defect Propagation](https://github.com/MSKazemi/idkmesh/blob/main/experiments/E027-defect-propagation.md)
   — gives an accepted defect a cost, so verifier error can reach the outcome
   metric, and sweeps the cost knob across its whole range.
-- [E028 Latent Defect Dimension](../../experiments/E028-latent-defect-dimension.md)
+- [E028 Latent Defect Dimension](https://github.com/MSKazemi/idkmesh/blob/main/experiments/E028-latent-defect-dimension.md)
   — removes E027's confound by moving viability into a dimension the goals cannot
   see; the archive's survival holds in 18 of 20 cells and breaks only under the
   stress panel at full defect cost.
-- [E029 First Real Model Attempts](../../experiments/E029-first-real-model-attempts.md)
+- [E029 First Real Model Attempts](https://github.com/MSKazemi/idkmesh/blob/main/experiments/E029-first-real-model-attempts.md)
   — 60 sandboxed attempts by a pinned 0.5B open-weight producer on the frozen
   benchmark: 0 accepted, 56 of 60 failing the diff protocol before any
   repository content was consulted.
-- [E030 Supplied-Goal Membership](../../experiments/E030-supplied-goal-membership.md)
+- [E030 Supplied-Goal Membership](https://github.com/MSKazemi/idkmesh/blob/main/experiments/E030-supplied-goal-membership.md)
   — removes E024's supplied-oracle confound by switching the environment to a
   parity-matched goal the arms do not hold; the archive keeps all but 1.6-4.4%
   of its lead and stays 0/100 catastrophic, while the majority-vote swarm loses
   its whole lead in every panel.
-- [E031 Learned Goal Filter](../../experiments/E031-learned-goal-filter.md)
+- [E031 Learned Goal Filter](https://github.com/MSKazemi/idkmesh/blob/main/experiments/E031-learned-goal-filter.md)
   — the other half of E024's caveat: gives the consensus swarm a particle filter
   that learns the goal from ordinal evidence. Learning from generation 0 roughly
   doubles its catastrophic seeds; learning from post-change evidence alone is the
@@ -115,7 +115,7 @@ policy changes or merge decisions.
   rescue — perturbing each agent's hypothesis once at initialisation — takes
   38/100 catastrophic seeds to 0/100 while the new goal is one of the four
   supplied, and to 71/100 when it is not.
-- [E032 Population Scaling](../../experiments/E032-population-scaling.md)
+- [E032 Population Scaling](https://github.com/MSKazemi/idkmesh/blob/main/experiments/E032-population-scaling.md)
   — answers issue 13's success criterion, *at a fixed budget when is another
   agent worth adding*, by running the sweep with the budget held and with it
   free. The two disagree: the archive gains on every doubling when the budget is
@@ -126,7 +126,7 @@ policy changes or merge decisions.
   retains. No arm shows the negative return hypothesis 1 predicts; the resolved
   negative returns are on the other two axes, archive capacity past bins=8 and
   budget spent on generations rather than agents.
-- [E033 Goal Distance](../../experiments/E033-goal-distance.md)
+- [E033 Goal Distance](https://github.com/MSKazemi/idkmesh/blob/main/experiments/E033-goal-distance.md)
   — turns E030's single substitute goal into a ladder of rings, six goals each,
   at a matched change size. The archive's lead over the arms that hold no
   hypothesis decays smoothly rather than off a cliff, and is fully gone by 0.35
@@ -138,12 +138,12 @@ policy changes or merge decisions.
   there is 78.3% on average, not the 95.6% one goal reports. Sweeping the same
   axis without holding the change size returns 'unresolved' and would have
   missed the decay entirely.
-- [E034 Goal Direction](../../experiments/E034-goal-direction.md)
-- [E035 Direction Across Shells](../../experiments/E035-direction-across-shells.md)
-- [E036 Adversarial Contributors](../../experiments/E036-adversarial-contributors.md)
-- [E037 Ladder Under Panels](../../experiments/E037-ladder-under-panels.md)
-- [E038 Symmetric Gate](../../experiments/E038-symmetric-gate.md)
-- [E039 Content Addressed Blind Spot](../../experiments/E039-content-addressed-blind-spot.md)
+- [E034 Goal Direction](https://github.com/MSKazemi/idkmesh/blob/main/experiments/E034-goal-direction.md)
+- [E035 Direction Across Shells](https://github.com/MSKazemi/idkmesh/blob/main/experiments/E035-direction-across-shells.md)
+- [E036 Adversarial Contributors](https://github.com/MSKazemi/idkmesh/blob/main/experiments/E036-adversarial-contributors.md)
+- [E037 Ladder Under Panels](https://github.com/MSKazemi/idkmesh/blob/main/experiments/E037-ladder-under-panels.md)
+- [E038 Symmetric Gate](https://github.com/MSKazemi/idkmesh/blob/main/experiments/E038-symmetric-gate.md)
+- [E039 Content Addressed Blind Spot](https://github.com/MSKazemi/idkmesh/blob/main/experiments/E039-content-addressed-blind-spot.md)
   — holds E033's distance still (0.30 from the supplied set, 0.392 of change)
   and sweeps direction instead, 385 goals on one shell. Direction is worth more
   than distance: the archive's lead runs from -4.894 to +4.471, a spread of
@@ -156,7 +156,7 @@ policy changes or merge decisions.
   not a valid grouping either; the two descriptor traits move in opposite
   directions and average to nothing. E033's post-hoc 'security' observation
   (-1.362) does not survive the control, which gives +0.279 [-1.095, +1.653].
-- [E040 Diversity Correlation Threshold](../../experiments/E040-diversity-correlation-threshold.md)
+- [E040 Diversity Correlation Threshold](https://github.com/MSKazemi/idkmesh/blob/main/experiments/E040-diversity-correlation-threshold.md)
   — sweeps the assumed worker-error correlation the R1 scaling runner had fixed
   at 0.25, and connects the result to issue 13's hypothesis 2. There is no
   threshold: the equal-budget advantage is proportional to retained
@@ -171,7 +171,7 @@ policy changes or merge decisions.
   0.0181 against worker-diversity slopes running to 0.5504, so the whole
   measured effect is on the worker side and none of it belongs to the 'with
   independent verification' half.
-- [E025 Learned Verifier Reliability](../../experiments/E025-learned-verifier-reliability.md)
+- [E025 Learned Verifier Reliability](https://github.com/MSKazemi/idkmesh/blob/main/experiments/E025-learned-verifier-reliability.md)
   — calibration/held-out evidence for reliability and dependence-aware aggregation.
 - [IDKGraph P1 Independent Review Protocol](IDKGRAPH_P1_INDEPENDENT_REVIEW_PROTOCOL.md)
   — frozen-cohort human review and attention measurement for issue #152.

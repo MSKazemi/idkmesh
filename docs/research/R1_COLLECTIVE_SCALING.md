@@ -85,11 +85,11 @@ verification before execution.
 ## Outputs
 
 - [machine-readable seeded results, flat arm](https://github.com/MSKazemi/idkmesh/blob/main/results/experiments/r1/collective-scaling-seeds42-51.json.gz)
-- [compact generated table, flat arm](../../results/experiments/r1/collective-scaling-seeds42-51.md)
+- [compact generated table, flat arm](https://github.com/MSKazemi/idkmesh/blob/main/results/experiments/r1/collective-scaling-seeds42-51.md)
 - [machine-readable seeded results, three topologies](https://github.com/MSKazemi/idkmesh/blob/main/results/experiments/r1/coordination-topology-seeds42-51.json.gz)
-- [compact generated table, three topologies](../../results/experiments/r1/coordination-topology-seeds42-51.md)
+- [compact generated table, three topologies](https://github.com/MSKazemi/idkmesh/blob/main/results/experiments/r1/coordination-topology-seeds42-51.md)
 - [machine-readable seeded results, correlation sweep](https://github.com/MSKazemi/idkmesh/blob/main/results/experiments/r1/diversity-correlation-threshold-seeds42-51.json.gz)
-- [compact generated table, correlation sweep](../../results/experiments/r1/diversity-correlation-threshold-seeds42-51.md)
+- [compact generated table, correlation sweep](https://github.com/MSKazemi/idkmesh/blob/main/results/experiments/r1/diversity-correlation-threshold-seeds42-51.md)
 - [runner](https://github.com/MSKazemi/idkmesh/blob/main/randomness_lab/r1_scaling.py)
 - [low-diversity threshold analyzer](https://github.com/MSKazemi/idkmesh/blob/main/randomness_lab/r1_low_diversity_threshold.py)
 - [correlation-sweep runner](https://github.com/MSKazemi/idkmesh/blob/main/randomness_lab/r1_correlation_threshold.py)
@@ -231,7 +231,7 @@ maximally correlated homogeneous condition in this frozen run. That result is
 partly constructed by the correlation assumptions; it must not be cited as
 evidence that heterogeneous coding agents outperform replicated models.
 
-[E040](../../experiments/E040-diversity-correlation-threshold.md) measured how
+[E040](https://github.com/MSKazemi/idkmesh/blob/main/experiments/E040-diversity-correlation-threshold.md) measured how
 much of it the assumption constructs, by rerunning this grid across a ladder of
 assumed correlations instead of the single `0.25`. The answer is: all of the
 size and none of the sign. The advantage is proportional to retained

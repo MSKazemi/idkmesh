@@ -157,7 +157,7 @@ P_success(k) = (1-q) * [1-(1-a)^k]
 
 One worker still succeeds with probability 60%, but two reach 72%, three reach 74.4%, and even fifty approach only 75%. With the same costs, the toy optimum is two. More agents cannot remove a shared bad requirement, missing dependency, or evaluator blind spot.
 
-Do not estimate this from provider names alone, or size a verifier panel with `N/(1+(N-1)*rho)` as if it guarantees correct aggregation. The repository's [marginal-verifier owner](https://github.com/MSKazemi/idkmesh/issues/693) and [worker-dependence experiment](../../experiments/E042-worker-dependence-shape.md) already address related distinctions.
+Do not estimate this from provider names alone, or size a verifier panel with `N/(1+(N-1)*rho)` as if it guarantees correct aggregation. The repository's [marginal-verifier owner](https://github.com/MSKazemi/idkmesh/issues/693) and [worker-dependence experiment](https://github.com/MSKazemi/idkmesh/blob/main/experiments/E042-worker-dependence-shape.md) already address related distinctions.
 
 ### 4.3 Evaluation and stop rules
 
@@ -330,7 +330,7 @@ No durable global human/model reputation score is needed. Passing a synthetic pr
 
 ### 8.1 Resource economics and queue stability
 
-Project-funded compute remains exactly `$0` under [PROJECT_RULES](../../PROJECT_RULES.md) and [compute policy](https://github.com/MSKazemi/idkmesh/blob/main/config/compute-policy.json). The scheduler cannot price scarcity and then buy capacity. With no eligible zero-project-cost lane, queue, reduce scope, seek opt-in capacity, or abstain.
+Project-funded compute remains exactly `$0` under [PROJECT_RULES](https://github.com/MSKazemi/idkmesh/blob/main/PROJECT_RULES.md) and [compute policy](https://github.com/MSKazemi/idkmesh/blob/main/config/compute-policy.json). The scheduler cannot price scarcity and then buy capacity. With no eligible zero-project-cost lane, queue, reduce scope, seek opt-in capacity, or abstain.
 
 Track provider quotas, CI minutes, CPU/GPU time, memory, disk, bandwidth, energy, and human attention separately. Reserve against upper task budgets before dispatch, refund measured unused resources where justified, and never erase unresolved execution occupancy. Per-project/actor limits stop one noisy participant consuming every slot; donor thermal/battery/network limits are enforceable caps where the backend supports them.
 

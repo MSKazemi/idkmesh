@@ -30,7 +30,7 @@ The cohort was selected before classification with a public SHA-256 ranking. The
 
 ## Evidence rules used
 
-[`PROJECT_RULES.md`](../../PROJECT_RULES.md) requires substantive project conversations to be preserved under `docs/conversations/` and says findings belong under `docs/findings/`. It also says conversation archives are not substitutes for canonical maintenance: durable conclusions should be promoted into decisions, architecture, research, governance, or implementation artifacts.
+[`PROJECT_RULES.md`](https://github.com/MSKazemi/idkmesh/blob/main/PROJECT_RULES.md) requires substantive project conversations to be preserved under `docs/conversations/` and says findings belong under `docs/findings/`. It also says conversation archives are not substitutes for canonical maintenance: durable conclusions should be promoted into decisions, architecture, research, governance, or implementation artifacts.
 
 [`EVOLUTION_ARTIFACT_MINIMIZATION.md`](../architecture/EVOLUTION_ARTIFACT_MINIMIZATION.md) independently distinguishes deliberate curated project-chat memory from indiscriminate retention of raw GitHub input.
 

@@ -2,7 +2,7 @@
 
 **Experiment window:** 2026-08-28 through 2026-09-27  
 **Status:** Active bootstrap experiment  
-**Parent design:** [`COMMUNITY_GROWTH_ENGINE.md`](../../COMMUNITY_GROWTH_ENGINE.md)  
+**Parent design:** [`COMMUNITY_GROWTH_ENGINE.md`](https://github.com/MSKazemi/idkmesh/blob/main/COMMUNITY_GROWTH_ENGINE.md)  
 **Public state:** issue #23 (`[ACE] Community Growth Ledger`)
 
 ## Question

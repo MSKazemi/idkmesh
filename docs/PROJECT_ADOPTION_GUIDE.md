@@ -121,7 +121,7 @@ These define how work is bounded and how evidence is interpreted:
 - integration policy;
 - provenance and evidence requirements.
 
-See [ProjectManifest and DomainPack interfaces](specifications/PROJECT_DOMAIN_INTERFACES.md) and [schema navigation](../schemas/README.md).
+See [ProjectManifest and DomainPack interfaces](specifications/PROJECT_DOMAIN_INTERFACES.md) and [schema navigation](https://github.com/MSKazemi/idkmesh/blob/main/schemas/README.md).
 
 ### Layer C — replaceable participants
 
@@ -335,7 +335,7 @@ Credentials should be runtime-scoped and short-lived where possible. Do not stor
 
 ### A2A/MCP-compatible integration
 
-IDKMesh already contains protocol-neutral worker-adapter infrastructure and A2A/MCP mappings under [interop](../interop/README.md).
+IDKMesh already contains protocol-neutral worker-adapter infrastructure and A2A/MCP mappings under [interop](https://github.com/MSKazemi/idkmesh/blob/main/interop/README.md).
 
 Use these protocols as **transport and tool-integration surfaces**, while keeping IDKMesh semantics in:
 
@@ -813,11 +813,11 @@ You do not need many agents to start. You need **clear boundaries, evidence, and
 
 - [Getting Started](GETTING_STARTED.md)
 - [What Is IDKMesh?](WHAT_IS_IDKMESH.md)
-- [Architecture](../ARCHITECTURE.md)
+- [Architecture](https://github.com/MSKazemi/idkmesh/blob/main/ARCHITECTURE.md)
 - [ProjectManifest and DomainPack interfaces](specifications/PROJECT_DOMAIN_INTERFACES.md)
-- [Schema index](../schemas/README.md)
-- [Interoperability](../interop/README.md)
+- [Schema index](https://github.com/MSKazemi/idkmesh/blob/main/schemas/README.md)
+- [Interoperability](https://github.com/MSKazemi/idkmesh/blob/main/interop/README.md)
 - [Agent Network and Volunteer Nodes](architecture/AGENT_NETWORK_AND_VOLUNTEER_NODES.md)
 - [Execution Substrate Abstraction](architecture/EXECUTION_SUBSTRATE_ABSTRACTION.md)
 - [Testing and CI Practice](TESTING.md)
-- [Project Rules](../PROJECT_RULES.md)
+- [Project Rules](https://github.com/MSKazemi/idkmesh/blob/main/PROJECT_RULES.md)

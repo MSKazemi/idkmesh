@@ -12,14 +12,14 @@ A gate that reports "N verifiers approved" implies N independent pieces of
 evidence. The repository's retained experiments show that implication fails in
 practice and fails in the dangerous direction:
 
-- [E017](../../experiments/E017-item-difficulty-and-quorum.md) measured a real
+- [E017](https://github.com/MSKazemi/idkmesh/blob/main/experiments/E017-item-difficulty-and-quorum.md) measured a real
   25-verifier panel (mean accuracy 0.7956, mean pairwise error correlation
   +0.5873) whose majority vote had the error rate of roughly **one** verifier.
-- [E015](../../experiments/E015-verification-phase-diagram.md) falsified the standard
+- [E015](https://github.com/MSKazemi/idkmesh/blob/main/experiments/E015-verification-phase-diagram.md) falsified the standard
   `N / (1 + (N-1)ρ)` effective-size heuristic: it converges to `1/ρ` regardless
   of verifier accuracy, so it overstates exactly the accurate-verifier panels a
   serious gate would deploy.
-- [E016](../../experiments/E016-live-verifier-correlation.md) showed that a
+- [E016](https://github.com/MSKazemi/idkmesh/blob/main/experiments/E016-live-verifier-correlation.md) showed that a
   panel of non-discriminating verifiers produces confident-looking votes whose
   correlation statistics are uninterpretable — so an audit must screen
   discrimination before reporting anything else.
