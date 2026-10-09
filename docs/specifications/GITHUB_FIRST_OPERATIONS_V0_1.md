@@ -1,3 +1,6 @@
+---
+description: "Minimum behavior for running IDKMesh in the GitHub-first G0 profile: from issue to WorkUnit preview, routing, a dispatch gate, and one admitted run."
+---
 # GitHub-First Operations v0.1
 
 **Status:** experimental implementation contract  

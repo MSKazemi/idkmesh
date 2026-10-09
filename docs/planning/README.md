@@ -27,7 +27,7 @@ This directory translates the long-range vision into current execution choices.
 ## Relationship to other project artifacts
 
 - [`../foundations/GOALS.md`](../foundations/GOALS.md) defines the durable goal hierarchy and North Star.
-- [`../../ROADMAP.md`](../../ROADMAP.md) defines the staged scale/research progression.
+- [`../../ROADMAP.md`](https://github.com/MSKazemi/idkmesh/blob/main/ROADMAP.md) defines the staged scale/research progression.
 - GitHub Issues define claimable work and acceptance criteria.
 - IDKGraph schemas/modeling define the intended machine-readable semantic layer.
 - Planning documents are snapshots and should change when evidence changes priorities.

@@ -1,9 +1,9 @@
 # IDKMesh Self-Growth Mechanism
 
 **Status:** current plain-language explainer. Canonical authority rules remain in
-[`EVOLUTION.md`](../../EVOLUTION.md),
-[`ITERATION_MODEL.md`](../../ITERATION_MODEL.md),
-[`CONSTITUTION.md`](../../CONSTITUTION.md), and the linked executable workflows.
+[`EVOLUTION.md`](https://github.com/MSKazemi/idkmesh/blob/main/EVOLUTION.md),
+[`ITERATION_MODEL.md`](https://github.com/MSKazemi/idkmesh/blob/main/ITERATION_MODEL.md),
+[`CONSTITUTION.md`](https://github.com/MSKazemi/idkmesh/blob/main/CONSTITUTION.md), and the linked executable workflows.
 
 IDKMesh "self-growth" is a **guarded feedback loop for increasing verified project
 capacity**. It does not mean that one AI agent can rewrite the repository and approve
@@ -47,7 +47,7 @@ The evolution workflow observes bounded metadata such as:
 - review load and carrying capacity.
 
 The canonical workflow is
-[`.github/workflows/evolution-loop.yml`](../../.github/workflows/evolution-loop.yml).
+[`.github/workflows/evolution-loop.yml`](https://github.com/MSKazemi/idkmesh/blob/main/.github/workflows/evolution-loop.yml).
 It runs on trusted repository events, manual dispatch, and a daily scheduled audit.
 
 ## 2. Remember
@@ -170,7 +170,7 @@ reproduce, challenge, extend, or explain the result. Recovery is capped so an
 unexpected backlog cannot cause mass issue creation.
 
 The executable implementation is
-[`.github/workflows/ace-community-growth.yml`](../../.github/workflows/ace-community-growth.yml).
+[`.github/workflows/ace-community-growth.yml`](https://github.com/MSKazemi/idkmesh/blob/main/.github/workflows/ace-community-growth.yml).
 
 ## 6. Execute with replaceable humans and agents
 

@@ -2,7 +2,7 @@
 
 **Status:** working design for the next ACE iteration.
 
-This document refines [COMMUNITY_GROWTH_ENGINE.md](../../COMMUNITY_GROWTH_ENGINE.md) around a practical constraint: IDKMesh currently lives inside GitHub. Its community-evolution system therefore has to work with GitHub Issues, Pull Requests, reviews, labels, reactions, repository files, Actions, schedules, and API limits instead of assuming an unrestricted autonomous social platform.
+This document refines [COMMUNITY_GROWTH_ENGINE.md](https://github.com/MSKazemi/idkmesh/blob/main/COMMUNITY_GROWTH_ENGINE.md) around a practical constraint: IDKMesh currently lives inside GitHub. Its community-evolution system therefore has to work with GitHub Issues, Pull Requests, reviews, labels, reactions, repository files, Actions, schedules, and API limits instead of assuming an unrestricted autonomous social platform.
 
 The objective is not to automate publicity. It is to create a **self-improving contribution ecology** in which verified useful work makes the next useful contribution easier while the control policy itself learns from evidence.
 

@@ -1,3 +1,6 @@
+---
+description: "Use IDKMesh contracts in a new repository: Git as canonical state, bounded Work Units, separately verified candidates, and separate integration authority."
+---
 # Use IDKMesh to Build Another Software Project
 
 **Status:** practical adoption guide for the current alpha framework  
@@ -118,7 +121,7 @@ These define how work is bounded and how evidence is interpreted:
 - integration policy;
 - provenance and evidence requirements.
 
-See [ProjectManifest and DomainPack interfaces](specifications/PROJECT_DOMAIN_INTERFACES.md) and [schema navigation](../schemas/README.md).
+See [ProjectManifest and DomainPack interfaces](specifications/PROJECT_DOMAIN_INTERFACES.md) and [schema navigation](https://github.com/MSKazemi/idkmesh/blob/main/schemas/README.md).
 
 ### Layer C — replaceable participants
 
@@ -240,9 +243,9 @@ remains disabled until the safe re-run/write boundary (C8-F) is implemented.
 
 Use the current reference contracts as templates:
 
-- [self-improvement ProjectManifest](../examples/projects/idkmesh-self-improvement.project.json);
-- [software-engineering DomainPack](../examples/domain-packs/software-engineering-v0.1.domain-pack.json);
-- [WorkUnit v0.2 example](../examples/work-units/phase0-smoke.work-unit.json).
+- [self-improvement ProjectManifest](https://github.com/MSKazemi/idkmesh/blob/main/examples/projects/idkmesh-self-improvement.project.json);
+- [software-engineering DomainPack](https://github.com/MSKazemi/idkmesh/blob/main/examples/domain-packs/software-engineering-v0.1.domain-pack.json);
+- [WorkUnit v0.2 example](https://github.com/MSKazemi/idkmesh/blob/main/examples/work-units/phase0-smoke.work-unit.json).
 
 The C8-C renderer produces a ProjectManifest v0.1 seed, a disabled
 secret-reference connector template, and a repository-local copy of the
@@ -332,7 +335,7 @@ Credentials should be runtime-scoped and short-lived where possible. Do not stor
 
 ### A2A/MCP-compatible integration
 
-IDKMesh already contains protocol-neutral worker-adapter infrastructure and A2A/MCP mappings under [interop](../interop/README.md).
+IDKMesh already contains protocol-neutral worker-adapter infrastructure and A2A/MCP mappings under [interop](https://github.com/MSKazemi/idkmesh/blob/main/interop/README.md).
 
 Use these protocols as **transport and tool-integration surfaces**, while keeping IDKMesh semantics in:
 
@@ -387,7 +390,7 @@ A machine/agent-friendly Work Unit should make these fields explicit:
 | failure semantics | Stop, retry, replan, or escalate |
 | provenance | Who or what created the Work Unit? |
 
-The current machine-readable definition is [WorkUnit v0.2](../schemas/work-unit-v0.2.schema.json).
+The current machine-readable definition is [WorkUnit v0.2](https://github.com/MSKazemi/idkmesh/blob/main/schemas/work-unit-v0.2.schema.json).
 
 ### Small-chunk rules
 
@@ -810,11 +813,11 @@ You do not need many agents to start. You need **clear boundaries, evidence, and
 
 - [Getting Started](GETTING_STARTED.md)
 - [What Is IDKMesh?](WHAT_IS_IDKMESH.md)
-- [Architecture](../ARCHITECTURE.md)
+- [Architecture](https://github.com/MSKazemi/idkmesh/blob/main/ARCHITECTURE.md)
 - [ProjectManifest and DomainPack interfaces](specifications/PROJECT_DOMAIN_INTERFACES.md)
-- [Schema index](../schemas/README.md)
-- [Interoperability](../interop/README.md)
+- [Schema index](https://github.com/MSKazemi/idkmesh/blob/main/schemas/README.md)
+- [Interoperability](https://github.com/MSKazemi/idkmesh/blob/main/interop/README.md)
 - [Agent Network and Volunteer Nodes](architecture/AGENT_NETWORK_AND_VOLUNTEER_NODES.md)
 - [Execution Substrate Abstraction](architecture/EXECUTION_SUBSTRATE_ABSTRACTION.md)
 - [Testing and CI Practice](TESTING.md)
-- [Project Rules](../PROJECT_RULES.md)
+- [Project Rules](https://github.com/MSKazemi/idkmesh/blob/main/PROJECT_RULES.md)

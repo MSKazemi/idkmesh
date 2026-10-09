@@ -1,3 +1,6 @@
+---
+description: "Accepted ADR freezing IDKMesh API Conventions v0.1 (error envelope, status mapping, idempotency, concurrency, deprecation) for every /api/v1 endpoint."
+---
 # ADR-0018 — Freeze API Conventions v0.1
 
 **Status:** Accepted  

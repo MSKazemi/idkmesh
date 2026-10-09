@@ -5,7 +5,7 @@
 
 IDKMesh already has the ingredients for a nature-inspired self-improving repository: project fitness, community reproduction, carrying capacity, stigmergy, replicator dynamics, exploration temperature, structural entropy, verification backpressure, and lineage evidence. The missing layer is a single rule that composes them.
 
-This document defines that community-specific composition as **ACE Activity Metabolism**. [`../../ITERATION_MODEL.md`](../../ITERATION_MODEL.md) defines the whole-system lifecycle and shared vocabulary.
+This document defines that community-specific composition as **ACE Activity Metabolism**. [`../../ITERATION_MODEL.md`](https://github.com/MSKazemi/idkmesh/blob/main/ITERATION_MODEL.md) defines the whole-system lifecycle and shared vocabulary.
 
 The core idea is biological rather than promotional:
 

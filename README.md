@@ -1,4 +1,4 @@
-# IDKMesh
+# IDKMesh — AI agent verification and review-gate auditing
 
 [![PR Gate](https://github.com/MSKazemi/idkmesh/actions/workflows/pr-gate.yml/badge.svg?branch=main)](https://github.com/MSKazemi/idkmesh/actions/workflows/pr-gate.yml)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
@@ -222,12 +222,20 @@ It binds only to `127.0.0.1`, uses the same audit engine as the CLI, and adds
 no runtime dependency. Your verdict matrix is sent only between your browser
 and the local Python process; IDKMesh does not upload it to a hosted service.
 
-The bundled example reports that a five-verifier panel is worth about **1.69
-effective independent votes**, and that the popular `N/(1+(N-1)ρ)` heuristic
-overstates it — the phenomenon measured on a real 25-verifier panel in
-[E017](experiments/E017-item-difficulty-and-quorum.md) and falsified as a
-sizing rule in [E015](experiments/E015-verification-phase-diagram.md). The
-contract is specified in
+The bundled example is **synthetic** (its votes come from no real panel, and
+the file is marked `"evidence_class": "synthetic"`): on it, a five-verifier panel is worth about
+**1.69 effective independent votes**, while the popular `N/(1+(N-1)ρ)`
+heuristic predicts 3.66. The same direction has been measured, not just
+illustrated: on E017's 25-verifier panel of programs, where every error is an
+observed missed defect, the effective size was 1.00 against a heuristic 1.66
+([E017](experiments/E017-item-difficulty-and-quorum.md)), and in
+[E015](experiments/E015-verification-phase-diagram.md)'s simulations the
+heuristic is optimistic for accurate verifiers with modest shared dependence
+(it is conservative for weak verifiers). These findings hold for the panels and
+dependence models tested and are not a universal law: concurrent work on a
+nine-judge LLM panel ([Kohli, 2026](https://arxiv.org/abs/2605.29800)) reports
+the heuristic closely matching an eigenvalue-based estimate. Measure your own
+panel rather than sizing it with the heuristic. The contract is specified in
 [`docs/specifications/GATE_AUDIT_V0_1.md`](docs/specifications/GATE_AUDIT_V0_1.md).
 Add `--bootstrap` for a deterministic finite-sample confidence interval on
 those panel metrics ([issue #520](https://github.com/MSKazemi/idkmesh/issues/520);
@@ -514,7 +522,7 @@ vs task/evidence DAG teams
 
 Important outcomes include correctness, hidden-test success, regressions, error correlation, reviewer time, compute/resource use, latency, integration conflict, provenance quality, and verified useful work per unit of scarce attention/cost.
 
-See [`RESEARCH_QUESTIONS.md`](RESEARCH_QUESTIONS.md), [`docs/research/`](docs/research/README.md), and [`experiments/`](experiments/).
+The one question the research is organised around — *when does adding another AI agent, as worker or verifier, increase independently verified useful work, and can that be predicted from a small pilot?* — and its hypotheses, experiments, algorithms and audience are set out in the [Scientific Program](docs/research/SCIENTIFIC_PROGRAM.md). [`RESEARCH_QUESTIONS.md`](RESEARCH_QUESTIONS.md) is the longer idea backlog; see also [`docs/research/`](docs/research/README.md) and [`experiments/`](experiments/).
 
 ## Project principles
 

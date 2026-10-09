@@ -68,10 +68,10 @@ opened from this change.
 
 ## Decisions, artifacts and remaining gates
 
-- [Gate](../../idkmesh/executor_admission.py),
-  [tests](../../tests/test_executor_admission.py),
-  [demo](../../examples/coordination/admission_demo.py),
-  [schema](../../schemas/executor-admission-v0.1.schema.json) and
+- [Gate](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/executor_admission.py),
+  [tests](https://github.com/MSKazemi/idkmesh/blob/main/tests/test_executor_admission.py),
+  [demo](https://github.com/MSKazemi/idkmesh/blob/main/examples/coordination/admission_demo.py),
+  [schema](https://github.com/MSKazemi/idkmesh/blob/main/schemas/executor-admission-v0.1.schema.json) and
   [specification](../specifications/EXECUTOR_ADMISSION_V0_1.md).
 - This is local conformance composition, not a live distributed executor. The
   GitHub durable ledger, authenticated event/identity producers, real provider

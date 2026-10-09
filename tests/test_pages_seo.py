@@ -265,6 +265,36 @@ class PagesSEOTests(unittest.TestCase):
         self.assertNotIn("<h1><a href=", layout)
         self.assertIn('<p class="site-title h1">', layout)
 
+    def test_jekyll_layout_gives_markdown_pages_their_own_description(self) -> None:
+        # jekyll-seo-tag falls back to site.description for every page without
+        # front-matter `description`; 405 of 456 rendered pages shared it. The
+        # layout must capture the tag and substitute a per-page description,
+        # leaving pages that set `description` to the tag itself.
+        layout = (DOCS / "_layouts" / "default.html").read_text(encoding="utf-8")
+        self.assertIn("{% capture seo_tag %}{% seo %}", layout.replace("{%-", "{%").replace("-%}", "%}"))
+        self.assertIn("{{ seo_tag }}", layout)
+        self.assertEqual(1, layout.count("{% seo"), "render the seo tag exactly once")
+        self.assertIn("unless page.description", layout)
+        self.assertIn("replace: site_desc_needle, page_desc_value", layout)
+
+    def test_jekyll_layout_emits_article_and_breadcrumb_structured_data(self) -> None:
+        layout = (DOCS / "_layouts" / "default.html").read_text(encoding="utf-8")
+        for expected in (
+            '"@type":"TechArticle"',
+            '"@type":"BreadcrumbList"',
+            '"@type":"WebSite"',
+            '"@type":"Person"',
+            '"isPartOf"',
+            'aria-label="Breadcrumb"',
+            'aria-current="page"',
+            '"/library.html" | relative_url',
+        ):
+            self.assertIn(expected, layout)
+        # The legacy Pages build has no jekyll-last-modified-at and site.time is
+        # the build time: any modification date here would be invented.
+        self.assertNotIn("dateModified", layout.split("{%- endcomment -%}", 1)[1])
+        self.assertNotIn("site.time", layout)
+
 
 if __name__ == "__main__":  # pragma: no cover
     unittest.main()

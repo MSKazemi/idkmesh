@@ -1,3 +1,7 @@
+---
+title: "ADR-0024: Retained Run Evidence and Mixed-Store Reads"
+description: "Accepted ADR: GET /api/v1/runs/{run_id}/evidence serves the retained report only after its digest matches the run projection; a mismatch is never served."
+---
 # ADR-0024 — Serve Retained Run Evidence, and Read Product Spine Runs From a Mixed Store
 
 **Status:** Accepted

@@ -8,7 +8,7 @@ contract, and it does not by itself authorize an implementation.
 Canonical current authority lives in
 [`../decisions/`](../decisions/), [`../specifications/README.md`](../specifications/README.md),
 [`../architecture/README.md`](../architecture/README.md), and
-[`../../PROJECT_RULES.md`](../../PROJECT_RULES.md). Where a finding and a canonical
+[`../../PROJECT_RULES.md`](https://github.com/MSKazemi/idkmesh/blob/main/PROJECT_RULES.md). Where a finding and a canonical
 artifact disagree, the canonical artifact wins.
 
 The groups below separate findings that still state a working project thesis from
@@ -27,7 +27,7 @@ referenced by open research issues.
   nature-inspired argument that variation plus constraints, selection, memory,
   and verification, not vagueness alone, can produce coherent systems.
   Cited by issue #22; measured against baselines in experiment
-  [E024](../../experiments/E024-matched-budget-emergence.md).
+  [E024](https://github.com/MSKazemi/idkmesh/blob/main/experiments/E024-matched-budget-emergence.md).
 - [Current Agent Ecosystem and the IDKMesh Evolution Wedge](2026-08-28-agent-ecosystem-and-idkmesh-evolution.md)
   — external-ecosystem review concluding that IDKMesh should integrate rather
   than recreate generic agent infrastructure.

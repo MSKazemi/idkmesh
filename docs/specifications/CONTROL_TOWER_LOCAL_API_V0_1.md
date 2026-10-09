@@ -1,3 +1,6 @@
+---
+description: "Local, read-only /api/v1 HTTP API exposing produced IDKMesh evidence to human-facing clients, without scheduling, verifying, writing to repos, or merging."
+---
 # Control Tower Local API v0.1
 
 **Status:** experimental, local-only, read-only  
@@ -1235,7 +1238,7 @@ and carried in the `data:` field of `GET /api/v1/events/stream` is frozen by:
 ## Error envelope
 
 All API JSON errors use the shape frozen by
-[`schemas/idkmesh-api-error-v0.1.schema.json`](../../schemas/idkmesh-api-error-v0.1.schema.json)
+[`schemas/idkmesh-api-error-v0.1.schema.json`](https://github.com/MSKazemi/idkmesh/blob/main/schemas/idkmesh-api-error-v0.1.schema.json)
 (cross-cutting for every IDKMesh product API, not specific to Control Tower —
 see [API Conventions v0.1](API_CONVENTIONS_V0_1.md) section 5):
 

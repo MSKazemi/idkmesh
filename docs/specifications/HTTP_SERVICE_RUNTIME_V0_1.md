@@ -1,3 +1,6 @@
+---
+description: "Dependency-free HTTP runtime baseline for IDKMesh services: response metadata, request correlation, liveness and readiness probes, limits, and logging."
+---
 # HTTP Service Runtime Baseline v0.1
 
 **Status:** experimental productionization baseline  

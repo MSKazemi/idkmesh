@@ -1,6 +1,6 @@
 ---
-title: "Verifier Panels, Effective Independent Votes, and Reliable Review — IDKMesh"
-description: "Measured verifier-panel evidence: why reviewer count can overstate independent votes, how correlated errors weaken quorums, and how to audit review gates."
+title: "How Many Independent Votes Is a Verifier Panel Worth?"
+description: "Correlated errors shrink a verifier or LLM-judge panel's effective votes: 1.00 of 25 measured in E017, when N/(1+(N-1)rho) misleads, and how to audit."
 image: "/assets/idkmesh-social.png"
 ---
 
@@ -9,6 +9,57 @@ image: "/assets/idkmesh-social.png"
 **A verifier panel is only as strong as the independent evidence its members contribute.** Ten reviewers that fail on the same cases may be worth much less than ten independent votes.
 
 This problem is central to IDKMesh because agentic systems can cheaply create both candidates and reviewers. Counting votes without measuring dependence can make a review gate look stronger while adding little real protection.
+
+## How many independent votes is a verifier panel worth?
+
+**Short answer: fewer than its head-count whenever its members fail on the same items, and the only reliable way to know how many is to measure their verdicts against cases with known outcomes.** On an observed 25-verifier panel in [E017](https://github.com/MSKazemi/idkmesh/blob/main/experiments/E017-item-difficulty-and-quorum.md) — every verifier a program, not an LLM judge — majority vote was worth **1.00** independent vote. A separate 2026 study of nine frontier LLM judges reports a panel worth about two independent votes ([Kohli, arXiv:2605.29800](https://arxiv.org/abs/2605.29800)).
+
+Here, *effective independent votes* means the size of a panel of truly independent verifiers, at the same mean accuracy, that would make the same panel error. `idkmesh gate-audit` reports it as `panel.effective_votes`; see the [Gate Audit v0.1 field reference](https://mskazemi.com/idkmesh/specifications/GATE_AUDIT_V0_1.html).
+
+## The design-effect formula, and when it is optimistic
+
+The usual shortcut is the Kish design effect applied to votes, where `rho` is the mean pairwise error correlation between panel members:
+
+```text
+N_eff = N / (1 + (N - 1) * rho)
+```
+
+With E017's measured `rho = 0.5873` and `N = 25`, the formula gives 25 / (1 + 24 × 0.5873) ≈ **1.66**. The measured effective size was **1.00**, so on that panel the formula overstated the independent evidence by 1.66x.
+
+The reason is that one average correlation does not describe *where* errors fall. E017's errors clustered by item: four defects were missed by all 25 verifiers, and most panel failures were partial majorities rather than unanimous misses — a shape that a single shared-correlation model under-predicts. In a simulated grid that assumes that item-difficulty shape, [E018](https://github.com/MSKazemi/idkmesh/blob/main/experiments/E018-dependence-model-shape.md) reports the formula overstating independence in 441 of 441 cells, against 17 of 441 under a shared-shock model — a result about the assumed shape, not about every panel.
+
+The formula is not always wrong. On Kohli's nine-judge natural-language-inference panel, the paper reports that the empirical curve closely tracks the Kish prediction (about 2.18 effective votes at a mean correlation of 0.391). The two results together support a conditional rule rather than a universal one: **the formula is only as good as the assumption that one correlation summarizes your panel's dependence — measure the panel before trusting it.**
+
+## Run the audit from a repository clone
+
+`gate-audit` is not published on PyPI yet; install it from a clone. It is standard-library only.
+
+```bash
+git clone https://github.com/MSKazemi/idkmesh
+cd idkmesh
+python3 -m venv .venv
+.venv/bin/pip install -e .
+.venv/bin/idkmesh gate-audit examples/gate-audit/panel-votes.example.json --pretty
+```
+
+Without installing anything, `python3 -m idkmesh.cli gate-audit examples/gate-audit/panel-votes.example.json --pretty` runs the same audit from the repository root. An excerpt of the report:
+
+```text
+"evidence_class": "synthetic",
+...
+"nominal_votes": 5,
+"effective_votes": 1.6944444444444438,
+"heuristic_n_eff": 3.6588245300435087,
+```
+
+The bundled input is a **synthetic** demonstration, and the report says so in `evidence_class`; its numbers show the output format and are not a measurement of any real panel. To audit your own gate, replace it with verdicts you collected on candidates with a known `ground_truth`, plus seeded known-bad probes, following the input format in the specification linked above. The report is diagnostic and grants no acceptance or merge authority.
+
+## Related 2026 work on correlated judges
+
+- **Kohli, [*Nine Judges, Two Effective Votes: Correlated Errors Undermine LLM Evaluation Panels*](https://arxiv.org/abs/2605.29800).** Nine frontier LLMs from seven model families on three natural-language-inference datasets provide about two independent votes; the best single judge matches or outperforms the full panel, and established aggregation methods close at most 11% of the gap. This paper reached the "reviewer count is not evidence count" conclusion for LLM judges; IDKMesh does not claim priority for it. E017 adds a different setting — executable ground truth, programmatic verifiers, one-sided missed-defect errors, and quorum consequences — in which the Kish formula was optimistic rather than accurate.
+- **Xin, [*Are Verifier Errors Independent Within a GRPO Group? Evidence from Qwen2.5 Rollouts*](https://arxiv.org/abs/2609.06386).** Across 24,998 eight-completion groups, the pooled within-group verifier-error correlation is 0.530, which under an exchangeable-error model corresponds to an effective sample size of 1.70 per group. This is dependence across completions scored by one verifier, not across a panel of evaluators.
+- **Shu, [*Blind to the Pivotal Vote: Aggregate Independence Metrics Miss Where Verification Actually Helps*](https://arxiv.org/abs/2608.06940).** Adding a different evidence source, such as executing a test suite, produced no distinguishable change in a panel's effective-vote count, yet its entire accuracy gain concentrated on decisions with a one-vote margin. Effective votes and decision-level utility are complementary measurements.
+- **Shu, [*When Verifiers Vote Backwards under Verdict Substitution: Signed Pivotal Value in Correlated Self-Consistency*](https://arxiv.org/abs/2609.26144).** Substituting one verdict can change only one-vote-margin decisions, and the sign of that change can be negative: on MATH-500 a different-model verifier gave a +24.2 percentage-point pivotal gain while a role-reversed configuration gave −11.2 points.
 
 ## Nominal votes versus effective votes
 
@@ -89,7 +140,7 @@ A quorum is the threshold or rule used to turn individual verification results i
 <a id="q-how-can-i-try-this-in-idkmesh"></a>
 ### How can I try this in IDKMesh?
 
-Run the [gate-audit quickstart](https://mskazemi.com/idkmesh/start.html) and read the [Gate Audit v0.1 specification](https://github.com/MSKazemi/idkmesh/blob/main/docs/specifications/GATE_AUDIT_V0_1.md).
+Run the [gate-audit quickstart](https://mskazemi.com/idkmesh/start.html) and read the [Gate Audit v0.1 specification](https://mskazemi.com/idkmesh/specifications/GATE_AUDIT_V0_1.html).
 
 <a id="q-how-do-i-choose-diverse-verifiers"></a>
 ### How do I choose diverse verifiers?
@@ -118,4 +169,4 @@ Compare item-level error patterns, prompts, tools, data sources, model/provider 
 
 [Browse all AI-agent trust topics](https://mskazemi.com/idkmesh/topics/).
 
-**Last reviewed:** 2026-09-24.
+**Last reviewed:** 2026-10-09.

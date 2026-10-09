@@ -28,12 +28,12 @@ This audit inspected applicable contributor rules, current main, relevant issues
 
 | Current artifact | Implemented or retained behavior | Boundary still needing work |
 | --- | --- | --- |
-| [WorkUnit v0.2](../../schemas/work-unit-v0.2.schema.json) and [composability profile](../specifications/WORK_UNIT_COMPOSABILITY_V0_2.md) | Explicit task contracts and `requires` projection; benchmark validation rejects dependency cycles | This benchmark is read-only; it is not a live ready-task dispatcher |
-| [Issue Model Router](../../scripts/issue_model_router.py) | Explainable T0–T4 rules, floors, human gates, and override support | Its issue-length/checklist/reference signals are heuristics; its confidence labels are not calibrated success probabilities |
-| [Connector router](../../idkmesh/connector_routing.py) | Provider-neutral eligibility, non-compensating policy gates, transparent lexicographic selection | It does not estimate task completion distributions or implement a learned budgeted scheduler |
-| [Local metadata store](../../idkmesh/connector_store.py) and [Product Spine idempotency adapter](../../idkmesh/product_spine_idempotency.py) | Restart-safe local request reservation/replay and conflict detection | Local reference idempotency is not a multi-provider, multi-human task lease or a distributed ledger |
-| [Jules dispatcher](../../tools/jules_dispatcher.py) and [operations contract](../operations/JULES_AUTOMATION.md) | Provider/repository capacity, duplicate checks, provider-session reconciliation, stalled-work attention, and CI backpressure | Jules-specific state is not global ownership shared by all humans and connectors |
-| [Two-attempt orchestrator](../../experiments/two_attempt_orchestrator.py) | Bounded attempt evidence, separate verification, and non-selecting reports | This does not authorize automatic best-candidate selection or protected integration |
+| [WorkUnit v0.2](https://github.com/MSKazemi/idkmesh/blob/main/schemas/work-unit-v0.2.schema.json) and [composability profile](../specifications/WORK_UNIT_COMPOSABILITY_V0_2.md) | Explicit task contracts and `requires` projection; benchmark validation rejects dependency cycles | This benchmark is read-only; it is not a live ready-task dispatcher |
+| [Issue Model Router](https://github.com/MSKazemi/idkmesh/blob/main/scripts/issue_model_router.py) | Explainable T0–T4 rules, floors, human gates, and override support | Its issue-length/checklist/reference signals are heuristics; its confidence labels are not calibrated success probabilities |
+| [Connector router](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/connector_routing.py) | Provider-neutral eligibility, non-compensating policy gates, transparent lexicographic selection | It does not estimate task completion distributions or implement a learned budgeted scheduler |
+| [Local metadata store](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/connector_store.py) and [Product Spine idempotency adapter](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/product_spine_idempotency.py) | Restart-safe local request reservation/replay and conflict detection | Local reference idempotency is not a multi-provider, multi-human task lease or a distributed ledger |
+| [Jules dispatcher](https://github.com/MSKazemi/idkmesh/blob/main/tools/jules_dispatcher.py) and [operations contract](../operations/JULES_AUTOMATION.md) | Provider/repository capacity, duplicate checks, provider-session reconciliation, stalled-work attention, and CI backpressure | Jules-specific state is not global ownership shared by all humans and connectors |
+| [Two-attempt orchestrator](https://github.com/MSKazemi/idkmesh/blob/main/experiments/two_attempt_orchestrator.py) | Bounded attempt evidence, separate verification, and non-selecting reports | This does not authorize automatic best-candidate selection or protected integration |
 | [R2](../research/R2_SCHEDULING_CHURN_EXPERIMENT.md), [R3](../research/R3_EVOLUTIONARY_ORCHESTRATION.md), [R4](../research/R4_STIGMERGIC_ROUTING.md), and [AVE](../algorithms/ADAPTIVE_VERIFICATION_ECOLOGY.md) | Scheduling, evolutionary, stigmergic, and verifier-allocation research machinery | Synthetic mechanism results do not prove live human–agent performance |
 | [Existing GitHub-first multi-user plan](../architecture/GITHUB_FIRST_DEPLOYMENT_AND_MULTIUSER.md) | Already identifies durable idempotency, claims, expiry, and actor roles | C9/C10 still own the common live protocol and recovery proof |
 
@@ -157,7 +157,7 @@ P_success(k) = (1-q) * [1-(1-a)^k]
 
 One worker still succeeds with probability 60%, but two reach 72%, three reach 74.4%, and even fifty approach only 75%. With the same costs, the toy optimum is two. More agents cannot remove a shared bad requirement, missing dependency, or evaluator blind spot.
 
-Do not estimate this from provider names alone, or size a verifier panel with `N/(1+(N-1)*rho)` as if it guarantees correct aggregation. The repository's [marginal-verifier owner](https://github.com/MSKazemi/idkmesh/issues/693) and [worker-dependence experiment](../../experiments/E042-worker-dependence-shape.md) already address related distinctions.
+Do not estimate this from provider names alone, or size a verifier panel with `N/(1+(N-1)*rho)` as if it guarantees correct aggregation. The repository's [marginal-verifier owner](https://github.com/MSKazemi/idkmesh/issues/693) and [worker-dependence experiment](https://github.com/MSKazemi/idkmesh/blob/main/experiments/E042-worker-dependence-shape.md) already address related distinctions.
 
 ### 4.3 Evaluation and stop rules
 
@@ -330,7 +330,7 @@ No durable global human/model reputation score is needed. Passing a synthetic pr
 
 ### 8.1 Resource economics and queue stability
 
-Project-funded compute remains exactly `$0` under [PROJECT_RULES](../../PROJECT_RULES.md) and [compute policy](../../config/compute-policy.json). The scheduler cannot price scarcity and then buy capacity. With no eligible zero-project-cost lane, queue, reduce scope, seek opt-in capacity, or abstain.
+Project-funded compute remains exactly `$0` under [PROJECT_RULES](https://github.com/MSKazemi/idkmesh/blob/main/PROJECT_RULES.md) and [compute policy](https://github.com/MSKazemi/idkmesh/blob/main/config/compute-policy.json). The scheduler cannot price scarcity and then buy capacity. With no eligible zero-project-cost lane, queue, reduce scope, seek opt-in capacity, or abstain.
 
 Track provider quotas, CI minutes, CPU/GPU time, memory, disk, bandwidth, energy, and human attention separately. Reserve against upper task budgets before dispatch, refund measured unused resources where justified, and never erase unresolved execution occupancy. Per-project/actor limits stop one noisy participant consuming every slot; donor thermal/battery/network limits are enforceable caps where the backend supports them.
 

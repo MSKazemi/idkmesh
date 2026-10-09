@@ -3,7 +3,7 @@
 **Status:** executable read-only local projection and shadow recommendation,
 issue 915, under the existing Product Spine/C9/C10/connector owners.
 
-[`idkmesh/coordination_preflight.py`](../../idkmesh/coordination_preflight.py)
+[`idkmesh/coordination_preflight.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/coordination_preflight.py)
 implements the dependency and effort slice of the
 [coordination plan](../planning/HUMAN_AGENT_COORDINATION_ALGORITHMS_2026-10-04.md).
 It composes canonical WorkUnit source binding and `resolve_routes()` rather
@@ -169,7 +169,7 @@ The standalone stdlib demo emits three schema-conforming reports:
 
 The wrapper labels the demonstration `synthetic_fixture`; it executes no model
 or worker and establishes no real quality/performance advantage. The report
-contract is [`coordination-preflight-v0.1.schema.json`](../../schemas/coordination-preflight-v0.1.schema.json).
+contract is [`coordination-preflight-v0.1.schema.json`](https://github.com/MSKazemi/idkmesh/blob/main/schemas/coordination-preflight-v0.1.schema.json).
 
 A future executor must recheck these exact inputs and authority inside its
 authoritative admission boundary, bind the input digest to

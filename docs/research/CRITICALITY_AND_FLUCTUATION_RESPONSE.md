@@ -28,7 +28,7 @@ thermodynamic phase transition.
 
 ## Model
 
-[`../../experiments/criticality_susceptibility.py`](../../experiments/criticality_susceptibility.py)
+[`../../experiments/criticality_susceptibility.py`](https://github.com/MSKazemi/idkmesh/blob/main/experiments/criticality_susceptibility.py)
 is a discrete two-stage queue:
 
 ```text
@@ -69,7 +69,7 @@ criterion.
 ## Result and use
 
 The 40-seed result is documented in
-[`../../experiments/E021-coordination-criticality.md`](../../experiments/E021-coordination-criticality.md).
+[`../../experiments/E021-coordination-criticality.md`](https://github.com/MSKazemi/idkmesh/blob/main/experiments/E021-coordination-criticality.md).
 Susceptibility warned earlier in this grid, but at the cost of false alarms; it
 did not dominate the utilization baseline. The useful control-plane conclusion
 is therefore conditional:

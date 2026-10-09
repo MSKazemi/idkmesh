@@ -1,3 +1,7 @@
+---
+title: "ADR-0004: Verified Swarm Runner as First Product"
+description: "Accepted ADR: IDKMesh's first reference product is a Git-native Verified Swarm Runner that isolates workers, verifies results, and never auto-merges."
+---
 # ADR-0004 — Build the Verified Swarm Runner as the first reference product
 
 - **Status:** Accepted for the next implementation cycle

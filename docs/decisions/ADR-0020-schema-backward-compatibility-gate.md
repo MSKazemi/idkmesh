@@ -1,3 +1,6 @@
+---
+description: "Accepted ADR: a published IDKMesh JSON schema may never change to reject previously valid data; a breaking change needs a new versioned schema file."
+---
 # ADR-0020 — Schema Backward-Compatibility Gate
 
 **Status:** Accepted

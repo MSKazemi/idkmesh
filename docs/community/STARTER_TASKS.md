@@ -25,7 +25,7 @@ accepts code gets only coders.
   independent attempts, so duplicated effort here is data, not waste.
 - **Negative results count.** If you attempt a task and conclude it should not
   be done, that write-up is a contribution and will be treated as one.
-- **Read [CONTRIBUTING.md](../../CONTRIBUTING.md) first** for the closing-keyword
+- **Read [CONTRIBUTING.md](https://github.com/MSKazemi/idkmesh/blob/main/CONTRIBUTING.md) first** for the closing-keyword
   rule and the pull request gate.
 - Times are rough estimates for someone new to the repository.
 
@@ -109,8 +109,8 @@ that only reads the tree should not hold `contents: write`.
 
 Related invariant, already enforced: every third-party action is pinned to an
 immutable commit SHA, guarded by
-[`tests/test_workflow_action_pinning.py`](../../tests/test_workflow_action_pinning.py)
-and recorded in [SECURITY.md](../../SECURITY.md).
+[`tests/test_workflow_action_pinning.py`](https://github.com/MSKazemi/idkmesh/blob/main/tests/test_workflow_action_pinning.py)
+and recorded in [SECURITY.md](https://github.com/MSKazemi/idkmesh/blob/main/SECURITY.md).
 
 **Acceptance:** a table of workflow, declared permissions, and the narrowest
 permissions its steps actually need, with a pull request narrowing the ones that
@@ -145,7 +145,7 @@ grep -rhoE '\]\((https?://[^)]+)\)' --include=*.md . | sed 's/^](//; s/)$//' | s
 current state, and a stated rule for which document contexts may reference a
 closed issue. It must not require network access during the ordinary test run —
 follow the committed-snapshot pattern already used by
-[`tools/issue_evidence_gate.py`](../../tools/issue_evidence_gate.py). Report
+[`tools/issue_evidence_gate.py`](https://github.com/MSKazemi/idkmesh/blob/main/tools/issue_evidence_gate.py). Report
 what you find; do not mass-edit provenance headers.
 
 ### D2 — Resolve the four documents reachable only from non-markdown artifacts
@@ -174,7 +174,7 @@ silencing them — see the note on retained detector findings in
 
 **Parallel welcome** — independent reproductions are the point. ~3 hours.
 
-[`experiments/E029-first-real-model-attempts.md`](../../experiments/E029-first-real-model-attempts.md)
+[`experiments/E029-first-real-model-attempts.md`](https://github.com/MSKazemi/idkmesh/blob/main/experiments/E029-first-real-model-attempts.md)
 reports that a pinned open-weight model produced **0 of 60** attempts the
 verifier was even asked to judge, and that 56 of the 60 failures were
 unified-diff *protocol* failures rather than failures of the proposed change.
@@ -189,9 +189,9 @@ disagrees is more valuable than one that agrees.
 
 ~1 hour.
 
-[`benchmarks/PUBLICATION.md`](../../benchmarks/PUBLICATION.md) is generated from
+[`benchmarks/PUBLICATION.md`](https://github.com/MSKazemi/idkmesh/blob/main/benchmarks/PUBLICATION.md) is generated from
 the cohort definitions by
-[`tools/benchmark_publication.py`](../../tools/benchmark_publication.py). It
+[`tools/benchmark_publication.py`](https://github.com/MSKazemi/idkmesh/blob/main/tools/benchmark_publication.py). It
 claims 4 cohorts, 20 tasks, 5 tasks with a verified outcome and 5 attempts, all
 sharing one structural signature.
 

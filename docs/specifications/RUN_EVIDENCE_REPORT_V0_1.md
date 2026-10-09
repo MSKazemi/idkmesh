@@ -1,3 +1,6 @@
+---
+description: "Run Evidence Report v0.1: one human-readable view of a multi-attempt run that keeps worker self-reports, verifier evidence, and disagreement separate."
+---
 # Run Evidence Report v0.1
 
 **Status:** Experimental product-facing aggregation layer  

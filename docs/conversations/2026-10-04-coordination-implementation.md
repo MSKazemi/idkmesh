@@ -50,10 +50,10 @@ optimum, model-quality calibration or live energy measurement is claimed.
 
 ## Artifacts and verification
 
-- [Coordinator](../../idkmesh/task_claims.py), existing store migration and
-  [regression tests](../../tests/test_task_claims.py).
+- [Coordinator](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/task_claims.py), existing store migration and
+  [regression tests](https://github.com/MSKazemi/idkmesh/blob/main/tests/test_task_claims.py).
 - [Local Task Claims v0.1](../specifications/LOCAL_TASK_CLAIMS_V0_1.md) and its
-  [schema](../../schemas/task-claim-v0.1.schema.json).
+  [schema](https://github.com/MSKazemi/idkmesh/blob/main/schemas/task-claim-v0.1.schema.json).
 - Architecture, changelog, schema/specification/conversation indexes and sitemap
   updated in the same bounded change.
 

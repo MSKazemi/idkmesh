@@ -3,8 +3,8 @@
 **Date:** 2026-10-07  
 **Status:** preregistered design only; no confirmatory outcome data collected  
 **Parent plan:** [issue #936](https://github.com/MSKazemi/idkmesh/issues/936)  
-**Motivating evidence:** [E017](../../experiments/E017-item-difficulty-and-quorum.md), [E018](../../experiments/E018-dependence-model-shape.md), [E020](../../experiments/E020-quorum-frontier-under-measured-shape.md)  
-**Current manuscript:** [paper/main.tex](../../paper/main.tex)  
+**Motivating evidence:** [E017](https://github.com/MSKazemi/idkmesh/blob/main/experiments/E017-item-difficulty-and-quorum.md), [E018](https://github.com/MSKazemi/idkmesh/blob/main/experiments/E018-dependence-model-shape.md), [E020](https://github.com/MSKazemi/idkmesh/blob/main/experiments/E020-quorum-frontier-under-measured-shape.md)  
+**Current manuscript:** [paper/main.tex](https://github.com/MSKazemi/idkmesh/blob/main/paper/main.tex)  
 **Project compute policy:** zero project spend; no paid provider fallback
 
 ## 1. Why this replication exists

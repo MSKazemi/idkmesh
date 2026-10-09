@@ -14,6 +14,36 @@ and the release notes for that tag.
 
 ### Added
 
+- The scientific program (`docs/research/SCIENTIFIC_PROGRAM.md`, umbrella
+  issue #968) states the one question IDKMesh is organised around: *when does
+  adding another AI agent, as worker or verifier, increase independently
+  verified useful work, and can that be predicted from a small pilot?* It also
+  defines the audience, hypotheses H1–H6, experiments X1–X10, algorithms
+  A1–A7, engineering targets T1–T6, the checked novelty boundary, and phases
+  S0–S5. `RESEARCH_QUESTIONS.md` is now labelled as the long-horizon backlog.
+- E045, an exploratory pilot (`experiments/public_agent_dependence.py`). It
+  reads public execution-graded SWE-bench Verified results, at a pinned
+  upstream commit, for 169 competent coding systems × 500 tasks. Mean pairwise
+  φ is 0.4763, 26/500 tasks are solved by no system, and oracle best-of-10
+  covers 0.8521 where independence predicts 0.9997.
+
+- Transport-neutral Human Decision service core for issue #740
+  (`idkmesh/human_decision_service.py`). It records an `accept` / `reject` /
+  `escalate` decision with a rationale into an append-only SQLite store whose
+  triggers reject UPDATE and DELETE, bound to the exact retained Run Evidence
+  Report digest (a stale or swapped digest fails closed) and to a selected
+  attempt that must exist in that report. The decider comes only from a trusted,
+  authenticated, unrevoked, unexpired human `ActorContext`; the request body
+  cannot supply identity, timestamp, decision id or authority. `Idempotency-Key`
+  semantics follow API conventions section 12 and are bound to the principal:
+  same principal, key and request replays the original record; a different
+  request or a different principal with the same key is `idempotency_conflict`.
+  Responses match the frozen `idkmesh-human-decision-response-v0.1` schema and
+  returned records are copies. Not yet built: no HTTP endpoint or CLI calls this
+  core, it performs no tenant/role policy authorization (`decisions:write`), and
+  it emits no audit-ledger event; those remain owned by #740 with #670/#671/#743,
+  so a local session token still cannot record a decision.
+||||||| parent of 91d5a48 (research: define the scientific program and add the E045 public agent-dependence pilot)
 - API-11A client read-model completion for issue #746: the official
   dependency-free Python client (`idkmesh.api_client.ControlTowerClient`) now
   covers the whole resource-oriented Control Tower read model — `list_runs`
@@ -60,6 +90,15 @@ and the release notes for that tag.
   inferring maturity from code presence alone. This matrix/drift mechanism is
   evidence level 1 (implemented); it does not promote the project itself to
   production-qualified.
+
+- GitHub governance baseline policy object for issue #607 (C12-A):
+  `idkmesh/github_governance_policy.py` defines deterministic
+  required/warn/optional guards for read-only, candidate, secret-bearing,
+  high-risk, and cloud dispatch and for integration. Automatic GitHub admin
+  mutation and treating ruleset metadata as proof of independent review are
+  structurally forbidden. Policy only: no GitHub API call, ruleset evaluation,
+  workflow lint, or `doctor --github` output is added yet. See
+  [Main protection](docs/admin/MAIN_PROTECTION.md).
 
 - Privacy-safe API observability slice for issue #744: the loopback Control
   Tower now exposes authenticated `GET /api/v1/metrics` with fixed-cardinality
@@ -375,6 +414,23 @@ and the release notes for that tag.
 
 ### Fixed
 
+- The IDKGraph Markdown index (`tools/idkgraph_markdown_index.py`) now skips a
+  leading YAML front-matter block. Previously the last metadata line followed by
+  the closing `---` parsed as a setext H2, so every page with front matter (all
+  topic guides) got a metadata line such as `image: "/assets/idkmesh-social.png"`
+  as its first heading and IDKGraph title. This unblocks adding search
+  `description:` front matter to specifications and ADRs without corrupting
+  their IDKGraph titles.
+- Jekyll-rendered Markdown pages on the GitHub Pages site no longer share one
+  meta description. At fca4e8c, 405 of 456 rendered pages fell back to `site.description`;
+  `docs/_layouts/default.html` now derives a per-page description from the first
+  real paragraph (front-matter `description` still wins and is untouched) and
+  substitutes it into the `meta`/Open Graph tags. A local `github-pages` gem
+  build went from 52 to 454 distinct descriptions across 456 pages. The same
+  layout replaces the bare `WebPage` JSON-LD with a `TechArticle` + `WebSite` +
+  `Person` + `BreadcrumbList` graph and adds a visible Home / Library breadcrumb.
+  No `dateModified` is emitted: the legacy Pages build exposes no reliable
+  per-page date. Documented in [`docs/PAGES_SETUP.md`](docs/PAGES_SETUP.md).
 - `GET /api/v1/runs` and `idkmesh run list` no longer fail for the whole page
   when the store also holds a row that is not a Product Spine run. The shared
   `runs` table also holds admission-only, execution-error and GitHub

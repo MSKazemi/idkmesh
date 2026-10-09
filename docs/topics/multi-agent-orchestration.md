@@ -1,6 +1,6 @@
 ---
-title: "Multi-Agent Orchestration and Coordination — IDKMesh"
-description: "A verification-first approach to multi-agent orchestration: bounded decomposition, capability routing, candidate isolation, independent verification, and protected integration."
+title: "Multi-Agent Orchestration and Coordination"
+description: "Verification-first multi-agent orchestration: bounded decomposition, capability routing, candidate isolation, independent review, and protected merges."
 image: "/assets/idkmesh-social.png"
 ---
 
@@ -30,7 +30,7 @@ This structure applies whether workers are coding agents, humans, local models, 
 
 IDKMesh's connector-control-plane direction separates the coordinator from specific providers. A routing layer should ask whether a worker is eligible for the task, what capabilities and authority it has, what resources it consumes, and what risk class the work carries. Provider-specific logic should remain behind adapters rather than becoming the orchestration architecture.
 
-See the [connector control plane](https://github.com/MSKazemi/idkmesh/blob/main/docs/architecture/AGENT_MODEL_CONNECTOR_CONTROL_PLANE.md) and [model-tier dispatcher plan](https://github.com/MSKazemi/idkmesh/blob/main/docs/planning/MODEL_TIER_DISPATCHER_EXECUTION_PLAN_2026-09-22.md).
+See the [connector control plane](https://mskazemi.com/idkmesh/architecture/AGENT_MODEL_CONNECTOR_CONTROL_PLANE.html) and [model-tier dispatcher plan](https://mskazemi.com/idkmesh/planning/MODEL_TIER_DISPATCHER_EXECUTION_PLAN_2026-09-22.html).
 
 ## Coordination needs backpressure
 

@@ -11,13 +11,13 @@ is a record of what the program was, not a list of what is currently claimable.
    — all three of its falsifiable hypotheses now have a named synthetic test,
    and none of the three is closed by one. Hypothesis 1 is falsified in the
    direction it was stated, by
-   [`E032-population-scaling.md`](../../experiments/E032-population-scaling.md).
+   [`E032-population-scaling.md`](https://github.com/MSKazemi/idkmesh/blob/main/experiments/E032-population-scaling.md).
    Hypothesis 3 is tested by the budget-matched coordination-topology arms in
    [`R1_COLLECTIVE_SCALING.md`](R1_COLLECTIVE_SCALING.md), which find topology
    shifts the exponent by roughly an order of magnitude less than error
    correlation does. Hypothesis 2 is tested by the issue #30 help/hurt sweep
    ([`R1_HELP_HURT_SWEEP.md`](R1_HELP_HURT_SWEEP.md)) and by
-   [`E040-diversity-correlation-threshold.md`](../../experiments/E040-diversity-correlation-threshold.md),
+   [`E040-diversity-correlation-threshold.md`](https://github.com/MSKazemi/idkmesh/blob/main/experiments/E040-diversity-correlation-threshold.md),
    whose joint result is about the harnesses rather than the hypothesis: the
    equal-budget advantage is proportional to retained independence at every
    assumed correlation short of 1.0, so a grid that does not charge for
@@ -29,7 +29,7 @@ is a record of what the program was, not a list of what is currently claimable.
    [issue #70](https://github.com/MSKazemi/idkmesh/issues/70).
 2. **Closed 2026-08-29**, by pull request 252. [Issue #14 — Make verification scale with generation](https://github.com/MSKazemi/idkmesh/issues/14)
    — the result is the seven-condition comparison recorded in
-   [`E022-verification-scaling-matrix.md`](../../experiments/E022-verification-scaling-matrix.md).
+   [`E022-verification-scaling-matrix.md`](https://github.com/MSKazemi/idkmesh/blob/main/experiments/E022-verification-scaling-matrix.md).
 3. **Closed 2026-08-29**, by pull request 319. [Issue #15 — Define a formal Work Unit for composable distributed work](https://github.com/MSKazemi/idkmesh/issues/15)
    — the closure argument and its empirical gate are recorded in
    [`WORK_UNIT_RESEARCH_TRACK_COMPLETION.md`](WORK_UNIT_RESEARCH_TRACK_COMPLETION.md).
@@ -303,7 +303,7 @@ From there, scale only when measurement demonstrates what should be scaled.
 ## Related documents
 
 - [`../foundations/FIELD_DEFINING_QUESTIONS.md`](../foundations/FIELD_DEFINING_QUESTIONS.md)
-- [`RESEARCH_QUESTIONS.md`](../../RESEARCH_QUESTIONS.md)
-- [`MATHEMATICAL_FOUNDATIONS.md`](../../MATHEMATICAL_FOUNDATIONS.md)
-- [`ARCHITECTURE.md`](../../ARCHITECTURE.md)
+- [`RESEARCH_QUESTIONS.md`](https://github.com/MSKazemi/idkmesh/blob/main/RESEARCH_QUESTIONS.md)
+- [`MATHEMATICAL_FOUNDATIONS.md`](https://github.com/MSKazemi/idkmesh/blob/main/MATHEMATICAL_FOUNDATIONS.md)
+- [`ARCHITECTURE.md`](https://github.com/MSKazemi/idkmesh/blob/main/ARCHITECTURE.md)
 - [`TOP_20_QUESTIONS.md`](TOP_20_QUESTIONS.md)
