@@ -1,3 +1,92 @@
+{%- comment -%}
+  Layout for every Markdown page GitHub Pages renders from docs/ (the
+  hand-written docs/*.html pages own their <head> and do not use it).
+
+  SEO additions on top of jekyll-theme-primer's default layout:
+  1. Per-page description. jekyll-seo-tag falls back to site.description for
+     every page without front-matter `description`, so 405 of 456 pages shared one
+     meta description. When front matter sets none, derive one from the first
+     real paragraph of the rendered page (skipping headings, lists, tables,
+     code blocks, badge/image-only paragraphs and short "Status: ..." /
+     "Date: ..." metadata lines; a paragraph under 110 characters is joined
+     with the next one; the result is cut at a word boundary near 160
+     characters) and substitute it into the seo-tag output.
+     Pages that set `description` keep the seo-tag meta tags byte-for-byte.
+  2. Structured data. The seo-tag's bare WebPage JSON-LD is replaced by one
+     @graph: TechArticle + WebSite + Person + BreadcrumbList. No dateModified:
+     the legacy Pages build exposes no reliable per-page modification date.
+  3. A visible breadcrumb (Home / Library / page) for internal linking.
+{%- endcomment -%}
+{%- assign site_root = "/" | absolute_url -%}
+{%- assign library_url = "/library.html" | absolute_url -%}
+{%- assign page_url = page.url | absolute_url | replace: "/index.html", "/" -%}
+{%- assign page_lang = page.lang | default: site.lang | default: "en" -%}
+
+{%- comment -%} Plain-text page title (jekyll-titles-from-headings fills page.title). {%- endcomment -%}
+{%- assign title_plain = page.title | default: page.name | markdownify | strip_html | normalize_whitespace
+    | replace: "&lt;", "<" | replace: "&gt;", ">" | replace: "&quot;", '"' | replace: "&#39;", "'"
+    | replace: "&nbsp;", " " | replace: "&amp;", "&" -%}
+
+{%- comment -%} Plain-text description: front matter wins; otherwise the first real paragraph. {%- endcomment -%}
+{%- if page.description -%}
+  {%- assign desc_plain = page.description | markdownify | strip_html | normalize_whitespace -%}
+{%- else -%}
+  {%- assign desc_plain = "" -%}
+  {%- assign desc_fallback = "" -%}
+  {%- assign chunks = content | split: "<p>" -%}
+  {%- for chunk in chunks offset: 1 -%}
+    {%- assign text = chunk | split: "</p>" | first | strip_html | normalize_whitespace -%}
+    {%- if text.size < 50 -%}{%- continue -%}{%- endif -%}
+    {%- assign label = text | slice: 0, 32 | split: ": " -%}
+    {%- assign label_words = label.first | split: " " -%}
+    {%- if label.size > 1 and label_words.size <= 3 -%}
+      {%- if desc_fallback == "" -%}{%- assign desc_fallback = text -%}{%- endif -%}
+      {%- continue -%}
+    {%- endif -%}
+    {%- comment -%} A short opening paragraph is extended with the next one. {%- endcomment -%}
+    {%- if desc_plain == "" -%}
+      {%- assign desc_plain = text -%}
+    {%- else -%}
+      {%- assign desc_plain = desc_plain | append: " " | append: text -%}
+    {%- endif -%}
+    {%- if desc_plain.size >= 110 -%}{%- break -%}{%- endif -%}
+  {%- endfor -%}
+  {%- if desc_plain == "" -%}{%- assign desc_plain = desc_fallback -%}{%- endif -%}
+{%- endif -%}
+{%- assign desc_plain = desc_plain
+    | replace: "&lt;", "<" | replace: "&gt;", ">" | replace: "&quot;", '"' | replace: "&#39;", "'"
+    | replace: "&nbsp;", " " | replace: "&amp;", "&" | normalize_whitespace -%}
+{%- if page.description == nil and desc_plain.size > 160 -%}
+  {%- assign desc_words = desc_plain | truncate: 158, "" | split: " " | pop -%}
+  {%- assign desc_plain = desc_words | join: " " -%}
+  {%- assign desc_end = desc_plain | slice: -1 -%}
+  {%- if desc_end == "," or desc_end == ":" or desc_end == ";" or desc_end == "." -%}
+    {%- assign desc_keep = desc_plain.size | minus: 1 -%}
+    {%- assign desc_plain = desc_plain | slice: 0, desc_keep -%}
+  {%- endif -%}
+  {%- assign desc_plain = desc_plain | append: "…" -%}
+{%- endif -%}
+{%- if desc_plain == "" -%}
+  {%- assign desc_plain = site.description | normalize_whitespace -%}
+{%- endif -%}
+
+{%- capture seo_tag -%}{% seo %}{%- endcapture -%}
+{%- unless page.description -%}
+  {%- comment -%} Same transformation jekyll-seo-tag applies to site.description. {%- endcomment -%}
+  {%- assign site_desc_attr = site.description | markdownify | strip_html | normalize_whitespace | escape_once -%}
+  {%- assign site_desc_needle = 'content="' | append: site_desc_attr | append: '"' -%}
+  {%- assign desc_attr = desc_plain | escape_once -%}
+  {%- assign page_desc_value = 'content="' | append: desc_attr | append: '"' -%}
+  {%- assign seo_tag = seo_tag | replace: site_desc_needle, page_desc_value -%}
+{%- endunless -%}
+{%- if page.url != "/" -%}
+  {%- assign seo_parts = seo_tag | split: '<script type="application/ld+json">' -%}
+  {%- if seo_parts.size == 2 -%}
+    {%- assign seo_tail = seo_parts.last | split: "</script>" | last -%}
+    {%- assign seo_tag = seo_parts.first | append: seo_tail -%}
+    {%- assign emit_graph = true -%}
+  {%- endif -%}
+{%- endif -%}
 <!DOCTYPE html>
 <html lang="{{ page.lang | default: site.lang | default: "en-US" }}">
   <head>
@@ -5,14 +94,42 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-{% seo %}
+{{ seo_tag }}
+{%- if emit_graph %}
+{%- assign website_id = site_root | append: "#website" -%}
+{%- assign person_id = site.author.url | default: "https://mskazemi.com/" | append: "#person" -%}
+{%- assign headline = title_plain | truncate: 110 -%}
+{%- assign page_image = page.image | default: site.image -%}
+    <script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+{"@type":"TechArticle","@id":{{ page_url | append: "#article" | jsonify }},"headline":{{ headline | jsonify }},"name":{{ title_plain | jsonify }},"description":{{ desc_plain | jsonify }},"url":{{ page_url | jsonify }},"inLanguage":{{ page_lang | jsonify }},{% if page_image %}"image":{{ page_image | absolute_url | jsonify }},{% endif %}"mainEntityOfPage":{"@type":"WebPage","@id":{{ page_url | jsonify }},"url":{{ page_url | jsonify }},"name":{{ title_plain | jsonify }},"breadcrumb":{"@id":{{ page_url | append: "#breadcrumb" | jsonify }}}},"author":{"@id":{{ person_id | jsonify }}},"publisher":{"@id":{{ person_id | jsonify }}},"isPartOf":{"@id":{{ website_id | jsonify }}}},
+{"@type":"WebSite","@id":{{ website_id | jsonify }},"name":{{ site.title | jsonify }},"url":{{ site_root | jsonify }},"inLanguage":{{ site.lang | default: "en" | jsonify }},"publisher":{"@id":{{ person_id | jsonify }}}},
+{"@type":"Person","@id":{{ person_id | jsonify }},"name":{{ site.author.name | jsonify }},"url":{{ site.author.url | jsonify }}{% if site.social.links %},"sameAs":{{ site.social.links | jsonify }}{% endif %}},
+{"@type":"BreadcrumbList","@id":{{ page_url | append: "#breadcrumb" | jsonify }},"itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":{{ site_root | jsonify }}},{"@type":"ListItem","position":2,"name":"Library","item":{{ library_url | jsonify }}},{"@type":"ListItem","position":3,"name":{{ title_plain | jsonify }},"item":{{ page_url | jsonify }}}]}
+]}
+    </script>
+{%- endif %}
     <link rel="stylesheet" href="{{ "/assets/css/style.css?v=" | append: site.github.build_revision | relative_url }}">
+    <style>
+      .markdown-body .page-breadcrumb ol { list-style: none; margin: 0 0 16px; padding: 0; display: flex; flex-wrap: wrap; font-size: 14px; color: #57606a; }
+      .markdown-body .page-breadcrumb li { margin: 0; }
+      .markdown-body .page-breadcrumb li + li::before { content: "/"; padding: 0 0.5em; color: #6e7781; }
+    </style>
     {% include head-custom.html %}
   </head>
   <body>
     <div class="container-lg px-3 my-5 markdown-body">
       {% if site.title and site.title != page.title %}
       <p class="site-title h1"><a href="{{ "/" | absolute_url }}">{{ site.title }}</a></p>
+      {% endif %}
+      {% if page.url != "/" %}
+      <nav class="page-breadcrumb" aria-label="Breadcrumb">
+        <ol>
+          <li><a href="{{ "/" | relative_url }}">Home</a></li>
+          <li><a href="{{ "/library.html" | relative_url }}">Library</a></li>
+          <li><span aria-current="page">{{ title_plain | escape }}</span></li>
+        </ol>
+      </nav>
       {% endif %}
 
       {{ content }}

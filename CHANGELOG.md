@@ -406,6 +406,16 @@ and the release notes for that tag.
   as its first heading and IDKGraph title. This unblocks adding search
   `description:` front matter to specifications and ADRs without corrupting
   their IDKGraph titles.
+- Jekyll-rendered Markdown pages on the GitHub Pages site no longer share one
+  meta description. At fca4e8c, 405 of 456 rendered pages fell back to `site.description`;
+  `docs/_layouts/default.html` now derives a per-page description from the first
+  real paragraph (front-matter `description` still wins and is untouched) and
+  substitutes it into the `meta`/Open Graph tags. A local `github-pages` gem
+  build went from 52 to 454 distinct descriptions across 456 pages. The same
+  layout replaces the bare `WebPage` JSON-LD with a `TechArticle` + `WebSite` +
+  `Person` + `BreadcrumbList` graph and adds a visible Home / Library breadcrumb.
+  No `dateModified` is emitted: the legacy Pages build exposes no reliable
+  per-page date. Documented in [`docs/PAGES_SETUP.md`](docs/PAGES_SETUP.md).
 - `GET /api/v1/runs` and `idkmesh run list` no longer fail for the whole page
   when the store also holds a row that is not a Product Spine run. The shared
   `runs` table also holds admission-only, execution-error and GitHub
