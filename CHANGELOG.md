@@ -14,6 +14,12 @@ and the release notes for that tag.
 
 ### Added
 
+- Preregistration v2 (`docs/research/PREREG_AGENT_VALUE_FORECAST_V2.md`) and
+  the E048 runner (`experiments/temporal_holdout.py`) register, before any data
+  exists, a temporal-holdout replication of the agent-value forecast on SWE-bench
+  submissions added after the pinned commit. Upstream currently has none; the
+  runner reports that and does nothing else.
+
 - T1 / E047 (`experiments/submission_provenance.py`) adds provenance for public
   SWE-bench submissions: model, model organisation, scaffold and attempts,
   with canonicalised model names. Verified's 169 competent submissions come
