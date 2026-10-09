@@ -108,6 +108,13 @@ consumer.
   indefinitely, and it ends promptly on drain. A service that drains must begin
   the drain on both limiters and wait for both.
 
+Cancellation is capacity-safe: once a request is admitted, the consumer must
+release its limiter slot in a `finally` path even if the peer disconnects or a
+response write fails. Interrupted work is not automatically retried. Long-lived
+SSE handlers additionally treat broken-pipe/reset/timeout as stream termination
+and release their own stream slot. This runtime rule prevents abandoned clients
+from leaking capacity; domain services still own mutation/idempotency semantics.
+
 See [Service limits](CONTROL_TOWER_LOCAL_API_V0_1.md#service-limits) for the
 Control Tower's concrete values and the tests that prove them.
 
