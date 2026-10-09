@@ -33,6 +33,24 @@ def _load_sibling(name: str):
 
 _helpers = _load_sibling("test_run_evidence_store")
 
+HAS_JSONSCHEMA = importlib.util.find_spec("jsonschema") is not None
+SCHEMAS = Path(__file__).resolve().parents[1] / "schemas"
+
+
+def _schema_validator(schema_name: str):
+    import jsonschema
+    from referencing import Registry, Resource
+
+    registry = Registry()
+    for path in sorted(SCHEMAS.glob("*.json")):
+        document = json.loads(path.read_text(encoding="utf-8"))
+        registry = registry.with_resource(
+            document.get("$id", path.name),
+            Resource.from_contents(document),
+        )
+    schema = json.loads((SCHEMAS / schema_name).read_text(encoding="utf-8"))
+    return jsonschema.Draft202012Validator(schema, registry=registry)
+
 
 class HumanDecisionServiceTests(unittest.TestCase):
     def setUp(self) -> None:
@@ -123,6 +141,57 @@ class HumanDecisionServiceTests(unittest.TestCase):
             self.record(changed)
         self.assertEqual(caught.exception.code, "idempotency_conflict")
         self.assertEqual(len(self.store.list_for_run(self.report["run_id"])), 1)
+
+    def test_same_idempotency_key_from_another_principal_is_a_conflict(self) -> None:
+        first = self.record()
+        other = ActorContext(
+            principal_id="other-reviewer@example.com",
+            actor_type="human",
+            issuer="tests",
+            roles=frozenset({"reviewer"}),
+            scopes=self.actor.scopes,
+            data_clearance="internal",
+            identity_revision="test-v1",
+        )
+        with self.assertRaises(HumanDecisionServiceError) as caught:
+            self.record(actor=other)
+        self.assertEqual(caught.exception.code, "idempotency_conflict")
+        self.assertEqual(
+            self.store.list_for_run(self.report["run_id"]),
+            [first.decision_record],
+        )
+
+    def test_returned_records_are_copies_that_cannot_alter_persisted_state(self) -> None:
+        result = self.record()
+        original = result.decision_record
+        digest = result.decision_record_digest
+
+        result.decision_record["decision"] = "reject"
+        response = result.response()
+        response["decision_record"]["evidence_report"]["digest"] = "sha256:" + "f" * 64
+        response["decision_record"]["authority"]["merge"] = True
+
+        self.assertEqual(result.decision_record, original)
+        self.assertEqual(canonical_digest(result.decision_record), digest)
+        # Frozen+slotted dataclasses raise FrozenInstanceError (an
+        # AttributeError) or, on some CPython versions, TypeError.
+        with self.assertRaises((AttributeError, TypeError)):
+            result.decision_record = {}  # type: ignore[misc]
+        with self.assertRaises((AttributeError, TypeError)):
+            result.decision_record_json = "{}"  # type: ignore[misc]
+        replay = self.record()
+        self.assertTrue(replay.replayed)
+        self.assertEqual(replay.decision_record, original)
+        self.assertEqual(self.store.list_for_run(self.report["run_id"]), [original])
+
+    @unittest.skipUnless(HAS_JSONSCHEMA, "frozen transport schema check requires jsonschema")
+    def test_fresh_and_replayed_responses_match_the_frozen_transport_schema(self) -> None:
+        validator = _schema_validator("idkmesh-human-decision-response-v0.1.schema.json")
+        fresh = self.record().response()
+        replayed = self.record().response()
+        for response in (fresh, replayed):
+            validator.validate(response)
+        self.assertEqual(fresh, replayed)
 
     def test_request_cannot_supply_identity_timestamp_authority_or_id(self) -> None:
         for field, value in (

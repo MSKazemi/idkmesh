@@ -9,6 +9,18 @@ The service consumes a trusted :class:`ActorContext`, an already-verified
 Product Spine evidence reader, and a small append-only SQLite decision store.
 It never dispatches work, changes canonical project state, pushes Git, or
 merges code.
+
+Boundary of this core.  It *authenticates* the principal (human, authenticated,
+not revoked, not expired) but performs no tenant/role *policy authorization*:
+the ``decisions:write`` action does not yet exist in the
+:mod:`idkmesh.enterprise_authz` vocabulary, and this core emits no
+:mod:`idkmesh.enterprise_audit` event.  Both belong to the transport adapter
+that #740 still owes, and no transport may call this core until they exist.
+
+Idempotency keys are bound to the accountable principal: the same key reused by
+a different principal is a conflict, never a replay of someone else's record.
+Returned records are copies; mutating one cannot alter the persisted record,
+its digest, or a later replay.
 """
 
 from __future__ import annotations
@@ -54,12 +66,62 @@ class EvidenceReader(Protocol):
         """Return run_id, evidence_report_digest and evidence_report."""
 
 
+def _canonical_json(value: Mapping[str, Any]) -> str:
+    """Serialize exactly as :func:`canonical_digest` hashes."""
+
+    return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+
+
 @dataclass(frozen=True, slots=True)
 class PersistedHumanDecision:
-    decision_record: Mapping[str, Any]
+    """An immutable view of one persisted decision.
+
+    The record is held only as its canonical JSON text, so neither the store
+    nor a caller shares a mutable object with it.  :attr:`decision_record` and
+    :meth:`response` return fresh deep copies on every call.
+    """
+
+    decision_record_json: str
     decision_record_digest: str
     created: bool
     replayed: bool
+
+    def __post_init__(self) -> None:
+        try:
+            record = json.loads(self.decision_record_json)
+        except (TypeError, ValueError) as exc:
+            raise HumanDecisionServiceError(
+                "persisted_state_corrupt", "decision record is not valid JSON"
+            ) from exc
+        if not isinstance(record, dict) or (
+            canonical_digest(record) != self.decision_record_digest
+        ):
+            raise HumanDecisionServiceError(
+                "persisted_state_corrupt",
+                "decision record does not match its canonical digest",
+            )
+
+    @classmethod
+    def from_record(
+        cls,
+        record: Mapping[str, Any],
+        *,
+        decision_record_digest: str,
+        created: bool,
+        replayed: bool,
+    ) -> "PersistedHumanDecision":
+        return cls(
+            decision_record_json=_canonical_json(record),
+            decision_record_digest=decision_record_digest,
+            created=created,
+            replayed=replayed,
+        )
+
+    @property
+    def decision_record(self) -> dict[str, Any]:
+        """Return a fresh deep copy of the immutable decision record."""
+
+        return json.loads(self.decision_record_json)
 
     def response(self) -> dict[str, Any]:
         return {
@@ -67,7 +129,7 @@ class PersistedHumanDecision:
             "schema_version": SCHEMA_VERSION,
             "kind": RESPONSE_KIND,
             "ok": True,
-            "decision_record": dict(self.decision_record),
+            "decision_record": self.decision_record,
             "decision_record_digest": self.decision_record_digest,
         }
 
@@ -165,10 +227,8 @@ class HumanDecisionStore:
         request_digest: str,
         decision_record: Mapping[str, Any],
     ) -> PersistedHumanDecision:
-        record = dict(decision_record)
-        record_json = json.dumps(
-            record, sort_keys=True, separators=(",", ":"), ensure_ascii=False
-        )
+        record_json = _canonical_json(decision_record)
+        record = json.loads(record_json)
         record_digest = canonical_digest(record)
         decision_id = record["decision_id"]
         run_id = record["evidence_report"]["run_id"]
@@ -201,8 +261,8 @@ class HumanDecisionStore:
                         "stored decision identity does not match stored record",
                     )
                 conn.commit()
-                return PersistedHumanDecision(
-                    decision_record=stored,
+                return PersistedHumanDecision.from_record(
+                    stored,
                     decision_record_digest=existing["decision_record_digest"],
                     created=False,
                     replayed=True,
@@ -235,7 +295,7 @@ class HumanDecisionStore:
                 ) from exc
             conn.commit()
             return PersistedHumanDecision(
-                decision_record=record,
+                decision_record_json=record_json,
                 decision_record_digest=record_digest,
                 created=True,
                 replayed=False,
@@ -438,7 +498,19 @@ class HumanDecisionService:
         trusted_actor = _validate_actor(actor, evaluated_at_epoch=evaluated_at_epoch)
         timestamp = _validate_timestamp(decided_at)
         normalized = _validate_request(request)
-        request_digest = canonical_digest(normalized)
+        # The accountable principal is part of the idempotent request identity
+        # (it arrives out-of-band, like the Idempotency-Key header).  Without
+        # it, a second principal reusing a key with an identical body would be
+        # "replayed" someone else's decision and record nothing of their own.
+        request_digest = canonical_digest(
+            {
+                "request": normalized,
+                "principal": {
+                    "issuer": trusted_actor.issuer,
+                    "id": trusted_actor.principal_id,
+                },
+            }
+        )
 
         expected = normalized["evidence_report"]
         try:

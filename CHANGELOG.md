@@ -14,6 +14,23 @@ and the release notes for that tag.
 
 ### Added
 
+- Transport-neutral Human Decision service core for issue #740
+  (`idkmesh/human_decision_service.py`). It records an `accept` / `reject` /
+  `escalate` decision with a rationale into an append-only SQLite store whose
+  triggers reject UPDATE and DELETE, bound to the exact retained Run Evidence
+  Report digest (a stale or swapped digest fails closed) and to a selected
+  attempt that must exist in that report. The decider comes only from a trusted,
+  authenticated, unrevoked, unexpired human `ActorContext`; the request body
+  cannot supply identity, timestamp, decision id or authority. `Idempotency-Key`
+  semantics follow API conventions section 12 and are bound to the principal:
+  same principal, key and request replays the original record; a different
+  request or a different principal with the same key is `idempotency_conflict`.
+  Responses match the frozen `idkmesh-human-decision-response-v0.1` schema and
+  returned records are copies. Not yet built: no HTTP endpoint or CLI calls this
+  core, it performs no tenant/role policy authorization (`decisions:write`), and
+  it emits no audit-ledger event; those remain owned by #740 with #670/#671/#743,
+  so a local session token still cannot record a decision.
+
 - Canonical capability truth matrix for issue #944:
   `docs/capability-matrix-v1.json` is the machine-readable public claim
   boundary, with generated human/site projections and a normal-CI drift guard.
