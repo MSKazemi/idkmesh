@@ -1498,11 +1498,11 @@ provider secret or repository credential and should not be committed.
 read/inspection endpoints above. It covers `status`,
 `run-evidence/inspect`, `runs`, `runs/{run_id}`, `runs/{run_id}/attempts`,
 `runs/{run_id}/evidence`, `work-units`, `work-units/{work_unit_id}`,
-`projects/{project_id}`, and `events`; human-decision recording is deliberately
-absent until the authenticated mutation adapter (issue #740) exists. The
-`/healthz` and `/readyz` probes, `openapi.json` discovery, and the
-`events/stream` Server-Sent Events stream are not wrapped by the client and
-remain plain HTTP.
+`projects/{project_id}`, `connections`, and `events`; human-decision recording
+is deliberately absent until the authenticated mutation adapter (issue #740)
+exists. The `/healthz` and `/readyz` probes, `openapi.json` discovery,
+`metrics`, and the `events/stream` Server-Sent Events stream are not wrapped by
+the client and remain plain HTTP.
 
 ```python
 import os

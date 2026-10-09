@@ -258,6 +258,50 @@ class LiveServerTests(ClientServerCase):
             self.assertEqual(summary["runs_by_state"]["proposed"], 1)
             self.assertEqual(sum(summary["runs_by_state"].values()), 1)
 
+    def test_list_connections_pages_secret_free_metadata(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            store_path = str(Path(tmp) / "state.sqlite")
+            store = LocalMetadataStore(store_path)
+            for connection_id in ("beta-agent", "alpha-agent", "gamma-agent"):
+                store.record_connection(
+                    connection_id,
+                    metadata={
+                        "id": connection_id,
+                        "kind": "agent",
+                        "driver": "fake-agent",
+                        "enabled": True,
+                        "auth_ref_configured": False,
+                        "capability_tiers": ["T1"],
+                        "task_classes": ["coding"],
+                        "tools": ["git"],
+                        "candidate_types": ["artifact_bundle"],
+                        "max_risk": "medium",
+                        "external_processing": False,
+                        "project_spend_usd_max": 0.0,
+                        "max_concurrency": 1,
+                    },
+                    updated_at="2026-10-08T00:00:00Z",
+                )
+            _server, client = self.start_server(store_path)
+
+            first = client.list_connections(limit=2)
+            self.assertEqual(first.value.limit, 2)
+            self.assertEqual(
+                [item["id"] for item in first.value.items],
+                ["alpha-agent", "beta-agent"],
+            )
+            self.assertIsNotNone(first.value.next_cursor)
+            second = client.list_connections(
+                limit=2, cursor=first.value.next_cursor
+            )
+            self.assertEqual(
+                [item["id"] for item in second.value.items], ["gamma-agent"]
+            )
+            self.assertIsNone(second.value.next_cursor)
+            for item in first.value.items + second.value.items:
+                self.assertNotIn("secret_ref", item)
+                self.assertNotIn("settings", item)
+
     def test_unknown_resources_fail_with_stable_error_codes(self):
         with tempfile.TemporaryDirectory() as tmp:
             store = str(Path(tmp) / "state.sqlite")
@@ -455,6 +499,7 @@ class FailClosedTransportTests(unittest.TestCase):
             client.list_events,
             client.list_runs,
             client.list_work_units,
+            client.list_connections,
         ):
             with self.subTest(method=method.__name__):
                 with mock.patch(
