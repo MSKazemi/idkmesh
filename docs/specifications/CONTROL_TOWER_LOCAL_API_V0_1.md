@@ -432,6 +432,7 @@ Supported methods:
 ```text
 GET, HEAD
 ```
+
 ### `GET /api/v1/runs`
 
 Authenticated, read-only Product Spine run listing (issue #739). Serves the

@@ -14,6 +14,20 @@ and the release notes for that tag.
 
 ### Added
 
+- Read-only connector listing on the Control Tower for API-3 / issue #738:
+  authenticated `GET`/`HEAD /api/v1/connections` serves the connection rows
+  `idkmesh connections import` persists, through the existing `/api/v1`
+  service rather than a second HTTP server. Items are a strict public-safe
+  projection (`schemas/idkmesh-connection-resource-v0.1.schema.json`) in the
+  shared `idkmesh-list-v0.1` envelope with bounded keyset pagination and an
+  opaque cursor; secret references and settings are never returned, and a
+  legacy/free-form row fails closed with `500 connection_record_invalid`
+  instead of being serialized. The endpoint is advertised in `openapi.yaml`,
+  the runtime OpenAPI document, and `GET /api/v1/status`, and its 200/400/403/
+  503 responses are runtime representatives in
+  `tests/test_api_contract_conformance.py`. No connector create, probe,
+  enable/disable, secret resolution, dispatch, or provider call is added.
+
 - Canonical capability truth matrix for issue #944:
   `docs/capability-matrix-v1.json` is the machine-readable public claim
   boundary, with generated human/site projections and a normal-CI drift guard.
