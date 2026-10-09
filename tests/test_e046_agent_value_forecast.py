@@ -6,6 +6,7 @@ from closed forms, never from the module itself.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import math
 import random
@@ -150,6 +151,16 @@ class FreezeTests(unittest.TestCase):
         self.assertIsNotNone(frozen, "the preregistration no longer states the analysis digest")
         actual = hashlib.sha256((root / "experiments" / "agent_value_forecast.py").read_bytes()).hexdigest()
         self.assertEqual(actual, frozen.group(1), "agent_value_forecast.py changed after its freeze; register an amendment")
+
+
+    def test_retained_confirmatory_run_used_the_frozen_code(self) -> None:
+        root = Path(__file__).resolve().parents[1]
+        run = json.loads((root / "experiments" / "results" / "E046-confirmatory.json").read_text(encoding="utf-8"))
+        frozen = hashlib.sha256((root / "experiments" / "agent_value_forecast.py").read_bytes()).hexdigest()
+        self.assertEqual(run["analysis_sha256"], frozen)
+        self.assertEqual(run["decision"]["feasible_splits"], ["lite"])
+        self.assertEqual(run["decision"]["H1"], "supported")
+        self.assertNotIn("verified", run["splits"])
 
 
 if __name__ == "__main__":
