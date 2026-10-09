@@ -1461,6 +1461,60 @@ curl \
 The environment token is an ephemeral local API session credential. It is not a
 provider secret or repository credential and should not be committed.
 
+### Python client
+
+`idkmesh.api_client.ControlTowerClient` is the supported Python surface for the
+read/inspection endpoints above. It covers `status`,
+`run-evidence/inspect`, `runs`, `runs/{run_id}`, `runs/{run_id}/attempts`,
+`runs/{run_id}/evidence`, `work-units`, `work-units/{work_unit_id}`,
+`projects/{project_id}`, and `events`; human-decision recording is deliberately
+absent until the authenticated mutation adapter (issue #740) exists. The
+`/healthz` and `/readyz` probes, `openapi.json` discovery, and the
+`events/stream` Server-Sent Events stream are not wrapped by the client and
+remain plain HTTP.
+
+```python
+import os
+
+from idkmesh.api_client import ControlTowerClient
+
+client = ControlTowerClient(
+    "http://127.0.0.1:8770",
+    os.environ["IDKMESH_CONTROL_TOWER_TOKEN"],
+    timeout=5.0,  # mandatory by construction
+)
+run = client.get_run("run/alpha-1")
+print(run.request_id, run.value["run"]["state"])
+
+page = client.list_runs(limit=50, project_id="project.alpha")
+while page.value.next_cursor is not None:
+    page = client.list_runs(
+        limit=50,
+        project_id="project.alpha",
+        cursor=page.value.next_cursor,  # cursors stay opaque
+    )
+```
+
+Client guarantees, each fail-closed:
+
+- exactly one HTTP request per method call: no retries, redirects, or hidden
+  idempotent replay;
+- loopback-only `http` base URLs, so the local session token cannot leak to a
+  remote host;
+- the response content digest is recomputed and compared before the document
+  is returned, and embedded evidence/snapshot digests are verified
+  independently of the outer envelope (`IntegrityError` on mismatch);
+- every resource read is bound to the requested identity: a response naming a
+  different `run_id`/`work_unit`/`project` raises `ProtocolError`;
+- request IDs and response metadata are exposed on every
+  `ApiResult` for correlation and bug reports;
+- failures use the stable taxonomy `ClientConfigurationError`, `TransportError`,
+  `ProtocolError`/`IntegrityError`, and `ApiResponseError` (which carries the
+  server's stable error `code`, `retryable` flag, and HTTP status);
+- list methods validate `limit`, `cursor`, and filters before any transport
+  I/O, and unknown query parameters fail explicitly on the server
+  (API Conventions v0.1 section 11).
+
 ## Relationship to Gate Audit
 
 `gate-audit-ui` and `control-tower` are complementary.
