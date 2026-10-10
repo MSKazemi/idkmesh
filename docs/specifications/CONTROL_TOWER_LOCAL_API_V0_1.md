@@ -177,11 +177,25 @@ Clients may request either through `Accept`.
 If the vendor type is explicitly requested, the server responds with that vendor
 media type. Otherwise it returns ordinary `application/json`.
 
+Media-type matching is case-insensitive and ignores media-type parameters and
+optional whitespace (RFC 9110). Within `Accept`, an entry with an explicit zero
+quality (`q=0`, `q=0.0`) is not acceptable: a request whose Accept entries are
+all explicitly zero quality returns `406 not_acceptable`, and `q=0` on the
+vendor type falls back to ordinary `application/json`. A malformed quality
+value is treated as acceptable, so a broken `q` parameter can never reject a
+request the client clearly meant to make.
+
 Unsupported response media types return HTTP 406 with
 `not_acceptable`.
 
 Unsupported request media types return HTTP 415 with
 `unsupported_media_type`.
+
+`Content-Length` must be RFC 9110 `1*DIGIT` (ASCII digits), padded at most by
+the field's optional whitespace. Any other spelling -- `+2`, `-1`, decimals,
+non-ASCII digits -- is `400 invalid_content_length`; a missing header is
+`411 length_required`, and any `Transfer-Encoding` is rejected with
+`400 unsupported_transfer_encoding` before the body is read.
 
 API responses include:
 
