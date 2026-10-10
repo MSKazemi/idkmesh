@@ -154,6 +154,11 @@ def _json_object(raw: bytes) -> dict[str, Any]:
         )
     except json.JSONDecodeError as exc:
         raise ProtocolError(f"response body is not valid JSON ({exc})") from exc
+    except RecursionError as exc:
+        # Totality: pathological nesting is a protocol error, never a raw
+        # RecursionError escaping to the transport layer.
+        raise ProtocolError(
+            "response body JSON nesting is too deep") from exc
     if not isinstance(value, dict):
         raise ProtocolError("response JSON root must be an object")
     return value

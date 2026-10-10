@@ -1407,7 +1407,12 @@ def _strict_json_file(path_value: str) -> dict[str, object]:
             object_pairs_hook=no_duplicates,
             parse_constant=reject_constant,
         )
-    except (json.JSONDecodeError, DuplicateKeyError, ValueError) as exc:
+    except (
+        json.JSONDecodeError,
+        DuplicateKeyError,
+        ValueError,
+        RecursionError,
+    ) as exc:
         raise ValueError(
             f"{path_value}: invalid strict JSON: {exc}"
         ) from exc
