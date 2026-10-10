@@ -19,7 +19,7 @@
   ],
   "properties": {
     "schema_version": {"const": "0.2"},
-    "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._/-]{2,127}$"},
+    "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._/-]{2,127}$(?!\n)"},
     "binding": {
       "type": "object",
       "additionalProperties": false,
@@ -27,7 +27,7 @@
       "properties": {
         "work_unit_id": {"type": "string", "minLength": 1},
         "work_unit_version": {"type": "integer", "minimum": 1},
-        "work_unit_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+        "work_unit_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$(?!\n)"},
         "source_revision": {"type": "string", "minLength": 1}
       }
     },

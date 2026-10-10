@@ -8,7 +8,7 @@
   "required": ["schema_version", "id", "version", "kind", "objective", "inputs", "outputs", "dependencies", "constraints", "uncertainty", "permissions", "validators", "evidence_requirements", "budget", "provenance", "failure_semantics"],
   "properties": {
     "schema_version": {"const": "0.1"},
-    "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._/-]{2,127}$"},
+    "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._/-]{2,127}$(?!\n)"},
     "version": {"type": "integer", "minimum": 1},
     "kind": {"enum": ["coding", "testing", "research", "review", "integration", "documentation", "governance", "other"]},
     "objective": {"type": "string", "minLength": 1},

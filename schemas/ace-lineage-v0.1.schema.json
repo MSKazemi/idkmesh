@@ -94,7 +94,7 @@
       "properties": {
         "repo": {
           "type": "string",
-          "pattern": "^[^/\\s]+/[^/\\s]+$"
+          "pattern": "^[^/\\s]+/[^/\\s]+$(?!\n)"
         },
         "kind": {
           "enum": ["issue", "pr", "commit"]
@@ -105,7 +105,7 @@
         },
         "sha": {
           "type": "string",
-          "pattern": "^[0-9a-fA-F]{7,64}$"
+          "pattern": "^[0-9a-fA-F]{7,64}$(?!\n)"
         }
       },
       "allOf": [

@@ -27,7 +27,7 @@
   ],
   "properties": {
     "schema_version": {"const": "0.1"},
-    "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._/-]{2,127}$"},
+    "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._/-]{2,127}$(?!\n)"},
     "result_manifest_id": {"type": "string", "minLength": 1},
     "work_unit_id": {"type": "string", "minLength": 1},
     "work_unit_version": {"type": "integer", "minimum": 1},
@@ -96,7 +96,7 @@
           "id": {"type": "string", "minLength": 1},
           "type": {"enum": ["test_output", "review", "benchmark", "trace", "attestation", "artifact_hash", "static_analysis", "security_report", "other"]},
           "locator": {"type": "string", "minLength": 1},
-          "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+          "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$(?!\n)"},
           "media_type": {"type": "string"},
           "description": {"type": "string"}
         }
@@ -139,10 +139,10 @@
       "additionalProperties": false,
       "required": ["result_manifest_digest", "work_unit_digest", "source_revision", "environment"],
       "properties": {
-        "result_manifest_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
-        "work_unit_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+        "result_manifest_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$(?!\n)"},
+        "work_unit_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$(?!\n)"},
         "source_revision": {"type": "string", "minLength": 1},
-        "verifier_config_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+        "verifier_config_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$(?!\n)"},
         "environment": {
           "type": "object",
           "additionalProperties": false,

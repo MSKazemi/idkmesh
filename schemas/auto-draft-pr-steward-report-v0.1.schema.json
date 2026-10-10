@@ -28,7 +28,7 @@
     },
     "repository": {
       "type": "string",
-      "pattern": "^[^/\\s]+/[^/\\s]+$"
+      "pattern": "^[^/\\s]+/[^/\\s]+$(?!\n)"
     },
     "generated_at": {
       "type": "string",
@@ -48,7 +48,7 @@
         "path": {"type": "string", "minLength": 1},
         "sha256": {
           "type": "string",
-          "pattern": "^[0-9a-f]{64}$"
+          "pattern": "^[0-9a-f]{64}$(?!\n)"
         }
       }
     },
@@ -67,7 +67,7 @@
         "run_attempt": {"type": ["string", "null"]},
         "trusted_head_sha": {
           "anyOf": [
-            {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+            {"type": "string", "pattern": "^[0-9a-f]{40}$(?!\n)"},
             {"type": "null"}
           ]
         }
@@ -150,7 +150,7 @@
         "base": {"type": "string", "minLength": 1},
         "head_sha": {
           "type": "string",
-          "pattern": "^[0-9a-f]{40}$"
+          "pattern": "^[0-9a-f]{40}$(?!\n)"
         },
         "ahead_by": {"type": "integer", "minimum": 0},
         "behind_by": {"type": "integer", "minimum": 0}
@@ -191,7 +191,7 @@
             },
             "current_head_sha": {
               "type": "string",
-              "pattern": "^[0-9a-f]{40}$"
+              "pattern": "^[0-9a-f]{40}$(?!\n)"
             }
           }
         }

@@ -462,6 +462,18 @@ and the release notes for that tag.
   `Person` + `BreadcrumbList` graph and adds a visible Home / Library breadcrumb.
   No `dateModified` is emitted: the legacy Pages build exposes no reliable
   per-page date. Documented in [`docs/PAGES_SETUP.md`](docs/PAGES_SETUP.md).
+- Anchored `pattern`s in `schemas/` no longer accept a trailing newline
+  (issue #963). Python's `re` matches `$` before a trailing newline, so every
+  `^...$` pattern accepted `value + "\n"` — 180 patterns across 60 files,
+  including SHA/digest/id identity fields where such values break exact-match
+  equality downstream. Every end anchor now carries the `(?!\n)` guard
+  ([ADR-0025](docs/decisions/ADR-0025-pattern-end-anchor-hardening.md)),
+  which is a no-op under the ECMA-262 regex semantics JSON Schema specifies
+  and makes Python validators agree with that contract;
+  `tests/test_schema_pattern_anchors.py` proves the rejection for every
+  pattern occurrence. `tools/schema_compat_check.py` recognizes exactly this
+  transform as compatible and still reports every other pattern change as
+  breaking.
 - `GET /api/v1/runs` and `idkmesh run list` no longer fail for the whole page
   when the store also holds a row that is not a Product Spine run. The shared
   `runs` table also holds admission-only, execution-error and GitHub

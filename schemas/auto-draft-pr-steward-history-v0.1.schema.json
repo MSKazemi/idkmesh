@@ -24,7 +24,7 @@
     },
     "repository": {
       "type": "string",
-      "pattern": "^[^/\\s]+/[^/\\s]+$"
+      "pattern": "^[^/\\s]+/[^/\\s]+$(?!\n)"
     },
     "report_count": {
       "type": "integer",
@@ -85,7 +85,7 @@
         "changes": {"type": "integer", "minimum": 0},
         "latest_sha256": {
           "type": "string",
-          "pattern": "^[0-9a-f]{64}$"
+          "pattern": "^[0-9a-f]{64}$(?!\n)"
         }
       }
     },
@@ -100,7 +100,7 @@
         },
         "input_set_sha256": {
           "type": "string",
-          "pattern": "^[0-9a-f]{64}$"
+          "pattern": "^[0-9a-f]{64}$(?!\n)"
         }
       }
     },
@@ -146,17 +146,17 @@
         "blocked_reason": {"type": ["string", "null"]},
         "policy_sha256": {
           "type": "string",
-          "pattern": "^[0-9a-f]{64}$"
+          "pattern": "^[0-9a-f]{64}$(?!\n)"
         },
         "report_sha256": {
           "type": "string",
-          "pattern": "^[0-9a-f]{64}$"
+          "pattern": "^[0-9a-f]{64}$(?!\n)"
         },
         "run_id": {"type": ["string", "null"]},
         "run_attempt": {"type": ["string", "null"]},
         "trusted_head_sha": {
           "anyOf": [
-            {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+            {"type": "string", "pattern": "^[0-9a-f]{40}$(?!\n)"},
             {"type": "null"}
           ]
         }

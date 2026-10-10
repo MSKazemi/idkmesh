@@ -79,7 +79,7 @@
         "input_digest_sha256": {
           "description": "sha256 of the canonical (sort_keys, compact-separator) verdict-matrix input JSON. Identical to the matching gate-audit-report-v0.1's provenance.input_digest_sha256 for the same input, so the two artifacts can be proven to describe the same audited population.",
           "type": "string",
-          "pattern": "^[0-9a-f]{64}$"
+          "pattern": "^[0-9a-f]{64}$(?!\n)"
         }
       }
     }

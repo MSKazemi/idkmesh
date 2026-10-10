@@ -4,8 +4,14 @@
 **Authority:** none. A passing score is not merge approval, independent review,
 or evidence that one model/agent is generally better than another.  
 **Source revision:** `1db0aa0cc525e3179f179661ba1623381d889c89`.  
-**Pinned schema blob:** `e2cd2f55cff59bb306ba74bfc63ff8f4c6ffd934`.  
+**Pinned schema blob:** `4698b7680966f66d425402f6791829ee78d16c2f`.  
 **Related:** issue #461, `schemas/result-manifest.schema.json`.
+
+The pinned schema blob was deliberately re-pinned when ADR-0025 hardened the
+schema's end anchors (issue #963). No case classification changed: none of the
+case values carry a trailing newline, so the hardened patterns accept exactly
+the same manifests here. `source_revision` still names the revision this
+challenge was originally cut from; the blob pin is the binding check.
 
 This is the first bounded "bring your own agent" challenge requested by the
 IDKMesh growth flywheel. It gives a human, coding agent, or human+agent pair one

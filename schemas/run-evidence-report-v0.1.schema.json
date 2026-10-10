@@ -102,7 +102,7 @@
   "$defs": {
     "digest": {
       "type": "string",
-      "pattern": "^sha256:[0-9a-f]{64}$"
+      "pattern": "^sha256:[0-9a-f]{64}$(?!\n)"
     },
     "worker": {
       "type": ["object", "null"],

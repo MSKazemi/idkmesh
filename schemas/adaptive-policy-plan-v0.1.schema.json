@@ -28,7 +28,7 @@
     "mode": {"const": "shadow"},
     "plan_id": {
       "type": "string",
-      "pattern": "^adaptive-plan-[a-z0-9][a-z0-9._-]*-[a-f0-9]{12}$"
+      "pattern": "^adaptive-plan-[a-z0-9][a-z0-9._-]*-[a-f0-9]{12}$(?!\n)"
     },
     "subsystem": {
       "enum": [
@@ -162,8 +162,8 @@
     }
   },
   "$defs": {
-    "sha": {"type": "string", "pattern": "^[a-f0-9]{40}$"},
-    "digest": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$"},
+    "sha": {"type": "string", "pattern": "^[a-f0-9]{40}$(?!\n)"},
+    "digest": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$(?!\n)"},
     "gate": {
       "type": "object",
       "additionalProperties": false,
