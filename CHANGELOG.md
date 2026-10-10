@@ -74,7 +74,6 @@ and the release notes for that tag.
   core, it performs no tenant/role policy authorization (`decisions:write`), and
   it emits no audit-ledger event; those remain owned by #740 with #670/#671/#743,
   so a local session token still cannot record a decision.
-||||||| parent of 91d5a48 (research: define the scientific program and add the E045 public agent-dependence pilot)
 - API-11A client read-model completion for issue #746: the official
   dependency-free Python client (`idkmesh.api_client.ControlTowerClient`) now
   covers the whole resource-oriented Control Tower read model — `list_runs`
@@ -452,6 +451,20 @@ and the release notes for that tag.
   Control Tower report parsing (`ControlTowerInputError`) and enterprise audit
   event replay (`invalid_event_json`); each now rejects with its documented
   controlled error.
+- Control Tower header/media-type boundary qualification (issue #745, second
+  fuzz slice; `tests/test_api_header_boundary_fuzz.py`) found and fixed three
+  boundary defects. Explicit `q=0` Accept entries were served anyway: a
+  request whose Accept entries are all explicitly zero quality now gets `406
+  not_acceptable`, `q=0` on the vendor media type falls back to
+  `application/json`, and malformed quality values stay lenient (RFC 9110
+  section 12.4.2). The Python API client rejected case/whitespace variants of
+  valid response media types (`Application/JSON`, `application/json
+  ;charset=utf-8`) with `ProtocolError`; it now normalizes exactly like the
+  server while still failing closed on genuinely wrong types. `Content-Length`
+  accepted any spelling `int()` parses (`+2`, `-0`) in both request handlers;
+  it is now strict RFC 9110 `1*DIGIT`, so those spellings are `400
+  invalid_content_length` instead of a framing disagreement with strict
+  fronting proxies.
 - The IDKGraph Markdown index (`tools/idkgraph_markdown_index.py`) now skips a
   leading YAML front-matter block. Previously the last metadata line followed by
   the closing `---` parsed as a setext H2, so every page with front matter (all
