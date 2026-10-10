@@ -162,6 +162,10 @@ def _strict_json(text: str) -> dict[str, Any]:
         )
     except json.JSONDecodeError as exc:
         raise _fail("invalid_event_json", str(exc)) from exc
+    except RecursionError as exc:
+        # Pathological nesting must reject as a controlled audit failure,
+        # never escape as a raw RecursionError during event replay.
+        raise _fail("invalid_event_json", "JSON nesting is too deep") from exc
     if not isinstance(value, dict):
         raise _fail("invalid_event_json", "audit event must be a JSON object")
     return value

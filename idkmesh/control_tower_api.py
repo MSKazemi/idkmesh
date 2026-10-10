@@ -110,6 +110,11 @@ def parse_report_text(
     except json.JSONDecodeError as exc:
         raise ControlTowerInputError(
             f"{source}: not valid JSON ({exc})") from exc
+    except RecursionError as exc:
+        # Pathological nesting must reject as a controlled input error, not
+        # escape as a raw RecursionError that callers do not catch.
+        raise ControlTowerInputError(
+            f"{source}: JSON nesting is too deep") from exc
     except ControlTowerInputError as exc:
         raise ControlTowerInputError(f"{source}: {exc}") from exc
     if not isinstance(value, dict):

@@ -445,6 +445,13 @@ and the release notes for that tag.
 
 ### Fixed
 
+- Strict-JSON parsers are now total on pathologically nested input (issue #745,
+  first fuzz slice; `tests/test_api_qualification_fuzz.py`). Deeply nested
+  documents raised a raw `RecursionError` through the API client
+  (`ProtocolError`), `idkmesh` CLI strict-JSON file loading (`ValueError`),
+  Control Tower report parsing (`ControlTowerInputError`) and enterprise audit
+  event replay (`invalid_event_json`); each now rejects with its documented
+  controlled error.
 - The IDKGraph Markdown index (`tools/idkgraph_markdown_index.py`) now skips a
   leading YAML front-matter block. Previously the last metadata line followed by
   the closing `---` parsed as a setext H2, so every page with front matter (all
