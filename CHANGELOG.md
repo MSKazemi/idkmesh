@@ -14,6 +14,16 @@ and the release notes for that tag.
 
 ### Added
 
+- State-transition and idempotency properties for the API release
+  qualification suite (issue #745, property/fuzz slice;
+  `tests/test_api_state_idempotency_properties.py`). The documented v0.1 run
+  and attempt lifecycle graphs are pinned as independent oracles with an
+  exhaustive pair test, seeded random legal/illegal walks assert immutability,
+  identity preservation and determinism, and seeded create/replay/status/list/
+  cancel sequences assert the idempotency laws (exact replay returns the run
+  untouched, any mutated replay is `idempotency_conflict`, run identity is
+  unique across keys) with total, controlled failures throughout.
+
 - Preregistration v2 (`docs/research/PREREG_AGENT_VALUE_FORECAST_V2.md`) and
   the E048 runner (`experiments/temporal_holdout.py`) register, before any data
   exists, a temporal-holdout replication of the agent-value forecast on SWE-bench
@@ -445,6 +455,15 @@ and the release notes for that tag.
 
 ### Fixed
 
+- Lifecycle transitions could rewrite identity and authority
+  (`ProductSpineRun.transition("previewed", run_id=...)` silently changed the
+  run identity that feeds the create request digest, and
+  `transition(..., authority_mode="agent_candidate")` downgraded
+  `human_required` work past the admission gate; `attempts` could be smuggled
+  past `append_attempt`/`replace_attempt`). Run and attempt transitions now
+  reject every field except state plus the state-gated evidence fields and the
+  admitted connector set with `invalid_update`, closing the authority bypass
+  found by the #745 property suite.
 - The IDKGraph Markdown index (`tools/idkgraph_markdown_index.py`) now skips a
   leading YAML front-matter block. Previously the last metadata line followed by
   the closing `---` parsed as a setext H2, so every page with front matter (all
