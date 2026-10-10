@@ -191,7 +191,7 @@ def _leaf_compatible(old: dict, new: dict) -> bool:
     every other key in the subschema unchanged), and the ADR-0025
     end-anchor hardening of a ``pattern``. Anything else -- including a
     narrowing of the first two, or any change this function does not
-    specifically    recognize -- is reported as breaking by the caller.
+    specifically recognize -- is reported as breaking by the caller.
     """
     if _hardening_only_change(old, new):
         return True
