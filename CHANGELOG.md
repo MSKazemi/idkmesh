@@ -445,6 +445,20 @@ and the release notes for that tag.
 
 ### Fixed
 
+- Control Tower header/media-type boundary qualification (issue #745, second
+  fuzz slice; `tests/test_api_header_boundary_fuzz.py`) found and fixed three
+  boundary defects. Explicit `q=0` Accept entries were served anyway: a
+  request whose Accept entries are all explicitly zero quality now gets `406
+  not_acceptable`, `q=0` on the vendor media type falls back to
+  `application/json`, and malformed quality values stay lenient (RFC 9110
+  section 12.4.2). The Python API client rejected case/whitespace variants of
+  valid response media types (`Application/JSON`, `application/json
+  ;charset=utf-8`) with `ProtocolError`; it now normalizes exactly like the
+  server while still failing closed on genuinely wrong types. `Content-Length`
+  accepted any spelling `int()` parses (`+2`, `-0`) in both request handlers;
+  it is now strict RFC 9110 `1*DIGIT`, so those spellings are `400
+  invalid_content_length` instead of a framing disagreement with strict
+  fronting proxies.
 - The IDKGraph Markdown index (`tools/idkgraph_markdown_index.py`) now skips a
   leading YAML front-matter block. Previously the last metadata line followed by
   the closing `---` parsed as a setext H2, so every page with front matter (all

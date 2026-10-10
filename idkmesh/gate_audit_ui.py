@@ -711,15 +711,17 @@ def _handler(initial_text: str | None, token: str):
                     {"ok": False, "error": "missing Content-Length header"},
                 )
                 return
-            try:
-                length = int(raw_length)
-            except ValueError:
+            # See the Control Tower's _read_json_text: Content-Length must be
+            # ASCII digits (RFC 9110), not whatever int() happens to parse.
+            value = raw_length.strip(" \t")
+            if not value.isascii() or not value.isdigit():
                 self._send_json(
                     400,
                     {"ok": False, "error": "invalid Content-Length header"},
                 )
                 return
-            if length < 0 or length > MAX_BODY_BYTES:
+            length = int(value)
+            if length > MAX_BODY_BYTES:
                 self._send_json(
                     413,
                     {

@@ -571,6 +571,34 @@ _EVENT_BATCH = 200
 _SERVER_FAULT_CODES = frozenset({"store_error", "evidence_integrity_error"})
 
 
+def _accept_entries(accept: str) -> list[tuple[str, float]]:
+    """Split an Accept header into ``(media type, quality)`` pairs.
+
+    Parsing is lenient in exactly one direction: an entry whose quality
+    parameter cannot be parsed keeps quality 1.0 (acceptable), so a malformed
+    q-value can never reject a request the client clearly meant to make. Only
+    an explicit zero quality ("q=0", "q=0.0") marks an entry unacceptable
+    (RFC 9110 section 12.4.2).
+    """
+    entries: list[tuple[str, float]] = []
+    for part in accept.split(","):
+        pieces = part.split(";")
+        media_type = pieces[0].strip().lower()
+        if not media_type:
+            continue
+        quality = 1.0
+        for parameter in pieces[1:]:
+            name, _, value = parameter.partition("=")
+            if name.strip().lower() != "q":
+                continue
+            try:
+                quality = float(value.strip().strip('"'))
+            except ValueError:
+                quality = 1.0
+        entries.append((media_type, quality))
+    return entries
+
+
 def _service_error_status(code: str, *not_found: str) -> int:
     """HTTP status for a ProductSpineRunStoreError code.
 
@@ -695,8 +723,9 @@ def _handler(
 
         def _response_media_type(self) -> str:
             accept = self.headers.get("Accept", "")
-            for part in accept.split(","):
-                media_type = part.split(";", 1)[0].strip().lower()
+            for media_type, quality in _accept_entries(accept):
+                if quality == 0.0:
+                    continue
                 if media_type == V1_MEDIA_TYPE:
                     return V1_MEDIA_TYPE
             return JSON_MEDIA_TYPE
@@ -766,8 +795,9 @@ def _handler(
                 # ADR-0023: the SSE endpoint is the one place a client
                 # legitimately asks for text/event-stream.
                 accepted |= {"text/*", "text/event-stream"}
-            for part in accept.split(","):
-                media_type = part.split(";", 1)[0].strip().lower()
+            for media_type, quality in _accept_entries(accept):
+                if quality == 0.0:
+                    continue
                 if media_type in accepted:
                     return True
             self._send_json(
@@ -1451,9 +1481,13 @@ def _handler(
                     ),
                 )
                 return None
-            try:
-                length = int(raw_length)
-            except ValueError:
+            # RFC 9110 Content-Length is 1*ASCII DIGIT, padded at most by the
+            # field's optional whitespace. int() would also accept "+2" and
+            # Unicode digits (int("\u0662") == 2) -- spellings a strict fronting
+            # proxy rejects, and that parser disagreement is request-smuggling
+            # surface, so anything but ASCII digits is a controlled 400.
+            value = raw_length.strip(" \t")
+            if not value.isascii() or not value.isdigit():
                 self._send_json(
                     400,
                     error_document(
@@ -1462,15 +1496,7 @@ def _handler(
                     ),
                 )
                 return None
-            if length < 0:
-                self._send_json(
-                    400,
-                    error_document(
-                        "invalid_content_length",
-                        "Content-Length cannot be negative",
-                    ),
-                )
-                return None
+            length = int(value)
             if length > MAX_BODY_BYTES:
                 self._send_json(
                     413,

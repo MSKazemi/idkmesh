@@ -314,7 +314,13 @@ class ControlTowerClient:
         finally:
             connection.close()
 
-        media_type = (response.getheader("Content-Type") or "").split(";", 1)[0]
+        # Media types are case-insensitive and RFC 9110 field values tolerate
+        # optional whitespace, so normalize exactly the way the server side
+        # does before deciding. Genuinely wrong media types (HTML from a
+        # misconfigured proxy, empty values) still fail closed as ProtocolError.
+        media_type = (
+            (response.getheader("Content-Type") or "").split(";", 1)[0].strip().lower()
+        )
         if media_type not in {JSON_MEDIA_TYPE, V1_MEDIA_TYPE}:
             raise ProtocolError(
                 f"unexpected response media type {media_type!r}"
