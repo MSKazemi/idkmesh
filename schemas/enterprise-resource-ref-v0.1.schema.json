@@ -22,19 +22,19 @@
     },
     "tenant_id": {
       "type": "string",
-      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$(?!\n)"
     },
     "project_id": {
       "type": "string",
-      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$(?!\n)"
     },
     "resource_type": {
       "type": "string",
-      "pattern": "^[a-z][a-z0-9._-]{0,63}$"
+      "pattern": "^[a-z][a-z0-9._-]{0,63}$(?!\n)"
     },
     "resource_id": {
       "type": "string",
-      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$(?!\n)"
     }
   }
 }

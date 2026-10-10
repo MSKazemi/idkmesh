@@ -22,7 +22,7 @@
     "schema_version": {"const": "0.1"},
     "kind": {"const": "idkmesh-verifier-observation-pool"},
     "repository": {"type": "string", "minLength": 1},
-    "source_revision": {"type": "string", "pattern": "^[a-f0-9]{40}$"},
+    "source_revision": {"type": "string", "pattern": "^[a-f0-9]{40}$(?!\n)"},
     "captured_at": {"type": "string", "format": "date-time"},
     "work_unit_id": {"type": "string", "minLength": 1},
     "task_domain": {"type": "string", "minLength": 1},

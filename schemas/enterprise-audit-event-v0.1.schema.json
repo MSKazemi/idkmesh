@@ -30,7 +30,7 @@
     "schema_version": {"const": "0.1"},
     "event_id": {
       "type": "string",
-      "pattern": "^audit-[0-9]{12}$"
+      "pattern": "^audit-[0-9]{12}$(?!\n)"
     },
     "sequence": {
       "type": "integer",
@@ -47,11 +47,11 @@
       "properties": {
         "tenant_id": {
           "type": "string",
-          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,255}$"
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,255}$(?!\n)"
         },
         "project_id": {
           "type": "string",
-          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,255}$"
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,255}$(?!\n)"
         }
       }
     },
@@ -62,11 +62,11 @@
       "properties": {
         "request_id": {
           "type": "string",
-          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,255}$"
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,255}$(?!\n)"
         },
         "run_id": {
           "type": ["string", "null"],
-          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,255}$"
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,255}$(?!\n)"
         }
       }
     },
@@ -104,15 +104,15 @@
       "properties": {
         "resource_type": {
           "type": "string",
-          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,255}$"
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,255}$(?!\n)"
         },
         "resource_id": {
           "type": "string",
-          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,255}$"
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,255}$(?!\n)"
         },
         "revision": {
           "type": "string",
-          "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64}|sha256:[0-9a-f]{64}|[A-Za-z0-9][A-Za-z0-9._:/@-]{0,255})$"
+          "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64}|sha256:[0-9a-f]{64}|[A-Za-z0-9][A-Za-z0-9._:/@-]{0,255})$(?!\n)"
         }
       }
     },
@@ -134,23 +134,23 @@
         },
         "reason_code": {
           "type": "string",
-          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,255}$"
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,255}$(?!\n)"
         },
         "approved_by": {
           "type": ["string", "null"],
-          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,255}$"
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,255}$(?!\n)"
         },
         "approval_reference": {
           "type": ["string", "null"],
-          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,255}$"
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,255}$(?!\n)"
         },
         "policy_id": {
           "type": "string",
-          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,255}$"
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,255}$(?!\n)"
         },
         "policy_revision": {
           "type": "string",
-          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,255}$"
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,255}$(?!\n)"
         },
         "decision_digest": {
           "$ref": "#/$defs/digest"
@@ -213,7 +213,7 @@
   "$defs": {
     "digest": {
       "type": "string",
-      "pattern": "^sha256:[0-9a-f]{64}$"
+      "pattern": "^sha256:[0-9a-f]{64}$(?!\n)"
     },
     "identity": {
       "type": "object",
@@ -227,7 +227,7 @@
       "properties": {
         "principal_id": {
           "type": "string",
-          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,255}$"
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,255}$(?!\n)"
         },
         "actor_type": {
           "enum": [
@@ -241,11 +241,11 @@
         },
         "issuer": {
           "type": "string",
-          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,255}$"
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,255}$(?!\n)"
         },
         "identity_revision": {
           "type": "string",
-          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,255}$"
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,255}$(?!\n)"
         }
       }
     }

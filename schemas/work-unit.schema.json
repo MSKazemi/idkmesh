@@ -45,7 +45,7 @@
           "name": { "type": "string" },
           "kind": { "type": "string", "enum": ["artifact", "repository", "dataset", "text", "url", "other"] },
           "uri": { "type": "string" },
-          "sha256": { "type": "string", "pattern": "^[a-fA-F0-9]{64}$" },
+          "sha256": { "type": "string", "pattern": "^[a-fA-F0-9]{64}$(?!\n)" },
           "required": { "type": "boolean", "default": true }
         },
         "additionalProperties": true

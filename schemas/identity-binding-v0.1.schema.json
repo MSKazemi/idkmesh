@@ -11,7 +11,7 @@
     "protocol": {"type": "string", "minLength": 1},
     "subject": {"type": "string", "minLength": 1},
     "verified": {"type": "boolean"},
-    "evidence_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "evidence_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$(?!\n)"},
     "evidence_locator": {"type": "string"},
     "verification_method": {"type": "string"}
   }

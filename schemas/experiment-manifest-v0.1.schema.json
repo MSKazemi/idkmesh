@@ -7,7 +7,7 @@
   "required": ["schema_version", "id", "title", "research_tracks", "hypotheses", "work_units", "configurations", "metrics", "repetitions", "seeds", "stopping_rules", "environment", "budget"],
   "properties": {
     "schema_version": {"const": "0.1"},
-    "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._/-]{2,127}$"},
+    "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._/-]{2,127}$(?!\n)"},
     "title": {"type": "string", "minLength": 1},
     "description": {"type": "string"},
     "research_tracks": {"type": "array", "items": {"type": "string"}, "minItems": 1, "uniqueItems": true},

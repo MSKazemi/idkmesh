@@ -25,7 +25,7 @@
   ],
   "properties": {
     "schema_version": {"const": "0.1"},
-    "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._/-]{2,127}$"},
+    "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._/-]{2,127}$(?!\n)"},
     "work_unit_id": {"type": "string", "minLength": 1},
     "work_unit_version": {"type": "integer", "minimum": 1},
     "attempt": {"type": "integer", "minimum": 1},
@@ -63,7 +63,7 @@
           "id": {"type": "string", "minLength": 1},
           "type": {"enum": ["patch", "file", "report", "test_result", "dataset", "decision", "review", "log", "other"]},
           "locator": {"type": "string", "minLength": 1},
-          "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+          "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$(?!\n)"},
           "media_type": {"type": "string"},
           "description": {"type": "string"}
         }
@@ -78,7 +78,7 @@
         "properties": {
           "type": {"enum": ["stdout", "stderr", "trace", "tool_calls", "other"]},
           "locator": {"type": "string", "minLength": 1},
-          "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+          "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$(?!\n)"}
         }
       }
     },
@@ -122,9 +122,9 @@
       "additionalProperties": false,
       "required": ["work_unit_digest", "source_revision", "environment"],
       "properties": {
-        "work_unit_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+        "work_unit_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$(?!\n)"},
         "source_revision": {"type": "string", "minLength": 1},
-        "worker_config_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+        "worker_config_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$(?!\n)"},
         "environment": {
           "type": "object",
           "additionalProperties": false,

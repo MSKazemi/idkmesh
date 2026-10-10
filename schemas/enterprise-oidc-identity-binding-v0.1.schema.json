@@ -30,7 +30,7 @@
         "properties": {
           "issuer": {
             "type": "string",
-            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,255}$",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,255}$(?!\n)",
             "description": "Trusted IdP issuer (the verified token/assertion's iss). Half of the primary trust key."
           },
           "subject": {
@@ -61,13 +61,13 @@
               "additionalProperties": false,
               "required": ["tenant_id", "project_id"],
               "properties": {
-                "tenant_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"},
-                "project_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"}
+                "tenant_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$(?!\n)"},
+                "project_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$(?!\n)"}
               }
             }
           },
           "data_clearance": {"enum": ["public", "internal", "confidential", "restricted"]},
-          "identity_revision": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$"},
+          "identity_revision": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$(?!\n)"},
           "revoked": {"type": "boolean"},
           "expires_at_epoch": {
             "oneOf": [

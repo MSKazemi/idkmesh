@@ -33,7 +33,7 @@
     },
     "evidence_report_digest": {
       "type": "string",
-      "pattern": "^sha256:[0-9a-f]{64}$"
+      "pattern": "^sha256:[0-9a-f]{64}$(?!\n)"
     },
     "evidence_report": {
       "$ref": "https://idkmesh.org/schemas/run-evidence-report-v0.1.schema.json"
