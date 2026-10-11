@@ -536,13 +536,12 @@ A connection probe records:
 
 The dispatcher uses only healthy/eligible connections.
 
-## 13. Proposed backend API
+## 13. Backend API: implemented convergence plus target resources
 
-The first HTTP API should be thin over the same Python control-plane services used by the CLI.
-
-None of the paths below are implemented; this section is a proposed resource
-shape, not a shipped contract. Every path uses the `/api/v1` product
-namespace ADR-0016 settled and follows the frozen
+The HTTP API is thin over the same Python control-plane/application services used by
+the CLI. This section contains both shipped read surfaces and future resource targets;
+status is explicit so planned mutation endpoints are not confused with executable code.
+Every path uses the `/api/v1` product namespace ADR-0016 settled and follows the frozen
 [API Conventions v0.1](../specifications/API_CONVENTIONS_V0_1.md) (error
 envelope, status mapping, pagination, idempotency — this section predates
 that freeze and used a bare `/v1` prefix before it; corrected here so this
@@ -550,39 +549,53 @@ document does not describe a second, undocumented namespace).
 
 ### Service
 
-- `GET /healthz`
+- **implemented:** `GET /healthz`
+- **implemented:** `GET /readyz`
+- **implemented:** `GET /api/v1/status`
+- **implemented:** `GET /api/v1/openapi.json`
+- **implemented:** `GET /api/v1/metrics`
 
 ### Projects
 
-- `GET /api/v1/projects`
-- `POST /api/v1/projects`
-- `GET /api/v1/projects/{project_id}`
+- **target:** `GET /api/v1/projects`
+- **target:** `POST /api/v1/projects`
+- **implemented read model:** `GET /api/v1/projects/{project_id}`
 
 ### Connections
 
-- `GET /api/v1/connections`
-- `POST /api/v1/connections`
-- `GET /api/v1/connections/{connection_id}`
-- `POST /api/v1/connections/{connection_id}:probe`
-- `POST /api/v1/connections/{connection_id}:enable`
-- `POST /api/v1/connections/{connection_id}:disable`
+- **implemented read model:** `GET /api/v1/connections`
+- **target:** `POST /api/v1/connections`
+- **target:** `GET /api/v1/connections/{connection_id}`
+- **target:** `POST /api/v1/connections/{connection_id}:probe`
+- **target:** `POST /api/v1/connections/{connection_id}:enable`
+- **target:** `POST /api/v1/connections/{connection_id}:disable`
 
 ### Routing
 
-- `POST /api/v1/routes:resolve` — dry-run eligibility/routing explanation.
+- **target:** `POST /api/v1/routes:resolve` — dry-run eligibility/routing explanation.
+- **implemented CLI equivalent:** `idkmesh route explain` for local/offline explanation.
 
-### Work
+### Work and evidence
 
-- `POST /api/v1/work-units:preview` — convert an SCM issue/spec into canonical WorkUnit without dispatch.
-- `POST /api/v1/runs` — dispatch an already-authorized WorkUnit.
-- `GET /api/v1/runs/{run_id}`
-- `GET /api/v1/runs/{run_id}/events`
-- `POST /api/v1/runs/{run_id}:cancel`
+- **target:** `POST /api/v1/work-units:preview` — convert an SCM issue/spec into canonical WorkUnit without dispatch.
+- **target mutation:** `POST /api/v1/runs` — dispatch an already-authorized WorkUnit.
+- **implemented read:** `GET /api/v1/runs`
+- **implemented read:** `GET /api/v1/runs/{run_id}`
+- **implemented read:** `GET /api/v1/runs/{run_id}/attempts`
+- **implemented read:** `GET /api/v1/runs/{run_id}/evidence`
+- **implemented read:** `GET /api/v1/work-units`
+- **implemented read:** `GET /api/v1/work-units/{work_unit_id}`
+- **implemented canonical events:** `GET /api/v1/events` and `GET /api/v1/events/stream`
+- **target mutation:** `POST /api/v1/runs/{run_id}:cancel` (local CLI cancellation exists; HTTP mutation does not).
 
 ### Results
 
-- `GET /api/v1/results/{result_id}`
-- `GET /api/v1/verifications/{verification_id}`
+- **target:** `GET /api/v1/results/{result_id}`
+- **target:** `GET /api/v1/verifications/{verification_id}`
+
+The exhaustive shipped endpoint list is maintained in the
+[Executable Capability Reference](../EXECUTABLE_CAPABILITIES.md) and the
+[Control Tower Local API specification](../specifications/CONTROL_TOWER_LOCAL_API_V0_1.md).
 
 ### GitHub ingress
 
@@ -776,33 +789,29 @@ The CLI should eventually make connection setup understandable without requiring
 
 Example target:
 
+Future target ergonomics may eventually include project/connection mutation and direct
+issue dispatch commands, but those spellings are **not** current CLI syntax. Current
+executable examples are:
+
 ```bash
-idkmesh project add MSKazemi/idkmesh
+idkmesh connections validate connections.json
+idkmesh connections import connections.json --store state.sqlite
+idkmesh connections stored --store state.sqlite
+idkmesh connections probe connections.json
+idkmesh doctor connections.json
+idkmesh route explain connections.json routing-decision.json
 
-idkmesh connect agent jules \
-  --secret-ref env:JULES_API_KEY \
-  --source sources/github/MSKazemi/idkmesh
-
-idkmesh connect model gemini \
-  --driver openai-compatible \
-  --base-url https://generativelanguage.googleapis.com/v1beta/openai/ \
-  --secret-ref env:GEMINI_API_KEY \
-  --model <model>
-
-idkmesh connect model ollama \
-  --driver openai-compatible \
-  --base-url http://127.0.0.1:11434/v1 \
-  --model <model>
-
-idkmesh connections probe
-idkmesh doctor
-
-idkmesh work preview --issue 123
-idkmesh run --issue 123 --agent jules
-idkmesh run status <run-id>
+idkmesh run create run.json --store state.sqlite --idempotency-key request-1
+idkmesh run status run-1 --store state.sqlite
+idkmesh run list --store state.sqlite
+idkmesh run evidence run-1 --store state.sqlite
+idkmesh events list --store state.sqlite
+idkmesh control-tower --product-spine-store state.sqlite --no-browser
 ```
 
-CLI and HTTP API must call the same service layer.
+CLI and HTTP API must call the same service/application layer where they expose the same
+resource. See the [Executable Capability Reference](../EXECUTABLE_CAPABILITIES.md) for the
+complete real parser tree rather than copying target syntax from architecture prose.
 
 ## 23. Web UI target
 
