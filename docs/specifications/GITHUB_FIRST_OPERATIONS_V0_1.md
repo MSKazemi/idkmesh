@@ -321,24 +321,35 @@ Environment usage must remain optional for projects/plans where unavailable.
 
 ## 12. Rulesets / branch protection preflight
 
-`idkmesh doctor --github` should observe/report, where API permissions allow:
+The implemented C12 preflight is
+[`GitHub Governance Preflight v0.1`](GITHUB_GOVERNANCE_PREFLIGHT_V0_1.md).
+`idkmesh doctor --github OBSERVATION --operation <operation>` consumes a
+trusted normalized observation rather than fetching or mutating GitHub
+administration directly.
 
-- default branch;
-- whether PR-based integration is required;
-- force-push/deletion guards;
-- required checks;
-- review requirements;
-- CODEOWNERS-sensitive-path coverage where inferable;
-- broad bypass actors when observable.
+Where the observation has visibility, report the applicable C12 controls for:
 
-Report:
+- pull-request integration;
+- force-push and deletion guards;
+- required checks/reviews;
+- CODEOWNERS-sensitive paths;
+- broad bypass actors;
+- Actions least privilege and immutable action references;
+- untrusted-PR/secret separation;
+- protected-environment approval/self-review controls;
+- optional OIDC shape for cloud dispatch.
 
-- PASS;
-- WARN;
-- FAIL;
-- UNKNOWN (insufficient GitHub permission/API visibility).
+Statuses are PASS, WARN, FAIL, UNKNOWN, and NOT_APPLICABLE. For a required
+guard, missing evidence, GitHub API visibility limits, or an unobserved
+applicable condition is UNKNOWN and **blocks** the enforcement primitive. The
+same uncertainty on a `warn`/`optional` guard is WARN and non-blocking. Required
+unknowns are never treated as secure, and repository/plan-dependent capability
+is preserved as policy metadata rather than guessed from a product tier.
 
-UNKNOWN must not be falsely reported as secure.
+The command is read-only: it does not edit rulesets, branch protection,
+environments, secrets, apps, or CODEOWNERS. A PASS is a configuration
+precondition only and is not proof of reviewer independence, candidate
+correctness, acceptance, or merge authority.
 
 ## 13. GitHub Projects integration
 

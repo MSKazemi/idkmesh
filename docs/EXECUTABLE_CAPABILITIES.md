@@ -35,7 +35,7 @@ methods, and every top-level Python module in `idkmesh/`.
 | `idkmesh connections import` | persist safe normalized connector metadata in local SQLite | secret values are not persisted |
 | `idkmesh connections stored` | read normalized persisted connector metadata | read-only |
 | `idkmesh connections probe` | run offline fake-driver connector probes | no live provider call |
-| `idkmesh doctor` | summarize connector readiness from the offline inspection contract | PASS is not dispatch or acceptance authority |
+| `idkmesh doctor` | summarize connector readiness, or evaluate the read-only C12 GitHub governance preflight with `--github` | connector/GitHub PASS is diagnostic precondition evidence, not dispatch, admin, acceptance, or merge authority |
 | `idkmesh route` | provider-neutral routing command family | read/explain surface |
 | `idkmesh route explain` | explain eligible/rejected connectors and optional deterministic auto-selection | no external work or repository mutation |
 | `idkmesh run` | durable local Product Spine run-control command family | no provider dispatch, candidate acceptance, push, or merge |
@@ -150,8 +150,8 @@ The package contains bounded GitHub repository/ref readers, issue-source normali
 issue preview/routing projection, authenticated webhook ingress, delivery idempotency,
 deterministic ledger-record serialization with append-only chain verification (pure, no Git or GitHub action), a local compare-and-set optimistic append to a Git-ref ledger and idempotent dispatch admission by compare-and-set, a read-only recovery reader that derives run state from ledger records, and a pure advisory recovery planner that reconciles rather than resubmits (no push, no GitHub call),
 explicit dispatch authorization/bridge logic, exact candidate observation, evidence/status
-publication helpers, governance-policy checks, public-evidence projection, and deterministic
-GitHub-first bootstrap planning/rendering.
+publication helpers, governance-policy and read-only governance-preflight checks,
+public-evidence projection, and deterministic GitHub-first bootstrap planning/rendering.
 
 ### Enterprise control primitives
 
@@ -218,6 +218,7 @@ name documents implementation presence, not stability as a public Python API.
 - `idkmesh/github_evidence_link.py`
 - `idkmesh/github_explicit_dispatch.py`
 - `idkmesh/github_governance_policy.py`
+- `idkmesh/github_governance_preflight.py`
 - `idkmesh/github_issue_preview.py`
 - `idkmesh/github_issue_source.py`
 - `idkmesh/github_ledger_admission.py`

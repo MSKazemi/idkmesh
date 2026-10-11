@@ -1,0 +1,43 @@
+{
+  "schema_version": "0.1",
+  "repository_rules": {
+    "pull_request_integration": true,
+    "force_push_blocked": true,
+    "branch_deletion_blocked": true,
+    "narrow_bypass_actors": true,
+    "required_checks_enforced": true,
+    "risk_review_required": true,
+    "codeowner_review_required": true,
+    "stable_ci_checks_present": true
+  },
+  "environment_settings": {
+    "approval_required": true,
+    "prevent_self_review": true
+  },
+  "codeowners": {
+    "configured": true,
+    "sensitive_paths_covered": true
+  },
+  "connector_configuration": {
+    "uses_oidc": true
+  },
+  "workflow_source": {
+    "actions_default_contents_read": true,
+    "checkout_persist_credentials_disabled": true,
+    "immutable_security_actions": true,
+    "untrusted_pr_secret_isolation": true,
+    "environment_bound": true,
+    "oidc_token_permission": true
+  },
+  "conditions": {
+    "checkout_without_push": true,
+    "codeowners_configured": true,
+    "environment_protection_supported": true,
+    "required_checks_declared": true,
+    "risk_medium_or_higher": true,
+    "security_sensitive_lane": true,
+    "sensitive_paths": true,
+    "untrusted_pr_execution_present": true
+  },
+  "unknown_reasons": {}
+}

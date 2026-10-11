@@ -197,10 +197,23 @@ Two ceilings are structural:
 2. `ruleset_proves_independent_review` is always false; GitHub enforcement
    metadata does not prove that a reviewer is independent of a worker.
 
-C12-B should consume this exact policy object when mapping observed ruleset and
-branch-protection fixtures to PASS, WARN, or FAIL, plus the UNKNOWN state that
-[GitHub-First Operations v0.1](../specifications/GITHUB_FIRST_OPERATIONS_V0_1.md)
-section 12 requires when GitHub permissions or API visibility are insufficient.
-UNKNOWN must never be reported as PASS. C12-C and later security
-slices should reuse the same guard vocabulary rather than copy policy rules
-into workflow-specific code.
+C12-B through C12-H now consume this exact policy object through
+`idkmesh/github_governance_preflight.py` and
+[`GitHub Governance Preflight v0.1`](../specifications/GITHUB_GOVERNANCE_PREFLIGHT_V0_1.md).
+The preflight maps normalized trusted observations to PASS, WARN, FAIL,
+UNKNOWN, or NOT_APPLICABLE; missing required evidence remains UNKNOWN and
+blocks `require_governance()` rather than being reported as secure.
+
+The same layer performs conservative source-only workflow checks for default
+`contents: read`, immutable remote action references, checkout credential
+persistence, untrusted-PR secret isolation, environment binding, and OIDC token
+permission. It can render an explicit-owner CODEOWNERS recommendation and an
+OIDC workflow-shape check, but it never writes repository settings, reads secret
+values, or authenticates to a cloud provider.
+
+`idkmesh doctor --github` exposes the report without changing the older
+connector doctor. Repository/plan/API visibility limitations on required guards
+are represented as UNKNOWN; the same visibility gap on `warn`/`optional` guards
+is WARN and remains non-blocking, preserving C12-A's requirement levels. The
+structural ceilings remain unchanged: automatic admin mutation is false, and a
+GitHub ruleset is not evidence that a reviewer was independent.

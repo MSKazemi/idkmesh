@@ -37,7 +37,9 @@ The wheel intentionally installs only `idkmesh/`. Running the research-backed `l
 | `run cancel RUN_ID --store PATH` | Record legal lifecycle cancellation | Does **not** stop external provider work |
 | `work-unit list/status`, `project status`, `events list` | Derived reads from local retained runs/events | Supply `--store PATH`; check each subcommand's help |
 | `connections validate/list/import/stored/probe` | Parse, inspect, locally persist connector metadata, use offline fake probes | No implicit live-provider dispatch |
-| `doctor PROFILE`, `route explain PROFILE DECISION` | Offline connector readiness and eligibility | Neither grants authority |
+| `doctor PROFILE` | Offline connector readiness | Diagnostic only; no dispatch |
+| `doctor --github OBSERVATION --operation OP [--workflow PATH]` | Evaluate the read-only C12 GitHub governance preflight and optional workflow-source checks | Uses trusted normalized observations; no GitHub admin mutation, secret access, acceptance, or merge |
+| `route explain PROFILE DECISION` | Offline connector routing eligibility/explanation | Does not dispatch work or grant authority |
 | `init --github --dry-run --idkmesh-ref REF` | Pure deterministic GitHub-first bootstrap **plan**/render | Apply mode is **not** implemented; no repo writes |
 | `local-loop CONFIG [--output-dir PATH]` | Two-attempt reference orchestration and verification/evidence bundle | Checkout + `[verify]` extra; decisions/replay remain manual |
 | `steward-report INPUT`, `steward-report-ui INPUT` | Validate and display retained single-run steward evidence | Offline read/loopback UI |
@@ -56,6 +58,11 @@ idkmesh run list --store state.sqlite --json
 
 # Plan only. No bootstrap files are written:
 idkmesh init --github --dry-run --idkmesh-ref v0.1.0 --json
+
+# Evaluate the committed C12 fixture only; no GitHub API/admin mutation:
+idkmesh doctor --github examples/github-governance/governance-pass-v0.1.json \
+  --operation integration --json
+
 
 # With checkout and optional verification extra installed:
 idkmesh local-loop examples/orchestration/two-attempt-good-vs-bad.json \
