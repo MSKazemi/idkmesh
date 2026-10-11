@@ -1,0 +1,14 @@
+{
+  "schema_version": "0.1",
+  "kind": "idkmesh-github-ledger-local-git-fixture",
+  "records": [
+    {
+      "path": "00000000000000000001.json",
+      "record_digest": "sha256:eb3266592fab12710bfd959a640b68c4c79cf2ea6466d70febf5ec9a0f114d2c"
+    },
+    {
+      "path": "00000000000000000002.json",
+      "record_digest": "sha256:f6e63deb2a80bceb871c027b031c22f3d76ef3c46bf76cd11ae357d66a8a57ee"
+    }
+  ]
+}
