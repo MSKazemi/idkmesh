@@ -30,6 +30,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -109,6 +110,43 @@ Builder = Callable[[LedgerHead, tuple[dict[str, Any], ...]], "Mapping[str, Any] 
 EMPTY_HEAD = LedgerHead(commit=None, sequence=0, record_digest=None)
 
 
+def run_git(
+    repository: Path,
+    *args: str,
+    input: bytes | None = None,
+    check: bool = True,
+    env: Mapping[str, str] | None = None,
+) -> subprocess.CompletedProcess[bytes]:
+    """Run one ``git`` plumbing command in ``repository`` (shared by C9-C/C9-D)."""
+
+    full_env = {**os.environ, "GIT_CONFIG_NOSYSTEM": "1", "GIT_TERMINAL_PROMPT": "0"}
+    if env:
+        full_env.update(env)
+    try:
+        done = subprocess.run(
+            ["git", "-C", str(repository), *args],
+            input=input,
+            capture_output=True,
+            env=full_env,
+            check=False,
+        )
+    except OSError as exc:
+        raise LedgerStorageError(f"cannot run git: {exc}") from exc
+    if check and done.returncode != 0:
+        raise LedgerStorageError(
+            f"git {args[0]} failed: {done.stderr.decode('utf-8', 'replace').strip()[:300]}"
+        )
+    return done
+
+
+def ledger_ref_for_run(run_id: str) -> str:
+    """The ledger ref for a run: a digest of the id, so any id yields a valid ref."""
+
+    if not isinstance(run_id, str) or not run_id:
+        raise ValueError("run_id must be a non-empty string")
+    return f"{REF_PREFIX}{hashlib.sha256(run_id.encode('utf-8')).hexdigest()}"
+
+
 class GitLedger:
     """One run's append-only ledger, stored as a linear history on one Git ref."""
 
@@ -132,24 +170,7 @@ class GitLedger:
 
     def _git(self, *args: str, input: bytes | None = None, check: bool = True,
              env: Mapping[str, str] | None = None) -> subprocess.CompletedProcess[bytes]:
-        full_env = {**os.environ, "GIT_CONFIG_NOSYSTEM": "1", "GIT_TERMINAL_PROMPT": "0"}
-        if env:
-            full_env.update(env)
-        try:
-            done = subprocess.run(
-                ["git", "-C", str(self._repo), *args],
-                input=input,
-                capture_output=True,
-                env=full_env,
-                check=False,
-            )
-        except OSError as exc:
-            raise LedgerStorageError(f"cannot run git: {exc}") from exc
-        if check and done.returncode != 0:
-            raise LedgerStorageError(
-                f"git {args[0]} failed: {done.stderr.decode('utf-8', 'replace').strip()[:300]}"
-            )
-        return done
+        return run_git(self._repo, *args, input=input, check=check, env=env)
 
     def _head_commit(self) -> str | None:
         done = self._git("rev-parse", "--verify", "-q", f"{self._ref}^{{commit}}", check=False)

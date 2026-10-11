@@ -55,6 +55,10 @@ meaning of an existing version.
   C9-C compare-and-set append to the GitHub-native durable ledger: conflict
   detection on a Git ref, bounded retry, linear never-rewritten history, and an
   honest account of what it does not prove.
+- [GitHub Ledger Idempotent Admission v0.1](GITHUB_LEDGER_ADMISSION_V0_1.md) —
+  C9-D one-admission-ref-per-dispatch-key by compare-and-set, so a duplicate or
+  concurrent dispatch resolves to the existing run; conflicting replays fail
+  closed and a crash between admission and the first record is recoverable.
 - [Release Supply-Chain Baseline v0.1](RELEASE_SUPPLY_CHAIN_V0_1.md) —
   release SBOM/checksum/source-workflow identity evidence, immutable-pinned
   GitHub build provenance, consumer verification, and vulnerability/update

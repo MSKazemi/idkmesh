@@ -76,8 +76,8 @@ nothing-to-write case, and tamper detection on read.
 
 C9-C does **not** implement:
 
-- idempotent admission (duplicate dispatch resolving to the existing run) — C9-D;
-  the `build` returning `None` hook is where C9-D plugs in;
+- idempotent admission (duplicate dispatch resolving to the existing run) — C9-D,
+  specified in [GitHub Ledger Idempotent Admission v0.1](GITHUB_LEDGER_ADMISSION_V0_1.md);
 - reconstruction of current run state from events — C9-E;
 - killed-workflow recovery — C9-F;
 - the GitHub evidence-branch adapter, remote pushes, or branch protection — C9-G;
