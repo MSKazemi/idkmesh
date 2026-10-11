@@ -14,6 +14,14 @@ and the release notes for that tag.
 
 ### Added
 
+- `tools/api_clean_install_demo.py` (issue #747): the beta gate's "clean install
+  and reproducible demo". Builds a wheel from a staged copy, installs only that
+  wheel into a fresh venv, checks the import comes from the new environment and
+  the entry point answers `--help`, runs the installed `idkmesh control-tower`
+  with the installed Python client, and requires a stable transcript identical
+  to the one from the source tree. Part of `make qualify-api` (group `install`);
+  the beta readiness gate now counts that item as satisfied only from a current
+  green report.
 - [API v1 Beta Release Gate v0.1](docs/specifications/API_V1_BETA_RELEASE_GATE_V0_1.md)
   and `make beta-readiness` / `tools/api_beta_readiness.py` (issue #747): the
   fourteen required-evidence items for a first API beta, each with a declared

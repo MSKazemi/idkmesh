@@ -395,6 +395,7 @@ issue #745.
 | `security` | Host allow-list, token-bypass, method-confusion and CORS/CSRF matrices |
 | `reliability` | request limits, overload, drain, slow clients, the event stream; `tools/api_load_soak.py` (concurrent mixed load, thread and file-descriptor leaks after drain, heap growth) |
 | `client` | the official Python client |
+| `install` | `tools/api_clean_install_demo.py`: wheel, fresh venv, installed server and client, transcript equal to the source tree (needs package-index access to build) |
 
 ```bash
 make qualify-api                                   # local run; compat gate skipped
@@ -409,6 +410,15 @@ yet covered (capacity benchmarking; the permission matrix;
 production-adapter request-smuggling tests) rather than implying it. The run
 takes about 90 s wall-clock and is not part of the per-PR tiers above, which
 already execute the same test modules.
+
+### Clean install demo
+
+`python tools/api_clean_install_demo.py` proves the package works installed, not
+just from this checkout: it builds a wheel from a staged copy, installs only
+that wheel into a fresh virtual environment, starts the installed
+`idkmesh control-tower`, drives it with the installed Python client, and
+requires the same stable transcript from the source tree. About 6 s; exit 0
+pass, 1 package failure, 2 the environment could not build or install.
 
 ### Beta release gate
 

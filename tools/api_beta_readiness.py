@@ -161,9 +161,9 @@ ITEMS: tuple[Item, ...] = (
     Item(
         "clean-install-demo",
         "clean install and reproducible demo",
-        UNMET,
-        evidence=("docs/RUN_LIFECYCLE_TUTORIAL.md",),
-        gap="no automated clean-environment install-and-demo run for the API",
+        SATISFIED,
+        evidence=("tools/api_clean_install_demo.py", "docs/RUN_LIFECYCLE_TUTORIAL.md"),
+        qualification_groups=("install",),
     ),
 )
 

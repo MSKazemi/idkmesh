@@ -49,7 +49,7 @@ class CheckSetTests(unittest.TestCase):
         self.assertEqual(len(ids), len(set(ids)))
         self.assertEqual(
             {check.group for check in checks},
-            {"contract", "fuzz", "security", "reliability", "client"},
+            {"contract", "fuzz", "security", "reliability", "client", "install"},
         )
 
     def test_the_fuzz_and_security_slices_are_part_of_the_set(self):
@@ -58,6 +58,7 @@ class CheckSetTests(unittest.TestCase):
         self.assertIn("fuzz:api_header_boundary_fuzz", ids)
         self.assertIn("security:api_security_matrix", ids)
         self.assertIn("reliability:load-soak", ids)
+        self.assertIn("install:clean-install-demo", ids)
 
     def test_compat_gate_is_skipped_without_a_base(self):
         by_id = {c.id: c for c in aq.build_checks(None)}

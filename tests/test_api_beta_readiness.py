@@ -38,7 +38,7 @@ def _git(tags=(), dirty=False, head=HEAD):
 
 
 def _report(root, *, head=HEAD, dirty=False, failing=()):
-    groups = ("contract", "fuzz", "security", "reliability", "client")
+    groups = ("contract", "fuzz", "security", "reliability", "client", "install")
     checks = [
         {"id": f"{g}:x", "group": g, "status": "failed" if g in failing else "passed"}
         for g in groups
