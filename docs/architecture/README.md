@@ -12,6 +12,7 @@ remain authoritative; an index link does not promote a proposal into policy.
 
 ## System and Compute Fabric
 
+- [Executable Capability Reference](../EXECUTABLE_CAPABILITIES.md) — CI-checked inventory of the real CLI tree, local API endpoints, Python client, and package modules; use it to distinguish executable code from architecture targets.
 - [Adaptive Policy Shadow Contract](ADAPTIVE_POLICY_SHADOW_CONTRACT.md) —
   provider-neutral shadow planning and outcome boundaries for adaptive policy
   experiments.

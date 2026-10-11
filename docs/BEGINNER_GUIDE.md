@@ -150,7 +150,7 @@ The final authority remains separate.
 
 ## What can I actually use today?
 
-There are three useful ways to use the repository right now.
+There are four useful ways to use the repository right now.
 
 ### Option A — Run the demo
 
@@ -233,10 +233,28 @@ It is a **diagnostic tool**. It does not approve code or make merge decisions.
 
 For your own review data, continue with [Getting Started](GETTING_STARTED.md).
 
-### Option C — Help build the larger system
+### Option C — Inspect the local runner/control surfaces
+
+If you want to move beyond the demo without pretending the full swarm product is finished,
+the installed CLI can already inspect connector metadata, explain routing, persist/read
+Product Spine runs, derive WorkUnit/project views, list durable events, and open the local
+Human Control Tower. Start with:
+
+```bash
+idkmesh --help
+idkmesh connections --help
+idkmesh run --help
+idkmesh control-tower --help
+```
+
+The full command/API/module map is the
+[Executable Capability Reference](EXECUTABLE_CAPABILITIES.md). It also marks important
+limits such as offline-only probes, loopback-only HTTP, and the absence of automatic
+human-decision/merge authority.
+
+### Option D — Help build the larger system
 
 The complete Git-native **Verified Swarm Runner** is still being developed.
-
 You can contribute without understanding the entire project.
 
 Useful entry points include:
@@ -325,6 +343,7 @@ If you are completely new, use this order:
 2. Run `python scripts/demo.py`.
 3. Run the example `idkmesh gate-audit`.
 4. Read [Getting Started](GETTING_STARTED.md).
-5. If you want to contribute, use the [Contributor Quickstart](community/CONTRIBUTOR_QUICKSTART.md).
+5. When you need the exact implemented command/API/library map, open the [Executable Capability Reference](EXECUTABLE_CAPABILITIES.md).
+6. If you want to contribute, use the [Contributor Quickstart](community/CONTRIBUTOR_QUICKSTART.md).
 
 You do **not** need to understand the whole repository before trying those steps.
