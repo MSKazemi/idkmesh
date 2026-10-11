@@ -546,18 +546,31 @@ conforming production backend.
 
 - **C12-A — governance policy object:** implemented by
   `idkmesh/github_governance_policy.py`; deterministic required/warn/optional
-  GitHub guards per governed operation, with structural false ceilings for
-  automatic admin mutation and ruleset-as-independent-review. Policy only; no
-  GitHub observation or evaluation yet.
-- **C12-B — branch/ruleset fixture evaluator:** pure metadata -> PASS/WARN/FAIL.
-- **C12-C — workflow-permission linter:** generated workflows use least privilege.
-- **C12-D — secret-bearing job rules:** trusted event + environment approval boundary.
-- **C12-E — fork/untrusted-PR secret tests.**
-- **C12-F — CODEOWNERS sensitive-path recommendation generator.**
-- **C12-G — optional OIDC example/preflight.**
-- **C12-H — `doctor --github` rendering.**
+  guards per governed operation, with structural false ceilings for automatic
+  admin mutation and ruleset-as-independent-review.
+- **C12-B — branch/ruleset fixture evaluator:** implemented by
+  `idkmesh/github_governance_preflight.py`; normalized trusted observations
+  map canonical guards to PASS/WARN/FAIL/UNKNOWN/NOT_APPLICABLE.
+- **C12-C — workflow-permission linter:** implemented in the same preflight
+  module; source-only checks cover `contents: read`, immutable remote
+  references, and checkout credential persistence.
+- **C12-D — secret-bearing job rules:** implemented as canonical
+  environment/approval guards plus workflow environment-binding checks.
+- **C12-E — fork/untrusted-PR secret tests:** deterministic regressions reject
+  PR-triggered secret-bearing or privileged head execution.
+- **C12-F — CODEOWNERS sensitive-path recommendation generator:** implemented
+  with an explicit owner argument and no repository writes.
+- **C12-G — optional OIDC example/preflight:** implemented as a workflow-shape
+  check plus `examples/github-governance/oidc-cloud-dispatch.yml`; no cloud
+  authentication is attempted.
+- **C12-H — `doctor --github` rendering:** implemented as a read-only CLI mode
+  that preserves the existing connector doctor and exits non-zero for
+  FAIL/UNKNOWN.
 
-**C12 exit gate:** requested operation cannot run when its required GitHub guard is missing.
+**C12 exit gate:** `require_governance()` fails closed when a required GitHub
+guard is missing or unobservable. The C12 implementation performs no automatic
+GitHub administration and does not treat configuration metadata as proof of
+independent human review.
 
 ---
 

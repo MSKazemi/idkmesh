@@ -1382,12 +1382,22 @@
     <priority>0.3</priority>
   </url>
   <url>
+    <loc>https://mskazemi.com/idkmesh/conversations/2026-10-11-authority-reference-ledger.html</loc>
+    <lastmod>2026-10-11</lastmod>
+    <priority>0.3</priority>
+  </url>
+  <url>
     <loc>https://mskazemi.com/idkmesh/conversations/2026-10-11-beginner-clarity-first-run.html</loc>
     <lastmod>2026-10-11</lastmod>
     <priority>0.3</priority>
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/conversations/2026-10-11-github-traffic-observability.html</loc>
+    <lastmod>2026-10-11</lastmod>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://mskazemi.com/idkmesh/conversations/2026-10-11-parallel-worker-01-issue-607.html</loc>
     <lastmod>2026-10-11</lastmod>
     <priority>0.3</priority>
   </url>
@@ -2102,6 +2112,11 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://mskazemi.com/idkmesh/research/VERIFIER_PANEL_EXTERNAL_VALIDITY_AMENDMENT_V1_1.html</loc>
+    <lastmod>2026-10-11</lastmod>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://mskazemi.com/idkmesh/research/VERIFIER_PANEL_EXTERNAL_VALIDITY_PREREG_V1.html</loc>
     <lastmod>2026-10-09</lastmod>
     <priority>0.7</priority>
@@ -2233,6 +2248,11 @@
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/specifications/GITHUB_FIRST_OPERATIONS_V0_1.html</loc>
+    <lastmod>2026-10-11</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://mskazemi.com/idkmesh/specifications/GITHUB_GOVERNANCE_PREFLIGHT_V0_1.html</loc>
     <lastmod>2026-10-11</lastmod>
     <priority>0.8</priority>
   </url>

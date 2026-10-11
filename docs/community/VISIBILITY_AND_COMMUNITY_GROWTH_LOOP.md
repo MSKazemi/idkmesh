@@ -336,6 +336,45 @@ Observe genuine external references:
 
 Prefer independently earned references over self-post counts.
 
+**V4 ledger bootstrap implemented (offline, no crawler or publication authority).**
+The canonical file is `evidence/search-visibility/authority-references.json`, and
+`scripts/authority_reference_ledger.py` generates
+`evidence/search-visibility/AUTHORITY_REPORT.md`. Run from the repository root:
+
+```bash
+python scripts/authority_reference_ledger.py
+python scripts/authority_reference_ledger.py --check
+python -m unittest tests.test_authority_reference_ledger -v
+```
+
+Each record binds a dated HTTPS source to exactly one existing canonical topic
+URL and declares its relationship (`project_authored`, `syndication`,
+`external_unknown`, or `independent`). It also states whether the source was
+owner-reviewed and whether a direct link was actually checked.
+Only the combination of `independent` + `owner_reviewed` +
+`direct_link_checked` enters the report's **claimed independent direct-link**
+bucket. This classification is *owner-attested*, not an independently
+authenticated reviewer or a proven independent citation.
+
+The empty baseline is a deliberate **zero recorded references** statement, not
+a claim that the web contains no references. Public search can return syndicated
+copies of project-authored DEV posts or summaries on unrelated sites; such search
+hits are **candidate leads**, not verified independent backlinks. In a bounded
+2026-10-11 search, apparent mentions included
+`https://deniz.in/idkmesh-experiment-25-verifier-panel-measured-at-effective-size-of-1-00`
+and syndicated copies of the project-authored DEV content. Their ownership,
+editorial independence, and outbound links were not fully verified and they
+were **not** entered as reviewed references.
+
+Workflow: record a public URL and observation date, inspect the actual page
+and outbound link, classify ownership/syndication conservatively, commit the
+record with source-target evidence note, regenerate/check the report, and
+review the change as a normal PR. Duplicate records, mismatched canonical
+targets, private/invalid URL forms, and unreviewed claims of checked direct
+links fail closed. Do not treat the number of referring domains as a single
+"domain authority" score, measure ranking/clicks from this file, or grant
+publication/merge rights.
+
 ### V5 — funnel attribution
 
 Join, at aggregate level:

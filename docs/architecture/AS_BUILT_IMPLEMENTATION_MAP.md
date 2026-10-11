@@ -19,6 +19,11 @@ Developer / operator
   |       -> github_bootstrap.py -> github_bootstrap_render.py
   |       -> reproducible file/owner-action plan only, NO APPLY
   |
+  +-- idkmesh doctor --github OBSERVATION [--workflow PATH]
+  |       -> github_governance_policy.py -> github_governance_preflight.py
+  |       -> fail-closed governance/workflow preflight only
+  |       -> NO GitHub admin mutation, secret access, dispatch, acceptance, or merge
+  |
   +-- idkmesh run create | status | evidence | list | cancel
   |       -> product_spine_run_store.py -> connector_store.py (local SQLite)
   |       -> local run/event projections, NO DISPATCH
@@ -103,6 +108,7 @@ The runtime uses `service_runtime.py` for request correlation, readiness, resour
 | Driver and health | `connector_registry.py`, `connector_probe.py` | Static declarations and normalized observational probes; CLI `connections probe` uses offline fake drivers |
 | Eligibility | `connector_routing.py`, `connector_inspection.py` | Deterministic selection/explanation; no authority escalation |
 | GitHub ingress | `github_webhook_ingress.py`, `github_issue_preview.py` | Verify HMAC; issue text remains untrusted data; policy owns WorkUnit authority |
+| GitHub governance preflight | `github_governance_policy.py`, `github_governance_preflight.py` | Evaluate trusted normalized protection/workflow observations and fail closed on required UNKNOWN/FAIL; no GitHub administration or secret-value access |
 | GitHub mutable source | `github_branch_reader.py`, `github_candidate_reader.py` | Bind requested source/candidate to exact observed Git object identity |
 | GitHub dispatch/publication | `github_delivery_idempotency.py`, `github_explicit_dispatch.py`, `github_status_comment.py` | Explicit actor/role authorization, idempotency/reconciliation; no automatic merge |
 | Jules | `jules_sources.py`, `jules_sessions.py`, `jules_observation.py`, `jules_candidates.py`, `jules_candidate_binding.py`, `jules_lifecycle.py` | Provider Session completion is not trusted candidate identity or verification |

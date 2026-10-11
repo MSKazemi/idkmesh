@@ -147,6 +147,7 @@ NO_SCHEMA_CONTRACT = {
     "examples/community/ace-activation-gate-current.example.json": "ACE activation gate state; no schema published",
     "examples/community/ace-generation-shadow.example.json": "ACE generation shadow record; no schema published",
     "examples/gate-audit/panel-votes.example.json": "gate-audit verdict-matrix input; validated in code by idkmesh/gate_audit.py and tests/test_gate_audit.py",
+    "examples/github-governance/governance-pass-v0.1.json": "GitHub governance preflight observation; validated in code by idkmesh/github_governance_preflight.py and tests/test_github_governance_preflight.py",
     "examples/gate-audit/marginal-benchmark-design.example.json": "held-out benchmark design verdict matrix; validated in code by idkmesh/marginal_evidence_benchmark.py and tests/test_marginal_evidence_benchmark.py",
     "examples/gate-audit/marginal-benchmark-holdout.example.json": "held-out benchmark evaluation verdict matrix; validated in code by idkmesh/marginal_evidence_benchmark.py and tests/test_marginal_evidence_benchmark.py",
     "examples/idkgraph-p1-review-session.example.json": "review-session record; validated by tests/test_idkgraph_review_session.py",
