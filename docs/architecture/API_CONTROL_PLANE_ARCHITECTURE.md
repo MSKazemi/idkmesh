@@ -140,8 +140,10 @@ Object schema versions remain independent from URL compatibility versions.
 
 ## Dependency diagram
 
-The architectural rule above, grounded in the modules that exist on `main`
-today (not a target-state sketch):
+The architectural rule above is grounded in modules that exist on `main`, not a
+target-state sketch. For the exhaustive live command/endpoint/client/module inventory,
+see the [Executable Capability Reference](../EXECUTABLE_CAPABILITIES.md), which is
+checked against code in CI:
 
 ```text
 +----------------------------------------------------------------+
