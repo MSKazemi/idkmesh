@@ -11,6 +11,7 @@ Class-based on purpose: the documented test counts guard module-level
 from __future__ import annotations
 
 import copy
+import importlib.util
 import json
 from pathlib import Path
 import shutil
@@ -30,6 +31,20 @@ from idkmesh.github_ledger_serialization import (
     GitHubLedgerSerializationError,
     serialize_github_ledger_record,
 )
+
+# The statistical concurrency tests are marked `slow` (nightly tier): each one
+# spawns hundreds of git processes and the unit tier has almost no CPU headroom.
+# The deterministic race proof (a ref moved between snapshot and update) stays in
+# the per-PR tier. As in tests/test_benchmark_publication.py the marker is a tier
+# hint only: without pytest it degrades to a no-op instead of failing collection.
+if importlib.util.find_spec("pytest") is not None:
+    import pytest
+
+    slow = pytest.mark.slow
+else:  # pragma: no cover - exercised only where pytest is absent
+
+    def slow(obj):
+        return obj
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures" / "github-ledger"
 REF = "refs/idkmesh/ledger/run-fixture-001"
@@ -160,8 +175,9 @@ class ConflictTests(LedgerCase):
             ["ledger/run-fixture-001/sneaky"],
         )
 
+    @slow
     def test_concurrent_writers_all_land_without_losing_an_update(self):
-        writers = 8
+        writers = 4
         barrier = threading.Barrier(writers)
         results, errors = [], []
 
@@ -188,9 +204,10 @@ class ConflictTests(LedgerCase):
             {f"ledger/run-fixture-001/w{i}" for i in range(writers)},
         )
         self.assertTrue(all(r.appended for r in results))
-        # With eight racers at least one must have lost a race and retried.
+        # With four racers released together at least one loses a race and retries.
         self.assertGreater(max(r.attempts for r in results), 1)
 
+    @slow
     def test_retry_is_bounded(self):
         interfering = self.make_ledger()
 

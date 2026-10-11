@@ -14,6 +14,16 @@ and the release notes for that tag.
 
 ### Added
 
+- [GitHub Ledger Idempotent Admission v0.1](docs/specifications/GITHUB_LEDGER_ADMISSION_V0_1.md)
+  and `idkmesh/github_ledger_admission.py` (issue #597, slice C9-D): a duplicate
+  dispatch resolves to the run admitted first. One immutable admission ref per
+  dispatch key is created by Git compare-and-set (`update-ref` against the
+  all-zero id), so concurrent duplicates admit exactly one run; an exact replay
+  returns it and writes nothing, a replay with a different request digest fails
+  closed, and a crash between admission and the first ledger record is completed
+  by the next replay for that run. Proven against real Git, with a deterministic
+  race test per PR and concurrent-writer tests in the nightly tier. Local plumbing
+  only: no push, no GitHub call.
 - [GitHub Ledger Optimistic Append v0.1](docs/specifications/GITHUB_LEDGER_APPEND_V0_1.md)
   and `idkmesh/github_ledger_append.py` (issue #597, slice C9-C): a compare-and-set
   append to the GitHub-native durable ledger. Records land on one Git ref per run
@@ -22,7 +32,7 @@ and the release notes for that tag.
   the winner; `append_with_retry` re-reads and rebuilds, bounded. History is
   linear and never rewritten, every append re-verifies the whole chain, and a
   failed append leaves the ref where it was. Proven against real Git, including
-  eight concurrent writers. Local plumbing only: no push, no GitHub call.
+  concurrent writers (nightly tier). Local plumbing only: no push, no GitHub call.
 - Source-backed implementation reference (PR #1004): an as-built architecture
   map, a one-row-per-module map of `idkmesh/`, a CLI/HTTP quick reference, a
   troubleshooting guide and a dated reconciliation audit, linked from the

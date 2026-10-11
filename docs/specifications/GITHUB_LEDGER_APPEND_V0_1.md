@@ -69,15 +69,18 @@ and never touches an earlier blob.
 append and read-back, linear history with one record per commit, a stale writer
 losing without disturbing the winner, a mid-append race caught by the atomic ref
 update alone (removing the expected-old value from `update-ref` fails two tests),
-eight concurrent writers all landing with sequences 1–8, bounded retry, the
-nothing-to-write case, and tamper detection on read.
+four concurrent writers all landing with sequences 1–4, bounded retry, the
+nothing-to-write case, and tamper detection on read. The per-PR (unit) tier runs the deterministic race
+proof; the statistical concurrent-writer and bounded-retry tests are marked
+`slow` and run in the nightly full suite, because each spawns many `git`
+processes and the unit tier has little CPU headroom.
 
 ## Boundary with other C9 slices
 
 C9-C does **not** implement:
 
-- idempotent admission (duplicate dispatch resolving to the existing run) — C9-D;
-  the `build` returning `None` hook is where C9-D plugs in;
+- idempotent admission (duplicate dispatch resolving to the existing run) — C9-D,
+  specified in [GitHub Ledger Idempotent Admission v0.1](GITHUB_LEDGER_ADMISSION_V0_1.md);
 - reconstruction of current run state from events — C9-E;
 - killed-workflow recovery — C9-F;
 - the GitHub evidence-branch adapter, remote pushes, or branch protection — C9-G;

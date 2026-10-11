@@ -30,6 +30,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -95,6 +96,9 @@ class LedgerHead:
 class LedgerSnapshot:
     head: LedgerHead
     records: tuple[dict[str, Any], ...]
+    #: ``(file name, blob id)`` for every stored record, so an append can build
+    #: the next tree without listing it again.
+    entries: tuple[tuple[str, str], ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -107,6 +111,43 @@ class AppendResult:
 Builder = Callable[[LedgerHead, tuple[dict[str, Any], ...]], "Mapping[str, Any] | None"]
 
 EMPTY_HEAD = LedgerHead(commit=None, sequence=0, record_digest=None)
+
+
+def run_git(
+    repository: Path,
+    *args: str,
+    input: bytes | None = None,
+    check: bool = True,
+    env: Mapping[str, str] | None = None,
+) -> subprocess.CompletedProcess[bytes]:
+    """Run one ``git`` plumbing command in ``repository`` (shared by C9-C/C9-D)."""
+
+    full_env = {**os.environ, "GIT_CONFIG_NOSYSTEM": "1", "GIT_TERMINAL_PROMPT": "0"}
+    if env:
+        full_env.update(env)
+    try:
+        done = subprocess.run(
+            ["git", "-C", str(repository), *args],
+            input=input,
+            capture_output=True,
+            env=full_env,
+            check=False,
+        )
+    except OSError as exc:
+        raise LedgerStorageError(f"cannot run git: {exc}") from exc
+    if check and done.returncode != 0:
+        raise LedgerStorageError(
+            f"git {args[0]} failed: {done.stderr.decode('utf-8', 'replace').strip()[:300]}"
+        )
+    return done
+
+
+def ledger_ref_for_run(run_id: str) -> str:
+    """The ledger ref for a run: a digest of the id, so any id yields a valid ref."""
+
+    if not isinstance(run_id, str) or not run_id:
+        raise ValueError("run_id must be a non-empty string")
+    return f"{REF_PREFIX}{hashlib.sha256(run_id.encode('utf-8')).hexdigest()}"
 
 
 class GitLedger:
@@ -132,24 +173,7 @@ class GitLedger:
 
     def _git(self, *args: str, input: bytes | None = None, check: bool = True,
              env: Mapping[str, str] | None = None) -> subprocess.CompletedProcess[bytes]:
-        full_env = {**os.environ, "GIT_CONFIG_NOSYSTEM": "1", "GIT_TERMINAL_PROMPT": "0"}
-        if env:
-            full_env.update(env)
-        try:
-            done = subprocess.run(
-                ["git", "-C", str(self._repo), *args],
-                input=input,
-                capture_output=True,
-                env=full_env,
-                check=False,
-            )
-        except OSError as exc:
-            raise LedgerStorageError(f"cannot run git: {exc}") from exc
-        if check and done.returncode != 0:
-            raise LedgerStorageError(
-                f"git {args[0]} failed: {done.stderr.decode('utf-8', 'replace').strip()[:300]}"
-            )
-        return done
+        return run_git(self._repo, *args, input=input, check=check, env=env)
 
     def _head_commit(self) -> str | None:
         done = self._git("rev-parse", "--verify", "-q", f"{self._ref}^{{commit}}", check=False)
@@ -159,10 +183,6 @@ class GitLedger:
             return None  # the ref does not exist yet
         raise LedgerStorageError(f"cannot resolve {self._ref}: {done.stderr.decode()[:200]}")
 
-    def _zero(self) -> str:
-        probe = self._git("hash-object", "--stdin", input=b"", check=True).stdout.decode().strip()
-        return "0" * len(probe)
-
     # ----- reading -----------------------------------------------------------
 
     def snapshot(self) -> LedgerSnapshot:
@@ -171,25 +191,48 @@ class GitLedger:
         commit = self._head_commit()
         if commit is None:
             return LedgerSnapshot(EMPTY_HEAD, ())
-        listing = self._git("ls-tree", "-r", "--name-only", commit, "--", f"{RECORDS_DIR}/").stdout
-        names = sorted(
-            line.rsplit("/", 1)[-1] for line in listing.decode().splitlines() if line
-        )
+        listing = self._git("ls-tree", "-r", commit, "--", f"{RECORDS_DIR}/").stdout.decode()
+        entries: list[tuple[str, str]] = []
+        for line in listing.splitlines():
+            meta, _, path = line.partition("\t")
+            mode, kind, blob = meta.split()
+            name = path.rsplit("/", 1)[-1]
+            if kind != "blob" or _NAME_RE.fullmatch(name) is None:
+                raise LedgerStorageError(f"unexpected ledger entry {path!r}")
+            entries.append((name, blob))
+        entries.sort()
+        contents = self._read_blobs([blob for _, blob in entries])
         records = []
-        for name in names:
-            if _NAME_RE.fullmatch(name) is None:
-                raise LedgerStorageError(f"unexpected ledger entry {name!r}")
-            blob = self._git("cat-file", "blob", f"{commit}:{RECORDS_DIR}/{name}").stdout
+        for (name, _blob), content in zip(entries, contents):
             try:
-                records.append(json.loads(blob))
+                records.append(json.loads(content))
             except ValueError as exc:
                 raise LedgerStorageError(f"ledger entry {name} is not JSON: {exc}") from exc
         chain = serialize_github_ledger_chain(records)  # raises on any broken link
-        for name, item in zip(names, chain):
+        for (name, _blob), item in zip(entries, chain):
             if name != f"{item.sequence:020d}.json":
                 raise LedgerStorageError(f"entry {name} does not match its sequence")
         last = chain[-1]
-        return LedgerSnapshot(LedgerHead(commit, last.sequence, last.record_digest), tuple(records))
+        return LedgerSnapshot(
+            LedgerHead(commit, last.sequence, last.record_digest), tuple(records), tuple(entries)
+        )
+
+    def _read_blobs(self, blobs: list[str]) -> list[bytes]:
+        """Read several blobs with one ``git cat-file --batch`` process."""
+
+        if not blobs:
+            return []
+        out = self._git("cat-file", "--batch", input=("\n".join(blobs) + "\n").encode()).stdout
+        contents, offset = [], 0
+        for blob in blobs:
+            end = out.index(b"\n", offset)
+            header = out[offset:end].split()
+            if len(header) != 3 or header[0].decode() != blob or header[1] != b"blob":
+                raise LedgerStorageError(f"unexpected cat-file output for {blob}")
+            size = int(header[2])
+            contents.append(out[end + 1 : end + 1 + size])
+            offset = end + 1 + size + 1
+        return contents
 
     def head(self) -> LedgerHead:
         return self.snapshot().head
@@ -210,15 +253,23 @@ class GitLedger:
         snapshot = self.snapshot()
         if snapshot.head.commit != expected.commit:
             raise LedgerConflict(expected.commit, snapshot.head.commit)
+        return self._append_from(snapshot, record)
+
+    def _append_from(self, snapshot: LedgerSnapshot, record: Mapping[str, Any]) -> LedgerHead:
+        """Append on top of ``snapshot``; the ref update is the real guard.
+
+        The caller holds a verified snapshot it just read, so re-reading the
+        ledger here would only repeat work: if the head has moved since, the
+        compare-and-set below fails and the caller retries from a fresh read.
+        """
+
+        expected = snapshot.head
         item: SerializedGitHubLedgerRecord = serialize_github_ledger_record(record)
         serialize_github_ledger_chain([*snapshot.records, record])  # extends the chain?
 
         blob = self._git("hash-object", "-w", "--stdin", input=item.content).stdout.decode().strip()
-        subtree_entries = []
-        if snapshot.head.commit is not None:
-            subtree = self._git("rev-parse", f"{snapshot.head.commit}:{RECORDS_DIR}").stdout.decode().strip()
-            subtree_entries = self._git("ls-tree", subtree).stdout.decode().splitlines()
         name = f"{item.sequence:020d}.json"
+        subtree_entries = [f"100644 blob {sha}\t{n}" for n, sha in snapshot.entries]
         subtree_entries.append(f"100644 blob {blob}\t{name}")
         new_subtree = self._git(
             "mktree", input=("\n".join(sorted(subtree_entries, key=lambda e: e.split("\t", 1)[1])) + "\n").encode()
@@ -236,7 +287,7 @@ class GitLedger:
             "commit-tree", root, *parents, "-m", f"ledger: append {item.record_id}", env=author_env
         ).stdout.decode().strip()
 
-        old = snapshot.head.commit or self._zero()
+        old = snapshot.head.commit or "0" * len(commit)
         moved = self._git("update-ref", self._ref, commit, old, check=False)
         if moved.returncode != 0:
             raise LedgerConflict(expected.commit, self._head_commit())
@@ -261,7 +312,7 @@ class GitLedger:
             if record is None:
                 return AppendResult(False, snapshot.head, attempt)
             try:
-                head = self.append(record, expected=snapshot.head)
+                head = self._append_from(snapshot, record)
             except LedgerConflict:
                 continue
             return AppendResult(True, head, attempt)
