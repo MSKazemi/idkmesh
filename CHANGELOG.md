@@ -444,6 +444,17 @@ and the release notes for that tag.
 
 ### Fixed
 
+- Control Tower and gate-audit session-token checks are now total (issue #745,
+  third qualification slice; `tests/test_api_security_matrix.py`). A token
+  header holding a non-ASCII byte made `secrets.compare_digest` raise
+  `TypeError` inside the request handler, so the Control Tower dropped the
+  connection with no response instead of answering `403
+  invalid_session_token` (the request was still never served). Both local UIs
+  now share `local_ui_security.token_matches`, a constant-time comparison over
+  UTF-8 bytes; the gate-audit UI previously used a plain `!=`. The new matrix
+  also pins the Host allow-list, the token-bypass cases (missing, empty,
+  padded, truncated, extended, re-cased, query-string, cookie), method
+  confusion and override headers, and the absence of any CORS grant.
 - Strict-JSON parsers are now total on pathologically nested input (issue #745,
   first fuzz slice; `tests/test_api_qualification_fuzz.py`). Deeply nested
   documents raised a raw `RecursionError` through the API client

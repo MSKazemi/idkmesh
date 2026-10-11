@@ -5,7 +5,6 @@ from __future__ import annotations
 import html
 import json
 import os
-import secrets
 import threading
 import time
 import webbrowser
@@ -41,6 +40,7 @@ from idkmesh.local_ui_security import (
     is_loopback_host,
     new_session_token,
     send_security_headers,
+    token_matches,
 )
 from idkmesh.service_runtime import (
     ADMITTED,
@@ -769,8 +769,7 @@ def _handler(
             return False
 
         def _token_allowed(self) -> bool:
-            provided = self.headers.get(TOKEN_HEADER) or ""
-            if secrets.compare_digest(provided, token):
+            if token_matches(self.headers.get(TOKEN_HEADER), token):
                 return True
             self._send_json(
                 403,
