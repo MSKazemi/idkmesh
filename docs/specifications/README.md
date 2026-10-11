@@ -51,6 +51,10 @@ meaning of an existing version.
   the evidence a first API beta needs, how each item is verified (evidence files,
   a current green qualification report, a clean tagged revision), what the
   release note must state, and the tool that reports the gate as ready or not.
+- [GitHub Ledger Optimistic Append v0.1](GITHUB_LEDGER_APPEND_V0_1.md) —
+  C9-C compare-and-set append to the GitHub-native durable ledger: conflict
+  detection on a Git ref, bounded retry, linear never-rewritten history, and an
+  honest account of what it does not prove.
 - [Release Supply-Chain Baseline v0.1](RELEASE_SUPPLY_CHAIN_V0_1.md) —
   release SBOM/checksum/source-workflow identity evidence, immutable-pinned
   GitHub build provenance, consumer verification, and vulnerability/update
