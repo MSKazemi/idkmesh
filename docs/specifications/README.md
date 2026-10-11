@@ -67,6 +67,11 @@ meaning of an existing version.
   C9-F pure next-step planning for a recovered run (reconcile, never blindly
   resubmit) and the exhaustive kill-matrix test that a killed coordinating
   workflow is recovered with exactly one provider submission.
+- [GitHub Ledger GitHub Storage v0.1](GITHUB_LEDGER_GITHUB_STORAGE_V0_1.md) —
+  C9-G durable GitHub storage on one dedicated orphan ledger branch: hashed
+  immutable paths, fast-forward-only branch updates with bounded retry, C9-D
+  admission replay/conflict semantics, C9-E recovery reads, and no protected
+  application-branch write or integration authority.
 - [API Authority Matrix v0.1](API_AUTHORITY_MATRIX_V0_1.md) —
   which principal may call which Control Tower endpoint: a proposed mapping onto
   the enterprise authorization kernel for the network profile, what the loopback

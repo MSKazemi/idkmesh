@@ -203,7 +203,7 @@
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/architecture/GITHUB_FIRST_DEPLOYMENT_AND_MULTIUSER.html</loc>
-    <lastmod>2026-09-22</lastmod>
+    <lastmod>2026-10-11</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
@@ -2248,6 +2248,11 @@
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/specifications/GITHUB_LEDGER_APPEND_V0_1.html</loc>
+    <lastmod>2026-10-11</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://mskazemi.com/idkmesh/specifications/GITHUB_LEDGER_GITHUB_STORAGE_V0_1.html</loc>
     <lastmod>2026-10-11</lastmod>
     <priority>0.8</priority>
   </url>
