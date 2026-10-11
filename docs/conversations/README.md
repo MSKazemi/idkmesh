@@ -13,6 +13,7 @@ that produced them.
 
 ### 2026-10-11
 
+- [Independent authority-reference evidence ledger](2026-10-11-authority-reference-ledger.md)
 - [Optional owner-authorized GitHub Traffic observability](2026-10-11-github-traffic-observability.md)
 - [Parallel worker 01 — issue #607 GitHub governance preflight](2026-10-11-parallel-worker-01-issue-607.md)
 - [Beginner comprehension and first-run documentation review](2026-10-11-beginner-clarity-first-run.md)
