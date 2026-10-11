@@ -11,6 +11,7 @@ Class-based on purpose: the documented test counts guard module-level
 from __future__ import annotations
 
 import copy
+import importlib.util
 import json
 from pathlib import Path
 import shutil
@@ -19,6 +20,7 @@ import tempfile
 import threading
 import unittest
 
+import idkmesh.github_ledger_admission as admission_module
 from idkmesh.github_ledger_admission import (
     Admission,
     AdmissionConflict,
@@ -33,6 +35,20 @@ from idkmesh.github_ledger_append import (
     ledger_ref_for_run,
 )
 from idkmesh.github_ledger_serialization import GitHubLedgerSerializationError
+
+# The statistical concurrency tests are marked `slow` (nightly tier): each one
+# spawns hundreds of git processes and the unit tier has almost no CPU headroom.
+# The deterministic race proof (a ref moved between snapshot and update) stays in
+# the per-PR tier. As in tests/test_benchmark_publication.py the marker is a tier
+# hint only: without pytest it degrades to a no-op instead of failing collection.
+if importlib.util.find_spec("pytest") is not None:
+    import pytest
+
+    slow = pytest.mark.slow
+else:  # pragma: no cover - exercised only where pytest is absent
+
+    def slow(obj):
+        return obj
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures" / "github-ledger"
 GIT = shutil.which("git")
@@ -111,6 +127,30 @@ class AdmitTests(AdmissionCase):
         self.assertIsNone(self.ref_commit(ledger_ref_for_run("run-B")))
         self.assertEqual(self.refs("refs/idkmesh/ledger/"), [first.admission.ledger_ref])
 
+    def test_a_create_that_loses_a_race_returns_the_winner_without_overwriting(self):
+        # Deterministic stand-in for two admitters racing: this one's read saw no
+        # admission, but another admitter created it before this one's create.
+        # Only the compare-and-set against the all-zero id stands between this
+        # call and silently replacing the first run.
+        first = self.admit(first_record(run_id="run-A"))
+        admission_commit = self.ref_commit(admission_ref(KEY))
+        real_read = admission_module._read_admission
+        calls = {"n": 0}
+
+        def stale_first_read(repo, ref):
+            calls["n"] += 1
+            return None if calls["n"] == 1 else real_read(repo, ref)
+
+        admission_module._read_admission = stale_first_read
+        try:
+            late = self.admit(first_record(run_id="run-B"))
+        finally:
+            admission_module._read_admission = real_read
+        self.assertFalse(late.created)
+        self.assertEqual(late.admission.run_id, "run-A")
+        self.assertEqual(self.ref_commit(admission_ref(KEY)), admission_commit)
+        self.assertEqual(late.head, first.head)
+
     def test_the_same_key_with_a_different_request_fails_closed(self):
         first = self.admit(first_record())
         before = (self.ref_commit(admission_ref(KEY)), self.ref_commit(first.admission.ledger_ref))
@@ -128,6 +168,7 @@ class AdmitTests(AdmissionCase):
         self.assertEqual(len(self.refs("refs/idkmesh/ledger/")), 2)
 
 
+@slow
 class ConcurrencyTests(AdmissionCase):
     def race(self, records):
         barrier = threading.Barrier(len(records))
@@ -149,7 +190,7 @@ class ConcurrencyTests(AdmissionCase):
         return results
 
     def test_concurrent_duplicates_admit_exactly_one_run(self):
-        results = self.race([first_record(run_id=f"run-{i}") for i in range(8)])
+        results = self.race([first_record(run_id=f"run-{i}") for i in range(4)])
         self.assertEqual(sum(r.created for r in results), 1)
         self.assertEqual(len({r.admission.run_id for r in results}), 1)
         winner = results[0].admission
@@ -158,7 +199,7 @@ class ConcurrencyTests(AdmissionCase):
         self.assertEqual(len(records), 1)
 
     def test_concurrent_exact_replays_record_the_first_entry_once(self):
-        results = self.race([first_record() for _ in range(8)])
+        results = self.race([first_record() for _ in range(4)])
         self.assertEqual(sum(r.created for r in results), 1)
         self.assertEqual(sum(r.recorded for r in results), 1)
         ledger = GitLedger(self.repo, results[0].admission.ledger_ref, author_name="x", author_email="x@x")

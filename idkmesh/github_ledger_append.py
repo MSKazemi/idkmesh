@@ -253,6 +253,17 @@ class GitLedger:
         snapshot = self.snapshot()
         if snapshot.head.commit != expected.commit:
             raise LedgerConflict(expected.commit, snapshot.head.commit)
+        return self._append_from(snapshot, record)
+
+    def _append_from(self, snapshot: LedgerSnapshot, record: Mapping[str, Any]) -> LedgerHead:
+        """Append on top of ``snapshot``; the ref update is the real guard.
+
+        The caller holds a verified snapshot it just read, so re-reading the
+        ledger here would only repeat work: if the head has moved since, the
+        compare-and-set below fails and the caller retries from a fresh read.
+        """
+
+        expected = snapshot.head
         item: SerializedGitHubLedgerRecord = serialize_github_ledger_record(record)
         serialize_github_ledger_chain([*snapshot.records, record])  # extends the chain?
 
@@ -301,7 +312,7 @@ class GitLedger:
             if record is None:
                 return AppendResult(False, snapshot.head, attempt)
             try:
-                head = self.append(record, expected=snapshot.head)
+                head = self._append_from(snapshot, record)
             except LedgerConflict:
                 continue
             return AppendResult(True, head, attempt)

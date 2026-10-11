@@ -69,8 +69,11 @@ and never touches an earlier blob.
 append and read-back, linear history with one record per commit, a stale writer
 losing without disturbing the winner, a mid-append race caught by the atomic ref
 update alone (removing the expected-old value from `update-ref` fails two tests),
-eight concurrent writers all landing with sequences 1–8, bounded retry, the
-nothing-to-write case, and tamper detection on read.
+four concurrent writers all landing with sequences 1–4, bounded retry, the
+nothing-to-write case, and tamper detection on read. The per-PR (unit) tier runs the deterministic race
+proof; the statistical concurrent-writer and bounded-retry tests are marked
+`slow` and run in the nightly full suite, because each spawns many `git`
+processes and the unit tier has little CPU headroom.
 
 ## Boundary with other C9 slices
 

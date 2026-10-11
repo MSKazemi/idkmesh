@@ -55,12 +55,14 @@ exact replay returns the original, a replay with different content fails closed.
 ## Verified by
 
 `tests/test_github_ledger_admission.py` against a real bare repository: first
-arrival; exact replay with unchanged refs; a duplicate for another run; a
-conflicting replay; independent keys; eight concurrent duplicates for different
-runs admitting exactly one; eight concurrent exact replays recording the first
-entry once; crash recovery in both directions; sequence, authority and malformed
+arrival; exact replay with unchanged refs; a duplicate for another run; a create
+that loses a race (a stale read followed by a create that must lose, which only
+the compare-and-set prevents from overwriting); a conflicting replay; independent
+keys; crash recovery in both directions; and, in the nightly tier, concurrent
+duplicates for different runs admitting exactly one and concurrent exact replays
+recording the first entry once; sequence, authority and malformed
 stored-admission rejection. Removing the expected-zero value from `update-ref`
-fails the two concurrency tests, and removing the digest comparison fails the
+fails the race test in the per-PR tier (and the two concurrency tests), and removing the digest comparison fails the
 conflicting-replay test.
 
 ## Boundary with other C9 slices
