@@ -175,7 +175,7 @@ The browser connects to a process on your own computer (`127.0.0.1`). Stop that 
 
 ### Step 4 — understand the input
 
-Open [`panel-votes.example.json`](../examples/gate-audit/panel-votes.example.json). A **JSON** file is structured text; the braces and quotes help software read it.
+Open [`panel-votes.example.json`](https://github.com/MSKazemi/idkmesh/blob/main/examples/gate-audit/panel-votes.example.json). A **JSON** file is structured text; the braces and quotes help software read it.
 
 Notice these fields:
 
@@ -253,7 +253,7 @@ If you want a step-by-step adoption plan, read the [Project Adoption Guide](PROJ
 | The contract demo complains about a missing dependency | Run `python -m pip install -r requirements-phase0.txt` in the active environment. |
 | You are using Windows | Follow [Getting Started](GETTING_STARTED.md) for PowerShell-specific environment commands. |
 
-For deeper setup problems, see [Getting Started](GETTING_STARTED.md) or ask in [GitHub Discussions](https://github.com/MSKazemi/idkmesh/discussions). Report reproducible bugs in [GitHub Issues](https://github.com/MSKazemi/idkmesh/issues), and report security concerns privately using [SECURITY.md](../SECURITY.md).
+For deeper setup problems, see [Getting Started](GETTING_STARTED.md) or ask in [GitHub Discussions](https://github.com/MSKazemi/idkmesh/discussions). Report reproducible bugs in [GitHub Issues](https://github.com/MSKazemi/idkmesh/issues), and report security concerns privately using [SECURITY.md](https://github.com/MSKazemi/idkmesh/blob/main/SECURITY.md).
 
 ## Tiny glossary
 

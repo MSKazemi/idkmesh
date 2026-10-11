@@ -6,7 +6,7 @@ Can a person with limited software or AI-agent experience immediately tell **wha
 
 ## Findings from current `main`
 
-- The existing [README](../../README.md) and [beginner guide](../BEGINNER_GUIDE.md) communicate the verification-first vision, but the public front door combines research hypotheses, reference-product ambitions, executable demos, and specialist implementation detail.
+- The existing [README](https://github.com/MSKazemi/idkmesh/blob/main/README.md) and [beginner guide](../BEGINNER_GUIDE.md) communicate the verification-first vision, but the public front door combines research hypotheses, reference-product ambitions, executable demos, and specialist implementation detail.
 - `pyproject.toml` packages only the `idkmesh` Python module and exposes the `idkmesh` CLI.
 - `idkmesh/cli.py` provides an existing `gate-audit` diagnostic for ground-truthed verdict matrices and `gate-audit-ui` for local viewing; the checked-in votes fixture explicitly identifies itself as synthetic.
 - `scripts/demo.py` validates prepared work/evidence contracts and rejects intentionally invalid cases; it neither starts an AI worker nor proves live verifier independence.
