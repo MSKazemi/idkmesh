@@ -13,6 +13,11 @@ Before contributing, read:
 3. This file — how to make a contribution.
 
 Read deeper architecture/research documents only when your contribution requires them.
+For a code change, the [source-to-documentation module map](docs/reference/MODULE_MAP.md)
+locates each installable package module and its owning contract; use the
+[CLI/HTTP reference](docs/reference/CLI_HTTP_QUICK_REFERENCE.md) and
+[troubleshooting](docs/help/TROUBLESHOOTING.md) when validating user-visible behavior.
+Document the code's actual authority boundary in the same PR; a planned API is not an implemented command.
 
 **Looking for one concrete task or shared technical responsibility?** See the
 [contributor pilot](docs/community/CONTRIBUTOR_PILOT_2026_09.md) and the public

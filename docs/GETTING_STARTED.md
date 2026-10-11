@@ -16,6 +16,13 @@ This guide answers two questions:
 1. **Who should use IDKMesh today?**
 2. **What is the shortest path to use it successfully?**
 
+For a precise list of **currently shipped CLI and local HTTP commands**, see the
+[implementation quick reference](reference/CLI_HTTP_QUICK_REFERENCE.md). To
+navigate the source, use [module map](reference/MODULE_MAP.md); for practical
+failures use [troubleshooting](help/TROUBLESHOOTING.md). The
+[capability matrix](CAPABILITY_MATRIX.md) is the authority for maturity and
+evidence classifications; some deeper API design documents describe future work.
+
 ## Who should use IDKMesh today?
 
 ### 1. Engineering teams that use multiple reviewers or AI judges
