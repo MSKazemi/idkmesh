@@ -57,6 +57,7 @@ class CheckSetTests(unittest.TestCase):
         self.assertIn("fuzz:api_qualification_fuzz", ids)
         self.assertIn("fuzz:api_header_boundary_fuzz", ids)
         self.assertIn("security:api_security_matrix", ids)
+        self.assertIn("reliability:load-soak", ids)
 
     def test_compat_gate_is_skipped_without_a_base(self):
         by_id = {c.id: c for c in aq.build_checks(None)}

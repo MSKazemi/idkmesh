@@ -393,7 +393,7 @@ issue #745.
 | `contract` | `tools/openapi_ref_check.py`; `tools/schema_compat_check.py --base <rev>`; the OpenAPI, conformance, example-coverage and Human Decision contract tests |
 | `fuzz` | strict-JSON totality and header/media-type boundary fuzz |
 | `security` | Host allow-list, token-bypass, method-confusion and CORS/CSRF matrices |
-| `reliability` | request limits, overload, drain, slow clients, the event stream |
+| `reliability` | request limits, overload, drain, slow clients, the event stream; `tools/api_load_soak.py` (concurrent mixed load, thread and file-descriptor leaks after drain, heap growth) |
 | `client` | the official Python client |
 
 ```bash
@@ -405,10 +405,26 @@ Without `BASE` the schema compatibility gate is reported as `skipped`, and
 `STRICT=1` turns any skip into a failure. A suite listed in the tool that no
 longer exists is a `missing` check and fails the run, so renaming or deleting a
 suite cannot quietly shrink the qualification. The report lists what is *not*
-yet covered (load, soak and memory-ceiling measurement; the permission matrix;
+yet covered (capacity benchmarking; the permission matrix;
 production-adapter request-smuggling tests) rather than implying it. The run
-takes about 80 s wall-clock and is not part of the per-PR tiers above, which
+takes about 90 s wall-clock and is not part of the per-PR tiers above, which
 already execute the same test modules.
+
+### Load and soak
+
+`python tools/api_load_soak.py` (also run by `make qualify-api`) starts the real
+Control Tower over a seeded store and sends two equal rounds of mixed traffic
+from several client threads: authenticated reads of every route plus a share of
+hostile requests (bad token, wrong method, unknown route). It fails when any
+response is not the expected status (a `503` with `Retry-After` is the service
+shedding load and is counted separately), when p99 latency exceeds
+`--max-p99-ms` (default 2000, deliberately loose for shared runners), when
+thread count or open file descriptors have grown after the server drains, or
+when the Python heap grows by more than `--max-heap-growth-kib` across a second
+traced round. Heap is measured in rounds of its own because `tracemalloc` slows
+every allocation and would distort the latency figures. It is a regression
+tripwire with ceilings, not a capacity benchmark; `--json` prints the full
+report.
 
 ## Adding tests
 
