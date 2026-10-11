@@ -319,6 +319,12 @@ def build_parser() -> argparse.ArgumentParser:
     validate = connection_sub.add_parser(
         "validate",
         help="validate a connector-profile JSON document",
+        formatter_class=_ExamplesHelpFormatter,
+        epilog=(
+            "Examples:\n"
+            "  idkmesh connections validate tests/fixtures/connector_profiles_valid_v1alpha1.json\n"
+            "  idkmesh connections validate tests/fixtures/connector_profiles_valid_v1alpha1.json --json"
+        ),
     )
     validate.add_argument("profile", help="path to connector-profile JSON")
     validate.add_argument(
@@ -331,6 +337,12 @@ def build_parser() -> argparse.ArgumentParser:
     list_cmd = connection_sub.add_parser(
         "list",
         help="list normalized connector metadata from a profile",
+        formatter_class=_ExamplesHelpFormatter,
+        epilog=(
+            "Examples:\n"
+            "  idkmesh connections list tests/fixtures/connector_profiles_valid_v1alpha1.json\n"
+            "  idkmesh connections list tests/fixtures/connector_profiles_valid_v1alpha1.json --json"
+        ),
     )
     list_cmd.add_argument("profile", help="path to connector-profile JSON")
     list_cmd.add_argument(
@@ -347,6 +359,12 @@ def build_parser() -> argparse.ArgumentParser:
             "Validate a connector-profile document and persist safe normalized "
             "metadata into a local SQLite store. Secret material and credentials "
             "are never persisted."
+        ),
+        formatter_class=_ExamplesHelpFormatter,
+        epilog=(
+            "Examples:\n"
+            "  idkmesh connections import tests/fixtures/connector_profiles_valid_v1alpha1.json --store state.sqlite\n"
+            "  idkmesh connections import tests/fixtures/connector_profiles_valid_v1alpha1.json --store state.sqlite --json"
         ),
     )
     import_cmd.add_argument("profile", help="path to connector-profile JSON")
@@ -373,6 +391,12 @@ def build_parser() -> argparse.ArgumentParser:
         description=(
             "Read normalized connector configuration metadata from a local SQLite store."
         ),
+        formatter_class=_ExamplesHelpFormatter,
+        epilog=(
+            "Examples:\n"
+            "  idkmesh connections stored --store state.sqlite\n"
+            "  idkmesh connections stored --store state.sqlite --json"
+        ),
     )
     stored_cmd.add_argument(
         "--store",
@@ -393,6 +417,12 @@ def build_parser() -> argparse.ArgumentParser:
         description=(
             "Read-only probe using offline fake drivers only. This command "
             "does not contact live providers, materialize secrets, or dispatch work."
+        ),
+        formatter_class=_ExamplesHelpFormatter,
+        epilog=(
+            "Examples:\n"
+            "  idkmesh connections probe tests/fixtures/connector_profiles_valid_v1alpha1.json\n"
+            "  idkmesh connections probe tests/fixtures/connector_profiles_valid_v1alpha1.json --json"
         ),
     )
     probe.add_argument("profile", help="path to connector-profile JSON")
@@ -417,6 +447,13 @@ def build_parser() -> argparse.ArgumentParser:
             "optional workflow source. GitHub mode performs no repository "
             "administration, secret access, dispatch, verification, acceptance, "
             "or merge."
+        ),
+        formatter_class=_ExamplesHelpFormatter,
+        epilog=(
+            "Examples:\n"
+            "  idkmesh doctor tests/fixtures/connector_profiles_valid_v1alpha1.json\n"
+            "  idkmesh doctor --github examples/github-governance/governance-pass-v0.1.json\n"
+            "  idkmesh doctor --github examples/github-governance/governance-pass-v0.1.json --json"
         ),
     )
     doctor.add_argument(
@@ -475,6 +512,12 @@ def build_parser() -> argparse.ArgumentParser:
         description=(
             "Explain eligible/rejected connectors without external work or "
             "repository mutation. Selection is applied only with --auto-select."
+        ),
+        formatter_class=_ExamplesHelpFormatter,
+        epilog=(
+            "Examples:\n"
+            "  idkmesh route explain tests/fixtures/connector_profiles_valid_v1alpha1.json decision.json\n"
+            "  idkmesh route explain tests/fixtures/connector_profiles_valid_v1alpha1.json decision.json --auto-select --json"
         ),
     )
     explain.add_argument("profile", help="path to connector-profile JSON")
