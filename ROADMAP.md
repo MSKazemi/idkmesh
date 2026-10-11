@@ -57,6 +57,12 @@ Supporting measurements include:
 
 ## 2. Scientific operating loop
 
+The scientific targets — the one question, hypotheses H1–H6, experiments X1–X10,
+algorithms A1–A7 and evidence-gated phases S0–S5 — are defined in
+[`docs/research/SCIENTIFIC_PROGRAM.md`](docs/research/SCIENTIFIC_PROGRAM.md).
+This roadmap's engineering gates serve those targets; engineering targets T1–T6
+there map each one to its owning issue.
+
 Every significant mechanism should follow:
 
 ```text

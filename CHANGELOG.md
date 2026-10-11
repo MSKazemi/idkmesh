@@ -14,6 +14,157 @@ and the release notes for that tag.
 
 ### Added
 
+- `tools/api_load_soak.py` (issue #745): a bounded load and soak check for the
+  Control Tower. Two rounds of concurrent mixed traffic (every read route plus
+  hostile requests) must all return the expected status, stay under a p99
+  ceiling, leave no extra threads or file descriptors after drain, and grow the
+  heap by no more than a ceiling across a separate traced round. It runs as part
+  of `make qualify-api`; the qualification report now lists capacity
+  benchmarking, not load/soak, as uncovered. See
+  [`docs/TESTING.md`](docs/TESTING.md#load-and-soak).
+- [API Storage Profiles v0.1](docs/specifications/API_STORAGE_PROFILES_V0_1.md)
+  (issue #750): profile ownership (GitHub ledger, local SQLite, network
+  interface requirement), the storage-port operations, required semantics with
+  the test that verifies each, migration strategy, retention matrix, and an
+  acceptance table that states what is still open. New
+  `tests/test_api_storage_integrity.py` covers event integrity, migration
+  replay, restart reconstruction and backup.
+- `make qualify-api` / `tools/api_release_qualification.py` (issue #745): one
+  repeatable API release-qualification run. It executes the OpenAPI reference
+  gate, the schema compatibility gate (`--base`), and the contract, fuzz,
+  security, reliability and client suites, and writes a JSON report (command,
+  exit code, duration, counts, output tail, git revision) to
+  `results/api-qualification/report.json`. `--strict` fails on a skipped check,
+  and a listed suite that no longer exists fails the run. The report names what
+  is not yet covered (capacity benchmarking, permission matrix,
+  production-adapter smuggling tests). See
+  [`docs/TESTING.md`](docs/TESTING.md#api-release-qualification).
+- State-transition and idempotency properties for the API release
+  qualification suite (issue #745, property/fuzz slice;
+  `tests/test_api_state_idempotency_properties.py`). The documented v0.1 run
+  and attempt lifecycle graphs are pinned as independent oracles with an
+  exhaustive pair test, seeded random legal/illegal walks assert immutability,
+  identity preservation and determinism, and seeded create/replay/status/list/
+  cancel sequences assert the idempotency laws (exact replay returns the run
+  untouched, any mutated replay is `idempotency_conflict`, run identity is
+  unique across keys) with total, controlled failures throughout.
+
+- Preregistration v2 (`docs/research/PREREG_AGENT_VALUE_FORECAST_V2.md`) and
+  the E048 runner (`experiments/temporal_holdout.py`) register, before any data
+  exists, a temporal-holdout replication of the agent-value forecast on SWE-bench
+  submissions added after the pinned commit. Upstream currently has none; the
+  runner reports that and does nothing else.
+
+- T1 / E047 (`experiments/submission_provenance.py`) adds provenance for public
+  SWE-bench submissions: model, model organisation, scaffold and attempts,
+  with canonicalised model names. Verified's 169 competent submissions come
+  from 66 identifiable models and 12 organisations; 81 are multi-attempt. In
+  an exploratory re-run with one submission per model, H1 still holds on both
+  Verified and Lite. Choosing one agent per model organisation loses to
+  complementarity selection (Lite, k = 5, p = 0.0026).
+
+- E046 confirmatory results (`experiments/E046-agent-value-forecast.md`). The
+  analysis frozen by PREREG_AGENT_VALUE_FORECAST_V1 was run unchanged on the
+  held-out SWE-bench Lite split (78 agents × 300 tasks). Per-item difficulty
+  (beta-binomial) forecast team coverage with error 0.0316, against 0.1619 for
+  the Kish design effect and 0.0816 for shared shock (H1 supported). H2 and H3
+  passed the registered rule but are fragile under a disclosed post-hoc check
+  on tasks disjoint from Verified. Test, Multilingual and Multimodal were
+  infeasible (fewer than 20 competent agents).
+
+- Preregistration v1 for forecasting the value of the next coding agent
+  (`docs/research/PREREG_AGENT_VALUE_FORECAST_V1.md`, issue #973). It freezes
+  the E046 analysis (`experiments/agent_value_forecast.py`, SHA-256 recorded)
+  before the four held-out SWE-bench splits are opened. The analysis covers
+  dependence models, coverage forecasters and complementarity selection,
+  with H1–H3 decision rules. The exploratory output on the already-seen
+  Verified split is retained and labelled as such.
+
+- The scientific program (`docs/research/SCIENTIFIC_PROGRAM.md`, umbrella
+  issue #968) states the one question IDKMesh is organised around: *when does
+  adding another AI agent, as worker or verifier, increase independently
+  verified useful work, and can that be predicted from a small pilot?* It also
+  defines the audience, hypotheses H1–H6, experiments X1–X10, algorithms
+  A1–A7, engineering targets T1–T6, the checked novelty boundary, and phases
+  S0–S5. `RESEARCH_QUESTIONS.md` is now labelled as the long-horizon backlog.
+- E045, an exploratory pilot (`experiments/public_agent_dependence.py`). It
+  reads public execution-graded SWE-bench Verified results, at a pinned
+  upstream commit, for 169 competent coding systems × 500 tasks. Mean pairwise
+  φ is 0.4763, 26/500 tasks are solved by no system, and oracle best-of-10
+  covers 0.8521 where independence predicts 0.9997.
+
+- Transport-neutral Human Decision service core for issue #740
+  (`idkmesh/human_decision_service.py`). It records an `accept` / `reject` /
+  `escalate` decision with a rationale into an append-only SQLite store whose
+  triggers reject UPDATE and DELETE, bound to the exact retained Run Evidence
+  Report digest (a stale or swapped digest fails closed) and to a selected
+  attempt that must exist in that report. The decider comes only from a trusted,
+  authenticated, unrevoked, unexpired human `ActorContext`; the request body
+  cannot supply identity, timestamp, decision id or authority. `Idempotency-Key`
+  semantics follow API conventions section 12 and are bound to the principal:
+  same principal, key and request replays the original record; a different
+  request or a different principal with the same key is `idempotency_conflict`.
+  Responses match the frozen `idkmesh-human-decision-response-v0.1` schema and
+  returned records are copies. Not yet built: no HTTP endpoint or CLI calls this
+  core, it performs no tenant/role policy authorization (`decisions:write`), and
+  it emits no audit-ledger event; those remain owned by #740 with #670/#671/#743,
+  so a local session token still cannot record a decision.
+- API-11A client read-model completion for issue #746: the official
+  dependency-free Python client (`idkmesh.api_client.ControlTowerClient`) now
+  covers the whole resource-oriented Control Tower read model — `list_runs`
+  (bounded `state`/`project_id` filters, keyset pagination), `get_run_attempts`,
+  `get_work_unit`, `list_work_units`, `get_project`, and `list_connections`
+  (secret-free connector metadata from `GET /api/v1/connections`) alongside the existing
+  status/inspection/run/evidence/event methods. Every resource response is
+  identity-bound to the requested id and fails closed with `ProtocolError` on a
+  mismatch; list validation happens before any transport I/O; cursors stay
+  opaque. The client surface is documented in
+  [Control Tower Local API v0.1](docs/specifications/CONTROL_TOWER_LOCAL_API_V0_1.md).
+  Human-decision recording remains absent until the authenticated mutation
+  adapter (issue #740) exists; health/readiness probes, `openapi.json`,
+  `metrics`, and the `events/stream` SSE stream stay plain HTTP.
+- Read-only connector listing on the Control Tower for API-3 / issue #738:
+  authenticated `GET`/`HEAD /api/v1/connections` serves the connection rows
+  `idkmesh connections import` persists, through the existing `/api/v1`
+  service rather than a second HTTP server. Items are a strict public-safe
+  projection (`schemas/idkmesh-connection-resource-v0.1.schema.json`) in the
+  shared `idkmesh-list-v0.1` envelope with bounded keyset pagination and an
+  opaque cursor; secret references and settings are never returned, and a
+  legacy/free-form row fails closed with `500 connection_record_invalid`
+  instead of being serialized. The endpoint is advertised in `openapi.yaml`,
+  the runtime OpenAPI document, and `GET /api/v1/status`, and its 200/400/403/
+  503 responses are runtime representatives in
+  `tests/test_api_contract_conformance.py`. No connector create, probe,
+  enable/disable, secret resolution, dispatch, or provider call is added.
+- Public-safe GitHub evidence projection for issue #609 (C14-D):
+  `idkmesh/github_public_evidence.py` builds a strict whitelist over
+  digest-bound Product Spine, CandidateReference, and Run Evidence Report
+  state, gated by a trusted public-classification policy, and its JSON
+  renderer rejects any mapping outside that whitelist. Raw prompts, logs,
+  provider payloads, warnings, identities, artifact locators, and secrets are
+  never projected, and every authority flag is fixed to `false`. See
+  [GitHub Public Evidence Projection v0.1](docs/specifications/GITHUB_PUBLIC_EVIDENCE_V0_1.md).
+  No Pages generator, GitHub mutation, or repository-visibility probe is
+  included.
+
+- Canonical capability truth matrix for issue #944:
+  `docs/capability-matrix-v1.json` is the machine-readable public claim
+  boundary, with generated human/site projections and a normal-CI drift guard.
+  Release wording must use the matrix's `verified_revision` and the #943
+  evidence level (0 planned through 5 production-qualified) rather than
+  inferring maturity from code presence alone. This matrix/drift mechanism is
+  evidence level 1 (implemented); it does not promote the project itself to
+  production-qualified.
+
+- GitHub governance baseline policy object for issue #607 (C12-A):
+  `idkmesh/github_governance_policy.py` defines deterministic
+  required/warn/optional guards for read-only, candidate, secret-bearing,
+  high-risk, and cloud dispatch and for integration. Automatic GitHub admin
+  mutation and treating ruleset metadata as proof of independent review are
+  structurally forbidden. Policy only: no GitHub API call, ruleset evaluation,
+  workflow lint, or `doctor --github` output is added yet. See
+  [Main protection](docs/admin/MAIN_PROTECTION.md).
+
 - Privacy-safe API observability slice for issue #744: the loopback Control
   Tower now exposes authenticated `GET /api/v1/metrics` with fixed-cardinality
   request/status/error counters, cumulative latency buckets, concurrency and
@@ -25,6 +176,19 @@ and the release notes for that tag.
   [API Observability v0.1](docs/specifications/API_OBSERVABILITY_V0_1.md).
   OpenTelemetry export and Human Decision ingestion metrics remain follow-up
   work; no new runtime dependency or actuation authority is introduced.
+
+- Dependency-free OTLP metrics mapping for issue #744:
+  `idkmesh.otel_metrics.build_otlp_metrics_request()` converts one validated
+  API operational-metrics document into an OTLP `ExportMetricsServiceRequest`
+  JSON object (cumulative monotonic sums, gauges, and a histogram whose
+  cumulative source buckets are differenced into OTLP per-bucket counts), and
+  `render_otlp_metrics_json()` renders it as deterministic strict JSON. The
+  adapter is transport-free (no network I/O, credentials, retries, spans, or
+  clock reads) and fails closed if the source document is inconsistent,
+  relaxes its privacy flags or authority ceiling, or manufactures a
+  `not_implemented` counter. A collector transport and Human Decision
+  ingestion telemetry remain follow-up work under #744. See
+  [API Observability v0.1](docs/specifications/API_OBSERVABILITY_V0_1.md).
 
 - Enterprise Audit Ledger v0.1 (issue #671): a dedicated SQLite append-only
   security/audit stream separate from ordinary logs and Product Spine events.
@@ -315,6 +479,84 @@ and the release notes for that tag.
 
 ### Fixed
 
+- Event reads now verify what the store wrote (issue #750). `payload_digest`
+  was written with every event but never checked, so an event whose payload was
+  altered in the database file was served as the original. Every read of the
+  event log (`GET /api/v1/events`, the event stream, `idkmesh` readers) now
+  recomputes the payload digest and checks that the indexed columns
+  (`run_id`, `event_type`, ...) agree with the envelope; a mismatch is a
+  controlled `store_error` (HTTP 500) and the altered content is not returned.
+  Reads that do not touch the damaged row keep working.
+- Control Tower and gate-audit session-token checks are now total (issue #745,
+  third qualification slice; `tests/test_api_security_matrix.py`). A token
+  header holding a non-ASCII byte made `secrets.compare_digest` raise
+  `TypeError` inside the request handler, so the Control Tower dropped the
+  connection with no response instead of answering `403
+  invalid_session_token` (the request was still never served). Both local UIs
+  now share `local_ui_security.token_matches`, a constant-time comparison over
+  UTF-8 bytes; the gate-audit UI previously used a plain `!=`. The new matrix
+  also pins the Host allow-list, the token-bypass cases (missing, empty,
+  padded, truncated, extended, re-cased, query-string, cookie), method
+  confusion and override headers, and the absence of any CORS grant.
+- Strict-JSON parsers are now total on pathologically nested input (issue #745,
+  first fuzz slice; `tests/test_api_qualification_fuzz.py`). Deeply nested
+  documents raised a raw `RecursionError` through the API client
+  (`ProtocolError`), `idkmesh` CLI strict-JSON file loading (`ValueError`),
+  Control Tower report parsing (`ControlTowerInputError`) and enterprise audit
+  event replay (`invalid_event_json`); each now rejects with its documented
+  controlled error.
+- Control Tower header/media-type boundary qualification (issue #745, second
+  fuzz slice; `tests/test_api_header_boundary_fuzz.py`) found and fixed three
+  boundary defects. Explicit `q=0` Accept entries were served anyway: a
+  request whose Accept entries are all explicitly zero quality now gets `406
+  not_acceptable`, `q=0` on the vendor media type falls back to
+  `application/json`, and malformed quality values stay lenient (RFC 9110
+  section 12.4.2). The Python API client rejected case/whitespace variants of
+  valid response media types (`Application/JSON`, `application/json
+  ;charset=utf-8`) with `ProtocolError`; it now normalizes exactly like the
+  server while still failing closed on genuinely wrong types. `Content-Length`
+  accepted any spelling `int()` parses (`+2`, `-0`) in both request handlers;
+  it is now strict RFC 9110 `1*DIGIT`, so those spellings are `400
+  invalid_content_length` instead of a framing disagreement with strict
+  fronting proxies.
+- Lifecycle transitions could rewrite identity and authority
+  (`ProductSpineRun.transition("previewed", run_id=...)` silently changed the
+  run identity that feeds the create request digest, and
+  `transition(..., authority_mode="agent_candidate")` downgraded
+  `human_required` work past the admission gate; `attempts` could be smuggled
+  past `append_attempt`/`replace_attempt`). Run and attempt transitions now
+  reject every field except state plus the state-gated evidence fields and the
+  admitted connector set with `invalid_update`, closing the authority bypass
+  found by the #745 property suite.
+- The IDKGraph Markdown index (`tools/idkgraph_markdown_index.py`) now skips a
+  leading YAML front-matter block. Previously the last metadata line followed by
+  the closing `---` parsed as a setext H2, so every page with front matter (all
+  topic guides) got a metadata line such as `image: "/assets/idkmesh-social.png"`
+  as its first heading and IDKGraph title. This unblocks adding search
+  `description:` front matter to specifications and ADRs without corrupting
+  their IDKGraph titles.
+- Jekyll-rendered Markdown pages on the GitHub Pages site no longer share one
+  meta description. At fca4e8c, 405 of 456 rendered pages fell back to `site.description`;
+  `docs/_layouts/default.html` now derives a per-page description from the first
+  real paragraph (front-matter `description` still wins and is untouched) and
+  substitutes it into the `meta`/Open Graph tags. A local `github-pages` gem
+  build went from 52 to 454 distinct descriptions across 456 pages. The same
+  layout replaces the bare `WebPage` JSON-LD with a `TechArticle` + `WebSite` +
+  `Person` + `BreadcrumbList` graph and adds a visible Home / Library breadcrumb.
+  No `dateModified` is emitted: the legacy Pages build exposes no reliable
+  per-page date. Documented in [`docs/PAGES_SETUP.md`](docs/PAGES_SETUP.md).
+- Anchored `pattern`s in `schemas/` no longer accept a trailing newline
+  (issue #963). Python's `re` matches `$` before a trailing newline, so every
+  `^...$` pattern accepted `value + "\n"` — 180 patterns across 60 files,
+  including SHA/digest/id identity fields where such values break exact-match
+  equality downstream. Every end anchor now carries the `(?!\n)` guard
+  ([ADR-0025](docs/decisions/ADR-0025-pattern-end-anchor-hardening.md)),
+  which is a no-op under the ECMA-262 regex semantics JSON Schema specifies
+  and makes Python validators agree with that contract;
+  `tests/test_schema_pattern_anchors.py` proves the rejection for every
+  pattern occurrence. `tools/schema_compat_check.py` recognizes exactly this
+  transform as compatible and still reports every other pattern change as
+  breaking.
 - `GET /api/v1/runs` and `idkmesh run list` no longer fail for the whole page
   when the store also holds a row that is not a Product Spine run. The shared
   `runs` table also holds admission-only, execution-error and GitHub

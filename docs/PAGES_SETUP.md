@@ -137,6 +137,32 @@ Jekyll pages.
 `tests/test_pages_seo.py` guards the source convention. The post-deploy
 discovery workflow provides the public-side backstop.
 
+## Markdown page descriptions and structured data
+
+Jekyll SEO Tag falls back to `site.description` for every page whose front
+matter sets no `description`, so before this layout 405 of 456 rendered
+Markdown pages published the same meta description. `docs/_layouts/default.html`
+(which overrides the primer theme's layout) now:
+
+- keeps a front-matter `description` exactly as Jekyll SEO Tag renders it;
+- otherwise takes the first real paragraph of the rendered page — headings,
+  lists, tables, code blocks, badge/image-only paragraphs, and short
+  `Status: …` / `Date: …` metadata lines are skipped, a paragraph under 110
+  characters is joined with the next one, and the result is cut at a word
+  boundary near 160 characters — and substitutes it into the `description`
+  and `og:description` tags;
+- replaces the tag's bare `WebPage` JSON-LD with one `@graph` holding a
+  `TechArticle` (headline, description, author, publisher, `isPartOf` the
+  `WebSite`), the `WebSite`, the author `Person`, and a `BreadcrumbList`
+  (Home → Library → page);
+- renders the same breadcrumb visibly at the top of the page.
+
+No `dateModified` is emitted. The legacy Pages build has no
+`jekyll-last-modified-at`, and `site.time` is the build time, not the page's
+modification time; `docs/sitemap.xml` remains the truthful per-page `lastmod`
+source. To give a page a hand-written summary, set `description:` in its front
+matter.
+
 ## Search and answer-engine discovery
 
 The discovery surface is intentionally layered rather than dependent on one
@@ -145,7 +171,9 @@ crawler or one vendor:
 - `docs/sitemap.xml` declares every published HTML page with truthful per-source
   `lastmod` dates;
 - `docs/_config.yml` supplies a consistent IDKMesh identity, canonical origin,
-  repository, language, author, and social image to Jekyll-rendered Markdown;
+  repository, language, author, and social image to Jekyll-rendered Markdown,
+  and `docs/_layouts/default.html` gives each of those pages its own
+  description, `TechArticle`/`BreadcrumbList` JSON-LD, and a visible breadcrumb;
 - each hand-written HTML page carries its own canonical, Open Graph, Twitter,
   robots, and JSON-LD metadata;
 - `docs/topics/` maps ten substantial topic guides to the 100 semantic query

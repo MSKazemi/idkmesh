@@ -24,10 +24,10 @@
     "schema_version": {"const": "0.1"},
     "kind": {"const": "idkmesh-ci-receipt"},
     "planner_version": {"const": "0.1"},
-    "receipt_id": {"type": "string", "pattern": "^ci-receipt-[a-f0-9]{12}-[a-f0-9]{12}$"},
+    "receipt_id": {"type": "string", "pattern": "^ci-receipt-[a-f0-9]{12}-[a-f0-9]{12}$(?!\n)"},
     "stage": {"const": "planning"},
     "outcome": {"const": "shadow_plan_emitted"},
-    "plan_id": {"type": "string", "pattern": "^ci-plan-[a-f0-9]{12}-[a-f0-9]{12}$"},
+    "plan_id": {"type": "string", "pattern": "^ci-plan-[a-f0-9]{12}-[a-f0-9]{12}$(?!\n)"},
     "plan_digest": {"$ref": "#/$defs/digest"},
     "base_sha": {"$ref": "#/$defs/sha"},
     "head_sha": {"$ref": "#/$defs/sha"},
@@ -65,7 +65,7 @@
     }
   },
   "$defs": {
-    "sha": {"type": "string", "pattern": "^[a-f0-9]{40}$"},
-    "digest": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$"}
+    "sha": {"type": "string", "pattern": "^[a-f0-9]{40}$(?!\n)"},
+    "digest": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$(?!\n)"}
   }
 }

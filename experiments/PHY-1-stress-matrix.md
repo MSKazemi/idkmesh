@@ -3,7 +3,8 @@
 **Status:** executable synthetic falsification matrix  
 **Date:** 2026-09-22  
 **Tracker:** #630  
-**Implementation:** `sim/physarum_compute_routing_stress.py`
+**Implementation:** `sim/physarum_compute_routing_stress.py`  
+**Retained completion sweep:** `experiments/results/PHY-1-completion-sweep.json`
 
 ## Purpose
 
@@ -138,3 +139,77 @@ resource evidence
 
 The experiment cannot grant eligibility, permissions, money, trust, or merge
 authority.
+
+
+## Completion sweep — 2026-10-08
+
+Issue #630's remaining synthetic gates were completed with two explicit graph
+views:
+
+- `sparse`: the three independent coordinator-to-worker corridors only;
+- `dense`: the same admitted nodes plus all three cross-corridor edges already
+  present in PHY-0/PHY-1.
+
+No synthetic edge is treated as production topology. These are deterministic
+falsification fixtures only.
+
+The retained bounded sweep uses seeds 1–6, 50 epochs, and 10 tasks per epoch.
+It is intentionally smaller than the exploratory default so review and CI can
+reproduce it cheaply. The machine-readable summary is
+`experiments/results/PHY-1-completion-sweep.json`.
+
+Reproduce the topology matrix with:
+
+```bash
+python sim/physarum_compute_routing_stress.py \
+  --topology all --seeds 6 --epochs 50 --tasks-per-epoch 10
+```
+
+The explicit sensitivity sweep varies the conductance floor (`d_min`),
+evaporation, and exploration independently around the frozen baseline:
+
+```bash
+python sim/physarum_compute_routing_stress.py \
+  --parameter-sweep --topology dense --environment abrupt-shift \
+  --seeds 6 --epochs 50 --tasks-per-epoch 10
+```
+
+### Outcome
+
+**Recommendation: reject promotion to a dry-run product planner at this stage.**
+
+The result is negative, not a fabricated success. Across both topology views,
+explicit multipath failover has higher synthetic success than Physarum in all
+16 topology/environment cells of the retained sweep. It pays more route burden
+in 12 of them; in the remaining 4 (`stationary` on both views, and `dense`
+`correlated-ab-region-shocks`) failover is better on both success and burden.
+Discounted Thompson is better than Physarum on both success and burden in three
+dense scenarios (`abrupt-shift`, `gradual-shift`, `donor-burden-asymmetry`).
+The parameter sweep (dense, `abrupt-shift` only) moves Physarum's success
+between 0.805 (`evaporation-low`) and 0.926 (`exploration-high`) around a
+frozen baseline of 0.850, so its trade-off is materially parameter-sensitive.
+The best tested settings still trail failover's 0.998: `evaporation-high`
+reaches 0.924 at burden 2.287, and `exploration-high` reaches 0.926 at burden
+2.455, against failover's burden of 2.451. The negative result therefore does
+not come from an unluckily tuned baseline alone.
+
+What the data does **not** show: on the `sparse` view, Physarum is not
+Pareto-dominated by any single tested baseline in any of the seven
+non-stationary environments. It sits between discounted Thompson (lower
+success, lower burden) and failover (higher success, higher burden). The
+rejection is therefore a decision-rule judgement and not a dominance result.
+Rule 2 requires a resilience advantage against explicit failover, and Physarum
+has none in success. A failover variant matched on burden was not tested. The
+sensitivity sweep covers one environment and one topology, and it reuses the
+evaluation seeds.
+
+Every retained number is recomputed from the committed code and seeds by
+`tests/test_physarum_compute_routing_stress.py`. The full replay is the
+`sim`-marked (nightly) test, and one cheap cell replays in the unit tier. Both
+compare values within `1e-6`, never bytes.
+
+This does not prove failover is universally superior, and it is not real
+network evidence. It does satisfy the issue's decision purpose: the current
+synthetic evidence is insufficient to justify adding a Physarum production
+integration surface. Keep the simulator as research evidence; prefer simpler
+routing until a materially different experiment falsifies this conclusion.

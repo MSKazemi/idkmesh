@@ -3,7 +3,7 @@
 **Status:** executable local composition of readiness and claims, issue 921,
 under the existing Product Spine/C9/C10/connector owners.
 
-[`idkmesh/executor_admission.py`](../../idkmesh/executor_admission.py) closes
+[`idkmesh/executor_admission.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/executor_admission.py) closes
 the check/use race named by [Coordination Preflight v0.1](COORDINATION_PREFLIGHT_V0_1.md):
 a read-only readiness report does not authorize external work. It composes the
 preflight's exact-input readiness projection with
@@ -92,7 +92,7 @@ existing owners.
 ## Report contract
 
 Each phase returns a versioned record,
-[`executor-admission-v0.1.schema.json`](../../schemas/executor-admission-v0.1.schema.json),
+[`executor-admission-v0.1.schema.json`](https://github.com/MSKazemi/idkmesh/blob/main/schemas/executor-admission-v0.1.schema.json),
 binding scope, graph digest, observation digest, WorkUnit binding, input
 digest, `created`, and the embedded claim snapshot (identical in shape to
 `task-claim-v0.1`). The report is metadata; the durable claim record is the

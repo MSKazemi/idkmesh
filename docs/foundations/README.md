@@ -3,9 +3,9 @@
 Durable statements of **what IDKMesh is for** and **which questions it exists to answer**.
 
 These documents change slowly. They describe intent and open problems, not
-implementation. Architecture lives in [`../../ARCHITECTURE.md`](../../ARCHITECTURE.md),
-staged delivery in [`../../ROADMAP.md`](../../ROADMAP.md), and measurable results in
-[`../../results`](../../results).
+implementation. Architecture lives in [`../../ARCHITECTURE.md`](https://github.com/MSKazemi/idkmesh/blob/main/ARCHITECTURE.md),
+staged delivery in [`../../ROADMAP.md`](https://github.com/MSKazemi/idkmesh/blob/main/ROADMAP.md), and measurable results in
+[`../../results`](https://github.com/MSKazemi/idkmesh/tree/main/results).
 
 ## Documents
 
@@ -28,6 +28,6 @@ it is the shortest path from curiosity to understanding what this repository doe
 This module holds foundations only. A document belongs here when it states purpose,
 goals, or defining questions, and when rewriting it would change what the project is
 trying to be. Broader scientific and mathematical groundwork remains at the repository
-root ([`SCIENTIFIC_FOUNDATIONS.md`](../../SCIENTIFIC_FOUNDATIONS.md),
-[`MATHEMATICAL_FOUNDATIONS.md`](../../MATHEMATICAL_FOUNDATIONS.md)) pending a separate
+root ([`SCIENTIFIC_FOUNDATIONS.md`](https://github.com/MSKazemi/idkmesh/blob/main/SCIENTIFIC_FOUNDATIONS.md),
+[`MATHEMATICAL_FOUNDATIONS.md`](https://github.com/MSKazemi/idkmesh/blob/main/MATHEMATICAL_FOUNDATIONS.md)) pending a separate
 evidence-backed migration; see issue #38 for why this first migration was kept small.

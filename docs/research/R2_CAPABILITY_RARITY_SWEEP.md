@@ -39,4 +39,4 @@ heterogeneous requirements, or saturation; those remain separate issue #84
 sweeps.
 
 The first five-seed reference result and guarded interpretation are retained in
-[`../../results/experiments/r2/capability-rarity-seeds41-45.md`](../../results/experiments/r2/capability-rarity-seeds41-45.md).
+[`../../results/experiments/r2/capability-rarity-seeds41-45.md`](https://github.com/MSKazemi/idkmesh/blob/main/results/experiments/r2/capability-rarity-seeds41-45.md).

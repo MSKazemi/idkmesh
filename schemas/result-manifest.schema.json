@@ -59,7 +59,7 @@
           "name": { "type": "string" },
           "kind": { "type": "string" },
           "uri": { "type": "string" },
-          "sha256": { "type": "string", "pattern": "^[a-fA-F0-9]{64}$" },
+          "sha256": { "type": "string", "pattern": "^[a-fA-F0-9]{64}$(?!\n)" },
           "size_bytes": { "type": "integer", "minimum": 0 },
           "media_type": { "type": "string" }
         },
@@ -75,7 +75,7 @@
           "kind": { "type": "string" },
           "outcome": { "type": "string", "enum": ["pass", "fail", "inconclusive", "informational"] },
           "summary": { "type": "string" },
-          "artifact_sha256": { "type": "string", "pattern": "^[a-fA-F0-9]{64}$" },
+          "artifact_sha256": { "type": "string", "pattern": "^[a-fA-F0-9]{64}$(?!\n)" },
           "metric": { "type": "number" },
           "unit": { "type": "string" }
         },
@@ -105,7 +105,7 @@
         "type": "object",
         "properties": {
           "uri": { "type": "string" },
-          "sha256": { "type": "string", "pattern": "^[a-fA-F0-9]{64}$" },
+          "sha256": { "type": "string", "pattern": "^[a-fA-F0-9]{64}$(?!\n)" },
           "stream": { "type": "string", "enum": ["stdout", "stderr", "event", "other"] }
         },
         "additionalProperties": true
@@ -141,7 +141,7 @@
       "default": { "status": "not_checked", "independent_attempts": 0, "successful_attempts": 0 }
     },
     "signature": { "type": "string" },
-    "signed_payload_sha256": { "type": "string", "pattern": "^[a-fA-F0-9]{64}$" }
+    "signed_payload_sha256": { "type": "string", "pattern": "^[a-fA-F0-9]{64}$(?!\n)" }
   },
   "additionalProperties": true
 }

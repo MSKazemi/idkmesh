@@ -9,7 +9,7 @@ retained because it preserves what was inspected and why a decision changed, not
 because its situational claims are still true. Current authority lives in
 [`../decisions/`](../decisions/), [`../specifications/README.md`](../specifications/README.md),
 [`../architecture/README.md`](../architecture/README.md), and
-[`../../PROJECT_RULES.md`](../../PROJECT_RULES.md).
+[`../../PROJECT_RULES.md`](https://github.com/MSKazemi/idkmesh/blob/main/PROJECT_RULES.md).
 
 Each entry below carries the baseline the record itself declares. Five records
 declare no explicit baseline revision; that is noted rather than invented.
@@ -54,9 +54,9 @@ Each answers one bounded question rather than surveying the repository.
   failed on the reviewer's machine before any change.
 
 - [Visibility, SEO, and Traffic Evidence Audit](2026-10-08-visibility-seo-traffic-audit.md) —
-  2026-10-08; baseline `110f0307`. Finds a good technical discovery
-  foundation but no verified first-party search/visitor baseline. Confirms 2 stars,
-  3 forks, 0 subscribers; recommends activating #807 before SEO expansion.
+  2026-10-08; baseline `110f0307`. Finds a good technical discovery foundation
+  but no verified first-party search/visitor baseline. Confirms 2 stars,
+  3 forks, 0 subscribers at that date; recommends activating #807 first.
 
 - [SEO + AI-Visibility Audit](2026-09-20-seo-ai-visibility-audit.md) —
   2026-09-20; baseline `999bc26d`. Is `mskazemi.com/idkmesh/` visible to search

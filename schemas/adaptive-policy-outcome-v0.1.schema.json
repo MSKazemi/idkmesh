@@ -25,7 +25,7 @@
     "evaluator_version": {"const": "0.1"},
     "record_id": {
       "type": "string",
-      "pattern": "^adaptive-outcome-[a-f0-9]{12}-[a-f0-9]{12}$"
+      "pattern": "^adaptive-outcome-[a-f0-9]{12}-[a-f0-9]{12}$(?!\n)"
     },
     "plan_id": {"type": "string", "minLength": 1},
     "plan_digest": {"$ref": "#/$defs/digest"},
@@ -140,7 +140,7 @@
     }
   },
   "$defs": {
-    "sha": {"type": "string", "pattern": "^[a-f0-9]{40}$"},
-    "digest": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$"}
+    "sha": {"type": "string", "pattern": "^[a-f0-9]{40}$(?!\n)"},
+    "digest": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$(?!\n)"}
   }
 }

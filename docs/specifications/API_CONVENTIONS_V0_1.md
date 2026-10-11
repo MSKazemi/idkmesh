@@ -1,3 +1,6 @@
+---
+description: "Frozen v0.1 conventions for IDKMesh HTTP product APIs: error envelope, status mapping, idempotency, concurrency, pagination, and deprecation rules."
+---
 # IDKMesh API Conventions v0.1
 
 **Status:** Frozen v0.1  

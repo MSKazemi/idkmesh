@@ -1,3 +1,6 @@
+---
+description: "ProjectManifest and DomainPack v0.1 proposal: the interfaces that let IDKMesh core serve different domains and projects instead of one fixed application."
+---
 # ProjectManifest and DomainPack interfaces
 
 **Status:** v0.1 contract proposal  

@@ -169,7 +169,8 @@ today (not a target-state sketch):
 | control-tower  |  | idkmesh {...}  |  | Actions/hooks |  | HTTP    |
 | /api/v1, read  |  | connections,   |  | untrusted     |  | (not    |
 | -only + GET    |  | run, local-loop|  | until checked |  | built)  |
-| runs, GET runs/|  |                |  |               |  |         |
+| connections,   |  |                |  |               |  |         |
+| GET runs, GET  |  |                |  |               |  |         |
 | {id}, GET runs/|  |                |  |               |  |         |
 | {id}/attempts, |  |                |  |               |  |         |
 | GET runs/{id}/ |  |                |  |               |  |         |
@@ -423,43 +424,35 @@ This architecture is considered implemented only when:
    provider-specific knowledge;
 6. integration remains separately authorized.
 
-### Verified against current main -- 2026-09-27
+### Verified against current main -- 2026-10-08
 
-Not yet fully implemented; measured state per criterion, so a later pass can
-tell what actually changed rather than re-deriving all six from scratch:
+Still not product-complete by all six criteria, but the two API-3 architecture
+gaps recorded in the 2026-09-27 pass are now concrete and testable:
 
-1. **Partial.** `idkmesh/control_tower_api.py` emits the frozen conventions
-   (`idkmesh-api-error`, service headers) over real local HTTP endpoints. No
-   connector-control HTTP endpoint exists yet to compare against --
-   `docs/specifications/CONNECTOR_CONTROL_API_V0_1.md` remains an
-   unimplemented design contract (issue #580). Not measurable until a
-   connector HTTP endpoint ships.
-2. **Partial.** Domain contracts (WorkUnit, ResultManifest, VerificationResult,
-   Run Evidence Report, Human Decision Record) and the cross-cutting
-   envelopes (error, list, status, inspection, readiness -- issue #736/#737)
-   are schema-bound. The event envelope and a human-decision API
-   request/response wrapper are not (issue #737 remains open for both).
-3. **True for the CLI mutation path.** `idkmesh run create --idempotency-key`
-   persists to a SQLite `idempotency_key TEXT ... UNIQUE` constraint in
-   `idkmesh/connector_store.py`, so a duplicate key with a different request
-   digest fails closed rather than double-creating a run. No HTTP mutation
-   endpoint exists yet to verify the same at the transport layer.
-4. **Partial.** Product Spine run/connection state persists in a restart-safe
-   local SQLite store (`idkmesh/connector_store.py`). The canonical event
-   service (#741) referenced by the ownership map above does not exist yet,
-   so "events are restart-safe" is not yet measurable.
-5. **True for one bounded case, via the CLI.** `idkmesh local-loop <config>`
-   (issue #883/ROADMAP S4 R1) runs WorkUnit -> two isolated attempts ->
-   independent verification -> evidence report end to end without the
-   caller naming a worker/provider. Recording a human decision and replay
-   are still separate, deliberately manual commands, not part of this
-   client path. Not yet exposed over HTTP.
-6. **True.** No code path in `idkmesh/control_tower_api.py`,
-   `idkmesh/local_loop.py`, or the Product Spine CLI grants merge/push
-   authority; `idkmesh local-loop` explicitly prints next steps
-   (`record_human_decision.py`, `replay_run.py`) rather than executing them.
+1. **True for the read boundary.** Control Tower and connector-control reads
+   now share one `/api/v1` transport, API conventions, local session-token
+   boundary, error/list envelopes, request limits, and the same
+   `LocalMetadataStore` records used by the CLI. `GET /api/v1/connections`
+   adds no provider-specific behavior or mutation authority.
+2. **True for currently exposed public objects.** Domain and cross-cutting
+   objects, including the durable event envelope, human-decision request/
+   response contracts, and the public-safe connector resource, are schema-bound.
+3. **True for the existing CLI mutation path; HTTP mutation remains gated.**
+   Run creation is durable/idempotent; this slice introduces no connector
+   mutation merely to prove architecture convergence.
+4. **True for the implemented local profile.** Product Spine run/connection
+   state and the canonical append-only event source are restart-safe in the
+   same versioned SQLite store. `GET /api/v1/events` and resumable SSE read
+   that durable source (ADR-0023).
+5. **Partial.** The provider-neutral WorkUnit -> run -> evidence path is
+   inspectable without provider-specific knowledge, but accountable human-
+   decision HTTP recording remains owned by API-5 (#740) and its identity/
+   policy gate. A local UI session token is not promoted into a human principal.
+6. **True.** Transport and inspection paths grant no merge/push authority;
+   human decision and repository integration remain separately authorized.
 
-Net: this architecture is grounded and consistently followed where it has
-been implemented, but is not yet complete by its own six-criterion bar --
-criteria 1 and 4 are blocked on work (a connector HTTP endpoint, the event
-service) that does not exist yet, not on a design disagreement.
+Net: API-3's single-service architecture is now exercised by both Product
+Spine and connector-control HTTP reads, and durable events exist. The broader
+API program remains intentionally incomplete at criterion 5 until API-5 lands;
+that authority-sensitive mutation is not a reason to create a second HTTP
+universe.

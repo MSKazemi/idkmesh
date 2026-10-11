@@ -368,15 +368,15 @@ That boundary should remain visible in README, website, releases, papers, and ex
 
 Repository sources:
 
-- [README.md](../../README.md)
-- [RESEARCH_QUESTIONS.md](../../RESEARCH_QUESTIONS.md)
+- [README.md](https://github.com/MSKazemi/idkmesh/blob/main/README.md)
+- [RESEARCH_QUESTIONS.md](https://github.com/MSKazemi/idkmesh/blob/main/RESEARCH_QUESTIONS.md)
 - [FIELD_DEFINING_QUESTIONS.md](../foundations/FIELD_DEFINING_QUESTIONS.md)
 - [GOALS.md](../foundations/GOALS.md)
 - [WHAT_IS_IDKMESH.md](../WHAT_IS_IDKMESH.md)
 - [PRODUCT_DIFFERENTIATION_AND_KILLER_POINT.md](../product/PRODUCT_DIFFERENTIATION_AND_KILLER_POINT.md)
 - [END_TO_END_PRODUCT_SPINE_PLAN_2026-09-22.md](../planning/END_TO_END_PRODUCT_SPINE_PLAN_2026-09-22.md)
-- [pyproject.toml](../../pyproject.toml)
-- [idkmesh/cli.py](../../idkmesh/cli.py)
+- [pyproject.toml](https://github.com/MSKazemi/idkmesh/blob/main/pyproject.toml)
+- [idkmesh/cli.py](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/cli.py)
 
 Open engineering gates considered:
 

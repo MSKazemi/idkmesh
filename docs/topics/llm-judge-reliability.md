@@ -1,6 +1,6 @@
 ---
-title: "LLM-as-a-Judge Reliability and Evaluator Bias — IDKMesh"
-description: "LLM-as-a-judge reliability with measured failure evidence: calibration, discrimination, bias, correlated errors, panel independence, and authority boundaries."
+title: "LLM-as-a-Judge Reliability and Evaluator Bias"
+description: "LLM-as-a-judge reliability with measured failure evidence: calibration, discrimination, bias, correlated errors, panel independence, and authority."
 image: "/assets/idkmesh-social.png"
 ---
 

@@ -1,3 +1,6 @@
+---
+description: "Enterprise Audit Ledger v0.1: a compact evidence stream of identities, authorization decisions, resource revisions, and outcomes of privileged operations."
+---
 # Enterprise Audit Ledger v0.1
 
 **Status:** experimental  

@@ -4,8 +4,8 @@ theme: jekyll-theme-primer
 
 title: IDKMesh
 description: >-
-  Open-source framework for AI agent verification, multi-agent orchestration,
-  independent review, provenance, and evidence-first agentic software engineering.
+  Open-source toolkit for AI agent verification: measure your review panel's
+  effective independent votes and audit review gates for correlated errors.
 url: "https://mskazemi.com"
 baseurl: "/idkmesh"
 repository: MSKazemi/idkmesh

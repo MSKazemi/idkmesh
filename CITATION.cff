@@ -1,7 +1,5 @@
 cff-version: 1.2.0
-title: >-
-  IDKMesh: verified swarm engineering for humans, AI agents, and
-  heterogeneous compute
+title: 'IDKMesh: AI agent verification and review-gate auditing'
 message: >-
   If you use IDKMesh, or build on its Work Unit, ResultManifest, EvaluatorPlan,
   or VerificationResult contracts, please cite it using these metadata.
@@ -14,7 +12,11 @@ authors:
 repository-code: https://github.com/MSKazemi/idkmesh
 url: https://mskazemi.com/idkmesh/
 abstract: >-
-  IDKMesh is an open-source research laboratory studying whether a large open
+  Open-source toolkit for AI agent verification: measure how many independent
+  votes your review panel (LLM judges, CI checks, human reviewers) is really
+  worth, audit review gates for correlated errors, and keep reproducible
+  evidence for every accept/reject. IDKMesh is also an open-source research
+  laboratory studying whether a large open
   community of humans and AI agents can discover goals, decompose work, execute
   bounded tasks, verify results independently, and maintain complex systems
   better than isolated developers or agents can. It provides versioned task and
@@ -32,5 +34,4 @@ keywords:
   - distributed systems
   - reproducible research
 license: Apache-2.0
-version: research-preview-2026-08-29
-date-released: '2026-08-29'
+version: 0.1.0

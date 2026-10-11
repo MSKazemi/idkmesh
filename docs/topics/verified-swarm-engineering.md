@@ -1,6 +1,6 @@
 ---
-title: "Verified Swarm and Agentic Software Engineering — IDKMesh"
-description: "Verified swarm engineering combines collaborative AI agents with bounded work, heterogeneous routing, independent verification, provenance, and protected Git-based integration."
+title: "Verified Swarm and Agentic Software Engineering"
+description: "Verified swarm engineering: collaborative AI agents with bounded work, heterogeneous routing, independent verification, provenance, and Git integration."
 image: "/assets/idkmesh-social.png"
 ---
 
@@ -62,7 +62,7 @@ It is an engineering stance that plans verification capacity, evidence, and auth
 <a id="q-how-do-i-try-idkmesh"></a>
 ### How do I try IDKMesh?
 
-Use the [15-minute quickstart](https://mskazemi.com/idkmesh/start.html), read [What Is IDKMesh?](https://github.com/MSKazemi/idkmesh/blob/main/docs/WHAT_IS_IDKMESH.md), or inspect the [repository README](https://github.com/MSKazemi/idkmesh/blob/main/README.md).
+Use the [15-minute quickstart](https://mskazemi.com/idkmesh/start.html), read [What Is IDKMesh?](https://mskazemi.com/idkmesh/WHAT_IS_IDKMESH.html), or inspect the [repository README](https://github.com/MSKazemi/idkmesh/blob/main/README.md).
 
 <a id="q-how-is-verified-swarm-engineering-different-from-ordinary-multi-agent-orchestration"></a>
 ### How is verified swarm engineering different from ordinary multi-agent orchestration?

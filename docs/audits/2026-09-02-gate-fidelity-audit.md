@@ -51,7 +51,7 @@ normally still valid JSON, so `python -m json.tool` accepts it too.
 The consequence is quiet rather than loud. `jsonschema` may accept an unknown
 keyword and silently constrain nothing, so the first symptom is an instance
 passing a check that stopped checking — which matters here because
-[`../../schemas/`](../../schemas/) is the machine-readable protocol truth the
+[`../../schemas/`](https://github.com/MSKazemi/idkmesh/tree/main/schemas) is the machine-readable protocol truth the
 verification claims rest on.
 
 **All 32 schemas were valid at this revision.** The finding is missing coverage,
@@ -60,7 +60,7 @@ not a broken contract.
 ## What changed
 
 `tests/test_schema_validity.py` meta-validates every schema in
-[`../../schemas/`](../../schemas/), judging each by the dialect its own `$schema`
+[`../../schemas/`](https://github.com/MSKazemi/idkmesh/tree/main/schemas), judging each by the dialect its own `$schema`
 declares. It is itself mutation-tested against an invalid schema and invalid
 JSON.
 

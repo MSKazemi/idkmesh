@@ -2,7 +2,7 @@
 
 **Status:** current rendered view of pipelines that are already specified in
 prose elsewhere. This document adds no new contract. Where a diagram and a
-schema disagree, the schema in [`../../schemas/`](../../schemas/README.md) is
+schema disagree, the schema in [`../../schemas/`](https://github.com/MSKazemi/idkmesh/blob/main/schemas/README.md) is
 authoritative.
 
 Every flow below was read off the executable code named in its "Source" line,
@@ -19,7 +19,7 @@ asked for reduced motion sees the same diagram with the moving layers hidden.
 ## 1. Canonical work and evidence path
 
 This is the semantic boundary described in
-[`../../ARCHITECTURE.md`](../../ARCHITECTURE.md) §2. The critical property is
+[`../../ARCHITECTURE.md`](https://github.com/MSKazemi/idkmesh/blob/main/ARCHITECTURE.md) §2. The critical property is
 that authority is *not* transferred along the arrows: each stage produces
 evidence for the next, and only the final stage integrates.
 
@@ -211,9 +211,9 @@ are seeded there deliberately, so excluding them is what lets the gate assert
 
 ## Related documents
 
-- [`../../ARCHITECTURE.md`](../../ARCHITECTURE.md) — the prose architecture map
+- [`../../ARCHITECTURE.md`](https://github.com/MSKazemi/idkmesh/blob/main/ARCHITECTURE.md) — the prose architecture map
   these diagrams render.
-- [`../../ITERATION_MODEL.md`](../../ITERATION_MODEL.md) — canonical event,
+- [`../../ITERATION_MODEL.md`](https://github.com/MSKazemi/idkmesh/blob/main/ITERATION_MODEL.md) — canonical event,
   action, iteration, and authority vocabulary.
-- [`../../schemas/README.md`](../../schemas/README.md) — the machine-readable
+- [`../../schemas/README.md`](https://github.com/MSKazemi/idkmesh/blob/main/schemas/README.md) — the machine-readable
   contracts that remain authoritative.

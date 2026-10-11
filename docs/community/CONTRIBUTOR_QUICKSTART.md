@@ -41,7 +41,7 @@ This is a larger evidence/review task rather than a coding task.
 
 ## Before you start
 
-1. Read [CONTRIBUTING.md](../../CONTRIBUTING.md).
+1. Read [CONTRIBUTING.md](https://github.com/MSKazemi/idkmesh/blob/main/CONTRIBUTING.md).
 2. Open the issue and check assignees, comments, and linked pull requests.
 3. Comment with the bounded piece you intend to do.
 4. Keep the first pull request small.

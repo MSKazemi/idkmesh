@@ -1,3 +1,6 @@
+---
+description: "Held-out benchmark for verifier selection: freeze a choice on one design corpus, then compare it with four simpler selectors on a disjoint holdout corpus."
+---
 # Marginal Evidence Held-Out Benchmark v0.1
 
 **Status:** experimental, versioned diagnostic benchmark.  

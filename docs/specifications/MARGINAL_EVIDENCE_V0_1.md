@@ -1,3 +1,6 @@
+---
+description: "idkmesh gate-marginal: what changes when one more verifier joins a ground-truthed panel under the same gate rule. An add-one, diagnostic-only analysis."
+---
 # Marginal Evidence Analysis v0.1
 
 **Status:** experimental, versioned diagnostic contract.  

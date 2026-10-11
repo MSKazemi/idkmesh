@@ -12,7 +12,7 @@ import argparse
 import json
 import math
 import random
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from typing import Dict, Iterable, List, Mapping, Sequence, Tuple
 
 import physarum_compute_routing_sim as base
@@ -58,6 +58,77 @@ STRATEGIES = (
     "multipath-failover",
     "physarum",
 )
+
+
+@dataclass(frozen=True)
+class Topology:
+    """A deterministic view of the already-admitted synthetic graph."""
+
+    name: str
+    edge_keys: Tuple[Tuple[str, str], ...]
+
+
+TOPOLOGIES: Tuple[Topology, ...] = (
+    Topology(
+        "sparse",
+        tuple(
+            sorted(
+                (
+                    base.key("coordinator", "a"),
+                    base.key("a", "worker"),
+                    base.key("coordinator", "b"),
+                    base.key("b", "worker"),
+                    base.key("coordinator", "c"),
+                    base.key("c", "worker"),
+                )
+            )
+        ),
+    ),
+    Topology(
+        "dense",
+        tuple(
+            sorted(
+                base.key(edge.a, edge.b)
+                for edge in base.EDGES
+            )
+        ),
+    ),
+)
+
+
+PARAMETER_SWEEP: Tuple[Tuple[str, Mapping[str, float]], ...] = (
+    ("baseline", {}),
+    ("conductance-floor-low", {"d_min": 0.02}),
+    ("conductance-floor-high", {"d_min": 0.20}),
+    ("evaporation-low", {"evaporation": 0.04}),
+    ("evaporation-high", {"evaporation": 0.20}),
+    ("exploration-low", {"exploration": 0.01}),
+    ("exploration-high", {"exploration": 0.15}),
+)
+
+
+def topology_by_name(name: str) -> Topology:
+    for topology in TOPOLOGIES:
+        if topology.name == name:
+            return topology
+    raise ValueError(f"unknown topology: {name}")
+
+
+def topology_paths(
+    topology: Topology,
+    max_hops: int,
+) -> Tuple[Tuple[str, ...], ...]:
+    allowed = set(topology.edge_keys)
+    paths = tuple(
+        path
+        for path in base.enumerate_paths(max_hops=max_hops)
+        if set(base.path_edges(path)).issubset(allowed)
+    )
+    if len(paths) < 2:
+        raise ValueError(
+            f"topology {topology.name!r} does not provide failover paths"
+        )
+    return paths
 
 
 def environment_by_name(name: str) -> Environment:
@@ -342,6 +413,7 @@ def run_strategy(
     epochs: int = 80,
     tasks_per_epoch: int = 20,
     config: base.Config | None = None,
+    topology: Topology | None = None,
 ) -> Dict[str, object]:
     if strategy not in STRATEGIES:
         raise ValueError(f"unknown strategy: {strategy}")
@@ -349,19 +421,20 @@ def run_strategy(
         raise ValueError("epochs and tasks_per_epoch must be positive")
 
     config = config or base.Config()
+    topology = topology or topology_by_name("dense")
     rng = random.Random(seed)
-    paths = base.enumerate_paths(max_hops=config.max_hops)
+    paths = topology_paths(topology, max_hops=config.max_hops)
     shortest = min(
         paths,
         key=lambda path: (path_burden(path, environment), path),
     )
     conductance = {
-        base.key(edge.a, edge.b): 1.0
-        for edge in base.EDGES
+        edge_key: 1.0
+        for edge_key in topology.edge_keys
     }
     edge_posteriors: Dict[Tuple[str, str], List[float]] = {
-        base.key(edge.a, edge.b): [8.0, 2.0]
-        for edge in base.EDGES
+        edge_key: [8.0, 2.0]
+        for edge_key in topology.edge_keys
     }
     path_posteriors: Dict[str, List[float]] = {
         ">".join(path): [4.0, 1.0]
@@ -486,6 +559,7 @@ def run_strategy(
     return {
         "strategy": strategy,
         "environment": environment.name,
+        "topology": topology.name,
         "attempts": attempts,
         "route_attempts": route_attempts,
         "retry_rate": round(retries / attempts if attempts else 0.0, 6),
@@ -533,6 +607,8 @@ def compare(
     tasks_per_epoch: int = 20,
     environment_names: Sequence[str] | None = None,
     strategy_names: Sequence[str] | None = None,
+    topology_name: str = "dense",
+    config: base.Config | None = None,
 ) -> Dict[str, object]:
     if seeds <= 0:
         raise ValueError("seeds must be positive")
@@ -542,6 +618,8 @@ def compare(
         else list(ENVIRONMENTS)
     )
     strategies = list(strategy_names) if strategy_names else list(STRATEGIES)
+    topology = topology_by_name(topology_name)
+    config = config or base.Config()
     summary: Dict[str, Dict[str, Dict[str, float]]] = {}
 
     for environment in environments:
@@ -554,6 +632,8 @@ def compare(
                     seed=seed_start + offset,
                     epochs=epochs,
                     tasks_per_epoch=tasks_per_epoch,
+                    config=config,
+                    topology=topology,
                 )
                 for offset in range(seeds)
             ]
@@ -574,9 +654,101 @@ def compare(
         "seeds": seeds,
         "epochs": epochs,
         "tasks_per_epoch": tasks_per_epoch,
+        "topology": topology.name,
         "environments": [asdict(environment) for environment in environments],
         "strategies": strategies,
         "summary": summary,
+    }
+
+
+def compare_topologies(
+    seed_start: int = 1,
+    seeds: int = 20,
+    epochs: int = 80,
+    tasks_per_epoch: int = 20,
+    environment_names: Sequence[str] | None = None,
+    strategy_names: Sequence[str] | None = None,
+) -> Dict[str, object]:
+    return {
+        "experiment": "physarum-adaptive-compute-routing-topology-sweep-v0",
+        "model_warning": (
+            "Synthetic admitted-network topology sweep; not empirical evidence."
+        ),
+        "seed_start": seed_start,
+        "seeds": seeds,
+        "epochs": epochs,
+        "tasks_per_epoch": tasks_per_epoch,
+        "topologies": {
+            topology.name: compare(
+                seed_start=seed_start,
+                seeds=seeds,
+                epochs=epochs,
+                tasks_per_epoch=tasks_per_epoch,
+                environment_names=environment_names,
+                strategy_names=strategy_names,
+                topology_name=topology.name,
+            )["summary"]
+            for topology in TOPOLOGIES
+        },
+    }
+
+
+def parameter_sweep(
+    seed_start: int = 1,
+    seeds: int = 20,
+    epochs: int = 80,
+    tasks_per_epoch: int = 20,
+    environment_name: str = "abrupt-shift",
+    topology_name: str = "dense",
+) -> Dict[str, object]:
+    if seeds <= 0:
+        raise ValueError("seeds must be positive")
+    if epochs <= 0 or tasks_per_epoch <= 0:
+        raise ValueError("epochs and tasks_per_epoch must be positive")
+
+    environment = environment_by_name(environment_name)
+    topology = topology_by_name(topology_name)
+    baseline = base.Config()
+    rows: Dict[str, Dict[str, object]] = {}
+
+    for name, changes in PARAMETER_SWEEP:
+        config = replace(baseline, **changes)
+        samples = [
+            run_strategy(
+                "physarum",
+                environment,
+                seed=seed_start + offset,
+                epochs=epochs,
+                tasks_per_epoch=tasks_per_epoch,
+                config=config,
+                topology=topology,
+            )
+            for offset in range(seeds)
+        ]
+        rows[name] = {
+            "config": asdict(config),
+            "summary": {
+                metric: round(
+                    sum(float(sample[metric]) for sample in samples)
+                    / len(samples),
+                    9,
+                )
+                for metric in SUMMARY_METRICS
+            },
+        }
+
+    return {
+        "experiment": "physarum-adaptive-compute-routing-parameter-sweep-v0",
+        "model_warning": (
+            "Synthetic admitted-network parameter sweep; not empirical evidence."
+        ),
+        "seed_start": seed_start,
+        "seeds": seeds,
+        "epochs": epochs,
+        "tasks_per_epoch": tasks_per_epoch,
+        "environment": environment.name,
+        "topology": topology.name,
+        "parameters": rows,
     }
 
 
@@ -596,20 +768,61 @@ def main(argv: Sequence[str] | None = None) -> int:
         action="append",
         choices=STRATEGIES,
     )
+    parser.add_argument(
+        "--topology",
+        choices=("all",) + tuple(topology.name for topology in TOPOLOGIES),
+        default="dense",
+    )
+    parser.add_argument(
+        "--parameter-sweep",
+        action="store_true",
+        help=(
+            "run the bounded Physarum d_min/evaporation/exploration sweep "
+            "for one environment"
+        ),
+    )
     parser.add_argument("--indent", type=int, default=2)
     args = parser.parse_args(argv)
 
     if min(args.seeds, args.epochs, args.tasks_per_epoch) <= 0:
         parser.error("seeds, epochs, and tasks-per-epoch must be positive")
 
-    payload = compare(
-        seed_start=args.seed_start,
-        seeds=args.seeds,
-        epochs=args.epochs,
-        tasks_per_epoch=args.tasks_per_epoch,
-        environment_names=args.environment,
-        strategy_names=args.strategy,
-    )
+    if args.parameter_sweep:
+        if args.topology == "all":
+            parser.error("--parameter-sweep requires one topology")
+        if args.strategy:
+            parser.error("--parameter-sweep does not accept --strategy")
+        if args.environment and len(args.environment) != 1:
+            parser.error("--parameter-sweep requires exactly one environment")
+        payload = parameter_sweep(
+            seed_start=args.seed_start,
+            seeds=args.seeds,
+            epochs=args.epochs,
+            tasks_per_epoch=args.tasks_per_epoch,
+            environment_name=(
+                args.environment[0] if args.environment else "abrupt-shift"
+            ),
+            topology_name=args.topology,
+        )
+    elif args.topology == "all":
+        payload = compare_topologies(
+            seed_start=args.seed_start,
+            seeds=args.seeds,
+            epochs=args.epochs,
+            tasks_per_epoch=args.tasks_per_epoch,
+            environment_names=args.environment,
+            strategy_names=args.strategy,
+        )
+    else:
+        payload = compare(
+            seed_start=args.seed_start,
+            seeds=args.seeds,
+            epochs=args.epochs,
+            tasks_per_epoch=args.tasks_per_epoch,
+            environment_names=args.environment,
+            strategy_names=args.strategy,
+            topology_name=args.topology,
+        )
     print(json.dumps(payload, indent=args.indent, sort_keys=True))
     return 0
 

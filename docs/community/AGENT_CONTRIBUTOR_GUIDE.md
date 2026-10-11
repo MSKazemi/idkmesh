@@ -3,8 +3,8 @@
 You can contribute to IDKMesh with Claude Code, OpenAI Codex, Google Jules, or any
 other coding agent you are authorized to use. This guide gets you from zero to a
 reviewable pull request in about ten minutes of setup. It adds nothing to the
-project's rules: [`AGENTS.md`](../../AGENTS.md) and
-[`CONTRIBUTING.md`](../../CONTRIBUTING.md) stay the source of truth, and this page
+project's rules: [`AGENTS.md`](https://github.com/MSKazemi/idkmesh/blob/main/AGENTS.md) and
+[`CONTRIBUTING.md`](https://github.com/MSKazemi/idkmesh/blob/main/CONTRIBUTING.md) stay the source of truth, and this page
 only shows how to point your agent at them.
 
 Your agent works for you. You are the contributor, so you are accountable for
@@ -35,7 +35,7 @@ make setup     # creates .venv and installs test dependencies
 make smoke     # runs only the tests affected by your uncommitted changes
 ```
 
-On Windows, use the direct path in [`CONTRIBUTING.md`](../../CONTRIBUTING.md)
+On Windows, use the direct path in [`CONTRIBUTING.md`](https://github.com/MSKazemi/idkmesh/blob/main/CONTRIBUTING.md)
 (`python -m venv .venv`, then `.venv\Scripts\python.exe -m pip install -r
 requirements-phase0.txt pytest`).
 
@@ -87,7 +87,7 @@ the module-level pytest functions and still reports `OK`.
 ## 3. The safe loop
 
 1. Refresh from `upstream/main` and note the exact base commit.
-2. Give your agent the task, [`AGENTS.md`](../../AGENTS.md), and the prompts below.
+2. Give your agent the task, [`AGENTS.md`](https://github.com/MSKazemi/idkmesh/blob/main/AGENTS.md), and the prompts below.
 3. Keep the change small and focused: one reviewable outcome per pull request.
 4. Add or update a test that would have failed before your change.
 5. Update the documentation in the same pull request, including any `--help` text,
@@ -113,14 +113,14 @@ vouched for it.
 Put issue numbers on the `Refs:` line. Use `Closes: #<issue>` only when merging
 should actually close it, with nothing else on that line. GitHub closes issues
 from closing keywords in titles, bodies and commit messages, and the PR Gate
-check enforces this rule (see [`CONTRIBUTING.md`](../../CONTRIBUTING.md)).
+check enforces this rule (see [`CONTRIBUTING.md`](https://github.com/MSKazemi/idkmesh/blob/main/CONTRIBUTING.md)).
 
 ### Several files from one agent
 
 Avoid publishing one commit per file edit. Each new pull-request head can restart
 CI and invalidate review evidence. Let your agent finish a coherent change locally
 and push it once. See "Agent publication backpressure" in
-[`AGENTS.md`](../../AGENTS.md).
+[`AGENTS.md`](https://github.com/MSKazemi/idkmesh/blob/main/AGENTS.md).
 
 ## 4. Quick starts
 
@@ -140,7 +140,7 @@ section, and state plainly what was generated and what is not verified.
 
 ### Claude Code
 
-Claude Code reads [`AGENTS.md`](../../AGENTS.md) on its own when it finds no
+Claude Code reads [`AGENTS.md`](https://github.com/MSKazemi/idkmesh/blob/main/AGENTS.md) on its own when it finds no
 `CLAUDE.md` in your working directory or above it (Anthropic documents this for
 v2.1.277 and later). You normally need to do nothing. If you keep a personal
 `CLAUDE.md` or `CLAUDE.local.md`, Claude reads that instead and skips `AGENTS.md`,
@@ -234,11 +234,11 @@ yours does: it is not independent human review.
 - Maintainers may ask for changes, push small fixes on top, or reshape the change
   to fit the architecture; they will say what they changed and keep your commits
   and credit. Turnaround is not guaranteed, because this is a volunteer project.
-- Contributions that land are recorded in [`CONTRIBUTORS.md`](../../CONTRIBUTORS.md),
+- Contributions that land are recorded in [`CONTRIBUTORS.md`](https://github.com/MSKazemi/idkmesh/blob/main/CONTRIBUTORS.md),
   which describes how entries are added. If you would rather not be listed, say so
   in the pull request.
 - Questions or confusion are welcome as issues. Honest reports of where setup
   broke are useful project evidence.
 
-Conduct: [`CODE_OF_CONDUCT.md`](../../CODE_OF_CONDUCT.md). Security issues: follow
-[`SECURITY.md`](../../SECURITY.md) and do not open a public issue.
+Conduct: [`CODE_OF_CONDUCT.md`](https://github.com/MSKazemi/idkmesh/blob/main/CODE_OF_CONDUCT.md). Security issues: follow
+[`SECURITY.md`](https://github.com/MSKazemi/idkmesh/blob/main/SECURITY.md) and do not open a public issue.

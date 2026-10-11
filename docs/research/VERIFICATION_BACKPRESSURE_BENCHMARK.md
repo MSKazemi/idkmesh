@@ -162,7 +162,7 @@ This demonstrates the other side of the negative-feedback controller: it can inc
 ## Next evidence step
 
 The seven-mode synthetic comparison requested by issue #14 is now implemented
-in [`E022-verification-scaling-matrix.md`](../../experiments/E022-verification-scaling-matrix.md).
+in [`E022-verification-scaling-matrix.md`](https://github.com/MSKazemi/idkmesh/blob/main/experiments/E022-verification-scaling-matrix.md).
 It adds the no-verification, one-reviewer, fixed-quorum, independent-test, and
 test-plus-adversarial-review conditions while retaining fixed and adaptive RWVB.
 Its findings remain synthetic, so the real-evidence step below is unchanged.

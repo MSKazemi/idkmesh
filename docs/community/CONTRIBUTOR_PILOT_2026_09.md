@@ -2,7 +2,7 @@
 
 Date: 2026-09-09. This is a bounded operating pilot under the existing
 [community strategy](COMMUNITY_GROWTH_STRATEGY.md),
-[project rules](../../PROJECT_RULES.md), and [governance](../../GOVERNANCE.md).
+[project rules](https://github.com/MSKazemi/idkmesh/blob/main/PROJECT_RULES.md), and [governance](https://github.com/MSKazemi/idkmesh/blob/main/GOVERNANCE.md).
 It grants no new integration, spending, or administrative authority.
 
 ## Join
@@ -25,7 +25,7 @@ Check issue state, recent comments, assignees, and linked PRs before working.
 Comment on the task with your intended scope. Do not duplicate an active attempt.
 Issue 403 deliberately welcomes multiple independent people.
 
-Use [the current setup/test instructions](../../CONTRIBUTING.md). A command
+Use [the current setup/test instructions](https://github.com/MSKazemi/idkmesh/blob/main/CONTRIBUTING.md). A command
 mentioned in an old branch is not proof that it exists on current `main`.
 
 ## Bring your own agent

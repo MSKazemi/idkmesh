@@ -393,6 +393,45 @@ class LocalMetadataStore:
             ).fetchall()
         return [_load_metadata(row["metadata_json"]) for row in rows]
 
+    def list_connections_page(
+        self,
+        *,
+        limit: int = DEFAULT_LIST_LIMIT,
+        after: str | None = None,
+    ) -> tuple[list[tuple[str, Mapping[str, Any]]], bool]:
+        """Return one bounded page ordered by persisted connection id.
+
+        The database identity is returned with each decoded metadata object
+        so an API projection can reject legacy/free-form rows whose public
+        id disagrees with the key under which the row was persisted.
+        """
+        if (
+            not isinstance(limit, int)
+            or isinstance(limit, bool)
+            or not (1 <= limit <= MAX_LIST_LIMIT)
+        ):
+            raise ValueError(
+                f"limit must be an integer between 1 and {MAX_LIST_LIMIT}"
+            )
+        if after is not None:
+            self._require_text(after, "after")
+
+        sql = "SELECT connection_id, metadata_json FROM connections "
+        params: list[Any] = []
+        if after is not None:
+            sql += "WHERE connection_id > ? "
+            params.append(after)
+        sql += "ORDER BY connection_id ASC LIMIT ?"
+        params.append(limit + 1)
+        with _session(self.path) as conn:
+            rows = conn.execute(sql, tuple(params)).fetchall()
+
+        has_more = len(rows) > limit
+        return [
+            (row["connection_id"], _load_metadata(row["metadata_json"]))
+            for row in rows[:limit]
+        ], has_more
+
     def record_probe(
         self,
         connection_id: str,
@@ -1084,6 +1123,39 @@ class LocalMetadataStore:
         """The stable id of the event at ``sequence`` (unique in the stream)."""
         return f"evt-{sequence:012d}"
 
+    @staticmethod
+    def _verify_event_integrity(
+        sequence: int, envelope: Mapping[str, Any], row: sqlite3.Row
+    ) -> None:
+        """Fail closed on a stored event that no longer matches its digest.
+
+        The append-only triggers stop the application from rewriting an event,
+        but they are not a defence against a damaged or hand-edited database
+        file. ``payload_digest`` is written with every event, so recompute it,
+        and check that the indexed columns the filters match on still agree
+        with the envelope that is served (a mismatch would let an event be
+        found under one run and served as another).
+        """
+        payload = envelope.get("payload")
+        try:
+            expected = canonical_digest(payload)
+        except (TypeError, ValueError) as exc:
+            raise LocalStoreError(
+                f"stored event {sequence} payload is not canonical JSON: {exc}"
+            ) from exc
+        if envelope.get("payload_digest") != expected:
+            raise LocalStoreError(
+                f"stored event {sequence} payload does not match its payload_digest"
+            )
+        for column in (
+            "occurred_at", "event_type", "project_id", "work_unit_id",
+            "run_id", "attempt_id",
+        ):
+            if row[column] != envelope.get(column):
+                raise LocalStoreError(
+                    f"stored event {sequence} {column} differs from its envelope"
+                )
+
     @classmethod
     def _event_from_row(cls, row: sqlite3.Row) -> dict[str, Any]:
         try:
@@ -1093,6 +1165,7 @@ class LocalMetadataStore:
         if not isinstance(envelope, dict):
             raise LocalStoreError("stored event is not an object")
         sequence = int(row["sequence"])
+        cls._verify_event_integrity(sequence, envelope, row)
         return {
             "schema_version": EVENT_SCHEMA_VERSION,
             "kind": EVENT_KIND,
@@ -1155,7 +1228,8 @@ class LocalMetadataStore:
         with _session(self.path) as conn:
             rows = conn.execute(
                 f"""
-                SELECT sequence, envelope_json
+                SELECT sequence, occurred_at, event_type, project_id,
+                       work_unit_id, run_id, attempt_id, envelope_json
                 FROM events
                 WHERE {' AND '.join(clauses)}
                 ORDER BY sequence ASC

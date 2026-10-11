@@ -20,6 +20,7 @@ from __future__ import annotations
 import re
 import unittest
 from pathlib import Path
+from urllib.parse import urlsplit
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -58,11 +59,17 @@ def _linked_inside(index: Path, directory: Path) -> list[Path]:
     """Index link targets that resolve inside the indexed directory.
 
     Links pointing outside the directory are legitimate cross-references and are
-    deliberately ignored; only intra-directory coverage is asserted here.
+    deliberately ignored; only intra-directory coverage is asserted here. An
+    absolute URL is never a path: resolving ``https://github.com/.../X.md``
+    against the index directory would place it *inside* the directory and report
+    a missing document. Docs link to repository files outside the Pages site that
+    way (see ``tests/test_docs_links_stay_in_site.py``).
     """
     text = index.read_text(encoding="utf-8")
     inside = []
     for target in MARKDOWN_LINK.findall(text):
+        if urlsplit(target).scheme or target.startswith("//"):
+            continue
         resolved = (index.parent / target).resolve()
         if resolved.is_relative_to(directory.resolve()):
             inside.append(resolved)

@@ -107,7 +107,7 @@ Two remain flagged, and both are genuinely unexercised: `tools/open_model_benchm
 `tools/open_model_text_generator.py`.
 
 > **Both have since left the list, by the intended route.**
-> [E029](../../experiments/E029-first-real-model-attempts.md) ran the probe for
+> [E029](https://github.com/MSKazemi/idkmesh/blob/main/experiments/E029-first-real-model-attempts.md) ran the probe for
 > 60 sandboxed attempts and committed the per-attempt evidence, and the
 > generator is the in-container entry point every one of those attempts went
 > through. Clearing them required one change to the check itself: an experiment

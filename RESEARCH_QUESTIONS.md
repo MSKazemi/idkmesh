@@ -1,6 +1,15 @@
 # IDKMesh Research Questions
 
-This document captures open questions that should drive experiments, prototypes, literature review, and architecture decisions.
+> **This is the long-horizon idea backlog, not the list of current targets.** The
+> project's current scientific target is one question, *when does adding another AI
+> agent — as worker or verifier — increase independently verified useful work, and
+> can that be predicted from a small pilot?* That question, its falsifiable
+> hypotheses, the experiments still to run and the algorithms they must deliver are
+> in [`docs/research/SCIENTIFIC_PROGRAM.md`](docs/research/SCIENTIFIC_PROGRAM.md). A
+> question below becomes a target only when that document names it, gives it a
+> falsifier, and links an issue.
+
+This document captures open questions that could drive experiments, prototypes, literature review, and architecture decisions.
 
 ## Collective coding and quality
 

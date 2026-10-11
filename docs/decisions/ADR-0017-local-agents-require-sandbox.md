@@ -1,3 +1,7 @@
+---
+title: "ADR-0017: Local Coding Agents Require a Sandbox"
+description: "Accepted ADR: a local coding-agent preset runs only through a LocalSandboxExecutor meeting every enforcement bit; there is no raw host-process fallback."
+---
 # ADR-0017 — Local Coding Agents Require an Enforced Sandbox Boundary
 
 **Status:** Accepted for C4 implementation  

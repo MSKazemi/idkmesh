@@ -1,3 +1,6 @@
+---
+description: "Authenticated ingress for GitHub-triggered IDKMesh coordination: webhook signature checks, event allowlists, exact repository binding, and payload digests."
+---
 # GitHub Webhook Ingress v0.1
 
 Status: experimental contract

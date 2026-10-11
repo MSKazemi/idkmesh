@@ -54,9 +54,9 @@ quality comparison. Actual final test/gate/CI results are in the pull requests.
 
 ## Decisions, artifacts and remaining gates
 
-- [Preflight module](../../idkmesh/coordination_preflight.py),
-  [tests](../../tests/test_coordination_preflight.py),
-  [demo](../../examples/coordination/preflight_demo.py) and
+- [Preflight module](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/coordination_preflight.py),
+  [tests](https://github.com/MSKazemi/idkmesh/blob/main/tests/test_coordination_preflight.py),
+  [demo](https://github.com/MSKazemi/idkmesh/blob/main/examples/coordination/preflight_demo.py) and
   [specification](../specifications/COORDINATION_PREFLIGHT_V0_1.md).
 - Both local slices now make the recommended correctness/allocation mechanisms
   executable and reviewable. They do not yet form a live multi-user platform.

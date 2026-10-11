@@ -1,3 +1,6 @@
+---
+description: "A plain-language introduction to IDKMesh: humans and AI agents work together without trusting the first answer, with separate checks and an evidence log."
+---
 # IDKMesh for Absolute Beginners
 
 If the rest of the repository feels complicated, start here.

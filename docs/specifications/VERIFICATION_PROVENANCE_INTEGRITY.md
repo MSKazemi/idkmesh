@@ -1,3 +1,6 @@
+---
+description: "Digest rules that bind a VerificationResult to the exact Work Unit and ResultManifest it checked; schema validation alone cannot prove that binding."
+---
 # Verification Provenance Integrity
 
 Status: experimental Phase 0 contract hardening

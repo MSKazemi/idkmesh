@@ -1,3 +1,6 @@
+---
+description: "Release-integrity baseline: a published IDKMesh Python release must bind its Git commit, workflow identity, wheel and sdist bytes, and build provenance."
+---
 # Release Supply-Chain Baseline v0.1
 
 **Status:** active release baseline  

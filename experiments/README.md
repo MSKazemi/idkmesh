@@ -44,11 +44,15 @@ listed here fails the suite rather than becoming quietly undiscoverable.
 | **E042** | [E040's hedge points the wrong way, and its proportionality is a property of the shape](E042-worker-dependence-shape.md) |
 | **E043** | [A verifier panel does not pay for itself, and its one advantage needs real independence](E043-panel-frontier.md) |
 | **E044** | [Review capacity as a carrying-capacity governor](E044-review-capacity-governor.md) |
+| **E045** | [169 real coding agents fail together, and a 10-agent pilot underestimates what the population covers](E045-public-agent-dependence-pilot.md) |
+| **E046** | [Per-item difficulty forecasts how many tasks a team of coding agents will cover; correlation-only models do not](E046-agent-value-forecast.md) |
+| **E047** | [The H1 result survives removing duplicate models, and choosing agents by model organisation loses to choosing by complementarity](E047-provenance-aware-agent-value.md) |
 
 The Physarum routing research records are also indexed here:
 [PHY-0 reference routing](PHY-0-physarum-compute-routing.md),
 [PHY-0A stationary falsification](PHY-0A-physarum-stationary-routing.md), and
-[PHY-1 stress matrix](PHY-1-stress-matrix.md).
+[PHY-1 stress matrix](PHY-1-stress-matrix.md), with its retained
+[completion sweep](results/PHY-1-completion-sweep.json).
 
 The Adaptive Verification Ecology records are indexed here:
 [AVE-0 foundation](AVE-0-adaptive-verification-ecology.md),

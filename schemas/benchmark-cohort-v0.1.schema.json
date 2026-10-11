@@ -18,7 +18,7 @@
   ],
   "properties": {
     "schema_version": {"const": "0.1"},
-    "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._/-]{2,127}$"},
+    "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._/-]{2,127}$(?!\n)"},
     "title": {"type": "string", "minLength": 1},
     "description": {"type": "string"},
     "stage": {"enum": ["scaffold", "collecting", "frozen", "burned"]},
@@ -39,7 +39,7 @@
       }
     },
     "taxonomy_frozen_before_outcomes": {"const": true},
-    "definition_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "definition_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$(?!\n)"},
     "authority": {
       "type": "object",
       "additionalProperties": false,
@@ -65,11 +65,11 @@
     }
   ],
   "$defs": {
-    "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$(?!\n)"},
     "path": {
       "type": "string",
       "minLength": 1,
-      "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"
+      "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$)).+$(?!\n)"
     },
     "object_ref": {
       "type": "object",
@@ -98,7 +98,7 @@
         "evidence"
       ],
       "properties": {
-        "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._/-]{2,127}$"},
+        "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._/-]{2,127}$(?!\n)"},
         "family": {
           "enum": [
             "bug_fix",

@@ -1,3 +1,7 @@
+---
+title: "ADR-0007: Verification Debt and Backpressure"
+description: "ADR: independent VerificationResult is its own protocol object, verification debt is a flow-control signal, and generation yields to verification pressure."
+---
 # ADR-0007: Treat independent verification and verification debt as control-plane primitives
 
 - Status: Accepted for experimentation

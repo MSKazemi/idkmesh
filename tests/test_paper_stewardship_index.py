@@ -24,13 +24,23 @@ CLAIM_MAP = PAPER_DIR / "CLAIM_EVIDENCE_MAP.md"
 PAPER_GUIDE = PAPER_DIR / "README.md"
 
 # Project indexes that must link to the canonical manuscript artifacts,
-# as (index file, link target) pairs. Targets are resolved relative to the
-# index file, so a wrong number of ".." segments fails here too.
+# as (index file, link target) pairs. Relative targets are resolved relative to
+# the index file, so a wrong number of ".." segments fails here too. A target
+# under BLOB_PREFIX is resolved against the repository root instead: GitHub
+# Pages publishes only docs/, so a relative link from docs/ to any file outside
+# it is a 404 on the site and must use the repository URL. That holds for
+# Markdown targets too (paper/CLAIM_EVIDENCE_MAP.md): jekyll-relative-links only
+# rewrites links whose target is inside the site source. The general rule is
+# guarded by tests/test_docs_links_stay_in_site.py.
+BLOB_PREFIX = "https://github.com/MSKazemi/idkmesh/blob/main/"
 INDEX_LINKS = (
-    (REPO_ROOT / "docs" / "research" / "README.md", "../../paper/main.tex"),
     (
         REPO_ROOT / "docs" / "research" / "README.md",
-        "../../paper/CLAIM_EVIDENCE_MAP.md",
+        BLOB_PREFIX + "paper/main.tex",
+    ),
+    (
+        REPO_ROOT / "docs" / "research" / "README.md",
+        BLOB_PREFIX + "paper/CLAIM_EVIDENCE_MAP.md",
     ),
     (REPO_ROOT / "README.md", "paper/README.md"),
 )
@@ -59,7 +69,10 @@ class PaperDiscoverabilityTests(unittest.TestCase):
                     f"{target}; issue #478 requires the canonical manuscript "
                     f"to be findable from a project index.",
                 )
-                resolved = (index.parent / target).resolve()
+                if target.startswith(BLOB_PREFIX):
+                    resolved = (REPO_ROOT / target[len(BLOB_PREFIX):]).resolve()
+                else:
+                    resolved = (index.parent / target).resolve()
                 self.assertTrue(
                     resolved.is_file(),
                     f"{index.relative_to(REPO_ROOT)} links to {target} but it "

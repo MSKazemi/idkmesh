@@ -1,0 +1,164 @@
+{
+  "experiment": "E046",
+  "analysis_sha256": "67aa3068b52cf67baa6c3862f03fee8ae93a6ad0568de3d26f7b5a1848f28f7d",
+  "seed": 20261009,
+  "splits": {
+    "verified": {
+      "tasks": 500,
+      "agents_with_results": 174,
+      "competent_agents": 169,
+      "feasible": true,
+      "blind_spot_floor": {
+        "unsolved_by_every_agent": 26,
+        "fraction": 0.052
+      },
+      "mean_pairwise_phi": 0.4763,
+      "primary": {
+        "grid": [
+          2,
+          5,
+          10,
+          20,
+          40,
+          169
+        ],
+        "population_curve": {
+          "2": 0.6911,
+          "5": 0.8054,
+          "10": 0.8523,
+          "20": 0.8844,
+          "40": 0.9087,
+          "169": 0.948
+        },
+        "curve_mae": {
+          "independence": 0.1147,
+          "kish": 0.081,
+          "shared_shock": 0.0827,
+          "beta_binomial": 0.0443,
+          "incidence": 0.0278,
+          "pilot_only": 0.0396,
+          "rasch": 0.0208
+        },
+        "population_coverage_bias": {
+          "independence": 0.052,
+          "kish": -0.1338,
+          "shared_shock": -0.1588,
+          "beta_binomial": 0.0395,
+          "incidence": -0.0588,
+          "pilot_only": -0.0915,
+          "rasch": 0.002
+        },
+        "population_coverage_mae": {
+          "independence": 0.052,
+          "kish": 0.1338,
+          "shared_shock": 0.1588,
+          "beta_binomial": 0.0395,
+          "incidence": 0.0591,
+          "pilot_only": 0.0915,
+          "rasch": 0.0065
+        }
+      },
+      "h1_bootstrap": {
+        "kish": {
+          "mean": 0.0442,
+          "ci95": [
+            0.0201,
+            0.0703
+          ]
+        },
+        "shared_shock": {
+          "mean": 0.0427,
+          "ci95": [
+            0.0226,
+            0.0618
+          ]
+        }
+      },
+      "h1_verdict": "supported",
+      "h2": {
+        "meets_tolerance": {
+          "beta_binomial": false,
+          "rasch": true,
+          "incidence": false
+        },
+        "beats_pilot_only": {
+          "beta_binomial": true,
+          "rasch": true,
+          "incidence": true
+        },
+        "verdict": "supported"
+      },
+      "sensitivity": {
+        "5": {
+          "independence": 0.1158,
+          "kish": 0.0831,
+          "shared_shock": 0.0843,
+          "beta_binomial": 0.0494,
+          "incidence": 0.052,
+          "pilot_only": 0.0725
+        },
+        "20": {
+          "independence": 0.1134,
+          "kish": 0.0829,
+          "shared_shock": 0.0823,
+          "beta_binomial": 0.0401,
+          "incidence": 0.0161,
+          "pilot_only": 0.0224
+        }
+      },
+      "h3": {
+        "calibration_tasks": 246,
+        "held_out_tasks": 254,
+        "by_k": {
+          "3": {
+            "greedy_held_out_coverage": 0.8543,
+            "top_k_held_out_coverage": 0.8543,
+            "random_held_out_coverage": 0.7661,
+            "greedy_only_tasks": 6,
+            "top_k_only_tasks": 6,
+            "mcnemar_p": 1.0,
+            "resplit_mean_difference": 0.0068,
+            "resplit_greedy_not_worse_fraction": 0.715
+          },
+          "5": {
+            "greedy_held_out_coverage": 0.8898,
+            "top_k_held_out_coverage": 0.874,
+            "random_held_out_coverage": 0.8154,
+            "greedy_only_tasks": 7,
+            "top_k_only_tasks": 3,
+            "mcnemar_p": 0.34375,
+            "resplit_mean_difference": 0.0075,
+            "resplit_greedy_not_worse_fraction": 0.765
+          },
+          "10": {
+            "greedy_held_out_coverage": 0.9016,
+            "top_k_held_out_coverage": 0.9094,
+            "random_held_out_coverage": 0.8532,
+            "greedy_only_tasks": 4,
+            "top_k_only_tasks": 6,
+            "mcnemar_p": 0.753906,
+            "resplit_mean_difference": 0.0055,
+            "resplit_greedy_not_worse_fraction": 0.77
+          }
+        },
+        "verdict": "unresolved"
+      },
+      "upstream": {
+        "commit": "40f164d5b8f1d249bf95a6df8b74b577fd8e519d",
+        "files_read": 174,
+        "files_sha256": "adfec04c1fae9c06f2fe5518a3856b21bef3d249a5c74a679203842969e4e87c"
+      }
+    }
+  },
+  "decision": {
+    "feasible_splits": [
+      "verified"
+    ],
+    "H1": "supported",
+    "H2": "supported",
+    "H2_estimators_meeting_tolerance_on_every_split": [
+      "rasch"
+    ],
+    "H3": "unresolved"
+  }
+}

@@ -1,3 +1,6 @@
+---
+description: "Local coding-agent sandbox boundary: execution fails closed unless process, resource, filesystem, credential, and network limits are all enforced."
+---
 # Local Agent Execution Boundary v0.1
 
 **Status:** experimental implementation contract  

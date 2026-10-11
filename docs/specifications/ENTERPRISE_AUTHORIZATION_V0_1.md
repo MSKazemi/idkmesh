@@ -1,3 +1,6 @@
+---
+description: "Enterprise Authorization Kernel v0.1: may this authenticated actor perform this action on this exact resource and scope? Scope is not authorization."
+---
 # Enterprise Authorization Kernel v0.1
 
 **Status:** experimental E3 foundation  

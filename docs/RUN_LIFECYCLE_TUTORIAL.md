@@ -1,3 +1,7 @@
+---
+title: "Tutorial: Create and Read Back an IDKMesh Run"
+description: "Create a Product Spine run with the idkmesh run CLI, inspect and cancel it, then read it back over the Control Tower local HTTP API. Nothing is merged."
+---
 # Tutorial: create a run and read it back (CLI and local API)
 
 This walkthrough creates one Product Spine run through the `idkmesh run` CLI,
@@ -13,7 +17,7 @@ end.
 
 ## Prerequisites
 
-- Python 3.11 or 3.13 (see [`../CONTRIBUTING.md`](../CONTRIBUTING.md) for the
+- Python 3.11 or 3.13 (see [`../CONTRIBUTING.md`](https://github.com/MSKazemi/idkmesh/blob/main/CONTRIBUTING.md) for the
   environment setup used by the project);
 - a clone of this repository, with all commands run from the repository root;
 - the `idkmesh` CLI on your `PATH`, which one editable install provides:
@@ -31,7 +35,7 @@ below use the installed command.)
 
 `idkmesh run create` persists one canonical Product Spine run projection in a
 local SQLite store. The projection file is the committed example fixture
-[`../examples/api/product-spine-run.example.json`](../examples/api/product-spine-run.example.json)
+[`../examples/api/product-spine-run.example.json`](https://github.com/MSKazemi/idkmesh/blob/main/examples/api/product-spine-run.example.json)
 (a `state="proposed"` run for `run/example-1`), and `--idempotency-key` is a
 caller-chosen identity for this create request.
 

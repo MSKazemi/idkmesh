@@ -9,7 +9,7 @@
   ],
   "$defs": {
     "text": {"type": "string", "minLength": 1, "maxLength": 512},
-    "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$(?!\n)"},
     "authority": {
       "type": "object", "additionalProperties": false,
       "required": ["dispatch", "executes_worker", "accepts_candidate", "merge"],

@@ -2,7 +2,7 @@
 
 **Status:** Actionable research and implementation plan
 
-**Companion:** [`../../RANDOMNESS_AND_BIOINSPIRED_ALGORITHMS.md`](../../RANDOMNESS_AND_BIOINSPIRED_ALGORITHMS.md)
+**Companion:** [`../../RANDOMNESS_AND_BIOINSPIRED_ALGORITHMS.md`](https://github.com/MSKazemi/idkmesh/blob/main/RANDOMNESS_AND_BIOINSPIRED_ALGORITHMS.md)
 
 This document converts the randomness / biological-algorithm research into concrete engineering steps for IDKMesh.
 

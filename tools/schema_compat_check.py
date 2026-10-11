@@ -34,17 +34,28 @@ for a nested object under top-level property ``foo``, and so on through
 - for a property that is itself *not* a "properties"-bearing object (a
   leaf: ``type``, ``const``, ``enum``, ``pattern``, ``anyOf`` of scalars,
   ``$ref``, ...), a change to its subschema is breaking unless it is one
-  of two recognized widenings: ``enum`` gaining values (old values all
+  of three recognized changes: ``enum`` gaining values (old values all
   still present; this repository already does this in place, for example
   ``search-visibility-observation-v0.1.schema.json``'s surface enum), or
   ``type`` gaining an alternative (the old type(s) all still accepted,
-  for example ``"string"`` widened to ``["string", "null"]``). Any other
-  change to a leaf subschema -- narrowing either of those two, or a
-  change to anything else (``const``, ``pattern``, numeric bounds,
-  ``anyOf``/``oneOf``, ``$ref`` target, ...) -- is breaking. This is
-  deliberately conservative outside the two recognized widenings: the
-  fix for a genuine narrowing is the same either way, a new versioned
-  file.
+  for example ``"string"`` widened to ``["string", "null"]``), or the
+  end-anchor hardening of ADR-0025 (a ``pattern`` ending in ``$`` gains
+  the ``(?!\n)`` guard and changes nothing else). Any other change to a
+  leaf subschema -- narrowing of the first two, or a change to anything
+  else (``const``, ``pattern``, numeric bounds, ``anyOf``/``oneOf``,
+  ``$ref`` target, ...) -- is breaking. This is deliberately conservative
+  outside those three shapes: the fix for a genuine narrowing is the
+  same either way, a new versioned file.
+
+The anchor hardening is the one recognized *narrowing*. Python's ``re``
+matches ``$`` before a trailing newline, so a ``^...$`` pattern accepted
+``value + "\\n"`` under this repository's Python validators while the
+JSON Schema specification's ECMA-262 regex semantics never did. Adding
+the ``(?!\n)`` guard makes Python validation agree with the contract the
+pattern already declared, and rejects exactly the strings a trailing
+newline smuggled in -- nothing else (issue #963, ADR-0025). It is
+recognized only in that exact mechanical form so it cannot launder any
+other pattern change.
 
 A node present in the old document but entirely absent from the new one
 (the containing property itself was removed) is reported once, at its
@@ -121,15 +132,69 @@ def _type_set(value: Any) -> set[str] | None:
     return None
 
 
-def _leaf_compatible(old: dict, new: dict) -> bool:
-    """True if a leaf (non-object) subschema change is a recognized widening.
+# ADR-0025 end-anchor hardening (issue #963). ``json.load`` decodes the
+# JSON escape ``\\n`` in a pattern string to a literal newline, so the
+# guard suffix is written here as a literal newline too; ``(?!`` + newline
+# + ``)`` is the same regex assertion as the ``(?!\n)`` escape, and stays
+# valid ECMA-262 for non-Python validators.
+ANCHOR_SUFFIX = "(?!\n)"
 
-    Only two shapes are recognized as compatible: an ``enum`` that only
-    gains values, and a ``type`` that only gains alternatives, with every
-    other key in the subschema unchanged. Anything else -- including a
-    narrowing of either, or any change this function does not specifically
-    recognize -- is reported as breaking by the caller.
+
+def _pattern_hardened(old: Any, new: Any) -> bool:
+    """True for one ADR-0025 pattern change: ``P$`` -> ``P$`` + suffix."""
+    return (
+        isinstance(old, str)
+        and isinstance(new, str)
+        and old.endswith("$")
+        and not old_pattern_escaped(old)
+        and new == old + ANCHOR_SUFFIX
+    )
+
+
+def old_pattern_escaped(pattern: str) -> bool:
+    """True if the trailing ``$`` is an escaped literal, not an anchor."""
+    return pattern.endswith("\\$")
+
+
+def _hardening_only_change(old: Any, new: Any) -> bool:
+    """True if every difference is the ADR-0025 end-anchor hardening.
+
+    Walks both subschemas in parallel at any depth (``items`` entries,
+    ``anyOf`` branches, nested objects). Every ``pattern`` value must be
+    identical or a recognized hardening -- an old value ending in an
+    unescaped ``$`` followed by exactly ``ANCHOR_SUFFIX`` -- and every
+    other node must be structurally identical. Anything else falls
+    through to the widening checks and is reported as breaking.
     """
+    if isinstance(old, dict) and isinstance(new, dict):
+        if set(old) != set(new):
+            return False
+        for key in old:
+            if key == "pattern":
+                if old[key] != new[key] and not _pattern_hardened(old[key], new[key]):
+                    return False
+            elif not _hardening_only_change(old[key], new[key]):
+                return False
+        return True
+    if isinstance(old, list) and isinstance(new, list):
+        return len(old) == len(new) and all(
+            _hardening_only_change(o, n) for o, n in zip(old, new)
+        )
+    return old == new
+
+
+def _leaf_compatible(old: dict, new: dict) -> bool:
+    """True if a leaf (non-object) subschema change is a recognized one.
+
+    Three shapes are recognized as compatible: an ``enum`` that only
+    gains values, a ``type`` that only gains alternatives (each with
+    every other key in the subschema unchanged), and the ADR-0025
+    end-anchor hardening of a ``pattern``. Anything else -- including a
+    narrowing of the first two, or any change this function does not
+    specifically recognize -- is reported as breaking by the caller.
+    """
+    if _hardening_only_change(old, new):
+        return True
     old_other = {k: v for k, v in old.items() if k not in ("enum", "type")}
     new_other = {k: v for k, v in new.items() if k not in ("enum", "type")}
     if old_other != new_other:

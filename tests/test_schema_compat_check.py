@@ -182,6 +182,165 @@ class DiffSchemaTests(unittest.TestCase):
         )
 
 
+    def test_anchor_hardening_is_compatible(self) -> None:
+        old = _base(
+            properties={
+                "kind": _base()["properties"]["kind"],
+                "slug": {"type": "string", "pattern": "^abc$"},
+            }
+        )
+        new = _base(
+            properties={
+                "kind": _base()["properties"]["kind"],
+                "slug": {"type": "string", "pattern": "^abc$" + sc.ANCHOR_SUFFIX},
+            }
+        )
+        self.assertEqual(sc.diff_schema(old, new), [])
+
+    def test_nested_anchor_hardening_is_compatible(self) -> None:
+        old = _base(
+            properties={
+                "kind": _base()["properties"]["kind"],
+                "tags": {
+                    "type": "array",
+                    "items": {"type": "string", "pattern": "^abc$"},
+                },
+                "ref": {
+                    "anyOf": [
+                        {"type": "string", "pattern": "^abc$"},
+                        {"type": "integer"},
+                    ]
+                },
+            }
+        )
+        new = _base(
+            properties={
+                "kind": _base()["properties"]["kind"],
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "pattern": "^abc$" + sc.ANCHOR_SUFFIX,
+                    },
+                },
+                "ref": {
+                    "anyOf": [
+                        {
+                            "type": "string",
+                            "pattern": "^abc$" + sc.ANCHOR_SUFFIX,
+                        },
+                        {"type": "integer"},
+                    ]
+                },
+            }
+        )
+        self.assertEqual(sc.diff_schema(old, new), [])
+
+    def test_hardening_plus_any_other_change_is_breaking(self) -> None:
+        old = _base(
+            properties={
+                "kind": _base()["properties"]["kind"],
+                "slug": {"type": "string", "pattern": "^abc$", "maxLength": 8},
+            }
+        )
+        new = _base(
+            properties={
+                "kind": _base()["properties"]["kind"],
+                "slug": {
+                    "type": "string",
+                    "pattern": "^abc$" + sc.ANCHOR_SUFFIX,
+                    "maxLength": 9,
+                },
+            }
+        )
+        violations = sc.diff_schema(old, new)
+        self.assertTrue(any("properties/slug: schema changed" in v for v in violations))
+
+        # A recognized widening riding along with the hardening in the
+        # same leaf stays breaking: the exact mechanical form, with
+        # nothing else changing in that subschema, is the only thing
+        # recognized.
+        old = _base(
+            properties={
+                "kind": _base()["properties"]["kind"],
+                "state": {
+                    "type": "string",
+                    "enum": ["a", "b"],
+                    "pattern": "^abc$",
+                },
+            }
+        )
+        new = _base(
+            properties={
+                "kind": _base()["properties"]["kind"],
+                "state": {
+                    "type": "string",
+                    "enum": ["a", "b", "c"],
+                    "pattern": "^abc$" + sc.ANCHOR_SUFFIX,
+                },
+            }
+        )
+        violations = sc.diff_schema(old, new)
+        self.assertTrue(any("properties/state: schema changed" in v for v in violations))
+
+    def test_other_pattern_changes_are_still_breaking(self) -> None:
+        changed_leaves = {
+            "body changed": {
+                "type": "string",
+                "pattern": "^ab$" + sc.ANCHOR_SUFFIX,
+            },
+            "double hardened": {
+                "type": "string",
+                "pattern": "^abc$" + sc.ANCHOR_SUFFIX + sc.ANCHOR_SUFFIX,
+            },
+            "suffix without anchor": {
+                "type": "string",
+                "pattern": "^abc" + sc.ANCHOR_SUFFIX,
+            },
+        }
+        for label, changed in changed_leaves.items():
+            with self.subTest(label):
+                old = _base(
+                    properties={
+                        "kind": _base()["properties"]["kind"],
+                        "slug": {"type": "string", "pattern": "^abc$"},
+                    }
+                )
+                new = _base(
+                    properties={
+                        "kind": _base()["properties"]["kind"],
+                        "slug": changed,
+                    }
+                )
+                violations = sc.diff_schema(old, new)
+                self.assertTrue(
+                    any("properties/slug: schema changed" in v for v in violations),
+                    violations,
+                )
+
+    def test_escaped_literal_dollar_is_not_an_anchor(self) -> None:
+        # "cost\\$" is a literal dollar sign, not an end anchor; appending
+        # the guard would silently change what the pattern is anchored to,
+        # so only a real end anchor may be hardened.
+        old = _base(
+            properties={
+                "kind": _base()["properties"]["kind"],
+                "price": {"type": "string", "pattern": "cost\\$"},
+            }
+        )
+        new = _base(
+            properties={
+                "kind": _base()["properties"]["kind"],
+                "price": {
+                    "type": "string",
+                    "pattern": "cost\\$" + sc.ANCHOR_SUFFIX,
+                },
+            }
+        )
+        violations = sc.diff_schema(old, new)
+        self.assertTrue(any("properties/price: schema changed" in v for v in violations))
+
+
 class RealHistoryTests(unittest.TestCase):
     """Exercise check_file against this repository's own committed history."""
 

@@ -13,7 +13,7 @@ The experiment is intentionally limited to routing. A pheromone trace is **not**
 
 The frozen default and lock-in traces, readable comparison, exact generation
 commands, and artifact digests are published in the
-[`R4 reference report`](../../results/experiments/r4/reference-summary.md). The
+[`R4 reference report`](https://github.com/MSKazemi/idkmesh/blob/main/results/experiments/r4/reference-summary.md). The
 committed artifact hashes and cross-runtime replay invariants are checked in
 `tests/test_r4_reference.py`; byte identity is bound to the recorded Python 3.12
 runtime family.

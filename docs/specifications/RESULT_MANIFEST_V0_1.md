@@ -1,3 +1,6 @@
+---
+description: "ResultManifest v0.1: the machine-readable record of a worker attempt: Work Unit, worker, candidate artifacts, logs, resource use, and the worker's claims."
+---
 # Worker ResultManifest v0.1
 
 Status: experimental contract

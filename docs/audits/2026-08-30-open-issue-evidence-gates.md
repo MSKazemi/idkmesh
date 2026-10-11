@@ -1,7 +1,7 @@
 # Open-issue evidence gates — 2026-08-30
 
 **Baseline revision:** `e16a8d0`.
-**Tool:** [`tools/issue_evidence_gate.py`](../../tools/issue_evidence_gate.py).
+**Tool:** [`tools/issue_evidence_gate.py`](https://github.com/MSKazemi/idkmesh/blob/main/tools/issue_evidence_gate.py).
 
 Read this as a snapshot. The numbers below were measured at that revision and
 are re-derived on every run of the tool; the tool, not this page, is the current

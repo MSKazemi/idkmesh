@@ -5,7 +5,6 @@ from __future__ import annotations
 import html
 import json
 import os
-import secrets
 import threading
 import time
 import webbrowser
@@ -41,6 +40,7 @@ from idkmesh.local_ui_security import (
     is_loopback_host,
     new_session_token,
     send_security_headers,
+    token_matches,
 )
 from idkmesh.service_runtime import (
     ADMITTED,
@@ -571,6 +571,34 @@ _EVENT_BATCH = 200
 _SERVER_FAULT_CODES = frozenset({"store_error", "evidence_integrity_error"})
 
 
+def _accept_entries(accept: str) -> list[tuple[str, float]]:
+    """Split an Accept header into ``(media type, quality)`` pairs.
+
+    Parsing is lenient in exactly one direction: an entry whose quality
+    parameter cannot be parsed keeps quality 1.0 (acceptable), so a malformed
+    q-value can never reject a request the client clearly meant to make. Only
+    an explicit zero quality ("q=0", "q=0.0") marks an entry unacceptable
+    (RFC 9110 section 12.4.2).
+    """
+    entries: list[tuple[str, float]] = []
+    for part in accept.split(","):
+        pieces = part.split(";")
+        media_type = pieces[0].strip().lower()
+        if not media_type:
+            continue
+        quality = 1.0
+        for parameter in pieces[1:]:
+            name, _, value = parameter.partition("=")
+            if name.strip().lower() != "q":
+                continue
+            try:
+                quality = float(value.strip().strip('"'))
+            except ValueError:
+                quality = 1.0
+        entries.append((media_type, quality))
+    return entries
+
+
 def _service_error_status(code: str, *not_found: str) -> int:
     """HTTP status for a ProductSpineRunStoreError code.
 
@@ -695,8 +723,9 @@ def _handler(
 
         def _response_media_type(self) -> str:
             accept = self.headers.get("Accept", "")
-            for part in accept.split(","):
-                media_type = part.split(";", 1)[0].strip().lower()
+            for media_type, quality in _accept_entries(accept):
+                if quality == 0.0:
+                    continue
                 if media_type == V1_MEDIA_TYPE:
                     return V1_MEDIA_TYPE
             return JSON_MEDIA_TYPE
@@ -740,8 +769,7 @@ def _handler(
             return False
 
         def _token_allowed(self) -> bool:
-            provided = self.headers.get(TOKEN_HEADER) or ""
-            if secrets.compare_digest(provided, token):
+            if token_matches(self.headers.get(TOKEN_HEADER), token):
                 return True
             self._send_json(
                 403,
@@ -766,8 +794,9 @@ def _handler(
                 # ADR-0023: the SSE endpoint is the one place a client
                 # legitimately asks for text/event-stream.
                 accepted |= {"text/*", "text/event-stream"}
-            for part in accept.split(","):
-                media_type = part.split(";", 1)[0].strip().lower()
+            for media_type, quality in _accept_entries(accept):
+                if quality == 0.0:
+                    continue
                 if media_type in accepted:
                     return True
             self._send_json(
@@ -784,7 +813,7 @@ def _handler(
 
         def _path(self) -> tuple[str, str] | None:
             parsed = urlsplit(self.path)
-            # GET /api/v1/runs and GET /api/v1/work-units (lists) are the
+            # GET /api/v1/runs, /connections, and /work-units (lists) are
             # endpoints with declared, bounded query parameters (?limit=,
             # ?cursor=, and named filters; API Conventions v0.1 sections
             # 10-11). Every other /api/ endpoint keeps rejecting stray query
@@ -794,6 +823,7 @@ def _handler(
                 and parsed.path.startswith("/api/")
                 and parsed.path not in (
                     f"/api/{API_VERSION}/runs",
+                    f"/api/{API_VERSION}/connections",
                     f"/api/{API_VERSION}/work-units",
                     f"/api/{API_VERSION}/events",
                     _EVENT_STREAM_PATH,
@@ -1021,6 +1051,71 @@ def _handler(
                     )
                     return None
             return params, limit
+
+        def _connection_list_response(
+            self, query: str, *, head_only: bool
+        ) -> None:
+            if product_spine_store_path is None:
+                self._send_json(
+                    503,
+                    error_document(
+                        "product_spine_store_not_configured",
+                        "this Control Tower instance was started without a "
+                        "Product Spine store; connections cannot be read",
+                    ),
+                    head_only=head_only,
+                )
+                return
+            parsed_query = self._parse_list_query(
+                query, {"limit", "cursor"}, head_only=head_only
+            )
+            if parsed_query is None:
+                return
+            params, limit = parsed_query
+
+            from idkmesh.connector_control_read import (
+                ConnectorControlReadError,
+                ConnectorControlReadService,
+            )
+            from idkmesh.connector_store import (
+                LocalMetadataStore,
+                LocalStoreError,
+            )
+
+            try:
+                items, next_cursor = ConnectorControlReadService(
+                    LocalMetadataStore(product_spine_store_path)
+                ).list_connections(limit=limit, cursor=params.get("cursor"))
+            except ConnectorControlReadError as exc:
+                status = (
+                    400
+                    if exc.code in {"invalid_cursor", "invalid_limit"}
+                    else 500
+                )
+                self._send_json(
+                    status,
+                    error_document(exc.code, str(exc)),
+                    head_only=head_only,
+                )
+                return
+            except (LocalStoreError, OSError, ValueError) as exc:
+                self._send_json(
+                    500,
+                    error_document("store_error", str(exc)),
+                    head_only=head_only,
+                )
+                return
+
+            self._send_json(
+                200,
+                {
+                    "kind": "idkmesh-list",
+                    "schema_version": API_SCHEMA_VERSION,
+                    "items": items,
+                    "page": {"next_cursor": next_cursor, "limit": limit},
+                },
+                head_only=head_only,
+            )
 
         def _work_unit_id_from_path(self, path: str) -> str | None:
             """Return the id if path is /api/v1/work-units/<id>.
@@ -1385,9 +1480,13 @@ def _handler(
                     ),
                 )
                 return None
-            try:
-                length = int(raw_length)
-            except ValueError:
+            # RFC 9110 Content-Length is 1*ASCII DIGIT, padded at most by the
+            # field's optional whitespace. int() would also accept "+2" and
+            # Unicode digits (int("\u0662") == 2) -- spellings a strict fronting
+            # proxy rejects, and that parser disagreement is request-smuggling
+            # surface, so anything but ASCII digits is a controlled 400.
+            value = raw_length.strip(" \t")
+            if not value.isascii() or not value.isdigit():
                 self._send_json(
                     400,
                     error_document(
@@ -1396,15 +1495,7 @@ def _handler(
                     ),
                 )
                 return None
-            if length < 0:
-                self._send_json(
-                    400,
-                    error_document(
-                        "invalid_content_length",
-                        "Content-Length cannot be negative",
-                    ),
-                )
-                return None
+            length = int(value)
             if length > MAX_BODY_BYTES:
                 self._send_json(
                     413,
@@ -1800,6 +1891,9 @@ def _handler(
             if path == f"/api/{API_VERSION}/runs":
                 self._run_list_response(query, head_only=head_only)
                 return
+            if path == f"/api/{API_VERSION}/connections":
+                self._connection_list_response(query, head_only=head_only)
+                return
             if path == f"/api/{API_VERSION}/work-units":
                 self._work_unit_list_response(query, head_only=head_only)
                 return
@@ -1892,6 +1986,7 @@ def _handler(
                 f"/api/{API_VERSION}/openapi.json",
                 f"/api/{API_VERSION}/metrics",
                 f"/api/{API_VERSION}/runs",
+                f"/api/{API_VERSION}/connections",
                 f"/api/{API_VERSION}/work-units",
                 f"/api/{API_VERSION}/events",
             ):
@@ -1957,6 +2052,7 @@ def _handler(
                 f"/api/{API_VERSION}/openapi.json",
                 f"/api/{API_VERSION}/metrics",
                 f"/api/{API_VERSION}/runs",
+                f"/api/{API_VERSION}/connections",
                 f"/api/{API_VERSION}/work-units",
                 f"/api/{API_VERSION}/events",
             ) or (

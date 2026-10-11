@@ -1,0 +1,138 @@
+{
+  "schema_version": "0.1",
+  "contract_id": "github-workunit-intake-v0.1",
+  "work_unit_schema": "schemas/work-unit-v0.2.schema.json",
+  "intake_schema": "schemas/github-workunit-intake-v0.1.schema.json",
+  "issue_form_path": ".github/ISSUE_TEMPLATE/06-idkmesh-workunit.yml",
+  "purpose": "Map the structured, untrusted GitHub Issue Form onto the frozen GitHub WorkUnit intake schema for a later policy-bounded WorkUnit preview. Field ids are intake-schema property names; dropdown options are the schema enums.",
+  "fields": [
+    {
+      "id": "objective",
+      "label": "Objective",
+      "input_type": "textarea",
+      "required": true,
+      "canonical_effect": "task_content",
+      "direct_authority": false
+    },
+    {
+      "id": "task_class",
+      "label": "Task class",
+      "input_type": "dropdown",
+      "required": true,
+      "canonical_effect": "advisory_task_class",
+      "direct_authority": false
+    },
+    {
+      "id": "expected_outputs",
+      "label": "Expected outputs",
+      "input_type": "textarea",
+      "required": true,
+      "canonical_effect": "advisory_output_hint",
+      "direct_authority": false
+    },
+    {
+      "id": "requested_allowed_paths",
+      "label": "Requested allowed paths",
+      "input_type": "textarea",
+      "required": true,
+      "canonical_effect": "restrictive_scope_hint_only",
+      "direct_authority": false
+    },
+    {
+      "id": "requested_forbidden_paths",
+      "label": "Forbidden or sensitive paths",
+      "input_type": "textarea",
+      "required": false,
+      "canonical_effect": "restrictive_scope_hint_only",
+      "direct_authority": false
+    },
+    {
+      "id": "dependencies",
+      "label": "Dependencies or blockers",
+      "input_type": "textarea",
+      "required": false,
+      "canonical_effect": "task_context",
+      "direct_authority": false
+    },
+    {
+      "id": "acceptance_checks",
+      "label": "Acceptance checks",
+      "input_type": "textarea",
+      "required": true,
+      "canonical_effect": "verification_hint",
+      "direct_authority": false
+    },
+    {
+      "id": "risk_hint",
+      "label": "Risk hint",
+      "input_type": "dropdown",
+      "required": true,
+      "canonical_effect": "risk_floor_hint_only",
+      "direct_authority": false
+    },
+    {
+      "id": "data_sensitivity_hint",
+      "label": "Data sensitivity hint",
+      "input_type": "dropdown",
+      "required": true,
+      "canonical_effect": "classification_floor_hint_only",
+      "direct_authority": false
+    },
+    {
+      "id": "external_processing_hint",
+      "label": "External processing hint",
+      "input_type": "dropdown",
+      "required": true,
+      "canonical_effect": "processing_restriction_hint_only",
+      "direct_authority": false
+    },
+    {
+      "id": "human_review_hint",
+      "label": "Human review or decision requirement",
+      "input_type": "dropdown",
+      "required": true,
+      "canonical_effect": "review_floor_hint_only",
+      "direct_authority": false
+    },
+    {
+      "id": "preferred_connector_hint",
+      "label": "Preferred connector",
+      "input_type": "input",
+      "required": false,
+      "canonical_effect": "eligible_connector_preference_only",
+      "direct_authority": false
+    },
+    {
+      "id": "safety_acknowledgement",
+      "label": "Safety acknowledgement",
+      "input_type": "checkboxes",
+      "required": true,
+      "canonical_effect": "none",
+      "direct_authority": false
+    }
+  ],
+  "authority_boundary": {
+    "issue_text_trusted": false,
+    "allowed_path_semantics": "intersect_with_trusted_project_policy_only",
+    "forbidden_path_semantics": "union_with_trusted_project_policy_only",
+    "risk_semantics": "may_raise_but_never_lower_trusted_project_policy",
+    "data_sensitivity_semantics": "may_raise_but_never_lower_trusted_project_policy",
+    "external_processing_semantics": "may_restrict_but_never_expand_trusted_project_policy",
+    "human_review_semantics": "may_require_more_review_but_never_remove_trusted_project_requirements",
+    "preferred_connector_semantics": "may_rank_only_already_eligible_connectors",
+    "must_not_set_from_issue": [
+      "permissions.network",
+      "permissions.network_allowlist",
+      "permissions.secrets",
+      "permissions.process_execution",
+      "budget.project_spend_usd_max",
+      "budget.paid_fallback_allowed",
+      "validators[].command",
+      "dispatch_authority",
+      "verification_authority",
+      "human_decision_authority",
+      "integration_authority",
+      "merge_authority"
+    ]
+  }
+}

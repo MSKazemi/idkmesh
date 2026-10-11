@@ -52,6 +52,22 @@ def heading_id(relative_path: str, level: int, normalized_text: str, occurrence:
     return f"heading:{_digest('heading', relative_path, str(level), normalized_text, str(occurrence))}"
 
 
+def _front_matter_end(lines: list[str]) -> int:
+    """Index of the first body line after a leading YAML front-matter block.
+
+    GitHub Pages/Jekyll treats a ``---`` first line as the start of front matter,
+    closed by the next ``---`` (or ``...``) line. Without skipping it, the last
+    metadata line followed by the closing fence reads as a setext H2 and becomes
+    the document's "first heading". Returns 0 when there is no closed block.
+    """
+    if not lines or lines[0].rstrip() != "---":
+        return 0
+    for index in range(1, len(lines)):
+        if lines[index].rstrip() in ("---", "..."):
+            return index + 1
+    return 0
+
+
 def _iter_headings(lines: list[str]) -> Iterable[tuple[int, int, str]]:
     """Yield ``(line_number, level, raw_text)`` for ATX and setext headings.
 
@@ -62,7 +78,7 @@ def _iter_headings(lines: list[str]) -> Iterable[tuple[int, int, str]]:
     fence_char = ""
     fence_len = 0
 
-    i = 0
+    i = _front_matter_end(lines)
     while i < len(lines):
         line = lines[i]
         fence_match = FENCE.match(line)

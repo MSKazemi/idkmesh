@@ -31,10 +31,10 @@
   },
   "$defs": {
     "text": {"type": "string", "minLength": 1, "maxLength": 512},
-    "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
-    "revision": {"type": "string", "pattern": "^(?:[0-9a-fA-F]{40}|[0-9a-fA-F]{64})$"},
+    "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$(?!\n)"},
+    "revision": {"type": "string", "pattern": "^(?:[0-9a-fA-F]{40}|[0-9a-fA-F]{64})$(?!\n)"},
     "epochSeconds": {"type": "integer", "minimum": 0},
-    "scopeId": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"},
+    "scopeId": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$(?!\n)"},
     "scope": {
       "type": "object", "additionalProperties": false, "required": ["tenant_id", "project_id"],
       "properties": {
@@ -57,7 +57,7 @@
       "required": ["work_unit_digest", "source_revision", "inputs_digest"],
       "properties": {
         "work_unit_digest": {"$ref": "#/$defs/digest"},
-        "source_revision": {"type": "string", "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$"},
+        "source_revision": {"type": "string", "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$(?!\n)"},
         "inputs_digest": {"$ref": "#/$defs/digest"}
       }
     },

@@ -78,6 +78,35 @@ _RUN_TRANSITIONS = {
     "cancelled": frozenset(),
 }
 
+# Identity and authority fields are fixed at construction; a lifecycle
+# transition may only change state plus the state-gated evidence fields and the
+# admitted connector set. Attempts are managed exclusively by append_attempt /
+# replace_attempt, never smuggled in through a transition. Without this gate,
+# ``transition(target, run_id=...)`` silently rewrote identity (it feeds the
+# create request digest) and ``transition(target, authority_mode=...)`` could
+# downgrade human_required work past the admission gate (issue #745).
+_RUN_TRANSITION_PROTECTED_FIELDS = frozenset(
+    {
+        "run_id",
+        "request_digest",
+        "project_id",
+        "work_unit_id",
+        "work_unit_version",
+        "work_unit_digest",
+        "source_revision",
+        "authority_mode",
+        "routing_policy_version",
+        "attempts",
+        "state",
+    }
+)
+
+# Attempt identity is fixed at creation; transitions may change only state
+# plus the provider/candidate/verification evidence fields and error_code.
+_ATTEMPT_TRANSITION_PROTECTED_FIELDS = frozenset(
+    {"attempt_id", "order", "connector_id", "state"}
+)
+
 _ATTEMPT_TRANSITIONS = {
     "created": frozenset({"dispatched", "cancelled"}),
     "dispatched": frozenset(
@@ -363,6 +392,13 @@ class AttemptProjection:
         """Return a new immutable attempt after one legal transition."""
 
         state = transition_attempt_state(self.state, target)
+        for field in changes:
+            if field in _ATTEMPT_TRANSITION_PROTECTED_FIELDS:
+                raise _fail(
+                    "invalid_update",
+                    field,
+                    "field is immutable across attempt transitions",
+                )
         try:
             return replace(self, state=state, **changes)
         except TypeError as exc:
@@ -519,6 +555,13 @@ class ProductSpineRun:
         """Return a new immutable run after one legal lifecycle transition."""
 
         state = transition_run_state(self.state, target)
+        for field in changes:
+            if field in _RUN_TRANSITION_PROTECTED_FIELDS:
+                raise _fail(
+                    "invalid_update",
+                    field,
+                    "field is immutable across run transitions",
+                )
         if state == "admitted" and self.authority_mode == "human_required":
             raise _fail(
                 "human_authority_required",

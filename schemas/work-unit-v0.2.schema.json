@@ -28,7 +28,7 @@
   ],
   "properties": {
     "schema_version": {"const": "0.2"},
-    "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._/-]{2,127}$"},
+    "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._/-]{2,127}$(?!\n)"},
     "version": {"type": "integer", "minimum": 1},
     "kind": {
       "enum": [
@@ -256,7 +256,7 @@
         "id": {"type": "string", "minLength": 1},
         "type": {"enum": ["file", "directory", "git_ref", "dataset", "url", "text", "json", "other"]},
         "locator": {"type": "string"},
-        "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+        "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$(?!\n)"}
       }
     },
     "artifactSpec": {

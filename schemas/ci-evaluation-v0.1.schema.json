@@ -31,7 +31,7 @@
     "evaluator_version": {"const": "0.1"},
     "mode": {"const": "shadow"},
     "head_sha": {"$ref": "#/$defs/sha"},
-    "plan_id": {"type": "string", "pattern": "^ci-plan-[a-f0-9]{12}-[a-f0-9]{12}$"},
+    "plan_id": {"type": "string", "pattern": "^ci-plan-[a-f0-9]{12}-[a-f0-9]{12}$(?!\n)"},
     "plan_digest": {"$ref": "#/$defs/digest"},
     "observation_digest": {"$ref": "#/$defs/digest"},
     "policy_digest": {"$ref": "#/$defs/digest"},
@@ -90,11 +90,11 @@
       }
     },
     "authority": {"$ref": "#/$defs/authority"},
-    "evaluation_id": {"type": "string", "pattern": "^ci-evaluation-[a-f0-9]{20}$"}
+    "evaluation_id": {"type": "string", "pattern": "^ci-evaluation-[a-f0-9]{20}$(?!\n)"}
   },
   "$defs": {
-    "sha": {"type": "string", "pattern": "^[a-f0-9]{40}$"},
-    "digest": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$"},
+    "sha": {"type": "string", "pattern": "^[a-f0-9]{40}$(?!\n)"},
+    "digest": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$(?!\n)"},
     "failure": {
       "type": "object",
       "additionalProperties": false,

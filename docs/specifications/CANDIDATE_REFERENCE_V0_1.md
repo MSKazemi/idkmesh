@@ -1,3 +1,6 @@
+---
+description: "CandidateReference v0.1: a provider-neutral object naming exactly which immutable candidate to verify. It grants no acceptance or merge authority."
+---
 # CandidateReference v0.1
 
 **Status:** experimental contract  

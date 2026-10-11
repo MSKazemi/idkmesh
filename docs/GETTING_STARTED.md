@@ -1,3 +1,6 @@
+---
+description: "Who should use alpha IDKMesh today and the shortest path to success, starting with the gate-audit CLI for teams that use multiple reviewers or AI judges."
+---
 # Getting Started: Using IDKMesh
 
 IDKMesh is currently an **alpha research and engineering project**, not a finished

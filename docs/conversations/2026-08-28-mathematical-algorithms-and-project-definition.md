@@ -4,7 +4,7 @@
 
 This record preserves the project-relevant content of the conversation in which the project owner asked to review earlier IDKMesh chats, refine the project definition, and identify mathematical, algorithmic, economic, distributed-systems, statistical-physics, classical-physics, and quantum-inspired ideas that could support IDKMesh.
 
-The durable mathematical material from this conversation is maintained canonically in [`../../MATHEMATICAL_FOUNDATIONS.md`](../../MATHEMATICAL_FOUNDATIONS.md). Related scientific analogies are maintained in [`../../SCIENTIFIC_FOUNDATIONS.md`](../../SCIENTIFIC_FOUNDATIONS.md).
+The durable mathematical material from this conversation is maintained canonically in [`../../MATHEMATICAL_FOUNDATIONS.md`](https://github.com/MSKazemi/idkmesh/blob/main/MATHEMATICAL_FOUNDATIONS.md). Related scientific analogies are maintained in [`../../SCIENTIFIC_FOUNDATIONS.md`](https://github.com/MSKazemi/idkmesh/blob/main/SCIENTIFIC_FOUNDATIONS.md).
 
 ## Questions and ideas from the project owner
 
@@ -564,4 +564,4 @@ The project owner explicitly reaffirmed that all substantive IDKMesh chats, find
 
 `https://github.com/MSKazemi/idkmesh`
 
-This file records the public-safe project content from this conversation in accordance with [`../../PROJECT_RULES.md`](../../PROJECT_RULES.md).
+This file records the public-safe project content from this conversation in accordance with [`../../PROJECT_RULES.md`](https://github.com/MSKazemi/idkmesh/blob/main/PROJECT_RULES.md).

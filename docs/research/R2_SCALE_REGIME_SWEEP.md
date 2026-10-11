@@ -160,7 +160,7 @@ python -m randomness_lab.r2_scale \
 The 100,000-worker runs may be materially more expensive than the smaller cells. Keep the raw configuration with every published result.
 
 The first five-seed full-ladder evidence and guarded interpretation are retained
-in [`../../results/experiments/r2/reference-scale-seeds41-45.md`](../../results/experiments/r2/reference-scale-seeds41-45.md).
+in [`../../results/experiments/r2/reference-scale-seeds41-45.md`](https://github.com/MSKazemi/idkmesh/blob/main/results/experiments/r2/reference-scale-seeds41-45.md).
 
 The factor-isolated capability-prevalence design is specified in
 [`R2_CAPABILITY_RARITY_SWEEP.md`](R2_CAPABILITY_RARITY_SWEEP.md).
@@ -181,7 +181,7 @@ All are useful findings.
 ## Factor-isolated follow-up
 
 Issue #84 Phase B/C is retained in
-[`reference-factor-isolation-seeds41-45.md`](../../results/experiments/r2/reference-factor-isolation-seeds41-45.md).
+[`reference-factor-isolation-seeds41-45.md`](https://github.com/MSKazemi/idkmesh/blob/main/results/experiments/r2/reference-factor-isolation-seeds41-45.md).
 It varies availability lag, load lag, regional failure correlation, and offered
 load separately across five seeds. It also reports directory operations,
 modeled messages/bytes, state entries, locality mismatch, and a separate

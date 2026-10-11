@@ -1,0 +1,61 @@
+{
+ "tasks": 207,
+ "competent_agents": 78,
+ "blind_spot_floor": {
+  "unsolved_by_every_agent": 33,
+  "fraction": 0.1594
+ },
+ "mean_pairwise_phi": 0.4946,
+ "h1_verdict": "supported",
+ "curve_mae": {
+  "independence": 0.2428,
+  "kish": 0.1831,
+  "shared_shock": 0.0735,
+  "beta_binomial": 0.0365,
+  "incidence": 0.0615,
+  "pilot_only": 0.0955,
+  "rasch": 0.0572
+ },
+ "population_coverage_mae": {
+  "independence": 0.1594,
+  "kish": 0.3503,
+  "shared_shock": 0.1909,
+  "beta_binomial": 0.048,
+  "incidence": 0.1258,
+  "pilot_only": 0.233,
+  "rasch": 0.1046
+ },
+ "h1_bootstrap": {
+  "kish": {
+   "mean": 0.1464,
+   "ci95": [
+    0.1264,
+    0.1636
+   ]
+  },
+  "shared_shock": {
+   "mean": 0.0352,
+   "ci95": [
+    0.0202,
+    0.0479
+   ]
+  }
+ },
+ "h2": "falsified",
+ "h2_meets": {
+  "beta_binomial": false,
+  "rasch": false,
+  "incidence": false
+ },
+ "h3": "unresolved",
+ "h3_k5": {
+  "greedy_held_out_coverage": 0.7383,
+  "top_k_held_out_coverage": 0.6916,
+  "random_held_out_coverage": 0.5095,
+  "greedy_only_tasks": 11,
+  "top_k_only_tasks": 6,
+  "mcnemar_p": 0.332306,
+  "resplit_mean_difference": 0.0507,
+  "resplit_greedy_not_worse_fraction": 0.97
+ }
+}

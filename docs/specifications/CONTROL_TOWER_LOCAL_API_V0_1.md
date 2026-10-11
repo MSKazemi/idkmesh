@@ -1,3 +1,6 @@
+---
+description: "Local, read-only /api/v1 HTTP API exposing produced IDKMesh evidence to human-facing clients, without scheduling, verifying, writing to repos, or merging."
+---
 # Control Tower Local API v0.1
 
 **Status:** experimental, local-only, read-only  
@@ -85,7 +88,12 @@ can know the token without weakening the browser default.
 The server also:
 
 - accepts only loopback `Host` values;
-- compares session tokens with constant-time comparison;
+- compares session tokens with constant-time comparison over their UTF-8
+  bytes, so a header holding non-ASCII bytes is an ordinary `403
+  invalid_session_token`, never a dropped connection;
+- accepts the token only in the `X-IDKMesh-UI-Token` header (a query string,
+  cookie or `Authorization` value is not a credential) and checks it before
+  routing, so unauthenticated callers cannot tell real routes from missing ones;
 - rejects cross-origin preflight;
 - rejects transfer-encoded/chunked request bodies;
 - caps request bodies at 2 MiB;
@@ -174,11 +182,25 @@ Clients may request either through `Accept`.
 If the vendor type is explicitly requested, the server responds with that vendor
 media type. Otherwise it returns ordinary `application/json`.
 
+Media-type matching is case-insensitive and ignores media-type parameters and
+optional whitespace (RFC 9110). Within `Accept`, an entry with an explicit zero
+quality (`q=0`, `q=0.0`) is not acceptable: a request whose Accept entries are
+all explicitly zero quality returns `406 not_acceptable`, and `q=0` on the
+vendor type falls back to ordinary `application/json`. A malformed quality
+value is treated as acceptable, so a broken `q` parameter can never reject a
+request the client clearly meant to make.
+
 Unsupported response media types return HTTP 406 with
 `not_acceptable`.
 
 Unsupported request media types return HTTP 415 with
 `unsupported_media_type`.
+
+`Content-Length` must be RFC 9110 `1*DIGIT` (ASCII digits), padded at most by
+the field's optional whitespace. Any other spelling -- `+2`, `-1`, decimals,
+non-ASCII digits -- is `400 invalid_content_length`; a missing header is
+`411 length_required`, and any `Transfer-Encoding` is rejected with
+`400 unsupported_transfer_encoding` before the body is read.
 
 API responses include:
 
@@ -401,6 +423,37 @@ POST
 
 Wrong methods return HTTP 405 with an `Allow` header. `HEAD` on a POST-only
 resource also returns no body.
+
+### `GET /api/v1/connections`
+
+Authenticated, read-only connector-control listing (API-3, issue #738). This
+is the first implemented HTTP slice from the Connector Control API contract
+and deliberately lives in the existing Control Tower service rather than
+creating a second HTTP server.
+
+The endpoint reads the same `LocalMetadataStore` connection table used by
+`idkmesh connections stored`. Only the canonical secret-free import summary is
+projected. It never returns a secret reference or `settings`. A legacy/free-
+form row with missing, mismatched, or extra fields fails closed with
+`500 connection_record_invalid` rather than being serialized as an API resource.
+
+Query parameters are `limit` (1-200, default 50) and an opaque `cursor`.
+Ordering is by persisted connection id with keyset pagination. Unknown or
+duplicate parameters fail with `400 unexpected_query_parameters`; a cursor
+not issued by this connection-list service fails with `400 invalid_cursor`.
+
+The server must be started with `--product-spine-store PATH`, the shared local
+metadata database; otherwise the endpoint returns
+`503 product_spine_store_not_configured`.
+
+Each item conforms to `schemas/idkmesh-connection-resource-v0.1.schema.json`,
+wrapped by the shared `idkmesh-list-v0.1` envelope.
+
+Supported methods:
+
+```text
+GET, HEAD
+```
 
 ### `GET /api/v1/runs`
 
@@ -1204,7 +1257,7 @@ and carried in the `data:` field of `GET /api/v1/events/stream` is frozen by:
 ## Error envelope
 
 All API JSON errors use the shape frozen by
-[`schemas/idkmesh-api-error-v0.1.schema.json`](../../schemas/idkmesh-api-error-v0.1.schema.json)
+[`schemas/idkmesh-api-error-v0.1.schema.json`](https://github.com/MSKazemi/idkmesh/blob/main/schemas/idkmesh-api-error-v0.1.schema.json)
 (cross-cutting for every IDKMesh product API, not specific to Control Tower —
 see [API Conventions v0.1](API_CONVENTIONS_V0_1.md) section 5):
 
@@ -1460,6 +1513,60 @@ curl \
 
 The environment token is an ephemeral local API session credential. It is not a
 provider secret or repository credential and should not be committed.
+
+### Python client
+
+`idkmesh.api_client.ControlTowerClient` is the supported Python surface for the
+read/inspection endpoints above. It covers `status`,
+`run-evidence/inspect`, `runs`, `runs/{run_id}`, `runs/{run_id}/attempts`,
+`runs/{run_id}/evidence`, `work-units`, `work-units/{work_unit_id}`,
+`projects/{project_id}`, `connections`, and `events`; human-decision recording
+is deliberately absent until the authenticated mutation adapter (issue #740)
+exists. The `/healthz` and `/readyz` probes, `openapi.json` discovery,
+`metrics`, and the `events/stream` Server-Sent Events stream are not wrapped by
+the client and remain plain HTTP.
+
+```python
+import os
+
+from idkmesh.api_client import ControlTowerClient
+
+client = ControlTowerClient(
+    "http://127.0.0.1:8770",
+    os.environ["IDKMESH_CONTROL_TOWER_TOKEN"],
+    timeout=5.0,  # mandatory by construction
+)
+run = client.get_run("run/alpha-1")
+print(run.request_id, run.value["run"]["state"])
+
+page = client.list_runs(limit=50, project_id="project.alpha")
+while page.value.next_cursor is not None:
+    page = client.list_runs(
+        limit=50,
+        project_id="project.alpha",
+        cursor=page.value.next_cursor,  # cursors stay opaque
+    )
+```
+
+Client guarantees, each fail-closed:
+
+- exactly one HTTP request per method call: no retries, redirects, or hidden
+  idempotent replay;
+- loopback-only `http` base URLs, so the local session token cannot leak to a
+  remote host;
+- the response content digest is recomputed and compared before the document
+  is returned, and embedded evidence/snapshot digests are verified
+  independently of the outer envelope (`IntegrityError` on mismatch);
+- every resource read is bound to the requested identity: a response naming a
+  different `run_id`/`work_unit`/`project` raises `ProtocolError`;
+- request IDs and response metadata are exposed on every
+  `ApiResult` for correlation and bug reports;
+- failures use the stable taxonomy `ClientConfigurationError`, `TransportError`,
+  `ProtocolError`/`IntegrityError`, and `ApiResponseError` (which carries the
+  server's stable error `code`, `retryable` flag, and HTTP status);
+- list methods validate `limit`, `cursor`, and filters before any transport
+  I/O, and unknown query parameters fail explicitly on the server
+  (API Conventions v0.1 section 11).
 
 ## Relationship to Gate Audit
 

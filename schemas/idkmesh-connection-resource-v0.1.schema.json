@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idkmesh.org/schemas/idkmesh-connection-resource-v0.1.schema.json",
+  "title": "IDKMesh Connection Resource v0.1",
+  "description": "Public-safe read projection of one persisted connector-control record. It reports only secret-reference presence, never a secret reference or value, settings, provider payload, dispatch authority, verification authority, acceptance authority, Git push authority, or merge authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "kind",
+    "driver",
+    "enabled",
+    "auth_ref_configured",
+    "capability_tiers",
+    "task_classes",
+    "tools",
+    "candidate_types",
+    "max_risk",
+    "external_processing",
+    "project_spend_usd_max",
+    "max_concurrency"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "kind": {
+      "type": "string",
+      "minLength": 1
+    },
+    "driver": {
+      "type": "string",
+      "minLength": 1
+    },
+    "enabled": {
+      "type": "boolean"
+    },
+    "auth_ref_configured": {
+      "type": "boolean"
+    },
+    "capability_tiers": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "task_classes": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "tools": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "candidate_types": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "max_risk": {
+      "type": "string",
+      "minLength": 1
+    },
+    "external_processing": {
+      "type": "boolean"
+    },
+    "project_spend_usd_max": {
+      "type": "number",
+      "minimum": 0
+    },
+    "max_concurrency": {
+      "type": "integer",
+      "minimum": 1
+    }
+  }
+}

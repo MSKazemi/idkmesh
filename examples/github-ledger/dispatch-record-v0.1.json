@@ -1,0 +1,90 @@
+{
+  "schema_version": "0.1",
+  "kind": "idkmesh-github-ledger-record",
+  "record_id": "ledger/run-2026-001/000003",
+  "repository": "MSKazemi/idkmesh",
+  "project_id": "MSKazemi/idkmesh",
+  "run_id": "github-dispatch/0123456789abcdef01234567",
+  "ledger_sequence": 3,
+  "previous_record_digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+  "event": {
+    "event_id": "github-delivery/delivery-003",
+    "event_type": "dispatch.submitted",
+    "occurred_at": "2026-10-08T10:30:00Z",
+    "state": "dispatched",
+    "trigger": "workflow_call",
+    "actor": {
+      "github_actor_id": 13011878,
+      "login": "MSKazemi"
+    },
+    "github_delivery_id": "delivery-003"
+  },
+  "work_unit": {
+    "id": "github/mskazemi/idkmesh/issue-597",
+    "version": 1,
+    "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "source_revision": "26363a162902ae090f81bebfacaaa0c3e07384c8"
+  },
+  "routing": {
+    "routing_digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "policy_version": "routing-v1",
+    "required_capability_tier": "T3",
+    "authority_mode": "agent_candidate",
+    "risk_class": "medium",
+    "eligible_connectors": [
+      {
+        "connection_id": "jules-primary",
+        "supported_tier": "T3"
+      }
+    ],
+    "ineligible_connectors": [
+      {
+        "connection_id": "local-small",
+        "reasons": [
+          "insufficient_capability_tier"
+        ]
+      }
+    ],
+    "selected_connection_id": "jules-primary",
+    "selection_reason": [
+      "eligible",
+      "deterministic_selection_key"
+    ]
+  },
+  "idempotency": {
+    "dispatch_key": "dispatch:github/mskazemi/idkmesh/issue-597:1:attempt-1",
+    "request_digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "attempt_number": 1
+  },
+  "attempt": {
+    "attempt_id": "attempt-1",
+    "attempt_number": 1,
+    "reason": "initial",
+    "connector_id": "jules-primary"
+  },
+  "provider": {
+    "driver": "jules",
+    "driver_version": "0.1",
+    "submission_state": "submitted",
+    "external_run_id": null,
+    "external_session_id": "session-123",
+    "external_job_id": null
+  },
+  "candidate_reference": null,
+  "result_manifest": null,
+  "verification_results": [],
+  "human_decision": {
+    "state": "not_recorded",
+    "record": null
+  },
+  "failure": null,
+  "authority": {
+    "dispatch": false,
+    "verification": false,
+    "acceptance": false,
+    "canonical_state_write": false,
+    "git_push": false,
+    "integration": false,
+    "merge": false
+  }
+}

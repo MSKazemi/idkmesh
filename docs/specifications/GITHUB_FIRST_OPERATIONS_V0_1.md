@@ -1,3 +1,6 @@
+---
+description: "Minimum behavior for running IDKMesh in the GitHub-first G0 profile: from issue to WorkUnit preview, routing, a dispatch gate, and one admitted run."
+---
 # GitHub-First Operations v0.1
 
 **Status:** experimental implementation contract  
@@ -194,6 +197,10 @@ Persist:
 - human decision reference;
 - failure/cancellation classification;
 - timestamps necessary for audit.
+
+### 6.2.1 Canonical C9-A record contract
+
+The versioned record shape for the first durable-ledger slice is [GitHub Durable Ledger Record v0.1](GITHUB_LEDGER_RECORD_V0_1.md), with machine-readable schema `schemas/github-ledger-record-v0.1.schema.json`. It freezes compact run/event/route/idempotency/attempt/provider/evidence references without choosing the Git storage layout or granting any next-stage authority. C9-B/C9-C must preserve this record meaning when they define serialization and optimistic append behavior.
 
 ### 6.3 Ledger implementation constraints
 

@@ -3,17 +3,18 @@
 Append-only records of working sessions: what was asked, what was decided, and what
 changed. They are historical evidence, not living documentation — a record is not
 rewritten when the project later moves on. Durable outcomes are promoted into the
-canonical files designated by [`../../PROJECT_RULES.md`](../../PROJECT_RULES.md)
+canonical files designated by [`../../PROJECT_RULES.md`](https://github.com/MSKazemi/idkmesh/blob/main/PROJECT_RULES.md)
 (decisions, specifications, architecture, findings); this directory keeps the trail
 that produced them.
 
-176 records across 12 dates, newest first.
+177 records across 12 dates, newest first.
 
 ## Index
 
 ### 2026-10-08
 
 - [IDKMesh SEO, discoverability, and traffic assessment](2026-10-08-visibility-seo-traffic-assessment.md)
+- [Parallel worker 01 — issue #630 completion](2026-10-08-parallel-worker-01-issue-630.md)
 
 ### 2026-10-07
 
