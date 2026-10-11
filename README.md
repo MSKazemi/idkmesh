@@ -70,6 +70,14 @@ For the claim-by-claim source of truth, see the
 validated in normal CI against repository paths and the real CLI command tree,
 and uses the evidence ladder from planned (0) through production-qualified (5).
 
+For the commands and interfaces available **in code today**, use the
+[implementation reference](docs/reference/README.md) and
+[as-built architecture map](docs/architecture/AS_BUILT_IMPLEMENTATION_MAP.md).
+They distinguish `init --github --dry-run`, local `run` bookkeeping,
+checkout-only `local-loop` execution, and read-only Control Tower HTTP from
+future network/multi-user and merge capabilities. For common failures see
+[troubleshooting](docs/help/TROUBLESHOOTING.md).
+
 **Executable research foundation; reference runner still incomplete.**
 
 What is already present on `main`:

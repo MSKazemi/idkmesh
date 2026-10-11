@@ -6,6 +6,15 @@ This page is a **curated navigation and authority map, not an exhaustive catalog
 
 For the public front door, start with [`BEGINNER_GUIDE.md`](BEGINNER_GUIDE.md) if you want a plain-language explanation, then continue with [`../README.md`](https://github.com/MSKazemi/idkmesh/blob/main/README.md), [`GETTING_STARTED.md`](GETTING_STARTED.md), [`PROJECT_ADOPTION_GUIDE.md`](PROJECT_ADOPTION_GUIDE.md) if you want to use IDKMesh with another repository, [`../CONTRIBUTING.md`](https://github.com/MSKazemi/idkmesh/blob/main/CONTRIBUTING.md), and [`../COMMUNITY.md`](https://github.com/MSKazemi/idkmesh/blob/main/COMMUNITY.md).
 
+## As-built code, reference, and help
+
+- [Implementation reference](reference/README.md) — one-to-one map for all 85 installable Python modules, shipped CLI commands and local HTTP endpoints.
+- [Source-derived architecture](architecture/AS_BUILT_IMPLEMENTATION_MAP.md) — how run control, offline execution, verification, GitHub/Jules connectors, and human authority are **actually** separated in code.
+- [Troubleshooting](help/TROUBLESHOOTING.md) — concrete setup, API, run-store, sandbox, and test failures.
+- [Dated reconciliation audit](audits/2026-10-10-code-documentation-reconciliation.md) — exact reviewed revision, implementation boundaries, test limitations and follow-up scope.
+
+The [capability matrix](CAPABILITY_MATRIX.md) remains authoritative for implementation status and evidence level. A linked source file or design document alone does **not** prove a production guarantee.
+
 ## Current productization initiative
 
 The current productization track turns the existing WorkUnit/worker/verification

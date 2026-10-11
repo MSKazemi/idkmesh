@@ -18,6 +18,12 @@ declare no explicit baseline revision; that is noted rather than invented.
 
 Whole-repository snapshots, ordered by date.
 
+- [Code-to-Documentation Reconciliation](2026-10-10-code-documentation-reconciliation.md)
+  — 2026-10-10/11; initial `58f5d925`, refreshed `bee77a61`. Inventories all
+  85 direct installable Python modules, links as-built architecture and operator
+  references, records source/plan distinctions, and explicitly bounds the
+  unexecuted test and wider-tree review scope.
+
 - [Engineering Questions and Product-Answer Assessment](2026-10-07-engineering-question-and-product-answer-assessment.md)
   — 2026-10-07; baseline `7ac46d39`. Reviews the engineering questions IDKMesh
   needs to answer, grades the current repository/product evidence, and separates

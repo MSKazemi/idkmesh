@@ -4,6 +4,8 @@
 
 IDKMesh is a verification-first coordination system for uncertain, distributed work. The repository currently combines protocol contracts, experiment/simulation code, GitHub-native control loops, community/evolution research, and interoperability adapters. It is **not yet a production distributed mesh or a finished Verified Swarm Runner product**.
 
+For the **source-verified implementation wiring** (CLI, local HTTP, SQLite run bookkeeping, reference execution, candidate/verification boundaries and integration non-authority) see [As-Built Implementation Map](docs/architecture/AS_BUILT_IMPLEMENTATION_MAP.md) and [the 85-module source index](docs/reference/MODULE_MAP.md). These supplement this architectural model without promoting plans to current capabilities.
+
 For the canonical definitions of event, action, candidate, iteration, generation, learning, improvement, and integration authority, see [`ITERATION_MODEL.md`](ITERATION_MODEL.md).
 
 ## 1. System identity
