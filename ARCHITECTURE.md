@@ -42,6 +42,29 @@ benchmark fixture != scientific outcome
 
 The machine-readable contracts and compatibility rules live in [`schemas/`](schemas/README.md).
 
+## 2.1 Implemented executable surfaces
+
+The semantic path above is broader than any one transport. For the exact code-backed
+surface currently present in the package, use the
+[Executable Capability Reference](docs/EXECUTABLE_CAPABILITIES.md). It is CI-checked
+against the real recursive CLI parser, Control Tower discovery endpoints, public Python
+client methods, and every top-level `idkmesh/*.py` module.
+
+At the current revision, executable architecture spans:
+
+- review/evidence diagnostics (`gate-audit`, dependence, marginal evidence, benchmark and synthesis);
+- connector profile validation/import/storage, offline probes, readiness diagnosis, and provider-neutral route explanation;
+- durable Product Spine run state, retained evidence, derived WorkUnit/project reads, and append-only events;
+- loopback Control Tower UI/API plus a dependency-free Python client;
+- Jules, OpenAI-compatible, and bounded local-agent implementation foundations;
+- GitHub-native source/webhook/dispatch/candidate/evidence/bootstrap control primitives;
+- tenant scope, enterprise identity/authorization/profile, and tamper-evident audit primitives;
+- task claims, coordination preflight, executor admission, service limits, and observability;
+- stewardship reports/history and local browser views.
+
+These are implementation capabilities, not a blanket maturity claim. The
+[Capability Truth Matrix](docs/CAPABILITY_MATRIX.md) remains authoritative for evidence
+level and allowed public wording; specifications define each surface's authority ceiling.
 ## 3. Semantic state: goals, work, evidence, provenance
 
 IDKMesh models the project as interacting graphs rather than one task queue.
