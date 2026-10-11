@@ -87,6 +87,14 @@ For the exhaustive code-backed command/API/library inventory, see the
 against the recursive CLI tree, Control Tower discovery, Python client, and `idkmesh/`
 module inventory.
 
+For the commands and interfaces available **in code today**, use the
+[implementation reference](docs/reference/README.md) and
+[as-built architecture map](docs/architecture/AS_BUILT_IMPLEMENTATION_MAP.md).
+They distinguish `init --github --dry-run`, local `run` bookkeeping,
+checkout-only `local-loop` execution, and read-only Control Tower HTTP from
+future network/multi-user and merge capabilities. For common failures see
+[troubleshooting](docs/help/TROUBLESHOOTING.md).
+
 **Executable research foundation; reference runner still incomplete.**
 
 What is already present on `main`:

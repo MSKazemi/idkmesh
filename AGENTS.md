@@ -4,6 +4,8 @@
 
 Core prototypes live in `experiments/`, simulations in `randomness_lab/` and `sim/`, bindings in `interop/`, and utilities in `tools/` and `scripts/`. Put tests in `tests/` (or `interop/tests/`) and fixtures under `tests/fixtures/` or `verification/fixtures/`. JSON contracts belong in `schemas/`, samples in `examples/`, outputs in `results/`, policies/state in `config/` and `state/`, and rationale in `docs/`. Read `README.md`, `CONTRIBUTING.md`, and `PROJECT_RULES.md` first. Use `ARCHITECTURE.md` for the current system map, `ROADMAP.md` for evidence-gated future work, and `docs/README.md` for deeper subsystem/research indexes.
 
+For source-derived module ownership and user-facing command/HTTP contracts, see `docs/reference/MODULE_MAP.md` and `docs/reference/CLI_HTTP_QUICK_REFERENCE.md`; for execution, API and authority boundaries see `docs/architecture/AS_BUILT_IMPLEMENTATION_MAP.md`. Treat this map as a dated navigation aid, not a replacement for live code, `docs/CAPABILITY_MATRIX.md`, or tests; update it when adding/removing an `idkmesh/*.py` module.
+
 ## Build, Test, and Development Commands
 
 The supported local entry points now live in the repository and delegate to the same `scripts/testkit.py` tiers used by the documented development workflow:
