@@ -88,7 +88,13 @@ can know the token without weakening the browser default.
 The server also:
 
 - accepts only loopback `Host` values;
-- compares session tokens with constant-time comparison;
+- compares session tokens with constant-time comparison and answers every
+  invalid transport -- a wrong, missing, or similarly named header, or a
+  hostile value such as non-ASCII or oversized input -- with `403
+  invalid_session_token`, failing closed and never crashing the handler;
+- answers `403 invalid_session_token` before any routing or input-validation
+  feedback on token-protected endpoints (including stray query-parameter
+  rejection), so unauthenticated callers learn no endpoint input shapes;
 - rejects cross-origin preflight;
 - rejects transfer-encoded/chunked request bodies;
 - caps request bodies at 2 MiB;

@@ -14,6 +14,17 @@ and the release notes for that tag.
 
 ### Added
 
+- Security matrix for the API release qualification suite (issue #745,
+  Security slice; `tests/test_api_security_matrix.py`): an auth/token bypass
+  matrix (the token travels in exactly one header; query strings,
+  `Authorization`, `Cookie`, lookalike names and hostile values are all
+  rejected, with auth ordered before negotiation and body parsing), an
+  oracle-driven method-confusion matrix over the advertised endpoint map
+  (closed method set, `Allow`-accurate 405s, no TRACE reflection, protocol
+  layer 501 for unknown methods), and CORS/CSRF pins (no `Access-Control-*`
+  grants on any response, preflight refused, cross-site simple-request
+  mutations rejected at auth).
+
 - Preregistration v2 (`docs/research/PREREG_AGENT_VALUE_FORECAST_V2.md`) and
   the E048 runner (`experiments/temporal_holdout.py`) register, before any data
   exists, a temporal-holdout replication of the agent-value forecast on SWE-bench
@@ -445,6 +456,19 @@ and the release notes for that tag.
 
 ### Fixed
 
+- Control Tower token-protected endpoints answered input-shape errors before
+  authentication: a stray query parameter produced `400
+  unexpected_query_parameters` for callers with no session token, letting
+  unauthenticated callers probe endpoint input shapes. Query validation now
+  runs after the token gate, matching the pinned "token before routing"
+  ordering (issue #745, Security slice).
+- A non-ASCII `X-IDKMesh-UI-Token` header value crashed the Control Tower
+  handler (`secrets.compare_digest` raises `TypeError` on non-ASCII strings),
+  killing the connection instead of answering `403 invalid_session_token`.
+  Hostile header values now fail closed with the normal error envelope.
+- `PUT`/`PATCH`/`DELETE`/`TRACE`/`CONNECT` on `/readyz` answered `404
+  not_found` while `POST` correctly answered `405`; the unsupported-write-method
+  table now covers `/`, `/index.html`, `/healthz` and `/readyz` uniformly.
 - The IDKGraph Markdown index (`tools/idkgraph_markdown_index.py`) now skips a
   leading YAML front-matter block. Previously the last metadata line followed by
   the closing `---` parsed as a setext H2, so every page with front matter (all

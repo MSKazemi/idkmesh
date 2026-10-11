@@ -741,7 +741,12 @@ def _handler(
 
         def _token_allowed(self) -> bool:
             provided = self.headers.get(TOKEN_HEADER) or ""
-            if secrets.compare_digest(provided, token):
+            # secrets.compare_digest raises TypeError on non-ASCII str
+            # values, so hostile header values must be rejected before the
+            # comparison: invalid input fails closed with the usual 403 and
+            # never crashes the handler. The comparison itself stays exact
+            # and constant-time for every value that reaches it.
+            if provided.isascii() and secrets.compare_digest(provided, token):
                 return True
             self._send_json(
                 403,
@@ -782,17 +787,27 @@ def _handler(
             )
             return False
 
-        def _path(self) -> tuple[str, str] | None:
+        def _path(self) -> tuple[str, str]:
             parsed = urlsplit(self.path)
-            # GET /api/v1/runs, /connections, and /work-units (lists) are
-            # endpoints with declared, bounded query parameters (?limit=,
-            # ?cursor=, and named filters; API Conventions v0.1 sections
-            # 10-11). Every other /api/ endpoint keeps rejecting stray query
-            # parameters outright.
+            return parsed.path, parsed.query
+
+        def _stray_query_rejected(self, path: str, query: str) -> bool:
+            """Answer 400 for stray query parameters; True when rejected.
+
+            GET /api/v1/runs, /connections, /work-units, and /events (and
+            the event stream) are endpoints with declared, bounded query
+            parameters (?limit=, ?cursor=, and named filters; API
+            Conventions v0.1 sections 10-11). Every other /api/ endpoint
+            rejects stray query parameters outright -- but only after the
+            token gate, so an unauthenticated caller gets
+            ``invalid_session_token`` before any input-shape feedback (the
+            same ordering as routing; see
+            ``test_unknown_v1_route_requires_token_before_routing``).
+            """
             if (
-                parsed.query
-                and parsed.path.startswith("/api/")
-                and parsed.path not in (
+                query
+                and path.startswith("/api/")
+                and path not in (
                     f"/api/{API_VERSION}/runs",
                     f"/api/{API_VERSION}/connections",
                     f"/api/{API_VERSION}/work-units",
@@ -807,8 +822,8 @@ def _handler(
                         "Control Tower v1 endpoints do not accept query parameters",
                     ),
                 )
-                return None
-            return parsed.path, parsed.query
+                return True
+            return False
 
         def _unknown_api_version(self, path: str) -> bool:
             if not path.startswith("/api/"):
@@ -1783,10 +1798,7 @@ def _handler(
         def _handle_get(self, *, head_only: bool) -> None:
             if not self._host_allowed():
                 return
-            parsed = self._path()
-            if parsed is None:
-                return
-            path, query = parsed
+            path, query = self._path()
             if path in ("/", "/index.html"):
                 self._headers(
                     200,
@@ -1822,6 +1834,8 @@ def _handler(
                 return
             if path.startswith(f"/api/{API_VERSION}/"):
                 if not self._token_allowed() or not self._accept_allowed():
+                    return
+                if self._stray_query_rejected(path, query):
                     return
             if path == f"/api/{API_VERSION}/status":
                 self._send_json(
@@ -1925,10 +1939,9 @@ def _handler(
         def do_OPTIONS(self) -> None:
             if not self._host_allowed():
                 return
-            parsed = self._path()
-            if parsed is None:
+            path, query = self._path()
+            if self._stray_query_rejected(path, query):
                 return
-            path, _query = parsed
             allow = "GET, HEAD"
             if path == f"/api/{API_VERSION}/run-evidence/inspect":
                 allow = "POST"
@@ -1943,14 +1956,13 @@ def _handler(
         def do_POST(self) -> None:
             if not self._host_allowed():
                 return
-            parsed = self._path()
-            if parsed is None:
-                return
-            path, _query = parsed
+            path, query = self._path()
             if self._unknown_api_version(path):
                 return
             if path.startswith(f"/api/{API_VERSION}/"):
                 if not self._token_allowed() or not self._accept_allowed():
+                    return
+                if self._stray_query_rejected(path, query):
                     return
             if path in (
                 "/",
@@ -2004,14 +2016,13 @@ def _handler(
         def _unsupported_write_method(self) -> None:
             if not self._host_allowed():
                 return
-            parsed = self._path()
-            if parsed is None:
-                return
-            path, _query = parsed
+            path, query = self._path()
             if self._unknown_api_version(path):
                 return
             if path.startswith(f"/api/{API_VERSION}/"):
                 if not self._token_allowed() or not self._accept_allowed():
+                    return
+                if self._stray_query_rejected(path, query):
                     return
             if path == f"/api/{API_VERSION}/run-evidence/inspect":
                 self._method_not_allowed("POST")
@@ -2023,6 +2034,7 @@ def _handler(
                 "/",
                 "/index.html",
                 "/healthz",
+                "/readyz",
                 f"/api/{API_VERSION}/status",
                 f"/api/{API_VERSION}/openapi.json",
                 f"/api/{API_VERSION}/metrics",
