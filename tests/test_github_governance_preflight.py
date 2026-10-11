@@ -133,6 +133,9 @@ class GitHubGovernancePreflightTests(unittest.TestCase):
         self.observation["repository_rules"]["invented"] = True
         with self.assertRaises(preflight.GitHubGovernancePreflightError):
             preflight.validate_observation(self.observation)
+        with self.assertRaises(preflight.GitHubGovernancePreflightError) as caught:
+            preflight.parse_observation_text(None)  # type: ignore[arg-type]
+        self.assertEqual(caught.exception.code, "invalid_observation_text")
 
     def test_committed_observation_fixture_is_deterministic(self) -> None:
         text = (EXAMPLES / "governance-pass-v0.1.json").read_text(encoding="utf-8")
@@ -158,6 +161,82 @@ class GitHubGovernancePreflightTests(unittest.TestCase):
             "actions-default-contents-read", "immutable-security-actions",
             "checkout-persist-credentials-disabled", "untrusted-pr-secret-isolation",
         }.issubset(codes))
+
+    def test_inline_pr_trigger_and_bracket_secret_are_isolated(self) -> None:
+        secret_expr = "$" + "{{ secrets['PROVIDER_TOKEN'] }}"
+        source = f"""on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  t:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: "actions/checkout@11d5960a326750d5838078e36cf38b85af677262"
+        with:
+          persist-credentials: false
+      - run: echo "{secret_expr}"
+"""
+        report = preflight.lint_workflow_text(source)
+        codes = {item["code"] for item in report["findings"]}
+        self.assertIn("untrusted-pr-secret-isolation", codes)
+        self.assertNotIn("checkout-persist-credentials-disabled", codes)
+
+    def test_permission_and_environment_lookalikes_do_not_count(self) -> None:
+        source = """on: workflow_dispatch
+permissions:
+  contents: read
+jobs:
+  t:
+    runs-on: ubuntu-latest
+    env:
+      id-token: write
+      environment: production
+    steps:
+      - run: echo safe
+"""
+        observed = preflight.lint_workflow_text(source)["workflow_source"]
+        self.assertFalse(observed["oidc_token_permission"])
+        self.assertFalse(observed["environment_bound"])
+
+    def test_job_level_oidc_permission_and_environment_are_detected(self) -> None:
+        source = """on: workflow_dispatch
+permissions:
+  contents: read
+jobs:
+  t:
+    permissions:
+      contents: read
+      id-token: write
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - run: echo safe
+"""
+        observed = preflight.lint_workflow_text(source)["workflow_source"]
+        self.assertTrue(observed["oidc_token_permission"])
+        self.assertTrue(observed["environment_bound"])
+
+    def test_malformed_docker_digest_is_not_immutable(self) -> None:
+        source = """on: workflow_dispatch
+permissions:
+  contents: read
+jobs:
+  t:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: docker://example.invalid/tool@sha256:not-a-digest
+"""
+        report = preflight.lint_workflow_text(source)
+        self.assertIn(
+            "immutable-security-actions",
+            {item["code"] for item in report["findings"]},
+        )
+
+    def test_oidc_rejects_bracket_form_long_lived_cloud_secret(self) -> None:
+        secret_expr = "$" + "{{ secrets['AWS_SECRET_ACCESS_KEY'] }}"
+        source = (EXAMPLES / "oidc-cloud-dispatch.yml").read_text(encoding="utf-8")
+        source += f"\n# {secret_expr}\n"
+        self.assertEqual(preflight.oidc_preflight(source)["status"], "FAIL")
 
     def test_multiple_workflows_merge_conservatively(self) -> None:
         good = (EXAMPLES / "read-only-lane.yml").read_text(encoding="utf-8")

@@ -84,6 +84,17 @@ CODEOWNERS_PATTERNS = (
 OWNER_RE = re.compile(r"@[A-Za-z0-9][A-Za-z0-9_.-]*(?:/[A-Za-z0-9_.-]+)?\Z")
 SHA_RE = re.compile(r"[0-9a-f]{40}\Z")
 USES_RE = re.compile(r"^\s*(?:-\s*)?uses\s*:\s*['\"]?([^'\"#\s]+)", re.MULTILINE)
+CHECKOUT_RE = re.compile(
+    r"^\s*-\s*uses\s*:\s*['\"]?actions/checkout@[^'\"#\s]+['\"]?[^\n]*",
+    re.MULTILINE,
+)
+SECRET_EXPR_RE = re.compile(r"\$\{\{[^}]*\bsecrets\b", re.IGNORECASE)
+CLOUD_SECRET_RE = re.compile(
+    r"\$\{\{[^}]*\bsecrets\s*(?:\.\s*|\[\s*['\"])"
+    r"(?:AWS_SECRET_ACCESS_KEY|AZURE_CLIENT_SECRET|"
+    r"GOOGLE_APPLICATION_CREDENTIALS|GCP_SERVICE_ACCOUNT_KEY)",
+    re.IGNORECASE,
+)
 
 
 def _pairs(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
@@ -96,6 +107,10 @@ def _pairs(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
 
 
 def parse_observation_text(text: str) -> dict[str, Any]:
+    if not isinstance(text, str):
+        raise GitHubGovernancePreflightError(
+            "invalid_observation_text", "observation must be UTF-8 JSON text"
+        )
     if len(text.encode("utf-8")) > MAX_OBSERVATION_BYTES:
         raise GitHubGovernancePreflightError("observation_too_large", "observation exceeds size limit")
     try:
@@ -216,19 +231,86 @@ def require_governance(operation: str, observation: Mapping[str, Any]) -> dict[s
     return report
 
 
+def _permission_blocks(
+    text: str,
+) -> list[tuple[int, dict[str, str] | str]]:
+    lines = text.splitlines()
+    blocks: list[tuple[int, dict[str, str] | str]] = []
+    for index, line in enumerate(lines):
+        match = re.match(r"^( *)permissions\s*:\s*([^#]*?)\s*$", line)
+        if not match:
+            continue
+        indent = len(match.group(1))
+        scalar = match.group(2).strip().strip("'\"")
+        if scalar:
+            blocks.append((indent, scalar))
+            continue
+        values: dict[str, str] = {}
+        for later in lines[index + 1 :]:
+            if not later.strip() or later.lstrip().startswith("#"):
+                continue
+            later_indent = len(later) - len(later.lstrip(" "))
+            if later_indent <= indent:
+                break
+            item = re.match(
+                r"^\s*([A-Za-z0-9_-]+)\s*:\s*([^#]+?)\s*$", later
+            )
+            if item:
+                values[item.group(1)] = item.group(2).strip().strip("'\"")
+        blocks.append((indent, values))
+    return blocks
+
+
 def _permissions(text: str) -> tuple[bool, bool]:
-    root = re.search(r"(?m)^permissions:\s*\n((?:  [^\n]+\n?)*)", text)
-    block = root.group(1) if root else ""
-    contents_read = bool(re.search(r"(?m)^  contents:\s*read\s*(?:#.*)?$", block))
-    id_token = bool(re.search(r"(?m)^\s*id-token:\s*write\s*(?:#.*)?$", text))
+    blocks = _permission_blocks(text)
+    contents_read = any(
+        indent == 0
+        and isinstance(value, dict)
+        and value.get("contents") == "read"
+        for indent, value in blocks
+    )
+    id_token = any(
+        indent in {0, 4}
+        and isinstance(value, dict)
+        and value.get("id-token") == "write"
+        for indent, value in blocks
+    )
     return contents_read, id_token
+
+
+def _has_pr_trigger(text: str) -> bool:
+    lines = text.splitlines()
+    for index, line in enumerate(lines):
+        match = re.match(
+            r"^( *)['\"]?on['\"]?\s*:\s*([^#]*?)\s*$", line
+        )
+        if not match:
+            continue
+        indent = len(match.group(1))
+        scalar = match.group(2).strip().strip("'\"")
+        if scalar and re.search(r"\bpull_request(?:_target)?\b", scalar):
+            return True
+        if scalar:
+            continue
+        for later in lines[index + 1 :]:
+            if not later.strip() or later.lstrip().startswith("#"):
+                continue
+            later_indent = len(later) - len(later.lstrip(" "))
+            if later_indent <= indent:
+                break
+            if re.match(r"^\s*pull_request(?:_target)?\s*:", later):
+                return True
+        return False
+    return False
 
 
 def _immutable(ref: str) -> bool:
     if ref.startswith("./"):
         return True
     if ref.startswith("docker://"):
-        return "@sha256:" in ref
+        return re.fullmatch(
+            r"docker://[^@\s]+@sha256:[0-9a-fA-F]{64}", ref
+        ) is not None
     return "@" in ref and SHA_RE.fullmatch(ref.rsplit("@", 1)[1]) is not None
 
 
@@ -245,20 +327,22 @@ def lint_workflow_text(text: str, *, label: str = "workflow") -> dict[str, Any]:
         if not _immutable(ref):
             findings.append({"code": "immutable-security-actions", "message": f"not pinned to immutable revision: {ref}"})
     checkout_safe = True
-    for match in re.finditer(r"(?m)^\s*-\s*uses:\s*actions/checkout@[^\n]+", text):
+    for match in CHECKOUT_RE.finditer(text):
         rest = text[match.end():]
         next_step = re.search(r"(?m)^\s*-\s+", rest)
         block = rest[: next_step.start()] if next_step else rest
         if not re.search(r"(?m)^\s*persist-credentials:\s*false\s*(?:#.*)?$", block):
             checkout_safe = False
             findings.append({"code": "checkout-persist-credentials-disabled", "message": "checkout must set persist-credentials: false"})
-    pr = bool(re.search(r"(?m)^\s{0,2}(?:on:\s*)?pull_request(?:_target)?\s*:", text) or re.search(r"(?m)^\s{0,2}on:\s*pull_request(?:_target)?\s*$", text))
-    secrets = "${{ secrets." in text or bool(re.search(r"(?m)^\s*secrets:\s*inherit\s*$", text))
+    pr = _has_pr_trigger(text)
+    secrets = bool(SECRET_EXPR_RE.search(text)) or bool(
+        re.search(r"(?m)^\s*secrets:\s*inherit\s*$", text)
+    )
     privileged_head = "pull_request_target" in text and "github.event.pull_request.head" in text
     isolated = not (pr and (secrets or privileged_head))
     if not isolated:
         findings.append({"code": "untrusted-pr-secret-isolation", "message": "PR-triggered untrusted code cannot share secret-bearing or privileged head execution"})
-    environment_bound = bool(re.search(r"(?m)^\s+environment:\s*[^#\n]+", text))
+    environment_bound = bool(re.search(r"(?m)^ {4}environment\s*:", text))
     return {
         "label": label,
         "workflow_source": {
@@ -297,7 +381,7 @@ def render_codeowners_recommendation(owner: str) -> str:
 
 def oidc_preflight(text: str) -> dict[str, Any]:
     report = lint_workflow_text(text, label="oidc-workflow")
-    long_lived = bool(re.search(r"\$\{\{\s*secrets\.(?:AWS_SECRET_ACCESS_KEY|AZURE_CLIENT_SECRET|GOOGLE_APPLICATION_CREDENTIALS|GCP_SERVICE_ACCOUNT_KEY)", text, re.IGNORECASE))
+    long_lived = bool(CLOUD_SECRET_RE.search(text))
     token = report["workflow_source"]["oidc_token_permission"]
     return {
         "status": "PASS" if token and not long_lived else "FAIL",

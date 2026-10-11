@@ -111,8 +111,18 @@ YAML interpreter:
 - every `actions/checkout` use sets `persist-credentials: false`;
 - PR-triggered source does not combine untrusted PR execution with secret
   references or privileged `pull_request_target` head checkout;
-- presence of an environment approval binding;
-- presence of `id-token: write` for an OIDC lane.
+- presence of a direct job-level environment binding in the generated workflow
+  shape;
+- presence of `id-token: write` inside workflow/job `permissions:` for an
+  OIDC lane;
+- mapped, scalar, and inline-list `pull_request`/`pull_request_target`
+  trigger forms, including quoted `on` keys;
+- secret-expression references including dot and bracket syntax.
+
+The source checks intentionally reject ambiguous/non-standard shapes rather
+than guessing them safe. For example, a key named `id-token` under `env:`
+does not count as an Actions permission, and an `environment` variable does
+not count as a protected GitHub Environment binding.
 
 When several workflow files are supplied, their booleans are combined
 conservatively: one unsafe/unknown workflow cannot be hidden by a safe one.
