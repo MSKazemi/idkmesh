@@ -14,6 +14,16 @@ and the release notes for that tag.
 
 ### Added
 
+- The backward-compatibility diff gate (issue #737, ADR-0020) now covers
+  the `openapi.yaml` API surface, not just `schemas/*.json` (issue #745,
+  Contract-tests compatibility diff gate). Removing a path, operation,
+  response status, media type, or declared parameter -- making a
+  parameter required, renaming an `operationId`, changing a response
+  shape or schema target, or removing a shared `components` entry -- is
+  now a gate failure; additions remain widenings. Parameters are read via
+  the new stdlib-only `tools/openapi_catalog.py` block-mapping parser,
+  which also becomes the single source for the parsing helper the API
+  conformance tests use. Documented in the ADR's amendment note.
 - Preregistration v2 (`docs/research/PREREG_AGENT_VALUE_FORECAST_V2.md`) and
   the E048 runner (`experiments/temporal_holdout.py`) register, before any data
   exists, a temporal-holdout replication of the agent-value forecast on SWE-bench

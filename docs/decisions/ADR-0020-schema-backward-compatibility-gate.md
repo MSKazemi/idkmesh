@@ -151,3 +151,22 @@ Revisit this ADR if:
 - the two-widening allowlist (`enum` growth, `type` widening) proves too
   narrow or too permissive in practice — evidence from an actual missed or
   falsely-flagged change, not speculation, should drive any change to it.
+
+## Amendment (2026-10): the API surface is gated too
+
+Issue #745's release-qualification suite exposed that the gate covered
+``schemas/*.json`` but not ``openapi.yaml``, the checked-in document that
+binds endpoints to those schemas: removing a path, an operation, a
+response status, a media type, or a declared parameter — or making a
+parameter required — passed the gate. ``tools/schema_compat_check.py``
+now diffs that surface between the base ref and the working tree under
+the same conservative policy (additions are widenings; removals and
+shape changes are breaking; the sanctioned fix stays additive change or a
+new version). Parameters are YAML list items, so the document is read by
+``tools/openapi_catalog.parse_block_mapping_lists``, a stdlib-only
+sibling of the block-mapping parser the test suite already used (now
+shared from that one module). Known limitation carried over: a change
+hidden purely inside ``allOf``/``oneOf`` composition or flow-style
+scalars is not detected. Covered by ``tests/test_schema_compat_check.py``
+(``DiffOpenapiSurfaceTests``, ``OpenapiParserContainmentTests``) and an
+end-to-end mutation of the real document.
