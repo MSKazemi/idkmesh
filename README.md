@@ -7,9 +7,22 @@
 
 > **I don't know. You don't know. Together, the mesh can discover, build, verify, and learn.**
 
-IDKMesh is an open-source research and engineering project exploring how humans, AI agents, software tools, and heterogeneous compute can coordinate on uncertain goals and turn proposals into **verified useful work**.
+**In plain English:** IDKMesh helps teams check AI-assisted work instead of trusting the first answer. A tool that works today, `idkmesh gate-audit`, reads reviewer **approve/reject votes and known correct answers**, then reports how often the reviewers fail together and how much independent checking their panel actually provides. **It does not run the reviewers or approve changes.**
 
-The project is intentionally ambitious, but the repository is not claiming a finished planetary-scale system. Today it is a **GitHub-native research laboratory with an executable coordination/evidence foundation** and a reference-product target: the Git-native Verified Swarm Runner.
+The wider IDKMesh framework explores how people, AI agents, and tools can break goals into small tasks, produce candidate work, verify it separately, preserve evidence, and leave the final integration decision to an authorized human or policy. **That automatic end-to-end swarm runner is not yet a finished product.** The repository is currently an **alpha GitHub-native research and engineering laboratory** with runnable tools, schemas, local inspection, and experimental coordination components.
+
+**New here? Start by what you want to do:**
+
+| Your goal | Best first step |
+| --- | --- |
+| Understand the idea without technical background | [IDKMesh for Absolute Beginners](docs/BEGINNER_GUIDE.md) |
+| Try a real command on included sample votes | [Audit a review gate](#try-it-in-five-minutes-audit-a-review-gate) |
+| See why a worker cannot approve its own work | [Run the contract demo](#try-the-contract-demo) (synthetic fixtures, no AI) |
+| Inspect recorded attempts and evidence in a browser | [Human Control Tower](#inspect-a-swarm-run-in-the-human-control-tower) (read-only, local) |
+| Use the approach with a different GitHub project | [Project Adoption Guide](docs/PROJECT_ADOPTION_GUIDE.md) (manual model; automation incomplete) |
+| Check exactly what is implemented versus planned | [Capability Truth Matrix](docs/CAPABILITY_MATRIX.md) |
+
+**The boundary to remember:** *worker says "done" ≠ independently checked ≠ authorized to merge.*
 
 **A concrete question this repository can already answer:** *how many independent votes is
 your review panel actually worth?* Often far fewer than the number of reviewers on it. In
