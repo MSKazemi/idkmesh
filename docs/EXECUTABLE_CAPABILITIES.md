@@ -148,6 +148,7 @@ bounded `local-loop` composition.
 
 The package contains bounded GitHub repository/ref readers, issue-source normalization,
 issue preview/routing projection, authenticated webhook ingress, delivery idempotency,
+deterministic ledger-record serialization with append-only chain verification (pure, no Git or GitHub action),
 explicit dispatch authorization/bridge logic, exact candidate observation, evidence/status
 publication helpers, governance-policy checks, public-evidence projection, and deterministic
 GitHub-first bootstrap planning/rendering.
@@ -219,6 +220,7 @@ name documents implementation presence, not stability as a public Python API.
 - `idkmesh/github_governance_policy.py`
 - `idkmesh/github_issue_preview.py`
 - `idkmesh/github_issue_source.py`
+- `idkmesh/github_ledger_serialization.py`
 - `idkmesh/github_public_evidence.py`
 - `idkmesh/github_rest_source.py`
 - `idkmesh/github_routing_projection.py`
