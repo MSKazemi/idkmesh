@@ -1803,7 +1803,7 @@
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/planning/PRODUCT_GOALS_COMPONENT_SLICE_MAP_2026-09-22.html</loc>
-    <lastmod>2026-10-09</lastmod>
+    <lastmod>2026-10-11</lastmod>
     <priority>0.4</priority>
   </url>
   <url>
@@ -2178,7 +2178,7 @@
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/specifications/GITHUB_FIRST_OPERATIONS_V0_1.html</loc>
-    <lastmod>2026-10-09</lastmod>
+    <lastmod>2026-10-11</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
@@ -2188,7 +2188,12 @@
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/specifications/GITHUB_LEDGER_RECORD_V0_1.html</loc>
-    <lastmod>2026-10-09</lastmod>
+    <lastmod>2026-10-11</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://mskazemi.com/idkmesh/specifications/GITHUB_LEDGER_SERIALIZATION_V0_1.html</loc>
+    <lastmod>2026-10-11</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
