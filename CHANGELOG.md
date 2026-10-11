@@ -14,6 +14,15 @@ and the release notes for that tag.
 
 ### Added
 
+- [GitHub Ledger Recovery Planning and Killed-Workflow Proof v0.1](docs/specifications/GITHUB_LEDGER_RECOVERY_PLAN_V0_1.md),
+  `idkmesh/github_ledger_recovery_plan.py` and
+  `tests/test_github_ledger_killed_workflow.py` (issue #597, slice C9-F): a pure
+  advisory `plan_recovery(state)` that names the safe next step for a recovered
+  run and reconciles, never blindly resubmits, an unconfirmed provider
+  submission; and an exhaustive kill matrix that kills a coordinating workflow at
+  every side-effect point (and in pairs), starts a fresh coordinator with only
+  the ledger and the provider, and requires a recorded decision with exactly one
+  provider submission. Intent is recorded before effect. Grants no authority.
 - [GitHub Ledger Recovery Reader v0.1](docs/specifications/GITHUB_LEDGER_RECOVERY_V0_1.md)
   and `idkmesh/github_ledger_recovery.py` (issue #597, slice C9-E): derive a run's
   current state from its immutable ledger records. It verifies the chain, then

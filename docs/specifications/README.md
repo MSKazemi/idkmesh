@@ -63,6 +63,10 @@ meaning of an existing version.
   C9-E derives a run's current state from its immutable ledger records, never
   drops negative evidence, surfaces ambiguous provider submissions, and refuses
   histories no real run could have produced.
+- [GitHub Ledger Recovery Planning and Killed-Workflow Proof v0.1](GITHUB_LEDGER_RECOVERY_PLAN_V0_1.md) —
+  C9-F pure next-step planning for a recovered run (reconcile, never blindly
+  resubmit) and the exhaustive kill-matrix test that a killed coordinating
+  workflow is recovered with exactly one provider submission.
 - [Release Supply-Chain Baseline v0.1](RELEASE_SUPPLY_CHAIN_V0_1.md) —
   release SBOM/checksum/source-workflow identity evidence, immutable-pinned
   GitHub build provenance, consumer verification, and vulnerability/update
