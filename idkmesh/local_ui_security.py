@@ -15,6 +15,19 @@ def new_session_token() -> str:
     return secrets.token_urlsafe(24)
 
 
+def token_matches(provided: str | None, expected: str) -> bool:
+    """Constant-time check of a session-token header value.
+
+    ``secrets.compare_digest`` raises ``TypeError`` for ``str`` operands with
+    non-ASCII characters, and ``http.server`` decodes header bytes as latin-1,
+    so a single hostile header byte would otherwise escape as an unhandled
+    exception instead of a controlled 403. Comparing the UTF-8 bytes is total.
+    """
+    return secrets.compare_digest(
+        (provided or "").encode("utf-8"), expected.encode("utf-8")
+    )
+
+
 def is_loopback_host(host_header: str | None) -> bool:
     """Accept only the loopback host names used by IDKMesh local UIs."""
     if not host_header or any(ch in host_header for ch in "/\\@,\r\n\t "):

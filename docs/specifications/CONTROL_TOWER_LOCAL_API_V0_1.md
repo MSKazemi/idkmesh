@@ -88,7 +88,12 @@ can know the token without weakening the browser default.
 The server also:
 
 - accepts only loopback `Host` values;
-- compares session tokens with constant-time comparison;
+- compares session tokens with constant-time comparison over their UTF-8
+  bytes, so a header holding non-ASCII bytes is an ordinary `403
+  invalid_session_token`, never a dropped connection;
+- accepts the token only in the `X-IDKMesh-UI-Token` header (a query string,
+  cookie or `Authorization` value is not a credential) and checks it before
+  routing, so unauthenticated callers cannot tell real routes from missing ones;
 - rejects cross-origin preflight;
 - rejects transfer-encoded/chunked request bodies;
 - caps request bodies at 2 MiB;
