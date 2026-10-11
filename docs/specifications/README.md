@@ -135,6 +135,11 @@ meaning of an existing version.
   experimental machine-readable enterprise posture and deterministic
   declaration-preflight contract for tenancy, identity/SoD, data/egress,
   secrets, audit, recovery, supply chain, and emergency change.
+- [Enterprise Control Service Boundary v0.1](ENTERPRISE_CONTROL_SERVICE_V0_1.md) —
+  normative E8 G2/G3 deployment reference for plane separation, per-tenant
+  authorization, durable state, private workers, scale/idempotency,
+  migrations/backups/probes, upgrade/rollback, and the GitHub integration
+  authority ceiling.
 - [ProjectManifest and DomainPack Interfaces](PROJECT_DOMAIN_INTERFACES.md) —
   separates reusable coordination core from declarative domain and project
   policy.
