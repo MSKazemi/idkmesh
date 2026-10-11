@@ -14,6 +14,15 @@ and the release notes for that tag.
 
 ### Added
 
+- [API v1 Beta Release Gate v0.1](docs/specifications/API_V1_BETA_RELEASE_GATE_V0_1.md)
+  and `make beta-readiness` / `tools/api_beta_readiness.py` (issue #747): the
+  fourteen required-evidence items for a first API beta, each with a declared
+  status, a recorded gap and verified evidence files. Items the qualification
+  run measures are satisfied only by a current, clean, green
+  `make qualify-api` report; the tag item needs an `api-v1-beta*` tag on a clean
+  HEAD. It currently reports **not ready**, with the real gaps named (Human
+  Decision API, multi-user security profile, authority matrix, unpublished
+  clients, migration guide, clean-install demo). It tags and publishes nothing.
 - API-3 control-plane convergence (#738): the checked-in API architecture now
   names one canonical application/domain owner for projects, connectors,
   WorkUnit preview, routing, runs, candidates, verification/evidence, human

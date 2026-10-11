@@ -46,6 +46,10 @@ meaning of an existing version.
   profiles, the storage-port operations and required semantics (migration
   replay, digest-checked reads, append-only events, restart reconstruction),
   the retention matrix, and an honest verified-versus-open acceptance table.
+- [API v1 Beta Release Gate v0.1](API_V1_BETA_RELEASE_GATE_V0_1.md) —
+  the evidence a first API beta needs, how each item is verified (evidence files,
+  a current green qualification report, a clean tagged revision), what the
+  release note must state, and the tool that reports the gate as ready or not.
 - [Release Supply-Chain Baseline v0.1](RELEASE_SUPPLY_CHAIN_V0_1.md) —
   release SBOM/checksum/source-workflow identity evidence, immutable-pinned
   GitHub build provenance, consumer verification, and vulnerability/update
