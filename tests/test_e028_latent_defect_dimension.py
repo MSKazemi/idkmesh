@@ -62,6 +62,21 @@ from sim.e028_latent_defect_dimension import (
 )
 from sim.matched_budget_emergence import STRATEGIES, DefectChannel, run_seed
 from sim.matched_budget_emergence import sim as arena_sim
+import importlib.util
+
+# Marked `sim`: this module replays a frozen simulation (sim/e028_latent_defect_dimension.py) and is run by
+# .github/workflows/emergence-sim.yml whenever the simulation, its tests or its
+# results change, and by the nightly tier. Keeping it out of the per-PR unit
+# tier is the documented remedy for a CPU-budget breach (docs/TESTING.md). As in
+# tests/test_benchmark_publication.py the marker is a tier hint only: without
+# pytest it degrades to no marker rather than failing collection.
+if importlib.util.find_spec("pytest") is not None:
+    import pytest
+
+    pytestmark = pytest.mark.sim
+else:  # pragma: no cover - exercised only where pytest is absent
+    pytestmark = ()
+
 
 ROOT = Path(__file__).resolve().parents[1]
 RESULTS = ROOT / "experiments" / "results"
