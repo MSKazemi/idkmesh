@@ -27,7 +27,9 @@ and the release notes for that tag.
   Control Tower. Two rounds of concurrent mixed traffic (every read route plus
   hostile requests) must all return the expected status, stay under a p99
   ceiling, leave no extra threads or file descriptors after drain, and grow the
-  heap by no more than a ceiling across a separate traced round. It runs as part
+  heap by no more than a ceiling across a separate traced round, and every
+  response body that is byte-stable on an idle server must be identical under
+  load. It runs as part
   of `make qualify-api`; the qualification report now lists capacity
   benchmarking, not load/soak, as uncovered. See
   [`docs/TESTING.md`](docs/TESTING.md#load-and-soak).
@@ -488,6 +490,14 @@ and the release notes for that tag.
 
 ### Fixed
 
+- Control Tower request path (issue #745; found by an independent bot derivation
+  of the security matrix, #1002, and adopted here). Stray query parameters on a
+  token-protected endpoint were answered `400 unexpected_query_parameters`
+  *before* the token gate, so an unauthenticated caller could probe endpoint
+  input shapes; the query check now runs after authentication, and an
+  unauthenticated `OPTIONS` preflight is refused identically whatever its query.
+  `PUT`/`PATCH`/`DELETE`/`TRACE` on `/readyz` returned `404 not_found` while
+  `POST` returned `405`; they now return `405` with `Allow: GET, HEAD`.
 - Event reads now verify what the store wrote (issue #750). `payload_digest`
   was written with every event but never checked, so an event whose payload was
   altered in the database file was served as the original. Every read of the

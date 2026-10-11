@@ -417,7 +417,9 @@ Control Tower over a seeded store and sends two equal rounds of mixed traffic
 from several client threads: authenticated reads of every route plus a share of
 hostile requests (bad token, wrong method, unknown route). It fails when any
 response is not the expected status (a `503` with `Retry-After` is the service
-shedding load and is counted separately), when p99 latency exceeds
+shedding load and is counted separately), when a response body that is
+byte-stable on an idle server differs under load (corruption or cross-request
+bleed that a status check cannot see), when p99 latency exceeds
 `--max-p99-ms` (default 2000, deliberately loose for shared runners), when
 thread count or open file descriptors have grown after the server drains, or
 when the Python heap grows by more than `--max-heap-growth-kib` across a second

@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import copy
 import unittest
+from unittest import mock
 
 from tools import api_load_soak as soak
 
@@ -83,6 +84,20 @@ class LiveSoakTests(unittest.TestCase):
         for round_ in self.report["rounds"]:
             self.assertEqual(round_["failures"], 0)
             self.assertEqual(round_["answered"], 24)
+
+    def test_bodies_are_compared_against_an_idle_baseline(self):
+        # Most endpoints are byte-stable when idle; those must stay identical
+        # under load (corruption / cross-request bleed would show here).
+        self.assertGreaterEqual(self.report["deterministic_endpoints_compared"], 5)
+
+    def test_a_body_that_drifts_under_load_is_reported(self):
+        client = mock.Mock()
+        client.call.return_value = (200, False, 0.001, "different-digest")
+        baselines = {("GET", "/api/v1/status", True): "idle-digest"}
+        with mock.patch.object(soak, "PLAN", (("GET", "/api/v1/status", True, (200,)),)):
+            result = soak.run_round(client, 3, 1, 1, baselines)
+        self.assertEqual(result["failures"], 3)
+        self.assertIn("differs from its idle baseline", result["failure_samples"][0])
 
     def test_the_server_drains_and_leaves_nothing_behind(self):
         after = self.report["after_drain"]
