@@ -38,6 +38,7 @@ whose names differ needs an entry in ``DISTRIBUTION_ALIASES``.
 from __future__ import annotations
 
 import ast
+import functools
 import fnmatch
 import pathlib
 import re
@@ -466,6 +467,18 @@ def _repo_module_names():
     return names
 
 
+@functools.lru_cache(maxsize=1)
+def _repo_module_names_once():
+    """`_repo_module_names()` computed once per process.
+
+    The scan walks the whole tree (about 3 s of CPU). Every caller except the
+    one that tests the scan itself only needs the answer, so they share it; the
+    virtualenv test calls `_repo_module_names()` directly to get a fresh scan.
+    """
+
+    return frozenset(_repo_module_names())
+
+
 def _module_scope_third_party_imports(path, local_names):
     """Distributions `path` imports at module scope, unguarded.
 
@@ -538,7 +551,7 @@ class NamedTestModulesImportCleanlyTests(unittest.TestCase):
         path = ROOT / "tests" / "_positive_control.py"
         try:
             path.write_text(source, encoding="utf-8")
-            found = _module_scope_third_party_imports(path, _repo_module_names())
+            found = _module_scope_third_party_imports(path, _repo_module_names_once())
         finally:
             path.unlink(missing_ok=True)
         self.assertIn("pytest", found)
@@ -579,13 +592,13 @@ class NamedTestModulesImportCleanlyTests(unittest.TestCase):
         path = ROOT / "tests" / "_negative_control.py"
         try:
             path.write_text(source, encoding="utf-8")
-            found = _module_scope_third_party_imports(path, _repo_module_names())
+            found = _module_scope_third_party_imports(path, _repo_module_names_once())
         finally:
             path.unlink(missing_ok=True)
         self.assertEqual(found, set())
 
     def test_every_named_module_imports_under_its_jobs_interpreter(self):
-        local_names = _repo_module_names()
+        local_names = _repo_module_names_once()
         offenders = {}
         for path, job, body in _unittest_jobs():
             installed = _installed_distributions(body)
