@@ -19,6 +19,7 @@ on:
       - "scripts/search_visibility_observation_import.py"
       - "scripts/visibility_growth_selector.py"
       - "scripts/visibility_observatory.py"
+      - "scripts/github_traffic_snapshot.py"
 
 permissions:
   contents: read
@@ -47,6 +48,7 @@ jobs:
         run: |
           python -m unittest \
             tests.test_visibility_observatory \
+            tests.test_github_traffic_snapshot \
             tests.test_discovery_query_portfolio \
             tests.test_bing_ai_performance_import \
             tests.test_search_console_snapshot \
@@ -70,6 +72,26 @@ jobs:
             --repository '${{ github.repository }}' \
             --docs-dir docs \
             --output results/visibility/observatory.json
+
+      - name: Detect optional GitHub Traffic configuration
+        id: traffic
+        env:
+          GITHUB_TRAFFIC_READ_TOKEN: ${{ secrets.GITHUB_TRAFFIC_READ_TOKEN }}
+        run: |
+          if [[ -n "$GITHUB_TRAFFIC_READ_TOKEN" ]]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Collect first-party GitHub Traffic evidence
+        if: steps.traffic.outputs.configured == 'true'
+        env:
+          GITHUB_TRAFFIC_READ_TOKEN: ${{ secrets.GITHUB_TRAFFIC_READ_TOKEN }}
+        run: |
+          python scripts/github_traffic_snapshot.py \
+            --repository '${{ github.repository }}' \
+            --output results/visibility/github-traffic.json
 
       - name: Detect Search Console configuration
         id: gsc
@@ -133,6 +155,8 @@ jobs:
           site = result["site"]
           portfolio = json.loads(Path("results/visibility/query-portfolio.json").read_text())
           query_summary = portfolio["summary"]
+          traffic_path = Path("results/visibility/github-traffic.json")
+          traffic = json.loads(traffic_path.read_text()) if traffic_path.exists() else None
           gsc_path = Path("results/visibility/google-search-console.json")
           gsc = json.loads(gsc_path.read_text()) if gsc_path.exists() else None
           experiment = json.loads(Path("results/visibility/growth-experiment.json").read_text())
@@ -145,6 +169,18 @@ jobs:
               f"- Stars: {discovery['stars']}",
               f"- Forks: {discovery['forks']}",
               f"- Subscribers: {discovery['subscribers']}",
+              (
+                  f"- GitHub repository views / unique visitors (rolling 14d): {traffic['views']['count']} / {traffic['views']['uniques']}"
+                  if traffic else "- GitHub repository traffic: unavailable (optional owner-authorized token not configured)"
+              ),
+              (
+                  f"- GitHub clones / unique cloners (rolling 14d): {traffic['clones']['count']} / {traffic['clones']['uniques']}"
+                  if traffic else "- GitHub clones: unavailable (not zero)"
+              ),
+              (
+                  f"- Aggregate GitHub top referrers observed: {len(traffic['referrers'])}"
+                  if traffic else "- GitHub top referrers: unavailable"
+              ),
               f"- External commit contributors observed: {acquisition['external_commit_contributors_observed']}",
               f"- Contributor page truncated: {acquisition['contributors_page_truncated']}",
               f"- HTML pages audited: {site['html_pages']}",

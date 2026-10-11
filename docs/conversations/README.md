@@ -7,9 +7,13 @@ canonical files designated by [`../../PROJECT_RULES.md`](https://github.com/MSKa
 (decisions, specifications, architecture, findings); this directory keeps the trail
 that produced them.
 
-177 records across 12 dates, newest first.
+178 records across 13 dates, newest first.
 
 ## Index
+
+### 2026-10-11
+
+- [Optional owner-authorized GitHub Traffic observability](2026-10-11-github-traffic-observability.md)
 
 ### 2026-10-08
 
