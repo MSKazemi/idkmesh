@@ -14,6 +14,13 @@ and the release notes for that tag.
 
 ### Added
 
+- [API Storage Profiles v0.1](docs/specifications/API_STORAGE_PROFILES_V0_1.md)
+  (issue #750): profile ownership (GitHub ledger, local SQLite, network
+  interface requirement), the storage-port operations, required semantics with
+  the test that verifies each, migration strategy, retention matrix, and an
+  acceptance table that states what is still open. New
+  `tests/test_api_storage_integrity.py` covers event integrity, migration
+  replay, restart reconstruction and backup.
 - `make qualify-api` / `tools/api_release_qualification.py` (issue #745): one
   repeatable API release-qualification run. It executes the OpenAPI reference
   gate, the schema compatibility gate (`--base`), and the contract, fuzz,
@@ -454,6 +461,14 @@ and the release notes for that tag.
 
 ### Fixed
 
+- Event reads now verify what the store wrote (issue #750). `payload_digest`
+  was written with every event but never checked, so an event whose payload was
+  altered in the database file was served as the original. Every read of the
+  event log (`GET /api/v1/events`, the event stream, `idkmesh` readers) now
+  recomputes the payload digest and checks that the indexed columns
+  (`run_id`, `event_type`, ...) agree with the envelope; a mismatch is a
+  controlled `store_error` (HTTP 500) and the altered content is not returned.
+  Reads that do not touch the damaged row keep working.
 - Control Tower and gate-audit session-token checks are now total (issue #745,
   third qualification slice; `tests/test_api_security_matrix.py`). A token
   header holding a non-ASCII byte made `secrets.compare_digest` raise

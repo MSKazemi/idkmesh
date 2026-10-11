@@ -41,6 +41,11 @@ meaning of an existing version.
   targets, and a dependency-free transport-neutral OTLP/HTTP JSON mapping
   adapter. Collector transport and Human Decision ingestion telemetry remain
   separate follow-up work under #744.
+- [API Storage Profiles v0.1](API_STORAGE_PROFILES_V0_1.md) —
+  which durable store owns the API in the GitHub-first, local and network
+  profiles, the storage-port operations and required semantics (migration
+  replay, digest-checked reads, append-only events, restart reconstruction),
+  the retention matrix, and an honest verified-versus-open acceptance table.
 - [Release Supply-Chain Baseline v0.1](RELEASE_SUPPLY_CHAIN_V0_1.md) —
   release SBOM/checksum/source-workflow identity evidence, immutable-pinned
   GitHub build provenance, consumer verification, and vulnerability/update
