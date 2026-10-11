@@ -7,13 +7,14 @@ canonical files designated by [`../../PROJECT_RULES.md`](https://github.com/MSKa
 (decisions, specifications, architecture, findings); this directory keeps the trail
 that produced them.
 
-179 records across 13 dates, newest first.
+180 records across 13 dates, newest first.
 
 ## Index
 
 ### 2026-10-11
 
 - [Optional owner-authorized GitHub Traffic observability](2026-10-11-github-traffic-observability.md)
+- [Parallel worker 01 — issue #607 GitHub governance preflight](2026-10-11-parallel-worker-01-issue-607.md)
 - [Beginner comprehension and first-run documentation review](2026-10-11-beginner-clarity-first-run.md)
 
 ### 2026-10-08

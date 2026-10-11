@@ -14,6 +14,18 @@ and the release notes for that tag.
 
 ### Added
 
+- C12 GitHub governance preflight (issue #607): `idkmesh doctor --github`
+  now evaluates the canonical C12-A governance policy from bounded normalized
+  observations, reports PASS/WARN/FAIL/UNKNOWN/NOT_APPLICABLE, and treats
+  missing required evidence as blocking. `idkmesh/github_governance_preflight.py`
+  also provides conservative workflow-source checks for least privilege,
+  immutable action references, checkout credential persistence, untrusted-PR
+  secret isolation, protected-environment binding, optional OIDC shape, and an
+  explicit-owner CODEOWNERS recommendation. The implementation is read-only:
+  it never changes GitHub administration, reads secret values, dispatches work,
+  or treats ruleset metadata as proof of independent review. See
+  [GitHub Governance Preflight v0.1](docs/specifications/GITHUB_GOVERNANCE_PREFLIGHT_V0_1.md).
+
 - [API Authority Matrix v0.1](docs/specifications/API_AUTHORITY_MATRIX_V0_1.md)
   (issues #743, #670): which principal may call which Control Tower endpoint,
   expressed in the enterprise authorization kernel's roles and actions as a
