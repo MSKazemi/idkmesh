@@ -346,12 +346,7 @@
     <lastmod>2026-09-18</lastmod>
     <priority>0.6</priority>
   </url>
-  <url>
-    <loc>https://mskazemi.com/idkmesh/audits/2026-10-08-visibility-seo-traffic-audit.html</loc>
-    <lastmod>2026-10-11</lastmod>
-    <priority>0.6</priority>
-  </url>
-  <url>
+<url>
     <loc>https://mskazemi.com/idkmesh/audits/2026-09-20-seo-ai-visibility-audit.html</loc>
     <lastmod>2026-09-20</lastmod>
     <priority>0.6</priority>
@@ -364,6 +359,11 @@
   <url>
     <loc>https://mskazemi.com/idkmesh/audits/2026-10-07-engineering-question-and-product-answer-assessment.html</loc>
     <lastmod>2026-10-09</lastmod>
+    <priority>0.6</priority>
+  </url>
+    <url>
+    <loc>https://mskazemi.com/idkmesh/audits/2026-10-08-visibility-seo-traffic-audit.html</loc>
+    <lastmod>2026-10-11</lastmod>
     <priority>0.6</priority>
   </url>
   <url>
@@ -1316,12 +1316,7 @@
     <lastmod>2026-09-23</lastmod>
     <priority>0.3</priority>
   </url>
-  <url>
-    <loc>https://mskazemi.com/idkmesh/conversations/2026-10-08-visibility-seo-traffic-assessment.html</loc>
-    <lastmod>2026-10-11</lastmod>
-    <priority>0.3</priority>
-  </url>
-  <url>
+<url>
     <loc>https://mskazemi.com/idkmesh/conversations/2026-09-24-jules-review-reservation-lifecycle.html</loc>
     <lastmod>2026-09-24</lastmod>
     <priority>0.3</priority>
@@ -1359,6 +1354,11 @@
   <url>
     <loc>https://mskazemi.com/idkmesh/conversations/2026-10-08-parallel-worker-01-issue-630.html</loc>
     <lastmod>2026-10-09</lastmod>
+    <priority>0.3</priority>
+  </url>
+    <url>
+    <loc>https://mskazemi.com/idkmesh/conversations/2026-10-08-visibility-seo-traffic-assessment.html</loc>
+    <lastmod>2026-10-11</lastmod>
     <priority>0.3</priority>
   </url>
   <url>
