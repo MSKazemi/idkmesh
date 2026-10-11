@@ -410,6 +410,15 @@ production-adapter request-smuggling tests) rather than implying it. The run
 takes about 90 s wall-clock and is not part of the per-PR tiers above, which
 already execute the same test modules.
 
+### Beta release gate
+
+`make beta-readiness` (`tools/api_beta_readiness.py`) evaluates the fourteen
+required-evidence items of issue #747 against the repository and the
+qualification report above, and exits 1 until every item is satisfied. It reads
+`results/api-qualification/report.json` and treats it as evidence only for the
+current git revision on a clean tree, so run `make qualify-api` first. See
+[API v1 Beta Release Gate](specifications/API_V1_BETA_RELEASE_GATE_V0_1.md).
+
 ### Load and soak
 
 `python tools/api_load_soak.py` (also run by `make qualify-api`) starts the real
