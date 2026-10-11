@@ -148,9 +148,14 @@ bounded `local-loop` composition.
 
 The package contains bounded GitHub repository/ref readers, issue-source normalization,
 issue preview/routing projection, authenticated webhook ingress, delivery idempotency,
-deterministic ledger-record serialization with append-only chain verification (pure, no Git or GitHub action), a local compare-and-set optimistic append to a Git-ref ledger and idempotent dispatch admission by compare-and-set, a read-only recovery reader that derives run state from ledger records, and a pure advisory recovery planner that reconciles rather than resubmits (no push, no GitHub call),
-explicit dispatch authorization/bridge logic, exact candidate observation, evidence/status
-publication helpers, governance-policy checks, public-evidence projection, and deterministic
+deterministic ledger-record serialization with append-only chain verification, local
+compare-and-set append/admission/recovery machinery, and a GitHub-native durable storage
+adapter that uses one dedicated orphan ledger branch with fast-forward-only ref updates.
+The recovery planner reconciles unconfirmed provider submissions rather than resubmitting
+blindly; none of these ledger layers grants dispatch, verification, acceptance, application
+branch write, integration, or merge authority. The package also includes explicit dispatch
+authorization/bridge logic, exact candidate observation, evidence/status publication
+helpers, governance-policy checks, public-evidence projection, and deterministic
 GitHub-first bootstrap planning/rendering.
 
 ### Enterprise control primitives
@@ -222,6 +227,7 @@ name documents implementation presence, not stability as a public Python API.
 - `idkmesh/github_issue_source.py`
 - `idkmesh/github_ledger_admission.py`
 - `idkmesh/github_ledger_append.py`
+- `idkmesh/github_ledger_github_store.py`
 - `idkmesh/github_ledger_recovery.py`
 - `idkmesh/github_ledger_recovery_plan.py`
 - `idkmesh/github_ledger_serialization.py`
