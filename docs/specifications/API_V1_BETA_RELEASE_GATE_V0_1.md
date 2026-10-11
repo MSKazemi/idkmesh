@@ -33,7 +33,7 @@ files that back it. The tool then applies four rules:
    leave an item green.
 2. **Measured items are not taken on faith.** Items that the API release
    qualification run measures (`contract`, `fuzz`, `security`, `reliability`,
-   `client`) are `satisfied` only if `results/api-qualification/report.json`
+   `client`, `install`) are `satisfied` only if `results/api-qualification/report.json`
    exists, was taken at the current git revision on a clean tree, and every
    check in the relevant groups passed. Otherwise they are `unverified` with the
    reason.
@@ -47,6 +47,20 @@ files that back it. The tool then applies four rules:
    gap.
 
 The release is `ready` only when every item is `satisfied`.
+
+## Clean install and reproducible demo
+
+`tools/api_clean_install_demo.py` (run by `make qualify-api` as the `install`
+group) builds a wheel from a staged copy of the installable files, installs only
+that wheel into a fresh virtual environment, and from another directory in
+isolated mode checks that `idkmesh` imports from the new environment and that
+`idkmesh --help` works. It then starts the *installed* `idkmesh control-tower`,
+runs a short demo with the installed Python client (read status, have the server
+inspect the bundled sample run-evidence report and verify its snapshot digest),
+runs the same demo against a source-tree server, and requires the two stable
+transcripts to be byte-identical. Building the wheel fetches the build backend,
+so it needs package-index access; if the environment cannot build or install,
+the run reports *could not run* (exit 2) rather than a package failure.
 
 ## Required evidence
 
@@ -62,8 +76,7 @@ At the time of writing the gate reports **not ready**. The gaps it records are
 the real ones: the Human Decision API and its sub-resources are unbuilt (#740),
 the network/multi-user security profile and an API-level authority matrix do not
 exist (#743, #670), the Python client is unpublished (#769) and the typed web
-client is unbuilt (#746), there is no beta migration guide, and there is no
-automated clean-install demo for the API. Recording them is the point; closing
+client is unbuilt (#746), and there is no beta migration guide. Recording them is the point; closing
 them is the work of those issues.
 
 ## What the beta release note must state

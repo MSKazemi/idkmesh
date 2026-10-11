@@ -20,6 +20,10 @@ reliability     request limits, overload, drain, slow clients, event stream;
                 ``tools/api_load_soak.py`` (concurrent load, thread/fd leaks,
                 heap growth)
 client          the official Python client
+install         ``tools/api_clean_install_demo.py``: build a wheel, install it
+                into a fresh venv, run the installed server and client, and
+                require the same transcript as the source tree (needs network
+                access to fetch the build backend)
 ==============  ==========================================================
 
 Every check runs as a subprocess with this interpreter, and the report records
@@ -134,6 +138,14 @@ def build_checks(base: str | None, python: str = sys.executable) -> list[Check]:
             "reliability",
             (python, "tools/api_load_soak.py"),
             requires=("tools/api_load_soak.py",),
+        )
+    )
+    checks.append(
+        Check(
+            "install:clean-install-demo",
+            "install",
+            (python, "tools/api_clean_install_demo.py"),
+            requires=("tools/api_clean_install_demo.py", "pyproject.toml"),
         )
     )
     for group, modules in (
