@@ -40,7 +40,9 @@ inside `/api/v1` is not a new API version.
   mutation beyond inspecting a supplied evidence report are **not built**
   (issues #740, #739). Do not code against their absence being permanent.
 - No multi-user or network authentication profile exists (#743). The session
-  token is a local boundary, not an identity.
+  token is a local boundary, not an identity. The
+  [API authority matrix](specifications/API_AUTHORITY_MATRIX_V0_1.md) is a
+  proposal for what a network profile would enforce, not something enforced today.
 - The typed web client is not built and the Python client is not published to a
   package index (#746, #769).
 - Anything under `docs/specifications/` marked *experimental*.

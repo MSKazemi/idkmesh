@@ -14,6 +14,15 @@ and the release notes for that tag.
 
 ### Added
 
+- [API Authority Matrix v0.1](docs/specifications/API_AUTHORITY_MATRIX_V0_1.md)
+  (issues #743, #670): which principal may call which Control Tower endpoint,
+  expressed in the enterprise authorization kernel's roles and actions as a
+  **proposal** for the network profile, with an explicit "enforced today" column
+  (a local session token, not a principal). `tests/test_api_authority_matrix.py`
+  keeps it complete against the running server's discovery document, checks every
+  action and role exists in the kernel, that no served route needs a mutating
+  authority, and that the "enforced today" claim is true. The beta gate counts the
+  authority-matrix item as satisfied; the security-profile item stays partial.
 - [GitHub Ledger Recovery Planning and Killed-Workflow Proof v0.1](docs/specifications/GITHUB_LEDGER_RECOVERY_PLAN_V0_1.md),
   `idkmesh/github_ledger_recovery_plan.py` and
   `tests/test_github_ledger_killed_workflow.py` (issue #597, slice C9-F): a pure

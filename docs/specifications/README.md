@@ -67,6 +67,11 @@ meaning of an existing version.
   C9-F pure next-step planning for a recovered run (reconcile, never blindly
   resubmit) and the exhaustive kill-matrix test that a killed coordinating
   workflow is recovered with exactly one provider submission.
+- [API Authority Matrix v0.1](API_AUTHORITY_MATRIX_V0_1.md) —
+  which principal may call which Control Tower endpoint: a proposed mapping onto
+  the enterprise authorization kernel for the network profile, what the loopback
+  API enforces today (a session token, not a principal), and a guard that keeps
+  the matrix complete against the served routes.
 - [Release Supply-Chain Baseline v0.1](RELEASE_SUPPLY_CHAIN_V0_1.md) —
   release SBOM/checksum/source-workflow identity evidence, immutable-pinned
   GitHub build provenance, consumer verification, and vulnerability/update

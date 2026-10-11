@@ -108,9 +108,12 @@ ITEMS: tuple[Item, ...] = (
     Item(
         "authority-matrix",
         "identity / authority matrix documented",
-        PARTIAL,
-        evidence=("docs/specifications/ENTERPRISE_AUTHORIZATION_V0_1.md",),
-        gap="no API-level matrix mapping endpoints to principals and permissions (issues 670, 743)",
+        SATISFIED,
+        evidence=(
+            "docs/specifications/API_AUTHORITY_MATRIX_V0_1.md",
+            "docs/specifications/ENTERPRISE_AUTHORIZATION_V0_1.md",
+            "tests/test_api_authority_matrix.py",
+        ),
     ),
     Item(
         "idempotency",
