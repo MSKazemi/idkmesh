@@ -72,8 +72,9 @@ with only the repository surviving.
 ## Boundary with other C9 slices
 
 C9-E reports state and hazards. It does **not** decide what to do about them:
-resuming observation after a killed workflow, reconciling an ambiguous
-submission, and the recovery test that kills a workflow are C9-F; the GitHub
+the safe next step, reconciling an ambiguous submission, and the recovery test
+that kills a workflow are C9-F, specified in
+[Recovery Planning and Killed-Workflow Proof](GITHUB_LEDGER_RECOVERY_PLAN_V0_1.md); the GitHub
 evidence-branch adapter is C9-G; retention is C9-H. It authenticates no one and
 reads no secret; `recover_run` is the only function that touches Git, and only to
 read.
