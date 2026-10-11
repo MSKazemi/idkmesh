@@ -97,6 +97,19 @@ The most important rule is:
 
 These are different levels of maturity. **A program existing is not proof it is safe or production-ready.** For the exact evidence and limitations behind each claim, see the [Capability Truth Matrix](CAPABILITY_MATRIX.md).
 
+### For the complete list of commands
+
+The CLI also exposes tools for inspecting connector metadata, explaining route eligibility, and reading local run/project/event records. They are **not** a general live-agent deployment wizard. To explore without modifying anything, run:
+
+```bash
+idkmesh --help
+idkmesh connections --help
+idkmesh run --help
+idkmesh control-tower --help
+```
+
+For the **complete, code-backed CLI, local API, and module inventory**, see [Executable Capability Reference](EXECUTABLE_CAPABILITIES.md). It marks limits including offline-only connector probes, loopback-only HTTP, and missing automatic decision/merge authority.
+
 ## Your first 10 minutes: run an actual audit
 
 This is the most useful first hands-on experience. You will analyze **sample reviewer data stored on your own computer**. You do **not** need ChatGPT, Claude, an API key, a GPU, cloud resources, or a paid service.

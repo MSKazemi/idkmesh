@@ -82,6 +82,10 @@ For the claim-by-claim source of truth, see the
 [Capability Truth Matrix](docs/CAPABILITY_MATRIX.md). Its canonical JSON is
 validated in normal CI against repository paths and the real CLI command tree,
 and uses the evidence ladder from planned (0) through production-qualified (5).
+For the exhaustive code-backed command/API/library inventory, see the
+[Executable Capability Reference](docs/EXECUTABLE_CAPABILITIES.md); it is CI-checked
+against the recursive CLI tree, Control Tower discovery, Python client, and `idkmesh/`
+module inventory.
 
 **Executable research foundation; reference runner still incomplete.**
 
@@ -96,6 +100,9 @@ What is already present on `main`:
 - zero-project-spend compute admission and routing experiments;
 - IDKGraph repository modeling, observability, link-integrity, and warning/review machinery;
 - GitHub-native ACE community-growth experiments and repository-evolution control tooling;
+- durable Product Spine run/create/status/evidence/cancel/list commands, derived WorkUnit/project reads, and an append-only local event stream;
+- connector profile validation/import/storage, offline probe/doctor/routing explanation, plus the read-only `/api/v1/connections` Control Tower surface;
+- implementation foundations for Jules, OpenAI-compatible model endpoints, bounded local agents, GitHub ingress/dispatch/candidate observation, and enterprise identity/authorization/audit controls, each with the limitations recorded in the executable capability reference;
 - a first installable product surface: `pip install .` provides the `idkmesh`
   CLI, whose `gate-audit` command packages the measured verifier-panel results
   (E015/E016/E017) as a review-gate diagnostic;
@@ -183,8 +190,8 @@ print(len(events.value.items))
 The client requires an explicit timeout, refuses non-loopback destinations,
 exposes the server request ID, verifies response content digests, and performs
 no automatic retries. It covers status, evidence inspection, and the
-resource-oriented read model (runs, run attempts, retained run evidence,
-derived WorkUnits and projects, events); see the
+resource-oriented read model (connections, runs, run attempts, retained run
+evidence, derived WorkUnits and projects, events); see the
 [Python client section](docs/specifications/CONTROL_TOWER_LOCAL_API_V0_1.md#python-client)
 of the API specification. The client is read/inspect only: human-decision
 recording remains unavailable until its authenticated mutation contract is
@@ -364,7 +371,13 @@ configured connection
 ```
 
 **This connector product is under implementation, not a finished public API.**
-Do not copy the planned CLI/API examples and assume they exist on `main` yet.
+Substantial foundations do exist on `main`: connector profile validation/list/import,
+offline probe/doctor/routing explanation, durable metadata, the read-only
+`GET /api/v1/connections` surface, GitHub dispatch/candidate foundations, and library
+support for Jules, OpenAI-compatible endpoints, and bounded local agents. Treat each
+surface according to its documented authority and maturity rather than assuming either
+"all planned" or "production-ready". The complete code-backed inventory is the
+[Executable Capability Reference](docs/EXECUTABLE_CAPABILITIES.md).
 
 Current source of truth:
 
@@ -374,19 +387,18 @@ Current source of truth:
 - [model-tier dispatcher execution plan](docs/planning/MODEL_TIER_DISPATCHER_EXECUTION_PLAN_2026-09-22.md);
 - [live umbrella tracker #570](https://github.com/MSKazemi/idkmesh/issues/570).
 
-The immediate implementation queue is deliberately bounded:
+The component queue is deliberately bounded; current tracker state is:
 
-1. [#574 — connector kernel, profile validation, probes, routing](https://github.com/MSKazemi/idkmesh/issues/574);
-2. [#575 — Jules REST agent connector](https://github.com/MSKazemi/idkmesh/issues/575);
-3. [#576 — OpenAI-compatible model-provider connector](https://github.com/MSKazemi/idkmesh/issues/576);
-4. [#577 — bounded local agent runner](https://github.com/MSKazemi/idkmesh/issues/577);
-5. [#578 — GitHub issue/webhook dispatch bridge](https://github.com/MSKazemi/idkmesh/issues/578);
-6. [#579 — canonical candidate/result normalization](https://github.com/MSKazemi/idkmesh/issues/579);
-7. [#580 — CLI and optional HTTP control API](https://github.com/MSKazemi/idkmesh/issues/580).
+1. **merged/closed:** [#574 — connector kernel, profile validation, probes, routing](https://github.com/MSKazemi/idkmesh/issues/574);
+2. **open:** [#575 — Jules REST agent connector](https://github.com/MSKazemi/idkmesh/issues/575);
+3. **open:** [#576 — OpenAI-compatible model-provider connector](https://github.com/MSKazemi/idkmesh/issues/576);
+4. **open:** [#577 — bounded local agent runner](https://github.com/MSKazemi/idkmesh/issues/577);
+5. **merged/closed:** [#578 — GitHub issue/webhook dispatch bridge](https://github.com/MSKazemi/idkmesh/issues/578);
+6. **merged/closed:** [#579 — canonical candidate/result normalization](https://github.com/MSKazemi/idkmesh/issues/579);
+7. **open:** [#580 — CLI and optional HTTP control API](https://github.com/MSKazemi/idkmesh/issues/580).
 
-The first coding priority is **#574**. Jules and model-provider work should start
-only against the shared connector contract rather than creating provider-specific
-coordinator paths.
+New provider work should continue to compose the shared connector contracts and authority
+boundaries rather than creating provider-specific coordinator paths.
 
 ## The reference product
 

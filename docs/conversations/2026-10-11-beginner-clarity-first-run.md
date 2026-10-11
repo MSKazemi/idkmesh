@@ -36,3 +36,7 @@ Makes the shortest hands-on path, evidence caveats, and onward routes obvious to
 ## AI/tool provenance
 
 Drafted with ChatGPT GPT-6 using live GitHub-connected repository data. No independent human usability study is represented.
+
+## Integration note (same documentation branch)
+
+While this work was being prepared, `main` advanced from `bee77a6125dbccb58f166ec363e978cd960f43f3` to `12242ba12e4823c025c76dce2b471b830afbdf7c` with new command/API/library inventory documentation. The final documentation integrates those additions: the README is patched **onto the later main text**, and the beginner guide adds a direct link and introductory help commands for `docs/EXECUTABLE_CAPABILITIES.md`. No newer main changes are intentionally removed.

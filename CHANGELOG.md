@@ -14,6 +14,15 @@ and the release notes for that tag.
 
 ### Added
 
+- API-3 control-plane convergence (#738): the checked-in API architecture now
+  names one canonical application/domain owner for projects, connectors,
+  WorkUnit preview, routing, runs, candidates, verification/evidence, human
+  decisions, integration handoff, resource admission, and events. CLI and
+  Control Tower connector/Product-Spine reads are regression-guarded against
+  splitting into parallel service models; the still-gated authenticated Human
+  Decision HTTP mutation remains owned by #740 rather than being approximated.
+
+- `docs/EXECUTABLE_CAPABILITIES.md` adds a CI-checked code-surface inventory covering the recursive `idkmesh` CLI tree, Control Tower endpoints, dependency-free Python client methods, connector/provider/GitHub/enterprise/runtime capability groups, and every top-level `idkmesh/*.py` module. README, beginner/getting-started help, and architecture indexes now link to it, and stale connector API/CLI status text has been reconciled with current code.
 - `tools/api_load_soak.py` (issue #745): a bounded load and soak check for the
   Control Tower. Two rounds of concurrent mixed traffic (every read route plus
   hostile requests) must all return the expected status, stay under a p99
