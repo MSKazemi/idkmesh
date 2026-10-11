@@ -14,6 +14,17 @@ and the release notes for that tag.
 
 ### Added
 
+- Load/soak/memory qualification for the API release suite (issue #745,
+  Reliability slice; `tests/test_api_load_soak_memory.py`, `slow`-marked so
+  the nightly tier runs it and the cheap tiers stay fast): a bounded mixed-
+  endpoint load test at 8-way concurrency that must reproduce each shape's
+  isolated status and body exactly (catching nondeterministic 503s and
+  response drift) with all admission capacity released afterwards; soak
+  cycles mixing adversarial probes (unauthenticated, wrong method, malformed
+  body) that must accumulate zero failures and zero capacity leaks; and a
+  tracemalloc Python-heap ceiling (8 MiB) that catches per-request retention.
+  Measured baseline: 40 soak cycles x 16 probes in 1.7s, peak heap growth
+  1579 KiB.
 - Preregistration v2 (`docs/research/PREREG_AGENT_VALUE_FORECAST_V2.md`) and
   the E048 runner (`experiments/temporal_holdout.py`) register, before any data
   exists, a temporal-holdout replication of the agent-value forecast on SWE-bench
