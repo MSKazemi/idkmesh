@@ -20,8 +20,12 @@ Read in this order:
 4. [Model-Tier Dispatcher and Connector Routing](planning/MODEL_TIER_DISPATCHER_EXECUTION_PLAN_2026-09-22.md) — capability/authority routing, connector admission, escalation, and the exact #574 implementation breakdown.
 4. [Live GitHub tracker #570](https://github.com/MSKazemi/idkmesh/issues/570) — current implementation state and bounded work queue.
 
-The planned connector API is **not yet a finished capability on `main`**. Keep
-implemented behavior, design contracts, and future milestones distinct.
+The connector control plane is **partially implemented, not finished**. Current code
+includes connector profile/routing foundations, GitHub dispatch/candidate slices, and the
+read-only `GET /api/v1/connections` surface; mutating connection management and the full
+multi-provider product remain incomplete. Use the
+[Executable Capability Reference](EXECUTABLE_CAPABILITIES.md) for the exact code-backed
+surface and keep implemented behavior, design contracts, and future milestones distinct.
 
 ## How to read the documentation
 
@@ -31,6 +35,7 @@ Different documents serve different roles. When two files appear to disagree, pr
 | --- | --- |
 | project identity and current public status | [`../README.md`](https://github.com/MSKazemi/idkmesh/blob/main/README.md) |
 | canonical capability/claim truth | [`CAPABILITY_MATRIX.md`](CAPABILITY_MATRIX.md), [`capability-matrix-v1.json`](capability-matrix-v1.json) |
+| exhaustive executable command/API/module inventory | [`EXECUTABLE_CAPABILITIES.md`](EXECUTABLE_CAPABILITIES.md) |
 | canonical evolution vocabulary / authority lifecycle | [`../ITERATION_MODEL.md`](https://github.com/MSKazemi/idkmesh/blob/main/ITERATION_MODEL.md) |
 | high-level current architecture | [`../ARCHITECTURE.md`](https://github.com/MSKazemi/idkmesh/blob/main/ARCHITECTURE.md) |
 | machine-readable protocol truth | [`../schemas/`](https://github.com/MSKazemi/idkmesh/blob/main/schemas/README.md) |
@@ -52,14 +57,15 @@ A conversation, old roadmap section, experiment note, or historical architecture
 For a newcomer trying to understand the executable foundation, this order is usually enough:
 
 1. [`../README.md`](https://github.com/MSKazemi/idkmesh/blob/main/README.md) — what exists and what does not;
-2. [`GETTING_STARTED.md`](GETTING_STARTED.md) — the shortest current paths to run the contract demo, use `idkmesh gate-audit`, integrate the Action, or start contributing;
-3. [`PROJECT_ADOPTION_GUIDE.md`](PROJECT_ADOPTION_GUIDE.md) — practical external-project workflow from GitHub setup through humans/agents, Work Units, verification, and protected integration;
-4. [`../ARCHITECTURE.md`](https://github.com/MSKazemi/idkmesh/blob/main/ARCHITECTURE.md) — end-to-end work/evidence/authority path;
-5. [`../schemas/README.md`](https://github.com/MSKazemi/idkmesh/blob/main/schemas/README.md) — canonical machine-readable contracts;
-6. [`specifications/README.md`](specifications/README.md) — written contract index;
-7. [`architecture/README.md`](architecture/README.md) — subsystem architecture;
-8. [`research/README.md`](research/README.md) — experiment/evidence program;
-9. [`../ROADMAP.md`](https://github.com/MSKazemi/idkmesh/blob/main/ROADMAP.md) — current evidence gates and next progression.
+2. [`GETTING_STARTED.md`](GETTING_STARTED.md) — shortest practical user paths;
+3. [`EXECUTABLE_CAPABILITIES.md`](EXECUTABLE_CAPABILITIES.md) — exhaustive code-backed CLI/API/Python/module inventory and authority boundaries;
+4. [`PROJECT_ADOPTION_GUIDE.md`](PROJECT_ADOPTION_GUIDE.md) — practical external-project workflow from GitHub setup through humans/agents, Work Units, verification, and protected integration;
+5. [`../ARCHITECTURE.md`](https://github.com/MSKazemi/idkmesh/blob/main/ARCHITECTURE.md) — end-to-end work/evidence/authority path;
+6. [`../schemas/README.md`](https://github.com/MSKazemi/idkmesh/blob/main/schemas/README.md) — canonical machine-readable contracts;
+7. [`specifications/README.md`](specifications/README.md) — written contract index;
+8. [`architecture/README.md`](architecture/README.md) — subsystem architecture;
+9. [`research/README.md`](research/README.md) — experiment/evidence program;
+10. [`../ROADMAP.md`](https://github.com/MSKazemi/idkmesh/blob/main/ROADMAP.md) — current evidence gates and next progression.
 
 ## Documentation indexes
 
