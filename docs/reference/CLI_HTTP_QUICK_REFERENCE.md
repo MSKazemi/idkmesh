@@ -100,12 +100,12 @@ result = client.status()
 print(result.value)
 ```
 
-`ControlTowerClient` exposes `status`, `inspect_run_evidence`, `list_connections`, `list_runs`, `get_run`, `get_run_attempts`, `get_run_evidence`, `list_work_units`, `get_work_unit`, `get_project`, and `list_events`; it does **not** expose a human-decision mutation or an SSE subscription helper. Read-list pagination uses opaque cursors and a maximum page size of 200. Error classes include `ClientConfigurationError`, `TransportError`, `ProtocolError`, `IntegrityError`, and `ApiResponseError` (see [source](../../idkmesh/api_client.py)). No public typed JavaScript client is claimed here.
+`ControlTowerClient` exposes `status`, `inspect_run_evidence`, `list_connections`, `list_runs`, `get_run`, `get_run_attempts`, `get_run_evidence`, `list_work_units`, `get_work_unit`, `get_project`, and `list_events`; it does **not** expose a human-decision mutation or an SSE subscription helper. Read-list pagination uses opaque cursors and a maximum page size of 200. Error classes include `ClientConfigurationError`, `TransportError`, `ProtocolError`, `IntegrityError`, and `ApiResponseError` (see [source](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/api_client.py)). No public typed JavaScript client is claimed here.
 
 ## Source-of-truth and future endpoints
 
-- Source commands: [`idkmesh/cli.py`](../../idkmesh/cli.py); source HTTP methods: [`idkmesh/control_tower_ui.py`](../../idkmesh/control_tower_ui.py); generated OpenAPI: [`idkmesh/control_tower_api.py`](../../idkmesh/control_tower_api.py).
-- Detailed request/response/error semantics: [Control Tower Local API v0.1](../specifications/CONTROL_TOWER_LOCAL_API_V0_1.md), [API Conventions v0.1](../specifications/API_CONVENTIONS_V0_1.md), [API examples](../../examples/api/README.md).
+- Source commands: [`idkmesh/cli.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/cli.py); source HTTP methods: [`idkmesh/control_tower_ui.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/control_tower_ui.py); generated OpenAPI: [`idkmesh/control_tower_api.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/control_tower_api.py).
+- Detailed request/response/error semantics: [Control Tower Local API v0.1](../specifications/CONTROL_TOWER_LOCAL_API_V0_1.md), [API Conventions v0.1](../specifications/API_CONVENTIONS_V0_1.md), [API examples](https://github.com/MSKazemi/idkmesh/blob/main/examples/api/README.md).
 - **Not served by this local Control Tower:** `POST /api/v1/human-decisions`, generic connector dispatch/configure, network/multi-user mutations, and merge/integration endpoints. `human_decision_service.py` is a separate service-layer kernel, not a routed authenticated HTTP endpoint.
 - Historical planning candidates: [API surface catalog](../planning/API_V1_SURFACE_CATALOG_2026-09-23.md). An older `planned` row there does **not** override the router on current `main`.
 

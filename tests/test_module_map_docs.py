@@ -18,7 +18,12 @@ import unittest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 MODULE_MAP = REPO_ROOT / "docs" / "reference" / "MODULE_MAP.md"
-ROW = re.compile(r"^\| \[`([A-Za-z0-9_]+\.py)`\]\(\.\./\.\./idkmesh/([A-Za-z0-9_]+\.py)\)", re.MULTILINE)
+# Links to repository files outside docs/ must be absolute (the Pages site
+# cannot resolve ../../), so each row links to the file on GitHub.
+ROW = re.compile(
+    r"^\| \[`([A-Za-z0-9_]+\.py)`\]\(https://github\.com/MSKazemi/idkmesh/blob/main/idkmesh/([A-Za-z0-9_]+\.py)\)",
+    re.MULTILINE,
+)
 
 
 class ModuleMapTests(unittest.TestCase):

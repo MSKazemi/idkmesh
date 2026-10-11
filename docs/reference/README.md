@@ -8,6 +8,6 @@ Use these alongside the [capability truth matrix](../CAPABILITY_MATRIX.md) and t
 4. [Troubleshooting and operator help](../help/TROUBLESHOOTING.md) — installation, SQLite, local API, verifier evidence, sandbox and tests.
 5. [Dated code/documentation audit](../audits/2026-10-10-code-documentation-reconciliation.md) — precise review scope, source revision, unverified areas, and next steps.
 
-For machine-readable protocol truth use [schemas](../../schemas/README.md); for complete HTTP payload rules consult [the Control Tower Local API contract](../specifications/CONTROL_TOWER_LOCAL_API_V0_1.md). Historical design catalogs are **not** a statement that an endpoint ships today.
+For machine-readable protocol truth use [schemas](https://github.com/MSKazemi/idkmesh/blob/main/schemas/README.md); for complete HTTP payload rules consult [the Control Tower Local API contract](../specifications/CONTROL_TOWER_LOCAL_API_V0_1.md). Historical design catalogs are **not** a statement that an endpoint ships today.
 
 **Maintenance discipline:** add or update documentation in the same PR when a CLI command, routed endpoint, module authority, source binding, schema, or safety boundary changes. Verify against current merged source and exact-head CI before publishing stronger claims.

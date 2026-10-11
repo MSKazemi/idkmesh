@@ -39,7 +39,7 @@ The documented developer test setup uses `make setup` on POSIX hosts, followed b
 | `run cancel` succeeds but worker remains active | Only local lifecycle metadata was transitioned | Cancel/terminate a provider through its own separately authorized operator path. |
 | List cursor fails | Cursors are opaque and bind to a listing contract | Copy `next_cursor` verbatim; use the same list filter context and query; do not decode/construct it manually. |
 
-Source: [`product_spine_run_store.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/product_spine_run_store.py), [`product_spine.py`](../../idkmesh/product_spine.py), [Product Spine spec](../specifications/PRODUCT_SPINE_SERVICE_V0_1.md). The local SQLite store is **not** a multi-user hosted ledger.
+Source: [`product_spine_run_store.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/product_spine_run_store.py), [`product_spine.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/product_spine.py), [Product Spine spec](../specifications/PRODUCT_SPINE_SERVICE_V0_1.md). The local SQLite store is **not** a multi-user hosted ledger.
 
 ## Control Tower and HTTP
 
@@ -88,4 +88,4 @@ Do not copy the token into an issue, CI log, diagnostic report, or publicly shar
 
 ## Diagnostic escalation
 
-For a reproducible GitHub bug report, collect **sanitized** command line and expected/actual behavior, `idkmesh --version`, Python version, OS/platform, exact checkout commit SHA, relevant JSON contract version, and the smallest non-sensitive fixture. Report secret or vulnerability details privately through [SECURITY.md](../../SECURITY.md), not in an issue. For CI, use [the test tiers](../TESTING.md), distinguish test **not run** from a genuine pass, and always cite the exact Git/PR head that produced results. If documentation disagrees with live code, include the code path and a focused correction PR instead of treating a future design document as already implemented.
+For a reproducible GitHub bug report, collect **sanitized** command line and expected/actual behavior, `idkmesh --version`, Python version, OS/platform, exact checkout commit SHA, relevant JSON contract version, and the smallest non-sensitive fixture. Report secret or vulnerability details privately through [SECURITY.md](https://github.com/MSKazemi/idkmesh/blob/main/SECURITY.md), not in an issue. For CI, use [the test tiers](../TESTING.md), distinguish test **not run** from a genuine pass, and always cite the exact Git/PR head that produced results. If documentation disagrees with live code, include the code path and a focused correction PR instead of treating a future design document as already implemented.
