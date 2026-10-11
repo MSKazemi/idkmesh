@@ -193,35 +193,38 @@ Exit: release artifacts can be traced to exact source/build identity, and proven
 
 ## 10. Phase E8 — optional G2/G3 control service (#675)
 
-Do not begin by selecting Kubernetes/Postgres/Redis.
+**Boundary status:** frozen by
+[Enterprise Control Service Boundary v0.1](../specifications/ENTERPRISE_CONTROL_SERVICE_V0_1.md).
 
-First freeze the service boundary:
+E8 deliberately does not begin by selecting Kubernetes/Postgres/Redis. The
+specification now fixes the technology-neutral boundary:
 
-- authenticated ingress;
-- tenant context;
-- authorization;
-- idempotent command semantics;
-- durable state interface;
-- connector dispatch interface;
-- audit event interface;
-- health/readiness;
-- migration lifecycle;
-- backup/restore lifecycle.
+- authenticated ingress plus explicit tenant context;
+- authorization before tenant state, secrets, dispatch, or mutation;
+- stateless API replicas where practical;
+- durable run/event/idempotency/decision/evidence ownership;
+- idempotent multi-replica command and lease/fencing semantics;
+- private/self-hosted worker boundary with no merge/database-admin authority;
+- health/readiness and degraded-mode behavior;
+- migration and backup/restore lifecycle;
+- rolling compatible upgrades and bounded-downtime breaking upgrades;
+- GitHub protected integration as the canonical code/integration authority.
 
-Then choose implementation technologies using measured load and deployment constraints.
+Issue #675 owns this **service boundary and deployment reference**, not proof
+that a production G2/G3 service is already operating. Concrete transport/store
+adapters should use separate implementation issues so vendor choices remain
+replaceable.
 
-Suggested slices:
+Observed runtime evidence stays with its domain owners:
 
-- E8-A service API contract;
-- E8-B single-tenant reference process;
-- E8-C durable store adapter;
-- E8-D tenant middleware;
-- E8-E worker/connector service boundary;
-- E8-F observability;
-- E8-G packaging/deployment reference;
-- E8-H rolling/bounded-downtime upgrade + rollback.
+- E2/E3: tenant isolation and authorization enforcement;
+- E6: restart, backup/restore, SLO/RPO/RTO and incident behavior;
+- E7: release provenance;
+- E9: destructive cross-tenant, outage, replay and recovery conformance.
 
-Exit: G2 can restart without losing admitted state; G3 adds proven tenant isolation before being called multi-tenant.
+Exit for #675: every acceptance criterion is mapped in the normative E8
+specification. A deployment may claim G2/G3 operational readiness only after
+the applicable E2/E3/E6/E9 evidence also exists.
 
 ## 11. Phase E9 — conformance pilot (#676)
 
