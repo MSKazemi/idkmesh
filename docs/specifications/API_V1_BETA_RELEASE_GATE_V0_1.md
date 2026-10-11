@@ -74,8 +74,8 @@ reproducible demo.
 
 At the time of writing the gate reports **not ready**. The gaps it records are
 the real ones: the Human Decision API and its sub-resources are unbuilt (#740),
-the network/multi-user security profile and an API-level authority matrix do not
-exist (#743, #670), the Python client is unpublished (#769) and the typed web
+the network/multi-user security profile is undefined and unenforced (#743; the
+[authority matrix](API_AUTHORITY_MATRIX_V0_1.md) is a documented proposal), the Python client is unpublished (#769) and the typed web
 client is unbuilt (#746), and there is no beta migration guide. Recording them is the point; closing
 them is the work of those issues.
 
