@@ -106,13 +106,21 @@ Before any verifier verdict is analyzed:
 
 Primary model fitting gives an exact duplicate patch only one vote.
 
+Producer provenance is another sampling level. Where upstream metadata permits,
+freeze a producer lineage as the tuple **(organization, base model, scaffold)**.
+The primary patch-level summaries weight each task equally and, within a task,
+each producer lineage equally before averaging unique patches within a lineage.
+This prevents a team with many closely related submissions from dominating the
+measured item-difficulty distribution.
+
 A secondary **ecological-frequency** analysis may weight the same unique item by
 the number of upstream submissions that produced it. That analysis is explicitly
 secondary and cannot overturn the primary decision.
 
 Near-duplicate patches are not automatically merged. Any semantic-deduplication
 method would require a separate preregistered rule because it introduces another
-modeling choice.
+modeling choice. Missing producer provenance is retained as unknown, not inferred
+from patch content.
 
 ## 4. Candidate sampling and class balance
 
@@ -121,38 +129,44 @@ The patch inventory is frozen before X7/X10 verifier execution.
 Selection may use upstream execution labels only to construct the two
 ground-truth strata; it may not use any X7/X10 verifier outcome.
 
-Each unique candidate has one official label:
+Each unique candidate has one official **execution label**:
 
-- **correct** — passes the complete official evaluation used by S3;
-- **incorrect** — fails that evaluation.
+- **official-pass** — passes the complete official evaluation used by S3;
+- **official-fail** — fails that evaluation.
+
+These are operational benchmark labels, not proofs of semantic program
+correctness. Paper-facing text must not silently replace "official-pass" with
+"correct" or "official-fail" with "incorrect" unless an additional independent
+correctness argument exists.
 
 The primary dependence analysis is **class-conditional**. It fits each competing
-dependence model separately to correct and incorrect candidates, then reports the
-macro-average of the two held-out log-score differences:
+dependence model separately to official-pass and official-fail candidates, then
+reports the macro-average of the two held-out log-score differences:
 
 \[
 \Delta_{\mathrm{macro}}
 =
 \frac{1}{2}
 \left(
-\Delta_{\mathrm{correct}}
+\Delta_{\mathrm{pass}}
 +
-\Delta_{\mathrm{incorrect}}
+\Delta_{\mathrm{fail}}
 \right).
 \]
 
-This prevents a benchmark's correct/incorrect prevalence from manufacturing the
-headline model comparison.
+This prevents a benchmark's pass/fail prevalence from manufacturing the headline
+model comparison.
 
 The pooled analysis retained by E017 is still reported for continuity, but is
 secondary for S3.
 
 For safety interpretation, the two unanimous-error events are named separately:
 
-- **false-accept blind spot:** every verifier accepts an incorrect patch;
-- **false-reject blind spot:** every verifier rejects a correct patch.
+- **false-accept blind spot:** every verifier accepts an official-fail patch;
+- **false-reject blind spot:** every verifier rejects an official-pass patch.
 
-They are not pooled into one "blind-spot floor."
+They are not pooled into one "blind-spot floor," and neither is described as a
+semantic defect rate beyond the benchmark's execution contract.
 
 ## 5. Repository, task, and candidate clustering
 
@@ -205,6 +219,12 @@ repositories is much smaller than the number of candidate patches.
 The competence screen applies to the independent-family panel used for the Paper
 A external-validity claim.
 
+The complete candidate verifier inventory — checkpoint, prompt, context policy,
+decoding parameters, and lineage label — is frozen **before calibration**.
+Calibration may select among those frozen members, but it may not edit prompts,
+swap models, enlarge context, or create a second calibration wave to rescue an
+underperforming panel.
+
 Panel selection uses calibration data only. Confirmatory data cannot add, remove,
 reweight, or retune a member.
 
@@ -232,6 +252,34 @@ The confirmatory independent-family panel additionally requires:
 If 12–19 competent members remain, the matrix may be retained as a feasibility
 result but cannot satisfy the v1 positive confirmatory gate. If fewer than 12
 remain, record the family as infeasible under this amendment.
+
+### 6.1 Benchmark-contamination boundary for LLM judges
+
+Public coding benchmarks may appear in model pretraining, instruction tuning, or
+benchmark-specific fine-tuning. "The judge did not receive the hidden tests at
+inference time" is therefore not proof that the checkpoint has never seen the
+task, gold patch, or evaluation artifacts.
+
+For every LLM lineage, retain:
+
+- model/checkpoint release date;
+- disclosed training-data cutoff when available;
+- any disclosed SWE-bench/code-repair fine-tuning;
+- whether benchmark contamination is **ruled out, known possible, or unknown**
+  from public model documentation.
+
+A lineage explicitly fine-tuned on the same benchmark's gold patches, hidden
+tests, or official evaluation outputs is **ineligible for the primary
+independent-family panel**.
+
+Unknown contamination is not converted into "clean." The primary result reports
+the contamination class of every lineage. If at least 20 eligible members remain
+after excluding all lineages with known possible same-benchmark contamination,
+run that exclusion as a preregistered sensitivity analysis. If fewer remain,
+report the limitation rather than claiming contamination robustness.
+
+This rule addresses known benchmark exposure; it cannot prove absence from an
+undisclosed training corpus.
 
 ## 7. Execution failures and retry rule
 
@@ -282,7 +330,9 @@ distinguish is:
 \]
 
 nats per item in held-out predictive log density, corresponding to a 10% geometric
-mean predictive-likelihood advantage.
+mean predictive-likelihood advantage. This 10% threshold is the ex-ante
+**smallest effect of interest** for sizing: smaller positive effects are still
+reported, but the design does not claim to have been powered to distinguish them.
 
 ### 8.2 Sizing rule
 
@@ -367,6 +417,12 @@ cannot rescue a failed primary gate.
 Only item 3 can supply the positive independent-family external-validity claim for
 Paper A.
 
+H1 is the only confirmatory hypothesis frozen by this amendment. H4 (budget
+allocation/harvest) and H5 (attack surface) remain scientifically important, but
+their confirmatory endpoints, multiplicity family, and decision rules must be
+frozen separately before they can be called confirmatory. A favorable H4/H5
+secondary pattern in the H1 dataset cannot be promoted after inspection.
+
 ## 12. Paper-facing language allowed after S3
 
 ### If the independent-family result is positive
@@ -374,9 +430,9 @@ Paper A.
 Allowed, if supported by the retained artifacts:
 
 > On a second, materially different verifier family over real public patches,
-> the item-difficulty model predicted held-out error-count structure better than
-> the equal-complexity shared-shock model under repository- and task-clustered
-> inference.
+> the item-difficulty model predicted held-out error-count structure relative to
+> execution-graded benchmark labels better than the equal-complexity
+> shared-shock model under repository- and task-clustered inference.
 
 Not allowed:
 
