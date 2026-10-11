@@ -14,6 +14,14 @@ and the release notes for that tag.
 
 ### Added
 
+- `tools/api_load_soak.py` (issue #745): a bounded load and soak check for the
+  Control Tower. Two rounds of concurrent mixed traffic (every read route plus
+  hostile requests) must all return the expected status, stay under a p99
+  ceiling, leave no extra threads or file descriptors after drain, and grow the
+  heap by no more than a ceiling across a separate traced round. It runs as part
+  of `make qualify-api`; the qualification report now lists capacity
+  benchmarking, not load/soak, as uncovered. See
+  [`docs/TESTING.md`](docs/TESTING.md#load-and-soak).
 - [API Storage Profiles v0.1](docs/specifications/API_STORAGE_PROFILES_V0_1.md)
   (issue #750): profile ownership (GitHub ledger, local SQLite, network
   interface requirement), the storage-port operations, required semantics with

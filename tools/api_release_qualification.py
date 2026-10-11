@@ -16,7 +16,9 @@ contract        ``tools/openapi_ref_check.py``; ``tools/schema_compat_check.py``
                 Human Decision contract test modules
 fuzz            strict-JSON totality and header/media-type boundary fuzz
 security        Host, token-bypass, method-confusion and CORS/CSRF matrices
-reliability     request limits, overload, drain, slow clients, event stream
+reliability     request limits, overload, drain, slow clients, event stream;
+                ``tools/api_load_soak.py`` (concurrent load, thread/fd leaks,
+                heap growth)
 client          the official Python client
 ==============  ==========================================================
 
@@ -34,7 +36,7 @@ Exit codes: 0 every check passed (or was skipped without ``--strict``),
 1 at least one check failed or is missing, 2 the run could not start.
 
 Not yet covered, and recorded in the report's ``not_covered`` list rather than
-implied: load, soak and memory-ceiling measurement, the permission matrix, and
+implied: capacity benchmarking, the permission matrix, and
 proxy/request-smuggling tests for a production adapter. The last two depend on
 authorization and adapter work that does not exist yet (#670, #743).
 """
@@ -57,7 +59,8 @@ DEFAULT_OUTPUT = Path("results/api-qualification/report.json")
 OUTPUT_TAIL_LINES = 12
 
 NOT_COVERED = (
-    "load, soak and memory-ceiling measurement",
+    "capacity benchmarking (the load/soak run is a regression tripwire, not a "
+    "throughput figure)",
     "permission matrix (needs the authorization model, issues 670 and 743)",
     "proxy / request-smuggling tests for a production adapter (issue 743)",
 )
@@ -125,6 +128,14 @@ def build_checks(base: str | None, python: str = sys.executable) -> list[Check]:
             skip_reason=compat_skip,
         ),
     ]
+    checks.append(
+        Check(
+            "reliability:load-soak",
+            "reliability",
+            (python, "tools/api_load_soak.py"),
+            requires=("tools/api_load_soak.py",),
+        )
+    )
     for group, modules in (
         ("contract", CONTRACT_TESTS),
         ("fuzz", FUZZ_TESTS),
