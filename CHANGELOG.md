@@ -14,6 +14,16 @@ and the release notes for that tag.
 
 ### Added
 
+- `make qualify-api` / `tools/api_release_qualification.py` (issue #745): one
+  repeatable API release-qualification run. It executes the OpenAPI reference
+  gate, the schema compatibility gate (`--base`), and the contract, fuzz,
+  security, reliability and client suites, and writes a JSON report (command,
+  exit code, duration, counts, output tail, git revision) to
+  `results/api-qualification/report.json`. `--strict` fails on a skipped check,
+  and a listed suite that no longer exists fails the run. The report names what
+  is not yet covered (load/soak/memory ceiling, permission matrix,
+  production-adapter smuggling tests). See
+  [`docs/TESTING.md`](docs/TESTING.md#api-release-qualification).
 - Preregistration v2 (`docs/research/PREREG_AGENT_VALUE_FORECAST_V2.md`) and
   the E048 runner (`experiments/temporal_holdout.py`) register, before any data
   exists, a temporal-holdout replication of the agent-value forecast on SWE-bench
