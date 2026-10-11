@@ -39,6 +39,7 @@ from __future__ import annotations
 
 import ast
 import functools
+import os
 import fnmatch
 import pathlib
 import re
@@ -429,22 +430,6 @@ UNITTEST_INVOCATION_RE = re.compile(
 )
 
 
-def _virtualenv_roots():
-    """Directories under ROOT that are virtualenvs, found by marker not by name.
-
-    A venv created inside the working tree puts every installed distribution on
-    `rglob`'s path, so `pytest` and `jsonschema` are indexed as repository
-    modules and this guard stops reporting the third-party imports it exists to
-    catch. Matching `.venv`/`venv` by name misses `.v`, `env`, `.venv311` and
-    every other spelling an agent worktree invents, and the failure is silent:
-    the guard keeps passing while inspecting the wrong universe.
-
-    Every virtualenv, whatever it is called, has a `pyvenv.cfg` beside `bin/`.
-    """
-
-    return {path.parent for path in ROOT.rglob("pyvenv.cfg")}
-
-
 def _repo_module_names():
     """Top-level names that resolve inside this repository rather than to PyPI.
 
@@ -454,16 +439,24 @@ def _repo_module_names():
     a dozen findings that are only its own path model being wrong.
     """
 
-    skip_roots = _virtualenv_roots()
+    # One pruned walk: `.git`, `node_modules` and any virtualenv are never
+    # descended into, so their contents are never indexed as repository code.
+    # A virtualenv is found by marker, not by name: every one has a
+    # `pyvenv.cfg`, whereas matching `.venv`/`venv` misses `.v`, `env`,
+    # `.venv311` and every other spelling an agent worktree invents -- and that
+    # failure is silent, the guard keeps passing while inspecting the wrong
+    # universe.
     names = set()
-    for path in ROOT.rglob("*.py"):
-        parts = set(path.parts)
-        if parts & {".git", "node_modules"}:
+    for directory, subdirectories, files in os.walk(ROOT):
+        if "pyvenv.cfg" in files:
+            subdirectories[:] = []
             continue
-        if any(root in path.parents for root in skip_roots):
-            continue
-        names.add(path.stem)
-        names.update(path.relative_to(ROOT).parts[:-1])
+        subdirectories[:] = [d for d in subdirectories if d not in {".git", "node_modules"}]
+        relative = [] if directory == str(ROOT) else os.path.relpath(directory, ROOT).split(os.sep)
+        for filename in files:
+            if filename.endswith(".py"):
+                names.add(filename[:-3])
+                names.update(relative)
     return names
 
 
