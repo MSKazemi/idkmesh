@@ -1,8 +1,8 @@
 # IDKMesh API Control-Plane Architecture
 
-**Status:** planning baseline  
-**Date:** 2026-09-23  
-**Program:** #713  
+**Status:** implemented API convergence contract for the current local profile  
+**Last verified:** 2026-10-11 at `1887bd915b5a42b130ad66b72c7b9d3798bf8fe4`  
+**Program:** #713 · **API-3 owner:** #738  
 **Companion plan:** `API_V1_PROFESSIONALIZATION_PLAN_2026-09-23.md`  
 **Cross-cutting conventions:** every endpoint under `/api/v1` follows the frozen
 [API Conventions v0.1](../specifications/API_CONVENTIONS_V0_1.md) (error
@@ -53,20 +53,37 @@ convenience.
 
 ### 2. Application services
 
-Application services own use-case semantics:
+Application services own use-case semantics. The current canonical owners are
+explicit rather than inferred from whichever transport happens to expose them:
 
-- project/work query;
-- connector configuration/probe;
-- WorkUnit preview;
-- route resolution;
-- run lifecycle;
-- candidate normalization;
-- verification/evidence inspection;
-- human decision recording;
-- event query/stream;
-- integration handoff.
+- project/WorkUnit/run/evidence/event reads and run lifecycle:
+  `idkmesh/product_spine_run_store.py` over `LocalMetadataStore`;
+- secret-free connector-control reads:
+  `idkmesh/connector_control_read.py` over the same persisted connector rows
+  used by the CLI;
+- connector profile validation/persistence:
+  `idkmesh/connector_profiles.py` + `idkmesh/connector_store.py`;
+- WorkUnit preview:
+  `idkmesh/github_issue_preview.py`;
+- route resolution:
+  `idkmesh/connector_routing.py`;
+- candidate identity/normalization boundary:
+  `idkmesh/candidate_reference.py` plus the ResultManifest contract;
+- verification handoff/evidence:
+  `idkmesh/verification_handoff.py`, Product Spine evidence retention, and the
+  versioned VerificationResult/Run Evidence Report contracts;
+- accountable human-decision recording:
+  `idkmesh/human_decision_service.py` (transport-neutral core; the authenticated
+  HTTP mutation remains gated by #740);
+- execution admission:
+  `idkmesh/executor_admission.py`;
+- integration execution:
+  no shared transport is allowed to invent it; protected repository integration
+  remains a separate authority boundary.
 
-They are provider-neutral and transport-neutral.
+These services are provider-neutral and transport-neutral. A CLI or HTTP adapter
+may expose only a subset, but it must reuse the canonical owner rather than
+reimplementing domain state or authority semantics.
 
 ### 3. Policy / authority boundary
 
@@ -156,12 +173,13 @@ checked against code in CI:
                               |
 +----------------------------------------------------------------+
 | Application services (idkmesh/*.py)                            |
-|  control_tower_api.py     -- read-only evidence inspection      |
-|  connector_store.py       -- connections/routing/run persistence|
-|  connector_routing.py     -- RoutingDecision resolution         |
-|  product_spine_run_store.py -- run create/status/cancel/events  |
-|  local_loop.py            -- WorkUnit -> attempts -> evidence   |
-|                               (delegates to experiments/*)      |
+|  product_spine_run_store.py -- runs/work/evidence/events reads  |
+|  connector_control_read.py  -- secret-free connector read model |
+|  connector_store.py         -- shared durable local metadata    |
+|  connector_routing.py       -- RoutingDecision resolution       |
+|  github_issue_preview.py    -- bounded WorkUnit preview         |
+|  human_decision_service.py  -- immutable decision core (#740)   |
+|  executor_admission.py      -- stale-input-safe local admission |
 +----------------------------------------------------------------+
           ^                 ^                  ^              ^
           | thin dispatch   | thin dispatch    | thin dispatch |
@@ -242,21 +260,26 @@ transport. The Network HTTP adapter is explicitly not built yet -- see
 
 ## Resource ownership map
 
-| Resource/use case | Canonical owner |
-| --- | --- |
-| projects | ProjectManifest/Product Spine |
-| connections/probes | Connector Control Plane (#570/#580) |
-| WorkUnit preview | Product Spine + connector service |
-| routes | RoutingDecision / connector kernel |
-| runs | Product Spine / run service |
-| attempts/candidates | run service + CandidateReference |
-| result manifests | ResultManifest contract |
-| verification | verifier/evidence service |
-| run evidence | Run Evidence Report |
-| human decisions | Human Decision Record |
-| resource/compute admission | zero-project-spend compute router (`experiments/free_compute_router.py`, `scripts/free_resource_planner.py`, ADR-0006) |
-| events | canonical event service (#741) |
-| integration execution | separate protected integration authority |
+This is the dependency map required by API-3. “Transport surface” describes what
+is exposed today; absence of an HTTP mutation does not create permission for a
+second implementation.
+
+| Resource/use case | Canonical application/domain owner | Current transport surface |
+| --- | --- | --- |
+| projects | `ProductSpineRunStore.get_project()` derived from Product Spine runs | CLI `project status`; `GET /api/v1/projects/{project_id}` |
+| connections | `LocalMetadataStore` + `ConnectorControlReadService`; profile semantics in `connector_profiles.py` | CLI validate/list/import/stored; `GET /api/v1/connections` |
+| connector probes | connector inspection/probe services over ConnectorProfile | CLI only; no duplicate HTTP probe implementation |
+| WorkUnit preview | `github_issue_preview.py` + canonical WorkUnit v0.2 | GitHub/adapter path; no competing HTTP WorkUnit model |
+| routes | `connector_routing.py` / RoutingDecision | CLI/adapter consumers call the same routing kernel |
+| runs | `ProductSpineRunStore` | CLI `run create/status/list/cancel/evidence`; HTTP read surfaces under `/api/v1/runs` |
+| attempts/candidates | Product Spine attempt projection + CandidateReference/ResultManifest contracts | `GET /api/v1/runs/{run_id}/attempts`; provider adapters normalize into the same contracts |
+| verification | verifier-owned EvaluatorPlan/VerificationResult + `verification_handoff.py` | evidence/inspection surfaces only; transport cannot turn recommendation into authority |
+| run evidence | Product Spine retained Run Evidence Report with digest recheck | CLI `run evidence`; `GET /api/v1/runs/{run_id}/evidence`; inspect endpoint |
+| human decisions | `human_decision_service.py` + Human Decision Record contract | transport-neutral core exists; authenticated HTTP mutation remains #740 |
+| integration handoff/execution | Human Decision Record + protected repository policy; no transport-local owner | deliberately separate from worker/verifier/Control Tower authority |
+| resource/compute admission | `executor_admission.py` for execution binding; zero-project-spend compute router remains the resource planner (ADR-0006) | application/CLI composition; no transport may bypass admission |
+| events | append-only Product Spine event source in `LocalMetadataStore` | CLI `events list`; `GET /api/v1/events`; resumable SSE |
+
 
 ## Read versus mutation separation
 
@@ -298,19 +321,20 @@ A later integration actor must independently consume the decision plus policy.
 Events are append-only facts about state transitions, not a replacement for the
 domain records they reference.
 
-The future event service must support:
+The implemented local canonical event source provides:
 
-- exact event ID;
-- stream sequence;
-- actual occurrence time;
-- principal/actor;
-- object IDs;
-- source revision;
+- exact event ID and monotonic stream sequence;
+- producer-supplied occurrence time;
+- principal and authority class;
+- project/run/WorkUnit identities where applicable;
 - payload/evidence digest;
-- authority class;
-- resumable cursor.
+- deterministic query ordering and opaque pagination;
+- resumable SSE via `Last-Event-ID`.
 
-SSE is the first live-delivery transport because current needs are one-way
+Coverage is intentionally narrower than “every writer”: the Product Spine
+create/cancel path emits canonical events today, while other writers must not
+pretend their status projections are equivalent event authority. See ADR-0023.
+SSE remains the first live-delivery transport because current needs are one-way
 observation.
 
 ## Local-to-network evolution
@@ -413,7 +437,52 @@ Reject designs that:
 - expose localhost authentication as enterprise auth;
 - silently retry non-idempotent mutations.
 
-## Architecture completion evidence
+## API-3 acceptance evidence
+
+Issue #738 is an **architecture-convergence** issue, not the release gate for
+every API mutation. Its four acceptance criteria are now satisfied on current
+`main`:
+
+1. **CLI, Control Tower, Connector Control, and Product Spine share canonical
+   application/domain owners.** Connector reads use
+   `ConnectorControlReadService(LocalMetadataStore(...))`; Product Spine CLI
+   and HTTP reads use `ProductSpineRunStore(LocalMetadataStore(...))`.
+   WorkUnit preview, routing, human decision, and executor admission each have a
+   named transport-neutral owner rather than transport-local copies.
+2. **No duplicate canonical run/evidence/decision model.** HTTP/CLI response
+   envelopes project the same Product Spine, Run Evidence Report, and Human
+   Decision Record contracts. The decision HTTP mutation is still absent rather
+   than being approximated by the local session token.
+3. **Transport adapters cannot create authority.** The local HTTP server remains
+   read/inspect oriented; connector HTTP convergence added read-only metadata.
+   Worker success, verifier recommendation, and human decision remain distinct
+   from protected integration authority.
+4. **Architecture diagram and dependency map are checked in.** The diagram above
+   and the resource ownership table are regression-guarded by
+   `tests/test_api_control_plane_architecture.py` in the normal pytest/PR gate.
+
+### Broader API program gates that remain open
+
+Closing API-3 does **not** mean #713 is complete. In particular:
+
+- authenticated/policy-authorized Human Decision HTTP recording remains #740;
+- the current network/multi-user production transport/security profile remains
+  a separate API program gate;
+- GitHub-native durable ledger/recovery remains #597;
+- wider qualification, clients, release, and storage-profile work remain owned
+  by their API-program issues.
+
+This distinction is intentional: future transports must attach to the ownership
+map above instead of reopening API-3 or creating a second HTTP/domain universe.
+
+## Historical completion evidence
+
+The earlier architecture self-check below is retained as project history. Its
+criterion 5 was deliberately broader than API-3's own acceptance because it
+described the full client golden path, including the still-gated Human Decision
+HTTP mutation.
+
+
 
 This architecture is considered implemented only when:
 
