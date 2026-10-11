@@ -136,6 +136,9 @@ class GitHubGovernancePreflightTests(unittest.TestCase):
         with self.assertRaises(preflight.GitHubGovernancePreflightError) as caught:
             preflight.parse_observation_text(None)  # type: ignore[arg-type]
         self.assertEqual(caught.exception.code, "invalid_observation_text")
+        with self.assertRaises(preflight.GitHubGovernancePreflightError) as caught:
+            preflight.lint_workflow_text(None)  # type: ignore[arg-type]
+        self.assertEqual(caught.exception.code, "invalid_workflow_source")
 
     def test_committed_observation_fixture_is_deterministic(self) -> None:
         text = (EXAMPLES / "governance-pass-v0.1.json").read_text(encoding="utf-8")
@@ -185,6 +188,8 @@ jobs:
         source = """on: workflow_dispatch
 permissions:
   contents: read
+env:
+    environment: top-level-variable
 jobs:
   t:
     runs-on: ubuntu-latest
@@ -197,6 +202,59 @@ jobs:
         observed = preflight.lint_workflow_text(source)["workflow_source"]
         self.assertFalse(observed["oidc_token_permission"])
         self.assertFalse(observed["environment_bound"])
+
+    def test_job_write_all_permission_is_not_least_privilege(self) -> None:
+        source = """on: workflow_dispatch
+permissions:
+  contents: read
+jobs:
+  t:
+    permissions: write-all
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo unsafe
+"""
+        report = preflight.lint_workflow_text(source)
+        self.assertIn(
+            "actions-default-contents-read",
+            {item["code"] for item in report["findings"]},
+        )
+
+    def test_pr_reusable_workflow_secrets_inherit_comment_is_detected(self) -> None:
+        source = """on: [pull_request]
+permissions:
+  contents: read
+jobs:
+  call:
+    uses: org/repo/.github/workflows/reusable.yml@11d5960a326750d5838078e36cf38b85af677262
+    secrets: inherit # forwards caller secrets
+"""
+        report = preflight.lint_workflow_text(source)
+        self.assertIn(
+            "untrusted-pr-secret-isolation",
+            {item["code"] for item in report["findings"]},
+        )
+
+    def test_pull_request_target_github_head_ref_is_privileged_head(self) -> None:
+        head_expr = "$" + "{{ github.head_ref }}"
+        source = f"""on:
+  pull_request_target:
+permissions:
+  contents: read
+jobs:
+  t:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          ref: "{head_expr}"
+"""
+        report = preflight.lint_workflow_text(source)
+        self.assertIn(
+            "untrusted-pr-secret-isolation",
+            {item["code"] for item in report["findings"]},
+        )
 
     def test_job_level_oidc_permission_and_environment_are_detected(self) -> None:
         source = """on: workflow_dispatch

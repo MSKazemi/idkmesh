@@ -105,7 +105,8 @@ Command exit codes are:
 checks the security properties needed by C12 without trying to become a full
 YAML interpreter:
 
-- workflow-level `permissions: contents: read` default;
+- workflow-level `permissions: contents: read` default and rejection of
+  broad `read-all`/`write-all` permission scalars at workflow/job scope;
 - every remote action/reusable workflow pinned to an immutable 40-hex Git SHA
   (Docker references require a digest; repository-local actions are allowed);
 - every `actions/checkout` use sets `persist-credentials: false`;
@@ -121,8 +122,10 @@ YAML interpreter:
 
 The source checks intentionally reject ambiguous/non-standard shapes rather
 than guessing them safe. For example, a key named `id-token` under `env:`
-does not count as an Actions permission, and an `environment` variable does
-not count as a protected GitHub Environment binding.
+does not count as an Actions permission, a top-level/job `env.environment`
+variable does not count as a protected GitHub Environment binding, and
+`secrets: inherit` remains secret-bearing even when quoted or followed by an
+inline comment.
 
 When several workflow files are supplied, their booleans are combined
 conservatively: one unsafe/unknown workflow cannot be hidden by a safe one.

@@ -263,11 +263,20 @@ def _permission_blocks(
 
 def _permissions(text: str) -> tuple[bool, bool]:
     blocks = _permission_blocks(text)
-    contents_read = any(
-        indent == 0
-        and isinstance(value, dict)
-        and value.get("contents") == "read"
+    broad_scalar = any(
+        indent in {0, 4}
+        and isinstance(value, str)
+        and value in {"read-all", "write-all"}
         for indent, value in blocks
+    )
+    contents_read = (
+        any(
+            indent == 0
+            and isinstance(value, dict)
+            and value.get("contents") == "read"
+            for indent, value in blocks
+        )
+        and not broad_scalar
     )
     id_token = any(
         indent in {0, 4}
@@ -304,6 +313,65 @@ def _has_pr_trigger(text: str) -> bool:
     return False
 
 
+def _has_job_environment(text: str) -> bool:
+    lines = text.splitlines()
+    jobs_index = None
+    jobs_indent = None
+    for index, line in enumerate(lines):
+        match = re.match(r"^( *)jobs\s*:\s*(?:#.*)?$", line)
+        if match:
+            jobs_index = index
+            jobs_indent = len(match.group(1))
+            break
+    if jobs_index is None or jobs_indent is None:
+        return False
+
+    job_indent: int | None = None
+    index = jobs_index + 1
+    while index < len(lines):
+        line = lines[index]
+        if not line.strip() or line.lstrip().startswith("#"):
+            index += 1
+            continue
+        indent = len(line) - len(line.lstrip(" "))
+        if indent <= jobs_indent:
+            break
+        if job_indent is None:
+            job_indent = indent
+        if indent != job_indent:
+            index += 1
+            continue
+        if not re.match(r"^\s*[A-Za-z0-9_-]+\s*:\s*(?:#.*)?$", line):
+            index += 1
+            continue
+
+        end = index + 1
+        direct_indent: int | None = None
+        while end < len(lines):
+            later = lines[end]
+            if not later.strip() or later.lstrip().startswith("#"):
+                end += 1
+                continue
+            later_indent = len(later) - len(later.lstrip(" "))
+            if later_indent <= job_indent:
+                break
+            if direct_indent is None or later_indent < direct_indent:
+                direct_indent = later_indent
+            end += 1
+
+        if direct_indent is not None:
+            for later in lines[index + 1 : end]:
+                if not later.strip() or later.lstrip().startswith("#"):
+                    continue
+                later_indent = len(later) - len(later.lstrip(" "))
+                if later_indent == direct_indent and re.match(
+                    r"^\s*environment\s*:", later
+                ):
+                    return True
+        index = end
+    return False
+
+
 def _immutable(ref: str) -> bool:
     if ref.startswith("./"):
         return True
@@ -315,12 +383,16 @@ def _immutable(ref: str) -> bool:
 
 
 def lint_workflow_text(text: str, *, label: str = "workflow") -> dict[str, Any]:
+    if not isinstance(text, str):
+        raise GitHubGovernancePreflightError(
+            "invalid_workflow_source", f"{label}: workflow source must be UTF-8 text"
+        )
     if not text.strip() or len(text.encode("utf-8")) > MAX_WORKFLOW_BYTES or "\t" in text:
         raise GitHubGovernancePreflightError("invalid_workflow_source", f"{label}: invalid or oversized workflow source")
     findings: list[dict[str, Any]] = []
     contents_read, id_token = _permissions(text)
     if not contents_read:
-        findings.append({"code": "actions-default-contents-read", "message": "workflow-level permissions must set contents: read"})
+        findings.append({"code": "actions-default-contents-read", "message": "permissions must default contents to read and avoid read-all/write-all grants"})
     refs = [match.group(1) for match in USES_RE.finditer(text)]
     immutable = all(_immutable(ref) for ref in refs)
     for ref in refs:
@@ -336,13 +408,18 @@ def lint_workflow_text(text: str, *, label: str = "workflow") -> dict[str, Any]:
             findings.append({"code": "checkout-persist-credentials-disabled", "message": "checkout must set persist-credentials: false"})
     pr = _has_pr_trigger(text)
     secrets = bool(SECRET_EXPR_RE.search(text)) or bool(
-        re.search(r"(?m)^\s*secrets:\s*inherit\s*$", text)
+        re.search(
+            r"(?m)^\s*secrets:\s*['\"]?inherit['\"]?\s*(?:#.*)?$",
+            text,
+        )
     )
-    privileged_head = "pull_request_target" in text and "github.event.pull_request.head" in text
+    privileged_head = "pull_request_target" in text and (
+        "github.event.pull_request.head" in text or "github.head_ref" in text
+    )
     isolated = not (pr and (secrets or privileged_head))
     if not isolated:
         findings.append({"code": "untrusted-pr-secret-isolation", "message": "PR-triggered untrusted code cannot share secret-bearing or privileged head execution"})
-    environment_bound = bool(re.search(r"(?m)^ {4}environment\s*:", text))
+    environment_bound = _has_job_environment(text)
     return {
         "label": label,
         "workflow_source": {
