@@ -221,7 +221,11 @@ class GitHubLedgerSerializationTests(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as raw_directory:
             repo = Path(raw_directory)
-            _git(repo, "init", "-q")
+            # Hermetic fixture repo: an empty template means no inherited
+            # hooks (a developer's global pre-commit identity guard would
+            # otherwise reject the fixture author), and signing is off.
+            _git(repo, "init", "-q", "--template=")
+            _git(repo, "config", "commit.gpgsign", "false")
             _git(repo, "config", "user.name", "IDKMesh fixture")
             _git(
                 repo,
