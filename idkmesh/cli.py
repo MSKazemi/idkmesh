@@ -568,7 +568,10 @@ def build_parser() -> argparse.ArgumentParser:
             "  idkmesh run status run-1 --store state.sqlite --json"
         ),
     )
-    run_status.add_argument("run_id")
+    run_status.add_argument(
+        "run_id",
+        help="exact run id as printed by 'run create' or 'run list'",
+    )
     run_status.add_argument(
         "--store",
         required=True,
@@ -594,7 +597,10 @@ def build_parser() -> argparse.ArgumentParser:
             "command never selects, accepts, pushes, or merges a candidate."
         ),
     )
-    run_evidence.add_argument("run_id")
+    run_evidence.add_argument(
+        "run_id",
+        help="exact run id as printed by 'run create' or 'run list'",
+    )
     run_evidence.add_argument(
         "--store",
         required=True,
@@ -624,7 +630,10 @@ def build_parser() -> argparse.ArgumentParser:
             " --updated-at 2026-01-01T00:00:00Z --json"
         ),
     )
-    run_cancel.add_argument("run_id")
+    run_cancel.add_argument(
+        "run_id",
+        help="exact run id as printed by 'run create' or 'run list'",
+    )
     run_cancel.add_argument(
         "--store",
         required=True,
@@ -754,7 +763,12 @@ def build_parser() -> argparse.ArgumentParser:
         "status",
         help="inspect one WorkUnit and its distinct revisions",
     )
-    work_unit_status.add_argument("work_unit_id")
+    work_unit_status.add_argument(
+        "work_unit_id",
+        help=(
+            "exact work unit id as printed by 'work-unit list' or 'run status'"
+        ),
+    )
     work_unit_status.add_argument(
         "--store",
         required=True,
@@ -789,7 +803,10 @@ def build_parser() -> argparse.ArgumentParser:
         "status",
         help="show run counts by state for one project",
     )
-    project_status.add_argument("project_id")
+    project_status.add_argument(
+        "project_id",
+        help="exact project id as printed by 'run list' or 'run status'",
+    )
     project_status.add_argument(
         "--store",
         required=True,

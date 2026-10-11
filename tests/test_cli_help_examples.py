@@ -96,6 +96,31 @@ class HelpExamplesTests(unittest.TestCase):
                     if len(argv) == 2:
                         self.assertEqual(parsed.run_command, argv[1])
 
+    def test_every_non_subparser_argument_has_help_text(self):
+        import argparse
+
+        def _walk(parser, path=("idkmesh",)):
+            missing = []
+            seen_parsers = set()
+            for action in parser._actions:
+                if isinstance(action, argparse._SubParsersAction):
+                    for name, subparser in action.choices.items():
+                        if id(subparser) in seen_parsers:
+                            continue
+                        seen_parsers.add(id(subparser))
+                        missing.extend(_walk(subparser, path + (name,)))
+                else:
+                    if not action.help:
+                        missing.append(f"{' '.join(path)} dest={action.dest!r}")
+            return missing
+
+        missing = _walk(cli.build_parser())
+        self.assertEqual(
+            missing,
+            [],
+            f"The following CLI arguments are missing help text: {missing}",
+        )
+
     def test_examples_are_deterministic_and_machine_path_free(self):
         for argv in EXAMPLE_COMMANDS:
             first = self.help_text(argv)
