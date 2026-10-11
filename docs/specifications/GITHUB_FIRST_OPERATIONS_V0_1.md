@@ -222,6 +222,27 @@ It must not require writes to the protected application code branch merely to up
 
 The ledger implementation must expose compare-and-set/optimistic conflict behavior so concurrent workflows cannot silently overwrite each other.
 
+### 6.4 Current C9-G GitHub storage adapter
+
+[GitHub Ledger GitHub Storage v0.1](GITHUB_LEDGER_GITHUB_STORAGE_V0_1.md)
+implements the GitHub-native G0 store in
+`idkmesh.github_ledger_github_store`.
+
+The adapter creates one dedicated orphan `idkmesh-ledger` branch and refuses
+the configured default/protected application branches. Compact admissions and
+canonical records use hash-derived paths; the branch marker binds the store to
+the repository and storage schema.
+
+Each mutation builds a commit whose parent is the observed ledger-branch head,
+then updates `refs/heads/idkmesh-ledger` through the GitHub Git Data API with
+`force=false`. A stale/non-fast-forward writer re-reads and rebuilds within a
+bounded retry budget. The adapter composes the existing C9-D admission and C9-E
+recovery semantics but performs no provider dispatch, verification, candidate
+acceptance, application-branch write, integration, or merge.
+
+C9-H still owns retention: C9-G writes/reads durable compact records but does
+not delete or compact canonical history.
+
 ## 7. State machine
 
 Canonical operational states:
