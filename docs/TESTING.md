@@ -379,6 +379,37 @@ addition to the normal repository gate and treat the current workflow files plus
 their regression tests as the source of truth; do not rely on an older issue or
 PR description of CI behavior.
 
+## API release qualification
+
+`make qualify-api` (or `python tools/api_release_qualification.py`) runs the
+checks that decide whether an API revision is safe to release and writes one
+JSON report to `results/api-qualification/report.json` (git-ignored): the exact
+command, exit code, duration, pytest counts and output tail of every check,
+plus the git revision and Python version. It is the evidence artifact for
+issue #745.
+
+| Group | What runs |
+|---|---|
+| `contract` | `tools/openapi_ref_check.py`; `tools/schema_compat_check.py --base <rev>`; the OpenAPI, conformance, example-coverage and Human Decision contract tests |
+| `fuzz` | strict-JSON totality and header/media-type boundary fuzz |
+| `security` | Host allow-list, token-bypass, method-confusion and CORS/CSRF matrices |
+| `reliability` | request limits, overload, drain, slow clients, the event stream |
+| `client` | the official Python client |
+
+```bash
+make qualify-api                                   # local run; compat gate skipped
+make qualify-api BASE=v0.2.0 STRICT=1              # release run: diff vs the last tag, skips fail
+```
+
+Without `BASE` the schema compatibility gate is reported as `skipped`, and
+`STRICT=1` turns any skip into a failure. A suite listed in the tool that no
+longer exists is a `missing` check and fails the run, so renaming or deleting a
+suite cannot quietly shrink the qualification. The report lists what is *not*
+yet covered (load, soak and memory-ceiling measurement; the permission matrix;
+production-adapter request-smuggling tests) rather than implying it. The run
+takes about 80 s wall-clock and is not part of the per-PR tiers above, which
+already execute the same test modules.
+
 ## Adding tests
 
 Conventions are unchanged: files are `test_*.py`, classes end in `Tests`,
