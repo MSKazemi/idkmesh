@@ -14,6 +14,12 @@ and the release notes for that tag.
 
 ### Added
 
+- Source-backed implementation reference (PR #1004): an as-built architecture
+  map, a one-row-per-module map of `idkmesh/`, a CLI/HTTP quick reference, a
+  troubleshooting guide and a dated reconciliation audit, linked from the
+  README, getting-started, architecture and contributor guides. The module map
+  is kept complete by `tests/test_module_map_docs.py`, which fails when a
+  top-level `idkmesh/*.py` module has no row or a row names a missing module.
 - [API v1 beta compatibility, deprecation and migration guide](docs/API_V1_BETA_MIGRATION_GUIDE.md)
   (issue #747): what an API consumer can rely on and what is not yet stable, how
   change and deprecation are announced (no deprecation is in force), the nine

@@ -39,7 +39,7 @@ The documented developer test setup uses `make setup` on POSIX hosts, followed b
 | `run cancel` succeeds but worker remains active | Only local lifecycle metadata was transitioned | Cancel/terminate a provider through its own separately authorized operator path. |
 | List cursor fails | Cursors are opaque and bind to a listing contract | Copy `next_cursor` verbatim; use the same list filter context and query; do not decode/construct it manually. |
 
-Source: [`product_spine_run_store.py`](../../idkmesh/product_spine_run_store.py), [`product_spine.py`](../../idkmesh/product_spine.py), [Product Spine spec](../specifications/PRODUCT_SPINE_SERVICE_V0_1.md). The local SQLite store is **not** a multi-user hosted ledger.
+Source: [`product_spine_run_store.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/product_spine_run_store.py), [`product_spine.py`](../../idkmesh/product_spine.py), [Product Spine spec](../specifications/PRODUCT_SPINE_SERVICE_V0_1.md). The local SQLite store is **not** a multi-user hosted ledger.
 
 ## Control Tower and HTTP
 

@@ -126,4 +126,4 @@ The execution-substrate abstraction and GitHub-first deployment model remain **a
 4. **No CI green claim is made from source inspection.** New/modified documentation still needs exact-head link/schema/test gates when the PR is opened.
 5. **No historical planned label is a current status.** The [2026-09-23 API catalog](../planning/API_V1_SURFACE_CATALOG_2026-09-23.md) is a planning snapshot; the current CLI/router and specifications win.
 
-For developer help see [troubleshooting](../help/TROUBLESHOOTING.md), for source-by-source navigation see [module map](../reference/MODULE_MAP.md), and for the architectural contract outside this bounded as-built review see [root architecture](../../ARCHITECTURE.md).
+For developer help see [troubleshooting](../help/TROUBLESHOOTING.md), for source-by-source navigation see [module map](../reference/MODULE_MAP.md), and for the architectural contract outside this bounded as-built review see [root architecture](https://github.com/MSKazemi/idkmesh/blob/main/ARCHITECTURE.md).

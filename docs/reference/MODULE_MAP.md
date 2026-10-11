@@ -3,7 +3,7 @@ description: "Source-derived owner map for every installable idkmesh Python modu
 ---
 # Installable Python module map (as-built)
 
-**Baseline:** `main@bee77a6125dbccb58f166ec363e978cd960f43f3` (2026-10-11). **Scope:** all 85 direct `idkmesh/*.py` files on this commit, including `__init__.py`. This is a **source navigation and responsibility map**, not a claim that all modules form a deployable service, a list of supported public Python APIs, or a test-coverage/qualification certificate. Public claims must follow [the canonical capability matrix](../CAPABILITY_MATRIX.md).
+**Baseline:** `main@bee77a6125dbccb58f166ec363e978cd960f43f3` (2026-10-11). **Scope:** every direct `idkmesh/*.py` file, including `__init__.py` (85 at the baseline; `tests/test_module_map_docs.py` keeps the table complete as modules are added — `github_ledger_serialization.py` was added after the baseline). This is a **source navigation and responsibility map**, not a claim that all modules form a deployable service, a list of supported public Python APIs, or a test-coverage/qualification certificate. Public claims must follow [the canonical capability matrix](../CAPABILITY_MATRIX.md).
 
 Each row points to real source code inspected for its module-level contract and exported declarations. A module can be pure/experimental, CLI-wired, local-only, or an adapter boundary; mere presence in the installable package does not grant execution, acceptance, human decision, or merge authority. See the [as-built flow](../architecture/AS_BUILT_IMPLEMENTATION_MAP.md) and [CLI/HTTP reference](CLI_HTTP_QUICK_REFERENCE.md) for **exposed** behavior.
 
@@ -91,6 +91,7 @@ Primary context: [subsystem contract](../specifications/GITHUB_WEBHOOK_INGRESS_V
 | [`github_governance_policy.py`](../../idkmesh/github_governance_policy.py) | Declarative GitHub repository governance rules |
 | [`github_issue_preview.py`](../../idkmesh/github_issue_preview.py) | Untrusted issue-to-policy-owned WorkUnit preview |
 | [`github_issue_source.py`](../../idkmesh/github_issue_source.py) | Bounded GitHub REST issue read adapter |
+| [`github_ledger_serialization.py`](../../idkmesh/github_ledger_serialization.py) | Pure canonical serialization and append-only chain verification for GitHub ledger records; performs no Git or GitHub action |
 | [`github_public_evidence.py`](../../idkmesh/github_public_evidence.py) | Strict public-safe evidence publication projection |
 | [`github_rest_source.py`](../../idkmesh/github_rest_source.py) | Bounded GitHub identity REST transport |
 | [`github_routing_projection.py`](../../idkmesh/github_routing_projection.py) | Read-only GitHub UI projection of routing decision |

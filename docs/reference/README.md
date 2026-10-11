@@ -1,6 +1,3 @@
----
-description: "Practical references for navigating installed source code, supported CLI commands, local HTTP endpoints, and troubleshooting."
----
 # IDKMesh implementation reference
 
 Use these alongside the [capability truth matrix](../CAPABILITY_MATRIX.md) and the [getting-started guide](../GETTING_STARTED.md):
