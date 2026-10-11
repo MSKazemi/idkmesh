@@ -154,9 +154,11 @@ ITEMS: tuple[Item, ...] = (
     Item(
         "deprecation-policy",
         "migration / deprecation policy published",
-        PARTIAL,
-        evidence=("docs/specifications/API_CONVENTIONS_V0_1.md",),
-        gap="deprecation rules exist (conventions section 20); no published migration guide for a beta consumer",
+        SATISFIED,
+        evidence=(
+            "docs/API_V1_BETA_MIGRATION_GUIDE.md",
+            "docs/specifications/API_CONVENTIONS_V0_1.md",
+        ),
     ),
     Item(
         "clean-install-demo",
