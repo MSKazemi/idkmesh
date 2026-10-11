@@ -14,6 +14,13 @@ and the release notes for that tag.
 
 ### Added
 
+- [API v1 beta compatibility, deprecation and migration guide](docs/API_V1_BETA_MIGRATION_GUIDE.md)
+  (issue #747): what an API consumer can rely on and what is not yet stable, how
+  change and deprecation are announced (no deprecation is in force), the nine
+  behaviour clarifications found while qualifying the API with the test that
+  covers each, and how to check a revision with `make qualify-api` and
+  `make beta-readiness`. The beta gate now counts the migration/deprecation item
+  as satisfied.
 - `tools/api_clean_install_demo.py` (issue #747): the beta gate's "clean install
   and reproducible demo". Builds a wheel from a staged copy, installs only that
   wheel into a fresh venv, checks the import comes from the new environment and
