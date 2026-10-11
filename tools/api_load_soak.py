@@ -15,6 +15,9 @@ client threads. It records:
   the request sent; ``503`` with ``Retry-After`` is the service's own load
   shedding and is counted separately, never as success and never as failure;
   any other status, and any transport error, is a failure;
+* **body integrity** -- every endpoint whose idle answer is stable (two idle
+  requests return the same bytes) must return those same bytes under load, which
+  catches corruption and cross-request bleed that a status check cannot;
 * **latency** -- p50 / p95 / p99 / max per round (a generous p99 ceiling, since
   wall-clock on a shared runner is noisy; see ``--max-p99-ms``);
 * **leaks** -- thread count and open file descriptors after the server has
@@ -38,6 +41,7 @@ import argparse
 import http.client
 from concurrent.futures import ThreadPoolExecutor
 import gc
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -131,25 +135,51 @@ class _Client:
         self.port = port
         self.token = token
 
-    def call(self, method: str, path: str, with_token: bool) -> tuple[int, bool, float]:
-        """One request; returns (status, retry_after_present, seconds)."""
+    def call(
+        self, method: str, path: str, with_token: bool
+    ) -> tuple[int, bool, float, str]:
+        """One request; returns (status, retry_after_present, seconds, body_digest)."""
         started = time.perf_counter()
         conn = http.client.HTTPConnection("127.0.0.1", self.port, timeout=10)
         try:
             headers = {TOKEN_HEADER: self.token} if with_token else {}
             conn.request(method, path, headers=headers)
             response = conn.getresponse()
-            response.read()
+            body = response.read()
             return (
                 response.status,
                 response.getheader("Retry-After") is not None,
                 time.perf_counter() - started,
+                hashlib.sha256(body).hexdigest(),
             )
         finally:
             conn.close()
 
 
-def run_round(client: _Client, requests: int, threads: int, seed: int) -> dict[str, Any]:
+def isolated_baselines(client: _Client) -> dict[tuple[str, str, bool], str]:
+    """Body digest of every plan entry whose answer is stable when idle.
+
+    Each entry is requested twice with nothing else running; if the two bodies
+    match, the answer is deterministic and any different body seen under load
+    is corruption or drift, not a timestamp. Entries that legitimately vary
+    (uptime, counters, request ids) are left out rather than special-cased.
+    """
+    stable: dict[tuple[str, str, bool], str] = {}
+    for method, path, with_token, _expected in PLAN:
+        first = client.call(method, path, with_token)
+        second = client.call(method, path, with_token)
+        if first[3] == second[3]:
+            stable[(method, path, with_token)] = first[3]
+    return stable
+
+
+def run_round(
+    client: _Client,
+    requests: int,
+    threads: int,
+    seed: int,
+    baselines: dict[tuple[str, str, bool], str] | None = None,
+) -> dict[str, Any]:
     rng = random.Random(seed)
     jobs = [PLAN[rng.randrange(len(PLAN))] for _ in range(requests)]
     latencies: list[float] = []
@@ -161,7 +191,7 @@ def run_round(client: _Client, requests: int, threads: int, seed: int) -> dict[s
         nonlocal shed
         method, path, with_token, expected = job
         try:
-            status, retry_after, seconds = client.call(method, path, with_token)
+            status, retry_after, seconds, digest = client.call(method, path, with_token)
         except OSError as exc:
             with lock:
                 failures.append(f"{method} {path}: transport error {exc!r}")
@@ -172,6 +202,8 @@ def run_round(client: _Client, requests: int, threads: int, seed: int) -> dict[s
                 shed += 1
             elif status not in expected:
                 failures.append(f"{method} {path}: got {status}, expected {expected}")
+            elif baselines is not None and baselines.get((method, path, with_token), digest) != digest:
+                failures.append(f"{method} {path}: body differs from its idle baseline")
 
     started = time.perf_counter()
     with ThreadPoolExecutor(max_workers=threads) as pool:
@@ -248,14 +280,15 @@ def soak(
                 threads,
                 SEED - 1,
             )
+            baselines = isolated_baselines(client)
             gc.collect()
             threads_before = threading.active_count()
             fds_before = open_fd_count()
 
             # Latency and correctness are measured untraced: tracemalloc slows
             # every allocation and would distort the percentiles.
-            first = run_round(client, requests, threads, SEED)
-            second = run_round(client, requests, threads, SEED + 1)
+            first = run_round(client, requests, threads, SEED, baselines)
+            second = run_round(client, requests, threads, SEED + 1, baselines)
 
             # The memory ceiling gets its own traced pair of rounds. Round one
             # warms any lazily built state; growth is read across round two.
@@ -284,6 +317,7 @@ def soak(
         "seed": SEED,
         "threads": threads,
         "limits": limits,
+        "deterministic_endpoints_compared": len(baselines),
         "rounds": [first, second],
         "heap": {
             "requests_per_round": heap_requests,
@@ -316,6 +350,9 @@ def render(report: dict[str, Any]) -> str:
     lines.append(
         f"  heap: +{heap['round_two_growth_kib']} KiB over {heap['requests_per_round']} traced requests; after drain: "
         f"threads {after['thread_growth']:+d}, fds {after['fd_growth']}"
+    )
+    lines.append(
+        f"  bodies compared against idle baseline: {report['deterministic_endpoints_compared']} endpoints"
     )
     lines.extend(f"  PROBLEM: {problem}" for problem in report["problems"])
     for round_ in report["rounds"]:
