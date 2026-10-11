@@ -101,6 +101,7 @@ multi-user network exposure.
 `idkmesh.api_client.ControlTowerClient` provides the same read/inspect model without
 requiring an HTTP client dependency. Current public methods are:
 
+- `ControlTowerClient.request_id` — last response request ID exposed for correlation
 - `ControlTowerClient.status()`
 - `ControlTowerClient.inspect_run_evidence()`
 - `ControlTowerClient.get_run()`
