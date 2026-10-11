@@ -487,7 +487,7 @@ conforming production backend.
 
 - **C9-A — [ledger record schema](../specifications/GITHUB_LEDGER_RECORD_V0_1.md):** run/event/route/attempt/idempotency/evidence references with exact WorkUnit/source binding and no authority.
 - **C9-B — [append-only local Git fixture](../specifications/GITHUB_LEDGER_SERIALIZATION_V0_1.md):** implemented by `idkmesh/github_ledger_serialization.py`; deterministic canonical bytes/digests, semantic attempt/route checks, complete sequence/digest-chain verification, and a two-commit local Git append fixture with no remote write authority.
-- **C9-C — optimistic append protocol:** concurrent writer conflict/retry semantics.
+- **C9-C — [optimistic append protocol](../specifications/GITHUB_LEDGER_APPEND_V0_1.md):** implemented by `idkmesh/github_ledger_append.py`; compare-and-set `git update-ref` on one ref per run, `LedgerConflict` with the actual head, bounded retry, linear never-rewritten history, proven against real Git with concurrent writers. No remote write authority.
 - **C9-D — idempotent admission record:** duplicate dispatch -> existing run.
 - **C9-E — recovery reader:** reconstruct current run state from events.
 - **C9-F — killed-workflow recovery test:** resume observation safely.

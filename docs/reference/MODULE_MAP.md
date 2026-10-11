@@ -91,6 +91,7 @@ Primary context: [subsystem contract](../specifications/GITHUB_WEBHOOK_INGRESS_V
 | [`github_governance_policy.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_governance_policy.py) | Declarative GitHub repository governance rules |
 | [`github_issue_preview.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_issue_preview.py) | Untrusted issue-to-policy-owned WorkUnit preview |
 | [`github_issue_source.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_issue_source.py) | Bounded GitHub REST issue read adapter |
+| [`github_ledger_append.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_ledger_append.py) | Local compare-and-set optimistic append to a per-run Git-ref ledger with bounded retry; no push or GitHub call |
 | [`github_ledger_serialization.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_ledger_serialization.py) | Pure canonical serialization and append-only chain verification for GitHub ledger records; performs no Git or GitHub action |
 | [`github_public_evidence.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_public_evidence.py) | Strict public-safe evidence publication projection |
 | [`github_rest_source.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_rest_source.py) | Bounded GitHub identity REST transport |

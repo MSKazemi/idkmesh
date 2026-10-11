@@ -198,7 +198,7 @@ Those remain C9-C through C9-H.
 In particular, passing `serialize_github_ledger_chain()` proves only that the
 supplied records form a deterministic internally linked chain. It does not
 prove that a remote branch was not rewritten or that two concurrent writers
-cannot race. C9-C owns that concurrency/storage proof.
+cannot race. C9-C owns that concurrency/storage proof; it is specified in [GitHub Ledger Optimistic Append v0.1](GITHUB_LEDGER_APPEND_V0_1.md).
 
 ## Security and authority
 

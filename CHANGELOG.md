@@ -14,6 +14,15 @@ and the release notes for that tag.
 
 ### Added
 
+- [GitHub Ledger Optimistic Append v0.1](docs/specifications/GITHUB_LEDGER_APPEND_V0_1.md)
+  and `idkmesh/github_ledger_append.py` (issue #597, slice C9-C): a compare-and-set
+  append to the GitHub-native durable ledger. Records land on one Git ref per run
+  through `git update-ref <ref> <new> <old>`, so a writer that read a stale head
+  loses with a `LedgerConflict` carrying the actual head instead of overwriting
+  the winner; `append_with_retry` re-reads and rebuilds, bounded. History is
+  linear and never rewritten, every append re-verifies the whole chain, and a
+  failed append leaves the ref where it was. Proven against real Git, including
+  eight concurrent writers. Local plumbing only: no push, no GitHub call.
 - Source-backed implementation reference (PR #1004): an as-built architecture
   map, a one-row-per-module map of `idkmesh/`, a CLI/HTTP quick reference, a
   troubleshooting guide and a dated reconciliation audit, linked from the
