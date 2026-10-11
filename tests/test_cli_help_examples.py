@@ -30,6 +30,10 @@ EXAMPLE_COMMANDS = (
     ("run", "list"),
     ("run", "cancel"),
     ("control-tower",),
+    ("work-unit", "list"),
+    ("work-unit", "status"),
+    ("project", "status"),
+    ("events", "list"),
 )
 
 _DRIVE_PATH_RE = re.compile(r"^[A-Za-z]:[\\/]")
@@ -94,7 +98,8 @@ class HelpExamplesTests(unittest.TestCase):
                     parsed = cli.build_parser().parse_args(tokens[1:])
                     self.assertEqual(parsed.command, argv[0])
                     if len(argv) == 2:
-                        self.assertEqual(parsed.run_command, argv[1])
+                        sub_attr = f"{argv[0].replace('-', '_')}_command"
+                        self.assertEqual(getattr(parsed, sub_attr), argv[1])
 
     def test_examples_are_deterministic_and_machine_path_free(self):
         for argv in EXAMPLE_COMMANDS:
