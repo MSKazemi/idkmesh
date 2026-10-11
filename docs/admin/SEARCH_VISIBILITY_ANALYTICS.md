@@ -149,6 +149,73 @@ evidence that people actually search for it.
 Search Console observations are what begin to convert that hypothesis into observed
 demand.
 
+## GitHub repository Traffic API (optional owner-authorized evidence)
+
+The existing public GitHub API reports stars, forks, and subscribers but **not**
+GitHub Insights visitor/clone traffic. `scripts/github_traffic_snapshot.py`
+adds an opt-in read-only collector to the *same* weekly
+`Visibility and Community Observatory`. It is not enabled without credentials.
+
+GitHub exposes rolling ~14-day repository traffic through authenticated endpoints
+(`traffic/views`, `traffic/clones`, and `traffic/popular/referrers`). The
+adapter stores aggregate totals, window-level unique visitors/cloners, per-day
+counts, and top referrer aggregates. It never collects visitor identities,
+IP addresses, raw headers, cookies, or individual visits.
+
+### Owner setup
+
+1. Decide whether publishing aggregate traffic in repository Actions artifacts is
+   acceptable for this public open-source project. The workflow's existing
+   `results/visibility/` artifact has a **30-day retention** policy.
+2. Create a **fine-grained GitHub personal access token** scoped to
+   `MSKazemi/idkmesh`, with the minimum repository permission required for
+   GitHub's Traffic API: **Administration: read-only**. GitHub labels this
+   permission "Administration" even though the selected access is read-only.
+   It exposes more repository administration metadata than ordinary read access;
+   use a dedicated, revocable token. Repository-owner approval may be required.
+3. Add it as the Actions **repository secret** `GITHUB_TRAFFIC_READ_TOKEN`
+   (Settings → Secrets and variables → Actions). Do **not** put it in a
+   workflow variable, code, issue, PR, documentation, chat, or uploaded data file.
+4. Manually run **Visibility and Community Observatory** from trusted `main`
+   once, or allow the normal weekly run. It writes
+   `results/visibility/github-traffic.json` inside the retained workflow
+   artifact and shows total views/unique visitors and clones/unique cloners
+   in the job summary.
+
+The collector is skipped when the secret is absent; the summary says
+**unavailable**, never zero. When a configured token is rejected (for example
+HTTP 403), the workflow fails visibly and does not publish a misleading traffic
+observation. Credential contents and API response bodies are never written to
+error output. The collector does not attempt a fallback to the ordinary
+`GITHUB_TOKEN`, which lacks the required Traffic API authorization.
+
+Standalone use (requires an owner-authorized environment secret):
+
+```bash
+python scripts/github_traffic_snapshot.py \
+  --repository MSKazemi/idkmesh \
+  --output results/visibility/github-traffic.json
+```
+
+GitHub's traffic history is limited to the last 14 days and **daily unique
+counts must not be added together** to estimate 14-day unique visitors. The
+weekly snapshots overlap. Historical uniqueness cannot be recovered simply by
+summing them. GitHub repo views are not website page views, search impressions,
+Search Console clicks, installations, or verified contributions.
+
+### Evidence interpretation
+
+| Question | Trustworthy metric | Not measured by this adapter |
+| --- | --- | --- |
+| Did visitors view GitHub repository pages? | `views.count`, `views.uniques` in one GitHub 14-day window | Visits to `mskazemi.com/idkmesh/` |
+| Were repository clones observed? | `clones.count`, `clones.uniques` | Successful installations or active users |
+| Where are GitHub visitors referred from? | Aggregated top referrers only | Complete channel attribution or user journeys |
+| Is non-brand Google discovery improving? | Google Search Console read-only query/page report (separately configured) | GitHub Traffic figures |
+| Are visitors becoming repeat contributors? | Requires independent issue/PR/contribution funnel evidence | Repository views alone |
+
+No traffic metric grants repository correctness, integration, automatic publication,
+or merge authority. Do not invent baseline values if no authorized token exists.
+
 ## Bing Webmaster Tools
 
 Do **not** implement or re-enable the historical SOAP/POX endpoints.

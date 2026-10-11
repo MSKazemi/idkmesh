@@ -377,6 +377,11 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://mskazemi.com/idkmesh/audits/2026-10-08-visibility-seo-traffic-audit.html</loc>
+    <lastmod>2026-10-11</lastmod>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://mskazemi.com/idkmesh/audits/2026-10-10-code-documentation-reconciliation.html</loc>
     <lastmod>2026-10-11</lastmod>
     <priority>0.6</priority>
@@ -1372,7 +1377,17 @@
     <priority>0.3</priority>
   </url>
   <url>
+    <loc>https://mskazemi.com/idkmesh/conversations/2026-10-08-visibility-seo-traffic-assessment.html</loc>
+    <lastmod>2026-10-11</lastmod>
+    <priority>0.3</priority>
+  </url>
+  <url>
     <loc>https://mskazemi.com/idkmesh/conversations/2026-10-11-beginner-clarity-first-run.html</loc>
+    <lastmod>2026-10-11</lastmod>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://mskazemi.com/idkmesh/conversations/2026-10-11-github-traffic-observability.html</loc>
     <lastmod>2026-10-11</lastmod>
     <priority>0.3</priority>
   </url>
