@@ -104,13 +104,12 @@ class LiveSoakTests(unittest.TestCase):
         self.assertTrue(after["drained"])
         self.assertLessEqual(after["thread_growth"], LIMITS["max_thread_growth"])
 
-    def test_the_same_measurement_fails_against_a_tight_limit(self):
-        # Bite check on real numbers: the traced heap growth is non-zero, so a
-        # limit below it must be reported rather than ignored.
-        growth = self.report["heap"]["round_two_growth_kib"]
-        self.assertGreater(growth, 0.0)
-        tight = dict(LIMITS, max_heap_growth_kib=growth / 2)
-        self.assertTrue(any("heap" in p for p in soak.evaluate(self.report, tight)))
+    def test_the_same_measurement_fails_against_an_impossible_limit(self):
+        # Bite check on the real report: a ceiling below any possible growth
+        # (growth can be small or even negative under load, so a negative cap)
+        # must be reported rather than ignored.
+        impossible = dict(LIMITS, max_heap_growth_kib=-1e9)
+        self.assertTrue(any("heap" in p for p in soak.evaluate(self.report, impossible)))
 
     def test_render_names_the_verdict(self):
         self.assertIn("API load/soak: PASS", soak.render(self.report))

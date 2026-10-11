@@ -14,6 +14,14 @@ and the release notes for that tag.
 
 ### Added
 
+- [GitHub Ledger Recovery Reader v0.1](docs/specifications/GITHUB_LEDGER_RECOVERY_V0_1.md)
+  and `idkmesh/github_ledger_recovery.py` (issue #597, slice C9-E): derive a run's
+  current state from its immutable ledger records. It verifies the chain, then
+  replays it checking legal lifecycle transitions, attempt identity and the human
+  decision, keeps every failure observation, reports ambiguous provider
+  submissions as a reconciliation hazard, and refuses histories no real run could
+  have produced. Works from any prefix, so a crash after any record is
+  recoverable. Read-only; no authority.
 - [GitHub Ledger Idempotent Admission v0.1](docs/specifications/GITHUB_LEDGER_ADMISSION_V0_1.md)
   and `idkmesh/github_ledger_admission.py` (issue #597, slice C9-D): a duplicate
   dispatch resolves to the run admitted first. One immutable admission ref per
