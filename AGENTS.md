@@ -4,6 +4,8 @@
 
 Core prototypes live in `experiments/`, simulations in `randomness_lab/` and `sim/`, bindings in `interop/`, and utilities in `tools/` and `scripts/`. Put tests in `tests/` (or `interop/tests/`) and fixtures under `tests/fixtures/` or `verification/fixtures/`. JSON contracts belong in `schemas/`, samples in `examples/`, outputs in `results/`, policies/state in `config/` and `state/`, and rationale in `docs/`. Read `README.md`, `CONTRIBUTING.md`, and `PROJECT_RULES.md` first. Use `ARCHITECTURE.md` for the current system map, `ROADMAP.md` for evidence-gated future work, and `docs/README.md` for deeper subsystem/research indexes.
 
+For source-derived module ownership and user-facing command/HTTP contracts, see `docs/reference/MODULE_MAP.md` and `docs/reference/CLI_HTTP_QUICK_REFERENCE.md`; for execution, API and authority boundaries see `docs/architecture/AS_BUILT_IMPLEMENTATION_MAP.md`. Treat this map as a dated navigation aid, not a replacement for live code, `docs/CAPABILITY_MATRIX.md`, or tests; update it when adding/removing an `idkmesh/*.py` module.
+
 ## Build, Test, and Development Commands
 
 The supported local entry points now live in the repository and delegate to the same `scripts/testkit.py` tiers used by the documented development workflow:
@@ -27,7 +29,7 @@ python -m randomness_lab --policy thompson --rounds 100 --seed 42
 
 `pytest.ini` sets the repository root on `pythonpath`, so `PYTHONPATH=.` is no longer required for pytest on current `main`. See `docs/TESTING.md` for tier budgets, caching, hooks, CI parity, and Windows-specific guidance. Use a focused module, such as `python -m pytest -q tests/test_r2.py`, while iterating.
 
-**Do not use `python -m unittest discover` to check your work.** It silently under-collects: `unittest` only finds `TestCase` subclasses, so the **325** module-level `test_*` functions spread across **32** files in `tests/` are invisible to it — roughly a tenth of the suite, reported as `OK` with no warning that anything was missed. `tests/test_documented_test_counts.py` re-measures both figures and the gap they explain, so this paragraph fails the suite if it drifts.
+**Do not use `python -m unittest discover` to check your work.** It silently under-collects: `unittest` only finds `TestCase` subclasses, so the **332** module-level `test_*` functions spread across **33** files in `tests/` are invisible to it — roughly a tenth of the suite, reported as `OK` with no warning that anything was missed. `tests/test_documented_test_counts.py` re-measures both figures and the gap they explain, so this paragraph fails the suite if it drifts.
 
 ## Agent Contribution Loop
 

@@ -395,6 +395,7 @@ issue #745.
 | `security` | Host allow-list, token-bypass, method-confusion and CORS/CSRF matrices |
 | `reliability` | request limits, overload, drain, slow clients, the event stream; `tools/api_load_soak.py` (concurrent mixed load, thread and file-descriptor leaks after drain, heap growth) |
 | `client` | the official Python client |
+| `install` | `tools/api_clean_install_demo.py`: wheel, fresh venv, installed server and client, transcript equal to the source tree (needs package-index access to build) |
 
 ```bash
 make qualify-api                                   # local run; compat gate skipped
@@ -410,6 +411,24 @@ production-adapter request-smuggling tests) rather than implying it. The run
 takes about 90 s wall-clock and is not part of the per-PR tiers above, which
 already execute the same test modules.
 
+### Clean install demo
+
+`python tools/api_clean_install_demo.py` proves the package works installed, not
+just from this checkout: it builds a wheel from a staged copy, installs only
+that wheel into a fresh virtual environment, starts the installed
+`idkmesh control-tower`, drives it with the installed Python client, and
+requires the same stable transcript from the source tree. About 6 s; exit 0
+pass, 1 package failure, 2 the environment could not build or install.
+
+### Beta release gate
+
+`make beta-readiness` (`tools/api_beta_readiness.py`) evaluates the fourteen
+required-evidence items of issue #747 against the repository and the
+qualification report above, and exits 1 until every item is satisfied. It reads
+`results/api-qualification/report.json` and treats it as evidence only for the
+current git revision on a clean tree, so run `make qualify-api` first. See
+[API v1 Beta Release Gate](specifications/API_V1_BETA_RELEASE_GATE_V0_1.md).
+
 ### Load and soak
 
 `python tools/api_load_soak.py` (also run by `make qualify-api`) starts the real
@@ -417,7 +436,9 @@ Control Tower over a seeded store and sends two equal rounds of mixed traffic
 from several client threads: authenticated reads of every route plus a share of
 hostile requests (bad token, wrong method, unknown route). It fails when any
 response is not the expected status (a `503` with `Retry-After` is the service
-shedding load and is counted separately), when p99 latency exceeds
+shedding load and is counted separately), when a response body that is
+byte-stable on an idle server differs under load (corruption or cross-request
+bleed that a status check cannot see), when p99 latency exceeds
 `--max-p99-ms` (default 2000, deliberately loose for shared runners), when
 thread count or open file descriptors have grown after the server drains, or
 when the Python heap grows by more than `--max-heap-growth-kib` across a second

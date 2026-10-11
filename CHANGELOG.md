@@ -14,11 +14,97 @@ and the release notes for that tag.
 
 ### Added
 
+- [API Authority Matrix v0.1](docs/specifications/API_AUTHORITY_MATRIX_V0_1.md)
+  (issues #743, #670): which principal may call which Control Tower endpoint,
+  expressed in the enterprise authorization kernel's roles and actions as a
+  **proposal** for the network profile, with an explicit "enforced today" column
+  (a local session token, not a principal). `tests/test_api_authority_matrix.py`
+  keeps it complete against the running server's discovery document, checks every
+  action and role exists in the kernel, that no served route needs a mutating
+  authority, and that the "enforced today" claim is true. The beta gate counts the
+  authority-matrix item as satisfied; the security-profile item stays partial.
+- [GitHub Ledger Recovery Planning and Killed-Workflow Proof v0.1](docs/specifications/GITHUB_LEDGER_RECOVERY_PLAN_V0_1.md),
+  `idkmesh/github_ledger_recovery_plan.py` and
+  `tests/test_github_ledger_killed_workflow.py` (issue #597, slice C9-F): a pure
+  advisory `plan_recovery(state)` that names the safe next step for a recovered
+  run and reconciles, never blindly resubmits, an unconfirmed provider
+  submission; and an exhaustive kill matrix that kills a coordinating workflow at
+  every side-effect point (and in pairs), starts a fresh coordinator with only
+  the ledger and the provider, and requires a recorded decision with exactly one
+  provider submission. Intent is recorded before effect. Grants no authority.
+- [GitHub Ledger Recovery Reader v0.1](docs/specifications/GITHUB_LEDGER_RECOVERY_V0_1.md)
+  and `idkmesh/github_ledger_recovery.py` (issue #597, slice C9-E): derive a run's
+  current state from its immutable ledger records. It verifies the chain, then
+  replays it checking legal lifecycle transitions, attempt identity and the human
+  decision, keeps every failure observation, reports ambiguous provider
+  submissions as a reconciliation hazard, and refuses histories no real run could
+  have produced. Works from any prefix, so a crash after any record is
+  recoverable. Read-only; no authority.
+- [GitHub Ledger Idempotent Admission v0.1](docs/specifications/GITHUB_LEDGER_ADMISSION_V0_1.md)
+  and `idkmesh/github_ledger_admission.py` (issue #597, slice C9-D): a duplicate
+  dispatch resolves to the run admitted first. One immutable admission ref per
+  dispatch key is created by Git compare-and-set (`update-ref` against the
+  all-zero id), so concurrent duplicates admit exactly one run; an exact replay
+  returns it and writes nothing, a replay with a different request digest fails
+  closed, and a crash between admission and the first ledger record is completed
+  by the next replay for that run. Proven against real Git, with a deterministic
+  race test per PR and concurrent-writer tests in the nightly tier. Local plumbing
+  only: no push, no GitHub call.
+- [GitHub Ledger Optimistic Append v0.1](docs/specifications/GITHUB_LEDGER_APPEND_V0_1.md)
+  and `idkmesh/github_ledger_append.py` (issue #597, slice C9-C): a compare-and-set
+  append to the GitHub-native durable ledger. Records land on one Git ref per run
+  through `git update-ref <ref> <new> <old>`, so a writer that read a stale head
+  loses with a `LedgerConflict` carrying the actual head instead of overwriting
+  the winner; `append_with_retry` re-reads and rebuilds, bounded. History is
+  linear and never rewritten, every append re-verifies the whole chain, and a
+  failed append leaves the ref where it was. Proven against real Git, including
+  concurrent writers (nightly tier). Local plumbing only: no push, no GitHub call.
+- Source-backed implementation reference (PR #1004): an as-built architecture
+  map, a one-row-per-module map of `idkmesh/`, a CLI/HTTP quick reference, a
+  troubleshooting guide and a dated reconciliation audit, linked from the
+  README, getting-started, architecture and contributor guides. The module map
+  is kept complete by `tests/test_module_map_docs.py`, which fails when a
+  top-level `idkmesh/*.py` module has no row or a row names a missing module.
+- [API v1 beta compatibility, deprecation and migration guide](docs/API_V1_BETA_MIGRATION_GUIDE.md)
+  (issue #747): what an API consumer can rely on and what is not yet stable, how
+  change and deprecation are announced (no deprecation is in force), the nine
+  behaviour clarifications found while qualifying the API with the test that
+  covers each, and how to check a revision with `make qualify-api` and
+  `make beta-readiness`. The beta gate now counts the migration/deprecation item
+  as satisfied.
+- `tools/api_clean_install_demo.py` (issue #747): the beta gate's "clean install
+  and reproducible demo". Builds a wheel from a staged copy, installs only that
+  wheel into a fresh venv, checks the import comes from the new environment and
+  the entry point answers `--help`, runs the installed `idkmesh control-tower`
+  with the installed Python client, and requires a stable transcript identical
+  to the one from the source tree. Part of `make qualify-api` (group `install`);
+  the beta readiness gate now counts that item as satisfied only from a current
+  green report.
+- [API v1 Beta Release Gate v0.1](docs/specifications/API_V1_BETA_RELEASE_GATE_V0_1.md)
+  and `make beta-readiness` / `tools/api_beta_readiness.py` (issue #747): the
+  fourteen required-evidence items for a first API beta, each with a declared
+  status, a recorded gap and verified evidence files. Items the qualification
+  run measures are satisfied only by a current, clean, green
+  `make qualify-api` report; the tag item needs an `api-v1-beta*` tag on a clean
+  HEAD. It currently reports **not ready**, with the real gaps named (Human
+  Decision API, multi-user security profile, authority matrix, unpublished
+  clients, migration guide, clean-install demo). It tags and publishes nothing.
+- API-3 control-plane convergence (#738): the checked-in API architecture now
+  names one canonical application/domain owner for projects, connectors,
+  WorkUnit preview, routing, runs, candidates, verification/evidence, human
+  decisions, integration handoff, resource admission, and events. CLI and
+  Control Tower connector/Product-Spine reads are regression-guarded against
+  splitting into parallel service models; the still-gated authenticated Human
+  Decision HTTP mutation remains owned by #740 rather than being approximated.
+
+- `docs/EXECUTABLE_CAPABILITIES.md` adds a CI-checked code-surface inventory covering the recursive `idkmesh` CLI tree, Control Tower endpoints, dependency-free Python client methods, connector/provider/GitHub/enterprise/runtime capability groups, and every top-level `idkmesh/*.py` module. README, beginner/getting-started help, and architecture indexes now link to it, and stale connector API/CLI status text has been reconciled with current code.
 - `tools/api_load_soak.py` (issue #745): a bounded load and soak check for the
   Control Tower. Two rounds of concurrent mixed traffic (every read route plus
   hostile requests) must all return the expected status, stay under a p99
   ceiling, leave no extra threads or file descriptors after drain, and grow the
-  heap by no more than a ceiling across a separate traced round. It runs as part
+  heap by no more than a ceiling across a separate traced round, and every
+  response body that is byte-stable on an idle server must be identical under
+  load. It runs as part
   of `make qualify-api`; the qualification report now lists capacity
   benchmarking, not load/soak, as uncovered. See
   [`docs/TESTING.md`](docs/TESTING.md#load-and-soak).
@@ -479,6 +565,14 @@ and the release notes for that tag.
 
 ### Fixed
 
+- Control Tower request path (issue #745; found by an independent bot derivation
+  of the security matrix, #1002, and adopted here). Stray query parameters on a
+  token-protected endpoint were answered `400 unexpected_query_parameters`
+  *before* the token gate, so an unauthenticated caller could probe endpoint
+  input shapes; the query check now runs after authentication, and an
+  unauthenticated `OPTIONS` preflight is refused identically whatever its query.
+  `PUT`/`PATCH`/`DELETE`/`TRACE` on `/readyz` returned `404 not_found` while
+  `POST` returned `405`; they now return `405` with `Allow: GET, HEAD`.
 - Event reads now verify what the store wrote (issue #750). `payload_digest`
   was written with every event but never checked, so an event whose payload was
   altered in the database file was served as the original. Every read of the

@@ -1,330 +1,287 @@
 ---
-description: "A plain-language introduction to IDKMesh: humans and AI agents work together without trusting the first answer, with separate checks and an evidence log."
+description: "A plain-English explanation of what IDKMesh does today, what is still being built, and a first working audit you can run without an AI account."
 ---
 # IDKMesh for Absolute Beginners
 
-If the rest of the repository feels complicated, start here.
+**New to AI agents, GitHub, or programming? Start here.** You do not need to understand the research papers or the architecture to understand what this project is for.
 
 ## IDKMesh in one sentence
 
-**IDKMesh helps humans and AI agents work together without trusting the first answer automatically.**
+**IDKMesh helps people assess AI-assisted work by separating what a worker *claims* from what an independent check *shows*.** It is developing a broader framework for coordinating people, AI agents, and tools around that principle.
 
-Think of it as a combination of:
+Imagine five AI reviewers all say **"approve."** Did five different checks really happen, or did they all miss the same error? IDKMesh has a tool that analyzes recorded reviewer decisions against known correct answers to help you investigate this question.
 
-- a **team manager** that gives small jobs to workers;
-- a **quality-control system** that checks the work separately;
-- a **logbook** that records what happened and what evidence exists;
-- a **safety boundary** that prevents a worker from approving its own work.
-
-The long-term goal is to make this useful for large teams of people, AI agents, software tools, and computers.
-
-Today, IDKMesh is still an **alpha research and engineering project**. It is not yet a finished one-click AI swarm product.
+**Important:** IDKMesh is an **alpha research and engineering project**. The review-auditing tool works today; an automatic, general-purpose AI swarm that takes a request, runs arbitrary agents, verifies everything, and merges the result is **not yet a finished product**.
 
 ## What problem is it trying to solve?
 
-Imagine you ask one AI agent:
+When AI produces code, an answer, or a proposed change, three questions matter:
 
-> "Please change my software."
+1. **What was requested?** The job needs clear boundaries.
+2. **What evidence says the result is good?** A worker saying "done" is not proof.
+3. **Who is allowed to accept it?** The worker and checker should not silently approve their own work.
 
-The agent may produce a good answer, but it may also make a mistake.
+Several reviewers can also make *the same* mistake. Simply counting reviewers does not tell you how much independent confidence they add.
 
-Now imagine you ask five AI agents. That sounds safer, but the five agents may make the **same mistake**. Five answers do not automatically mean five independent opinions.
+This project combines **research on that problem** with **working software components** that record, validate, inspect, and analyze evidence.
 
-IDKMesh is trying to solve problems like these:
+## An example without jargon
 
-1. **Big work is hard to control.**  
-   A large goal should be split into small, bounded jobs.
+Suppose a team uses five AI models to review a proposed software change.
 
-2. **AI can be confidently wrong.**  
-   The system should not trust a worker just because it says "done."
+| What happens | What it means |
+| --- | --- |
+| A change is submitted | This is the **candidate** to be reviewed. |
+| Five reviewers vote approve/reject | These are **verdicts**, not automatically the correct answer. |
+| The team has test cases with known correct outcomes | This is **ground truth**: which candidates really should be accepted or rejected. |
+| IDKMesh compares the verdicts with those known outcomes | The `gate-audit` tool measures mistakes, shared mistakes, and how useful the whole panel was. |
+| A responsible person reads the report | **The person or project's governance still makes the decision**; the report does not accept or merge code. |
 
-3. **More reviewers do not always mean more safety.**  
-   Several reviewers may repeat the same error.
-
-4. **It is often unclear who did what.**  
-   The project keeps provenance: records of workers, inputs, outputs, checks, and evidence.
-
-5. **The same actor should not create and approve its own result.**  
-   Work and verification are separated.
-
-6. **Automation should not silently gain authority.**  
-   A successful worker, verifier, or CI check does not automatically get merge authority.
-
-The basic rule is:
-
-```text
-worker says "done"
-        !=
-work is accepted
-```
-
-## A simple example
-
-Suppose you want to add a login feature to a project.
-
-Without a verification-first process:
-
-```text
-AI writes code
-   ->
-AI says it works
-   ->
-code is accepted
-```
-
-With the IDKMesh idea:
-
-```text
-Goal: add login
-   ->
-Create a small, clear task
-   ->
-Worker writes the code
-   ->
-Worker records what it changed
-   ->
-A separate verifier checks it
-   ->
-Tests and evidence are recorded
-   ->
-A human or governance rule decides whether to integrate it
-```
-
-The important difference is that **the worker does not approve itself**.
+The bundled example contains **synthetic (made-up) votes**, not real AI reviewers. In that example, five nominal reviewers correspond to roughly **1.69 effective independent votes** under the measured gate-performance metric. This is an illustration, **not** a claim that every five-reviewer panel has that value.
 
 ## How does IDKMesh work?
 
-You do not need to remember the technical names yet. The basic flow is:
+There are **two related but different paths**. Do not confuse them.
 
-### 1. Start with a goal
+**Path 1 — a working tool you can try now:**
 
-Example:
+```text
+Your saved reviewer votes + known correct answers
+                  |
+                  v
+         idkmesh gate-audit
+                  |
+                  v
+   JSON report / readable Markdown report
+                  |
+                  v
+       You interpret the evidence
+```
 
-> "Fix this bug."
+`gate-audit` does **not** call an AI model, run the reviewers, discover the correct answers, or make a merge decision.
 
-### 2. Turn the goal into a small job
+**Path 2 — the wider framework's intended work cycle:**
 
-IDKMesh calls a bounded task a **WorkUnit**.
+```text
+Goal --> small, bounded task --> human / AI worker
+                                  |
+                                  v
+                         candidate + history
+                                  |
+                                  v
+                       separate verification
+                                  |
+                                  v
+                         evidence for review
+                                  |
+                                  v
+                       human / policy decision
+```
 
-A WorkUnit tries to make the job clear:
+IDKMesh calls the bounded task a **WorkUnit**. It has schemas and validators for these stages, a local evidence viewer, and experimental coordination components. **This diagram is a framework model, not a promise that a single command runs the whole cycle for any GitHub repository today.**
 
-- what should be done;
-- what is allowed;
-- what is not allowed;
-- what evidence is expected;
-- what security limits apply.
+The most important rule is:
 
-### 3. Give the job to a worker
-
-The worker could be:
-
-- a human;
-- an AI coding agent;
-- a script;
-- another software tool;
-- eventually another machine or service.
-
-### 4. Save the result and its history
-
-The result should include information about what was produced and where it came from.
-
-This helps answer:
-
-> "What created this result, from what inputs, and under what rules?"
-
-### 5. Check the work separately
-
-A different verifier checks the result.
-
-The verifier should not simply trust the worker's claim.
-
-### 6. Save the verification evidence
-
-The system records what was checked and what the verifier found.
-
-### 7. Make a separate integration decision
-
-Even a successful verification is not automatically permission to merge or publish.
-
-The final authority remains separate.
+> A worker saying "finished" is not verification. Verification is not permission to merge.
 
 ## What can I actually use today?
 
-There are three useful ways to use the repository right now.
+| If you want to... | Current status | Start with |
+| --- | --- | --- |
+| Understand the rule that workers cannot approve themselves | **Working synthetic fixture demo** | `python scripts/demo.py` |
+| Analyze a panel of reviewers when you already have verdicts and known correct outcomes | **Working CLI + local browser UI** | `idkmesh gate-audit` or `idkmesh gate-audit-ui` |
+| Look at recorded work attempts, verification results, and evidence | **Working read-only local viewer** | `idkmesh control-tower` |
+| Create/read/cancel a local run record | **Working local record management**; does not start or terminate a remote worker | [Run lifecycle tutorial](RUN_LIFECYCLE_TUTORIAL.md) |
+| Adopt bounded tasks and review/evidence rules in another repository | **Manual operating model + components; automation incomplete** | [Project Adoption Guide](PROJECT_ADOPTION_GUIDE.md) |
+| Automatically run arbitrary AI agents across machines and approve their code | **Not a finished capability** | [Capability Truth Matrix](CAPABILITY_MATRIX.md) |
 
-### Option A — Run the demo
+These are different levels of maturity. **A program existing is not proof it is safe or production-ready.** For the exact evidence and limitations behind each claim, see the [Capability Truth Matrix](CAPABILITY_MATRIX.md).
 
-This is the easiest way to understand the trust model.
+### For the complete list of commands
 
-You need:
-
-- Git;
-- Python 3.11 or newer.
-
-Clone the project:
+The CLI also exposes tools for inspecting connector metadata, explaining route eligibility, and reading local run/project/event records. They are **not** a general live-agent deployment wizard. To explore without modifying anything, run:
 
 ```bash
-git clone https://github.com/MSKazemi/idkmesh
-cd idkmesh
+idkmesh --help
+idkmesh connections --help
+idkmesh run --help
+idkmesh control-tower --help
 ```
 
-Create a Python environment on Linux/macOS:
+For the **complete, code-backed CLI, local API, and module inventory**, see [Executable Capability Reference](EXECUTABLE_CAPABILITIES.md). It marks limits including offline-only connector probes, loopback-only HTTP, and missing automatic decision/merge authority.
+
+## Your first 10 minutes: run an actual audit
+
+This is the most useful first hands-on experience. You will analyze **sample reviewer data stored on your own computer**. You do **not** need ChatGPT, Claude, an API key, a GPU, cloud resources, or a paid service.
+
+### Step 1 — what you need
+
+- A computer with **Python 3.11 or newer** and **Git** installed.
+- A **terminal** (a window where you type commands).
+- An internet connection only to obtain the repository and install the package.
+
+The next commands are for **Linux or macOS**. Windows users can follow the [PowerShell instructions in Getting Started](GETTING_STARTED.md#path-a-try-the-contract-demo) and use the same `idkmesh` commands after installation.
+
+### Step 2 — get the software
+
+Copy and run these commands, one line at a time:
 
 ```bash
+git clone https://github.com/MSKazemi/idkmesh.git
+cd idkmesh
 python -m venv .venv
 source .venv/bin/activate
-python -m pip install -r requirements-phase0.txt
+python -m pip install .
+idkmesh --version
 ```
 
-Run the demo:
+What the commands mean:
+
+- `git clone` downloads a local copy of the repository.
+- `cd idkmesh` moves into its directory.
+- `venv` creates an isolated Python environment so you do not change your other Python projects.
+- `pip install .` installs the small IDKMesh command-line package.
+- `idkmesh --version` confirms that the command is available.
+
+### Step 3 — analyze the included example
 
 ```bash
+idkmesh gate-audit examples/gate-audit/panel-votes.example.json \
+  --out first-gate-audit.json \
+  --markdown first-gate-audit.md \
+  --pretty
+```
+
+**What to expect:** if the command succeeds, it creates two files in your current directory:
+
+- `first-gate-audit.json` — a machine-readable report.
+- `first-gate-audit.md` — a readable report that you can open in a text editor.
+
+On Linux/macOS, you can also read the Markdown file with:
+
+```bash
+cat first-gate-audit.md
+```
+
+Look for the panel error measurements, shared reviewer mistakes, **effective votes**, and **probe breaches** (known-bad test cases wrongly accepted). The input is labelled `"evidence_class": "synthetic"`. **Do not present the generated numbers as measurements of your real team.**
+
+**Prefer clicking instead of reading terminal output?** Use the included local browser interface with the same example:
+
+```bash
+idkmesh gate-audit-ui examples/gate-audit/panel-votes.example.json
+```
+
+The browser connects to a process on your own computer (`127.0.0.1`). Stop that process in the terminal with `Ctrl+C`.
+
+### Step 4 — understand the input
+
+Open [`panel-votes.example.json`](https://github.com/MSKazemi/idkmesh/blob/main/examples/gate-audit/panel-votes.example.json). A **JSON** file is structured text; the braces and quotes help software read it.
+
+Notice these fields:
+
+| Field | In everyday language |
+| --- | --- |
+| `candidates` | The things being checked |
+| `ground_truth` | The known correct accept/reject outcome for each candidate |
+| `verifiers` | The reviewers in the panel |
+| `verdicts` | What each reviewer said about each candidate |
+| `probe` | A deliberately included known-bad test case |
+| `evidence_class` | Whether the input is an illustration (`synthetic`) or a record of something observed (`observed`) |
+
+For example, in the included file, candidate `c10` should be **rejected**, but `reviewer-a` voted **accept**. That is an error the analysis can count. A verifier's opinion is not the ground truth.
+
+To use **your own data**, you must gather the verdicts and establish the correct outcomes first. Changing `evidence_class` to `observed` does **not** turn invented results into real evidence. See the [complete data format and examples](GETTING_STARTED.md#path-b-audit-a-review-or-verifier-panel).
+
+### Step 5 — decide what you learned
+
+Ask three questions:
+
+1. Do the reviewers tend to make the **same errors**?
+2. Did the panel accept any **known-bad** candidates?
+3. Does adding more similar reviewers seem helpful, or is a different kind of check needed?
+
+The report informs those questions; it does **not** answer whether a new code change is safe in all circumstances.
+
+## Try two other learning paths
+
+### See why the project separates workers from checkers
+
+This demo validates **prepared examples** against the project's task, result, and verification rules:
+
+```bash
+python -m pip install -r requirements-phase0.txt
 python scripts/demo.py
 ```
 
-The demo deliberately tests both valid and invalid examples.
+You should see valid examples and **intentional rejections**, such as a worker trying to accept its own result or a task missing security limits. A rejection is a *successful contract check*. **No live AI worker or external verifier runs in this demo.**
 
-For example, it checks that the system rejects cases where:
-
-- a task is missing required security limits;
-- a worker tries to accept its own work;
-- the same identity is used as worker and independent verifier;
-- evidence does not match the supplied artifacts.
-
-No AI API key is required for this demo.
-
-### Option B — Use `idkmesh gate-audit`
-
-This is the most immediately usable product in the repository today.
-
-Install it from the repository:
+### Inspect what a completed two-attempt run looks like
 
 ```bash
-pip install .
+idkmesh control-tower
 ```
 
-Run the included example:
+This opens a **local read-only evidence viewer** using a committed example when no path is supplied. You can inspect the separate worker-claim, verification-evidence, and human-authority layers. **The viewer cannot run agents, record a human decision, push code, or merge a pull request.** For a more detailed local walkthrough, see the [Run Lifecycle Tutorial](RUN_LIFECYCLE_TUTORIAL.md).
 
-```bash
-idkmesh gate-audit examples/gate-audit/panel-votes.example.json --pretty
-```
+## How can I use IDKMesh with my own project?
 
-The tool helps answer a question like:
+Today, a maintainer can **apply the operating model**: write small tasks with clear permissions, have people or external AI tools propose changes, check changes separately, and use GitHub's own review/branch protections before merging. IDKMesh provides contracts, validators, and related tooling, but **you must still connect and operate many of those pieces yourself**.
 
-> "I have several reviewers. Are they really giving me several independent checks, or are they mostly making the same mistakes?"
+If you want a step-by-step adoption plan, read the [Project Adoption Guide](PROJECT_ADOPTION_GUIDE.md). The **one-command external-project runner and automatic integration are unfinished**; the GitHub-first bootstrap command is currently **dry-run planning only**, not a live install wizard.
 
-It looks at reviewer/verifier results and reports things such as:
+## Common beginner questions
 
-- reviewer accuracy;
-- whether reviewers fail on the same items;
-- false accepts and false rejects;
-- an estimate of effective independent votes;
-- whether known-bad test cases got through.
+**Is IDKMesh an AI model or a chatbot?** No. It does not train a model and is not a conversational assistant.
 
-This can be useful if you use:
+**Will it write code or fix an issue by itself?** Not as a general-purpose, install-and-run product today. The repository includes experimental agent/coordination components, but the end-to-end reference runner is unfinished.
 
-- multiple AI judges;
-- multiple automated code reviewers;
-- human + AI review panels;
-- CI/QA verification systems;
-- evaluation pipelines.
+**Does `gate-audit` review my GitHub pull request?** No. You first provide recorded accept/reject verdicts and known correct answers. The command measures the review *process*, not the content of an arbitrary PR.
 
-It is a **diagnostic tool**. It does not approve code or make merge decisions.
+**Does a high score mean the software is safe?** No. The conclusions depend on the tasks sampled, their known answers, the quality of the evidence, and the review policy.
 
-For your own review data, continue with [Getting Started](GETTING_STARTED.md).
+**Do I need a cloud account or AI API key to follow this guide?** No. The three local demos above use committed examples.
 
-### Option C — Help build the larger system
+**Does IDKMesh automatically approve or merge changes?** No. The evidence tools do not grant integration authority. The project deliberately separates a worker's claim, a checker's findings, and a human or explicitly governed decision.
 
-The complete Git-native **Verified Swarm Runner** is still being developed.
+## When something goes wrong
 
-You can contribute without understanding the entire project.
+| Problem | First thing to try |
+| --- | --- |
+| `python: command not found` | Your operating system may call it `python3`; verify Python 3.11+ is installed. |
+| `idkmesh: command not found` | Activate the `.venv` environment again; run `python -m pip install .` from the repository root. |
+| The example JSON file cannot be found | Run `cd idkmesh` to return to the cloned repository root. |
+| The contract demo complains about a missing dependency | Run `python -m pip install -r requirements-phase0.txt` in the active environment. |
+| You are using Windows | Follow [Getting Started](GETTING_STARTED.md) for PowerShell-specific environment commands. |
 
-Useful entry points include:
-
-- documentation;
-- Python tests;
-- reproducibility checks;
-- verification tools;
-- security;
-- agent adapters;
-- experiments;
-- contributor experience.
-
-See [Contributor Quickstart](community/CONTRIBUTOR_QUICKSTART.md).
-
-## A real-world situation where this idea helps
-
-Imagine you use five AI models to review generated code.
-
-All five say:
-
-> "Looks good."
-
-You may think you have five independent confirmations.
-
-But if all five models learned similar patterns, use similar prompts, or fail on the same kind of bug, the five votes may contain much less independent information than you think.
-
-IDKMesh's current `gate-audit` tool is designed to measure this kind of problem from verdict data that you already collected.
-
-That is one concrete problem the repository can help with **today**.
-
-## What IDKMesh does not solve yet
-
-Do not expect the current repository to:
-
-- automatically run thousands of AI agents for you;
-- automatically distribute arbitrary jobs across the internet;
-- safely control millions of computers;
-- replace GitHub;
-- replace your AI agent framework;
-- replace your CI system;
-- automatically decide what should be merged;
-- prove that a result is correct just because several agents agree.
-
-Those are either outside the project or still future work.
-
-## Who should use it today?
-
-IDKMesh is most useful today for:
-
-- AI-agent researchers;
-- software engineers experimenting with multiple AI reviewers;
-- teams building verification or evaluation pipelines;
-- open-source maintainers interested in safer human + AI collaboration;
-- researchers studying collective intelligence;
-- contributors who want to help build the Verified Swarm Runner.
-
-If you only want a simple chatbot or a finished autonomous coding swarm, IDKMesh is not that product yet.
+For deeper setup problems, see [Getting Started](GETTING_STARTED.md) or ask in [GitHub Discussions](https://github.com/MSKazemi/idkmesh/discussions). Report reproducible bugs in [GitHub Issues](https://github.com/MSKazemi/idkmesh/issues), and report security concerns privately using [SECURITY.md](https://github.com/MSKazemi/idkmesh/blob/main/SECURITY.md).
 
 ## Tiny glossary
 
-| Word | Very simple meaning |
+| Word | Simple meaning |
 | --- | --- |
-| **WorkUnit** | A small job with clear limits |
-| **Worker** | The person, AI, or tool doing the job |
-| **Result** | What the worker produced |
-| **Verifier** | A separate checker |
-| **Evidence** | Information showing what was tested or observed |
-| **Provenance** | The history of where a result came from |
-| **Gate** | A checkpoint before something is accepted |
-| **Integration** | Putting an accepted change into the main project |
-| **Mesh** | A network of different people, agents, tools, and computers |
-| **IDK** | "I don't know" — uncertainty should be visible instead of hidden |
+| **Agent / worker** | A person, AI system, or tool doing a job |
+| **WorkUnit** | A small task that says what is allowed, required, and forbidden |
+| **Candidate** | A proposed answer, change, or artifact |
+| **Verifier** | A checker that evaluates a candidate separately from its creator |
+| **Evidence** | The recorded inputs, checks, outcomes, and supporting facts |
+| **Provenance** | Where an artifact came from and which versions created it |
+| **Review gate** | A checkpoint where proposed work is considered for acceptance |
+| **Effective votes** | An estimate of how much independent checking a panel's outcomes represent |
+| **Integration / merge** | Accepting a change into the project's main version |
+| **Framework** | Reusable building blocks and rules that different applications can adopt |
 
-## The most important idea
+## Who should use it today?
 
-You can understand most of IDKMesh by remembering this:
+IDKMesh is particularly relevant to teams evaluating multiple AI/human reviewers, researchers studying agent reliability, maintainers who need auditable evidence, and contributors interested in building trustworthy human–AI collaboration tools.
 
-> **Do not trust an answer only because it was produced. Check it independently, keep the evidence, and keep final authority separate.**
+If you need a simple chatbot, automatic PR reviewer, or fully managed multi-agent coding service today, **this is not yet that product**.
 
 ## What should I do first?
 
-If you are completely new, use this order:
+**Start with the panel audit above.** It provides one tangible result without requiring an AI model. Then choose the next page that matches your goal:
 
-1. Read this page.
-2. Run `python scripts/demo.py`.
-3. Run the example `idkmesh gate-audit`.
-4. Read [Getting Started](GETTING_STARTED.md).
-5. If you want to contribute, use the [Contributor Quickstart](community/CONTRIBUTOR_QUICKSTART.md).
-
-You do **not** need to understand the whole repository before trying those steps.
+- [Getting Started](GETTING_STARTED.md) — detailed commands and using your own data.
+- [What Is IDKMesh?](WHAT_IS_IDKMESH.md) — the larger framework/research vision.
+- [Project Adoption Guide](PROJECT_ADOPTION_GUIDE.md) — use the collaboration model with another repository.
+- [Capability Truth Matrix](CAPABILITY_MATRIX.md) — what is demonstrated, experimental, or planned.
+- [Contributor Quickstart](community/CONTRIBUTOR_QUICKSTART.md) — contribute one small improvement.

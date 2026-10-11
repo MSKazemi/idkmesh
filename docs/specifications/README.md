@@ -9,6 +9,7 @@ meaning of an existing version.
 
 - [GitHub-First Operations v0.1](GITHUB_FIRST_OPERATIONS_V0_1.md) — implementation contract for no-server GitHub coordination: bootstrap, durable run ledger, idempotency/recovery, multi-user claims/authority, Actions security, optional Projects/Pages/OIDC/attestations, and the pilot test matrix.
 - [GitHub Durable Ledger Record v0.1](GITHUB_LEDGER_RECORD_V0_1.md) — C9-A compact append-only run/event/route/idempotency/attempt/evidence-reference contract for restart-safe GitHub-first coordination; secret-free and structurally without dispatch, verification, integration, or merge authority.
+- [GitHub Ledger Serialization v0.1](GITHUB_LEDGER_SERIALIZATION_V0_1.md) — C9-B deterministic canonical bytes/digests, semantic writer checks, complete sequence/digest-chain verification, and a two-commit append-only local Git fixture; pure serialization only, with no remote write or integration authority.
 - [GitHub Bootstrap Config Rendering v0.1](GITHUB_BOOTSTRAP_CONFIG_RENDERING_V0_1.md) — deterministic C8-C rendering of the ProjectManifest seed, disabled secret-reference connector template, repository-local software-engineering DomainPack, generated ownership README, and content digests; rendering only, with no apply or GitHub mutation authority.
 - [GitHub Webhook Ingress v0.1](GITHUB_WEBHOOK_INGRESS_V0_1.md) — authenticated bounded webhook envelope: raw-body HMAC-SHA256, event/action allowlists, repository binding, delivery provenance, and no dispatch authority.
 - [GitHub WorkUnit Intake v0.1](GITHUB_WORKUNIT_INTAKE_V0_1.md) — normalized untrusted GitHub Issue Form planning hints with an explicit all-false authority ceiling; requested paths, risk, review, processing, and connector values cannot broaden trusted project policy. The C13-B WorkUnit request Issue Form uses exactly these field ids and enums.
@@ -46,6 +47,31 @@ meaning of an existing version.
   profiles, the storage-port operations and required semantics (migration
   replay, digest-checked reads, append-only events, restart reconstruction),
   the retention matrix, and an honest verified-versus-open acceptance table.
+- [API v1 Beta Release Gate v0.1](API_V1_BETA_RELEASE_GATE_V0_1.md) —
+  the evidence a first API beta needs, how each item is verified (evidence files,
+  a current green qualification report, a clean tagged revision), what the
+  release note must state, and the tool that reports the gate as ready or not.
+- [GitHub Ledger Optimistic Append v0.1](GITHUB_LEDGER_APPEND_V0_1.md) —
+  C9-C compare-and-set append to the GitHub-native durable ledger: conflict
+  detection on a Git ref, bounded retry, linear never-rewritten history, and an
+  honest account of what it does not prove.
+- [GitHub Ledger Idempotent Admission v0.1](GITHUB_LEDGER_ADMISSION_V0_1.md) —
+  C9-D one-admission-ref-per-dispatch-key by compare-and-set, so a duplicate or
+  concurrent dispatch resolves to the existing run; conflicting replays fail
+  closed and a crash between admission and the first record is recoverable.
+- [GitHub Ledger Recovery Reader v0.1](GITHUB_LEDGER_RECOVERY_V0_1.md) —
+  C9-E derives a run's current state from its immutable ledger records, never
+  drops negative evidence, surfaces ambiguous provider submissions, and refuses
+  histories no real run could have produced.
+- [GitHub Ledger Recovery Planning and Killed-Workflow Proof v0.1](GITHUB_LEDGER_RECOVERY_PLAN_V0_1.md) —
+  C9-F pure next-step planning for a recovered run (reconcile, never blindly
+  resubmit) and the exhaustive kill-matrix test that a killed coordinating
+  workflow is recovered with exactly one provider submission.
+- [API Authority Matrix v0.1](API_AUTHORITY_MATRIX_V0_1.md) —
+  which principal may call which Control Tower endpoint: a proposed mapping onto
+  the enterprise authorization kernel for the network profile, what the loopback
+  API enforces today (a session token, not a principal), and a guard that keeps
+  the matrix complete against the served routes.
 - [Release Supply-Chain Baseline v0.1](RELEASE_SUPPLY_CHAIN_V0_1.md) —
   release SBOM/checksum/source-workflow identity evidence, immutable-pinned
   GitHub build provenance, consumer verification, and vulnerability/update
@@ -135,6 +161,11 @@ meaning of an existing version.
   experimental machine-readable enterprise posture and deterministic
   declaration-preflight contract for tenancy, identity/SoD, data/egress,
   secrets, audit, recovery, supply chain, and emergency change.
+- [Enterprise Control Service Boundary v0.1](ENTERPRISE_CONTROL_SERVICE_V0_1.md) —
+  normative E8 G2/G3 deployment reference for plane separation, per-tenant
+  authorization, durable state, private workers, scale/idempotency,
+  migrations/backups/probes, upgrade/rollback, and the GitHub integration
+  authority ceiling.
 - [ProjectManifest and DomainPack Interfaces](PROJECT_DOMAIN_INTERFACES.md) —
   separates reusable coordination core from declarative domain and project
   policy.

@@ -202,6 +202,18 @@ Persist:
 
 The versioned record shape for the first durable-ledger slice is [GitHub Durable Ledger Record v0.1](GITHUB_LEDGER_RECORD_V0_1.md), with machine-readable schema `schemas/github-ledger-record-v0.1.schema.json`. It freezes compact run/event/route/idempotency/attempt/provider/evidence references without choosing the Git storage layout or granting any next-stage authority. C9-B/C9-C must preserve this record meaning when they define serialization and optimistic append behavior.
 
+### 6.2.2 Canonical C9-B serialization
+
+[GitHub Ledger Serialization v0.1](GITHUB_LEDGER_SERIALIZATION_V0_1.md) defines
+the pure C9-B boundary used before any GitHub storage write.
+`idkmesh.github_ledger_serialization` emits canonical UTF-8 JSON bytes plus LF,
+keeps the record digest identical to the repository's frozen canonical JSON
+SHA-256 convention, enforces attempt/idempotency and
+attempted-connector/selected-route consistency, and verifies a complete
+sequence/digest-linked run chain. The local Git fixture proves a second append
+adds only the next immutable record. It does not implement compare-and-set,
+remote branch writes, recovery, or admission authority.
+
 ### 6.3 Ledger implementation constraints
 
 The first implementation may use a dedicated Git-native branch/path or another GitHub-native immutable/conflict-safe representation.

@@ -206,13 +206,7 @@ class TokenBypassMatrixTests(_Harness):
         ):
             with self.subTest(carrier=label):
                 status, _, raw = self.call("GET", path, headers, token=None)
-                if label.startswith("query string"):
-                    # Queries are not accepted on /status at all; either way
-                    # the request is refused and the carried token is inert.
-                    self.assertIn(status, (400, 403), label)
-                    self.assertEqual(json.loads(raw)["api_version"], "v1")
-                else:
-                    self.assert_rejected(status, raw, label)
+                self.assert_rejected(status, raw, label)
 
     def test_unauthenticated_requests_learn_nothing_about_routes(self):
         _, _, real = self.call("GET", "/api/v1/runs/run-1", token="x")
@@ -245,6 +239,79 @@ class TokenBypassMatrixTests(_Harness):
             self.call("GET", "/api/v1/status", token=bad)
         status, _, _ = self.call("GET", "/api/v1/status")
         self.assertEqual(status, 200)
+
+
+class AuthBeforeInputFeedbackTests(_Harness):
+    """Unauthenticated callers must learn nothing about endpoint input shapes."""
+
+    def test_stray_query_parameters_are_judged_only_after_the_token(self):
+        for path in (
+            "/api/v1/status?x=1",
+            "/api/v1/openapi.json?x=1",
+            "/api/v1/runs/run-1?x=1",
+            "/api/v1/metrics?x=1",
+            "/api/v1/this-route-does-not-exist?x=1",
+        ):
+            with self.subTest(path=path, authenticated=False):
+                status, _, raw = self.call("GET", path, token=None)
+                self.assertEqual(status, 403)
+                self.assertEqual(_error_code(raw), "invalid_session_token")
+            if "this-route" in path:
+                continue
+            with self.subTest(path=path, authenticated=True):
+                status, _, raw = self.call("GET", path)
+                self.assertEqual(status, 400)
+                self.assertEqual(_error_code(raw), "unexpected_query_parameters")
+
+    def test_the_same_holds_for_the_mutation_and_write_verbs(self):
+        for method, path in (
+            ("POST", INSPECT_PATH + "?x=1"),
+            ("PUT", "/api/v1/status?x=1"),
+            ("DELETE", "/api/v1/runs/run-1?x=1"),
+        ):
+            with self.subTest(method=method):
+                status, _, raw = self.call(method, path, token=None)
+                self.assertEqual(status, 403)
+                self.assertEqual(_error_code(raw), "invalid_session_token")
+
+    def test_a_preflight_answers_identically_whatever_the_query(self):
+        answers = {
+            self.call("OPTIONS", path, token=None)[2]
+            for path in ("/api/v1/status", "/api/v1/status?x=1", "/api/v1/status?" + "a" * 500)
+        }
+        self.assertEqual(len(answers), 1)
+        self.assertEqual(_error_code(answers.pop()), "preflight_not_supported")
+
+    def test_declared_query_parameters_still_work_after_auth(self):
+        for path in ("/api/v1/runs?limit=1", "/api/v1/events?limit=1", "/api/v1/work-units?limit=1"):
+            with self.subTest(path=path):
+                # This harness has no store, so a served read is 503; what
+                # matters is that the declared parameter is not a 400.
+                self.assertNotIn(self.call("GET", path)[0], (400, 403))
+                self.assertEqual(self.call("GET", path, token=None)[0], 403)
+
+
+class ReadinessMethodTests(_Harness):
+    def test_every_write_verb_on_readyz_is_405_like_post(self):
+        for method in ("POST", "PUT", "PATCH", "DELETE", "TRACE"):
+            with self.subTest(method=method):
+                status, headers, raw = self.call(method, "/readyz", token=None)
+                self.assertEqual(status, 405)
+                self.assertEqual(headers.get("Allow"), "GET, HEAD")
+                self.assertEqual(_error_code(raw), "method_not_allowed")
+
+    def test_trace_never_reflects_the_request(self):
+        status, _, raw = self.call(
+            "TRACE", "/api/v1/status", {"X-Secret-Probe": "reflect-me"}
+        )
+        self.assertEqual(status, 405)
+        self.assertNotIn(b"reflect-me", raw)
+        self.assertNotIn(TOKEN.encode(), raw)
+
+    def test_unknown_methods_stop_at_the_protocol_layer(self):
+        status, _, raw = self.call("FROBNICATE", "/api/v1/status")
+        self.assertEqual(status, 501)
+        self.assertNotIn(b"invalid_session_token", raw)
 
 
 class TokenComparisonTests(unittest.TestCase):

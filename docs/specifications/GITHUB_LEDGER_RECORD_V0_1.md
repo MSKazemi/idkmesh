@@ -22,8 +22,8 @@ The machine-readable contract is
 dispatch record is
 `examples/github-ledger/dispatch-record-v0.1.json`.
 
-C9-A freezes the **record shape only**. C9-B/C9-C own deterministic append
-serialization and optimistic/concurrent Git writes.
+C9-A freezes the **record shape only**. C9-B now defines deterministic canonical
+serialization and complete-chain validation in [GitHub Ledger Serialization v0.1](GITHUB_LEDGER_SERIALIZATION_V0_1.md); C9-C owns optimistic/concurrent Git writes.
 
 ## Record model
 
@@ -76,8 +76,10 @@ Every record carries:
 - `attempt_number`.
 
 When an `attempt` object is present, its `attempt_number` must equal
-`idempotency.attempt_number`. JSON Schema cannot express that cross-field
-equality, so C9-B/C9-E writers and readers must enforce it.
+`idempotency.attempt_number`, and its `connector_id` must equal
+`routing.selected_connection_id`. JSON Schema cannot express those cross-field
+relationships, so C9-B enforces them before serialization and C9-E must preserve
+them while reconstructing state.
 
 The schema does not itself reserve or execute that key. C9-D must define atomic
 admission semantics so:
@@ -177,7 +179,8 @@ append-only chain:
   `previous_record_digest = null`;
 - each later record must carry a digest pointing at the canonical digest of the
   previous record (the schema enforces both rules structurally);
-- C9-B defines canonical serialization/digest calculation;
+- C9-B defines canonical serialization/digest calculation and complete-chain
+  verification in [GitHub Ledger Serialization v0.1](GITHUB_LEDGER_SERIALIZATION_V0_1.md);
 - C9-C defines compare-and-set/optimistic write semantics.
 
 The schema alone does not prove that a Git branch is append-only or that a

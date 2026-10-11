@@ -94,6 +94,10 @@ The server also:
 - accepts the token only in the `X-IDKMesh-UI-Token` header (a query string,
   cookie or `Authorization` value is not a credential) and checks it before
   routing, so unauthenticated callers cannot tell real routes from missing ones;
+- judges stray query parameters (`400 unexpected_query_parameters`) only after the
+  token, so an unauthenticated caller gets `403 invalid_session_token` and learns
+  no endpoint input shapes; an unauthenticated `OPTIONS` preflight is refused
+  identically whatever its query;
 - rejects cross-origin preflight;
 - rejects transfer-encoded/chunked request bodies;
 - caps request bodies at 2 MiB;

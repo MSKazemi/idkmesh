@@ -13,6 +13,11 @@ Before contributing, read:
 3. This file — how to make a contribution.
 
 Read deeper architecture/research documents only when your contribution requires them.
+For a code change, the [source-to-documentation module map](docs/reference/MODULE_MAP.md)
+locates each installable package module and its owning contract; use the
+[CLI/HTTP reference](docs/reference/CLI_HTTP_QUICK_REFERENCE.md) and
+[troubleshooting](docs/help/TROUBLESHOOTING.md) when validating user-visible behavior.
+Document the code's actual authority boundary in the same PR; a planned API is not an implemented command.
 
 **Looking for one concrete task or shared technical responsibility?** See the
 [contributor pilot](docs/community/CONTRIBUTOR_PILOT_2026_09.md) and the public
@@ -169,8 +174,8 @@ Markdown/identity report, not the combined gate. See
 [the stable PR gate](.github/workflows/pr-gate.yml) for the CI invocation.
 
 **Do not verify your work with `python -m unittest discover`.** It silently
-under-collects — `unittest` only finds `TestCase` subclasses, so the 325
-module-level `test_*` functions spread across 32 files in `tests/` are
+under-collects — `unittest` only finds `TestCase` subclasses, so the 332
+module-level `test_*` functions spread across 33 files in `tests/` are
 invisible to it. That is roughly a tenth of the suite, skipped while the run
 still prints `OK`, with no indication anything was missed.
 `tests/test_documented_test_counts.py` re-measures both figures and the gap
