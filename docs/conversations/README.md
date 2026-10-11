@@ -7,9 +7,13 @@ canonical files designated by [`../../PROJECT_RULES.md`](https://github.com/MSKa
 (decisions, specifications, architecture, findings); this directory keeps the trail
 that produced them.
 
-176 records across 12 dates, newest first.
+177 records across 13 dates, newest first.
 
 ## Index
+
+### 2026-10-11
+
+- [Beginner comprehension and first-run documentation review](2026-10-11-beginner-clarity-first-run.md)
 
 ### 2026-10-08
 
