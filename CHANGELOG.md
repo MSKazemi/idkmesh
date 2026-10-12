@@ -14,6 +14,16 @@ and the release notes for that tag.
 
 ### Added
 
+- API-11 discovery reads for issue #746: `ControlTowerClient.get_openapi()`
+  downloads the OpenAPI 3.x definition of the running Control Tower
+  (`GET /api/v1/openapi.json`) and `get_metrics()` reads the fixed-cardinality
+  operational metrics (`GET /api/v1/metrics`). Both reuse the single-request,
+  no-retry, request-ID and whole-response content-digest verification; the
+  OpenAPI document is additionally checked for a `3.x` version marker, `info`
+  and `paths`, and metrics for the expected `kind`, failing closed with
+  `ProtocolError`. The typed web client, error catalog and remaining API
+  documentation, and the authenticated human-decision mutation, remain open.
+
 - C12 GitHub governance preflight (issue #607): `idkmesh doctor --github`
   now evaluates the canonical C12-A governance policy from bounded normalized
   observations, reports PASS/WARN/FAIL/UNKNOWN/NOT_APPLICABLE, and treats
