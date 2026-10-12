@@ -14,6 +14,12 @@ and the release notes for that tag.
 
 ### Added
 
+- C10-H two-GitHub-user acceptance fixture (refs #598): `tests/test_c10_two_user_acceptance.py`
+  composes the reviewed binding table, `authorize`, `LocalTaskClaims` and the C5
+  label lane over synthetic actors to demonstrate propose / dispatch / concurrent
+  claim / verify / protected-integration / unauthorized-label behavior. Tests only;
+  no runtime behavior changed.
+
 - X4 forecast-interval instrument (refs #976): `experiments/forecast_intervals.py` adds the
   piece of the X4 report E046 did not compute, the **interval coverage** of the intervals a
   pilot forecaster reports, with bias, MAE and the 0.03 hit-rate, as a function of pilot size k.
