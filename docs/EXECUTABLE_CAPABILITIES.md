@@ -238,6 +238,7 @@ name documents implementation presence, not stability as a public Python API.
 - `idkmesh/github_status_comment.py`
 - `idkmesh/github_status_update.py`
 - `idkmesh/github_webhook_ingress.py`
+- `idkmesh/github_workunit_intake.py`
 - `idkmesh/human_decision_service.py`
 - `idkmesh/jules_actions.py`
 - `idkmesh/jules_candidate_binding.py`
