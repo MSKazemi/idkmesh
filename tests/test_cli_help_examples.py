@@ -30,6 +30,13 @@ EXAMPLE_COMMANDS = (
     ("run", "list"),
     ("run", "cancel"),
     ("control-tower",),
+    ("connections", "validate"),
+    ("connections", "list"),
+    ("connections", "import"),
+    ("connections", "stored"),
+    ("connections", "probe"),
+    ("route", "explain"),
+    ("doctor",),
 )
 
 _DRIVE_PATH_RE = re.compile(r"^[A-Za-z]:[\\/]")
@@ -94,7 +101,12 @@ class HelpExamplesTests(unittest.TestCase):
                     parsed = cli.build_parser().parse_args(tokens[1:])
                     self.assertEqual(parsed.command, argv[0])
                     if len(argv) == 2:
-                        self.assertEqual(parsed.run_command, argv[1])
+                        subcommand_attr = {
+                            "run": "run_command",
+                            "connections": "connections_command",
+                            "route": "route_command",
+                        }.get(argv[0], f"{argv[0]}_command")
+                        self.assertEqual(getattr(parsed, subcommand_attr), argv[1])
 
     def test_every_non_subparser_argument_has_help_text(self):
         import argparse
