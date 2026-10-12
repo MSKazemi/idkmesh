@@ -111,6 +111,17 @@ and the release notes for that tag.
   coverage (the blind-spot floor is its complement), and imports the frozen E046 analysis
   unchanged. It is exploratory: on splits E046 already opened its output is post-hoc, and
   no result has been run or claimed. Covered by `tests/test_x4_forecast_intervals.py`.
+- The backward-compatibility diff gate (issue #737, ADR-0020) now covers
+  the `openapi.yaml` API surface, not just `schemas/*.json` (issue #745,
+  Contract-tests compatibility diff gate). Removing a path, operation,
+  response status, media type, or declared parameter -- making a
+  parameter required, renaming an `operationId`, changing a response
+  shape or schema target, or removing a shared `components` entry -- is
+  now a gate failure; additions remain widenings. Parameters are read via
+  the new stdlib-only `tools/openapi_catalog.py` block-mapping parser,
+  which also becomes the single source for the parsing helper the API
+  conformance tests use. Documented in the ADR's amendment note.
+
 - C12 GitHub governance preflight (issue #607): `idkmesh doctor --github`
   now evaluates the canonical C12-A governance policy from bounded normalized
   observations, reports PASS/WARN/FAIL/UNKNOWN/NOT_APPLICABLE, and treats
