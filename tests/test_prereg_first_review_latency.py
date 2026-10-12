@@ -9,6 +9,8 @@ from __future__ import annotations
 
 import json
 import unittest
+
+import pytest
 from datetime import datetime, timedelta, timezone
 
 from scripts.prereg_first_review_latency import (
@@ -97,6 +99,7 @@ class PreregisteredAnalysisTests(unittest.TestCase):
         self.assertGreater(difference["posterior_mean"], 0.4)
         self.assertGreater(difference["posterior_probability_fast_arm_higher"], 0.99)
 
+    @pytest.mark.slow  # posterior simulation (~0.8 CPU-s)
     def test_the_direction_reverses_when_the_data_reverses(self) -> None:
         forward = analyze(self._population(fast_recur=16, slow_recur=4))["risk_difference"]
         reverse = analyze(self._population(fast_recur=4, slow_recur=16))["risk_difference"]
@@ -157,6 +160,7 @@ class PreregisteredAnalysisTests(unittest.TestCase):
         self.assertEqual(1, inside["arms"][ARM_FAST]["recurred"])
         self.assertEqual(0, outside["arms"][ARM_FAST]["recurred"])
 
+    @pytest.mark.slow  # posterior simulation (~0.8 CPU-s)
     def test_the_result_is_deterministic(self) -> None:
         snapshot = self._population(fast_recur=13, slow_recur=7)
         first = json.dumps(analyze(snapshot), sort_keys=True)

@@ -1287,6 +1287,10 @@ capacity responses `overloaded`, `too_many_streams` and `shutting_down`, which
 carry `retryable: true`, a `Retry-After` header and
 `error.details.retry_after_seconds`.
 
+The complete, test-verified table of codes (HTTP status, retryability, trigger
+and client action) is the [API error catalog](../reference/API_ERROR_CATALOG.md);
+the list below is the contract-level summary.
+
 Stable v0.1 codes include:
 
 - `invalid_host`;
@@ -1355,7 +1359,9 @@ Stable v0.1 codes include:
 
 ## Service limits
 
-The Control Tower is a stdlib development server bound to loopback. Its limits
+The Control Tower is a stdlib development server bound to loopback. The
+integrator-facing summary, with the tunable ranges, is [API service
+limits](../reference/API_LIMITS.md). Its limits
 ([ADR-0022](../decisions/ADR-0022-control-tower-bounded-service-limits.md), issue #742) are published at `operations.limits` on
 `GET /api/v1/status`, validated by `schemas/idkmesh-control-tower-status-v0.1.schema.json`,
 and each is proven by `tests/test_control_tower_limits.py`.
@@ -1526,9 +1532,11 @@ read/inspection endpoints above. It covers `status`,
 `runs/{run_id}/evidence`, `work-units`, `work-units/{work_unit_id}`,
 `projects/{project_id}`, `connections`, and `events`; human-decision recording
 is deliberately absent until the authenticated mutation adapter (issue #740)
-exists. The `/healthz` and `/readyz` probes, `openapi.json` discovery,
-`metrics`, and the `events/stream` Server-Sent Events stream are not wrapped by
-the client and remain plain HTTP.
+exists. `get_openapi()` downloads the running `openapi.json` and `get_metrics()`
+reads `metrics`, both failing closed. The `/healthz` and `/readyz` probes and the
+`events/stream` Server-Sent Events stream are not wrapped by the client and
+remain plain HTTP. A runnable walkthrough is the
+[API quickstart](../reference/API_QUICKSTART.md).
 
 ```python
 import os

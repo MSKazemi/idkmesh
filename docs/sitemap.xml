@@ -18,7 +18,7 @@
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/CAPABILITY_MATRIX.html</loc>
-    <lastmod>2026-10-09</lastmod>
+    <lastmod>2026-10-12</lastmod>
     <priority>0.9</priority>
   </url>
   <url>
@@ -43,7 +43,7 @@
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/PROJECT_ADOPTION_GUIDE.html</loc>
-    <lastmod>2026-10-09</lastmod>
+    <lastmod>2026-10-12</lastmod>
     <priority>0.9</priority>
   </url>
   <url>
@@ -53,7 +53,7 @@
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/TESTING.html</loc>
-    <lastmod>2026-10-11</lastmod>
+    <lastmod>2026-10-12</lastmod>
     <priority>0.9</priority>
   </url>
   <url>
@@ -153,7 +153,7 @@
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/architecture/AS_BUILT_IMPLEMENTATION_MAP.html</loc>
-    <lastmod>2026-10-11</lastmod>
+    <lastmod>2026-10-12</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
@@ -173,7 +173,7 @@
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/architecture/ENTERPRISE_CONTROL_PLANE.html</loc>
-    <lastmod>2026-10-11</lastmod>
+    <lastmod>2026-10-12</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
@@ -1513,7 +1513,7 @@
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/decisions/ADR-0020-schema-backward-compatibility-gate.html</loc>
-    <lastmod>2026-10-09</lastmod>
+    <lastmod>2026-10-12</lastmod>
     <priority>0.6</priority>
   </url>
   <url>
@@ -1678,7 +1678,7 @@
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/help/TROUBLESHOOTING.html</loc>
-    <lastmod>2026-10-11</lastmod>
+    <lastmod>2026-10-12</lastmod>
     <priority>0.5</priority>
   </url>
   <url>
@@ -1897,6 +1897,21 @@
     <priority>0.5</priority>
   </url>
   <url>
+    <loc>https://mskazemi.com/idkmesh/reference/API_ERROR_CATALOG.html</loc>
+    <lastmod>2026-10-12</lastmod>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://mskazemi.com/idkmesh/reference/API_LIMITS.html</loc>
+    <lastmod>2026-10-12</lastmod>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://mskazemi.com/idkmesh/reference/API_QUICKSTART.html</loc>
+    <lastmod>2026-10-12</lastmod>
+    <priority>0.5</priority>
+  </url>
+  <url>
     <loc>https://mskazemi.com/idkmesh/reference/CLI_HTTP_QUICK_REFERENCE.html</loc>
     <lastmod>2026-10-12</lastmod>
     <priority>0.5</priority>
@@ -2003,7 +2018,7 @@
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/research/PHYSARUM_N3_READINESS.html</loc>
-    <lastmod>2026-09-23</lastmod>
+    <lastmod>2026-10-12</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
@@ -2198,7 +2213,7 @@
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/specifications/ENTERPRISE_AUTHORIZATION_V0_1.html</loc>
-    <lastmod>2026-10-09</lastmod>
+    <lastmod>2026-10-12</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
@@ -2248,7 +2263,7 @@
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/specifications/GITHUB_BOOTSTRAP_CONFIG_RENDERING_V0_1.html</loc>
-    <lastmod>2026-10-08</lastmod>
+    <lastmod>2026-10-12</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
@@ -2258,7 +2273,7 @@
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/specifications/GITHUB_FIRST_OPERATIONS_V0_1.html</loc>
-    <lastmod>2026-10-11</lastmod>
+    <lastmod>2026-10-12</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
@@ -2378,7 +2393,7 @@
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/specifications/MARGINAL_EVIDENCE_V0_1.html</loc>
-    <lastmod>2026-10-09</lastmod>
+    <lastmod>2026-10-12</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
@@ -2388,7 +2403,7 @@
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/specifications/PRODUCT_SPINE_SERVICE_V0_1.html</loc>
-    <lastmod>2026-10-09</lastmod>
+    <lastmod>2026-10-12</lastmod>
     <priority>0.8</priority>
   </url>
   <url>

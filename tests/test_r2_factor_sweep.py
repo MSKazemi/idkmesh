@@ -130,6 +130,7 @@ class R2FactorSweepTests(unittest.TestCase):
             + capable_cost["modeled_directory_messages"],
         )
 
+    @pytest.mark.slow  # runs the profiled sweep (~1 CPU-s)
     def test_profile_keeps_host_measurements_separate(self):
         profile = run_profile(self.config, repetitions=1)
         self.assertIn("environment", profile)
