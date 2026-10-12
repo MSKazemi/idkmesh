@@ -257,9 +257,9 @@ def build_parser() -> argparse.ArgumentParser:
         description=(
             "apply mode remains fail-closed until C8-F. Expose the "
             "deterministic GitHub-first bootstrap plan plus C8-C rendered "
-            "configuration content/digests without writing repository files "
-            "or mutating GitHub. --github --dry-run remains the only "
-            "supported mode."
+            "configuration and C8-D workflow-wrapper content/digests without "
+            "writing repository files or mutating GitHub. --github "
+            "--dry-run remains the only supported mode."
         ),
         formatter_class=_ExamplesHelpFormatter,
         epilog=(
@@ -2037,7 +2037,7 @@ def _run_route(args: argparse.Namespace) -> int:
 
 
 def _run_github_init(args: argparse.Namespace) -> int:
-    """Render the C8-B bootstrap plan without any side effect."""
+    """Render the C8-B plan plus C8-C/C8-D content without any side effect."""
 
     if not args.github:
         return _fail("init currently supports only the --github profile")
@@ -2054,6 +2054,9 @@ def _run_github_init(args: argparse.Namespace) -> int:
         BootstrapRenderError,
         render_github_bootstrap_config,
     )
+    from idkmesh.github_bootstrap_workflows import (
+        render_github_bootstrap_workflows,
+    )
 
     try:
         plan = build_github_bootstrap_plan(
@@ -2061,6 +2064,7 @@ def _run_github_init(args: argparse.Namespace) -> int:
             default_branch=args.default_branch,
         )
         rendered_config = render_github_bootstrap_config(plan)
+        rendered_workflows = render_github_bootstrap_workflows(plan)
     except (BootstrapPlanError, BootstrapRenderError) as exc:
         return _fail(str(exc))
 
@@ -2075,6 +2079,10 @@ def _run_github_init(args: argparse.Namespace) -> int:
         "rendered_config_files": [
             item.to_dict(include_content=True)
             for item in rendered_config
+        ],
+        "rendered_workflow_files": [
+            item.to_dict(include_content=True)
+            for item in rendered_workflows
         ],
     }
 
@@ -2094,6 +2102,12 @@ def _run_github_init(args: argparse.Namespace) -> int:
         )
     print("rendered C8-C config files:")
     for item in rendered_config:
+        print(
+            f"- {item.path} [{item.content_digest}; "
+            f"{item.size_bytes} bytes]"
+        )
+    print("rendered C8-D workflow wrappers:")
+    for item in rendered_workflows:
         print(
             f"- {item.path} [{item.content_digest}; "
             f"{item.size_bytes} bytes]"

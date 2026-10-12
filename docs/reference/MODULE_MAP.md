@@ -82,6 +82,7 @@ Primary context: [subsystem contract](../specifications/GITHUB_WEBHOOK_INGRESS_V
 | [`github_actions_summary.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_actions_summary.py) | Bounded digest-bound Actions step-summary renderer |
 | [`github_bootstrap.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_bootstrap.py) | GitHub-first bootstrap file/owner-action plan (pure) |
 | [`github_bootstrap_render.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_bootstrap_render.py) | Deterministic bootstrap config rendering (pure) |
+| [`github_bootstrap_workflows.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_bootstrap_workflows.py) | Deterministic pinned workflow-wrapper rendering (pure; no apply) |
 | [`github_branch_reader.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_branch_reader.py) | Exact immutable branch-head observation |
 | [`github_candidate_reader.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_candidate_reader.py) | PR discovery reconciled to trusted GitHub head identity |
 | [`github_delivery_idempotency.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_delivery_idempotency.py) | Delivery reservation before external side effects |

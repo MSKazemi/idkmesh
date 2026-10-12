@@ -28,7 +28,7 @@ methods, and every top-level Python module in `idkmesh/`.
 | `idkmesh gate-marginal` | measure marginal evidence contribution of candidate verifiers | diagnostic only |
 | `idkmesh gate-marginal-benchmark` | compare the marginal-evidence selector with preregistered baselines | benchmark/evidence surface, not routing authority |
 | `idkmesh gate-marginal-synthesis` | synthesize multiple benchmark cohorts descriptively | no cross-cohort winner or integration authority |
-| `idkmesh init` | deterministic GitHub-first bootstrap planning/rendering | `--github --dry-run` only; no repository or GitHub mutation |
+| `idkmesh init` | deterministic GitHub-first bootstrap planning/rendering of config and pinned workflow wrappers | `--github --dry-run` only; no repository or GitHub mutation; rendered wrappers call a runner that no released IDKMesh ref provides yet |
 | `idkmesh connections` | validate, normalize, persist, and inspect connector metadata | no live dispatch, no raw secret persistence |
 | `idkmesh connections validate` | validate a versioned connector profile | read-only |
 | `idkmesh connections list` | list normalized connector metadata from a profile | read-only |
@@ -221,6 +221,7 @@ name documents implementation presence, not stability as a public Python API.
 - `idkmesh/github_actions_summary.py`
 - `idkmesh/github_bootstrap.py`
 - `idkmesh/github_bootstrap_render.py`
+- `idkmesh/github_bootstrap_workflows.py`
 - `idkmesh/github_branch_reader.py`
 - `idkmesh/github_candidate_reader.py`
 - `idkmesh/github_delivery_idempotency.py`
