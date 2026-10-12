@@ -14,6 +14,12 @@ and the release notes for that tag.
 
 ### Added
 
+- C10-H two-GitHub-user acceptance fixture (refs #598): `tests/test_c10_two_user_acceptance.py`
+  composes the reviewed binding table, `authorize`, `LocalTaskClaims` and the C5
+  label lane over synthetic actors to demonstrate propose / dispatch / concurrent
+  claim / verify / protected-integration / unauthorized-label behavior. Tests only;
+  no runtime behavior changed.
+
 - C12 GitHub governance preflight (issue #607): `idkmesh doctor --github`
   now evaluates the canonical C12-A governance policy from bounded normalized
   observations, reports PASS/WARN/FAIL/UNKNOWN/NOT_APPLICABLE, and treats
