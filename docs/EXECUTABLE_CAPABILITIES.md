@@ -103,6 +103,8 @@ requiring an HTTP client dependency. Current public methods are:
 
 - `ControlTowerClient.request_id` — last response request ID exposed for correlation
 - `ControlTowerClient.status()`
+- `ControlTowerClient.get_openapi()` — download the OpenAPI 3.x definition served by the running API
+- `ControlTowerClient.get_metrics()` — read the fixed-cardinality, privacy-safe operational metrics
 - `ControlTowerClient.inspect_run_evidence()`
 - `ControlTowerClient.get_run()`
 - `ControlTowerClient.get_run_evidence()`

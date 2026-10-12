@@ -576,5 +576,78 @@ class FailClosedTransportTests(unittest.TestCase):
                         method(resource_id)
 
 
+class DiscoveryReadTests(ClientServerCase):
+    """Live-server coverage for the OpenAPI download and metrics reads (#746)."""
+
+    def test_get_openapi_downloads_the_running_definition(self):
+        from idkmesh.control_tower_api import openapi_document
+
+        _server, client = self.start_server()
+        result = client.get_openapi()
+
+        self.assertEqual(result.value, openapi_document())
+        self.assertTrue(result.value["openapi"].startswith("3."))
+        self.assertIn("/api/v1/status", result.value["paths"])
+        self.assertTrue(result.request_id.startswith("req_"))
+        self.assertEqual(
+            result.metadata.content_digest,
+            canonical_digest(result.value),
+        )
+
+    def test_get_metrics_returns_the_aggregate_document(self):
+        _server, client = self.start_server()
+        client.status()
+        result = client.get_metrics()
+
+        self.assertEqual(result.value["kind"], "idkmesh-api-operational-metrics")
+        self.assertGreaterEqual(result.value["requests"]["total"], 1)
+        self.assertFalse(result.value["authority"]["merge"])
+
+    def test_discovery_reads_require_the_session_token(self):
+        server, _client = self.start_server()
+        wrong = ControlTowerClient(
+            f"http://127.0.0.1:{server.server_port}",
+            "u" * 32,
+            timeout=2.0,
+        )
+        for name in ("get_openapi", "get_metrics"):
+            with self.subTest(method=name):
+                with self.assertRaises(ApiResponseError) as caught:
+                    getattr(wrong, name)()
+                self.assertIn(caught.exception.status_code, {401, 403})
+
+
+class DiscoveryFailClosedTests(unittest.TestCase):
+    def call(self, method: str, payload: dict):
+        client = ControlTowerClient(
+            "http://127.0.0.1:8770", TOKEN, timeout=1.0
+        )
+        connection = _FakeConnection(_FakeResponse(payload))
+        with mock.patch(
+            "idkmesh.api_client.http.client.HTTPConnection",
+            return_value=connection,
+        ):
+            try:
+                return getattr(client, method)()
+            finally:
+                self.assertEqual(len(connection.requests), 1)
+
+    def test_openapi_without_a_3x_version_or_paths_is_rejected(self):
+        bad_documents = [
+            {"info": {}, "paths": {}},
+            {"openapi": "2.0", "info": {}, "paths": {}},
+            {"openapi": "3.1.0", "paths": {}},
+            {"openapi": "3.1.0", "info": {}},
+        ]
+        for document in bad_documents:
+            with self.subTest(document=document):
+                with self.assertRaises(ProtocolError):
+                    self.call("get_openapi", document)
+
+    def test_metrics_of_the_wrong_kind_are_rejected(self):
+        with self.assertRaises(ProtocolError):
+            self.call("get_metrics", {"kind": "idkmesh-control-tower-status"})
+
+
 if __name__ == "__main__":
     unittest.main()
