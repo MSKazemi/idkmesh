@@ -14,6 +14,11 @@ and the release notes for that tag.
 
 ### Added
 
+- E3-D authorization freshness cache (refs #670): `idkmesh/enterprise_authz_cache.py`
+  adds `AuthorizationDecisionCache`, keyed on the full normalized actor/approver,
+  policy content digest and request shape, with a validity window capped by
+  max age and actor/approver expiry, so a revoked, changed or expired identity
+  or an edited policy cannot reuse a cached ALLOW. Adds focused unit tests.
 - C12 GitHub governance preflight (issue #607): `idkmesh doctor --github`
   now evaluates the canonical C12-A governance policy from bounded normalized
   observations, reports PASS/WARN/FAIL/UNKNOWN/NOT_APPLICABLE, and treats
