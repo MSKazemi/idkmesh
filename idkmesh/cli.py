@@ -771,6 +771,14 @@ def build_parser() -> argparse.ArgumentParser:
             "Pass the previous page's --cursor value verbatim to continue; "
             "never construct or parse a cursor by hand."
         ),
+        formatter_class=_ExamplesHelpFormatter,
+        epilog=(
+            "Examples:\n"
+            "  idkmesh work-unit list --store state.sqlite\n"
+            "  idkmesh work-unit list --store state.sqlite"
+            " --limit 20 --project-id project.test\n"
+            "  idkmesh work-unit list --store state.sqlite --json"
+        ),
     )
     work_unit_list.add_argument(
         "--store",
@@ -805,6 +813,12 @@ def build_parser() -> argparse.ArgumentParser:
     work_unit_status = work_unit_sub.add_parser(
         "status",
         help="inspect one WorkUnit and its distinct revisions",
+        formatter_class=_ExamplesHelpFormatter,
+        epilog=(
+            "Examples:\n"
+            "  idkmesh work-unit status wu-1 --store state.sqlite\n"
+            "  idkmesh work-unit status wu-1 --store state.sqlite --json"
+        ),
     )
     work_unit_status.add_argument(
         "work_unit_id",
@@ -845,6 +859,12 @@ def build_parser() -> argparse.ArgumentParser:
     project_status = project_sub.add_parser(
         "status",
         help="show run counts by state for one project",
+        formatter_class=_ExamplesHelpFormatter,
+        epilog=(
+            "Examples:\n"
+            "  idkmesh project status project.test --store state.sqlite\n"
+            "  idkmesh project status project.test --store state.sqlite --json"
+        ),
     )
     project_status.add_argument(
         "project_id",
@@ -889,6 +909,15 @@ def build_parser() -> argparse.ArgumentParser:
             "verbatim to continue; never construct or parse a cursor by "
             "hand. Filters are exact matches; an unknown --event-type fails "
             "explicitly."
+        ),
+        formatter_class=_ExamplesHelpFormatter,
+        epilog=(
+            "Examples:\n"
+            "  idkmesh events list --store state.sqlite\n"
+            "  idkmesh events list --store state.sqlite"
+            " --limit 20 --event-type run.created\n"
+            "  idkmesh events list --store state.sqlite"
+            " --run-id run-1 --json"
         ),
     )
     events_list.add_argument(
