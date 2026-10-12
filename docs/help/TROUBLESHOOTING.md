@@ -11,6 +11,7 @@ description: "User and contributor troubleshooting for IDKMesh installation, loc
 | --- | --- | --- |
 | Evaluate multiple reviewers | `idkmesh gate-audit INPUT` | Run reviewers or decide acceptance |
 | Plan adoption in another GitHub repository | `idkmesh init --github --dry-run --idkmesh-ref REF` | Write files, apply a workflow, or mutate GitHub |
+| Preview what a saved issue file would become, on your machine | `idkmesh work preview --issue-json FILE --repository OWNER/NAME --source-revision SHA` | Fetch from GitHub, dispatch, or write files |
 | Preview an issue or read run status from a generated GitHub workflow | `idkmesh github-workflow preview` / `status` | Dispatch, verify, comment on an issue, read provider secrets, or merge |
 | Persist/read local run state | `idkmesh run create/list/status/evidence/cancel` | Execute/cancel a provider process |
 | Execute the bounded two-attempt reference demo | `idkmesh local-loop CONFIG` | Record a human decision or automatically replay |
@@ -39,6 +40,8 @@ The documented developer test setup uses `make setup` on POSIX hosts, followed b
 | `preview_scope_unconfigured` | The bootstrap seed deliberately has no write scope | Set `metadata.github_issue_preview.allowed_paths` in `.idkmesh/project.json`; `.github/**` and `.idkmesh/**` stay forbidden regardless. |
 | `project_policy_invalid` | The manifest allows automatic merge, skips the human decision, has a risk ceiling of `none`, or has an unsafe path | Restore `automatic_merge_allowed: false` and `human_decision_required: true`; fix the named field. |
 | `event_issue_mismatch` | The triggering event concerns a different issue than `IDKMESH_ISSUE_NUMBER`; the generated wrappers never produce this, so the workflow file was edited | Restore the wrapper from `idkmesh init --github --dry-run`. |
+| `policy_denied` from `idkmesh work preview` | The issue is closed, locked, a pull request, over the size bounds, or its Issue Form asks only for paths outside the project scope | Same fix as `preview_refused`; or widen `metadata.github_issue_preview.allowed_paths` yourself. The issue cannot. |
+| `issue_invalid` / `issue_unreadable` from `idkmesh work preview` | The `--issue-json` file is not one strict-JSON GitHub issue object (duplicate keys, `NaN`, over 1 MiB), or its URL/number does not match `--repository` / `--issue` | Save the REST object for exactly that issue and repository. |
 | `preview_refused` | The issue is closed, locked, or over the configured size bounds | Reopen or unlock the issue, or shorten it; a human decides, the runner does not override. |
 | `ledger_unavailable` with a missing `idkmesh-ledger` branch | No run has been recorded on the ledger branch yet | Nothing to repair; `status` never creates the branch. |
 | `ledger_run_not_found` | The `idkmesh_run_id` input matches no ledger run | Copy the run id from the ledger or dispatch record exactly. |

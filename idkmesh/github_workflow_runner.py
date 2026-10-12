@@ -256,6 +256,20 @@ def _preview_policy(manifest: Mapping[str, Any], repository: str) -> GitHubIssue
         raise GitHubWorkflowError("project_policy_invalid", str(exc)) from exc
 
 
+def load_preview_policy(project_root: Path, repository: str) -> GitHubIssueWorkPolicy:
+    """Derive the issue-preview policy from ``.idkmesh/project.json``.
+
+    The one place that turns the trusted project manifest into a
+    :class:`GitHubIssueWorkPolicy`. Shared by the workflow ``preview`` phase
+    and the local ``idkmesh work preview`` command so both surfaces apply the
+    same scope, risk ceiling and always-forbidden paths. Raises
+    :class:`GitHubWorkflowError` with the documented ``project_policy_*`` /
+    ``preview_scope_unconfigured`` codes.
+    """
+
+    return _preview_policy(_load_project_policy(project_root), repository)
+
+
 def _check_event(path_value: str | None, issue_number: int) -> None:
     """Cross-check the event's issue number; its text is never read."""
 
@@ -341,7 +355,7 @@ def run_preview(
     common = _Common(environ)
     issue_number = int(_matching(environ, "IDKMESH_ISSUE_NUMBER", _ISSUE_RE))
     _check_event(_env(environ, "IDKMESH_EVENT_PATH", required=False), issue_number)
-    policy = _preview_policy(_load_project_policy(common.project_root), common.repository)
+    policy = load_preview_policy(common.project_root, common.repository)
 
     try:
         if issue_json is not None:

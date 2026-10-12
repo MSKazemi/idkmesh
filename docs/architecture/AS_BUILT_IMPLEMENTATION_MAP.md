@@ -27,6 +27,11 @@ Developer / operator
   |       -> dispatch / verify: fail closed (dispatch_unavailable / verify_unavailable)
   |       -> NO dispatch, issue comment, provider secret, acceptance, or merge
   |
+  +-- idkmesh work preview --issue-json FILE --repository R --source-revision SHA
+  |       -> work_preview.py -> github_workflow_runner.load_preview_policy (project policy)
+  |       -> github_issue_preview.py (use_intake_form composition; narrows policy only)
+  |       -> offline WorkUnit preview + digest, NO network, secret, write, or dispatch
+  |
   +-- idkmesh doctor --github OBSERVATION [--workflow PATH]
   |       -> github_governance_policy.py -> github_governance_preflight.py
   |       -> fail-closed governance/workflow preflight only

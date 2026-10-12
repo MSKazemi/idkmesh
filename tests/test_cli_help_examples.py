@@ -42,6 +42,8 @@ EXAMPLE_COMMANDS = (
     ("github-workflow",),
     ("github-workflow", "preview"),
     ("github-workflow", "status"),
+    ("work",),
+    ("work", "preview"),
     ("work-unit", "list"),
     ("work-unit", "status"),
     ("project", "status"),
