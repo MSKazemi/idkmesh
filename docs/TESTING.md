@@ -403,11 +403,11 @@ make qualify-api BASE=v0.2.0 STRICT=1              # release run: diff vs the la
 ```
 
 Without `BASE` the schema compatibility gate is reported as `skipped`, and
-`STRICT=1` turns any skip into a failure. A suite listed in the tool that no
-longer exists is a `missing` check and fails the run, so renaming or deleting a
+`STRICT=1` turns any skip into a failure. A suite listed in the tool thatno longer exists is a `missing` check and fails the run, so renaming or deleting a
 suite cannot quietly shrink the qualification. The report lists what is *not*
-yet covered (capacity benchmarking; the permission matrix;
-production-adapter request-smuggling tests) rather than implying it. The run
+yet covered (capacity benchmarking; production-adapter request-smuggling
+tests) rather than implying it. The permission matrix is covered by
+`tests/test_enterprise_authz_permission_matrix.py`. The run
 takes about 90 s wall-clock and is not part of the per-PR tiers above, which
 already execute the same test modules.
 

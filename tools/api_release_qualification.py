@@ -40,9 +40,9 @@ Exit codes: 0 every check passed (or was skipped without ``--strict``),
 1 at least one check failed or is missing, 2 the run could not start.
 
 Not yet covered, and recorded in the report's ``not_covered`` list rather than
-implied: capacity benchmarking, the permission matrix, and
-proxy/request-smuggling tests for a production adapter. The last two depend on
-authorization and adapter work that does not exist yet (#670, #743).
+implied: capacity benchmarking, and proxy/request-smuggling tests for a
+production adapter (which does not exist yet; #743). The permission matrix is
+covered by ``tests/test_enterprise_authz_permission_matrix.py`` (issue #745).
 """
 
 from __future__ import annotations
@@ -65,7 +65,6 @@ OUTPUT_TAIL_LINES = 12
 NOT_COVERED = (
     "capacity benchmarking (the load/soak run is a regression tripwire, not a "
     "throughput figure)",
-    "permission matrix (needs the authorization model, issues 670 and 743)",
     "proxy / request-smuggling tests for a production adapter (issue 743)",
 )
 
@@ -81,7 +80,10 @@ FUZZ_TESTS = (
     "tests/test_api_qualification_fuzz.py",
     "tests/test_api_header_boundary_fuzz.py",
 )
-SECURITY_TESTS = ("tests/test_api_security_matrix.py",)
+SECURITY_TESTS = (
+    "tests/test_api_security_matrix.py",
+    "tests/test_enterprise_authz_permission_matrix.py",
+)
 RELIABILITY_TESTS = (
     "tests/test_control_tower_limits.py",
     "tests/test_control_tower_events.py",
