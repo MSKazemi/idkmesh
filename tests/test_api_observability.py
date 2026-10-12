@@ -13,6 +13,7 @@ from jsonschema import Draft202012Validator
 
 from idkmesh.api_observability import ApiMetrics, resolve_traceparent
 from idkmesh.control_tower_ui import SAMPLE_REPORT, TOKEN_ENV, create_server
+from idkmesh.otel_metrics import render_otlp_metrics_json
 from idkmesh.local_ui_security import TOKEN_HEADER
 
 
@@ -244,6 +245,61 @@ class ControlTowerObservabilityTests(unittest.TestCase):
             "traceparent",
             {key.lower(): value for key, value in bad_headers.items()},
         )
+
+    def test_secrets_sent_through_every_channel_never_reach_telemetry(self) -> None:
+        """#744 privacy rules, end to end.
+
+        A sentinel is pushed through each channel the issue forbids in
+        telemetry -- path segment, query string, request body, a wrong session
+        token, an Authorization header, an invalid traceparent and a tracestate
+        -- and must be absent from the canonical metrics document, the OTLP
+        export of it, and the status document.
+        """
+        sentinel = "SECRETSENTINEL-7c1e9"
+        self.request("GET", f"/api/v1/runs/{sentinel}-path", token=True)
+        self.request(
+            "GET", f"/api/v1/status?api_key={sentinel}-query", token=True
+        )
+        self.request(
+            "POST",
+            "/api/v1/run-evidence/inspect",
+            json.dumps({"prompt": f"{sentinel}-body", "evidence": sentinel}),
+            token=True,
+        )
+        conn = http.client.HTTPConnection(
+            "127.0.0.1", self.server.server_port, timeout=3
+        )
+        conn.request(
+            "GET",
+            "/api/v1/status",
+            headers={
+                TOKEN_HEADER: f"{sentinel}-badtoken",
+                "Authorization": f"Bearer {sentinel}-bearer",
+                "traceparent": f"00-{sentinel}-bad-01",
+                "tracestate": f"vendor={sentinel}-state",
+            },
+        )
+        self.assertEqual(conn.getresponse().status, 403)
+        conn.close()
+
+        status, _, body = self.request("GET", "/api/v1/metrics", token=True)
+        self.assertEqual(status, 200)
+        document = json.loads(body)
+        # Not vacuous: the requests above were counted, only their content was not.
+        self.assertGreaterEqual(document["requests"]["total"], 4)
+        self.assertGreaterEqual(document["requests"]["by_status_class"]["4xx"], 1)
+
+        otlp = render_otlp_metrics_json(
+            document, start_time_unix_nano=1_000_000_000, time_unix_nano=2_000_000_000
+        )
+        _, _, status_body = self.request("GET", "/api/v1/status", token=True)
+        for name, rendered in (
+            ("metrics", body.decode("utf-8")),
+            ("otlp", otlp),
+            ("status", status_body.decode("utf-8")),
+        ):
+            with self.subTest(surface=name):
+                self.assertNotIn("SECRETSENTINEL", rendered)
 
 
 if __name__ == "__main__":
