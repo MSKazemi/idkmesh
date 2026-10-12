@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from dataclasses import replace
+import sys
+import threading
 import unittest
 
 from idkmesh.enterprise_authz import (
@@ -215,6 +217,42 @@ class AuthorizationDecisionCacheTests(unittest.TestCase):
         ):
             with self.assertRaises(AuthorizationContractError):
                 AuthorizationDecisionCache(**kwargs)
+
+    def test_concurrent_use_keeps_counters_bound_and_lru_consistent(self):
+        """The cache is shared by request threads: no lost counter updates,
+        no exceptions from LRU mutation, and the bound still holds."""
+        cache = AuthorizationDecisionCache(max_age_seconds=300, max_entries=8)
+        actors = [self.actor(f"github:user:u{i}") for i in range(24)]
+        threads_n, rounds = 8, 150
+        errors: list[BaseException] = []
+        calls = [0] * threads_n
+
+        def work(index: int) -> None:
+            try:
+                for step in range(rounds):
+                    actor = actors[(index * 7 + step) % len(actors)]
+                    cache.authorize(
+                        self.request(actor, request_id=f"r:{index}:{step}"), self.policy
+                    )
+                    calls[index] += 1
+                    if step % 25 == 0:
+                        cache.invalidate_principal(actor.principal_id)
+            except BaseException as exc:  # pragma: no cover - failure path
+                errors.append(exc)
+
+        previous = sys.getswitchinterval()
+        sys.setswitchinterval(1e-6)
+        try:
+            threads = [threading.Thread(target=work, args=(i,)) for i in range(threads_n)]
+            for thread in threads:
+                thread.start()
+            for thread in threads:
+                thread.join(timeout=30)
+        finally:
+            sys.setswitchinterval(previous)
+        self.assertEqual(errors, [])
+        self.assertEqual(cache.hits + cache.misses, sum(calls))
+        self.assertLessEqual(len(cache), 8)
 
     def test_cached_decision_keeps_no_action_authority(self):
         actor = self.actor()

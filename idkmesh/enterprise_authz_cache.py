@@ -13,7 +13,11 @@ makes that property structural rather than a caller convention:
   ``valid_until`` is the earliest of the max age, the actor's expiry and the
   approver's expiry, so an expired identity never keeps cached authority and a
   clock that moves backwards cannot revive an entry;
-* ``invalidate_principal`` lets a revocation feed drop entries eagerly.
+* ``invalidate_principal`` lets a revocation feed drop entries eagerly;
+* every operation is serialised by one lock, so concurrent callers cannot
+  corrupt the LRU order or the hit/miss counters (``authorize`` is pure and
+  cheap, so holding the lock across it keeps a revocation and a lookup from
+  interleaving into a stale ALLOW).
 
 The cache evaluates and stores policy evidence only. A hit returns the stored
 decision re-stamped with the new ``request_id`` and ``evaluated_at_epoch``; it
@@ -26,6 +30,7 @@ from collections import OrderedDict
 from dataclasses import dataclass, replace
 import hashlib
 import json
+import threading
 from typing import Any
 
 from idkmesh.enterprise_authz import (
@@ -120,55 +125,62 @@ class AuthorizationDecisionCache:
         self._max_age = max_age_seconds
         self._max_entries = max_entries
         self._entries: OrderedDict[str, _Entry] = OrderedDict()
+        self._lock = threading.Lock()
         self.hits = 0
         self.misses = 0
 
     def __len__(self) -> int:
-        return len(self._entries)
+        with self._lock:
+            return len(self._entries)
 
     def authorize(
         self, request: AuthorizationRequest, policy: AuthorizationPolicy
     ) -> AuthorizationDecision:
         key = decision_cache_key(request, policy)
-        now = request.evaluated_at_epoch
-        entry = self._entries.get(key)
-        if entry is not None:
-            if entry.stored_at_epoch <= now < entry.valid_until_epoch:
-                self.hits += 1
-                self._entries.move_to_end(key)
-                return replace(
-                    entry.decision,
-                    request_id=request.request_id,
-                    evaluated_at_epoch=now,
+        with self._lock:
+            now = request.evaluated_at_epoch
+            entry = self._entries.get(key)
+            if entry is not None:
+                if entry.stored_at_epoch <= now < entry.valid_until_epoch:
+                    self.hits += 1
+                    self._entries.move_to_end(key)
+                    return replace(
+                        entry.decision,
+                        request_id=request.request_id,
+                        evaluated_at_epoch=now,
+                    )
+                del self._entries[key]
+            self.misses += 1
+            decision = authorize(request, policy)
+            valid_until = now + self._max_age
+            identities: list[ActorContext] = [request.actor]
+            if request.approver is not None:
+                identities.append(request.approver)
+            for identity in identities:
+                if identity.expires_at_epoch is not None:
+                    valid_until = min(valid_until, identity.expires_at_epoch)
+            if valid_until > now:
+                self._entries[key] = _Entry(
+                    decision=decision,
+                    stored_at_epoch=now,
+                    valid_until_epoch=valid_until,
+                    principals=frozenset(item.principal_id for item in identities),
                 )
-            del self._entries[key]
-        self.misses += 1
-        decision = authorize(request, policy)
-        valid_until = now + self._max_age
-        identities: list[ActorContext] = [request.actor]
-        if request.approver is not None:
-            identities.append(request.approver)
-        for identity in identities:
-            if identity.expires_at_epoch is not None:
-                valid_until = min(valid_until, identity.expires_at_epoch)
-        if valid_until > now:
-            self._entries[key] = _Entry(
-                decision=decision,
-                stored_at_epoch=now,
-                valid_until_epoch=valid_until,
-                principals=frozenset(item.principal_id for item in identities),
-            )
-            while len(self._entries) > self._max_entries:
-                self._entries.popitem(last=False)
-        return decision
+                while len(self._entries) > self._max_entries:
+                    self._entries.popitem(last=False)
+            return decision
 
     def invalidate_principal(self, principal_id: str) -> int:
         """Drop every entry that used ``principal_id`` as actor or approver."""
 
-        doomed = [k for k, e in self._entries.items() if principal_id in e.principals]
-        for key in doomed:
-            del self._entries[key]
-        return len(doomed)
+        with self._lock:
+            doomed = [
+                k for k, e in self._entries.items() if principal_id in e.principals
+            ]
+            for key in doomed:
+                del self._entries[key]
+            return len(doomed)
 
     def clear(self) -> None:
-        self._entries.clear()
+        with self._lock:
+            self._entries.clear()
