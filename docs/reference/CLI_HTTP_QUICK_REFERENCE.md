@@ -42,6 +42,7 @@ The wheel intentionally installs only `idkmesh/`. Running the research-backed `l
 | `doctor --enterprise-conformance [--json]` | Run the in-process E9 failure-mode scenarios (unauthorized actor, cross-tenant reference, replay, secret loss, audit-exporter outage, ledger restore, stale identity, self-approval) and report PASS/WARN/FAIL/UNKNOWN per scenario | Temp dirs and fakes only; exit 1 on FAIL or UNKNOWN; scenarios not yet exercised report UNKNOWN; not a SOC 2/ISO 27001/FedRAMP claim |
 | `route explain PROFILE DECISION` | Offline connector routing eligibility/explanation | Does not dispatch work or grant authority |
 | `init --github --dry-run --idkmesh-ref REF` | Pure deterministic GitHub-first bootstrap **plan**/render of config and pinned workflow wrappers (`rendered_config_files`, `rendered_workflow_files` in `--json`) | Apply mode is **not** implemented; no repo writes; wrappers call a runner not yet released |
+| `pages-site --repository OWNER/NAME --projection PATH... --out DIR [--force] [--json]` | Validate C14-D public-safe projections, render the C14-E static Pages file map, and write exactly those files to a local directory all-or-nothing | Local files only: no publication, workflow, network or GitHub call; refuses `..`/absolute/symlinked paths, a symlinked or foreign non-empty `--out` (replaced only with `--force`, never the cwd, its ancestors, home, or a `.git` directory) |
 | `local-loop CONFIG [--output-dir PATH]` | Two-attempt reference orchestration and verification/evidence bundle | Checkout + `[verify]` extra; decisions/replay remain manual |
 | `steward-report INPUT`, `steward-report-ui INPUT` | Validate and display retained single-run steward evidence | Offline read/loopback UI |
 | `steward-history INPUTS...`, `steward-history-ui INPUTS...` | Aggregate/show retained steward history | No GitHub polling or mutation |
@@ -59,6 +60,9 @@ idkmesh run list --store state.sqlite --json
 
 # Plan only. No bootstrap files are written:
 idkmesh init --github --dry-run --idkmesh-ref v0.1.0 --json
+
+# Write a Pages site from public-safe projections to a local directory; nothing is published:
+idkmesh pages-site --repository owner/name --projection run-1.json --out site
 
 # Evaluate the committed C12 fixture only; no GitHub API/admin mutation:
 idkmesh doctor --github examples/github-governance/governance-pass-v0.1.json \
@@ -116,5 +120,7 @@ print(result.value)
 - Detailed request/response/error semantics: [Control Tower Local API v0.1](../specifications/CONTROL_TOWER_LOCAL_API_V0_1.md), [API Conventions v0.1](../specifications/API_CONVENTIONS_V0_1.md), [API examples](https://github.com/MSKazemi/idkmesh/blob/main/examples/api/README.md).
 - **Not served by this local Control Tower:** `POST /api/v1/human-decisions`, generic connector dispatch/configure, network/multi-user mutations, and merge/integration endpoints. `human_decision_service.py` is a separate service-layer kernel, not a routed authenticated HTTP endpoint.
 - Historical planning candidates: [API surface catalog](../planning/API_V1_SURFACE_CATALOG_2026-09-23.md). An older `planned` row there does **not** override the router on current `main`.
+
+Integrator pages: [API quickstart](API_QUICKSTART.md) (executable curl and Python examples), [error catalog](API_ERROR_CATALOG.md) (every stable error code with status and retry rule) and [service limits](API_LIMITS.md) (timeouts, concurrency, body, header and event-stream bounds).
 
 For user-facing failures use [troubleshooting](../help/TROUBLESHOOTING.md). For file-by-file ownership use [module map](MODULE_MAP.md).
