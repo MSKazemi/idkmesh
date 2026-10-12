@@ -34,6 +34,8 @@ methods, and every top-level Python module in `idkmesh/`.
 | `idkmesh github-workflow status` | project one run's latest durable-ledger record into the bounded status body and job summary | read-only transport; publishes no issue comment |
 | `idkmesh github-workflow dispatch` | refuse with the stable `dispatch_unavailable` code | fails closed; reads no environment or secret |
 | `idkmesh github-workflow verify` | refuse with the stable `verify_unavailable` code | fails closed; reads no environment, candidate, or secret |
+| `idkmesh work` | local, offline view of the issue-to-WorkUnit path | read-only; the only subcommand is `preview` |
+| `idkmesh work preview` | derive the WorkUnit, digest and warnings for one issue snapshot file (`--issue-json`) from the trusted `.idkmesh/project.json` policy, optionally narrowed by an IDKMesh Issue Form in the body | offline; no network, credential, environment variable, file write or dispatch; the form can only narrow policy scope or raise risk; refusals print `error: <code>: <message>` and exit 2 |
 | `idkmesh pages-site` | validate C14-D public-safe projections, render the C14-E static Pages file map, and write exactly those files to a local directory | local files only; no publication, workflow, network or GitHub call; refuses unsafe paths, symlinks, and unrecognised non-empty directories unless `--force` |
 | `idkmesh connections` | validate, normalize, persist, and inspect connector metadata | no live dispatch, no raw secret persistence |
 | `idkmesh connections validate` | validate a versioned connector profile | read-only |
@@ -292,6 +294,7 @@ name documents implementation presence, not stability as a public Python API.
 - `idkmesh/task_claims.py`
 - `idkmesh/tenant_scope.py`
 - `idkmesh/verification_handoff.py`
+- `idkmesh/work_preview.py`
 - `idkmesh/work_unit_binding.py`
 
 ## Relationship to architecture and claim truth

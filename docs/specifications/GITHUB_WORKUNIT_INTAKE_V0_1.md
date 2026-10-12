@@ -268,8 +268,10 @@ generic preview (same digest). The preview then only adds the warning
 the WorkUnit. A parsed result also fills `to_dict()["intake"]` with the
 effective allowed/forbidden paths, risk class and data classification.
 
-There is no `idkmesh work preview` command on `main` yet (planned as C7-C);
-this composition is the library seam that command will call. Offline coverage:
+`idkmesh work preview` (C7-C) is the local command over this composition: it
+turns an issue snapshot file plus `.idkmesh/project.json` policy into the
+preview and enables `use_intake_form` by default (`--no-intake-form` builds the
+generic preview). Offline coverage:
 `tests/test_github_issue_preview_intake.py` (REST payload through
 `GitHubRestIssueSource` with a fake transport, hostile and fallback bodies).
 

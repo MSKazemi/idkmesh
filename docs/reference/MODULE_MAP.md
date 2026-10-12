@@ -109,6 +109,7 @@ Primary context: [subsystem contract](../specifications/GITHUB_WEBHOOK_INGRESS_V
 | [`github_workunit_intake.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_workunit_intake.py) | Pure Issue Form body parser to untrusted intake hints; any malformed or hand-edited content falls back; never grants authority |
 | [`github_webhook_ingress.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_webhook_ingress.py) | HMAC-verified bounded webhook normalization |
 | [`github_workflow_runner.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_workflow_runner.py) | Stdlib-only runner behind the generated workflow wrappers: read-only issue preview and ledger status; dispatch and verify fail closed |
+| [`work_preview.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/work_preview.py) | Offline `idkmesh work preview`: issue snapshot file + `.idkmesh/project.json` policy (via `github_workflow_runner.load_preview_policy`) to the `github_issue_preview` WorkUnit; no network, secret, write or dispatch |
 
 ## Jules connector lifecycle
 

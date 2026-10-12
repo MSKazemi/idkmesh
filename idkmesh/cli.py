@@ -404,6 +404,98 @@ def build_parser() -> argparse.ArgumentParser:
             "reads no environment, candidate, or secret."
         ),
     )
+    work = sub.add_parser(
+        "work",
+        help="preview the bounded work an issue would become (read-only)",
+        description=(
+            "Local, offline view of the product path from a GitHub issue to a "
+            "canonical WorkUnit. 'work preview' dispatches nothing."
+        ),
+        formatter_class=_ExamplesHelpFormatter,
+        epilog=(
+            "Examples:\n"
+            "  idkmesh work preview --issue-json issue.json "
+            "--repository MSKazemi/idkmesh --source-revision "
+            "0123456789abcdef0123456789abcdef01234567\n"
+            "  idkmesh work preview --issue-json issue.json "
+            "--repository MSKazemi/idkmesh --source-revision "
+            "0123456789abcdef0123456789abcdef01234567 --json"
+        ),
+    )
+    work_sub = work.add_subparsers(dest="work_command", required=True)
+    work_preview = work_sub.add_parser(
+        "preview",
+        help="derive a WorkUnit preview from an issue snapshot file",
+        description=(
+            "Read one GitHub issue REST object (--issue-json, offline) and the "
+            "trusted .idkmesh/project.json under --project-root, and print the "
+            "WorkUnit the issue would become plus its digest. Authority-bearing "
+            "fields (paths, risk ceiling, network, secrets, budget, validators) "
+            "come from project policy, never from the issue; "
+            "metadata.github_issue_preview.allowed_paths must be configured and "
+            ".github/** and .idkmesh/** are always forbidden. An IDKMesh WorkUnit "
+            "request Issue Form in the body can only narrow that scope or raise "
+            "risk; any other body keeps the generic preview (warning "
+            "intake_fallback). Uses no network, credential or environment "
+            "variable, writes no file, and performs no dispatch. A refusal "
+            "prints 'error: <code>: <message>' on stderr and exits 2."
+        ),
+        formatter_class=_ExamplesHelpFormatter,
+        epilog=(
+            "Examples:\n"
+            "  idkmesh work preview --issue-json issue.json "
+            "--repository MSKazemi/idkmesh --source-revision "
+            "0123456789abcdef0123456789abcdef01234567\n"
+            "  idkmesh work preview --issue-json issue.json "
+            "--repository MSKazemi/idkmesh --source-revision "
+            "0123456789abcdef0123456789abcdef01234567 --json\n"
+            "  idkmesh work preview --issue-json issue.json "
+            "--repository MSKazemi/idkmesh --source-revision "
+            "0123456789abcdef0123456789abcdef01234567 --no-intake-form"
+        ),
+    )
+    work_preview.add_argument(
+        "--issue-json",
+        required=True,
+        metavar="PATH",
+        help="offline GitHub issue REST object (JSON file, at most 1 MiB)",
+    )
+    work_preview.add_argument(
+        "--repository",
+        required=True,
+        metavar="OWNER/NAME",
+        help="repository the issue belongs to; must match the issue URL",
+    )
+    work_preview.add_argument(
+        "--source-revision",
+        required=True,
+        metavar="SHA",
+        help="exact 40- or 64-hex Git object id the WorkUnit is bound to",
+    )
+    work_preview.add_argument(
+        "--project-root",
+        default=".",
+        metavar="DIR",
+        help="directory holding .idkmesh/project.json (default: .)",
+    )
+    work_preview.add_argument(
+        "--issue",
+        type=int,
+        metavar="N",
+        help="expected issue number; default is the number in the snapshot",
+    )
+    work_preview.add_argument(
+        "--no-intake-form",
+        action="store_true",
+        help="skip the Issue Form composition and build the generic preview",
+    )
+    work_preview.add_argument(
+        "--json",
+        action="store_true",
+        dest="json_output",
+        help="emit the full machine-readable result as one JSON line",
+    )
+
     pages_site = sub.add_parser(
         "pages-site",
         help="write the read-only GitHub Pages site for public-safe projections",
@@ -2328,6 +2420,38 @@ def _run_github_workflow(args: argparse.Namespace) -> int:
     return 0
 
 
+def _run_work(args: argparse.Namespace) -> int:
+    """C7-C: offline WorkUnit preview; every refusal is a stable ``error: <code>``."""
+
+    from idkmesh.work_preview import (
+        WorkPreviewError,
+        render_work_preview_text,
+        run_work_preview,
+    )
+
+    if args.issue is not None and args.issue < 1:
+        return _fail("invalid_argument: --issue must be an integer >= 1")
+    try:
+        result = run_work_preview(
+            issue_json=Path(args.issue_json),
+            project_root=Path(args.project_root),
+            repository=args.repository,
+            source_revision=args.source_revision,
+            issue_number=args.issue,
+            use_intake_form=not args.no_intake_form,
+        )
+    except WorkPreviewError as exc:
+        return _fail(f"{exc.code}: {exc.message}")
+
+    if args.json_output:
+        # Compact single-line JSON: untrusted issue text stays escaped inside
+        # string values.
+        print(json.dumps(result, sort_keys=True, separators=(",", ":")))
+    else:
+        print(render_work_preview_text(result))
+    return 0
+
+
 def _run_pages_site(args: argparse.Namespace) -> int:
     """Validate projections, render the Pages file map, write it locally."""
 
@@ -2433,6 +2557,8 @@ def main(argv: list[str] | None = None) -> int:
         return _run_github_init(args)
     if args.command == "github-workflow":
         return _run_github_workflow(args)
+    if args.command == "work":
+        return _run_work(args)
     if args.command == "pages-site":
         return _run_pages_site(args)
     if args.command == "run":

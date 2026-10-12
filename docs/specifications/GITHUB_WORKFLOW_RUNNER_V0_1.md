@@ -96,6 +96,12 @@ is never printed, stored, or placed in the result.
 The runner also refuses any project whose `integration_policy` allows automatic
 merge or waives the human decision.
 
+This derivation is `load_preview_policy` in `idkmesh/github_workflow_runner.py`.
+The local, offline `idkmesh work preview` command (C7-C, see
+[Connector Control API](CONNECTOR_CONTROL_API_V0_1.md#6-work-preview)) calls the
+same function, so a WorkUnit previewed on a developer machine and one previewed
+by the workflow use the same scope, risk ceiling and always-forbidden paths.
+
 **A freshly bootstrapped project cannot preview yet.** The C8-C seed carries no
 write scope, so `preview` fails with `preview_scope_unconfigured` until the
 owner adds, for example:

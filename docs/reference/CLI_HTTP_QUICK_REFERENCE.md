@@ -43,6 +43,7 @@ The wheel intentionally installs only `idkmesh/`. Running the research-backed `l
 | `route explain PROFILE DECISION` | Offline connector routing eligibility/explanation | Does not dispatch work or grant authority |
 | `init --github --dry-run --idkmesh-ref REF` | Pure deterministic GitHub-first bootstrap **plan**/render of config and pinned workflow wrappers (`rendered_config_files`, `rendered_workflow_files` in `--json`) | Apply mode is **not** implemented; no repo writes; the wrappers call `github-workflow` below |
 | `github-workflow {preview,status} [--issue-json PATH \| --ledger-records PATH] [--json]` | Runner the generated `idkmesh-*.yml` wrappers call; reads `IDKMESH_*` environment variables. `preview` derives a WorkUnit preview and digest for one issue; `status` projects one run's latest durable-ledger record into the bounded status body and job summary | Read-only; no dispatch, issue comment, provider secret, or merge; refusals print `error: <code>: <message>` and exit 2 |
+| `work preview --issue-json PATH --repository OWNER/NAME --source-revision SHA [--project-root DIR] [--issue N] [--no-intake-form] [--json]` | Offline WorkUnit preview (C7-C): one issue snapshot file plus `.idkmesh/project.json` policy (same derivation as `github-workflow preview`) to a canonical WorkUnit, digest and warnings; an IDKMesh Issue Form in the body is composed by default | Read-only; no network, secret, environment variable, file write, dispatch or HTTP route (`POST /api/v1/work-units:preview` is specified, not served); the form only narrows scope or raises risk; refusals print `error: <code>: <message>` and exit 2 |
 | `github-workflow {dispatch,verify}` | Reserved wrapper phases | Always fail closed with `dispatch_unavailable` / `verify_unavailable`; read no environment or secret |
 | `pages-site --repository OWNER/NAME --projection PATH... --out DIR [--force] [--json]` | Validate C14-D public-safe projections, render the C14-E static Pages file map, and write exactly those files to a local directory all-or-nothing | Local files only: no publication, workflow, network or GitHub call; refuses `..`/absolute/symlinked paths, a symlinked or foreign non-empty `--out` (replaced only with `--force`, never the cwd, its ancestors, home, or a `.git` directory) |
 | `local-loop CONFIG [--output-dir PATH]` | Two-attempt reference orchestration and verification/evidence bundle | Checkout + `[verify]` extra; decisions/replay remain manual |
@@ -67,6 +68,11 @@ idkmesh init --github --dry-run --idkmesh-ref v0.1.0 --json
 IDKMESH_PROJECT_ROOT=. IDKMESH_REPOSITORY=OWNER/REPO IDKMESH_RUN_ID=1 \
   IDKMESH_BASE_SHA=0123456789abcdef0123456789abcdef01234567 IDKMESH_ISSUE_NUMBER=7 \
   idkmesh github-workflow preview --issue-json issue.json
+
+# Same preview from a local shell, no wrapper environment needed:
+idkmesh work preview --issue-json issue.json --repository OWNER/REPO \
+  --source-revision 0123456789abcdef0123456789abcdef01234567 --json
+
 # Write a Pages site from public-safe projections to a local directory; nothing is published:
 idkmesh pages-site --repository owner/name --projection run-1.json --out site
 

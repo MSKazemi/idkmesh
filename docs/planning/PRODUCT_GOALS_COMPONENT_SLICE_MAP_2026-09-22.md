@@ -443,7 +443,7 @@ conforming production backend.
 
 - **C7-A — service layer extraction:** one application service used by CLI/HTTP/GitHub.
 - **C7-B — project/connect CLI:** create/read project + connector profiles.
-- **C7-C — preview/routing CLI:** work preview and route explain.
+- **C7-C — preview/routing CLI:** work preview and route explain. `route explain` (#758) and the offline `idkmesh work preview --issue-json` (issue snapshot file + project policy; no live fetch, no HTTP) are on `main`; live issue fetch and the Product Spine binding remain open.
 - **C7-D — run CLI:** create/status/cancel with idempotency.
 - **C7-E — evidence CLI:** show candidate/result/verification/human state.
 - **C7-F — read-only HTTP surfaces:** projects/connections/routes/runs GET/preview.
@@ -592,7 +592,7 @@ independent human review.
 
 - **C13-A — Issue Form field contract.**
 - **C13-B — generated Issue Form template.**
-- **C13-C — issue body -> WorkUnit preview parser.** Parser (#1049) merged; policy composition in the issue preview (`use_intake_form`) adds the restrict-only join with `GitHubIssueWorkPolicy`; the `work preview` CLI itself belongs to C7-C.
+- **C13-C — issue body -> WorkUnit preview parser.** Parser (#1049) merged; policy composition in the issue preview (`use_intake_form`) adds the restrict-only join with `GitHubIssueWorkPolicy`; the offline `idkmesh work preview` CLI over it is C7-C.
 - **C13-D — incomplete/malicious fallback behavior.** Parser fallback and the byte-identical generic-preview fallback are covered.
 - **C13-E — label projection from canonical work/run state.**
 - **C13-F — optional GitHub Project field mapping.**

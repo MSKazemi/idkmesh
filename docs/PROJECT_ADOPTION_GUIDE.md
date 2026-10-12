@@ -281,7 +281,10 @@ you, the paths a previewed WorkUnit may write, to `.idkmesh/project.json`:
 ~~~
 
 Without it the runner stops with `preview_scope_unconfigured`; `.github/**` and
-`.idkmesh/**` are always forbidden. Applying files and the owner-action checks
+`.idkmesh/**` are always forbidden. To see the same preview locally before any
+workflow runs, save the issue's REST object and run
+`idkmesh work preview --issue-json issue.json --repository OWNER/REPO --source-revision SHA`
+from the project root (offline; it uses the same policy and dispatches nothing). Applying files and the owner-action checks
 remain explicit follow-on slices.
 
 ### Step 5 — define project policy before selecting models
