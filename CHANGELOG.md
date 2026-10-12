@@ -14,6 +14,18 @@ and the release notes for that tag.
 
 ### Added
 
+- Exhaustive permission matrix for the enterprise authorization baseline
+  (issue #745, Security permission-matrix item;
+  `tests/test_enterprise_authz_permission_matrix.py`). Pins the complete
+  role x action x actor-type decision table of
+  `AuthorizationPolicy.enterprise_baseline()` as an independent oracle (136
+  subtests): which roles and actor types may take each action, that
+  `manage_policy` is the only action already at its approval threshold at its
+  own risk floor, and that multi-role actors get exactly the union of their
+  cells. Any baseline widening or narrowing now forces a deliberate table
+  update. Complements the pairwise scenarios in
+  `tests/test_enterprise_authz.py` and the #743 authority-matrix guards.
+
 - C12 GitHub governance preflight (issue #607): `idkmesh doctor --github`
   now evaluates the canonical C12-A governance policy from bounded normalized
   observations, reports PASS/WARN/FAIL/UNKNOWN/NOT_APPLICABLE, and treats
