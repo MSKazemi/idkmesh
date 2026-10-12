@@ -132,6 +132,11 @@ and the release notes for that tag.
   403 whether or not the id exists (no 404-vs-403 existence probe), and that
   an unknown id with the token is an explicit 404. Test-only; no behaviour
   change.
+- End-to-end telemetry privacy test (issue #744): pushes a sentinel through the
+  path, query string, request body, wrong session token, `Authorization`,
+  invalid `traceparent` and `tracestate` channels and asserts it is absent from
+  the metrics document, its OTLP export and the status document. Test-only; no
+  behaviour change.
 - `LocalMetadataStore.prune_probe_history()` (issue #750): removes superseded
   probe rows and keeps the latest per connection, the one expendable class in
   the API storage retention matrix. Runs, idempotency records, events and
