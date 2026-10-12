@@ -119,6 +119,12 @@ call and never retries. Every failure is one of these classes (all subclass
 | `IntegrityError` | a response or embedded digest does not verify (subclass of `ProtocolError`) | message |
 | `ApiResponseError` | the server returned a schema-shaped error envelope | `status_code`, `code`, `message`, `retryable`, `details`, `request_id` |
 
+`client.stream_events()` uses the same classes and adds no new one. An error the
+server sends before the stream starts is an `ApiResponseError`; a stalled stream
+or a drop without a `stream-ended` marker is a `TransportError`; a frame that
+breaks the SSE contract is a `ProtocolError`; an event whose `payload_digest`
+does not verify is an `IntegrityError`.
+
 An `ApiResponseError` is the only class that corresponds to a row in this
 catalog. Quote `request_id` when reporting a problem. See the
 [quickstart](API_QUICKSTART.md#handle-errors) for a worked example.

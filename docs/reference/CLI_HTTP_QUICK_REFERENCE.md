@@ -123,7 +123,7 @@ result = client.status()
 print(result.value)
 ```
 
-`ControlTowerClient` exposes `status`, `get_openapi` (download of the running OpenAPI definition), `get_metrics` (aggregate operational metrics), `inspect_run_evidence`, `list_connections`, `list_runs`, `get_run`, `get_run_attempts`, `get_run_evidence`, `list_work_units`, `get_work_unit`, `get_project`, and `list_events`; it does **not** expose a human-decision mutation or an SSE subscription helper. Read-list pagination uses opaque cursors and a maximum page size of 200. Error classes include `ClientConfigurationError`, `TransportError`, `ProtocolError`, `IntegrityError`, and `ApiResponseError` (see [source](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/api_client.py)). No public typed JavaScript client is claimed here.
+`ControlTowerClient` exposes `status`, `get_openapi` (download of the running OpenAPI definition), `get_metrics` (aggregate operational metrics), `inspect_run_evidence`, `list_connections`, `list_runs`, `get_run`, `get_run_attempts`, `get_run_evidence`, `list_work_units`, `get_work_unit`, `get_project`, and `list_events`, plus `stream_events` (one bounded, strictly parsed read of `GET /api/v1/events/stream`; resuming with `Last-Event-ID` is the caller's job); it does **not** expose a human-decision mutation. Read-list pagination uses opaque cursors and a maximum page size of 200. Error classes include `ClientConfigurationError`, `TransportError`, `ProtocolError`, `IntegrityError`, and `ApiResponseError` (see [source](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/api_client.py)). No public typed JavaScript client is claimed here.
 
 ## Source-of-truth and future endpoints
 

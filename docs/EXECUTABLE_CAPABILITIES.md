@@ -122,9 +122,10 @@ requiring an HTTP client dependency. Current public methods are:
 - `ControlTowerClient.list_connections()`
 - `ControlTowerClient.get_project()`
 - `ControlTowerClient.list_events()`
+- `ControlTowerClient.stream_events()` — one bounded, strictly parsed read of the `events/stream` SSE endpoint (mandatory idle timeout, digest-checked events, caller-driven resume with `Last-Event-ID`)
 
 The client requires an explicit timeout, refuses non-loopback destinations, exposes
-request IDs, validates content digests, and performs no implicit retry.
+request IDs, validates content digests, and performs no implicit retry or reconnect.
 
 ## Implemented library/runtime capability groups
 

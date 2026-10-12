@@ -1533,9 +1533,10 @@ read/inspection endpoints above. It covers `status`,
 `projects/{project_id}`, `connections`, and `events`; human-decision recording
 is deliberately absent until the authenticated mutation adapter (issue #740)
 exists. `get_openapi()` downloads the running `openapi.json` and `get_metrics()`
-reads `metrics`, both failing closed. The `/healthz` and `/readyz` probes and the
-`events/stream` Server-Sent Events stream are not wrapped by the client and
-remain plain HTTP. A runnable walkthrough is the
+reads `metrics`, both failing closed. `stream_events()` opens the
+`events/stream` Server-Sent Events stream as one bounded, strictly parsed
+`EventStream` (see below). The `/healthz` and `/readyz` probes are not wrapped
+by the client and remain plain HTTP. A runnable walkthrough is the
 [API quickstart](../reference/API_QUICKSTART.md).
 
 ```python
@@ -1579,6 +1580,43 @@ Client guarantees, each fail-closed:
 - list methods validate `limit`, `cursor`, and filters before any transport
   I/O, and unknown query parameters fail explicitly on the server
   (API Conventions v0.1 section 11).
+
+### Python client: event stream
+
+```python
+with client.stream_events(idle_timeout=20.0, last_event_id=41) as stream:
+    for item in stream:
+        print(item.sequence, item.event_type)
+# stream.end_reason is the server's stream-ended reason, or client-max-*;
+# resume with last_event_id=stream.last_event_id on a new stream.
+```
+
+`stream_events()` is one `GET /api/v1/events/stream` and nothing more: it does
+not reconnect, retry, or follow redirects, because resume is defined by this
+section's `Last-Event-ID` rules and belongs to the caller. Its guarantees:
+
+- `idle_timeout` is mandatory (the longest wait for the next byte, so at least
+  20 s against the 15 s keepalive); the stream is also bounded by `max_seconds`
+  (default 315 s: the 300 s server lifetime plus a margin), an optional
+  `max_events`, and `max_frame_bytes` (default 1 MiB) per line and per frame.
+- Errors before the stream starts are the usual `ApiResponseError`
+  (`invalid_last_event_id`, `invalid_filter`, `too_many_streams`, 403). A stall
+  or a connection that closes without a `stream-ended` marker is a
+  `TransportError`; a frame outside the framing above (unknown field, duplicate
+  field, unknown comment, bad UTF-8 or JSON, oversize line or frame, truncated
+  frame) is a `ProtocolError`.
+- Every event is checked before it is yielded: the exact `idkmesh-event` key set,
+  `kind`, `schema_version`, `event_id`, `id:` and `event:` agreeing with the
+  envelope, a strictly increasing sequence, the requested filters, and
+  `payload_digest` against the canonical digest of `payload` (`IntegrityError`).
+  A failed stream closes itself.
+- `StreamedEvent.sequence` is the value to send back as `last_event_id`;
+  delivery stays at-least-once across connections, so dedupe on `event_id`.
+- Leaving the `with` block (or `close()`) closes the socket, which lets the
+  server release the stream slot at its next write.
+
+Proven by `tests/test_api_client_event_stream.py`, against a real
+`create_server` and a scripted peer for wire-level violations.
 
 ## Relationship to Gate Audit
 
