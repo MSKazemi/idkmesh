@@ -354,6 +354,66 @@ def build_parser() -> argparse.ArgumentParser:
         help="emit deterministic machine-readable JSON",
     )
 
+    release_provenance = sub.add_parser(
+        "release-provenance",
+        help="print release metadata/provenance for public-safe projections",
+        description=(
+            "Bind a proposed release (tag, target commit, artifact SHA-256 "
+            "digests) to the C14-D public-safe run evidence it references and "
+            "print the deterministic C14-F record, or draft release notes "
+            "with --notes. Nothing is created or published: no tag, GitHub "
+            "Release, or attestation, and no network or GitHub call. The "
+            "target commit and artifact digests are caller-supplied and are "
+            "recorded as unverified. The record carries no timestamps and "
+            "grants no dispatch, verification, decision, merge, tag, release, "
+            "or attestation authority."
+        ),
+        formatter_class=_ExamplesHelpFormatter,
+        epilog=(
+            "Examples:\n"
+            "  idkmesh release-provenance --repository owner/name"
+            " --tag v0.1.0 --target-commit <40-hex-commit>"
+            " --projection run-1.json\n"
+            "  idkmesh release-provenance --repository owner/name"
+            " --tag v0.1.0 --target-commit <40-hex-commit>"
+            " --artifact idkmesh-0.1.0.tar.gz=sha256:<64-hex> --notes"
+        ),
+    )
+    release_provenance.add_argument(
+        "--repository",
+        required=True,
+        metavar="OWNER/NAME",
+        help="the public repository every projection must be for",
+    )
+    release_provenance.add_argument(
+        "--tag", required=True, metavar="TAG", help="proposed release tag name"
+    )
+    release_provenance.add_argument(
+        "--target-commit",
+        required=True,
+        metavar="SHA",
+        help="exact 40- or 64-hex commit the release would point at (unverified)",
+    )
+    release_provenance.add_argument(
+        "--artifact",
+        action="append",
+        default=[],
+        metavar="NAME=sha256:HEX",
+        help="a distributable artifact and its SHA-256 digest (repeatable; unverified)",
+    )
+    release_provenance.add_argument(
+        "--projection",
+        nargs="*",
+        default=[],
+        metavar="PATH",
+        help="C14-D public evidence projection JSON files the release references",
+    )
+    release_provenance.add_argument(
+        "--notes",
+        action="store_true",
+        help="print draft release-note Markdown instead of the JSON record",
+    )
+
     connections = sub.add_parser(
         "connections",
         help="validate, list, import, store, or inspect connector configuration",
@@ -2225,6 +2285,48 @@ def _run_pages_site(args: argparse.Namespace) -> int:
     return 0
 
 
+def _run_release_provenance(args: argparse.Namespace) -> int:
+    """Build and print the C14-F release metadata record; nothing is created."""
+
+    from idkmesh.github_pages_site import MAX_RUNS
+    from idkmesh.github_release_provenance import (
+        MAX_ARTIFACTS,
+        GitHubReleaseArtifact,
+        build_github_release_provenance,
+        render_github_release_notes,
+        render_github_release_provenance_json,
+    )
+
+    if len(args.projection) > MAX_RUNS:
+        return _fail(f"at most {MAX_RUNS} projections may be referenced")
+    if len(args.artifact) > MAX_ARTIFACTS:
+        return _fail(f"at most {MAX_ARTIFACTS} artifacts may be recorded")
+    try:
+        artifacts = []
+        for item in args.artifact:
+            name, separator, digest = item.partition("=")
+            if not separator:
+                return _fail("--artifact must be NAME=sha256:<64-hex>")
+            artifacts.append(GitHubReleaseArtifact(name, digest))
+        projections = [_strict_json_file(item) for item in args.projection]
+        record = build_github_release_provenance(
+            projections,
+            repository=args.repository,
+            tag=args.tag,
+            target_commit=args.target_commit,
+            artifacts=artifacts,
+        )
+        output = (
+            render_github_release_notes(record)
+            if args.notes
+            else render_github_release_provenance_json(record)
+        )
+    except ValueError as exc:
+        return _fail(str(exc))
+    sys.stdout.write(output)
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     if args.command == "control-tower":
@@ -2279,6 +2381,8 @@ def main(argv: list[str] | None = None) -> int:
         return _run_github_init(args)
     if args.command == "pages-site":
         return _run_pages_site(args)
+    if args.command == "release-provenance":
+        return _run_release_provenance(args)
     if args.command == "run":
         return _run_product_spine_control(args)
     if args.command == "work-unit":

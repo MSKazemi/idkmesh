@@ -43,6 +43,7 @@ The wheel intentionally installs only `idkmesh/`. Running the research-backed `l
 | `route explain PROFILE DECISION` | Offline connector routing eligibility/explanation | Does not dispatch work or grant authority |
 | `init --github --dry-run --idkmesh-ref REF` | Pure deterministic GitHub-first bootstrap **plan**/render of config and pinned workflow wrappers (`rendered_config_files`, `rendered_workflow_files` in `--json`) | Apply mode is **not** implemented; no repo writes; wrappers call a runner not yet released |
 | `pages-site --repository OWNER/NAME --projection PATH... --out DIR [--force] [--json]` | Validate C14-D public-safe projections, render the C14-E static Pages file map, and write exactly those files to a local directory all-or-nothing | Local files only: no publication, workflow, network or GitHub call; refuses `..`/absolute/symlinked paths, a symlinked or foreign non-empty `--out` (replaced only with `--force`, never the cwd, its ancestors, home, or a `.git` directory) |
+| `release-provenance --repository OWNER/NAME --tag TAG --target-commit SHA [--artifact NAME=sha256:HEX]... [--projection PATH...] [--notes]` | Validate C14-D public-safe projections and print the C14-F release metadata/provenance record as JSON, or draft release notes with `--notes` | stdout only: no tag, GitHub Release, attestation, network or GitHub call; commit and artifact digests are caller-supplied and recorded as unverified; no timestamps; exit 2 and empty stdout on any rejected input |
 | `local-loop CONFIG [--output-dir PATH]` | Two-attempt reference orchestration and verification/evidence bundle | Checkout + `[verify]` extra; decisions/replay remain manual |
 | `steward-report INPUT`, `steward-report-ui INPUT` | Validate and display retained single-run steward evidence | Offline read/loopback UI |
 | `steward-history INPUTS...`, `steward-history-ui INPUTS...` | Aggregate/show retained steward history | No GitHub polling or mutation |
@@ -63,6 +64,10 @@ idkmesh init --github --dry-run --idkmesh-ref v0.1.0 --json
 
 # Write a Pages site from public-safe projections to a local directory; nothing is published:
 idkmesh pages-site --repository owner/name --projection run-1.json --out site
+
+# Print release metadata for a proposed tag; nothing is tagged, released, or attested:
+idkmesh release-provenance --repository owner/name --tag v0.1.0 \
+  --target-commit <40-hex-commit> --projection run-1.json
 
 # Evaluate the committed C12 fixture only; no GitHub API/admin mutation:
 idkmesh doctor --github examples/github-governance/governance-pass-v0.1.json \

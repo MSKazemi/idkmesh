@@ -93,6 +93,11 @@ meaning of an existing version.
   public-safe projections: health, active work, verification debt, per-run
   provenance; no scripts, no external assets, no mutation or approval surface.
   `idkmesh pages-site` writes the map to a local directory; it never publishes.
+- [GitHub Release Provenance v0.1](GITHUB_RELEASE_PROVENANCE_V0_1.md) —
+  C14-F offline metadata record binding a proposed release (tag, target commit,
+  artifact digests, all caller-supplied and unverified) to the C14-D run
+  evidence it references; `idkmesh release-provenance` prints the record or
+  draft notes. It creates no tag, release, or attestation and claims none.
 - [Verification Provenance Integrity](VERIFICATION_PROVENANCE_INTEGRITY.md) —
   binds WorkUnit, result, and verification objects with canonical digests.
 
