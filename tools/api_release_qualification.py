@@ -81,7 +81,10 @@ FUZZ_TESTS = (
     "tests/test_api_qualification_fuzz.py",
     "tests/test_api_header_boundary_fuzz.py",
 )
-SECURITY_TESTS = ("tests/test_api_security_matrix.py",)
+SECURITY_TESTS = (
+    "tests/test_api_security_matrix.py",
+    "tests/test_api_cors_csrf_matrix.py",
+)
 RELIABILITY_TESTS = (
     "tests/test_control_tower_limits.py",
     "tests/test_control_tower_events.py",
