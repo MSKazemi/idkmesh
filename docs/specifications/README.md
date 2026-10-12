@@ -93,6 +93,7 @@ meaning of an existing version.
   C14-E pure, deterministic static-site file map generated only from C14-D
   public-safe projections: health, active work, verification debt, per-run
   provenance; no scripts, no external assets, no mutation or approval surface.
+  `idkmesh pages-site` writes the map to a local directory; it never publishes.
 - [Verification Provenance Integrity](VERIFICATION_PROVENANCE_INTEGRITY.md) —
   binds WorkUnit, result, and verification objects with canonical digests.
 

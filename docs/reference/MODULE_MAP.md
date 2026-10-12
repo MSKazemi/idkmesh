@@ -91,7 +91,7 @@ Primary context: [subsystem contract](../specifications/GITHUB_WEBHOOK_INGRESS_V
 | [`github_explicit_dispatch.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_explicit_dispatch.py) | Idempotent explicitly authorized dispatch boundary |
 | [`github_governance_policy.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_governance_policy.py) | Declarative GitHub repository governance rules |
 | [`github_governance_preflight.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_governance_preflight.py) | Read-only C12 governance evaluation, workflow-source linting, CODEOWNERS recommendations, and OIDC shape checks; no GitHub admin mutation |
-| [`github_issue_preview.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_issue_preview.py) | Untrusted issue-to-policy-owned WorkUnit preview |
+| [`github_issue_preview.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_issue_preview.py) | Untrusted issue-to-policy-owned WorkUnit preview; an opt-in parsed Issue Form can only narrow policy scope and raise risk/sensitivity |
 | [`github_issue_source.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_issue_source.py) | Bounded GitHub REST issue read adapter |
 | [`github_ledger_admission.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_ledger_admission.py) | Idempotent dispatch admission by compare-and-set on a per-key ref; duplicate dispatch resolves to the existing run; no push or GitHub call |
 | [`github_ledger_append.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_ledger_append.py) | Local compare-and-set optimistic append to a per-run Git-ref ledger with bounded retry; no push or GitHub call |
@@ -100,6 +100,7 @@ Primary context: [subsystem contract](../specifications/GITHUB_WEBHOOK_INGRESS_V
 | [`github_ledger_recovery_plan.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_ledger_recovery_plan.py) | Pure advisory safe-next-step plan for a recovered ledger run; reconciles unconfirmed provider submissions instead of resubmitting; grants no authority |
 | [`github_ledger_serialization.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_ledger_serialization.py) | Pure canonical serialization and append-only chain verification for GitHub ledger records; performs no Git or GitHub action |
 | [`github_pages_site.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_pages_site.py) | Pure read-only static Pages file map generated from public-safe evidence projections |
+| [`github_pages_writer.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_pages_writer.py) | All-or-nothing local-directory writer for the Pages file map behind `idkmesh pages-site`; refuses unsafe paths, symlinks, and unrecognised non-empty directories; no network or GitHub call |
 | [`github_public_evidence.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_public_evidence.py) | Strict public-safe evidence publication projection |
 | [`github_rest_source.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_rest_source.py) | Bounded GitHub identity REST transport |
 | [`github_routing_projection.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_routing_projection.py) | Read-only GitHub UI projection of routing decision |

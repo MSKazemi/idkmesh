@@ -404,6 +404,58 @@ def build_parser() -> argparse.ArgumentParser:
             "reads no environment, candidate, or secret."
         ),
     )
+    pages_site = sub.add_parser(
+        "pages-site",
+        help="write the read-only GitHub Pages site for public-safe projections",
+        description=(
+            "Validate C14-D public-safe evidence projections, render the "
+            "C14-E static Pages file map, and write exactly those files to a "
+            "local directory. Nothing is published: there is no network or "
+            "GitHub call, and the site grants no dispatch, verification, "
+            "decision, or merge authority. The directory is written "
+            "all-or-nothing and must not exist, be empty, or be a site this "
+            "command produced; --force replaces any other directory. The "
+            "caller must establish that the repository and data are public."
+        ),
+        formatter_class=_ExamplesHelpFormatter,
+        epilog=(
+            "Examples:\n"
+            "  idkmesh pages-site --repository owner/name"
+            " --projection run-1.json --out site\n"
+            "  idkmesh pages-site --repository owner/name"
+            " --projection projections/*.json --out site --force --json"
+        ),
+    )
+    pages_site.add_argument(
+        "--repository",
+        required=True,
+        metavar="OWNER/NAME",
+        help="the public repository every projection must be for",
+    )
+    pages_site.add_argument(
+        "--projection",
+        required=True,
+        nargs="+",
+        metavar="PATH",
+        help="one or more C14-D public evidence projection JSON files",
+    )
+    pages_site.add_argument(
+        "--out",
+        required=True,
+        metavar="DIR",
+        help="local output directory (its parent directory must exist)",
+    )
+    pages_site.add_argument(
+        "--force",
+        action="store_true",
+        help="replace an existing non-empty directory not produced by this command",
+    )
+    pages_site.add_argument(
+        "--json",
+        action="store_true",
+        dest="json_output",
+        help="emit deterministic machine-readable JSON",
+    )
 
     connections = sub.add_parser(
         "connections",
@@ -2273,6 +2325,54 @@ def _run_github_workflow(args: argparse.Namespace) -> int:
     print("dispatch performed: no")
     print("GitHub mutations: no")
     print("secret values accessed: no")
+def _run_pages_site(args: argparse.Namespace) -> int:
+    """Validate projections, render the Pages file map, write it locally."""
+
+    from idkmesh.github_pages_site import MAX_RUNS, render_github_pages_site
+    from idkmesh.github_pages_writer import write_github_pages_site
+
+    if len(args.projection) > MAX_RUNS:
+        return _fail(f"at most {MAX_RUNS} projections may be published")
+    try:
+        projections = [_strict_json_file(item) for item in args.projection]
+        files = render_github_pages_site(projections, repository=args.repository)
+        result = write_github_pages_site(files, args.out, force=args.force)
+    except ValueError as exc:
+        # Input, projection-validation, renderer and writer errors are all
+        # ValueError subclasses; each message is user-fixable.
+        return _fail(str(exc))
+
+    if args.json_output:
+        print(
+            json.dumps(
+                {
+                    "kind": "idkmesh-github-pages-site-write",
+                    "schema_version": "0.1",
+                    "repository": args.repository,
+                    "out_dir": result.out_dir,
+                    "replaced_existing": result.replaced_existing,
+                    "total_bytes": result.total_bytes,
+                    "files": [
+                        {"path": path, "size_bytes": size, "sha256": digest}
+                        for path, size, digest in result.files
+                    ],
+                    "published": False,
+                    "github_mutation_performed": False,
+                    "network_access": False,
+                },
+                sort_keys=True,
+                separators=(",", ":"),
+            )
+        )
+        return 0
+
+    print(f"GitHub Pages site written to {result.out_dir}")
+    print(f"repository: {args.repository}")
+    print(f"files: {len(result.files)} ({result.total_bytes} bytes)")
+    for path, size, digest in result.files:
+        print(f"- {path} [sha256:{digest}; {size} bytes]")
+    print("published: no (local directory only)")
+    print("GitHub mutations: no")
     return 0
 
 
@@ -2330,6 +2430,8 @@ def main(argv: list[str] | None = None) -> int:
         return _run_github_init(args)
     if args.command == "github-workflow":
         return _run_github_workflow(args)
+    if args.command == "pages-site":
+        return _run_pages_site(args)
     if args.command == "run":
         return _run_product_spine_control(args)
     if args.command == "work-unit":
