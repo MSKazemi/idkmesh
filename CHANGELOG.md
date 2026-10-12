@@ -14,6 +14,14 @@ and the release notes for that tag.
 
 ### Added
 
+- AVE-core shadow adapter regression pins (refs #644):
+  `tests/test_ave_shadow_adapter_gates.py` isolates each of the nine hard gates
+  (WorkUnit id/version, pool binding, sovereignty, zero project spend,
+  independent-verification policy, required-validator coverage, schema version),
+  the critical risk target, and each step of the eight-step lexicographic order,
+  so a refactor cannot silently drop one. Tests only; no adapter behaviour
+  changed, and the real N3 cohort remains open pending actual pre-outcome
+  captures.
 - C12 GitHub governance preflight (issue #607): `idkmesh doctor --github`
   now evaluates the canonical C12-A governance policy from bounded normalized
   observations, reports PASS/WARN/FAIL/UNKNOWN/NOT_APPLICABLE, and treats
