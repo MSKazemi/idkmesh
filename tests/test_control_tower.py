@@ -1873,5 +1873,83 @@ class ControlTowerConnectionReadTests(unittest.TestCase):
         )
 
 
+class ControlTowerReadAuthBeforeLookupTests(unittest.TestCase):
+    """#739: authorization is decided before any resource lookup.
+
+    Every Product Spine read route answers a missing or wrong session token
+    with the same 403 whether or not the id exists, so an unauthenticated
+    caller cannot use 404-vs-403 to probe which ids are present. With the
+    token, an unknown id is an explicit 404.
+    """
+
+    # (path, error code returned for an unknown id with a valid token)
+    ROUTES = (
+        ("/api/v1/runs/unknown-run", "run_not_found"),
+        ("/api/v1/runs/unknown-run/attempts", "run_not_found"),
+        ("/api/v1/runs/unknown-run/evidence", "run_not_found"),
+        ("/api/v1/work-units/unknown-wu", "work_unit_not_found"),
+        ("/api/v1/projects/unknown-project", "project_not_found"),
+    )
+    LISTS = ("/api/v1/runs", "/api/v1/work-units")
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls._tmp = tempfile.TemporaryDirectory()
+        cls.server = create_server(
+            port=0,
+            product_spine_store_path=str(Path(cls._tmp.name) / "spine.sqlite3"),
+        )
+        cls.thread = threading.Thread(target=cls.server.serve_forever, daemon=True)
+        cls.thread.start()
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        cls.server.shutdown()
+        cls.server.server_close()
+        cls.thread.join(timeout=2)
+        cls._tmp.cleanup()
+
+    def get(self, path: str, token: str | None):
+        conn = http.client.HTTPConnection(
+            "127.0.0.1", self.server.server_port, timeout=3
+        )
+        headers = {TOKEN_HEADER: token} if token is not None else {}
+        conn.request("GET", path, headers=headers)
+        response = conn.getresponse()
+        body = response.read()
+        conn.close()
+        return response.status, json.loads(body)
+
+    def test_missing_or_wrong_token_is_403_before_any_lookup(self) -> None:
+        for path, _ in self.ROUTES:
+            for token in (None, "not-the-session-token"):
+                with self.subTest(path=path, token=token):
+                    status, payload = self.get(path, token)
+                    self.assertEqual(status, 403)
+                    self.assertEqual(
+                        payload["error"]["code"], "invalid_session_token"
+                    )
+
+    def test_unauthorised_answer_does_not_depend_on_the_id(self) -> None:
+        for path, _ in self.ROUTES:
+            other = path.replace("unknown", "another")
+            with self.subTest(path=path):
+                self.assertEqual(self.get(path, None), self.get(other, None))
+
+    def test_list_routes_also_require_the_token(self) -> None:
+        for path in self.LISTS:
+            with self.subTest(path=path):
+                status, payload = self.get(path, None)
+                self.assertEqual(status, 403)
+                self.assertEqual(payload["error"]["code"], "invalid_session_token")
+
+    def test_unknown_id_with_the_token_is_an_explicit_404(self) -> None:
+        for path, code in self.ROUTES:
+            with self.subTest(path=path):
+                status, payload = self.get(path, self.server.ui_token)
+                self.assertEqual(status, 404)
+                self.assertEqual(payload["error"]["code"], code)
+
+
 if __name__ == "__main__":
     unittest.main()
