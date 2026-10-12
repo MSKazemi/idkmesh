@@ -40,6 +40,10 @@ POLICY_VERSION = "0.1"
 DECISION_KIND = "idkmesh-enterprise-data-policy-decision"
 
 DATA_CLASSES = ("public", "internal", "confidential", "restricted")
+# Secret materialization follows an allowed side-effecting stage (see the
+# authorization flow in ENTERPRISE_AUTHORIZATION_V0_1): an allow for ``read``,
+# ``claim``, ``verify`` or ``audit_export`` must never unlock a secret.
+SECRET_ACCESS_ACTIONS = frozenset({"dispatch", "execute"})
 CREDENTIAL_KINDS = (
     "workload_identity",
     "secret_manager_reference",
@@ -139,9 +143,8 @@ def decide_external_processing(
     control = "external_processing"
     subject = _safe_subject(provider_id)
     valid, denial = _profile_or_deny(profile, control)
-    if denial is not None:
+    if valid is None:
         return denial
-    assert valid is not None
     if not isinstance(data_class, str) or data_class not in DATA_CLASSES:
         return _deny(control, "unknown_data_class", "data class is not recognised", subject)
     data = valid["data"]
@@ -212,9 +215,8 @@ def decide_egress(
 
     control = "egress"
     valid, denial = _profile_or_deny(profile, control)
-    if denial is not None:
+    if valid is None:
         return denial
-    assert valid is not None
     host = normalize_host(destination_host)
     if host is None:
         return _deny(control, "invalid_destination", "destination is not a bare hostname")
@@ -256,9 +258,8 @@ def decide_credential(profile: Any, *, credential_kind: object) -> DataPolicyDec
 
     control = "credential"
     valid, denial = _profile_or_deny(profile, control)
-    if denial is not None:
+    if valid is None:
         return denial
-    assert valid is not None
     if not isinstance(credential_kind, str) or credential_kind not in CREDENTIAL_KINDS:
         return _deny(control, "unknown_credential_kind", "credential kind is not recognised")
     secrets = valid["secrets"]
@@ -316,7 +317,8 @@ def authorize_secret_access(
     """Permit secret access only after authorization, from the profile's source.
 
     ``authorization`` must be an ``AuthorizationDecision`` whose effect is
-    ``allow`` (``requires_approval`` is not enough). ``requested_backend`` is the
+    ``allow`` (``requires_approval`` is not enough) and whose action is
+    ``dispatch`` or ``execute`` (``SECRET_ACCESS_ACTIONS``). ``requested_backend`` is the
     place untrusted provider/task text would land: any value other than the
     profile's own backend is denied, and a matching value is still only
     corroboration -- the source always comes from the profile. The decision
@@ -337,10 +339,16 @@ def authorize_secret_access(
             f"authorization effect is {authorization.effect}",
             _safe_subject(authorization.request_id),
         )
+    if authorization.action not in SECRET_ACCESS_ACTIONS:
+        return _deny(
+            control,
+            "authorization_action_not_permitted",
+            "only an allowed dispatch or execute decision can unlock a secret",
+            _safe_subject(authorization.request_id),
+        )
     valid, denial = _profile_or_deny(profile, control)
-    if denial is not None:
+    if valid is None:
         return denial
-    assert valid is not None
     backend = valid["secrets"]["backend"]
     if requested_backend is not None and requested_backend != backend:
         return _deny(

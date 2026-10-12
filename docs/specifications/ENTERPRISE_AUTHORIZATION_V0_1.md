@@ -369,7 +369,7 @@ v0.1 does not claim:
 - a production policy database;
 - policy caching;
 - break-glass implementation;
-- secret/egress enforcement;
+- secret/egress enforcement (the decision kernel exists, see [Enterprise Data Policy Kernel](ENTERPRISE_DATA_POLICY_V0_1.md), but is not wired into any runtime path);
 - database row-level security;
 - merge execution;
 - regulatory certification.

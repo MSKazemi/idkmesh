@@ -26,14 +26,14 @@ G2 = json.loads(
 APPROVED = ("provider-a",)
 
 
-def authz(effect: str = "allow") -> AuthorizationDecision:
+def authz(effect: str = "allow", action: str = "execute") -> AuthorizationDecision:
     return AuthorizationDecision(
         effect=effect,
         code="test",
         message="fixture",
         request_id="req-1",
         principal_id="github:user:alice",
-        action="read",
+        action=action,
         tenant_id="tenant-a",
         project_id="project-main",
         resource_type="secret",
@@ -264,6 +264,17 @@ class SecretAccessTests(unittest.TestCase):
                     self.access(authorization=authz(effect)).code,
                     "authorization_not_allowed",
                 )
+
+    def test_only_dispatch_and_execute_allows_unlock_secrets(self) -> None:
+        for action in ("dispatch", "execute"):
+            with self.subTest(action=action):
+                self.assertTrue(self.access(authorization=authz(action=action)).allowed)
+        for action in ("read", "claim", "release", "verify", "integrate",
+                       "manage_policy", "audit_export"):
+            with self.subTest(action=action):
+                decision = self.access(authorization=authz(action=action))
+                self.assertFalse(decision.allowed)
+                self.assertEqual(decision.code, "authorization_action_not_permitted")
 
     def test_request_text_cannot_select_the_secret_source(self) -> None:
         decision = self.access(requested_backend="environment")
