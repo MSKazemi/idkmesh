@@ -1,0 +1,696 @@
+{
+  "epochs": 50,
+  "experiment": "PHY-1-failover-frontier-v0",
+  "margin_standard_errors": 2.0,
+  "model_warning": "Synthetic admitted-network frontier comparison; not empirical evidence.",
+  "recommendation": "reject-promotion",
+  "retry_probabilities": [
+    0.0,
+    0.25,
+    0.5,
+    0.75,
+    1.0
+  ],
+  "scope_note": "Burden-matched failover frontier (retry probability 0, 0.25, 0.5, 0.75, 1). The failover arm orders paths by undiscounted posteriors, so it is one fixed, untuned frontier and not the strongest possible one. Same seeds as PHY-1-completion-sweep.json; no held-out split was opened.",
+  "seed_start": 1,
+  "seeds": 6,
+  "tasks_per_epoch": 10,
+  "topologies": {
+    "dense": {
+      "abrupt-shift": {
+        "discounted-thompson": {
+          "frontier_status": "within-range",
+          "gap_standard_error": 0.002366524,
+          "mean_gap_to_frontier": 0.038074111,
+          "mean_route_burden_per_task": 2.107266667,
+          "seeds_above_frontier": 6,
+          "success_rate": 0.878666667,
+          "verdict": "above-frontier"
+        },
+        "frontier": {
+          "0": {
+            "mean_route_burden_per_task": 2.0,
+            "success_rate": 0.789333333
+          },
+          "0.25": {
+            "mean_route_burden_per_task": 2.132533333,
+            "success_rate": 0.852666667
+          },
+          "0.5": {
+            "mean_route_burden_per_task": 2.238933333,
+            "success_rate": 0.899666667
+          },
+          "0.75": {
+            "mean_route_burden_per_task": 2.356266667,
+            "success_rate": 0.947666667
+          },
+          "1": {
+            "mean_route_burden_per_task": 2.450533333,
+            "success_rate": 0.997666667
+          }
+        },
+        "physarum": {
+          "frontier_status": "within-range",
+          "gap_standard_error": 0.007971536,
+          "mean_gap_to_frontier": -0.013355414,
+          "mean_route_burden_per_task": 2.158233333,
+          "seeds_above_frontier": 1,
+          "success_rate": 0.850333333,
+          "verdict": "on-frontier"
+        }
+      },
+      "correlated-ab-region-shocks": {
+        "discounted-thompson": {
+          "frontier_status": "below-frontier-floor",
+          "gap_standard_error": 0.014157847,
+          "mean_gap_to_frontier": -0.03779851,
+          "mean_route_burden_per_task": 2.089133333,
+          "seeds_above_frontier": 1,
+          "success_rate": 0.819666667,
+          "verdict": "uncompared"
+        },
+        "frontier": {
+          "0": {
+            "mean_route_burden_per_task": 2.165666667,
+            "success_rate": 0.856
+          },
+          "0.25": {
+            "mean_route_burden_per_task": 2.294466667,
+            "success_rate": 0.865666667
+          },
+          "0.5": {
+            "mean_route_burden_per_task": 2.481666667,
+            "success_rate": 0.935666667
+          },
+          "0.75": {
+            "mean_route_burden_per_task": 2.564266667,
+            "success_rate": 0.965666667
+          },
+          "1": {
+            "mean_route_burden_per_task": 2.551466667,
+            "success_rate": 0.993333333
+          }
+        },
+        "physarum": {
+          "frontier_status": "above-frontier-ceiling",
+          "gap_standard_error": 0.018849698,
+          "mean_gap_to_frontier": -0.048363472,
+          "mean_route_burden_per_task": 2.66225,
+          "seeds_above_frontier": 1,
+          "success_rate": 0.914333333,
+          "verdict": "dominated-by-frontier-endpoint"
+        }
+      },
+      "donor-burden-asymmetry": {
+        "discounted-thompson": {
+          "frontier_status": "within-range",
+          "gap_standard_error": 0.002366524,
+          "mean_gap_to_frontier": 0.038074111,
+          "mean_route_burden_per_task": 2.107266667,
+          "seeds_above_frontier": 6,
+          "success_rate": 0.878666667,
+          "verdict": "above-frontier"
+        },
+        "frontier": {
+          "0": {
+            "mean_route_burden_per_task": 2.0,
+            "success_rate": 0.789333333
+          },
+          "0.25": {
+            "mean_route_burden_per_task": 2.132533333,
+            "success_rate": 0.852666667
+          },
+          "0.5": {
+            "mean_route_burden_per_task": 2.238933333,
+            "success_rate": 0.899666667
+          },
+          "0.75": {
+            "mean_route_burden_per_task": 2.356266667,
+            "success_rate": 0.947666667
+          },
+          "1": {
+            "mean_route_burden_per_task": 2.450533333,
+            "success_rate": 0.997666667
+          }
+        },
+        "physarum": {
+          "frontier_status": "within-range",
+          "gap_standard_error": 0.006567956,
+          "mean_gap_to_frontier": -0.060005977,
+          "mean_route_burden_per_task": 2.266866667,
+          "seeds_above_frontier": 0,
+          "success_rate": 0.851,
+          "verdict": "below-frontier"
+        }
+      },
+      "gradual-shift": {
+        "discounted-thompson": {
+          "frontier_status": "within-range",
+          "gap_standard_error": 0.003892485,
+          "mean_gap_to_frontier": 0.038882309,
+          "mean_route_burden_per_task": 2.105,
+          "seeds_above_frontier": 6,
+          "success_rate": 0.87,
+          "verdict": "above-frontier"
+        },
+        "frontier": {
+          "0": {
+            "mean_route_burden_per_task": 2.0,
+            "success_rate": 0.783666667
+          },
+          "0.25": {
+            "mean_route_burden_per_task": 2.149733333,
+            "success_rate": 0.851333333
+          },
+          "0.5": {
+            "mean_route_burden_per_task": 2.2616,
+            "success_rate": 0.902666667
+          },
+          "0.75": {
+            "mean_route_burden_per_task": 2.373866667,
+            "success_rate": 0.948
+          },
+          "1": {
+            "mean_route_burden_per_task": 2.481866667,
+            "success_rate": 0.993666667
+          }
+        },
+        "physarum": {
+          "frontier_status": "within-range",
+          "gap_standard_error": 0.007546549,
+          "mean_gap_to_frontier": -0.015096509,
+          "mean_route_burden_per_task": 2.154766667,
+          "seeds_above_frontier": 1,
+          "success_rate": 0.838666667,
+          "verdict": "below-frontier"
+        }
+      },
+      "noisy-failure-attribution": {
+        "discounted-thompson": {
+          "frontier_status": "within-range",
+          "gap_standard_error": 0.002366524,
+          "mean_gap_to_frontier": 0.038074111,
+          "mean_route_burden_per_task": 2.107266667,
+          "seeds_above_frontier": 6,
+          "success_rate": 0.878666667,
+          "verdict": "above-frontier"
+        },
+        "frontier": {
+          "0": {
+            "mean_route_burden_per_task": 2.0,
+            "success_rate": 0.789333333
+          },
+          "0.25": {
+            "mean_route_burden_per_task": 2.132533333,
+            "success_rate": 0.852666667
+          },
+          "0.5": {
+            "mean_route_burden_per_task": 2.238933333,
+            "success_rate": 0.899666667
+          },
+          "0.75": {
+            "mean_route_burden_per_task": 2.356266667,
+            "success_rate": 0.947666667
+          },
+          "1": {
+            "mean_route_burden_per_task": 2.450533333,
+            "success_rate": 0.997666667
+          }
+        },
+        "physarum": {
+          "frontier_status": "within-range",
+          "gap_standard_error": 0.015817264,
+          "mean_gap_to_frontier": -0.01550106,
+          "mean_route_burden_per_task": 2.273333333,
+          "seeds_above_frontier": 2,
+          "success_rate": 0.898666667,
+          "verdict": "on-frontier"
+        }
+      },
+      "permanent-a-node-loss": {
+        "discounted-thompson": {
+          "frontier_status": "within-range",
+          "gap_standard_error": 0.009896703,
+          "mean_gap_to_frontier": 0.096049565,
+          "mean_route_burden_per_task": 2.158966667,
+          "seeds_above_frontier": 6,
+          "success_rate": 0.840333333,
+          "verdict": "above-frontier"
+        },
+        "frontier": {
+          "0": {
+            "mean_route_burden_per_task": 2.105866667,
+            "success_rate": 0.719666667
+          },
+          "0.25": {
+            "mean_route_burden_per_task": 2.3,
+            "success_rate": 0.809666667
+          },
+          "0.5": {
+            "mean_route_burden_per_task": 2.390666667,
+            "success_rate": 0.860333333
+          },
+          "0.75": {
+            "mean_route_burden_per_task": 2.509733333,
+            "success_rate": 0.908666667
+          },
+          "1": {
+            "mean_route_burden_per_task": 2.5964,
+            "success_rate": 0.951
+          }
+        },
+        "physarum": {
+          "frontier_status": "within-range",
+          "gap_standard_error": 0.007441352,
+          "mean_gap_to_frontier": 0.094808625,
+          "mean_route_burden_per_task": 2.29425,
+          "seeds_above_frontier": 6,
+          "success_rate": 0.902333333,
+          "verdict": "above-frontier"
+        }
+      },
+      "stationary": {
+        "discounted-thompson": {
+          "frontier_status": "within-range",
+          "gap_standard_error": 0.002736382,
+          "mean_gap_to_frontier": -0.007583333,
+          "mean_route_burden_per_task": 2.0018,
+          "seeds_above_frontier": 0,
+          "success_rate": 0.964666667,
+          "verdict": "below-frontier"
+        },
+        "frontier": {
+          "0": {
+            "mean_route_burden_per_task": 2.0,
+            "success_rate": 0.971666667
+          },
+          "0.25": {
+            "mean_route_burden_per_task": 2.0216,
+            "success_rate": 0.978666667
+          },
+          "0.5": {
+            "mean_route_burden_per_task": 2.0352,
+            "success_rate": 0.984333333
+          },
+          "0.75": {
+            "mean_route_burden_per_task": 2.052,
+            "success_rate": 0.990666667
+          },
+          "1": {
+            "mean_route_burden_per_task": 2.0704,
+            "success_rate": 0.998
+          }
+        },
+        "physarum": {
+          "frontier_status": "above-frontier-ceiling",
+          "gap_standard_error": 0.002816617,
+          "mean_gap_to_frontier": -0.031,
+          "mean_route_burden_per_task": 2.102716667,
+          "seeds_above_frontier": 0,
+          "success_rate": 0.967,
+          "verdict": "dominated-by-frontier-endpoint"
+        }
+      },
+      "transient-a-outage": {
+        "discounted-thompson": {
+          "frontier_status": "within-range",
+          "gap_standard_error": 0.01304887,
+          "mean_gap_to_frontier": -0.015449453,
+          "mean_route_burden_per_task": 2.118566667,
+          "seeds_above_frontier": 2,
+          "success_rate": 0.862,
+          "verdict": "on-frontier"
+        },
+        "frontier": {
+          "0": {
+            "mean_route_burden_per_task": 2.0,
+            "success_rate": 0.835333333
+          },
+          "0.25": {
+            "mean_route_burden_per_task": 2.108933333,
+            "success_rate": 0.873333333
+          },
+          "0.5": {
+            "mean_route_burden_per_task": 2.192,
+            "success_rate": 0.906
+          },
+          "0.75": {
+            "mean_route_burden_per_task": 2.299466667,
+            "success_rate": 0.95
+          },
+          "1": {
+            "mean_route_burden_per_task": 2.423866667,
+            "success_rate": 0.986666667
+          }
+        },
+        "physarum": {
+          "frontier_status": "within-range",
+          "gap_standard_error": 0.005157489,
+          "mean_gap_to_frontier": -0.024545913,
+          "mean_route_burden_per_task": 2.288666667,
+          "seeds_above_frontier": 0,
+          "success_rate": 0.920333333,
+          "verdict": "below-frontier"
+        }
+      }
+    },
+    "sparse": {
+      "abrupt-shift": {
+        "discounted-thompson": {
+          "frontier_status": "within-range",
+          "gap_standard_error": 0.006758854,
+          "mean_gap_to_frontier": 0.034130114,
+          "mean_route_burden_per_task": 2.102266667,
+          "seeds_above_frontier": 6,
+          "success_rate": 0.872333333,
+          "verdict": "above-frontier"
+        },
+        "frontier": {
+          "0": {
+            "mean_route_burden_per_task": 2.0,
+            "success_rate": 0.789333333
+          },
+          "0.25": {
+            "mean_route_burden_per_task": 2.132533333,
+            "success_rate": 0.852666667
+          },
+          "0.5": {
+            "mean_route_burden_per_task": 2.238933333,
+            "success_rate": 0.899666667
+          },
+          "0.75": {
+            "mean_route_burden_per_task": 2.356266667,
+            "success_rate": 0.947666667
+          },
+          "1": {
+            "mean_route_burden_per_task": 2.450533333,
+            "success_rate": 0.997666667
+          }
+        },
+        "physarum": {
+          "frontier_status": "within-range",
+          "gap_standard_error": 0.014950651,
+          "mean_gap_to_frontier": 0.032018974,
+          "mean_route_burden_per_task": 2.2042,
+          "seeds_above_frontier": 5,
+          "success_rate": 0.916333333,
+          "verdict": "above-frontier"
+        }
+      },
+      "correlated-ab-region-shocks": {
+        "discounted-thompson": {
+          "frontier_status": "below-frontier-floor",
+          "gap_standard_error": 0.01641747,
+          "mean_gap_to_frontier": -0.029,
+          "mean_route_burden_per_task": 2.024466667,
+          "seeds_above_frontier": 1,
+          "success_rate": 0.827,
+          "verdict": "uncompared"
+        },
+        "frontier": {
+          "0": {
+            "mean_route_burden_per_task": 2.165666667,
+            "success_rate": 0.856
+          },
+          "0.25": {
+            "mean_route_burden_per_task": 2.296266667,
+            "success_rate": 0.865666667
+          },
+          "0.5": {
+            "mean_route_burden_per_task": 2.480333333,
+            "success_rate": 0.935333333
+          },
+          "0.75": {
+            "mean_route_burden_per_task": 2.563266667,
+            "success_rate": 0.965333333
+          },
+          "1": {
+            "mean_route_burden_per_task": 2.550466667,
+            "success_rate": 0.993333333
+          }
+        },
+        "physarum": {
+          "frontier_status": "within-range",
+          "gap_standard_error": 0.013824266,
+          "mean_gap_to_frontier": -0.018086314,
+          "mean_route_burden_per_task": 2.399066667,
+          "seeds_above_frontier": 2,
+          "success_rate": 0.884666667,
+          "verdict": "on-frontier"
+        }
+      },
+      "donor-burden-asymmetry": {
+        "discounted-thompson": {
+          "frontier_status": "within-range",
+          "gap_standard_error": 0.006758854,
+          "mean_gap_to_frontier": 0.034130114,
+          "mean_route_burden_per_task": 2.102266667,
+          "seeds_above_frontier": 6,
+          "success_rate": 0.872333333,
+          "verdict": "above-frontier"
+        },
+        "frontier": {
+          "0": {
+            "mean_route_burden_per_task": 2.0,
+            "success_rate": 0.789333333
+          },
+          "0.25": {
+            "mean_route_burden_per_task": 2.132533333,
+            "success_rate": 0.852666667
+          },
+          "0.5": {
+            "mean_route_burden_per_task": 2.238933333,
+            "success_rate": 0.899666667
+          },
+          "0.75": {
+            "mean_route_burden_per_task": 2.356266667,
+            "success_rate": 0.947666667
+          },
+          "1": {
+            "mean_route_burden_per_task": 2.450533333,
+            "success_rate": 0.997666667
+          }
+        },
+        "physarum": {
+          "frontier_status": "within-range",
+          "gap_standard_error": 0.01260623,
+          "mean_gap_to_frontier": -0.006437138,
+          "mean_route_burden_per_task": 2.253066667,
+          "seeds_above_frontier": 3,
+          "success_rate": 0.898333333,
+          "verdict": "on-frontier"
+        }
+      },
+      "gradual-shift": {
+        "discounted-thompson": {
+          "frontier_status": "within-range",
+          "gap_standard_error": 0.005962056,
+          "mean_gap_to_frontier": 0.033558623,
+          "mean_route_burden_per_task": 2.108666667,
+          "seeds_above_frontier": 6,
+          "success_rate": 0.866333333,
+          "verdict": "above-frontier"
+        },
+        "frontier": {
+          "0": {
+            "mean_route_burden_per_task": 2.0,
+            "success_rate": 0.783666667
+          },
+          "0.25": {
+            "mean_route_burden_per_task": 2.149733333,
+            "success_rate": 0.851333333
+          },
+          "0.5": {
+            "mean_route_burden_per_task": 2.2616,
+            "success_rate": 0.902666667
+          },
+          "0.75": {
+            "mean_route_burden_per_task": 2.373866667,
+            "success_rate": 0.948
+          },
+          "1": {
+            "mean_route_burden_per_task": 2.481866667,
+            "success_rate": 0.993666667
+          }
+        },
+        "physarum": {
+          "frontier_status": "within-range",
+          "gap_standard_error": 0.011996784,
+          "mean_gap_to_frontier": 0.019533128,
+          "mean_route_burden_per_task": 2.171266667,
+          "seeds_above_frontier": 4,
+          "success_rate": 0.879666667,
+          "verdict": "on-frontier"
+        }
+      },
+      "noisy-failure-attribution": {
+        "discounted-thompson": {
+          "frontier_status": "within-range",
+          "gap_standard_error": 0.006758854,
+          "mean_gap_to_frontier": 0.034130114,
+          "mean_route_burden_per_task": 2.102266667,
+          "seeds_above_frontier": 6,
+          "success_rate": 0.872333333,
+          "verdict": "above-frontier"
+        },
+        "frontier": {
+          "0": {
+            "mean_route_burden_per_task": 2.0,
+            "success_rate": 0.789333333
+          },
+          "0.25": {
+            "mean_route_burden_per_task": 2.132533333,
+            "success_rate": 0.852666667
+          },
+          "0.5": {
+            "mean_route_burden_per_task": 2.238933333,
+            "success_rate": 0.899666667
+          },
+          "0.75": {
+            "mean_route_burden_per_task": 2.356266667,
+            "success_rate": 0.947666667
+          },
+          "1": {
+            "mean_route_burden_per_task": 2.450533333,
+            "success_rate": 0.997666667
+          }
+        },
+        "physarum": {
+          "frontier_status": "within-range",
+          "gap_standard_error": 0.013838039,
+          "mean_gap_to_frontier": -0.006590454,
+          "mean_route_burden_per_task": 2.2368,
+          "seeds_above_frontier": 2,
+          "success_rate": 0.891,
+          "verdict": "on-frontier"
+        }
+      },
+      "permanent-a-node-loss": {
+        "discounted-thompson": {
+          "frontier_status": "within-range",
+          "gap_standard_error": 0.005063438,
+          "mean_gap_to_frontier": 0.08559043,
+          "mean_route_burden_per_task": 2.1578,
+          "seeds_above_frontier": 6,
+          "success_rate": 0.829333333,
+          "verdict": "above-frontier"
+        },
+        "frontier": {
+          "0": {
+            "mean_route_burden_per_task": 2.105866667,
+            "success_rate": 0.719666667
+          },
+          "0.25": {
+            "mean_route_burden_per_task": 2.3,
+            "success_rate": 0.809666667
+          },
+          "0.5": {
+            "mean_route_burden_per_task": 2.390666667,
+            "success_rate": 0.860333333
+          },
+          "0.75": {
+            "mean_route_burden_per_task": 2.509733333,
+            "success_rate": 0.908666667
+          },
+          "1": {
+            "mean_route_burden_per_task": 2.5964,
+            "success_rate": 0.951
+          }
+        },
+        "physarum": {
+          "frontier_status": "within-range",
+          "gap_standard_error": 0.023191002,
+          "mean_gap_to_frontier": 0.111083057,
+          "mean_route_burden_per_task": 2.2938,
+          "seeds_above_frontier": 6,
+          "success_rate": 0.919666667,
+          "verdict": "above-frontier"
+        }
+      },
+      "stationary": {
+        "discounted-thompson": {
+          "frontier_status": "within-range",
+          "gap_standard_error": 0.004527916,
+          "mean_gap_to_frontier": -0.008790123,
+          "mean_route_burden_per_task": 2.003466667,
+          "seeds_above_frontier": 1,
+          "success_rate": 0.964,
+          "verdict": "on-frontier"
+        },
+        "frontier": {
+          "0": {
+            "mean_route_burden_per_task": 2.0,
+            "success_rate": 0.971666667
+          },
+          "0.25": {
+            "mean_route_burden_per_task": 2.0216,
+            "success_rate": 0.978666667
+          },
+          "0.5": {
+            "mean_route_burden_per_task": 2.0352,
+            "success_rate": 0.984333333
+          },
+          "0.75": {
+            "mean_route_burden_per_task": 2.052,
+            "success_rate": 0.990666667
+          },
+          "1": {
+            "mean_route_burden_per_task": 2.0704,
+            "success_rate": 0.998
+          }
+        },
+        "physarum": {
+          "frontier_status": "above-frontier-ceiling",
+          "gap_standard_error": 0.012973412,
+          "mean_gap_to_frontier": -0.028134461,
+          "mean_route_burden_per_task": 2.099933333,
+          "seeds_above_frontier": 0,
+          "success_rate": 0.959333333,
+          "verdict": "dominated-by-frontier-endpoint"
+        }
+      },
+      "transient-a-outage": {
+        "discounted-thompson": {
+          "frontier_status": "within-range",
+          "gap_standard_error": 0.010169678,
+          "mean_gap_to_frontier": -0.021035014,
+          "mean_route_burden_per_task": 2.1072,
+          "seeds_above_frontier": 1,
+          "success_rate": 0.852333333,
+          "verdict": "below-frontier"
+        },
+        "frontier": {
+          "0": {
+            "mean_route_burden_per_task": 2.0,
+            "success_rate": 0.835333333
+          },
+          "0.25": {
+            "mean_route_burden_per_task": 2.108933333,
+            "success_rate": 0.873333333
+          },
+          "0.5": {
+            "mean_route_burden_per_task": 2.192,
+            "success_rate": 0.906
+          },
+          "0.75": {
+            "mean_route_burden_per_task": 2.299466667,
+            "success_rate": 0.95
+          },
+          "1": {
+            "mean_route_burden_per_task": 2.423866667,
+            "success_rate": 0.986666667
+          }
+        },
+        "physarum": {
+          "frontier_status": "within-range",
+          "gap_standard_error": 0.021447414,
+          "mean_gap_to_frontier": 0.013043727,
+          "mean_route_burden_per_task": 2.223533333,
+          "seeds_above_frontier": 4,
+          "success_rate": 0.930333333,
+          "verdict": "on-frontier"
+        }
+      }
+    }
+  }
+}
