@@ -39,6 +39,7 @@ The wheel intentionally installs only `idkmesh/`. Running the research-backed `l
 | `connections validate/list/import/stored/probe` | Parse, inspect, locally persist connector metadata, use offline fake probes | No implicit live-provider dispatch |
 | `doctor PROFILE` | Offline connector readiness | Diagnostic only; no dispatch |
 | `doctor --github OBSERVATION --operation OP [--workflow PATH]` | Evaluate the read-only C12 GitHub governance preflight and optional workflow-source checks | Uses trusted normalized observations; no GitHub admin mutation, secret access, acceptance, or merge |
+| `doctor --enterprise-conformance [--json]` | Run the in-process E9 failure-mode scenarios (unauthorized actor, cross-tenant reference, replay, secret loss, audit-exporter outage, ledger restore, stale identity, self-approval) and report PASS/WARN/FAIL/UNKNOWN per scenario | Temp dirs and fakes only; exit 1 on FAIL or UNKNOWN; scenarios not yet exercised report UNKNOWN; not a SOC 2/ISO 27001/FedRAMP claim |
 | `route explain PROFILE DECISION` | Offline connector routing eligibility/explanation | Does not dispatch work or grant authority |
 | `init --github --dry-run --idkmesh-ref REF` | Pure deterministic GitHub-first bootstrap **plan**/render | Apply mode is **not** implemented; no repo writes |
 | `local-loop CONFIG [--output-dir PATH]` | Two-attempt reference orchestration and verification/evidence bundle | Checkout + `[verify]` extra; decisions/replay remain manual |
