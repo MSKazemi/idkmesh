@@ -237,9 +237,11 @@ This layout is now represented by the deterministic GitHub bootstrap plan. The c
 idkmesh init --github --dry-run --idkmesh-ref v0.1.0 --json
 ~~~
 
-The JSON output includes the four rendered C8-C files, their exact UTF-8 content,
-ownership/overwrite policy, byte size, and SHA-256 content digest. Apply mode
-remains disabled until the safe re-run/write boundary (C8-F) is implemented.
+The JSON output includes the four rendered C8-C files under `rendered_config_files`
+and the four C8-D GitHub Actions wrappers under `rendered_workflow_files`, each
+with exact UTF-8 content, ownership/overwrite policy, byte size, and SHA-256
+content digest. Apply mode remains disabled until the safe re-run/write boundary
+(C8-F) is implemented.
 
 Use the current reference contracts as templates:
 
@@ -254,8 +256,14 @@ DomainPack back to their schemas/canonical source.
 
 This is still a **render-only bootstrap surface**, not a completed external-project
 installer: it does not write files, create secrets, install provider apps, change
-branch protection, generate workflow wrappers, or dispatch work. Those boundaries
-remain explicit follow-on slices.
+branch protection, or dispatch work. It renders (but does not write) four thin
+`.github/workflows/idkmesh-*.yml` wrappers pinned to full-SHA Actions and to your
+`--idkmesh-ref`; see
+[GitHub Bootstrap Workflow Wrappers](specifications/GITHUB_BOOTSTRAP_WORKFLOW_WRAPPERS_V0_1.md).
+Those wrappers call a `github-workflow` runner that no released IDKMesh ref
+provides yet, so they would fail closed at their first probe step if committed
+today. Applying files, owner-action checks, and the runner remain explicit
+follow-on slices.
 
 ### Step 5 — define project policy before selecting models
 

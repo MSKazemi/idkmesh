@@ -328,10 +328,12 @@
       "evidence_level": 1,
       "implementation_paths": [
         "idkmesh/github_bootstrap.py",
-        "idkmesh/github_bootstrap_render.py"
+        "idkmesh/github_bootstrap_render.py",
+        "idkmesh/github_bootstrap_workflows.py"
       ],
       "specification_paths": [
         "docs/specifications/GITHUB_BOOTSTRAP_CONFIG_RENDERING_V0_1.md",
+        "docs/specifications/GITHUB_BOOTSTRAP_WORKFLOW_WRAPPERS_V0_1.md",
         "docs/PROJECT_ADOPTION_GUIDE.md"
       ],
       "cli_commands": [
@@ -340,11 +342,12 @@
       "evidence_paths": [
         "tests/test_github_bootstrap.py",
         "tests/test_github_bootstrap_cli.py",
-        "tests/test_github_bootstrap_render.py"
+        "tests/test_github_bootstrap_render.py",
+        "tests/test_github_bootstrap_workflows.py"
       ],
-      "known_limitation": "GitHub-first bootstrap planning and deterministic config rendering are implemented in dry-run mode; workflow wrappers, safe apply/re-run, and the external second-project pilot remain incomplete.",
+      "known_limitation": "GitHub-first bootstrap planning, deterministic config rendering, and pinned workflow-wrapper rendering are implemented in dry-run mode; the github-workflow runner the wrappers call, safe apply/re-run, and the external second-project pilot remain incomplete.",
       "last_verified_revision": "110f0307ad36d4cca554c19465d7cdc0605d3f21",
-      "public_wording": "IDKMesh provides a deterministic GitHub-first bootstrap dry-run that renders project/config content and digests; apply/workflow-pack and external reproduction remain unfinished.",
+      "public_wording": "IDKMesh provides a deterministic GitHub-first bootstrap dry-run that renders project/config and pinned workflow-wrapper content and digests; the workflow runner, apply, and external reproduction remain unfinished.",
       "qualification_artifact": null
     },
     {

@@ -17,7 +17,8 @@ Developer / operator
   |
   +-- idkmesh init --github --dry-run
   |       -> github_bootstrap.py -> github_bootstrap_render.py
-  |       -> reproducible file/owner-action plan only, NO APPLY
+  |                              -> github_bootstrap_workflows.py
+  |       -> reproducible file/owner-action plan + rendered config/workflow bytes, NO APPLY
   |
   +-- idkmesh doctor --github OBSERVATION [--workflow PATH]
   |       -> github_governance_policy.py -> github_governance_preflight.py

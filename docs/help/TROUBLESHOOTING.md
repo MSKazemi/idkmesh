@@ -10,7 +10,7 @@ description: "User and contributor troubleshooting for IDKMesh installation, loc
 | Goal | Correct entry point | What it does **not** do |
 | --- | --- | --- |
 | Evaluate multiple reviewers | `idkmesh gate-audit INPUT` | Run reviewers or decide acceptance |
-| Plan adoption in another GitHub repository | `idkmesh init --github --dry-run --idkmesh-ref REF` | Apply a workflow or mutate GitHub |
+| Plan adoption in another GitHub repository | `idkmesh init --github --dry-run --idkmesh-ref REF` | Write files, apply a workflow, or mutate GitHub |
 | Persist/read local run state | `idkmesh run create/list/status/evidence/cancel` | Execute/cancel a provider process |
 | Execute the bounded two-attempt reference demo | `idkmesh local-loop CONFIG` | Record a human decision or automatically replay |
 | Inspect existing evidence in a browser | `idkmesh control-tower` | Publish APIs externally, dispatch workers, push, or merge |

@@ -18,8 +18,9 @@ The renderer consumes a validated
 - `.idkmesh/connections.json`;
 - `.idkmesh/domain-packs/software-engineering-v0.1.domain-pack.json`.
 
-Workflow wrappers remain C8-D. Filesystem application and safe re-run behavior
-remain C8-F.
+Workflow wrappers are rendered by C8-D, see
+[GitHub Bootstrap Workflow Wrappers v0.1](GITHUB_BOOTSTRAP_WORKFLOW_WRAPPERS_V0_1.md).
+Filesystem application and safe re-run behavior remain C8-F.
 
 ## Determinism and generated identity
 
@@ -157,7 +158,8 @@ Focused tests cover:
 
 ## Follow-on
 
-- **C8-D:** render thin pinned workflow wrappers.
+- **C8-D:** rendered thin pinned workflow wrappers (now implemented; see the
+  workflow-wrapper specification).
 - **C8-E:** owner-action checklist/preflight.
 - **C8-F:** safe filesystem apply/re-run with user-edit preservation.
 - **C8-G:** fresh-repository bootstrap-to-preview acceptance fixture.

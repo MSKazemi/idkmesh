@@ -71,11 +71,13 @@ idkmesh init --github --dry-run \
   --idkmesh-ref 0123456789abcdef0123456789abcdef01234567 --json
 ```
 
-The current implementation exposes the deterministic bootstrap plan only. It
-performs no filesystem writes, GitHub mutations, secret access, workflow
+The current implementation exposes the deterministic bootstrap plan plus the
+rendered C8-C configuration and C8-D workflow-wrapper bytes and digests (see
+[GitHub Bootstrap Workflow Wrappers v0.1](GITHUB_BOOTSTRAP_WORKFLOW_WRAPPERS_V0_1.md)).
+It performs no filesystem writes, GitHub mutations, secret access, workflow
 execution, or repository administration. Omitting `--dry-run` fails closed
-until C8-C/C8-D rendering and C8-F safe re-run/conflict handling are
-implemented.
+until C8-F safe re-run/conflict handling is implemented. The rendered wrappers
+call a `github-workflow` runner that no released IDKMesh ref provides yet.
 
 Required behavior:
 

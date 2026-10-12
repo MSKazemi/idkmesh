@@ -470,7 +470,11 @@ conforming production backend.
   disabled secret-reference connector template, repository-local
   software-engineering DomainPack, generated ownership README, and SHA-256
   content identities. Rendering only; apply remains disabled.
-- **C8-D — workflow wrapper generation:** thin pinned preview/dispatch/verify/status workflows.
+- **C8-D — workflow wrapper generation:** implemented by
+  `idkmesh/github_bootstrap_workflows.py`; four thin full-SHA-pinned
+  preview/dispatch/verify/status wrappers rendered deterministically with
+  least-privilege permissions and SHA-256 content identities. Rendering only;
+  they call a `github-workflow` runner that does not exist yet (separate slice).
 - **C8-E — owner-action checklist:** secrets, branch protection, environments, app install.
 - **C8-F — re-run/update behavior:** preserve user edits and report conflicts.
 - **C8-G — fresh-repo fixture test:** bootstrap -> preview without server.
