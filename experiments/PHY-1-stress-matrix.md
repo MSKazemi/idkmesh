@@ -4,7 +4,8 @@
 **Date:** 2026-09-22  
 **Tracker:** #630  
 **Implementation:** `sim/physarum_compute_routing_stress.py`  
-**Retained completion sweep:** `experiments/results/PHY-1-completion-sweep.json`
+**Retained completion sweep:** `experiments/results/PHY-1-completion-sweep.json`  
+**Retained failover frontier:** `experiments/results/PHY-1-failover-frontier.json`
 
 ## Purpose
 
@@ -199,7 +200,8 @@ non-stationary environments. It sits between discounted Thompson (lower
 success, lower burden) and failover (higher success, higher burden). The
 rejection is therefore a decision-rule judgement and not a dominance result.
 Rule 2 requires a resilience advantage against explicit failover, and Physarum
-has none in success. A failover variant matched on burden was not tested. The
+has none in success. A failover variant matched on burden was not tested here; it is tested in the
+frontier section below. The
 sensitivity sweep covers one environment and one topology, and it reuses the
 evaluation seeds.
 
@@ -213,3 +215,95 @@ network evidence. It does satisfy the issue's decision purpose: the current
 synthetic evidence is insufficient to justify adding a Physarum production
 integration surface. Keep the simulator as research evidence; prefer simpler
 routing until a materially different experiment falsifies this conclusion.
+
+
+## Burden-matched failover frontier — 2026-10-12
+
+The completion sweep left one question open: its rejection compared Physarum
+with explicit failover that retries on **every** failure, so failover usually
+spent more burden and the comparison was not burden-matched. This section
+closes that gap on the same synthetic fixture. Tracker: #630.
+
+### Method
+
+`multipath-failover` gained a `retry_probability` knob (default `1.0`). A
+failed primary is retried only with that probability, so sweeping it over
+`0, 0.25, 0.5, 0.75, 1` traces a failover burden/success frontier. At `1.0` no
+extra random number is drawn, so the arm is the published failover arm
+unchanged: its retained numbers equal the completion sweep's failover cells
+(checked by a test), which keeps the new arm comparable with the baseline.
+
+Physarum and discounted Thompson are scored per seed as
+`success - frontier_success_at_that_seed's_own_burden`, where the frontier is
+the Pareto envelope of the five failover points (more burden for no more
+success is dropped), interpolated linearly. Failover, Physarum and Thompson
+share seeds 1-6, 50 epochs, 10 tasks per epoch, on both the `sparse` and
+`dense` views. Verdicts:
+
+- `above-frontier` / `below-frontier`: mean gap beyond 2 standard errors of the
+  per-seed gaps (an uncalibrated screen with n=6, not a significance test);
+- `on-frontier`: within 2 standard errors;
+- `dominated-by-frontier-endpoint`: Physarum burden is above failover's `p=1`
+  burden and its success is below it, in the means;
+- `uncompared`: burden below the cheapest failover point, so there is nothing
+  to interpolate against.
+
+Reproduce, and replay the retained artifact:
+
+```bash
+python sim/physarum_compute_routing_stress.py \
+  --failover-frontier --topology all --seeds 6 --epochs 50 --tasks-per-epoch 10
+```
+
+The retained result is `experiments/results/PHY-1-failover-frontier.json`; it
+is replayed from committed code by `tests/test_physarum_failover_frontier.py`
+(one cell in the unit tier, all 16 topology/environment cells in the `sim`-marked nightly test,
+compared by value within `1e-6`).
+
+### Result (synthetic)
+
+Verdicts over the 16 topology/environment cells:
+
+| Strategy | above frontier | on frontier | below frontier | dominated by endpoint | uncompared |
+|---|---|---|---|---|---|
+| physarum | 3 | 7 | 3 | 3 | 0 |
+| discounted-thompson | 10 | 2 | 2 | 0 | 2 |
+
+- Physarum is above the burden-matched failover frontier only in
+  `permanent-a-node-loss` on both views (gap +0.095 +/- 0.007 dense,
+  +0.111 +/- 0.023 sparse) and in `abrupt-shift` on the sparse view
+  (+0.032 +/- 0.015).
+- In each of those three cells discounted Thompson has a comparable gap at
+  lower burden (+0.096 +/- 0.010 dense node loss; +0.086 +/- 0.005 sparse node
+  loss, below Physarum's +0.111 by about one Physarum standard error;
+  +0.034 +/- 0.007 sparse abrupt). The
+  Physarum advantage over burden-matched failover is therefore not specific to
+  Physarum; a simpler adaptive baseline gets it too. Under decision rule 2 and
+  the "prefer the simpler baseline" clause this reaffirms the rejection.
+- Thompson is above the frontier in all non-correlated, non-transient,
+  non-stationary cells on both views; Physarum is not.
+- In `stationary` (both views) Physarum is dominated by the `p=1` failover
+  endpoint (success 0.967 / 0.959 against 0.998, at higher burden), and in
+  dense `correlated-ab-region-shocks` it is dominated too (success 0.914 at
+  burden 2.66 against 0.993 at 2.55).
+- Dense `donor-burden-asymmetry` is Physarum's worst cell: -0.060 +/- 0.007
+  below the frontier.
+
+### What this does and does not show
+
+Tested: one burden-matched failover frontier (five retry probabilities), two
+graph views, eight environments, six seeds, paired by seed.
+
+Not tested, and still open for #630:
+
+- the failover arm orders paths by **undiscounted** posteriors, so it adapts
+  slowly after a persistent change. The `above-frontier` cells are exactly the
+  persistent-change cells, so part of the Physarum and Thompson advantage there
+  may be a weak-frontier artifact. A failover arm with discounted posteriors
+  is the natural next arm and is not built;
+- a change-point-aware or contextual-bandit baseline;
+- sensitivity-sweep settings chosen on seeds disjoint from the evaluation seeds;
+- any real topology, network trace, or donor burden. Nothing here is empirical
+  evidence, and the held-out splits tracked by #973 were not opened.
+
+The recommendation stays **reject promotion to a dry-run planner**.

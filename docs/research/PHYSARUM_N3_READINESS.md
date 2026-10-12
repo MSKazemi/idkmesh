@@ -218,5 +218,9 @@ PHY-0 and PHY-1 justify continued **synthetic resilience research**.
 
 They do not yet justify an N3 product adapter.
 
+The 2026-10-12 burden-matched failover frontier (synthetic) did not change
+this: Physarum beats the frontier only where discounted Thompson does equally
+well at lower burden (`experiments/PHY-1-stress-matrix.md`).
+
 The next engineering work is real multi-node topology/telemetry, not more
 Physarum policy code.

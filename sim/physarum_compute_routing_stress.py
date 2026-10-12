@@ -414,11 +414,22 @@ def run_strategy(
     tasks_per_epoch: int = 20,
     config: base.Config | None = None,
     topology: Topology | None = None,
+    retry_probability: float = 1.0,
 ) -> Dict[str, object]:
+    """Run one strategy on one seed.
+
+    ``retry_probability`` only applies to ``multipath-failover``. At the
+    default of 1.0 no extra random number is drawn, so the arm is bit-for-bit
+    the published PHY-1 failover arm; below 1.0 a failed primary is retried
+    only with that probability, which traces the failover burden/success
+    frontier used by ``failover_frontier``.
+    """
     if strategy not in STRATEGIES:
         raise ValueError(f"unknown strategy: {strategy}")
     if epochs <= 0 or tasks_per_epoch <= 0:
         raise ValueError("epochs and tasks_per_epoch must be positive")
+    if not 0.0 <= retry_probability <= 1.0:
+        raise ValueError("retry_probability must be within [0, 1]")
 
     config = config or base.Config()
     topology = topology or topology_by_name("dense")
@@ -520,7 +531,17 @@ def run_strategy(
             final_success = success
             task_burden = primary_cost
 
-            if strategy == "multipath-failover" and not success:
+            if (
+                strategy == "multipath-failover"
+                and not success
+                and (
+                    retry_probability >= 1.0
+                    or (
+                        retry_probability > 0.0
+                        and rng.random() < retry_probability
+                    )
+                )
+            ):
                 ordered = greedy_path_order(
                     paths,
                     path_posteriors,
@@ -752,6 +773,194 @@ def parameter_sweep(
     }
 
 
+FRONTIER_RETRY_PROBABILITIES: Tuple[float, ...] = (0.0, 0.25, 0.5, 0.75, 1.0)
+FRONTIER_MARGIN_SE = 2.0
+
+
+def pareto_envelope(
+    points: Sequence[Tuple[float, float]],
+) -> List[Tuple[float, float]]:
+    """Keep only points no cheaper point matches or beats on success.
+
+    More burden for no more success is dominated, so it is not part of the
+    frontier a router could actually choose.
+    """
+    kept: List[Tuple[float, float]] = []
+    best = -math.inf
+    for burden, success in sorted(points):
+        if success > best:
+            kept.append((burden, success))
+            best = success
+    return kept
+
+
+def frontier_interpolate(
+    points: Sequence[Tuple[float, float]],
+    burden: float,
+) -> Tuple[float, str]:
+    """Piecewise-linear success of the failover frontier at ``burden``.
+
+    Returns ``(success, status)``. Outside the tested burden range the nearest
+    endpoint is returned and the status says so, because an extrapolated
+    frontier is not a measurement.
+    """
+    ordered = pareto_envelope(points)
+    if burden < ordered[0][0]:
+        return ordered[0][1], "below-frontier-floor"
+    if burden > ordered[-1][0]:
+        return ordered[-1][1], "above-frontier-ceiling"
+    for (b0, s0), (b1, s1) in zip(ordered, ordered[1:]):
+        if b0 <= burden <= b1:
+            if b1 == b0:
+                return max(s0, s1), "within-range"
+            weight = (burden - b0) / (b1 - b0)
+            return s0 + weight * (s1 - s0), "within-range"
+    return ordered[-1][1], "within-range"
+
+
+def _mean(values: Sequence[float]) -> float:
+    return sum(values) / len(values)
+
+
+def _standard_error(values: Sequence[float]) -> float:
+    if len(values) < 2:
+        return 0.0
+    centre = _mean(values)
+    variance = sum((v - centre) ** 2 for v in values) / (len(values) - 1)
+    return math.sqrt(variance / len(values))
+
+
+def failover_frontier(
+    seed_start: int = 1,
+    seeds: int = 6,
+    epochs: int = 50,
+    tasks_per_epoch: int = 10,
+    environment_names: Sequence[str] | None = None,
+    topology_name: str = "dense",
+    retry_probabilities: Sequence[float] = FRONTIER_RETRY_PROBABILITIES,
+) -> Dict[str, object]:
+    """Burden-matched comparison against an explicit failover frontier.
+
+    Explicit failover pays a retry on every failure, so it usually spends more
+    burden than Physarum and success alone cannot say whether Physarum is
+    cheaper per unit of resilience. Here failover is retried only with
+    probability ``p``; the resulting (burden, success) points form a frontier,
+    and Physarum and discounted Thompson are scored by their per-seed success
+    minus the frontier's interpolated success at that seed's own burden. The
+    frontier is built from the same seeds, so the comparison is paired.
+    """
+    if seeds <= 0:
+        raise ValueError("seeds must be positive")
+    if epochs <= 0 or tasks_per_epoch <= 0:
+        raise ValueError("epochs and tasks_per_epoch must be positive")
+    probabilities = sorted(set(float(p) for p in retry_probabilities))
+    if len(probabilities) < 2:
+        raise ValueError("a frontier needs at least two retry probabilities")
+    environments = (
+        [environment_by_name(name) for name in environment_names]
+        if environment_names
+        else list(ENVIRONMENTS)
+    )
+    topology = topology_by_name(topology_name)
+    seed_values = [seed_start + offset for offset in range(seeds)]
+    cells: Dict[str, Dict[str, object]] = {}
+
+    for environment in environments:
+
+        def rows(strategy: str, **kwargs: object) -> List[Dict[str, object]]:
+            return [
+                run_strategy(
+                    strategy,
+                    environment,
+                    seed=seed,
+                    epochs=epochs,
+                    tasks_per_epoch=tasks_per_epoch,
+                    topology=topology,
+                    **kwargs,
+                )
+                for seed in seed_values
+            ]
+
+        frontier_rows = {
+            p: rows("multipath-failover", retry_probability=p)
+            for p in probabilities
+        }
+        frontier = [
+            (
+                _mean([float(r["mean_route_burden_per_task"]) for r in group]),
+                _mean([float(r["success_rate"]) for r in group]),
+            )
+            for group in frontier_rows.values()
+        ]
+        cell: Dict[str, object] = {
+            "frontier": {
+                f"{p:g}": {
+                    "mean_route_burden_per_task": round(point[0], 9),
+                    "success_rate": round(point[1], 9),
+                }
+                for p, point in zip(probabilities, frontier)
+            },
+        }
+        for strategy in ("physarum", "discounted-thompson"):
+            group = rows(strategy)
+            gaps = []
+            for row in group:
+                expected, _ = frontier_interpolate(
+                    frontier,
+                    float(row["mean_route_burden_per_task"]),
+                )
+                gaps.append(float(row["success_rate"]) - expected)
+            burden = _mean(
+                [float(r["mean_route_burden_per_task"]) for r in group]
+            )
+            success = _mean([float(r["success_rate"]) for r in group])
+            _, status = frontier_interpolate(frontier, burden)
+            gap = _mean(gaps)
+            se = _standard_error(gaps)
+            endpoint_burden, endpoint_success = pareto_envelope(frontier)[-1]
+            if status == "below-frontier-floor":
+                verdict = "uncompared"
+            elif (
+                status == "above-frontier-ceiling"
+                and success < endpoint_success
+                and burden > endpoint_burden
+            ):
+                # Mean-level dominance by the cheapest best failover point.
+                verdict = "dominated-by-frontier-endpoint"
+            elif gap > FRONTIER_MARGIN_SE * se:
+                verdict = "above-frontier"
+            elif gap < -FRONTIER_MARGIN_SE * se:
+                verdict = "below-frontier"
+            else:
+                verdict = "on-frontier"
+            cell[strategy] = {
+                "mean_route_burden_per_task": round(burden, 9),
+                "success_rate": round(success, 9),
+                "mean_gap_to_frontier": round(gap, 9),
+                "gap_standard_error": round(se, 9),
+                "seeds_above_frontier": sum(1 for g in gaps if g > 0.0),
+                "frontier_status": status,
+                "verdict": verdict,
+            }
+        cells[environment.name] = cell
+
+    return {
+        "experiment": "physarum-adaptive-compute-routing-failover-frontier-v0",
+        "model_warning": (
+            "Synthetic admitted-network frontier comparison; "
+            "not empirical evidence."
+        ),
+        "seed_start": seed_start,
+        "seeds": seeds,
+        "epochs": epochs,
+        "tasks_per_epoch": tasks_per_epoch,
+        "topology": topology.name,
+        "retry_probabilities": probabilities,
+        "margin_standard_errors": FRONTIER_MARGIN_SE,
+        "environments": cells,
+    }
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--seed-start", type=int, default=1)
@@ -781,13 +990,48 @@ def main(argv: Sequence[str] | None = None) -> int:
             "for one environment"
         ),
     )
+    parser.add_argument(
+        "--failover-frontier",
+        action="store_true",
+        help=(
+            "compare Physarum and discounted Thompson with a burden-matched "
+            "failover frontier (retry probability swept from 0 to 1)"
+        ),
+    )
     parser.add_argument("--indent", type=int, default=2)
     args = parser.parse_args(argv)
 
     if min(args.seeds, args.epochs, args.tasks_per_epoch) <= 0:
         parser.error("seeds, epochs, and tasks-per-epoch must be positive")
 
-    if args.parameter_sweep:
+    if args.failover_frontier:
+        if args.parameter_sweep or args.strategy:
+            parser.error(
+                "--failover-frontier does not combine with "
+                "--parameter-sweep or --strategy"
+            )
+        names = (
+            tuple(topology.name for topology in TOPOLOGIES)
+            if args.topology == "all"
+            else (args.topology,)
+        )
+        payload = {
+            "experiment": (
+                "physarum-adaptive-compute-routing-failover-frontier-sweep-v0"
+            ),
+            "topologies": {
+                name: failover_frontier(
+                    seed_start=args.seed_start,
+                    seeds=args.seeds,
+                    epochs=args.epochs,
+                    tasks_per_epoch=args.tasks_per_epoch,
+                    environment_names=args.environment,
+                    topology_name=name,
+                )
+                for name in names
+            },
+        }
+    elif args.parameter_sweep:
         if args.topology == "all":
             parser.error("--parameter-sweep requires one topology")
         if args.strategy:
