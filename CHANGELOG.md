@@ -23,7 +23,9 @@ and the release notes for that tag.
   even with a valid session token, `Origin: null` is not a credential, no
   response reflects the `Origin` value, and refusals keep the
   browser-isolation headers. The no-grant check matches any
-  `Access-Control-*` header, not just the `-Allow` family.
+  `Access-Control-*` header, not just the `-Allow` family. The suite runs
+  in the `security` group of `make qualify-api`, keeping the release
+  qualification report in line with `docs/TESTING.md`.
 
 - C12 GitHub governance preflight (issue #607): `idkmesh doctor --github`
   now evaluates the canonical C12-A governance policy from bounded normalized
