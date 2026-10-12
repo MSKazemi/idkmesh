@@ -301,6 +301,109 @@ def build_parser() -> argparse.ArgumentParser:
         help="emit deterministic machine-readable dry-run JSON",
     )
 
+    github_workflow = sub.add_parser(
+        "github-workflow",
+        help="run one phase of a generated GitHub workflow wrapper",
+        description=(
+            "Runner behind the idkmesh-preview/-dispatch/-verify/-status "
+            "workflows that `idkmesh init --github` renders. Event data "
+            "arrives only through IDKMESH_PROJECT_ROOT, IDKMESH_REPOSITORY, "
+            "IDKMESH_BASE_SHA, IDKMESH_RUN_ID and the per-phase IDKMESH_* "
+            "variables documented in the workflow-wrapper specification. "
+            "preview and status are read-only and never dispatch, mutate "
+            "GitHub, read provider secrets, or merge. dispatch and verify "
+            "fail closed with dispatch_unavailable / verify_unavailable: "
+            "no stateless-runner primitive backs them yet. A refusal prints "
+            "'error: <code>: <message>' on stderr and exits 2."
+        ),
+        formatter_class=_ExamplesHelpFormatter,
+        epilog=(
+            "Examples:\n"
+            "  idkmesh github-workflow preview --issue-json issue.json --json\n"
+            "  idkmesh github-workflow status --ledger-records ledger.json --json"
+        ),
+    )
+    github_workflow_sub = github_workflow.add_subparsers(
+        dest="github_workflow_command",
+        required=True,
+    )
+    gw_preview = github_workflow_sub.add_parser(
+        "preview",
+        help="derive a WorkUnit preview for one issue (read-only)",
+        description=(
+            "Read IDKMESH_ISSUE_NUMBER from GitHub (or --issue-json), read "
+            ".idkmesh/project.json from IDKMESH_PROJECT_ROOT, and print a "
+            "deterministic WorkUnit preview and digest. Requires "
+            "metadata.github_issue_preview.allowed_paths in the project "
+            "manifest; .github/** and .idkmesh/** are always forbidden. "
+            "Appends a summary with no issue text to GITHUB_STEP_SUMMARY when "
+            "set. Performs no dispatch."
+        ),
+        formatter_class=_ExamplesHelpFormatter,
+        epilog=(
+            "Examples:\n"
+            "  idkmesh github-workflow preview --issue-json issue.json\n"
+            "  idkmesh github-workflow preview --issue-json issue.json --json"
+        ),
+    )
+    gw_preview.add_argument(
+        "--issue-json",
+        metavar="PATH",
+        help="offline GitHub issue REST object to use instead of calling GitHub",
+    )
+    gw_preview.add_argument(
+        "--json",
+        action="store_true",
+        dest="json_output",
+        help="emit the full machine-readable result",
+    )
+    gw_status = github_workflow_sub.add_parser(
+        "status",
+        help="project one run's latest ledger record into a status body (read-only)",
+        description=(
+            "Read the durable ledger records of IDKMESH_RUN_REFERENCE (from "
+            "--ledger-records, or the dedicated ledger branch through a "
+            "transport that refuses every mutation), verify the append-only "
+            "chain, and print the bounded status body. Appends it to "
+            "GITHUB_STEP_SUMMARY when set. Publishes no issue comment."
+        ),
+        formatter_class=_ExamplesHelpFormatter,
+        epilog=(
+            "Examples:\n"
+            "  idkmesh github-workflow status --ledger-records ledger.json\n"
+            "  idkmesh github-workflow status --ledger-records ledger.json --json"
+        ),
+    )
+    gw_status.add_argument(
+        "--ledger-records",
+        metavar="PATH",
+        help="offline JSON array of ledger records instead of reading GitHub",
+    )
+    gw_status.add_argument(
+        "--json",
+        action="store_true",
+        dest="json_output",
+        help="emit the full machine-readable result",
+    )
+    github_workflow_sub.add_parser(
+        "dispatch",
+        help="fails closed: dispatch_unavailable",
+        description=(
+            "Explicit candidate dispatch is not available in a stateless "
+            "runner: it needs retained delivery state, actor authorization "
+            "and a provider connector. Always exits 2 with "
+            "dispatch_unavailable and reads no environment or secret."
+        ),
+    )
+    github_workflow_sub.add_parser(
+        "verify",
+        help="fails closed: verify_unavailable",
+        description=(
+            "Independent candidate verification is not available in a "
+            "stateless runner. Always exits 2 with verify_unavailable and "
+            "reads no environment, candidate, or secret."
+        ),
+    )
     pages_site = sub.add_parser(
         "pages-site",
         help="write the read-only GitHub Pages site for public-safe projections",
@@ -2174,6 +2277,57 @@ def _run_github_init(args: argparse.Namespace) -> int:
     return 0
 
 
+def _run_github_workflow(args: argparse.Namespace) -> int:
+    """Run one wrapper phase; every refusal is a stable ``error: <code>``."""
+
+    from idkmesh.github_workflow_runner import (
+        GitHubWorkflowError,
+        run_preview,
+        run_status,
+        run_unavailable,
+    )
+
+    phase = args.github_workflow_command
+    try:
+        if phase == "preview":
+            result = run_preview(
+                os.environ,
+                issue_json=Path(args.issue_json) if args.issue_json else None,
+            )
+        elif phase == "status":
+            result = run_status(
+                os.environ,
+                ledger_records=(
+                    Path(args.ledger_records) if args.ledger_records else None
+                ),
+            )
+        else:
+            result = run_unavailable(phase)
+    except GitHubWorkflowError as exc:
+        return _fail(f"{exc.code}: {exc.message}")
+
+    if args.json_output:
+        # Compact single-line JSON: untrusted issue text is escaped inside the
+        # string values, so no output line can start a workflow command.
+        print(json.dumps(result, sort_keys=True, separators=(",", ":")))
+        return 0
+
+    print(f"IDKMesh GitHub workflow {phase}: ok")
+    print(f"repository: {result['repository']}")
+    print(f"issue: #{result['issue_number']}")
+    if phase == "preview":
+        print(f"work unit: {result['preview']['work_unit']['id']}")
+        print(f"work unit digest: {result['preview']['work_unit_digest']}")
+    else:
+        print(f"run: {result['run_reference']}")
+        print(f"state: {result['state']}")
+        print(f"status digest: {result['status_digest']}")
+    print("dispatch performed: no")
+    print("GitHub mutations: no")
+    print("secret values accessed: no")
+    return 0
+
+
 def _run_pages_site(args: argparse.Namespace) -> int:
     """Validate projections, render the Pages file map, write it locally."""
 
@@ -2277,6 +2431,8 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "init":
         return _run_github_init(args)
+    if args.command == "github-workflow":
+        return _run_github_workflow(args)
     if args.command == "pages-site":
         return _run_pages_site(args)
     if args.command == "run":
