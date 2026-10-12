@@ -20,6 +20,14 @@ and the release notes for that tag.
   or a safe `fallback` result for incomplete, duplicated, hand-edited,
   unsafe-path or out-of-vocabulary content; it never grants authority.
   Composition with `GitHubIssueWorkPolicy` and `work preview` is still open.
+- X4 forecast-interval instrument (refs #976): `experiments/forecast_intervals.py` adds the
+  piece of the X4 report E046 did not compute, the **interval coverage** of the intervals a
+  pilot forecaster reports, with bias, MAE and the 0.03 hit-rate, as a function of pilot size k.
+  It bootstraps beta-binomial, incidence (Chao et al. 2014), independence and pilot-only
+  forecasts by resampling tasks or pilot agents, scores them against the exact population
+  coverage (the blind-spot floor is its complement), and imports the frozen E046 analysis
+  unchanged. It is exploratory: on splits E046 already opened its output is post-hoc, and
+  no result has been run or claimed. Covered by `tests/test_x4_forecast_intervals.py`.
 - C12 GitHub governance preflight (issue #607): `idkmesh doctor --github`
   now evaluates the canonical C12-A governance policy from bounded normalized
   observations, reports PASS/WARN/FAIL/UNKNOWN/NOT_APPLICABLE, and treats
