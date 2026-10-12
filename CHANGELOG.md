@@ -248,6 +248,14 @@ and the release notes for that tag.
   503 responses are runtime representatives in
   `tests/test_api_contract_conformance.py`. No connector create, probe,
   enable/disable, secret resolution, dispatch, or provider call is added.
+- Read-only GitHub Pages site projection for issue #609 (C14-E):
+  `idkmesh/github_pages_site.py` renders a deterministic in-memory static file
+  map (health, active work, verification debt, per-run provenance pages,
+  public JSON, `.nojekyll`) from C14-D public-safe projections only,
+  re-validating every value, escaping HTML and Liquid delimiters, and emitting
+  no scripts, external assets, or mutation controls. See
+  [GitHub Pages Site Projection v0.1](docs/specifications/GITHUB_PAGES_SITE_V0_1.md).
+  No publishing workflow, GitHub call, or outage fallback is included.
 - Public-safe GitHub evidence projection for issue #609 (C14-D):
   `idkmesh/github_public_evidence.py` builds a strict whitelist over
   digest-bound Product Spine, CandidateReference, and Run Evidence Report

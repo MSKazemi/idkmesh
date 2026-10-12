@@ -232,6 +232,7 @@ name documents implementation presence, not stability as a public Python API.
 - `idkmesh/github_ledger_recovery.py`
 - `idkmesh/github_ledger_recovery_plan.py`
 - `idkmesh/github_ledger_serialization.py`
+- `idkmesh/github_pages_site.py`
 - `idkmesh/github_public_evidence.py`
 - `idkmesh/github_rest_source.py`
 - `idkmesh/github_routing_projection.py`

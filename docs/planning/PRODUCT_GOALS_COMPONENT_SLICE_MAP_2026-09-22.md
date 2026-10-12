@@ -618,7 +618,13 @@ independent human review.
   whitelist over digest-bound Product Spine/evidence metadata; raw
   prompts/logs/provider payloads/secrets and all actuation authority stay
   excluded, and the renderer rejects any mapping outside the whitelist.
-- **C14-E — read-only GitHub Pages generator.**
+- **C14-E — read-only GitHub Pages generator.** Implemented by
+  `idkmesh/github_pages_site.py`
+  ([contract](../specifications/GITHUB_PAGES_SITE_V0_1.md)): a pure
+  `render_github_pages_site()` file map (index with health/active
+  work/verification debt, per-run provenance pages, public JSON) built only
+  from C14-D projections; no script, no external asset, no mutation control.
+  The publishing workflow and outage fallback remain open (C14-H).
 - **C14-F — pilot release metadata/provenance.**
 - **C14-G — optional artifact attestation integration.**
 - **C14-H — no-GitHub-Pages fallback behavior.**
