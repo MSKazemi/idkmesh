@@ -14,6 +14,15 @@ and the release notes for that tag.
 
 ### Added
 
+- Enterprise conformance doctor, first slice (refs #676):
+  `idkmesh doctor --enterprise-conformance [--json]` runs nine in-process
+  destructive scenarios against the real tenant-scope, authorization, audit
+  ledger, run-idempotency and secret-boundary primitives (temp dirs and fakes
+  only) and reports PASS/WARN/FAIL/UNKNOWN per scenario with expected safe
+  state, observed result and evidence links. Stale claim/retry, provider
+  outage/quota and release provenance report UNKNOWN until they are built;
+  the overall status is therefore UNKNOWN (exit 1). Not a certification claim.
+  `idkmesh/enterprise_conformance.py`, `tests/test_enterprise_conformance.py`.
 - C12 GitHub governance preflight (issue #607): `idkmesh doctor --github`
   now evaluates the canonical C12-A governance policy from bounded normalized
   observations, reports PASS/WARN/FAIL/UNKNOWN/NOT_APPLICABLE, and treats

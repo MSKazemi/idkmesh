@@ -446,14 +446,18 @@ def build_parser() -> argparse.ArgumentParser:
             "governance preflight from trusted normalized observations and "
             "optional workflow source. GitHub mode performs no repository "
             "administration, secret access, dispatch, verification, acceptance, "
-            "or merge."
+            "or merge. With --enterprise-conformance, run the in-process E9 "
+            "destructive failure-mode scenarios against the enterprise "
+            "primitives in a temporary directory; no provider, GitHub, network "
+            "or real secret is touched, and the report is not a certification "
+            "claim."
         ),
         formatter_class=_ExamplesHelpFormatter,
         epilog=(
             "Examples:\n"
             "  idkmesh doctor tests/fixtures/connector_profiles_valid_v1alpha1.json\n"
-            "  idkmesh doctor --github examples/github-governance/governance-pass-v0.1.json\n"
-            "  idkmesh doctor --github examples/github-governance/governance-pass-v0.1.json --json"
+            "  idkmesh doctor --github examples/github-governance/governance-pass-v0.1.json --json\n"
+            "  idkmesh doctor --enterprise-conformance --json"
         ),
     )
     doctor.add_argument(
@@ -465,6 +469,14 @@ def build_parser() -> argparse.ArgumentParser:
         "--github",
         metavar="OBSERVATION",
         help="normalized GitHub governance observation JSON",
+    )
+    doctor.add_argument(
+        "--enterprise-conformance",
+        action="store_true",
+        help=(
+            "run the in-process enterprise failure-mode scenarios and report "
+            "PASS/WARN/FAIL/UNKNOWN per scenario (exit 1 on FAIL or UNKNOWN)"
+        ),
     )
     doctor.add_argument(
         "--operation",
@@ -1841,7 +1853,36 @@ def _run_events_control(args: argparse.Namespace) -> int:
     return 0
 
 
+def _run_enterprise_conformance(args: argparse.Namespace) -> int:
+    from idkmesh.enterprise_conformance import run_conformance
+
+    report = run_conformance()
+    if args.json_output:
+        print(json.dumps(report, sort_keys=True, separators=(",", ":")))
+    else:
+        print(f"enterprise conformance: {report['status']}")
+        for item in report["scenarios"]:
+            print(f"- {item['id']}: {item['status']} ({item['observed']})")
+        print(report["disclaimer"])
+    return 1 if report["status"] in {"FAIL", "UNKNOWN"} else 0
+
+
 def _run_doctor(args: argparse.Namespace) -> int:
+    if args.enterprise_conformance:
+        if (
+            args.profile
+            or args.github
+            or args.workflow
+            or args.codeowners_owner
+            or args.checked_at
+            or args.operation != "read_only"
+        ):
+            return _fail(
+                "--enterprise-conformance cannot be combined with a profile, "
+                "--github, --workflow, --codeowners-owner, --checked-at or "
+                "--operation"
+            )
+        return _run_enterprise_conformance(args)
     if args.github:
         if args.profile:
             return _fail("connector profile cannot be combined with --github")
