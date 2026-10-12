@@ -14,11 +14,6 @@ and the release notes for that tag.
 
 ### Added
 
-- E3-D authorization freshness cache (refs #670): `idkmesh/enterprise_authz_cache.py`
-  adds `AuthorizationDecisionCache`, keyed on the full normalized actor/approver,
-  policy content digest and request shape, with a validity window capped by
-  max age and actor/approver expiry, so a revoked, changed or expired identity
-  or an edited policy cannot reuse a cached ALLOW. Adds focused unit tests.
 - X4 forecast-interval instrument (refs #976): `experiments/forecast_intervals.py` adds the
   piece of the X4 report E046 did not compute, the **interval coverage** of the intervals a
   pilot forecaster reports, with bias, MAE and the 0.03 hit-rate, as a function of pilot size k.
