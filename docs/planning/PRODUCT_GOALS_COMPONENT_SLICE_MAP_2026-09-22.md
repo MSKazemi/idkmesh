@@ -586,8 +586,8 @@ independent human review.
 
 - **C13-A — Issue Form field contract.**
 - **C13-B — generated Issue Form template.**
-- **C13-C — issue body -> WorkUnit preview parser.**
-- **C13-D — incomplete/malicious fallback behavior.**
+- **C13-C — issue body -> WorkUnit preview parser.** Parser (#1049) merged; policy composition in the issue preview (`use_intake_form`) adds the restrict-only join with `GitHubIssueWorkPolicy`; the `work preview` CLI itself belongs to C7-C.
+- **C13-D — incomplete/malicious fallback behavior.** Parser fallback and the byte-identical generic-preview fallback are covered.
 - **C13-E — label projection from canonical work/run state.**
 - **C13-F — optional GitHub Project field mapping.**
 - **C13-G — idempotent Project sync.**
