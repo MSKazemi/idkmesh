@@ -103,6 +103,8 @@ requiring an HTTP client dependency. Current public methods are:
 
 - `ControlTowerClient.request_id` — last response request ID exposed for correlation
 - `ControlTowerClient.status()`
+- `ControlTowerClient.get_openapi()` — download the OpenAPI 3.x definition served by the running API
+- `ControlTowerClient.get_metrics()` — read the fixed-cardinality, privacy-safe operational metrics
 - `ControlTowerClient.inspect_run_evidence()`
 - `ControlTowerClient.get_run()`
 - `ControlTowerClient.get_run_evidence()`
@@ -205,6 +207,7 @@ name documents implementation presence, not stability as a public Python API.
 - `idkmesh/coordination_preflight.py`
 - `idkmesh/enterprise_audit.py`
 - `idkmesh/enterprise_authz.py`
+- `idkmesh/enterprise_conformance.py`
 - `idkmesh/enterprise_data_policy.py`
 - `idkmesh/enterprise_identity_github.py`
 - `idkmesh/enterprise_identity_oidc.py`
@@ -233,12 +236,14 @@ name documents implementation presence, not stability as a public Python API.
 - `idkmesh/github_ledger_recovery.py`
 - `idkmesh/github_ledger_recovery_plan.py`
 - `idkmesh/github_ledger_serialization.py`
+- `idkmesh/github_pages_site.py`
 - `idkmesh/github_public_evidence.py`
 - `idkmesh/github_rest_source.py`
 - `idkmesh/github_routing_projection.py`
 - `idkmesh/github_status_comment.py`
 - `idkmesh/github_status_update.py`
 - `idkmesh/github_webhook_ingress.py`
+- `idkmesh/github_workunit_intake.py`
 - `idkmesh/human_decision_service.py`
 - `idkmesh/jules_actions.py`
 - `idkmesh/jules_candidate_binding.py`

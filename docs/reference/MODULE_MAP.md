@@ -98,11 +98,13 @@ Primary context: [subsystem contract](../specifications/GITHUB_WEBHOOK_INGRESS_V
 | [`github_ledger_recovery.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_ledger_recovery.py) | Read-only derivation of a run's current state from its ledger records; keeps negative evidence and flags ambiguous submissions |
 | [`github_ledger_recovery_plan.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_ledger_recovery_plan.py) | Pure advisory safe-next-step plan for a recovered ledger run; reconciles unconfirmed provider submissions instead of resubmitting; grants no authority |
 | [`github_ledger_serialization.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_ledger_serialization.py) | Pure canonical serialization and append-only chain verification for GitHub ledger records; performs no Git or GitHub action |
+| [`github_pages_site.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_pages_site.py) | Pure read-only static Pages file map generated from public-safe evidence projections |
 | [`github_public_evidence.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_public_evidence.py) | Strict public-safe evidence publication projection |
 | [`github_rest_source.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_rest_source.py) | Bounded GitHub identity REST transport |
 | [`github_routing_projection.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_routing_projection.py) | Read-only GitHub UI projection of routing decision |
 | [`github_status_comment.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_status_comment.py) | One idempotently synchronized run-status comment |
 | [`github_status_update.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_status_update.py) | Immutable single-comment publication and recovery |
+| [`github_workunit_intake.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_workunit_intake.py) | Pure Issue Form body parser to untrusted intake hints; any malformed or hand-edited content falls back; never grants authority |
 | [`github_webhook_ingress.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_webhook_ingress.py) | HMAC-verified bounded webhook normalization |
 
 ## Jules connector lifecycle
@@ -153,6 +155,7 @@ Primary context: [subsystem contract](../architecture/ENTERPRISE_CONTROL_PLANE.m
 | --- | --- |
 | [`enterprise_audit.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/enterprise_audit.py) | Tenant-scoped tamper-evident audit ledger and exports |
 | [`enterprise_authz.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/enterprise_authz.py) | Actor/policy/action authorization kernel |
+| [`enterprise_conformance.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/enterprise_conformance.py) | In-process E9 failure-mode scenarios over the enterprise primitives; PASS/WARN/FAIL/UNKNOWN report, not a certification claim |
 | [`enterprise_data_policy.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/enterprise_data_policy.py) | Fail-closed external-processing, egress, credential and secret-access decisions from a profile |
 | [`enterprise_identity_github.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/enterprise_identity_github.py) | Trusted GitHub actor binding to ActorContext |
 | [`enterprise_identity_oidc.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/enterprise_identity_oidc.py) | Trusted IdP claims binding to ActorContext |

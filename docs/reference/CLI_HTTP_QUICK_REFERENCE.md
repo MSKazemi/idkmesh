@@ -39,6 +39,7 @@ The wheel intentionally installs only `idkmesh/`. Running the research-backed `l
 | `connections validate/list/import/stored/probe` | Parse, inspect, locally persist connector metadata, use offline fake probes | No implicit live-provider dispatch |
 | `doctor PROFILE` | Offline connector readiness | Diagnostic only; no dispatch |
 | `doctor --github OBSERVATION --operation OP [--workflow PATH]` | Evaluate the read-only C12 GitHub governance preflight and optional workflow-source checks | Uses trusted normalized observations; no GitHub admin mutation, secret access, acceptance, or merge |
+| `doctor --enterprise-conformance [--json]` | Run the in-process E9 failure-mode scenarios (unauthorized actor, cross-tenant reference, replay, secret loss, audit-exporter outage, ledger restore, stale identity, self-approval) and report PASS/WARN/FAIL/UNKNOWN per scenario | Temp dirs and fakes only; exit 1 on FAIL or UNKNOWN; scenarios not yet exercised report UNKNOWN; not a SOC 2/ISO 27001/FedRAMP claim |
 | `route explain PROFILE DECISION` | Offline connector routing eligibility/explanation | Does not dispatch work or grant authority |
 | `init --github --dry-run --idkmesh-ref REF` | Pure deterministic GitHub-first bootstrap **plan**/render | Apply mode is **not** implemented; no repo writes |
 | `local-loop CONFIG [--output-dir PATH]` | Two-attempt reference orchestration and verification/evidence bundle | Checkout + `[verify]` extra; decisions/replay remain manual |
@@ -107,7 +108,7 @@ result = client.status()
 print(result.value)
 ```
 
-`ControlTowerClient` exposes `status`, `inspect_run_evidence`, `list_connections`, `list_runs`, `get_run`, `get_run_attempts`, `get_run_evidence`, `list_work_units`, `get_work_unit`, `get_project`, and `list_events`; it does **not** expose a human-decision mutation or an SSE subscription helper. Read-list pagination uses opaque cursors and a maximum page size of 200. Error classes include `ClientConfigurationError`, `TransportError`, `ProtocolError`, `IntegrityError`, and `ApiResponseError` (see [source](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/api_client.py)). No public typed JavaScript client is claimed here.
+`ControlTowerClient` exposes `status`, `get_openapi` (download of the running OpenAPI definition), `get_metrics` (aggregate operational metrics), `inspect_run_evidence`, `list_connections`, `list_runs`, `get_run`, `get_run_attempts`, `get_run_evidence`, `list_work_units`, `get_work_unit`, `get_project`, and `list_events`; it does **not** expose a human-decision mutation or an SSE subscription helper. Read-list pagination uses opaque cursors and a maximum page size of 200. Error classes include `ClientConfigurationError`, `TransportError`, `ProtocolError`, `IntegrityError`, and `ApiResponseError` (see [source](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/api_client.py)). No public typed JavaScript client is claimed here.
 
 ## Source-of-truth and future endpoints
 

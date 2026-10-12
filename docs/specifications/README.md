@@ -87,6 +87,10 @@ meaning of an existing version.
   run/candidate/verification metadata only, with raw evidence, logs, prompts,
   provider payloads, identities, artifact locators, secrets, and all actuation
   authority excluded.
+- [GitHub Pages Site Projection v0.1](GITHUB_PAGES_SITE_V0_1.md) —
+  C14-E pure, deterministic static-site file map generated only from C14-D
+  public-safe projections: health, active work, verification debt, per-run
+  provenance; no scripts, no external assets, no mutation or approval surface.
 - [Verification Provenance Integrity](VERIFICATION_PROVENANCE_INTEGRITY.md) —
   binds WorkUnit, result, and verification objects with canonical digests.
 

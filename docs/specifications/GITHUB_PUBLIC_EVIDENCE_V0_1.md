@@ -129,8 +129,9 @@ therefore cannot smuggle extra fields past the projection builder.
 
 - C14-A (PR #932) renders a richer ephemeral Actions summary for operators.
 - C14-D (this contract) is the narrower public-safe data boundary.
-- C14-E should generate read-only Pages **from this projection or an equally
-  strict reviewed successor**, not from raw provider/evidence JSON.
+- C14-E ([GitHub Pages Site Projection](GITHUB_PAGES_SITE_V0_1.md)) generates
+  read-only Pages **from this projection or an equally strict reviewed
+  successor**, not from raw provider/evidence JSON.
 - C14-C (`idkmesh/github_evidence_link.py`) owns durable, commit-pinned
   evidence links after runner teardown; this projection carries no links
   beyond the canonical same-repository PR URL.
@@ -139,7 +140,7 @@ therefore cannot smuggle extra fields past the projection builder.
 ## Non-goals
 
 - no durable ledger;
-- no GitHub Pages generator;
+- no GitHub Pages publication (the pure site generator is C14-E);
 - no issue/PR comment mutation;
 - no repository-visibility API probe;
 - no secret scanner;
