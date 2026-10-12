@@ -25,6 +25,7 @@ from typing import Any, Generic, Mapping, TypeVar
 from urllib.parse import quote, urlencode, urlsplit
 
 from idkmesh import __version__
+from idkmesh.api_observability import METRICS_KIND
 from idkmesh.local_ui_security import TOKEN_HEADER
 from idkmesh.service_runtime import REQUEST_ID_HEADER
 from idkmesh.work_unit_binding import canonical_digest
@@ -480,6 +481,34 @@ class ControlTowerClient:
         return self._expect_kind(
             self._request("GET", f"/api/{API_VERSION}/status"),
             kind="idkmesh-control-tower-status",
+        )
+
+    def get_openapi(self) -> ApiResult[dict[str, Any]]:
+        """Download the machine-readable definition of the *running* API.
+
+        The document is the OpenAPI 3.x description served by this exact
+        Control Tower build (``GET /api/v1/openapi.json``), so integrators
+        can discover the live surface without reading server code. It has no
+        IDKMesh ``kind`` envelope; the client instead checks the OpenAPI
+        version marker and the ``info`` / ``paths`` structure and fails
+        closed with ``ProtocolError`` otherwise.
+        """
+        result = self._request("GET", f"/api/{API_VERSION}/openapi.json")
+        document = result.value
+        version = document.get("openapi")
+        if not isinstance(version, str) or not version.startswith("3."):
+            raise ProtocolError("openapi response has no OpenAPI 3.x version")
+        if not isinstance(document.get("info"), Mapping) or not isinstance(
+            document.get("paths"), Mapping
+        ):
+            raise ProtocolError("openapi response is missing info or paths")
+        return result
+
+    def get_metrics(self) -> ApiResult[dict[str, Any]]:
+        """Read the fixed-cardinality, privacy-safe operational metrics."""
+        return self._expect_kind(
+            self._request("GET", f"/api/{API_VERSION}/metrics"),
+            kind=METRICS_KIND,
         )
 
     def inspect_run_evidence(
