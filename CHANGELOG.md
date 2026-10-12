@@ -14,14 +14,6 @@ and the release notes for that tag.
 
 ### Added
 
-- AVE-core shadow adapter regression pins (refs #644):
-  `tests/test_ave_shadow_adapter_gates.py` isolates each of the nine hard gates
-  (WorkUnit id/version, pool binding, sovereignty, zero project spend,
-  independent-verification policy, required-validator coverage, schema version),
-  the critical risk target, and each step of the eight-step lexicographic order,
-  so a refactor cannot silently drop one. Tests only; no adapter behaviour
-  changed, and the real N3 cohort remains open pending actual pre-outcome
-  captures.
 - X4 forecast-interval instrument (refs #976): `experiments/forecast_intervals.py` adds the
   piece of the X4 report E046 did not compute, the **interval coverage** of the intervals a
   pilot forecaster reports, with bias, MAE and the 0.03 hit-rate, as a function of pilot size k.
