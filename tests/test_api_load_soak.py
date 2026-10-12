@@ -14,6 +14,7 @@ import copy
 import unittest
 from unittest import mock
 
+import pytest
 from tools import api_load_soak as soak
 
 LIMITS = {
@@ -89,6 +90,8 @@ class LiveSoakTests(unittest.TestCase):
         # Most endpoints are byte-stable when idle; those must stay identical
         # under load (corruption / cross-request bleed would show here).
         self.assertGreaterEqual(self.report["deterministic_endpoints_compared"], 5)
+
+    @pytest.mark.slow  # live soak under load (~1.2 CPU-s)
 
     def test_a_body_that_drifts_under_load_is_reported(self):
         client = mock.Mock()

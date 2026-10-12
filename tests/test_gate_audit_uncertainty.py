@@ -190,6 +190,7 @@ class PerfectPanelTests(unittest.TestCase):
         ]
         return panel(candidates, verifiers)
 
+    @pytest.mark.slow  # bootstrap interval (~0.7 CPU-s)
     def test_panel_error_and_accuracy_intervals_are_degenerate_points(self):
         report = gate_audit.audit(
             self._perfect_panel(), bootstrap={"seed": 0, "replicates": 200})
@@ -199,6 +200,7 @@ class PerfectPanelTests(unittest.TestCase):
         self.assertEqual(unc["mean_verifier_accuracy"]["ci_low"], 1.0)
         self.assertEqual(unc["mean_verifier_accuracy"]["ci_high"], 1.0)
 
+    @pytest.mark.slow  # bootstrap interval (~0.7 CPU-s)
     def test_effective_votes_interval_is_the_constant_floor_not_censored(self):
         report = gate_audit.audit(
             self._perfect_panel(), bootstrap={"seed": 0, "replicates": 200})
@@ -371,6 +373,7 @@ class CensoringTests(unittest.TestCase):
             vers.append({"id": f"v{j:02d}", "verdicts": verdicts})
         return panel(cands, vers)
 
+    @pytest.mark.slow  # bootstrap interval (~0.7 CPU-s)
     def test_unsaturated_panel_is_not_marked_censored(self):
         report = gate_audit.audit(
             self._comfortably_resolved_panel(),

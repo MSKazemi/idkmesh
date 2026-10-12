@@ -496,6 +496,7 @@ class FiniteSampleTests(unittest.TestCase):
             second["candidates"][0]["uncertainty"],
         )
 
+    @pytest.mark.slow  # paired bootstrap (~0.7 CPU-s)
     def test_bootstrap_resamples_current_and_augmented_panels_as_paired_rows(self):
         data = make_matrix(count=18)
         report = marginal_evidence.analyze(
