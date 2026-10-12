@@ -628,7 +628,10 @@ independent human review.
   `render_github_pages_site()` file map (index with health/active
   work/verification debt, per-run provenance pages, public JSON) built only
   from C14-D projections; no script, no external asset, no mutation control.
-  The publishing workflow and outage fallback remain open (C14-H).
+  `idkmesh pages-site` (`idkmesh/github_pages_writer.py`) writes that map to a
+  local directory all-or-nothing, refusing path traversal, symlinks, and
+  unrecognised non-empty directories without `--force`. The publishing
+  workflow and outage fallback remain open (C14-H).
 - **C14-F — pilot release metadata/provenance.**
 - **C14-G — optional artifact attestation integration.**
 - **C14-H — no-GitHub-Pages fallback behavior.**

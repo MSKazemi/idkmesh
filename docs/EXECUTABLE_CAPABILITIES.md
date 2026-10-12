@@ -29,6 +29,7 @@ methods, and every top-level Python module in `idkmesh/`.
 | `idkmesh gate-marginal-benchmark` | compare the marginal-evidence selector with preregistered baselines | benchmark/evidence surface, not routing authority |
 | `idkmesh gate-marginal-synthesis` | synthesize multiple benchmark cohorts descriptively | no cross-cohort winner or integration authority |
 | `idkmesh init` | deterministic GitHub-first bootstrap planning/rendering of config and pinned workflow wrappers | `--github --dry-run` only; no repository or GitHub mutation; rendered wrappers call a runner that no released IDKMesh ref provides yet |
+| `idkmesh pages-site` | validate C14-D public-safe projections, render the C14-E static Pages file map, and write exactly those files to a local directory | local files only; no publication, workflow, network or GitHub call; refuses unsafe paths, symlinks, and unrecognised non-empty directories unless `--force` |
 | `idkmesh connections` | validate, normalize, persist, and inspect connector metadata | no live dispatch, no raw secret persistence |
 | `idkmesh connections validate` | validate a versioned connector profile | read-only |
 | `idkmesh connections list` | list normalized connector metadata from a profile | read-only |
@@ -157,7 +158,7 @@ The recovery planner reconciles unconfirmed provider submissions rather than res
 blindly; none of these ledger layers grants dispatch, verification, acceptance, application
 branch write, integration, or merge authority. The package also includes explicit dispatch
 authorization/bridge logic, exact candidate observation, evidence/status publication
-helpers, governance-policy and read-only governance-preflight checks, public-evidence projection, and deterministic
+helpers, governance-policy and read-only governance-preflight checks, public-evidence projection, a static Pages site generator with a local-directory writer (`idkmesh pages-site`; no publication), and deterministic
 GitHub-first bootstrap planning/rendering.
 
 ### Enterprise control primitives
@@ -239,6 +240,7 @@ name documents implementation presence, not stability as a public Python API.
 - `idkmesh/github_ledger_recovery_plan.py`
 - `idkmesh/github_ledger_serialization.py`
 - `idkmesh/github_pages_site.py`
+- `idkmesh/github_pages_writer.py`
 - `idkmesh/github_public_evidence.py`
 - `idkmesh/github_rest_source.py`
 - `idkmesh/github_routing_projection.py`
