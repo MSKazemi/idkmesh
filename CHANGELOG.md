@@ -14,6 +14,49 @@ and the release notes for that tag.
 
 ### Added
 
+- E3-D authorization freshness cache (refs #670): `idkmesh/enterprise_authz_cache.py`
+  adds `AuthorizationDecisionCache`, keyed on the full normalized actor/approver,
+  policy content digest and request shape, with a validity window capped by
+  max age and actor/approver expiry, so a revoked, changed or expired identity
+  or an edited policy cannot reuse a cached ALLOW. Adds focused unit tests.
+- E5 data/egress/credential decision kernel (issue #672, partial):
+  `idkmesh/enterprise_data_policy.py` turns a validated enterprise control
+  profile into pure fail-closed decisions. External processing is checked per
+  exact data class (non-compensating, restricted denied unless its own flag is
+  true) against an explicit approved-provider list; egress is deny-by-default
+  with exact-hostname allowlisting and no wildcard or suffix matching;
+  long-lived cloud keys are refused by the profile switch and under an OIDC
+  backend; secret access requires a prior `allow` authorization decision and
+  the source comes from the profile, never from request text. Decisions carry
+  identifiers and reason codes only, read no secret value and grant no
+  authority. Not yet wired into any runtime path, and the profile still has no
+  egress-allowlist field, so #672 stays open.
+- Thread-safe authorization decision cache (refs #670): every operation of
+  `AuthorizationDecisionCache` is serialised by one lock, so concurrent request
+  threads cannot corrupt LRU order or the hit/miss counters; a threaded test
+  fails without the lock.
+- Data-policy hardening (refs #672): `authorize_secret_access` now unlocks a
+  secret only for an allowed `dispatch` or `execute` decision (an allow for
+  `read`, `claim`, `verify` or `audit_export` does not), production
+  `assert` statements are replaced with explicit checks, and
+  [Enterprise Data Policy Kernel v0.1](docs/specifications/ENTERPRISE_DATA_POLICY_V0_1.md)
+  specifies the kernel.
+- spine: pin the evidence-to-human-decision seam end to end (refs #682). A new
+  integration test drives the offline spine, run store, `idkmesh run evidence`,
+  the Control Tower client and `HumanDecisionService`, proving the shown digest
+  is the bound digest, stale or swapped digests fail closed, and recording a
+  decision changes no run state or evidence.
+- tests: pin required marginal-evidence fixture cases 1, 3, 4 and 10 by name and
+  map all ten in the spec (refs #693).
+- research: PHY-1 burden-matched failover frontier for Physarum routing
+  (synthetic). Physarum beats the frontier in 3/16 cells, discounted Thompson in
+  10/16; promotion stays rejected (refs #630).
+- `idkmesh init --github --dry-run` now renders the four pinned C8-D workflow
+  wrappers (`idkmesh-preview`, `-dispatch`, `-verify`, `-status`) as
+  `rendered_workflow_files`, with Actions pinned to full SHAs, least-privilege
+  permissions, an environment-gated dispatch secret and a fail-closed runner
+  probe. Rendering only; apply stays disabled and the runner is still owed
+  (refs #596).
 - API-11 discovery reads for issue #746: `ControlTowerClient.get_openapi()`
   downloads the OpenAPI 3.x definition of the running Control Tower
   (`GET /api/v1/openapi.json`) and `get_metrics()` reads the fixed-cardinality
