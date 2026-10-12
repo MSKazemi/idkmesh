@@ -14,12 +14,6 @@ and the release notes for that tag.
 
 ### Added
 
-- C13-C/C13-D GitHub WorkUnit intake parser (refs #608): the new pure
-  `idkmesh.github_workunit_intake.parse_workunit_intake` turns an
-  `IDKMesh WorkUnit request` Issue Form body into the frozen intake object
-  or a safe `fallback` result for incomplete, duplicated, hand-edited,
-  unsafe-path or out-of-vocabulary content; it never grants authority.
-  Composition with `GitHubIssueWorkPolicy` and `work preview` is still open.
 - X4 forecast-interval instrument (refs #976): `experiments/forecast_intervals.py` adds the
   piece of the X4 report E046 did not compute, the **interval coverage** of the intervals a
   pilot forecaster reports, with bias, MAE and the 0.03 hit-rate, as a function of pilot size k.
