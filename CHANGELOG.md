@@ -14,6 +14,45 @@ and the release notes for that tag.
 
 ### Added
 
+- tests: E3-G enterprise two-principal acceptance fixture (refs #670). Nine
+  in-process tests drive `authorize` behind the decision cache with every
+  outcome appended to the audit ledger under `TenantScope`. Four
+  separation-of-duties and audit gaps are documented in the spec, not fixed.
+- github: `preview_github_issue_work_unit(..., use_intake_form=True)` composes a
+  parsed WorkUnit Issue Form with `GitHubIssueWorkPolicy` (refs #608). The form
+  can only restrict: requested paths are intersected with policy scope,
+  forbidden paths are appended, risk and data classification can only rise, and
+  other hints are advisory. A fallback parse leaves the generic preview digest
+  unchanged.
+- github: `idkmesh pages-site` validates C14-D public-safe projections and
+  writes the C14-E Pages file map to a local directory all-or-nothing, refusing
+  unsafe paths, symlinks and unrecognised non-empty directories; no publication
+  or network (refs #609).
+- docs: API error catalog, limits and quickstart under `docs/reference/`, each
+  drift-tested against the code (refs #746). Corrects a stale statement that
+  the client omits `openapi.json` and `metrics`.
+- github: `idkmesh github-workflow {preview,status,dispatch,verify}`, the
+  stdlib-only runner the generated `init --github` wrappers call (refs #596).
+  `preview` and `status` are read-only; `dispatch` and `verify` fail closed
+  (`dispatch_unavailable`, `verify_unavailable`). Specified in
+  [GitHub Workflow Runner v0.1](docs/specifications/GITHUB_WORKFLOW_RUNNER_V0_1.md).
+- github: `idkmesh release-provenance` and `idkmesh/github_release_provenance.py`
+  (C14-F, refs #609): an offline record binding a proposed tag, target commit
+  and artifact digests (caller-supplied, unverified) to C14-D run evidence, with
+  fixed all-false claims and authority and no timestamps. Creates no tag,
+  release or attestation.
+- api: `ControlTowerClient.stream_events()` reads `GET /api/v1/events/stream` as
+  one bounded, strictly parsed, digest-checked `EventStream` with a mandatory
+  idle timeout and no reconnect; resuming with `Last-Event-ID` is the caller's
+  job (refs #746).
+- cli: offline `idkmesh work preview --issue-json` (C7-C, refs #580): an issue
+  snapshot file plus `.idkmesh/project.json` policy to the WorkUnit preview with
+  the Issue Form composition; read-only, no network, no dispatch. Policy
+  derivation is shared with `github-workflow preview`.
+- ci: 16 heavy replay, bootstrap, soak and process-spawning tests are marked
+  `slow` (nightly tier) because the unit tier had reached 90.7 CPU-s of test
+  time against its 90 CPU-s budget (refs #752). No test was deleted and the
+  budget is unchanged; the unit tier is now about 75 CPU-s.
 - E3-D authorization freshness cache (refs #670): `idkmesh/enterprise_authz_cache.py`
   adds `AuthorizationDecisionCache`, keyed on the full normalized actor/approver,
   policy content digest and request shape, with a validity window capped by
