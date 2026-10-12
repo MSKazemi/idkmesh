@@ -117,4 +117,6 @@ print(result.value)
 - **Not served by this local Control Tower:** `POST /api/v1/human-decisions`, generic connector dispatch/configure, network/multi-user mutations, and merge/integration endpoints. `human_decision_service.py` is a separate service-layer kernel, not a routed authenticated HTTP endpoint.
 - Historical planning candidates: [API surface catalog](../planning/API_V1_SURFACE_CATALOG_2026-09-23.md). An older `planned` row there does **not** override the router on current `main`.
 
+Integrator pages: [API quickstart](API_QUICKSTART.md) (executable curl and Python examples), [error catalog](API_ERROR_CATALOG.md) (every stable error code with status and retry rule) and [service limits](API_LIMITS.md) (timeouts, concurrency, body, header and event-stream bounds).
+
 For user-facing failures use [troubleshooting](../help/TROUBLESHOOTING.md). For file-by-file ownership use [module map](MODULE_MAP.md).
