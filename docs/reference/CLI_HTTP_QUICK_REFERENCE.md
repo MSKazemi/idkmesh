@@ -41,7 +41,9 @@ The wheel intentionally installs only `idkmesh/`. Running the research-backed `l
 | `doctor --github OBSERVATION --operation OP [--workflow PATH]` | Evaluate the read-only C12 GitHub governance preflight and optional workflow-source checks | Uses trusted normalized observations; no GitHub admin mutation, secret access, acceptance, or merge |
 | `doctor --enterprise-conformance [--json]` | Run the in-process E9 failure-mode scenarios (unauthorized actor, cross-tenant reference, replay, secret loss, audit-exporter outage, ledger restore, stale identity, self-approval) and report PASS/WARN/FAIL/UNKNOWN per scenario | Temp dirs and fakes only; exit 1 on FAIL or UNKNOWN; scenarios not yet exercised report UNKNOWN; not a SOC 2/ISO 27001/FedRAMP claim |
 | `route explain PROFILE DECISION` | Offline connector routing eligibility/explanation | Does not dispatch work or grant authority |
-| `init --github --dry-run --idkmesh-ref REF` | Pure deterministic GitHub-first bootstrap **plan**/render of config and pinned workflow wrappers (`rendered_config_files`, `rendered_workflow_files` in `--json`) | Apply mode is **not** implemented; no repo writes; wrappers call a runner not yet released |
+| `init --github --dry-run --idkmesh-ref REF` | Pure deterministic GitHub-first bootstrap **plan**/render of config and pinned workflow wrappers (`rendered_config_files`, `rendered_workflow_files` in `--json`) | Apply mode is **not** implemented; no repo writes; the wrappers call `github-workflow` below |
+| `github-workflow {preview,status} [--issue-json PATH \| --ledger-records PATH] [--json]` | Runner the generated `idkmesh-*.yml` wrappers call; reads `IDKMESH_*` environment variables. `preview` derives a WorkUnit preview and digest for one issue; `status` projects one run's latest durable-ledger record into the bounded status body and job summary | Read-only; no dispatch, issue comment, provider secret, or merge; refusals print `error: <code>: <message>` and exit 2 |
+| `github-workflow {dispatch,verify}` | Reserved wrapper phases | Always fail closed with `dispatch_unavailable` / `verify_unavailable`; read no environment or secret |
 | `local-loop CONFIG [--output-dir PATH]` | Two-attempt reference orchestration and verification/evidence bundle | Checkout + `[verify]` extra; decisions/replay remain manual |
 | `steward-report INPUT`, `steward-report-ui INPUT` | Validate and display retained single-run steward evidence | Offline read/loopback UI |
 | `steward-history INPUTS...`, `steward-history-ui INPUTS...` | Aggregate/show retained steward history | No GitHub polling or mutation |
@@ -59,6 +61,11 @@ idkmesh run list --store state.sqlite --json
 
 # Plan only. No bootstrap files are written:
 idkmesh init --github --dry-run --idkmesh-ref v0.1.0 --json
+
+# Runner phase as a generated wrapper invokes it; offline issue, no GitHub call:
+IDKMESH_PROJECT_ROOT=. IDKMESH_REPOSITORY=OWNER/REPO IDKMESH_RUN_ID=1 \
+  IDKMESH_BASE_SHA=0123456789abcdef0123456789abcdef01234567 IDKMESH_ISSUE_NUMBER=7 \
+  idkmesh github-workflow preview --issue-json issue.json
 
 # Evaluate the committed C12 fixture only; no GitHub API/admin mutation:
 idkmesh doctor --github examples/github-governance/governance-pass-v0.1.json \

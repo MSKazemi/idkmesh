@@ -20,6 +20,13 @@ Developer / operator
   |                              -> github_bootstrap_workflows.py
   |       -> reproducible file/owner-action plan + rendered config/workflow bytes, NO APPLY
   |
+  +-- idkmesh github-workflow preview | status | dispatch | verify   [inside a generated wrapper]
+  |       -> github_workflow_runner.py (stdlib-only; IDKMESH_* environment contract)
+  |       -> preview: github_issue_source.py -> github_issue_preview.py (project policy, not issue text)
+  |       -> status: github_ledger_github_store.py via a read-only transport -> github_status_comment.py body
+  |       -> dispatch / verify: fail closed (dispatch_unavailable / verify_unavailable)
+  |       -> NO dispatch, issue comment, provider secret, acceptance, or merge
+  |
   +-- idkmesh doctor --github OBSERVATION [--workflow PATH]
   |       -> github_governance_policy.py -> github_governance_preflight.py
   |       -> fail-closed governance/workflow preflight only

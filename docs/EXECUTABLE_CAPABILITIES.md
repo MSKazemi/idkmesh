@@ -28,7 +28,12 @@ methods, and every top-level Python module in `idkmesh/`.
 | `idkmesh gate-marginal` | measure marginal evidence contribution of candidate verifiers | diagnostic only |
 | `idkmesh gate-marginal-benchmark` | compare the marginal-evidence selector with preregistered baselines | benchmark/evidence surface, not routing authority |
 | `idkmesh gate-marginal-synthesis` | synthesize multiple benchmark cohorts descriptively | no cross-cohort winner or integration authority |
-| `idkmesh init` | deterministic GitHub-first bootstrap planning/rendering of config and pinned workflow wrappers | `--github --dry-run` only; no repository or GitHub mutation; rendered wrappers call a runner that no released IDKMesh ref provides yet |
+| `idkmesh init` | deterministic GitHub-first bootstrap planning/rendering of config and pinned workflow wrappers | `--github --dry-run` only; no repository or GitHub mutation; rendered wrappers call `idkmesh github-workflow`, whose `dispatch` and `verify` phases still fail closed |
+| `idkmesh github-workflow` | runner the generated GitHub workflow wrappers call, driven by `IDKMESH_*` environment variables | `preview` and `status` are read-only; `dispatch` and `verify` fail closed; no merge, no provider secret, no issue comment |
+| `idkmesh github-workflow preview` | derive a deterministic WorkUnit preview and digest for one issue from project policy | read-only; needs `metadata.github_issue_preview.allowed_paths`; no dispatch |
+| `idkmesh github-workflow status` | project one run's latest durable-ledger record into the bounded status body and job summary | read-only transport; publishes no issue comment |
+| `idkmesh github-workflow dispatch` | refuse with the stable `dispatch_unavailable` code | fails closed; reads no environment or secret |
+| `idkmesh github-workflow verify` | refuse with the stable `verify_unavailable` code | fails closed; reads no environment, candidate, or secret |
 | `idkmesh connections` | validate, normalize, persist, and inspect connector metadata | no live dispatch, no raw secret persistence |
 | `idkmesh connections validate` | validate a versioned connector profile | read-only |
 | `idkmesh connections list` | list normalized connector metadata from a profile | read-only |
@@ -245,6 +250,7 @@ name documents implementation presence, not stability as a public Python API.
 - `idkmesh/github_status_comment.py`
 - `idkmesh/github_status_update.py`
 - `idkmesh/github_webhook_ingress.py`
+- `idkmesh/github_workflow_runner.py`
 - `idkmesh/github_workunit_intake.py`
 - `idkmesh/human_decision_service.py`
 - `idkmesh/jules_actions.py`

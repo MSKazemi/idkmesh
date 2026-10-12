@@ -473,8 +473,14 @@ conforming production backend.
 - **C8-D — workflow wrapper generation:** implemented by
   `idkmesh/github_bootstrap_workflows.py`; four thin full-SHA-pinned
   preview/dispatch/verify/status wrappers rendered deterministically with
-  least-privilege permissions and SHA-256 content identities. Rendering only;
-  they call a `github-workflow` runner that does not exist yet (separate slice).
+  least-privilege permissions and SHA-256 content identities. Rendering only.
+- **Runner slice (follows C8-D):** implemented by
+  `idkmesh/github_workflow_runner.py`; `idkmesh github-workflow` is what the
+  wrappers call. `preview` (project-policy WorkUnit preview from one issue) and
+  `status` (durable-ledger projection into the job summary) are read-only;
+  `dispatch` and `verify` fail closed (`dispatch_unavailable`,
+  `verify_unavailable`) because no stateless-runner authority primitive backs
+  them. See [GitHub Workflow Runner](../specifications/GITHUB_WORKFLOW_RUNNER_V0_1.md).
 - **C8-E — owner-action checklist:** secrets, branch protection, environments, app install.
 - **C8-F — re-run/update behavior:** preserve user edits and report conflicts.
 - **C8-G — fresh-repo fixture test:** bootstrap -> preview without server.

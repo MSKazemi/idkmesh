@@ -107,6 +107,7 @@ Primary context: [subsystem contract](../specifications/GITHUB_WEBHOOK_INGRESS_V
 | [`github_status_update.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_status_update.py) | Immutable single-comment publication and recovery |
 | [`github_workunit_intake.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_workunit_intake.py) | Pure Issue Form body parser to untrusted intake hints; any malformed or hand-edited content falls back; never grants authority |
 | [`github_webhook_ingress.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_webhook_ingress.py) | HMAC-verified bounded webhook normalization |
+| [`github_workflow_runner.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_workflow_runner.py) | Stdlib-only runner behind the generated workflow wrappers: read-only issue preview and ledger status; dispatch and verify fail closed |
 
 ## Jules connector lifecycle
 

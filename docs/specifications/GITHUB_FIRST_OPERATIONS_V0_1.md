@@ -77,7 +77,7 @@ rendered C8-C configuration and C8-D workflow-wrapper bytes and digests (see
 It performs no filesystem writes, GitHub mutations, secret access, workflow
 execution, or repository administration. Omitting `--dry-run` fails closed
 until C8-F safe re-run/conflict handling is implemented. The rendered wrappers
-call a `github-workflow` runner that no released IDKMesh ref provides yet.
+call the `github-workflow` runner ([GitHub Workflow Runner v0.1](GITHUB_WORKFLOW_RUNNER_V0_1.md)): `preview` and `status` are read-only, while `dispatch` and `verify` fail closed.
 
 Required behavior:
 
