@@ -180,6 +180,12 @@ Output:
 
 The operation does not merge, push, or mutate protected application state.
 
+Implementation status: the transport-neutral decision core
+(`idkmesh/human_decision_service.py`) persists the record in its own append-only
+store, bound to the retained evidence digest. It does not yet transition a
+persisted run to `decided`; that reconciliation needs an accountable-principal
+adapter (#740) and a change to the offline-row read-only rule of ADR-0024.
+
 ## 5. Idempotency
 
 Each mutating service operation must have a deterministic request digest.
