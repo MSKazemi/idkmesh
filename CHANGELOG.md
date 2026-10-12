@@ -127,6 +127,11 @@ and the release notes for that tag.
   acceptance table that states what is still open. New
   `tests/test_api_storage_integrity.py` covers event integrity, migration
   replay, restart reconstruction and backup.
+- `ControlTowerReadAuthBeforeLookupTests` (issue #739): pins, across every
+  Product Spine read route, that a missing or wrong session token gets the same
+  403 whether or not the id exists (no 404-vs-403 existence probe), and that
+  an unknown id with the token is an explicit 404. Test-only; no behaviour
+  change.
 - `LocalMetadataStore.prune_probe_history()` (issue #750): removes superseded
   probe rows and keeps the latest per connection, the one expendable class in
   the API storage retention matrix. Runs, idempotency records, events and
