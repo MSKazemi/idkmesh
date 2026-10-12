@@ -1,6 +1,6 @@
 ---
 title: "Control Tower API Quickstart"
-description: "Start the local Control Tower, then read runs, evidence, events, the live OpenAPI definition and metrics with curl and the official Python client, including error handling. Every Python snippet is executed by a test."
+description: "Start the local Control Tower, then read runs, evidence, events, the live event stream, the live OpenAPI definition and metrics with curl and the official Python client, including error handling. Every Python snippet is executed by a test."
 ---
 # Control Tower API quickstart
 
@@ -114,6 +114,51 @@ print(run.request_id, run.value["run"]["state"])
 `get_project`, `list_connections` and `list_events` follow the same shape. Run
 IDs may contain `/` and `:`; the client encodes them for you.
 
+### Follow the event stream
+
+`client.stream_events(...)` opens `GET /api/v1/events/stream` (Server-Sent
+Events) and yields validated events in sequence order. It makes exactly one
+request, never reconnects, and ends when the server, you, or a bound you set
+ends it. Use it as a context manager so the connection, and the server's stream
+slot, is released as soon as you stop.
+
+`idle_timeout` is mandatory: the longest the client waits for the next byte.
+The server sends a keepalive comment every 15 seconds, so pass at least 20 for a
+quiet stream. Without `last_event_id` the stream starts at the live tail; with
+it, every event whose sequence is greater is replayed first (`0` replays the
+whole history), then live events follow. Filters (`project_id`, `run_id`,
+`work_unit_id`, `event_type`) mean what they mean on `list_events`.
+
+```python
+with client.stream_events(
+    idle_timeout=20.0, last_event_id=0, max_events=1
+) as stream:
+    for item in stream:
+        print(item.sequence, item.event_type, item.event["run_id"])
+    print(stream.request_id, stream.last_event_id, stream.end_reason)
+```
+
+Each `StreamedEvent` carries `sequence`, `event_type` and the full
+`idkmesh-event` envelope. Before an event reaches you, the client checks that
+the frame matches the documented envelope (exact key set, `kind`,
+`schema_version`, `event_id`), that its sequence is strictly greater than the
+previous one, that it matches your filters, and that `payload_digest` is the
+digest of `payload` (`IntegrityError` otherwise). Anything else on the wire,
+an unknown field, a duplicate field, a comment other than `keepalive` or
+`stream-ended`, or a line or frame over `max_frame_bytes` (default 1 MiB), is a
+`ProtocolError`, and the stream closes itself.
+
+Iteration stops with `stream.end_reason` set to the server's marker
+(`max-duration` after 300 seconds, `shutdown`, `store-error`) or to a bound you
+set (`client-max-events`, `client-max-seconds`). **Resuming is your job**: open
+a new stream with `last_event_id=stream.last_event_id`. Delivery is
+at-least-once across connections, so dedupe on `event_id`. A stalled stream or a
+connection that drops without a marker raises `TransportError`; resume the same
+way. Errors sent before the stream starts (bad token, `invalid_last_event_id`,
+`too_many_streams`) are the usual `ApiResponseError`. The server rejects a
+`Last-Event-ID` beyond its newest event with `400 invalid_last_event_id`, so
+never carry an ID over from a different store.
+
 ### Inspect an evidence report
 
 `inspect_run_evidence` sends a report you hold to `POST /api/v1/run-evidence/inspect`
@@ -182,6 +227,9 @@ that names a different run, work unit or project than you asked for) and
   any document is returned; embedded evidence and snapshot digests are checked
   independently.
 - Request IDs are exposed on every result and error.
+- An event stream has a mandatory idle timeout and a wall-clock bound, bounded
+  lines and frames, strict parsing, and a digest check on every event; it never
+  reconnects on its own.
 
 ## Response headers
 
@@ -215,7 +263,6 @@ are **not** built. Do not code against them.
 |---|---|
 | `client.record_human_decision(...)` and `POST /api/v1/human-decisions` | blocked on [#740](https://github.com/MSKazemi/idkmesh/issues/740): it needs an authenticated, accountable identity, and the local session token is not one |
 | `GET /api/v1/runs/{run_id}/decisions` | same blocker (#740); the route answers `404 not_found` today |
-| a Python client helper for the event stream | open on #746. The server stream, `GET /api/v1/events/stream` (Server-Sent Events, resumable with `Last-Event-ID`), exists and can be read with plain HTTP; the client has no wrapper for it |
 | a typed TypeScript client generated from the OpenAPI document | open on #746, deferred until v1 stabilizes |
 | publishing the Python client to a package index | tracked separately; today it ships inside the `idkmesh` checkout |
 

@@ -179,6 +179,9 @@ class _ServerCase(unittest.TestCase):
         thread.start()
 
         def stop():
+            # An event stream a quickstart snippet left open outlives
+            # shutdown(); drain() ends it before the temp store is removed.
+            server.drain(timeout=5.0)
             server.shutdown()
             server.server_close()
             thread.join(timeout=2)
@@ -836,7 +839,10 @@ class IntegrationTests(unittest.TestCase):
         from idkmesh.api_client import ControlTowerClient
 
         self.assertFalse(hasattr(ControlTowerClient, "record_human_decision"))
-        self.assertFalse(hasattr(ControlTowerClient, "stream_events"))
+        # The event-stream helper shipped, so it must not be listed as planned.
+        self.assertTrue(callable(getattr(ControlTowerClient, "stream_events", None)))
+        planned = quickstart.split("## Planned, not available today")[1]
+        self.assertNotIn("event stream", planned)
 
     def test_the_spec_no_longer_says_the_client_omits_openapi_and_metrics(self):
         text = SPEC.read_text(encoding="utf-8")
