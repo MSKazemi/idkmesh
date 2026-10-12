@@ -14,15 +14,6 @@ and the release notes for that tag.
 
 ### Added
 
-- Enterprise conformance doctor, first slice (refs #676):
-  `idkmesh doctor --enterprise-conformance [--json]` runs nine in-process
-  destructive scenarios against the real tenant-scope, authorization, audit
-  ledger, run-idempotency and secret-boundary primitives (temp dirs and fakes
-  only) and reports PASS/WARN/FAIL/UNKNOWN per scenario with expected safe
-  state, observed result and evidence links. Stale claim/retry, provider
-  outage/quota and release provenance report UNKNOWN until they are built;
-  the overall status is therefore UNKNOWN (exit 1). Not a certification claim.
-  `idkmesh/enterprise_conformance.py`, `tests/test_enterprise_conformance.py`.
 - X4 forecast-interval instrument (refs #976): `experiments/forecast_intervals.py` adds the
   piece of the X4 report E046 did not compute, the **interval coverage** of the intervals a
   pilot forecaster reports, with bias, MAE and the 0.03 hit-rate, as a function of pilot size k.
