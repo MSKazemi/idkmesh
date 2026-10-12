@@ -103,6 +103,7 @@ Primary context: [subsystem contract](../specifications/GITHUB_WEBHOOK_INGRESS_V
 | [`github_routing_projection.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_routing_projection.py) | Read-only GitHub UI projection of routing decision |
 | [`github_status_comment.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_status_comment.py) | One idempotently synchronized run-status comment |
 | [`github_status_update.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_status_update.py) | Immutable single-comment publication and recovery |
+| [`github_workunit_intake.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_workunit_intake.py) | Pure Issue Form body parser to untrusted intake hints; any malformed or hand-edited content falls back; never grants authority |
 | [`github_webhook_ingress.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_webhook_ingress.py) | HMAC-verified bounded webhook normalization |
 
 ## Jules connector lifecycle

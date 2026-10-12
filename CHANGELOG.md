@@ -14,6 +14,12 @@ and the release notes for that tag.
 
 ### Added
 
+- C13-C/C13-D GitHub WorkUnit intake parser (refs #608): the new pure
+  `idkmesh.github_workunit_intake.parse_workunit_intake` turns an
+  `IDKMesh WorkUnit request` Issue Form body into the frozen intake object
+  or a safe `fallback` result for incomplete, duplicated, hand-edited,
+  unsafe-path or out-of-vocabulary content; it never grants authority.
+  Composition with `GitHubIssueWorkPolicy` and `work preview` is still open.
 - C12 GitHub governance preflight (issue #607): `idkmesh doctor --github`
   now evaluates the canonical C12-A governance policy from bounded normalized
   observations, reports PASS/WARN/FAIL/UNKNOWN/NOT_APPLICABLE, and treats
