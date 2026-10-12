@@ -414,3 +414,35 @@ def build_github_bootstrap_plan(
         files=tuple(sorted(files, key=lambda item: item.path)),
         owner_actions=tuple(sorted(owner_actions, key=lambda item: item.code)),
     )
+
+
+def render_owner_action_checklist(plan: GitHubBootstrapPlan) -> str:
+    """Render the C8-E manual setup boundary as a deterministic checklist.
+
+    Input is the trusted bootstrap plan, never issue or provider text.
+    No file, network, secret, GitHub admin or dispatch operation occurs.
+    """
+    if not isinstance(plan, GitHubBootstrapPlan):
+        raise TypeError("plan must be GitHubBootstrapPlan")
+    lines = [
+        "# IDKMesh GitHub setup - repository owner checklist",
+        "",
+        f"Pinned IDKMesh ref: {plan.idkmesh_ref}",
+        f"Integration branch: {plan.default_branch}",
+        "",
+        "Generated workflow/config files are proposals, not installed automation.",
+        "The repository owner must perform and verify each action:",
+        "",
+    ]
+    for action in plan.owner_actions:
+        lines.append(f"- [ ] {action.code}: {action.summary}")
+        lines.append(f"  Rationale: {action.reason}")
+    lines.extend([
+        "",
+        "Do not paste secret values into issues, logs or this checklist.",
+        "Do not weaken branch protection or grant workers merge authority.",
+        "The github-workflow runner is not implemented on current main.",
+        "Record owner-approved settings as separate operational evidence.",
+        "",
+    ])
+    return "\n".join(lines)
