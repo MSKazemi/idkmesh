@@ -127,6 +127,10 @@ and the release notes for that tag.
   acceptance table that states what is still open. New
   `tests/test_api_storage_integrity.py` covers event integrity, migration
   replay, restart reconstruction and backup.
+- `LocalMetadataStore.prune_probe_history()` (issue #750): removes superseded
+  probe rows and keeps the latest per connection, the one expendable class in
+  the API storage retention matrix. Runs, idempotency records, events and
+  claims are never touched; claim/lease pruning remains open.
 - `make qualify-api` / `tools/api_release_qualification.py` (issue #745): one
   repeatable API release-qualification run. It executes the OpenAPI reference
   gate, the schema compatibility gate (`--base`), and the contract, fuzz,

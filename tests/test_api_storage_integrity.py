@@ -365,5 +365,53 @@ class RestartReconstructionTests(_StoreCase):
         self.assertEqual(len(self.reopen().list_events()[0]), count)
 
 
+class ProbeHistoryPruningTests(unittest.TestCase):
+    """Retention (#750): only the expendable probe history may be pruned."""
+
+    def setUp(self) -> None:
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.store = LocalMetadataStore(Path(tmp.name) / "state.sqlite")
+
+    def _probe(self, connection_id: str, checked_at: str) -> None:
+        self.store.record_probe(
+            connection_id, checked_at=checked_at, status="ok", metadata={}
+        )
+
+    def _count(self, table: str) -> int:
+        with sqlite3.connect(self.store.path) as conn:
+            return conn.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
+
+    def test_keeps_only_the_latest_probe_per_connection(self) -> None:
+        for stamp in ("2026-01-01T00:00:00Z", "2026-01-03T00:00:00Z", "2026-01-02T00:00:00Z"):
+            self._probe("conn-a", stamp)
+        self._probe("conn-b", "2026-01-01T00:00:00Z")
+
+        self.assertEqual(self.store.prune_probe_history(), 2)
+
+        self.assertEqual(self._count("probes"), 2)
+        self.assertEqual(
+            self.store.latest_probe("conn-a")["checked_at"], "2026-01-03T00:00:00Z"
+        )
+        self.assertEqual(
+            self.store.latest_probe("conn-b")["checked_at"], "2026-01-01T00:00:00Z"
+        )
+
+    def test_second_call_is_a_no_op_and_empty_store_is_safe(self) -> None:
+        self.assertEqual(self.store.prune_probe_history(), 0)
+        self._probe("conn-a", "2026-01-01T00:00:00Z")
+        self._probe("conn-a", "2026-01-02T00:00:00Z")
+        self.assertEqual(self.store.prune_probe_history(), 1)
+        self.assertEqual(self.store.prune_probe_history(), 0)
+
+    def test_essential_records_are_never_pruned(self) -> None:
+        self._probe("conn-a", "2026-01-01T00:00:00Z")
+        self._probe("conn-a", "2026-01-02T00:00:00Z")
+        before = {t: self._count(t) for t in ("runs", "idempotency", "events")}
+        self.store.prune_probe_history()
+        after = {t: self._count(t) for t in ("runs", "idempotency", "events")}
+        self.assertEqual(before, after)
+
+
 if __name__ == "__main__":
     unittest.main()
