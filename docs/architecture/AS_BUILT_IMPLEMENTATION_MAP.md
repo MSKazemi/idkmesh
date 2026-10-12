@@ -80,6 +80,8 @@ Separate project integration policy and actual Git merge authority
 
 The arrows are **semantic boundaries**, not a claim that a single production service wires every stage automatically. In particular, provider completion does not validate the Git head, a verified artifact does not approve itself, a local UI session token does not confer a trusted human actor identity, and a stored decision does not push or merge code. Pure-domain lifecycle in `product_spine.py`, offline composition in `product_spine_offline.py`, and local SQLite orchestration in `product_spine_run_store.py` are deliberately separate implementations.
 
+**Evidence-to-decision seam (tested, not yet a state transition).** `tests/test_product_spine_human_decision_integration.py` drives the idempotent offline spine, the SQLite run store, `idkmesh run evidence`, the Control Tower HTTP route with `ControlTowerClient`, and `HumanDecisionService` together. It pins that the evidence digest shown by the CLI and the Control Tower is the digest a decision binds, that a swapped or post-hoc-changed digest fails closed with nothing stored, and that recording a decision leaves the run row, its events and the served evidence unchanged and spawns no process. Nothing yet moves a persisted offline run from `awaiting_human_decision` to `decided`: ADR-0024 keeps offline rows read-only and the authenticated decision adapter is still owed by #740, so a stored decision is not reflected in the run's `human_decision_record_digest`.
+
 ## HTTP and browser profile
 
 ```text
