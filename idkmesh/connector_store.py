@@ -490,6 +490,28 @@ class LocalMetadataStore:
             "metadata": _load_metadata(row["metadata_json"]),
         }
 
+    def prune_probe_history(self) -> int:
+        """Delete superseded probe rows, keeping the latest per connection.
+
+        Probe history is the one *expendable* class in the retention matrix
+        (``API_STORAGE_PROFILES_V0_1``): readers only ever use
+        :meth:`latest_probe`. Runs, idempotency records, events, evidence and
+        claims are never touched. Returns the number of rows removed; a
+        second call is a no-op.
+        """
+        with _session(self.path) as conn:
+            cursor = conn.execute(
+                """
+                DELETE FROM probes
+                WHERE checked_at < (
+                    SELECT MAX(newer.checked_at)
+                    FROM probes AS newer
+                    WHERE newer.connection_id = probes.connection_id
+                )
+                """
+            )
+            return cursor.rowcount
+
     def record_route(
         self,
         route_id: str,

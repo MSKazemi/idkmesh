@@ -93,8 +93,11 @@ its digest. Tamper-evidence against a malicious writer needs the hash-chained
 
 ## Retention matrix
 
-No automated pruning exists in v0.1; this matrix states what may be pruned
-once one does, so that it cannot remove evidence by accident.
+Pruning is deliberately narrow in v0.1: the only implemented pruner is
+`LocalMetadataStore.prune_probe_history()`, which removes superseded probe rows
+and keeps the latest per connection. It is a library call, not a scheduled job.
+Nothing else is pruned automatically. This matrix states what may be pruned, so
+that no pruner can remove evidence by accident.
 
 | Record | Class | Retention |
 |---|---|---|
@@ -103,8 +106,8 @@ once one does, so that it cannot remove evidence by accident.
 | Retained run-evidence report | Essential | Kept with its run; digest-bound. |
 | Human Decision records (#740, not built) | Essential, immutable | Kept; never rewritten. |
 | Connector configuration | Configuration | Kept until superseded; secret references only. |
-| Probe history | Expendable | Only the latest probe per connection is needed. |
-| Task claims and leases | Ephemeral | Expired and released rows are expendable after their lease window. |
+| Probe history | Expendable | Only the latest probe per connection is needed. Pruned by `prune_probe_history()`; `ProbeHistoryPruningTests` proves runs, idempotency records and events are untouched. |
+| Task claims and leases | Ephemeral | Expired and released rows are expendable after their lease window. Not pruned yet: rows carry epoch fencing and occupancy state, so a pruner needs its own design and tests. |
 | Raw logs and large artifacts | Not stored | Referenced by content digest; their retention belongs to the artifact store. |
 
 ## Backup and restore
@@ -126,7 +129,7 @@ it exists yet.
 | One storage-port contract shared by application services | Documented above as the `ProductSpineRunStore` operations; no separate `Protocol` type, to avoid a second model. |
 | Local / GitHub / network ownership documented | Done (this document). |
 | Migration / version strategy | Done; replay verified. |
-| Retention matrix | Done; no pruning implemented. |
+| Retention matrix | Done; probe-history pruning implemented and tested. Claim/lease pruning and any scheduled retention job are open. |
 | Backup / restore test for the network adapter | Open: no network adapter. Local backup reconstruction is tested. |
 | Corruption / digest negative test | Done for runs, evidence and events. |
 | Restart / reconstruction fixture | Done. |
