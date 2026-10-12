@@ -110,7 +110,7 @@ The runtime uses `service_runtime.py` for request correlation, readiness, resour
 | Versioned configuration | `connector_profiles.py`, `connector_secrets.py` | Validate metadata/secret references, not provider access |
 | Driver and health | `connector_registry.py`, `connector_probe.py` | Static declarations and normalized observational probes; CLI `connections probe` uses offline fake drivers |
 | Eligibility | `connector_routing.py`, `connector_inspection.py` | Deterministic selection/explanation; no authority escalation |
-| GitHub ingress | `github_webhook_ingress.py`, `github_issue_preview.py` | Verify HMAC; issue text remains untrusted data; policy owns WorkUnit authority |
+| GitHub ingress | `github_webhook_ingress.py`, `github_issue_preview.py` | Verify HMAC; issue text remains untrusted data; policy owns WorkUnit authority (a parsed Issue Form may only narrow it) |
 | GitHub governance preflight | `github_governance_policy.py`, `github_governance_preflight.py` | Evaluate trusted normalized protection/workflow observations and fail closed on required UNKNOWN/FAIL; no GitHub administration or secret-value access |
 | GitHub mutable source | `github_branch_reader.py`, `github_candidate_reader.py` | Bind requested source/candidate to exact observed Git object identity |
 | GitHub dispatch/publication | `github_delivery_idempotency.py`, `github_explicit_dispatch.py`, `github_status_comment.py` | Explicit actor/role authorization, idempotency/reconciliation; no automatic merge |
