@@ -71,65 +71,13 @@ API_EXAMPLES_DIR = "examples/api"
 
 HTTP_METHODS = {"get", "post", "put", "patch", "delete", "head", "options"}
 
-# A `key:` / `key: value` / `"key":` / `"key": value` line in the block-mapping
-# subset of YAML that `openapi.yaml` uses. A value may itself contain colons;
-# the key ends at the first one.
-_KEY = re.compile(r"""^(?:"([^"]*)"|'([^']*)'|([^\s:][^:]*?)):(?:\s+(.*))?$""")
-_BLOCK_SCALAR = re.compile(r"^[>|][+-]?\d*$")
-
-
-def _unquote(value: str) -> str:
-    """Strip one layer of matching YAML quotes from a scalar value."""
-    if len(value) >= 2 and value[0] == value[-1] and value[0] in {'"', "'"}:
-        return value[1:-1]
-    return value
-
-
-def parse_block_mapping(text: str) -> dict:
-    """Parse the block-mapping subset of YAML `openapi.yaml` is written in.
-
-    Deliberately not a YAML parser: this must run where only the standard
-    library exists. List items and block scalars are skipped wholesale --
-    nothing this module asserts lives inside one -- and any line shape that
-    does not match is ignored rather than guessed at. What remains is the
-    nested ``key: value`` mapping tree: paths, verbs, response codes, media
-    types, schema references, and the ``components`` sections.
-    """
-    root: dict = {}
-    stack: list[tuple[int, dict]] = [(-1, root)]
-    skip_indent: int | None = None
-    for raw in text.splitlines():
-        if not raw.strip():
-            continue
-        stripped = raw.strip()
-        indent = len(raw) - len(raw.lstrip(" "))
-        if skip_indent is not None:
-            if indent > skip_indent or stripped.startswith("- "):
-                continue
-            skip_indent = None
-        if stripped.startswith("- "):
-            # A list item (security schemes, parameters). Skip it and its
-            # continuation lines; no advertised schema lives inside one.
-            skip_indent = indent
-            continue
-        match = _KEY.match(stripped)
-        if match is None:
-            continue
-        double, single, plain, value = match.groups()
-        key = (double if double is not None else single if single is not None else plain).strip()
-        while stack and stack[-1][0] >= indent:
-            stack.pop()
-        parent = stack[-1][1]
-        if value is None or value == "":
-            child: dict = {}
-            parent[key] = child
-            stack.append((indent, child))
-        elif _BLOCK_SCALAR.match(value):
-            skip_indent = indent
-            parent[key] = value
-        else:
-            parent[key] = _unquote(value)
-    return root
+# The block-mapping parser lives in tools/openapi_catalog.py (shared with
+# tools/schema_compat_check.py's API-surface diff gate), imported under the
+# same name so `from test_api_contract_conformance import
+# parse_block_mapping` keeps working.
+if str(REPO_ROOT / "tools") not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT / "tools"))
+from openapi_catalog import parse_block_mapping
 
 
 def load_catalog() -> dict:

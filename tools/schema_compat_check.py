@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Detect a breaking change to an existing ``schemas/*.json`` file.
+"""Detect a breaking change to an existing ``schemas/*.json`` file or to
+the ``openapi.yaml`` API surface.
 
 Policy (issue #737, "backwards-compatibility diff check for stable v1
 objects"): every schema in ``schemas/`` is versioned in its own filename
@@ -60,6 +61,32 @@ other pattern change.
 A node present in the old document but entirely absent from the new one
 (the containing property itself was removed) is reported once, at its
 parent's property-removal check; it is not walked as its own node.
+
+## API surface rule (``openapi.yaml``)
+
+The checked-in ``openapi.yaml`` binds endpoints to those schemas and is
+itself a stable contract: a client can be generated from it. Between the
+base ref and the working tree, the following are breaking (mirroring the
+schema rule's conservatism -- the sanctioned fix is additive change, or a
+new API version):
+
+- a path or an operation (method) removed;
+- ``operationId`` changed or removed once it existed (generated clients
+  bind to it);
+- a response status removed from an operation, or a request-body or
+  response media type removed from a status;
+- a response that changes shape between ``$ref`` form and inline form, or
+  whose ``$ref`` target or (description-stripped) schema changes;
+- a declared parameter removed, or a parameter made required (``required``
+  gaining ``true``, in either direction of creation or flip);
+- a shared ``components.responses`` or ``components.schemas`` entry
+  removed or changed under the same response/schema rules.
+
+Additions are widenings and pass: new paths, methods, statuses, media
+types, and new *optional* parameters. Parameters are YAML list items, so
+this comparison reads the document with
+``tools/openapi_catalog.parse_block_mapping_lists`` (stdlib-only, same
+line rules as the block-mapping parser the test suite uses).
 
 ## Known limitation (v0.1 of this tool)
 
@@ -292,6 +319,188 @@ def check_file(relative_path: str, base_ref: str) -> list[str]:
     return diff_schema(old_doc, new_doc)
 
 
+# ---------------------------------------------------------------- openapi --
+
+_HTTP_METHODS = {
+    "get",
+    "put",
+    "post",
+    "delete",
+    "options",
+    "head",
+    "patch",
+    "trace",
+}
+
+
+def _schema_changed(old: Any, new: Any) -> bool:
+    """Compare two schema subtrees, ignoring description-only changes."""
+
+    def strip(node: Any) -> Any:
+        if isinstance(node, dict):
+            return {
+                key: strip(value)
+                for key, value in node.items()
+                if key != "description"
+            }
+        if isinstance(node, list):
+            return [strip(value) for value in node]
+        return node
+
+    return strip(old) != strip(new)
+
+
+def _diff_response(
+    where: str, old: dict, new: dict, violations: list[str]
+) -> None:
+    """Compare one response (inline or ``$ref`` form) shared by both docs."""
+    old_ref = old.get("$ref") if isinstance(old, dict) else None
+    new_ref = new.get("$ref") if isinstance(new, dict) else None
+    if old_ref is not None or new_ref is not None:
+        if old_ref != new_ref:
+            violations.append(f"{where}: response shape changed")
+        return
+    old_content = (old.get("content") or {}) if isinstance(old, dict) else {}
+    new_content = (new.get("content") or {}) if isinstance(new, dict) else {}
+    for media, old_media in old_content.items():
+        if media not in new_content:
+            violations.append(f"{where}.content.{media}: media type removed")
+        elif _schema_changed(
+            (old_media or {}).get("schema"), (new_content[media] or {}).get("schema")
+        ):
+            violations.append(f"{where}.content.{media}: schema changed")
+
+
+def _diff_parameters(
+    where: str, old: list, new: list, violations: list[str]
+) -> None:
+    old_by_name = {
+        item.get("name"): item for item in old if isinstance(item, dict)
+    }
+    new_by_name = {
+        item.get("name"): item for item in new if isinstance(item, dict)
+    }
+    for name, old_param in old_by_name.items():
+        if name not in new_by_name:
+            violations.append(f"{where}.parameters[{name}]: parameter removed")
+            continue
+        new_param = new_by_name[name]
+        if str(old_param.get("required")) != str(new_param.get("required")):
+            violations.append(
+                f"{where}.parameters[{name}]: required changed "
+                f"({old_param.get('required')} -> {new_param.get('required')})"
+            )
+        old_rest = {k: v for k, v in old_param.items() if k not in ("description", "required")}
+        new_rest = {k: v for k, v in new_param.items() if k not in ("description", "required")}
+        if old_rest != new_rest:
+            violations.append(f"{where}.parameters[{name}]: parameter changed")
+    for name, new_param in new_by_name.items():
+        if name not in old_by_name and str(new_param.get("required")) == "true":
+            violations.append(
+                f"{where}.parameters[{name}]: new required parameter"
+            )
+
+
+def diff_openapi_surface(old: dict, new: dict) -> list[str]:
+    """Return violations for the API surface diff; [] if new/compatible."""
+    violations: list[str] = []
+    if not old.get("paths"):
+        # Nothing to compare against (new or unparsable base document).
+        return violations
+    old_paths = old.get("paths") or {}
+    new_paths = new.get("paths") or {}
+    for path, old_path in old_paths.items():
+        if path not in new_paths:
+            violations.append(f"paths.{path}: path removed")
+            continue
+        new_path = new_paths[path] or {}
+        for method, old_op in old_path.items():
+            if method not in _HTTP_METHODS:
+                continue
+            if method not in new_path:
+                violations.append(f"paths.{path}.{method}: operation removed")
+                continue
+            new_op = new_path[method] or {}
+            where = f"paths.{path}.{method}"
+            old_id = (old_op or {}).get("operationId")
+            if old_id and old_id != new_op.get("operationId"):
+                violations.append(f"{where}: operationId changed")
+            old_body = ((old_op or {}).get("requestBody") or {})
+            new_body = (new_op.get("requestBody") or {})
+            old_media = old_body.get("content") or {}
+            new_media = new_body.get("content") or {}
+            for media, old_entry in old_media.items():
+                if media not in new_media:
+                    violations.append(
+                        f"{where}.requestBody.content.{media}: media type removed"
+                    )
+                elif _schema_changed(
+                    (old_entry or {}).get("schema"),
+                    (new_media[media] or {}).get("schema"),
+                ):
+                    violations.append(
+                        f"{where}.requestBody.content.{media}: schema changed"
+                    )
+            old_responses = (old_op or {}).get("responses") or {}
+            new_responses = new_op.get("responses") or {}
+            for status, old_response in old_responses.items():
+                if status not in new_responses:
+                    violations.append(
+                        f"{where}.responses.{status}: response removed"
+                    )
+                else:
+                    _diff_response(
+                        f"{where}.responses.{status}",
+                        old_response or {},
+                        new_responses[status] or {},
+                        violations,
+                    )
+            _diff_parameters(
+                where,
+                (old_op or {}).get("parameters") or [],
+                new_op.get("parameters") or [],
+                violations,
+            )
+
+    old_components = old.get("components") or {}
+    new_components = new.get("components") or {}
+    for section in ("responses", "schemas"):
+        old_entries = old_components.get(section) or {}
+        new_entries = new_components.get(section) or {}
+        for name, old_entry in old_entries.items():
+            where = f"components.{section}.{name}"
+            if name not in new_entries:
+                violations.append(f"{where}: removed")
+            elif section == "responses":
+                _diff_response(
+                    where, old_entry or {}, new_entries[name] or {}, violations
+                )
+            elif _schema_changed(old_entry, new_entries[name]):
+                violations.append(f"{where}: schema changed")
+    return violations
+
+
+def check_openapi(base_ref: str) -> list[str]:
+    """Return violations for ``openapi.yaml``, or [] if new/unchanged/compatible."""
+    relative_path = "openapi.yaml"
+    old_text = _git_show(base_ref, relative_path)
+    if old_text is None:
+        return []
+    new_path = ROOT / relative_path
+    if not new_path.is_file():
+        return [f"{relative_path}: removed"]
+    new_text = new_path.read_text(encoding="utf-8")
+    if old_text == new_text:
+        return []
+    from openapi_catalog import parse_block_mapping_lists
+
+    old_doc = parse_block_mapping_lists(old_text)
+    new_doc = parse_block_mapping_lists(new_text)
+    if old_doc == new_doc:
+        return []
+    return diff_openapi_surface(old_doc, new_doc)
+
+
 def _ref_resolves(ref: str) -> bool:
     return (
         subprocess.run(
@@ -319,6 +528,9 @@ def check_tree(base_ref: str, schemas_dir: Path = SCHEMAS_DIR) -> dict[str, list
         violations = check_file(relative_path, base_ref)
         if violations:
             report[relative_path] = violations
+    openapi_violations = check_openapi(base_ref)
+    if openapi_violations:
+        report["openapi.yaml"] = openapi_violations
     return report
 
 
@@ -367,7 +579,9 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"    - {violation}")
         print(
             "\nA schema file's content must never change incompatibly once it "
-            "exists. Add a new, separately versioned file instead (see "
+            "exists, and the openapi.yaml API surface must only widen. Add a "
+            "new, separately versioned file (or an additive endpoint) "
+            "instead (see "
             "docs/decisions/ADR-0020-schema-backward-compatibility-gate.md)."
         )
     else:
