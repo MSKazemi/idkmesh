@@ -14,19 +14,6 @@ and the release notes for that tag.
 
 ### Added
 
-- E5 data/egress/credential decision kernel (issue #672, partial):
-  `idkmesh/enterprise_data_policy.py` turns a validated enterprise control
-  profile into pure fail-closed decisions. External processing is checked per
-  exact data class (non-compensating, restricted denied unless its own flag is
-  true) against an explicit approved-provider list; egress is deny-by-default
-  with exact-hostname allowlisting and no wildcard or suffix matching;
-  long-lived cloud keys are refused by the profile switch and under an OIDC
-  backend; secret access requires a prior `allow` authorization decision and
-  the source comes from the profile, never from request text. Decisions carry
-  identifiers and reason codes only, read no secret value and grant no
-  authority. Not yet wired into any runtime path, and the profile still has no
-  egress-allowlist field, so #672 stays open.
-
 - X4 forecast-interval instrument (refs #976): `experiments/forecast_intervals.py` adds the
   piece of the X4 report E046 did not compute, the **interval coverage** of the intervals a
   pilot forecaster reports, with bias, MAE and the 0.03 hit-rate, as a function of pilot size k.
