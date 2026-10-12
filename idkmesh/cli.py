@@ -2325,6 +2325,9 @@ def _run_github_workflow(args: argparse.Namespace) -> int:
     print("dispatch performed: no")
     print("GitHub mutations: no")
     print("secret values accessed: no")
+    return 0
+
+
 def _run_pages_site(args: argparse.Namespace) -> int:
     """Validate projections, render the Pages file map, write it locally."""
 
