@@ -4,14 +4,24 @@ description: "Who should use alpha IDKMesh today and the shortest path to succes
 # Getting Started: Using IDKMesh
 
 IDKMesh is currently an **alpha research and engineering project**, not a finished
-one-click multi-agent product. The most practical user-facing surface today is
-the `idkmesh gate-audit` CLI. The repository also includes an executable
-contract demo and a contribution/research environment.
+one-click multi-agent product. The most mature directly usable surface remains
+the `idkmesh gate-audit` CLI, but the installed package now also includes local
+Product Spine run/read tooling, connector inspection/routing, Control Tower/API
+reads, stewardship tools, bootstrap dry-run support, and research diagnostics.
+The exhaustive code-backed inventory is the
+[Executable Capability Reference](EXECUTABLE_CAPABILITIES.md).
 
 This guide answers two questions:
 
 1. **Who should use IDKMesh today?**
 2. **What is the shortest path to use it successfully?**
+
+For a precise list of **currently shipped CLI and local HTTP commands**, see the
+[implementation quick reference](reference/CLI_HTTP_QUICK_REFERENCE.md). To
+navigate the source, use [module map](reference/MODULE_MAP.md); for practical
+failures use [troubleshooting](help/TROUBLESHOOTING.md). The
+[capability matrix](CAPABILITY_MATRIX.md) is the authority for maturity and
+evidence classifications; some deeper API design documents describe future work.
 
 ## Who should use IDKMesh today?
 
@@ -261,6 +271,27 @@ A repository can run the audit in CI:
 Treat the output as diagnostic evidence unless your own repository policy
 explicitly defines how that evidence is used.
 
+## Explore the other implemented CLI and local API surfaces
+
+After `pip install .`, start with:
+
+```bash
+idkmesh --help
+idkmesh connections --help
+idkmesh run --help
+idkmesh work-unit --help
+idkmesh events --help
+idkmesh control-tower --help
+```
+
+These surfaces cover connector metadata validation/import/offline inspection,
+provider-neutral route explanation, durable local Product Spine state, derived
+WorkUnit/project views, append-only events, evidence inspection, local browser UIs,
+and a loopback read-only API. They do **not** imply automatic merge authority or a
+production multi-user service. For every command, nested subcommand, HTTP endpoint,
+Python client method, and package module, use the
+[Executable Capability Reference](EXECUTABLE_CAPABILITIES.md).
+
 ## Path D: Use IDKMesh to develop another application
 
 If you already have (or are creating) a separate software project, the practical
@@ -386,6 +417,8 @@ not yet packaged as a polished general-purpose swarm application.
   Gate Audit GitHub Action.
 - **I want to use IDKMesh while building a different application:** follow the
   [Project Adoption Guide](PROJECT_ADOPTION_GUIDE.md).
+- **I need to know exactly what commands/APIs/modules exist today:** use the
+  [Executable Capability Reference](EXECUTABLE_CAPABILITIES.md).
 - **I want to study multi-agent verification or coordination:** use the schemas,
   simulations, experiments, and interop layers.
 - **I want a finished autonomous swarm product:** follow or contribute to the

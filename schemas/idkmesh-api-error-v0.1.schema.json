@@ -9,7 +9,7 @@
   "properties": {
     "api_version": {
       "type": "string",
-      "pattern": "^v[0-9]+$",
+      "pattern": "^v[0-9]+$(?!\n)",
       "description": "The URL compatibility version this response was served under, e.g. \"v1\". Independent of schema_version -- see section 1."
     },
     "schema_version": {"const": "0.1"},
@@ -22,7 +22,7 @@
       "properties": {
         "code": {
           "type": "string",
-          "pattern": "^[a-z][a-z0-9_]{2,63}$",
+          "pattern": "^[a-z][a-z0-9_]{2,63}$(?!\n)",
           "description": "Stable machine-readable error code. This is the compatibility contract; message text may change freely."
         },
         "message": {

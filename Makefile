@@ -8,7 +8,7 @@ PY := .venv/bin/python
 
 .DEFAULT_GOAL := help
 
-.PHONY: help setup smoke test integration nightly gate profile clean-cache
+.PHONY: help setup smoke test integration nightly gate profile clean-cache qualify-api beta-readiness
 
 help: ## Show this help
 	@echo "IDKMesh test tiers (see docs/TESTING.md):"
@@ -39,6 +39,12 @@ gate: ## Run whichever tier your current changes actually require
 
 profile: ## Show the 25 slowest tests - use this when a budget is exceeded
 	@$(PY) -m pytest -q --durations=25 | tail -30
+
+qualify-api: ## API release qualification report (BASE=<rev> to diff schemas; STRICT=1 for releases)
+	@$(PY) tools/api_release_qualification.py $(if $(BASE),--base $(BASE)) $(if $(STRICT),--strict)
+
+beta-readiness: ## Evaluate the API v1 beta release gate (exit 1 until every item is satisfied)
+	@$(PY) tools/api_beta_readiness.py
 
 clean-cache: ## Forget cached tier results and force a full re-run
 	@rm -f .claude/state/testkit-cache.json

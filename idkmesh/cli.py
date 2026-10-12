@@ -61,6 +61,9 @@ from idkmesh.local_loop import (
 )
 from idkmesh.connector_store import DEFAULT_LIST_LIMIT, MAX_LIST_LIMIT
 from idkmesh.local_ui_security import MAX_BODY_BYTES
+from idkmesh.github_governance_policy import (
+    OPERATIONS as GITHUB_GOVERNANCE_OPERATIONS,
+)
 
 
 class _ExamplesHelpFormatter(argparse.RawDescriptionHelpFormatter):
@@ -406,17 +409,53 @@ def build_parser() -> argparse.ArgumentParser:
 
     doctor = sub.add_parser(
         "doctor",
-        help="summarize connector readiness without dispatching work",
+        help="inspect connector readiness or GitHub governance preconditions",
         description=(
-            "Validate and inspect connector profiles using the offline probe "
-            "contract without dispatching work. FAIL means configuration/driver health blocks routing; "
-            "WARN means disabled/degraded; PASS means healthy in this offline view."
+            "Connector mode inspects readiness without dispatching. "
+            "With --github OBSERVATION, evaluate the read-only C12 GitHub "
+            "governance preflight from trusted normalized observations and "
+            "optional workflow source. GitHub mode performs no repository "
+            "administration, secret access, dispatch, verification, acceptance, "
+            "or merge."
         ),
     )
-    doctor.add_argument("profile", help="path to connector-profile JSON")
+    doctor.add_argument(
+        "profile",
+        nargs="?",
+        help="connector-profile JSON (connector mode only)",
+    )
+    doctor.add_argument(
+        "--github",
+        metavar="OBSERVATION",
+        help="normalized GitHub governance observation JSON",
+    )
+    doctor.add_argument(
+        "--operation",
+        choices=tuple(sorted(GITHUB_GOVERNANCE_OPERATIONS)),
+        default="read_only",
+        help="C12 operation whose applicable guards should be evaluated",
+    )
+    doctor.add_argument(
+        "--workflow",
+        action="append",
+        default=[],
+        metavar="PATH",
+        help=(
+            "workflow source to lint and merge into the GitHub observation; "
+            "repeat as needed"
+        ),
+    )
+    doctor.add_argument(
+        "--codeowners-owner",
+        metavar="@OWNER",
+        help=(
+            "render a sensitive-path CODEOWNERS recommendation for an explicit "
+            "@user or @org/team; never writes CODEOWNERS"
+        ),
+    )
     doctor.add_argument(
         "--checked-at",
-        help="explicit observation timestamp (default: current UTC time)",
+        help="explicit observation timestamp (connector mode only)",
     )
     doctor.add_argument(
         "--json",
@@ -1407,7 +1446,12 @@ def _strict_json_file(path_value: str) -> dict[str, object]:
             object_pairs_hook=no_duplicates,
             parse_constant=reject_constant,
         )
-    except (json.JSONDecodeError, DuplicateKeyError, ValueError) as exc:
+    except (
+        json.JSONDecodeError,
+        DuplicateKeyError,
+        ValueError,
+        RecursionError,
+    ) as exc:
         raise ValueError(
             f"{path_value}: invalid strict JSON: {exc}"
         ) from exc
@@ -1709,6 +1753,71 @@ def _run_events_control(args: argparse.Namespace) -> int:
 
 
 def _run_doctor(args: argparse.Namespace) -> int:
+    if args.github:
+        if args.profile:
+            return _fail("connector profile cannot be combined with --github")
+        if args.checked_at:
+            return _fail("--checked-at is connector-only and cannot be combined with --github")
+
+        from idkmesh.github_governance_policy import GitHubGovernancePolicyError
+        from idkmesh.github_governance_preflight import (
+            GitHubGovernancePreflightError,
+            evaluate_governance,
+            lint_workflow_file,
+            load_observation_file,
+            merge_workflow_lints,
+            render_codeowners_recommendation,
+        )
+
+        try:
+            observation = load_observation_file(args.github)
+            workflow_lint = [
+                lint_workflow_file(workflow)
+                for workflow in args.workflow
+            ]
+            observation = merge_workflow_lints(observation, workflow_lint)
+            report = evaluate_governance(args.operation, observation)
+            payload = {**report, "workflow_lint": workflow_lint}
+            if args.codeowners_owner:
+                payload["codeowners_recommendation"] = (
+                    render_codeowners_recommendation(args.codeowners_owner)
+                )
+        except (
+            GitHubGovernancePolicyError,
+            GitHubGovernancePreflightError,
+            OSError,
+            UnicodeError,
+        ) as exc:
+            return _fail(str(exc))
+
+        if args.json_output:
+            print(json.dumps(payload, sort_keys=True, separators=(",", ":")))
+        else:
+            print(f"github doctor: {report['status']}")
+            print(f"operation: {report['operation']}")
+            print(
+                "operation allowed: "
+                + ("yes" if report["operation_allowed"] else "no")
+            )
+            for item in report["guards"]:
+                print(
+                    f"- {item['code']}: {item['status']} "
+                    f"({item['reason']})"
+                )
+            if args.codeowners_owner:
+                print("CODEOWNERS recommendation:")
+                print(payload["codeowners_recommendation"], end="")
+        return 1 if report["status"] in {"FAIL", "UNKNOWN"} else 0
+
+    if args.workflow:
+        return _fail("--workflow requires --github")
+    if args.codeowners_owner:
+        return _fail("--codeowners-owner requires --github")
+    if args.operation != "read_only":
+        return _fail("--operation requires --github")
+    if args.profile is None:
+        return _fail("connector doctor requires profile unless --github is used")
+
     from idkmesh.connector_inspection import doctor_report, inspect_connectors
     from idkmesh.connector_profiles import (
         ConnectorProfileError,

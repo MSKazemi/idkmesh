@@ -61,8 +61,8 @@
     "authority": {"$ref": "#/$defs/authority"}
   },
   "$defs": {
-    "sha": {"type": "string", "pattern": "^[a-f0-9]{40}$"},
-    "digest": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$"},
+    "sha": {"type": "string", "pattern": "^[a-f0-9]{40}$(?!\n)"},
+    "digest": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$(?!\n)"},
     "check": {
       "type": "object",
       "additionalProperties": false,

@@ -105,6 +105,12 @@ some unrelated page but missing from its own index stays invisible.
   set so one foreign row no longer breaks it; `/decisions` and the
   human-decision API stay unbuilt pending #740 and an accountable principal.
   *(2026-10-02.)*
+- [ADR-0025 — Hardened End Anchors for Schema Patterns](ADR-0025-pattern-end-anchor-hardening.md)
+  — every end-anchored `pattern` in `schemas/` gains the `(?!\n)` guard, making
+  Python's lenient `$` match the ECMA-262 semantics JSON Schema specifies and
+  rejecting trailing-newline identity values at the contract boundary (issue
+  #963); the schema compatibility gate recognizes exactly this transform and
+  still reports every other pattern change as breaking. *(2026-10-09.)*
 
 ## Proposed and experimental
 

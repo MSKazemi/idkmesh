@@ -202,6 +202,18 @@ Persist:
 
 The versioned record shape for the first durable-ledger slice is [GitHub Durable Ledger Record v0.1](GITHUB_LEDGER_RECORD_V0_1.md), with machine-readable schema `schemas/github-ledger-record-v0.1.schema.json`. It freezes compact run/event/route/idempotency/attempt/provider/evidence references without choosing the Git storage layout or granting any next-stage authority. C9-B/C9-C must preserve this record meaning when they define serialization and optimistic append behavior.
 
+### 6.2.2 Canonical C9-B serialization
+
+[GitHub Ledger Serialization v0.1](GITHUB_LEDGER_SERIALIZATION_V0_1.md) defines
+the pure C9-B boundary used before any GitHub storage write.
+`idkmesh.github_ledger_serialization` emits canonical UTF-8 JSON bytes plus LF,
+keeps the record digest identical to the repository's frozen canonical JSON
+SHA-256 convention, enforces attempt/idempotency and
+attempted-connector/selected-route consistency, and verifies a complete
+sequence/digest-linked run chain. The local Git fixture proves a second append
+adds only the next immutable record. It does not implement compare-and-set,
+remote branch writes, recovery, or admission authority.
+
 ### 6.3 Ledger implementation constraints
 
 The first implementation may use a dedicated Git-native branch/path or another GitHub-native immutable/conflict-safe representation.
@@ -209,6 +221,27 @@ The first implementation may use a dedicated Git-native branch/path or another G
 It must not require writes to the protected application code branch merely to update run state.
 
 The ledger implementation must expose compare-and-set/optimistic conflict behavior so concurrent workflows cannot silently overwrite each other.
+
+### 6.4 Current C9-G GitHub storage adapter
+
+[GitHub Ledger GitHub Storage v0.1](GITHUB_LEDGER_GITHUB_STORAGE_V0_1.md)
+implements the GitHub-native G0 store in
+`idkmesh.github_ledger_github_store`.
+
+The adapter creates one dedicated orphan `idkmesh-ledger` branch and refuses
+the configured default/protected application branches. Compact admissions and
+canonical records use hash-derived paths; the branch marker binds the store to
+the repository and storage schema.
+
+Each mutation builds a commit whose parent is the observed ledger-branch head,
+then updates `refs/heads/idkmesh-ledger` through the GitHub Git Data API with
+`force=false`. A stale/non-fast-forward writer re-reads and rebuilds within a
+bounded retry budget. The adapter composes the existing C9-D admission and C9-E
+recovery semantics but performs no provider dispatch, verification, candidate
+acceptance, application-branch write, integration, or merge.
+
+C9-H still owns retention: C9-G writes/reads durable compact records but does
+not delete or compact canonical history.
 
 ## 7. State machine
 
@@ -309,24 +342,35 @@ Environment usage must remain optional for projects/plans where unavailable.
 
 ## 12. Rulesets / branch protection preflight
 
-`idkmesh doctor --github` should observe/report, where API permissions allow:
+The implemented C12 preflight is
+[`GitHub Governance Preflight v0.1`](GITHUB_GOVERNANCE_PREFLIGHT_V0_1.md).
+`idkmesh doctor --github OBSERVATION --operation <operation>` consumes a
+trusted normalized observation rather than fetching or mutating GitHub
+administration directly.
 
-- default branch;
-- whether PR-based integration is required;
-- force-push/deletion guards;
-- required checks;
-- review requirements;
-- CODEOWNERS-sensitive-path coverage where inferable;
-- broad bypass actors when observable.
+Where the observation has visibility, report the applicable C12 controls for:
 
-Report:
+- pull-request integration;
+- force-push and deletion guards;
+- required checks/reviews;
+- CODEOWNERS-sensitive paths;
+- broad bypass actors;
+- Actions least privilege and immutable action references;
+- untrusted-PR/secret separation;
+- protected-environment approval/self-review controls;
+- optional OIDC shape for cloud dispatch.
 
-- PASS;
-- WARN;
-- FAIL;
-- UNKNOWN (insufficient GitHub permission/API visibility).
+Statuses are PASS, WARN, FAIL, UNKNOWN, and NOT_APPLICABLE. For a required
+guard, missing evidence, GitHub API visibility limits, or an unobserved
+applicable condition is UNKNOWN and **blocks** the enforcement primitive. The
+same uncertainty on a `warn`/`optional` guard is WARN and non-blocking. Required
+unknowns are never treated as secure, and repository/plan-dependent capability
+is preserved as policy metadata rather than guessed from a product tier.
 
-UNKNOWN must not be falsely reported as secure.
+The command is read-only: it does not edit rulesets, branch protection,
+environments, secrets, apps, or CODEOWNERS. A PASS is a configuration
+precondition only and is not proof of reviewer independence, candidate
+correctness, acceptance, or merge authority.
 
 ## 13. GitHub Projects integration
 

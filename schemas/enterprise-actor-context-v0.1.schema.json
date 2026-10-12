@@ -22,9 +22,9 @@
   "properties": {
     "kind": {"const": "idkmesh-enterprise-actor-context"},
     "schema_version": {"const": "0.1"},
-    "principal_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,255}$"},
+    "principal_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,255}$(?!\n)"},
     "actor_type": {"enum": ["human", "github_app", "github_actions", "service", "provider", "node"]},
-    "issuer": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,255}$"},
+    "issuer": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,255}$(?!\n)"},
     "roles": {
       "type": "array",
       "uniqueItems": true,
@@ -39,13 +39,13 @@
         "additionalProperties": false,
         "required": ["tenant_id", "project_id"],
         "properties": {
-          "tenant_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"},
-          "project_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"}
+          "tenant_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$(?!\n)"},
+          "project_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$(?!\n)"}
         }
       }
     },
     "data_clearance": {"enum": ["public", "internal", "confidential", "restricted"]},
-    "identity_revision": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$"},
+    "identity_revision": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$(?!\n)"},
     "authenticated": {"type": "boolean"},
     "revoked": {"type": "boolean"},
     "expires_at_epoch": {

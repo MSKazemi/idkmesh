@@ -7,9 +7,22 @@
 
 > **I don't know. You don't know. Together, the mesh can discover, build, verify, and learn.**
 
-IDKMesh is an open-source research and engineering project exploring how humans, AI agents, software tools, and heterogeneous compute can coordinate on uncertain goals and turn proposals into **verified useful work**.
+**In plain English:** IDKMesh helps teams check AI-assisted work instead of trusting the first answer. A tool that works today, `idkmesh gate-audit`, reads reviewer **approve/reject votes and known correct answers**, then reports how often the reviewers fail together and how much independent checking their panel actually provides. **It does not run the reviewers or approve changes.**
 
-The project is intentionally ambitious, but the repository is not claiming a finished planetary-scale system. Today it is a **GitHub-native research laboratory with an executable coordination/evidence foundation** and a reference-product target: the Git-native Verified Swarm Runner.
+The wider IDKMesh framework explores how people, AI agents, and tools can break goals into small tasks, produce candidate work, verify it separately, preserve evidence, and leave the final integration decision to an authorized human or policy. **That automatic end-to-end swarm runner is not yet a finished product.** The repository is currently an **alpha GitHub-native research and engineering laboratory** with runnable tools, schemas, local inspection, and experimental coordination components.
+
+**New here? Start by what you want to do:**
+
+| Your goal | Best first step |
+| --- | --- |
+| Understand the idea without technical background | [IDKMesh for Absolute Beginners](docs/BEGINNER_GUIDE.md) |
+| Try a real command on included sample votes | [Audit a review gate](#try-it-in-five-minutes-audit-a-review-gate) |
+| See why a worker cannot approve its own work | [Run the contract demo](#try-the-contract-demo) (synthetic fixtures, no AI) |
+| Inspect recorded attempts and evidence in a browser | [Human Control Tower](#inspect-a-swarm-run-in-the-human-control-tower) (read-only, local) |
+| Use the approach with a different GitHub project | [Project Adoption Guide](docs/PROJECT_ADOPTION_GUIDE.md) (manual model; automation incomplete) |
+| Check exactly what is implemented versus planned | [Capability Truth Matrix](docs/CAPABILITY_MATRIX.md) |
+
+**The boundary to remember:** *worker says "done" ≠ independently checked ≠ authorized to merge.*
 
 **A concrete question this repository can already answer:** *how many independent votes is
 your review panel actually worth?* Often far fewer than the number of reviewers on it. In
@@ -69,6 +82,18 @@ For the claim-by-claim source of truth, see the
 [Capability Truth Matrix](docs/CAPABILITY_MATRIX.md). Its canonical JSON is
 validated in normal CI against repository paths and the real CLI command tree,
 and uses the evidence ladder from planned (0) through production-qualified (5).
+For the exhaustive code-backed command/API/library inventory, see the
+[Executable Capability Reference](docs/EXECUTABLE_CAPABILITIES.md); it is CI-checked
+against the recursive CLI tree, Control Tower discovery, Python client, and `idkmesh/`
+module inventory.
+
+For the commands and interfaces available **in code today**, use the
+[implementation reference](docs/reference/README.md) and
+[as-built architecture map](docs/architecture/AS_BUILT_IMPLEMENTATION_MAP.md).
+They distinguish `init --github --dry-run`, local `run` bookkeeping,
+checkout-only `local-loop` execution, and read-only Control Tower HTTP from
+future network/multi-user and merge capabilities. For common failures see
+[troubleshooting](docs/help/TROUBLESHOOTING.md).
 
 **Executable research foundation; reference runner still incomplete.**
 
@@ -83,6 +108,9 @@ What is already present on `main`:
 - zero-project-spend compute admission and routing experiments;
 - IDKGraph repository modeling, observability, link-integrity, and warning/review machinery;
 - GitHub-native ACE community-growth experiments and repository-evolution control tooling;
+- durable Product Spine run/create/status/evidence/cancel/list commands, derived WorkUnit/project reads, and an append-only local event stream;
+- connector profile validation/import/storage, offline probe/doctor/routing explanation, plus the read-only `/api/v1/connections` Control Tower surface;
+- implementation foundations for Jules, OpenAI-compatible model endpoints, bounded local agents, GitHub ingress/dispatch/candidate observation, and enterprise identity/authorization/audit controls, each with the limitations recorded in the executable capability reference;
 - a first installable product surface: `pip install .` provides the `idkmesh`
   CLI, whose `gate-audit` command packages the measured verifier-panel results
   (E015/E016/E017) as a review-gate diagnostic;
@@ -170,8 +198,8 @@ print(len(events.value.items))
 The client requires an explicit timeout, refuses non-loopback destinations,
 exposes the server request ID, verifies response content digests, and performs
 no automatic retries. It covers status, evidence inspection, and the
-resource-oriented read model (runs, run attempts, retained run evidence,
-derived WorkUnits and projects, events); see the
+resource-oriented read model (connections, runs, run attempts, retained run
+evidence, derived WorkUnits and projects, events); see the
 [Python client section](docs/specifications/CONTROL_TOWER_LOCAL_API_V0_1.md#python-client)
 of the API specification. The client is read/inspect only: human-decision
 recording remains unavailable until its authenticated mutation contract is
@@ -351,7 +379,13 @@ configured connection
 ```
 
 **This connector product is under implementation, not a finished public API.**
-Do not copy the planned CLI/API examples and assume they exist on `main` yet.
+Substantial foundations do exist on `main`: connector profile validation/list/import,
+offline probe/doctor/routing explanation, durable metadata, the read-only
+`GET /api/v1/connections` surface, GitHub dispatch/candidate foundations, and library
+support for Jules, OpenAI-compatible endpoints, and bounded local agents. Treat each
+surface according to its documented authority and maturity rather than assuming either
+"all planned" or "production-ready". The complete code-backed inventory is the
+[Executable Capability Reference](docs/EXECUTABLE_CAPABILITIES.md).
 
 Current source of truth:
 
@@ -361,19 +395,18 @@ Current source of truth:
 - [model-tier dispatcher execution plan](docs/planning/MODEL_TIER_DISPATCHER_EXECUTION_PLAN_2026-09-22.md);
 - [live umbrella tracker #570](https://github.com/MSKazemi/idkmesh/issues/570).
 
-The immediate implementation queue is deliberately bounded:
+The component queue is deliberately bounded; current tracker state is:
 
-1. [#574 — connector kernel, profile validation, probes, routing](https://github.com/MSKazemi/idkmesh/issues/574);
-2. [#575 — Jules REST agent connector](https://github.com/MSKazemi/idkmesh/issues/575);
-3. [#576 — OpenAI-compatible model-provider connector](https://github.com/MSKazemi/idkmesh/issues/576);
-4. [#577 — bounded local agent runner](https://github.com/MSKazemi/idkmesh/issues/577);
-5. [#578 — GitHub issue/webhook dispatch bridge](https://github.com/MSKazemi/idkmesh/issues/578);
-6. [#579 — canonical candidate/result normalization](https://github.com/MSKazemi/idkmesh/issues/579);
-7. [#580 — CLI and optional HTTP control API](https://github.com/MSKazemi/idkmesh/issues/580).
+1. **merged/closed:** [#574 — connector kernel, profile validation, probes, routing](https://github.com/MSKazemi/idkmesh/issues/574);
+2. **open:** [#575 — Jules REST agent connector](https://github.com/MSKazemi/idkmesh/issues/575);
+3. **open:** [#576 — OpenAI-compatible model-provider connector](https://github.com/MSKazemi/idkmesh/issues/576);
+4. **open:** [#577 — bounded local agent runner](https://github.com/MSKazemi/idkmesh/issues/577);
+5. **merged/closed:** [#578 — GitHub issue/webhook dispatch bridge](https://github.com/MSKazemi/idkmesh/issues/578);
+6. **merged/closed:** [#579 — canonical candidate/result normalization](https://github.com/MSKazemi/idkmesh/issues/579);
+7. **open:** [#580 — CLI and optional HTTP control API](https://github.com/MSKazemi/idkmesh/issues/580).
 
-The first coding priority is **#574**. Jules and model-provider work should start
-only against the shared connector contract rather than creating provider-specific
-coordinator paths.
+New provider work should continue to compose the shared connector contracts and authority
+boundaries rather than creating provider-specific coordinator paths.
 
 ## The reference product
 

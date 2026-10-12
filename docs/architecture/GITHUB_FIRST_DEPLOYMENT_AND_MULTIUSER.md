@@ -132,9 +132,21 @@ A server is often introduced because an application needs a database and queue. 
 
 Actions logs/artifacts are useful operational evidence but should not be the only durable interpretation record. Hosted runners disappear, provider sessions can expire, and artifact retention is finite.
 
-The GitHub-only design therefore needs a small durable state layer, preferably an append-only or conflict-safe Git-native ledger, containing compact metadata and digests rather than huge raw logs.
+The GitHub-only design therefore needs a small durable state layer containing
+compact metadata and digests rather than huge raw logs.
 
-Issue #597 tracks this work.
+C9 now implements that path through
+[GitHub Ledger GitHub Storage v0.1](../specifications/GITHUB_LEDGER_GITHUB_STORAGE_V0_1.md).
+The G0 adapter uses one dedicated orphan `idkmesh-ledger` branch, not the
+default/protected application branch. Admissions and run records live at
+hash-derived paths and every remote mutation must extend the observed branch
+head through a GitHub `force=false` ref update; a stale writer re-reads and
+rebuilds instead of overwriting the winner.
+
+This storage branch is canonical only for the compact C9 state reachable from
+its validated head. It grants no dispatch or merge authority and does not store
+raw provider credentials. C9-H still defines the retention/reference policy for
+compact evidence versus large transient artifacts.
 
 ## 4. Multi-user model
 

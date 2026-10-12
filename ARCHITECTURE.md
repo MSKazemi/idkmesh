@@ -4,6 +4,8 @@
 
 IDKMesh is a verification-first coordination system for uncertain, distributed work. The repository currently combines protocol contracts, experiment/simulation code, GitHub-native control loops, community/evolution research, and interoperability adapters. It is **not yet a production distributed mesh or a finished Verified Swarm Runner product**.
 
+For the **source-verified implementation wiring** (CLI, local HTTP, SQLite run bookkeeping, reference execution, candidate/verification boundaries and integration non-authority) see [As-Built Implementation Map](docs/architecture/AS_BUILT_IMPLEMENTATION_MAP.md) and [the 85-module source index](docs/reference/MODULE_MAP.md). These supplement this architectural model without promoting plans to current capabilities.
+
 For the canonical definitions of event, action, candidate, iteration, generation, learning, improvement, and integration authority, see [`ITERATION_MODEL.md`](ITERATION_MODEL.md).
 
 ## 1. System identity
@@ -42,6 +44,29 @@ benchmark fixture != scientific outcome
 
 The machine-readable contracts and compatibility rules live in [`schemas/`](schemas/README.md).
 
+## 2.1 Implemented executable surfaces
+
+The semantic path above is broader than any one transport. For the exact code-backed
+surface currently present in the package, use the
+[Executable Capability Reference](docs/EXECUTABLE_CAPABILITIES.md). It is CI-checked
+against the real recursive CLI parser, Control Tower discovery endpoints, public Python
+client methods, and every top-level `idkmesh/*.py` module.
+
+At the current revision, executable architecture spans:
+
+- review/evidence diagnostics (`gate-audit`, dependence, marginal evidence, benchmark and synthesis);
+- connector profile validation/import/storage, offline probes, readiness diagnosis, and provider-neutral route explanation;
+- durable Product Spine run state, retained evidence, derived WorkUnit/project reads, and append-only events;
+- loopback Control Tower UI/API plus a dependency-free Python client;
+- Jules, OpenAI-compatible, and bounded local-agent implementation foundations;
+- GitHub-native source/webhook/dispatch/candidate/evidence/bootstrap control primitives;
+- tenant scope, enterprise identity/authorization/profile, and tamper-evident audit primitives;
+- task claims, coordination preflight, executor admission, service limits, and observability;
+- stewardship reports/history and local browser views.
+
+These are implementation capabilities, not a blanket maturity claim. The
+[Capability Truth Matrix](docs/CAPABILITY_MATRIX.md) remains authoritative for evidence
+level and allowed public wording; specifications define each surface's authority ceiling.
 ## 3. Semantic state: goals, work, evidence, provenance
 
 IDKMesh models the project as interacting graphs rather than one task queue.

@@ -3,7 +3,7 @@
   "challenge_id": "byo-agent-001-result-manifest-conformance",
   "source_revision": "1db0aa0cc525e3179f179661ba1623381d889c89",
   "schema": "schemas/result-manifest.schema.json",
-  "schema_git_blob_sha": "e2cd2f55cff59bb306ba74bfc63ff8f4c6ffd934",
+  "schema_git_blob_sha": "4698b7680966f66d425402f6791829ee78d16c2f",
   "purpose": "Public onboarding/conformance challenge for the canonical ResultManifest v0.1 contract; not a hidden model benchmark.",
   "cases": [
     {

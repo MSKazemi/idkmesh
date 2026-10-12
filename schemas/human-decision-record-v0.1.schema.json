@@ -20,7 +20,7 @@
   "properties": {
     "schema_version": {"const": "0.1"},
     "kind": {"const": "idkmesh-human-decision-record"},
-    "decision_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._/-]{2,127}$"},
+    "decision_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._/-]{2,127}$(?!\n)"},
     "evidence_report": {
       "type": "object",
       "additionalProperties": false,
@@ -69,7 +69,7 @@
   "$defs": {
     "digest": {
       "type": "string",
-      "pattern": "^sha256:[0-9a-f]{64}$"
+      "pattern": "^sha256:[0-9a-f]{64}$(?!\n)"
     }
   }
 }

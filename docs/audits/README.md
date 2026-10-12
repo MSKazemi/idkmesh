@@ -18,6 +18,12 @@ declare no explicit baseline revision; that is noted rather than invented.
 
 Whole-repository snapshots, ordered by date.
 
+- [Code-to-Documentation Reconciliation](2026-10-10-code-documentation-reconciliation.md)
+  — 2026-10-10/11; initial `58f5d925`, refreshed `bee77a61`. Inventories all
+  85 direct installable Python modules, links as-built architecture and operator
+  references, records source/plan distinctions, and explicitly bounds the
+  unexecuted test and wider-tree review scope.
+
 - [Engineering Questions and Product-Answer Assessment](2026-10-07-engineering-question-and-product-answer-assessment.md)
   — 2026-10-07; baseline `7ac46d39`. Reviews the engineering questions IDKMesh
   needs to answer, grades the current repository/product evidence, and separates
@@ -52,6 +58,11 @@ Each answers one bounded question rather than surveying the repository.
   --check` fails without `PYTHONPATH=.`, and one unrelated baseline test
   (`test_local_agent_boundary_rejects_implicit_host_env_and_repo_artifacts`)
   failed on the reviewer's machine before any change.
+
+- [Visibility, SEO, and Traffic Evidence Audit](2026-10-08-visibility-seo-traffic-audit.md) —
+  2026-10-08; baseline `110f0307`. Finds good technical discovery foundations
+  but no verified first-party search/visitor baseline. Confirms the public
+  GitHub snapshot and recommends activating #807 first.
 
 - [SEO + AI-Visibility Audit](2026-09-20-seo-ai-visibility-audit.md) —
   2026-09-20; baseline `999bc26d`. Is `mskazemi.com/idkmesh/` visible to search

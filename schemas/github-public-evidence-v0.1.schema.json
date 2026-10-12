@@ -21,7 +21,7 @@
     "kind": {"const": "idkmesh-github-public-evidence"},
     "repository": {
       "type": "string",
-      "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+      "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$(?!\n)"
     },
     "run": {
       "type": "object",
@@ -61,7 +61,7 @@
         "work_unit_digest": {"$ref": "#/$defs/digest"},
         "source_revision": {
           "type": "string",
-          "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$"
+          "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$(?!\n)"
         },
         "evidence_report_digest": {
           "anyOf": [{"$ref": "#/$defs/digest"}, {"type": "null"}]
@@ -136,7 +136,7 @@
   "$defs": {
     "digest": {
       "type": "string",
-      "pattern": "^sha256:[0-9a-f]{64}$"
+      "pattern": "^sha256:[0-9a-f]{64}$(?!\n)"
     },
     "candidate": {
       "oneOf": [
@@ -149,16 +149,16 @@
             "type": {"const": "github_pull_request"},
             "repository": {
               "type": "string",
-              "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+              "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$(?!\n)"
             },
             "number": {"type": "integer", "minimum": 1},
             "head_sha": {
               "type": "string",
-              "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$"
+              "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$(?!\n)"
             },
             "url": {
               "type": "string",
-              "pattern": "^https://github\\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/pull/[1-9][0-9]*$"
+              "pattern": "^https://github\\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/pull/[1-9][0-9]*$(?!\n)"
             }
           }
         },

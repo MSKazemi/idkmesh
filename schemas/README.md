@@ -171,6 +171,15 @@ when an entry names a file that is not a successor.
 
 ## Compatibility notes
 
+- Every end-anchored `pattern` in this directory is written as the anchor plus
+  the ADR-0025 `(?!\n)` guard (for example `^[0-9a-f]{40}$(?!\n)`): Python's
+  `re` matches `$` before a trailing newline, and the guard makes Python
+  validators reject exactly the trailing-newline values the ECMA-262 regex
+  semantics JSON Schema specifies never accepted. Under the versioning rule
+  this is a validator-divergence repair, not a breaking contract change
+  ([ADR-0025](../docs/decisions/ADR-0025-pattern-end-anchor-hardening.md));
+  `tests/test_schema_pattern_anchors.py` enforces it for every pattern and
+  records the two deliberate unanchored prefix matchers.
 - WorkUnit v0.1 remains available for historical Phase 0 artifacts.
 - The current harness validates new WorkUnits against v0.2.
 - The valid v0.2 Phase 0 smoke fixture includes the new zero-project-spend budget fields.

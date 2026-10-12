@@ -144,7 +144,7 @@
         "input_digest_sha256": {
           "description": "SHA-256 of the canonicalized (sorted-key, compact) input document, binding the report to the exact verdict matrix it was computed from.",
           "type": "string",
-          "pattern": "^[0-9a-f]{64}$"
+          "pattern": "^[0-9a-f]{64}$(?!\n)"
         }
       }
     }

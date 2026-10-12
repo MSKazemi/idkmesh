@@ -4,6 +4,11 @@ This index maps IDKMesh's active architecture, experimental control primitives,
 and retained design history. Status and authority declarations in each document
 remain authoritative; an index link does not promote a proposal into policy.
 
+## As-built implementation map
+
+- [Current implementation / trust-boundary map](AS_BUILT_IMPLEMENTATION_MAP.md) — source-backed local CLI, SQLite Product Spine, two-attempt reference loop, Control Tower HTTP, connector/Jules adapters, sandbox, and decision boundaries.
+- [Direct package module inventory](../reference/MODULE_MAP.md) — responsibilities for every `idkmesh/*.py` file, with links to the owning specs; this is **not** a production-readiness assertion.
+
 ## Rendered Pipeline Views
 
 - [Pipeline Diagrams](PIPELINE_DIAGRAMS.md) — the canonical work/evidence path,
@@ -12,6 +17,7 @@ remain authoritative; an index link does not promote a proposal into policy.
 
 ## System and Compute Fabric
 
+- [Executable Capability Reference](../EXECUTABLE_CAPABILITIES.md) — CI-checked inventory of the real CLI tree, local API endpoints, Python client, and package modules; use it to distinguish executable code from architecture targets.
 - [Adaptive Policy Shadow Contract](ADAPTIVE_POLICY_SHADOW_CONTRACT.md) —
   provider-neutral shadow planning and outcome boundaries for adaptive policy
   experiments.
@@ -26,9 +32,10 @@ remain authoritative; an index link does not promote a proposal into policy.
   secret-reference, and self-hosting boundaries above the existing WorkUnit and
   verification contracts.
 - [API Control-Plane Architecture](API_CONTROL_PLANE_ARCHITECTURE.md) —
-  unifies Control Tower, Connector Control, Product Spine, CLI, and future
-  multi-user transports around one domain/application-service model while
-  keeping evidence, human decision, and integration authority separate.
+  implemented API-3 convergence contract: Control Tower, Connector Control,
+  Product Spine, CLI, and future transports share named application/domain
+  owners; the checked-in ownership map is regression-guarded in normal CI while
+  human-decision HTTP and wider production API gates remain separate.
 - [GitHub-First Deployment and Multi-User Operation](GITHUB_FIRST_DEPLOYMENT_AND_MULTIUSER.md) —
   default server-optional deployment profile, durable GitHub-native state,
   team roles/claims, optional nodes, and evidence-based triggers for adding a service.

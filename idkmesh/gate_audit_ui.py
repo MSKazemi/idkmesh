@@ -23,6 +23,7 @@ from idkmesh.local_ui_security import (
     is_loopback_host,
     new_session_token,
     send_security_headers,
+    token_matches,
 )
 
 DEFAULT_PORT = 8765
@@ -684,7 +685,7 @@ def _handler(initial_text: str | None, token: str):
             if self.path != "/api/audit":
                 self._send_json(404, {"ok": False, "error": "not found"})
                 return
-            if self.headers.get(TOKEN_HEADER) != token:
+            if not token_matches(self.headers.get(TOKEN_HEADER), token):
                 self._send_json(
                     403,
                     {
@@ -711,15 +712,17 @@ def _handler(initial_text: str | None, token: str):
                     {"ok": False, "error": "missing Content-Length header"},
                 )
                 return
-            try:
-                length = int(raw_length)
-            except ValueError:
+            # See the Control Tower's _read_json_text: Content-Length must be
+            # ASCII digits (RFC 9110), not whatever int() happens to parse.
+            value = raw_length.strip(" \t")
+            if not value.isascii() or not value.isdigit():
                 self._send_json(
                     400,
                     {"ok": False, "error": "invalid Content-Length header"},
                 )
                 return
-            if length < 0 or length > MAX_BODY_BYTES:
+            length = int(value)
+            if length > MAX_BODY_BYTES:
                 self._send_json(
                     413,
                     {

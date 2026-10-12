@@ -128,6 +128,14 @@ Human users / enterprise IdP
 
 GitHub remains the canonical code and integration authority unless a future ADR explicitly changes that boundary.
 
+The normative E8 service/deployment contract is
+[Enterprise Control Service Boundary v0.1](../specifications/ENTERPRISE_CONTROL_SERVICE_V0_1.md).
+It freezes the API/control/worker/data/evidence authority split, request ordering,
+durable-state and idempotency rules, private-runner pattern, migration/backup
+lifecycle, operational probes, and upgrade/rollback strategy without selecting
+an infrastructure vendor. Its existence is architecture evidence, not proof
+that a production G2/G3 deployment currently enforces the contract.
+
 ## 5. Four planes, four authorities
 
 Enterprise deployments must not collapse these planes into one privileged service account.

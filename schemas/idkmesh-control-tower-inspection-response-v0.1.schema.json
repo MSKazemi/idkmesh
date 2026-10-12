@@ -15,7 +15,7 @@
     "ok": {"const": true},
     "snapshot_digest": {
       "type": "string",
-      "pattern": "^sha256:[0-9a-f]{64}$",
+      "pattern": "^sha256:[0-9a-f]{64}$(?!\n)",
       "description": "canonical_digest() of the sibling snapshot field."
     },
     "snapshot": {

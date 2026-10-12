@@ -1,0 +1,20 @@
+name: IDKMesh OIDC cloud-dispatch shape example
+
+on: workflow_dispatch
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  authorize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: idkmesh-dispatch-high
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - run: |
+          echo "OIDC shape only: exchange the GitHub identity with the configured provider here."
+          echo "No long-lived cloud credential is embedded in this example."

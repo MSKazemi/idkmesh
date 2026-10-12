@@ -47,7 +47,7 @@
     "record_id": {"$ref": "#/$defs/id"},
     "repository": {
       "type": "string",
-      "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+      "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$(?!\n)"
     },
     "project_id": {"$ref": "#/$defs/id"},
     "run_id": {"$ref": "#/$defs/id"},
@@ -117,26 +117,26 @@
       "type": "string",
       "minLength": 1,
       "maxLength": 192,
-      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]*$"
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]*$(?!\n)"
     },
     "digest": {
       "type": "string",
-      "pattern": "^sha256:[0-9a-f]{64}$"
+      "pattern": "^sha256:[0-9a-f]{64}$(?!\n)"
     },
     "gitRevision": {
       "type": "string",
-      "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$"
+      "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$(?!\n)"
     },
     "utcTimestamp": {
       "type": "string",
       "format": "date-time",
-      "pattern": "Z$"
+      "pattern": "Z$(?!\n)"
     },
     "repoPath": {
       "type": "string",
       "minLength": 1,
       "maxLength": 1024,
-      "pattern": "^[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)*$",
+      "pattern": "^[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)*$(?!\n)",
       "not": {
         "pattern": "(^|/)\\.{1,2}(/|$)"
       }
@@ -159,7 +159,7 @@
           "type": "string",
           "minLength": 1,
           "maxLength": 64,
-          "pattern": "^[a-z][a-z0-9_.-]*$"
+          "pattern": "^[a-z][a-z0-9_.-]*$(?!\n)"
         },
         "occurred_at": {"$ref": "#/$defs/utcTimestamp"},
         "state": {
@@ -213,7 +213,7 @@
             {"type": "null"},
             {
               "type": "string",
-              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$(?!\n)"
             }
           ]
         }
@@ -468,7 +468,7 @@
           "type": "string",
           "minLength": 1,
           "maxLength": 128,
-          "pattern": "^[a-z][a-z0-9_.-]*$"
+          "pattern": "^[a-z][a-z0-9_.-]*$(?!\n)"
         },
         "classification": {
           "enum": [

@@ -486,12 +486,12 @@ conforming production backend.
 ### Slices
 
 - **C9-A — [ledger record schema](../specifications/GITHUB_LEDGER_RECORD_V0_1.md):** run/event/route/attempt/idempotency/evidence references with exact WorkUnit/source binding and no authority.
-- **C9-B — append-only local Git fixture:** deterministic event serialization.
-- **C9-C — optimistic append protocol:** concurrent writer conflict/retry semantics.
-- **C9-D — idempotent admission record:** duplicate dispatch -> existing run.
-- **C9-E — recovery reader:** reconstruct current run state from events.
-- **C9-F — killed-workflow recovery test:** resume observation safely.
-- **C9-G — GitHub storage adapter:** evidence branch/equivalent with protected application branch untouched.
+- **C9-B — [append-only local Git fixture](../specifications/GITHUB_LEDGER_SERIALIZATION_V0_1.md):** implemented by `idkmesh/github_ledger_serialization.py`; deterministic canonical bytes/digests, semantic attempt/route checks, complete sequence/digest-chain verification, and a two-commit local Git append fixture with no remote write authority.
+- **C9-C — [optimistic append protocol](../specifications/GITHUB_LEDGER_APPEND_V0_1.md):** implemented by `idkmesh/github_ledger_append.py`; compare-and-set `git update-ref` on one ref per run, `LedgerConflict` with the actual head, bounded retry, linear never-rewritten history, proven against real Git with concurrent writers. No remote write authority.
+- **C9-D — [idempotent admission record](../specifications/GITHUB_LEDGER_ADMISSION_V0_1.md):** implemented by `idkmesh/github_ledger_admission.py`; one admission ref per dispatch key created by compare-and-set, so duplicate or concurrent dispatch resolves to the existing run, a conflicting replay fails closed, and a crash before the first record is recoverable. No remote write authority.
+- **C9-E — [recovery reader](../specifications/GITHUB_LEDGER_RECOVERY_V0_1.md):** implemented by `idkmesh/github_ledger_recovery.py`; derives a run's current state from its records, checks the lifecycle, attempts and human decision, keeps every failure, and surfaces ambiguous provider submissions. Read-only; no authority.
+- **C9-F — [killed-workflow recovery test](../specifications/GITHUB_LEDGER_RECOVERY_PLAN_V0_1.md):** implemented by `idkmesh/github_ledger_recovery_plan.py` and `tests/test_github_ledger_killed_workflow.py`; a pure safe-next-step plan (reconcile an unconfirmed provider submission, never resubmit blindly) and an exhaustive kill matrix proving a killed coordinator is recovered with exactly one provider submission. Advisory; no authority.
+- **C9-G — [GitHub storage adapter](../specifications/GITHUB_LEDGER_GITHUB_STORAGE_V0_1.md):** implemented by `idkmesh/github_ledger_github_store.py`; one dedicated orphan `idkmesh-ledger` branch, hash-derived admission/run-record paths, fast-forward-only (`force=false`) GitHub ref updates with bounded retry, C9-D admission semantics, and C9-E recovery reads while protected application branches remain untouched.
 - **C9-H — retention/reference policy:** large artifacts transient, essential evidence durable.
 
 **C9 exit gate:** G3 restart-safe coordination.
@@ -546,18 +546,31 @@ conforming production backend.
 
 - **C12-A — governance policy object:** implemented by
   `idkmesh/github_governance_policy.py`; deterministic required/warn/optional
-  GitHub guards per governed operation, with structural false ceilings for
-  automatic admin mutation and ruleset-as-independent-review. Policy only; no
-  GitHub observation or evaluation yet.
-- **C12-B — branch/ruleset fixture evaluator:** pure metadata -> PASS/WARN/FAIL.
-- **C12-C — workflow-permission linter:** generated workflows use least privilege.
-- **C12-D — secret-bearing job rules:** trusted event + environment approval boundary.
-- **C12-E — fork/untrusted-PR secret tests.**
-- **C12-F — CODEOWNERS sensitive-path recommendation generator.**
-- **C12-G — optional OIDC example/preflight.**
-- **C12-H — `doctor --github` rendering.**
+  guards per governed operation, with structural false ceilings for automatic
+  admin mutation and ruleset-as-independent-review.
+- **C12-B — branch/ruleset fixture evaluator:** implemented by
+  `idkmesh/github_governance_preflight.py`; normalized trusted observations
+  map canonical guards to PASS/WARN/FAIL/UNKNOWN/NOT_APPLICABLE.
+- **C12-C — workflow-permission linter:** implemented in the same preflight
+  module; source-only checks cover `contents: read`, immutable remote
+  references, and checkout credential persistence.
+- **C12-D — secret-bearing job rules:** implemented as canonical
+  environment/approval guards plus workflow environment-binding checks.
+- **C12-E — fork/untrusted-PR secret tests:** deterministic regressions reject
+  PR-triggered secret-bearing or privileged head execution.
+- **C12-F — CODEOWNERS sensitive-path recommendation generator:** implemented
+  with an explicit owner argument and no repository writes.
+- **C12-G — optional OIDC example/preflight:** implemented as a workflow-shape
+  check plus `examples/github-governance/oidc-cloud-dispatch.yml`; no cloud
+  authentication is attempted.
+- **C12-H — `doctor --github` rendering:** implemented as a read-only CLI mode
+  that preserves the existing connector doctor and exits non-zero for
+  FAIL/UNKNOWN.
 
-**C12 exit gate:** requested operation cannot run when its required GitHub guard is missing.
+**C12 exit gate:** `require_governance()` fails closed when a required GitHub
+guard is missing or unobservable. The C12 implementation performs no automatic
+GitHub administration and does not treat configuration metadata as proof of
+independent human review.
 
 ---
 
