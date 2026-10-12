@@ -1,7 +1,7 @@
 # GitHub WorkUnit Intake v0.1
 
 **Status:** experimental field contract and Issue Form  
-**Issue:** #608, C13-A/C13-B  
+**Issue:** #608, C13-A/C13-B/C13-C (parser) and C13-D (fallback)  
 **Schema:** `schemas/github-workunit-intake-v0.1.schema.json`  
 **Issue Form:** `.github/ISSUE_TEMPLATE/06-idkmesh-workunit.yml`  
 **Form mapping:** `config/github-workunit-intake-v0.1.json`  
@@ -217,11 +217,39 @@ rewriting durable issue semantics.
 - no Project synchronization;
 - no replacement for WorkUnit v0.2 or the Product Spine.
 
+## C13-C/C13-D parser and fallback
+
+`idkmesh/github_workunit_intake.py` provides
+`parse_workunit_intake(body) -> IntakeParseResult`, a pure function (no
+network, filesystem, or clock) that reads the `### <label>` sections GitHub
+renders from the Issue Form and returns either `status="parsed"` with an
+intake object shaped like the schema, or `status="fallback"` with `intake=None`
+and human-readable `reasons`. A fallback means the caller keeps using the
+generic issue preview.
+
+It falls back, never guessing, when the body is not text, exceeds 65536
+characters, contains control characters, repeats a section, has an unknown
+heading or text outside any section, omits or blanks a required field, has a
+dropdown value outside the closed vocabulary (matched exactly, no coercion),
+exceeds a schema length/count bound, lists an unsafe path (absolute, `~`,
+drive letter, backslash, or `..`), gives a connector hint that is not a plain
+identifier, or leaves the safety acknowledgement unchecked. The
+`authority_ceiling` is always all-false and no form value can alter it.
+
+Dependency lines may start with `requires:`, `blocked by:` (or `blocked_by:`)
+or `informs:`; a line without a keyword is recorded as `informs`, the least
+binding relation. Blank optional fields and GitHub's `_No response_` yield
+empty lists or a null connector.
+
+Still open: composing a parsed intake with trusted `GitHubIssueWorkPolicy`
+(path intersection, risk/sensitivity floors) inside `work preview`.
+
 ## Next slices
 
-- **C13-C:** parse/normalize the form into this contract and then produce a
-  policy-bounded WorkUnit preview.
-- **C13-D:** prove incomplete/malicious form content cannot broaden authority.
+- **C13-C (remaining):** feed a parsed intake through policy composition into
+  the policy-bounded WorkUnit preview.
+- **C13-E to C13-H:** label projection, Project field mapping and
+  synchronization, and the newcomer no-JSON guide.
 
 Those slices must reuse this contract rather than creating a second intake
 vocabulary.
