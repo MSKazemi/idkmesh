@@ -14,6 +14,17 @@ and the release notes for that tag.
 
 ### Added
 
+- Cross-origin delta matrix for the local UI servers (issue #745, Security
+  CORS/CSRF item; `tests/test_api_cors_csrf_matrix.py`). Complements
+  `tests/test_api_security_matrix.py` with the coverage it does not have:
+  the read-only steward dashboards refuse every write verb and preflight
+  under a hostile `Origin`, the gate-audit mutation's CORS posture is pinned,
+  the Control Tower's JSON-only mutation gate refuses simple content types
+  even with a valid session token, `Origin: null` is not a credential, no
+  response reflects the `Origin` value, and refusals keep the
+  browser-isolation headers. The no-grant check matches any
+  `Access-Control-*` header, not just the `-Allow` family.
+
 - C12 GitHub governance preflight (issue #607): `idkmesh doctor --github`
   now evaluates the canonical C12-A governance policy from bounded normalized
   observations, reports PASS/WARN/FAIL/UNKNOWN/NOT_APPLICABLE, and treats
