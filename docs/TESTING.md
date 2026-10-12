@@ -172,7 +172,8 @@ hooks, and CI execute the same code path and cannot drift apart.
 
 **PR Gate runs `unit` (`scripts/testkit.py unit`) plus the same Markdown-link
 check (`scripts/check_links.py`), schema backward-compatibility check
-(`tools/schema_compat_check.py`, ADR-0020), schema migration-note check
+(`tools/schema_compat_check.py`, ADR-0020 -- both the `schemas/*.json`
+files and the `openapi.yaml` API surface), schema migration-note check
 (`tools/schema_migration_note_check.py`, the ledger in `schemas/README.md`),
 and OpenAPI/schema reference resolution check (`tools/openapi_ref_check.py`,
 API Conventions section 19) as its required, always-on checks** — seconds, not minutes, so a documentation fix

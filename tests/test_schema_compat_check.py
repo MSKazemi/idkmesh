@@ -11,6 +11,7 @@ not just an assertion against the implementation's own behavior.
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 import sys
 import unittest
@@ -181,6 +182,213 @@ class DiffSchemaTests(unittest.TestCase):
             any("properties/budget" in v and "removed" in v for v in violations)
         )
 
+
+class DiffOpenapiSurfaceTests(unittest.TestCase):
+    """Pin the openapi.yaml surface rule (paths, methods, statuses, params)."""
+
+    @staticmethod
+    def _doc() -> dict:
+        return {
+            "paths": {
+                "/api/v1/runs": {
+                    "get": {
+                        "operationId": "list_runs",
+                        "parameters": [
+                            {"name": "limit", "required": "false"},
+                            {"name": "cursor", "required": "false"},
+                        ],
+                        "responses": {
+                            "200": {
+                                "content": {
+                                    "application/json": {
+                                        "schema": {
+                                            "$ref": "#/components/schemas/a"
+                                        }
+                                    }
+                                }
+                            },
+                            "403": {
+                                "$ref": "#/components/responses/Forbidden"
+                            },
+                        },
+                    }
+                }
+            },
+            "components": {
+                "responses": {
+                    "Forbidden": {
+                        "content": {
+                            "application/json": {
+                                "schema": {"$ref": "#/components/schemas/e"}
+                            }
+                        }
+                    }
+                },
+                "schemas": {"a": {"type": "object"}},
+            },
+        }
+
+    def test_identical_documents_are_compatible(self) -> None:
+        self.assertEqual(sc.diff_openapi_surface(self._doc(), self._doc()), [])
+
+    def test_additions_are_widenings(self) -> None:
+        new = self._doc()
+        new["paths"]["/api/v1/new"] = {"post": {}}
+        op = new["paths"]["/api/v1/runs"]["get"]
+        op["responses"]["503"] = {}
+        op["parameters"].append({"name": "state", "required": "false"})
+        self.assertEqual(sc.diff_openapi_surface(self._doc(), new), [])
+
+    def test_removed_path_is_breaking(self) -> None:
+        new = self._doc()
+        new["paths"].pop("/api/v1/runs")
+        violations = sc.diff_openapi_surface(self._doc(), new)
+        self.assertEqual(violations, ["paths./api/v1/runs: path removed"])
+
+    def test_removed_operation_is_breaking(self) -> None:
+        new = self._doc()
+        new["paths"]["/api/v1/runs"].pop("get")
+        violations = sc.diff_openapi_surface(self._doc(), new)
+        self.assertEqual(
+            violations, ["paths./api/v1/runs.get: operation removed"]
+        )
+
+    def test_operation_id_rename_is_breaking(self) -> None:
+        new = self._doc()
+        new["paths"]["/api/v1/runs"]["get"]["operationId"] = "listRuns"
+        violations = sc.diff_openapi_surface(self._doc(), new)
+        self.assertEqual(
+            violations, ["paths./api/v1/runs.get: operationId changed"]
+        )
+
+    def test_removed_status_and_media_type_are_breaking(self) -> None:
+        new = self._doc()
+        responses = new["paths"]["/api/v1/runs"]["get"]["responses"]
+        responses["200"]["content"].pop("application/json")
+        responses.pop("403")
+        violations = sc.diff_openapi_surface(self._doc(), new)
+        self.assertEqual(
+            violations,
+            [
+                "paths./api/v1/runs.get.responses.200.content."
+                "application/json: media type removed",
+                "paths./api/v1/runs.get.responses.403: response removed",
+            ],
+        )
+
+    def test_response_ref_shape_change_is_breaking(self) -> None:
+        new = self._doc()
+        new["paths"]["/api/v1/runs"]["get"]["responses"]["403"] = {
+            "content": {}
+        }
+        violations = sc.diff_openapi_surface(self._doc(), new)
+        self.assertEqual(
+            violations,
+            ["paths./api/v1/runs.get.responses.403: response shape changed"],
+        )
+
+    def test_response_schema_target_change_is_breaking(self) -> None:
+        new = self._doc()
+        content = new["paths"]["/api/v1/runs"]["get"]["responses"]["200"][
+            "content"
+        ]
+        content["application/json"]["schema"] = {"$ref": "#/x"}
+        violations = sc.diff_openapi_surface(self._doc(), new)
+        self.assertEqual(
+            violations,
+            [
+                "paths./api/v1/runs.get.responses.200.content."
+                "application/json: schema changed"
+            ],
+        )
+
+    def test_parameter_removal_and_required_flip_are_breaking(self) -> None:
+        new = self._doc()
+        params = new["paths"]["/api/v1/runs"]["get"]["parameters"]
+        params[1]["required"] = "true"
+        params.pop(0)
+        violations = sc.diff_openapi_surface(self._doc(), new)
+        self.assertEqual(
+            violations,
+            [
+                "paths./api/v1/runs.get.parameters[limit]: parameter removed",
+                "paths./api/v1/runs.get.parameters[cursor]: required changed "
+                "(false -> true)",
+            ],
+        )
+
+    def test_new_required_parameter_is_breaking(self) -> None:
+        new = self._doc()
+        new["paths"]["/api/v1/runs"]["get"]["parameters"].append(
+            {"name": "tenant", "required": "true"}
+        )
+        violations = sc.diff_openapi_surface(self._doc(), new)
+        self.assertEqual(
+            violations,
+            [
+                "paths./api/v1/runs.get.parameters[tenant]: "
+                "new required parameter"
+            ],
+        )
+
+    def test_shared_component_removal_and_change_are_breaking(self) -> None:
+        new = self._doc()
+        new["components"]["responses"]["Forbidden"]["content"] = {}
+        new["components"]["schemas"].pop("a")
+        violations = sc.diff_openapi_surface(self._doc(), new)
+        self.assertEqual(
+            sorted(violations),
+            [
+                "components.responses.Forbidden.content.application/json: "
+                "media type removed",
+                "components.schemas.a: removed",
+            ],
+        )
+
+
+class OpenapiParserContainmentTests(unittest.TestCase):
+    """The list-capturing parser supersedes the legacy one on the real document."""
+
+    def test_both_parsers_agree_on_the_mapping_tree(self) -> None:
+        from openapi_catalog import parse_block_mapping, parse_block_mapping_lists
+
+        text = (ROOT / "openapi.yaml").read_text(encoding="utf-8")
+        legacy = parse_block_mapping(text)
+        extended = parse_block_mapping_lists(text)
+
+        def contained(old, new, where: str) -> None:
+            if isinstance(old, dict):
+                self.assertIsInstance(new, dict, where)
+                for key, value in old.items():
+                    self.assertIn(key, new, f"{where}/{key}")
+                    if value == {} and isinstance(new[key], list):
+                        continue  # the recorded upgrade point: skipped list
+                    contained(value, new[key], f"{where}/{key}")
+            else:
+                self.assertEqual(old, new, where)
+
+        contained(legacy, extended, "")
+
+    def test_parameters_are_captured_with_their_required_flags(self) -> None:
+        from openapi_catalog import parse_block_mapping_lists
+
+        text = (ROOT / "openapi.yaml").read_text(encoding="utf-8")
+        doc = parse_block_mapping_lists(text)
+        runs = doc["paths"]["/api/v1/runs"]["get"]["parameters"]
+        self.assertIsInstance(runs, list)
+        self.assertTrue(runs)
+        for parameter in runs:
+            self.assertIn("name", parameter)
+            self.assertIn("required", parameter)
+
+
+class DiffSchemaAnchorHardeningTests(unittest.TestCase):
+    """Anchor-hardening rules of ``diff_schema``.
+
+    These methods arrived on main while the OpenAPI surface tests were being
+    developed on this branch; the merge keeps them as their own class so both
+    derivations survive review intact.
+    """
 
     def test_anchor_hardening_is_compatible(self) -> None:
         old = _base(
@@ -445,6 +653,42 @@ class CliTests(unittest.TestCase):
         finally:
             schema_path.write_text(original, encoding="utf-8")
         self.assertEqual(schema_path.read_text(encoding="utf-8"), original)
+
+    def test_detects_a_real_openapi_surface_break_end_to_end(self) -> None:
+        # Same discipline as the schema end-to-end: mutate the real
+        # checked-in document on disk, run the exact CI command, restore
+        # the original bytes in `finally` and verify the restore landed.
+        openapi_path = ROOT / "openapi.yaml"
+        original = openapi_path.read_text(encoding="utf-8")
+        # Two breaks the real document can express: a parameter flipped to
+        # required, and a response media type renamed away. (The document
+        # names no operations, so operationId renames are pinned purely in
+        # DiffOpenapiSurfaceTests instead.)
+        required = original.replace("required: false", "required: true", 1)
+        renamed = required.replace("text/plain:", "text/html:", 1)
+        self.assertNotEqual(required, original)
+        self.assertNotEqual(renamed, required)
+        try:
+            openapi_path.write_text(renamed, encoding="utf-8")
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(ROOT / "tools" / "schema_compat_check.py"),
+                    "--base",
+                    "HEAD",
+                ],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+            self.assertIn("openapi.yaml", result.stdout)
+            self.assertIn("required changed (false -> true)", result.stdout)
+            self.assertIn("media type removed", result.stdout)
+        finally:
+            openapi_path.write_text(original, encoding="utf-8")
+        self.assertEqual(openapi_path.read_text(encoding="utf-8"), original)
 
     def test_unresolvable_base_without_explicit_flag_fails_closed(self) -> None:
         result = subprocess.run(
