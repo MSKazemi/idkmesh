@@ -35,6 +35,7 @@ methods, and every top-level Python module in `idkmesh/`.
 | `idkmesh github-workflow dispatch` | refuse with the stable `dispatch_unavailable` code | fails closed; reads no environment or secret |
 | `idkmesh github-workflow verify` | refuse with the stable `verify_unavailable` code | fails closed; reads no environment, candidate, or secret |
 | `idkmesh pages-site` | validate C14-D public-safe projections, render the C14-E static Pages file map, and write exactly those files to a local directory | local files only; no publication, workflow, network or GitHub call; refuses unsafe paths, symlinks, and unrecognised non-empty directories unless `--force` |
+| `idkmesh release-provenance` | validate C14-D public-safe projections and print the C14-F release metadata/provenance record (or draft release notes with `--notes`) binding a proposed tag, target commit and artifact digests to that evidence | stdout only; creates no tag, GitHub Release or attestation and makes no network or GitHub call; commit and digests are caller-supplied and recorded as unverified; no timestamps |
 | `idkmesh connections` | validate, normalize, persist, and inspect connector metadata | no live dispatch, no raw secret persistence |
 | `idkmesh connections validate` | validate a versioned connector profile | read-only |
 | `idkmesh connections list` | list normalized connector metadata from a profile | read-only |
@@ -163,7 +164,7 @@ The recovery planner reconciles unconfirmed provider submissions rather than res
 blindly; none of these ledger layers grants dispatch, verification, acceptance, application
 branch write, integration, or merge authority. The package also includes explicit dispatch
 authorization/bridge logic, exact candidate observation, evidence/status publication
-helpers, governance-policy and read-only governance-preflight checks, public-evidence projection, a static Pages site generator with a local-directory writer (`idkmesh pages-site`; no publication), and deterministic
+helpers, governance-policy and read-only governance-preflight checks, public-evidence projection, a static Pages site generator with a local-directory writer (`idkmesh pages-site`; no publication), a release metadata/provenance record (`idkmesh release-provenance`; no tag, release, or attestation), and deterministic
 GitHub-first bootstrap planning/rendering.
 
 ### Enterprise control primitives
@@ -247,6 +248,7 @@ name documents implementation presence, not stability as a public Python API.
 - `idkmesh/github_pages_site.py`
 - `idkmesh/github_pages_writer.py`
 - `idkmesh/github_public_evidence.py`
+- `idkmesh/github_release_provenance.py`
 - `idkmesh/github_rest_source.py`
 - `idkmesh/github_routing_projection.py`
 - `idkmesh/github_status_comment.py`

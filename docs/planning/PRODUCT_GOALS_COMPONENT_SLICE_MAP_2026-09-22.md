@@ -638,7 +638,15 @@ independent human review.
   local directory all-or-nothing, refusing path traversal, symlinks, and
   unrecognised non-empty directories without `--force`. The publishing
   workflow and outage fallback remain open (C14-H).
-- **C14-F — pilot release metadata/provenance.**
+- **C14-F — pilot release metadata/provenance.** Metadata record implemented by
+  `idkmesh/github_release_provenance.py`
+  ([contract](../specifications/GITHUB_RELEASE_PROVENANCE_V0_1.md)) and
+  `idkmesh release-provenance`: binds a proposed tag, target commit, and
+  artifact digests (caller-supplied, recorded as unverified) to the C14-D
+  evidence a release references, with fixed all-false claims and authority and
+  no timestamps. It creates no tag, GitHub Release, or attestation. **Still
+  open:** the pilot release itself, which needs the second-project pilot (C11)
+  and a human-approved release.
 - **C14-G — optional artifact attestation integration.**
 - **C14-H — no-GitHub-Pages fallback behavior.**
 

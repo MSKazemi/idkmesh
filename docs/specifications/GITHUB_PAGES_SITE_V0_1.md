@@ -126,5 +126,7 @@ public before building the C14-D projections.
 - no provenance timeline (the public projection carries no timestamps, so none
   is invented);
 - no JavaScript, search, or interactive filtering;
-- no release or attestation metadata (C14-F, C14-G);
+- no release or attestation metadata on the site (the offline release record is
+  [GitHub Release Provenance](GITHUB_RELEASE_PROVENANCE_V0_1.md), C14-F;
+  attestation is C14-G, not built);
 - no functional-correctness claim from publication.

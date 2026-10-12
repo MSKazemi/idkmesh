@@ -45,6 +45,7 @@ The wheel intentionally installs only `idkmesh/`. Running the research-backed `l
 | `github-workflow {preview,status} [--issue-json PATH \| --ledger-records PATH] [--json]` | Runner the generated `idkmesh-*.yml` wrappers call; reads `IDKMESH_*` environment variables. `preview` derives a WorkUnit preview and digest for one issue; `status` projects one run's latest durable-ledger record into the bounded status body and job summary | Read-only; no dispatch, issue comment, provider secret, or merge; refusals print `error: <code>: <message>` and exit 2 |
 | `github-workflow {dispatch,verify}` | Reserved wrapper phases | Always fail closed with `dispatch_unavailable` / `verify_unavailable`; read no environment or secret |
 | `pages-site --repository OWNER/NAME --projection PATH... --out DIR [--force] [--json]` | Validate C14-D public-safe projections, render the C14-E static Pages file map, and write exactly those files to a local directory all-or-nothing | Local files only: no publication, workflow, network or GitHub call; refuses `..`/absolute/symlinked paths, a symlinked or foreign non-empty `--out` (replaced only with `--force`, never the cwd, its ancestors, home, or a `.git` directory) |
+| `release-provenance --repository OWNER/NAME --tag TAG --target-commit SHA [--artifact NAME=sha256:HEX]... [--projection PATH...] [--notes]` | Validate C14-D public-safe projections and print the C14-F release metadata/provenance record as JSON, or draft release notes with `--notes` | stdout only: no tag, GitHub Release, attestation, network or GitHub call; commit and artifact digests are caller-supplied and recorded as unverified; no timestamps; exit 2 and empty stdout on any rejected input |
 | `local-loop CONFIG [--output-dir PATH]` | Two-attempt reference orchestration and verification/evidence bundle | Checkout + `[verify]` extra; decisions/replay remain manual |
 | `steward-report INPUT`, `steward-report-ui INPUT` | Validate and display retained single-run steward evidence | Offline read/loopback UI |
 | `steward-history INPUTS...`, `steward-history-ui INPUTS...` | Aggregate/show retained steward history | No GitHub polling or mutation |
@@ -69,6 +70,10 @@ IDKMESH_PROJECT_ROOT=. IDKMESH_REPOSITORY=OWNER/REPO IDKMESH_RUN_ID=1 \
   idkmesh github-workflow preview --issue-json issue.json
 # Write a Pages site from public-safe projections to a local directory; nothing is published:
 idkmesh pages-site --repository owner/name --projection run-1.json --out site
+
+# Print release metadata for a proposed tag; nothing is tagged, released, or attested:
+idkmesh release-provenance --repository owner/name --tag v0.1.0 \
+  --target-commit <40-hex-commit> --projection run-1.json
 
 # Evaluate the committed C12 fixture only; no GitHub API/admin mutation:
 idkmesh doctor --github examples/github-governance/governance-pass-v0.1.json \

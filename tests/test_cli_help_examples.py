@@ -31,6 +31,7 @@ EXAMPLE_COMMANDS = (
     ("run", "cancel"),
     ("control-tower",),
     ("pages-site",),
+    ("release-provenance",),
     ("connections", "validate"),
     ("connections", "list"),
     ("connections", "import"),
