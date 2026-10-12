@@ -14,6 +14,46 @@ and the release notes for that tag.
 
 ### Added
 
+- API-11 discovery reads for issue #746: `ControlTowerClient.get_openapi()`
+  downloads the OpenAPI 3.x definition of the running Control Tower
+  (`GET /api/v1/openapi.json`) and `get_metrics()` reads the fixed-cardinality
+  operational metrics (`GET /api/v1/metrics`). Both reuse the single-request,
+  no-retry, request-ID and whole-response content-digest verification; the
+  OpenAPI document is additionally checked for a `3.x` version marker, `info`
+  and `paths`, and metrics for the expected `kind`, failing closed with
+  `ProtocolError`. The typed web client, error catalog and remaining API
+  documentation, and the authenticated human-decision mutation, remain open.
+- C13-C/C13-D GitHub WorkUnit intake parser (refs #608): the new pure
+  `idkmesh.github_workunit_intake.parse_workunit_intake` turns an
+  `IDKMesh WorkUnit request` Issue Form body into the frozen intake object
+  or a safe `fallback` result for incomplete, duplicated, hand-edited,
+  unsafe-path or out-of-vocabulary content; it never grants authority.
+  Composition with `GitHubIssueWorkPolicy` and `work preview` is still open.
+- AVE-core shadow adapter regression pins (refs #644):
+  `tests/test_ave_shadow_adapter_gates.py` isolates each of the nine hard gates
+  (WorkUnit id/version, pool binding, sovereignty, zero project spend,
+  independent-verification policy, required-validator coverage, schema version),
+  the critical risk target, and each step of the eight-step lexicographic order,
+  so a refactor cannot silently drop one. Tests only; no adapter behaviour
+  changed, and the real N3 cohort remains open pending actual pre-outcome
+  captures.
+- Enterprise conformance doctor, first slice (refs #676):
+  `idkmesh doctor --enterprise-conformance [--json]` runs nine in-process
+  destructive scenarios against the real tenant-scope, authorization, audit
+  ledger, run-idempotency and secret-boundary primitives (temp dirs and fakes
+  only) and reports PASS/WARN/FAIL/UNKNOWN per scenario with expected safe
+  state, observed result and evidence links. Stale claim/retry, provider
+  outage/quota and release provenance report UNKNOWN until they are built;
+  the overall status is therefore UNKNOWN (exit 1). Not a certification claim.
+  `idkmesh/enterprise_conformance.py`, `tests/test_enterprise_conformance.py`.
+- Read-only GitHub Pages site projection for issue #609 (C14-E):
+  `idkmesh/github_pages_site.py` renders a deterministic in-memory static file
+  map (health, active work, verification debt, per-run provenance pages,
+  public JSON, `.nojekyll`) from C14-D public-safe projections only,
+  re-validating every value, escaping HTML and Liquid delimiters, and emitting
+  no scripts, external assets, or mutation controls. See
+  [GitHub Pages Site Projection v0.1](docs/specifications/GITHUB_PAGES_SITE_V0_1.md).
+  No publishing workflow, GitHub call, or outage fallback is included.
 - C10-H two-GitHub-user acceptance fixture (refs #598): `tests/test_c10_two_user_acceptance.py`
   composes the reviewed binding table, `authorize`, `LocalTaskClaims` and the C5
   label lane over synthetic actors to demonstrate propose / dispatch / concurrent
