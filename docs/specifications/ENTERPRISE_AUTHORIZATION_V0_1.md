@@ -159,6 +159,18 @@ The actor/approver is denied or rejected as approval evidence when:
 
 The decision records the exact `identity_revision` and policy revision used. Later service caches must key/invalidate against those revisions; a stale cached decision is not permanent authority.
 
+### Freshness-bound decision cache (E3-D)
+
+`idkmesh/enterprise_authz_cache.py` provides `AuthorizationDecisionCache`, a bounded LRU in front of `authorize`. Its guarantees are structural:
+
+- the key digests the whole normalized actor and approver (roles, scopes, clearance, `revoked`, expiry, `identity_revision`), the policy id, revision and a digest of the rule content, and the scope/resource/action/risk/data class. A revoked, re-scoped or demoted identity, or an edited policy, is a miss even when no revision string was bumped;
+- `request_id` and `evaluated_at_epoch` are not in the key. Time is enforced by the entry window `[stored_at, valid_until)`, where `valid_until` is the earliest of the max age (default 300 s), the actor expiry and the approver expiry. An identity that has expired never keeps cached authority, and a clock that moves backwards cannot revive an entry;
+- `invalidate_principal` drops every entry that used a principal as actor or approver, for a revocation feed;
+- every operation (lookup, store, eviction, `invalidate_principal`, `clear`) is serialised by one lock, so concurrent request threads cannot corrupt the LRU order or the hit/miss counters, and a revocation cannot interleave with a lookup into a stale ALLOW;
+- a hit is re-stamped with the new `request_id` and `evaluated_at_epoch` and still carries no execution, state-write or merge authority.
+
+No live service consumes the cache yet; wiring it in front of dispatch/API enforcement is E3-F.
+
 ## Tenant isolation
 
 The request has an explicit `TenantScope`, and its `ScopedResourceRef` must carry the exact same scope.
@@ -280,8 +292,7 @@ resolved `ActorContext` and are enforced exactly once, by this kernel's own
 contract composes with `ActorContext`'s validation rather than
 duplicating it.
 
-This closes only the GitHub identity source. E3-D (identity/policy freshness
-cache integration), E3-E (audited break-glass grant), E3-F (dispatch/API
+This closes only the GitHub identity source. E3-E (audited break-glass grant), E3-F (dispatch/API
 enforcement integration), E3-G (two-principal acceptance fixture), and E3-H
 (service middleware/conformance) remain open E3 slices; E3-C (enterprise
 IdP/OIDC/SAML adapter) is covered separately below.
@@ -348,8 +359,7 @@ document (missing or unknown fields, a wrong `kind`/`schema_version`, an
 unsupported `actor_type`, a duplicate `(issuer, subject)` pair) stay with
 the adapter and raise `OidcIdentityAdapterError`.
 
-This closes only the enterprise IdP identity source. E3-D (identity/policy
-freshness cache integration), E3-E (audited break-glass grant), E3-F
+This closes only the enterprise IdP identity source. E3-E (audited break-glass grant), E3-F
 (dispatch/API enforcement integration, including a live claims producer for
 both this adapter and E3-B), E3-G (two-principal acceptance fixture), and
 E3-H (service middleware/conformance) remain open E3 slices.
@@ -369,7 +379,7 @@ v0.1 does not claim:
 - a production policy database;
 - policy caching;
 - break-glass implementation;
-- secret/egress enforcement;
+- secret/egress enforcement (the decision kernel exists, see [Enterprise Data Policy Kernel](ENTERPRISE_DATA_POLICY_V0_1.md), but is not wired into any runtime path);
 - database row-level security;
 - merge execution;
 - regulatory certification.

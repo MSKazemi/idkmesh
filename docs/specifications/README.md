@@ -186,6 +186,7 @@ meaning of an existing version.
   verification semantics.
 - [Jules Trusted Source-Revision Binding](JULES_SOURCE_REVISION_BINDING.md) — fail-closed comparison boundary that permits `ScmRevisionBinding.verified=True` only when the authorized repository/branch/revision matches independently observed SCM identity.
 - [Product Spine Service v0.1](PRODUCT_SPINE_SERVICE_V0_1.md) — provider-neutral application-service contract that composes WorkUnit, routing, dispatch, candidate normalization, verification, evidence, and Human Decision Record without creating a new correctness or merge authority.
+- [Enterprise Data Policy Kernel v0.1](ENTERPRISE_DATA_POLICY_V0_1.md) — pure, fail-closed external-processing, egress, credential and secret-access decisions derived from the enterprise control profile; not yet wired into any runtime path.
 - [Enterprise Tenant Scope v0.1](ENTERPRISE_TENANT_SCOPE_V0_1.md) —
   tenant/project-scoped resource, storage-key, and idempotency foundation with
   fail-closed cross-scope reference checks.

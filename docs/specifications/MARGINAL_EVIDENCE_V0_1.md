@@ -348,5 +348,31 @@ The implementation is covered for:
 - schema validation;
 - CLI output and destructive-output-path refusal.
 
+### Required fixture cases (issue #693)
+
+Each of the ten deterministic, synthetic fixture cases the issue requires is
+pinned by name in `tests/test_marginal_evidence.py`:
+
+| # | Case | Test |
+|---|---|---|
+| 1 | complementary errors | `RequiredFixtureCaseTests.test_case1_complementary_errors_reduce_panel_error` |
+| 2 | almost-duplicate errors | `ContributionSemanticsTests.test_identical_error_candidate_has_correlation_one` |
+| 3 | high accuracy but redundant | `RequiredFixtureCaseTests.test_case3_high_accuracy_redundant_candidate_adds_nothing` |
+| 4 | lower accuracy, uniquely catches panel failures | `RequiredFixtureCaseTests.test_case4_lower_accuracy_candidate_uniquely_catches_panel_failures` |
+| 5 | candidate makes the quorum worse | `ContributionSemanticsTests.test_candidate_that_worsens_gate_gets_warning` |
+| 6 | zero-variance correlation | `ContributionSemanticsTests.test_zero_variance_candidate_correlation_is_explicitly_unresolved` |
+| 7 | insufficient common observations | `FiniteSampleTests.test_less_than_five_rows_is_point_only_and_unresolved` |
+| 8 | effective-vote saturation/censoring | `ContributionSemanticsTests.test_censored_effective_vote_delta_is_not_subtracted` |
+| 9 | probe rows excluded from the ordinary estimate | `ContributionSemanticsTests.test_probes_are_separate_from_headline_delta` |
+| 10 | even/odd panel transitions under the quorum | `RequiredFixtureCaseTests.test_case10_even_to_odd_transition_breaks_a_tie`, `...test_case10_odd_to_even_transition_raises_the_threshold` |
+
+`RequiredFixtureCaseTests.test_fixture_panel_errors_match_a_direct_gate_audit_run`
+cross-checks the before/after panel errors of cases 1, 3 and 10 against
+`gate_audit.audit` run directly on the current and augmented panels. Case 3
+records why standalone accuracy is not a substitute for marginal contribution:
+the candidate is more accurate than either incumbent yet changes no decision.
+These fixtures validate arithmetic and fail-closed behaviour only; they are
+synthetic and are not evidence about any real verifier.
+
 These tests are intended to make the first implementation fail closed before
 any future routing integration is considered.

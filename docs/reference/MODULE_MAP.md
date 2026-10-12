@@ -156,7 +156,9 @@ Primary context: [subsystem contract](../architecture/ENTERPRISE_CONTROL_PLANE.m
 | --- | --- |
 | [`enterprise_audit.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/enterprise_audit.py) | Tenant-scoped tamper-evident audit ledger and exports |
 | [`enterprise_authz.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/enterprise_authz.py) | Actor/policy/action authorization kernel |
+| [`enterprise_authz_cache.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/enterprise_authz_cache.py) | Freshness-bound authorization decision cache |
 | [`enterprise_conformance.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/enterprise_conformance.py) | In-process E9 failure-mode scenarios over the enterprise primitives; PASS/WARN/FAIL/UNKNOWN report, not a certification claim |
+| [`enterprise_data_policy.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/enterprise_data_policy.py) | Fail-closed external-processing, egress, credential and secret-access decisions from a profile |
 | [`enterprise_identity_github.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/enterprise_identity_github.py) | Trusted GitHub actor binding to ActorContext |
 | [`enterprise_identity_oidc.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/enterprise_identity_oidc.py) | Trusted IdP claims binding to ActorContext |
 | [`enterprise_profile.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/enterprise_profile.py) | Strict enterprise profile and cross-field validation |

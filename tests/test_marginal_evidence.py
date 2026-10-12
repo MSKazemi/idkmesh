@@ -326,6 +326,140 @@ class ContributionSemanticsTests(unittest.TestCase):
         )
 
 
+def _submatrix(data: dict, verifier_ids: list[str]) -> dict:
+    """Return ``data`` restricted to ``verifier_ids`` for a direct gate-audit run."""
+    keep = set(verifier_ids)
+    return {**data, "verifiers": [v for v in data["verifiers"] if v["id"] in keep]}
+
+
+class RequiredFixtureCaseTests(unittest.TestCase):
+    """Issue #693 required benchmark cases 1, 3, 4 and 10, by name.
+
+    The other required cases are pinned elsewhere in this module: near-duplicate
+    errors (case 2, ``test_identical_error_candidate_has_correlation_one``),
+    candidate that worsens the gate (5), zero-variance correlation (6),
+    insufficient common observations (7, ``FiniteSampleTests``), effective-vote
+    saturation (8) and probe exclusion (9, both in ``ContributionSemanticsTests``).
+    Every fixture is synthetic and labelled so by ``make_matrix``.
+    """
+
+    def _row(self, data, current, candidate):
+        return marginal_evidence.analyze(
+            data, current_verifier_ids=current, candidate_verifier_ids=[candidate]
+        )["candidates"][0]
+
+    def test_case1_complementary_errors_reduce_panel_error(self):
+        # v1 and v2 err on disjoint rows; the candidate is right on both sets.
+        data = make_matrix(
+            count=24,
+            error_sets={
+                "v1": {0, 2, 4, 6},
+                "v2": {8, 10, 12, 14},
+                "cand": {16, 18, 20, 22},
+            },
+        )
+        row = self._row(data, ["v1", "v2"], "cand")
+        self.assertAlmostEqual(row["panel_error_delta"], 8 / 24, places=12)
+        self.assertEqual(row["transition_counts"]["panel_decisions_changed_to_wrong"], 0)
+        self.assertEqual(
+            row["transition_counts"]["candidate_correct_on_current_panel_errors"], 8
+        )
+        self.assertLess(row["mean_error_correlation_with_current_panel"], 0.0)
+
+    def test_case3_high_accuracy_redundant_candidate_adds_nothing(self):
+        # The candidate is MORE accurate than both current verifiers but only
+        # ever wrong where they already are wrong: standalone accuracy must not
+        # be mistaken for marginal contribution.
+        data = make_matrix(
+            count=24,
+            error_sets={
+                "v1": {0, 1, 2, 3},
+                "v2": {0, 1, 2, 3},
+                "cand": {0, 1},
+            },
+        )
+        row = self._row(data, ["v1", "v2"], "cand")
+        self.assertGreater(row["standalone_accuracy"], 20 / 24)
+        self.assertEqual(row["panel_error_delta"], 0.0)
+        self.assertGreater(row["mean_error_correlation_with_current_panel"], 0.5)
+        # It is right on rows 2-3 where the panel errs, but one correct vote
+        # cannot outvote two shared wrong ones: no panel decision changes.
+        self.assertEqual(row["transition_counts"]["panel_decisions_changed"], 0)
+
+    def test_case4_lower_accuracy_candidate_uniquely_catches_panel_failures(self):
+        # v1 alone causes the unanimity gate's four false rejects. The candidate
+        # is the least accurate verifier present, yet it is right on two of
+        # those rows and so repairs them under the augmented majority rule.
+        data = make_matrix(
+            count=24,
+            error_sets={
+                "v1": {0, 2, 4, 6},
+                "v2": {1, 3, 5, 7},
+                "cand": {0, 2, 8, 9, 10, 11, 12, 13, 14, 15},
+            },
+        )
+        row = self._row(data, ["v1", "v2"], "cand")
+        current_accuracies = [
+            1 - len(errs) / 24 for errs in ({0, 2, 4, 6}, {1, 3, 5, 7})
+        ]
+        self.assertLess(row["standalone_accuracy"], min(current_accuracies))
+        self.assertAlmostEqual(row["current_panel_error"], 4 / 24, places=12)
+        self.assertAlmostEqual(row["augmented_panel_error"], 2 / 24, places=12)
+        self.assertAlmostEqual(row["panel_error_delta"], 2 / 24, places=12)
+        self.assertEqual(
+            row["transition_counts"]["candidate_correct_on_current_panel_errors"], 2
+        )
+
+    def test_case10_even_to_odd_transition_breaks_a_tie(self):
+        # Quorum .5: two voters need both to accept (threshold 2); three need
+        # two (threshold 2). A correct third voter resolves a 1-1 split.
+        data = make_matrix(
+            count=12,
+            error_sets={"v1": {0, 2}, "v2": set(), "cand": set()},
+        )
+        report = marginal_evidence.analyze(
+            data, current_verifier_ids=["v1", "v2"], candidate_verifier_ids=["cand"]
+        )
+        self.assertEqual(report["analysis"]["quorum"], 0.5)
+        row = report["candidates"][0]
+        self.assertAlmostEqual(row["panel_error_delta"], 2 / 12, places=12)
+        self.assertEqual(row["transition_counts"]["panel_decisions_changed_to_correct"], 2)
+        self.assertEqual(row["transition_counts"]["panel_decisions_changed_to_wrong"], 0)
+
+    def test_case10_odd_to_even_transition_raises_the_threshold(self):
+        # Three voters need two accepts; four need three. A wrong fourth voter
+        # that agrees with the one wrong incumbent turns 2-1 into 2-2 -> reject.
+        data = make_matrix(
+            count=12,
+            error_sets={"v1": set(), "v2": set(), "v3": {0, 2}, "cand": {0, 2}},
+        )
+        row = self._row(data, ["v1", "v2", "v3"], "cand")
+        self.assertAlmostEqual(row["panel_error_delta"], -2 / 12, places=12)
+        self.assertEqual(row["transition_counts"]["panel_decisions_changed_to_wrong"], 2)
+        self.assertEqual(row["transition_counts"]["panel_decisions_changed_to_correct"], 0)
+        self.assertTrue(any("increased panel error" in w for w in row["warnings"]))
+
+    def test_fixture_panel_errors_match_a_direct_gate_audit_run(self):
+        # Integration with the real neighbour: the marginal report's before and
+        # after panel errors must equal what `gate-audit` itself measures on the
+        # same rows with the current panel and the augmented panel.
+        cases = (
+            ({"v1": {0, 2, 4, 6}, "v2": {8, 10, 12, 14}, "cand": {16, 18, 20, 22}}, ["v1", "v2"]),
+            ({"v1": {0, 1, 2, 3}, "v2": {0, 1, 2, 3}, "cand": {0, 1}}, ["v1", "v2"]),
+            ({"v1": set(), "v2": set(), "v3": {0, 2}, "cand": {0, 2}}, ["v1", "v2", "v3"]),
+        )
+        for error_sets, current in cases:
+            with self.subTest(current=current, errors=sorted(error_sets)):
+                data = make_matrix(count=24, error_sets=error_sets)
+                row = self._row(data, current, "cand")
+                before = gate_audit.audit(_submatrix(data, current))["panel"]["error"]
+                after = gate_audit.audit(_submatrix(data, [*current, "cand"]))["panel"][
+                    "error"
+                ]
+                self.assertEqual(row["current_panel_error"], before)
+                self.assertEqual(row["augmented_panel_error"], after)
+
+
 class FiniteSampleTests(unittest.TestCase):
     def test_less_than_five_rows_is_point_only_and_unresolved(self):
         data = make_matrix(count=4)
