@@ -10,7 +10,8 @@ This module performs no GitHub mutation.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Iterable
+from typing import Any, Iterable, Mapping
+import re
 
 from idkmesh.connector_routing import (
     RouteResolution,
@@ -247,3 +248,83 @@ def replace_managed_routing_labels(
             preserved.append(label)
 
     return tuple(preserved)
+
+
+
+_PROJECT_SYNC_FIELDS = frozenset({"risk", "routing", "review"})
+_PROJECT_FIELD_ID_RE = re.compile(r"[A-Za-z0-9_:-]{1,80}\Z")
+
+
+def plan_github_project_routing_fields(
+    decision: RoutingDecision,
+    resolution: RouteResolution,
+    *,
+    field_ids: Mapping[str, str],
+    observed_fields: Mapping[str, str | None],
+    expected_routing_digest: str | None = None,
+) -> dict[str, Any]:
+    """Plan read-model changes; never mutate GitHub Projects or authority.
+
+    Field ids are trusted configuration, not issue/Project contents.
+    The observed values determine only which writes are redundant.
+    """
+    projection = project_routing_to_github(decision, resolution)
+    if expected_routing_digest is not None and (
+        expected_routing_digest != projection.routing_digest
+    ):
+        raise ValueError("stale canonical routing digest")
+    if not isinstance(field_ids, Mapping) or set(field_ids) != _PROJECT_SYNC_FIELDS:
+        raise ValueError("field_ids must map exactly risk/routing/review")
+    ids = list(field_ids.values())
+    if any(
+        not isinstance(value, str) or _PROJECT_FIELD_ID_RE.fullmatch(value) is None
+        for value in ids
+    ) or len(ids) != len(set(ids)):
+        raise ValueError("project field ids must be distinct bounded identifiers")
+    if not isinstance(observed_fields, Mapping):
+        raise TypeError("observed_fields must be a mapping")
+    if any(
+        not isinstance(key, str)
+        or not isinstance(value, (str, type(None)))
+        for key, value in observed_fields.items()
+    ):
+        raise ValueError("observed_fields must contain text or null values")
+
+    canonical = {
+        "risk": decision.risk_class,
+        "routing": projection.route_state,
+        "review": (
+            "independent-required"
+            if decision.independent_reviewer_required
+            else "standard"
+        ),
+    }
+    desired = tuple(
+        sorted(
+            (field_ids[field], canonical[field])
+            for field in _PROJECT_SYNC_FIELDS
+        )
+    )
+    updates = tuple(
+        (field_id, value)
+        for field_id, value in desired
+        if observed_fields.get(field_id) != value
+    )
+    return {
+        "schema_version": "0.1",
+        "kind": "idkmesh-project-routing-sync-plan",
+        "routing_digest": projection.routing_digest,
+        "desired_fields": [
+            {"field_id": field_id, "value": value}
+            for field_id, value in desired
+        ],
+        "updates": [
+            {"field_id": field_id, "value": value}
+            for field_id, value in updates
+        ],
+        "noop": len(updates) == 0,
+        "project_mutation_performed": False,
+        "execution_authority": False,
+        "human_decision_authority": False,
+        "integration_authority": False,
+    }
