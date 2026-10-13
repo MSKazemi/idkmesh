@@ -75,8 +75,8 @@ unless the report is clean.
 | `google_api_key` | `AIza` API keys |
 | `api_key_sk` | `sk-`, `sk-ant-` and `sk-proj-` API keys of at least 32 characters |
 | `jwt` | three-part JWTs whose header and payload start `eyJ` |
-| `bearer_credential` | `Bearer` followed by a run of at least 20 token characters that contains a digit, an uppercase letter or a symbol (an all-lowercase hyphenated phrase such as `bearer token-based-authentication` is prose) |
-| `url_userinfo` | `scheme://user:secret@host`; an obvious placeholder password (`password`, `pass`, `<password>`, `${PASSWORD}`, `****`) is ignored |
+| `bearer_credential` | `Bearer` followed by at least 20 token characters, including lowercase-only tokens; the exact documentation phrase `bearer token-based-authentication` is excluded, not arbitrary lowercase or hyphenated credentials |
+| `url_userinfo` | `scheme://user:secret@host`; explicit templates (`<password>`, `${PASSWORD}`, `****`) and a synthetic `scheme://user:password@host` example are ignored, but ordinary URLs containing even weak passwords like `password` or `changeme` are flagged |
 | `sensitive_key_literal` | a literal string of at least 8 characters under an exact credential-named key (`password`, `api_key`, `authorization`, `token`, ...) |
 
 Properties:

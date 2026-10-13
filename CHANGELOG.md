@@ -148,10 +148,11 @@ and the release notes for that tag.
   preview`, the `github-workflow preview` runner and the Issue Form path. The
   refusal names rule ids and fields only, never the text, and tells the author
   to rotate the credential. Scanner refinements from a measured false-positive
-  check on this repository's 1,117 issues and PRs: placeholder URL passwords
-  (`user:password@host`) are ignored, and `Bearer` needs a token-shaped value, so
-  prose such as `bearer token-based-authentication` is not flagged. Result and
-  audit write paths are not covered yet.
+  check on this repository's 1,117 issues and PRs: explicit URL templates and
+  synthetic `scheme://user:password@host` are ignored, but weak literal URL
+  passwords and lowercase Bearer tokens remain detectable. The exact phrase
+  `bearer token-based-authentication` is exempt, not arbitrary lowercase
+  credentials. Result and audit write paths are not covered yet.
 - E5 raw-secret scanner (issue #672, partial): `idkmesh/enterprise_secret_scan.py`
   detects credential-shaped values (GitHub, AWS, Slack, Google, `sk-` keys, JWTs,
   PEM private-key headers, `Bearer` credentials, URL userinfo) and literal values

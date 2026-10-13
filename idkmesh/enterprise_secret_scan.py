@@ -83,12 +83,13 @@ _VALUE_RULES: tuple[tuple[str, "re.Pattern[str]"], ...] = (
     ),
     (
         "bearer_credential",
-        # The token must hold a digit, an uppercase letter or a symbol: an
-        # all-lowercase hyphenated phrase ("bearer token-based-authentication")
-        # is prose, not a credential.
+        # Keep long lowercase tokens detectable; only the exact known
+        # documentation phrase is exempt. Otherwise real all-lowercase
+        # bearer tokens would pass a security check that used to reject them.
         re.compile(
             r"(?<![A-Za-z0-9])(?i:bearer)[ \t]{1,8}"
-            r"(?=[a-z-]{0,2048}[0-9A-Z._~+/])[A-Za-z0-9._~+/-]{20,2048}"
+            r"(?!token-based-authentication(?![A-Za-z0-9._~+/-]))"
+            r"[A-Za-z0-9._~+/-]{20,2048}"
         ),
     ),
     (
@@ -98,17 +99,25 @@ _VALUE_RULES: tuple[tuple[str, "re.Pattern[str]"], ...] = (
         ),
     ),
 )
-# A URL password that is obviously documentation (``user:password@host``,
-# ``<password>``, ``${PASSWORD}``, ``****``) is not a credential. Measured on this
-# repository's own 1,117 issues and PRs, this was the only false positive.
+# Exclude visually explicit placeholders. Bare words like "password",
+# "secret", or "changeme" can be real weak credentials and must be flagged
+# in ordinary URLs; an unmistakably synthetic scheme://user:password@
+# example is excluded narrowly for documentation compatibility.
 _PLACEHOLDER_PASSWORD = re.compile(
-    r"(?i)(?:pass(?:w(?:or)?d)?|pwd|secret|token|changeme|x{3,}|\*{3,}"
-    r"|<[^>]{1,64}>|\$\{[^}]{1,64}\}|\{[^}]{1,64}\}|%s)\Z"
+    r"(?i)(?:x{3,}|\*{3,}|<[^>]{1,64}>|\$\{[^}]{1,64}\}|"
+    r"\{[^}]{1,64}\}|%s)\Z"
 )
 
 
 def _userinfo_is_credential(match: "re.Match[str]") -> bool:
-    return _PLACEHOLDER_PASSWORD.fullmatch(match.group("password")) is None
+    password = match.group("password")
+    if _PLACEHOLDER_PASSWORD.fullmatch(password):
+        return False
+    return not (
+        match.group(0).lower().startswith("scheme://user:")
+        and password.lower()
+        in {"pass", "passwd", "password", "pwd", "secret", "token", "changeme"}
+    )
 
 
 # Rules whose raw pattern match still needs a second look.
