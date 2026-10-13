@@ -1444,6 +1444,16 @@ and the release notes for that tag.
   evaluator path" and the workflow's `paths:` filter watched it, so editing the
   module the run actually depends on did not trigger the run.
 
+### Fixed
+
+- tools: the clean-install demo's wheel-build failure message is now evidence
+  instead of an empty string (refs #745). It used to read `wheel build failed: `
+  with no output because the build ran under `pip wheel -q`; it now reports the
+  build's exit code and its own output, and distinguishes a failed build from a
+  build that exits 0 while producing the wrong wheel (an old pip can silently
+  emit `UNKNOWN-0.0.0` from a valid `pyproject.toml`), naming the wheel that
+  actually appeared. The verdict and exit codes are unchanged.
+
 ## [research-preview-2026-08-29] - 2026-08-29
 
 First public research-preview snapshot, published as a prerelease. See the

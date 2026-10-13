@@ -15,6 +15,7 @@ from __future__ import annotations
 import contextlib
 import io
 from pathlib import Path
+import subprocess
 import tempfile
 import unittest
 from unittest import mock
@@ -61,6 +62,40 @@ class DemoScriptTests(unittest.TestCase):
 
     def test_the_demo_script_compiles(self):
         compile(demo.DEMO_SCRIPT, "<demo>", "exec")
+
+
+class WheelBuildEvidenceTests(unittest.TestCase):
+    def completed(self, code=0, stdout="", stderr=""):
+        return subprocess.CompletedProcess([], code, stdout, stderr)
+
+    def test_a_failed_build_reports_its_exit_code_and_output(self):
+        problem = demo.wheel_build_problem(
+            self.completed(1, stderr="boom\n"), Path("/nonexistent-dist")
+        )
+        self.assertIn("exit 1", problem)
+        self.assertIn("boom", problem)
+
+    def test_a_build_that_makes_the_wrong_wheel_names_what_appeared(self):
+        # An old pip can exit 0 while silently building UNKNOWN-0.0.0 from a
+        # valid pyproject.toml; "wheel build failed" with an empty tail hides
+        # that, so the message must name the wheel that was actually produced.
+        with tempfile.TemporaryDirectory() as tmp:
+            dist = Path(tmp)
+            (dist / "UNKNOWN-0.0.0-py3-none-any.whl").write_bytes(b"")
+            problem = demo.wheel_build_problem(self.completed(0), dist)
+        self.assertIn("no idkmesh-*.whl", problem)
+        self.assertIn("UNKNOWN-0.0.0-py3-none-any.whl", problem)
+
+    def test_silent_output_is_reported_as_such(self):
+        problem = demo.wheel_build_problem(self.completed(2), Path("/nonexistent-dist"))
+        self.assertIn("exit 2", problem)
+        self.assertIn("(the build printed nothing)", problem)
+
+    def test_a_real_idkmesh_wheel_is_not_a_problem(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            dist = Path(tmp)
+            (dist / "idkmesh-0.1.0-py3-none-any.whl").write_bytes(b"")
+            self.assertIsNone(demo.wheel_build_problem(self.completed(0), dist))
 
 
 class VerdictTests(unittest.TestCase):
