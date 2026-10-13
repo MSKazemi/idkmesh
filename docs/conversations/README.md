@@ -7,7 +7,7 @@ canonical files designated by [`../../PROJECT_RULES.md`](https://github.com/MSKa
 (decisions, specifications, architecture, findings); this directory keeps the trail
 that produced them.
 
-187 records across 14 dates, newest first.
+188 records across 14 dates, newest first.
 
 ## Index
 
@@ -18,6 +18,7 @@ that produced them.
 - [Evidence-aware growth selection and Search Console quality gates](2026-10-13-evidence-aware-growth-selection.md)
 - [Interactive Reviewer Lab: no-install beginner demonstration](2026-10-13-interactive-reviewer-lab.md)
 - [Visibility funnel measurement coverage](2026-10-13-visibility-funnel-coverage.md)
+- [C13-H no-JSON GitHub WorkUnit onboarding](2026-10-13-c13h-no-json-workunit-onboarding.md)
 - [Search Console HTTP error confidentiality hardening](2026-10-13-search-console-http-error-hardening.md)
 
 ### 2026-10-11
