@@ -1,6 +1,6 @@
 # Python API client integration check matrix
 
-**Issue:** #746. **Status:** test design, no client behavior modified.
+**Issue:** #746. **Status:** bounded multi-page run helper implemented; further test fixtures and web client pending.
 
 The dependency-free ControlTowerClient supports local-only read and inspection.
 The human-decision mutation is intentionally absent pending issue #740.
@@ -29,3 +29,18 @@ Regenerate typed web client only after API v1 schema/read surface is stable.
 
 **Remaining:** TypeScript client, actual documentation publication and
 human-decision method after authorized server implementation.
+
+
+## Bounded run pagination (implemented)
+
+`ControlTowerClient.collect_run_pages(max_pages=3, limit=50, state=None, project_id=None)`
+collects multiple `list_runs` pages using **opaque cursors**. Its mandatory
+page cap is validated before I/O (maximum 100). Each result retains its own
+request ID and response digest. Repeated cursors, exhausted budgets, invalid
+parameters or server errors raise typed exceptions rather than returning
+misleading partial success; the helper never retries or writes.
+
+**Important:** this is not a transactional snapshot. Concurrent changes may
+affect later pages. Single-page reads should still use `list_runs` directly.
+Three-page HTTP, cap, replay and pre-network validation regression tests are
+part of this slice. No TypeScript SDK or human-decision write API is claimed.

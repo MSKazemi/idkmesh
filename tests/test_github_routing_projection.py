@@ -11,6 +11,7 @@ from idkmesh.github_routing_projection import (
     MANAGED_LABEL_PREFIX,
     project_routing_to_github,
     replace_managed_routing_labels,
+    plan_github_project_routing_fields,
 )
 
 
@@ -293,6 +294,85 @@ class GitHubRoutingProjectionTests(unittest.TestCase):
             replace_managed_routing_labels(
                 ("bug", ""),
                 projection,
+            )
+
+
+
+
+class GitHubProjectRoutingSyncPlanTests(unittest.TestCase):
+    FIELD_IDS = {
+        "risk": "field_risk",
+        "routing": "field_route",
+        "review": "field_review",
+    }
+
+    def projection(self, **kwargs):
+        decision = _decision(**kwargs)
+        resolution = resolve_routes(decision, [_connector("agent-a")])
+        return decision, resolution
+
+    def test_first_projection_then_replay_is_idempotent(self):
+        decision, resolution = self.projection()
+        first = plan_github_project_routing_fields(
+            decision, resolution, field_ids=self.FIELD_IDS, observed_fields={}
+        )
+        self.assertFalse(first["noop"])
+        self.assertEqual(len(first["updates"]), 3)
+        current = {
+            item["field_id"]: item["value"]
+            for item in first["updates"]
+        }
+        repeat = plan_github_project_routing_fields(
+            decision, resolution, field_ids=self.FIELD_IDS,
+            observed_fields=current,
+            expected_routing_digest=first["routing_digest"],
+        )
+        self.assertTrue(repeat["noop"])
+        self.assertEqual(repeat["updates"], [])
+        self.assertFalse(repeat["project_mutation_performed"])
+        self.assertFalse(repeat["execution_authority"])
+
+    def test_manual_project_approval_does_not_override_blocked_route(self):
+        decision, resolution = self.projection(risk_class="high")
+        plan = plan_github_project_routing_fields(
+            decision, resolution,
+            field_ids=self.FIELD_IDS,
+            observed_fields={"field_route": "approved", "other-human-field": "notes"},
+        )
+        desired = {item["field_id"]: item["value"] for item in plan["updates"]}
+        self.assertEqual(desired["field_route"], "blocked")
+        self.assertEqual(desired["field_risk"], "high")
+        self.assertNotIn("other-human-field", desired)
+        self.assertFalse(plan["integration_authority"])
+
+    def test_mismatched_source_digest_fails_closed(self):
+        decision, resolution = self.projection()
+        with self.assertRaisesRegex(ValueError, "stale"):
+            plan_github_project_routing_fields(
+                decision, resolution, field_ids=self.FIELD_IDS,
+                observed_fields={}, expected_routing_digest="sha256:" + "0" * 64,
+            )
+
+    def test_invalid_project_field_config_rejected(self):
+        decision, resolution = self.projection()
+        for bad_fields in (
+            {"risk": "r", "routing": "x"},
+            {"risk": "same", "routing": "same", "review": "review"},
+            {"risk": "r", "routing": "route name", "review": "review"},
+        ):
+            with self.subTest(bad_fields=bad_fields):
+                with self.assertRaises(ValueError):
+                    plan_github_project_routing_fields(
+                        decision, resolution, field_ids=bad_fields, observed_fields={}
+                    )
+
+    def test_untrusted_project_values_must_be_text(self):
+        decision, resolution = self.projection()
+        with self.assertRaises(ValueError):
+            plan_github_project_routing_fields(
+                decision, resolution,
+                field_ids=self.FIELD_IDS,
+                observed_fields={"field_risk": {"execute": True}},
             )
 
 

@@ -105,6 +105,18 @@ Do not copy the token into an issue, CI log, diagnostic report, or publicly shar
 | Verification passed but nothing merged | Correct by design: verification is evidence; trusted human/governance decision and GitHub integration remain separate authorities. |
 | Request to record human decision via local HTTP returns 404/405 | The `human_decision_service.py` domain service does **not** expose a mutation route in the local Control Tower. Don't bypass identity/authz by inventing one. |
 
+## CI and GitHub Actions troubleshooting
+
+Use the [workflow-to-code map](../reference/GITHUB_ACTIONS_CODE_MAP.md) to identify exactly which source entry point a GitHub Actions job runs and what its declared trigger and token scopes are. Source files under `tools/` and `scripts/` are **not all safe to run merely for debugging**; some mutate GitHub, dispatch providers, or contact external services. The table labels direct GitHub write scopes but does not authorize commands with external side effects.
+
+| CI symptom | Interpretation and next action |
+| --- | --- |
+| Red PR Gate even though an optional workflow passed | Inspect both `gate (3.11)` and `gate (3.13)`, including failure logs, on the **current head SHA**. Required checks, not path-filtered research workflows, govern merging. |
+| Python collection `SyntaxError` in a documentation guard | Treat it as a real source error. Compile the changed test first (`python -m py_compile tests/test_github_workflow_docs.py`), then run a focused `python -m pytest -q tests/test_github_workflow_docs.py` before running the canonical tier. |
+| New workflow / permissions change makes documentation test fail | Update [workflow map](../reference/GITHUB_ACTIONS_CODE_MAP.md) with exact source `on:` event keys and explicitly declared `permissions` write scopes. Confirm conditions, checkout trust, action pin and external credentials manually. |
+| Workflow is skipped or absent | `on:` events, `paths` and job `if:` expressions control admission. An absent optional path-filtered workflow is **not** a pass. |
+| Jules / OpenHands / PyPI job cannot run | Check the documented policy, approval, trusted checkout, secrets and environment/provider configuration with a maintainer. Do not paste credentials into logs, switch to an unsafe checkout or grant broad token scopes. |
+
 ## Diagnostic escalation
 
 For a reproducible GitHub bug report, collect **sanitized** command line and expected/actual behavior, `idkmesh --version`, Python version, OS/platform, exact checkout commit SHA, relevant JSON contract version, and the smallest non-sensitive fixture. Report secret or vulnerability details privately through [SECURITY.md](https://github.com/MSKazemi/idkmesh/blob/main/SECURITY.md), not in an issue. For CI, use [the test tiers](../TESTING.md), distinguish test **not run** from a genuine pass, and always cite the exact Git/PR head that produced results. If documentation disagrees with live code, include the code path and a focused correction PR instead of treating a future design document as already implemented.

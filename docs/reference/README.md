@@ -7,7 +7,12 @@ Use these alongside the [capability truth matrix](../CAPABILITY_MATRIX.md) and t
 3. API pages for integrators: [quickstart](API_QUICKSTART.md) (curl and the Python client), [error catalog](API_ERROR_CATALOG.md) (every stable code, status and retry rule), and [service limits](API_LIMITS.md) (timeouts, caps, body and header bounds) — each is drift-tested against the code.
 4. [As-built implementation architecture](../architecture/AS_BUILT_IMPLEMENTATION_MAP.md) — current source paths, lifecycle boundaries, and separated authority.
 5. [Troubleshooting and operator help](../help/TROUBLESHOOTING.md) — installation, SQLite, local API, verifier evidence, sandbox and tests.
-6. [Dated code/documentation audit](../audits/2026-10-10-code-documentation-reconciliation.md) — precise review scope, source revision, unverified areas, and next steps.
+6. [Research/interoperability module map](RESEARCH_MODULE_MAP.md) — experiments, simulations, randomness lab, A2A/MCP and evidence boundaries.
+7. [Operational Python module map](OPERATIONS_MODULE_MAP.md) — tool/script navigation and explicit external side effects.
+8. [GitHub Actions code and authority map](GITHUB_ACTIONS_CODE_MAP.md) — every workflow, its trigger families, explicit write scopes, relevant code and side-effect boundaries.
+9. [Workflow-to-code audit](../audits/2026-10-13-workflow-code-trace.md) — pinned review and validation limits.
+10. [Non-package audit](../audits/2026-10-13-nonpackage-python-audit.md) — source coverage, limitations, follow-up checks.
+11. [Dated code/documentation audit](../audits/2026-10-10-code-documentation-reconciliation.md) — precise review scope, source revision, unverified areas, and next steps.
 
 For machine-readable protocol truth use [schemas](https://github.com/MSKazemi/idkmesh/blob/main/schemas/README.md); for complete HTTP payload rules consult [the Control Tower Local API contract](../specifications/CONTROL_TOWER_LOCAL_API_V0_1.md). Historical design catalogs are **not** a statement that an endpoint ships today.
 

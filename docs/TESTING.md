@@ -356,6 +356,10 @@ runner widens to the full suite instead of trusting a partial answer.
 
 ## CI
 
+The [as-built GitHub Actions reference](reference/GITHUB_ACTIONS_CODE_MAP.md) inventories every checked-in workflow's trigger families, explicit GitHub token write scopes, and linked code entry points. Its [drift test](https://github.com/MSKazemi/idkmesh/blob/main/tests/test_github_workflow_docs.py) checks both workflow existence and trigger/permission declarations, so a change to workflow authority must update the reference in the same PR. **Read-only GitHub token permissions do not imply no external network or provider side effects**; inspect secret usage and script logic too.
+
+For a workflow failing in CI, identify the exact PR head SHA, select the failed **job**, and read its failing step/log; do not infer a pass from another matrix leg or a path-filtered check. The required PR Gate has Python 3.11 and 3.13 jobs; `make test` / `python scripts/testkit.py unit` reproduce its unit tier locally, while `make integration` runs additional checks. [Troubleshooting](help/TROUBLESHOOTING.md) covers common failure categories.
+
 `pytest.ini` sets `pythonpath = .`, so a bare `pytest` now works. The old
 `PYTHONPATH=. pytest` prefix is no longer required (plain `unittest` discovery
 still under-collects; prefer pytest).

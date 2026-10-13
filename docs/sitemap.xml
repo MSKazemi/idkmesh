@@ -7,61 +7,6 @@
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://mskazemi.com/idkmesh/API_V1_BETA_MIGRATION_GUIDE.html</loc>
-    <lastmod>2026-10-11</lastmod>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://mskazemi.com/idkmesh/BEGINNER_GUIDE.html</loc>
-    <lastmod>2026-10-11</lastmod>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://mskazemi.com/idkmesh/CAPABILITY_MATRIX.html</loc>
-    <lastmod>2026-10-12</lastmod>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://mskazemi.com/idkmesh/CONTRIBUTOR_PERSPECTIVES.html</loc>
-    <lastmod>2026-10-09</lastmod>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://mskazemi.com/idkmesh/EXECUTABLE_CAPABILITIES.html</loc>
-    <lastmod>2026-10-12</lastmod>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://mskazemi.com/idkmesh/GETTING_STARTED.html</loc>
-    <lastmod>2026-10-11</lastmod>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://mskazemi.com/idkmesh/PAGES_SETUP.html</loc>
-    <lastmod>2026-10-09</lastmod>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://mskazemi.com/idkmesh/PROJECT_ADOPTION_GUIDE.html</loc>
-    <lastmod>2026-10-12</lastmod>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://mskazemi.com/idkmesh/RUN_LIFECYCLE_TUTORIAL.html</loc>
-    <lastmod>2026-10-09</lastmod>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://mskazemi.com/idkmesh/TESTING.html</loc>
-    <lastmod>2026-10-12</lastmod>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://mskazemi.com/idkmesh/WHAT_IS_IDKMESH.html</loc>
-    <lastmod>2026-10-09</lastmod>
-    <priority>0.9</priority>
-  </url>
-  <url>
     <loc>https://mskazemi.com/idkmesh/acceptance/PR91_CONTROLLED_DOCKER_GATE.html</loc>
     <lastmod>2026-08-28</lastmod>
     <priority>0.5</priority>
@@ -105,6 +50,11 @@
     <loc>https://mskazemi.com/idkmesh/algorithms/PHYSARUM_ADAPTIVE_COMPUTE_ROUTING.html</loc>
     <lastmod>2026-09-23</lastmod>
     <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://mskazemi.com/idkmesh/API_V1_BETA_MIGRATION_GUIDE.html</loc>
+    <lastmod>2026-10-11</lastmod>
+    <priority>0.9</priority>
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/architecture/</loc>
@@ -192,12 +142,12 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://mskazemi.com/idkmesh/architecture/FREE_RESOURCE_MESH.html</loc>
+    <loc>https://mskazemi.com/idkmesh/architecture/FREE_RESOURCE_MESH_COMPUTE_BRIDGE.html</loc>
     <lastmod>2026-08-28</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://mskazemi.com/idkmesh/architecture/FREE_RESOURCE_MESH_COMPUTE_BRIDGE.html</loc>
+    <loc>https://mskazemi.com/idkmesh/architecture/FREE_RESOURCE_MESH.html</loc>
     <lastmod>2026-08-28</lastmod>
     <priority>0.8</priority>
   </url>
@@ -252,13 +202,13 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://mskazemi.com/idkmesh/architecture/REPOSITORY_MATHEMATICAL_PORTFOLIO.html</loc>
-    <lastmod>2026-08-29</lastmod>
+    <loc>https://mskazemi.com/idkmesh/architecture/REPOSITORY_MATHEMATICAL_PORTFOLIO_CONCURRENCY.html</loc>
+    <lastmod>2026-09-10</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://mskazemi.com/idkmesh/architecture/REPOSITORY_MATHEMATICAL_PORTFOLIO_CONCURRENCY.html</loc>
-    <lastmod>2026-09-10</lastmod>
+    <loc>https://mskazemi.com/idkmesh/architecture/REPOSITORY_MATHEMATICAL_PORTFOLIO.html</loc>
+    <lastmod>2026-08-29</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
@@ -387,6 +337,26 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://mskazemi.com/idkmesh/audits/2026-10-13-nonpackage-python-audit.html</loc>
+    <lastmod>2026-10-13</lastmod>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://mskazemi.com/idkmesh/audits/2026-10-13-workflow-code-trace.html</loc>
+    <lastmod>2026-10-13</lastmod>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://mskazemi.com/idkmesh/BEGINNER_GUIDE.html</loc>
+    <lastmod>2026-10-11</lastmod>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://mskazemi.com/idkmesh/CAPABILITY_MATRIX.html</loc>
+    <lastmod>2026-10-12</lastmod>
+    <priority>0.9</priority>
+  </url>
+  <url>
     <loc>https://mskazemi.com/idkmesh/community/</loc>
     <lastmod>2026-10-03</lastmod>
     <priority>0.6</priority>
@@ -467,18 +437,13 @@
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://mskazemi.com/idkmesh/community/STARTER_TASKS.html</loc>
-    <lastmod>2026-10-11</lastmod>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://mskazemi.com/idkmesh/community/VISIBILITY_AND_COMMUNITY_GROWTH_LOOP.html</loc>
-    <lastmod>2026-10-11</lastmod>
-    <priority>0.6</priority>
-  </url>
-  <url>
     <loc>https://mskazemi.com/idkmesh/community/onboarding-tests/2026-08-29-newcomer-path.html</loc>
     <lastmod>2026-08-29</lastmod>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://mskazemi.com/idkmesh/community/STARTER_TASKS.html</loc>
+    <lastmod>2026-10-11</lastmod>
     <priority>0.6</priority>
   </url>
   <url>
@@ -487,7 +452,17 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://mskazemi.com/idkmesh/community/VISIBILITY_AND_COMMUNITY_GROWTH_LOOP.html</loc>
+    <lastmod>2026-10-11</lastmod>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://mskazemi.com/idkmesh/concepts.html</loc>
+    <lastmod>2026-10-09</lastmod>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://mskazemi.com/idkmesh/CONTRIBUTOR_PERSPECTIVES.html</loc>
     <lastmod>2026-10-09</lastmod>
     <priority>0.9</priority>
   </url>
@@ -1407,6 +1382,11 @@
     <priority>0.3</priority>
   </url>
   <url>
+    <loc>https://mskazemi.com/idkmesh/conversations/2026-10-13-visibility-funnel-coverage.html</loc>
+    <lastmod>2026-10-13</lastmod>
+    <priority>0.3</priority>
+  </url>
+  <url>
     <loc>https://mskazemi.com/idkmesh/decisions/</loc>
     <lastmod>2026-10-10</lastmod>
     <priority>0.6</priority>
@@ -1551,7 +1531,12 @@
     <lastmod>2026-08-28</lastmod>
     <priority>0.5</priority>
   </url>
-    <url>
+  <url>
+    <loc>https://mskazemi.com/idkmesh/EXECUTABLE_CAPABILITIES.html</loc>
+    <lastmod>2026-10-12</lastmod>
+    <priority>0.9</priority>
+  </url>
+  <url>
     <loc>https://mskazemi.com/idkmesh/findings/</loc>
     <lastmod>2026-10-09</lastmod>
     <priority>0.7</priority>
@@ -1682,6 +1667,11 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://mskazemi.com/idkmesh/GETTING_STARTED.html</loc>
+    <lastmod>2026-10-11</lastmod>
+    <priority>0.9</priority>
+  </url>
+  <url>
     <loc>https://mskazemi.com/idkmesh/help/TROUBLESHOOTING.html</loc>
     <lastmod>2026-10-12</lastmod>
     <priority>0.5</priority>
@@ -1701,7 +1691,12 @@
     <lastmod>2026-10-09</lastmod>
     <priority>0.9</priority>
   </url>
-  <url>
+    <url>
+    <loc>https://mskazemi.com/idkmesh/operations/API_OBSERVABILITY_INTERVALS_V0_1.html</loc>
+    <lastmod>2026-10-13</lastmod>
+    <priority>0.5</priority>
+  </url>
+<url>
     <loc>https://mskazemi.com/idkmesh/operations/AUTO_DRAFT_PR_STEWARD.html</loc>
     <lastmod>2026-09-23</lastmod>
     <priority>0.5</priority>
@@ -1735,6 +1730,11 @@
     <loc>https://mskazemi.com/idkmesh/operations/WEBMASTER_TOOLS_MEASUREMENT_RUNBOOK.html</loc>
     <lastmod>2026-09-24</lastmod>
     <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://mskazemi.com/idkmesh/PAGES_SETUP.html</loc>
+    <lastmod>2026-10-09</lastmod>
+    <priority>0.9</priority>
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/pipelines.html</loc>
@@ -1852,13 +1852,13 @@
     <priority>0.4</priority>
   </url>
   <url>
-    <loc>https://mskazemi.com/idkmesh/planning/PRODUCT_GOALS_COMPONENT_SLICE_MAP_2026-09-22.html</loc>
-    <lastmod>2026-10-12</lastmod>
+    <loc>https://mskazemi.com/idkmesh/planning/PR_TRIAGE_2026-08-28.html</loc>
+    <lastmod>2026-08-28</lastmod>
     <priority>0.4</priority>
   </url>
   <url>
-    <loc>https://mskazemi.com/idkmesh/planning/PR_TRIAGE_2026-08-28.html</loc>
-    <lastmod>2026-08-28</lastmod>
+    <loc>https://mskazemi.com/idkmesh/planning/PRODUCT_GOALS_COMPONENT_SLICE_MAP_2026-09-22.html</loc>
+    <lastmod>2026-10-12</lastmod>
     <priority>0.4</priority>
   </url>
   <url>
@@ -1880,6 +1880,11 @@
     <loc>https://mskazemi.com/idkmesh/product/PRODUCT_DIFFERENTIATION_AND_KILLER_POINT.html</loc>
     <lastmod>2026-09-23</lastmod>
     <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://mskazemi.com/idkmesh/PROJECT_ADOPTION_GUIDE.html</loc>
+    <lastmod>2026-10-12</lastmod>
+    <priority>0.9</priority>
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/project-governance/CHATGPT_PROJECT_RESET_RECOMMENDATION_2026-09-19.html</loc>
@@ -1922,8 +1927,23 @@
     <priority>0.5</priority>
   </url>
   <url>
+    <loc>https://mskazemi.com/idkmesh/reference/GITHUB_ACTIONS_CODE_MAP.html</loc>
+    <lastmod>2026-10-13</lastmod>
+    <priority>0.5</priority>
+  </url>
+  <url>
     <loc>https://mskazemi.com/idkmesh/reference/MODULE_MAP.html</loc>
     <lastmod>2026-10-12</lastmod>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://mskazemi.com/idkmesh/reference/OPERATIONS_MODULE_MAP.html</loc>
+    <lastmod>2026-10-13</lastmod>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://mskazemi.com/idkmesh/reference/RESEARCH_MODULE_MAP.html</loc>
+    <lastmod>2026-10-13</lastmod>
     <priority>0.5</priority>
   </url>
   <url>
@@ -2107,6 +2127,11 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://mskazemi.com/idkmesh/research/S3_VERIFIER_FREEZE_TOOLKIT.html</loc>
+    <lastmod>2026-10-13</lastmod>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://mskazemi.com/idkmesh/research/SCIENTIFIC_PROGRAM.html</loc>
     <lastmod>2026-10-12</lastmod>
     <priority>0.7</priority>
@@ -2137,6 +2162,11 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://mskazemi.com/idkmesh/research/VERIFIER_PANEL_EXTERNAL_VALIDITY_AMENDMENT_V1_2.html</loc>
+    <lastmod>2026-10-13</lastmod>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://mskazemi.com/idkmesh/research/VERIFIER_PANEL_EXTERNAL_VALIDITY_PREREG_V1.html</loc>
     <lastmod>2026-10-09</lastmod>
     <priority>0.7</priority>
@@ -2145,6 +2175,11 @@
     <loc>https://mskazemi.com/idkmesh/research/WORK_UNIT_RESEARCH_TRACK_COMPLETION.html</loc>
     <lastmod>2026-08-29</lastmod>
     <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://mskazemi.com/idkmesh/RUN_LIFECYCLE_TUTORIAL.html</loc>
+    <lastmod>2026-10-09</lastmod>
+    <priority>0.9</priority>
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/security/ACE_THREAT_MODEL.html</loc>
@@ -2336,7 +2371,12 @@
     <lastmod>2026-10-12</lastmod>
     <priority>0.8</priority>
   </url>
-  <url>
+    <url>
+    <loc>https://mskazemi.com/idkmesh/specifications/GITHUB_PROJECTS_SYNC_V0_1.html</loc>
+    <lastmod>2026-10-13</lastmod>
+    <priority>0.8</priority>
+  </url>
+<url>
     <loc>https://mskazemi.com/idkmesh/specifications/GITHUB_PUBLIC_EVIDENCE_V0_1.html</loc>
     <lastmod>2026-10-12</lastmod>
     <priority>0.8</priority>
@@ -2457,6 +2497,11 @@
     <priority>0.9</priority>
   </url>
   <url>
+    <loc>https://mskazemi.com/idkmesh/TESTING.html</loc>
+    <lastmod>2026-10-12</lastmod>
+    <priority>0.9</priority>
+  </url>
+  <url>
     <loc>https://mskazemi.com/idkmesh/topics/</loc>
     <lastmod>2026-10-09</lastmod>
     <priority>0.5</priority>
@@ -2510,5 +2555,10 @@
     <loc>https://mskazemi.com/idkmesh/topics/verifier-panels.html</loc>
     <lastmod>2026-10-09</lastmod>
     <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://mskazemi.com/idkmesh/WHAT_IS_IDKMESH.html</loc>
+    <lastmod>2026-10-09</lastmod>
+    <priority>0.9</priority>
   </url>
 </urlset>
