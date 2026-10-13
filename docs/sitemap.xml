@@ -1552,11 +1552,6 @@
     <priority>0.5</priority>
   </url>
     <url>
-    <loc>https://mskazemi.com/idkmesh/docs/specifications/API_PYTHON_CLIENT_COMPATIBILITY_CHECKS_V0_1.html</loc>
-    <lastmod>2026-10-13</lastmod>
-    <priority>0.8</priority>
-  </url>
-<url>
     <loc>https://mskazemi.com/idkmesh/findings/</loc>
     <lastmod>2026-10-09</lastmod>
     <priority>0.7</priority>
@@ -2181,7 +2176,12 @@
     <lastmod>2026-10-09</lastmod>
     <priority>0.8</priority>
   </url>
-  <url>
+    <url>
+    <loc>https://mskazemi.com/idkmesh/specifications/API_PYTHON_CLIENT_COMPATIBILITY_CHECKS_V0_1.html</loc>
+    <lastmod>2026-10-13</lastmod>
+    <priority>0.8</priority>
+  </url>
+<url>
     <loc>https://mskazemi.com/idkmesh/specifications/API_STORAGE_PROFILES_V0_1.html</loc>
     <lastmod>2026-10-12</lastmod>
     <priority>0.8</priority>
