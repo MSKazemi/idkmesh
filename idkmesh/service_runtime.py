@@ -57,9 +57,23 @@ SSE_MAX_STREAM_SECONDS = 300.0
 MAX_REQUEST_LINE_BYTES = 65536
 MAX_HEADER_LINE_BYTES = 65536
 MAX_HEADER_COUNT = 99
-_MAX_LOG_PATH = 2048
-_MAX_LOG_METHOD = 32
 _MAX_LOG_SERVICE = 128
+_LOG_STATIC_PATHS = frozenset({
+    "/", "/index.html", "/healthz", "/readyz",
+    "/api/v1/status", "/api/v1/openapi.json", "/api/v1/metrics",
+    "/api/v1/run-evidence/inspect", "/api/v1/runs",
+    "/api/v1/connections", "/api/v1/work-units", "/api/v1/events",
+    "/api/v1/events/stream",
+})
+_LOG_RUN_PREFIX = "/api/v1/runs/"
+_LOG_RUN_SUBRESOURCES = ("attempts", "evidence", "decisions")
+_LOG_DYNAMIC_PREFIXES = (
+    ("/api/v1/work-units/", "{work_unit_id}"),
+    ("/api/v1/projects/", "{project_id}"),
+)
+_LOG_METHODS = frozenset({
+    "GET", "HEAD", "POST", "OPTIONS", "PUT", "PATCH", "DELETE", "TRACE", "CONNECT",
+})
 
 
 def new_request_id() -> str:
@@ -95,6 +109,32 @@ def _bounded_log_text(value: str, max_length: int) -> str:
         for char in str(value)
     )
     return text[:max_length]
+
+
+def _access_log_route(path: str) -> str:
+    """Classify a request path without copying user-supplied URL contents.
+
+    The result is from a closed, finite route vocabulary. Dynamic IDs, even
+    percent-encoded ones or IDs containing slashes, never become log fields.
+    Unknown routes deliberately collapse to one constant label.
+    """
+    if not isinstance(path, str):
+        return "<unmatched>"
+    pathname = path.split("?", 1)[0]
+    if pathname in _LOG_STATIC_PATHS:
+        return pathname
+    if pathname.startswith(_LOG_RUN_PREFIX):
+        remainder = pathname[len(_LOG_RUN_PREFIX):]
+        if remainder:
+            for subresource in _LOG_RUN_SUBRESOURCES:
+                suffix = "/" + subresource
+                if remainder.endswith(suffix) and len(remainder) > len(suffix):
+                    return _LOG_RUN_PREFIX + "{run_id}" + suffix
+            return _LOG_RUN_PREFIX + "{run_id}"
+    for prefix, placeholder in _LOG_DYNAMIC_PREFIXES:
+        if pathname.startswith(prefix) and pathname[len(prefix):]:
+            return prefix + placeholder
+    return "<unmatched>"
 
 
 def service_headers(
@@ -161,9 +201,10 @@ def build_access_log_event(
 ) -> dict[str, Any]:
     """Create a bounded access-log event.
 
-    Query strings are stripped defensively and text fields are bounded before
-    serialization. Headers and request/response bodies are intentionally not
-    accepted.
+    Only known static route names or canonical dynamic route templates may be
+    logged; unknown paths become <unmatched>. Query strings, dynamic identifiers
+    and arbitrary method text never enter the output. Request/response bodies
+    and authentication headers are not accepted by this function.
     """
     if occurred_at is None:
         occurred_at = (
@@ -178,7 +219,7 @@ def build_access_log_event(
     if response_size < 0:
         raise ValueError("response_bytes must be >= 0")
 
-    safe_path = str(path).split("?", 1)[0]
+    safe_path = _access_log_route(path)
     return {
         "event": "http_request",
         "service": _bounded_log_text(service, _MAX_LOG_SERVICE),
@@ -187,8 +228,8 @@ def build_access_log_event(
             if _REQUEST_ID_RE.fullmatch(request_id)
             else resolve_request_id(None)
         ),
-        "method": _bounded_log_text(method, _MAX_LOG_METHOD),
-        "path": _bounded_log_text(safe_path, _MAX_LOG_PATH),
+        "method": method if method in _LOG_METHODS else "OTHER",
+        "path": safe_path,
         "status": status_value,
         "response_bytes": response_size,
         "duration_ms": round(max(0.0, float(duration_ms)), 3),
