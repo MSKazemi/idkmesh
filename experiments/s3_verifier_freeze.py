@@ -44,6 +44,7 @@ REQUIRED_ARTIFACT_ROLES = frozenset(
         "analysis_code",
         "power_planning_code",
         "power_plan",
+        "calibration_statistics",
         "candidate_inventory",
         "verifier_inventory",
         "stage_assignment",
@@ -793,6 +794,10 @@ def _validate_power_plan_file(path: Path) -> dict:
         "self_sha256": plan["self_sha256"],
         "status": status,
         "selected_task_count": decision.get("selected_task_count"),
+        "calibration_sha256": _validate_sha256(
+            plan.get("calibration_sha256"),
+            "power_plan.calibration_sha256",
+        ),
     }
 
 
@@ -884,6 +889,19 @@ def build_freeze_manifest(spec: dict, root: Path) -> dict:
     missing = sorted(REQUIRED_ARTIFACT_ROLES - seen_roles)
     if missing:
         raise S3FreezeError(f"missing required artifact roles: {missing}")
+
+    bound_by_role = {item["role"]: item for item in bound_artifacts}
+    power_validation = bound_by_role["power_plan"].get("validation")
+    if not isinstance(power_validation, dict):
+        raise S3FreezeError("power_plan validation metadata is missing")
+    if (
+        power_validation["calibration_sha256"]
+        != bound_by_role["calibration_statistics"]["sha256"]
+    ):
+        raise S3FreezeError(
+            "calibration_statistics digest does not match power_plan calibration_sha256"
+        )
+
     if experiment_id == "X7" and "prompt_bundle" not in seen_roles:
         raise S3FreezeError("X7 requires a prompt_bundle artifact")
 
