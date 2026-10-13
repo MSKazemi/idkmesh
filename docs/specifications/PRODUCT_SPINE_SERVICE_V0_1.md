@@ -254,7 +254,15 @@ No service method named or shaped as `merge` belongs in v0.1.
 
 ## 8. Secret boundary
 
-Secret references may be inspected before admission.
+Secret references may be inspected before admission. The concrete
+`idkmesh.work_unit_binding.bind_work_unit_source()` and
+`validate_work_unit_source_binding()` now apply the E5 raw-secret scan
+before creating or accepting the canonical WorkUnit/source binding. Known
+credential literals and incomplete scans are rejected with non-disclosing
+`WorkUnitBindingError` messages. This is a bounded source-binding control,
+**not** a guarantee that arbitrary preview, issue form, result, evidence or
+provider-returned documents have already been scanned. See the
+[E5 enforcement boundary](ENTERPRISE_DATA_POLICY_V0_1.md#executable-enforcement-boundaries-partial-e5).
 
 Secret values may be materialized only:
 

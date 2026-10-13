@@ -25,6 +25,7 @@ from idkmesh.enterprise_authz import (
     ActorContext,
     AuthorizationDecision,
 )
+from idkmesh.enterprise_secret_scan import SecretLeakError, assert_no_secrets
 from idkmesh.tenant_scope import TenantScope
 
 
@@ -344,6 +345,9 @@ class JsonLinesAuditSink:
         self._stream = stream
 
     def write_event(self, event: Mapping[str, Any]) -> None:
+        # A caller may bypass the ledger export path; validate independently
+        # before a single byte reaches the downstream stream/SIEM.
+        validate_audit_event(event)
         self._stream.write(_canonical_json(dict(event)))
         self._stream.write("\n")
 
@@ -402,6 +406,13 @@ _AUTHORITY_FIELDS = frozenset(
 
 
 def validate_audit_event(event: Any) -> None:
+    # The audit event is the durable write contract, not an arbitrary input
+    # object. Inspect the exact object before persistence or onward export.
+    try:
+        assert_no_secrets(event, context="enterprise_audit_event")
+    except SecretLeakError as exc:
+        reason = "raw_secret_detected" if exc.report.findings else "secret_scan_incomplete"
+        raise _fail(reason, "audit event refused by enterprise data policy") from None
     root = _strict_object(event, fields=_ROOT_FIELDS, field="$")
     if root["kind"] != AUDIT_KIND or root["schema_version"] != AUDIT_VERSION:
         raise _fail("invalid_event", "unsupported audit kind/schema version")

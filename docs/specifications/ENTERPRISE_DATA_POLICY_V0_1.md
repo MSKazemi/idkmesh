@@ -3,7 +3,7 @@ description: "Enterprise Data Policy Kernel v0.1: pure, fail-closed decisions fo
 ---
 # Enterprise Data Policy Kernel v0.1
 
-**Status:** experimental E5 foundation; decision kernel and raw-secret scanner, neither wired into any runtime path  
+**Status:** experimental E5 foundation; the scanner is enforced at canonical WorkUnit/source binding and E4 audit event/NDJSON sink boundaries, but not universally  
 **Issue:** #672  
 **Parent:** #667  
 **Depends on:** [Enterprise Control Profile](ENTERPRISE_CONTROL_PROFILE_V0_1.md), [Enterprise Authorization Kernel](ENTERPRISE_AUTHORIZATION_V0_1.md)
@@ -77,7 +77,7 @@ unless the report is clean.
 | `jwt` | three-part JWTs whose header and payload start `eyJ` |
 | `bearer_credential` | `Bearer` followed by at least 20 token characters |
 | `url_userinfo` | `scheme://user:password@host` |
-| `sensitive_key_literal` | a literal string of at least 8 characters under an exact credential-named key (`password`, `api_key`, `authorization`, `token`, ...) |
+| `sensitive_key_literal` | a literal string of at least 8 characters under an exact credential-named key (`password`, `api_key`, `authorization`, `token`, ...), including strings in a list under such a key; an object under such a key is judged by its own keys, and a number is not judged |
 
 Properties:
 
@@ -109,13 +109,43 @@ credential values shorter than 8 characters under a credential key are not
 detected. The scanner performs no I/O, reads no environment variable, and grants
 no authority; it does not redact (redaction stays in `connector_secrets`).
 
+## Executable enforcement boundaries (partial E5)
+
+The scanner remains pure. Two already-existing higher-level call paths now
+invoke it **before** accepting a value:
+
+- `bind_work_unit_source()` rejects raw credentials and incomplete scans
+  before issuing a WorkUnit/source digest. `validate_work_unit_source_binding()`
+  scans again before accepting a retained binding so mutation or replay cannot
+  bypass this check. Both preserve the existing `WorkUnitBindingError` type,
+  using stable `raw_secret_detected` / `secret_scan_incomplete` messages without
+  including credential text or the input document.
+- `validate_audit_event()` rejects secret-bearing or unscannable canonical E4
+  audit events before `LocalEnterpriseAuditLedger.append()` inserts anything
+  in SQLite. `JsonLinesAuditSink.write_event()` revalidates independently
+  before it writes to a supplied stream. Both retain `EnterpriseAuditError`
+  with stable codes and no matched credential text.
+
+These are **specific gates**, not a global admission/sanitization guarantee.
+In particular the GitHub Issue Form preview, arbitrary WorkUnit JSON files
+before source binding, ResultManifest, verification/result artifacts, other
+ledger backends and ordinary logs are not covered by this integration. Those
+surfaces remain open follow-up work under E5. Secret *references*, including
+`env:NAME` and `secret:...`, remain permitted by the detector.
+
+The tests include rejected objective/nested-credential content, replay-time
+WorkUnit mutation, an E4 SQLite append rollback, and independent NDJSON sink
+denial without partially writing a line. These checks do not claim that
+unrecognized, encoded or short secret formats will be detected.
+
 ## Not in this slice
 
 - Wiring the kernel in front of connectors, workers or `connector_secrets`.
 - An egress allowlist and an approved-provider list in the profile schema. They
   are function arguments today; adding them to the schema is a separate
   decision.
-- Calling the scanner from the WorkUnit, result or audit write paths. The
-  scanner below exists; nothing invokes it yet.
+- Enforcement at all other WorkUnit creation/preview, ResultManifest,
+  verification, provider output, ordinary log, GitHub publication or audit
+  adapter write paths (see the bounded entry points above).
 - Detecting secrets the scanner has no rule for (see its limits).
 - Recording decisions in the audit ledger.
