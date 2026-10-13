@@ -23,6 +23,19 @@ and the release notes for that tag.
 
 ### Added
 
+- tests: five scenarios move from UNKNOWN to exercised in the E9 enterprise
+  conformance harness: stale-claim fencing, data-class egress, the local HTTP
+  boundary, public-evidence publication, and provider outage and quota (refs
+  #670, #672, #673, #676, #609). Each has a negative control that turns it red
+  (disabled fencing, disabled Host check, unrestricted external processing, a
+  publication renderer without the whitelist, wrongly retryable errors), and a
+  scenario with no explicit assertion cannot report PASS. Provider coverage is
+  pre-dispatch only: injected outage, rate-limit and quota probes are refused by
+  the real router and normalized errors, including the non-retryable
+  `authentication_error`, stay credential-redacted. Live attempt, quota
+  reconciliation and retry boundaries remain an explicit WARN gap. The
+  ten-issue evidence matrix is in
+  [Enterprise Control Plane](docs/architecture/ENTERPRISE_CONTROL_PLANE.md).
 - github: `idkmesh init --github --check` and `--apply` (C8-F, refs #596) install
   the eight generated bootstrap files into the current Git repository. `--check`
   is read-only. `--apply` writes only those files, through no-follow
