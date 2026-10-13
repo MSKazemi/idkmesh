@@ -268,6 +268,9 @@ are **not** built. Do not code against them.
 
 ## Where next
 
+To compare two cumulative metrics snapshots without misreporting restarts or unknown windows, follow the [source-backed metrics interval guide](API_METRICS_INTERVAL_GUIDE.md). Its evaluator is library-only, not another HTTP route or a rolling SLO service.
+
+
 [Control Tower Local API v0.1](../specifications/CONTROL_TOWER_LOCAL_API_V0_1.md)
 is the complete endpoint contract, and the
 [CLI and HTTP quick reference](CLI_HTTP_QUICK_REFERENCE.md) lists every shipped
