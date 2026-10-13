@@ -206,6 +206,10 @@ rm -rf tutorial-demo
   every local API endpoint, including single-run and attempts reads.
 - [`specifications/API_CONVENTIONS_V0_1.md`](specifications/API_CONVENTIONS_V0_1.md) —
   the shared error, pagination, and idempotency conventions.
+- [`reference/API_QUICKSTART.md`](reference/API_QUICKSTART.md) — the same
+  reads with the official Python client, plus the
+  [error catalog](reference/API_ERROR_CATALOG.md) and
+  [service limits](reference/API_LIMITS.md).
 - Newer read surfaces on `main`: `idkmesh work-unit list|status`,
   `idkmesh project status`, `idkmesh events list` and `idkmesh run evidence`
   (see the two specifications above for what each one does and does not cover).

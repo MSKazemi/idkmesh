@@ -125,6 +125,32 @@ class SearchConsoleSnapshotTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "CTR"):
             analyze_rows(rows, PORTFOLIO, page_prefix=None)
 
+    def test_search_console_http_errors_do_not_echo_sensitive_body(self):
+        import io
+        import urllib.error
+        from unittest.mock import patch
+        from scripts.search_console_snapshot import _post_json, _post_form
+
+        def rejected(*_args, **_kwargs):
+            return_error = urllib.error.HTTPError(
+                "https://example.invalid/SECRET_URL", 403, "SECRET_REASON", {},
+                io.BytesIO(b"SECRET_RESPONSE_TOKEN"),
+            )
+            raise return_error
+
+        with patch("scripts.search_console_snapshot.urllib.request.urlopen", side_effect=rejected):
+            for operation in (
+                lambda: _post_json("https://example.invalid/", {}, {"Authorization": "Bearer SECRET_HEADER_TOKEN"}),
+                lambda: _post_form("https://example.invalid/", {"refresh_token": "SECRET_REFRESH_TOKEN"}),
+            ):
+                with self.subTest(operation=operation), self.assertRaises(RuntimeError) as raised:
+                    operation()
+                message = str(raised.exception)
+                self.assertIn("HTTP 403", message)
+                for secret in ("SECRET_RESPONSE_TOKEN", "SECRET_URL", "SECRET_REASON", "SECRET_HEADER_TOKEN", "SECRET_REFRESH_TOKEN"):
+                    self.assertNotIn(secret, message)
+                self.assertIsNone(raised.exception.__cause__)
+
 
 if __name__ == "__main__":
     unittest.main()

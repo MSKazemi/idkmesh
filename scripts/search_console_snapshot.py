@@ -42,8 +42,7 @@ def _post_json(url: str, payload: dict[str, Any], headers: dict[str, str]) -> di
         with urllib.request.urlopen(request, timeout=30) as response:
             value = json.loads(response.read().decode("utf-8"))
     except urllib.error.HTTPError as error:
-        body = error.read().decode("utf-8", errors="replace")
-        raise RuntimeError(f"Search Console request failed with HTTP {error.code}: {body[:500]}") from error
+        raise RuntimeError(f"Search Console request failed with HTTP {error.code}; check Search Console property access and API configuration") from None
     _require(isinstance(value, dict), "Search Console response must be a JSON object")
     return value
 
@@ -59,8 +58,7 @@ def _post_form(url: str, fields: dict[str, str]) -> dict[str, Any]:
         with urllib.request.urlopen(request, timeout=30) as response:
             value = json.loads(response.read().decode("utf-8"))
     except urllib.error.HTTPError as error:
-        body = error.read().decode("utf-8", errors="replace")
-        raise RuntimeError(f"OAuth token refresh failed with HTTP {error.code}: {body[:500]}") from error
+        raise RuntimeError(f"OAuth token refresh failed with HTTP {error.code}; check credential grants and expiration") from None
     _require(isinstance(value, dict), "OAuth response must be a JSON object")
     return value
 

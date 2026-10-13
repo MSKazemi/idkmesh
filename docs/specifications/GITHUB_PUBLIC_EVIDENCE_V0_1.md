@@ -140,7 +140,7 @@ therefore cannot smuggle extra fields past the projection builder.
 ## Non-goals
 
 - no durable ledger;
-- no GitHub Pages publication (the pure site generator is C14-E);
+- no GitHub Pages publication (the pure site generator and its local-directory writer are C14-E);
 - no issue/PR comment mutation;
 - no repository-visibility API probe;
 - no secret scanner;

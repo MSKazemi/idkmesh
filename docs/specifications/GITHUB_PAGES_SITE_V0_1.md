@@ -18,8 +18,54 @@ files = render_github_pages_site(projections, repository="owner/name")
 ```
 
 The result is a deterministic `path -> text` mapping. The function performs no
-file, network, GitHub, verification, decision, or repository mutation. A later
-publication step (not part of this slice) decides whether and where to write it.
+file, network, GitHub, verification, decision, or repository mutation. A
+separate step decides whether and where to write it: the local-directory writer
+below, or a later publication step (not part of this slice).
+
+## Writing the site to a local directory
+
+```bash
+idkmesh pages-site --repository owner/name \
+  --projection projections/run-1.json projections/run-2.json --out site
+```
+
+The implementation is `idkmesh/github_pages_writer.py`
+(`write_github_pages_site(files, out_dir, force=False)`), driven by
+`idkmesh pages-site`. The command reads each `--projection` file as strict JSON
+(no duplicate keys, no `NaN`), at most 500 files, passes them through
+`render_github_pages_site` (which re-validates every projection through the
+C14-D renderer first), and writes exactly the returned files. It adds no
+manifest, marker, or other file. `--json` prints the repository, output
+directory, and per-file size and SHA-256. It makes no network or GitHub call and
+does not publish: copying the directory to a Pages branch or artifact is a
+separate, not yet built step.
+
+Write guarantees:
+
+- Every path in the map is re-checked: relative, `/`-separated, each segment
+  `[A-Za-z0-9_][A-Za-z0-9_.-]*` (or exactly `.nojekyll`), at most 256 bytes,
+  no case-insensitive duplicates, no path that is both a file and a directory
+  prefix, at most `2 + 2 * 500` files and 8 MiB. Absolute paths, `..`, `.`,
+  backslashes, drive letters, and NUL are refused before any write.
+- All files are written into a fresh sibling staging directory
+  (`.<name>.idkmesh-tmp-<random>`) with exclusive creation and then moved to
+  the target with a rename. Any failure removes the staging directory; a
+  failed swap restores the previous directory. Files are never written through
+  an existing path, so planted symlinks inside the target are never followed.
+- The `--out` directory itself must not be a symlink, and its parent must
+  already exist.
+- A missing or empty `--out` is accepted. A non-empty directory is replaced
+  without `--force` only if it is recognisably a site this command produced:
+  exactly the generated layout (`.nojekyll`, `index.html`, `runs/<16 hex>.html`,
+  `data/runs/<16 hex>.json`), no symlinks, and an `index.html` carrying the
+  generated `noindex` meta tag and disclaimer. Anything else is refused and left
+  untouched.
+- `--force` replaces any other directory, except the filesystem root, the
+  current directory and its ancestors, the home directory and its ancestors,
+  and any directory containing `.git`. It deletes the old contents.
+
+Residual risk: another process swapping `--out` between the check and the
+rename is not defended against.
 
 ## Generated files
 
@@ -75,9 +121,12 @@ public before building the C14-D projections.
 
 ## Non-goals
 
-- no publication step, workflow, or GitHub API call;
+- no publication step, workflow, or GitHub API call (the local writer above
+  only writes a directory);
 - no provenance timeline (the public projection carries no timestamps, so none
   is invented);
 - no JavaScript, search, or interactive filtering;
-- no release or attestation metadata (C14-F, C14-G);
+- no release or attestation metadata on the site (the offline release record is
+  [GitHub Release Provenance](GITHUB_RELEASE_PROVENANCE_V0_1.md), C14-F;
+  attestation is C14-G, not built);
 - no functional-correctness claim from publication.

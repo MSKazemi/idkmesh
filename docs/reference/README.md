@@ -4,9 +4,10 @@ Use these alongside the [capability truth matrix](../CAPABILITY_MATRIX.md) and t
 
 1. [Module map](MODULE_MAP.md) — every direct `idkmesh/*.py` module, grouped by responsibility and linked to its versioned contract.
 2. [CLI and HTTP quick reference](CLI_HTTP_QUICK_REFERENCE.md) — shipped commands, routed local endpoints, read-only client, and runnable examples.
-3. [As-built implementation architecture](../architecture/AS_BUILT_IMPLEMENTATION_MAP.md) — current source paths, lifecycle boundaries, and separated authority.
-4. [Troubleshooting and operator help](../help/TROUBLESHOOTING.md) — installation, SQLite, local API, verifier evidence, sandbox and tests.
-5. [Dated code/documentation audit](../audits/2026-10-10-code-documentation-reconciliation.md) — precise review scope, source revision, unverified areas, and next steps.
+3. API pages for integrators: [quickstart](API_QUICKSTART.md) (curl and the Python client), [error catalog](API_ERROR_CATALOG.md) (every stable code, status and retry rule), and [service limits](API_LIMITS.md) (timeouts, caps, body and header bounds) — each is drift-tested against the code.
+4. [As-built implementation architecture](../architecture/AS_BUILT_IMPLEMENTATION_MAP.md) — current source paths, lifecycle boundaries, and separated authority.
+5. [Troubleshooting and operator help](../help/TROUBLESHOOTING.md) — installation, SQLite, local API, verifier evidence, sandbox and tests.
+6. [Dated code/documentation audit](../audits/2026-10-10-code-documentation-reconciliation.md) — precise review scope, source revision, unverified areas, and next steps.
 
 For machine-readable protocol truth use [schemas](https://github.com/MSKazemi/idkmesh/blob/main/schemas/README.md); for complete HTTP payload rules consult [the Control Tower Local API contract](../specifications/CONTROL_TOWER_LOCAL_API_V0_1.md). Historical design catalogs are **not** a statement that an endpoint ships today.
 
