@@ -11,6 +11,8 @@ description: "User and contributor troubleshooting for IDKMesh installation, loc
 | --- | --- | --- |
 | Evaluate multiple reviewers | `idkmesh gate-audit INPUT` | Run reviewers or decide acceptance |
 | Plan adoption in another GitHub repository | `idkmesh init --github --dry-run --idkmesh-ref REF` | Write files, apply a workflow, or mutate GitHub |
+| Preview what a saved issue file would become, on your machine | `idkmesh work preview --issue-json FILE --repository OWNER/NAME --source-revision SHA` | Fetch from GitHub, dispatch, or write files |
+| Preview an issue or read run status from a generated GitHub workflow | `idkmesh github-workflow preview` / `status` | Dispatch, verify, comment on an issue, read provider secrets, or merge |
 | Persist/read local run state | `idkmesh run create/list/status/evidence/cancel` | Execute/cancel a provider process |
 | Execute the bounded two-attempt reference demo | `idkmesh local-loop CONFIG` | Record a human decision or automatically replay |
 | Inspect existing evidence in a browser | `idkmesh control-tower` | Publish APIs externally, dispatch workers, push, or merge |
@@ -27,6 +29,23 @@ description: "User and contributor troubleshooting for IDKMesh installation, loc
 | `init` says apply mode is not implemented | `init` only supports GitHub **dry-run** planning | Include both `--github` and `--dry-run`, plus a pinned `--idkmesh-ref`. Inspect rendered plan and owner-only steps; do not assume files were written. |
 
 The documented developer test setup uses `make setup` on POSIX hosts, followed by `make smoke`, `make gate`, `make test`, or `make integration` according to [testing instructions](../TESTING.md). For platforms without a suitable Make environment, create a Python virtual environment and use the direct `python -m pytest -q` path. **Do not** use `python -m unittest discover` as a proxy for the canonical suite: it misses pytest module-level functions.
+
+## GitHub workflow runner
+
+`idkmesh github-workflow` runs inside the workflows that `idkmesh init --github` renders. A refusal prints `error: <code>: <message>` on stderr and exits 2. See [GitHub Workflow Runner](../specifications/GITHUB_WORKFLOW_RUNNER_V0_1.md) for the full list.
+
+| Symptom | Interpretation | Action |
+| --- | --- | --- |
+| Wrapper fails at "Require the pinned IDKMesh GitHub workflow runner" | The pinned `--idkmesh-ref` predates the runner | Bootstrap again with an `--idkmesh-ref` that contains `idkmesh github-workflow`. |
+| `preview_scope_unconfigured` | The bootstrap seed deliberately has no write scope | Set `metadata.github_issue_preview.allowed_paths` in `.idkmesh/project.json`; `.github/**` and `.idkmesh/**` stay forbidden regardless. |
+| `project_policy_invalid` | The manifest allows automatic merge, skips the human decision, has a risk ceiling of `none`, or has an unsafe path | Restore `automatic_merge_allowed: false` and `human_decision_required: true`; fix the named field. |
+| `event_issue_mismatch` | The triggering event concerns a different issue than `IDKMESH_ISSUE_NUMBER`; the generated wrappers never produce this, so the workflow file was edited | Restore the wrapper from `idkmesh init --github --dry-run`. |
+| `policy_denied` from `idkmesh work preview` | The issue is closed, locked, a pull request, over the size bounds, or its Issue Form asks only for paths outside the project scope | Same fix as `preview_refused`; or widen `metadata.github_issue_preview.allowed_paths` yourself. The issue cannot. |
+| `issue_invalid` / `issue_unreadable` from `idkmesh work preview` | The `--issue-json` file is not one strict-JSON GitHub issue object (duplicate keys, `NaN`, over 1 MiB), or its URL/number does not match `--repository` / `--issue` | Save the REST object for exactly that issue and repository. |
+| `preview_refused` | The issue is closed, locked, or over the configured size bounds | Reopen or unlock the issue, or shorten it; a human decides, the runner does not override. |
+| `ledger_unavailable` with a missing `idkmesh-ledger` branch | No run has been recorded on the ledger branch yet | Nothing to repair; `status` never creates the branch. |
+| `ledger_run_not_found` | The `idkmesh_run_id` input matches no ledger run | Copy the run id from the ledger or dispatch record exactly. |
+| `dispatch_unavailable`, `verify_unavailable` | These phases are intentionally not implemented in a stateless runner | Not a fault; dispatch and verification stay outside the workflow until their own authority design lands. |
 
 ## Local Product Spine store
 
@@ -71,7 +90,7 @@ Do not copy the token into an issue, CI log, diagnostic report, or publicly shar
 | 413 Request Entity Too Large | JSON report exceeds local UI's **2 MiB** body limit | Produce a smaller valid report; do not bypass bounds. |
 | 503 with `Retry-After` | Bounded concurrent-request or SSE admission, draining, or unavailable backing store | Respect retry instructions; check `/readyz` and store configuration. This is not an authorization to retry an external side effect. |
 | `/runs` list is empty or read endpoints unavailable | Optional local `--product-spine-store` absent, empty or mismatched | Start Control Tower with the **existing** local SQLite store path; no hosted datastore is implied. |
-| An SSE client disconnects | Bounded streams, lifetime and heartbeats | Re-read event state with paginated `/events` and the documented stream cursor rather than assuming no events were lost. |
+| An SSE client disconnects | Bounded streams, lifetime and heartbeats | Re-read event state with paginated `/events` and the documented stream cursor rather than assuming no events were lost. With the Python client, open a new `stream_events(last_event_id=...)` from the last sequence you saw. |
 
 `GET /healthz` is liveness and `GET /readyz` is bounded readiness; neither constitutes evidence of worker quality or trusted actor identity. `GET /api/v1/metrics` is privacy-safe aggregate telemetry, not a trace of prompts or private candidate content. `idkmesh.api_client.ControlTowerClient` supplies typed transport/protocol/integrity errors and is preferred to hand-coded HTTP parsers.
 

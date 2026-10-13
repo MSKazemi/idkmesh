@@ -293,8 +293,8 @@ contract composes with `ActorContext`'s validation rather than
 duplicating it.
 
 This closes only the GitHub identity source. E3-E (audited break-glass grant), E3-F (dispatch/API
-enforcement integration), E3-G (two-principal acceptance fixture), and E3-H
-(service middleware/conformance) remain open E3 slices; E3-C (enterprise
+enforcement integration) and E3-H (service middleware/conformance) remain open E3 slices, and
+E3-G (two-principal acceptance fixture) is delivered for the enterprise kernel only (see below); E3-C (enterprise
 IdP/OIDC/SAML adapter) is covered separately below.
 
 ## E3-C: enterprise IdP adapter contract (OIDC/SAML/SSO)
@@ -361,8 +361,46 @@ the adapter and raise `OidcIdentityAdapterError`.
 
 This closes only the enterprise IdP identity source. E3-E (audited break-glass grant), E3-F
 (dispatch/API enforcement integration, including a live claims producer for
-both this adapter and E3-B), E3-G (two-principal acceptance fixture), and
-E3-H (service middleware/conformance) remain open E3 slices.
+both this adapter and E3-B) and E3-H (service middleware/conformance) remain open E3
+slices; E3-G (two-principal acceptance fixture) is delivered for the enterprise kernel only.
+
+## E3-G: two-principal acceptance fixture (enterprise kernel)
+
+`tests/test_enterprise_two_principal_acceptance.py` drives the shipped enterprise kernel together --
+`authorize` behind `AuthorizationDecisionCache`, with every outcome appended to the
+[Enterprise Audit Ledger](ENTERPRISE_AUDIT_LEDGER_V0_1.md) -- using fake `ActorContext` identities only.
+The GitHub two-user case is owned by `tests/test_c10_two_user_acceptance.py` (#598) and is not repeated.
+What the fixture pins:
+
+- proposer, dispatcher, reviewer and integrator paths: a worker cannot dispatch or integrate, a reviewer
+  verifies, and high-risk dispatch, execute and integrate each need a distinct authorized approver (a missing
+  approver, the actor itself, a wrong-role approver, a provider approver and an other-tenant approver all stay
+  `requires_approval`);
+- a cached ALLOW granted with one approver is not served to a different approver, a demoted approver, no
+  approver, or the actor itself;
+- a cached ALLOW is never served across a tenant boundary, including the same principal id and resource id in
+  another tenant, and the audit ledger lists each tenant's events only;
+- revocation, expiry, and a policy edit (with or without a revision bump) are re-evaluated and the denied or
+  `requires_approval` outcome is recorded with its reason code; a stale ALLOW cannot be audited as the
+  revoked identity's decision once its `identity_revision` has moved;
+- audit events carry reason codes and revisions, never the decision message or identity claims.
+
+Known gaps this fixture exposes but does not change (policy semantics are owned by the policy author, not the test):
+
+- **No cross-action separation of duties.** The kernel evaluates one request at a time. The baseline `verify` rule has
+  no distinct-approval threshold, and `ActorContext` roles are a set, so one principal holding both `worker` and
+  `reviewer` can pass `execute` and then `verify` the same candidate. A deployment that needs worker/verifier
+  separation must bind them to different principals or add a rule; E3-F enforcement should also carry the prior actor.
+- **No principal linking.** Self-approval is compared on `principal_id`. The same human reachable under two
+  principal ids (for example two IdPs) is two principals to the kernel.
+- **The audit event names the policy by id and revision only.** An edit that does not bump `revision` is a cache
+  miss and is evaluated correctly, but the ledger cannot show that the rule content changed. Bump the revision on
+  every edit.
+- **`approval_reference` is stored verbatim.** It is validated as an identifier only, so a token-shaped value
+  would be retained in the decision and the audit event. Callers must pass an opaque review reference, never a credential.
+
+This does not wire the cache into live dispatch or API paths (E3-F), implement break-glass (E3-E), or add a
+service middleware conformance check (E3-H).
 
 ## Non-goals
 
@@ -377,7 +415,7 @@ v0.1 does not claim:
   webhook envelope or Actions run context is likewise E3-F scope;
 - organization/team synchronization;
 - a production policy database;
-- policy caching;
+- a live consumer of the decision cache (the cache exists, see E3-D; wiring it into dispatch/API enforcement is E3-F);
 - break-glass implementation;
 - secret/egress enforcement (the decision kernel exists, see [Enterprise Data Policy Kernel](ENTERPRISE_DATA_POLICY_V0_1.md), but is not wired into any runtime path);
 - database row-level security;

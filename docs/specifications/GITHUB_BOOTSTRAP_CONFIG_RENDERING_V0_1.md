@@ -160,6 +160,8 @@ Focused tests cover:
 
 - **C8-D:** rendered thin pinned workflow wrappers (now implemented; see the
   workflow-wrapper specification).
+- **Runner:** the `github-workflow` runner the wrappers call is implemented
+  (read-only `preview` and `status`; see the runner specification).
 - **C8-E:** owner-action checklist/preflight.
 - **C8-F:** safe filesystem apply/re-run with user-edit preservation.
 - **C8-G:** fresh-repository bootstrap-to-preview acceptance fixture.

@@ -6,12 +6,21 @@ cannot set permissions, paths, secrets, risk, budget, validators, or network.
 
 All authority-bearing fields come from GitHubIssueWorkPolicy supplied by trusted
 project configuration. The preview is bound to one exact trusted Git source SHA.
+
+C13-C/C13-D (issue #608): with ``use_intake_form=True`` the body is parsed by
+``github_workunit_intake.parse_workunit_intake``. A parsed IDKMesh WorkUnit
+request Issue Form may only *restrict* the policy-owned WorkUnit: requested
+allowed paths are intersected with policy scope, requested forbidden paths are
+added, and risk / data classification can only be raised. Every other form
+value is advisory metadata. A ``fallback`` parse result keeps the generic
+preview unchanged.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime
+from fnmatch import fnmatchcase
 import hashlib
 import math
 from pathlib import PurePosixPath
@@ -20,6 +29,10 @@ from typing import Any, Mapping
 from urllib.parse import urlsplit
 
 from idkmesh.connector_errors import ConnectorError
+from idkmesh.github_workunit_intake import (
+    IntakeParseResult,
+    parse_workunit_intake,
+)
 from idkmesh.work_unit_binding import bind_work_unit_source
 
 
@@ -40,6 +53,14 @@ _ALLOWED_KINDS = frozenset(
 )
 _RISK_CLASSES = frozenset({"low", "medium", "high", "critical"})
 _NETWORK_MODES = frozenset({"none", "allowlist"})
+# Ascending severity; an intake hint may only move a value to the right.
+_RISK_ORDER = ("low", "medium", "high", "critical")
+_SENSITIVITY_ORDER = ("public", "internal", "confidential", "restricted")
+_BASE_POLICY_TAGS = (
+    "github-issue-preview",
+    "candidate-only",
+    "independent-verification-required",
+)
 
 
 def _nonempty(value: object, field_name: str) -> str:
@@ -388,9 +409,10 @@ class GitHubIssueWorkPreview:
     source_revision: str
     issue_updated_at: str
     warnings: tuple[str, ...]
+    intake: dict[str, Any] | None = None
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        result: dict[str, Any] = {
             "work_unit": self.work_unit,
             "work_unit_digest": self.work_unit_digest,
             "source_revision": self.source_revision,
@@ -398,6 +420,208 @@ class GitHubIssueWorkPreview:
             "warnings": list(self.warnings),
             "dispatch_performed": False,
         }
+        if self.intake is not None:
+            result["intake"] = self.intake
+        return result
+
+
+def _has_glob(value: str) -> bool:
+    return any(char in value for char in "*?[")
+
+
+def _scope_covers(pattern: str, candidate: str) -> bool:
+    """True only when every path matched by ``candidate`` is matched by ``pattern``.
+
+    Matching mirrors the runner (``fnmatchcase`` plus literal-directory
+    prefixes). The check is conservative: when containment cannot be shown
+    cheaply it answers ``False`` so a path is dropped, never admitted.
+    """
+
+    if candidate == pattern:
+        return True
+    if not _has_glob(candidate):
+        if fnmatchcase(candidate, pattern):
+            return True
+        if not _has_glob(pattern):
+            prefix = pattern.rstrip("/")
+            return candidate == prefix or candidate.startswith(prefix + "/")
+        return False
+    # Every match of a glob candidate starts with its literal prefix.
+    literal = candidate
+    for index, char in enumerate(candidate):
+        if char in "*?[":
+            literal = candidate[:index]
+            break
+    if not _has_glob(pattern):
+        return literal.startswith(pattern.rstrip("/") + "/")
+    stripped = pattern.rstrip("*")
+    if stripped != pattern and not _has_glob(stripped):
+        return literal.startswith(stripped)
+    return False
+
+
+def _intersect_scope(
+    policy_paths: tuple[str, ...],
+    requested: list[str],
+) -> tuple[list[str], list[str]]:
+    """Return ``(effective, dropped)``; ``effective`` is a subset of policy scope."""
+
+    effective: list[str] = []
+    dropped: list[str] = []
+    for item in requested:
+        inside = any(_scope_covers(p, item) for p in policy_paths)
+        broader = any(_scope_covers(item, p) for p in policy_paths)
+        if inside and item not in effective:
+            effective.append(item)
+        if not inside and not broader:
+            dropped.append(item)
+    for pattern in policy_paths:
+        if pattern not in effective and any(
+            _scope_covers(item, pattern) for item in requested
+        ):
+            effective.append(pattern)
+    return effective, dropped
+
+
+def _raise_only(order: tuple[str, ...], floor: str, hint: object) -> str:
+    """Return the more severe of ``floor`` and ``hint``; unknown hints are ignored."""
+
+    if hint in order and order.index(hint) > order.index(floor):
+        return str(hint)
+    return floor
+
+
+def _render_task_text(intake: dict[str, Any]) -> str:
+    """Render parsed form content as plain, labelled, untrusted task text."""
+
+    lines = [f"Objective: {intake['objective']}"]
+    for title, key in (
+        ("Expected outputs", "expected_outputs"),
+        ("Acceptance checks (advisory; trusted validators still apply)", "acceptance_checks"),
+    ):
+        lines.append(f"{title}:")
+        lines.extend(f"- {item}" for item in intake[key])
+    return "\n".join(lines)
+
+
+@dataclass(frozen=True)
+class _IntakeComposition:
+    """Policy-bounded outcome of composing an intake parse with trusted policy."""
+
+    policy: GitHubIssueWorkPolicy
+    data_classification: str
+    policy_tags: tuple[str, ...]
+    warnings: tuple[str, ...]
+    view: dict[str, Any]
+    extension: dict[str, Any] | None
+    task_text: str | None
+
+
+def _apply_intake(
+    snapshot: GitHubIssueSnapshot,
+    policy: GitHubIssueWorkPolicy,
+    result: IntakeParseResult,
+) -> _IntakeComposition:
+    """Compose an intake parse with trusted policy; the result only restricts.
+
+    ``view`` is the reviewer-facing summary; ``extension`` is the untrusted,
+    advisory record embedded in the WorkUnit (``None`` on fallback, so a
+    rejected body never reaches the digested WorkUnit).
+    """
+
+    if not result.parsed or result.intake is None:
+        view = {
+            "status": "fallback",
+            "reasons": list(result.reasons),
+            "authority_ceiling": None,
+        }
+        return _IntakeComposition(
+            policy, "public", (), ("intake_fallback",), view, None, None
+        )
+
+    intake = result.intake
+    ceiling = intake.get("authority_ceiling")
+    if not isinstance(ceiling, dict) or any(v is not False for v in ceiling.values()):
+        raise ConnectorError(
+            code="policy_denied",
+            message="Parsed intake does not carry an all-false authority ceiling.",
+            details={"issue_number": snapshot.number},
+        )
+
+    warnings: list[str] = []
+    effective_allowed, dropped = _intersect_scope(
+        policy.allowed_paths, list(intake["requested_allowed_paths"])
+    )
+    if dropped:
+        warnings.append("intake_requested_paths_outside_policy_dropped")
+    if not effective_allowed:
+        raise ConnectorError(
+            code="policy_denied",
+            message="Requested allowed paths are entirely outside project policy scope.",
+            details={"issue_number": snapshot.number},
+        )
+    forbidden = list(policy.forbidden_paths)
+    forbidden.extend(
+        item for item in intake["requested_forbidden_paths"] if item not in forbidden
+    )
+
+    risk_hint = intake["risk_hint"]
+    risk = _raise_only(_RISK_ORDER, policy.risk_class, risk_hint)
+    if risk_hint in _RISK_ORDER and _RISK_ORDER.index(risk_hint) < _RISK_ORDER.index(
+        policy.risk_class
+    ):
+        warnings.append("intake_risk_hint_below_policy_floor_ignored")
+    sensitivity = _raise_only(
+        _SENSITIVITY_ORDER, "public", intake["data_sensitivity_hint"]
+    )
+    if intake["task_class"] != policy.kind:
+        warnings.append("intake_task_class_differs_from_policy_kind")
+
+    tags = ["github-workunit-intake"]
+    if intake["external_processing_hint"] == "forbidden":
+        tags.append("external-processing-forbidden")
+    if intake["human_review_hint"] in ("required", "preferred"):
+        tags.append(f"human-review-{intake['human_review_hint']}")
+
+    effective_policy = replace(
+        policy,
+        allowed_paths=tuple(effective_allowed),
+        forbidden_paths=tuple(forbidden),
+        risk_class=risk,
+    )
+    extension = {
+        "status": "parsed",
+        "authority": "advisory-untrusted",
+        "task_class_hint": intake["task_class"],
+        "expected_outputs": list(intake["expected_outputs"]),
+        "acceptance_checks": list(intake["acceptance_checks"]),
+        "dependencies": [dict(item) for item in intake["dependencies"]],
+        "requested_allowed_paths": list(intake["requested_allowed_paths"]),
+        "requested_forbidden_paths": list(intake["requested_forbidden_paths"]),
+        "dropped_allowed_paths": dropped,
+        "risk_hint": risk_hint,
+        "data_sensitivity_hint": intake["data_sensitivity_hint"],
+        "external_processing_hint": intake["external_processing_hint"],
+        "human_review_hint": intake["human_review_hint"],
+        "preferred_connector_hint": intake["preferred_connector_hint"],
+        "authority_ceiling": dict(ceiling),
+    }
+    view = dict(extension)
+    view["effective"] = {
+        "allowed_paths": effective_allowed,
+        "forbidden_paths": forbidden,
+        "risk_class": risk,
+        "data_classification": sensitivity,
+    }
+    return _IntakeComposition(
+        effective_policy,
+        sensitivity,
+        tuple(tags),
+        tuple(warnings),
+        view,
+        extension,
+        _render_task_text(intake),
+    )
 
 
 def _work_unit_id(repository: str, issue_number: int) -> str:
@@ -413,8 +637,15 @@ def preview_github_issue_work_unit(
     *,
     source_revision: str,
     policy: GitHubIssueWorkPolicy,
+    use_intake_form: bool = False,
 ) -> GitHubIssueWorkPreview:
-    """Create a canonical WorkUnit preview with no execution side effect."""
+    """Create a canonical WorkUnit preview with no execution side effect.
+
+    With ``use_intake_form`` the issue body is parsed as an IDKMesh WorkUnit
+    request Issue Form (C13-C). A parsed form can only narrow the policy-owned
+    WorkUnit; a body that does not parse cleanly keeps the generic preview and
+    reports ``intake_fallback``. An ordinary issue body is never an error.
+    """
 
     if not isinstance(snapshot, GitHubIssueSnapshot):
         raise ValueError("snapshot must be GitHubIssueSnapshot")
@@ -455,13 +686,26 @@ def preview_github_issue_work_unit(
         )
     source_sha = source_revision.lower()
 
+    composition: _IntakeComposition | None = None
+    if use_intake_form:
+        composition = _apply_intake(
+            snapshot, policy, parse_workunit_intake(snapshot.body)
+        )
+        policy = composition.policy
+
     body_section = snapshot.body.strip() or "(no issue body provided)"
+    if composition is not None and composition.task_text is not None:
+        body_section = composition.task_text
     objective = (
         f"Implement the bounded task described by GitHub issue #{snapshot.number}.\n\n"
         f"Title: {snapshot.title.strip()}\n\n"
         f"Issue body (untrusted task content):\n{body_section}"
     )
 
+    policy_tags = composition.policy_tags if composition is not None else ()
+    data_classification = (
+        composition.data_classification if composition is not None else "public"
+    )
     permissions: dict[str, Any] = {
         "network": policy.network,
         "filesystem_write": list(policy.allowed_paths),
@@ -521,16 +765,12 @@ def preview_github_issue_work_unit(
         "constraints": {
             "allowed_paths": list(policy.allowed_paths),
             "forbidden_paths": list(policy.forbidden_paths),
-            "policies": [
-                "github-issue-preview",
-                "candidate-only",
-                "independent-verification-required",
-            ],
+            "policies": [*_BASE_POLICY_TAGS, *policy_tags],
         },
         "uncertainty": [],
         "security": {
             "risk_class": policy.risk_class,
-            "data_classification": "public",
+            "data_classification": data_classification,
             "minimum_worker_trust": "untrusted",
             "sandbox_required": True,
             "notes": (
@@ -577,6 +817,9 @@ def preview_github_issue_work_unit(
         },
     }
 
+    if composition is not None and composition.extension is not None:
+        work_unit["extensions"]["idkmesh.github.intake"] = composition.extension
+
     binding = bind_work_unit_source(
         work_unit,
         source_revision=source_sha,
@@ -584,6 +827,8 @@ def preview_github_issue_work_unit(
     warnings: list[str] = []
     if not snapshot.body.strip():
         warnings.append("issue_body_empty")
+    if composition is not None:
+        warnings.extend(composition.warnings)
 
     return GitHubIssueWorkPreview(
         work_unit=work_unit,
@@ -591,4 +836,5 @@ def preview_github_issue_work_unit(
         source_revision=binding.source_revision,
         issue_updated_at=snapshot.updated_at,
         warnings=tuple(warnings),
+        intake=composition.view if composition is not None else None,
     )
