@@ -72,6 +72,16 @@ GSC_ACCESS_TOKEN
 A direct access token takes precedence when present. Because access tokens expire,
 this is not the preferred long-term scheduled configuration.
 
+### Safe API failure diagnostics
+
+Google Search Console and OAuth token refresh failures report the HTTP status and
+which authorization/configuration path to inspect, without logging API response
+bodies, request URLs, bearer credentials, OAuth refresh values, or chained HTTP
+exceptions. A configured collector **fails visibly** on HTTP 403/401 instead of
+turning an authentication failure into a zero-traffic measurement. Check the
+repository secret/property permissions privately; never paste an exception
+response body into a public issue or PR.
+
 ### Fail-quiet behavior
 
 If `GSC_SITE_URL` and a complete credential set are absent, the visibility
