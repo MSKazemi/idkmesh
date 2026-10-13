@@ -124,6 +124,7 @@
     const voteGrid = document.getElementById("lab-votes");
     const tableBody = document.getElementById("lab-rows");
 
+    candidate.replaceChildren();
     fixture.candidates.forEach(function (entry) {
       const option = document.createElement("option");
       option.value = entry.id;
