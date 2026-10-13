@@ -11,6 +11,8 @@
 
 The wider IDKMesh framework explores how people, AI agents, and tools can break goals into small tasks, produce candidate work, verify it separately, preserve evidence, and leave the final integration decision to an authorized human or policy. **That automatic end-to-end swarm runner is not yet a finished product.** The repository is currently an **alpha GitHub-native research and engineering laboratory** with runnable tools, schemas, local inspection, and experimental coordination components.
 
+**Practical benefit today:** Instead of assuming five approvals mean five independent checks, IDKMesh can reveal shared reviewer mistakes, measure the panel's effective votes, and show which seeded known-bad cases passed the gate. You provide recorded verdicts **and known correct outcomes**; the tool does not collect votes or establish ground truth. [Try the working gate audit](#try-it-in-five-minutes-audit-a-review-gate).
+
 **New here? Start by what you want to do:**
 
 | Your goal | Best first step |
@@ -32,6 +34,19 @@ under majority vote the panel was worth no more than a single member, while the 
 `N/(1+(N-1)rho)` correction predicted 1.66. [`idkmesh gate-audit`](#try-it-in-five-minutes-audit-a-review-gate)
 runs that measurement on verdicts you have already collected, and reports the seeded
 known-bad candidates your panel let through.
+
+## Why would I use IDKMesh?
+
+| Your problem | Benefit you can use today | Important boundary |
+| --- | --- | --- |
+| Several AI or human reviewers agree, but may repeat the same mistakes | `gate-audit` measures errors shared across the panel and estimates **effective independent votes** | Requires reviewer decisions **and** known correct answers on an audited set; conclusions are specific to that set |
+| You want to know whether your review gate catches obvious failures | Audit the **breach rate** on labeled known-bad probe candidates | IDKMesh does not generate probes, run reviewers, or certify that unseen defects will be caught |
+| You need to explain what happened to an AI-produced candidate | Versioned task/result/verification contracts and the local, read-only `control-tower` help inspect retained claims and evidence | They do not independently establish semantic correctness or authorize acceptance/merge |
+| You want bounded tasks and a safer human/agent handoff | Reuse WorkUnit and evidence contracts in a GitHub-based operating process | Enforcement depends on your deployment; the fully automatic multi-agent runner is incomplete |
+
+**How it fits existing tools:** Keep GitHub, CI checks, your models, and your human reviewers. IDKMesh adds **review-gate diagnostics and explicit evidence/authority boundaries**; it is not a replacement for those tools. **Lower cost, faster delivery, and better real-world correctness are hypotheses to test, not demonstrated general benefits.**
+
+For an adoption decision and a worked example, read [Getting Started](docs/GETTING_STARTED.md). For command-by-command implementation status, use the [Capability Truth Matrix](docs/CAPABILITY_MATRIX.md).
 
 ## Try the contract demo
 

@@ -23,6 +23,26 @@ failures use [troubleshooting](help/TROUBLESHOOTING.md). The
 [capability matrix](CAPABILITY_MATRIX.md) is the authority for maturity and
 evidence classifications; some deeper API design documents describe future work.
 
+## What benefit can I expect?
+
+Imagine that five reviewers all approve the same change. **Five approvals are not necessarily five independent checks.** If those reviewers fail on the same candidates, adding more reviewers may add less useful evidence than their headcount suggests.
+
+The working `gate-audit` tool lets you make that problem measurable:
+
+1. Collect recorded **approve/reject** decisions on cases where you know which outcome is correct.
+2. Run `idkmesh gate-audit` on that verdict matrix; optionally include labeled known-bad probe cases.
+3. Read the panel's measured error rate, shared errors, effective votes, and known-bad probe breaches.
+4. Use those diagnostics to review your gate's design. **The report does not automatically change a policy, approve a candidate, or guarantee a safer gate.**
+
+| What you are trying to do | What you gain today | What you still need to do |
+| --- | --- | --- |
+| Evaluate several AI judges, CI checks, or human reviewers | Evidence about their *combined* behavior, not just a count of approvals | Supply a representative, correctly labeled audit set and the recorded votes |
+| Audit whether a gate accepts deliberately bad examples | Reported breach rate for provided, known-bad probes | Construct and label probes; investigate whether they reflect realistic risks |
+| Understand an existing AI-work attempt | Local read-only inspection of retained claims, attempts, and verification evidence | Supply a valid report; independently judge whether the outcome is acceptable |
+| Apply a bounded work-and-review process to your repository | Reusable WorkUnit/result/verification contracts and an [adoption walkthrough](PROJECT_ADOPTION_GUIDE.md) | Run and enforce the process yourself; automatic external-project dispatch and merge are not finished |
+
+**Compared with GitHub, CI, or an AI coding agent:** those tools host collaboration, run checks, or produce proposed work. IDKMesh is an **additional diagnostic and evidence layer**, not a replacement. You do not need a model subscription to try the bundled synthetic example. No measured universal cost savings, delivery speedup, or accuracy improvement is claimed; those outcomes require controlled comparisons and external reproduction. See the [Capability Truth Matrix](CAPABILITY_MATRIX.md) for the evidence level behind each capability.
+
 ## Who should use IDKMesh today?
 
 ### 1. Engineering teams that use multiple reviewers or AI judges
