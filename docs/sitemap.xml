@@ -387,6 +387,11 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://mskazemi.com/idkmesh/audits/2026-10-13-nonpackage-python-audit.html</loc>
+    <lastmod>2026-10-13</lastmod>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://mskazemi.com/idkmesh/community/</loc>
     <lastmod>2026-10-03</lastmod>
     <priority>0.6</priority>
@@ -1402,6 +1407,16 @@
     <priority>0.3</priority>
   </url>
   <url>
+    <loc>https://mskazemi.com/idkmesh/conversations/2026-10-13-search-console-http-error-hardening.html</loc>
+    <lastmod>2026-10-13</lastmod>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://mskazemi.com/idkmesh/conversations/2026-10-13-visibility-funnel-coverage.html</loc>
+    <lastmod>2026-10-13</lastmod>
+    <priority>0.3</priority>
+  </url>
+  <url>
     <loc>https://mskazemi.com/idkmesh/decisions/</loc>
     <lastmod>2026-10-10</lastmod>
     <priority>0.6</priority>
@@ -1919,6 +1934,16 @@
   <url>
     <loc>https://mskazemi.com/idkmesh/reference/MODULE_MAP.html</loc>
     <lastmod>2026-10-12</lastmod>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://mskazemi.com/idkmesh/reference/OPERATIONS_MODULE_MAP.html</loc>
+    <lastmod>2026-10-13</lastmod>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://mskazemi.com/idkmesh/reference/RESEARCH_MODULE_MAP.html</loc>
+    <lastmod>2026-10-13</lastmod>
     <priority>0.5</priority>
   </url>
   <url>
