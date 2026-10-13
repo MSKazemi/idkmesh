@@ -136,7 +136,7 @@ class GitHubBootstrapCliTests(unittest.TestCase):
             self.assertEqual(list(root.iterdir()), [])
 
         self.assertEqual(result.returncode, 2)
-        self.assertIn("apply mode is not implemented", result.stderr)
+        self.assertIn("choose exactly one of --dry-run, --check, or --apply", result.stderr)
 
     def test_missing_github_profile_fails_closed(self):
         result = self.run_cli(
@@ -165,7 +165,8 @@ class GitHubBootstrapCliTests(unittest.TestCase):
         self.assertIn("--github", result.stdout)
         self.assertIn("--dry-run", result.stdout)
         self.assertIn("--idkmesh-ref", result.stdout)
-        self.assertIn("apply mode remains fail-closed", result.stdout)
+        self.assertIn("--apply", result.stdout)
+        self.assertIn("--check", result.stdout)
 
 
 if __name__ == "__main__":
