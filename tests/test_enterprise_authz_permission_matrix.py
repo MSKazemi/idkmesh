@@ -146,6 +146,9 @@ class BaselinePermissionMatrixTests(unittest.TestCase):
             risk=risk_floor or "low",
             data_classification="internal",
             evaluated_at_epoch=NOW,
+            # Baseline ``verify`` is strict separation of duties: the work under
+            # review was executed by someone other than the actor under test.
+            executor_principal_ids=("principal:executor",) if action == "verify" else (),
         )
 
     def cell(self, *, roles, action: str, actor_type: str = "human"):

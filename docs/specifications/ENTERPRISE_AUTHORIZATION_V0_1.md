@@ -86,7 +86,7 @@ The default baseline preserves IDKMesh authority boundaries:
 
 ~~~text
 worker/node       -> execute/claim, not integrate
-reviewer          -> verify, not integrate
+reviewer          -> verify (never work they executed), not integrate
 dispatcher        -> dispatch, not integrate
 integrator human  -> integrate
 owner/admin human -> policy/integration authority according to rule
@@ -147,6 +147,36 @@ The actor and approver must have clearance at least as high as the request class
 
 This is an authorization attribute check only. E5 (#672) owns external-provider/egress policy; E3 does not make a restricted external route valid.
 
+## Verifier is not the executor
+
+A principal that executed the work must not verify it. The rule mirrors the
+distinct-approval threshold: `PolicyRule.executor_distinct_at_risk` is a risk
+threshold, and an `AuthorizationRequest` carries `executor_principal_ids`, the
+principals that executed the work under review.
+
+At or above the threshold (effective risk, after the rule's floor):
+
+- no `executor_principal_ids` returns `deny / executor_identity_required`. This is
+  fail-closed on purpose: a rule the caller could disable by omitting a field
+  would not be a control;
+- the actor's `principal_id` among them returns
+  `deny / self_verification_forbidden`. It is a plain `deny`, not
+  `requires_approval`, because no approver can make the executor an acceptable
+  verifier of their own work. Taking part in a multi-party execution is enough.
+
+The baseline `verify` rule sets the threshold to `low`, so it applies at every
+risk. A project that accepts self-verification for low-risk work must say so in
+its policy by raising the threshold to `medium`; below the threshold the field
+is ignored and an omitted executor is tolerated. `None` disables the rule. The
+check runs after the role, actor-type and data-class checks, so a principal
+without the `verify` role still gets `role_denied`. The field is ignored for
+every other action.
+
+Callers must take `executor_principal_ids` from the retained run or attempt
+record, never from the verifier's own claim. The kernel can show that the actor
+is not among the principals it was told about; it cannot establish that the list
+is complete or true.
+
 ## Identity freshness
 
 Authorization takes an explicit `evaluated_at_epoch`.
@@ -163,7 +193,7 @@ The decision records the exact `identity_revision` and policy revision used. Lat
 
 `idkmesh/enterprise_authz_cache.py` provides `AuthorizationDecisionCache`, a bounded LRU in front of `authorize`. Its guarantees are structural:
 
-- the key digests the whole normalized actor and approver (roles, scopes, clearance, `revoked`, expiry, `identity_revision`), the policy id, revision and a digest of the rule content, and the scope/resource/action/risk/data class. A revoked, re-scoped or demoted identity, or an edited policy, is a miss even when no revision string was bumped;
+- the key digests the whole normalized actor and approver (roles, scopes, clearance, `revoked`, expiry, `identity_revision`), the executor principal set, the policy id, revision and a digest of the rule content (including `executor_distinct_at_risk`), and the scope/resource/action/risk/data class, so a cached ALLOW for one executor set is never replayed for another. A revoked, re-scoped or demoted identity, or an edited policy, is a miss even when no revision string was bumped;
 - `request_id` and `evaluated_at_epoch` are not in the key. Time is enforced by the entry window `[stored_at, valid_until)`, where `valid_until` is the earliest of the max age (default 300 s), the actor expiry and the approver expiry. An identity that has expired never keeps cached authority, and a clock that moves backwards cannot revive an entry;
 - `invalidate_principal` drops every entry that used a principal as actor or approver, for a revocation feed;
 - every operation (lookup, store, eviction, `invalidate_principal`, `clear`) is serialised by one lock, so concurrent request threads cannot corrupt the LRU order or the hit/miss counters, and a revocation cannot interleave with a lookup into a stale ALLOW;
@@ -205,6 +235,8 @@ Representative stable codes include:
 - `data_clearance_denied`;
 - `distinct_approval_required`;
 - `self_approval_forbidden`;
+- `self_verification_forbidden`;
+- `executor_identity_required`;
 - `approver_scope_denied`;
 - `approver_role_denied`.
 
@@ -387,10 +419,11 @@ What the fixture pins:
 
 Known gaps this fixture exposes but does not change (policy semantics are owned by the policy author, not the test):
 
-- **No cross-action separation of duties.** The kernel evaluates one request at a time. The baseline `verify` rule has
-  no distinct-approval threshold, and `ActorContext` roles are a set, so one principal holding both `worker` and
-  `reviewer` can pass `execute` and then `verify` the same candidate. A deployment that needs worker/verifier
-  separation must bind them to different principals or add a rule; E3-F enforcement should also carry the prior actor.
+- **Cross-action separation of duties is now explicit, not automatic (#598).** The kernel still evaluates one
+  request at a time and does not remember who executed what. The baseline `verify` rule now refuses a principal
+  listed in `executor_principal_ids` (see "Verifier is not the executor"), but only as true as the list the caller
+  supplies from its retained record. Nothing yet calls `verify` in production, so no enforcement point builds that
+  list; E3-F must do so.
 - **No principal linking.** Self-approval is compared on `principal_id`. The same human reachable under two
   principal ids (for example two IdPs) is two principals to the kernel.
 - **The audit event names the policy by id and revision only.** An edit that does not bump `revision` is a cache

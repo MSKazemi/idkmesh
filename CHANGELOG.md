@@ -161,6 +161,20 @@ and the release notes for that tag.
   passwords and lowercase Bearer tokens remain detectable. The exact phrase
   `bearer token-based-authentication` is exempt, not arbitrary lowercase
   credentials. Result and audit write paths are not covered yet.
+- Separation of duties for verification (issue #598, C10-G): the authorization
+  kernel now refuses `verify` when the actor is among the principals that executed
+  the work under review. `PolicyRule.executor_distinct_at_risk` is a risk
+  threshold (baseline `verify`: `low`, i.e. every risk; `medium` permits
+  low-risk self-verification explicitly; `None` disables it) and
+  `AuthorizationRequest.executor_principal_ids` carries the executors. The result is
+  `deny / self_verification_forbidden`, or `deny / executor_identity_required`
+  when no executor is supplied (fail-closed, since a rule the caller could skip
+  by omission is not a control). The decision cache key and policy digest cover
+  both new inputs. Behaviour change: baseline `verify` requests must now carry
+  `executor_principal_ids`; no production code issues them yet. The principals
+  must come from the retained run record, and principal linking across IdPs
+  remains out of scope. Specified in
+  [Enterprise Authorization](docs/specifications/ENTERPRISE_AUTHORIZATION_V0_1.md#verifier-is-not-the-executor).
 - E5 raw-secret scanner (issue #672, partial): `idkmesh/enterprise_secret_scan.py`
   detects credential-shaped values (GitHub, AWS, Slack, Google, `sk-` keys, JWTs,
   PEM private-key headers, `Bearer` credentials, URL userinfo) and literal values
