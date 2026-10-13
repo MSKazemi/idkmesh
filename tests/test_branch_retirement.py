@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 from pathlib import Path
 import sys
 import tempfile
@@ -229,6 +230,56 @@ class RetirementTests(unittest.TestCase):
                            attestation=retire.ACK, cwd=ROOT)
         self.assertEqual(checkout.call_count, 2)
         git.assert_not_called()
+
+    def test_real_git_pushurl_override_blocks_retirement_before_any_delete(self):
+        """Two bare repositories retain the protected ref despite a bad pushurl.
+
+        The intended destination and a wrong destination deliberately share
+        the same commit SHA, so the old exact-SHA lease alone would not detect
+        the wrong repository.
+        """
+        def git(*args, cwd=None):
+            completed = subprocess.run(
+                ["git", *args], cwd=cwd, check=True, capture_output=True,
+                text=True, timeout=10,
+            )
+            return completed.stdout.strip()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            home = Path(tmp)
+            work = home / "checkout"
+            intended = home / "intended.git"
+            wrong = home / "wrong.git"
+            git("init", "-b", "main", str(work))
+            git("-c", "user.name=IDKMesh Test",
+                "-c", "user.email=test@example.invalid", "-C", str(work),
+                "commit", "--allow-empty", "-m", "fixture")
+            commit = git("-C", str(work), "rev-parse", "HEAD")
+            for destination in (intended, wrong):
+                git("init", "--bare", str(destination))
+                git("-C", str(work), "push", str(destination),
+                    f"{commit}:refs/heads/agent/old-feature")
+            git("-C", str(work), "remote", "add", "origin",
+                f"https://github.com/{REPO}.git")
+            git("-C", str(work), "remote", "set-url", "--push", "origin",
+                str(wrong))
+            self.assertEqual(
+                git("-C", str(work), "remote", "get-url", "origin"),
+                f"https://github.com/{REPO}.git",
+            )
+            self.assertEqual(
+                git("-C", str(work), "remote", "get-url", "--push", "--all", "origin"),
+                str(wrong),
+            )
+            with self.assertRaisesRegex(retire.RetirementError, "Git push destinations"):
+                retire.verify_local_checkout(REPO, commit, work)
+            for destination in (intended, wrong):
+                self.assertEqual(
+                    git("--git-dir", str(destination), "rev-parse",
+                        "refs/heads/agent/old-feature"),
+                    commit,
+                )
+
 
 
 if __name__ == "__main__":
