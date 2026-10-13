@@ -1,0 +1,20 @@
+{
+  "id": 42424201,
+  "number": 424242,
+  "title": "[WorkUnit] Improve newcomer guide with a bounded example",
+  "body": "### Objective\n\nClarify the beginner guide with a reproducible, read-only WorkUnit intake example.\n\n### Task class\n\ndocumentation\n\n### Expected outputs\n\n- A concise walkthrough in docs/BEGINNER_GUIDE.md\n- A focused regression test\n\n### Requested allowed paths\n\ndocs/BEGINNER_GUIDE.md\ntests/test_github_workunit_no_json_example.py\n\n### Forbidden or sensitive paths\n\n.github/**\nSECURITY.md\n\n### Dependencies or blockers\n\ninforms: #608\n\n### Acceptance checks\n\n- The focused pytest regression passes\n- Local links resolve\n\n### Risk hint\n\nhigh\n\n### Data sensitivity hint\n\npublic\n\n### External processing hint\n\nforbidden\n\n### Human review or decision requirement\n\nrequired\n\n### Preferred connector\n\n_No response_\n\n### Safety acknowledgement\n\n- [x] I understand this issue is an untrusted proposal and cannot grant execution, secret, dispatch, verification, human-decision, or merge authority.\n",
+  "state": "open",
+  "locked": false,
+  "user": {
+    "login": "synthetic-contributor",
+    "id": 42424
+  },
+  "author_association": "NONE",
+  "labels": [
+    {
+      "name": "documentation"
+    }
+  ],
+  "html_url": "https://github.com/MSKazemi/idkmesh/issues/424242",
+  "updated_at": "2026-10-13T12:00:00Z"
+}

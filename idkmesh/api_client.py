@@ -942,6 +942,45 @@ class ControlTowerClient:
             raise ProtocolError("run attempts response has invalid attempts")
         return result
 
+    def collect_run_pages(
+        self,
+        *,
+        max_pages: int,
+        limit: int = 50,
+        state: str | None = None,
+        project_id: str | None = None,
+    ) -> tuple[ApiResult[ListPage], ...]:
+        """Read a bounded series of run pages, retaining each page's metadata.
+
+        The caller must select a page budget. Cursors remain opaque; a repeated
+        cursor or exhausted budget is a protocol error, not partial success.
+        These non-transactional GETs never retry or mutate a resource.
+        """
+        if type(max_pages) is not int or not 1 <= max_pages <= 100:
+            raise ClientConfigurationError(
+                "max_pages must be an integer between 1 and 100"
+            )
+        _list_limit(limit)
+        cursor: str | None = None
+        seen: set[str] = set()
+        pages: list[ApiResult[ListPage]] = []
+        for _ in range(max_pages):
+            result = self.list_runs(
+                limit=limit,
+                cursor=cursor,
+                state=state,
+                project_id=project_id,
+            )
+            pages.append(result)
+            following = result.value.next_cursor
+            if following is None:
+                return tuple(pages)
+            if following in seen:
+                raise ProtocolError("run-list cursor repeated; refusing replay")
+            seen.add(following)
+            cursor = following
+        raise ProtocolError("run-list page cap reached with more pages remaining")
+
     def list_runs(
         self,
         *,

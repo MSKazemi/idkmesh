@@ -31,13 +31,17 @@ import tempfile
 from typing import Any, Callable
 
 from idkmesh.connector_profiles import parse_connector_profile_document
+from idkmesh.connector_errors import connector_error
+from idkmesh.connector_inspection import InspectedConnector, doctor_report, explain_route
+from idkmesh.connector_probe import DriverProbeOutcome, FakeProbeDriver, ProbeFailure, probe_connector
+from idkmesh.connector_registry import ConnectorRegistry
+from idkmesh.connector_routing import RoutingDecision
 from idkmesh.connector_secrets import (
     SecretReferenceError,
     materialize_config_secret,
     mint_secret_access_grant,
 )
 from idkmesh.connector_store import LocalMetadataStore, LocalStoreConflict
-from idkmesh.connector_errors import connector_error
 from idkmesh.enterprise_authz_cache import AuthorizationDecisionCache
 from idkmesh.enterprise_data_policy import (
     DataPolicyDecision, decide_credential, decide_egress, decide_external_processing,
@@ -346,6 +350,170 @@ def _coordinator_crash_after_dispatch(ctx: _Context) -> None:
         "no provider-side dispatch record or lease/fencing primitive exists "
         "in-process, so reconciliation of an already-accepted external "
         "dispatch (#675/#673) is not exercised"
+    )
+
+
+def _provider_outage_quota(ctx: _Context) -> None:
+    """Exercise pre-dispatch outage/quota refusal against real connector kernels.
+
+    The injected drivers are strictly in-process fakes: no provider request,
+    credential materialization, dispatch, attempt state transition or retry.
+    """
+    config = parse_connector_profile_document({
+        "api_version": "idkmesh.io/v1alpha1",
+        "id": "provider-fault-fixture",
+        "kind": "agent",
+        "driver": "fake-agent",
+        "enabled": True,
+        "capabilities": {
+            "tiers": ["T1"],
+            "task_classes": ["coder"],
+            "tools": ["git"],
+        },
+        "policy": {"project_spend_usd_max": 0.0},
+    })[0]
+    decision = RoutingDecision(
+        required_capability_tier="T1",
+        authority_mode="agent_candidate",
+        task_classes=frozenset({"coder"}),
+        required_tools=frozenset({"git"}),
+        allowed_connector_kinds=frozenset({"agent"}),
+        project_spend_usd_max=0.0,
+        external_processing_allowed=False,
+    )
+
+    cases = (
+        ("healthy_control", DriverProbeOutcome("healthy"), None),
+        (
+            "provider_outage",
+            DriverProbeOutcome("unavailable", failure=ProbeFailure(
+                "provider_unavailable", "provider_unavailable")),
+            "provider_unavailable",
+        ),
+        (
+            "rate_limit",
+            DriverProbeOutcome("unavailable", failure=ProbeFailure(
+                "provider_error", "rate_limited")),
+            "rate_limited",
+        ),
+        (
+            "quota_exhausted",
+            DriverProbeOutcome("unavailable", failure=ProbeFailure(
+                "provider_error", "quota_exhausted")),
+            "quota_exhausted",
+        ),
+    )
+    for label, injected, error_code in cases:
+        driver = FakeProbeDriver(driver_id=config.driver, outcome=injected)
+        registry = ConnectorRegistry()
+        registry.register(driver)
+        observation = probe_connector(config, registry, checked_at="2026-10-13T00:00:00Z")
+        inspected = (InspectedConnector(config=config, probe=observation),)
+        doctor = doctor_report(inspected)
+        route = explain_route(decision, inspected, auto_select=True)
+
+        ctx.expect(f"{label}: exactly one probe, no probe retry loop", driver.probe_calls == 1)
+        if error_code is None:
+            ctx.expect(
+                "healthy control: the same fixture is eligible for a zero-spend route",
+                observation.status == "healthy"
+                and doctor["status"] == "PASS"
+                and route["selected_connection_id"] == config.id
+                and [x["connection_id"] for x in route["eligible"]] == [config.id],
+            )
+            continue
+
+        ctx.expect(
+            f"{label}: structured probe reason is retained without provider body",
+            observation.status == "unavailable"
+            and observation.failure is not None
+            and observation.failure.code == error_code
+            and _SECRET not in repr(observation.to_dict()),
+        )
+        ctx.expect(
+            f"{label}: diagnostic reports failure, not a healthy provider",
+            doctor == {"status": "FAIL", "connections": [
+                {"connection_id": config.id, "state": "FAIL", "reason": error_code}
+            ]},
+        )
+        rejected = {x["connection_id"]: x["reasons"] for x in route["ineligible"]}
+        ctx.expect(
+            f"{label}: router refuses selection regardless of capability/cost",
+            route["selected_connection_id"] is None
+            and not route["eligible"]
+            and {"connector_unavailable", "capacity_unavailable"}
+            <= set(rejected.get(config.id, [])),
+        )
+
+        # These are normalization contract examples, NOT an invocation of a
+        # provider adapter. Retryable metadata must never perform a retry.
+        normalized = connector_error(
+            error_code,
+            "Provider failure (offline test)",
+            connection_id=config.id,
+            details={"Authorization": _SECRET, "nested": {"api_key": _SECRET}},
+        )
+        envelope = normalized.to_envelope()
+        ctx.expect(
+            f"{label}: envelope contains only the expected error code/retry class",
+            envelope["error"]["code"] == error_code
+            and envelope["error"]["retryable"] == (error_code != "quota_exhausted")
+            and envelope["error"]["connection_id"] == config.id,
+        )
+        ctx.expect(
+            f"{label}: credential-shaped error details are redacted",
+            _SECRET not in repr(envelope) and _SECRET not in str(normalized)
+            and envelope["error"]["details"]["Authorization"] == "[REDACTED]"
+            and envelope["error"]["details"]["nested"]["api_key"] == "[REDACTED]",
+        )
+
+    class ThrowingProbe(FakeProbeDriver):
+        def probe(self, config: Any) -> DriverProbeOutcome:
+            self.probe_calls += 1
+            raise RuntimeError(_SECRET)
+
+    faulty = ThrowingProbe(driver_id=config.driver)
+    registry = ConnectorRegistry()
+    registry.register(faulty)
+    observation = probe_connector(config, registry, checked_at="2026-10-13T00:00:00Z")
+    route = explain_route(
+        decision, (InspectedConnector(config=config, probe=observation),),
+        auto_select=True,
+    )
+    ctx.expect(
+        "exception from probe is mapped to a safe failure code, without exception text",
+        observation.status == "unavailable"
+        and observation.failure is not None
+        and observation.failure.kind == "driver_error"
+        and observation.failure.code == "probe_exception"
+        and _SECRET not in repr(observation.to_dict()),
+    )
+    ctx.expect(
+        "exception probe is not retried or routed",
+        faulty.probe_calls == 1 and route["selected_connection_id"] is None,
+    )
+    # Not a probe outcome: a credential rejection is never retryable, and retry
+    # metadata is data about the provider, not permission to retry.
+    rejected_credential = connector_error(
+        "authentication_error",
+        "Provider rejected the credential (offline test)",
+        connection_id=config.id,
+        details={"Authorization": "Bearer " + _SECRET, "retry_after_seconds": 10},
+    )
+    rejected_envelope = rejected_credential.to_envelope()["error"]
+    ctx.expect(
+        "authentication_error: normalized, non-retryable and credential-redacted",
+        rejected_envelope["code"] == "authentication_error"
+        and rejected_credential.is_retryable is False
+        and rejected_envelope["details"]["Authorization"] == "[REDACTED]"
+        and rejected_envelope["details"]["retry_after_seconds"] == 10
+        and _SECRET not in str(rejected_credential)
+        and _SECRET not in json.dumps(rejected_envelope),
+    )
+    ctx.gap(
+        "pre-dispatch probes and offline error normalization only: no actual "
+        "provider attempt, credential-bearing request, attempt terminal state, "
+        "quota reconciliation, or bounded retry scheduler is exercised (#673/#675)"
     )
 
 
@@ -668,36 +836,6 @@ def _stale_claim_retry(ctx: _Context) -> None:
     )
 
 
-def _provider_outage_quota(ctx: _Context) -> None:
-    expected = (
-        ("rate_limited", True),
-        ("quota_exhausted", False),
-        ("provider_unavailable", True),
-        ("authentication_error", False),
-    )
-    for code, retryable in expected:
-        error = connector_error(
-            code, "synthetic connector failure",
-            details={"Authorization": "Bearer " + _SECRET, "retry_after_seconds": 10},
-        )
-        envelope = error.to_envelope()["error"]
-        ctx.expect(
-            f"{code}: normalized without false success",
-            envelope["code"] == code and error.is_retryable is retryable,
-        )
-        ctx.expect(
-            f"{code}: metadata redacts Authorization and exception omits details",
-            envelope["details"]["Authorization"] == "[REDACTED]"
-            and _SECRET not in str(error)
-            and _SECRET not in json.dumps(envelope),
-        )
-    ctx.gap(
-        "the real provider adapter, retry scheduler, cancellation and "
-        "attempt ledger are not exercised; retryable does not mean an "
-        "unbounded automatic retry is authorized"
-    )
-
-
 def _external_data_and_egress(ctx: _Context) -> None:
     profile = _G2_DATA_PROFILE
     approved = ("example-provider",)
@@ -932,11 +1070,21 @@ _SELF = ("idkmesh/enterprise_conformance.py", "tests/test_enterprise_conformance
 _CLAIMS = ("idkmesh/task_claims.py", "tests/test_task_claims.py")
 _CACHE = ("idkmesh/enterprise_authz_cache.py", "tests/test_enterprise_authz_cache.py")
 _DATA = ("idkmesh/enterprise_data_policy.py", "tests/test_enterprise_data_policy.py")
-_ERRORS = ("idkmesh/connector_errors.py", "tests/test_connector_errors.py")
 _LOCAL_API = ("idkmesh/local_ui_security.py", "tests/test_api_security_matrix.py")
 _PUBLIC = ("idkmesh/github_public_evidence.py", "tests/test_github_public_evidence.py")
 _SPINE = ("idkmesh/product_spine.py", "tests/test_product_spine.py")
 
+_PROVIDER = (
+    "idkmesh/connector_profiles.py",
+    "idkmesh/connector_probe.py",
+    "idkmesh/connector_registry.py",
+    "idkmesh/connector_inspection.py",
+    "idkmesh/connector_routing.py",
+    "idkmesh/connector_errors.py",
+    "tests/test_connector_errors.py",
+    "tests/test_connector_probe.py",
+    "tests/test_connector_routing.py",
+)
 
 SCENARIOS: tuple[Scenario, ...] = (
     Scenario(
@@ -982,9 +1130,10 @@ SCENARIOS: tuple[Scenario, ...] = (
     Scenario(
         "provider_outage_quota",
         "Provider outage or quota failure",
-        "Normalized provider errors carry the intended retryability and "
-        "never copy credentials into diagnostic output.",
-        _ERRORS + _SELF,
+        "Outage, rate-limit and quota failures observed before dispatch "
+        "must be ineligible for routing and have sanitized, stable error "
+        "codes; live attempt completion and retry policy are not yet exercised.",
+        _PROVIDER + _SELF,
         _provider_outage_quota,
     ),
     Scenario(
