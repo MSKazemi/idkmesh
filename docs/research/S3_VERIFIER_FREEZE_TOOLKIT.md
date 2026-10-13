@@ -88,7 +88,10 @@ No threshold is relaxed to obtain a favorable status.
 ## 3. Freeze-manifest input
 
 After a canonical power_plan.json exists, prepare a strict input object using
-schema idkmesh.s3-freeze-input.v1.
+schema idkmesh.s3-freeze-input.v1. The manifest builder parses the bound power
+plan again and refuses it unless canonical=true, its self digest is valid, and
+its frozen seed, effect size, simulation count, bootstrap count, and target
+power still match the preregistration.
 
 The manifest builder accepts only named pre-confirmatory artifact roles:
 
@@ -133,6 +136,11 @@ This tool is deliberately incapable of satisfying #804.
 - claims.executes_untrusted_code is always false.
 - No confirmatory verdict-matrix artifact role exists.
 - Unknown artifact roles fail closed.
+- JSON/JSONL metadata roles are recursively checked for verdict/vote/model-output
+  keys so outcome material cannot be accidentally relabeled as an inventory.
+- Source-code roles must bind Python files; metadata roles must bind JSON/JSONL.
+- The power-plan role must bind a valid canonical plan; development plans and
+  infeasible plans cannot authorize an experiment freeze.
 - Artifact paths cannot escape the requested root or be symlinks.
 - An execution boundary that says untrusted patches will run while the sandbox
   is not required is rejected.
