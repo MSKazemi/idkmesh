@@ -215,6 +215,8 @@ def run(
 ) -> list[dict[str, str]]:
     if execute and attestation != ACK:
         raise RetirementError("execution requires explicit evidence/reference attestation")
+    if execute and len(candidates) != 1:
+        raise RetirementError("execution requires exactly one selected branch per invocation")
     main_sha = current_main(client, repository, default)
     for candidate in candidates:
         verify(client, repository, default, candidate)
@@ -247,12 +249,20 @@ def run(
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--manifest", type=Path, required=True)
-    parser.add_argument("--execute", action="store_true", help="Delete only exact reviewed refs after independent approval")
+    parser.add_argument("--branch", help="Exact manifest branch; required for destructive execution")
+    parser.add_argument("--execute", action="store_true", help="Delete one exact reviewed ref after independent approval")
     parser.add_argument("--attest", help="Human confirmation that exact SHA, evidence and external references were reviewed")
     parser.add_argument("--checkout", type=Path, default=Path.cwd())
     args = parser.parse_args(argv)
     try:
         repo, default, candidates = load_manifest(args.manifest)
+        if args.execute and args.branch is None:
+            raise RetirementError("--execute requires one explicit --branch")
+        if args.branch is not None:
+            selected = tuple(item for item in candidates if item.name == args.branch)
+            if len(selected) != 1:
+                raise RetirementError("selected --branch is not in the frozen retirement manifest")
+            candidates = selected
         outcome = run(Client(os.environ.get("GITHUB_TOKEN")), repo, default, candidates,
                       execute=args.execute, attestation=args.attest, cwd=args.checkout)
     except RetirementError as exc:

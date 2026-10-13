@@ -31,12 +31,13 @@ The tool only issues GitHub **GET** requests by default. Every candidate must ma
 python tools/branch_retirement.py \
   --manifest docs/audits/branch-retirement-2026-10-13.json \
   --execute \
+  --branch agent/issue-745-cors-delta \
   --attest I_REVIEWED_BRANCH_EVIDENCE_AND_EXTERNAL_REFERENCES
 ~~~
 
 Before deletion the tool requires the reviewed origin, exact local main HEAD, clean worktree, stable GitHub main and **fresh** PR/branch checks. It uses Git push with an exact SHA --force-with-lease, so moving a source branch after review rejects deletion. It never invokes a generic force-push, direct merge, unapproved rebasing or branch cleanup by name pattern.
 
-**Non-atomicity:** the eight deletions are sequential, not one transaction. If a later candidate fails, record the already deleted refs, investigate why, and make a separately reviewed reduced manifest; do **not** blindly retry a stale whole-batch manifest. No tool can prove that every external system stopped referencing a branch, so the human attestation is mandatory.
+**One branch per execution:** the full eight-branch manifest may be inspected in dry-run mode, but `--execute` requires `--branch` selecting exactly one listed ref. After a real deletion, record the result, recheck the remote branch inventory and dependencies, and independently authorize the next ref. The literal attestation string is an operator assertion, **not proof of human identity or external-consumer clearance**; a separate human review remains mandatory.
 
 **Excluded:** main, active PRs, changed/protected/frozen branches, recent work such as C13-E/C8-G, and fix/e9-no-empty-pass-20261013 (a no-PR orphan still needing independent evidence review). The historical PRs stay available as audit references after deleting a source branch.
 

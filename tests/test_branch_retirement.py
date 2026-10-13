@@ -127,6 +127,33 @@ class RetirementTests(unittest.TestCase):
         with self.assertRaisesRegex(retire.RetirementError, "not in current main"):
             retire.verify(api, REPO, "main", OLD)
 
+    def test_execute_fails_closed_on_multiple_candidates(self):
+        """The manifest can audit eight branches, but execution deletes at most one."""
+        other = retire.Candidate("agent/other", "d" * 40, 105, 106)
+        with self.assertRaisesRegex(retire.RetirementError, "exactly one"):
+            retire.run(FakeClient(), REPO, "main", (OLD, other),
+                       execute=True, attestation=retire.ACK, cwd=ROOT)
+
+    def test_cli_requires_explicit_manifest_branch_for_destructive_mode(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "retirement.json"
+            path.write_text(json.dumps({
+                "repository": REPO, "default_branch": "main",
+                "candidates": [{
+                    "name": OLD.name, "head": HEAD,
+                    "closed_pr": OLD.closed_pr,
+                    "merged_replacement_pr": OLD.merged_replacement_pr,
+                }],
+            }), encoding="utf-8")
+            with mock.patch.object(retire, "Client", side_effect=AssertionError("no network")):
+                self.assertEqual(retire.main([
+                    "--manifest", str(path), "--execute", "--attest", retire.ACK,
+                ]), 2)
+                self.assertEqual(retire.main([
+                    "--manifest", str(path), "--execute", "--branch", "agent/unlisted",
+                    "--attest", retire.ACK,
+                ]), 2)
+
     def test_execute_requires_explicit_operator_attestation(self):
         with self.assertRaisesRegex(retire.RetirementError, "requires explicit"):
             retire.run(FakeClient(), REPO, "main", (OLD,), execute=True, attestation=None, cwd=ROOT)
