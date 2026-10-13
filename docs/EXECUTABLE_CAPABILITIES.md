@@ -159,7 +159,7 @@ bounded `local-loop` composition.
 ### GitHub-native control plane
 
 The package contains bounded GitHub repository/ref readers, issue-source normalization,
-issue preview/routing projection, authenticated webhook ingress, delivery idempotency,
+issue preview/routing projection, strict untrusted WorkUnit form parsing (pure optional API, not a dispatch workflow), authenticated webhook ingress, delivery idempotency,
 deterministic ledger-record serialization with append-only chain verification, local
 compare-and-set append/admission/recovery machinery, and a GitHub-native durable storage
 adapter that uses one dedicated orphan ledger branch with fast-forward-only ref updates.
@@ -242,6 +242,7 @@ name documents implementation presence, not stability as a public Python API.
 - `idkmesh/github_governance_preflight.py`
 - `idkmesh/github_issue_preview.py`
 - `idkmesh/github_issue_source.py`
+- `idkmesh/github_workunit_intake.py`
 - `idkmesh/github_ledger_admission.py`
 - `idkmesh/github_ledger_append.py`
 - `idkmesh/github_ledger_github_store.py`

@@ -96,6 +96,8 @@ For a newcomer trying to understand the executable foundation, this order is usu
 
 ### Work, evidence, and interoperability
 
+- [GitHub WorkUnit request: no-JSON path](help/GITHUB_WORKUNIT_FORM.md) — experimental strict form parsing, bounded preview, security limits and example.
+
 - [Human–agent coordination algorithms](planning/HUMAN_AGENT_COORDINATION_ALGORITHMS_2026-10-04.md) — proposed ownership, timeout recovery, bounded competition, dependency scheduling, and model/effort allocation; distinguishes current foundations from the missing shared live protocol.
 - [`../schemas/README.md`](https://github.com/MSKazemi/idkmesh/blob/main/schemas/README.md) — current WorkUnit/ResultManifest/VerificationResult and related schema versions.
 - [WorkUnit composability](specifications/WORK_UNIT_COMPOSABILITY_V0_2.md) — decomposition benchmark and evidence boundary.

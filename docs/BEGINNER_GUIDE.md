@@ -223,6 +223,10 @@ idkmesh control-tower
 
 This opens a **local read-only evidence viewer** using a committed example when no path is supplied. You can inspect the separate worker-claim, verification-evidence, and human-authority layers. **The viewer cannot run agents, record a human decision, push code, or merge a pull request.** For a more detailed local walkthrough, see the [Run Lifecycle Tutorial](RUN_LIFECYCLE_TUTORIAL.md).
 
+## Create a bounded task without writing JSON
+
+Use the [GitHub WorkUnit Issue Form walkthrough](help/GITHUB_WORKUNIT_FORM.md) to propose objective, output, allowed-path hints, risks and review checks in ordinary language. It produces **untrusted proposal data**, not an execution grant or an automatic agent run. The optional parser can make a policy-bounded preview; automatic dispatch and end-to-end adoption remain unfinished.
+
 ## How can I use IDKMesh with my own project?
 
 Today, a maintainer can **apply the operating model**: write small tasks with clear permissions, have people or external AI tools propose changes, check changes separately, and use GitHub's own review/branch protections before merging. IDKMesh provides contracts, validators, and related tooling, but **you must still connect and operate many of those pieces yourself**.

@@ -1,7 +1,7 @@
 # GitHub WorkUnit Intake v0.1
 
-**Status:** experimental field contract and Issue Form  
-**Issue:** #608, C13-A/C13-B/C13-C (parser and policy composition) and C13-D (fallback)  
+**Status:** experimental field contract, Issue Form, and pure read-only preview  
+**Issue:** #608, C13-A through C13-D/C13-C (parser and policy composition) and C13-D (fallback)  
 **Schema:** `schemas/github-workunit-intake-v0.1.schema.json`  
 **Issue Form:** `.github/ISSUE_TEMPLATE/06-idkmesh-workunit.yml`  
 **Form mapping:** `config/github-workunit-intake-v0.1.json`  
@@ -13,11 +13,7 @@ This contract freezes the normalized field vocabulary for the GitHub Issue
 Form that lets a newcomer request bounded work without writing raw WorkUnit
 JSON (C13-B, below).
 
-It deliberately stops before C13-C:
-
-- it does **not** parse an issue body;
-- it does **not** create a canonical WorkUnit;
-- it does **not** route or dispatch work.
+C13-C/D now adds optional strict normalization in `idkmesh/github_workunit_intake.py` and a policy-bounded WorkUnit preview. A valid intake document is still untrusted, and the module does **not** route, dispatch, verify or merge work. The existing generic issue preview remains available for ordinary issues.
 
 A valid intake document means only that untrusted requester input has a known
 shape.
@@ -176,14 +172,13 @@ integration, or merge authority. The config's
 existing GitHub issue preview invariant remains authoritative: trusted
 `GitHubIssueWorkPolicy` controls authority-bearing WorkUnit fields.
 
-### Form-to-preview rules for C13-C
+### Form-to-preview rules (C13-C/D implemented as a pure optional API)
 
-When the structured parser is implemented, it should follow these rules:
+The optional parser/preview follows these rules:
 
 1. Recognize only the field vocabulary of this contract.
 2. Treat edited, duplicated, malformed, or unknown values as untrusted input.
-3. Fall back safely to the existing generic issue preview rather than guessing
-   authority.
+3. Use the existing generic preview only for ordinary non-form issues; reject malformed recognized WorkUnit forms rather than guessing authority.
 4. Never union requested allowed paths with project policy. The maximum safe
    scope is their intersection.
 5. Forbidden-path hints may only narrow scope.
