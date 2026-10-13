@@ -18,6 +18,9 @@ declare no explicit baseline revision; that is noted rather than invented.
 
 Whole-repository snapshots, ordered by date.
 
+- [Non-package Python Module Reconciliation](2026-10-13-nonpackage-python-audit.md)
+  — 2026-10-13; baseline `19043860`. Inventories 209 non-package Python source modules, authority/evidence boundaries, and remaining test/review gaps.
+
 - [Code-to-Documentation Reconciliation](2026-10-10-code-documentation-reconciliation.md)
   — 2026-10-10/11; initial `58f5d925`, refreshed `bee77a61`. Inventories all
   85 direct installable Python modules, links as-built architecture and operator
