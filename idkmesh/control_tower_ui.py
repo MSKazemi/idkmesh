@@ -1455,7 +1455,9 @@ def _handler(
             self._send_json(200, payload, head_only=head_only)
 
         def _read_json_text(self) -> str | None:
-            if self.headers.get("Transfer-Encoding"):
+            # Presence is enough to reject TE, including an empty field.
+            # A fronting proxy must not parse a different body framing.
+            if self.headers.get_all("Transfer-Encoding"):
                 self._send_json(
                     400,
                     error_document(
@@ -1464,8 +1466,17 @@ def _handler(
                     ),
                 )
                 return None
-            content_type = self.headers.get("Content-Type", "")
-            media_type = content_type.split(";", 1)[0].strip().lower()
+            types = self.headers.get_all("Content-Type", [])
+            if len(types) != 1:
+                self._send_json(
+                    415,
+                    error_document(
+                        "unsupported_media_type",
+                        "API requests require exactly one Content-Type header",
+                    ),
+                )
+                return None
+            media_type = types[0].split(";", 1)[0].strip().lower()
             if media_type not in {JSON_MEDIA_TYPE, V1_MEDIA_TYPE}:
                 self._send_json(
                     415,
@@ -1478,8 +1489,8 @@ def _handler(
                     ),
                 )
                 return None
-            raw_length = self.headers.get("Content-Length")
-            if raw_length is None:
+            lengths = self.headers.get_all("Content-Length", [])
+            if not lengths:
                 self._send_json(
                     411,
                     error_document(
@@ -1488,6 +1499,16 @@ def _handler(
                     ),
                 )
                 return None
+            if len(lengths) != 1:
+                self._send_json(
+                    400,
+                    error_document(
+                        "invalid_content_length",
+                        "duplicate Content-Length headers are not supported",
+                    ),
+                )
+                return None
+            raw_length = lengths[0]
             # RFC 9110 Content-Length is 1*ASCII DIGIT, padded at most by the
             # field's optional whitespace. int() would also accept "+2" and
             # Unicode digits (int("\u0662") == 2) -- spellings a strict fronting
