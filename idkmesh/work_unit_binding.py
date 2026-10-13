@@ -13,6 +13,8 @@ import json
 import re
 from typing import Any
 
+from idkmesh.enterprise_secret_scan import SecretLeakError, assert_no_secrets
+
 
 _GIT_REVISION_RE = re.compile(r"(?:[0-9a-fA-F]{40}|[0-9a-fA-F]{64})\Z")
 _SHA256_RE = re.compile(r"sha256:[0-9a-f]{64}\Z")
@@ -58,6 +60,19 @@ def _work_unit_identity(work_unit: Any) -> tuple[str, int]:
     if isinstance(version, bool) or not isinstance(version, int) or version < 1:
         raise WorkUnitBindingError("work_unit.version must be an integer >= 1")
     return work_unit_id, version
+
+
+def _require_secret_free_work_unit(work_unit: dict[str, Any]) -> None:
+    """Prevent credentials entering a canonical WorkUnit source binding.
+
+    Keep the public exception type stable and never include the input, its
+    credential, or a potentially sensitive mapping key in the error message.
+    """
+    try:
+        assert_no_secrets(work_unit, context="work_unit")
+    except SecretLeakError as exc:
+        reason = "raw_secret_detected" if exc.report.findings else "secret_scan_incomplete"
+        raise WorkUnitBindingError(f"{reason}: WorkUnit admission refused") from None
 
 
 @dataclass(frozen=True)
@@ -112,6 +127,7 @@ def bind_work_unit_source(
     """
 
     work_unit_id, version = _work_unit_identity(work_unit)
+    _require_secret_free_work_unit(work_unit)
     trusted_revision = _git_revision(source_revision, "source_revision")
 
     provenance = work_unit.get("provenance")
@@ -149,6 +165,7 @@ def validate_work_unit_source_binding(
         raise WorkUnitBindingError("binding must be a WorkUnitSourceBinding")
 
     work_unit_id, version = _work_unit_identity(work_unit)
+    _require_secret_free_work_unit(work_unit)
     if work_unit_id != binding.work_unit_id:
         raise WorkUnitBindingError("binding references a different WorkUnit id")
     if version != binding.work_unit_version:

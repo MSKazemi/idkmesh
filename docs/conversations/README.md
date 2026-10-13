@@ -7,12 +7,13 @@ canonical files designated by [`../../PROJECT_RULES.md`](https://github.com/MSKa
 (decisions, specifications, architecture, findings); this directory keeps the trail
 that produced them.
 
-192 records across 14 dates, newest first.
+193 records across 14 dates, newest first.
 
 ## Index
 
 ### 2026-10-13
 
+- [E5 raw-secret guards at WorkUnit and audit boundaries](2026-10-13-e5-secret-guard-bindings.md)
 - [C13-E safe run-state label projection](2026-10-13-c13e-safe-run-labels.md)
 - [API-9 optional access-log privacy hardening](2026-10-13-api-access-log-privacy-hardening.md)
 - [Branch reconciliation: which refs need merging?](2026-10-13-branch-main-integration-review.md)

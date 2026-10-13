@@ -196,11 +196,19 @@ The contract is fixed-shape and stores identifiers/digests rather than
 arbitrary request data. Raw credential values, Authorization headers, API
 tokens, prompts and secret material must never be passed as identifiers.
 
-No software can infer whether an opaque identifier string was actually copied
-from a secret. Operators/adapters therefore remain responsible for supplying
-only normalized identities, references, stable reason codes and digests. The
-ledger reduces the accidental-leak surface; it does not make a false claim that
-arbitrary strings can be classified perfectly.
+The E5 raw-secret detector is now a **second, fail-closed gate**. The canonical
+`validate_audit_event()` scans the complete fixed-shape event before
+`LocalEnterpriseAuditLedger.append()` inserts a row. Even a client directly
+calling `JsonLinesAuditSink.write_event()` must pass that same validation
+before the stream receives any bytes. `EnterpriseAuditError` uses the stable
+`raw_secret_detected` or `secret_scan_incomplete` code, not a credential or
+its contents. Rejected appends roll back their transaction and do not consume
+an audit sequence.
+
+This check covers known credential formats and credential-named literal fields,
+not every possible arbitrary or encoded secret. Operators and other adapters
+remain responsible for normalized identities and references; a scan is not an
+independent certificate of secret absence. See [E5 data policy](ENTERPRISE_DATA_POLICY_V0_1.md#executable-enforcement-boundaries-partial-e5).
 
 ## Failure behavior
 
