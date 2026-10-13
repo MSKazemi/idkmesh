@@ -3,7 +3,7 @@ description: "Dated GitHub Actions source, trigger, write-permission, and docume
 ---
 # Workflow-to-code audit — 2026-10-13
 
-**Pinned source revision:** `main@3ae17662500a798bafffeb087bbe3910a07bb8d2` (after merged [PR #1091](https://github.com/MSKazemi/idkmesh/pull/1091)). **Review mode:** static configuration/source-interface inspection via connected GitHub APIs, not production execution, runner penetration testing, or independent security certification.
+**Initial source revision:** `main@3ae17662500a798bafffeb087bbe3910a07bb8d2`; **refreshed** against `main@0cdf0519dd937f04a4e0a98d077719b659f0e5d6` (after merged [PR #1091](https://github.com/MSKazemi/idkmesh/pull/1091)). **Review mode:** static configuration/source-interface inspection via connected GitHub APIs, not production execution, runner penetration testing, or independent security certification.
 
 ## Scope and method
 
@@ -25,6 +25,10 @@ description: "Dated GitHub Actions source, trigger, write-permission, and docume
 | Provider and discovery egress | Jules/OpenHands use provider secrets; IndexNow, search observatory and public discovery probes can contact external endpoints | `contents: read` or no explicit GitHub write scopes **does not** mean offline or no side effects |
 | E2E / verification | Frozen `real-*-e2e.yml` workflows run pinned node candidates with controlled Docker setup and separate evaluator-owned source | Not a general arbitrary-agent sandbox and not a merge permit |
 | Synthetic research | ACO, emergence, ACE, R1/R2 and verifier-error sweeps execute experimental models | Synthetic trends, simulated accepted defects or read artifacts do not establish external validity |
+
+## Refresh on newer main
+
+The intervening feature commit adds `scripts/visibility_funnel_coverage.py`, its tests and an invocation in `visibility-observatory.yml`. Its trigger families and GitHub write scopes are unchanged. The workflow catalog has been updated to point to the new read-only aggregate report. The PR's sitemap must preserve the new feature's published documentation.
 
 ## Checks and evidence
 
