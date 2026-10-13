@@ -99,6 +99,23 @@ class ExternalProcessingTests(unittest.TestCase):
             self.decide(G1, "public", approved=()).code, "provider_not_approved"
         )
 
+    def test_approved_provider_list_rejects_scalar_and_malformed_inputs(self) -> None:
+        for invalid in (
+            "provider-a", b"provider-a", {"provider-a": True}, None,
+            ["provider-a", 17], ["provider-a", "bad provider"],
+        ):
+            with self.subTest(invalid=repr(invalid)):
+                decision = self.decide(G1, "public", approved=invalid)
+                self.assertFalse(decision.allowed)
+                self.assertEqual(decision.code, "invalid_approved_providers")
+        self.assertTrue(
+            self.decide(G1, "public", approved=(x for x in APPROVED)).allowed
+        )
+        self.assertEqual(
+            self.decide(G1, "public", approved=["provider-a"] * 257).code,
+            "invalid_approved_providers",
+        )
+
     def test_unknown_class_and_invalid_profile_deny(self) -> None:
         self.assertEqual(self.decide(G1, "top-secret").code, "unknown_data_class")
         self.assertEqual(self.decide(G1, None).code, "unknown_data_class")
@@ -114,6 +131,17 @@ class ExternalProcessingTests(unittest.TestCase):
 
 
 class EgressTests(unittest.TestCase):
+    def test_allowlist_collection_rejects_scalar_mapping_and_oversize(self) -> None:
+        for invalid in ("a", b"a", {"a": True}, None, ["a", 1], ["a", "*.example.org"]):
+            with self.subTest(invalid=repr(invalid)):
+                decision = decide_egress(G1, destination_host="a", allowlist=invalid)
+                self.assertEqual(decision.code, "invalid_allowlist")
+                self.assertFalse(decision.allowed)
+        self.assertEqual(
+            decide_egress(G1, destination_host="a", allowlist=["a"] * 257).code,
+            "invalid_allowlist",
+        )
+
     def test_default_deny_blocks_unlisted_host(self) -> None:
         decision = decide_egress(
             G1, destination_host="api.example.com", allowlist=["other.example.com"]
