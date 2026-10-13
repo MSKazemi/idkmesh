@@ -39,6 +39,7 @@ revision, and retain full stdout JSON before interpreting the results:
 
 ```bash
 git rev-parse HEAD
+mkdir -p results   # results/ is gitignored scratch output
 python sim/physarum_compute_routing_stress.py \
   --seed-start 1 --seeds 20 --epochs 80 --tasks-per-epoch 20 \
   --topology all > results/physarum-routing-stress.json
