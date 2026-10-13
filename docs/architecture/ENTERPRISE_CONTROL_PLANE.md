@@ -446,9 +446,9 @@ The baseline is ready for an enterprise pilot only when the system can demonstra
 
 That evidence, rather than infrastructure size, is what makes the system enterprise-operable.
 
-## 18. Cross-layer enterprise conformance: ten issue work slices (2026-10-13)
+## 19. Cross-layer enterprise conformance: ten issue work slices (2026-10-13)
 
-The current in-process conformance harness is [enterprise_conformance.py](../../idkmesh/enterprise_conformance.py),
+The current in-process conformance harness is [enterprise_conformance.py](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/enterprise_conformance.py),
 exposed via the existing command:
 
 ~~~bash
