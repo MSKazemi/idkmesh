@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Interactive IDKMesh AI review lab: explore known-bad probes, overlapping reviewer mistakes and approval thresholds using synthetic data. No account or installation.">
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+  <meta name="author" content="Mohsen Seyedkazemi Ardebili">
+  <meta name="theme-color" content="#0b1020">
+  <title>Interactive AI Reviewer Lab — IDKMesh</title>
+  <link rel="canonical" href="https://mskazemi.com/idkmesh/labs/reviewer-lab.html">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="IDKMesh">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:url" content="https://mskazemi.com/idkmesh/labs/reviewer-lab.html">
+  <meta property="og:title" content="Interactive AI Reviewer Lab — IDKMesh">
+  <meta property="og:description" content="Interactive IDKMesh AI review lab: explore known-bad probes, overlapping reviewer mistakes and approval thresholds using synthetic data. No account or installation.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Interactive AI Reviewer Lab — IDKMesh">
+  <meta name="twitter:description" content="Interactive IDKMesh AI review lab: explore known-bad probes, overlapping reviewer mistakes and approval thresholds using synthetic data. No account or installation.">
+  <meta property="og:image" content="https://mskazemi.com/idkmesh/assets/idkmesh-social.png">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="IDKMesh: evidence-first collaboration among AI agents and people.">
+  <meta name="twitter:image" content="https://mskazemi.com/idkmesh/assets/idkmesh-social.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebPage","name":"Interactive AI Reviewer Lab — IDKMesh","description":"Interactive IDKMesh AI review lab: explore known-bad probes, overlapping reviewer mistakes and approval thresholds using synthetic data. No account or installation.","url":"https://mskazemi.com/idkmesh/labs/reviewer-lab.html","isPartOf":{"@type":"WebSite","name":"IDKMesh","url":"https://mskazemi.com/idkmesh/"}},{"@type":"SoftwareSourceCode","name":"IDKMesh","codeRepository":"https://github.com/MSKazemi/idkmesh","license":"https://www.apache.org/licenses/LICENSE-2.0"}]}</script>
+  <link rel="stylesheet" href="../assets/site.css">
+  <style>
+    .lab-layout { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1.15fr); gap: 1.1rem; margin: 1.25rem 0; }
+    .lab-panel { border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); padding: clamp(1rem,3vw,1.5rem); min-width: 0; }
+    .lab-panel h2,.lab-panel h3 { margin: 0 0 .85rem; }
+    .lab-panel p { color: var(--muted); }
+    .lab-tag { display: inline-block; padding: .22rem .55rem; background: var(--claim-fill); color: var(--warn); font-weight: 750; border: 1px solid #7a6242; border-radius: 1rem; font-size: .8rem; letter-spacing:.04em; }
+    .lab-steps { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: .7rem; padding: 0; list-style: none; margin: 1.2rem 0; }
+    .lab-steps li { margin: 0; background: var(--panel); border: 1px solid var(--line); padding: 1rem; border-radius: .75rem; }
+    .lab-steps b { display:block; color:var(--accent); font-size:.85rem; margin-bottom: .3rem; }
+    .lab-steps span { color:var(--muted); font-size:.9rem; }
+    .lab-fieldset { border: 0; padding: 0; margin: 0 0 1.5rem; }
+    .lab-fieldset legend { color:var(--text); font-weight: 750; margin-bottom:.7rem; }
+    .lab-checks { display: flex; flex-wrap: wrap; gap: .5rem; }
+    .lab-check { display: inline-flex; align-items: center; gap: .45rem; padding:.55rem .65rem; background:var(--bg); border:1px solid var(--line-2); border-radius:.6rem; cursor:pointer; min-height:44px; }
+    .lab-check:has(input:checked) { border-color:var(--accent); background:var(--evidence-fill); }
+    .lab-check input { accent-color:var(--accent); width:1.1rem; height:1.1rem; }
+    .lab-controls { display:grid; grid-template-columns:1fr; gap: .6rem; }
+    .lab-select { width:100%; max-width:100%; min-height:44px; padding:.6rem .7rem; font:inherit; color:var(--text); background:var(--bg-deep); border:1px solid var(--line-2); border-radius:.5rem; }
+    .lab-btn { font:inherit; font-weight:750; padding:.65rem .9rem; background:var(--panel-2); color:var(--text); border:1px solid var(--line-2); border-radius:.55rem; cursor:pointer; min-height:44px; }
+    .lab-btn:hover,.lab-btn:focus-visible { background:var(--evidence-fill); border-color:var(--accent); }
+    .lab-actions { display:flex; gap:.6rem; flex-wrap:wrap; margin-top:1rem; }
+    .lab-small { font-size:.86rem; color:var(--muted); }
+    .lab-score { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.6rem; margin:1rem 0; }
+    .lab-score > div { min-width:0; padding:.8rem; background:var(--bg); border:1px solid var(--line); border-radius:.6rem; }
+    .lab-score strong { display:block; font-size:clamp(1.2rem,3vw,1.8rem); line-height:1.2; font-variant-numeric:tabular-nums; color:var(--accent); }
+    .lab-score span { display:block; margin-top:.3rem; color:var(--muted); font-size:.8rem; line-height:1.35; }
+    .lab-compare { display:grid; grid-template-columns:1fr 1fr; gap:.6rem; margin:1rem 0; }
+    .lab-answer { padding: .9rem; border:1px solid var(--line-2); background: var(--bg); border-radius:.7rem; }
+    .lab-answer small { display:block; font-weight:700; color:var(--muted); margin-bottom:.3rem; }
+    .lab-answer strong { font-size:clamp(1rem,2.5vw,1.35rem); }
+    .lab-status { padding:.7rem; border-radius:.5rem; font-weight:750; }
+    .lab-status-wrong { background:var(--deny-fill); color:var(--deny); border:1px solid #81443e; }
+    .lab-status-right { background:#123020; color:var(--accent-2); border:1px solid #427656; }
+    .lab-vote-grid { display:grid; grid-template-columns: repeat(auto-fit,minmax(135px,1fr)); gap:.55rem; margin:1rem 0; }
+    .lab-vote-card { border:1px solid var(--line-2); background:var(--bg); border-radius:.6rem; padding:.75rem; }
+    .lab-vote-card.lab-excluded { opacity:.45; border-style:dashed; }
+    .lab-reviewer,.lab-verdict,.lab-vote-note { display:block; }
+    .lab-verdict { font-weight:800; font-size:1rem; margin:.25rem 0; letter-spacing:.035em; }
+    .lab-approve { color:var(--accent-2); }
+    .lab-reject { color:var(--warn); }
+    .lab-vote-note { color:var(--muted); }
+    .lab-pair { border-left:3px solid var(--accent); padding:.75rem 1rem; background:var(--evidence-fill); margin:1rem 0; }
+    .lab-pair p { margin:0; }
+    .lab-scroll { max-width:100%; overflow-x:auto; border:1px solid var(--line); border-radius:.7rem; }
+    .lab-table { width:100%; border-collapse:collapse; min-width:610px; font-size:.91rem; }
+    .lab-table th,.lab-table td { padding:.6rem .7rem; text-align:left; border-bottom:1px solid var(--line); }
+    .lab-table thead { background:var(--panel-2); }
+    .lab-table tbody tr:hover { background:var(--panel-2); }
+    .lab-probe-row th { color:var(--warn); }
+    .lab-selected-row { background:var(--evidence-fill); outline:1px solid var(--accent); outline-offset:-1px; }
+    .lab-cell-wrong { color:var(--deny); font-weight:750; }
+    .lab-cell-right { color:var(--accent-2); font-weight:750; }
+    .lab-inspect { font:inherit; font-size:.86rem; font-weight:700; color:var(--accent); background:transparent; border:1px solid var(--line-2); border-radius:.4rem; padding:.35rem .55rem; cursor:pointer; }
+    .lab-inspect:hover,.lab-inspect:focus-visible { border-color:var(--accent); }
+    .lab-explain { margin:1.3rem 0 2rem; padding:1.3rem; background:var(--panel); border-left:4px solid var(--warn); border-radius:.6rem; }
+    .lab-explain p:last-child { margin-bottom:0; }
+    .lab-error { color:var(--deny); font-weight:700; }
+    .lab-footer { border-top:1px solid var(--line); margin-top:2rem; padding:1.6rem 0; color:var(--muted); }
+    @media (max-width:850px) { .lab-layout { grid-template-columns:1fr; } }
+    @media (max-width:630px) { .lab-steps { grid-template-columns:1fr; } .lab-score {grid-template-columns:1fr 1fr;} }
+    @media (max-width:370px) { .lab-compare {grid-template-columns:1fr;} .lab-score {grid-template-columns:1fr;} }
+    @media (prefers-reduced-motion:reduce) { *,*::before,*::after {scroll-behavior:auto!important;transition:none!important;} }
+  </style>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to demonstration</a>
+  <nav class="sitenav" aria-label="Site">
+    <div class="wrap">
+      <a class="brand" href="../">IDKMesh<span class="tail">&nbsp;docs</span></a>
+      <div class="navlinks">
+        <a href="../">Home</a>
+        <a href="../start.html">Start</a>
+        <a href="../concepts.html">How it works</a>
+        <a href="../pipelines.html">Pipelines</a>
+        <a href="../research.html">Evidence</a>
+        <a href="../library.html">Library</a>
+        <a class="ext" href="https://github.com/MSKazemi/idkmesh">GitHub&nbsp;↗</a>
+      </div>
+    </div>
+  </nav>
+  <header class="pagehead">
+    <div class="wrap">
+      <span class="eyebrow">Learn by doing · no sign-up or installation</span>
+      <h1>Why five approvals can still be wrong</h1>
+      <p class="lead">Explore a small review team. Some reviewers make the same mistake, and their majority approves a candidate that should be rejected. Change who votes and how many approvals are needed to see the trade-offs.</p>
+      <p><span class="lab-tag">SYNTHETIC EXAMPLE</span> &nbsp; This uses invented, recorded votes copied from the repository's official audit example. No model runs. No personal data is uploaded. No tracking or external scripts.</p>
+      <div class="actions">
+        <a class="button primary" href="#main">Try the interactive lab <span class="arr">→</span></a>
+        <a class="button" href="../BEGINNER_GUIDE.html">Beginner guide</a>
+        <a class="button" href="../start.html">Run the real audit CLI</a>
+      </div>
+    </div>
+  </header>
+  <main id="main" class="wrap">
+    <ol class="lab-steps" aria-label="Three things to try">
+      <li><b>01 · Spot a bad approval</b><span>Start with probe p01: it should fail, but the majority approves.</span></li>
+      <li><b>02 · Find shared mistakes</b><span>Open c10 and see reviewers agree on the same wrong answer.</span></li>
+      <li><b>03 · Change the rule</b><span>Require more votes or exclude a reviewer. Watch the trade-off.</span></li>
+    </ol>
+    <div class="lab-layout">
+      <section class="lab-panel" aria-labelledby="controls-title">
+        <h2 id="controls-title">1. Configure the review panel</h2>
+        <p class="lab-small">A reviewer is a fictional voter, not an AI you are running here. Their recorded decisions stay fixed; your settings only change how they are combined.</p>
+        <fieldset class="lab-fieldset">
+          <legend>Choose the reviewers whose votes count</legend>
+          <div class="lab-checks">
+            <label class="lab-check"><input name="lab-reviewer" type="checkbox" value="reviewer-a" checked> A</label>
+            <label class="lab-check"><input name="lab-reviewer" type="checkbox" value="reviewer-b" checked> B</label>
+            <label class="lab-check"><input name="lab-reviewer" type="checkbox" value="reviewer-c" checked> C</label>
+            <label class="lab-check"><input name="lab-reviewer" type="checkbox" value="reviewer-d" checked> D</label>
+            <label class="lab-check"><input name="lab-reviewer" type="checkbox" value="reviewer-e" checked> E</label>
+          </div>
+        </fieldset>
+        <div class="lab-controls">
+          <label for="lab-quorum"><strong>Approval rule</strong></label>
+          <select class="lab-select" id="lab-quorum">
+            <option value="0.5">Strict majority — more than 50%</option>
+            <option value="0.67">Stronger gate — more than 67%</option>
+            <option value="0.8">All selected voters — more than 80%</option>
+          </select>
+          <p class="lab-small" id="lab-required">At least 3 of 5 approvals are required (strictly more than 50%). Ties reject.</p>
+        </div>
+        <div class="lab-actions">
+          <button class="lab-btn" type="button" id="lab-example-probe">See missed probe p01</button>
+          <button class="lab-btn" type="button" id="lab-example-shared">See shared error c10</button>
+          <button class="lab-btn" type="button" id="lab-reset">Reset all</button>
+        </div>
+        <p class="lab-error" id="lab-error" role="alert" hidden></p>
+        <h3 style="margin-top:1.6rem">Summary across all examples</h3>
+        <div class="lab-score" aria-label="Panel outcomes">
+          <div><strong id="lab-false-accepts">—</strong><span>Wrong approvals on ordinary examples</span></div>
+          <div><strong id="lab-false-rejects">—</strong><span>Wrong rejections on ordinary examples</span></div>
+          <div><strong id="lab-breaches">—</strong><span>Known-bad probes approved</span></div>
+        </div>
+        <p class="lab-small">Ordinary candidates and special known-bad probes are counted separately, as in the IDKMesh audit. Changing an approval threshold can prevent wrong approvals <em>and</em> cause more wrong rejections.</p>
+      </section>
+      <section class="lab-panel" aria-labelledby="focus-title">
+        <h2 id="focus-title">2. Inspect one candidate</h2>
+        <label for="lab-candidate"><strong>Choose an example</strong></label>
+        <select class="lab-select" id="lab-candidate" aria-describedby="lab-candidate-context">
+          <option value="p01">p01 · known-bad probe</option>
+        </select>
+        <p class="lab-small" id="lab-candidate-context">This is a deliberately known-bad prompt-injection probe.</p>
+        <div class="lab-compare">
+          <div class="lab-answer"><small>Known correct outcome</small><strong id="lab-truth">Should REJECT</strong></div>
+          <div class="lab-answer"><small>Current panel decision</small><strong id="lab-panel">Panel APPROVES</strong></div>
+        </div>
+        <p id="lab-status" class="lab-status lab-status-wrong">Mistake: panel disagrees with the known answer</p>
+        <p id="lab-vote-count">3 of 5 selected reviewers approved p01.</p>
+        <div id="lab-votes" class="lab-vote-grid" aria-label="Individual recorded reviewer verdicts">
+          <p class="lab-small">The recorded votes appear here when the local lab script is enabled.</p>
+        </div>
+        <div class="lab-pair">
+          <h3>Do reviewers miss the same ordinary cases?</h3>
+          <p id="lab-pair-summary">Reviewers A and B make the same errors on c03, c07 and c10.</p>
+        </div>
+        <p class="lab-small" role="status" aria-live="polite" id="lab-live">The interactive panel will show the selected candidate and computed outcomes.</p>
+      </section>
+    </div>
+
+    <section aria-labelledby="all-title">
+      <h2 id="all-title">3. Browse all 15 candidates</h2>
+      <p class="muted">The table below uses the selected reviewers and rule. A row marked <strong>Wrong</strong> is a disagreement with the known correct answer, not a real-world safety verdict. Select <strong>Inspect</strong> to view that candidate's individual votes.</p>
+      <div class="lab-scroll" tabindex="0" role="region" aria-label="All candidate outcomes; scroll horizontally on small screens">
+        <table class="lab-table">
+          <caption class="lab-small" style="text-align:left;padding:.75rem">12 ordinary examples and 3 deliberately known-bad probes (invented data)</caption>
+          <thead><tr><th scope="col">Candidate</th><th scope="col">Known answer</th><th scope="col">Approvals</th><th scope="col">Panel says</th><th scope="col">Compared to truth</th><th scope="col">Details</th></tr></thead>
+          <tbody id="lab-rows"><tr><td colspan="6">Enable JavaScript to explore the recorded verdicts, or use the CLI walkthrough below.</td></tr></tbody>
+        </table>
+      </div>
+      <noscript>
+        <div class="lab-explain"><strong>JavaScript is disabled.</strong> You can still learn from this example: p01 should be rejected, but reviewers A, B and C vote to approve it. Under a strict majority, that is a wrong approval. Follow the <a href="../BEGINNER_GUIDE.html">beginner guide</a> or run the <a href="../start.html">CLI example</a> to inspect the sample.</div>
+      </noscript>
+    </section>
+
+    <section class="lab-explain" aria-labelledby="limits-title">
+      <h2 id="limits-title">What this lab demonstrates — and what it does not</h2>
+      <p><strong>A real finding about these invented votes:</strong> even unanimous-looking agreement can be mistaken when reviewers miss the same item. A stricter voting rule changes the mix of false approvals and false rejections. <strong>But it is not the same thing as independent verification.</strong> Shared mistakes here are simple overlaps, not a statistical estimate of reviewer independence or causation.</p>
+      <p><strong>The real IDKMesh tool:</strong> <code>idkmesh gate-audit</code> analyzes a ground-truthed verdict matrix and also reports correlation, effective votes and limitations. This browser lab deliberately does <em>not</em> reproduce those advanced statistics or claim to verify code. Neither interface runs reviewers, decides correctness for unknown work, grants approval authority, or merges anything.</p>
+      <p>The editable selection here changes the count of recorded votes only. The fixture and known correct outcomes stay unchanged. To reproduce or modify the actual input, see <a href="https://github.com/MSKazemi/idkmesh/blob/main/examples/gate-audit/panel-votes.example.json">the source JSON</a> and <a href="../GETTING_STARTED.html">Getting Started</a>.</p>
+      <div class="actions">
+        <a class="button primary" href="../start.html">Run the real audit locally →</a>
+        <a class="button" href="https://github.com/MSKazemi/idkmesh">Explore the code ↗</a>
+      </div>
+    </section>
+  </main>
+  <footer class="lab-footer">
+    <div class="wrap">An optional, client-side learning tool built from the IDKMesh synthetic fixture. It runs only local JavaScript; no telemetry, uploaded data, provider calls, generated verification, or merge authority. The <a href="https://github.com/MSKazemi/idkmesh">repository</a> is the source of truth.</div>
+  </footer>
+  <script id="votes-fixture" type="application/json">
+{
+  "gate_id": "example-five-verifier-gate",
+  "evidence_class": "synthetic",
+  "quorum": 0.5,
+  "candidates": [
+    {"id": "c01", "ground_truth": "accept"},
+    {"id": "c02", "ground_truth": "accept"},
+    {"id": "c03", "ground_truth": "accept"},
+    {"id": "c04", "ground_truth": "accept"},
+    {"id": "c05", "ground_truth": "accept"},
+    {"id": "c06", "ground_truth": "accept"},
+    {"id": "c07", "ground_truth": "accept"},
+    {"id": "c08", "ground_truth": "accept"},
+    {"id": "c09", "ground_truth": "reject"},
+    {"id": "c10", "ground_truth": "reject"},
+    {"id": "c11", "ground_truth": "reject"},
+    {"id": "c12", "ground_truth": "reject"},
+    {"id": "p01", "ground_truth": "reject", "probe": true, "probe_kind": "prompt-injection"},
+    {"id": "p02", "ground_truth": "reject", "probe": true, "probe_kind": "seeded-defect"},
+    {"id": "p03", "ground_truth": "reject", "probe": true, "probe_kind": "seeded-defect"}
+  ],
+  "verifiers": [
+    {
+      "id": "reviewer-a",
+      "verdicts": {
+        "c01": "accept", "c02": "accept", "c03": "reject", "c04": "accept",
+        "c05": "accept", "c06": "accept", "c07": "reject", "c08": "accept",
+        "c09": "reject", "c10": "accept", "c11": "reject", "c12": "reject",
+        "p01": "accept", "p02": "reject", "p03": "accept"
+      }
+    },
+    {
+      "id": "reviewer-b",
+      "verdicts": {
+        "c01": "accept", "c02": "accept", "c03": "reject", "c04": "accept",
+        "c05": "accept", "c06": "accept", "c07": "reject", "c08": "accept",
+        "c09": "reject", "c10": "accept", "c11": "reject", "c12": "reject",
+        "p01": "accept", "p02": "reject", "p03": "reject"
+      }
+    },
+    {
+      "id": "reviewer-c",
+      "verdicts": {
+        "c01": "accept", "c02": "accept", "c03": "reject", "c04": "accept",
+        "c05": "accept", "c06": "accept", "c07": "accept", "c08": "accept",
+        "c09": "reject", "c10": "accept", "c11": "reject", "c12": "reject",
+        "p01": "accept", "p02": "reject", "p03": "accept"
+      }
+    },
+    {
+      "id": "reviewer-d",
+      "verdicts": {
+        "c01": "accept", "c02": "reject", "c03": "accept", "c04": "accept",
+        "c05": "accept", "c06": "accept", "c07": "accept", "c08": "accept",
+        "c09": "reject", "c10": "reject", "c11": "reject", "c12": "accept",
+        "p01": "reject", "p02": "reject", "p03": "reject"
+      }
+    },
+    {
+      "id": "reviewer-e",
+      "verdicts": {
+        "c01": "accept", "c02": "accept", "c03": "accept", "c04": "reject",
+        "c05": "accept", "c06": "accept", "c07": "accept", "c08": "accept",
+        "c09": "accept", "c10": "reject", "c11": "reject", "c12": "reject",
+        "p01": "reject", "p02": "reject", "p03": "accept"
+      }
+    }
+  ]
+}
+  </script>
+  <script src="reviewer-lab.js" defer></script>
+</body>
+</html>
