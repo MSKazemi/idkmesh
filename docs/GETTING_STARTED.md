@@ -43,6 +43,25 @@ The working `gate-audit` tool lets you make that problem measurable:
 
 **Compared with GitHub, CI, or an AI coding agent:** those tools host collaboration, run checks, or produce proposed work. IDKMesh is an **additional diagnostic and evidence layer**, not a replacement. You do not need a model subscription to try the bundled synthetic example. No measured universal cost savings, delivery speedup, or accuracy improvement is claimed; those outcomes require controlled comparisons and external reproduction. See the [Capability Truth Matrix](CAPABILITY_MATRIX.md) for the evidence level behind each capability.
 
+### Before and after: more information, not magically better reviews
+
+The [committed sample matrix](https://github.com/MSKazemi/idkmesh/blob/main/examples/gate-audit/panel-votes.example.json) has five fictional reviewers, twelve ordinary candidates with known correct outcomes, and three deliberately bad probes. A raw majority tally reports **3/5 approvals** for each of `c10`, `p01`, and `p03` — although their known correct decisions are all **reject**.
+
+From an installed repository checkout, run:
+
+```bash
+idkmesh gate-audit examples/gate-audit/panel-votes.example.json --pretty
+```
+
+| Same votes, different level of understanding | Observation on the **synthetic** example |
+| --- | --- |
+| Raw majority tally | Five nominal reviewers; 3/5 approvals for each of `c10`, `p01`, `p03` despite known rejection labels |
+| IDKMesh audit | **2/12** ordinary cases misclassified (one false accept, one false reject); **2/3** known-bad probes breached; **about 1.69** effective independent votes under the measured panel metric |
+
+The [committed expected report](https://github.com/MSKazemi/idkmesh/blob/main/examples/gate-audit/gate-audit-report.example.json) records these values; [tests](https://github.com/MSKazemi/idkmesh/blob/main/tests/test_gate_audit.py) guard fixture/report parity. Prefer a no-install exploration? The [Interactive Reviewer Lab](labs/reviewer-lab.html) lets you inspect the **same fabricated votes** in a browser; it does not calculate the Python audit's effective-vote metric.
+
+**What improves here is visibility, not review outcomes.** The audit does not alter a vote, block acceptance, or show real-world defect reduction. To support speed, cost, or correctness claims, compare the existing review process against an evidence-informed workflow on prospective labeled holdouts, matched budgets, and recorded human effort.
+
 ## Who should use IDKMesh today?
 
 ### 1. Engineering teams that use multiple reviewers or AI judges

@@ -33,7 +33,11 @@ Repository: [MSKazemi/idkmesh](https://github.com/MSKazemi/idkmesh). Reviewed cu
 
 ## Validation and limits
 
-The documentation changes were checked for expected unique insertion points, linked existing files, and a sorted added sitemap URL. This GitHub-connected editing environment cannot clone the repository from its local execution container (the GitHub hostname did not resolve); full Python/Pages checks and first-time-user interviews **were not run here**. Exact-head PR CI and human review are required before merge.
+The documentation changes were checked for unique insertion points, linked existing files, independently recomputed fixture-vote outcomes, and a sorted added sitemap URL. This GitHub-connected editing environment cannot clone the repository from its local execution container (the GitHub hostname did not resolve); full Python/Pages checks and first-time-user interviews **were not run here**. Exact-head PR CI and human review are required before merge.
+
+## Concurrent integration
+
+After this branch was created, `main` merged the separate Interactive Reviewer Lab (#1089) and several operational changes. Reconciliation uses the newer `main` tree to preserve the lab, its README link, related pages, and newer sitemap entries. The getting-started guide adds a reproducible *information* comparison on the same synthetic fixture. This is not an independent external test of the lab.
 
 ## Community impact and follow-up
 
