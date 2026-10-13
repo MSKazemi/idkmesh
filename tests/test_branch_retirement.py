@@ -138,7 +138,8 @@ class RetirementTests(unittest.TestCase):
             return ""
         with mock.patch.object(retire, "verify_local_checkout") as checkout, mock.patch.object(retire, "_git", side_effect=git):
             result = retire.run(api, REPO, "main", (OLD,), execute=True, attestation=retire.ACK, cwd=ROOT)
-        checkout.assert_called_once_with(REPO, MAIN, ROOT)
+        self.assertEqual(checkout.call_count, 2)
+        checkout.assert_any_call(REPO, MAIN, ROOT)
         self.assertEqual(result[0]["status"], "retired")
         self.assertEqual(calls, [("push", "--porcelain", f"--force-with-lease=refs/heads/{OLD.name}:{HEAD}",
                                   "origin", f":refs/heads/{OLD.name}")])
@@ -167,6 +168,7 @@ class RetirementTests(unittest.TestCase):
         with mock.patch.object(retire, "_git", side_effect=[
             f"https://github.com/{REPO}.git",
             f"https://github.com/{REPO}.git",
+            "false",
             "feature",
         ]):
             with self.assertRaisesRegex(retire.RetirementError, "checkout must be on main"):
@@ -196,10 +198,34 @@ class RetirementTests(unittest.TestCase):
         fetch_url = f"https://github.com/{REPO}.git"
         push_url = f"git@github.com:{REPO}.git"
         with mock.patch.object(retire, "_git", side_effect=[
-            fetch_url, push_url, "main", MAIN, "",
+            fetch_url, push_url, "false", "main", MAIN, "",
         ]) as git:
             retire.verify_local_checkout(REPO, MAIN, ROOT)
         self.assertEqual(git.call_count, 5)
+
+
+    def test_origin_push_mirror_is_denied_even_with_approved_url(self):
+        """An explicit mirror mode must never reach a deletion push."""
+        approved = f"https://github.com/{REPO}.git"
+        with mock.patch.object(retire, "_git", side_effect=[
+            approved, approved, "true",
+        ]) as git:
+            with self.assertRaisesRegex(retire.RetirementError, "push mirror"):
+                retire.verify_local_checkout(REPO, MAIN, ROOT)
+        self.assertEqual(git.call_count, 3)
+
+    def test_execute_rechecks_checkout_and_push_url_before_each_delete(self):
+        """A pushurl changed after the first preflight must block the push."""
+        api = FakeClient()
+        with mock.patch.object(
+            retire, "verify_local_checkout",
+            side_effect=[None, retire.RetirementError("push destination moved")],
+        ) as checkout, mock.patch.object(retire, "_git") as git:
+            with self.assertRaisesRegex(retire.RetirementError, "push destination moved"):
+                retire.run(api, REPO, "main", (OLD,), execute=True,
+                           attestation=retire.ACK, cwd=ROOT)
+        self.assertEqual(checkout.call_count, 2)
+        git.assert_not_called()
 
 
 if __name__ == "__main__":

@@ -188,6 +188,13 @@ def verify_local_checkout(repository: str, main_sha: str, cwd: Path) -> None:
     push_urls = _git("remote", "get-url", "--push", "--all", "origin", cwd=cwd).splitlines()
     if len(push_urls) != 1 or push_urls[0] not in allowed:
         raise RetirementError("origin has an unexpected or multiple Git push destinations")
+    # A mirror remote must never be a destination for a narrow destructive
+    # command, even if a particular Git version rejects mixed mirror/refspecs.
+    if _git(
+        "config", "--get", "--bool", "--default", "false",
+        "remote.origin.mirror", cwd=cwd,
+    ) != "false":
+        raise RetirementError("origin must not be configured as a push mirror")
     if _git("branch", "--show-current", cwd=cwd) != "main":
         raise RetirementError("checkout must be on main")
     if _git("rev-parse", "HEAD", cwd=cwd) != main_sha:
@@ -223,6 +230,10 @@ def run(
             verify(client, repository, default, candidate)
             if current_main(client, repository, default) != main_sha:
                 raise RetirementError("main changed during retirement")
+            # Revalidate the local checkout and effective push destination
+            # immediately before EVERY non-atomic branch deletion. One
+            # preflight is insufficient if config changes between candidates.
+            verify_local_checkout(repository, main_sha, cwd)
             _git(
                 "push", "--porcelain",
                 f"--force-with-lease=refs/heads/{candidate.name}:{candidate.head}",
