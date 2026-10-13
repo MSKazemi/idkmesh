@@ -7,6 +7,7 @@ meaning of an existing version.
 
 ## GitHub-First Product Operations
 
+- [GitHub Projects Routing Field Sync v0.1](GITHUB_PROJECTS_SYNC_V0_1.md) — C13-F read-only, digest-bound, idempotent routing/risk/review field plan; Projects is never an execution-authority source and the API writer remains unimplemented.
 - [GitHub-First Operations v0.1](GITHUB_FIRST_OPERATIONS_V0_1.md) — implementation contract for no-server GitHub coordination: bootstrap, durable run ledger, idempotency/recovery, multi-user claims/authority, Actions security, optional Projects/Pages/OIDC/attestations, and the pilot test matrix.
 - [GitHub Governance Preflight v0.1](GITHUB_GOVERNANCE_PREFLIGHT_V0_1.md) — C12 read-only governance admission contract: normalized protection observations, PASS/WARN/FAIL/UNKNOWN semantics, least-privilege workflow linting, explicit-owner CODEOWNERS recommendations, optional OIDC shape checks, and no automatic GitHub administration authority.
 - [GitHub Durable Ledger Record v0.1](GITHUB_LEDGER_RECORD_V0_1.md) — C9-A compact append-only run/event/route/idempotency/attempt/evidence-reference contract for restart-safe GitHub-first coordination; secret-free and structurally without dispatch, verification, integration, or merge authority.

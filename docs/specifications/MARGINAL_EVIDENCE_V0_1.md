@@ -71,7 +71,12 @@ When `--candidate` is omitted, every verifier in the matrix that is not
 already in the current panel is analyzed.
 
 A verifier cannot be both current and candidate. Unknown or duplicate IDs are
-refused.
+refused. The Python diagnostic API also rejects scalar strings/bytes, mapping
+objects, and non-iterables for verifier-ID collections. Finite generators are
+accepted, but an iterable that produces more IDs than the number of verifiers
+in the validated matrix fails immediately with `MarginalEvidenceInputError`.
+This prevents unbounded iterators and accidentally passing dictionary keys as
+verifier selections; it does not change successful CLI behavior or output.
 
 ## CLI
 
