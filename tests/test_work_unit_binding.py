@@ -134,6 +134,52 @@ class WorkUnitSourceBindingTests(unittest.TestCase):
         }
         self.assertTrue(forbidden.isdisjoint(encoded))
 
+    def test_raw_credential_refused_before_source_binding(self):
+        secret = "gh" + "p_" + "A1b2C3d4" * 5
+        for field in ("objective", "id"):
+            with self.subTest(field=field):
+                document = _work_unit()
+                document[field] = f"task-{secret}"
+                with self.assertRaisesRegex(
+                    WorkUnitBindingError, "raw_secret_detected"
+                ) as raised:
+                    bind_work_unit_source(document, source_revision=SHA)
+                self.assertNotIn(secret, str(raised.exception))
+
+    def test_nested_secret_and_unscannable_work_unit_fail_closed(self):
+        document = _work_unit()
+        document["inputs"] = [{"config": {"api_key": "literal-password-value"}}]
+        with self.assertRaisesRegex(WorkUnitBindingError, "raw_secret_detected"):
+            bind_work_unit_source(document, source_revision=SHA)
+
+        unsupported = _work_unit()
+        unsupported["context"] = {"input": object()}
+        with self.assertRaisesRegex(
+            WorkUnitBindingError, "secret_scan_incomplete"
+        ):
+            bind_work_unit_source(unsupported, source_revision=SHA)
+
+    def test_secret_references_and_ordinary_content_remain_bindable(self):
+        document = _work_unit()
+        document["permissions"] = {
+            "secrets": ["env:DEPLOY_KEY", "secret:projects/p/secret"],
+        }
+        document["objective"] = "Document safe environment variable references"
+        binding = bind_work_unit_source(document, source_revision=SHA)
+        validate_work_unit_source_binding(document, binding, source_revision=SHA)
+
+    def test_revalidation_never_accepts_newly_inserted_secret(self):
+        document = _work_unit()
+        binding = bind_work_unit_source(document, source_revision=SHA)
+        changed = copy.deepcopy(document)
+        secret = "AK" + "IA" + "ABCDEFGHIJKLMNOP"
+        changed["objective"] = "Do not store " + secret
+        with self.assertRaisesRegex(
+            WorkUnitBindingError, "raw_secret_detected"
+        ) as raised:
+            validate_work_unit_source_binding(changed, binding)
+        self.assertNotIn(secret, str(raised.exception))
+
     def test_malformed_work_unit_fails_closed(self):
         for work_unit in (
             [],

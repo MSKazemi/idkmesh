@@ -30,6 +30,14 @@ and the release notes for that tag.
 
 ### Added
 
+- E5 secret non-disclosure at canonical WorkUnit/source binding and E4 audit
+  output (refs #672): reject recognized raw credentials and incomplete scans
+  before creating or revalidating a WorkUnit binding, before inserting an E4
+  SQLite audit row and before direct NDJSON audit export. The public error
+  classes remain stable, messages include no matched secret, rejected audit
+  writes leave the append-only chain unchanged, and regression tests cover
+  replay/rollback/stream denial. Other runtime write paths remain unguarded.
+
 - github: pure C13-E canonical Product Spine run-state label planning, with three narrowly owned namespaces, idempotent add/remove diffs, stale-digest/invalid-input refusal, and complete run-state regression tests (refs #608). Routing label projection now preserves the independent lifecycle namespace. No GitHub write or grant of dispatch, verification, human decision, integration, or merge authority. See [run label projection](docs/specifications/GITHUB_RUN_LABEL_PROJECTION_V0_1.md).
 
 - tests: five scenarios move from UNKNOWN to exercised in the E9 enterprise
@@ -149,9 +157,11 @@ and the release notes for that tag.
   as a mapping key is replaced by `<key:N>` in locations. The scan is fail-closed:
   depth, node and string-size limits and non-JSON values make the report
   incomplete, which is never clean. References such as `env:NAME` are accepted.
-  Not yet called from any WorkUnit, result or audit write path, and not a
-  guarantee that a document holds no secret. Specified in
-  [Enterprise Data Policy Kernel v0.1](docs/specifications/ENTERPRISE_DATA_POLICY_V0_1.md#raw-secret-scanner).
+  The initial scanner did not enforce admission or persistence. A subsequent
+  E5 slice now guards canonical WorkUnit/source binding and E4 audit event and
+  NDJSON sink writes, but does not cover results or every runtime path and is
+  not a guarantee of secret absence. See
+  [Enterprise Data Policy Kernel v0.1](docs/specifications/ENTERPRISE_DATA_POLICY_V0_1.md#executable-enforcement-boundaries-partial-e5).
 - E5 data/egress/credential decision kernel (issue #672, partial):
   `idkmesh/enterprise_data_policy.py` turns a validated enterprise control
   profile into pure fail-closed decisions. External processing is checked per
