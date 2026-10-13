@@ -11,7 +11,9 @@ It detects two things:
   credentials, and ``scheme://user:password@host`` URLs);
 * **credential-named keys with literal values** -- ``password``, ``api_key``,
   ``authorization`` and the like whose value is a literal string rather than a
-  secret *reference* (``env:NAME`` and placeholders are accepted).
+  secret *reference* (``env:NAME`` and placeholders are accepted). Strings in a
+  list under such a key are judged the same way; an object under such a key is
+  judged by its own keys, and a non-string value (a number) is not judged.
 
 Properties that make the result safe to log and to record as audit evidence:
 
@@ -300,8 +302,10 @@ def scan_for_secrets(
             if len(node) > max_nodes - nodes - len(stack):
                 reasons.add("node_limit_exceeded")
                 continue
+            # A list has no key of its own, so its items inherit the parent key:
+            # ``{"password": ["literal"]}`` holds the same secret as the scalar form.
             stack.extend(
-                (item, f"{location}/{index}", depth + 1, None)
+                (item, f"{location}/{index}", depth + 1, key_name)
                 for index, item in reversed(list(enumerate(node)))
             )
             continue
