@@ -5,7 +5,7 @@ import unittest
 
 from idkmesh.connector_store import LocalMetadataStore, LocalStoreError
 from idkmesh.product_spine import ProductSpineRun
-from idkmesh.product_spine_run_store import ProductSpineRunStore
+from idkmesh.product_spine_run_store import ProductSpineRunStore, ProductSpineRunStoreError
 
 SHA = "0123456789abcdef0123456789abcdef01234567"
 
@@ -51,7 +51,9 @@ class LocalOnlineBackupTests(unittest.TestCase):
         saved_events, _ = restored.list_events()
         self.assertEqual(saved_events, source_events)
         self.assertIsNotNone(restored.status("run/backup-1"))
-        self.assertIsNone(restored.status("run/backup-3"))
+        with self.assertRaises(ProductSpineRunStoreError) as missing:
+            restored.status("run/backup-3")
+        self.assertEqual(missing.exception.code, "run_not_found")
         self.assertEqual(len(self.service.list_events()[0]), 3)
 
     def test_does_not_overwrite_existing_backup_or_source(self):
