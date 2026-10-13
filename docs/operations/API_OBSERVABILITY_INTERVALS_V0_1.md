@@ -1,6 +1,6 @@
 # API observability interval validation v0.1
 
-**Issue:** #744. **Scope:** operator guidance only; no alerting implementation or live measurements.
+**Issue:** #744. **Scope:** operator guidance only; interval diagnostic implemented; no alert daemon or live measurements.
 
 The currently implemented ApiMetrics counters cover the lifetime of one API
 process. A telemetry consumer must not calculate error rate or latency by
@@ -30,7 +30,11 @@ prompts, raw evidence or secrets as metric labels. The decision is an
 operator alert, never a WorkUnit routing/dispatch or integration decision.
 
 ## Missing implementation
-The application does not yet publish a guaranteed collector-side process
-identity nor ship an alert evaluator. A future implementation must provide
+The API does not yet publish a guaranteed collector-attested process identity nor ship an alert daemon. A future implementation must provide
 them and test counter resets, histogram changes, missing scrapes, zero traffic
 and malformed snapshots before claiming a working alert.
+
+
+## Pure interval diagnostic
+
+`idkmesh.otel_metrics.evaluate_api_metrics_interval(before, after, before_process_identity=..., after_process_identity=..., before_time_unix_nano=..., after_time_unix_nano=...)` compares two already-collected, validated metrics snapshots. It reports counted requests, 5xx fraction, fraction of requests no slower than 1000 ms and overload rejections. It returns a fixed reason code and status `unknown` for restarts, invalid documents, regressed counters, zero traffic or timestamp inconsistencies, never false-green success. The caller must supply a trusted process identity; the local service does **not** currently expose one. An alerting collector and rolling-window policy remain unimplemented.
