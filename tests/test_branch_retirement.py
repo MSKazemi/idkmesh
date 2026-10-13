@@ -164,9 +164,42 @@ class RetirementTests(unittest.TestCase):
         with mock.patch.object(retire, "_git", side_effect=["https://evil.example/x.git"]):
             with self.assertRaisesRegex(retire.RetirementError, "origin"):
                 retire.verify_local_checkout(REPO, MAIN, ROOT)
-        with mock.patch.object(retire, "_git", side_effect=[f"https://github.com/{REPO}.git", "feature"]):
+        with mock.patch.object(retire, "_git", side_effect=[
+            f"https://github.com/{REPO}.git",
+            f"https://github.com/{REPO}.git",
+            "feature",
+        ]):
             with self.assertRaisesRegex(retire.RetirementError, "checkout must be on main"):
                 retire.verify_local_checkout(REPO, MAIN, ROOT)
+
+    def test_origin_fetch_url_cannot_override_a_different_push_destination(self):
+        """A clean-looking fetch remote must not authorize a malicious pushurl."""
+        fetch_url = f"https://github.com/{REPO}.git"
+        for target in ("https://github.com/other/repository.git", "ssh://git@evil.example/x.git"):
+            with self.subTest(push_target=target):
+                with mock.patch.object(retire, "_git", side_effect=[fetch_url, target]) as git:
+                    with self.assertRaisesRegex(retire.RetirementError, "Git push destinations"):
+                        retire.verify_local_checkout(REPO, MAIN, ROOT)
+                self.assertEqual(git.call_count, 2)
+
+    def test_multiple_origin_push_destinations_are_denied(self):
+        """A single push can otherwise affect more than the approved repository."""
+        approved = f"https://github.com/{REPO}.git"
+        for resolved in ("", approved + "\n" + approved):
+            with self.subTest(resolved=resolved):
+                with mock.patch.object(retire, "_git", side_effect=[approved, resolved]) as git:
+                    with self.assertRaisesRegex(retire.RetirementError, "Git push destinations"):
+                        retire.verify_local_checkout(REPO, MAIN, ROOT)
+                self.assertEqual(git.call_count, 2)
+
+    def test_one_approved_effective_push_destination_reaches_remaining_checks(self):
+        fetch_url = f"https://github.com/{REPO}.git"
+        push_url = f"git@github.com:{REPO}.git"
+        with mock.patch.object(retire, "_git", side_effect=[
+            fetch_url, push_url, "main", MAIN, "",
+        ]) as git:
+            retire.verify_local_checkout(REPO, MAIN, ROOT)
+        self.assertEqual(git.call_count, 5)
 
 
 if __name__ == "__main__":

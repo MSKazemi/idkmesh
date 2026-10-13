@@ -182,6 +182,12 @@ def verify_local_checkout(repository: str, main_sha: str, cwd: Path) -> None:
     }
     if remote not in allowed:
         raise RetirementError("origin is not the audited GitHub repository")
+    # Git can send pushes somewhere other than its fetch URL through
+    # remote.origin.pushurl or url.*.pushInsteadOf. Inspect *all effective*
+    # destinations instead of assuming that checking the fetch URL is enough.
+    push_urls = _git("remote", "get-url", "--push", "--all", "origin", cwd=cwd).splitlines()
+    if len(push_urls) != 1 or push_urls[0] not in allowed:
+        raise RetirementError("origin has an unexpected or multiple Git push destinations")
     if _git("branch", "--show-current", cwd=cwd) != "main":
         raise RetirementError("checkout must be on main")
     if _git("rev-parse", "HEAD", cwd=cwd) != main_sha:
