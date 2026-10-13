@@ -3,7 +3,7 @@
 **Status:** preparation tooling only; no X6/X7 verifier outcome  
 **Issue:** [#1080](https://github.com/MSKazemi/idkmesh/issues/1080)  
 **Program:** [S3 / Paper A external validity](SCIENTIFIC_PROGRAM.md)  
-**Protocol:** [v1 preregistration](VERIFIER_PANEL_EXTERNAL_VALIDITY_PREREG_V1.md) plus [v1.1 amendment](VERIFIER_PANEL_EXTERNAL_VALIDITY_AMENDMENT_V1_1.md)
+**Protocol:** [v1 preregistration](VERIFIER_PANEL_EXTERNAL_VALIDITY_PREREG_V1.md), [v1.1 validity amendment](VERIFIER_PANEL_EXTERNAL_VALIDITY_AMENDMENT_V1_1.md), and [v1.2 power-method amendment](VERIFIER_PANEL_EXTERNAL_VALIDITY_AMENDMENT_V1_2.md)
 
 The S3 verifier program now has a deterministic tool for the two things that must
 happen before confirmatory verifier execution:
@@ -47,7 +47,7 @@ The canonical design constants are code-level defaults:
 | smallest effect of interest | log(1.10) nats/item |
 | target power | 0.90 |
 | simulated cohorts | 10,000 |
-| bootstrap replicates per clustering level | 10,000 |
+| final confirmatory bootstrap replicates per clustering level | 10,000 (recorded, not nested inside power simulation) |
 | seed | 20261011 |
 | task-count ladder | 50, 75, 100, 150, 200, 300, 500, then full eligible universe |
 
@@ -67,13 +67,19 @@ The tool:
    strata, removing the observed calibration effect direction;
 2. injects only the preregistered smallest effect of interest;
 3. resamples empirical repository profiles and their task structure while never creating more repository clusters than the eligible confirmatory universe contains;
-4. computes repository-cluster and task-cluster percentile intervals;
-5. counts success only when both 95% lower bounds exceed zero;
+4. computes a delete-one-cluster jackknife standard error separately at the
+   repository and task levels and applies the two-sided 95% cluster-t critical
+   value;
+5. counts success only when both planning lower bounds exceed zero;
 6. selects the first task count reaching 90% simulated power.
 
-A full canonical run is intentionally computationally intensive. Smaller
-simulation or bootstrap counts are allowed for code development, but their
-output is marked canonical=false and cannot satisfy the S3 freeze gate.
+This cluster-t calculation is a **power-planning approximation** registered in
+the v1.2 amendment. The final confirmatory result still uses the stricter
+10,000-resample percentile bootstrap at both clustering levels.
+
+Smaller simulation counts are allowed for code development, but their output is
+marked canonical=false and cannot satisfy the S3 freeze gate. The final
+confirmatory bootstrap count is not a development knob in this tool.
 
 Expected scientific outcomes are explicit:
 
@@ -90,8 +96,9 @@ No threshold is relaxed to obtain a favorable status.
 After a canonical power_plan.json exists, prepare a strict input object using
 schema idkmesh.s3-freeze-input.v1. The manifest builder parses the bound power
 plan again and refuses it unless canonical=true, its self digest is valid, and
-its frozen seed, effect size, simulation count, bootstrap count, and target
-power still match the preregistration.
+its frozen seed, effect size, simulation count, cluster-t planning method,
+final confirmatory bootstrap count, and target power still match the current
+pre-outcome amendments.
 
 The manifest builder accepts only named pre-confirmatory artifact roles:
 
