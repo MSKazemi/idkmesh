@@ -14,6 +14,37 @@ and the release notes for that tag.
 
 ### Added
 
+- api: `ControlTowerClient.collect_run_pages(max_pages=..., limit=..., state=...,
+  project_id=...)` reads a bounded series of run pages with opaque cursors,
+  keeps each page's request ID and digest, validates the page budget before any
+  I/O and raises on a repeated cursor or an exhausted cap instead of returning
+  silent partial success. Not a transactional snapshot; no retries or writes
+  (refs #746). Specified in
+  [Python API Client Compatibility Checks v0.1](docs/specifications/API_PYTHON_CLIENT_COMPATIBILITY_CHECKS_V0_1.md).
+- steward: `evaluate_steward_history_sli()` evaluates a validated Auto Draft
+  steward history against operator-supplied thresholds (report volume, blocked
+  and head-moved fractions, consecutive blocks), binds the result to the history
+  input-set digest and lists what it cannot observe; it has no dispatch,
+  verification or integration authority (refs #752). Operations and retention
+  decision guide: `docs/operations/AUTO_DRAFT_STEWARD_SLI_RETENTION_V0_1.md`.
+- research: `analyze_heldout_verifier_addition()` selects a verifier on
+  calibration rows only and reads the holdout solely for the frozen candidate;
+  it abstains on ties or non-positive contributions and refuses overlapping
+  candidate IDs or mismatched gate, quorum or verifier identities. Exploratory
+  point estimates only, no group-level uncertainty (refs #693). Protocol:
+  [Marginal Verifier Holdout Protocol v0.1](docs/research/MARGINAL_VERIFIER_HOLDOUT_PROTOCOL_V0_1.md).
+- research: [Physarum synthetic-to-field decision gate](docs/research/PHYSARUM_SYNTHETIC_TO_FIELD_GATE_V0_1.md)
+  freezes the falsification rule, the reproduction commands (each checked
+  against the simulator's argument parser) and the decision-ledger fields for
+  the synthetic stress simulator. No new simulation result is claimed (refs #630).
+- docs: [Comparing Control Tower API metrics snapshots](docs/reference/API_METRICS_INTERVAL_GUIDE.md)
+  explains `evaluate_api_metrics_interval()`, with a runnable example and a
+  drift test that executes it and compares the UNKNOWN reason vocabulary with
+  the source (refs #744, #471).
+- docs: [no-JSON WorkUnit walkthrough](docs/help/GITHUB_WORKUNIT_FORM.md) with
+  three committed synthetic issue snapshots (parsed, fallback, refused) run
+  through the real `idkmesh work preview`; the test fails when a fixture is
+  broken (refs #608).
 - tests: E3-G enterprise two-principal acceptance fixture (refs #670). Nine
   in-process tests drive `authorize` behind the decision cache with every
   outcome appended to the audit ledger under `TenantScope`. Four
