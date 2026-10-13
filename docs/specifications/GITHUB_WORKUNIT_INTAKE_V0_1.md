@@ -1,7 +1,7 @@
 # GitHub WorkUnit Intake v0.1
 
 **Status:** experimental field contract and Issue Form  
-**Issue:** #608, C13-A/C13-B/C13-C (parser) and C13-D (fallback)  
+**Issue:** #608, C13-A/C13-B/C13-C (parser and policy composition) and C13-D (fallback)  
 **Schema:** `schemas/github-workunit-intake-v0.1.schema.json`  
 **Issue Form:** `.github/ISSUE_TEMPLATE/06-idkmesh-workunit.yml`  
 **Form mapping:** `config/github-workunit-intake-v0.1.json`  
@@ -241,13 +241,42 @@ or `informs:`; a line without a keyword is recorded as `informs`, the least
 binding relation. Blank optional fields and GitHub's `_No response_` yield
 empty lists or a null connector.
 
-Still open: composing a parsed intake with trusted `GitHubIssueWorkPolicy`
-(path intersection, risk/sensitivity floors) inside `work preview`.
+## C13-C policy composition in the issue preview
+
+`idkmesh.github_issue_preview.preview_github_issue_work_unit(...,
+use_intake_form=True)` parses the snapshot body with `parse_workunit_intake`
+and composes the result with the trusted `GitHubIssueWorkPolicy`. The flag is
+off by default, so existing callers and ordinary issues are unchanged. The
+parse always runs on the same body as the snapshot, never on a caller-supplied
+intake object. Composition can only restrict:
+
+| Form value | Effect on the preview WorkUnit |
+| --- | --- |
+| requested allowed paths | intersected with policy `allowed_paths` (conservative glob containment; unsure means dropped). A request broader than a policy pattern yields that policy pattern, never the request. Dropped paths are reported (`dropped_allowed_paths`, warning `intake_requested_paths_outside_policy_dropped`). If nothing survives, the preview fails closed with `policy_denied`. |
+| forbidden paths | appended after the policy exclusions; policy exclusions can never be removed. |
+| risk hint | `security.risk_class` becomes the higher of policy and hint; a lower hint is ignored (`intake_risk_hint_below_policy_floor_ignored`). |
+| data sensitivity hint | `security.data_classification` starts at `public` and can only be raised. |
+| external processing `forbidden`, human review `required`/`preferred` | additive `constraints.policies` tags `external-processing-forbidden`, `human-review-required`, `human-review-preferred`. They never alter `permissions.network` and carry no authority; their absence is not permission. |
+| task class | recorded only; `kind` stays the policy `kind` (`intake_task_class_differs_from_policy_kind`). |
+| objective, expected outputs, acceptance checks | rendered as labelled untrusted task text in the objective; acceptance checks never become validators. |
+| dependencies, preferred connector, hints | advisory record in `extensions["idkmesh.github.intake"]` (`authority: advisory-untrusted`), which is part of the WorkUnit digest. `dependencies` stays empty and no connector is selected. |
+
+When the parse result is `fallback`, the WorkUnit is byte-identical to the
+generic preview (same digest). The preview then only adds the warning
+`intake_fallback` and an `intake` section (`status`, `reasons`) to
+`GitHubIssueWorkPreview.to_dict()`. Rejected-body text is never written into
+the WorkUnit. A parsed result also fills `to_dict()["intake"]` with the
+effective allowed/forbidden paths, risk class and data classification.
+
+`idkmesh work preview` (C7-C) is the local command over this composition: it
+turns an issue snapshot file plus `.idkmesh/project.json` policy into the
+preview and enables `use_intake_form` by default (`--no-intake-form` builds the
+generic preview). Offline coverage:
+`tests/test_github_issue_preview_intake.py` (REST payload through
+`GitHubRestIssueSource` with a fake transport, hostile and fallback bodies).
 
 ## Next slices
 
-- **C13-C (remaining):** feed a parsed intake through policy composition into
-  the policy-bounded WorkUnit preview.
 - **C13-E to C13-H:** label projection, Project field mapping and
   synchronization, and the newcomer no-JSON guide.
 

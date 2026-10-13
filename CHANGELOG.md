@@ -14,6 +14,45 @@ and the release notes for that tag.
 
 ### Added
 
+- tests: E3-G enterprise two-principal acceptance fixture (refs #670). Nine
+  in-process tests drive `authorize` behind the decision cache with every
+  outcome appended to the audit ledger under `TenantScope`. Four
+  separation-of-duties and audit gaps are documented in the spec, not fixed.
+- github: `preview_github_issue_work_unit(..., use_intake_form=True)` composes a
+  parsed WorkUnit Issue Form with `GitHubIssueWorkPolicy` (refs #608). The form
+  can only restrict: requested paths are intersected with policy scope,
+  forbidden paths are appended, risk and data classification can only rise, and
+  other hints are advisory. A fallback parse leaves the generic preview digest
+  unchanged.
+- github: `idkmesh pages-site` validates C14-D public-safe projections and
+  writes the C14-E Pages file map to a local directory all-or-nothing, refusing
+  unsafe paths, symlinks and unrecognised non-empty directories; no publication
+  or network (refs #609).
+- docs: API error catalog, limits and quickstart under `docs/reference/`, each
+  drift-tested against the code (refs #746). Corrects a stale statement that
+  the client omits `openapi.json` and `metrics`.
+- github: `idkmesh github-workflow {preview,status,dispatch,verify}`, the
+  stdlib-only runner the generated `init --github` wrappers call (refs #596).
+  `preview` and `status` are read-only; `dispatch` and `verify` fail closed
+  (`dispatch_unavailable`, `verify_unavailable`). Specified in
+  [GitHub Workflow Runner v0.1](docs/specifications/GITHUB_WORKFLOW_RUNNER_V0_1.md).
+- github: `idkmesh release-provenance` and `idkmesh/github_release_provenance.py`
+  (C14-F, refs #609): an offline record binding a proposed tag, target commit
+  and artifact digests (caller-supplied, unverified) to C14-D run evidence, with
+  fixed all-false claims and authority and no timestamps. Creates no tag,
+  release or attestation.
+- api: `ControlTowerClient.stream_events()` reads `GET /api/v1/events/stream` as
+  one bounded, strictly parsed, digest-checked `EventStream` with a mandatory
+  idle timeout and no reconnect; resuming with `Last-Event-ID` is the caller's
+  job (refs #746).
+- cli: offline `idkmesh work preview --issue-json` (C7-C, refs #580): an issue
+  snapshot file plus `.idkmesh/project.json` policy to the WorkUnit preview with
+  the Issue Form composition; read-only, no network, no dispatch. Policy
+  derivation is shared with `github-workflow preview`.
+- ci: 16 heavy replay, bootstrap, soak and process-spawning tests are marked
+  `slow` (nightly tier) because the unit tier had reached 90.7 CPU-s of test
+  time against its 90 CPU-s budget (refs #752). No test was deleted and the
+  budget is unchanged; the unit tier is now about 75 CPU-s.
 - E3-D authorization freshness cache (refs #670): `idkmesh/enterprise_authz_cache.py`
   adds `AuthorizationDecisionCache`, keyed on the full normalized actor/approver,
   policy content digest and request shape, with a validity window capped by
@@ -111,6 +150,18 @@ and the release notes for that tag.
   coverage (the blind-spot floor is its complement), and imports the frozen E046 analysis
   unchanged. It is exploratory: on splits E046 already opened its output is post-hoc, and
   no result has been run or claimed. Covered by `tests/test_x4_forecast_intervals.py`.
+- Cross-origin delta matrix for the local UI servers (issue #745, Security
+  CORS/CSRF item; `tests/test_api_cors_csrf_matrix.py`). Complements
+  `tests/test_api_security_matrix.py` with the coverage it does not have:
+  the read-only steward dashboards refuse every write verb and preflight
+  under a hostile `Origin`, the gate-audit mutation's CORS posture is pinned,
+  the Control Tower's JSON-only mutation gate refuses simple content types
+  even with a valid session token, `Origin: null` is not a credential, no
+  response reflects the `Origin` value, and refusals keep the
+  browser-isolation headers. The no-grant check matches any
+  `Access-Control-*` header, not just the `-Allow` family. The suite runs
+  in the `security` group of `make qualify-api`, keeping the release
+  qualification report in line with `docs/TESTING.md`.
 - The backward-compatibility diff gate (issue #737, ADR-0020) now covers
   the `openapi.yaml` API surface, not just `schemas/*.json` (issue #745,
   Contract-tests compatibility diff gate). Removing a path, operation,
@@ -121,6 +172,18 @@ and the release notes for that tag.
   the new stdlib-only `tools/openapi_catalog.py` block-mapping parser,
   which also becomes the single source for the parsing helper the API
   conformance tests use. Documented in the ADR's amendment note.
+- Exhaustive permission matrix for the enterprise authorization baseline
+  (issue #745, Security permission-matrix item;
+  `tests/test_enterprise_authz_permission_matrix.py`). Pins the complete
+  role x action x actor-type decision table of
+  `AuthorizationPolicy.enterprise_baseline()` as a change-detector (136
+  subtests; ENTERPRISE_AUTHORIZATION_V0_1 states the matrix only in part, so
+  this table is a transcription of the current baseline, not a spec oracle): which roles and actor types may take each action, that
+  `manage_policy` is the only action already at its approval threshold at its
+  own risk floor, and that multi-role actors get exactly the union of their
+  cells. Any baseline widening or narrowing now forces a deliberate table
+  update. Complements the pairwise scenarios in
+  `tests/test_enterprise_authz.py` and the #743 authority-matrix guards.
 
 - C12 GitHub governance preflight (issue #607): `idkmesh doctor --github`
   now evaluates the canonical C12-A governance policy from bounded normalized

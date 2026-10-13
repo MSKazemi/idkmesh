@@ -199,7 +199,8 @@ The client requires an explicit timeout, refuses non-loopback destinations,
 exposes the server request ID, verifies response content digests, and performs
 no automatic retries. It covers status, evidence inspection, and the
 resource-oriented read model (connections, runs, run attempts, retained run
-evidence, derived WorkUnits and projects, events); see the
+evidence, derived WorkUnits and projects, events, and a bounded
+`stream_events` reader for the Server-Sent Events stream); see the
 [Python client section](docs/specifications/CONTROL_TOWER_LOCAL_API_V0_1.md#python-client)
 of the API specification. The client is read/inspect only: human-decision
 recording remains unavailable until its authenticated mutation contract is
