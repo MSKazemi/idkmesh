@@ -319,6 +319,10 @@ Before deletion confirm:
 
 The current audit workflow is intentionally read-only and has no branch deletion capability.
 
+### 8.1 Operator-run branch retirement
+
+The [branch retirement runbook](../operations/BRANCH_RETIREMENT_V0_1.md) defines a separate and explicitly attested cleanup boundary for superseded branches. Its candidate manifest is exact-SHA-bound, its default mode is read-only, and actual deletion requires checking original and replacement PRs, live branch heads, the current main checkout and external evidence references. A Git explicit lease prevents a changed ref from being deleted. This does not authorize an autonomous merge or deletion, and the existing convergence auditor and planner remain read-only.
+
 ## 9. Current protection boundary
 
 At the time this policy was introduced, public GitHub metadata still reported:
