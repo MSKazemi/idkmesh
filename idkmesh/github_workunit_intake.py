@@ -170,18 +170,21 @@ def _is_blank(text: str) -> bool:
     return not text or text.strip().lower() == _NO_RESPONSE
 
 
-def _lines(text: str) -> list[str]:
+def _lines(text: str, *, deduplicate: bool = True) -> list[str]:
     items: list[str] = []
     for raw in text.split("\n"):
         line = _BULLET_RE.sub("", raw.strip(), count=1).strip()
         if line:
             items.append(line)
-    return list(dict.fromkeys(items))
+    return list(dict.fromkeys(items)) if deduplicate else items
 
 
 def _safe_path(value: str) -> str | None:
     if (
-        "\\" in value
+        value in {".", "./"}
+        or value.startswith("./")
+        or "://" in value
+        or "\\" in value
         or value.startswith(("/", "~"))
         or re.match(r"^[A-Za-z]:", value)
         or ".." in PurePosixPath(value).parts
@@ -193,7 +196,10 @@ def _safe_path(value: str) -> str | None:
 def _parse_dependencies(text: str, problems: list[str]) -> list[dict[str, str]]:
     result: list[dict[str, str]] = []
     seen: set[tuple[str, str]] = set()
-    for line in _lines(text):
+    raw_lines = _lines(text, deduplicate=False)
+    if len(raw_lines) > _MAX_DEPENDENCIES:
+        problems.append("dependencies: too many entries")
+    for line in raw_lines:
         match = _DEPENDENCY_RE.match(line)
         if match is None:
             # Least binding relation when no keyword is given.
@@ -208,8 +214,6 @@ def _parse_dependencies(text: str, problems: list[str]) -> list[dict[str, str]]:
         if key not in seen:
             seen.add(key)
             result.append({"reference": reference, "relation": relation})
-    if len(result) > _MAX_DEPENDENCIES:
-        problems.append("dependencies: too many entries")
     return result
 
 
@@ -241,10 +245,11 @@ def parse_workunit_intake(body: object) -> IntakeParseResult:
         intake[field_id] = value
 
     for field_id, (max_items, max_chars) in _LIST_LIMITS.items():
-        items = [] if _is_blank(sections.get(field_id, "")) else _lines(
-            sections[field_id]
+        raw_items = [] if _is_blank(sections.get(field_id, "")) else _lines(
+            sections[field_id], deduplicate=False
         )
-        if len(items) > max_items or any(len(i) > max_chars for i in items):
+        items = list(dict.fromkeys(raw_items))
+        if len(raw_items) > max_items or any(len(i) > max_chars for i in raw_items):
             problems.append(f"{field_id}: too many or oversized entries")
         if field_id in ("requested_allowed_paths", "requested_forbidden_paths"):
             if any(_safe_path(item) is None for item in items):

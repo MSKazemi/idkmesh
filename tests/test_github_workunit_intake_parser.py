@@ -202,6 +202,29 @@ class IntakeParserFallbackTests(unittest.TestCase):
             "too many",
         )
 
+    def test_repeated_lines_cannot_evade_collection_limits(self) -> None:
+        self.assertFallback(
+            render(requested_allowed_paths="src/code.py\n" * 65),
+            "too many",
+        )
+        self.assertFallback(
+            render(expected_outputs="- report\n" * 33),
+            "too many",
+        )
+        self.assertFallback(
+            render(dependencies="requires: #42\n" * 33),
+            "dependencies: too many",
+        )
+        # A normal duplicated item is still deduplicated below the cap.
+        result = parse_workunit_intake(render(expected_outputs="- report\n- report"))
+        self.assertTrue(result.parsed, result.reasons)
+        self.assertEqual(result.intake["expected_outputs"], ["report"])
+
+    def test_root_and_url_shaped_paths_are_not_accepted_as_scope(self) -> None:
+        for value in (".", "./", "./src", "https://example.test/x.py"):
+            with self.subTest(value=value):
+                self.assertFallback(render(requested_allowed_paths=value), "unsafe path")
+
     def test_connector_hint_must_be_a_plain_identifier(self) -> None:
         for bad in ("jules; rm -rf /", "$OPENAI_API_KEY", "a b", "x" * 129):
             with self.subTest(connector=bad):
