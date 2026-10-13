@@ -111,18 +111,6 @@ and the release notes for that tag.
   coverage (the blind-spot floor is its complement), and imports the frozen E046 analysis
   unchanged. It is exploratory: on splits E046 already opened its output is post-hoc, and
   no result has been run or claimed. Covered by `tests/test_x4_forecast_intervals.py`.
-- Cross-origin delta matrix for the local UI servers (issue #745, Security
-  CORS/CSRF item; `tests/test_api_cors_csrf_matrix.py`). Complements
-  `tests/test_api_security_matrix.py` with the coverage it does not have:
-  the read-only steward dashboards refuse every write verb and preflight
-  under a hostile `Origin`, the gate-audit mutation's CORS posture is pinned,
-  the Control Tower's JSON-only mutation gate refuses simple content types
-  even with a valid session token, `Origin: null` is not a credential, no
-  response reflects the `Origin` value, and refusals keep the
-  browser-isolation headers. The no-grant check matches any
-  `Access-Control-*` header, not just the `-Allow` family. The suite runs
-  in the `security` group of `make qualify-api`, keeping the release
-  qualification report in line with `docs/TESTING.md`.
 - The backward-compatibility diff gate (issue #737, ADR-0020) now covers
   the `openapi.yaml` API surface, not just `schemas/*.json` (issue #745,
   Contract-tests compatibility diff gate). Removing a path, operation,
