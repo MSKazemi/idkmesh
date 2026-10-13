@@ -72,6 +72,16 @@ GSC_ACCESS_TOKEN
 A direct access token takes precedence when present. Because access tokens expire,
 this is not the preferred long-term scheduled configuration.
 
+### Safe API failure diagnostics
+
+Google Search Console and OAuth token refresh failures report the HTTP status and
+which authorization/configuration path to inspect, without logging API response
+bodies, request URLs, bearer credentials, OAuth refresh values, or chained HTTP
+exceptions. A configured collector **fails visibly** on HTTP 403/401 instead of
+turning an authentication failure into a zero-traffic measurement. Check the
+repository secret/property permissions privately; never paste an exception
+response body into a public issue or PR.
+
 ### Fail-quiet behavior
 
 If `GSC_SITE_URL` and a complete credential set are absent, the visibility
@@ -215,6 +225,40 @@ Search Console clicks, installations, or verified contributions.
 
 No traffic metric grants repository correctness, integration, automatic publication,
 or merge authority. Do not invent baseline values if no authorized token exists.
+
+## Read-only funnel coverage (V5)
+
+The weekly observatory emits `results/visibility/funnel-coverage.json` after
+Search Console and GitHub Traffic collection. It does not need any new
+credential or hosted service. It runs even when neither optional provider
+is configured, reporting `unavailable` rather than zero.
+
+It reports separate observations for non-branded Google search, GitHub repository
+views, and a limited snapshot of external commit contributors. It explicitly
+marks website visits, identifiable first interactions, independently verified
+first contributions, and repeat-contributor cohorts as **not observed**.
+
+**Conversion rates are not calculated.** Search Console query clicks are not
+website visits; GitHub's 14-day view counter is not a time-matched cohort of
+Search Console searchers; lifetime contributors are not a first-contribution
+cohort. No visitor identities, cookies, fingerprints, or synthetic joins
+are collected.
+
+Run it manually against real retained evidence:
+
+```bash
+python scripts/visibility_funnel_coverage.py \
+  --visibility results/visibility/observatory.json \
+  --output results/visibility/funnel-coverage.json
+```
+
+Supply `--search-console` and `--github-traffic` with paths to real JSON
+snapshots if present. The collector validates provider identity, repository,
+canonical page scope, final-data state, date windows, counters, and observed
+population bounds. An invalid or explicitly supplied missing file fails,
+rather than becoming a fictional zero. See
+[the V5 measurement boundary](../community/VISIBILITY_AND_COMMUNITY_GROWTH_LOOP.md#v5--funnel-attribution)
+for the stage-by-stage interpretation.
 
 ## Bing Webmaster Tools
 

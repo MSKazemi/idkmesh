@@ -126,6 +126,28 @@ def _profile_or_deny(
     return profile, None
 
 
+_MAX_POLICY_LIST_ENTRIES = 256
+
+
+def _bounded_policy_entries(values: object) -> list[object] | None:
+    """Reject scalar/mapping and unbounded inputs instead of iterating text.
+
+    These are explicit policy collections, not trusted strings or provider
+    payloads. Arbitrary iterables are accepted only up to a finite ceiling.
+    """
+    if isinstance(values, (str, bytes, Mapping)):
+        return None
+    try:
+        items = []
+        for value in values:
+            if len(items) == _MAX_POLICY_LIST_ENTRIES:
+                return None
+            items.append(value)
+    except (TypeError, ValueError, RuntimeError):
+        return None
+    return items
+
+
 def decide_external_processing(
     profile: Any,
     *,
@@ -164,10 +186,18 @@ def decide_external_processing(
         )
     if subject == "<invalid>":
         return _deny(control, "invalid_provider", "provider id is malformed", subject)
-    approved = frozenset(
-        item for item in approved_provider_ids if isinstance(item, str)
-    )
-    if provider_id not in approved:
+    entries = _bounded_policy_entries(approved_provider_ids)
+    if entries is None or any(
+        not isinstance(item, str) or _ID_RE.fullmatch(item) is None
+        for item in entries
+    ):
+        return _deny(
+            control,
+            "invalid_approved_providers",
+            "approved provider ids must be a bounded collection of identifiers",
+            subject,
+        )
+    if provider_id not in frozenset(entries):
         return _deny(
             control,
             "provider_not_approved",
@@ -220,8 +250,14 @@ def decide_egress(
     host = normalize_host(destination_host)
     if host is None:
         return _deny(control, "invalid_destination", "destination is not a bare hostname")
+    raw_entries = _bounded_policy_entries(allowlist)
+    if raw_entries is None:
+        return _deny(
+            control, "invalid_allowlist",
+            "allowlist must be a bounded collection of hostnames", host,
+        )
     entries = []
-    for entry in allowlist:
+    for entry in raw_entries:
         normalized = normalize_host(entry)
         if normalized is None:
             return _deny(
