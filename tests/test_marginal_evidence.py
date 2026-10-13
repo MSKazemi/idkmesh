@@ -733,7 +733,7 @@ class CliTests(unittest.TestCase):
 
 class HeldoutVerifierDiagnosticTests(unittest.TestCase):
     def matrices(self, *, count=12):
-        errors = {"v1": {1, 3, 5}, "v2": {9}, "v3": {0, 2, 4}}
+        errors = {"v1": {1, 3, 5}, "v2": {0, 9}, "v3": {0, 2, 4}}
         train = make_matrix(count=count, error_sets=errors)
         test = make_matrix(count=count, error_sets=errors)
         for cand in test["candidates"]:
