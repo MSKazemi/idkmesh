@@ -1552,11 +1552,6 @@
     <priority>0.5</priority>
   </url>
     <url>
-    <loc>https://mskazemi.com/idkmesh/docs/operations/VISIBILITY_FUNNEL_ATTRIBUTION_V0_1.html</loc>
-    <lastmod>2026-10-13</lastmod>
-    <priority>0.5</priority>
-  </url>
-<url>
     <loc>https://mskazemi.com/idkmesh/findings/</loc>
     <lastmod>2026-10-09</lastmod>
     <priority>0.7</priority>
@@ -1736,7 +1731,12 @@
     <lastmod>2026-09-24</lastmod>
     <priority>0.5</priority>
   </url>
-  <url>
+    <url>
+    <loc>https://mskazemi.com/idkmesh/operations/VISIBILITY_FUNNEL_ATTRIBUTION_V0_1.html</loc>
+    <lastmod>2026-10-13</lastmod>
+    <priority>0.5</priority>
+  </url>
+<url>
     <loc>https://mskazemi.com/idkmesh/operations/WEBMASTER_TOOLS_MEASUREMENT_RUNBOOK.html</loc>
     <lastmod>2026-09-24</lastmod>
     <priority>0.5</priority>
