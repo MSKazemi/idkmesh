@@ -159,7 +159,7 @@ class GitHubBootstrapCliTests(unittest.TestCase):
         self.assertEqual(result.returncode, 2)
         self.assertIn("unpinned_idkmesh_ref", result.stderr)
 
-    def test_help_states_that_current_surface_is_dry_run_only(self):
+    def test_help_lists_every_init_mode(self):
         result = self.run_cli("init", "--help")
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("--github", result.stdout)
@@ -167,6 +167,81 @@ class GitHubBootstrapCliTests(unittest.TestCase):
         self.assertIn("--idkmesh-ref", result.stdout)
         self.assertIn("--apply", result.stdout)
         self.assertIn("--check", result.stdout)
+
+
+class GitHubBootstrapApplyCliTests(unittest.TestCase):
+    """The C8-F `--check` / `--apply` modes through the real CLI entry point."""
+
+    run_cli = GitHubBootstrapCliTests.run_cli
+
+    def repo(self, tmp: str) -> Path:
+        root = Path(tmp)
+        (root / ".git").mkdir()
+        return root
+
+    def tree(self, root: Path) -> list[str]:
+        return sorted(str(p.relative_to(root)) for p in root.rglob("*") if p.is_file())
+
+    def test_check_inspects_without_writing(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = self.repo(tmp)
+            result = self.run_cli(
+                "init", "--github", "--check", "--idkmesh-ref", SHA, "--json", cwd=root
+            )
+            self.assertEqual(self.tree(root), [])
+        self.assertEqual(result.returncode, 0, result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertFalse(payload["writes_performed"])
+        self.assertFalse(payload["github_mutation_performed"])
+        self.assertEqual({a["action"] for a in payload["actions"]}, {"create"})
+        self.assertEqual(len(payload["actions"]), 8)
+
+    def test_apply_writes_the_eight_files_then_rerun_is_a_noop(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = self.repo(tmp)
+            first = self.run_cli("init", "--github", "--apply", "--idkmesh-ref", SHA, cwd=root)
+            written = self.tree(root)
+            second = self.run_cli(
+                "init", "--github", "--apply", "--idkmesh-ref", SHA, "--json", cwd=root
+            )
+            self.assertEqual(self.tree(root), written)
+        self.assertEqual(first.returncode, 0, first.stderr)
+        self.assertIn("GitHub bootstrap applied", first.stdout)
+        self.assertIn("filesystem writes: yes", first.stdout)
+        self.assertIn("GitHub mutations: no", first.stdout)
+        self.assertIn(".idkmesh/bootstrap-state.json", written)
+        self.assertEqual(len(written), 9)  # eight canonical files plus the state record
+        self.assertEqual(second.returncode, 0, second.stderr)
+        self.assertFalse(json.loads(second.stdout)["writes_performed"])
+
+    def test_apply_refuses_an_edited_managed_file_and_exits_nonzero(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = self.repo(tmp)
+            self.run_cli("init", "--github", "--apply", "--idkmesh-ref", SHA, cwd=root)
+            edited = root / ".idkmesh/README.md"
+            edited.write_text("local edit\n", encoding="utf-8")
+            result = self.run_cli("init", "--github", "--apply", "--idkmesh-ref", SHA, cwd=root)
+            self.assertEqual(edited.read_text(encoding="utf-8"), "local edit\n")
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("managed_file_modified", result.stderr)
+
+    def test_apply_outside_a_git_repository_writes_nothing(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            result = self.run_cli("init", "--github", "--apply", "--idkmesh-ref", SHA, cwd=root)
+            self.assertEqual(self.tree(root), [])
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("git_repository_required", result.stderr)
+
+    def test_modes_are_mutually_exclusive(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = self.repo(tmp)
+            result = self.run_cli(
+                "init", "--github", "--dry-run", "--apply", "--idkmesh-ref", SHA, cwd=root
+            )
+            self.assertEqual(self.tree(root), [])
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("choose exactly one of --dry-run, --check, or --apply", result.stderr)
 
 
 if __name__ == "__main__":

@@ -255,6 +255,7 @@ def _atomic_write(root_fd: int, path: str, data: bytes, *, old_digest: str | Non
         fd = os.open(temp_name, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
                      0o600, dir_fd=parent)
         try:
+            os.fchmod(fd, 0o644)  # generated files are public repo content, not 0600 temp files
             with os.fdopen(fd, "wb") as stream:
                 stream.write(data)
                 stream.flush()

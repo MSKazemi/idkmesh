@@ -34,6 +34,7 @@ class BootstrapApplyTests(unittest.TestCase):
             self.assertEqual(len(json.loads((root / STATE_PATH).read_text())["managed_digests"]), 6)
             for item in files:
                 self.assertEqual((root / item.path).read_text(), item.content)
+                self.assertEqual((root / item.path).stat().st_mode & 0o777, 0o644)
             seed = root / ".idkmesh/project.json"
             seed.write_text("owner changed this\n")
             again = apply_github_bootstrap(root, plan, files)
