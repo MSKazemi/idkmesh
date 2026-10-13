@@ -147,7 +147,7 @@ Web discovery collection, analysis or publication; some commands make authentica
 | [`scripts/search_visibility_observation_import.py`](https://github.com/MSKazemi/idkmesh/blob/main/scripts/search_visibility_observation_import.py) | Search visibility search visibility observation import tool |
 | [`scripts/search_visibility_observation_plan.py`](https://github.com/MSKazemi/idkmesh/blob/main/scripts/search_visibility_observation_plan.py) | Search visibility search visibility observation plan tool |
 | [`scripts/visibility_funnel_coverage.py`](https://github.com/MSKazemi/idkmesh/blob/main/scripts/visibility_funnel_coverage.py) | Read-only aggregate discovery-to-contribution coverage; no attributable conversions or publication authority |
-| [`scripts/visibility_growth_selector.py`](https://github.com/MSKazemi/idkmesh/blob/main/scripts/visibility_growth_selector.py) | Search visibility visibility growth selector tool |
+| [`scripts/visibility_growth_selector.py`](https://github.com/MSKazemi/idkmesh/blob/main/scripts/visibility_growth_selector.py) | Evidence-aware read-only V6 experiment prioritizer; no outreach, acceptance, publication or merge authority |
 | [`scripts/visibility_observatory.py`](https://github.com/MSKazemi/idkmesh/blob/main/scripts/visibility_observatory.py) | Search visibility visibility observatory tool |
 | [`tools/check_public_discovery.py`](https://github.com/MSKazemi/idkmesh/blob/main/tools/check_public_discovery.py) | check public discovery |
 | [`tools/search_visibility_report.py`](https://github.com/MSKazemi/idkmesh/blob/main/tools/search_visibility_report.py) | Search visibility search visibility report tool |
