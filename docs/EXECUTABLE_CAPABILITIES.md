@@ -44,7 +44,7 @@ methods, and every top-level Python module in `idkmesh/`.
 | `idkmesh connections import` | persist safe normalized connector metadata in local SQLite | secret values are not persisted |
 | `idkmesh connections stored` | read normalized persisted connector metadata | read-only |
 | `idkmesh connections probe` | run offline fake-driver connector probes | no live provider call |
-| `idkmesh doctor` | summarize connector readiness, or evaluate the read-only C12 GitHub governance preflight with `--github` | connector/GitHub PASS is diagnostic precondition evidence, not dispatch, admin, acceptance, or merge authority |
+| `idkmesh doctor` | summarize connector readiness, evaluate the C12 GitHub governance preflight (`--github`), or run E9 offline destructive conformance (`--enterprise-conformance`) | E9 provider outage/quota exercises pre-dispatch fake-driver routing and redacted errors only; WARN/UNKNOWN never proves a live adapter or certification; no dispatch/admin/merge authority |
 | `idkmesh route` | provider-neutral routing command family | read/explain surface |
 | `idkmesh route explain` | explain eligible/rejected connectors and optional deterministic auto-selection | no external work or repository mutation |
 | `idkmesh run` | durable local Product Spine run-control command family | no provider dispatch, candidate acceptance, push, or merge |

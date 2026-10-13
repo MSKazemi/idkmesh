@@ -12,6 +12,15 @@ and the release notes for that tag.
 
 ## [Unreleased]
 
+- E9 enterprise provider-fault scenario (refs #676): replace one UNKNOWN
+  placeholder with a deterministic offline WARN diagnostic over the actual
+  connector probe, inspection, route and error kernels. Inject healthy,
+  outage, rate-limit, quota and secret-bearing exception conditions; require
+  refusal to route failed probes and redaction of credential-shaped error
+  details. Add falsifying negative tests and synchronize the enterprise
+  profile, testing and executable-capability documentation. No live provider
+  attempt, retry-scheduler qualification, dispatch or certification claim.
+
 ### Added
 
 - tests: E3-G enterprise two-principal acceptance fixture (refs #670). Nine

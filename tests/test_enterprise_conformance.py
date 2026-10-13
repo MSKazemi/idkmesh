@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import contextlib
+from dataclasses import replace
 import io
 import json
 from pathlib import Path
@@ -21,13 +22,14 @@ EXERCISED = (
     "cross_tenant_reference",
     "duplicate_event",
     "coordinator_crash_after_dispatch",
+    "provider_outage_quota",
     "secret_missing_or_revoked",
     "audit_exporter_unavailable",
     "ledger_restore",
     "stale_identity_policy_cache",
     "high_risk_sod_violation",
 )
-NOT_EXERCISED = ("stale_claim_retry", "provider_outage_quota", "release_provenance")
+NOT_EXERCISED = ("stale_claim_retry", "release_provenance")
 
 
 def _by_id(report: dict) -> dict[str, dict]:
@@ -197,6 +199,74 @@ class ConformanceDetectsBrokenControlsTests(unittest.TestCase):
             report = conformance.run_conformance()
         self.assertEqual(report["status"], "FAIL")
         self.assertIn("RuntimeError", report["scenarios"][0]["observed"])
+
+
+class ConformanceProviderFaultTests(unittest.TestCase):
+    """Failure injection must catch a fail-open probe/router or leaky envelope."""
+
+    def _scenario(self) -> dict:
+        report = conformance.run_conformance(scenario_ids=("provider_outage_quota",))
+        return _by_id(report)["provider_outage_quota"]
+
+    def test_injected_faults_are_warn_not_full_provider_qualification(self) -> None:
+        item = self._scenario()
+        self.assertEqual(item["status"], "WARN", item["observed"])
+        self.assertGreaterEqual(len(item["checks"]), 20)
+        self.assertTrue(all(check["ok"] for check in item["checks"]))
+        self.assertEqual(len(item["gaps"]), 1)
+        self.assertIn("no actual provider attempt", item["gaps"][0])
+        self.assertNotIn(conformance._SECRET, json.dumps(item))
+        self.assertEqual(item, self._scenario())
+
+    def test_lying_probe_healthy_causes_failure(self) -> None:
+        actual = conformance.probe_connector
+
+        def unsafe_probe(config, registry, **kwargs):
+            result = actual(config, registry, **kwargs)
+            if result.status == "unavailable":
+                return replace(result, status="healthy", failure=None)
+            return result
+
+        with mock.patch.object(conformance, "probe_connector", side_effect=unsafe_probe):
+            result = self._scenario()
+        self.assertEqual(result["status"], "FAIL")
+        self.assertTrue(any(not check["ok"] for check in result["checks"]))
+
+    def test_router_admitting_unavailable_connector_causes_failure(self) -> None:
+        actual = conformance.explain_route
+
+        def unsafe_route(*args, **kwargs):
+            result = actual(*args, **kwargs)
+            if result["ineligible"]:
+                return {**result, "selected_connection_id": "provider-fault-fixture"}
+            return result
+
+        with mock.patch.object(conformance, "explain_route", side_effect=unsafe_route):
+            result = self._scenario()
+        self.assertEqual(result["status"], "FAIL")
+
+    def test_error_envelope_leaking_credentials_causes_failure(self) -> None:
+        actual = conformance.connector_error
+
+        class LeakyEnvelope:
+            def __init__(self, safe) -> None:
+                self.safe = safe
+
+            def to_envelope(self):
+                envelope = self.safe.to_envelope()
+                envelope["error"]["details"]["Authorization"] = conformance._SECRET
+                return envelope
+
+            def __str__(self):
+                return str(self.safe)
+
+        def leaky_error(*args, **kwargs):
+            return LeakyEnvelope(actual(*args, **kwargs))
+
+        with mock.patch.object(conformance, "connector_error", side_effect=leaky_error):
+            result = self._scenario()
+        self.assertEqual(result["status"], "FAIL")
+        self.assertNotIn(conformance._SECRET, json.dumps(result))
 
 
 class DoctorEnterpriseConformanceCliTests(unittest.TestCase):
