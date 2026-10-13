@@ -253,13 +253,13 @@ def build_parser() -> argparse.ArgumentParser:
 
     init_cmd = sub.add_parser(
         "init",
-        help="plan GitHub-first IDKMesh bootstrap",
+        help="render or safely install GitHub-first IDKMesh bootstrap",
         description=(
-            "apply mode remains fail-closed until C8-F. Expose the "
+            "Safe local apply is opt-in (--apply) and guarded by digest checks. Expose the "
             "deterministic GitHub-first bootstrap plan plus C8-C rendered "
             "configuration and C8-D workflow-wrapper content/digests without "
-            "writing repository files or mutating GitHub. --github "
-            "--dry-run remains the only supported mode."
+            "mutating GitHub. --dry-run stays pure; --check inspects local "
+            "conflicts; --apply only writes safe local generated files."
         ),
         formatter_class=_ExamplesHelpFormatter,
         epilog=(
@@ -279,6 +279,8 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="print the deterministic bootstrap plan; perform no writes",
     )
+    init_cmd.add_argument("--check", action="store_true", help="inspect existing generated files without writes")
+    init_cmd.add_argument("--apply", action="store_true", help="explicitly write generated files locally with digest conflict checks")
     init_cmd.add_argument(
         "--idkmesh-ref",
         required=True,
@@ -2349,10 +2351,9 @@ def _run_github_init(args: argparse.Namespace) -> int:
 
     if not args.github:
         return _fail("init currently supports only the --github profile")
-    if not args.dry_run:
-        return _fail(
-            "GitHub bootstrap apply mode is not implemented; pass --dry-run"
-        )
+    modes = sum(bool(value) for value in (args.dry_run, args.check, args.apply))
+    if modes != 1:
+        return _fail("choose exactly one of --dry-run, --check, or --apply")
 
     from idkmesh.github_bootstrap import (
         BootstrapPlanError,
@@ -2375,6 +2376,26 @@ def _run_github_init(args: argparse.Namespace) -> int:
         rendered_workflows = render_github_bootstrap_workflows(plan)
     except (BootstrapPlanError, BootstrapRenderError) as exc:
         return _fail(str(exc))
+
+    if args.check or args.apply:
+        from idkmesh.github_bootstrap_apply import (
+            BootstrapApplyError, apply_github_bootstrap, plan_github_bootstrap_apply,
+        )
+        try:
+            files = rendered_config + rendered_workflows
+            action = apply_github_bootstrap if args.apply else plan_github_bootstrap_apply
+            result = action(Path.cwd(), plan, files)
+        except BootstrapApplyError as exc:
+            return _fail(str(exc))
+        if args.json_output:
+            print(json.dumps(result, sort_keys=True, separators=(",", ":")))
+        else:
+            print("GitHub bootstrap " + ("applied" if args.apply else "local check"))
+            for item in result["actions"]:
+                print(f"- {item['action']}: {item['path']}")
+            print(f"filesystem writes: {'yes' if result['writes_performed'] else 'no'}")
+            print("GitHub mutations: no")
+        return 0
 
     payload = {
         "kind": "idkmesh-github-bootstrap-dry-run",

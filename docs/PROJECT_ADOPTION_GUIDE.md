@@ -240,8 +240,10 @@ idkmesh init --github --dry-run --idkmesh-ref v0.1.0 --json
 The JSON output includes the four rendered C8-C files under `rendered_config_files`
 and the four C8-D GitHub Actions wrappers under `rendered_workflow_files`, each
 with exact UTF-8 content, ownership/overwrite policy, byte size, and SHA-256
-content digest. Apply mode remains disabled until the safe re-run/write boundary
-(C8-F) is implemented.
+content digest. To examine existing target-file conflicts use `--check`; explicit
+`--apply` now installs the generated files locally on a POSIX Git working tree.
+User-owned configuration is never overwritten, and managed files require an
+unchanged retained SHA-256 digest on rerun. See [safe local apply](specifications/GITHUB_BOOTSTRAP_SAFE_APPLY_V0_1.md).
 
 Use the current reference contracts as templates:
 
@@ -254,8 +256,9 @@ secret-reference connector template, and a repository-local copy of the
 software-engineering DomainPack. Tests bind the generated ProjectManifest and
 DomainPack back to their schemas/canonical source.
 
-This is still a **render-only bootstrap surface**, not a completed external-project
-installer: it does not write files, create secrets, install provider apps, change
+This is still an **experimental local bootstrap surface**, not a completed
+external-project adoption pilot: an explicit `--apply` writes local files but
+never creates secrets, installs provider apps, changes
 branch protection, or dispatch work. It renders (but does not write) four thin
 `.github/workflows/idkmesh-*.yml` wrappers pinned to full-SHA Actions and to your
 `--idkmesh-ref`; see
