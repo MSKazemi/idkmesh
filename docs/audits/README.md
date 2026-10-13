@@ -18,6 +18,9 @@ declare no explicit baseline revision; that is noted rather than invented.
 
 Whole-repository snapshots, ordered by date.
 
+- [Branch convergence reconciliation](2026-10-13-branch-convergence-reconciliation.md)
+  — 2026-10-13; baseline `ea1fc610`. Exact-head audit of all nine non-`main` branches, closed/superseded PR evidence, verified replacements and safe retirement conditions; no merges or deletions.
+
 - [Workflow-to-Code Audit](2026-10-13-workflow-code-trace.md)
   — 2026-10-13; baseline `3ae17662`. Reviews all 61 workflow definitions, their declared triggers, token write scopes and primary code/action entry points, including provider/publisher boundaries.
 

@@ -15,6 +15,7 @@ from idkmesh.api_observability import ApiMetrics, resolve_traceparent
 from idkmesh.control_tower_ui import SAMPLE_REPORT, TOKEN_ENV, create_server
 from idkmesh.otel_metrics import render_otlp_metrics_json
 from idkmesh.local_ui_security import TOKEN_HEADER
+from idkmesh.service_runtime import ACCESS_LOG_ENV
 
 
 VALID_TRACEPARENT = (
@@ -245,6 +246,35 @@ class ControlTowerObservabilityTests(unittest.TestCase):
             "traceparent",
             {key.lower(): value for key, value in bad_headers.items()},
         )
+
+    def test_opt_in_access_logs_never_include_dynamic_path_or_query_secrets(self) -> None:
+        """An enabled log must be useful without copying any raw URL text."""
+        sentinel = "SECRETSENTINEL-7c1e9"
+        events: list[dict] = []
+        with mock.patch.dict("os.environ", {ACCESS_LOG_ENV: "1"}):
+            with mock.patch(
+                "idkmesh.control_tower_ui.write_access_log",
+                side_effect=events.append,
+            ):
+                self.request("GET", f"/api/v1/runs/{sentinel}/evidence")
+                self.request("GET", f"/api/v1/work-units/{sentinel}/nested")
+                self.request("GET", f"/api/v1/projects/{sentinel}")
+                self.request("GET", f"/api/v1/status?api_key={sentinel}")
+                self.request("GET", f"/unrecognized/{sentinel}")
+                self.request("GET", "/readyz", token=False)
+
+        self.assertEqual(len(events), 6)
+        paths = {event["path"] for event in events}
+        self.assertIn("/api/v1/runs/{run_id}/evidence", paths)
+        self.assertIn("/api/v1/work-units/{work_unit_id}", paths)
+        self.assertIn("/api/v1/projects/{project_id}", paths)
+        self.assertIn("/api/v1/status", paths)
+        self.assertIn("<unmatched>", paths)
+        self.assertIn("/readyz", paths)
+        for event in events:
+            self.assertNotIn(sentinel, json.dumps(event))
+            self.assertIn("status", event)
+            self.assertIn("duration_ms", event)
 
     def test_secrets_sent_through_every_channel_never_reach_telemetry(self) -> None:
         """#744 privacy rules, end to end.

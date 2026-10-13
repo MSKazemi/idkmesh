@@ -128,11 +128,17 @@ Optional access logging is enabled with:
 IDKMESH_HTTP_ACCESS_LOG=1
 ```
 
-Each log line is compact JSON containing request ID, method, path, response
-status/size, duration, service, and event time. Query strings are stripped and
-the logging API does not accept request bodies, authorization/session headers,
-prompts, or secret material. Logging failure does not turn an otherwise valid
-read-only response into an application failure.
+Each opt-in log line is compact JSON containing request ID, method, a **fixed
+route template** (in the legacy `path` field), response status/size, duration,
+service, and event time. Only recognized static endpoints appear verbatim.
+Dynamic run, WorkUnit, and project IDs become `{run_id}`, `{work_unit_id}`,
+and `{project_id}`; unrecognized URLs become `<unmatched>`. Query strings,
+raw route arguments (including encoded arguments), and unrecognized method
+text are not logged. The logging API does not accept request/response bodies,
+authorization/session headers or prompts. Caller-supplied safe `X-Request-ID`
+is still retained for correlation, so **never put secret data in that header**.
+Operators control access to and retention of opt-in stderr logs. Logging failure
+does not turn an otherwise valid read-only response into an application failure.
 
 
 ## Authority invariant
