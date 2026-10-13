@@ -96,7 +96,7 @@ concurrency limit:
 - overload SLO: no sustained overload rejection for two consecutive scrape
   intervals under expected local load.
 
-A collector derives rolling values by differencing process-lifetime counters.
+A trusted collector can derive rolling values by differencing process-lifetime counters, provided the process epoch and timestamps are independently established. The local HTTP service does not itself calculate rolling windows.
 
 Suggested alerts:
 
@@ -109,6 +109,10 @@ Suggested alerts:
 
 A 4xx is not itself a service failure. `configured_unprobed` is not a health
 claim.
+
+## Same-process interval evaluator (library only)
+
+`idkmesh.otel_metrics.evaluate_api_metrics_interval()` validates and compares two cumulative service metrics documents when an external trusted collector provides a matching process epoch and strictly increasing Unix-nanosecond observation times. It reports the completed-response 5xx fraction, the share within the fixed 1000 ms latency bucket, overload-rejection deltas, and request count. It returns `status="unknown"` (with no authority) for different epochs, invalid or decreasing counters, empty intervals, and other unsafe comparisons. UNKNOWN **never** means a zero-error interval. This is neither a served HTTP route nor a rolling SLO monitor; see the [runnable interval guide](../reference/API_METRICS_INTERVAL_GUIDE.md) and `tests/test_api_observability_intervals.py`.
 
 ## OpenTelemetry / OTLP JSON adapter
 

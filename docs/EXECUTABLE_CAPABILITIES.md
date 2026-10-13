@@ -119,6 +119,7 @@ requiring an HTTP client dependency. Current public methods are:
 - `ControlTowerClient.get_run_evidence()`
 - `ControlTowerClient.get_run_attempts()`
 - `ControlTowerClient.list_runs()`
+- `ControlTowerClient.collect_run_pages()` — explicitly bounded, cursor-safe multi-page run reads that retain each page's request ID and digest; no writes, implicit retries, or snapshot consistency claim
 - `ControlTowerClient.get_work_unit()`
 - `ControlTowerClient.list_work_units()`
 - `ControlTowerClient.list_connections()`
