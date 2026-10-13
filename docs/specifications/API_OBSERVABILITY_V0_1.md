@@ -35,6 +35,23 @@ project/WorkUnit/run/attempt/candidate identifiers, or secret references.
 The response schema is
 `schemas/idkmesh-api-operational-metrics-v0.1.schema.json`.
 
+### Optional access-log privacy (distinct from aggregate metrics)
+
+`IDKMESH_HTTP_ACCESS_LOG=1` enables local stderr access logs. Unlike the
+aggregate metrics and OTLP documents, those logs include a validated request ID
+for operational correlation and a canonical `path` **route template**. The
+service runtime replaces all run, WorkUnit and project IDs with placeholders;
+unknown routes collapse to `<unmatched>`. Neither raw paths nor query strings
+are emitted, even on HTTP errors and unsupported URLs. Unrecognized methods
+are emitted as `OTHER`. Tests exercise the real HTTP logging path, not only
+the standalone formatter.
+
+The caller-chosen request ID is intentionally still included in optional logs:
+never pass a credential or private payload as `X-Request-ID`. Access controls
+and retention for stderr output remain the local operator's responsibility.
+This hardening does not introduce tracing spans, collector networking, or an
+authenticated network-service logging profile.
+
 ## Metrics
 
 All counters are process-lifetime counters and reset on process restart.

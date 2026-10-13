@@ -151,6 +151,48 @@ class ServiceRuntimeTests(unittest.TestCase):
         self.assertNotIn("token", rendered.lower())
         self.assertNotIn("body", rendered.lower())
 
+    def test_access_logs_redact_dynamic_identifiers_and_unknown_routes(self) -> None:
+        secret = "SECRETSENTINEL-7c1e9"
+        cases = {
+            f"/api/v1/runs/{secret}": "/api/v1/runs/{run_id}",
+            f"/api/v1/runs/{secret}/attempts": "/api/v1/runs/{run_id}/attempts",
+            f"/api/v1/runs/{secret}/evidence": "/api/v1/runs/{run_id}/evidence",
+            f"/api/v1/runs/{secret}/decisions": "/api/v1/runs/{run_id}/decisions",
+            f"/api/v1/work-units/{secret}/nested": "/api/v1/work-units/{work_unit_id}",
+            f"/api/v1/projects/{secret}": "/api/v1/projects/{project_id}",
+            f"/api/v1/runs/%53{secret}": "/api/v1/runs/{run_id}",
+            f"/api/v1/status?api_key={secret}": "/api/v1/status",
+            "/api/v1/events/stream": "/api/v1/events/stream",
+            f"/unknown/{secret}?token={secret}": "<unmatched>",
+            f"/api/v2/status/{secret}": "<unmatched>",
+            "/api/v1/runs/": "<unmatched>",
+        }
+        for raw_path, route in cases.items():
+            with self.subTest(path=raw_path):
+                event = build_access_log_event(
+                    service="idkmesh-control-tower",
+                    request_id="req-test",
+                    method="GET",
+                    path=raw_path,
+                    status=404,
+                    response_bytes=10,
+                    duration_ms=1.0,
+                )
+                self.assertEqual(event["path"], route)
+                self.assertNotIn(secret, json.dumps(event))
+
+        unknown_method = build_access_log_event(
+            service="idkmesh-control-tower",
+            request_id="req-test",
+            method="SENSITIVE-UNRECOGNIZED-METHOD",
+            path="/readyz",
+            status=200,
+            response_bytes=0,
+            duration_ms=0.1,
+        )
+        self.assertEqual(unknown_method["method"], "OTHER")
+        self.assertEqual(unknown_method["path"], "/readyz")
+
     def test_access_log_writer_emits_one_compact_json_line(self) -> None:
         event = build_access_log_event(
             service="idkmesh-control-tower",

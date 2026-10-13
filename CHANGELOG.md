@@ -12,6 +12,13 @@ and the release notes for that tag.
 
 ## [Unreleased]
 
+- API-9 observability privacy hardening (refs #744): opt-in local access logs
+  now use a fixed route vocabulary, replacing run/WorkUnit/project identifiers
+  with placeholders and unknown URL paths with `<unmatched>`; unrecognized HTTP
+  methods become `OTHER`. Added formatter and live HTTP regression tests and
+  synchronized the API/architecture documentation. The authenticated aggregate
+  metrics and OTLP export contracts are unchanged.
+
 - E9 enterprise provider-fault scenario (refs #676): replace one UNKNOWN
   placeholder with a deterministic offline WARN diagnostic over the actual
   connector probe, inspection, route and error kernels. Inject healthy,
