@@ -29,3 +29,17 @@ rewrite both payload and digest. No credential may be stored in event payloads.
 **Acceptance:** recovery reconstructs the same immutable records while
 corruption and unsupported migrations fail closed. This text is not evidence
 that the drill has been run.
+
+
+## Implemented local API and validation
+
+`LocalMetadataStore.backup_to(destination)` now reserves a new destination
+without overwriting existing files, uses SQLite's online backup protocol and
+checks database integrity before returning. It does not restore, encrypt,
+upload, retain, or authorize anything. Use a trusted, access-controlled
+directory, keep the backup offline until verification, and validate a restored
+copy by opening it and reading the original digests and event indices.
+
+The `tests/test_local_metadata_online_backup.py` suite covers snapshot
+independence, repeat/open-target refusal, source-path refusal, invalid
+directories and symlinks. Network-profile restore remains entirely unbuilt.
