@@ -294,12 +294,16 @@ Enterprise operation requires explicit objectives rather than adjectives such as
 The Enterprise Control Profile records:
 
 - availability target;
-- recovery point objective (RPO);
-- recovery time objective (RTO);
-- restore-test interval;
-- backpressure requirement.
+- recovery point objective (RPO), in minutes;
+- recovery time objective (RTO), in minutes;
+- whether backups are required;
+- whether a restore test is required (a boolean: the profile has no restore-test
+  interval and no backpressure field yet).
 
-These are declared objectives until measured by a pilot.
+These are declared objectives until measured by a pilot. `idkmesh/enterprise_recovery_drill.py`
+judges one *recorded* recovery drill against the declared RPO and RTO and returns
+PASS, FAIL or UNKNOWN; a missing, stale or mismatched drill is UNKNOWN, never a pass.
+It runs no drill and restores nothing, and no real drill has been recorded yet.
 
 Required failure behavior:
 
@@ -468,7 +472,7 @@ to dispatch, publish, approve, push or merge.
 | --- | --- | --- |
 | [#670](https://github.com/MSKazemi/idkmesh/issues/670) identity | Live-vs-revoked/expired decision-cache results and same-revision identity denial | Authenticated upstream identity producer, revocation feed and enforced service middleware |
 | [#672](https://github.com/MSKazemi/idkmesh/issues/672) data policy | G2 policy fixture rejects restricted external processing, destination bypasses and cloud key misuse | Apply decisions before real worker egress, secrets and provider invocation |
-| [#673](https://github.com/MSKazemi/idkmesh/issues/673) operations | Injected provider outage, rate-limit and quota probes are refused by the real router before dispatch; normalized, credential-redacted error evidence; restored local/audit SQLite checks | Outage pilot, bounded retries, encrypted backup owner, measured RPO/RTO |
+| [#673](https://github.com/MSKazemi/idkmesh/issues/673) operations | Injected provider outage, rate-limit and quota probes are refused by the real router before dispatch; normalized, credential-redacted error evidence; restored local/audit SQLite checks; a pure evaluator that judges a recorded recovery drill against the declared RPO/RTO | Outage pilot, bounded retries, encrypted backup owner, a real recorded drill (none exists), restore-test interval and backpressure fields |
 | [#676](https://github.com/MSKazemi/idkmesh/issues/676) conformance | Negative controls demonstrate that disabled claim fencing, Host checks, provider classification, egress and publication whitelists turn red | Destructive deployment pilot and independently retained evidence |
 | [#743](https://github.com/MSKazemi/idkmesh/issues/743) API security | Local Host/token boundary rejects malformed or non-loopback requests | TLS/proxy/mTLS/SSO, tenant-scoped auth, browser origin/CSRF for **network** service |
 | [#750](https://github.com/MSKazemi/idkmesh/issues/750) storage | SQLite online backup replay and audit checkpoint/tamper negative controls | Network storage adapter, replay/migrations, encrypted backup/restore drill |

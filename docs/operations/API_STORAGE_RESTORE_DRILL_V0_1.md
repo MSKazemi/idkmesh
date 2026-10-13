@@ -31,6 +31,55 @@ corruption and unsupported migrations fail closed. This text is not evidence
 that the drill has been run.
 
 
+## Judging a drill against the profile (E6, #673)
+
+A drill is only worth recording if something compares it with the objectives the
+deployment declared. `idkmesh/enterprise_recovery_drill.py` is that comparison:
+`evaluate_recovery_drill(profile, drill, evaluated_at_epoch=..., max_drill_age_seconds=...)`
+checks one drill record against `reliability.rpo_minutes` and
+`reliability.rto_minutes` of a validated enterprise control profile. It runs
+nothing and restores nothing; the operator runs the drill above and records:
+
+~~~json
+{
+  "kind": "idkmesh-enterprise-recovery-drill",
+  "schema_version": "0.1",
+  "drill_id": "drill:2026-10-14-restore",
+  "profile_id": "example-g2-self-hosted",
+  "last_acknowledged_write_epoch": 1789999995,
+  "last_recovered_write_epoch": 1789999990,
+  "failure_injected_at_epoch": 1790000000,
+  "service_restored_at_epoch": 1790000600,
+  "integrity_verified": true,
+  "evidence_digest": "sha256:<64 hex of the retained drill report>"
+}
+~~~
+
+The record has exactly these fields; unknown, missing or coerced values are
+rejected, and time may not run backwards (acknowledged and recovered writes no
+later than the failure, restoration no earlier than the failure).
+
+| Measurement | Definition | Compared with |
+| --- | --- | --- |
+| data loss | newest acknowledged write minus newest recovered write, never below zero; idle time before the failure is not loss | `rpo_minutes` x 60 |
+| recovery time | service restored minus failure injected | `rto_minutes` x 60 |
+
+Both comparisons are inclusive. The outcome is **FAIL** when an objective is
+exceeded (`rpo_exceeded`, `rto_exceeded`) or the restored state was not
+integrity-verified (`integrity_not_verified`); **PASS** (`objectives_met`) when
+all three checks pass; **UNKNOWN** when there is nothing trustworthy to judge:
+`no_drill_evidence`, `invalid_drill`, `profile_mismatch`, `invalid_profile`,
+`drill_from_future`, or `stale_drill` when `max_drill_age_seconds` is given and
+exceeded. A missing drill is never a pass, and a stale failing drill is UNKNOWN,
+not FAIL, because old evidence is not a current measurement. The profile
+declares no restore-test interval, so freshness is the caller's policy.
+
+A PASS is evidence about that one drill, not a guarantee about the next
+recovery, and `integrity_verified` is the operator's claim, bound only by the
+retained `evidence_digest`. Results carry identifiers, counts and reason codes;
+untrusted text is never echoed. This is **not** a recorded drill: the module
+only judges one, and none has been run.
+
 ## Implemented local API and validation
 
 `LocalMetadataStore.backup_to(destination)` now reserves a new destination
