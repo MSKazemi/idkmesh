@@ -23,7 +23,7 @@ python tools/branch_retirement.py --manifest docs/audits/branch-retirement-2026-
 python -m pytest -q tests/test_branch_retirement.py
 ~~~
 
-The tool only issues GitHub **GET** requests by default. Every candidate must match its pinned head; the original PR must remain closed and unmerged; no open PR may exist; the replacement must actually have merged; and the replacement merge commit must be an ancestor of current main. A dry-run result is **not** deletion authorization. Keep the GitHub token private; Git push credentials are separate.
+The tool only issues GitHub **GET** requests by default. The manifest is pinned to `MSKazemi/idkmesh` and `main`. Every candidate must match its pinned head; the original PR must remain closed and unmerged; the retained GitHub `refs/pull/N/head` must still resolve to that exact commit; no open PR may exist; the replacement must actually have merged; and the replacement merge commit must be an ancestor of current main. A dry-run result is **not** deletion authorization. Keep the GitHub token private; Git push credentials are separate.
 
 ## Execute only after human evidence attestation
 
@@ -35,7 +35,7 @@ python tools/branch_retirement.py \
   --attest I_REVIEWED_BRANCH_EVIDENCE_AND_EXTERNAL_REFERENCES
 ~~~
 
-Before deletion the tool requires the reviewed origin, exact local main HEAD, clean worktree, stable GitHub main and **fresh** PR/branch checks. It uses Git push with an exact SHA --force-with-lease, so moving a source branch after review rejects deletion. It never invokes a generic force-push, direct merge, unapproved rebasing or branch cleanup by name pattern.
+Before deletion the tool requires the reviewed origin, exact local main HEAD, clean worktree, stable GitHub main and **fresh** PR/branch checks. It uses Git push with an exact SHA --force-with-lease, so moving a source branch after review rejects deletion. The command disables local pre-push hooks (`--no-verify`) and incidental tag propagation (`--no-follow-tags`); it performs only the named branch-ref deletion. It never invokes a generic force-push, direct merge, unapproved rebasing or branch cleanup by name pattern.
 
 **One branch per execution:** the full eight-branch manifest may be inspected in dry-run mode, but `--execute` requires `--branch` selecting exactly one listed ref. After a real deletion, record the result, recheck the remote branch inventory and dependencies, and independently authorize the next ref. The literal attestation string is an operator assertion, **not proof of human identity or external-consumer clearance**; a separate human review remains mandatory.
 

@@ -59,8 +59,13 @@ def load_manifest(path: Path) -> tuple[str, str, tuple[Candidate, ...]]:
     if not isinstance(document, dict) or set(document) != {"repository", "default_branch", "candidates"}:
         raise RetirementError("unexpected retirement manifest shape")
     repo, default, entries = (document[key] for key in ("repository", "default_branch", "candidates"))
-    if not isinstance(repo, str) or REPO.fullmatch(repo) is None or default != "main":
-        raise RetirementError("retirement must target a valid repository and main")
+    if (
+        not isinstance(repo, str)
+        or REPO.fullmatch(repo) is None
+        or repo != "MSKazemi/idkmesh"
+        or default != "main"
+    ):
+        raise RetirementError("retirement manifest must target canonical MSKazemi/idkmesh main")
     if not isinstance(entries, list) or not entries or len(entries) > 20:
         raise RetirementError("retirement candidates must be a bounded, nonempty list")
     candidates = []
@@ -148,6 +153,20 @@ def verify(client: Client, repository: str, default: str, candidate: Candidate) 
         or (head.get("repo") or {}).get("full_name") != repository
     ):
         raise RetirementError(f"{candidate.name}: original closed-PR evidence mismatch")
+
+    # A closed PR is not enough by itself: its preserved GitHub PR-head ref
+    # must still resolve to the historical exact commit before retiring the
+    # only named source branch. This is read-only, and failure blocks deletion.
+    archived_ref = f"refs/pull/{candidate.closed_pr}/head"
+    archived = client.get(path + f"/git/ref/pull/{candidate.closed_pr}/head")
+    if (
+        not isinstance(archived, dict)
+        or archived.get("ref") != archived_ref
+        or not isinstance(archived.get("object"), dict)
+        or archived["object"].get("type") != "commit"
+        or archived["object"].get("sha") != candidate.head
+    ):
+        raise RetirementError(f"{candidate.name}: preserved PR-head ref unavailable or mismatched")
 
     successor = client.get(path + f"/pulls/{candidate.merged_replacement_pr}")
     if not isinstance(successor, dict):
@@ -237,7 +256,7 @@ def run(
             # preflight is insufficient if config changes between candidates.
             verify_local_checkout(repository, main_sha, cwd)
             _git(
-                "push", "--porcelain",
+                "push", "--porcelain", "--no-verify", "--no-follow-tags",
                 f"--force-with-lease=refs/heads/{candidate.name}:{candidate.head}",
                 "origin", f":refs/heads/{candidate.name}", cwd=cwd,
             )

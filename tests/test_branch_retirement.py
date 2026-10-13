@@ -38,6 +38,9 @@ class FakeClient:
         if path.endswith("/pulls/101"):
             return {"state": "closed", "merged_at": None,
                     "head": {"ref": OLD.name, "sha": HEAD, "repo": {"full_name": REPO}}}
+        if path.endswith("/git/ref/pull/101/head"):
+            return {"ref": "refs/pull/101/head",
+                    "object": {"type": "commit", "sha": HEAD}}
         if path.endswith("/pulls/103"):
             return {"state": "closed", "merged_at": "2026-10-13T00:00:00Z", "merge_commit_sha": MERGED}
         if path.endswith("/compare/" + MERGED + "...main"):
@@ -63,6 +66,20 @@ class RetirementTests(unittest.TestCase):
                     with self.assertRaises(retire.RetirementError):
                         retire.load_manifest(path)
 
+    def test_manifest_is_pinned_to_the_canonical_repository(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "manifest.json"
+            path.write_text(json.dumps({
+                "repository": "someone/other-repo", "default_branch": "main",
+                "candidates": [{
+                    "name": OLD.name, "head": OLD.head,
+                    "closed_pr": OLD.closed_pr,
+                    "merged_replacement_pr": OLD.merged_replacement_pr,
+                }],
+            }), encoding="utf-8")
+            with self.assertRaisesRegex(retire.RetirementError, "canonical"):
+                retire.load_manifest(path)
+
     def test_dry_run_is_read_only_and_never_calls_git(self):
         api = FakeClient()
         with mock.patch.object(retire, "_git", side_effect=AssertionError("git must not be called")):
@@ -82,6 +99,7 @@ class RetirementTests(unittest.TestCase):
             "/repos/MSKazemi/idkmesh/branches/agent%2Fold-feature",
             "/repos/MSKazemi/idkmesh/pulls/101",
             "/repos/MSKazemi/idkmesh/pulls/103",
+            "/repos/MSKazemi/idkmesh/git/ref/pull/101/head",
             "/repos/MSKazemi/idkmesh/compare/" + MERGED + "...main",
         )
         for path in paths:
@@ -112,6 +130,22 @@ class RetirementTests(unittest.TestCase):
             "head": {"ref": OLD.name, "sha": HEAD, "repo": {"full_name": REPO}}}
         with self.assertRaisesRegex(retire.RetirementError, "closed-PR evidence mismatch"):
             retire.verify(api, REPO, "main", OLD)
+
+    def test_retirement_requires_retained_exact_archival_pr_head(self):
+        path = "/repos/MSKazemi/idkmesh/git/ref/pull/101/head"
+        invalid = (
+            {},
+            {"ref": "refs/pull/101/head", "object": {"type": "commit", "sha": "d" * 40}},
+            {"ref": "refs/pull/102/head", "object": {"type": "commit", "sha": HEAD}},
+            {"ref": "refs/pull/101/head", "object": {"type": "tag", "sha": HEAD}},
+            {"ref": "refs/pull/101/head", "object": None},
+        )
+        for response in invalid:
+            with self.subTest(response=response):
+                api = FakeClient()
+                api.overrides[path] = response
+                with self.assertRaisesRegex(retire.RetirementError, "preserved PR-head ref"):
+                    retire.verify(api, REPO, "main", OLD)
 
     def test_unmerged_replacement_blocks_deletion(self):
         api = FakeClient()
@@ -169,7 +203,8 @@ class RetirementTests(unittest.TestCase):
         self.assertEqual(checkout.call_count, 2)
         checkout.assert_any_call(REPO, MAIN, ROOT)
         self.assertEqual(result[0]["status"], "retired")
-        self.assertEqual(calls, [("push", "--porcelain", f"--force-with-lease=refs/heads/{OLD.name}:{HEAD}",
+        self.assertEqual(calls, [("push", "--porcelain", "--no-verify", "--no-follow-tags",
+                                  f"--force-with-lease=refs/heads/{OLD.name}:{HEAD}",
                                   "origin", f":refs/heads/{OLD.name}")])
         self.assertEqual(sum("/branches/agent%2Fold-feature" in url for url in api.calls), 2)
 
