@@ -10,7 +10,7 @@ description: "Operator-reviewed, exact-SHA retirement of already superseded GitH
 1. Independently review each historical PR, its closure decision, the exact branch head, and the already-merged replacement. Preserve any unique code, experiments, negative findings or research evidence before retirement.
 2. Check workflows, repository configuration, published docs, issues, release and acceptance records, and **external consumers** for branch-name/exact-SHA dependencies. A historical audit mention is provenance, not an active dependency. Hold anything uncertain.
 3. Obtain explicit maintainer review/approval for **these exact refs**. Green CI does not confer deletion authority.
-4. Before deletion, preserve old refs in an offline, verified Git bundle: fetch remote branch refs, run `git bundle create /secure/archive/idkmesh-before-retirement.bundle --all`, then `git bundle verify /secure/archive/idkmesh-before-retirement.bundle`. Retain its checksum and a secure copy outside the checkout. This prevents otherwise-unreachable commits from being lost.
+4. Before deletion, preserve old refs in an offline, **self-contained** Git bundle outside the checkout. Fetch every needed remote ref, run `git bundle create /secure/archive/idkmesh-before-retirement.bundle --all`, then inspect `git bundle list-heads /secure/archive/idkmesh-before-retirement.bundle`. Confirm the exact named branch and full SHA appear. Retain a SHA-256 checksum and an independent secure copy. Destructive execution now **requires** this archive, performs `git bundle verify`, and tests recovery by cloning the bundle into a disposable empty bare repository. This rejects incremental archives whose prerequisites happen to be present in the original checkout.
 5. Use a clean local checkout of **current main** with Git origin pointing to MSKazemi/idkmesh. The tool validates **both** the effective fetch URL and the single effective Git push URL (including `remote.origin.pushurl` and `url.*.pushInsteadOf` rewrites); multiple push destinations, mismatched fetch/push URL strings (even two protocols for the same repository), and remote push-mirror mode are refused. The checkout,
 origin and effective push URL are revalidated immediately before **each**
 non-atomic deletion. Never run cleanup from an old feature branch. Your authenticated Git origin must have deletion permission.
@@ -32,10 +32,11 @@ python tools/branch_retirement.py \
   --manifest docs/audits/branch-retirement-2026-10-13.json \
   --execute \
   --branch agent/issue-745-cors-delta \
+  --archive-bundle /secure/archive/idkmesh-before-retirement.bundle \
   --attest I_REVIEWED_BRANCH_EVIDENCE_AND_EXTERNAL_REFERENCES
 ~~~
 
-Before deletion the tool requires the reviewed origin, exact local main HEAD, clean worktree, stable GitHub main and **fresh** PR/branch checks. It uses Git push with an exact SHA --force-with-lease, so moving a source branch after review rejects deletion. The command disables local pre-push hooks (`--no-verify`) and incidental tag propagation (`--no-follow-tags`); it performs only the named branch-ref deletion. It never invokes a generic force-push, direct merge, unapproved rebasing or branch cleanup by name pattern.
+Before deletion the tool requires the reviewed origin, exact local main HEAD, clean worktree, stable GitHub main, **fresh** PR/branch checks and an externally stored regular Git bundle containing the selected named ref at its expected SHA. A disposable bare clone must independently restore the exact original commit; a symlinked, missing, checkout-local or incremental bundle is refused. It uses Git push with an exact SHA --force-with-lease, so moving a source branch after review rejects deletion. The command disables local pre-push hooks (`--no-verify`) and incidental tag propagation (`--no-follow-tags`); it performs only the named branch-ref deletion. It never invokes a generic force-push, direct merge, unapproved rebasing or branch cleanup by name pattern.
 
 **One branch per execution:** the full eight-branch manifest may be inspected in dry-run mode, but `--execute` requires `--branch` selecting exactly one listed ref. After a real deletion, record the result, recheck the remote branch inventory and dependencies, and independently authorize the next ref. The literal attestation string is an operator assertion, **not proof of human identity or external-consumer clearance**; a separate human review remains mandatory.
 
@@ -43,7 +44,7 @@ Before deletion the tool requires the reviewed origin, exact local main HEAD, cl
 
 ## Verification and aftercare
 
-The isolated negative-control suite passed **13 tests and 10 subtests**. A disposable local bare-Git test confirmed a mismatched expected SHA blocks deletion and an exact matching lease permits it. These are **not** live destructive GitHub tests. Exact-head PR Gate, a separate reviewer and operator authorization remain required before using execute.
+The focused negative-control suite covers named-ref archive recovery, missing and incremental bundles, symlink/checkout-local archive refusal, wrong push destinations, mirrors and SHA-lease races. Run the current tests and use exact-head CI rather than relying on historical pass counts. A disposable local bare-Git test confirmed a mismatched expected SHA blocks deletion and an exact matching lease permits it. These are **not** live destructive GitHub tests. Exact-head PR Gate, a separate reviewer and operator authorization remain required before using execute.
 
 After a successful operator run, rerun the read-only branch convergence audit, verify remaining remote refs and open PRs, inspect workflows for broken dependencies, and save actual deletion results in a dated repository audit. Do not interpret a smaller branch number as evidence of better code.
 

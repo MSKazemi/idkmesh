@@ -15,6 +15,7 @@ import os
 from pathlib import Path
 import re
 import subprocess
+import tempfile
 import sys
 from typing import Any
 from urllib.error import HTTPError, URLError
@@ -191,6 +192,53 @@ def _git(*args: str, cwd: Path) -> str:
     return result.stdout.strip()
 
 
+def verify_archive_bundle(archive: Path, candidate: Candidate, *, cwd: Path) -> None:
+    """Require an external bundle which restores the exact source branch.
+
+    Git bundle verify alone can succeed for an incremental bundle when the
+    local checkout supplies missing prerequisite commits. A fresh bare clone
+    demonstrates that the archive is independently recoverable.
+    """
+    if not isinstance(archive, Path) or archive.is_symlink():
+        raise RetirementError("archive bundle must be a regular external file")
+    try:
+        path = archive.resolve(strict=True)
+    except (OSError, RuntimeError) as exc:
+        raise RetirementError("archive bundle is missing or inaccessible") from exc
+    if not path.is_file():
+        raise RetirementError("archive bundle must be a regular file")
+    checkout = cwd.resolve()
+    if path == checkout or checkout in path.parents:
+        raise RetirementError("archive bundle must live outside the checkout")
+
+    _git("bundle", "verify", str(path), cwd=cwd)
+    expected_refs = {
+        f"refs/heads/{candidate.name}",
+        f"refs/remotes/origin/{candidate.name}",
+    }
+    entries = _git("bundle", "list-heads", str(path), cwd=cwd).splitlines()
+    if not any(
+        len(parts := line.split(maxsplit=1)) == 2
+        and parts[0] == candidate.head
+        and parts[1] in expected_refs
+        for line in entries
+    ):
+        raise RetirementError(
+            f"{candidate.name}: archive lacks exact named source branch head"
+        )
+
+    try:
+        with tempfile.TemporaryDirectory(prefix="idkmesh-archive-recovery-") as tmp:
+            restored = Path(tmp) / "restored.git"
+            _git("clone", "--quiet", "--bare", "--no-local",
+                 str(path), str(restored), cwd=cwd)
+            _git("cat-file", "-e", f"{candidate.head}^{{commit}}", cwd=restored)
+    except (OSError, RetirementError) as exc:
+        raise RetirementError(
+            f"{candidate.name}: archive cannot independently restore source history"
+        ) from exc
+
+
 def verify_local_checkout(repository: str, main_sha: str, cwd: Path) -> None:
     remote = _git("remote", "get-url", "origin", cwd=cwd)
     allowed = {
@@ -231,15 +279,19 @@ def run(
     execute: bool,
     attestation: str | None,
     cwd: Path,
+    archive_bundle: Path | None = None,
 ) -> list[dict[str, str]]:
     if execute and attestation != ACK:
         raise RetirementError("execution requires explicit evidence/reference attestation")
     if execute and len(candidates) != 1:
         raise RetirementError("execution requires exactly one selected branch per invocation")
+    if execute and archive_bundle is None:
+        raise RetirementError("execution requires a self-contained external archive bundle")
     main_sha = current_main(client, repository, default)
     for candidate in candidates:
         verify(client, repository, default, candidate)
     if execute:
+        verify_archive_bundle(archive_bundle, candidates[0], cwd=cwd)
         verify_local_checkout(repository, main_sha, cwd)
         if current_main(client, repository, default) != main_sha:
             raise RetirementError("main moved during retirement preflight")
@@ -271,6 +323,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--branch", help="Exact manifest branch; required for destructive execution")
     parser.add_argument("--execute", action="store_true", help="Delete one exact reviewed ref after independent approval")
     parser.add_argument("--attest", help="Human confirmation that exact SHA, evidence and external references were reviewed")
+    parser.add_argument("--archive-bundle", type=Path, help="Self-contained external Git bundle, mandatory with --execute")
     parser.add_argument("--checkout", type=Path, default=Path.cwd())
     args = parser.parse_args(argv)
     try:
@@ -283,7 +336,8 @@ def main(argv: list[str] | None = None) -> int:
                 raise RetirementError("selected --branch is not in the frozen retirement manifest")
             candidates = selected
         outcome = run(Client(os.environ.get("GITHUB_TOKEN")), repo, default, candidates,
-                      execute=args.execute, attestation=args.attest, cwd=args.checkout)
+                      execute=args.execute, attestation=args.attest, cwd=args.checkout,
+                      archive_bundle=args.archive_bundle)
     except RetirementError as exc:
         print(f"BLOCKED: {exc}", file=sys.stderr)
         return 2
