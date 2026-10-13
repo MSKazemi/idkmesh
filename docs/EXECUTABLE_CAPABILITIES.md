@@ -28,7 +28,7 @@ methods, and every top-level Python module in `idkmesh/`.
 | `idkmesh gate-marginal` | measure marginal evidence contribution of candidate verifiers | diagnostic only |
 | `idkmesh gate-marginal-benchmark` | compare the marginal-evidence selector with preregistered baselines | benchmark/evidence surface, not routing authority |
 | `idkmesh gate-marginal-synthesis` | synthesize multiple benchmark cohorts descriptively | no cross-cohort winner or integration authority |
-| `idkmesh init` | deterministic GitHub-first bootstrap planning/rendering of config and pinned workflow wrappers | `--github --dry-run` only; no repository or GitHub mutation; rendered wrappers call `idkmesh github-workflow`, whose `dispatch` and `verify` phases still fail closed |
+| `idkmesh init` | GitHub-first bootstrap planning/rendering and POSIX local apply of config and pinned workflow wrappers | `--dry-run` purely renders; `--check` checks filesystem conflicts; explicit `--apply` writes only digest-guarded local generated files, never GitHub mutations; dispatch/verify still fail closed |
 | `idkmesh github-workflow` | runner the generated GitHub workflow wrappers call, driven by `IDKMESH_*` environment variables | `preview` and `status` are read-only; `dispatch` and `verify` fail closed; no merge, no provider secret, no issue comment |
 | `idkmesh github-workflow preview` | derive a deterministic WorkUnit preview and digest for one issue from project policy | read-only; needs `metadata.github_issue_preview.allowed_paths`; no dispatch |
 | `idkmesh github-workflow status` | project one run's latest durable-ledger record into the bounded status body and job summary | read-only transport; publishes no issue comment |
@@ -230,6 +230,7 @@ name documents implementation presence, not stability as a public Python API.
 - `idkmesh/gate_audit_uncertainty.py`
 - `idkmesh/github_actions_summary.py`
 - `idkmesh/github_bootstrap.py`
+- `idkmesh/github_bootstrap_apply.py`
 - `idkmesh/github_bootstrap_render.py`
 - `idkmesh/github_bootstrap_workflows.py`
 - `idkmesh/github_branch_reader.py`

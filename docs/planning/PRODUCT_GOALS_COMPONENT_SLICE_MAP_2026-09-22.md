@@ -482,7 +482,7 @@ conforming production backend.
   `verify_unavailable`) because no stateless-runner authority primitive backs
   them. See [GitHub Workflow Runner](../specifications/GITHUB_WORKFLOW_RUNNER_V0_1.md).
 - **C8-E — owner-action checklist:** secrets, branch protection, environments, app install.
-- **C8-F — re-run/update behavior:** preserve user edits and report conflicts.
+- **C8-F — re-run/update behavior:** implemented by `idkmesh/github_bootstrap_apply.py`: explicit POSIX local apply, read-only conflict preflight, retained managed digests, seed-file preservation and fail-closed edited-file refusal. See [safe apply](../specifications/GITHUB_BOOTSTRAP_SAFE_APPLY_V0_1.md).
 - **C8-G — fresh-repo fixture test:** bootstrap -> preview without server.
 
 **C8 exit gate:** deterministic no-server project bootstrap.

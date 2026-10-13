@@ -328,6 +328,7 @@
       "evidence_level": 1,
       "implementation_paths": [
         "idkmesh/github_bootstrap.py",
+        "idkmesh/github_bootstrap_apply.py",
         "idkmesh/github_bootstrap_render.py",
         "idkmesh/github_bootstrap_workflows.py",
         "idkmesh/github_workflow_runner.py"
@@ -336,7 +337,8 @@
         "docs/specifications/GITHUB_BOOTSTRAP_CONFIG_RENDERING_V0_1.md",
         "docs/specifications/GITHUB_BOOTSTRAP_WORKFLOW_WRAPPERS_V0_1.md",
         "docs/specifications/GITHUB_WORKFLOW_RUNNER_V0_1.md",
-        "docs/PROJECT_ADOPTION_GUIDE.md"
+        "docs/PROJECT_ADOPTION_GUIDE.md",
+        "docs/specifications/GITHUB_BOOTSTRAP_SAFE_APPLY_V0_1.md"
       ],
       "cli_commands": [
         "init",
@@ -347,11 +349,12 @@
         "tests/test_github_bootstrap_cli.py",
         "tests/test_github_bootstrap_render.py",
         "tests/test_github_bootstrap_workflows.py",
-        "tests/test_github_workflow_runner.py"
+        "tests/test_github_workflow_runner.py",
+        "tests/test_github_bootstrap_apply.py"
       ],
-      "known_limitation": "GitHub-first bootstrap planning, deterministic config rendering, pinned workflow-wrapper rendering, and the read-only github-workflow preview and status runner are implemented; the runner's dispatch and verify phases fail closed, and safe apply/re-run, the owner-action checklist, and the external second-project pilot remain incomplete.",
+      "known_limitation": "Local POSIX-only bootstrap apply and digest-guarded reruns are available; no GitHub admin mutation, production-hosted workflow, dispatch/verify runner authority, or independent second-project reproduction exists.",
       "last_verified_revision": "110f0307ad36d4cca554c19465d7cdc0605d3f21",
-      "public_wording": "IDKMesh provides a deterministic GitHub-first bootstrap dry-run that renders project/config and pinned workflow-wrapper content and digests; a read-only workflow runner previews issues and projects run status; dispatch, verification, apply, and external reproduction remain unfinished.",
+      "public_wording": "IDKMesh renders pinned GitHub-first configuration/workflows and supports explicit, digest-guarded local POSIX bootstrap apply; the read-only workflow runner previews and projects status, while dispatch, verification and external reproduction remain unfinished.",
       "qualification_artifact": null
     },
     {
