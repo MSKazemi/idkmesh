@@ -75,8 +75,8 @@ unless the report is clean.
 | `google_api_key` | `AIza` API keys |
 | `api_key_sk` | `sk-`, `sk-ant-` and `sk-proj-` API keys of at least 32 characters |
 | `jwt` | three-part JWTs whose header and payload start `eyJ` |
-| `bearer_credential` | `Bearer` followed by at least 20 token characters |
-| `url_userinfo` | `scheme://user:password@host` |
+| `bearer_credential` | `Bearer` followed by at least 20 token characters, including lowercase-only tokens; the exact documentation phrase `bearer token-based-authentication` is excluded, not arbitrary lowercase or hyphenated credentials |
+| `url_userinfo` | `scheme://user:secret@host`; explicit templates (`<password>`, `${PASSWORD}`, `****`) and a synthetic `scheme://user:password@host` example are ignored, but ordinary URLs containing even weak passwords like `password` or `changeme` are flagged |
 | `sensitive_key_literal` | a literal string of at least 8 characters under an exact credential-named key (`password`, `api_key`, `authorization`, `token`, ...), including strings in a list under such a key; an object under such a key is judged by its own keys, and a number is not judged |
 
 Properties:
@@ -127,8 +127,7 @@ invoke it **before** accepting a value:
   with stable codes and no matched credential text.
 
 These are **specific gates**, not a global admission/sanitization guarantee.
-In particular the GitHub Issue Form preview, arbitrary WorkUnit JSON files
-before source binding, ResultManifest, verification/result artifacts, other
+In particular arbitrary WorkUnit JSON files before source binding, ResultManifest, verification/result artifacts, other
 ledger backends and ordinary logs are not covered by this integration. Those
 surfaces remain open follow-up work under E5. Secret *references*, including
 `env:NAME` and `secret:...`, remain permitted by the detector.
@@ -138,13 +137,33 @@ WorkUnit mutation, an E4 SQLite append rollback, and independent NDJSON sink
 denial without partially writing a line. These checks do not claim that
 unrecognized, encoded or short secret formats will be detected.
 
+### Where it is called
+
+`preview_github_issue_work_unit` (`idkmesh/github_issue_preview.py`) scans the
+issue title, body and snapshot metadata before building a WorkUnit, because issue
+text is copied verbatim into the objective and an issue is usually public. That
+function is the single chokepoint for `idkmesh work preview`, the
+`github-workflow preview` runner and the Issue Form path. A finding raises
+`ConnectorError` `policy_denied` with `details.rules` and `details.fields` (rule
+ids and top-level field names only); an incomplete scan is refused with
+`details.reasons`. The refusal asks the author to rotate the credential, since
+it may already be exposed.
+
+False positives were measured, not assumed: on this repository's own issues and
+pull requests the first rule set flagged one document (a `user:password@host`
+placeholder in prose). Review then narrowed the exemptions so the reusable scanner
+stays conservative: weak literal passwords such as `password` or `changeme` in an
+ordinary URL are still flagged, and only explicit templates plus one exact
+documentation example are ignored. That is one corpus, not a guarantee, and the
+preview refusal tells the author how to proceed.
+
 ## Not in this slice
 
 - Wiring the kernel in front of connectors, workers or `connector_secrets`.
 - An egress allowlist and an approved-provider list in the profile schema. They
   are function arguments today; adding them to the schema is a separate
   decision.
-- Enforcement at all other WorkUnit creation/preview, ResultManifest,
+- Enforcement at all other WorkUnit creation paths, ResultManifest,
   verification, provider output, ordinary log, GitHub publication or audit
   adapter write paths (see the bounded entry points above).
 - Detecting secrets the scanner has no rule for (see its limits).

@@ -149,6 +149,18 @@ and the release notes for that tag.
   policy content digest and request shape, with a validity window capped by
   max age and actor/approver expiry, so a revoked, changed or expired identity
   or an edited policy cannot reuse a cached ALLOW. Adds focused unit tests.
+- E5 issue-preview credential refusal (issue #672, partial):
+  `preview_github_issue_work_unit` now scans the issue title, body and metadata
+  with the raw-secret scanner and refuses with `policy_denied` when a credential
+  is found or the text cannot be fully scanned. This covers `idkmesh work
+  preview`, the `github-workflow preview` runner and the Issue Form path. The
+  refusal names rule ids and fields only, never the text, and tells the author
+  to rotate the credential. Scanner refinements from a measured false-positive
+  check on this repository's 1,117 issues and PRs: explicit URL templates and
+  synthetic `scheme://user:password@host` are ignored, but weak literal URL
+  passwords and lowercase Bearer tokens remain detectable. The exact phrase
+  `bearer token-based-authentication` is exempt, not arbitrary lowercase
+  credentials. Result and audit write paths are not covered yet.
 - Separation of duties for verification (issue #598, C10-G): the authorization
   kernel now refuses `verify` when the actor is among the principals that executed
   the work under review. `PolicyRule.executor_distinct_at_risk` is a risk

@@ -85,13 +85,46 @@ _VALUE_RULES: tuple[tuple[str, "re.Pattern[str]"], ...] = (
     ),
     (
         "bearer_credential",
-        re.compile(r"(?i)(?<![A-Za-z0-9])bearer[ \t]{1,8}[A-Za-z0-9._~+/-]{20,2048}"),
+        # Keep long lowercase tokens detectable; only the exact known
+        # documentation phrase is exempt. Otherwise real all-lowercase
+        # bearer tokens would pass a security check that used to reject them.
+        re.compile(
+            r"(?<![A-Za-z0-9])(?i:bearer)[ \t]{1,8}"
+            r"(?!token-based-authentication(?![A-Za-z0-9._~+/-]))"
+            r"[A-Za-z0-9._~+/-]{20,2048}"
+        ),
     ),
     (
         "url_userinfo",
-        re.compile(r"[A-Za-z][A-Za-z0-9+.-]{0,31}://[^\s/@:]{1,256}:[^\s/@]{1,256}@"),
+        re.compile(
+            r"[A-Za-z][A-Za-z0-9+.-]{0,31}://[^\s/@:]{1,256}:(?P<password>[^\s/@]{1,256})@"
+        ),
     ),
 )
+# Exclude visually explicit placeholders. Bare words like "password",
+# "secret", or "changeme" can be real weak credentials and must be flagged
+# in ordinary URLs; an unmistakably synthetic scheme://user:password@
+# example is excluded narrowly for documentation compatibility.
+_PLACEHOLDER_PASSWORD = re.compile(
+    r"(?i)(?:x{3,}|\*{3,}|<[^>]{1,64}>|\$\{[^}]{1,64}\}|"
+    r"\{[^}]{1,64}\}|%s)\Z"
+)
+
+
+def _userinfo_is_credential(match: "re.Match[str]") -> bool:
+    password = match.group("password")
+    if _PLACEHOLDER_PASSWORD.fullmatch(password):
+        return False
+    return not (
+        match.group(0).lower().startswith("scheme://user:")
+        and password.lower()
+        in {"pass", "passwd", "password", "pwd", "secret", "token", "changeme"}
+    )
+
+
+# Rules whose raw pattern match still needs a second look.
+_MATCH_FILTERS = {"url_userinfo": _userinfo_is_credential}
+
 RULE_IDS = tuple(rule for rule, _ in _VALUE_RULES) + ("sensitive_key_literal",)
 
 # Exact (not substring) key names, so ``max_tokens`` and ``secret_ref`` are not
@@ -195,7 +228,11 @@ class SecretLeakError(ValueError):
 
 def _value_rule(text: str) -> str | None:
     for rule, pattern in _VALUE_RULES:
-        if pattern.search(text):
+        accept = _MATCH_FILTERS.get(rule)
+        if accept is None:
+            if pattern.search(text):
+                return rule
+        elif any(accept(match) for match in pattern.finditer(text)):
             return rule
     return None
 

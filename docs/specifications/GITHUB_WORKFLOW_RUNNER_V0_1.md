@@ -169,7 +169,7 @@ exits 2. Results carry `dispatch_performed: false`,
 | `preview_scope_unconfigured` | `metadata.github_issue_preview.allowed_paths` is not set |
 | `event_issue_mismatch` | The triggering event concerns a different issue |
 | `issue_unavailable` | The issue could not be read or normalized (includes the connector error code) |
-| `preview_refused` | The issue is closed, locked, or over the configured bounds |
+| `preview_refused` | The issue is closed, locked, over the configured bounds, or its title, body or metadata appears to contain a credential (or could not be fully scanned); the message and details name rule ids and fields, never the text |
 | `ledger_unavailable` | The ledger branch or transport could not be read |
 | `ledger_invalid` | The ledger chain or latest record is inconsistent |
 | `ledger_run_not_found` | The run has no ledger records |
@@ -198,6 +198,8 @@ It asserts that:
   and, after it, emits one deterministic JSON line that carries the owner scope
   and the always-forbidden control paths and none of the credential values in
   the environment;
+- an issue whose body holds a pasted credential is refused with `preview_refused`
+  and the credential appears in neither stdout nor stderr;
 - `status` projects a ledger fixture read-only, and `dispatch` and `verify`
   still refuse with their own error codes (matched on the `error:` line, because
   an argparse usage error also exits 2);

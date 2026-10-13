@@ -266,6 +266,25 @@ class FreshRepositoryBootstrapToPreviewTests(unittest.TestCase):
         for sentinel in (TOKEN_SENTINEL, SECRET_SENTINEL):
             self.assertNotIn(sentinel, first.stdout + first.stderr)
 
+    def test_issue_with_a_pasted_credential_is_refused_end_to_end(self) -> None:
+        self.assertEqual(self.bootstrap().returncode, 0)
+        self.owner_configures_scope()
+        pasted = "gh" + "p_" + "A1b2C3d4E5" * 4
+        issue = _issue()
+        issue["body"] = f"It fails with {pasted} in the environment."
+        path = self.tmp / "issue-with-credential.json"
+        path.write_text(json.dumps(issue), encoding="utf-8")
+
+        result = self.run_cli(
+            ["github-workflow", "preview", "--issue-json", str(path), "--json"],
+            self.installed_env("idkmesh-preview.yml"),
+        )
+        self.assertEqual(result.returncode, 2)
+        self.assertEqual(result.stdout, "")
+        self.assertRegex(result.stderr, r"^error: preview_refused: policy_denied: ")
+        self.assertIn("credential", result.stderr)
+        self.assertNotIn(pasted, result.stdout + result.stderr)
+
     def test_status_projects_the_ledger_read_only(self) -> None:
         self.assertEqual(self.bootstrap().returncode, 0)
         self.owner_configures_scope()

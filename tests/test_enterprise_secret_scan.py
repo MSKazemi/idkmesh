@@ -32,7 +32,7 @@ SAMPLES = {
     "google_api_key": "AI" + "za" + "A" * 35,
     "api_key_sk": "sk" + "-ant-" + "x1Y2" * 10,
     "jwt": "ey" + "JhbGciOiJIUzI1" + ".ey" + "JzdWIiOiIxMjM0" + ".c2lnbmF0dXJl" + "AAAA",
-    "bearer_credential": "Bear" + "er " + "conformance-secret-value-do-not-leak",
+    "bearer_credential": "Bear" + "er " + "conformance-secret-value-1234567890",
     "url_userinfo": "https://" + "deploy:" + "hunter2hunter2" + "@example.org/repo.git",
 }
 
@@ -52,6 +52,32 @@ class ValueRuleTests(unittest.TestCase):
                 self.assertEqual(rules({"note": f"see {sample} now"}), {rule})
                 self.assertEqual(rules(sample), {rule})
 
+    def test_placeholder_url_password_does_not_hide_a_real_one(self) -> None:
+        text = "see https://user:password@host and https://deploy:" + "hunter2hunter2@example.org/x"
+        self.assertEqual(rules({"v": text}), {"url_userinfo"})
+
+    def test_bearer_literals_are_detected_without_loose_shape_exemptions(self) -> None:
+        flagged = (
+            "Bearer abcdefghijklmnopqrstuvwxyz0123",  # digits
+            "Bearer AbcdefghijklmnopqrstuvwxYz",  # mixed case
+            "bearer abcdefghij.klmnopqrstuvwxyz",  # symbol
+            "BEARER\tabcdefghijklmnopqrstuvwxyz0",  # case-insensitive keyword
+            "Bearer abcdefghijklmnopqrstuvwxyz",  # all lowercase
+            "bearer abcdefghijklmnopqrstuvwxyz-abc",  # hyphenated lowercase
+        )
+        for text in flagged:
+            with self.subTest(text=text):
+                self.assertEqual(rules({"v": text}), {"bearer_credential"})
+        # Narrow documentation exception; not a wildcard for lowercase tokens.
+        self.assertTrue(scan_for_secrets({"v": "bearer token-based-authentication"}).clean)
+
+    def test_bare_url_password_words_are_not_trusted_as_placeholders(self) -> None:
+        for password in ("password", "secret", "token", "changeme", "pwd"):
+            with self.subTest(password=password):
+                url = f"https://deploy:{password}@prod.example.com"
+                self.assertEqual(rules({"v": url}), {"url_userinfo"})
+        self.assertTrue(scan_for_secrets({"v": "scheme://user:password@host"}).clean)
+
     def test_credential_inside_nested_list_is_located(self) -> None:
         report = scan_for_secrets(
             {"inputs": [{"locator": "ok"}, {"locator": SAMPLES["github_token"]}]}
@@ -70,11 +96,17 @@ class ValueRuleTests(unittest.TestCase):
             "https://example.org/a:b/c@d",  # no user:password@ before the path
             "sk-learn is a library",
             "Bearer token authentication is described in the spec",
+            "Use a bearer token-based-authentication header scheme.",
             "ghp_ is the prefix of a GitHub token",
             "-----BEGIN CERTIFICATE-----",  # public material
             "123e4567-e89b-12d3-a456-426614174000",
             "AKIA",
             "env:JULES_API_KEY",
+            # Documentation placeholders for URL credentials.
+            "use scheme://user:password@host for basic auth",
+            "https://<user>:<password>@example.org/repo.git",
+            "postgres://app:${DB_PASSWORD}@db:5432/app",
+            "https://user:****@example.org/",
         ]
         for text in benign:
             with self.subTest(text=text):
