@@ -66,7 +66,7 @@ The tool:
 1. centers calibration log-score differences separately within the pass/fail
    strata, removing the observed calibration effect direction;
 2. injects only the preregistered smallest effect of interest;
-3. resamples empirical repository profiles and their task structure;
+3. resamples empirical repository profiles and their task structure while never creating more repository clusters than the eligible confirmatory universe contains;
 4. computes repository-cluster and task-cluster percentile intervals;
 5. counts success only when both 95% lower bounds exceed zero;
 6. selects the first task count reaching 90% simulated power.
