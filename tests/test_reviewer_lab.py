@@ -129,5 +129,97 @@ console.log("93 deterministic lab combinations verified");
         self.assertIn("93 deterministic", result.stdout)
 
 
+    def test_dom_controls_have_reproducible_effects(self):
+        """Exercise the actual browser script using minimal deterministic DOM nodes."""
+        import shutil
+        if not shutil.which("node"):
+            self.skipTest("node is not installed")
+        code = r"""
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const page = fs.readFileSync(process.argv[1], 'utf8');
+const script = fs.readFileSync(process.argv[2], 'utf8');
+const json = page.match(/<script id="votes-fixture" type="application\/json">([\s\S]*?)<\/script>/);
+assert.ok(json, 'missing fixture');
+const fixture = JSON.parse(json[1]);
+class Element {
+  constructor(tag, id) {
+    this.tag = tag; this.id = id; this.children = [];
+    this.textContent = ''; this.value = ''; this.checked = false;
+    this.hidden = false; this.listeners = {}; this.attrs = {}; this.className = '';
+  }
+  appendChild(child) { this.children.push(child); return child; }
+  replaceChildren(...children) { this.children = children; }
+  addEventListener(type, fn) { this.listeners[type] = fn; }
+  setAttribute(key, value) { this.attrs[key] = value; }
+  focus() { this.focused = true; }
+  fire(type) {
+    assert.ok(this.listeners[type], 'missing '+type+' handler on '+this.id);
+    this.listeners[type]();
+  }
+}
+const ids = [
+  'votes-fixture', 'lab-error', 'lab-quorum', 'lab-candidate', 'lab-live',
+  'lab-votes', 'lab-rows', 'lab-required', 'lab-false-accepts',
+  'lab-false-rejects', 'lab-breaches', 'lab-truth', 'lab-panel',
+  'lab-status', 'lab-vote-count', 'lab-candidate-context',
+  'lab-pair-summary', 'lab-reset', 'lab-example-probe', 'lab-example-shared'
+];
+const nodes = Object.fromEntries(ids.map(id => [id, new Element('div', id)]));
+nodes['votes-fixture'].textContent = json[1];
+nodes['lab-quorum'].value = '0.5';
+const checkboxes = fixture.verifiers.map(v => {
+  const box = new Element('input', v.id);
+  box.value = v.id; box.checked = true; return box;
+});
+const doc = {
+  readyState: 'complete',
+  getElementById: id => nodes[id],
+  createElement: tag => new Element(tag),
+  querySelectorAll: selector => {
+    assert.equal(selector, 'input[name="lab-reviewer"]');
+    return checkboxes;
+  }
+};
+new Function('document', 'module', script)(doc, undefined);
+function outcomes() {
+  return [nodes['lab-false-accepts'].textContent,
+          nodes['lab-false-rejects'].textContent,
+          nodes['lab-breaches'].textContent];
+}
+assert.deepEqual(outcomes(), ['1 / 12', '1 / 12', '2 / 3']);
+assert.equal(nodes['lab-candidate'].children.length, 15);
+assert.equal(nodes['lab-rows'].children.length, 15);
+assert.equal(nodes['lab-votes'].children.length, 5);
+assert.match(nodes['lab-status'].textContent, /Mistake/);
+
+nodes['lab-quorum'].value = '0.67';
+nodes['lab-quorum'].fire('change');
+assert.deepEqual(outcomes(), ['0 / 12', '2 / 12', '0 / 3']);
+nodes['lab-example-shared'].fire('click');
+assert.equal(nodes['lab-candidate'].value, 'c10');
+assert.match(nodes['lab-status'].textContent, /Matches/);
+nodes['lab-reset'].fire('click');
+assert.equal(nodes['lab-candidate'].value, 'p01');
+assert.equal(nodes['lab-quorum'].value, '0.5');
+assert.deepEqual(outcomes(), ['1 / 12', '1 / 12', '2 / 3']);
+for(let i=0; i<4; i++) {
+  checkboxes[i].checked = false;
+  checkboxes[i].fire('change');
+}
+checkboxes[4].checked = false;
+checkboxes[4].fire('change');
+assert.equal(checkboxes[4].checked, true);
+assert.equal(nodes['lab-error'].hidden, false);
+console.log('reviewer lab DOM controls pass');
+"""
+        result = subprocess.run(
+            ["node", "-e", code, str(PAGE), str(JS)],
+            cwd=ROOT, capture_output=True, text=True, timeout=30,
+        )
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        self.assertIn("reviewer lab DOM controls pass", result.stdout)
+
+
 if __name__ == "__main__":
     unittest.main()
