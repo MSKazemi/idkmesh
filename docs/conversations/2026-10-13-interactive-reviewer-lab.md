@@ -30,3 +30,24 @@ Promote the lab from the README, beginner guide, published Start page and docs n
 A curious visitor can experience a meaningful, falsifiable behavior before cloning the repository. No traffic, accessibility study, or external-user comprehension improvement is claimed without measurement. The intended next evaluation is to ask first-time visitors to distinguish recorded verdicts, known correct answers and acceptance authority.
 
 AI/tool provenance: authored with ChatGPT GPT-6 through the connected GitHub interface, source-matched to the committed fixture and Python audit rule. No independent human review is asserted.
+
+## Merge, deployment and validation follow-up (2026-10-13)
+
+[PR #1089](https://github.com/MSKazemi/idkmesh/pull/1089) merged as
+`a0cd473de57059ca376e8fb88fb693bdbe0d1a23`. The initial Python gates
+failed because this conversation record had not been added to the conversation
+index and sitemap. Subsequent changes restored both references, and the
+required Python 3.11 and 3.13 PR checks, CodeQL and observatory checks passed
+for the exact reviewed PR head.
+
+The [GitHub Pages build and deploy](https://github.com/MSKazemi/idkmesh/actions/runs/38425058753)
+reported success for the same merge SHA, with the public environment URL
+`https://mskazemi.com/idkmesh/`. This establishes a successful Pages deployment
+job, **not** an independently observed browser session at the new route.
+
+A deterministic DOM-state simulation of the actual browser script checked
+the five-reviewer default, fifteen candidate options and table rows,
+the 67%-rule result, candidate inspection, reset and last-reviewer safeguard.
+The dedicated Node test added in a subsequent PR makes the interaction checks
+part of CI. The real-user comprehension study described in
+[PAGES_SETUP](../PAGES_SETUP.md) remains **unperformed**.
