@@ -92,7 +92,7 @@ Do not copy the token into an issue, CI log, diagnostic report, or publicly shar
 | `/runs` list is empty or read endpoints unavailable | Optional local `--product-spine-store` absent, empty or mismatched | Start Control Tower with the **existing** local SQLite store path; no hosted datastore is implied. |
 | An SSE client disconnects | Bounded streams, lifetime and heartbeats | Re-read event state with paginated `/events` and the documented stream cursor rather than assuming no events were lost. With the Python client, open a new `stream_events(last_event_id=...)` from the last sequence you saw. |
 
-`GET /healthz` is liveness and `GET /readyz` is bounded readiness; neither constitutes evidence of worker quality or trusted actor identity. `GET /api/v1/metrics` is privacy-safe aggregate telemetry, not a trace of prompts or private candidate content. `idkmesh.api_client.ControlTowerClient` supplies typed transport/protocol/integrity errors and is preferred to hand-coded HTTP parsers.
+`GET /healthz` is liveness and `GET /readyz` is bounded readiness; neither constitutes evidence of worker quality or trusted actor identity. `GET /api/v1/metrics` is privacy-safe **process-lifetime** aggregate telemetry, not a trace of prompts or private candidate content. The [interval guide](../reference/API_METRICS_INTERVAL_GUIDE.md) explains why a trusted process epoch is necessary and why UNKNOWN must never be counted as zero errors. `idkmesh.api_client.ControlTowerClient` supplies typed transport/protocol/integrity errors and is preferred to hand-coded HTTP parsers.
 
 ## Agent execution and authority
 
