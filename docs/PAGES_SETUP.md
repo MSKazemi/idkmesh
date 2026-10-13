@@ -32,6 +32,15 @@ documentation framework. The only `<script>` element anywhere on them is an
 inert `application/ld+json` structured-data block. The Markdown topic guides
 are rendered by GitHub Pages/Jekyll like the rest of `docs/**/*.md`.
 
+The [interactive Reviewer Lab](labs/reviewer-lab.html) is an **opt-in exception**
+under `docs/labs/` rather than one of the six JavaScript-free presentation
+pages. It loads `reviewer-lab.js` from the **same origin** and uses only a
+committed synthetic vote fixture. Apart from loading the HTML, stylesheet and
+script, the lab initiates no network requests, model calls, uploads or
+telemetry. No result from this page authorizes a merge or substitutes for the
+Python `gate-audit` implementation.
+
+
 `pipelines.html` predates the shared stylesheet and keeps its rules inline,
 because its diagram primitives are the page; it links no stylesheet and that is
 allowed. Every other page loads `assets/site.css` and nothing else. Motion
@@ -364,6 +373,32 @@ Record materially changed observations in the canonical tracker rather than leav
 The landing page should change much less frequently than `main`.
 
 Prefer stable contribution categories and canonical trackers over transient PR numbers. If a highlighted issue closes, replace it only with another genuinely open bounded task. Avoid turning the page into a live dashboard; GitHub Issues and repository observatories already serve that purpose.
+
+## Reviewer Lab: volunteer usability validation
+
+**Status: protocol defined; independent usability not yet demonstrated.**
+Passing CI, building GitHub Pages and testing interactive controls establish
+technical behavior but **not** that a first-time visitor understands IDKMesh.
+Use [newcomer-path issue #542](https://github.com/MSKazemi/idkmesh/issues/542)
+to coordinate a small voluntary test rather than inventing user observations.
+
+1. Invite three to five people unfamiliar with IDKMesh. Ask consent to record
+   only aggregate task outcomes; do not collect names, private data or recordings
+   without separate explicit permission.
+2. Share the [live lab](labs/reviewer-lab.html) without coaching. Ask them to
+   explain the purpose, whether the five votes are real, and whether IDKMesh
+   automatically accepts work. Record answers before offering help.
+3. Ask them to inspect known-bad candidate `p01`, find its mistaken approval,
+   inspect overlapping mistakes on `c10`, select a stricter (more than 67%)
+   rule, explain the changed counts, and reset to the initial configuration.
+4. Ask what remains unknown: does a stricter quorum prove independence? Does the
+   browser compute the full `gate-audit` results? Record misconceptions.
+5. Include keyboard navigation, small screens and the no-JavaScript fallback
+   where practical. Log each failure or accessibility barrier as an issue.
+6. Report number of participants, task completion without hints, comprehension
+   responses and reproducible problems in issue #542 or a separate sanitized
+   evidence PR. Do not label the interface "usability validated" until actual
+   external results and test conditions are available for inspection.
 
 ## Success metric
 
