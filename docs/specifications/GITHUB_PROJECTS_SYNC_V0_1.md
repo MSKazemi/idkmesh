@@ -31,3 +31,18 @@ No scenario may broaden permissions or block canonical WorkUnit execution.
 
 **Remaining:** C13-F/G implementation, mocked API tests and idempotency proof.
 This document alone does not establish working Projects synchronization.
+
+
+## Implemented pure routing-field plan
+
+`idkmesh.github_routing_projection.plan_github_project_routing_fields()`
+now derives three bounded optional Project field values from the canonical
+`RoutingDecision` and `RouteResolution`: trusted risk, routing state and independent-review
+requirement. The caller supplies trusted field IDs and observed display
+values. It returns only necessary updates, an exact routing digest and a
+no-op result on unchanged replay. Tests reject stale digests, duplicate IDs,
+malformed field values and manually changed Project approval fields.
+
+There are **no GitHub API writes** and no Projects state reads in the actual
+worker coordinator. This is C13-F planning groundwork, **not** completion
+of the C13-G GitHub API sync, concurrency control or project audit trail.
