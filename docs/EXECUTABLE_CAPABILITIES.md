@@ -255,6 +255,7 @@ name documents implementation presence, not stability as a public Python API.
 - `idkmesh/github_public_evidence.py`
 - `idkmesh/github_release_provenance.py`
 - `idkmesh/github_rest_source.py`
+- `idkmesh/github_run_label_projection.py`
 - `idkmesh/github_routing_projection.py`
 - `idkmesh/github_status_comment.py`
 - `idkmesh/github_status_update.py`

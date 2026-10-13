@@ -30,6 +30,8 @@ and the release notes for that tag.
 
 ### Added
 
+- github: pure C13-E canonical Product Spine run-state label planning, with three narrowly owned namespaces, idempotent add/remove diffs, stale-digest/invalid-input refusal, and complete run-state regression tests (refs #608). Routing label projection now preserves the independent lifecycle namespace. No GitHub write or grant of dispatch, verification, human decision, integration, or merge authority. See [run label projection](docs/specifications/GITHUB_RUN_LABEL_PROJECTION_V0_1.md).
+
 - tests: five scenarios move from UNKNOWN to exercised in the E9 enterprise
   conformance harness: stale-claim fencing, data-class egress, the local HTTP
   boundary, public-evidence publication, and provider outage and quota (refs
@@ -43,6 +45,17 @@ and the release notes for that tag.
   reconciliation and retry boundaries remain an explicit WARN gap. The
   ten-issue evidence matrix is in
   [Enterprise Control Plane](docs/architecture/ENTERPRISE_CONTROL_PLANE.md).
+- tests: fresh-repository bootstrap-to-preview fixture (C8-G, refs #596). On a
+  bare directory with only a `.git` marker, it runs `idkmesh init --github
+  --apply`, shows `github-workflow preview` refusing with
+  `preview_scope_unconfigured` until the owner sets a write scope, then
+  previews deterministically using the environment declared by the
+  *installed* wrapper file, with every socket connection blocked. It also
+  pins re-run safety (an owner-edited seed is preserved, a hand-edited
+  managed workflow is refused and left untouched), read-only `status`, and
+  fail-closed `dispatch` and `verify`. No production code changed; no GitHub
+  mutation, dispatch or secret access. Described in
+  [GitHub Workflow Runner v0.1](docs/specifications/GITHUB_WORKFLOW_RUNNER_V0_1.md#tests).
 - github: `idkmesh init --github --check` and `--apply` (C8-F, refs #596) install
   the eight generated bootstrap files into the current Git repository. `--check`
   is read-only. `--apply` writes only those files, through no-follow

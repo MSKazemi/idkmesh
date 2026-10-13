@@ -21,6 +21,17 @@ from idkmesh.work_unit_binding import canonical_digest
 
 
 MANAGED_LABEL_PREFIX = "idkmesh:"
+_ROUTING_LABEL_FAMILIES = (
+    "tier:", "authority:", "risk:", "route:", "processing:", "review:",
+)
+
+
+def _is_managed_routing_label(label: str) -> bool:
+    folded = label.casefold()
+    return any(
+        folded.startswith(MANAGED_LABEL_PREFIX + family)
+        for family in _ROUTING_LABEL_FAMILIES
+    )
 
 
 def _decision_payload(decision: RoutingDecision) -> dict[str, Any]:
@@ -234,7 +245,7 @@ def replace_managed_routing_labels(
             )
         label = value.strip()
         folded = label.casefold()
-        if folded.startswith(MANAGED_LABEL_PREFIX):
+        if _is_managed_routing_label(label):
             continue
         if folded in seen:
             continue
