@@ -1092,6 +1092,8 @@ def _run_scenario(scenario: Scenario, base: Path) -> dict[str, Any]:
     except Exception as exc:  # a crashing scenario is a failed safe state
         ctx.expect(f"scenario ran to completion (raised {type(exc).__name__})", False)
 
+    if not ctx.checks:
+        ctx.expect("scenario must execute at least one explicit safety assertion", False)
     failed = [c["name"] for c in ctx.checks if not c["ok"]]
     result["checks"] = ctx.checks
     result["gaps"] = list(ctx.gaps)
@@ -1110,6 +1112,8 @@ def _run_scenario(scenario: Scenario, base: Path) -> dict[str, Any]:
 
 
 def overall_status(statuses: list[str]) -> str:
+    if not statuses or any(status not in STATUSES for status in statuses):
+        return "UNKNOWN"
     for status in ("FAIL", "UNKNOWN", "WARN"):
         if status in statuses:
             return status
@@ -1125,6 +1129,8 @@ def run_conformance(
 
     selected = SCENARIOS
     if scenario_ids is not None:
+        if not scenario_ids:
+            raise ValueError("at least one conformance scenario must be selected")
         known = {s.scenario_id for s in SCENARIOS}
         unknown = sorted(set(scenario_ids) - known)
         if unknown:

@@ -459,8 +459,9 @@ python -m pytest -q tests/test_enterprise_conformance.py
 These checks operate on synthetic identities and temp SQLite databases. A
 reported PASS means only that the named **in-process** assertions held; WARN
 means they held but the named deployment gap remains; UNKNOWN remains unknown.
-The overall report continues to be UNKNOWN until every required scenario is
-exercised. It is not an enterprise certification, a release gate, or permission
+A scenario executing zero safety assertions now fails closed, and an empty or
+unrecognised status set is UNKNOWN rather than a false PASS. The overall report
+continues to be UNKNOWN until every required scenario is exercised. It is not an enterprise certification, a release gate, or permission
 to dispatch, publish, approve, push or merge.
 
 | Open issue | Implemented/reviewed boundary in this change | Still required for issue completion |

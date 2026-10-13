@@ -144,6 +144,13 @@ class ConformanceReportTests(unittest.TestCase):
         self.assertEqual(order(["WARN", "UNKNOWN"]), "UNKNOWN")
         self.assertEqual(order(["UNKNOWN", "FAIL", "PASS"]), "FAIL")
         self.assertEqual(order(["PASS"]), "PASS")
+        self.assertEqual(order([]), "UNKNOWN")
+        self.assertEqual(order(["UNRECOGNISED"]), "UNKNOWN")
+        self.assertEqual(order(["PASS", "UNRECOGNISED"]), "UNKNOWN")
+
+    def test_empty_conformance_selection_is_rejected(self) -> None:
+        with self.assertRaisesRegex(ValueError, "at least one"):
+            conformance.run_conformance(scenario_ids=())
 
     def test_unknown_scenario_id_is_rejected(self) -> None:
         with self.assertRaises(ValueError):
@@ -250,6 +257,13 @@ class ConformanceDetectsBrokenControlsTests(unittest.TestCase):
         ):
             result = self._run("provider_outage_quota")
         self.assertEqual(result["provider_outage_quota"]["status"], "FAIL")
+
+    def test_scenario_without_any_assertions_cannot_report_pass(self) -> None:
+        silent = conformance.Scenario("silent", "Silent", "must check", (), lambda ctx: None)
+        with mock.patch.object(conformance, "SCENARIOS", (silent,)):
+            report = conformance.run_conformance()
+        self.assertEqual(report["status"], "FAIL")
+        self.assertIn("at least one explicit safety assertion", report["scenarios"][0]["observed"])
 
     def test_crashing_scenario_is_reported_as_fail(self) -> None:
         def boom(ctx):
