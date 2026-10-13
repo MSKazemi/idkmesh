@@ -249,6 +249,33 @@ fix it or mark it for a later tier:
 Raising a budget converts a one-time cost into a permanent one, and there is no
 natural point at which anyone ever lowers it again.
 
+## E9 enterprise provider-fault conformance (offline)
+
+The experimental `idkmesh doctor --enterprise-conformance [--json]` exercise
+includes an in-process provider-outage/quota scenario (#676). It uses the real
+connector **probe**, diagnostic, **route explanation**, and stable error-envelope
+kernels with an injected **fake** driver. It checks a healthy positive control,
+outage, rate limit, quota exhaustion, and an exception that contains a synthetic
+credential string. The failure cases must block routing, report normalized
+codes without raw provider content, redact credential-shaped error details,
+and complete the probe without retrying it.
+
+Run the focused checks with:
+
+```bash
+python -m pytest -q tests/test_enterprise_conformance.py
+idkmesh doctor --enterprise-conformance --json
+```
+
+The conformance report's `provider_outage_quota` scenario is **WARN** even when
+every assertion passes: it does **not** execute a real remote attempt, establish
+terminal run state, revoke a real in-flight secret, reconcile quota, or enforce a
+bounded production retry scheduler. The overall report remains `UNKNOWN`
+while other scenarios have no executable pilot. A `WARN` is bounded diagnostic
+evidence, **not** enterprise production qualification or certification. Tests
+include negative controls proving a lying probe, fail-open route, or secret-
+leaking envelope makes the scenario `FAIL`.
+
 ## Automation: running the tiers without typing test commands
 
 **This is a local, opt-in setup, not repository content.** `.gitignore` excludes
