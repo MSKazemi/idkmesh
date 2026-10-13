@@ -260,10 +260,32 @@ branch protection, or dispatch work. It renders (but does not write) four thin
 `.github/workflows/idkmesh-*.yml` wrappers pinned to full-SHA Actions and to your
 `--idkmesh-ref`; see
 [GitHub Bootstrap Workflow Wrappers](specifications/GITHUB_BOOTSTRAP_WORKFLOW_WRAPPERS_V0_1.md).
-Those wrappers call a `github-workflow` runner that no released IDKMesh ref
-provides yet, so they would fail closed at their first probe step if committed
-today. Applying files, owner-action checks, and the runner remain explicit
-follow-on slices.
+Those wrappers call `idkmesh github-workflow`
+([GitHub Workflow Runner](specifications/GITHUB_WORKFLOW_RUNNER_V0_1.md)).
+`preview` derives a deterministic WorkUnit preview and digest for one issue and
+`status` projects a run's latest durable-ledger record into the job summary;
+both are read-only. `dispatch` and `verify` fail closed with
+`dispatch_unavailable` and `verify_unavailable`. A wrapper pinned to a ref that
+predates the runner fails at its first probe step.
+
+Before `preview` can run, add the one decision the seed deliberately leaves to
+you, the paths a previewed WorkUnit may write, to `.idkmesh/project.json`:
+
+~~~json
+"metadata": {
+  "github_issue_preview": {
+    "allowed_paths": ["src/**", "tests/**"],
+    "forbidden_paths": ["SECURITY.md"]
+  }
+}
+~~~
+
+Without it the runner stops with `preview_scope_unconfigured`; `.github/**` and
+`.idkmesh/**` are always forbidden. To see the same preview locally before any
+workflow runs, save the issue's REST object and run
+`idkmesh work preview --issue-json issue.json --repository OWNER/REPO --source-revision SHA`
+from the project root (offline; it uses the same policy and dispatches nothing). Applying files and the owner-action checks
+remain explicit follow-on slices.
 
 ### Step 5 — define project policy before selecting models
 

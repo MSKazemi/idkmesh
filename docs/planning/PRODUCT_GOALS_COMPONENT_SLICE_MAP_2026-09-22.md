@@ -443,7 +443,7 @@ conforming production backend.
 
 - **C7-A — service layer extraction:** one application service used by CLI/HTTP/GitHub.
 - **C7-B — project/connect CLI:** create/read project + connector profiles.
-- **C7-C — preview/routing CLI:** work preview and route explain.
+- **C7-C — preview/routing CLI:** work preview and route explain. `route explain` (#758) and the offline `idkmesh work preview --issue-json` (issue snapshot file + project policy; no live fetch, no HTTP) are on `main`; live issue fetch and the Product Spine binding remain open.
 - **C7-D — run CLI:** create/status/cancel with idempotency.
 - **C7-E — evidence CLI:** show candidate/result/verification/human state.
 - **C7-F — read-only HTTP surfaces:** projects/connections/routes/runs GET/preview.
@@ -473,8 +473,14 @@ conforming production backend.
 - **C8-D — workflow wrapper generation:** implemented by
   `idkmesh/github_bootstrap_workflows.py`; four thin full-SHA-pinned
   preview/dispatch/verify/status wrappers rendered deterministically with
-  least-privilege permissions and SHA-256 content identities. Rendering only;
-  they call a `github-workflow` runner that does not exist yet (separate slice).
+  least-privilege permissions and SHA-256 content identities. Rendering only.
+- **Runner slice (follows C8-D):** implemented by
+  `idkmesh/github_workflow_runner.py`; `idkmesh github-workflow` is what the
+  wrappers call. `preview` (project-policy WorkUnit preview from one issue) and
+  `status` (durable-ledger projection into the job summary) are read-only;
+  `dispatch` and `verify` fail closed (`dispatch_unavailable`,
+  `verify_unavailable`) because no stateless-runner authority primitive backs
+  them. See [GitHub Workflow Runner](../specifications/GITHUB_WORKFLOW_RUNNER_V0_1.md).
 - **C8-E — owner-action checklist:** secrets, branch protection, environments, app install.
 - **C8-F — re-run/update behavior:** preserve user edits and report conflicts.
 - **C8-G — fresh-repo fixture test:** bootstrap -> preview without server.
@@ -586,8 +592,8 @@ independent human review.
 
 - **C13-A — Issue Form field contract.**
 - **C13-B — generated Issue Form template.**
-- **C13-C — issue body -> WorkUnit preview parser.**
-- **C13-D — incomplete/malicious fallback behavior.**
+- **C13-C — issue body -> WorkUnit preview parser.** Parser (#1049) merged; policy composition in the issue preview (`use_intake_form`) adds the restrict-only join with `GitHubIssueWorkPolicy`; the offline `idkmesh work preview` CLI over it is C7-C.
+- **C13-D — incomplete/malicious fallback behavior.** Parser fallback and the byte-identical generic-preview fallback are covered.
 - **C13-E — label projection from canonical work/run state.**
 - **C13-F — optional GitHub Project field mapping.**
 - **C13-G — idempotent Project sync.**
@@ -628,8 +634,19 @@ independent human review.
   `render_github_pages_site()` file map (index with health/active
   work/verification debt, per-run provenance pages, public JSON) built only
   from C14-D projections; no script, no external asset, no mutation control.
-  The publishing workflow and outage fallback remain open (C14-H).
-- **C14-F — pilot release metadata/provenance.**
+  `idkmesh pages-site` (`idkmesh/github_pages_writer.py`) writes that map to a
+  local directory all-or-nothing, refusing path traversal, symlinks, and
+  unrecognised non-empty directories without `--force`. The publishing
+  workflow and outage fallback remain open (C14-H).
+- **C14-F — pilot release metadata/provenance.** Metadata record implemented by
+  `idkmesh/github_release_provenance.py`
+  ([contract](../specifications/GITHUB_RELEASE_PROVENANCE_V0_1.md)) and
+  `idkmesh release-provenance`: binds a proposed tag, target commit, and
+  artifact digests (caller-supplied, recorded as unverified) to the C14-D
+  evidence a release references, with fixed all-false claims and authority and
+  no timestamps. It creates no tag, GitHub Release, or attestation. **Still
+  open:** the pilot release itself, which needs the second-project pilot (C11)
+  and a human-approved release.
 - **C14-G — optional artifact attestation integration.**
 - **C14-H — no-GitHub-Pages fallback behavior.**
 
