@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 from pathlib import Path
 import sys
@@ -301,8 +302,11 @@ class RetirementTests(unittest.TestCase):
         the wrong repository.
         """
         def git(*args, cwd=None):
+            # Hermetic: a contributor's global or template hooks must not be able
+            # to reject the throwaway fixture commits and pushes.
             completed = subprocess.run(
-                ["git", *args], cwd=cwd, check=True, capture_output=True,
+                ["git", "-c", f"core.hooksPath={os.devnull}", *args],
+                cwd=cwd, check=True, capture_output=True,
                 text=True, timeout=10,
             )
             return completed.stdout.strip()
@@ -341,7 +345,6 @@ class RetirementTests(unittest.TestCase):
                         "refs/heads/agent/old-feature"),
                     commit,
                 )
-
 
 
 if __name__ == "__main__":
