@@ -209,6 +209,37 @@ Response contains:
 
 Issue text is untrusted input and cannot set connector credentials, executable paths, secret refs, merge authority, or repository administration permissions.
 
+### Local offline projection
+
+The CLI projection of the same read-only decision is:
+
+```text
+idkmesh work preview --issue-json issue.json --repository OWNER/NAME \
+  --source-revision <40-or-64-hex-git-sha> [--project-root DIR] [--issue N] \
+  [--no-intake-form] [--json]
+```
+
+It reads one GitHub issue REST object from a local file and the trusted
+`.idkmesh/project.json` under `--project-root`, derives policy through the same
+function as the generated `preview` workflow, and calls
+`preview_github_issue_work_unit` (with the C13 Issue Form composition unless
+`--no-intake-form`). Output (`--json` is one compact line) carries `preview`
+(`work_unit`, `work_unit_digest`, `source_revision`, `issue_updated_at`,
+`warnings`, optional `intake`) plus `dispatch_performed`,
+`github_mutation_performed` and `secret_values_accessed`, all `false`. The
+command uses no network, credential or environment variable, writes no file,
+and never prints issue text in its human-readable form.
+
+Refusals print `error: <code>: <message>` and exit 2. Codes:
+`invalid_argument`, `issue_unreadable`, `issue_invalid`, `policy_denied`
+(closed, locked, pull request, oversized, or a form that requests only paths
+outside project scope), and the shared `project_policy_missing`,
+`project_policy_invalid`, `preview_scope_unconfigured`.
+
+Not yet provided: the HTTP route above, live `--issue N` fetching, and the
+"human approval required before dispatch" field of the response, which has no
+backing policy source yet. Dispatch stays a separate explicit step.
+
 ## 7. Route resolution
 
 `POST /api/v1/routes:resolve`

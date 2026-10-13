@@ -41,7 +41,12 @@ The wheel intentionally installs only `idkmesh/`. Running the research-backed `l
 | `doctor --github OBSERVATION --operation OP [--workflow PATH]` | Evaluate the read-only C12 GitHub governance preflight and optional workflow-source checks | Uses trusted normalized observations; no GitHub admin mutation, secret access, acceptance, or merge |
 | `doctor --enterprise-conformance [--json]` | Run the in-process E9 failure-mode scenarios (unauthorized actor, cross-tenant reference, replay, secret loss, audit-exporter outage, ledger restore, stale identity, self-approval) and report PASS/WARN/FAIL/UNKNOWN per scenario | Temp dirs and fakes only; exit 1 on FAIL or UNKNOWN; scenarios not yet exercised report UNKNOWN; not a SOC 2/ISO 27001/FedRAMP claim |
 | `route explain PROFILE DECISION` | Offline connector routing eligibility/explanation | Does not dispatch work or grant authority |
-| `init --github --dry-run --idkmesh-ref REF` | Pure deterministic GitHub-first bootstrap **plan**/render of config and pinned workflow wrappers (`rendered_config_files`, `rendered_workflow_files` in `--json`) | Apply mode is **not** implemented; no repo writes; wrappers call a runner not yet released |
+| `init --github --dry-run --idkmesh-ref REF` | Pure deterministic GitHub-first bootstrap **plan**/render of config and pinned workflow wrappers (`rendered_config_files`, `rendered_workflow_files` in `--json`) | Apply mode is **not** implemented; no repo writes; the wrappers call `github-workflow` below |
+| `github-workflow {preview,status} [--issue-json PATH \| --ledger-records PATH] [--json]` | Runner the generated `idkmesh-*.yml` wrappers call; reads `IDKMESH_*` environment variables. `preview` derives a WorkUnit preview and digest for one issue; `status` projects one run's latest durable-ledger record into the bounded status body and job summary | Read-only; no dispatch, issue comment, provider secret, or merge; refusals print `error: <code>: <message>` and exit 2 |
+| `work preview --issue-json PATH --repository OWNER/NAME --source-revision SHA [--project-root DIR] [--issue N] [--no-intake-form] [--json]` | Offline WorkUnit preview (C7-C): one issue snapshot file plus `.idkmesh/project.json` policy (same derivation as `github-workflow preview`) to a canonical WorkUnit, digest and warnings; an IDKMesh Issue Form in the body is composed by default | Read-only; no network, secret, environment variable, file write, dispatch or HTTP route (`POST /api/v1/work-units:preview` is specified, not served); the form only narrows scope or raises risk; refusals print `error: <code>: <message>` and exit 2 |
+| `github-workflow {dispatch,verify}` | Reserved wrapper phases | Always fail closed with `dispatch_unavailable` / `verify_unavailable`; read no environment or secret |
+| `pages-site --repository OWNER/NAME --projection PATH... --out DIR [--force] [--json]` | Validate C14-D public-safe projections, render the C14-E static Pages file map, and write exactly those files to a local directory all-or-nothing | Local files only: no publication, workflow, network or GitHub call; refuses `..`/absolute/symlinked paths, a symlinked or foreign non-empty `--out` (replaced only with `--force`, never the cwd, its ancestors, home, or a `.git` directory) |
+| `release-provenance --repository OWNER/NAME --tag TAG --target-commit SHA [--artifact NAME=sha256:HEX]... [--projection PATH...] [--notes]` | Validate C14-D public-safe projections and print the C14-F release metadata/provenance record as JSON, or draft release notes with `--notes` | stdout only: no tag, GitHub Release, attestation, network or GitHub call; commit and artifact digests are caller-supplied and recorded as unverified; no timestamps; exit 2 and empty stdout on any rejected input |
 | `local-loop CONFIG [--output-dir PATH]` | Two-attempt reference orchestration and verification/evidence bundle | Checkout + `[verify]` extra; decisions/replay remain manual |
 | `steward-report INPUT`, `steward-report-ui INPUT` | Validate and display retained single-run steward evidence | Offline read/loopback UI |
 | `steward-history INPUTS...`, `steward-history-ui INPUTS...` | Aggregate/show retained steward history | No GitHub polling or mutation |
@@ -59,6 +64,22 @@ idkmesh run list --store state.sqlite --json
 
 # Plan only. No bootstrap files are written:
 idkmesh init --github --dry-run --idkmesh-ref v0.1.0 --json
+
+# Runner phase as a generated wrapper invokes it; offline issue, no GitHub call:
+IDKMESH_PROJECT_ROOT=. IDKMESH_REPOSITORY=OWNER/REPO IDKMESH_RUN_ID=1 \
+  IDKMESH_BASE_SHA=0123456789abcdef0123456789abcdef01234567 IDKMESH_ISSUE_NUMBER=7 \
+  idkmesh github-workflow preview --issue-json issue.json
+
+# Same preview from a local shell, no wrapper environment needed:
+idkmesh work preview --issue-json issue.json --repository OWNER/REPO \
+  --source-revision 0123456789abcdef0123456789abcdef01234567 --json
+
+# Write a Pages site from public-safe projections to a local directory; nothing is published:
+idkmesh pages-site --repository owner/name --projection run-1.json --out site
+
+# Print release metadata for a proposed tag; nothing is tagged, released, or attested:
+idkmesh release-provenance --repository owner/name --tag v0.1.0 \
+  --target-commit <40-hex-commit> --projection run-1.json
 
 # Evaluate the committed C12 fixture only; no GitHub API/admin mutation:
 idkmesh doctor --github examples/github-governance/governance-pass-v0.1.json \
@@ -108,7 +129,7 @@ result = client.status()
 print(result.value)
 ```
 
-`ControlTowerClient` exposes `status`, `get_openapi` (download of the running OpenAPI definition), `get_metrics` (aggregate operational metrics), `inspect_run_evidence`, `list_connections`, `list_runs`, `get_run`, `get_run_attempts`, `get_run_evidence`, `list_work_units`, `get_work_unit`, `get_project`, and `list_events`; it does **not** expose a human-decision mutation or an SSE subscription helper. Read-list pagination uses opaque cursors and a maximum page size of 200. Error classes include `ClientConfigurationError`, `TransportError`, `ProtocolError`, `IntegrityError`, and `ApiResponseError` (see [source](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/api_client.py)). No public typed JavaScript client is claimed here.
+`ControlTowerClient` exposes `status`, `get_openapi` (download of the running OpenAPI definition), `get_metrics` (aggregate operational metrics), `inspect_run_evidence`, `list_connections`, `list_runs`, `get_run`, `get_run_attempts`, `get_run_evidence`, `list_work_units`, `get_work_unit`, `get_project`, and `list_events`, plus `stream_events` (one bounded, strictly parsed read of `GET /api/v1/events/stream`; resuming with `Last-Event-ID` is the caller's job); it does **not** expose a human-decision mutation. Read-list pagination uses opaque cursors and a maximum page size of 200. Error classes include `ClientConfigurationError`, `TransportError`, `ProtocolError`, `IntegrityError`, and `ApiResponseError` (see [source](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/api_client.py)). No public typed JavaScript client is claimed here.
 
 ## Source-of-truth and future endpoints
 
@@ -116,5 +137,7 @@ print(result.value)
 - Detailed request/response/error semantics: [Control Tower Local API v0.1](../specifications/CONTROL_TOWER_LOCAL_API_V0_1.md), [API Conventions v0.1](../specifications/API_CONVENTIONS_V0_1.md), [API examples](https://github.com/MSKazemi/idkmesh/blob/main/examples/api/README.md).
 - **Not served by this local Control Tower:** `POST /api/v1/human-decisions`, generic connector dispatch/configure, network/multi-user mutations, and merge/integration endpoints. `human_decision_service.py` is a separate service-layer kernel, not a routed authenticated HTTP endpoint.
 - Historical planning candidates: [API surface catalog](../planning/API_V1_SURFACE_CATALOG_2026-09-23.md). An older `planned` row there does **not** override the router on current `main`.
+
+Integrator pages: [API quickstart](API_QUICKSTART.md) (executable curl and Python examples), [error catalog](API_ERROR_CATALOG.md) (every stable error code with status and retry rule) and [service limits](API_LIMITS.md) (timeouts, concurrency, body, header and event-stream bounds).
 
 For user-facing failures use [troubleshooting](../help/TROUBLESHOOTING.md). For file-by-file ownership use [module map](MODULE_MAP.md).

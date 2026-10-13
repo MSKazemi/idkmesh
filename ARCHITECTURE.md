@@ -59,7 +59,7 @@ At the current revision, executable architecture spans:
 - durable Product Spine run state, retained evidence, derived WorkUnit/project reads, and append-only events;
 - loopback Control Tower UI/API plus a dependency-free Python client;
 - Jules, OpenAI-compatible, and bounded local-agent implementation foundations;
-- GitHub-native source/webhook/dispatch/candidate/evidence/bootstrap control primitives;
+- GitHub-native source/webhook/dispatch/candidate/evidence/bootstrap control primitives, including the read-only `github-workflow` runner behind the generated wrappers;
 - tenant scope, enterprise identity/authorization/profile, and tamper-evident audit primitives;
 - task claims, coordination preflight, executor admission, service limits, and observability;
 - stewardship reports/history and local browser views.

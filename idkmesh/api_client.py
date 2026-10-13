@@ -3,15 +3,18 @@
 API-11A (#746) intentionally covers the stable read/inspection surfaces only:
 capability status, evidence inspection, the resource-oriented read model
 (runs, run attempts, retained run evidence, derived WorkUnits and projects),
-and keyset-paginated event listings. Human-decision recording is deliberately
+keyset-paginated event listings, and one bounded read of the Server-Sent
+Events stream (``stream_events``). Human-decision recording is deliberately
 absent until the authenticated mutation adapter (#740) exists.
 
 The current Control Tower is loopback-only, so this client refuses non-loopback
 base URLs rather than risking disclosure of the local session token.
 
 The client performs exactly one HTTP request per method call. It never retries,
-follows redirects, records human decisions, dispatches work, writes canonical
-state, pushes Git, or merges.
+reconnects, follows redirects, records human decisions, dispatches work, writes
+canonical state, pushes Git, or merges. An event stream ends when the server,
+the caller or a client-side bound ends it; resuming is the caller's decision,
+made with the documented ``Last-Event-ID`` sequence.
 """
 
 from __future__ import annotations
@@ -21,13 +24,15 @@ import http.client
 import json
 import math
 import re
-from typing import Any, Generic, Mapping, TypeVar
+import socket
+import time
+from typing import Any, Generic, Iterator, Mapping, TypeVar
 from urllib.parse import quote, urlencode, urlsplit
 
 from idkmesh import __version__
 from idkmesh.api_observability import METRICS_KIND
 from idkmesh.local_ui_security import TOKEN_HEADER
-from idkmesh.service_runtime import REQUEST_ID_HEADER
+from idkmesh.service_runtime import REQUEST_ID_HEADER, SSE_MAX_STREAM_SECONDS
 from idkmesh.work_unit_binding import canonical_digest
 
 JSON_MEDIA_TYPE = "application/json"
@@ -35,9 +40,47 @@ V1_MEDIA_TYPE = "application/vnd.idkmesh.control-tower.v1+json"
 CONTENT_DIGEST_HEADER = "X-IDKMesh-Content-Digest"
 API_VERSION = "v1"
 MAX_LIST_LIMIT = 200
+STREAM_MEDIA_TYPE = "text/event-stream"
+# One SSE line and one whole frame are each bounded; the largest legitimate
+# frame is a single ``data:`` line carrying one event envelope.
+MAX_STREAM_FRAME_BYTES = 1_048_576
+MIN_STREAM_FRAME_BYTES = 256
+MAX_STREAM_FRAME_BYTES_CEILING = 16_777_216
+MAX_STREAM_FRAME_LINES = 16
+MAX_STREAM_ERROR_BODY_BYTES = 1_048_576
+MAX_STREAM_SEQUENCE = 10**18 - 1  # Last-Event-ID is at most 18 ASCII digits
+# Client-side wall-clock bound: the server's own maximum stream lifetime plus
+# a margin, so a misbehaving server cannot hold the caller open forever.
+DEFAULT_STREAM_MAX_SECONDS = SSE_MAX_STREAM_SECONDS + 15.0
 
 _REQUEST_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
 _DIGEST_RE = re.compile(r"^sha256:[0-9a-f]{64}$")
+_STREAM_SEQUENCE_RE = re.compile(r"^[0-9]{1,18}$")
+_STREAM_RETRY_RE = re.compile(r"^[0-9]{1,9}$")
+_STREAM_END_RE = re.compile(
+    r"^stream-ended reason=(max-duration|shutdown|store-error)$"
+)
+_EVENT_ID_RE = re.compile(r"^evt-[0-9]{12}$")
+_EVENT_KEYS = frozenset(
+    {
+        "schema_version",
+        "kind",
+        "event_id",
+        "sequence",
+        "occurred_at",
+        "event_type",
+        "principal",
+        "authority_class",
+        "project_id",
+        "work_unit_id",
+        "run_id",
+        "attempt_id",
+        "source_revision",
+        "evidence_reference",
+        "payload",
+        "payload_digest",
+    }
+)
 _SAFE_TOKEN_CHARS = frozenset(
     "abcdefghijklmnopqrstuvwxyz"
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -140,12 +183,12 @@ def _reject_duplicate_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
     return result
 
 
-def _json_object(raw: bytes) -> dict[str, Any]:
+def _json_object(raw: bytes, what: str = "response body") -> dict[str, Any]:
     try:
         text = raw.decode("utf-8")
     except UnicodeDecodeError as exc:
         raise ProtocolError(
-            f"response body is not UTF-8 ({exc.reason} at byte {exc.start})"
+            f"{what} is not UTF-8 ({exc.reason} at byte {exc.start})"
         ) from exc
     try:
         value = json.loads(
@@ -154,14 +197,14 @@ def _json_object(raw: bytes) -> dict[str, Any]:
             object_pairs_hook=_reject_duplicate_keys,
         )
     except json.JSONDecodeError as exc:
-        raise ProtocolError(f"response body is not valid JSON ({exc})") from exc
+        raise ProtocolError(f"{what} is not valid JSON ({exc})") from exc
     except RecursionError as exc:
         # Totality: pathological nesting is a protocol error, never a raw
         # RecursionError escaping to the transport layer.
         raise ProtocolError(
-            "response body JSON nesting is too deep") from exc
+            f"{what} JSON nesting is too deep") from exc
     if not isinstance(value, dict):
-        raise ProtocolError("response JSON root must be an object")
+        raise ProtocolError(f"{what} JSON root must be an object")
     return value
 
 
@@ -212,6 +255,302 @@ def _list_query(
         if value is not None
     )
     return query_items
+
+
+def _positive_seconds(value: Any, field: str) -> float:
+    if (
+        isinstance(value, bool)
+        or not isinstance(value, (int, float))
+        or not math.isfinite(float(value))
+        or float(value) <= 0.0
+    ):
+        raise ClientConfigurationError(
+            f"{field} must be a finite number greater than zero"
+        )
+    return float(value)
+
+
+@dataclass(frozen=True)
+class StreamedEvent:
+    """One validated event delivered by ``ControlTowerClient.stream_events``.
+
+    ``event`` is the full ``idkmesh-event`` envelope; ``sequence`` is the value
+    to send back as ``last_event_id`` to resume after this event.
+    """
+
+    sequence: int
+    event_type: str
+    event: dict[str, Any]
+
+
+class EventStream:
+    """One open, bounded, strictly parsed Server-Sent Events response.
+
+    Iterate it to receive ``StreamedEvent`` values in strictly increasing
+    ``sequence`` order. It is a context manager: leaving the ``with`` block (or
+    calling ``close()``) releases the connection, and so the server's stream
+    slot, at once. Any failure closes the stream before the exception
+    propagates. It is not thread-safe.
+
+    Delivery is at-least-once across *connections* (dedupe on ``event_id``);
+    inside one stream the order is checked, so a repeated or older sequence is
+    a ``ProtocolError``. When iteration stops, ``end_reason`` says why:
+    ``max-duration``, ``shutdown`` or ``store-error`` (the server's own
+    ``stream-ended`` marker), or ``client-max-events`` / ``client-max-seconds``
+    (a bound you set). The stream never reconnects; to resume, open a new one
+    with ``last_event_id=stream.last_event_id``.
+    """
+
+    def __init__(
+        self,
+        *,
+        response: http.client.HTTPResponse,
+        sock: socket.socket,
+        request_id: str,
+        idle_timeout: float,
+        max_frame_bytes: int,
+        max_events: int | None,
+        deadline: float,
+        last_event_id: int | None,
+        filters: Mapping[str, str],
+    ) -> None:
+        self._response = response
+        self._sock = sock
+        self._idle_timeout = idle_timeout
+        self._max_frame_bytes = max_frame_bytes
+        self._max_events = max_events
+        self._deadline = deadline
+        self._filters = dict(filters)
+        self._delivered = 0
+        self._closed = False
+        self.request_id = request_id
+        self.retry_ms: int | None = None
+        self.end_reason: str | None = None
+        self.last_event_id = last_event_id
+
+    def __iter__(self) -> Iterator[StreamedEvent]:
+        return self
+
+    def __enter__(self) -> "EventStream":
+        return self
+
+    def __exit__(self, *exc_info: object) -> None:
+        self.close()
+
+    def close(self) -> None:
+        """Release the connection; safe to call more than once."""
+        if self._closed:
+            return
+        self._closed = True
+        for closer in (self._response.close, self._sock.close):
+            try:
+                closer()
+            except OSError:
+                pass
+
+    def __next__(self) -> StreamedEvent:
+        if self._closed:
+            raise StopIteration
+        try:
+            event = self._next_event()
+        except BaseException:
+            self.close()
+            raise
+        if event is None:
+            self.close()
+            raise StopIteration
+        return event
+
+    def _finish(self, reason: str) -> None:
+        self.end_reason = reason
+
+    def _next_event(self) -> StreamedEvent | None:
+        while True:
+            if self._max_events is not None and self._delivered >= self._max_events:
+                self._finish("client-max-events")
+                return None
+            lines = self._read_frame()
+            if lines is None:
+                return None
+            fields = self._parse_fields(lines)
+            if fields is None:
+                continue
+            if fields == "end":
+                return None
+            return self._event_from_fields(fields)
+
+    def _read_line(self) -> bytes | None:
+        """One LF-terminated line without its terminator; None at clean EOF."""
+        limit = self._max_frame_bytes
+        try:
+            line = self._response.readline(limit + 1)
+        except (OSError, http.client.HTTPException) as exc:
+            if isinstance(exc, socket.timeout) and time.monotonic() >= self._deadline:
+                raise _Deadline() from exc
+            if isinstance(exc, socket.timeout):
+                raise TransportError(
+                    "event stream was idle for longer than idle_timeout; "
+                    f"resume with last_event_id={self.last_event_id!r}"
+                ) from exc
+            raise TransportError(f"event stream read failed: {exc}") from exc
+        if not line:
+            return None
+        if len(line) > limit:
+            raise ProtocolError(
+                f"event stream line exceeds the {limit}-byte frame bound"
+            )
+        if not line.endswith(b"\n"):
+            raise ProtocolError("event stream ended inside a line")
+        return line[:-1]
+
+    def _read_frame(self) -> list[str] | None:
+        """Lines of the next frame, or None when iteration should stop."""
+        lines: list[str] = []
+        total = 0
+        while True:
+            remaining = self._deadline - time.monotonic()
+            if remaining <= 0:
+                self._finish("client-max-seconds")
+                return None
+            self._sock.settimeout(min(self._idle_timeout, remaining))
+            try:
+                raw = self._read_line()
+            except _Deadline:
+                self._finish("client-max-seconds")
+                return None
+            if raw is None:
+                if lines:
+                    raise ProtocolError("event stream ended inside a frame")
+                raise TransportError(
+                    "event stream closed without a stream-ended marker; "
+                    f"resume with last_event_id={self.last_event_id!r}"
+                )
+            total += len(raw) + 1
+            if total > self._max_frame_bytes:
+                raise ProtocolError(
+                    f"event stream frame exceeds the {self._max_frame_bytes}-byte bound"
+                )
+            if raw == b"":
+                if not lines:
+                    raise ProtocolError("event stream sent an empty frame")
+                return lines
+            if len(lines) >= MAX_STREAM_FRAME_LINES:
+                raise ProtocolError("event stream frame has too many lines")
+            try:
+                text = raw.decode("utf-8")
+            except UnicodeDecodeError as exc:
+                raise ProtocolError(
+                    f"event stream line is not UTF-8 ({exc.reason} at byte {exc.start})"
+                ) from exc
+            if "\r" in text:
+                raise ProtocolError("event stream line contains a carriage return")
+            lines.append(text)
+
+    def _parse_fields(self, lines: list[str]) -> dict[str, str] | str | None:
+        """Interpret one frame. None: skip it; "end": stop; dict: event fields."""
+        if all(line.startswith(":") for line in lines):
+            if len(lines) != 1:
+                raise ProtocolError("event stream comment frame has several lines")
+            comment = lines[0][1:]
+            comment = comment[1:] if comment.startswith(" ") else comment
+            if comment == "keepalive":
+                return None
+            match = _STREAM_END_RE.fullmatch(comment)
+            if match is None:
+                raise ProtocolError(
+                    f"unexpected event stream comment {comment[:60]!r}"
+                )
+            self._finish(match.group(1))
+            return "end"
+        fields: dict[str, str] = {}
+        for line in lines:
+            name, separator, value = line.partition(":")
+            if not separator or name not in {"id", "event", "data", "retry"}:
+                raise ProtocolError(
+                    f"unexpected event stream field {name[:40]!r}"
+                )
+            if name in fields:
+                raise ProtocolError(f"duplicate event stream field {name!r}")
+            fields[name] = value[1:] if value.startswith(" ") else value
+        if "retry" in fields:
+            if (
+                len(fields) != 1
+                or self.retry_ms is not None
+                or self._delivered
+                or _STREAM_RETRY_RE.fullmatch(fields["retry"]) is None
+            ):
+                raise ProtocolError("invalid or misplaced event stream retry hint")
+            self.retry_ms = int(fields["retry"])
+            return None
+        if set(fields) != {"id", "event", "data"}:
+            raise ProtocolError(
+                "event frame must carry exactly one id, event and data field"
+            )
+        return fields
+
+    def _event_from_fields(self, fields: Mapping[str, str]) -> StreamedEvent:
+        if _STREAM_SEQUENCE_RE.fullmatch(fields["id"]) is None:
+            raise ProtocolError("event stream id is not a sequence number")
+        sequence = int(fields["id"])
+        if sequence < 1:
+            raise ProtocolError("event stream sequence must be at least 1")
+        if self.last_event_id is not None and sequence <= self.last_event_id:
+            raise ProtocolError(
+                f"event stream sequence {sequence} is not after "
+                f"{self.last_event_id}"
+            )
+        envelope = _json_object(
+            fields["data"].encode("utf-8"), what="event stream data frame"
+        )
+        keys = set(envelope)
+        if keys != _EVENT_KEYS:
+            raise ProtocolError(
+                "event envelope keys do not match the idkmesh-event schema: "
+                f"missing={sorted(_EVENT_KEYS - keys)} extra={sorted(keys - _EVENT_KEYS)}"
+            )
+        event_type = envelope["event_type"]
+        event_id = envelope["event_id"]
+        if (
+            envelope["schema_version"] != "0.1"
+            or envelope["kind"] != "idkmesh-event"
+            or not isinstance(event_id, str)
+            or _EVENT_ID_RE.fullmatch(event_id) is None
+            or type(envelope["sequence"]) is not int
+            or envelope["sequence"] != sequence
+            or not isinstance(event_type, str)
+            or not event_type
+            or event_type != fields["event"]
+            or not isinstance(envelope["payload"], Mapping)
+        ):
+            raise ProtocolError(
+                "event frame fields disagree with its idkmesh-event envelope"
+            )
+        for name, expected in self._filters.items():
+            if envelope.get(name) != expected:
+                raise ProtocolError(
+                    f"event {name} does not match the requested filter"
+                )
+        expected_digest = envelope["payload_digest"]
+        if (
+            not isinstance(expected_digest, str)
+            or _DIGEST_RE.fullmatch(expected_digest) is None
+        ):
+            raise ProtocolError("event payload_digest is invalid")
+        actual_digest = canonical_digest(envelope["payload"])
+        if actual_digest != expected_digest:
+            raise IntegrityError(
+                "event payload digest mismatch: "
+                f"reported={expected_digest} computed={actual_digest}"
+            )
+        self.last_event_id = sequence
+        self._delivered += 1
+        return StreamedEvent(
+            sequence=sequence, event_type=event_type, event=envelope
+        )
+
+
+class _Deadline(Exception):
+    """Internal: the client-side wall-clock bound fired during a read."""
 
 
 class ControlTowerClient:
@@ -265,16 +604,7 @@ class ControlTowerClient:
             )
         self._token = token
 
-        if (
-            isinstance(timeout, bool)
-            or not isinstance(timeout, (int, float))
-            or not math.isfinite(float(timeout))
-            or float(timeout) <= 0.0
-        ):
-            raise ClientConfigurationError(
-                "timeout must be a finite number greater than zero"
-            )
-        self._timeout = float(timeout)
+        self._timeout = _positive_seconds(timeout, "timeout")
 
     def _request(
         self,
@@ -320,6 +650,14 @@ class ControlTowerClient:
         finally:
             connection.close()
 
+        return self._decode_response(response, raw)
+
+    def _decode_response(
+        self,
+        response: http.client.HTTPResponse,
+        raw: bytes,
+    ) -> ApiResult[dict[str, Any]]:
+        """Validate one fully read JSON response; raise the typed taxonomy."""
         # Media types are case-insensitive and RFC 9110 field values tolerate
         # optional whitespace, so normalize exactly the way the server side
         # does before deciding. Genuinely wrong media types (HTML from a
@@ -717,6 +1055,160 @@ class ControlTowerClient:
             ),
         )
 
+    def stream_events(
+        self,
+        *,
+        idle_timeout: float,
+        last_event_id: int | None = None,
+        project_id: str | None = None,
+        run_id: str | None = None,
+        work_unit_id: str | None = None,
+        event_type: str | None = None,
+        max_events: int | None = None,
+        max_seconds: float | None = None,
+        max_frame_bytes: int = MAX_STREAM_FRAME_BYTES,
+    ) -> EventStream:
+        """Open one bounded read of ``GET /api/v1/events/stream`` (SSE).
+
+        Exactly one HTTP request is made and the stream is never reopened;
+        the returned ``EventStream`` ends when the server, you or a bound ends
+        it. Without ``last_event_id`` it starts at the live tail; with it, it
+        replays every event whose sequence is greater, then follows live
+        events. To resume after an end, open a new stream with the old one's
+        ``last_event_id`` (delivery is at-least-once: dedupe on ``event_id``).
+
+        ``idle_timeout`` is mandatory: the longest wait for the next byte.
+        The server sends a keepalive every 15 s, so use at least 20 for an
+        otherwise quiet stream. ``max_seconds`` (default: the server's 300 s
+        stream lifetime plus a margin) and ``max_events`` end the stream from
+        the client side; ``max_frame_bytes`` bounds every line and frame.
+        Errors the server reports before streaming (bad token, bad filter,
+        ``too_many_streams``) raise ``ApiResponseError``.
+        """
+        idle = _positive_seconds(idle_timeout, "idle_timeout")
+        lifetime = _positive_seconds(
+            DEFAULT_STREAM_MAX_SECONDS if max_seconds is None else max_seconds,
+            "max_seconds",
+        )
+        if last_event_id is not None and (
+            isinstance(last_event_id, bool)
+            or not isinstance(last_event_id, int)
+            or not (0 <= last_event_id <= MAX_STREAM_SEQUENCE)
+        ):
+            raise ClientConfigurationError(
+                "last_event_id must be a non-negative integer of at most 18 digits"
+            )
+        if max_events is not None and (
+            isinstance(max_events, bool)
+            or not isinstance(max_events, int)
+            or max_events < 1
+        ):
+            raise ClientConfigurationError("max_events must be a positive integer")
+        if (
+            isinstance(max_frame_bytes, bool)
+            or not isinstance(max_frame_bytes, int)
+            or not (MIN_STREAM_FRAME_BYTES <= max_frame_bytes <= MAX_STREAM_FRAME_BYTES_CEILING)
+        ):
+            raise ClientConfigurationError(
+                "max_frame_bytes must be an integer between "
+                f"{MIN_STREAM_FRAME_BYTES} and {MAX_STREAM_FRAME_BYTES_CEILING}"
+            )
+        filters = {
+            name: value
+            for name, value in (
+                ("project_id", _optional_filter(project_id, "project_id")),
+                ("run_id", _optional_filter(run_id, "run_id")),
+                ("work_unit_id", _optional_filter(work_unit_id, "work_unit_id")),
+                ("event_type", _optional_filter(event_type, "event_type")),
+            )
+            if value is not None
+        }
+        path = f"/api/{API_VERSION}/events/stream"
+        if filters:
+            path = f"{path}?{urlencode(list(filters.items()))}"
+        headers = {
+            "Accept": STREAM_MEDIA_TYPE,
+            TOKEN_HEADER: self._token,
+            "User-Agent": f"idkmesh-python-client/{__version__}",
+        }
+        if last_event_id is not None:
+            headers["Last-Event-ID"] = str(last_event_id)
+
+        started = time.monotonic()
+        connection = http.client.HTTPConnection(
+            self._connect_host,
+            self._port,
+            timeout=self._timeout,
+        )
+        sock: socket.socket | None = None
+        response: http.client.HTTPResponse | None = None
+        opened = False
+        try:
+            try:
+                connection.request("GET", path, headers=headers)
+                # getresponse() detaches the socket from the connection for a
+                # close-delimited body, so keep our own reference first.
+                sock = connection.sock
+                response = connection.getresponse()
+                if response.status != 200:
+                    raw = response.read(MAX_STREAM_ERROR_BODY_BYTES + 1)
+            except (OSError, http.client.HTTPException) as exc:
+                raise TransportError(
+                    f"GET {path.split('?', 1)[0]} failed without retry: {exc}"
+                ) from exc
+            if response.status != 200:
+                if len(raw) > MAX_STREAM_ERROR_BODY_BYTES:
+                    raise ProtocolError("event stream error body is too large")
+                self._decode_response(response, raw)
+                raise ProtocolError(
+                    f"event stream answered HTTP {response.status}, expected 200"
+                )
+            media_type = (
+                (response.getheader("Content-Type") or "")
+                .split(";", 1)[0]
+                .strip()
+                .lower()
+            )
+            if media_type != STREAM_MEDIA_TYPE:
+                raise ProtocolError(
+                    f"unexpected response media type {media_type!r}"
+                )
+            request_id = response.getheader(REQUEST_ID_HEADER)
+            if (
+                not isinstance(request_id, str)
+                or _REQUEST_ID_RE.fullmatch(request_id) is None
+            ):
+                raise ProtocolError(
+                    f"missing or invalid {REQUEST_ID_HEADER} response header"
+                )
+            if sock is None:
+                raise TransportError("event stream connection was not established")
+            stream = EventStream(
+                response=response,
+                sock=sock,
+                request_id=request_id,
+                idle_timeout=idle,
+                max_frame_bytes=max_frame_bytes,
+                max_events=max_events,
+                deadline=started + lifetime,
+                last_event_id=last_event_id,
+                filters=filters,
+            )
+            opened = True
+            return stream
+        finally:
+            if not opened:
+                for closer in (
+                    getattr(response, "close", None),
+                    getattr(sock, "close", None),
+                    connection.close,
+                ):
+                    if closer is not None:
+                        try:
+                            closer()
+                        except OSError:
+                            pass
+
 
 __all__ = [
     "ApiResponseError",
@@ -725,9 +1217,11 @@ __all__ = [
     "ControlTowerClient",
     "ControlTowerClientError",
     "EventPage",
+    "EventStream",
     "IntegrityError",
     "ListPage",
     "ProtocolError",
     "ResponseMetadata",
+    "StreamedEvent",
     "TransportError",
 ]

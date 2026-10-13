@@ -133,7 +133,7 @@ Next evidence should show:
 
 See issue #17 and the interoperability docs.
 
-Productizing this boundary into configured, routable agent/model/execution/SCM connectors — and the default GitHub-first, server-optional deployment profile for running them — is proposed in [`docs/architecture/AGENT_MODEL_CONNECTOR_CONTROL_PLANE.md`](docs/architecture/AGENT_MODEL_CONNECTOR_CONTROL_PLANE.md) and [`docs/architecture/GITHUB_FIRST_DEPLOYMENT_AND_MULTIUSER.md`](docs/architecture/GITHUB_FIRST_DEPLOYMENT_AND_MULTIUSER.md), tracked by issue #570 and its C1-C11 sub-issues (#574-#580, #596-#599).
+Productizing this boundary into configured, routable agent/model/execution/SCM connectors — and the default GitHub-first, server-optional deployment profile for running them — is proposed in [`docs/architecture/AGENT_MODEL_CONNECTOR_CONTROL_PLANE.md`](docs/architecture/AGENT_MODEL_CONNECTOR_CONTROL_PLANE.md) and [`docs/architecture/GITHUB_FIRST_DEPLOYMENT_AND_MULTIUSER.md`](docs/architecture/GITHUB_FIRST_DEPLOYMENT_AND_MULTIUSER.md), tracked by issue #570 and its C1-C11 sub-issues (#574-#580, #596-#599). Current state of that profile: `init --github --dry-run` renders pinned workflow wrappers and the `idkmesh github-workflow` runner they call previews issues and projects ledger status read-only, while its `dispatch` and `verify` phases fail closed; applying files, owner-action checks, stateless dispatch, and verification remain evidence-gated future work (#596).
 
 ### Gate D — independent review capacity
 
