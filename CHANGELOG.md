@@ -30,6 +30,8 @@ and the release notes for that tag.
 
 ### Added
 
+- github: pure C13-E canonical Product Spine run-state label planning, with three narrowly owned namespaces, idempotent add/remove diffs, stale-digest/invalid-input refusal, and complete run-state regression tests (refs #608). Routing label projection now preserves the independent lifecycle namespace. No GitHub write or grant of dispatch, verification, human decision, integration, or merge authority. See [run label projection](docs/specifications/GITHUB_RUN_LABEL_PROJECTION_V0_1.md).
+
 - tests: five scenarios move from UNKNOWN to exercised in the E9 enterprise
   conformance harness: stale-claim fencing, data-class egress, the local HTTP
   boundary, public-evidence publication, and provider outage and quota (refs

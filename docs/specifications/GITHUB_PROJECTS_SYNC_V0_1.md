@@ -46,3 +46,13 @@ malformed field values and manually changed Project approval fields.
 There are **no GitHub API writes** and no Projects state reads in the actual
 worker coordinator. This is C13-F planning groundwork, **not** completion
 of the C13-G GitHub API sync, concurrency control or project audit trail.
+
+## Run-state label projection (C13-E)
+
+The pure `github_run_label_projection.plan_github_run_labels()` function
+plans three dedicated run/verification/human-state **display labels** from a
+trusted Product Spine run snapshot. It preserves routing-managed and human
+labels and never reads Project fields to choose a run state. The exact mapping,
+trust boundary and fail-closed limitations are in
+[GitHub Run Label Projection v0.1](GITHUB_RUN_LABEL_PROJECTION_V0_1.md).
+There is still no live GitHub label/Project API writer.

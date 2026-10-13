@@ -8,6 +8,7 @@ from idkmesh.connector_routing import (
     resolve_routes,
 )
 from idkmesh.github_routing_projection import (
+    _is_managed_routing_label,
     MANAGED_LABEL_PREFIX,
     project_routing_to_github,
     replace_managed_routing_labels,
@@ -190,6 +191,37 @@ class GitHubRoutingProjectionTests(unittest.TestCase):
         self.assertNotIn("idkmesh:tier:T4", merged)
         self.assertIn("idkmesh:route:selected", merged)
         self.assertIn("idkmesh:tier:T2", merged)
+
+    def test_run_lifecycle_labels_survive_routing_projection(self):
+        decision = _decision()
+        projection = project_routing_to_github(
+            decision,
+            resolve_routes(decision, [_connector("agent-a")]),
+        )
+        existing = (
+            "idkmesh:work:candidate-observed",
+            "idkmesh:verify:pending",
+            "idkmesh:human:unrecorded",
+            "idkmesh:route:blocked",
+        )
+        updated = replace_managed_routing_labels(existing, projection)
+        self.assertIn("idkmesh:work:candidate-observed", updated)
+        self.assertIn("idkmesh:verify:pending", updated)
+        self.assertIn("idkmesh:human:unrecorded", updated)
+        self.assertNotIn("idkmesh:route:blocked", updated)
+        self.assertIn("idkmesh:route:selected", updated)
+
+    def test_every_emitted_routing_label_is_owned_by_the_routing_replacer(self):
+        # The routing-owned family list is written out by hand; a family the
+        # projector emits but the replacer does not own would never be cleaned up.
+        decision = _decision()
+        for connectors in ([_connector("agent-a")], []):
+            projection = project_routing_to_github(
+                decision, resolve_routes(decision, connectors)
+            )
+            for label in projection.managed_labels:
+                with self.subTest(label=label):
+                    self.assertTrue(_is_managed_routing_label(label))
 
     def test_human_labels_cannot_change_routing_digest(self):
         decision = _decision()
