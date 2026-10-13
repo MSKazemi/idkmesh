@@ -96,7 +96,7 @@ concurrency limit:
 - overload SLO: no sustained overload rejection for two consecutive scrape
   intervals under expected local load.
 
-A collector derives rolling values by differencing process-lifetime counters.
+A trusted collector can derive rolling values by differencing process-lifetime counters, provided the process epoch and timestamps are independently established. The local HTTP service does not itself calculate rolling windows.
 
 Suggested alerts:
 
