@@ -28,7 +28,7 @@ import json
 import math
 import random
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any, Iterable, Mapping
 
 from idkmesh import gate_audit
 
@@ -50,19 +50,35 @@ class MarginalEvidenceInputError(ValueError):
 
 
 def _normalize_ids(
-    name: str, values: Iterable[str] | None, *, allow_empty: bool = False
+    name: str, values: Iterable[str] | None, *,
+    max_items: int, allow_empty: bool = False,
 ) -> tuple[str, ...]:
+    """Validate a finite ID collection against the canonical matrix size.
+
+    Caller-supplied iterators are consumed at most once, and never beyond the
+    number of verifiers already validated by the verdict-matrix contract.
+    """
     if values is None:
         if allow_empty:
             return ()
         raise MarginalEvidenceInputError(f"{name} must be provided")
-    if isinstance(values, (str, bytes)):
+    if isinstance(values, (str, bytes, Mapping)):
         raise MarginalEvidenceInputError(
-            f"{name} must be a collection of verifier ids, not one string"
+            f"{name} must be a collection of verifier ids, not text or a mapping"
         )
+    try:
+        iterator = iter(values)
+    except TypeError as exc:
+        raise MarginalEvidenceInputError(
+            f"{name} must be an iterable collection of verifier ids"
+        ) from exc
     result: list[str] = []
     seen: set[str] = set()
-    for index, value in enumerate(values):
+    for index, value in enumerate(iterator):
+        if index >= max_items:
+            raise MarginalEvidenceInputError(
+                f"{name} exceeds the {max_items} verifiers in the input matrix"
+            )
         if not isinstance(value, str) or not value:
             raise MarginalEvidenceInputError(
                 f"{name}[{index}] must be a non-empty string"
@@ -614,7 +630,10 @@ def analyze(
     except gate_audit.GateAuditInputError as exc:
         raise MarginalEvidenceInputError(str(exc)) from exc
 
-    current_ids = _normalize_ids("current_verifier_ids", current_verifier_ids)
+    current_ids = _normalize_ids(
+        "current_verifier_ids", current_verifier_ids,
+        max_items=len(data["verifiers"]),
+    )
     by_id = _verifier_map(data)
     known_ids = set(by_id)
     unknown_current = sorted(set(current_ids) - known_ids)
@@ -643,7 +662,8 @@ def analyze(
             )
     else:
         requested_candidates = _normalize_ids(
-            "candidate_verifier_ids", candidate_verifier_ids
+            "candidate_verifier_ids", candidate_verifier_ids,
+            max_items=len(data["verifiers"]),
         )
         unknown_candidates = sorted(set(requested_candidates) - known_ids)
         if unknown_candidates:
@@ -782,3 +802,109 @@ def _tool_version() -> str:
     from idkmesh import __version__
 
     return __version__
+
+
+def analyze_heldout_verifier_addition(
+    calibration: dict[str, Any],
+    holdout: dict[str, Any],
+    *,
+    current_verifier_ids: Iterable[str],
+    candidate_verifier_ids: Iterable[str],
+) -> dict[str, Any]:
+    """Exploratory calibration-only selection followed by one frozen holdout read.
+
+    This is not automatic routing or confirmatory inference. The caller must
+    enforce independent repository/task-group splits externally: disjoint row
+    IDs alone cannot detect near-duplicate tasks or leakage.
+    """
+    try:
+        gate_audit.validate_input(calibration)
+        gate_audit.validate_input(holdout)
+    except gate_audit.GateAuditInputError as exc:
+        raise MarginalEvidenceInputError(str(exc)) from exc
+    limit = len(calibration["verifiers"])
+    current = _normalize_ids(
+        "current_verifier_ids", current_verifier_ids, max_items=limit
+    )
+    candidates = _normalize_ids(
+        "candidate_verifier_ids", candidate_verifier_ids, max_items=limit
+    )
+    for key in ("gate_id", "evidence_class"):
+        if calibration[key] != holdout[key]:
+            raise MarginalEvidenceInputError(f"holdout {key} differs from calibration")
+    if float(calibration.get("quorum", 0.5)) != float(holdout.get("quorum", 0.5)):
+        raise MarginalEvidenceInputError("holdout quorum differs from calibration")
+    train_verifiers = {v["id"] for v in calibration["verifiers"]}
+    test_verifiers = {v["id"] for v in holdout["verifiers"]}
+    if train_verifiers != test_verifiers:
+        raise MarginalEvidenceInputError("holdout verifier identities differ")
+    train_rows = {v["id"] for v in calibration["candidates"]}
+    test_rows = {v["id"] for v in holdout["candidates"]}
+    if train_rows & test_rows:
+        raise MarginalEvidenceInputError(
+            "calibration and holdout candidate IDs overlap; possible leakage"
+        )
+
+    train_report = analyze(
+        calibration,
+        current_verifier_ids=current,
+        candidate_verifier_ids=candidates,
+    )
+    measured = [
+        row for row in train_report["candidates"]
+        if row["status"] == "measured" and row["panel_error_delta"] > 0
+    ]
+    selected: str | None = None
+    reason: str
+    if not measured:
+        reason = "no_measured_positive_calibration_contribution"
+    else:
+        best = max(row["panel_error_delta"] for row in measured)
+        winners = [
+            row["id"] for row in measured
+            if abs(row["panel_error_delta"] - best) <= 1e-12
+        ]
+        if len(winners) != 1:
+            reason = "tied_calibration_point_estimate"
+        else:
+            selected = winners[0]
+            reason = "unique_positive_calibration_point_estimate"
+
+    test_result = None
+    if selected is not None:
+        test_report = analyze(
+            holdout,
+            current_verifier_ids=current,
+            candidate_verifier_ids=[selected],
+        )
+        row = test_report["candidates"][0]
+        test_result = {
+            "candidate_verifier_id": selected,
+            "status": row["status"],
+            "panel_error_delta": row["panel_error_delta"],
+            "augmented_panel_error": row["augmented_panel_error"],
+            "current_panel_error": row["current_panel_error"],
+            "non_probe_candidates": test_report["analysis"]["non_probe_candidates"],
+            "input_digest_sha256": test_report["provenance"]["input_digest_sha256"],
+        }
+    return {
+        "kind": "marginal-verifier-holdout-diagnostic-v0.1",
+        "authority": AUTHORITY,
+        "inference": "exploratory_point_estimate_only",
+        "gate_id": calibration["gate_id"],
+        "calibration_input_digest_sha256": train_report["provenance"]["input_digest_sha256"],
+        "holdout_input_digest_sha256": _canonical_digest(holdout),
+        "calibration_non_probe_candidates": train_report["analysis"]["non_probe_candidates"],
+        "holdout_non_probe_candidates": len(_non_probe_candidates(holdout)),
+        "selected_verifier_id": selected,
+        "selection_reason": reason,
+        "selected_calibration_panel_error_delta": (
+            next(row["panel_error_delta"] for row in measured if row["id"] == selected)
+            if selected is not None else None
+        ),
+        "holdout_result": test_result,
+        "group_leakage_checked": False,
+        "dispatch_authority": False,
+        "verification_authority": False,
+        "integration_authority": False,
+    }

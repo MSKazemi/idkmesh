@@ -226,6 +226,74 @@ Search Console clicks, installations, or verified contributions.
 No traffic metric grants repository correctness, integration, automatic publication,
 or merge authority. Do not invent baseline values if no authorized token exists.
 
+## Read-only funnel coverage (V5)
+
+The weekly observatory emits `results/visibility/funnel-coverage.json` after
+Search Console and GitHub Traffic collection. It does not need any new
+credential or hosted service. It runs even when neither optional provider
+is configured, reporting `unavailable` rather than zero.
+
+It reports separate observations for non-branded Google search, GitHub repository
+views, and a limited snapshot of external commit contributors. It explicitly
+marks website visits, identifiable first interactions, independently verified
+first contributions, and repeat-contributor cohorts as **not observed**.
+
+**Conversion rates are not calculated.** Search Console query clicks are not
+website visits; GitHub's 14-day view counter is not a time-matched cohort of
+Search Console searchers; lifetime contributors are not a first-contribution
+cohort. No visitor identities, cookies, fingerprints, or synthetic joins
+are collected.
+
+Run it manually against real retained evidence:
+
+```bash
+python scripts/visibility_funnel_coverage.py \
+  --visibility results/visibility/observatory.json \
+  --output results/visibility/funnel-coverage.json
+```
+
+Supply `--search-console` and `--github-traffic` with paths to real JSON
+snapshots if present. The collector validates provider identity, repository,
+canonical page scope, final-data state, date windows, counters, and observed
+population bounds. An invalid or explicitly supplied missing file fails,
+rather than becoming a fictional zero. See
+[the V5 measurement boundary](../community/VISIBILITY_AND_COMMUNITY_GROWTH_LOOP.md#v5--funnel-attribution)
+for the stage-by-stage interpretation.
+
+## Evidence-aware growth recommendation (V6)
+
+The weekly workflow first creates `results/visibility/funnel-coverage.json`,
+then calls `scripts/visibility_growth_selector.py` with the exact versioned
+V4 reference ledger, ten canonical topic targets and V5 funnel-coverage
+snapshot. The resulting `growth-experiment.json` includes aggregated evidence
+readiness and **one recommendation**, not a permission to publish.
+
+For manual replay from repository root, after collecting real observatory and
+query-portfolio snapshots:
+
+```bash
+python scripts/visibility_growth_selector.py \
+  --visibility results/visibility/observatory.json \
+  --portfolio results/visibility/query-portfolio.json \
+  --policy config/visibility-growth-policy-v0.1.json \
+  --authority-ledger evidence/search-visibility/authority-references.json \
+  --authority-topics config/seo-topics-v1.json \
+  --funnel-coverage results/visibility/funnel-coverage.json \
+  --output results/visibility/growth-experiment.json
+```
+
+Only supply `--search-console results/visibility/google-search-console.json`
+when that authenticated evidence actually exists. Explicit missing files,
+malformed counters, wrong provider/page scope, unfinalized Search Console
+data, or funnel reports that claim conversion rates **fail closed**.
+If Search Console reports a locally truncated query rowset, the controller
+recommends a measurement-quality review before altering titles/keywords.
+
+The V4 direct-link counts are owner-reviewed claims, not independently
+authenticated backlinks. V5 commit contributors are not independently
+verified first contributions; there are no visitor-to-contributor conversion
+rates. All numerical thresholds remain hand-authored bootstrap priors.
+
 ## Bing Webmaster Tools
 
 Do **not** implement or re-enable the historical SOAP/POX endpoints.

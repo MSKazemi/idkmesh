@@ -20,6 +20,9 @@ on:
       - "scripts/visibility_growth_selector.py"
       - "scripts/visibility_observatory.py"
       - "scripts/github_traffic_snapshot.py"
+      - "scripts/visibility_funnel_coverage.py"
+      - "scripts/authority_reference_ledger.py"
+      - "evidence/search-visibility/authority-references.json"
 
 permissions:
   contents: read
@@ -49,6 +52,8 @@ jobs:
           python -m unittest \
             tests.test_visibility_observatory \
             tests.test_github_traffic_snapshot \
+            tests.test_visibility_funnel_coverage \
+            tests.test_authority_reference_ledger \
             tests.test_discovery_query_portfolio \
             tests.test_bing_ai_performance_import \
             tests.test_search_console_snapshot \
@@ -129,12 +134,29 @@ jobs:
             --lag-days 3 \
             --output results/visibility/google-search-console.json
 
+      - name: Assemble coverage-only visibility funnel
+        run: |
+          args=(
+            --visibility results/visibility/observatory.json
+            --output results/visibility/funnel-coverage.json
+          )
+          if [[ -f results/visibility/google-search-console.json ]]; then
+            args+=(--search-console results/visibility/google-search-console.json)
+          fi
+          if [[ -f results/visibility/github-traffic.json ]]; then
+            args+=(--github-traffic results/visibility/github-traffic.json)
+          fi
+          python scripts/visibility_funnel_coverage.py "${args[@]}"
+
       - name: Select one bounded growth experiment
         run: |
           args=( \
             --visibility results/visibility/observatory.json \
             --portfolio results/visibility/query-portfolio.json \
             --policy config/visibility-growth-policy-v0.1.json \
+            --authority-ledger evidence/search-visibility/authority-references.json \
+            --authority-topics config/seo-topics-v1.json \
+            --funnel-coverage results/visibility/funnel-coverage.json \
             --output results/visibility/growth-experiment.json \
           )
           if [[ -f results/visibility/google-search-console.json ]]; then
@@ -159,8 +181,11 @@ jobs:
           traffic = json.loads(traffic_path.read_text()) if traffic_path.exists() else None
           gsc_path = Path("results/visibility/google-search-console.json")
           gsc = json.loads(gsc_path.read_text()) if gsc_path.exists() else None
+          funnel = json.loads(Path("results/visibility/funnel-coverage.json").read_text())
           experiment = json.loads(Path("results/visibility/growth-experiment.json").read_text())
           selected = experiment["selected_experiment"]
+          authority_claims = experiment["evidence"]["authority_references"]
+          search_quality = experiment["evidence"]["search_console"]
           lines = [
               "# Visibility and Community Observatory",
               "",
@@ -199,6 +224,17 @@ jobs:
                   f"- Search Console portfolio queries observed (exact): {gsc['summary']['portfolio_queries_with_observations']}"
                   if gsc else
                   "- Search Console portfolio observations: unavailable"
+              ),
+              f"- Funnel directly observed stages: {funnel['summary']['direct_stages_observed']} of 2 eligible sources",
+              f"- Funnel rates estimable: {funnel['summary']['conversion_rates_estimable']} (no shared cohorts)",
+              f"- Next funnel evidence step: {funnel['summary']['next_measurement_action']}",
+              (
+                  f"- Owner-reviewed independent direct-link claims (not independently authenticated): {authority_claims['owner_attested_independent_direct_link_claims']}"
+                  if authority_claims else "- External authority ledger evidence: unavailable"
+              ),
+              (
+                  f"- Search Console locally truncated: {search_quality['locally_truncated']}"
+                  if search_quality else "- Search Console row-cap quality: unavailable"
               ),
               f"- Selected bounded experiment: {selected['id']} ({selected['type']})",
               f"- Experiment reason: {selected['reason']}",

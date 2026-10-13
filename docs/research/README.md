@@ -46,6 +46,7 @@ policy changes or merge decisions.
 
 ## Routing and Orchestration Experiments
 
+- [Physarum Synthetic-to-Field Gate v0.1](PHYSARUM_SYNTHETIC_TO_FIELD_GATE_V0_1.md) — reproducing paired stationary/shift/failover-frontier stress sweeps, declaring falsifiers and keeping field routing blocked pending admitted-path telemetry.
 - [Adaptive Policy Evidence CLI](ADAPTIVE_POLICY_EVIDENCE_CLI.md) — deterministic
   evidence extraction for shadow-policy cohort and outcome records.
 - [AVE-core Shadow Adapter](AVE_SHADOW_ADAPTER.md) — advisory verifier-allocation adapter that reuses canonical WorkUnit/EvaluatorPlan bindings, domain/time-scoped reliability evidence, and the common adaptive-policy shadow contract without dispatch or verification authority.
@@ -85,9 +86,12 @@ policy changes or merge decisions.
 
 ## Verification Research
 
+- [Marginal Verifier Holdout Protocol v0.1](MARGINAL_VERIFIER_HOLDOUT_PROTOCOL_V0_1.md) — exploratory calibration-only selection, disjoint-ID holdout validation and explicit scientific generalization limits.
 - [E017 Verifier-Panel Reproducibility](E017_VERIFIER_PANEL_REPRODUCIBILITY.md) — shortest path to the retained 25-verifier vote artifact, analysis commands, expected metrics, limitations, and falsification criteria.
 - [Verifier-Panel External-Validity Replication — Preregistration v1](VERIFIER_PANEL_EXTERNAL_VALIDITY_PREREG_V1.md) — freezes a two-stage, held-out replication of E017's dependence-shape result on a materially different verifier/task family; calibration may select competent verifiers, but confirmatory tasks cannot influence panel membership or analysis rules.
 - [Verifier-Panel External-Validity — Amendment v1.1](VERIFIER_PANEL_EXTERNAL_VALIDITY_AMENDMENT_V1_1.md) — hardens S3 before outcome collection: distinguishes X6 candidate realism from independent-family replication, freezes duplicate/provenance handling, class-conditional inference, repository/task clustering, competence thresholds, and a calibration-only power gate.
+- [Verifier-Panel External-Validity — Amendment v1.2](VERIFIER_PANEL_EXTERNAL_VALIDITY_AMENDMENT_V1_2.md) — replaces an infeasible nested-bootstrap power calculation with a pre-outcome repository/task cluster-jackknife/cluster-t approximation while leaving the final 10,000-resample confirmatory bootstrap unchanged.
+- [S3 Verifier Pre-Confirmatory Freeze Toolkit](S3_VERIFIER_FREEZE_TOOLKIT.md) — deterministic calibration-only power planning and content-addressed freeze manifests required before X6/X7 confirmatory execution; it never runs patches or verifier models.
 - [Coordination Criticality and Finite-Difference Response](CRITICALITY_AND_FLUCTUATION_RESPONSE.md)
   — matched small-load probes compared with utilization and backlog baselines.
 - [Evaluator Plan Binding](EVALUATOR_PLAN_BINDING.md) — binds verifier-owned

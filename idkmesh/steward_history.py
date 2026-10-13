@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import os
 import re
 from datetime import datetime
@@ -783,3 +784,89 @@ def render_history_text(history: dict[str, Any], *, details: bool = False) -> st
                 f"{blocked} source={json.dumps(run['source'], ensure_ascii=False)}"
             )
     return "\n".join(lines) + "\n"
+
+
+def evaluate_steward_history_sli(
+    history: dict[str, Any],
+    *,
+    minimum_reports: int,
+    maximum_blocked_fraction: float,
+    maximum_head_moved_fraction: float,
+    maximum_consecutive_blocks: int,
+) -> dict[str, Any]:
+    """Diagnostic over retained reports with operator-supplied SLI thresholds.
+
+    No history can prove that a scheduled workflow never went missing, that
+    artifact uploads succeeded, or that operational GA gates were satisfied.
+    """
+    if type(minimum_reports) is not int or minimum_reports < 1:
+        raise StewardHistoryInputError("minimum_reports must be positive integer")
+    if (
+        type(maximum_consecutive_blocks) is not int
+        or not 0 <= maximum_consecutive_blocks <= MAX_HISTORY_REPORTS
+    ):
+        raise StewardHistoryInputError("maximum_consecutive_blocks out of range")
+    for name, value in (
+        ("maximum_blocked_fraction", maximum_blocked_fraction),
+        ("maximum_head_moved_fraction", maximum_head_moved_fraction),
+    ):
+        if type(value) not in (int, float) or not math.isfinite(value) or not 0 <= value <= 1:
+            raise StewardHistoryInputError(f"{name} must be finite in [0, 1]")
+    validate_history(history)
+    count = history["report_count"]
+    planned = history["outcome_totals"]["planned"]
+    blocked = history["status_counts"]["blocked"]
+    moved = history["outcome_totals"]["head_moved"]
+    blocked_fraction = blocked / count
+    head_moved_fraction = moved / planned if planned else None
+    longest = consecutive = 0
+    for run in history["runs"]:
+        if run["status"] == "blocked":
+            consecutive += 1
+            longest = max(longest, consecutive)
+        else:
+            consecutive = 0
+    violations = []
+    if blocked_fraction > maximum_blocked_fraction:
+        violations.append("blocked_fraction")
+    if head_moved_fraction is not None and head_moved_fraction > maximum_head_moved_fraction:
+        violations.append("head_moved_fraction")
+    if longest > maximum_consecutive_blocks:
+        violations.append("consecutive_blocks")
+    status = (
+        "requires_attention" if violations
+        else "insufficient_evidence" if count < minimum_reports or planned == 0
+        else "within_observed_thresholds"
+    )
+    return {
+        "schema_version": "0.1",
+        "kind": "idkmesh-steward-observed-sli",
+        "repository": history["repository"],
+        "source_input_set_sha256": history["integrity"]["input_set_sha256"],
+        "status": status,
+        "reports_observed": count,
+        "planned_candidates_observed": planned,
+        "blocked_fraction": blocked_fraction,
+        "head_moved_fraction": head_moved_fraction,
+        "longest_consecutive_blocked": longest,
+        "thresholds": {
+            "minimum_reports": minimum_reports,
+            "maximum_blocked_fraction": maximum_blocked_fraction,
+            "maximum_head_moved_fraction": maximum_head_moved_fraction,
+            "maximum_consecutive_blocks": maximum_consecutive_blocks,
+        },
+        "violations": violations,
+        "unmeasured": [
+            "scheduled_runs_without_reports",
+            "failed_artifact_uploads",
+            "branch_protection_behavior",
+            "durable_evidence_retention",
+            "disaster_recovery_drill",
+        ],
+        "authority": {
+            "ga_decision": False,
+            "dispatch": False,
+            "verification": False,
+            "integration": False,
+        },
+    }

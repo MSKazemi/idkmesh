@@ -388,17 +388,59 @@ query/referral
  -> recurrence
 ```
 
-This is where IDKMesh can begin learning which discovery work produces durable
-community capacity rather than transient attention.
+**V5 measurement-coverage contract is implemented, but cross-source conversion
+attribution is not.** The offline tool `scripts/visibility_funnel_coverage.py`
+assembles the existing read-only observatory snapshot with optional first-party
+Google Search Console (28-day window) and GitHub Traffic (rolling 14-day window).
+The weekly workflow retains `results/visibility/funnel-coverage.json`.
+
+The report distinguishes **observed**, **unavailable**, and **proxy** stages.
+A measured zero is preserved as zero; unavailable owner-only traffic is never
+silently represented as zero. External GitHub commit contributors are a bounded
+lifetime attribution proxy, **not** first-time verified contributors.
+
+A query impression, search click, website visit, repository page view, star,
+first interaction, first verified contribution, and repeat contribution have
+different denominators. Neither the Search Console aggregates nor 14-day GitHub
+views identify which visitors became contributors. The report therefore records
+each transition as `not_attributable` with a null conversion rate, even when
+all available first-party sources are configured. No cookies, fingerprints,
+personal visitor identifiers, tracking pixels, or synthetic cohorts are added.
+
+Run from the repository root after producing an observatory JSON:
+
+```bash
+python scripts/visibility_funnel_coverage.py \
+  --visibility results/visibility/observatory.json \
+  --output results/visibility/funnel-coverage.json
+python -m unittest tests.test_visibility_funnel_coverage -v
+```
+
+Add `--search-console results/visibility/google-search-console.json` and
+`--github-traffic results/visibility/github-traffic.json` only when authentic
+snapshots exist. Explicit file inputs that are missing or malformed fail
+closed. Inspect each stage's status and window before proposing a small
+evidence-gathering experiment. True attribution remains open in issue #664;
+it requires independently designed consent/privacy-preserving measurement
+and appropriately matched cohorts, not arithmetic on incompatible counts.
 
 ### V6 — bounded growth experiments
 
-**Bootstrap selector implemented in this branch.**
+**Read-only V6 evidence-aware selector (v0.2).**
 
 `scripts/visibility_growth_selector.py` consumes the static visibility observation,
-query-portfolio report, optional Search Console evidence, and
-`config/visibility-growth-policy-v0.1.json`. It emits exactly one bounded
-recommendation from the currently observable bottleneck.
+query-portfolio report, optional finalized Search Console evidence, the reviewed
+V4 reference ledger and the V5 coverage-only report, plus
+`config/visibility-growth-policy-v0.1.json`. It validates the origin,
+canonical page scope, completeness flags and non-negative finite counters
+before emitting at most one **recommendation**, never an automatic action.
+
+Local Search Console row-cap truncation takes priority over SEO snippet/query
+changes: the controller recommends inspecting the incomplete observation
+rather than optimizing a potentially biased subset. The V4 input is an
+**owner-attested classification ledger**, not proven external authority:
+zero reviewed references means zero *recorded claims*, not zero backlinks.
+The V5 input only measures stage coverage, not conversion rates.
 
 Current experiment types include:
 
@@ -408,14 +450,20 @@ Current experiment types include:
 - improve one high-impression/low-CTR search snippet;
 - recalibrate one intent cluster from observed queries;
 - improve one visitor-to-first-contribution path;
-- expand authority/referral measurement.
+- review one genuinely independent third-party reference or reproduction;
+- define a time-bounded verified-contribution cohort when V5 confirms that
+  measure is still absent.
 
 The current thresholds are explicitly labeled hand-authored bootstrap priors and must
 be calibrated from future evidence. The selector cannot publish content, perform
 outreach, create issues, mutate branches, or merge changes.
 
-Future versions should add a deliberate no-op when evidence does not justify an
-experiment and should consume V4/V5 authority/funnel evidence when those layers exist.
+The selector is still a bootstrap hypothesis prioritizer. It does **not** infer
+causal improvements, perform external outreach or change repository permissions.
+The existing JSON output now includes an aggregate evidence-quality trace
+without listing raw source URLs or identifying contributors. A future revision
+may emit an explicit no-op when available evidence cannot justify another
+reversible experiment.
 
 ## Success criterion
 

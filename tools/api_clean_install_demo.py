@@ -99,6 +99,27 @@ def _tail(text: str, lines: int = 8) -> str:
     return "\n".join([line for line in text.splitlines() if line.strip()][-lines:])
 
 
+def wheel_build_problem(
+    built: subprocess.CompletedProcess[str], dist: Path,
+) -> str | None:
+    """Why no installable ``idkmesh`` wheel exists, or ``None`` when one does.
+
+    Distinguishes a failed build from a build that exits 0 while producing the
+    wrong wheel (an old pip can silently emit ``UNKNOWN-0.0.0`` from a valid
+    ``pyproject.toml``). The message is release evidence and always carries the
+    exit code, what actually appeared in the wheel directory, and the build's
+    own output -- never an empty string.
+    """
+    produced = sorted(path.name for path in dist.glob("*.whl"))
+    if built.returncode == 0 and any(name.startswith("idkmesh-") for name in produced):
+        return None
+    detail = _tail(built.stderr or built.stdout) or "(the build printed nothing)"
+    if built.returncode != 0:
+        return f"wheel build failed (exit {built.returncode}): {detail}"
+    found = ", ".join(produced) or "no wheels at all"
+    return f"wheel build produced no idkmesh-*.whl (found: {found}): {detail}"
+
+
 def free_port() -> int:
     with socket.socket() as sock:
         sock.bind(("127.0.0.1", 0))
@@ -179,12 +200,13 @@ def demo(root: Path = REPO_ROOT) -> dict[str, Any]:
         try:
             stage_source(root, work / "src")
             built = _run(
-                [sys.executable, "-m", "pip", "wheel", "--no-deps", "-q", "-w", str(work / "dist"), "."],
+                [sys.executable, "-m", "pip", "wheel", "--no-deps", "-w", str(work / "dist"), "."],
                 cwd=work / "src",
             )
+            problem = wheel_build_problem(built, work / "dist")
+            if problem is not None:
+                raise EnvironmentUnavailable(problem)
             wheels = sorted((work / "dist").glob("idkmesh-*.whl"))
-            if built.returncode != 0 or not wheels:
-                raise EnvironmentUnavailable("wheel build failed: " + _tail(built.stderr or built.stdout))
             record("wheel-builds", wheels[0].name)
 
             venv = work / "venv"
