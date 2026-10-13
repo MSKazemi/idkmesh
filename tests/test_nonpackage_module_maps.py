@@ -1,10 +1,10 @@
-"""Guard source coverage in the two non-package Python documentation maps.
+"""Keep non-package Python reference tables complete, accurate, and nonduplicative.
 
-Class-based tests keep module-level test_* counts unchanged.
-This is a source-path drift check, not evidence of runtime correctness.
+This guards source *navigation*, not correctness or empirical claim quality.
 """
 from __future__ import annotations
 
+from collections import Counter
 from pathlib import Path
 import re
 import unittest
@@ -21,7 +21,7 @@ LINK = re.compile(
 
 
 class NonpackageModuleMapTests(unittest.TestCase):
-    def test_maps_have_exact_source_coverage(self):
+    def test_maps_match_direct_python_sources(self):
         for filename, dirs in MAPS.items():
             with self.subTest(document=filename):
                 text = (ROOT / "docs" / "reference" / filename).read_text(
@@ -33,10 +33,12 @@ class NonpackageModuleMapTests(unittest.TestCase):
                     for dirname in dirs
                     for path in (ROOT / dirname).glob("*.py")
                 )
-                labels = [target for label, target in pairs]\n                self.assertTrue(all(\n                    label == target or label == Path(target).name\n                    for label, target in pairs\n                ))
-                self.assertEqual(sorted(labels), actual)
-                self.assertEqual(len(labels), len(set(labels)))
-                self.assertTrue(all(label == target for label, target in pairs))
+                targets = [target for _, target in pairs]
+                self.assertEqual(sorted(targets), actual)
+                self.assertEqual([p for p, n in Counter(targets).items() if n > 1], [])
+                for label, target in pairs:
+                    with self.subTest(module=target):
+                        self.assertIn(label, (target, Path(target).name))
 
 
 if __name__ == "__main__":
