@@ -17,7 +17,10 @@ def test_owner_checklist_is_complete_and_deterministic():
         assert action.requires_repository_owner and not action.automatic
     assert "a" * 40 in output
     assert "Do not paste secret values" in output
-    assert "not implemented" in output
+    assert "configure-preview-scope" in output
+    assert "verify-pinned-runtime" in output
+    assert "unavailable phases must stay fail-closed" in output
+    assert "not implemented on current main" not in output
 
 
 def test_owner_checklist_rejects_non_plan_input():

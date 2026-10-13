@@ -6,19 +6,23 @@ The generated bootstrap file plan is not a deployment. After reviewing
 `idkmesh init --github --dry-run`, an authorized repository owner must:
 
 1. Review project and connector policy; keep secret *references*, not values, in tracked configuration.
-2. Authorize only selected provider GitHub Apps with least privileges.
-3. Protect the integration branch, requiring appropriate checks, approvals and force-push restrictions.
-4. Create the `idkmesh-dispatch` environment with explicit reviewer approvals.
-5. Put provider credentials in environment-scoped secrets or approved secret storage, never WorkUnits or logs.
-6. Review the generated workflows and pin the runtime to a vetted immutable revision.
-7. Confirm the pinned runtime implements `python -m idkmesh.cli github-workflow`.
-   This runner does **not** exist on current `main`; the generated wrappers intentionally fail closed.
-8. Record who approved each setting, the checked revision and the observed results.
+2. Set `.idkmesh/project.json` `metadata.github_issue_preview.allowed_paths` (and any forbidden paths) before expecting issue preview. The generated seed intentionally has no preview write scope.
+3. Authorize only selected provider GitHub Apps with least privileges.
+4. Protect the integration branch, requiring appropriate checks, approvals, and force-push restrictions.
+5. Create the `idkmesh-dispatch` environment with explicit reviewer approvals.
+6. Put provider credentials in environment-scoped secrets or approved secret storage, never WorkUnits or logs.
+7. Review the generated workflows and pin the IDKMesh runtime to a vetted immutable revision.
+8. Confirm that pinned runtime provides the `python -m idkmesh.cli github-workflow` phases the wrappers require. The current [runner contract](../specifications/GITHUB_WORKFLOW_RUNNER_V0_1.md) keeps `preview` and `status` read-only while `dispatch` and `verify` fail closed.
+9. Record who approved each setting, the checked revision, and the observed results.
 
-The deterministic owner-action checklist can be rendered offline:
+The canonical bootstrap plan carries these owner actions, so
+`idkmesh init --github --dry-run --json` exposes them without performing
+repository or GitHub mutations. The same canonical action set can be rendered
+as a standalone checklist:
 
 ```python
 from idkmesh.github_bootstrap import build_github_bootstrap_plan, render_owner_action_checklist
+
 plan = build_github_bootstrap_plan(idkmesh_ref="a" * 40)
 print(render_owner_action_checklist(plan))
 ```

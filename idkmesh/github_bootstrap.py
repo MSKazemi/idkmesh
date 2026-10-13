@@ -396,6 +396,11 @@ def build_github_bootstrap_plan(
             reason="Bootstrap may inspect/report governance later but must not silently mutate admin policy.",
         ),
         OwnerAction(
+            code="configure-preview-scope",
+            summary="Choose the repository paths issue previews may propose changing in .idkmesh/project.json.",
+            reason="The generated project intentionally has no preview write scope; bootstrap must not guess owner-approved paths.",
+        ),
+        OwnerAction(
             code="configure-provider-secrets",
             summary="Create provider secret values in GitHub Secrets or approved external secret storage.",
             reason="Generated files contain secret references only; bootstrap never creates or reads secret values.",
@@ -404,6 +409,11 @@ def build_github_bootstrap_plan(
             code="configure-secret-environments",
             summary="Configure approval-protected GitHub Environments for secret-bearing/high-risk operations when required.",
             reason="Environment reviewers and protection rules are repository-owner governance decisions.",
+        ),
+        OwnerAction(
+            code="verify-pinned-runtime",
+            summary=f"Confirm the pinned IDKMesh ref {pinned_ref!r} provides the github-workflow phases the generated wrappers require.",
+            reason="Bootstrap validates pin syntax but does not fetch or attest the pinned runtime; unavailable phases must remain fail-closed.",
         ),
     )
 
@@ -441,7 +451,7 @@ def render_owner_action_checklist(plan: GitHubBootstrapPlan) -> str:
         "",
         "Do not paste secret values into issues, logs or this checklist.",
         "Do not weaken branch protection or grant workers merge authority.",
-        "The github-workflow runner is not implemented on current main.",
+        "Verify the pinned IDKMesh runtime before enabling workflows; unavailable phases must stay fail-closed.",
         "Record owner-approved settings as separate operational evidence.",
         "",
     ])
