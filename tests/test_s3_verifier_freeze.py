@@ -96,7 +96,6 @@ class PowerPlanTests(unittest.TestCase):
             eligible_pass_items=50,
             eligible_fail_items=50,
             simulations=6,
-            bootstrap_replicates=20,
             delta0=0.5,
             target_power=0.5,
         )
@@ -118,7 +117,6 @@ class PowerPlanTests(unittest.TestCase):
             eligible_pass_items=50,
             eligible_fail_items=50,
             simulations=2,
-            bootstrap_replicates=2,
         )
         self.assertEqual(plan["decision"]["status"], "infeasible")
         self.assertIn(
@@ -126,6 +124,34 @@ class PowerPlanTests(unittest.TestCase):
             plan["decision"]["reasons"],
         )
         self.assertTrue(s3.verify_self_digest(plan))
+
+    def test_repository_count_caps_simulated_independent_clusters(self):
+        cohort = s3._simulate_cohort(
+            s3._center(_rows()),
+            task_count=50,
+            eligible_repository_count=8,
+            delta0=0.2,
+            rng=s3.SplitMix64(7),
+        )
+        self.assertEqual(len({row.repository_id for row in cohort}), 8)
+        self.assertEqual(len({(row.repository_id, row.task_id) for row in cohort}), 50)
+
+    def test_cluster_jackknife_detects_a_large_positive_shift(self):
+        cohort = s3._simulate_cohort(
+            s3._center(_rows()),
+            task_count=50,
+            eligible_repository_count=8,
+            delta0=0.5,
+            rng=s3.SplitMix64(9),
+        )
+        self.assertGreater(
+            s3._cluster_jackknife_lower(cohort, "repository"),
+            0.0,
+        )
+        self.assertGreater(
+            s3._cluster_jackknife_lower(cohort, "task"),
+            0.0,
+        )
 
     def test_canonical_flag_requires_every_frozen_default(self):
         plan = s3.build_power_plan(
@@ -165,7 +191,13 @@ class FreezeManifestTests(unittest.TestCase):
                             "smallest_effect_geometric_likelihood_ratio": 1.10,
                             "target_power": s3.TARGET_POWER,
                             "simulated_cohorts": s3.SIMULATIONS,
-                            "bootstrap_replicates_per_level": s3.BOOTSTRAP_REPLICATES,
+                            "power_interval_method": (
+                                "delete-one-cluster jackknife SE with two-sided 95% cluster-t "
+                                "lower bound at repository and task levels"
+                            ),
+                            "final_confirmatory_bootstrap_replicates_per_level": (
+                                s3.FINAL_BOOTSTRAP_REPLICATES
+                            ),
                             "decision": "fixture",
                             "class_estimand": "fixture",
                             "centering": "fixture",
