@@ -150,8 +150,53 @@ class FreezeManifestTests(unittest.TestCase):
             roles.append("prompt_bundle")
         artifacts = []
         for role in roles:
-            path = root / f"{role}.txt"
-            path.write_text(f"{role}\n", encoding="utf-8")
+            if role in {"analysis_code", "power_planning_code"}:
+                path = root / f"{role}.py"
+                path.write_text("VALUE = 1\n", encoding="utf-8")
+            elif role == "power_plan":
+                path = root / "power_plan.json"
+                power_plan = s3.with_self_digest(
+                    {
+                        "schema_version": s3.SCHEMA_POWER,
+                        "canonical": True,
+                        "design": {
+                            "seed": s3.SEED,
+                            "smallest_effect_logscore_nats": s3.DELTA0,
+                            "smallest_effect_geometric_likelihood_ratio": 1.10,
+                            "target_power": s3.TARGET_POWER,
+                            "simulated_cohorts": s3.SIMULATIONS,
+                            "bootstrap_replicates_per_level": s3.BOOTSTRAP_REPLICATES,
+                            "decision": "fixture",
+                            "class_estimand": "fixture",
+                            "centering": "fixture",
+                        },
+                        "calibration_sha256": "a" * 64,
+                        "calibration": {},
+                        "eligible_universe": {},
+                        "candidates": [],
+                        "decision": {
+                            "status": "powered",
+                            "selected_task_count": 50,
+                            "target_power": s3.TARGET_POWER,
+                        },
+                    }
+                )
+                path.write_text(
+                    json.dumps(power_plan, sort_keys=True) + "\n",
+                    encoding="utf-8",
+                )
+            else:
+                path = root / f"{role}.json"
+                path.write_text(
+                    json.dumps(
+                        {
+                            "schema_version": "fixture",
+                            "role": role,
+                        }
+                    )
+                    + "\n",
+                    encoding="utf-8",
+                )
             artifacts.append({"role": role, "path": path.name})
 
         models = []
@@ -217,8 +262,8 @@ class FreezeManifestTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root, spec = self._root_and_spec(directory, experiment_id="X6")
             first = s3.build_freeze_manifest(spec, root)
-            (root / "analysis_code.txt").write_text(
-                "changed\n",
+            (root / "analysis_code.py").write_text(
+                "VALUE = 2\n",
                 encoding="utf-8",
             )
             second = s3.build_freeze_manifest(spec, root)
@@ -242,6 +287,37 @@ class FreezeManifestTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root, spec = self._root_and_spec(directory)
             spec["models"][0]["benchmark_specific_finetuning"] = True
+            with self.assertRaises(s3.S3FreezeError):
+                s3.build_freeze_manifest(spec, root)
+
+    def test_noncanonical_power_plan_cannot_be_frozen(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root, spec = self._root_and_spec(directory, experiment_id="X6")
+            power_path = root / "power_plan.json"
+            plan = json.loads(power_path.read_text(encoding="utf-8"))
+            plan["canonical"] = False
+            plan = s3.with_self_digest(plan)
+            power_path.write_text(
+                json.dumps(plan, sort_keys=True) + "\n",
+                encoding="utf-8",
+            )
+            with self.assertRaises(s3.S3FreezeError):
+                s3.build_freeze_manifest(spec, root)
+
+    def test_outcome_key_cannot_hide_in_candidate_inventory(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root, spec = self._root_and_spec(directory, experiment_id="X6")
+            candidate_path = root / "candidate_inventory.json"
+            candidate_path.write_text(
+                json.dumps(
+                    {
+                        "schema_version": "fixture",
+                        "verdicts": [True, False],
+                    }
+                )
+                + "\n",
+                encoding="utf-8",
+            )
             with self.assertRaises(s3.S3FreezeError):
                 s3.build_freeze_manifest(spec, root)
 
