@@ -804,7 +804,6 @@ def _tool_version() -> str:
     return __version__
 
 
-
 def analyze_heldout_verifier_addition(
     calibration: dict[str, Any],
     holdout: dict[str, Any],
