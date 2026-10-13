@@ -26,8 +26,13 @@ EXERCISED = (
     "ledger_restore",
     "stale_identity_policy_cache",
     "high_risk_sod_violation",
+    "stale_claim_retry",
+    "provider_outage_quota",
+    "external_data_and_egress",
+    "local_http_boundary",
+    "public_evidence_authority",
 )
-NOT_EXERCISED = ("stale_claim_retry", "provider_outage_quota", "release_provenance")
+NOT_EXERCISED = ("release_provenance",)
 
 
 def _by_id(report: dict) -> dict[str, dict]:
@@ -187,6 +192,46 @@ class ConformanceDetectsBrokenControlsTests(unittest.TestCase):
         with mock.patch.object(conformance, "materialize_config_secret", leaky):
             result = self._run("secret_missing_or_revoked")
         self.assertEqual(result["secret_missing_or_revoked"]["status"], "FAIL")
+
+    def test_stale_claim_fencing_regression_is_detected(self) -> None:
+        with mock.patch.object(conformance.LocalTaskClaims, "_current", lambda *args: None):
+            result = self._run("stale_claim_retry")
+        self.assertEqual(result["stale_claim_retry"]["status"], "FAIL")
+
+    def test_disabled_host_validation_is_detected(self) -> None:
+        with mock.patch.object(conformance, "is_loopback_host", return_value=True):
+            result = self._run("local_http_boundary")
+        self.assertEqual(result["local_http_boundary"]["status"], "FAIL")
+
+    def test_unrestricted_external_processing_is_detected(self) -> None:
+        class Unrestricted:
+            allowed = True
+            code = "external_processing_allowed"
+
+        with mock.patch.object(
+            conformance, "decide_external_processing", return_value=Unrestricted()
+        ):
+            result = self._run("external_data_and_egress")
+        self.assertEqual(result["external_data_and_egress"]["status"], "FAIL")
+
+    def test_publication_renderer_without_whitelist_is_detected(self) -> None:
+        with mock.patch.object(
+            conformance, "render_github_public_evidence_json",
+            side_effect=lambda document: json.dumps(document),
+        ):
+            result = self._run("public_evidence_authority")
+        self.assertEqual(result["public_evidence_authority"]["status"], "FAIL")
+
+    def test_provider_retryability_regression_is_detected(self) -> None:
+        real = conformance.connector_error
+        def wrongly_retryable(code, message, **kwargs):
+            return real(code, message, retryable=True, **kwargs)
+
+        with mock.patch.object(
+            conformance, "connector_error", side_effect=wrongly_retryable
+        ):
+            result = self._run("provider_outage_quota")
+        self.assertEqual(result["provider_outage_quota"]["status"], "FAIL")
 
     def test_crashing_scenario_is_reported_as_fail(self) -> None:
         def boom(ctx):

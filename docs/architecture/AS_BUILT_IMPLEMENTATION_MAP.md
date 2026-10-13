@@ -125,6 +125,14 @@ The runtime uses `service_runtime.py` for request correlation, readiness, resour
 
 **Not routed:** privileged `POST /api/v1/human-decisions`, connector mutation/dispatch APIs, an authenticated multi-tenant network service, or merge endpoints. `human_decision_service.py` and enterprise authorization kernels do not themselves make such routes available. See [Control Tower Local API v0.1](../specifications/CONTROL_TOWER_LOCAL_API_V0_1.md), [API Conventions](../specifications/API_CONVENTIONS_V0_1.md), and [Enterprise Control Plane](ENTERPRISE_CONTROL_PLANE.md).
 
+**Enterprise security/conformance seam:** the local E9 harness in
+[enterprise_conformance.py](../../idkmesh/enterprise_conformance.py) exercises
+the existing authorization/cache, tenant, claims, data/egress, local HTTP,
+SQLite restore, connector-error and public-projection boundaries in isolated
+fixtures. These are cross-layer *test observations*, not an authenticated
+G2/G3 API, a production sandbox, a remote-provider outage drill or merge
+authority. See the [ten-issue evidence and gap matrix](ENTERPRISE_CONTROL_PLANE.md#18-cross-layer-enterprise-conformance-ten-issue-work-slices-2026-10-13).
+
 ## Connector and provider boundaries
 
 | Layer | Source of truth | Guarantees / limits |

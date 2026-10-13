@@ -7,11 +7,13 @@ canonical files designated by [`../../PROJECT_RULES.md`](https://github.com/MSKa
 (decisions, specifications, architecture, findings); this directory keeps the trail
 that produced them.
 
-187 records across 14 dates, newest first.
+188 records across 14 dates, newest first.
 
 ## Index
 
 ### 2026-10-13
+
+- [Enterprise cross-layer conformance review](2026-10-13-enterprise-cross-layer-conformance-review.md)
 
 - [Source-backed review of API metrics interval documentation](2026-10-13-api-metrics-documentation-review.md)
 - [Benefits and adoption clarity review](2026-10-13-benefits-and-adoption-clarity.md)
