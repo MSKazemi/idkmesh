@@ -14,6 +14,7 @@ For the public front door, start with [`BEGINNER_GUIDE.md`](BEGINNER_GUIDE.md) i
 - [Control Tower API quickstart](reference/API_QUICKSTART.md), [error catalog](reference/API_ERROR_CATALOG.md) and [service limits](reference/API_LIMITS.md) — start the local server, read it with curl and the official Python client, and look up every stable error code and enforced limit; each is checked against the code by tests.
 - [Source-derived architecture](architecture/AS_BUILT_IMPLEMENTATION_MAP.md) — how run control, offline execution, verification, GitHub/Jules connectors, and human authority are **actually** separated in code.
 - [Troubleshooting](help/TROUBLESHOOTING.md) — concrete setup, API, run-store, sandbox, and test failures.
+- [API metrics intervals](reference/API_METRICS_INTERVAL_GUIDE.md) — read cumulative service metrics safely; compare only trusted same-process snapshots and distinguish UNKNOWN from zero failures.
 - [Dated reconciliation audit](audits/2026-10-10-code-documentation-reconciliation.md) — exact reviewed revision, implementation boundaries, test limitations and follow-up scope.
 
 The [capability matrix](CAPABILITY_MATRIX.md) remains authoritative for implementation status and evidence level. A linked source file or design document alone does **not** prove a production guarantee.
