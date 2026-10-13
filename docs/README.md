@@ -8,7 +8,7 @@ For the public front door, start with [`BEGINNER_GUIDE.md`](BEGINNER_GUIDE.md) i
 
 ## As-built code, reference, and help
 
-- [Implementation reference](reference/README.md) — one-to-one map for all 85 installable Python modules, shipped CLI commands and local HTTP endpoints.
+- [Implementation reference](reference/README.md) — one-to-one map for all direct installable Python modules (the 85-module baseline is dated and the map is CI-guarded), shipped CLI commands and local HTTP endpoints.
 - [Control Tower API quickstart](reference/API_QUICKSTART.md), [error catalog](reference/API_ERROR_CATALOG.md) and [service limits](reference/API_LIMITS.md) — start the local server, read it with curl and the official Python client, and look up every stable error code and enforced limit; each is checked against the code by tests.
 - [Source-derived architecture](architecture/AS_BUILT_IMPLEMENTATION_MAP.md) — how run control, offline execution, verification, GitHub/Jules connectors, and human authority are **actually** separated in code.
 - [Troubleshooting](help/TROUBLESHOOTING.md) — concrete setup, API, run-store, sandbox, and test failures.
@@ -17,6 +17,8 @@ For the public front door, start with [`BEGINNER_GUIDE.md`](BEGINNER_GUIDE.md) i
 The [capability matrix](CAPABILITY_MATRIX.md) remains authoritative for implementation status and evidence level. A linked source file or design document alone does **not** prove a production guarantee.
 
 The [research/interoperability source map](reference/RESEARCH_MODULE_MAP.md) and [operational tooling map](reference/OPERATIONS_MODULE_MAP.md) now cover direct non-package Python sources with an explicit source-coverage guard. They distinguish synthetic evidence, real data, and externally mutating utilities; see the [audit](audits/2026-10-13-nonpackage-python-audit.md).
+
+GitHub Actions are separately indexed by [workflow, event, explicit permissions and source entry points](reference/GITHUB_ACTIONS_CODE_MAP.md), with a [dated safety-boundary audit](audits/2026-10-13-workflow-code-trace.md). A token with no declared GitHub write scope may still contact external providers or execute controlled Docker workloads; inspect the workflow's conditions and secrets before running it.
 
 ## Current productization initiative
 

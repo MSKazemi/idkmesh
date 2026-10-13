@@ -342,6 +342,11 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://mskazemi.com/idkmesh/audits/2026-10-13-workflow-code-trace.html</loc>
+    <lastmod>2026-10-13</lastmod>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://mskazemi.com/idkmesh/BEGINNER_GUIDE.html</loc>
     <lastmod>2026-10-11</lastmod>
     <priority>0.9</priority>
@@ -1377,6 +1382,11 @@
     <priority>0.3</priority>
   </url>
   <url>
+    <loc>https://mskazemi.com/idkmesh/conversations/2026-10-13-visibility-funnel-coverage.html</loc>
+    <lastmod>2026-10-13</lastmod>
+    <priority>0.3</priority>
+  </url>
+  <url>
     <loc>https://mskazemi.com/idkmesh/decisions/</loc>
     <lastmod>2026-10-10</lastmod>
     <priority>0.6</priority>
@@ -1909,6 +1919,11 @@
   <url>
     <loc>https://mskazemi.com/idkmesh/reference/CLI_HTTP_QUICK_REFERENCE.html</loc>
     <lastmod>2026-10-12</lastmod>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://mskazemi.com/idkmesh/reference/GITHUB_ACTIONS_CODE_MAP.html</loc>
+    <lastmod>2026-10-13</lastmod>
     <priority>0.5</priority>
   </url>
   <url>
