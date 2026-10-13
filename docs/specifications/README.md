@@ -155,6 +155,7 @@ meaning of an existing version.
 
 ## API Conventions
 
+- [Python API Client Compatibility Checks v0.1](API_PYTHON_CLIENT_COMPATIBILITY_CHECKS_V0_1.md) — read-only client negative-test matrix for redirects, canonical digests, pagination, local token scoping and error taxonomy; mutation client remains blocked on authenticated API support.
 - [API Conventions v0.1](API_CONVENTIONS_V0_1.md) — frozen shared HTTP conventions for namespace/versioning, errors, correlation, pagination, idempotency, concurrency, events, limits, OpenAPI/schema compatibility, deprecation, and deployment security profiles. Frozen by issue #736 / [ADR-0018](../decisions/ADR-0018-freeze-api-conventions-v0-1.md); its error and list envelopes have canonical schemas under `schemas/idkmesh-api-error-v0.1.schema.json` and `schemas/idkmesh-list-v0.1.schema.json`.
 
 ## Project Configuration
