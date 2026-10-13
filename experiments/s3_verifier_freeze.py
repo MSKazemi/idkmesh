@@ -799,6 +799,10 @@ def _validate_power_plan_file(path: Path) -> dict:
             "the smallest effect"
         ),
     }
+    if "smallest_effect_logscore_nats" not in design:
+        raise S3FreezeError(
+            "power_plan smallest effect must be finite log(1.10)"
+        )
     if set(design) != set(expected) | {
         "smallest_effect_logscore_nats",
         "smallest_effect_geometric_likelihood_ratio",
