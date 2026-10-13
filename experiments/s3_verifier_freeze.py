@@ -290,6 +290,7 @@ def _macro_mean(rows: Sequence[SimRow]) -> float | None:
 def _simulate_cohort(
     centered: Sequence[CalibrationRow],
     task_count: int,
+    eligible_repository_count: int,
     delta0: float,
     rng: SplitMix64,
 ) -> list[SimRow]:
@@ -297,18 +298,31 @@ def _simulate_cohort(
     repo_ids = sorted(profiles)
     if len(repo_ids) < 8:
         raise S3FreezeError("at least 8 calibration repositories are required")
-    if task_count < 8:
-        raise S3FreezeError("task_count must be at least 8")
+    if task_count < 8 or eligible_repository_count < 8:
+        raise S3FreezeError(
+            "task and eligible repository counts must each be at least 8"
+        )
+
+    # Never simulate more independent repository clusters than the eligible
+    # confirmatory universe actually contains.
+    target_repositories = min(task_count, eligible_repository_count)
+    selected_profiles = list(
+        rng.sample_without_replacement(repo_ids, min(8, target_repositories))
+    )
+    while len(selected_profiles) < target_repositories:
+        selected_profiles.append(rng.choice(repo_ids))
 
     out: list[SimRow] = []
-    selected_tasks = 0
-    repo_instance = 0
+    task_ordinals = [0] * target_repositories
 
-    for repo in rng.sample_without_replacement(repo_ids, 8):
-        _task, entries = rng.choice(profiles[repo])
-        sim_repo = f"simrepo-{repo_instance:05d}"
-        sim_task = f"{sim_repo}/task-00000"
-        repo_instance += 1
+    def append_task(sim_repo_index: int) -> None:
+        profile = profiles[selected_profiles[sim_repo_index]]
+        _task, entries = rng.choice(profile)
+        sim_repo = f"simrepo-{sim_repo_index:05d}"
+        sim_task = (
+            f"{sim_repo}/task-{task_ordinals[sim_repo_index]:05d}"
+        )
+        task_ordinals[sim_repo_index] += 1
         for row in entries:
             out.append(
                 SimRow(
@@ -318,32 +332,18 @@ def _simulate_cohort(
                     row.delta_logscore + delta0,
                 )
             )
-        selected_tasks += 1
 
-    while selected_tasks < task_count:
-        repo = rng.choice(repo_ids)
-        profile = profiles[repo]
-        remaining = task_count - selected_tasks
-        take = min(len(profile), remaining)
-        chosen = (
-            list(profile)
-            if take == len(profile)
-            else rng.sample_without_replacement(profile, take)
-        )
-        sim_repo = f"simrepo-{repo_instance:05d}"
-        repo_instance += 1
-        for local_idx, (_task, entries) in enumerate(chosen):
-            sim_task = f"{sim_repo}/task-{local_idx:05d}"
-            for row in entries:
-                out.append(
-                    SimRow(
-                        sim_repo,
-                        sim_task,
-                        row.class_label,
-                        row.delta_logscore + delta0,
-                    )
-                )
-        selected_tasks += len(chosen)
+    # Give each eligible repository cluster one task first.
+    for repo_index in range(target_repositories):
+        append_task(repo_index)
+
+    # Allocate remaining tasks in proportion to the empirical profile sizes.
+    tickets = []
+    for repo_index, profile_name in enumerate(selected_profiles):
+        tickets.extend([repo_index] * len(profiles[profile_name]))
+    for _ in range(task_count - target_repositories):
+        append_task(rng.choice(tickets))
+
     return out
 
 
@@ -440,6 +440,7 @@ def build_power_plan(
         if isinstance(value, bool) or not isinstance(value, int) or value < 0:
             raise S3FreezeError(f"{name} must be a non-negative integer")
 
+    _validate_sha256(calibration_sha256, "calibration_sha256")
     summary = calibration_summary(rows)
     canonical = (
         simulations == SIMULATIONS
@@ -517,6 +518,7 @@ def build_power_plan(
             cohort = _simulate_cohort(
                 centered,
                 task_count,
+                eligible_repository_count,
                 delta0,
                 SplitMix64(_seed_for(seed, task_count, simulation, 0)),
             )
