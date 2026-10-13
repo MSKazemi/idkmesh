@@ -185,6 +185,46 @@ class EnterpriseAuditLedgerTests(unittest.TestCase):
             validate_audit_event(tampered)
         self.assertEqual(ctx.exception.code, "invalid_event")
 
+    def test_raw_secret_is_rejected_before_audit_sqlite_write(self) -> None:
+        secret = "gh" + "p_" + "A1b2C3d4" * 5
+        with LocalEnterpriseAuditLedger(self.path) as ledger:
+            first = ledger.append(self.item())
+            with self.assertRaises(EnterpriseAuditError) as raised:
+                ledger.append(self.item(
+                    run_id=secret,
+                    occurred_at_epoch=NOW + 2,
+                ))
+            self.assertEqual(raised.exception.code, "raw_secret_detected")
+            self.assertNotIn(secret, str(raised.exception))
+            state = ledger.verify()
+            self.assertTrue(state.ok)
+            self.assertEqual(state.event_count, 1)
+            second = ledger.append(self.item(
+                occurred_at_epoch=NOW + 3,
+            ))
+            self.assertEqual(second["sequence"], first["sequence"] + 1)
+
+    def test_raw_secret_cannot_escape_via_direct_ndjson_sink(self) -> None:
+        secret = "AK" + "IA" + "ABCDEFGHIJKLMNOP"
+        with LocalEnterpriseAuditLedger(self.path) as ledger:
+            event = ledger.append(self.item())
+        sink_output = io.StringIO()
+        sink = JsonLinesAuditSink(sink_output)
+        sink.write_event(event)
+        baseline = sink_output.getvalue()
+
+        leaked = json.loads(json.dumps(event))
+        leaked["correlation"]["run_id"] = secret
+        with self.assertRaises(EnterpriseAuditError) as validated:
+            validate_audit_event(leaked)
+        self.assertEqual(validated.exception.code, "raw_secret_detected")
+        self.assertNotIn(secret, str(validated.exception))
+        with self.assertRaises(EnterpriseAuditError) as forwarded:
+            sink.write_event(leaked)
+        self.assertEqual(forwarded.exception.code, "raw_secret_detected")
+        self.assertEqual(sink_output.getvalue(), baseline)
+        self.assertNotIn(secret, sink_output.getvalue())
+
     def test_denied_cross_tenant_attempt_is_still_auditable(self) -> None:
         actor = self.actor(
             principal_id="github:user:mallory",
