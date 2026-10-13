@@ -191,10 +191,7 @@ class FreezeManifestTests(unittest.TestCase):
                             "smallest_effect_geometric_likelihood_ratio": 1.10,
                             "target_power": s3.TARGET_POWER,
                             "simulated_cohorts": s3.SIMULATIONS,
-                            "power_interval_method": (
-                                "delete-one-cluster jackknife SE with two-sided 95% cluster-t "
-                                "lower bound at repository and task levels"
-                            ),
+                            "power_interval_method": s3.POWER_INTERVAL_METHOD,
                             "final_confirmatory_bootstrap_replicates_per_level": (
                                 s3.FINAL_BOOTSTRAP_REPLICATES
                             ),
