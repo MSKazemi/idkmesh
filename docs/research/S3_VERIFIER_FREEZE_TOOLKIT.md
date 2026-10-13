@@ -105,6 +105,7 @@ The manifest builder accepts only named pre-confirmatory artifact roles:
 - analysis_code;
 - power_planning_code;
 - power_plan;
+- calibration_statistics;
 - candidate_inventory;
 - verifier_inventory;
 - stage_assignment;
@@ -116,8 +117,10 @@ An X7 freeze requires prompt_bundle plus metadata for at least three base-model
 lineages. A model marked as benchmark-specifically fine-tuned is rejected from
 the primary independent-family freeze.
 
-The freeze input also records the pinned repository commit, upstream benchmark
-commit and artifact digests, bootstrap/permutation/stage-assignment seeds,
+The bound calibration_statistics file must hash to the calibration_sha256
+recorded inside the canonical power plan; a mismatch fails closed. The freeze
+input also records the pinned repository commit, upstream benchmark commit and
+artifact digests, bootstrap/permutation/stage-assignment seeds,
 execution boundary, model/checkpoint metadata, contamination status, and an
 optional container image digest.
 
@@ -148,6 +151,8 @@ This tool is deliberately incapable of satisfying #804.
 - Source-code roles must bind Python files; metadata roles must bind JSON/JSONL.
 - The power-plan role must bind a valid canonical plan; development plans and
   infeasible plans cannot authorize an experiment freeze.
+- The exact calibration-statistics artifact is mandatory and its digest must
+  equal the digest inside that power plan.
 - Artifact paths cannot escape the requested root or be symlinks.
 - An execution boundary that says untrusted patches will run while the sandbox
   is not required is rejected.
