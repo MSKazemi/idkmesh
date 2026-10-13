@@ -105,7 +105,8 @@ Primary context: [subsystem contract](../specifications/GITHUB_WEBHOOK_INGRESS_V
 | [`github_public_evidence.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_public_evidence.py) | Strict public-safe evidence publication projection |
 | [`github_release_provenance.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_release_provenance.py) | Pure release metadata/provenance record behind `idkmesh release-provenance`: binds a proposed tag, target commit, and artifact digests (caller-supplied, unverified) to C14-D run evidence; creates no tag, release, or attestation |
 | [`github_rest_source.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_rest_source.py) | Bounded GitHub identity REST transport |
-| [`github_routing_projection.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_routing_projection.py) | Read-only GitHub UI projection of routing decision |
+| [`github_run_label_projection.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_run_label_projection.py) | Read-only canonical Product Spine lifecycle-to-issue-label planning, no API mutation or integration authority |
+| [`github_routing_projection.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_routing_projection.py) | Read-only GitHub UI projection of routing decision; replaces only routing-owned label families |
 | [`github_status_comment.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_status_comment.py) | One idempotently synchronized run-status comment |
 | [`github_status_update.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_status_update.py) | Immutable single-comment publication and recovery |
 | [`github_workunit_intake.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_workunit_intake.py) | Pure Issue Form body parser to untrusted intake hints; any malformed or hand-edited content falls back; never grants authority |

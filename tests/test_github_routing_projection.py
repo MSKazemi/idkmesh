@@ -191,6 +191,25 @@ class GitHubRoutingProjectionTests(unittest.TestCase):
         self.assertIn("idkmesh:route:selected", merged)
         self.assertIn("idkmesh:tier:T2", merged)
 
+    def test_run_lifecycle_labels_survive_routing_projection(self):
+        decision = _decision()
+        projection = project_routing_to_github(
+            decision,
+            resolve_routes(decision, [_connector("agent-a")]),
+        )
+        existing = (
+            "idkmesh:work:candidate-observed",
+            "idkmesh:verify:pending",
+            "idkmesh:human:unrecorded",
+            "idkmesh:route:blocked",
+        )
+        updated = replace_managed_routing_labels(existing, projection)
+        self.assertIn("idkmesh:work:candidate-observed", updated)
+        self.assertIn("idkmesh:verify:pending", updated)
+        self.assertIn("idkmesh:human:unrecorded", updated)
+        self.assertNotIn("idkmesh:route:blocked", updated)
+        self.assertIn("idkmesh:route:selected", updated)
+
     def test_human_labels_cannot_change_routing_digest(self):
         decision = _decision()
         resolution = resolve_routes(

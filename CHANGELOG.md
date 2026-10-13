@@ -12,6 +12,13 @@ and the release notes for that tag.
 
 ## [Unreleased]
 
+- API-9 observability privacy hardening (refs #744): opt-in local access logs
+  now use a fixed route vocabulary, replacing run/WorkUnit/project identifiers
+  with placeholders and unknown URL paths with `<unmatched>`; unrecognized HTTP
+  methods become `OTHER`. Added formatter and live HTTP regression tests and
+  synchronized the API/architecture documentation. The authenticated aggregate
+  metrics and OTLP export contracts are unchanged.
+
 - E9 enterprise provider-fault scenario (refs #676): replace one UNKNOWN
   placeholder with a deterministic offline WARN diagnostic over the actual
   connector probe, inspection, route and error kernels. Inject healthy,
@@ -22,6 +29,8 @@ and the release notes for that tag.
   attempt, retry-scheduler qualification, dispatch or certification claim.
 
 ### Added
+
+- github: pure C13-E canonical Product Spine run-state label planning, with three narrowly owned namespaces, idempotent add/remove diffs, stale-digest/invalid-input refusal, and complete run-state regression tests (refs #608). Routing label projection now preserves the independent lifecycle namespace. No GitHub write or grant of dispatch, verification, human decision, integration, or merge authority. See [run label projection](docs/specifications/GITHUB_RUN_LABEL_PROJECTION_V0_1.md).
 
 - tests: five scenarios move from UNKNOWN to exercised in the E9 enterprise
   conformance harness: stale-claim fencing, data-class egress, the local HTTP
