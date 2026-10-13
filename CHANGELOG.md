@@ -144,11 +144,12 @@ and the release notes for that tag.
 - E5 raw-secret scanner (issue #672, partial): `idkmesh/enterprise_secret_scan.py`
   detects credential-shaped values (GitHub, AWS, Slack, Google, `sk-` keys, JWTs,
   PEM private-key headers, `Bearer` credentials, URL userinfo) and literal values
-  under exact credential-named keys in JSON-shaped documents. Findings carry a
-  rule id and a sanitized JSON Pointer only, never the matched text; a secret used
-  as a mapping key is replaced by `<key:N>` in locations. The scan is fail-closed:
-  depth, node and string-size limits and non-JSON values make the report
-  incomplete, which is never clean. References such as `env:NAME` are accepted.
+  under exact credential-named keys in JSON-shaped documents, including strings
+  in a list under such a key (an object under one is judged by its own keys).
+  Findings carry a rule id and a sanitized JSON Pointer only, never the matched
+  text; a secret used as a mapping key is replaced by `<key:N>` in locations.
+  The scan is fail-closed: depth, node and string-size limits and non-JSON values
+  make the report incomplete, which is never clean. References such as `env:NAME` are accepted.
   Not yet called from any WorkUnit, result or audit write path, and not a
   guarantee that a document holds no secret. Specified in
   [Enterprise Data Policy Kernel v0.1](docs/specifications/ENTERPRISE_DATA_POLICY_V0_1.md#raw-secret-scanner).

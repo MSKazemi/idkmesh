@@ -77,7 +77,7 @@ unless the report is clean.
 | `jwt` | three-part JWTs whose header and payload start `eyJ` |
 | `bearer_credential` | `Bearer` followed by at least 20 token characters |
 | `url_userinfo` | `scheme://user:password@host` |
-| `sensitive_key_literal` | a literal string of at least 8 characters under an exact credential-named key (`password`, `api_key`, `authorization`, `token`, ...) |
+| `sensitive_key_literal` | a literal string of at least 8 characters under an exact credential-named key (`password`, `api_key`, `authorization`, `token`, ...), including strings in a list under such a key; an object under such a key is judged by its own keys, and a number is not judged |
 
 Properties:
 
