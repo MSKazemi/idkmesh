@@ -3,7 +3,7 @@ description: "Source-by-source research, simulation and interoperability Python 
 ---
 # Research and interoperability code map (as built)
 
-**Code-review baseline:** current public `main` as inspected on 2026-10-13; see the [dated review record](../audits/2026-10-13-nonpackage-python-audit.md) for the pinned revision and validation limits. This map covers **97 direct Python files** in `experiments/`, `interop/`, `sim/`, and `randomness_lab/` (excluding `interop/tests/`). It is source/declaration navigation, **not** an independent line-by-line security review or a release qualification.
+**Code-review baseline:** current public `main` as inspected on 2026-10-13; see the [dated review record](../audits/2026-10-13-nonpackage-python-audit.md) for the pinned revision and validation limits. This map covers **98 direct Python files** in `experiments/`, `interop/`, `sim/`, and `randomness_lab/` (excluding `interop/tests/`). It is source/declaration navigation, **not** an independent line-by-line security review or a release qualification.
 
 **Read this before interpreting results:** `sim/` and `randomness_lab/` primarily model synthetic agents/outcomes, while parts of `experiments/` and E016/E017 consume real observed verdicts or public execution-graded data. Neither synthetic mechanisms, exploratory analysis of already seen data, a passing schema fixture, nor a matched simulation budget automatically demonstrates general real-world agent value. A metadata-only verifier does not execute candidate code; explicit behavioral harnesses operate in separate controlled contexts. `interop/` is an in-process protocol binding, not a network service. All paths grant **no direct permission to approve, push, or merge**.
 
@@ -23,7 +23,7 @@ sim/ + randomness_lab/                            -> falsifiable research models
 
 Use [source-derived architecture](../architecture/AS_BUILT_IMPLEMENTATION_MAP.md), [protocol specifications](../specifications/README.md), [research index](../research/README.md) and [test practice](../TESTING.md) to distinguish runnable components, tests, and evidence claims.
 
-## `experiments/` (27 source files)
+## `experiments/` (28 source files)
 
 Executable contracts, calibration and bounded two-attempt/reference experiments. Main [experiments guide](https://github.com/MSKazemi/idkmesh/blob/main/experiments/README.md); see [run evidence](../specifications/RUN_EVIDENCE_REPORT_V0_1.md), [EvaluatorPlan](../specifications/EVALUATOR_PLAN_V0_3_SEMANTIC_MATCHING.md) and [research design](../research/SCIENTIFIC_PROGRAM.md).
 
@@ -47,6 +47,7 @@ Executable contracts, calibration and bounded two-attempt/reference experiments.
 | [`record_human_decision.py`](https://github.com/MSKazemi/idkmesh/blob/main/experiments/record_human_decision.py) | Emit and verify an evidence-bound local decision record | Separate explicit human action; no Git push or merge |
 | [`replay_run.py`](https://github.com/MSKazemi/idkmesh/blob/main/experiments/replay_run.py) | Capture and replay bounded two-attempt evidence bundles | Checks reproducibility; does not decide integration |
 | [`run_evidence_report.py`](https://github.com/MSKazemi/idkmesh/blob/main/experiments/run_evidence_report.py) | Validate and render non-selecting run evidence and replay comparisons | Presentation/recommendation, never acceptance authority |
+| [`s3_verifier_freeze.py`](https://github.com/MSKazemi/idkmesh/blob/main/experiments/s3_verifier_freeze.py) | Build calibration-only S3 power plans and content-addressed pre-confirmatory freeze manifests | Preparation only; rejects confirmatory outcome material and never executes patches or verifier models |
 | [`submission_provenance.py`](https://github.com/MSKazemi/idkmesh/blob/main/experiments/submission_provenance.py) | Reanalyze pinned submission results using model/scaffold metadata | No inferred independent-agent identity from shared submissions |
 | [`substring_patch_verifier.py`](https://github.com/MSKazemi/idkmesh/blob/main/experiments/substring_patch_verifier.py) | Metadata-only added-line substring verifier | Never executes candidate code; no path/intent oracle |
 | [`temporal_holdout.py`](https://github.com/MSKazemi/idkmesh/blob/main/experiments/temporal_holdout.py) | E048 preregistered new-submission cohort and frozen analysis replay | Uses only post-pin submissions; not a new statistical method |
