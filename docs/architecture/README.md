@@ -12,6 +12,8 @@ remain authoritative; an index link does not promote a proposal into policy.
 - [Research and interop sources](../reference/RESEARCH_MODULE_MAP.md) — source-level responsibilities and evidence boundaries.
 - [Operational tooling](../reference/OPERATIONS_MODULE_MAP.md) — repository scripts/tools, their entry points and side effects.
 
+- [GitHub Actions source and authority map](../reference/GITHUB_ACTIONS_CODE_MAP.md) — all declared workflows, triggers, write scopes and owning entry points. Treat explicit GitHub token scope separately from provider credentials and evidence/merge authority.
+
 ## Rendered Pipeline Views
 
 - [Pipeline Diagrams](PIPELINE_DIAGRAMS.md) — the canonical work/evidence path,
