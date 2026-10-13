@@ -46,6 +46,7 @@ policy changes or merge decisions.
 
 ## Routing and Orchestration Experiments
 
+- [Physarum Synthetic-to-Field Gate v0.1](PHYSARUM_SYNTHETIC_TO_FIELD_GATE_V0_1.md) — burden-matched synthetic falsifiers and telemetry prerequisites before any real routing integration.
 - [Adaptive Policy Evidence CLI](ADAPTIVE_POLICY_EVIDENCE_CLI.md) — deterministic
   evidence extraction for shadow-policy cohort and outcome records.
 - [AVE-core Shadow Adapter](AVE_SHADOW_ADAPTER.md) — advisory verifier-allocation adapter that reuses canonical WorkUnit/EvaluatorPlan bindings, domain/time-scoped reliability evidence, and the common adaptive-policy shadow contract without dispatch or verification authority.
