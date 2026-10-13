@@ -141,6 +141,17 @@ and the release notes for that tag.
   policy content digest and request shape, with a validity window capped by
   max age and actor/approver expiry, so a revoked, changed or expired identity
   or an edited policy cannot reuse a cached ALLOW. Adds focused unit tests.
+- E5 issue-preview credential refusal (issue #672, partial):
+  `preview_github_issue_work_unit` now scans the issue title, body and metadata
+  with the raw-secret scanner and refuses with `policy_denied` when a credential
+  is found or the text cannot be fully scanned. This covers `idkmesh work
+  preview`, the `github-workflow preview` runner and the Issue Form path. The
+  refusal names rule ids and fields only, never the text, and tells the author
+  to rotate the credential. Scanner refinements from a measured false-positive
+  check on this repository's 1,117 issues and PRs: placeholder URL passwords
+  (`user:password@host`) are ignored, and `Bearer` needs a token-shaped value, so
+  prose such as `bearer token-based-authentication` is not flagged. Result and
+  audit write paths are not covered yet.
 - E5 raw-secret scanner (issue #672, partial): `idkmesh/enterprise_secret_scan.py`
   detects credential-shaped values (GitHub, AWS, Slack, Google, `sk-` keys, JWTs,
   PEM private-key headers, `Bearer` credentials, URL userinfo) and literal values

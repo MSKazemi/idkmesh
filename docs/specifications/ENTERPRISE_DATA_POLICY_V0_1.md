@@ -75,8 +75,8 @@ unless the report is clean.
 | `google_api_key` | `AIza` API keys |
 | `api_key_sk` | `sk-`, `sk-ant-` and `sk-proj-` API keys of at least 32 characters |
 | `jwt` | three-part JWTs whose header and payload start `eyJ` |
-| `bearer_credential` | `Bearer` followed by at least 20 token characters |
-| `url_userinfo` | `scheme://user:password@host` |
+| `bearer_credential` | `Bearer` followed by a run of at least 20 token characters that contains a digit, an uppercase letter or a symbol (an all-lowercase hyphenated phrase such as `bearer token-based-authentication` is prose) |
+| `url_userinfo` | `scheme://user:secret@host`; an obvious placeholder password (`password`, `pass`, `<password>`, `${PASSWORD}`, `****`) is ignored |
 | `sensitive_key_literal` | a literal string of at least 8 characters under an exact credential-named key (`password`, `api_key`, `authorization`, `token`, ...) |
 
 Properties:
@@ -109,13 +109,30 @@ credential values shorter than 8 characters under a credential key are not
 detected. The scanner performs no I/O, reads no environment variable, and grants
 no authority; it does not redact (redaction stays in `connector_secrets`).
 
+### Where it is called
+
+`preview_github_issue_work_unit` (`idkmesh/github_issue_preview.py`) scans the
+issue title, body and snapshot metadata before building a WorkUnit, because issue
+text is copied verbatim into the objective and an issue is usually public. That
+function is the single chokepoint for `idkmesh work preview`, the
+`github-workflow preview` runner and the Issue Form path. A finding raises
+`ConnectorError` `policy_denied` with `details.rules` and `details.fields` (rule
+ids and top-level field names only); an incomplete scan is refused with
+`details.reasons`. The refusal asks the author to rotate the credential, since
+it may already be exposed.
+
+False positives were measured, not assumed: on this repository's own 1,117
+issues and pull requests the first rule set flagged one document (a
+`user:password@host` placeholder in prose); after the placeholder filter and the
+`Bearer` shape requirement it flags none. That is one corpus, not a guarantee.
+
 ## Not in this slice
 
 - Wiring the kernel in front of connectors, workers or `connector_secrets`.
 - An egress allowlist and an approved-provider list in the profile schema. They
   are function arguments today; adding them to the schema is a separate
   decision.
-- Calling the scanner from the WorkUnit, result or audit write paths. The
-  scanner below exists; nothing invokes it yet.
+- Calling the scanner from the result or audit write paths. Only the GitHub
+  issue preview calls it today (see below).
 - Detecting secrets the scanner has no rule for (see its limits).
 - Recording decisions in the audit ledger.

@@ -32,7 +32,7 @@ SAMPLES = {
     "google_api_key": "AI" + "za" + "A" * 35,
     "api_key_sk": "sk" + "-ant-" + "x1Y2" * 10,
     "jwt": "ey" + "JhbGciOiJIUzI1" + ".ey" + "JzdWIiOiIxMjM0" + ".c2lnbmF0dXJl" + "AAAA",
-    "bearer_credential": "Bear" + "er " + "conformance-secret-value-do-not-leak",
+    "bearer_credential": "Bear" + "er " + "conformance-secret-value-1234567890",
     "url_userinfo": "https://" + "deploy:" + "hunter2hunter2" + "@example.org/repo.git",
 }
 
@@ -52,6 +52,22 @@ class ValueRuleTests(unittest.TestCase):
                 self.assertEqual(rules({"note": f"see {sample} now"}), {rule})
                 self.assertEqual(rules(sample), {rule})
 
+    def test_placeholder_url_password_does_not_hide_a_real_one(self) -> None:
+        text = "see https://user:password@host and https://deploy:" + "hunter2hunter2@example.org/x"
+        self.assertEqual(rules({"v": text}), {"url_userinfo"})
+
+    def test_bearer_needs_a_token_shape_not_just_length(self) -> None:
+        flagged = (
+            "Bearer abcdefghijklmnopqrstuvwxyz0123",  # digits
+            "Bearer AbcdefghijklmnopqrstuvwxYz",  # mixed case
+            "bearer abcdefghij.klmnopqrstuvwxyz",  # symbol
+            "BEARER\tabcdefghijklmnopqrstuvwxyz0",  # case-insensitive keyword
+        )
+        for text in flagged:
+            with self.subTest(text=text):
+                self.assertEqual(rules({"v": text}), {"bearer_credential"})
+        self.assertTrue(scan_for_secrets({"v": "bearer abcdefghijklmnopqrstuvwxyz-abc"}).clean)
+
     def test_credential_inside_nested_list_is_located(self) -> None:
         report = scan_for_secrets(
             {"inputs": [{"locator": "ok"}, {"locator": SAMPLES["github_token"]}]}
@@ -70,11 +86,17 @@ class ValueRuleTests(unittest.TestCase):
             "https://example.org/a:b/c@d",  # no user:password@ before the path
             "sk-learn is a library",
             "Bearer token authentication is described in the spec",
+            "Use a bearer token-based-authentication header scheme.",
             "ghp_ is the prefix of a GitHub token",
             "-----BEGIN CERTIFICATE-----",  # public material
             "123e4567-e89b-12d3-a456-426614174000",
             "AKIA",
             "env:JULES_API_KEY",
+            # Documentation placeholders for URL credentials.
+            "use scheme://user:password@host for basic auth",
+            "https://<user>:<password>@example.org/repo.git",
+            "postgres://app:${DB_PASSWORD}@db:5432/app",
+            "https://user:****@example.org/",
         ]
         for text in benign:
             with self.subTest(text=text):

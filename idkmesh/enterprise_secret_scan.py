@@ -83,13 +83,37 @@ _VALUE_RULES: tuple[tuple[str, "re.Pattern[str]"], ...] = (
     ),
     (
         "bearer_credential",
-        re.compile(r"(?i)(?<![A-Za-z0-9])bearer[ \t]{1,8}[A-Za-z0-9._~+/-]{20,2048}"),
+        # The token must hold a digit, an uppercase letter or a symbol: an
+        # all-lowercase hyphenated phrase ("bearer token-based-authentication")
+        # is prose, not a credential.
+        re.compile(
+            r"(?<![A-Za-z0-9])(?i:bearer)[ \t]{1,8}"
+            r"(?=[a-z-]{0,2048}[0-9A-Z._~+/])[A-Za-z0-9._~+/-]{20,2048}"
+        ),
     ),
     (
         "url_userinfo",
-        re.compile(r"[A-Za-z][A-Za-z0-9+.-]{0,31}://[^\s/@:]{1,256}:[^\s/@]{1,256}@"),
+        re.compile(
+            r"[A-Za-z][A-Za-z0-9+.-]{0,31}://[^\s/@:]{1,256}:(?P<password>[^\s/@]{1,256})@"
+        ),
     ),
 )
+# A URL password that is obviously documentation (``user:password@host``,
+# ``<password>``, ``${PASSWORD}``, ``****``) is not a credential. Measured on this
+# repository's own 1,117 issues and PRs, this was the only false positive.
+_PLACEHOLDER_PASSWORD = re.compile(
+    r"(?i)(?:pass(?:w(?:or)?d)?|pwd|secret|token|changeme|x{3,}|\*{3,}"
+    r"|<[^>]{1,64}>|\$\{[^}]{1,64}\}|\{[^}]{1,64}\}|%s)\Z"
+)
+
+
+def _userinfo_is_credential(match: "re.Match[str]") -> bool:
+    return _PLACEHOLDER_PASSWORD.fullmatch(match.group("password")) is None
+
+
+# Rules whose raw pattern match still needs a second look.
+_MATCH_FILTERS = {"url_userinfo": _userinfo_is_credential}
+
 RULE_IDS = tuple(rule for rule, _ in _VALUE_RULES) + ("sensitive_key_literal",)
 
 # Exact (not substring) key names, so ``max_tokens`` and ``secret_ref`` are not
@@ -193,7 +217,11 @@ class SecretLeakError(ValueError):
 
 def _value_rule(text: str) -> str | None:
     for rule, pattern in _VALUE_RULES:
-        if pattern.search(text):
+        accept = _MATCH_FILTERS.get(rule)
+        if accept is None:
+            if pattern.search(text):
+                return rule
+        elif any(accept(match) for match in pattern.finditer(text)):
             return rule
     return None
 

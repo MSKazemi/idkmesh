@@ -230,7 +230,7 @@ Enterprise workers should support:
 
 Issue #672 owns the data/egress/secrets boundary.
 
-The pure decision kernel is `idkmesh/enterprise_data_policy.py`, specified in [Enterprise Data Policy Kernel v0.1](../specifications/ENTERPRISE_DATA_POLICY_V0_1.md). It evaluates the profile's declarations as fail-closed allow/deny decisions; it is not yet wired into connectors, workers or the audit ledger. `idkmesh/enterprise_secret_scan.py` adds the matching check that a WorkUnit, result or audit document holds no raw credential; it is fail-closed and its findings never carry the matched text, but nothing calls it yet.
+The pure decision kernel is `idkmesh/enterprise_data_policy.py`, specified in [Enterprise Data Policy Kernel v0.1](../specifications/ENTERPRISE_DATA_POLICY_V0_1.md). It evaluates the profile's declarations as fail-closed allow/deny decisions; it is not yet wired into connectors, workers or the audit ledger. `idkmesh/enterprise_secret_scan.py` adds the matching check that a WorkUnit, result or audit document holds no raw credential; it is fail-closed and its findings never carry the matched text. Today only the GitHub issue preview calls it (issue text is copied into the WorkUnit objective); the result and audit write paths do not.
 
 ## 9. Secret and workload identity
 

@@ -29,6 +29,7 @@ from typing import Any, Mapping
 from urllib.parse import urlsplit
 
 from idkmesh.connector_errors import ConnectorError
+from idkmesh.enterprise_secret_scan import scan_for_secrets
 from idkmesh.github_workunit_intake import (
     IntakeParseResult,
     parse_workunit_intake,
@@ -632,6 +633,41 @@ def _work_unit_id(repository: str, issue_number: int) -> str:
     return f"github/issue-{issue_number}-{digest}"
 
 
+def _refuse_credentials_in_issue(snapshot: GitHubIssueSnapshot) -> None:
+    """Refuse a preview whose issue text holds a raw credential (E5, #672).
+
+    Issue text is copied verbatim into the WorkUnit objective, which can reach an
+    external provider, and an issue is usually public. The refusal names rule
+    ids and top-level fields only, never the matched text. A scan that could not
+    finish is refused too: "not scanned" is not "clean".
+    """
+
+    report = scan_for_secrets(
+        {"title": snapshot.title, "body": snapshot.body, "metadata": snapshot.to_metadata()}
+    )
+    if report.clean:
+        return
+    if report.findings:
+        raise ConnectorError(
+            code="policy_denied",
+            message=(
+                "GitHub issue text appears to contain a credential. Remove it, "
+                "rotate the credential (it may already be exposed), and preview again."
+            ),
+            details={
+                "rules": sorted({finding.rule for finding in report.findings}),
+                "fields": sorted(
+                    {finding.location.split("/")[1] for finding in report.findings}
+                ),
+            },
+        )
+    raise ConnectorError(
+        code="policy_denied",
+        message="GitHub issue text could not be fully scanned for credentials.",
+        details={"reasons": list(report.incomplete_reasons)},
+    )
+
+
 def preview_github_issue_work_unit(
     snapshot: GitHubIssueSnapshot,
     *,
@@ -685,6 +721,7 @@ def preview_github_issue_work_unit(
             "source_revision must be an exact 40- or 64-character hexadecimal Git object id"
         )
     source_sha = source_revision.lower()
+    _refuse_credentials_in_issue(snapshot)
 
     composition: _IntakeComposition | None = None
     if use_intake_form:
