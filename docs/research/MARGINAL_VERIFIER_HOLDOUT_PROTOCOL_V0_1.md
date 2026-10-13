@@ -1,6 +1,6 @@
 # Marginal verifier selection: out-of-sample validation protocol
 
-**Issue:** #693. **Status:** prespecified evaluation protocol; no new result.
+**Issue:** #693. **Status:** exploratory held-out diagnostic implemented; no confirmatory or external result.
 
 The existing marginal-evidence tool measures gate-specific contributions on
 historical ground-truthed candidate rows. In-sample contribution can overfit.
@@ -33,3 +33,23 @@ results, raw denominators, seed and the exact corpus revision.
 
 **Authority:** diagnostic only. No provider dispatch, verifier sovereignty,
 acceptance, GitHub merge or human decision is granted.
+
+
+## Implemented exploratory held-out primitive
+
+`idkmesh.marginal_evidence.analyze_heldout_verifier_addition(calibration,
+holdout, current_verifier_ids=..., candidate_verifier_ids=...)`
+validates complete independent *candidate IDs*, identical gate/quorum/verifier
+identities, and analyzes **calibration only** to select a unique candidate
+with a positive measured panel-error improvement. It abstains on unresolved,
+non-positive or tied point estimates; after selection it audits only the
+frozen candidate on the held-out rows. Input digests and sample counts are
+retained. Tests prove that changing held-out verdicts cannot change
+calibration selection and that overlap/quorum mismatch fails closed.
+
+**Scientific limitation:** disjoint IDs do not establish independent
+repositories, patches or task groups. The current matrix format carries no
+task-family provenance, so an external preregistered group splitter is still
+required. The method is *exploratory point-estimate only*, not a supported
+routing algorithm or a publishable out-of-sample estimate without uncertainty
+intervals and group-level replication. Human integration remains separate.

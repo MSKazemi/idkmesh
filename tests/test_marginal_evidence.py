@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib.util
+import itertools
 import json
 import subprocess
 import sys
@@ -138,6 +139,33 @@ class InputContractTests(unittest.TestCase):
         with self.assertRaises(marginal_evidence.MarginalEvidenceInputError) as ctx:
             marginal_evidence.analyze(data, current_verifier_ids=["v1"])
         self.assertIn("no candidate verifiers remain", str(ctx.exception))
+
+    def test_collections_reject_scalar_and_mapping_ids(self):
+        for malformed in (17, {"v1": True}, "v1", b"v1"):
+            for field in ("current_verifier_ids", "candidate_verifier_ids"):
+                with self.subTest(value=repr(malformed), field=field):
+                    options = {
+                        "current_verifier_ids": ["v1"],
+                        "candidate_verifier_ids": ["v3"],
+                    }
+                    options[field] = malformed
+                    with self.assertRaises(marginal_evidence.MarginalEvidenceInputError):
+                        marginal_evidence.analyze(make_matrix(), **options)
+
+    def test_finite_iterators_work_and_unbounded_iterators_fail_fast(self):
+        result = marginal_evidence.analyze(
+            make_matrix(),
+            current_verifier_ids=(v for v in ("v1", "v2")),
+            candidate_verifier_ids=(v for v in ("v3",)),
+        )
+        self.assertEqual(result["analysis"]["current_verifier_ids"], ["v1", "v2"])
+        self.assertEqual(result["analysis"]["candidate_verifier_ids"], ["v3"])
+        with self.assertRaises(marginal_evidence.MarginalEvidenceInputError) as ctx:
+            marginal_evidence.analyze(
+                make_matrix(),
+                current_verifier_ids=(f"v{i}" for i in itertools.count()),
+            )
+        self.assertIn("exceeds the", str(ctx.exception))
 
     def test_duplicate_current_ids_are_refused(self):
         with self.assertRaises(marginal_evidence.MarginalEvidenceInputError):
@@ -701,6 +729,65 @@ class CliTests(unittest.TestCase):
         )
         self.assertEqual(proc.returncode, 2)
         self.assertIn("would overwrite the verdict matrix", proc.stderr)
+
+
+class HeldoutVerifierDiagnosticTests(unittest.TestCase):
+    def matrices(self, *, count=12):
+        errors = {"v1": {1, 3, 5}, "v2": {9}, "v3": {0, 2, 4}}
+        train = make_matrix(count=count, error_sets=errors)
+        test = make_matrix(count=count, error_sets=errors)
+        for cand in test["candidates"]:
+            cand["id"] = "hold-" + cand["id"]
+        for verifier in test["verifiers"]:
+            verifier["verdicts"] = {
+                "hold-" + key: value
+                for key, value in verifier["verdicts"].items()
+            }
+        return train, test
+
+    def evaluate(self, train, test):
+        return marginal_evidence.analyze_heldout_verifier_addition(
+            train, test, current_verifier_ids=["v1"],
+            candidate_verifier_ids=["v2", "v3"],
+        )
+
+    def test_calibration_selection_is_frozen_before_holdout(self):
+        train, holdout = self.matrices()
+        report = self.evaluate(train, holdout)
+        self.assertEqual(report["selected_verifier_id"], "v2")
+        self.assertEqual(report["authority"], "diagnostic_only")
+        self.assertEqual(report["holdout_result"]["candidate_verifier_id"], "v2")
+        self.assertFalse(report["group_leakage_checked"])
+        self.assertFalse(report["dispatch_authority"])
+        changed = json.loads(json.dumps(holdout))
+        for verifier in changed["verifiers"]:
+            verifier["verdicts"] = {
+                key: _flip(value) for key, value in verifier["verdicts"].items()
+            }
+        altered = self.evaluate(train, changed)
+        self.assertEqual(altered["selected_verifier_id"], "v2")
+        self.assertNotEqual(report["holdout_input_digest_sha256"],
+                            altered["holdout_input_digest_sha256"])
+
+    def test_overlap_and_gate_incompatibility_rejected(self):
+        train, test = self.matrices()
+        with self.assertRaisesRegex(
+            marginal_evidence.MarginalEvidenceInputError, "overlap"
+        ):
+            self.evaluate(train, train)
+        test["quorum"] = 0.75
+        with self.assertRaisesRegex(
+            marginal_evidence.MarginalEvidenceInputError, "quorum"
+        ):
+            self.evaluate(train, test)
+
+    def test_insufficient_calibration_rows_abstain_without_holdout_read(self):
+        train, test = self.matrices(count=4)
+        result = self.evaluate(train, test)
+        self.assertIsNone(result["selected_verifier_id"])
+        self.assertIsNone(result["holdout_result"])
+        self.assertEqual(result["selection_reason"],
+                         "no_measured_positive_calibration_contribution")
 
 
 if __name__ == "__main__":

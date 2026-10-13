@@ -212,11 +212,34 @@ class HumanDecisionStore:
             raise HumanDecisionServiceError(
                 "persisted_state_corrupt", "stored decision record is not an object"
             )
-        observed = canonical_digest(record)
+        try:
+            observed = canonical_digest(record)
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise HumanDecisionServiceError(
+                "persisted_state_corrupt",
+                "stored decision record cannot be canonically digested",
+            ) from exc
         if observed != row["decision_record_digest"]:
             raise HumanDecisionServiceError(
                 "persisted_state_corrupt",
                 "stored decision record digest does not match stored content",
+            )
+        # A correct JSON digest does not bind indexed columns to the record.
+        # Check the identity before serving it through either list or replay.
+        evidence = record.get("evidence_report")
+        if (
+            record.get("decision_id") != row["decision_id"]
+            or not isinstance(evidence, dict)
+            or evidence.get("run_id") != row["run_id"]
+            or evidence.get("digest") != row["evidence_report_digest"]
+            or record.get("decided_at") != row["decided_at"]
+            or row["decision_id"] != _decision_id(
+                row["idempotency_key"], row["request_digest"]
+            )
+        ):
+            raise HumanDecisionServiceError(
+                "persisted_state_corrupt",
+                "stored decision indexed identity differs from its immutable record",
             )
         return record
 

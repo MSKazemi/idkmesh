@@ -59,6 +59,13 @@ class VisibilityObservatoryWorkflowTests(unittest.TestCase):
         self.assertIn("contents: read", self.text)
         self.assertNotIn("contents: write", self.text)
 
+    def test_funnel_coverage_is_self_tested_and_retained(self) -> None:
+        self.assertIn('scripts/visibility_funnel_coverage.py', self.text)
+        self.assertIn('tests.test_visibility_funnel_coverage', self.text)
+        self.assertIn('results/visibility/funnel-coverage.json', self.text)
+        self.assertIn("conversion_rates_estimable", self.text)
+        self.assertIn("contents: read", self.text)
+
 
 if __name__ == "__main__":  # pragma: no cover
     unittest.main()

@@ -36,6 +36,12 @@ variable and no secret value, and never executes, merges or accepts anything.
 - **Hostnames are exact.** No URL, port, userinfo, path, wildcard or suffix
   match is ever expanded; a malformed allowlist entry denies everything instead
   of being skipped.
+- **Allowlist arguments must be collections.** Approved-provider IDs and egress
+  host allowlists reject scalar strings/bytes, mappings, malformed entries, and
+  more than 256 entries. They accept bounded iterables including generators;
+  a scalar string cannot accidentally become a list of one-character entries.
+  Invalid collections deny with `invalid_approved_providers` or
+  `invalid_allowlist`; neither is interpreted as permission.
 - **The profile chooses the secret source.** Provider or task text can only
   corroborate the backend, never select it.
 - **Only a side-effecting stage unlocks a secret.** Secret materialization

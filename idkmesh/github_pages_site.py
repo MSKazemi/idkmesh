@@ -518,3 +518,40 @@ def render_github_pages_site(
         f"generated site exceeds {MAX_SITE_BYTES} UTF-8 bytes",
     )
     return dict(sorted(files.items()))
+
+
+
+def build_github_pages_outage_fallback(
+    projection: Mapping[str, Any], *, repository: str
+) -> dict[str, Any]:
+    """Return offline references when the optional public Pages view is down.
+
+    Every value is already in the validated C14-D public projection. This
+    function cannot access GitHub, durable storage, the filesystem, credentials,
+    or human decision APIs, and cannot attest that a linked record is online.
+    """
+    validate_public_projection(projection, repository)
+    run = projection["run"]
+    pull_requests = sorted({
+        attempt["candidate"]["url"]
+        for attempt in projection["attempts"]
+        if attempt["candidate"] is not None
+        and attempt["candidate"]["type"] == "github_pull_request"
+    })
+    return {
+        "schema_version": "0.1",
+        "kind": "idkmesh-pages-outage-fallback",
+        "repository": repository,
+        "run_id": run["run_id"],
+        "source_revision": run["source_revision"],
+        "work_unit_digest": run["work_unit_digest"],
+        "evidence_report_digest": run["evidence_report_digest"],
+        "human_decision_record_digest": run["human_decision_record_digest"],
+        "candidate_pr_urls": pull_requests,
+        "canonical_evidence_availability": "unverified",
+        "pages_required_for_coordination": False,
+        "github_mutation_performed": False,
+        "verification_authority": False,
+        "human_decision_authority": False,
+        "integration_authority": False,
+    }

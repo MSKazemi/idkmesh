@@ -20,6 +20,7 @@ on:
       - "scripts/visibility_growth_selector.py"
       - "scripts/visibility_observatory.py"
       - "scripts/github_traffic_snapshot.py"
+      - "scripts/visibility_funnel_coverage.py"
 
 permissions:
   contents: read
@@ -49,6 +50,7 @@ jobs:
           python -m unittest \
             tests.test_visibility_observatory \
             tests.test_github_traffic_snapshot \
+            tests.test_visibility_funnel_coverage \
             tests.test_discovery_query_portfolio \
             tests.test_bing_ai_performance_import \
             tests.test_search_console_snapshot \
@@ -142,6 +144,20 @@ jobs:
           fi
           python scripts/visibility_growth_selector.py "${args[@]}"
 
+      - name: Assemble coverage-only visibility funnel
+        run: |
+          args=(
+            --visibility results/visibility/observatory.json
+            --output results/visibility/funnel-coverage.json
+          )
+          if [[ -f results/visibility/google-search-console.json ]]; then
+            args+=(--search-console results/visibility/google-search-console.json)
+          fi
+          if [[ -f results/visibility/github-traffic.json ]]; then
+            args+=(--github-traffic results/visibility/github-traffic.json)
+          fi
+          python scripts/visibility_funnel_coverage.py "${args[@]}"
+
       - name: Publish bounded summary
         run: |
           python - <<'PY'
@@ -159,6 +175,7 @@ jobs:
           traffic = json.loads(traffic_path.read_text()) if traffic_path.exists() else None
           gsc_path = Path("results/visibility/google-search-console.json")
           gsc = json.loads(gsc_path.read_text()) if gsc_path.exists() else None
+          funnel = json.loads(Path("results/visibility/funnel-coverage.json").read_text())
           experiment = json.loads(Path("results/visibility/growth-experiment.json").read_text())
           selected = experiment["selected_experiment"]
           lines = [
@@ -200,6 +217,9 @@ jobs:
                   if gsc else
                   "- Search Console portfolio observations: unavailable"
               ),
+              f"- Funnel directly observed stages: {funnel['summary']['direct_stages_observed']} of 2 eligible sources",
+              f"- Funnel rates estimable: {funnel['summary']['conversion_rates_estimable']} (no shared cohorts)",
+              f"- Next funnel evidence step: {funnel['summary']['next_measurement_action']}",
               f"- Selected bounded experiment: {selected['id']} ({selected['type']})",
               f"- Experiment reason: {selected['reason']}",
               "",
