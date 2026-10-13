@@ -208,9 +208,22 @@ class FreezeManifestTests(unittest.TestCase):
                             "final_confirmatory_bootstrap_replicates_per_level": (
                                 s3.FINAL_BOOTSTRAP_REPLICATES
                             ),
-                            "decision": "fixture",
-                            "class_estimand": "fixture",
-                            "centering": "fixture",
+                            "power_decision": (
+                                "both repository- and task-cluster jackknife/cluster-t "
+                                "95% lower bounds are > 0"
+                            ),
+                            "final_confirmatory_decision": (
+                                "both repository- and task-cluster 10,000-resample percentile "
+                                "95% intervals have lower bound > 0"
+                            ),
+                            "class_estimand": (
+                                "macro-average of official-pass and official-fail mean "
+                                "delta_logscore"
+                            ),
+                            "centering": (
+                                "subtract calibration mean within each class before injecting "
+                                "the smallest effect"
+                            ),
                         },
                         "calibration_sha256": calibration_digest,
                         "calibration": {},
@@ -397,7 +410,7 @@ class FreezeManifestTests(unittest.TestCase):
                 s3.build_freeze_manifest(spec, root)
 
     def test_non_numeric_power_effect_is_rejected(self):
-        for invalid in (None, True, "not-a-number", [], {}):
+        for invalid in (None, True, "not-a-number", [], {}, 10 ** 500):
             with self.subTest(invalid=invalid):
                 with tempfile.TemporaryDirectory() as directory:
                     root, spec = self._root_and_spec(directory, experiment_id="X6")
@@ -410,6 +423,24 @@ class FreezeManifestTests(unittest.TestCase):
                     )
                     with self.assertRaises(s3.S3FreezeError):
                         s3.build_freeze_manifest(spec, root)
+
+    def test_canonical_power_metadata_drift_is_rejected(self):
+        for name, changed in (
+            ("power_decision", "wrong decision rule"),
+            ("centering", "wrong centering rule"),
+            ("smallest_effect_geometric_likelihood_ratio", 1.4),
+        ):
+            with self.subTest(name=name), tempfile.TemporaryDirectory() as directory:
+                root, spec = self._root_and_spec(directory, experiment_id="X6")
+                path = root / "power_plan.json"
+                power = json.loads(path.read_text(encoding="utf-8"))
+                power["design"][name] = changed
+                path.write_text(
+                    json.dumps(s3.with_self_digest(power)) + "\n",
+                    encoding="utf-8",
+                )
+                with self.assertRaises(s3.S3FreezeError):
+                    s3.build_freeze_manifest(spec, root)
 
     def test_freeze_validation_rehashes_every_bound_file(self):
         with tempfile.TemporaryDirectory() as directory:

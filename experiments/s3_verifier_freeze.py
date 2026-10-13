@@ -782,7 +782,28 @@ def _validate_power_plan_file(path: Path) -> dict:
         ),
         "target_power": TARGET_POWER,
         "power_interval_method": POWER_INTERVAL_METHOD,
+        "power_decision": (
+            "both repository- and task-cluster jackknife/cluster-t "
+            "95% lower bounds are > 0"
+        ),
+        "final_confirmatory_decision": (
+            "both repository- and task-cluster 10,000-resample percentile "
+            "95% intervals have lower bound > 0"
+        ),
+        "class_estimand": (
+            "macro-average of official-pass and official-fail mean "
+            "delta_logscore"
+        ),
+        "centering": (
+            "subtract calibration mean within each class before injecting "
+            "the smallest effect"
+        ),
     }
+    if set(design) != set(expected) | {
+        "smallest_effect_logscore_nats",
+        "smallest_effect_geometric_likelihood_ratio",
+    }:
+        raise S3FreezeError("power_plan design fields are not the frozen set")
     for key, value in expected.items():
         if design.get(key) != value:
             raise S3FreezeError(
@@ -790,14 +811,21 @@ def _validate_power_plan_file(path: Path) -> dict:
             )
     effect_size = design.get("smallest_effect_logscore_nats")
     if (
-        isinstance(effect_size, bool)
-        or not isinstance(effect_size, (int, float))
+        not isinstance(effect_size, float)
         or not math.isfinite(effect_size)
         or abs(effect_size - DELTA0) > 1e-15
     ):
         raise S3FreezeError(
             "power_plan smallest effect must be finite log(1.10)"
         )
+
+    ratio = design.get("smallest_effect_geometric_likelihood_ratio")
+    if (
+        not isinstance(ratio, float)
+        or not math.isfinite(ratio)
+        or abs(ratio - math.exp(DELTA0)) > 1e-12
+    ):
+        raise S3FreezeError("power_plan smallest-effect ratio must equal 1.10")
 
     decision = plan.get("decision")
     if not isinstance(decision, dict):
