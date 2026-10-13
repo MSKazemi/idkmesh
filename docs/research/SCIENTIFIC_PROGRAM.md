@@ -237,7 +237,7 @@ exit gate is met.
 | **S0 — charter and pilot** | This document; E045; issues | Merged on `main` |
 | **S1 — freeze** | X2 preregistration; T1 ingestion with provenance | The preregistration is merged with its analysis-code digest **before** any held-out split is downloaded |
 | **S2 — worker-side confirmation** | X3, X4, X5 with A1, A2, A4 | Results published, negative or not. This is the working basis for a new **Paper F: "Forecasting the value of the next coding agent"** |
-| **S3 — verifier side at scale** | pre-confirmatory freeze toolkit (#1080), T5, X6, then an independent-family X7/X10 under the v1.1 amendment | A canonical calibration-only power plan and content-addressed freeze manifest exist before outcome collection; X6 then records the real-candidate partial-oracle result **and** X7/X10 records an independent-family result (positive, negative, unresolved, or infeasible); only the latter can satisfy Paper A's positive external-validity gate |
+| **S3 — verifier side at scale** | pre-confirmatory freeze toolkit (#1080) under amendments v1.1/v1.2, T5, X6, then an independent-family X7/X10 | A canonical calibration-only power plan and content-addressed freeze manifest exist before outcome collection; X6 then records the real-candidate partial-oracle result **and** X7/X10 records an independent-family result (positive, negative, unresolved, or infeasible); only the latter can satisfy Paper A's positive external-validity gate |
 | **S4 — joint model and product** | X8, A6, A7, and T2 shipping as a diagnostic CLI | The advisor's recommendations beat its baselines on held-out tasks |
 | **S5 — controlled confirmation** | X9 (#936 steps 3–5) | Calibrated predictions tested on IDKMesh's own frozen cohort (Paper B) |
 
