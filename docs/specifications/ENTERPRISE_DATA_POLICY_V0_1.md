@@ -86,16 +86,22 @@ Properties:
   short plain identifier, or that itself looks like a secret, appears as
   `<key:N>`, so a secret used as a key cannot leak through the location.
 - **Fail-closed.** A depth, node or string-size limit, or a value that is not
-  JSON-shaped (bytes, sets, arbitrary objects, non-string keys), makes the
-  report `complete: false`, and an incomplete report is never `clean`.
-  Defaults: depth 32, 100,000 nodes, 262,144 characters per string.
+  JSON-shaped (bytes, sets, arbitrary objects, container subclasses, non-string
+  mapping keys or non-finite floats), makes the report `complete: false`, and
+  an incomplete report is never `clean`. Invalid limit settings themselves
+  raise `ValueError`. Defaults: depth 32, 100,000 nodes, 262,144 characters per
+  string. Before sorting a mapping or queuing children, the scanner refuses
+  any container exceeding the remaining node budget.
 - **References are not secrets.** `env:NAME`, `secret:...`, `vault:...`,
   `${NAME}`, `<placeholder>` and `***` values are accepted under credential
   keys, matching the secret-reference convention of `connector_secrets`.
   Key matching is exact, so `max_tokens` and `secret_ref` are not credential
   keys.
-- **Deterministic and linear.** Traversal is iterative and sorted; every pattern
-  uses bounded quantifiers, and a test bounds CPU time on pathological inputs.
+- **Deterministic and budgeted.** Traversal is iterative; strings use bounded
+  regexes and their scan cost is linear in the inspected text length. Sorted
+  mapping keys require up to `O(N log N)` comparisons for a mapping of `N`
+  entries; queue growth is capped by the total configured node budget. A
+  performance regression test bounds CPU time on pathological text.
 
 Limits, stated plainly: a clean report is evidence about the scanned text only.
 Formats without a rule, encoded or split values, low-entropy passwords, and

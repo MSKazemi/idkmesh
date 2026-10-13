@@ -200,6 +200,44 @@ class FailClosedTests(unittest.TestCase):
             with self.subTest(document=repr(document)):
                 self.assert_incomplete(document, "unsupported_value")
 
+    def test_nonfinite_float_is_not_valid_json(self) -> None:
+        for value in (float("nan"), float("inf"), float("-inf")):
+            with self.subTest(value=str(value)):
+                self.assert_incomplete({"value": value}, "unsupported_value")
+
+    def test_container_budget_refuses_fanout_before_enqueue_or_sort(self) -> None:
+        document = {f"field{i}": i for i in range(1000)}
+        mapping = scan_for_secrets(document, max_nodes=10)
+        sequence = scan_for_secrets(list(range(1000)), max_nodes=10)
+        for report in (mapping, sequence):
+            self.assertFalse(report.clean)
+            self.assertIn("node_limit_exceeded", report.incomplete_reasons)
+            self.assertEqual(report.nodes_scanned, 1)
+
+    def test_non_json_container_subclasses_are_rejected_without_iteration(self) -> None:
+        class HostileDict(dict):
+            def __iter__(self):
+                raise AssertionError("must not iterate custom mapping")
+
+        class HostileList(list):
+            def __iter__(self):
+                raise AssertionError("must not iterate custom list")
+
+        self.assert_incomplete(HostileDict({"token": "untrusted-value"}), "unsupported_value")
+        self.assert_incomplete(HostileList(["value"]), "unsupported_value")
+
+    def test_invalid_scan_limits_raise_configuration_errors(self) -> None:
+        for options in (
+            {"max_nodes": 0},
+            {"max_nodes": True},
+            {"max_depth": -1},
+            {"max_string_chars": "invalid"},
+        ):
+            with self.subTest(options=options), self.assertRaisesRegex(
+                ValueError, "positive integers"
+            ):
+                scan_for_secrets({"safe": "text"}, **options)
+
     def test_a_finding_and_an_incomplete_scan_can_coexist(self) -> None:
         report = scan_for_secrets([SAMPLES["jwt"], b"x"])
         self.assertEqual({f.rule for f in report.findings}, {"jwt"})

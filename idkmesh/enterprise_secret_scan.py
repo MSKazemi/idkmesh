@@ -24,7 +24,8 @@ Properties that make the result safe to log and to record as audit evidence:
 * the scan is **fail-closed**: a node, depth or string-size limit, or a value
   that is not JSON-shaped, makes the report ``complete=False`` and therefore not
   ``clean``. "I could not look" is never reported as "nothing found";
-* every pattern uses bounded quantifiers, so scan time is linear in input size.
+* every pattern uses bounded quantifiers. Traversal is budgeted, while sorted
+  mapping keys make the overall complexity O(N log N) in the worst case.
 
 A clean report is evidence about the scanned text only. It is not a proof that a
 document holds no secret: unknown formats, split or encoded values, and low
@@ -35,6 +36,7 @@ environment variable, and grants no authority.
 from __future__ import annotations
 
 from dataclasses import dataclass
+import math
 import re
 from typing import Any
 
@@ -124,9 +126,6 @@ _REFERENCE = re.compile(
 # "/" and "~" are allowed because the location is a JSON Pointer that escapes them.
 _SAFE_KEY = re.compile(r"[A-Za-z0-9_.:/~-]{1,64}\Z")
 _MIN_LITERAL_LENGTH = 8
-
-_SCALARS = (str, int, float, bool, type(None))
-
 
 @dataclass(frozen=True)
 class SecretFinding:
@@ -223,7 +222,15 @@ def scan_for_secrets(
     max_nodes: int = MAX_NODES,
     max_string_chars: int = MAX_STRING_CHARS,
 ) -> SecretScanReport:
-    """Scan a JSON-shaped document for raw secrets; never raises on content."""
+    """Scan a JSON-shaped document for raw secrets; never raises on content.
+
+    Limit configuration errors raise ValueError; malformed document contents
+    instead return a non-clean, incomplete report.
+    """
+    if any(type(value) is not int or value < 1 for value in (
+        max_depth, max_nodes, max_string_chars
+    )):
+        raise ValueError("scan limits must be positive integers")
 
     findings: list[SecretFinding] = []
     reasons: set[str] = set()
@@ -240,7 +247,7 @@ def scan_for_secrets(
             break
         shown = location or "/"
 
-        if isinstance(node, str):
+        if type(node) is str:
             if len(node) > max_string_chars:
                 reasons.add("string_too_large")
                 continue
@@ -255,15 +262,24 @@ def scan_for_secrets(
                 findings.append(SecretFinding("sensitive_key_literal", shown))
             continue
 
-        if isinstance(node, _SCALARS):
+        if type(node) in (int, bool, type(None)):
+            continue
+        if type(node) is float:
+            if not math.isfinite(node):
+                reasons.add("unsupported_value")
             continue
 
         if depth >= max_depth:
             reasons.add("depth_limit_exceeded")
             continue
 
-        if isinstance(node, dict):
-            if any(not isinstance(key, str) for key in node):
+        if type(node) is dict:
+            # Check fan-out before sorting or building a child queue: a hostile
+            # container must not allocate beyond the remaining node budget.
+            if len(node) > max_nodes - nodes - len(stack):
+                reasons.add("node_limit_exceeded")
+                continue
+            if any(type(key) is not str for key in node):
                 reasons.add("unsupported_value")
                 continue
             ordered = sorted(node)
@@ -280,7 +296,10 @@ def scan_for_secrets(
             stack.extend(reversed(children))
             continue
 
-        if isinstance(node, (list, tuple)):
+        if type(node) in (list, tuple):
+            if len(node) > max_nodes - nodes - len(stack):
+                reasons.add("node_limit_exceeded")
+                continue
             stack.extend(
                 (item, f"{location}/{index}", depth + 1, None)
                 for index, item in reversed(list(enumerate(node)))
