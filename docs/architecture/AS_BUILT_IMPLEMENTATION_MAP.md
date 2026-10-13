@@ -20,6 +20,18 @@ Developer / operator
   |                              -> github_bootstrap_workflows.py
   |       -> reproducible file/owner-action plan + rendered config/workflow bytes, NO APPLY
   |
+  +-- idkmesh github-workflow preview | status | dispatch | verify   [inside a generated wrapper]
+  |       -> github_workflow_runner.py (stdlib-only; IDKMESH_* environment contract)
+  |       -> preview: github_issue_source.py -> github_issue_preview.py (project policy, not issue text)
+  |       -> status: github_ledger_github_store.py via a read-only transport -> github_status_comment.py body
+  |       -> dispatch / verify: fail closed (dispatch_unavailable / verify_unavailable)
+  |       -> NO dispatch, issue comment, provider secret, acceptance, or merge
+  |
+  +-- idkmesh work preview --issue-json FILE --repository R --source-revision SHA
+  |       -> work_preview.py -> github_workflow_runner.load_preview_policy (project policy)
+  |       -> github_issue_preview.py (use_intake_form composition; narrows policy only)
+  |       -> offline WorkUnit preview + digest, NO network, secret, write, or dispatch
+  |
   +-- idkmesh doctor --github OBSERVATION [--workflow PATH]
   |       -> github_governance_policy.py -> github_governance_preflight.py
   |       -> fail-closed governance/workflow preflight only
@@ -35,6 +47,16 @@ Developer / operator
   |       -> independent verifier + run evidence report
   |       -> bounded local evidence/replay bundle
   |       -> human decision / replay remain separate, manual
+  |
+  +-- idkmesh pages-site --repository R --projection P... --out DIR
+  |       -> github_public_evidence.py (strict projection validation)
+  |       -> github_pages_site.py (pure file map) -> github_pages_writer.py
+  |       -> local directory, all-or-nothing; NO PUBLICATION, NETWORK, or GITHUB CALL
+  |
+  +-- idkmesh release-provenance --repository R --tag T --target-commit C [--projection P...]
+  |       -> github_public_evidence.py + github_pages_site.validate_public_projection
+  |       -> github_release_provenance.py (pure record / draft notes) -> stdout
+  |       -> NO TAG, RELEASE, ATTESTATION, NETWORK, OR GITHUB CALL; commit/digests unverified
   |
   +-- idkmesh control-tower [--product-spine-store SQLite]
           -> control_tower_ui.py (127.0.0.1:8770)
@@ -110,10 +132,10 @@ The runtime uses `service_runtime.py` for request correlation, readiness, resour
 | Versioned configuration | `connector_profiles.py`, `connector_secrets.py` | Validate metadata/secret references, not provider access |
 | Driver and health | `connector_registry.py`, `connector_probe.py` | Static declarations and normalized observational probes; CLI `connections probe` uses offline fake drivers |
 | Eligibility | `connector_routing.py`, `connector_inspection.py` | Deterministic selection/explanation; no authority escalation |
-| GitHub ingress | `github_webhook_ingress.py`, `github_issue_preview.py` | Verify HMAC; issue text remains untrusted data; policy owns WorkUnit authority |
+| GitHub ingress | `github_webhook_ingress.py`, `github_issue_preview.py` | Verify HMAC; issue text remains untrusted data; policy owns WorkUnit authority (a parsed Issue Form may only narrow it) |
 | GitHub governance preflight | `github_governance_policy.py`, `github_governance_preflight.py` | Evaluate trusted normalized protection/workflow observations and fail closed on required UNKNOWN/FAIL; no GitHub administration or secret-value access |
 | GitHub mutable source | `github_branch_reader.py`, `github_candidate_reader.py` | Bind requested source/candidate to exact observed Git object identity |
-| GitHub dispatch/publication | `github_delivery_idempotency.py`, `github_explicit_dispatch.py`, `github_status_comment.py` | Explicit actor/role authorization, idempotency/reconciliation; no automatic merge |
+| GitHub dispatch/publication | `github_delivery_idempotency.py`, `github_explicit_dispatch.py`, `github_status_comment.py`, `github_pages_site.py`, `github_pages_writer.py`, `github_release_provenance.py` | Explicit actor/role authorization, idempotency/reconciliation; no automatic merge |
 | Jules | `jules_sources.py`, `jules_sessions.py`, `jules_observation.py`, `jules_candidates.py`, `jules_candidate_binding.py`, `jules_lifecycle.py` | Provider Session completion is not trusted candidate identity or verification |
 | Local coding agent | `agent_presets.py`, `local_agent_runner.py`, `local_agent_sandbox.py`, `local_agent_artifacts.py` | Fail-closed `LocalSandboxExecutor`; Linux bubblewrap network-disabled only, not arbitrary network-safe agent execution |
 | OpenAI-compatible model | `openai_compatible*.py` | Model discovery/chat inference and capability evidence; model connection is not a coding-agent permission |

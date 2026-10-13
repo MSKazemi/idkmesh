@@ -10,6 +10,9 @@ from pathlib import Path
 
 import pytest
 
+# Builds the full E016 corpus (~3.5 CPU-s); a corpus-builder replay, not a PR contract.
+pytestmark = pytest.mark.slow
+
 from sim import e016_corpus
 
 

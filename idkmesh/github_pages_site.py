@@ -225,6 +225,26 @@ def _validate_projection(
             _digest(candidate["digest"], "candidate digest")
 
 
+def validate_public_projection(
+    projection: Mapping[str, Any], repository: str
+) -> None:
+    """Value-check one C14-D projection for ``repository`` (shared validator).
+
+    Other read-only C14 surfaces (release metadata, C14-F) call this instead of
+    forking the check. Raises :class:`GitHubPagesSiteError` on any violation.
+    """
+
+    _require(
+        isinstance(repository, str)
+        and _REPOSITORY_RE.fullmatch(repository) is not None,
+        "repository must be owner/name",
+    )
+    _require(
+        isinstance(projection, Mapping), "each projection must be a mapping"
+    )
+    _validate_projection(projection, repository)
+
+
 def _unverified_attempts(projection: Mapping[str, Any]) -> list[str]:
     return [
         attempt["attempt_id"]

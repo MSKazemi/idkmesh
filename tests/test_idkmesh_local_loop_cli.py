@@ -146,6 +146,8 @@ class LocalLoopCliEndToEndTests(unittest.TestCase):
         self.assertEqual(record_decision.returncode, 0, record_decision.stderr)
         self.assertTrue(decision_path.is_file())
 
+    @pytest.mark.slow  # end-to-end local loop run (~0.5-0.75 CPU-s)
+
     def test_local_loop_on_legacy_verifier_policy_config_also_produces_a_report(self):
         proc = run_cli("local-loop", GOOD_VS_BAD_CONFIG, "--output-dir", self.output_dir)
         self.assertEqual(proc.returncode, 0, proc.stderr)
@@ -168,6 +170,8 @@ class LocalLoopCliEndToEndTests(unittest.TestCase):
         run_evidence_report.validate_report(report)
         self.assertEqual(report["summary"]["control_errors"], 1)
         self.assertEqual(report["summary"]["supported"], 1)
+
+    @pytest.mark.slow  # end-to-end local loop run (~0.5-0.75 CPU-s)
 
     def test_local_loop_refuses_to_overwrite_a_non_empty_output_dir(self):
         proc = run_cli("local-loop", GOOD_VS_BAD_CONFIG, "--output-dir", self.output_dir)
