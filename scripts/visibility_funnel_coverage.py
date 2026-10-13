@@ -10,7 +10,8 @@ from __future__ import annotations
 import argparse
 import json
 import math
-from datetime import date
+import re
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -58,7 +59,8 @@ def assess(visibility: dict[str, Any], *,
     github = visibility.get("github")
     require(isinstance(github, dict), "visibility.github must be an object")
     repository = github.get("repository")
-    require(isinstance(repository, str) and repository.count("/") == 1 and repository,
+    require(isinstance(repository, str) and
+            re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", repository) is not None,
             "visibility.github.repository is invalid")
     acquisition = github.get("community_acquisition")
     require(isinstance(acquisition, dict), "visibility acquisition evidence is required")
@@ -113,9 +115,15 @@ def assess(visibility: dict[str, Any], *,
         require(source.get("repository") == repository and
                 source.get("window") == "github_rolling_14_days",
                 "GitHub Traffic repository or window mismatch")
-        require(isinstance(source.get("collected_at_utc"), str) and
-                source["collected_at_utc"].endswith("Z"),
-                "GitHub Traffic collection timestamp missing")
+        stamp = source.get("collected_at_utc")
+        require(isinstance(stamp, str) and stamp.endswith("Z"),
+                "GitHub Traffic UTC collection timestamp missing")
+        try:
+            parsed = datetime.fromisoformat(stamp[:-1] + "+00:00")
+        except ValueError as error:
+            raise ValueError("GitHub Traffic UTC collection timestamp invalid") from error
+        require(parsed.utcoffset() == timedelta(0),
+                "GitHub Traffic UTC collection timestamp invalid")
         views = github_traffic.get("views")
         require(isinstance(views, dict), "GitHub Traffic views required")
         total_views = count(views.get("count"), "GitHub repository views", integer=True)

@@ -88,7 +88,9 @@ class FunnelCoverageTests(unittest.TestCase):
 
     def test_traffic_validation_fails_closed(self):
         for override in ({"provider": "other"}, {"repository": "elsewhere/repo"},
-                         {"window": "lifetime"}, {"collected_at_utc": None}):
+                         {"window": "lifetime"}, {"collected_at_utc": None},
+                         {"collected_at_utc": "not-a-timestampZ"},
+                         {"collected_at_utc": "2026-10-13T09:30:00+01:00"}):
             with self.subTest(override=override), self.assertRaises(ValueError):
                 obj = traffic()
                 obj["source"].update(override)
