@@ -14,6 +14,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 import json
 import math
+import os
 from pathlib import Path
 import re
 import sqlite3
@@ -278,6 +279,45 @@ class LocalMetadataStore:
         self.path = Path(path)
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self._migrate()
+
+    def backup_to(self, destination: str | Path) -> Path:
+        """Create an online-consistent, owner-triggered local SQLite snapshot.
+
+        Refuses existing targets and symlink replacement. The created file is
+        private on POSIX (0600), not an archive or remote backup. The caller
+        governs its retention, encryption and destination permissions.
+        """
+        target = Path(destination)
+        if target.resolve(strict=False) == self.path.resolve(strict=False):
+            raise LocalStoreError("cannot back up a store to its own path")
+        if not target.parent.is_dir():
+            raise LocalStoreError("backup parent directory must already exist")
+
+        # Reserve the filename atomically; never clobber an existing backup
+        # or follow an existing symlink. The resulting file is not available
+        # as a successful backup until this function returns.
+        flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+        if hasattr(os, "O_NOFOLLOW"):
+            flags |= os.O_NOFOLLOW
+        try:
+            fd = os.open(target, flags, 0o600)
+            os.close(fd)
+        except OSError as exc:
+            raise LocalStoreError("backup destination could not be reserved") from exc
+
+        try:
+            with _session(self.path) as source:
+                with _session(target) as copied:
+                    source.backup(copied)
+                    integrity = copied.execute("PRAGMA quick_check").fetchone()
+                    if integrity is None or integrity[0] != "ok":
+                        raise LocalStoreError("backup SQLite integrity check failed")
+            return target
+        except (LocalStoreError, sqlite3.Error, OSError) as exc:
+            target.unlink(missing_ok=True)
+            if isinstance(exc, LocalStoreError):
+                raise
+            raise LocalStoreError("online SQLite backup failed") from exc
 
     def _migrate(self) -> None:
         with _session(self.path) as conn:

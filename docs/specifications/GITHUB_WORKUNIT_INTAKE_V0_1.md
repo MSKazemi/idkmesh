@@ -232,8 +232,12 @@ characters, contains control characters, repeats a section, has an unknown
 heading or text outside any section, omits or blanks a required field, has a
 dropdown value outside the closed vocabulary (matched exactly, no coercion),
 exceeds a schema length/count bound, lists an unsafe path (absolute, `~`,
-drive letter, backslash, or `..`), gives a connector hint that is not a plain
-identifier, or leaves the safety acknowledgement unchecked. The
+drive letter, backslash, `..`, the repository root (`.`/`./`), or a
+URL), gives a connector hint that is not a plain identifier, or leaves the
+safety acknowledgement unchecked. List-count limits apply to the original
+number of non-empty lines **before deduplication** (including dependencies):
+repeating one path or dependency cannot bypass the form's bounded intake.
+Below those limits, duplicate items are still normalized to one entry. The
 `authority_ceiling` is always all-false and no form value can alter it.
 
 Dependency lines may start with `requires:`, `blocked by:` (or `blocked_by:`)

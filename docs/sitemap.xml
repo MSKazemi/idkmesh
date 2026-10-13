@@ -1696,6 +1696,11 @@
     <lastmod>2026-10-13</lastmod>
     <priority>0.5</priority>
   </url>
+  <url>
+    <loc>https://mskazemi.com/idkmesh/operations/API_STORAGE_RESTORE_DRILL_V0_1.html</loc>
+    <lastmod>2026-10-13</lastmod>
+    <priority>0.5</priority>
+  </url>
 <url>
     <loc>https://mskazemi.com/idkmesh/operations/AUTO_DRAFT_PR_STEWARD.html</loc>
     <lastmod>2026-09-23</lastmod>
@@ -1708,6 +1713,11 @@
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/operations/GITHUB_BOOTSTRAP_OWNER_ACTIONS_V0_1.html</loc>
+    <lastmod>2026-10-13</lastmod>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://mskazemi.com/idkmesh/operations/GITHUB_PAGES_FALLBACK_V0_1.html</loc>
     <lastmod>2026-10-13</lastmod>
     <priority>0.5</priority>
   </url>
