@@ -580,3 +580,106 @@ def render_otlp_metrics_json(
         ensure_ascii=True,
         allow_nan=False,
     ) + "\n"
+
+
+
+def evaluate_api_metrics_interval(
+    before: Mapping[str, Any],
+    after: Mapping[str, Any],
+    *,
+    before_process_identity: str,
+    after_process_identity: str,
+    before_time_unix_nano: int,
+    after_time_unix_nano: int,
+) -> dict[str, Any]:
+    """Compare two process-lifetime snapshots, without publishing input IDs.
+
+    Process identity is a *collector-attested* epoch token; a caller cannot
+    derive it from an ordinary HTTP request or infer it from service.version.
+    Every invalid comparison is UNKNOWN, never interpreted as zero errors.
+    This is a pure diagnostic, not an alert daemon or an authorization result.
+    """
+    def unknown(reason: str) -> dict[str, Any]:
+        return {"status": "unknown", "reason": reason, "authority": "none"}
+
+    if (
+        not isinstance(before_process_identity, str)
+        or not before_process_identity
+        or len(before_process_identity) > 128
+        or not isinstance(after_process_identity, str)
+        or not after_process_identity
+        or len(after_process_identity) > 128
+    ):
+        return unknown("process_identity_missing")
+    if before_process_identity != after_process_identity:
+        return unknown("process_changed")
+
+    try:
+        start = _timestamp(before_time_unix_nano, "before_time_unix_nano")
+        end = _timestamp(after_time_unix_nano, "after_time_unix_nano")
+        if end <= start:
+            return unknown("timestamps_not_increasing")
+        first = _validate_canonical_document(_mapping(before, "before"))
+        last = _validate_canonical_document(_mapping(after, "after"))
+    except OtlpMetricsInputError:
+        # Do not reflect malformed fields: they may contain private payloads.
+        return unknown("invalid_snapshot")
+
+    if (
+        first["service"] != last["service"]
+        or first["service_version"] != last["service_version"]
+    ):
+        return unknown("service_changed")
+
+    counters_before = (
+        *first["status_counts"].values(),
+        first["client_errors"],
+        first["server_errors"],
+        first["latency_count"],
+        *first["per_bucket_counts"],
+        *first["admission"].values(),
+        *first["operations"].values(),
+    )
+    counters_after = (
+        *last["status_counts"].values(),
+        last["client_errors"],
+        last["server_errors"],
+        last["latency_count"],
+        *last["per_bucket_counts"],
+        *last["admission"].values(),
+        *last["operations"].values(),
+    )
+    if (
+        any(b < a for a, b in zip(counters_before, counters_after, strict=True))
+        or last["latency_sum"] < first["latency_sum"]
+        or last["latency_max"] < first["latency_max"]
+    ):
+        return unknown("counter_regression")
+
+    total = last["latency_count"] - first["latency_count"]
+    if total == 0:
+        return unknown("no_requests")
+
+    error_count = last["server_errors"] - first["server_errors"]
+    fast_bucket_count = LATENCY_BUCKETS_MS.index(1000.0) + 1
+    fast_before = sum(first["per_bucket_counts"][:fast_bucket_count])
+    fast_after = sum(last["per_bucket_counts"][:fast_bucket_count])
+    fast = fast_after - fast_before
+    if not 0 <= error_count <= total or not 0 <= fast <= total:
+        return unknown("inconsistent_interval")
+
+    overload = (
+        last["admission"]["overload_rejections_total"]
+        - first["admission"]["overload_rejections_total"]
+    )
+    return {
+        "status": "measured",
+        "authority": "none",
+        "requests": total,
+        "server_errors": error_count,
+        "server_error_fraction": error_count / total,
+        "within_1000ms": fast,
+        "within_1000ms_fraction": fast / total,
+        "overload_rejections": overload,
+        "interval_nanoseconds": end - start,
+    }

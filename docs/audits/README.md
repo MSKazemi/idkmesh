@@ -18,6 +18,12 @@ declare no explicit baseline revision; that is noted rather than invented.
 
 Whole-repository snapshots, ordered by date.
 
+- [Workflow-to-Code Audit](2026-10-13-workflow-code-trace.md)
+  — 2026-10-13; baseline `3ae17662`. Reviews all 61 workflow definitions, their declared triggers, token write scopes and primary code/action entry points, including provider/publisher boundaries.
+
+- [Non-package Python Module Reconciliation](2026-10-13-nonpackage-python-audit.md)
+  — 2026-10-13; baseline `19043860`. Inventories 209 non-package Python source modules, authority/evidence boundaries, and remaining test/review gaps.
+
 - [Code-to-Documentation Reconciliation](2026-10-10-code-documentation-reconciliation.md)
   — 2026-10-10/11; initial `58f5d925`, refreshed `bee77a61`. Inventories all
   85 direct installable Python modules, links as-built architecture and operator
