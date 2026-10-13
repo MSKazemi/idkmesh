@@ -16,6 +16,7 @@ The wider IDKMesh framework explores how people, AI agents, and tools can break 
 | Your goal | Best first step |
 | --- | --- |
 | Understand the idea without technical background | [IDKMesh for Absolute Beginners](docs/BEGINNER_GUIDE.md) |
+| Watch sample reviewers make the same mistake, without installing anything | [Interactive Reviewer Lab](https://mskazemi.com/idkmesh/labs/reviewer-lab.html) (synthetic browser walkthrough) |
 | Try a real command on included sample votes | [Audit a review gate](#try-it-in-five-minutes-audit-a-review-gate) |
 | See why a worker cannot approve its own work | [Run the contract demo](#try-the-contract-demo) (synthetic fixtures, no AI) |
 | Inspect recorded attempts and evidence in a browser | [Human Control Tower](#inspect-a-swarm-run-in-the-human-control-tower) (read-only, local) |

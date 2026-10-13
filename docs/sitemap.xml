@@ -1377,6 +1377,11 @@
     <priority>0.3</priority>
   </url>
   <url>
+    <loc>https://mskazemi.com/idkmesh/conversations/2026-10-13-interactive-reviewer-lab.html</loc>
+    <lastmod>2026-10-13</lastmod>
+    <priority>0.3</priority>
+  </url>
+  <url>
     <loc>https://mskazemi.com/idkmesh/conversations/2026-10-13-search-console-http-error-hardening.html</loc>
     <lastmod>2026-10-13</lastmod>
     <priority>0.3</priority>
@@ -1685,6 +1690,11 @@
     <loc>https://mskazemi.com/idkmesh/interoperability/AGENT_INTEROPERABILITY_ARCHITECTURE_2026-08-28.html</loc>
     <lastmod>2026-08-28</lastmod>
     <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://mskazemi.com/idkmesh/labs/reviewer-lab.html</loc>
+    <lastmod>2026-10-13</lastmod>
+    <priority>0.9</priority>
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/library.html</loc>
