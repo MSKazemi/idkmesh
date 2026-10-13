@@ -171,6 +171,19 @@ class FreezeManifestTests(unittest.TestCase):
         protocol = root / "protocol.md"
         protocol.write_text("frozen protocol\n", encoding="utf-8")
 
+        calibration_path = root / "calibration_statistics.json"
+        calibration_path.write_text(
+            json.dumps(
+                {
+                    "schema_version": "fixture",
+                    "role": "calibration_statistics",
+                }
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        calibration_digest = s3.file_sha256(calibration_path)
+
         roles = list(s3.REQUIRED_ARTIFACT_ROLES)
         if experiment_id == "X7":
             roles.append("prompt_bundle")
@@ -199,7 +212,7 @@ class FreezeManifestTests(unittest.TestCase):
                             "class_estimand": "fixture",
                             "centering": "fixture",
                         },
-                        "calibration_sha256": "a" * 64,
+                        "calibration_sha256": calibration_digest,
                         "calibration": {},
                         "eligible_universe": {},
                         "candidates": [],
@@ -214,6 +227,8 @@ class FreezeManifestTests(unittest.TestCase):
                     json.dumps(power_plan, sort_keys=True) + "\n",
                     encoding="utf-8",
                 )
+            elif role == "calibration_statistics":
+                path = calibration_path
             else:
                 path = root / f"{role}.json"
                 path.write_text(
@@ -316,6 +331,17 @@ class FreezeManifestTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root, spec = self._root_and_spec(directory)
             spec["models"][0]["benchmark_specific_finetuning"] = True
+            with self.assertRaises(s3.S3FreezeError):
+                s3.build_freeze_manifest(spec, root)
+
+    def test_calibration_digest_must_match_power_plan(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root, spec = self._root_and_spec(directory, experiment_id="X6")
+            calibration_path = root / "calibration_statistics.json"
+            calibration_path.write_text(
+                json.dumps({"changed": True}) + "\n",
+                encoding="utf-8",
+            )
             with self.assertRaises(s3.S3FreezeError):
                 s3.build_freeze_manifest(spec, root)
 
