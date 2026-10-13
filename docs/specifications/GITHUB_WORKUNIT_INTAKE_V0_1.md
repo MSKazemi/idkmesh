@@ -281,7 +281,7 @@ generic preview). Offline coverage:
 ## C13-H newcomer example
 
 The [no-JSON walkthrough](../help/GITHUB_WORKUNIT_FORM.md) uses committed
-[synthetic Issue Form fixtures](../../examples/github-workunit-intake/README.md)
+[synthetic Issue Form fixtures](https://github.com/MSKazemi/idkmesh/blob/main/examples/github-workunit-intake/README.md)
 and `tests/test_github_workunit_no_json_example.py` to demonstrate the real
 `idkmesh work preview` path with a **parsed** form, an unchecked-
 acknowledgement **fallback**, and an entirely out-of-scope **refusal**. The

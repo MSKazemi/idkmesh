@@ -27,7 +27,7 @@ The saved issue is deliberately **synthetic** (issue #424242 is not an observed 
 
 A valid result reports `preview.intake.status = "parsed"`, `dispatch_performed = false`, `github_mutation_performed = false`, `secret_values_accessed = false`, the WorkUnit digest and policy-bounded scopes. The form asks for documentation work but the trusted preview policy still supplies WorkUnit `kind = coding`. Its `high` risk hint **raises** the medium trusted baseline. This is a diagnostic preview, not high-risk execution approval. Form-level `external processing: forbidden` becomes a restrictive policy tag; actual egress is controlled separately by trusted permissions/admission.
 
-The trusted test policy is at [`project/.idkmesh/project.json`](../../examples/github-workunit-intake/project/.idkmesh/project.json). It explicitly limits paths to `docs/**` and `tests/**` and keeps `SECURITY.md`, `.github/**`, and `.idkmesh/**` excluded. It does not contain provider secrets.
+The trusted test policy is at [`project/.idkmesh/project.json`](https://github.com/MSKazemi/idkmesh/blob/main/examples/github-workunit-intake/project/.idkmesh/project.json). It explicitly limits paths to `docs/**` and `tests/**` and keeps `SECURITY.md`, `.github/**`, and `.idkmesh/**` excluded. It does not contain provider secrets.
 
 ## Step 3 — compare fallback and refusal
 
