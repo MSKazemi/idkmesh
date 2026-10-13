@@ -3,7 +3,7 @@ description: "As-built source inventory of repository tooling and scripts; opera
 ---
 # Operations and automation Python module map
 
-**Source baseline:** current `main` tree reviewed on 2026-10-13 (see [audit](../audits/2026-10-13-nonpackage-python-audit.md)). Covers **112** direct Python modules under `tools/` and `scripts/`. These are checkout tools, not installed `idkmesh` CLI subcommands. This is a source navigation inventory based on module descriptions and entry points, not an execution audit or independent security review.
+**Source baseline:** current `main` tree reviewed on 2026-10-13 (see [audit](../audits/2026-10-13-nonpackage-python-audit.md)). Covers **113** direct Python modules under `tools/` and `scripts/`. These are checkout tools, not installed `idkmesh` CLI subcommands. This is a source navigation inventory based on module descriptions and entry points, not an execution audit or independent security review. The inventory adds the V5 funnel-coverage helper after the pinned 2026-10-13 audit snapshot.
 
 **Caution:** not every script is read-only. `tools/jules_dispatcher.py`, `tools/openhands_pilot.py`, `tools/auto_draft_pr_steward.py`, `tools/publish_starter_tasks.py`, `tools/submit_indexnow.py`, and observation collectors interact with external systems under explicit arguments, credentials, or GitHub Actions. Never execute them merely to check documentation. Some frozen-node, model, and acceptance harnesses execute code in restricted controlled environments. Use [agent instructions](https://github.com/MSKazemi/idkmesh/blob/main/AGENTS.md), [testing](../TESTING.md), [Jules operations](../operations/JULES_AUTOMATION.md), and [safety policy](https://github.com/MSKazemi/idkmesh/blob/main/PROJECT_RULES.md).
 
@@ -135,7 +135,7 @@ Research/evolution/admission observation, recommendation, or offline gate; no im
 | [`tools/ci_shadow_evaluator.py`](https://github.com/MSKazemi/idkmesh/blob/main/tools/ci_shadow_evaluator.py) | ci shadow evaluator |
 | [`tools/ci_shadow_planner.py`](https://github.com/MSKazemi/idkmesh/blob/main/tools/ci_shadow_planner.py) | ci shadow planner |
 
-## Web discovery and visibility (10)
+## Web discovery and visibility (11)
 
 Web discovery collection, analysis or publication; some commands make authenticated/external requests.
 
@@ -146,6 +146,7 @@ Web discovery collection, analysis or publication; some commands make authentica
 | [`scripts/search_console_snapshot.py`](https://github.com/MSKazemi/idkmesh/blob/main/scripts/search_console_snapshot.py) | Search visibility search console snapshot tool |
 | [`scripts/search_visibility_observation_import.py`](https://github.com/MSKazemi/idkmesh/blob/main/scripts/search_visibility_observation_import.py) | Search visibility search visibility observation import tool |
 | [`scripts/search_visibility_observation_plan.py`](https://github.com/MSKazemi/idkmesh/blob/main/scripts/search_visibility_observation_plan.py) | Search visibility search visibility observation plan tool |
+| [`scripts/visibility_funnel_coverage.py`](https://github.com/MSKazemi/idkmesh/blob/main/scripts/visibility_funnel_coverage.py) | Read-only aggregate discovery-to-contribution coverage; no attributable conversions or publication authority |
 | [`scripts/visibility_growth_selector.py`](https://github.com/MSKazemi/idkmesh/blob/main/scripts/visibility_growth_selector.py) | Search visibility visibility growth selector tool |
 | [`scripts/visibility_observatory.py`](https://github.com/MSKazemi/idkmesh/blob/main/scripts/visibility_observatory.py) | Search visibility visibility observatory tool |
 | [`tools/check_public_discovery.py`](https://github.com/MSKazemi/idkmesh/blob/main/tools/check_public_discovery.py) | check public discovery |
