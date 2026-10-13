@@ -10,7 +10,8 @@ description: "Operator-reviewed, exact-SHA retirement of already superseded GitH
 1. Independently review each historical PR, its closure decision, the exact branch head, and the already-merged replacement. Preserve any unique code, experiments, negative findings or research evidence before retirement.
 2. Check workflows, repository configuration, published docs, issues, release and acceptance records, and **external consumers** for branch-name/exact-SHA dependencies. A historical audit mention is provenance, not an active dependency. Hold anything uncertain.
 3. Obtain explicit maintainer review/approval for **these exact refs**. Green CI does not confer deletion authority.
-4. Use a clean local checkout of **current main** with Git origin pointing to MSKazemi/idkmesh. The tool validates **both** the effective fetch URL and the single effective Git push URL (including `remote.origin.pushurl` and `url.*.pushInsteadOf` rewrites); multiple push destinations and remote push-mirror mode are refused. The checkout,
+4. Before deletion, preserve old refs in an offline, verified Git bundle: fetch remote branch refs, run `git bundle create /secure/archive/idkmesh-before-retirement.bundle --all`, then `git bundle verify /secure/archive/idkmesh-before-retirement.bundle`. Retain its checksum and a secure copy outside the checkout. This prevents otherwise-unreachable commits from being lost.
+5. Use a clean local checkout of **current main** with Git origin pointing to MSKazemi/idkmesh. The tool validates **both** the effective fetch URL and the single effective Git push URL (including `remote.origin.pushurl` and `url.*.pushInsteadOf` rewrites); multiple push destinations and remote push-mirror mode are refused. The checkout,
 origin and effective push URL are revalidated immediately before **each**
 non-atomic deletion. Never run cleanup from an old feature branch. Your authenticated Git origin must have deletion permission.
 
