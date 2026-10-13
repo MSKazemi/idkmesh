@@ -110,6 +110,10 @@ idkmesh control-tower --help
 
 For the **complete, code-backed CLI, local API, and module inventory**, see [Executable Capability Reference](EXECUTABLE_CAPABILITIES.md). It marks limits including offline-only connector probes, loopback-only HTTP, and missing automatic decision/merge authority.
 
+## Try it immediately in your browser (no installation)
+
+Open the [Interactive Reviewer Lab](labs/reviewer-lab.html) to see the same **synthetic** five-reviewer example without installing anything. Inspect the known-bad probe `p01`, compare overlapping mistakes on `c10`, and change the approval rule to see how stricter thresholds trade fewer wrong approvals for more wrong rejections. The page is a separate, optional client-side teaching aid: it does not run models or compute the full audit's effective-vote statistics, and it never uploads data or approves work.
+
 ## Your first 10 minutes: run an actual audit
 
 This is the most useful first hands-on experience. You will analyze **sample reviewer data stored on your own computer**. You do **not** need ChatGPT, Claude, an API key, a GPU, cloud resources, or a paid service.

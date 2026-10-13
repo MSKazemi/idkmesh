@@ -4,6 +4,8 @@ This directory contains current architecture/specifications, research programs, 
 
 This page is a **curated navigation and authority map, not an exhaustive catalog**. IDKMesh intentionally retains substantially more evidence than a newcomer should need to read.
 
+**No-install interactive introduction:** [Reviewer Lab](labs/reviewer-lab.html) — a small, synthetic voting experiment that demonstrates shared reviewer errors and the approval threshold trade-off. It is educational, not an actual verifier or the full gate-audit engine.
+
 For the public front door, start with [`BEGINNER_GUIDE.md`](BEGINNER_GUIDE.md) if you want a plain-language explanation, then continue with [`../README.md`](https://github.com/MSKazemi/idkmesh/blob/main/README.md), [`GETTING_STARTED.md`](GETTING_STARTED.md), [`PROJECT_ADOPTION_GUIDE.md`](PROJECT_ADOPTION_GUIDE.md) if you want to use IDKMesh with another repository, [`../CONTRIBUTING.md`](https://github.com/MSKazemi/idkmesh/blob/main/CONTRIBUTING.md), and [`../COMMUNITY.md`](https://github.com/MSKazemi/idkmesh/blob/main/COMMUNITY.md).
 
 ## As-built code, reference, and help
