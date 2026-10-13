@@ -312,6 +312,67 @@ class HumanDecisionServiceTests(unittest.TestCase):
         self.assertEqual(len(records), 1)
         self.assertEqual(records[0]["decision_id"], decision_id)
 
+    def test_index_columns_are_bound_to_the_immutable_decision_on_read(self) -> None:
+        self.record()
+        run_id = self.report["run_id"]
+        damaged = {
+            "decision_id": "decision.spoofed",
+            "run_id": "another-run",
+            "evidence_report_digest": "sha256:" + "f" * 64,
+            "decided_at": "2026-10-09T00:00:00Z",
+            "idempotency_key": "another-idempotency-key",
+            "request_digest": "sha256:" + "a" * 64,
+        }
+        conn = sqlite3.connect(self.decision_db)
+        try:
+            conn.execute("DROP TRIGGER human_decisions_no_update")
+            for column, fake_value in damaged.items():
+                real_value = conn.execute(
+                    f"SELECT {column} FROM human_decisions"
+                ).fetchone()[0]
+                with self.subTest(column=column):
+                    conn.execute(
+                        f"UPDATE human_decisions SET {column} = ?",
+                        (fake_value,),
+                    )
+                    conn.commit()
+                    try:
+                        with self.assertRaises(HumanDecisionServiceError) as ctx:
+                            self.store.list_for_run(
+                                fake_value if column == "run_id" else run_id
+                            )
+                        self.assertEqual(ctx.exception.code, "persisted_state_corrupt")
+                    finally:
+                        conn.execute(
+                            f"UPDATE human_decisions SET {column} = ?",
+                            (real_value,),
+                        )
+                        conn.commit()
+        finally:
+            conn.close()
+
+    def test_recomputed_json_digest_cannot_mask_wrong_run_identity(self) -> None:
+        first = self.record()
+        record = first.decision_record
+        record["evidence_report"]["run_id"] = "foreign-run"
+        conn = sqlite3.connect(self.decision_db)
+        try:
+            conn.execute("DROP TRIGGER human_decisions_no_update")
+            conn.execute(
+                "UPDATE human_decisions SET decision_record_json = ?, "
+                "decision_record_digest = ?",
+                (json.dumps(record), canonical_digest(record)),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+        with self.assertRaises(HumanDecisionServiceError) as ctx:
+            self.store.list_for_run(self.report["run_id"])
+        self.assertEqual(ctx.exception.code, "persisted_state_corrupt")
+        with self.assertRaises(HumanDecisionServiceError) as replay_ctx:
+            self.record()
+        self.assertEqual(replay_ctx.exception.code, "persisted_state_corrupt")
+
     def test_tampered_persisted_record_is_detected_on_read(self) -> None:
         self.record()
         conn = sqlite3.connect(self.decision_db)
