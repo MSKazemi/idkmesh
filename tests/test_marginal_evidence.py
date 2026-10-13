@@ -781,6 +781,14 @@ class HeldoutVerifierDiagnosticTests(unittest.TestCase):
         ):
             self.evaluate(train, test)
 
+    def test_holdout_cannot_silently_drop_one_verifier(self):
+        train, holdout = self.matrices()
+        holdout["verifiers"].pop()
+        with self.assertRaisesRegex(
+            marginal_evidence.MarginalEvidenceInputError, "verifier identities differ"
+        ):
+            self.evaluate(train, holdout)
+
     def test_insufficient_calibration_rows_abstain_without_holdout_read(self):
         train, test = self.matrices(count=4)
         result = self.evaluate(train, test)
