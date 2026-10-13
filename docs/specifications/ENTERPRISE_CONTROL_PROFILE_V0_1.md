@@ -197,7 +197,10 @@ Follow-on work:
 - E6 (#673) SLO/backup/DR;
 - E7 (#674) supply chain;
 - E8 (#675) hosted control service;
-- E9 (#676) destructive conformance pilot.
+- E9 (#676) destructive conformance pilot. Its in-process harness treats an
+  empty run, an unrecognized result status, or an executed scenario with no
+  safe-state checks as **UNKNOWN**, never PASS; results are baseline evidence,
+  not deployed-service certification.
 
 ## Exit gate
 

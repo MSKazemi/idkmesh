@@ -709,6 +709,10 @@ def _run_scenario(scenario: Scenario, base: Path) -> dict[str, Any]:
     if failed:
         result["status"] = "FAIL"
         result["observed"] = "expected safe state did not hold: " + "; ".join(failed)
+    elif not ctx.checks:
+        # A scenario that ran but asserted nothing must never certify safety.
+        result["status"] = "UNKNOWN"
+        result["observed"] = "no safe-state checks were executed"
     elif ctx.gaps:
         result["status"] = "WARN"
         result["observed"] = (
@@ -721,6 +725,9 @@ def _run_scenario(scenario: Scenario, base: Path) -> dict[str, Any]:
 
 
 def overall_status(statuses: list[str]) -> str:
+    # Empty/unknown result sets are not success evidence.
+    if not statuses or any(status not in STATUSES for status in statuses):
+        return "UNKNOWN"
     for status in ("FAIL", "UNKNOWN", "WARN"):
         if status in statuses:
             return status

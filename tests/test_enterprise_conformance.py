@@ -122,6 +122,24 @@ class ConformanceReportTests(unittest.TestCase):
         self.assertEqual(order(["UNKNOWN", "FAIL", "PASS"]), "FAIL")
         self.assertEqual(order(["PASS"]), "PASS")
 
+    def test_zero_scenarios_and_unknown_status_never_pass(self) -> None:
+        report = conformance.run_conformance(scenario_ids=())
+        self.assertEqual(report["status"], "UNKNOWN")
+        self.assertEqual(report["scenarios"], [])
+        self.assertEqual(conformance.overall_status([]), "UNKNOWN")
+        self.assertEqual(conformance.overall_status(["UNEXPECTED"]), "UNKNOWN")
+
+    def test_executed_scenario_without_checks_is_unknown(self) -> None:
+        no_checks = conformance.Scenario(
+            "empty_checks", "No checks", "no state verified", (),
+            lambda ctx: None,
+        )
+        with mock.patch.object(conformance, "SCENARIOS", (no_checks,)):
+            report = conformance.run_conformance()
+        self.assertEqual(report["status"], "UNKNOWN")
+        self.assertEqual(report["scenarios"][0]["status"], "UNKNOWN")
+        self.assertIn("no safe-state checks", report["scenarios"][0]["observed"])
+
     def test_unknown_scenario_id_is_rejected(self) -> None:
         with self.assertRaises(ValueError):
             conformance.run_conformance(scenario_ids=("nope",))
