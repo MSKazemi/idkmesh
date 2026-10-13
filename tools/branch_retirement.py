@@ -186,7 +186,7 @@ def verify_local_checkout(repository: str, main_sha: str, cwd: Path) -> None:
     # remote.origin.pushurl or url.*.pushInsteadOf. Inspect *all effective*
     # destinations instead of assuming that checking the fetch URL is enough.
     push_urls = _git("remote", "get-url", "--push", "--all", "origin", cwd=cwd).splitlines()
-    if len(push_urls) != 1 or push_urls[0] not in allowed:
+    if len(push_urls) != 1 or push_urls[0] != remote:
         raise RetirementError("origin has an unexpected or multiple Git push destinations")
     # A mirror remote must never be a destination for a narrow destructive
     # command, even if a particular Git version rejects mixed mirror/refspecs.

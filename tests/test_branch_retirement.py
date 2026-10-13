@@ -177,7 +177,11 @@ class RetirementTests(unittest.TestCase):
     def test_origin_fetch_url_cannot_override_a_different_push_destination(self):
         """A clean-looking fetch remote must not authorize a malicious pushurl."""
         fetch_url = f"https://github.com/{REPO}.git"
-        for target in ("https://github.com/other/repository.git", "ssh://git@evil.example/x.git"):
+        for target in (
+            "https://github.com/other/repository.git",
+            "ssh://git@evil.example/x.git",
+            f"git@github.com:{REPO}.git",
+        ):
             with self.subTest(push_target=target):
                 with mock.patch.object(retire, "_git", side_effect=[fetch_url, target]) as git:
                     with self.assertRaisesRegex(retire.RetirementError, "Git push destinations"):
@@ -194,14 +198,13 @@ class RetirementTests(unittest.TestCase):
                         retire.verify_local_checkout(REPO, MAIN, ROOT)
                 self.assertEqual(git.call_count, 2)
 
-    def test_one_approved_effective_push_destination_reaches_remaining_checks(self):
-        fetch_url = f"https://github.com/{REPO}.git"
-        push_url = f"git@github.com:{REPO}.git"
+    def test_matching_effective_push_destination_reaches_remaining_checks(self):
+        approved = f"https://github.com/{REPO}.git"
         with mock.patch.object(retire, "_git", side_effect=[
-            fetch_url, push_url, "false", "main", MAIN, "",
+            approved, approved, "false", "main", MAIN, "",
         ]) as git:
             retire.verify_local_checkout(REPO, MAIN, ROOT)
-        self.assertEqual(git.call_count, 5)
+        self.assertEqual(git.call_count, 6)
 
 
     def test_origin_push_mirror_is_denied_even_with_approved_url(self):
