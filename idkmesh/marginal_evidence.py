@@ -28,7 +28,7 @@ import json
 import math
 import random
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any, Iterable, Mapping
 
 from idkmesh import gate_audit
 
@@ -50,19 +50,35 @@ class MarginalEvidenceInputError(ValueError):
 
 
 def _normalize_ids(
-    name: str, values: Iterable[str] | None, *, allow_empty: bool = False
+    name: str, values: Iterable[str] | None, *,
+    max_items: int, allow_empty: bool = False,
 ) -> tuple[str, ...]:
+    """Validate a finite ID collection against the canonical matrix size.
+
+    Caller-supplied iterators are consumed at most once, and never beyond the
+    number of verifiers already validated by the verdict-matrix contract.
+    """
     if values is None:
         if allow_empty:
             return ()
         raise MarginalEvidenceInputError(f"{name} must be provided")
-    if isinstance(values, (str, bytes)):
+    if isinstance(values, (str, bytes, Mapping)):
         raise MarginalEvidenceInputError(
-            f"{name} must be a collection of verifier ids, not one string"
+            f"{name} must be a collection of verifier ids, not text or a mapping"
         )
+    try:
+        iterator = iter(values)
+    except TypeError as exc:
+        raise MarginalEvidenceInputError(
+            f"{name} must be an iterable collection of verifier ids"
+        ) from exc
     result: list[str] = []
     seen: set[str] = set()
-    for index, value in enumerate(values):
+    for index, value in enumerate(iterator):
+        if index >= max_items:
+            raise MarginalEvidenceInputError(
+                f"{name} exceeds the {max_items} verifiers in the input matrix"
+            )
         if not isinstance(value, str) or not value:
             raise MarginalEvidenceInputError(
                 f"{name}[{index}] must be a non-empty string"
@@ -614,7 +630,10 @@ def analyze(
     except gate_audit.GateAuditInputError as exc:
         raise MarginalEvidenceInputError(str(exc)) from exc
 
-    current_ids = _normalize_ids("current_verifier_ids", current_verifier_ids)
+    current_ids = _normalize_ids(
+        "current_verifier_ids", current_verifier_ids,
+        max_items=len(data["verifiers"]),
+    )
     by_id = _verifier_map(data)
     known_ids = set(by_id)
     unknown_current = sorted(set(current_ids) - known_ids)
@@ -643,7 +662,8 @@ def analyze(
             )
     else:
         requested_candidates = _normalize_ids(
-            "candidate_verifier_ids", candidate_verifier_ids
+            "candidate_verifier_ids", candidate_verifier_ids,
+            max_items=len(data["verifiers"]),
         )
         unknown_candidates = sorted(set(requested_candidates) - known_ids)
         if unknown_candidates:
