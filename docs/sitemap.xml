@@ -387,6 +387,11 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://mskazemi.com/idkmesh/audits/2026-10-13-branch-convergence-reconciliation.html</loc>
+    <lastmod>2026-10-13</lastmod>
+    <priority>0.5</priority>
+  </url>
+  <url>
     <loc>https://mskazemi.com/idkmesh/audits/2026-10-13-nonpackage-python-audit.html</loc>
     <lastmod>2026-10-13</lastmod>
     <priority>0.6</priority>
@@ -1418,6 +1423,11 @@
   </url>
   <url>
     <loc>https://mskazemi.com/idkmesh/conversations/2026-10-13-benefits-and-adoption-clarity.html</loc>
+    <lastmod>2026-10-13</lastmod>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://mskazemi.com/idkmesh/conversations/2026-10-13-branch-main-integration-review.html</loc>
     <lastmod>2026-10-13</lastmod>
     <priority>0.3</priority>
   </url>
