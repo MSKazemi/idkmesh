@@ -41,6 +41,14 @@ Before deletion the tool requires the reviewed origin, exact local main HEAD, cl
 
 **Excluded:** main, active PRs, changed/protected/frozen branches, recent work such as C13-E/C8-G, and fix/e9-no-empty-pass-20261013 (a no-PR orphan still needing independent evidence review). The historical PRs stay available as audit references after deleting a source branch.
 
+## Exact-head closing-keyword gate
+
+The PR Gate passes its authenticated pull-request number to the existing
+`closing_keyword_guard.py --self` option. This ignores only a reference to
+this very PR (which cannot close a separate issue); closing keywords attached
+to any other issue still fail the gate. Regression tests cover both cases.
+This does not weaken the separate exact-head CI or human retirement gate.
+
 ## Verification and aftercare
 
 The isolated negative-control suite passed **13 tests and 10 subtests**. A disposable local bare-Git test confirmed a mismatched expected SHA blocks deletion and an exact matching lease permits it. These are **not** live destructive GitHub tests. Exact-head PR Gate, a separate reviewer and operator authorization remain required before using execute.

@@ -235,6 +235,30 @@ class PullRequestTemplateTests(unittest.TestCase):
         self.assertEqual(scan_text(steward, source="steward"), [])
 
 
+class WorkflowSelfReferenceWiringTests(unittest.TestCase):
+    def test_pull_request_guard_receives_exact_pr_number(self):
+        workflow = (ROOT / ".github" / "workflows" / "pr-gate.yml").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("PR_NUMBER: ${{ github.event.pull_request.number }}", workflow)
+        self.assertIn('args=(--self "${PR_NUMBER}" --text', workflow)
+
+    def test_own_pr_reference_is_safe_but_other_issue_is_not(self):
+        text = (
+            "A wrong-repository delete. Real Git configuration must fail closed\\n"
+            "before changing either ref. Refs #1116."
+        )
+        self.assertEqual(
+            scan_sources([("commit", text)], self_reference=1116)["summary"]["violations"],
+            0,
+        )
+        self.assertEqual(
+            scan_sources([("commit", text.replace("#1116", "#1117"))], self_reference=1116)
+            ["summary"]["violations"],
+            1,
+        )
+
+
 class SelfReferenceTests(unittest.TestCase):
     """`gh pr merge --squash` appends the pull request's own number.
 

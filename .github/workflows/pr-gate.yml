@@ -54,13 +54,16 @@ jobs:
           PYTHONPATH: .
           PR_TITLE: ${{ github.event.pull_request.title }}
           PR_BODY: ${{ github.event.pull_request.body }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           set -euo pipefail
           # Untrusted pull request text reaches the tool through the environment
           # and argv only, never through the shell as code.
-          args=(--text "pull-request-title=${PR_TITLE}" --text "pull-request-body=${PR_BODY}")
+          # Self references are PR numbers, not issue closure instructions.
+          # The guard still inspects every other issue reference normally.
+          args=(--self "${PR_NUMBER}" --text "pull-request-title=${PR_TITLE}" --text "pull-request-body=${PR_BODY}")
           messages="${RUNNER_TEMP}/commit-messages"
           mkdir -p "${messages}"
           if ! revisions="$(git rev-list "${BASE_SHA}..${HEAD_SHA}" 2>/dev/null)"; then
