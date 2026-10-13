@@ -23,6 +23,16 @@ and the release notes for that tag.
 
 ### Added
 
+- github: `idkmesh init --github --check` and `--apply` (C8-F, refs #596) install
+  the eight generated bootstrap files into the current Git repository. `--check`
+  is read-only. `--apply` writes only those files, through no-follow
+  directory-relative operations, and records generated digests in
+  `.idkmesh/bootstrap-state.json`; it refuses symlinks, a missing or invalid
+  state record, and managed files edited since the last install, and it never
+  overwrites the user-owned seeds. POSIX only; multi-file writes are not
+  transactional (state is written last, so an interrupted run fails closed). No
+  GitHub mutation. Specified in
+  [GitHub Bootstrap Safe Apply v0.1](docs/specifications/GITHUB_BOOTSTRAP_SAFE_APPLY_V0_1.md).
 - api: `ControlTowerClient.collect_run_pages(max_pages=..., limit=..., state=...,
   project_id=...)` reads a bounded series of run pages with opaque cursors,
   keeps each page's request ID and digest, validates the page budget before any
