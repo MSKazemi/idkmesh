@@ -49,6 +49,19 @@ class FakeClient:
         raise AssertionError(f"unexpected fetch: {path}")
 
 
+def _fixture_git(*args, cwd=None, timeout=25):
+    """Run real git for throwaway fixtures, independent of the host's git hooks.
+
+    A contributor's global or template hooks (for example an author-identity
+    check) must not be able to reject the fixture's commits and pushes.
+    """
+    completed = subprocess.run(
+        ["git", "-c", f"core.hooksPath={os.devnull}", *args],
+        cwd=cwd, check=True, capture_output=True, text=True, timeout=timeout,
+    )
+    return completed.stdout.strip()
+
+
 class RetirementTests(unittest.TestCase):
     def test_manifest_rejects_duplicates_and_malformed_heads(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -201,12 +214,7 @@ class RetirementTests(unittest.TestCase):
         git.assert_not_called()
 
     def test_real_bundle_must_restore_the_exact_named_source_commit(self):
-        def git(*args, cwd):
-            result = subprocess.run(
-                ["git", *args], cwd=cwd, capture_output=True, text=True,
-                timeout=25, check=True,
-            )
-            return result.stdout.strip()
+        git = _fixture_git
 
         with tempfile.TemporaryDirectory() as temp:
             home = Path(temp)
@@ -378,15 +386,7 @@ class RetirementTests(unittest.TestCase):
         the same commit SHA, so the old exact-SHA lease alone would not detect
         the wrong repository.
         """
-        def git(*args, cwd=None):
-            # Hermetic: a contributor's global or template hooks must not be able
-            # to reject the throwaway fixture commits and pushes.
-            completed = subprocess.run(
-                ["git", "-c", f"core.hooksPath={os.devnull}", *args],
-                cwd=cwd, check=True, capture_output=True,
-                text=True, timeout=10,
-            )
-            return completed.stdout.strip()
+        git = _fixture_git
 
         with tempfile.TemporaryDirectory() as tmp:
             home = Path(tmp)
