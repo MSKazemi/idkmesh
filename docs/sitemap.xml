@@ -1412,6 +1412,11 @@
     <priority>0.3</priority>
   </url>
   <url>
+    <loc>https://mskazemi.com/idkmesh/conversations/2026-10-13-api-metrics-documentation-review.html</loc>
+    <lastmod>2026-10-13</lastmod>
+    <priority>0.3</priority>
+  </url>
+  <url>
     <loc>https://mskazemi.com/idkmesh/conversations/2026-10-13-benefits-and-adoption-clarity.html</loc>
     <lastmod>2026-10-13</lastmod>
     <priority>0.3</priority>
@@ -1964,6 +1969,11 @@
   <url>
     <loc>https://mskazemi.com/idkmesh/reference/API_LIMITS.html</loc>
     <lastmod>2026-10-12</lastmod>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://mskazemi.com/idkmesh/reference/API_METRICS_INTERVAL_GUIDE.html</loc>
+    <lastmod>2026-10-13</lastmod>
     <priority>0.5</priority>
   </url>
   <url>
