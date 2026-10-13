@@ -30,5 +30,7 @@ print(render_owner_action_checklist(plan))
 The all-`a` SHA is a *test fixture*, not a real published runtime. Substitute a
 reviewed tag or SHA during adoption.
 
-Checklist rendering is read-only. C8-F safe apply/re-run and C8-G fresh-repo
-pilot remain pending; none of these instructions claims they were performed.
+Checklist rendering is read-only. C8-F safe apply/re-run is implemented, and
+C8-G proves the bootstrap-to-preview path offline with a test fixture. That
+fixture is not a pilot on a real GitHub repository (#599 owns that); none of
+these instructions claims any owner action was performed.
