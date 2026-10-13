@@ -1,0 +1,14 @@
+{
+  "repository": "MSKazemi/idkmesh",
+  "default_branch": "main",
+  "candidates": [
+    {"name": "agent/issue-745-cors-delta", "head": "579b2891c3174a0038babb6405837021b2a69faa", "closed_pr": 1042, "merged_replacement_pr": 1064},
+    {"name": "agent/issue-745-openapi-compat-gate", "head": "4416f1dfa210458fe95c79061dc0b3b619370c05", "closed_pr": 1039, "merged_replacement_pr": 1063},
+    {"name": "agent/issue-745-permission-matrix", "head": "907a37960fa059f3aace8439ab1edd3881c17d9e", "closed_pr": 1043, "merged_replacement_pr": 1069},
+    {"name": "agent/20261012-issue-608-parallel", "head": "2beb3520e4685c0a246e9eb4cfbf4944460a3f2c", "closed_pr": 1078, "merged_replacement_pr": 1095},
+    {"name": "agent/20261012-issue-664-parallel", "head": "b9fb1768bf8930fd6f494a4f364a4d096c13252f", "closed_pr": 1086, "merged_replacement_pr": 1092},
+    {"name": "cli-help-examples-1029-8825333565183622993", "head": "fee10dd7936cfe2fa3367bcf27f13b3a1ef668ae", "closed_pr": 1033, "merged_replacement_pr": 1044},
+    {"name": "fix/c13-workunit-form-preview-20261013", "head": "94fa91c83f2e0f5267f164a74947d5a097bb2a3b", "closed_pr": 1084, "merged_replacement_pr": 1049},
+    {"name": "jules-1000812529289196511-6748be38", "head": "63f91382e4b2d0eb0323f6118c7896fd4e4899b3", "closed_pr": 1032, "merged_replacement_pr": 1041}
+  ]
+}

@@ -99,6 +99,7 @@ For a newcomer trying to understand the executable foundation, this order is usu
 
 - [Search and Answer-Engine Discovery Matrix](operations/SEARCH_AND_ANSWER_ENGINE_DISCOVERY_MATRIX.md) — crawler/discovery paths for Google/Gemini, Bing/Copilot, ChatGPT, Claude, Perplexity, and open-web search, plus the live visibility probe.
 - [PyPI Trusted Publishing and Release Runbook](operations/PYPI_RELEASE_RUNBOOK.md) — tokenless OIDC publication, release/version identity checks, protected-environment approval, first-release acceptance, and recovery.
+- [Branch retirement procedure](operations/BRANCH_RETIREMENT_V0_1.md) — how to reduce stale branches without reintegrating superseded code, with exact-SHA leases and human reference review.
 - [Jules development automation](operations/JULES_AUTOMATION.md) — who may mark work `agent-ready`, how the dispatcher adds `jules`, event-driven and recovery frequencies, concurrency/backpressure, veto labels, failure recovery, and the no-auto-merge boundary.
 
 ### Work, evidence, and interoperability
