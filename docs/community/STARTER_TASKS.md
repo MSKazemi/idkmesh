@@ -61,12 +61,12 @@ already carries, and never creates a label.
 
 **Parallel welcome.** ~45 minutes.
 
-`tools/` contains 60 modules that build an `argparse` parser. Nothing asserts
+`tools/` contains 61 modules that build an `argparse` parser. Nothing asserts
 that they still start. A tool can be broken by an import error, a bad default,
 or a renamed helper, and no test in the suite would notice until someone ran it
 by hand.
 
-This task adds a discovery-based guard rather than hard-coding the current tool list.
+This task adds a discovery-based guard rather than hard-coding the current tool list. CLI discovery tests must use `--help` only; never execute privileged operations such as branch deletion during a smoke test.
 
 **Acceptance:** a test that discovers the tools rather than hard-coding a list,
 runs each with `--help` in a subprocess, and asserts a zero exit status and

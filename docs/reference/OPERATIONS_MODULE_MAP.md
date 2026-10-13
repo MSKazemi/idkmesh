@@ -3,9 +3,9 @@ description: "As-built source inventory of repository tooling and scripts; opera
 ---
 # Operations and automation Python module map
 
-**Source baseline:** current `main` tree reviewed on 2026-10-13 (see [audit](../audits/2026-10-13-nonpackage-python-audit.md)). Covers **113** direct Python modules under `tools/` and `scripts/`. These are checkout tools, not installed `idkmesh` CLI subcommands. This is a source navigation inventory based on module descriptions and entry points, not an execution audit or independent security review. The inventory adds the V5 funnel-coverage helper after the pinned 2026-10-13 audit snapshot.
+**Source baseline:** current `main` tree reviewed on 2026-10-13 (see [audit](../audits/2026-10-13-nonpackage-python-audit.md)). Covers **114** direct Python modules under `tools/` and `scripts/`. These are checkout tools, not installed `idkmesh` CLI subcommands. This is a source navigation inventory based on module descriptions and entry points, not an execution audit or independent security review. The inventory adds the V5 funnel-coverage helper after the pinned 2026-10-13 audit snapshot.
 
-**Caution:** not every script is read-only. `tools/jules_dispatcher.py`, `tools/openhands_pilot.py`, `tools/auto_draft_pr_steward.py`, `tools/publish_starter_tasks.py`, `tools/submit_indexnow.py`, and observation collectors interact with external systems under explicit arguments, credentials, or GitHub Actions. Never execute them merely to check documentation. Some frozen-node, model, and acceptance harnesses execute code in restricted controlled environments. Use [agent instructions](https://github.com/MSKazemi/idkmesh/blob/main/AGENTS.md), [testing](../TESTING.md), [Jules operations](../operations/JULES_AUTOMATION.md), and [safety policy](https://github.com/MSKazemi/idkmesh/blob/main/PROJECT_RULES.md).
+**Caution:** not every script is read-only. The new branch retirement tool is read-only unless separately invoked with --execute and a manual attestation; that option can delete exact Git refs. `tools/jules_dispatcher.py`, `tools/openhands_pilot.py`, `tools/auto_draft_pr_steward.py`, `tools/publish_starter_tasks.py`, `tools/submit_indexnow.py`, and observation collectors interact with external systems under explicit arguments, credentials, or GitHub Actions. Never execute them merely to check documentation. Some frozen-node, model, and acceptance harnesses execute code in restricted controlled environments. Use [agent instructions](https://github.com/MSKazemi/idkmesh/blob/main/AGENTS.md), [testing](../TESTING.md), [Jules operations](../operations/JULES_AUTOMATION.md), and [safety policy](https://github.com/MSKazemi/idkmesh/blob/main/PROJECT_RULES.md).
 
 ## API and release (11)
 
@@ -98,7 +98,7 @@ Local structure, evidence, links, or documentation validation and rendering; sou
 | [`tools/idkgraph_warning_sample.py`](https://github.com/MSKazemi/idkmesh/blob/main/tools/idkgraph_warning_sample.py) | IDKGraph warning sample tool |
 | [`tools/idkgraph_workunit_cycles.py`](https://github.com/MSKazemi/idkmesh/blob/main/tools/idkgraph_workunit_cycles.py) | IDKGraph workunit cycles tool |
 
-## Research policy and evolution (30)
+## Research policy and evolution (31)
 
 Research/evolution/admission observation, recommendation, or offline gate; no implicit integration authority.
 
@@ -132,6 +132,7 @@ Research/evolution/admission observation, recommendation, or offline gate; no im
 | [`tools/ave_shadow_adapter_cli.py`](https://github.com/MSKazemi/idkmesh/blob/main/tools/ave_shadow_adapter_cli.py) | ave shadow adapter cli |
 | [`tools/branch_convergence_audit.py`](https://github.com/MSKazemi/idkmesh/blob/main/tools/branch_convergence_audit.py) | branch convergence audit |
 | [`tools/branch_merge_planner.py`](https://github.com/MSKazemi/idkmesh/blob/main/tools/branch_merge_planner.py) | branch merge planner |
+| [`tools/branch_retirement.py`](https://github.com/MSKazemi/idkmesh/blob/main/tools/branch_retirement.py) | exact-SHA dry-run and human-attested branch retirement |
 | [`tools/ci_shadow_evaluator.py`](https://github.com/MSKazemi/idkmesh/blob/main/tools/ci_shadow_evaluator.py) | ci shadow evaluator |
 | [`tools/ci_shadow_planner.py`](https://github.com/MSKazemi/idkmesh/blob/main/tools/ci_shadow_planner.py) | ci shadow planner |
 
