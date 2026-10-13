@@ -161,6 +161,17 @@ and the release notes for that tag.
   passwords and lowercase Bearer tokens remain detectable. The exact phrase
   `bearer token-based-authentication` is exempt, not arbitrary lowercase
   credentials. Result and audit write paths are not covered yet.
+- E6 recovery-drill evaluator (issue #673, partial):
+  `idkmesh/enterprise_recovery_drill.py` judges one recorded recovery drill against
+  the enterprise profile's declared `rpo_minutes` and `rto_minutes`, returning PASS,
+  FAIL or UNKNOWN with value-free reason codes. Measured data loss and recovery time
+  are compared inclusively; an unverified restore fails; a missing, malformed,
+  mismatched, future-dated or (when a maximum age is given) stale drill is UNKNOWN,
+  never a pass. The record is strict and credential-free. It runs no drill and
+  restores nothing, and no real drill has been recorded. Also corrects the control-plane
+  note that claimed a restore-test interval and a backpressure field the profile does
+  not have. Described in
+  [Storage restore and integrity drill](docs/operations/API_STORAGE_RESTORE_DRILL_V0_1.md#judging-a-drill-against-the-profile-e6-673).
 - Separation of duties for verification (issue #598, C10-G): the authorization
   kernel now refuses `verify` when the actor is among the principals that executed
   the work under review. `PolicyRule.executor_distinct_at_risk` is a risk
