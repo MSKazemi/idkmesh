@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import unittest
 
+import pytest
+
 from randomness_lab.r1_scaling import R1ScalingConfig, run_r1_scaling
 from randomness_lab.r1_threshold_robustness import (
     BOOTSTRAP_RESAMPLES,
@@ -41,6 +43,7 @@ class R1ThresholdRobustnessTests(unittest.TestCase):
             ],
         }
 
+    @pytest.mark.slow  # seeded R1 replay (~0.8 CPU-s)
     def test_integrates_with_seeded_r1_deterministically(self) -> None:
         config = R1ScalingConfig(
             tasks_per_trial=20,

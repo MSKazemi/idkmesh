@@ -280,6 +280,11 @@ and no execution or merge authority.
 
 Audit evidence records decisions; it does not grant authority by existing.
 
+The E3 kernel, its freshness-bound decision cache and this ledger are exercised together by the
+[E3-G acceptance fixture](../specifications/ENTERPRISE_AUTHORIZATION_V0_1.md#e3-g-two-principal-acceptance-fixture-enterprise-kernel):
+denied, stale-after-revocation and wrong-approver outcomes are recorded with their reason codes. It is test evidence,
+not live enforcement; no service consumes the cache yet (E3-F).
+
 Issue #671 owns the audit ledger/export contract.
 
 ## 11. Reliability and recovery
