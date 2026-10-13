@@ -32,6 +32,10 @@ FINAL_BOOTSTRAP_REPLICATES = 10_000
 TARGET_POWER = 0.90
 DELTA0 = math.log(1.10)
 TASK_LADDER = (50, 75, 100, 150, 200, 300, 500)
+POWER_INTERVAL_METHOD = (
+    "delete-one-cluster jackknife SE with two-sided 95% cluster-t "
+    "lower bound at repository and task levels"
+)
 CLASSES = ("official-pass", "official-fail")
 MASK64 = (1 << 64) - 1
 
@@ -521,16 +525,17 @@ def build_power_plan(
             "smallest_effect_geometric_likelihood_ratio": math.exp(delta0),
             "target_power": target_power,
             "simulated_cohorts": simulations,
-            "power_interval_method": (
-                "delete-one-cluster jackknife SE with two-sided 95% cluster-t "
-                "lower bound at repository and task levels"
-            ),
+            "power_interval_method": POWER_INTERVAL_METHOD,
             "final_confirmatory_bootstrap_replicates_per_level": (
                 FINAL_BOOTSTRAP_REPLICATES
             ),
-            "decision": (
-                "both repository- and task-cluster 95% percentile intervals "
-                "have lower bound > 0"
+            "power_decision": (
+                "both repository- and task-cluster jackknife/cluster-t "
+                "95% lower bounds are > 0"
+            ),
+            "final_confirmatory_decision": (
+                "both repository- and task-cluster 10,000-resample percentile "
+                "95% intervals have lower bound > 0"
             ),
             "class_estimand": (
                 "macro-average of official-pass and official-fail mean "
@@ -761,6 +766,7 @@ def _validate_power_plan_file(path: Path) -> dict:
             FINAL_BOOTSTRAP_REPLICATES
         ),
         "target_power": TARGET_POWER,
+        "power_interval_method": POWER_INTERVAL_METHOD,
     }
     for key, value in expected.items():
         if design.get(key) != value:
