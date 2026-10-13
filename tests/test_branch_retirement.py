@@ -193,14 +193,86 @@ class RetirementTests(unittest.TestCase):
         with self.assertRaisesRegex(retire.RetirementError, "requires explicit"):
             retire.run(FakeClient(), REPO, "main", (OLD,), execute=True, attestation=None, cwd=ROOT)
 
+    def test_execute_rejects_absent_bundle_before_any_remote_action(self):
+        with mock.patch.object(retire, "_git") as git:
+            with self.assertRaisesRegex(retire.RetirementError, "archive bundle"):
+                retire.run(FakeClient(), REPO, "main", (OLD,),
+                           execute=True, attestation=retire.ACK, cwd=ROOT)
+        git.assert_not_called()
+
+    def test_real_bundle_must_restore_the_exact_named_source_commit(self):
+        def git(*args, cwd):
+            result = subprocess.run(
+                ["git", *args], cwd=cwd, capture_output=True, text=True,
+                timeout=25, check=True,
+            )
+            return result.stdout.strip()
+
+        with tempfile.TemporaryDirectory() as temp:
+            home = Path(temp)
+            work = home / "checkout"
+            work.mkdir()
+            git("init", "-b", "main", cwd=work)
+            git("-c", "user.name=IDKMesh Test", "-c",
+                "user.email=test@example.invalid", "commit",
+                "--allow-empty", "-m", "initial", cwd=work)
+            base = git("rev-parse", "HEAD", cwd=work)
+            git("-c", "user.name=IDKMesh Test", "-c",
+                "user.email=test@example.invalid", "commit",
+                "--allow-empty", "-m", "second", cwd=work)
+            head = git("rev-parse", "HEAD", cwd=work)
+            git("branch", "agent/old-feature", cwd=work)
+            candidate = retire.Candidate("agent/old-feature", head, 101, 103)
+            full = home / "complete.bundle"
+            git("bundle", "create", str(full), "--all", cwd=work)
+            retire.verify_archive_bundle(full, candidate, cwd=work)
+
+            for bad in (
+                retire.Candidate("agent/other", head, 101, 103),
+                retire.Candidate(candidate.name, base, 101, 103),
+            ):
+                with self.subTest(name=bad.name, sha=bad.head):
+                    with self.assertRaisesRegex(retire.RetirementError, "exact named"):
+                        retire.verify_archive_bundle(full, bad, cwd=work)
+
+            incremental = home / "incremental.bundle"
+            git("bundle", "create", str(incremental),
+                "agent/old-feature", "^" + base, cwd=work)
+            # Local "bundle verify" can pass with missing prerequisites.
+            # The empty bare recovery clone must fail.
+            with self.assertRaisesRegex(retire.RetirementError, "independently restore"):
+                retire.verify_archive_bundle(incremental, candidate, cwd=work)
+
+            inside = work / "unsafe-location.bundle"
+            git("bundle", "create", str(inside), "--all", cwd=work)
+            with self.assertRaisesRegex(retire.RetirementError, "outside the checkout"):
+                retire.verify_archive_bundle(inside, candidate, cwd=work)
+
+    def test_archive_symlink_and_missing_file_fail_closed(self):
+        with tempfile.TemporaryDirectory() as temp:
+            home = Path(temp)
+            with self.assertRaisesRegex(retire.RetirementError, "missing"):
+                retire.verify_archive_bundle(home / "missing.bundle", OLD, cwd=ROOT)
+            target = home / "target.bundle"
+            target.write_text("not an archive", encoding="utf-8")
+            link = home / "archive.bundle"
+            link.symlink_to(target)
+            with self.assertRaisesRegex(retire.RetirementError, "regular external"):
+                retire.verify_archive_bundle(link, OLD, cwd=ROOT)
+
     def test_execute_rechecks_then_uses_exact_lease_without_shell(self):
         api = FakeClient()
         calls = []
         def git(*args, cwd):
             calls.append(args)
             return ""
-        with mock.patch.object(retire, "verify_local_checkout") as checkout, mock.patch.object(retire, "_git", side_effect=git):
-            result = retire.run(api, REPO, "main", (OLD,), execute=True, attestation=retire.ACK, cwd=ROOT)
+        with (mock.patch.object(retire, "verify_archive_bundle") as archive,
+              mock.patch.object(retire, "verify_local_checkout") as checkout,
+              mock.patch.object(retire, "_git", side_effect=git)):
+            result = retire.run(api, REPO, "main", (OLD,), execute=True,
+                                attestation=retire.ACK, cwd=ROOT,
+                                archive_bundle=Path("/tmp/reviewed.bundle"))
+        archive.assert_called_once_with(Path("/tmp/reviewed.bundle"), OLD, cwd=ROOT)
         self.assertEqual(checkout.call_count, 2)
         checkout.assert_any_call(REPO, MAIN, ROOT)
         self.assertEqual(result[0]["status"], "retired")
@@ -220,9 +292,13 @@ class RetirementTests(unittest.TestCase):
                     return {"commit": {"sha": "f" * 40}}
             return original_get(path)
         api.get = moving
-        with mock.patch.object(retire, "verify_local_checkout"), mock.patch.object(retire, "_git") as git:
+        with (mock.patch.object(retire, "verify_archive_bundle"),
+              mock.patch.object(retire, "verify_local_checkout"),
+              mock.patch.object(retire, "_git") as git):
             with self.assertRaisesRegex(retire.RetirementError, "main moved"):
-                retire.run(api, REPO, "main", (OLD,), execute=True, attestation=retire.ACK, cwd=ROOT)
+                retire.run(api, REPO, "main", (OLD,), execute=True,
+                           attestation=retire.ACK, cwd=ROOT,
+                           archive_bundle=Path("/tmp/reviewed.bundle"))
         git.assert_not_called()
 
     def test_bad_git_remote_or_checkout_is_rejected(self):
@@ -284,13 +360,14 @@ class RetirementTests(unittest.TestCase):
     def test_execute_rechecks_checkout_and_push_url_before_each_delete(self):
         """A pushurl changed after the first preflight must block the push."""
         api = FakeClient()
-        with mock.patch.object(
+        with mock.patch.object(retire, "verify_archive_bundle"), mock.patch.object(
             retire, "verify_local_checkout",
             side_effect=[None, retire.RetirementError("push destination moved")],
         ) as checkout, mock.patch.object(retire, "_git") as git:
             with self.assertRaisesRegex(retire.RetirementError, "push destination moved"):
                 retire.run(api, REPO, "main", (OLD,), execute=True,
-                           attestation=retire.ACK, cwd=ROOT)
+                           attestation=retire.ACK, cwd=ROOT,
+                           archive_bundle=Path("/tmp/reviewed.bundle"))
         self.assertEqual(checkout.call_count, 2)
         git.assert_not_called()
 
