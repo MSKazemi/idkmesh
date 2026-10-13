@@ -16,6 +16,8 @@ For the public front door, start with [`BEGINNER_GUIDE.md`](BEGINNER_GUIDE.md) i
 
 The [capability matrix](CAPABILITY_MATRIX.md) remains authoritative for implementation status and evidence level. A linked source file or design document alone does **not** prove a production guarantee.
 
+The [research/interoperability source map](reference/RESEARCH_MODULE_MAP.md) and [operational tooling map](reference/OPERATIONS_MODULE_MAP.md) now cover direct non-package Python sources with an explicit source-coverage guard. They distinguish synthetic evidence, real data, and externally mutating utilities; see the [audit](audits/2026-10-13-nonpackage-python-audit.md).
+
 ## Current productization initiative
 
 The current productization track turns the existing WorkUnit/worker/verification

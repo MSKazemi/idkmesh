@@ -6,6 +6,8 @@ Core prototypes live in `experiments/`, simulations in `randomness_lab/` and `si
 
 For source-derived module ownership and user-facing command/HTTP contracts, see `docs/reference/MODULE_MAP.md` and `docs/reference/CLI_HTTP_QUICK_REFERENCE.md`; for execution, API and authority boundaries see `docs/architecture/AS_BUILT_IMPLEMENTATION_MAP.md`. Treat this map as a dated navigation aid, not a replacement for live code, `docs/CAPABILITY_MATRIX.md`, or tests; update it when adding/removing an `idkmesh/*.py` module.
 
+For additional source navigation, see `docs/reference/RESEARCH_MODULE_MAP.md` (experiments, simulations, randomness lab, interop) and `docs/reference/OPERATIONS_MODULE_MAP.md` (tools and scripts). `tests/test_nonpackage_module_maps.py` guards direct Python-file inventory completeness. A module-map entry never authorizes running scripts with external effects.
+
 ## Build, Test, and Development Commands
 
 The supported local entry points now live in the repository and delegate to the same `scripts/testkit.py` tiers used by the documented development workflow:
