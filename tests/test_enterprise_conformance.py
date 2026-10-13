@@ -117,6 +117,24 @@ class ConformanceReportTests(unittest.TestCase):
                 with self.subTest(scenario=item["id"], path=rel):
                     self.assertTrue((ROOT / rel).is_file())
 
+    def test_embedded_g2_policy_matches_the_committed_credential_free_fixture(self) -> None:
+        expected = json.loads(
+            (ROOT / "examples" / "enterprise" / "g2-self-hosted.example.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        self.assertEqual(conformance._G2_DATA_PROFILE, expected)
+
+    def test_partial_failure_modes_are_warning_not_a_false_pass(self) -> None:
+        for scenario_id in (
+            "stale_claim_retry", "provider_outage_quota",
+            "external_data_and_egress", "local_http_boundary",
+            "public_evidence_authority",
+        ):
+            with self.subTest(scenario=scenario_id):
+                self.assertEqual(self.scenarios[scenario_id]["status"], "WARN")
+                self.assertTrue(self.scenarios[scenario_id]["gaps"])
+
     def test_report_never_contains_the_fixture_secret(self) -> None:
         self.assertNotIn(conformance._SECRET, json.dumps(self.report))
 
