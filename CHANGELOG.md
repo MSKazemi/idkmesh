@@ -141,6 +141,17 @@ and the release notes for that tag.
   policy content digest and request shape, with a validity window capped by
   max age and actor/approver expiry, so a revoked, changed or expired identity
   or an edited policy cannot reuse a cached ALLOW. Adds focused unit tests.
+- E5 raw-secret scanner (issue #672, partial): `idkmesh/enterprise_secret_scan.py`
+  detects credential-shaped values (GitHub, AWS, Slack, Google, `sk-` keys, JWTs,
+  PEM private-key headers, `Bearer` credentials, URL userinfo) and literal values
+  under exact credential-named keys in JSON-shaped documents. Findings carry a
+  rule id and a sanitized JSON Pointer only, never the matched text; a secret used
+  as a mapping key is replaced by `<key:N>` in locations. The scan is fail-closed:
+  depth, node and string-size limits and non-JSON values make the report
+  incomplete, which is never clean. References such as `env:NAME` are accepted.
+  Not yet called from any WorkUnit, result or audit write path, and not a
+  guarantee that a document holds no secret. Specified in
+  [Enterprise Data Policy Kernel v0.1](docs/specifications/ENTERPRISE_DATA_POLICY_V0_1.md#raw-secret-scanner).
 - E5 data/egress/credential decision kernel (issue #672, partial):
   `idkmesh/enterprise_data_policy.py` turns a validated enterprise control
   profile into pure fail-closed decisions. External processing is checked per

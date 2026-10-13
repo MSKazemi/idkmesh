@@ -168,6 +168,7 @@ Primary context: [subsystem contract](../architecture/ENTERPRISE_CONTROL_PLANE.m
 | [`enterprise_identity_github.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/enterprise_identity_github.py) | Trusted GitHub actor binding to ActorContext |
 | [`enterprise_identity_oidc.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/enterprise_identity_oidc.py) | Trusted IdP claims binding to ActorContext |
 | [`enterprise_profile.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/enterprise_profile.py) | Strict enterprise profile and cross-field validation |
+| [`enterprise_secret_scan.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/enterprise_secret_scan.py) | Deterministic fail-closed scan of JSON documents for raw credentials; findings never carry matched text |
 | [`tenant_scope.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/tenant_scope.py) | Tenant-scoped resource/idempotency identities and memory fixture |
 
 ## Steward report read models
