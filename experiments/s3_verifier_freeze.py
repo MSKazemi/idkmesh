@@ -79,7 +79,7 @@ def load_json(path: Path):
             object_pairs_hook=_no_duplicate_object,
             parse_constant=_reject_constant,
         )
-    except (OSError, json.JSONDecodeError) as exc:
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
         raise S3FreezeError(f"cannot read JSON {path}: {exc}") from exc
 
 
@@ -665,9 +665,13 @@ def _relative_regular_file(root: Path, raw_path: str, field: str) -> Path:
     if posix.is_absolute() or ".." in posix.parts:
         raise S3FreezeError(f"{field} must stay inside the freeze root")
 
-    candidate = root.joinpath(*posix.parts)
-    if candidate.is_symlink():
-        raise S3FreezeError(f"{field} must not be a symlink")
+    candidate = root
+    for component in posix.parts:
+        candidate = candidate / component
+        if candidate.is_symlink():
+            raise S3FreezeError(
+                f"{field} must not traverse a symlink: {raw_path}"
+            )
     resolved_root = root.resolve()
     try:
         resolved = candidate.resolve(strict=True)
@@ -774,12 +778,15 @@ def _validate_power_plan_file(path: Path) -> dict:
             raise S3FreezeError(
                 f"power_plan design {key} must equal frozen value {value!r}"
             )
-    if abs(
-        float(design.get("smallest_effect_logscore_nats", float("nan")))
-        - DELTA0
-    ) > 1e-15:
+    effect_size = design.get("smallest_effect_logscore_nats")
+    if (
+        isinstance(effect_size, bool)
+        or not isinstance(effect_size, (int, float))
+        or not math.isfinite(effect_size)
+        or abs(effect_size - DELTA0) > 1e-15
+    ):
         raise S3FreezeError(
-            "power_plan smallest effect does not match log(1.10)"
+            "power_plan smallest effect must be finite log(1.10)"
         )
 
     decision = plan.get("decision")
@@ -1106,6 +1113,75 @@ def build_freeze_manifest(spec: dict, root: Path) -> dict:
     return with_self_digest(manifest)
 
 
+
+def validate_freeze_manifest(manifest: dict, root: Path) -> None:
+    """Reconstruct the complete frozen artifact manifest from current bytes.
+
+    A self-digest authenticates only the *description*, not the files it names.
+    Comparing to a fresh build rechecks paths, artifact types, outcome exclusion,
+    power-plan defaults, calibration binding, model metadata, and SHA-256 bytes.
+    This is a local preflight, not a signature, provenance attestation, or
+    immunity to external files changing after the check.
+    """
+    expected_fields = {
+        "schema_version", "experiment_id", "repository_commit",
+        "protocol", "artifacts", "upstream", "models", "seeds",
+        "execution_boundary", "container_image_digest", "claims",
+        "self_sha256",
+    }
+    if not isinstance(manifest, dict) or set(manifest) != expected_fields:
+        raise S3FreezeError("freeze manifest has unexpected or missing fields")
+    if manifest["schema_version"] != SCHEMA_FREEZE:
+        raise S3FreezeError("freeze manifest has the wrong schema_version")
+    if not verify_self_digest(manifest):
+        raise S3FreezeError("freeze manifest self_sha256 is invalid")
+    if manifest["claims"] != {
+        "contains_confirmatory_outcomes": False,
+        "executes_untrusted_code": False,
+        "grants_acceptance_authority": False,
+    }:
+        raise S3FreezeError("freeze manifest asserts forbidden authority/outcomes")
+
+    protocol = manifest["protocol"]
+    artifacts = manifest["artifacts"]
+    if (
+        not isinstance(protocol, dict)
+        or set(protocol) != {"path", "sha256"}
+        or not isinstance(artifacts, list)
+    ):
+        raise S3FreezeError("freeze manifest has malformed protocol/artifacts")
+    artifact_specs = []
+    for idx, item in enumerate(artifacts):
+        if (
+            not isinstance(item, dict)
+            or not {"role", "path", "sha256", "bytes"}.issubset(item)
+            or set(item) - {"role", "path", "sha256", "bytes", "validation"}
+        ):
+            raise S3FreezeError(f"freeze manifest artifact {idx} is malformed")
+        artifact_specs.append({"role": item["role"], "path": item["path"]})
+
+    spec = {
+        "schema_version": SCHEMA_FREEZE_INPUT,
+        "experiment_id": manifest["experiment_id"],
+        "repository_commit": manifest["repository_commit"],
+        "protocol_document": protocol["path"],
+        "artifacts": artifact_specs,
+        "upstream": manifest["upstream"],
+        "models": manifest["models"],
+        "seeds": manifest["seeds"],
+        "execution_boundary": manifest["execution_boundary"],
+        "container_image_digest": manifest["container_image_digest"],
+    }
+    try:
+        rebuilt = build_freeze_manifest(spec, root)
+    except (KeyError, TypeError, AttributeError, OverflowError) as exc:
+        raise S3FreezeError("freeze manifest has malformed bound metadata") from exc
+    if rebuilt != manifest:
+        raise S3FreezeError(
+            "freeze manifest differs from current bound files or canonical schema"
+        )
+
+
 def _write_new_json(path: Path, payload: dict) -> None:
     if path.exists():
         raise S3FreezeError(
@@ -1173,7 +1249,7 @@ def _cmd_manifest(args) -> int:
 
 def _cmd_validate(args) -> int:
     payload = load_json(Path(args.manifest))
-    if payload.get("schema_version") not in {
+    if not isinstance(payload, dict) or payload.get("schema_version") not in {
         SCHEMA_POWER,
         SCHEMA_FREEZE,
     }:
@@ -1182,12 +1258,36 @@ def _cmd_validate(args) -> int:
         raise S3FreezeError(
             "self_sha256 does not match canonical manifest content"
         )
+
+    if payload["schema_version"] == SCHEMA_FREEZE:
+        if args.root is None:
+            raise S3FreezeError(
+                "--root is required to validate freeze-bound artifact contents"
+            )
+        validate_freeze_manifest(payload, Path(args.root))
+        verification_scope = "bound_artifacts_and_self_digest"
+        freeze_ready = True
+    else:
+        # A standalone plan is evidence of the plan document's integrity,
+        # not evidence that source files or a confirmatory study were frozen.
+        verification_scope = "power_plan_self_digest_only"
+        freeze_ready = False
+        if payload.get("canonical") is True and (
+            isinstance(payload.get("decision"), dict)
+            and payload["decision"].get("status")
+            in {"powered", "underpowered_full_universe"}
+        ):
+            _validate_power_plan_file(Path(args.manifest))
+            verification_scope = "canonical_power_plan_structure"
+
     print(
         json.dumps(
             {
                 "valid": True,
                 "schema_version": payload["schema_version"],
                 "self_sha256": payload["self_sha256"],
+                "verification_scope": verification_scope,
+                "freeze_ready": freeze_ready,
             },
             sort_keys=True,
         )
@@ -1261,9 +1361,13 @@ def build_parser() -> argparse.ArgumentParser:
 
     validate = sub.add_parser(
         "validate",
-        help="validate a generated self-digest",
+        help="validate a power-plan digest or rehash a freeze's bound artifacts",
     )
     validate.add_argument("manifest")
+    validate.add_argument(
+        "--root",
+        help="freeze artifact root (required for a freeze manifest)",
+    )
     validate.set_defaults(func=_cmd_validate)
     return parser
 

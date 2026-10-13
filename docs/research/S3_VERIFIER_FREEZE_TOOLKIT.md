@@ -132,12 +132,24 @@ Build and validate:
       --out .cache/s3/freeze-manifest.json
 
     python experiments/s3_verifier_freeze.py validate \
-      .cache/s3/freeze-manifest.json
+      .cache/s3/freeze-manifest.json --root .
 
 Output files are never overwritten. Every bound file records its byte size and
 SHA-256 digest. The manifest itself has a self_sha256 over canonical JSON with
 that field omitted, so the freeze can be checked without timestamps or network
 access.
+
+**Validation boundary:** a self-digest only detects changes to the manifest
+text. It does **not** prove that the referenced source, calibration data or
+inventories still match. For a freeze manifest, `validate` now requires an
+explicit `--root`, reconstructs the manifest from the actual file contents,
+rechecks artifact roles and forbidden outcome fields, and rejects missing,
+altered or symlink-traversed files. An output with
+`verification_scope=bound_artifacts_and_self_digest` proves that these local
+checks passed *at validation time*, not that files were signed or remain
+immutable afterwards. For power-plan JSON, `validate` reports a narrower
+`verification_scope` and `freeze_ready=false`. A canonical power plan is
+still not a freeze until it is bound into a validated full manifest.
 
 ## 4. Security and evidence boundaries
 
@@ -153,7 +165,11 @@ This tool is deliberately incapable of satisfying #804.
   infeasible plans cannot authorize an experiment freeze.
 - The exact calibration-statistics artifact is mandatory and its digest must
   equal the digest inside that power plan.
-- Artifact paths cannot escape the requested root or be symlinks.
+- Artifact paths cannot escape the requested root or traverse symlinks,
+  including symlinked ancestor directories.
+- A freshly computed manifest self-digest cannot legitimize altered evidence,
+  an unauthorized authority claim, or a missing smallest effect of interest;
+  the validator rechecks source bytes and the effect must be finite log(1.10).
 - An execution boundary that says untrusted patches will run while the sandbox
   is not required is rejected.
 - The manifest records #804 as the canonical sandbox issue but does not claim
