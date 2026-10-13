@@ -21,3 +21,7 @@ No direct merge, PR merge, force push, or branch deletion was justified by the a
 3. Start future changes from current `main`, with fresh PRs and independent review.
 
 AI-assisted evidence reconciliation only; no claim of independent human review.
+
+## Owner follow-up: smaller branch inventory
+
+The project owner requested professionally reducing branch count without losing useful code, architecture, tests or historical evidence. Since the first audit, PR #1111 merged into main. A separate proposal now adds an operator-run lease-guarded retirement tool, eight exact old-head manifest entries, negative-control tests, and a safety runbook. Deletion still requires independent review, a live remote preflight and explicit human confirmation. Current connected GitHub tooling cannot delete branch refs directly; no production branch deletion was performed during this development.
