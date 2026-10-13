@@ -818,13 +818,18 @@ def analyze_heldout_verifier_addition(
     enforce independent repository/task-group splits externally: disjoint row
     IDs alone cannot detect near-duplicate tasks or leakage.
     """
-    current = _normalize_ids("current_verifier_ids", current_verifier_ids)
-    candidates = _normalize_ids("candidate_verifier_ids", candidate_verifier_ids)
     try:
         gate_audit.validate_input(calibration)
         gate_audit.validate_input(holdout)
     except gate_audit.GateAuditInputError as exc:
         raise MarginalEvidenceInputError(str(exc)) from exc
+    limit = len(calibration["verifiers"])
+    current = _normalize_ids(
+        "current_verifier_ids", current_verifier_ids, max_items=limit
+    )
+    candidates = _normalize_ids(
+        "candidate_verifier_ids", candidate_verifier_ids, max_items=limit
+    )
     for key in ("gate_id", "evidence_class"):
         if calibration[key] != holdout[key]:
             raise MarginalEvidenceInputError(f"holdout {key} differs from calibration")
