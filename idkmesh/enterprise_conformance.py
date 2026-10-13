@@ -22,7 +22,8 @@ primitives.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
+import json
 import io
 from pathlib import Path
 import sqlite3
@@ -41,6 +42,17 @@ from idkmesh.connector_secrets import (
     mint_secret_access_grant,
 )
 from idkmesh.connector_store import LocalMetadataStore, LocalStoreConflict
+from idkmesh.enterprise_authz_cache import AuthorizationDecisionCache
+from idkmesh.enterprise_data_policy import (
+    DataPolicyDecision, decide_credential, decide_egress, decide_external_processing,
+)
+from idkmesh.github_public_evidence import (
+    GitHubPublicEvidenceError, GitHubPublicEvidencePolicy,
+    build_github_public_evidence_projection, render_github_public_evidence_json,
+)
+from idkmesh.local_ui_security import is_loopback_host, token_matches
+from idkmesh.product_spine import ProductSpineRun
+from idkmesh.task_claims import ClaimBinding, LocalTaskClaims, TaskClaimError, TaskClaimPolicy
 from idkmesh.enterprise_audit import (
     AuditEventInput,
     EnterpriseAuditError,
@@ -300,7 +312,7 @@ def _duplicate_event(ctx: _Context) -> None:
         created_at="2026-10-12T00:00:00Z",
     )
     first, created = store.admit_run(**args)
-    replay, replay_created = store.admit_run(**args)
+    replay, replay_created = LocalMetadataStore(ctx.workdir / "runs.sqlite3").admit_run(**args)
     ctx.expect("first delivery creates the run", created is True)
     ctx.expect("replayed delivery is not created again", replay_created is False)
     ctx.expect("replay returns the original run", replay.run_id == first.run_id)
@@ -480,6 +492,24 @@ def _provider_outage_quota(ctx: _Context) -> None:
         "exception probe is not retried or routed",
         faulty.probe_calls == 1 and route["selected_connection_id"] is None,
     )
+    # Not a probe outcome: a credential rejection is never retryable, and retry
+    # metadata is data about the provider, not permission to retry.
+    rejected_credential = connector_error(
+        "authentication_error",
+        "Provider rejected the credential (offline test)",
+        connection_id=config.id,
+        details={"Authorization": "Bearer " + _SECRET, "retry_after_seconds": 10},
+    )
+    rejected_envelope = rejected_credential.to_envelope()["error"]
+    ctx.expect(
+        "authentication_error: normalized, non-retryable and credential-redacted",
+        rejected_envelope["code"] == "authentication_error"
+        and rejected_credential.is_retryable is False
+        and rejected_envelope["details"]["Authorization"] == "[REDACTED]"
+        and rejected_envelope["details"]["retry_after_seconds"] == 10
+        and _SECRET not in str(rejected_credential)
+        and _SECRET not in json.dumps(rejected_envelope),
+    )
     ctx.gap(
         "pre-dispatch probes and offline error normalization only: no actual "
         "provider attempt, credential-bearing request, attempt terminal state, "
@@ -625,34 +655,354 @@ def _ledger_restore(ctx: _Context) -> None:
             "a restore that silently drops the newest event is detected by checkpoint",
             not ledger.verify(expected_checkpoint=checkpoint).ok,
         )
+    # A second, separate SQLite durability port must also survive restart.
+    local_path = ctx.workdir / "local-runs.sqlite3"
+    local = LocalMetadataStore(local_path)
+    args = dict(
+        run_id="run-restored-17", idempotency_key="restore:example-17",
+        request_digest=_DIGEST_A, state="proposed",
+        metadata={"kind": "conformance"}, created_at="2026-10-12T00:00:00Z",
+    )
+    initial, initial_created = local.admit_run(**args)
+    backup_path = local.backup_to(ctx.workdir / "local-runs-backup.sqlite3")
+    restored_local = LocalMetadataStore(backup_path)
+    copy_run = restored_local.get_run("run-restored-17")
+    ctx.expect(
+        "online backup retains the exact local run and digest",
+        initial_created and copy_run is not None
+        and copy_run.request_digest == initial.request_digest,
+    )
+    replay, replay_created = restored_local.admit_run(**args)
+    ctx.expect(
+        "restored local store cannot re-admit the same work",
+        not replay_created and replay.run_id == initial.run_id,
+    )
     ctx.gap(
-        "the checkpoint must be retained outside the database being restored; "
-        "no operational procedure or RPO/RTO measurement (#673) is exercised"
+        "the audit checkpoint must be retained outside the restored database; "
+        "no network storage adapter, encrypted-backup owner or measured RPO/RTO "
+        "drill exists (#673/#750)"
+    )
+
+
+
+# An immutable, credential-free policy fixture derived from the committed G2
+# example. Keep this embedded: conformance must run from the installed wheel
+# where repository examples/ are not installed.
+_G2_DATA_PROFILE = json.loads(
+    '''
+{
+  "kind": "idkmesh-enterprise-control-profile",
+  "schema_version": "0.1",
+  "profile_id": "example-g2-self-hosted",
+  "semantics": {
+    "profile_role": "policy_input_only",
+    "control_evidence": "declared_not_observed",
+    "grants_runtime_authority": false
+  },
+  "deployment": {
+    "profile": "g2_self_hosted_team",
+    "tenant_scope": "single_org",
+    "remote_api_enabled": true,
+    "coordinator_lifecycle": "long_lived_service",
+    "canonical_code_authority": "github_protected_integration"
+  },
+  "identity": {
+    "human_source": "oidc",
+    "service_source": "oidc",
+    "high_risk_distinct_approval": true,
+    "break_glass_enabled": true
+  },
+  "authority": {
+    "worker_can_merge": false,
+    "verifier_can_merge": false,
+    "worker_can_modify_policy": false,
+    "integration_authority": "github_protected_integration"
+  },
+  "data": {
+    "default_classification": "internal",
+    "allowed_classifications": [
+      "public",
+      "internal",
+      "confidential",
+      "restricted"
+    ],
+    "external_processing": {
+      "public": true,
+      "internal": false,
+      "confidential": false,
+      "restricted": false
+    },
+    "egress_default": "deny"
+  },
+  "secrets": {
+    "backend": "oidc_workload_identity",
+    "long_lived_cloud_keys_allowed": false,
+    "raw_secret_material_in_work_units": false,
+    "raw_secret_material_in_evidence": false
+  },
+  "audit": {
+    "enabled": true,
+    "tamper_evident_required": true,
+    "retention_days": 730,
+    "export": "siem"
+  },
+  "reliability": {
+    "availability_target": 0.995,
+    "rpo_minutes": 15,
+    "rto_minutes": 60,
+    "backups_required": true,
+    "restore_test_required": true
+  },
+  "supply_chain": {
+    "immutable_action_pins_required": true,
+    "sbom_required": true,
+    "provenance_required": true,
+    "vulnerability_response_sla_hours": 24
+  },
+  "change_management": {
+    "protected_integration_required": true,
+    "policy_change_approval_required": true,
+    "break_glass_reason_required": true
+  },
+  "enforcement": {
+    "mode": "enforce",
+    "unknown_control_behavior": "fail",
+    "startup_profile_validation": true
+  }
+}
+    '''
+)
+
+
+def _stale_claim_retry(ctx: _Context) -> None:
+    clock = [_NOW]
+    path = ctx.workdir / "claims.sqlite3"
+    task = ScopedResourceRef(_SCOPE_A, "task", "claim-1")
+    dispatcher = _actor("github:user:dispatcher", roles=("dispatcher",))
+    owner = _actor("github:user:alice", roles=("worker",))
+    replacement_owner = _actor("github:user:bob", roles=("worker",))
+    policy = TaskClaimPolicy(
+        max_attempts=2, ack_seconds=5, lease_seconds=15,
+        progress_seconds=30, hard_seconds=60,
+    )
+    binding = ClaimBinding(_DIGEST_A, _REVISION, _DIGEST_B)
+    claims = LocalTaskClaims(
+        LocalMetadataStore(path), _POLICY, clock=lambda: clock[0]
+    )
+    ctx.expect(
+        "trusted dispatcher configures the bounded task",
+        claims.configure_task(task, dispatcher, policy) is True,
+    )
+    first, created = claims.claim(
+        task, owner, request_id="first-claim", binding=binding
+    )
+    ctx.expect("one initial epoch is admitted", created and first.epoch == 1)
+    clock[0] += policy.ack_seconds
+
+    # A restarted process reads the durable clock and epoch; it cannot
+    # interpret expiry as fresh execution authority.
+    recovered = LocalTaskClaims(
+        LocalMetadataStore(path), _POLICY, clock=lambda: clock[0]
+    )
+    states = recovered.snapshot(task, dispatcher)
+    ctx.expect("expired claim is retained after restart", len(states) == 1 and states[0].state == "expired")
+    replay, replay_created = recovered.claim(
+        task, owner, request_id="first-claim", binding=binding
+    )
+    ctx.expect(
+        "replayed request neither renews nor creates an attempt",
+        not replay_created and replay.epoch == first.epoch and replay.state == "expired",
+    )
+    try:
+        recovered.update_owner(
+            task, owner, request_id=first.request_id,
+            epoch=first.epoch, operation="release",
+        )
+    except TaskClaimError as exc:
+        ctx.expect("expired owner is fenced from state changes", exc.code == "stale_claim")
+    else:
+        ctx.expect("expired owner is fenced from state changes", False)
+
+    successor, successor_created = recovered.claim(
+        task, replacement_owner, request_id="second-claim", binding=binding
+    )
+    ctx.expect(
+        "a distinct owner receives a higher epoch, not the old grant",
+        successor_created and successor.epoch == first.epoch + 1,
+    )
+    ctx.gap(
+        "only local SQLite claim fencing is observed; real provider-side "
+        "cancellation, tenant-wide leases and execution admission are not exercised"
+    )
+
+
+def _external_data_and_egress(ctx: _Context) -> None:
+    profile = _G2_DATA_PROFILE
+    approved = ("example-provider",)
+    restricted = decide_external_processing(
+        profile, data_class="restricted", provider_id="example-provider",
+        approved_provider_ids=approved,
+    )
+    ctx.expect(
+        "restricted data cannot leave even for an approved provider",
+        not restricted.allowed and restricted.code == "external_processing_forbidden",
+    )
+    public = decide_external_processing(
+        profile, data_class="public", provider_id="example-provider",
+        approved_provider_ids=approved,
+    )
+    ctx.expect("public processing still requires a listed provider", public.allowed)
+    unapproved = decide_external_processing(
+        profile, data_class="public", provider_id="unknown-provider",
+        approved_provider_ids=approved,
+    )
+    ctx.expect("a non-allowlisted provider is refused", not unapproved.allowed)
+    for destination in ("evil.example", "trusted.example.evil", "trusted.example:443"):
+        decision = decide_egress(
+            profile, destination_host=destination, allowlist=("trusted.example",)
+        )
+        ctx.expect(f"egress is denied for {destination}", not decision.allowed)
+    trusted = decide_egress(
+        profile, destination_host="trusted.example", allowlist=("trusted.example",)
+    )
+    ctx.expect("the exact allowlisted hostname is permitted", trusted.allowed)
+    ctx.expect(
+        "long-lived cloud keys remain blocked under workload identity",
+        not decide_credential(profile, credential_kind="long_lived_cloud_key").allowed,
+    )
+    for decision in (restricted, public, unapproved, trusted):
+        ctx.expect(
+            "policy decisions grant no execution or merge authority",
+            not decision.to_dict()["authority"]["executes_action"]
+            and not decision.to_dict()["authority"]["merge"],
+        )
+    ctx.gap(
+        "pure policy decisions are not live worker network isolation, DLP, "
+        "secret brokerage or provider dispatch enforcement"
+    )
+
+
+def _local_http_boundary(ctx: _Context) -> None:
+    ctx.expect("loopback Host is accepted", is_loopback_host("127.0.0.1:8770"))
+    ctx.expect("local hostname is accepted", is_loopback_host("localhost:8770"))
+    for host in (
+        "example.org", "localhost.example.org", "127.0.0.1@evil.example",
+        "localhost:65536", "127.0.0.1,evil.example", "[::1]",
+    ):
+        ctx.expect(f"non-local or malformed Host {host!r} is rejected", not is_loopback_host(host))
+    token = "local-session-test-only-token"
+    ctx.expect("matching local session token works", token_matches(token, token))
+    ctx.expect("missing token is denied", not token_matches(None, token))
+    ctx.expect("modified token is denied", not token_matches(token + "x", token))
+    ctx.expect(
+        "non-ASCII header bytes cannot bypass token check",
+        not token_matches("séssion", token),
+    )
+    ctx.gap(
+        "loopback session tokens are NOT enterprise authentication; "
+        "TLS, reverse-proxy trust, tenant-scoped remote API and browser "
+        "mutation CSRF controls are not exercised"
+    )
+
+
+def _public_evidence_and_authority(ctx: _Context) -> None:
+    run = ProductSpineRun(
+        run_id="run-public-17",
+        request_digest=_DIGEST_A,
+        project_id="MSKazemi/idkmesh",
+        work_unit_id="work-public-17",
+        work_unit_version=2,
+        work_unit_digest=_DIGEST_B,
+        source_revision=_REVISION,
+        authority_mode="human_required",
+        routing_policy_version="conformance:1",
+    )
+    policy = GitHubPublicEvidencePolicy("MSKazemi/idkmesh", "public", True)
+    projection = build_github_public_evidence_projection(run, policy=policy)
+    rendered = render_github_public_evidence_json(projection)
+    ctx.expect(
+        "public projection retains exact source/digest binding",
+        projection["run"]["source_revision"] == _REVISION
+        and projection["run"]["work_unit_digest"] == _DIGEST_B,
+    )
+    ctx.expect(
+        "publishing does not turn a proposed run into human approval",
+        projection["human_decision_status"] == "not_recorded"
+        and all(value is False for value in projection["authority"].values()),
+    )
+    ctx.expect("projection never includes a raw credential", _SECRET not in rendered)
+    injected = dict(projection, provider_log=_SECRET)
+    try:
+        render_github_public_evidence_json(injected)
+    except GitHubPublicEvidenceError:
+        ctx.expect("unlisted provider fields fail the strict publication whitelist", True)
+    else:
+        ctx.expect("unlisted provider fields fail the strict publication whitelist", False)
+    elevated = dict(projection, authority=dict(projection["authority"], merge=True))
+    try:
+        render_github_public_evidence_json(elevated)
+    except GitHubPublicEvidenceError:
+        ctx.expect("an attempted merge-authority flag is rejected", True)
+    else:
+        ctx.expect("an attempted merge-authority flag is rejected", False)
+    for classification in ("internal", "confidential", "restricted"):
+        try:
+            build_github_public_evidence_projection(
+                run,
+                policy=GitHubPublicEvidencePolicy("MSKazemi/idkmesh", classification, True),
+            )
+        except GitHubPublicEvidenceError:
+            ctx.expect(f"{classification} run cannot be publicly projected", True)
+        else:
+            ctx.expect(f"{classification} run cannot be publicly projected", False)
+    try:
+        build_github_public_evidence_projection(
+            run, policy=GitHubPublicEvidencePolicy("MSKazemi/idkmesh", "public", False)
+        )
+    except GitHubPublicEvidenceError:
+        ctx.expect("public projection disabled by policy is refused", True)
+    else:
+        ctx.expect("public projection disabled by policy is refused", False)
+    ctx.gap(
+        "this is a synthetic Product Spine projection; live GitHub Pages "
+        "publication, an actual Human Decision Record and protected merge are not run"
     )
 
 
 def _stale_identity_policy_cache(ctx: _Context) -> None:
     alice = _actor("github:user:alice", roles=("worker",))
-    cached = authorize(_request("req-cached", alice, "claim"), _POLICY)
-    ctx.expect("baseline decision allows the live identity", cached.effect == "allow")
-    ctx.expect(
-        "decision records identity and policy revisions",
-        cached.identity_revision == "identity:1" and cached.policy_revision == _POLICY.revision,
+    cache = AuthorizationDecisionCache(max_age_seconds=30, max_entries=8)
+    first = cache.authorize(_request("req-cached", alice, "claim"), _POLICY)
+    ctx.expect("live identity is allowed before revocation", first.effect == "allow")
+    hit = cache.authorize(
+        _request("req-cached-hit", alice, "claim", at=_NOW + 1), _POLICY
     )
-
-    revoked = _actor("github:user:alice", roles=("worker",), revision="identity:2", revoked=True)
-    after = authorize(_request("req-after-revoke", revoked, "claim", at=_NOW + 60), _POLICY)
-    ctx.expect("re-evaluation after revocation denies", after.effect == "deny" and after.code == "actor_revoked")
-    ctx.expect("the stale decision is distinguishable by identity revision", cached.identity_revision != after.identity_revision)
-
-    expiring = _actor("github:user:alice", roles=("worker",), expires_at_epoch=_NOW + 10)
-    at_boundary = authorize(_request("req-expiry", expiring, "claim", at=_NOW + 10), _POLICY)
-    ctx.expect("identity expiry is enforced at the boundary instant", at_boundary.code == "actor_expired")
-
+    ctx.expect(
+        "the valid cached decision is re-stamped but not an execution grant",
+        cache.hits == 1 and hit.request_id == "req-cached-hit"
+        and hit.to_dict()["authority"]["executes_action"] is False,
+    )
+    revoked = replace(alice, revoked=True)  # deliberately unchanged revision
+    decision = cache.authorize(
+        _request("req-revoked", revoked, "claim", at=_NOW + 2), _POLICY
+    )
+    ctx.expect(
+        "same-revision revocation cannot reuse cached ALLOW",
+        decision.effect == "deny" and decision.code == "actor_revoked"
+        and cache.hits == 1,
+    )
+    after = authorize(
+        _request("req-direct-revoked", revoked, "claim", at=_NOW + 2), _POLICY
+    )
+    ctx.expect("direct authorization agrees with cached revocation", after.code == "actor_revoked")
+    expired = replace(alice, expires_at_epoch=_NOW + 3)
+    cache.authorize(_request("req-expiry-prime", expired, "claim", at=_NOW + 2), _POLICY)
+    expiry = cache.authorize(_request("req-expiry", expired, "claim", at=_NOW + 3), _POLICY)
+    ctx.expect("expiry instant does not reuse a cached ALLOW", expiry.code == "actor_expired")
+    ctx.expect("revocation feed can invalidate an active principal", cache.invalidate_principal(alice.principal_id) > 0)
     ctx.gap(
-        "the kernel is stateless: there is no decision cache, TTL, or "
-        "invalidation primitive, so rejecting a stale decision is the caller's "
-        "responsibility and is not enforced here"
+        "the cache is in-process only; no live API identity-revocation feed "
+        "or policy-store integration is exercised"
     )
 
 
@@ -717,6 +1067,13 @@ _AUDIT = ("idkmesh/enterprise_audit.py", "tests/test_enterprise_audit.py")
 _STORE = ("idkmesh/connector_store.py", "tests/test_connector_store.py")
 _SECRETS = ("idkmesh/connector_secrets.py", "tests/test_connector_secrets.py")
 _SELF = ("idkmesh/enterprise_conformance.py", "tests/test_enterprise_conformance.py")
+_CLAIMS = ("idkmesh/task_claims.py", "tests/test_task_claims.py")
+_CACHE = ("idkmesh/enterprise_authz_cache.py", "tests/test_enterprise_authz_cache.py")
+_DATA = ("idkmesh/enterprise_data_policy.py", "tests/test_enterprise_data_policy.py")
+_LOCAL_API = ("idkmesh/local_ui_security.py", "tests/test_api_security_matrix.py")
+_PUBLIC = ("idkmesh/github_public_evidence.py", "tests/test_github_public_evidence.py")
+_SPINE = ("idkmesh/product_spine.py", "tests/test_product_spine.py")
+
 _PROVIDER = (
     "idkmesh/connector_profiles.py",
     "idkmesh/connector_probe.py",
@@ -724,6 +1081,7 @@ _PROVIDER = (
     "idkmesh/connector_inspection.py",
     "idkmesh/connector_routing.py",
     "idkmesh/connector_errors.py",
+    "tests/test_connector_errors.py",
     "tests/test_connector_probe.py",
     "tests/test_connector_routing.py",
 )
@@ -764,13 +1122,10 @@ SCENARIOS: tuple[Scenario, ...] = (
     Scenario(
         "stale_claim_retry",
         "Stale claim or retry",
-        "A claim that outlives its lease cannot be used to act again.",
-        ("idkmesh/task_claims.py", "tests/test_task_claims.py"),
-        unknown_reason=(
-            "no in-process scenario drives claim expiry against a fenced "
-            "executor yet; task-claim unit tests exist but are not a "
-            "conformance observation"
-        ),
+        "Expired claims and replayed request IDs cannot renew an owner grant; "
+        "a new actor obtains a higher fencing epoch after restart.",
+        _CLAIMS + _STORE + _SELF,
+        _stale_claim_retry,
     ),
     Scenario(
         "provider_outage_quota",
@@ -788,6 +1143,30 @@ SCENARIOS: tuple[Scenario, ...] = (
         "repr ever contains the secret value.",
         _SECRETS + _SELF,
         _secret_missing_or_revoked,
+    ),
+    Scenario(
+        "external_data_and_egress",
+        "Data classification and destination egress",
+        "Restricted data does not leave the trust boundary; an allowlisted "
+        "provider/host has no implied secret, execution or merge authority.",
+        _DATA + _SELF,
+        _external_data_and_egress,
+    ),
+    Scenario(
+        "local_http_boundary",
+        "Local-only HTTP security boundary",
+        "Host validation and a process-local token refuse nonlocal/malformed "
+        "requests; no network/multi-user authentication is inferred.",
+        _LOCAL_API + _SELF,
+        _local_http_boundary,
+    ),
+    Scenario(
+        "public_evidence_authority",
+        "Public evidence and Product Spine authority boundary",
+        "Public output is strictly whitelisted; internal evidence and raw "
+        "provider data cannot be published or converted to merge approval.",
+        _PUBLIC + _SPINE + _SELF,
+        _public_evidence_and_authority,
     ),
     Scenario(
         "audit_exporter_unavailable",
@@ -862,6 +1241,8 @@ def _run_scenario(scenario: Scenario, base: Path) -> dict[str, Any]:
     except Exception as exc:  # a crashing scenario is a failed safe state
         ctx.expect(f"scenario ran to completion (raised {type(exc).__name__})", False)
 
+    if not ctx.checks:
+        ctx.expect("scenario must execute at least one explicit safety assertion", False)
     failed = [c["name"] for c in ctx.checks if not c["ok"]]
     result["checks"] = ctx.checks
     result["gaps"] = list(ctx.gaps)
@@ -880,6 +1261,8 @@ def _run_scenario(scenario: Scenario, base: Path) -> dict[str, Any]:
 
 
 def overall_status(statuses: list[str]) -> str:
+    if not statuses or any(status not in STATUSES for status in statuses):
+        return "UNKNOWN"
     for status in ("FAIL", "UNKNOWN", "WARN"):
         if status in statuses:
             return status
@@ -895,6 +1278,8 @@ def run_conformance(
 
     selected = SCENARIOS
     if scenario_ids is not None:
+        if not scenario_ids:
+            raise ValueError("at least one conformance scenario must be selected")
         known = {s.scenario_id for s in SCENARIOS}
         unknown = sorted(set(scenario_ids) - known)
         if unknown:

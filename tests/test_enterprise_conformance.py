@@ -28,8 +28,13 @@ EXERCISED = (
     "ledger_restore",
     "stale_identity_policy_cache",
     "high_risk_sod_violation",
+    "stale_claim_retry",
+    "provider_outage_quota",
+    "external_data_and_egress",
+    "local_http_boundary",
+    "public_evidence_authority",
 )
-NOT_EXERCISED = ("stale_claim_retry", "release_provenance")
+NOT_EXERCISED = ("release_provenance",)
 
 
 def _by_id(report: dict) -> dict[str, dict]:
@@ -114,6 +119,24 @@ class ConformanceReportTests(unittest.TestCase):
                 with self.subTest(scenario=item["id"], path=rel):
                     self.assertTrue((ROOT / rel).is_file())
 
+    def test_embedded_g2_policy_matches_the_committed_credential_free_fixture(self) -> None:
+        expected = json.loads(
+            (ROOT / "examples" / "enterprise" / "g2-self-hosted.example.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        self.assertEqual(conformance._G2_DATA_PROFILE, expected)
+
+    def test_partial_failure_modes_are_warning_not_a_false_pass(self) -> None:
+        for scenario_id in (
+            "stale_claim_retry", "provider_outage_quota",
+            "external_data_and_egress", "local_http_boundary",
+            "public_evidence_authority",
+        ):
+            with self.subTest(scenario=scenario_id):
+                self.assertEqual(self.scenarios[scenario_id]["status"], "WARN")
+                self.assertTrue(self.scenarios[scenario_id]["gaps"])
+
     def test_report_never_contains_the_fixture_secret(self) -> None:
         self.assertNotIn(conformance._SECRET, json.dumps(self.report))
 
@@ -123,6 +146,13 @@ class ConformanceReportTests(unittest.TestCase):
         self.assertEqual(order(["WARN", "UNKNOWN"]), "UNKNOWN")
         self.assertEqual(order(["UNKNOWN", "FAIL", "PASS"]), "FAIL")
         self.assertEqual(order(["PASS"]), "PASS")
+        self.assertEqual(order([]), "UNKNOWN")
+        self.assertEqual(order(["UNRECOGNISED"]), "UNKNOWN")
+        self.assertEqual(order(["PASS", "UNRECOGNISED"]), "UNKNOWN")
+
+    def test_empty_conformance_selection_is_rejected(self) -> None:
+        with self.assertRaisesRegex(ValueError, "at least one"):
+            conformance.run_conformance(scenario_ids=())
 
     def test_unknown_scenario_id_is_rejected(self) -> None:
         with self.assertRaises(ValueError):
@@ -189,6 +219,53 @@ class ConformanceDetectsBrokenControlsTests(unittest.TestCase):
         with mock.patch.object(conformance, "materialize_config_secret", leaky):
             result = self._run("secret_missing_or_revoked")
         self.assertEqual(result["secret_missing_or_revoked"]["status"], "FAIL")
+
+    def test_stale_claim_fencing_regression_is_detected(self) -> None:
+        with mock.patch.object(conformance.LocalTaskClaims, "_current", lambda *args: None):
+            result = self._run("stale_claim_retry")
+        self.assertEqual(result["stale_claim_retry"]["status"], "FAIL")
+
+    def test_disabled_host_validation_is_detected(self) -> None:
+        with mock.patch.object(conformance, "is_loopback_host", return_value=True):
+            result = self._run("local_http_boundary")
+        self.assertEqual(result["local_http_boundary"]["status"], "FAIL")
+
+    def test_unrestricted_external_processing_is_detected(self) -> None:
+        class Unrestricted:
+            allowed = True
+            code = "external_processing_allowed"
+
+        with mock.patch.object(
+            conformance, "decide_external_processing", return_value=Unrestricted()
+        ):
+            result = self._run("external_data_and_egress")
+        self.assertEqual(result["external_data_and_egress"]["status"], "FAIL")
+
+    def test_publication_renderer_without_whitelist_is_detected(self) -> None:
+        with mock.patch.object(
+            conformance, "render_github_public_evidence_json",
+            side_effect=lambda document: json.dumps(document),
+        ):
+            result = self._run("public_evidence_authority")
+        self.assertEqual(result["public_evidence_authority"]["status"], "FAIL")
+
+    def test_provider_retryability_regression_is_detected(self) -> None:
+        real = conformance.connector_error
+        def wrongly_retryable(code, message, **kwargs):
+            return real(code, message, retryable=True, **kwargs)
+
+        with mock.patch.object(
+            conformance, "connector_error", side_effect=wrongly_retryable
+        ):
+            result = self._run("provider_outage_quota")
+        self.assertEqual(result["provider_outage_quota"]["status"], "FAIL")
+
+    def test_scenario_without_any_assertions_cannot_report_pass(self) -> None:
+        silent = conformance.Scenario("silent", "Silent", "must check", (), lambda ctx: None)
+        with mock.patch.object(conformance, "SCENARIOS", (silent,)):
+            report = conformance.run_conformance()
+        self.assertEqual(report["status"], "FAIL")
+        self.assertIn("at least one explicit safety assertion", report["scenarios"][0]["observed"])
 
     def test_crashing_scenario_is_reported_as_fail(self) -> None:
         def boom(ctx):
