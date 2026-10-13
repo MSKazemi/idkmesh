@@ -613,6 +613,132 @@ def _relative_regular_file(root: Path, raw_path: str, field: str) -> Path:
     return resolved
 
 
+FORBIDDEN_OUTCOME_KEYS = frozenset(
+    {
+        "verdict",
+        "verdicts",
+        "vote",
+        "votes",
+        "verdict_matrix",
+        "confirmatory_verdict_matrix",
+        "confirmatory_outcome",
+        "confirmatory_outcomes",
+        "judge_output",
+        "judge_outputs",
+        "model_output",
+        "model_outputs",
+    }
+)
+
+
+def _walk_forbidden_outcome_keys(value, location: str = "$") -> None:
+    if isinstance(value, dict):
+        for key, child in value.items():
+            if str(key).lower() in FORBIDDEN_OUTCOME_KEYS:
+                raise S3FreezeError(
+                    f"pre-confirmatory metadata contains forbidden outcome key "
+                    f"{key!r} at {location}"
+                )
+            _walk_forbidden_outcome_keys(child, f"{location}.{key}")
+    elif isinstance(value, list):
+        for idx, child in enumerate(value):
+            _walk_forbidden_outcome_keys(child, f"{location}[{idx}]")
+
+
+def _load_metadata_for_outcome_scan(path: Path):
+    suffix = path.suffix.lower()
+    if suffix == ".json":
+        return load_json(path)
+    if suffix == ".jsonl":
+        values = []
+        try:
+            lines = path.read_text(encoding="utf-8").splitlines()
+        except OSError as exc:
+            raise S3FreezeError(f"cannot read metadata {path}: {exc}") from exc
+        for lineno, raw in enumerate(lines, 1):
+            if not raw.strip():
+                continue
+            try:
+                values.append(
+                    json.loads(
+                        raw,
+                        object_pairs_hook=_no_duplicate_object,
+                        parse_constant=_reject_constant,
+                    )
+                )
+            except json.JSONDecodeError as exc:
+                raise S3FreezeError(
+                    f"{path}:{lineno}: invalid JSONL metadata: {exc}"
+                ) from exc
+        return values
+    raise S3FreezeError(
+        f"pre-confirmatory metadata must be JSON or JSONL: {path}"
+    )
+
+
+def _validate_power_plan_file(path: Path) -> dict:
+    plan = load_json(path)
+    if not isinstance(plan, dict):
+        raise S3FreezeError("power_plan must be a JSON object")
+    if plan.get("schema_version") != SCHEMA_POWER:
+        raise S3FreezeError("power_plan has the wrong schema_version")
+    if plan.get("canonical") is not True:
+        raise S3FreezeError(
+            "freeze manifest requires a canonical=true power_plan"
+        )
+    if not verify_self_digest(plan):
+        raise S3FreezeError("power_plan self_sha256 is invalid")
+
+    design = plan.get("design")
+    if not isinstance(design, dict):
+        raise S3FreezeError("power_plan is missing design")
+    expected = {
+        "seed": SEED,
+        "simulated_cohorts": SIMULATIONS,
+        "bootstrap_replicates_per_level": BOOTSTRAP_REPLICATES,
+        "target_power": TARGET_POWER,
+    }
+    for key, value in expected.items():
+        if design.get(key) != value:
+            raise S3FreezeError(
+                f"power_plan design {key} must equal frozen value {value!r}"
+            )
+    if abs(
+        float(design.get("smallest_effect_logscore_nats", float("nan")))
+        - DELTA0
+    ) > 1e-15:
+        raise S3FreezeError(
+            "power_plan smallest effect does not match log(1.10)"
+        )
+
+    decision = plan.get("decision")
+    if not isinstance(decision, dict):
+        raise S3FreezeError("power_plan is missing decision")
+    status = decision.get("status")
+    if status not in {"powered", "underpowered_full_universe"}:
+        raise S3FreezeError(
+            "an infeasible/unknown power plan cannot authorize an experiment freeze"
+        )
+    return {
+        "self_sha256": plan["self_sha256"],
+        "status": status,
+        "selected_task_count": decision.get("selected_task_count"),
+    }
+
+
+def _validate_preconfirmatory_artifact(path: Path, role: str):
+    if role in {"analysis_code", "power_planning_code"}:
+        if path.suffix.lower() != ".py":
+            raise S3FreezeError(f"{role} must bind a Python source file")
+        return None
+    if role == "power_plan":
+        return _validate_power_plan_file(path)
+
+    metadata = _load_metadata_for_outcome_scan(path)
+    _walk_forbidden_outcome_keys(metadata)
+    return None
+
+
 def build_freeze_manifest(spec: dict, root: Path) -> dict:
     allowed_top = {
         "schema_version",
@@ -674,14 +800,16 @@ def build_freeze_manifest(spec: dict, root: Path) -> dict:
         resolved = _relative_regular_file(
             root, item["path"], f"artifacts[{idx}].path"
         )
-        bound_artifacts.append(
-            {
-                "role": role,
-                "path": item["path"],
-                "sha256": file_sha256(resolved),
-                "bytes": resolved.stat().st_size,
-            }
-        )
+        validation = _validate_preconfirmatory_artifact(resolved, role)
+        bound = {
+            "role": role,
+            "path": item["path"],
+            "sha256": file_sha256(resolved),
+            "bytes": resolved.stat().st_size,
+        }
+        if validation is not None:
+            bound["validation"] = validation
+        bound_artifacts.append(bound)
 
     missing = sorted(REQUIRED_ARTIFACT_ROLES - seen_roles)
     if missing:
