@@ -148,8 +148,11 @@ altered or symlink-traversed files. An output with
 `verification_scope=bound_artifacts_and_self_digest` proves that these local
 checks passed *at validation time*, not that files were signed or remain
 immutable afterwards. For power-plan JSON, `validate` reports a narrower
-`verification_scope` and `freeze_ready=false`. A canonical power plan is
-still not a freeze until it is bound into a validated full manifest.
+`verification_scope` and `artifact_bindings_verified=false`. A validated
+freeze reports `artifact_bindings_verified=true` but always reports
+`authorizes_confirmatory_execution=false`: passing the file-integrity check
+is **not** execution/sandbox approval. A canonical power plan is still not a
+freeze until it is bound into a validated full manifest.
 
 ## 4. Security and evidence boundaries
 

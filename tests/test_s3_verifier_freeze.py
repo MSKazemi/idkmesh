@@ -376,6 +376,13 @@ class FreezeManifestTests(unittest.TestCase):
             with self.assertRaises(s3.S3FreezeError):
                 s3.build_freeze_manifest(spec, root)
 
+    def test_json_overflow_number_is_a_controlled_validation_failure(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "overflow.json"
+            path.write_text('{"field":1e9999}\n', encoding="utf-8")
+            with self.assertRaisesRegex(s3.S3FreezeError, "non-finite"):
+                s3.load_json(path)
+
     def test_missing_power_effect_cannot_pass_even_with_fresh_self_digest(self):
         with tempfile.TemporaryDirectory() as directory:
             root, spec = self._root_and_spec(directory, experiment_id="X6")
@@ -476,7 +483,8 @@ class FreezeManifestTests(unittest.TestCase):
                 result["verification_scope"],
                 "bound_artifacts_and_self_digest",
             )
-            self.assertTrue(result["freeze_ready"])
+            self.assertTrue(result["artifact_bindings_verified"])
+            self.assertFalse(result["authorizes_confirmatory_execution"])
 
             output = io.StringIO()
             with contextlib.redirect_stdout(output):
@@ -488,7 +496,8 @@ class FreezeManifestTests(unittest.TestCase):
             self.assertEqual(
                 result["verification_scope"], "canonical_power_plan_structure"
             )
-            self.assertFalse(result["freeze_ready"])
+            self.assertFalse(result["artifact_bindings_verified"])
+            self.assertFalse(result["authorizes_confirmatory_execution"])
 
     def test_unknown_artifact_role_cannot_smuggle_a_verdict_matrix(self):
         with tempfile.TemporaryDirectory() as directory:

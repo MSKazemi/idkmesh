@@ -63,6 +63,13 @@ def _reject_constant(value: str):
     raise S3FreezeError(f"non-finite JSON number is forbidden: {value}")
 
 
+def _parse_finite_float(value: str) -> float:
+    result = float(value)
+    if not math.isfinite(result):
+        raise S3FreezeError(f"non-finite JSON number is forbidden: {value}")
+    return result
+
+
 def _no_duplicate_object(pairs):
     out = {}
     for key, value in pairs:
@@ -78,6 +85,7 @@ def load_json(path: Path):
             path.read_text(encoding="utf-8"),
             object_pairs_hook=_no_duplicate_object,
             parse_constant=_reject_constant,
+            parse_float=_parse_finite_float,
         )
     except (OSError, UnicodeError, json.JSONDecodeError) as exc:
         raise S3FreezeError(f"cannot read JSON {path}: {exc}") from exc
@@ -192,6 +200,7 @@ def load_calibration_jsonl(path: Path) -> list[CalibrationRow]:
                 raw,
                 object_pairs_hook=_no_duplicate_object,
                 parse_constant=_reject_constant,
+                parse_float=_parse_finite_float,
             )
         except json.JSONDecodeError as exc:
             raise S3FreezeError(f"{path}:{lineno}: invalid JSON: {exc}") from exc
@@ -736,6 +745,7 @@ def _load_metadata_for_outcome_scan(path: Path):
                         raw,
                         object_pairs_hook=_no_duplicate_object,
                         parse_constant=_reject_constant,
+                        parse_float=_parse_finite_float,
                     )
                 )
             except json.JSONDecodeError as exc:
@@ -1266,12 +1276,12 @@ def _cmd_validate(args) -> int:
             )
         validate_freeze_manifest(payload, Path(args.root))
         verification_scope = "bound_artifacts_and_self_digest"
-        freeze_ready = True
+        artifact_bindings_verified = True
     else:
         # A standalone plan is evidence of the plan document's integrity,
         # not evidence that source files or a confirmatory study were frozen.
         verification_scope = "power_plan_self_digest_only"
-        freeze_ready = False
+        artifact_bindings_verified = False
         if payload.get("canonical") is True and (
             isinstance(payload.get("decision"), dict)
             and payload["decision"].get("status")
@@ -1287,7 +1297,8 @@ def _cmd_validate(args) -> int:
                 "schema_version": payload["schema_version"],
                 "self_sha256": payload["self_sha256"],
                 "verification_scope": verification_scope,
-                "freeze_ready": freeze_ready,
+                "artifact_bindings_verified": artifact_bindings_verified,
+                "authorizes_confirmatory_execution": False,
             },
             sort_keys=True,
         )
