@@ -28,7 +28,7 @@ SCHEMA_FREEZE = "idkmesh.s3-freeze-manifest.v1"
 
 SEED = 20261011
 SIMULATIONS = 10_000
-BOOTSTRAP_REPLICATES = 10_000
+FINAL_BOOTSTRAP_REPLICATES = 10_000
 TARGET_POWER = 0.90
 DELTA0 = math.log(1.10)
 TASK_LADDER = (50, 75, 100, 150, 200, 300, 500)
@@ -362,12 +362,48 @@ def _percentile(values: Sequence[float], q: float) -> float:
     return ordered[lo] * (1.0 - frac) + ordered[hi] * frac
 
 
-def _bootstrap_interval(
+_T975 = {
+    7: 2.364624, 8: 2.306004, 9: 2.262157, 10: 2.228139,
+    11: 2.200985, 12: 2.178813, 13: 2.160369, 14: 2.144787,
+    15: 2.131450, 16: 2.119905, 17: 2.109816, 18: 2.100922,
+    19: 2.093024, 20: 2.085963, 21: 2.079614, 22: 2.073873,
+    23: 2.068658, 24: 2.063899, 25: 2.059539, 26: 2.055529,
+    27: 2.051831, 28: 2.048407, 29: 2.045230, 30: 2.042272,
+}
+
+
+def _t975(df: int) -> float:
+    """Two-sided 95% t critical value without a scipy dependency.
+
+    Repository-level inference uses the exact tabulated values over the range
+    where the small-cluster correction materially differs from Normal. For
+    larger df, a Cornish-Fisher expansion around z=.975 is accurate enough for
+    power planning; the *confirmatory* analysis still uses the preregistered
+    10,000-replicate percentile cluster bootstrap.
+    """
+    if df < 1:
+        raise ValueError("degrees of freedom must be positive")
+    if df in _T975:
+        return _T975[df]
+    z = 1.959963984540054
+    inv = 1.0 / df
+    return (
+        z
+        + (z**3 + z) * inv / 4.0
+        + (5.0 * z**5 + 16.0 * z**3 + 3.0 * z) * inv**2 / 96.0
+    )
+
+
+def _cluster_jackknife_lower(
     rows: Sequence[SimRow],
     level: str,
-    replicates: int,
-    rng: SplitMix64,
-) -> tuple[float, float] | None:
+) -> float | None:
+    """Fast cluster-t lower bound used only for sample-size planning.
+
+    This avoids an infeasible nested 10k x 10k bootstrap.  It is deliberately
+    not the final confirmatory interval; the final analysis retains the frozen
+    repository- and task-cluster percentile bootstraps with 10,000 resamples.
+    """
     if level == "repository":
         key_fn = lambda row: row.repository_id
     elif level == "task":
@@ -375,27 +411,55 @@ def _bootstrap_interval(
     else:
         raise ValueError("level must be repository or task")
 
+    estimate = _macro_mean(rows)
+    if estimate is None:
+        return None
+
+    total_sum = {label: 0.0 for label in CLASSES}
+    total_n = {label: 0 for label in CLASSES}
     clusters = {}
     for row in rows:
-        clusters.setdefault(key_fn(row), []).append(row)
+        total_sum[row.class_label] += row.value
+        total_n[row.class_label] += 1
+        bucket = clusters.setdefault(
+            key_fn(row),
+            {
+                "sum": {label: 0.0 for label in CLASSES},
+                "n": {label: 0 for label in CLASSES},
+            },
+        )
+        bucket["sum"][row.class_label] += row.value
+        bucket["n"][row.class_label] += 1
+
     keys = sorted(clusters, key=lambda item: str(item))
     if level == "repository" and len(keys) < 8:
         return None
     if len(keys) < 2:
         return None
 
-    values = []
-    for _ in range(replicates):
-        sample = []
-        for _j in range(len(keys)):
-            sample.extend(clusters[rng.choice(keys)])
-        estimate = _macro_mean(sample)
-        if estimate is not None:
-            values.append(estimate)
+    deleted = []
+    for key in keys:
+        bucket = clusters[key]
+        means = {}
+        for label in CLASSES:
+            count = total_n[label] - bucket["n"][label]
+            if count <= 0:
+                return None
+            means[label] = (
+                total_sum[label] - bucket["sum"][label]
+            ) / count
+        deleted.append(
+            0.5 * (means["official-pass"] + means["official-fail"])
+        )
 
-    if len(values) < math.ceil(0.95 * replicates):
-        return None
-    return _percentile(values, 0.025), _percentile(values, 0.975)
+    jack_mean = sum(deleted) / len(deleted)
+    variance = (
+        (len(deleted) - 1)
+        / len(deleted)
+        * sum((value - jack_mean) ** 2 for value in deleted)
+    )
+    se = math.sqrt(max(0.0, variance))
+    return estimate - _t975(len(deleted) - 1) * se
 
 
 def _seed_for(base: int, task_count: int, simulation: int, channel: int) -> int:
@@ -419,13 +483,12 @@ def build_power_plan(
     eligible_pass_items: int,
     eligible_fail_items: int,
     simulations: int = SIMULATIONS,
-    bootstrap_replicates: int = BOOTSTRAP_REPLICATES,
     seed: int = SEED,
     delta0: float = DELTA0,
     target_power: float = TARGET_POWER,
 ) -> dict:
-    if simulations <= 0 or bootstrap_replicates <= 0:
-        raise S3FreezeError("simulation and bootstrap counts must be positive")
+    if simulations <= 0:
+        raise S3FreezeError("simulation count must be positive")
     if not 0.0 < target_power < 1.0:
         raise S3FreezeError("target_power must lie in (0,1)")
     if not math.isfinite(delta0) or delta0 <= 0:
@@ -444,7 +507,6 @@ def build_power_plan(
     summary = calibration_summary(rows)
     canonical = (
         simulations == SIMULATIONS
-        and bootstrap_replicates == BOOTSTRAP_REPLICATES
         and seed == SEED
         and abs(delta0 - DELTA0) <= 1e-15
         and abs(target_power - TARGET_POWER) <= 1e-15
@@ -459,7 +521,13 @@ def build_power_plan(
             "smallest_effect_geometric_likelihood_ratio": math.exp(delta0),
             "target_power": target_power,
             "simulated_cohorts": simulations,
-            "bootstrap_replicates_per_level": bootstrap_replicates,
+            "power_interval_method": (
+                "delete-one-cluster jackknife SE with two-sided 95% cluster-t "
+                "lower bound at repository and task levels"
+            ),
+            "final_confirmatory_bootstrap_replicates_per_level": (
+                FINAL_BOOTSTRAP_REPLICATES
+            ),
             "decision": (
                 "both repository- and task-cluster 95% percentile intervals "
                 "have lower bound > 0"
@@ -522,27 +590,19 @@ def build_power_plan(
                 delta0,
                 SplitMix64(_seed_for(seed, task_count, simulation, 0)),
             )
-            repo_ci = _bootstrap_interval(
-                cohort,
-                "repository",
-                bootstrap_replicates,
-                SplitMix64(_seed_for(seed, task_count, simulation, 1)),
+            repo_lower = _cluster_jackknife_lower(
+                cohort, "repository"
             )
-            task_ci = _bootstrap_interval(
-                cohort,
-                "task",
-                bootstrap_replicates,
-                SplitMix64(_seed_for(seed, task_count, simulation, 2)),
-            )
-            if repo_ci is not None:
+            task_lower = _cluster_jackknife_lower(cohort, "task")
+            if repo_lower is not None:
                 valid_repository_intervals += 1
-            if task_ci is not None:
+            if task_lower is not None:
                 valid_task_intervals += 1
             if (
-                repo_ci is not None
-                and task_ci is not None
-                and repo_ci[0] > 0.0
-                and task_ci[0] > 0.0
+                repo_lower is not None
+                and task_lower is not None
+                and repo_lower > 0.0
+                and task_lower > 0.0
             ):
                 successes += 1
 
@@ -697,7 +757,9 @@ def _validate_power_plan_file(path: Path) -> dict:
     expected = {
         "seed": SEED,
         "simulated_cohorts": SIMULATIONS,
-        "bootstrap_replicates_per_level": BOOTSTRAP_REPLICATES,
+        "final_confirmatory_bootstrap_replicates_per_level": (
+            FINAL_BOOTSTRAP_REPLICATES
+        ),
         "target_power": TARGET_POWER,
     }
     for key, value in expected.items():
@@ -1049,7 +1111,6 @@ def _cmd_power(args) -> int:
         eligible_pass_items=args.eligible_pass_items,
         eligible_fail_items=args.eligible_fail_items,
         simulations=args.simulations,
-        bootstrap_replicates=args.bootstrap_replicates,
         seed=args.seed,
         delta0=args.delta0,
         target_power=args.target_power,
@@ -1146,12 +1207,6 @@ def build_parser() -> argparse.ArgumentParser:
         "--simulations",
         type=int,
         default=SIMULATIONS,
-        help="non-default values create canonical=false development plans",
-    )
-    power.add_argument(
-        "--bootstrap-replicates",
-        type=int,
-        default=BOOTSTRAP_REPLICATES,
         help="non-default values create canonical=false development plans",
     )
     power.add_argument("--seed", type=int, default=SEED)
