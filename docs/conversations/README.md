@@ -7,9 +7,14 @@ canonical files designated by [`../../PROJECT_RULES.md`](https://github.com/MSKa
 (decisions, specifications, architecture, findings); this directory keeps the trail
 that produced them.
 
-181 records across 13 dates, newest first.
+183 records across 14 dates, newest first.
 
 ## Index
+
+### 2026-10-13
+
+- [Visibility funnel measurement coverage](2026-10-13-visibility-funnel-coverage.md)
+- [Search Console HTTP error confidentiality hardening](2026-10-13-search-console-http-error-hardening.md)
 
 ### 2026-10-11
 
