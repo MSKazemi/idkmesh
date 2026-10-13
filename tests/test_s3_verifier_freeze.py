@@ -1,0 +1,264 @@
+"""Tests for the S3 verifier external-validity freeze toolkit.
+
+The fixtures are synthetic calibration/pre-freeze inputs only. No confirmatory
+verdict or third-party patch is executed.
+"""
+
+from __future__ import annotations
+
+import json
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "experiments"))
+import s3_verifier_freeze as s3  # noqa: E402
+
+
+def _rows(repositories: int = 8):
+    rows = []
+    for repo in range(repositories):
+        for task in range(2):
+            task_id = f"r{repo}-t{task}"
+            rows.append(
+                s3.CalibrationRow(
+                    f"repo-{repo}",
+                    task_id,
+                    "official-pass",
+                    10.0,
+                )
+            )
+            rows.append(
+                s3.CalibrationRow(
+                    f"repo-{repo}",
+                    task_id,
+                    "official-fail",
+                    -7.0,
+                )
+            )
+    return rows
+
+
+class CalibrationInputTests(unittest.TestCase):
+    def test_loader_rejects_confirmatory_stage(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "calibration.jsonl"
+            path.write_text(
+                json.dumps(
+                    {
+                        "stage": "confirmatory",
+                        "repository_id": "r",
+                        "task_id": "t",
+                        "class_label": "official-pass",
+                        "delta_logscore": 0.1,
+                    }
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            with self.assertRaises(s3.S3FreezeError):
+                s3.load_calibration_jsonl(path)
+
+    def test_loader_rejects_task_id_collision_across_repositories(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "calibration.jsonl"
+            lines = [
+                {
+                    "stage": "calibration",
+                    "repository_id": "repo-a",
+                    "task_id": "same-task",
+                    "class_label": "official-pass",
+                    "delta_logscore": 0.1,
+                },
+                {
+                    "stage": "calibration",
+                    "repository_id": "repo-b",
+                    "task_id": "same-task",
+                    "class_label": "official-fail",
+                    "delta_logscore": -0.1,
+                },
+            ]
+            path.write_text(
+                "\n".join(json.dumps(row) for row in lines) + "\n",
+                encoding="utf-8",
+            )
+            with self.assertRaises(s3.S3FreezeError):
+                s3.load_calibration_jsonl(path)
+
+
+class PowerPlanTests(unittest.TestCase):
+    def test_development_power_plan_is_deterministic_and_self_addressed(self):
+        kwargs = dict(
+            calibration_sha256="a" * 64,
+            eligible_task_count=50,
+            eligible_repository_count=8,
+            eligible_pass_items=50,
+            eligible_fail_items=50,
+            simulations=6,
+            bootstrap_replicates=20,
+            delta0=0.5,
+            target_power=0.5,
+        )
+        first = s3.build_power_plan(_rows(), **kwargs)
+        second = s3.build_power_plan(_rows(), **kwargs)
+
+        self.assertEqual(first, second)
+        self.assertFalse(first["canonical"])
+        self.assertEqual(first["decision"]["status"], "powered")
+        self.assertEqual(first["decision"]["selected_task_count"], 50)
+        self.assertTrue(s3.verify_self_digest(first))
+
+    def test_infeasible_design_is_recorded_not_rescued(self):
+        plan = s3.build_power_plan(
+            _rows(repositories=7),
+            calibration_sha256="b" * 64,
+            eligible_task_count=100,
+            eligible_repository_count=7,
+            eligible_pass_items=50,
+            eligible_fail_items=50,
+            simulations=2,
+            bootstrap_replicates=2,
+        )
+        self.assertEqual(plan["decision"]["status"], "infeasible")
+        self.assertIn(
+            "calibration_has_fewer_than_8_repositories",
+            plan["decision"]["reasons"],
+        )
+        self.assertTrue(s3.verify_self_digest(plan))
+
+    def test_canonical_flag_requires_every_frozen_default(self):
+        plan = s3.build_power_plan(
+            _rows(repositories=7),
+            calibration_sha256="c" * 64,
+            eligible_task_count=100,
+            eligible_repository_count=7,
+            eligible_pass_items=50,
+            eligible_fail_items=50,
+        )
+        self.assertTrue(plan["canonical"])
+
+
+class FreezeManifestTests(unittest.TestCase):
+    def _root_and_spec(self, directory: str, experiment_id: str = "X7"):
+        root = Path(directory)
+        protocol = root / "protocol.md"
+        protocol.write_text("frozen protocol\n", encoding="utf-8")
+
+        roles = list(s3.REQUIRED_ARTIFACT_ROLES)
+        if experiment_id == "X7":
+            roles.append("prompt_bundle")
+        artifacts = []
+        for role in roles:
+            path = root / f"{role}.txt"
+            path.write_text(f"{role}\n", encoding="utf-8")
+            artifacts.append({"role": role, "path": path.name})
+
+        models = []
+        if experiment_id == "X7":
+            for idx in range(3):
+                models.append(
+                    {
+                        "lineage": f"lineage-{idx}",
+                        "checkpoint": f"checkpoint-{idx}",
+                        "digest": f"{idx + 1:064x}",
+                        "release_date": "2026-01-01",
+                        "training_cutoff": None,
+                        "benchmark_contamination": "unknown",
+                        "benchmark_specific_finetuning": False,
+                    }
+                )
+
+        spec = {
+            "schema_version": s3.SCHEMA_FREEZE_INPUT,
+            "experiment_id": experiment_id,
+            "repository_commit": "d" * 40,
+            "protocol_document": protocol.name,
+            "artifacts": artifacts,
+            "upstream": {
+                "name": "example-benchmark",
+                "commit": "upstream-pinned-revision",
+                "artifacts": [
+                    {
+                        "name": "inventory",
+                        "sha256": "e" * 64,
+                    }
+                ],
+            },
+            "models": models,
+            "seeds": {
+                "bootstrap": s3.SEED,
+                "permutation": s3.SEED,
+                "stage_assignment": 77,
+            },
+            "execution_boundary": {
+                "untrusted_patch_execution": False,
+                "sandbox_required": False,
+                "sandbox_issue": 804,
+            },
+            "container_image_digest": None,
+        }
+        return root, spec
+
+    def test_manifest_is_deterministic_and_contains_no_outcome_claim(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root, spec = self._root_and_spec(directory)
+            first = s3.build_freeze_manifest(spec, root)
+            second = s3.build_freeze_manifest(spec, root)
+
+            self.assertEqual(first, second)
+            self.assertTrue(s3.verify_self_digest(first))
+            self.assertFalse(
+                first["claims"]["contains_confirmatory_outcomes"]
+            )
+            self.assertFalse(first["claims"]["executes_untrusted_code"])
+
+    def test_manifest_digest_changes_when_a_bound_file_changes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root, spec = self._root_and_spec(directory, experiment_id="X6")
+            first = s3.build_freeze_manifest(spec, root)
+            (root / "analysis_code.txt").write_text(
+                "changed\n",
+                encoding="utf-8",
+            )
+            second = s3.build_freeze_manifest(spec, root)
+            self.assertNotEqual(
+                first["self_sha256"],
+                second["self_sha256"],
+            )
+
+    def test_x7_requires_prompt_bundle_and_three_lineages(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root, spec = self._root_and_spec(directory)
+            spec["artifacts"] = [
+                item
+                for item in spec["artifacts"]
+                if item["role"] != "prompt_bundle"
+            ]
+            with self.assertRaises(s3.S3FreezeError):
+                s3.build_freeze_manifest(spec, root)
+
+    def test_benchmark_specific_finetuning_is_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root, spec = self._root_and_spec(directory)
+            spec["models"][0]["benchmark_specific_finetuning"] = True
+            with self.assertRaises(s3.S3FreezeError):
+                s3.build_freeze_manifest(spec, root)
+
+    def test_unknown_artifact_role_cannot_smuggle_a_verdict_matrix(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root, spec = self._root_and_spec(directory, experiment_id="X6")
+            path = root / "verdicts.jsonl"
+            path.write_text("{}\n", encoding="utf-8")
+            spec["artifacts"].append(
+                {
+                    "role": "confirmatory_verdict_matrix",
+                    "path": path.name,
+                }
+            )
+            with self.assertRaises(s3.S3FreezeError):
+                s3.build_freeze_manifest(spec, root)
+
+
+if __name__ == "__main__":
+    unittest.main()
