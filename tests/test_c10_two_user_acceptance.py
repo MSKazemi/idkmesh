@@ -129,7 +129,9 @@ class TwoUserAcceptanceTests(unittest.TestCase):
             GithubActorClaims(actor_id, LOGINS[actor_id], kind), self.table
         )
 
-    def decide(self, actor_id, action, *, risk="low", approver=None, rid="r-1"):
+    def decide(
+        self, actor_id, action, *, risk="low", approver=None, rid="r-1", executors=()
+    ):
         return authorize(
             AuthorizationRequest(
                 request_id=rid,
@@ -142,6 +144,7 @@ class TwoUserAcceptanceTests(unittest.TestCase):
                 evaluated_at_epoch=NOW,
                 approver=None if approver is None else self.actor(approver),
                 approval_reference=None if approver is None else "review:1",
+                executor_principal_ids=tuple(executors),
             ),
             self.policy,
         )
@@ -253,12 +256,26 @@ class TwoUserAcceptanceTests(unittest.TestCase):
 
     # -- 4. verification records the actual reviewer identity -------------
     def test_4_verification_decision_names_the_actual_reviewer(self):
-        decision = self.decide(CAROL, "verify")
+        # Bob executed the work; Carol, a different human, verifies it.
+        decision = self.decide(CAROL, "verify", executors=(f"github:human:{BOB}",))
         self.assertEqual(decision.effect, "allow")
         record = decision.to_dict()
         self.assertEqual(record["principal_id"], f"github:human:{CAROL}")
         self.assertEqual(record["identity_revision"], "github-identity:1")
         self.assertEqual(record["action"], "verify")
+
+    def test_4_a_reviewer_cannot_verify_work_they_executed(self):
+        # One human holding both the worker and reviewer roles (#598 finding).
+        executed_by_carol = (f"github:human:{CAROL}",)
+        denied = self.decide(CAROL, "verify", executors=executed_by_carol)
+        self.assertEqual((denied.effect, denied.code), ("deny", "self_verification_forbidden"))
+        # Even when another principal also took part in the execution.
+        both = (f"github:human:{BOB}", f"github:human:{CAROL}")
+        self.assertEqual(self.decide(CAROL, "verify", executors=both).code, "self_verification_forbidden")
+
+    def test_4_verification_without_a_known_executor_is_refused(self):
+        denied = self.decide(CAROL, "verify")
+        self.assertEqual((denied.effect, denied.code), ("deny", "executor_identity_required"))
 
     def test_4_the_worker_is_not_an_automatic_verifier(self):
         denied = self.decide(BOB, "verify")
