@@ -15,7 +15,7 @@ Primary context: [subsystem contract](../specifications/CONTROL_TOWER_LOCAL_API_
 | --- | --- |
 | [`__init__.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/__init__.py) | Package boundary and version metadata |
 | [`cli.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/cli.py) | Argument parser and command handlers; does not replace domain services |
-| [`api_client.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/api_client.py) | Stdlib Python read/inspection client with typed errors and digest checks |
+| [`api_client.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/api_client.py) | Stdlib Python read/inspection client (including a bounded SSE event-stream reader) with typed errors and digest checks |
 | [`api_observability.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/api_observability.py) | Privacy-safe bounded-cardinality HTTP metrics |
 | [`control_tower_api.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/control_tower_api.py) | Evidence validation, read models, and OpenAPI document |
 | [`control_tower_ui.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/control_tower_ui.py) | Loopback-only Control Tower HTTP/UI adapter |
@@ -91,7 +91,7 @@ Primary context: [subsystem contract](../specifications/GITHUB_WEBHOOK_INGRESS_V
 | [`github_explicit_dispatch.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_explicit_dispatch.py) | Idempotent explicitly authorized dispatch boundary |
 | [`github_governance_policy.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_governance_policy.py) | Declarative GitHub repository governance rules |
 | [`github_governance_preflight.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_governance_preflight.py) | Read-only C12 governance evaluation, workflow-source linting, CODEOWNERS recommendations, and OIDC shape checks; no GitHub admin mutation |
-| [`github_issue_preview.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_issue_preview.py) | Untrusted issue-to-policy-owned WorkUnit preview |
+| [`github_issue_preview.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_issue_preview.py) | Untrusted issue-to-policy-owned WorkUnit preview; an opt-in parsed Issue Form can only narrow policy scope and raise risk/sensitivity |
 | [`github_issue_source.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_issue_source.py) | Bounded GitHub REST issue read adapter |
 | [`github_ledger_admission.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_ledger_admission.py) | Idempotent dispatch admission by compare-and-set on a per-key ref; duplicate dispatch resolves to the existing run; no push or GitHub call |
 | [`github_ledger_append.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_ledger_append.py) | Local compare-and-set optimistic append to a per-run Git-ref ledger with bounded retry; no push or GitHub call |
@@ -100,13 +100,17 @@ Primary context: [subsystem contract](../specifications/GITHUB_WEBHOOK_INGRESS_V
 | [`github_ledger_recovery_plan.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_ledger_recovery_plan.py) | Pure advisory safe-next-step plan for a recovered ledger run; reconciles unconfirmed provider submissions instead of resubmitting; grants no authority |
 | [`github_ledger_serialization.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_ledger_serialization.py) | Pure canonical serialization and append-only chain verification for GitHub ledger records; performs no Git or GitHub action |
 | [`github_pages_site.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_pages_site.py) | Pure read-only static Pages file map generated from public-safe evidence projections |
+| [`github_pages_writer.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_pages_writer.py) | All-or-nothing local-directory writer for the Pages file map behind `idkmesh pages-site`; refuses unsafe paths, symlinks, and unrecognised non-empty directories; no network or GitHub call |
 | [`github_public_evidence.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_public_evidence.py) | Strict public-safe evidence publication projection |
+| [`github_release_provenance.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_release_provenance.py) | Pure release metadata/provenance record behind `idkmesh release-provenance`: binds a proposed tag, target commit, and artifact digests (caller-supplied, unverified) to C14-D run evidence; creates no tag, release, or attestation |
 | [`github_rest_source.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_rest_source.py) | Bounded GitHub identity REST transport |
 | [`github_routing_projection.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_routing_projection.py) | Read-only GitHub UI projection of routing decision |
 | [`github_status_comment.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_status_comment.py) | One idempotently synchronized run-status comment |
 | [`github_status_update.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_status_update.py) | Immutable single-comment publication and recovery |
 | [`github_workunit_intake.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_workunit_intake.py) | Pure Issue Form body parser to untrusted intake hints; any malformed or hand-edited content falls back; never grants authority |
 | [`github_webhook_ingress.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_webhook_ingress.py) | HMAC-verified bounded webhook normalization |
+| [`github_workflow_runner.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_workflow_runner.py) | Stdlib-only runner behind the generated workflow wrappers: read-only issue preview and ledger status; dispatch and verify fail closed |
+| [`work_preview.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/work_preview.py) | Offline `idkmesh work preview`: issue snapshot file + `.idkmesh/project.json` policy (via `github_workflow_runner.load_preview_policy`) to the `github_issue_preview` WorkUnit; no network, secret, write or dispatch |
 
 ## Jules connector lifecycle
 

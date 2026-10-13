@@ -11,6 +11,7 @@ import threading
 import unittest
 from unittest.mock import patch
 
+import pytest
 from jsonschema import Draft202012Validator
 
 from idkmesh.connector_store import LocalMetadataStore, LocalStoreError, SCHEMA_VERSION
@@ -98,6 +99,8 @@ class LocalTaskClaimTests(unittest.TestCase):
         self.assertTrue(admitted[0][1])
         self.assertEqual(results.count("task_capacity_reserved"), 99)
         self.assertEqual(len(self.restart().snapshot(TASK, self.dispatcher)), 1)
+
+    @pytest.mark.slow  # spawns coordinator processes (~0.9 CPU-s)
 
     def test_separate_coordinator_processes_share_the_same_limit(self):
         context = multiprocessing.get_context("spawn")
