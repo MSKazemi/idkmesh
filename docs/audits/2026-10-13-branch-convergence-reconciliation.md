@@ -48,3 +48,13 @@ These are source/contract observations, **not** a new CI run or an independent s
 Read-only GitHub branch enumeration, `main...branch` comparisons, each source branch's full PR-history query, PR closure comments, successor PR merge metadata and selected live-`main` source checks were used. Local Git checkout and pytest were unavailable because the execution container could not resolve `github.com`; no CI results are claimed for this audit branch yet. This record is an AI-assisted reconciliation and **not** independent maintainer approval.
 
 **Community impact:** explicitly distinguishing stale duplicate branches from live work prevents new contributors from wasting review time or accidentally resurrecting superseded security and intake behavior. The [current branch policy](../planning/BRANCH_CONVERGENCE_POLICY.md) and [read-only branch audit tool](https://github.com/MSKazemi/idkmesh/blob/main/tools/branch_convergence_audit.py) remain the executable/process sources of truth.
+
+## Follow-up: eight guarded retirement candidates
+
+This earlier branch count is a dated snapshot, not the live inventory. The reconciliation itself was merged as [PR #1111](https://github.com/MSKazemi/idkmesh/pull/1111), commit c47ea2f2818549d8cd012d24bf0cc69c773f8f65.
+
+The [eight-item manifest](branch-retirement-2026-10-13.json) includes only branches whose original PRs were closed without merging and for which an explicit replacement PR **did** merge. Original PR head SHAs and replacement-merge ancestry were independently checked against current main at the time of drafting. Actual cleanup requires fresh checks, human verification of active workflows and *external* frozen-evidence references, and an explicit operator action. The manifest is not an approval.
+
+**Excluded:** fix/e9-no-empty-pass-20261013 has no original PR and its old zero-assertion semantics are weaker than the current main implementation. Keep it until independently reviewed. Active C13-E, C8-G and retirement-tool work, as well as any future branch opened by a contributor, are not cleanup candidates merely because they are young, ahead or behind main.
+
+See the [lease-guarded runbook](../operations/BRANCH_RETIREMENT_V0_1.md). No historic source branch was merged or deleted as part of this update.
