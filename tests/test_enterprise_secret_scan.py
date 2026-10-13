@@ -201,6 +201,39 @@ class ReportHygieneTests(unittest.TestCase):
         )
 
 
+class SensitiveKeyContainerTests(unittest.TestCase):
+    """A literal secret must not escape by being wrapped in a list."""
+
+    def rules(self, document) -> list[tuple[str, str]]:
+        return [(f.rule, f.location) for f in scan_for_secrets(document).findings]
+
+    def test_literal_in_a_list_under_a_sensitive_key_is_found(self) -> None:
+        self.assertEqual(
+            self.rules({"password": ["literal-pw-1234"]}),
+            [("sensitive_key_literal", "/password/0")],
+        )
+
+    def test_nested_lists_inherit_the_sensitive_key(self) -> None:
+        self.assertEqual(
+            self.rules({"api_key": [["short", "literal-pw-1234"]]}),
+            [("sensitive_key_literal", "/api_key/0/1")],
+        )
+
+    def test_references_and_short_values_in_such_a_list_stay_clean(self) -> None:
+        self.assertTrue(scan_for_secrets({"token": ["env:DEPLOY_TOKEN", "abc"]}).clean)
+
+    def test_list_under_an_ordinary_key_is_not_judged_by_key(self) -> None:
+        self.assertTrue(scan_for_secrets({"labels": ["literal-pw-1234"]}).clean)
+
+    def test_objects_under_a_sensitive_key_use_their_own_keys(self) -> None:
+        # Documented boundary: no benign object is flagged merely for its parent's name.
+        self.assertTrue(scan_for_secrets({"credentials": {"provider": "github-actions"}}).clean)
+        self.assertEqual(
+            self.rules({"credentials": {"password": "literal-pw-1234"}}),
+            [("sensitive_key_literal", "/credentials/password")],
+        )
+
+
 class FailClosedTests(unittest.TestCase):
     def assert_incomplete(self, document, reason: str, **limits) -> None:
         report = scan_for_secrets(document, **limits)
