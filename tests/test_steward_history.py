@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import contextlib
+from copy import deepcopy
 import importlib.util
 import io
 import json
@@ -682,7 +683,6 @@ class StewardHistorySliTests(unittest.TestCase):
             with self.subTest(fields=fields):
                 with self.assertRaises(steward_history.StewardHistoryInputError):
                     self.assess(hist, **fields)
-        from copy import deepcopy
         invalid = deepcopy(hist)
         invalid["status_counts"]["blocked"] = 0
         with self.assertRaises(steward_history.StewardHistoryInputError):

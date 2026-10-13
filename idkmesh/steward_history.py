@@ -786,7 +786,6 @@ def render_history_text(history: dict[str, Any], *, details: bool = False) -> st
     return "\n".join(lines) + "\n"
 
 
-
 def evaluate_steward_history_sli(
     history: dict[str, Any],
     *,
