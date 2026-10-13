@@ -1155,7 +1155,6 @@ def build_freeze_manifest(spec: dict, root: Path) -> dict:
     return with_self_digest(manifest)
 
 
-
 def validate_freeze_manifest(manifest: dict, root: Path) -> None:
     """Reconstruct the complete frozen artifact manifest from current bytes.
 
