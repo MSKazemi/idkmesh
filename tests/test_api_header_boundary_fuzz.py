@@ -430,6 +430,69 @@ class ContentLengthBoundaryTests(_ServerHarness):
         self.assertEqual(payload["error"]["code"], "payload_too_large")
 
 
+class AmbiguousFramingTests(_ServerHarness):
+    """Duplicate and empty framing headers must never reach JSON parsing."""
+
+    def setUp(self) -> None:
+        self.server = self.start_server()
+
+    def send_lines(self, lines):
+        conn = http.client.HTTPConnection(
+            "127.0.0.1", self.server.server_port, timeout=3
+        )
+        try:
+            conn.putrequest("POST", INSPECT_PATH, skip_host=True)
+            for name, value in (
+                ("Host", "127.0.0.1"),
+                (TOKEN_HEADER, TOKEN),
+                ("Connection", "close"),
+                *lines,
+            ):
+                conn.putheader(name, value)
+            conn.endheaders(b"{}")
+            response = conn.getresponse()
+            return response.status, json.loads(response.read())
+        finally:
+            conn.close()
+
+    def test_duplicate_length_even_if_identical_is_rejected(self):
+        for second in ("2", "3", " 2 "):
+            with self.subTest(second=second):
+                status, body = self.send_lines((
+                    ("Content-Type", "application/json"),
+                    ("Content-Length", "2"),
+                    ("Content-Length", second),
+                ))
+                self.assertEqual(status, 400)
+                self.assertEqual(body["error"]["code"], "invalid_content_length")
+
+    def test_duplicate_content_type_is_rejected(self):
+        status, body = self.send_lines((
+            ("Content-Type", "application/json"),
+            ("Content-Type", "text/plain"),
+            ("Content-Length", "2"),
+        ))
+        self.assertEqual(status, 415)
+        self.assertEqual(body["error"]["code"], "unsupported_media_type")
+
+    def test_empty_transfer_encoding_is_rejected(self):
+        status, body = self.send_lines((
+            ("Content-Type", "application/json"),
+            ("Transfer-Encoding", ""),
+            ("Content-Length", "2"),
+        ))
+        self.assertEqual(status, 400)
+        self.assertEqual(body["error"]["code"], "unsupported_transfer_encoding")
+
+    def test_one_content_length_still_reaches_evidence_validation(self):
+        status, body = self.send_lines((
+            ("Content-Type", "application/json"),
+            ("Content-Length", "2"),
+        ))
+        self.assertEqual(status, 400)
+        self.assertEqual(body["error"]["code"], "invalid_run_evidence")
+
+
 class RawByteBoundaryTests(_ServerHarness):
     """Byte-level hostility: the worker survives and the server keeps serving."""
 

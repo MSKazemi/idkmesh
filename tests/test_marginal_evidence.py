@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib.util
+import itertools
 import json
 import subprocess
 import sys
@@ -138,6 +139,33 @@ class InputContractTests(unittest.TestCase):
         with self.assertRaises(marginal_evidence.MarginalEvidenceInputError) as ctx:
             marginal_evidence.analyze(data, current_verifier_ids=["v1"])
         self.assertIn("no candidate verifiers remain", str(ctx.exception))
+
+    def test_collections_reject_scalar_and_mapping_ids(self):
+        for malformed in (17, {"v1": True}, "v1", b"v1"):
+            for field in ("current_verifier_ids", "candidate_verifier_ids"):
+                with self.subTest(value=repr(malformed), field=field):
+                    options = {
+                        "current_verifier_ids": ["v1"],
+                        "candidate_verifier_ids": ["v3"],
+                    }
+                    options[field] = malformed
+                    with self.assertRaises(marginal_evidence.MarginalEvidenceInputError):
+                        marginal_evidence.analyze(make_matrix(), **options)
+
+    def test_finite_iterators_work_and_unbounded_iterators_fail_fast(self):
+        result = marginal_evidence.analyze(
+            make_matrix(),
+            current_verifier_ids=(v for v in ("v1", "v2")),
+            candidate_verifier_ids=(v for v in ("v3",)),
+        )
+        self.assertEqual(result["analysis"]["current_verifier_ids"], ["v1", "v2"])
+        self.assertEqual(result["analysis"]["candidate_verifier_ids"], ["v3"])
+        with self.assertRaises(marginal_evidence.MarginalEvidenceInputError) as ctx:
+            marginal_evidence.analyze(
+                make_matrix(),
+                current_verifier_ids=(f"v{i}" for i in itertools.count()),
+            )
+        self.assertIn("exceeds the", str(ctx.exception))
 
     def test_duplicate_current_ids_are_refused(self):
         with self.assertRaises(marginal_evidence.MarginalEvidenceInputError):
