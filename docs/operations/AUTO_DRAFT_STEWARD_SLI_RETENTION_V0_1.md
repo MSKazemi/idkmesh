@@ -1,6 +1,6 @@
 # Auto Draft PR steward: operations and retention decision
 
-**Issue:** #752. **Status:** owner-facing decision record template, not GA.
+**Issue:** #752. **Status:** operator-threshold SLI evaluator and owner decision template; not GA.
 
 The Auto Draft steward opens limited Draft PR shells; it never verifies code,
 marks a PR ready, or merges. Existing routine Actions artifacts are retained
@@ -36,3 +36,20 @@ outputs and observed failure modes. This file does not claim that any drill ran.
 GA requires observed branch-protection behavior, reviewed archive choice,
 portability drill and named SLI monitoring ownership; no simulated human
 approval, branch-rule bypass or assumed independent review can replace them.
+
+
+## Implemented offline SLI evaluation
+
+`idkmesh.steward_history.evaluate_steward_history_sli(history, ...)`
+accepts a strictly validated steward history and explicit owner-defined
+thresholds for report volume, blocked run fraction, head-moved fraction, and
+consecutive blocks. It binds its result to the history input-set SHA-256.
+The status can be `within_observed_thresholds`, `requires_attention`,
+or `insufficient_evidence`. Missing planned candidates leaves the
+head-moved rate unknown rather than falsely healthy.
+
+This diagnostic does **not** observe missing scheduled executions, failed
+artifact uploads, branch-protection behavior, retention ownership, or an
+executed disaster recovery drill. These stay explicit missing GA requirements.
+Class-based regression tests cover passing, failing, insufficient evidence,
+invalid thresholds, and tampered history. No integration authority is granted.

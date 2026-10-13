@@ -621,5 +621,73 @@ class StewardHistoryCliTests(unittest.TestCase):
         self.assertIn("--pretty requires --json", stderr.getvalue())
 
 
+class StewardHistorySliTests(unittest.TestCase):
+    def history(self):
+        return steward_history.build_history([
+            (Path("one.json"), report(
+                generated_at="2026-10-13T10:00:00Z", run_id="one",
+                planned=[candidate("feat/one", "1" * 40)],
+            )),
+            (Path("two.json"), report(
+                generated_at="2026-10-13T11:00:00Z", run_id="two",
+                status="blocked", blocked_reason="github_api_budget_low",
+            )),
+        ])
+
+    def assess(self, hist, **overrides):
+        kwargs = {
+            "minimum_reports": 2,
+            "maximum_blocked_fraction": 0.75,
+            "maximum_head_moved_fraction": 0.5,
+            "maximum_consecutive_blocks": 1,
+        }
+        kwargs.update(overrides)
+        return steward_history.evaluate_steward_history_sli(hist, **kwargs)
+
+    def test_measured_window_does_not_grant_ga_authority(self):
+        result = self.assess(self.history())
+        self.assertEqual(result["status"], "within_observed_thresholds")
+        self.assertEqual(result["blocked_fraction"], 0.5)
+        self.assertEqual(result["head_moved_fraction"], 0.0)
+        self.assertFalse(result["authority"]["ga_decision"])
+        self.assertIn("failed_artifact_uploads", result["unmeasured"])
+
+    def test_violation_and_small_sample_are_explicit(self):
+        hist = self.history()
+        self.assertEqual(
+            self.assess(hist, maximum_blocked_fraction=0.25)["violations"],
+            ["blocked_fraction"],
+        )
+        self.assertEqual(
+            self.assess(hist, minimum_reports=3)["status"],
+            "insufficient_evidence",
+        )
+
+    def test_no_planned_work_never_passes(self):
+        hist = steward_history.build_history([(
+            Path("one.json"), report(generated_at="2026-10-13T10:00:00Z", run_id="one"),
+        )])
+        result = self.assess(hist, minimum_reports=1)
+        self.assertIsNone(result["head_moved_fraction"])
+        self.assertEqual(result["status"], "insufficient_evidence")
+
+    def test_policy_input_and_tampered_history_fail_closed(self):
+        hist = self.history()
+        for fields in (
+            {"minimum_reports": True},
+            {"maximum_blocked_fraction": float("nan")},
+            {"maximum_head_moved_fraction": 1.2},
+            {"maximum_consecutive_blocks": -1},
+        ):
+            with self.subTest(fields=fields):
+                with self.assertRaises(steward_history.StewardHistoryInputError):
+                    self.assess(hist, **fields)
+        from copy import deepcopy
+        invalid = deepcopy(hist)
+        invalid["status_counts"]["blocked"] = 0
+        with self.assertRaises(steward_history.StewardHistoryInputError):
+            self.assess(invalid)
+
+
 if __name__ == "__main__":
     unittest.main()

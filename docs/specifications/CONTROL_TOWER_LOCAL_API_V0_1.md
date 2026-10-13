@@ -203,8 +203,14 @@ Unsupported request media types return HTTP 415 with
 `Content-Length` must be RFC 9110 `1*DIGIT` (ASCII digits), padded at most by
 the field's optional whitespace. Any other spelling -- `+2`, `-1`, decimals,
 non-ASCII digits -- is `400 invalid_content_length`; a missing header is
-`411 length_required`, and any `Transfer-Encoding` is rejected with
-`400 unsupported_transfer_encoding` before the body is read.
+`411 length_required`. **More than one Content-Length is rejected**, even
+when every value is identical: the request must have an unambiguous single
+framing rule. Any `Transfer-Encoding` header, including an empty value, is
+rejected with `400 unsupported_transfer_encoding` before reading the body.
+The inspection endpoint also requires **exactly one Content-Type** header;
+missing, unsupported, or duplicated media-type fields return
+`415 unsupported_media_type`. This prevents parser disagreement with
+intermediaries; this local profile does not claim proxy-smuggling certification.
 
 API responses include:
 

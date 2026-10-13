@@ -6,6 +6,10 @@ Core prototypes live in `experiments/`, simulations in `randomness_lab/` and `si
 
 For source-derived module ownership and user-facing command/HTTP contracts, see `docs/reference/MODULE_MAP.md` and `docs/reference/CLI_HTTP_QUICK_REFERENCE.md`; for execution, API and authority boundaries see `docs/architecture/AS_BUILT_IMPLEMENTATION_MAP.md`. Treat this map as a dated navigation aid, not a replacement for live code, `docs/CAPABILITY_MATRIX.md`, or tests; update it when adding/removing an `idkmesh/*.py` module.
 
+For additional source navigation, see `docs/reference/RESEARCH_MODULE_MAP.md` (experiments, simulations, randomness lab, interop) and `docs/reference/OPERATIONS_MODULE_MAP.md` (tools and scripts). `tests/test_nonpackage_module_maps.py` guards direct Python-file inventory completeness. A module-map entry never authorizes running scripts with external effects.
+
+For automation changes, also consult `docs/reference/GITHUB_ACTIONS_CODE_MAP.md` (all workflow triggers, declared write scopes, and source entry points) and its `tests/test_github_workflow_docs.py` guard. Even a workflow using only GitHub read permissions may contact external providers or execute controlled code; check conditions, exact checkout ref, secrets and authority policy before invoking it.
+
 ## Build, Test, and Development Commands
 
 The supported local entry points now live in the repository and delegate to the same `scripts/testkit.py` tiers used by the documented development workflow:
