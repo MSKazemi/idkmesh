@@ -28,7 +28,16 @@ methods, and every top-level Python module in `idkmesh/`.
 | `idkmesh gate-marginal` | measure marginal evidence contribution of candidate verifiers | diagnostic only |
 | `idkmesh gate-marginal-benchmark` | compare the marginal-evidence selector with preregistered baselines | benchmark/evidence surface, not routing authority |
 | `idkmesh gate-marginal-synthesis` | synthesize multiple benchmark cohorts descriptively | no cross-cohort winner or integration authority |
-| `idkmesh init` | deterministic GitHub-first bootstrap planning/rendering of config and pinned workflow wrappers | `--github --dry-run` only; no repository or GitHub mutation; rendered wrappers call a runner that no released IDKMesh ref provides yet |
+| `idkmesh init` | deterministic GitHub-first bootstrap planning/rendering of config and pinned workflow wrappers | `--github --dry-run` only; no repository or GitHub mutation; rendered wrappers call `idkmesh github-workflow`, whose `dispatch` and `verify` phases still fail closed |
+| `idkmesh github-workflow` | runner the generated GitHub workflow wrappers call, driven by `IDKMESH_*` environment variables | `preview` and `status` are read-only; `dispatch` and `verify` fail closed; no merge, no provider secret, no issue comment |
+| `idkmesh github-workflow preview` | derive a deterministic WorkUnit preview and digest for one issue from project policy | read-only; needs `metadata.github_issue_preview.allowed_paths`; no dispatch |
+| `idkmesh github-workflow status` | project one run's latest durable-ledger record into the bounded status body and job summary | read-only transport; publishes no issue comment |
+| `idkmesh github-workflow dispatch` | refuse with the stable `dispatch_unavailable` code | fails closed; reads no environment or secret |
+| `idkmesh github-workflow verify` | refuse with the stable `verify_unavailable` code | fails closed; reads no environment, candidate, or secret |
+| `idkmesh work` | local, offline view of the issue-to-WorkUnit path | read-only; the only subcommand is `preview` |
+| `idkmesh work preview` | derive the WorkUnit, digest and warnings for one issue snapshot file (`--issue-json`) from the trusted `.idkmesh/project.json` policy, optionally narrowed by an IDKMesh Issue Form in the body | offline; no network, credential, environment variable, file write or dispatch; the form can only narrow policy scope or raise risk; refusals print `error: <code>: <message>` and exit 2 |
+| `idkmesh pages-site` | validate C14-D public-safe projections, render the C14-E static Pages file map, and write exactly those files to a local directory | local files only; no publication, workflow, network or GitHub call; refuses unsafe paths, symlinks, and unrecognised non-empty directories unless `--force` |
+| `idkmesh release-provenance` | validate C14-D public-safe projections and print the C14-F release metadata/provenance record (or draft release notes with `--notes`) binding a proposed tag, target commit and artifact digests to that evidence | stdout only; creates no tag, GitHub Release or attestation and makes no network or GitHub call; commit and digests are caller-supplied and recorded as unverified; no timestamps |
 | `idkmesh connections` | validate, normalize, persist, and inspect connector metadata | no live dispatch, no raw secret persistence |
 | `idkmesh connections validate` | validate a versioned connector profile | read-only |
 | `idkmesh connections list` | list normalized connector metadata from a profile | read-only |
@@ -115,9 +124,10 @@ requiring an HTTP client dependency. Current public methods are:
 - `ControlTowerClient.list_connections()`
 - `ControlTowerClient.get_project()`
 - `ControlTowerClient.list_events()`
+- `ControlTowerClient.stream_events()` — one bounded, strictly parsed read of the `events/stream` SSE endpoint (mandatory idle timeout, digest-checked events, caller-driven resume with `Last-Event-ID`)
 
 The client requires an explicit timeout, refuses non-loopback destinations, exposes
-request IDs, validates content digests, and performs no implicit retry.
+request IDs, validates content digests, and performs no implicit retry or reconnect.
 
 ## Implemented library/runtime capability groups
 
@@ -157,7 +167,7 @@ The recovery planner reconciles unconfirmed provider submissions rather than res
 blindly; none of these ledger layers grants dispatch, verification, acceptance, application
 branch write, integration, or merge authority. The package also includes explicit dispatch
 authorization/bridge logic, exact candidate observation, evidence/status publication
-helpers, governance-policy and read-only governance-preflight checks, public-evidence projection, and deterministic
+helpers, governance-policy and read-only governance-preflight checks, public-evidence projection, a static Pages site generator with a local-directory writer (`idkmesh pages-site`; no publication), a release metadata/provenance record (`idkmesh release-provenance`; no tag, release, or attestation), and deterministic
 GitHub-first bootstrap planning/rendering.
 
 ### Enterprise control primitives
@@ -239,12 +249,15 @@ name documents implementation presence, not stability as a public Python API.
 - `idkmesh/github_ledger_recovery_plan.py`
 - `idkmesh/github_ledger_serialization.py`
 - `idkmesh/github_pages_site.py`
+- `idkmesh/github_pages_writer.py`
 - `idkmesh/github_public_evidence.py`
+- `idkmesh/github_release_provenance.py`
 - `idkmesh/github_rest_source.py`
 - `idkmesh/github_routing_projection.py`
 - `idkmesh/github_status_comment.py`
 - `idkmesh/github_status_update.py`
 - `idkmesh/github_webhook_ingress.py`
+- `idkmesh/github_workflow_runner.py`
 - `idkmesh/github_workunit_intake.py`
 - `idkmesh/human_decision_service.py`
 - `idkmesh/jules_actions.py`
@@ -284,6 +297,7 @@ name documents implementation presence, not stability as a public Python API.
 - `idkmesh/task_claims.py`
 - `idkmesh/tenant_scope.py`
 - `idkmesh/verification_handoff.py`
+- `idkmesh/work_preview.py`
 - `idkmesh/work_unit_binding.py`
 
 ## Relationship to architecture and claim truth

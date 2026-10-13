@@ -64,7 +64,8 @@ explicit rather than inferred from whichever transport happens to expose them:
 - connector profile validation/persistence:
   `idkmesh/connector_profiles.py` + `idkmesh/connector_store.py`;
 - WorkUnit preview:
-  `idkmesh/github_issue_preview.py`;
+  `idkmesh/github_issue_preview.py` (optionally composing the untrusted
+  `idkmesh/github_workunit_intake.py` Issue Form parse, restrict-only);
 - route resolution:
   `idkmesh/connector_routing.py`;
 - candidate identity/normalization boundary:

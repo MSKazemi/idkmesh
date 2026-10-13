@@ -46,16 +46,21 @@ Event data reaches the runner through `IDKMESH_*` environment variables only.
 No expression is ever interpolated into a shell script, and no workflow reads
 issue titles, issue bodies, comment bodies, or head refs.
 
-## The runner is a contract, not an implementation
+## The runner and its environment contract
 
-No released IDKMesh ref provides `idkmesh github-workflow` yet. Step 4 above
-exists so that a wrapper pinned to such a ref fails loudly with
+The runner is `idkmesh github-workflow {preview,dispatch,verify,status}`,
+implemented in `idkmesh/github_workflow_runner.py` and specified in
+[GitHub Workflow Runner](GITHUB_WORKFLOW_RUNNER_V0_1.md). `preview` and `status`
+are read-only; `dispatch` and `verify` fail closed with `dispatch_unavailable`
+and `verify_unavailable`. Step 4 above still exists so that a wrapper pinned to
+an older ref that predates the runner fails loudly with
 `The pinned IDKMesh ref does not provide the github-workflow runner.` instead
 of succeeding vacuously. Because apply mode is still disabled, nothing renders
 these files into a repository today; they appear only in dry-run output.
 
-The environment names the wrappers pass are the interface the runner slice must
-implement: `IDKMESH_PROJECT_ROOT`, `IDKMESH_REPOSITORY`, `IDKMESH_BASE_SHA`,
+The environment names the wrappers pass are the interface the runner
+implements (`tests/test_github_workflow_runner.py` builds each phase's
+environment from the names the rendered wrapper declares): `IDKMESH_PROJECT_ROOT`, `IDKMESH_REPOSITORY`, `IDKMESH_BASE_SHA`,
 `IDKMESH_RUN_ID`, `IDKMESH_GITHUB_TOKEN` (preview, dispatch, status),
 `IDKMESH_ISSUE_NUMBER`, `IDKMESH_EVENT_PATH` (preview), `IDKMESH_WORK_UNIT_DIGEST`
 and `IDKMESH_CONNECTOR_ID` (dispatch), `IDKMESH_WORK_UNIT_DIGEST`,
@@ -131,8 +136,8 @@ workflow.
 
 This slice does not:
 
-- implement the `github-workflow` runner or any preview, dispatch, verification,
-  or status behavior;
+- implement the `github-workflow` runner (see the runner specification) or any
+  preview, dispatch, verification, or status behavior;
 - write files, create directories, or apply anything;
 - create the `idkmesh-dispatch` environment, labels, secrets, or branch
   protection (C8-E owner actions);
@@ -143,9 +148,9 @@ This slice does not:
 
 ## Follow-on
 
-- **Runner:** implement `idkmesh github-workflow {preview,dispatch,verify,status}`
-  against the environment contract above, on top of the existing issue-preview,
-  explicit-dispatch, candidate-reader, and status-comment modules.
+- **Runner:** done for `preview` and `status`; `dispatch` and `verify` remain
+  fail-closed until a stateless authority design exists (see the runner
+  specification).
 - **C8-E:** owner-action checklist (environment, label, secrets, protection).
 - **C8-F:** safe apply/re-run using the digests rendered here.
 - **C8-G:** fresh-repository bootstrap-to-preview fixture.

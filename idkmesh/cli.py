@@ -301,6 +301,314 @@ def build_parser() -> argparse.ArgumentParser:
         help="emit deterministic machine-readable dry-run JSON",
     )
 
+    github_workflow = sub.add_parser(
+        "github-workflow",
+        help="run one phase of a generated GitHub workflow wrapper",
+        description=(
+            "Runner behind the idkmesh-preview/-dispatch/-verify/-status "
+            "workflows that `idkmesh init --github` renders. Event data "
+            "arrives only through IDKMESH_PROJECT_ROOT, IDKMESH_REPOSITORY, "
+            "IDKMESH_BASE_SHA, IDKMESH_RUN_ID and the per-phase IDKMESH_* "
+            "variables documented in the workflow-wrapper specification. "
+            "preview and status are read-only and never dispatch, mutate "
+            "GitHub, read provider secrets, or merge. dispatch and verify "
+            "fail closed with dispatch_unavailable / verify_unavailable: "
+            "no stateless-runner primitive backs them yet. A refusal prints "
+            "'error: <code>: <message>' on stderr and exits 2."
+        ),
+        formatter_class=_ExamplesHelpFormatter,
+        epilog=(
+            "Examples:\n"
+            "  idkmesh github-workflow preview --issue-json issue.json --json\n"
+            "  idkmesh github-workflow status --ledger-records ledger.json --json"
+        ),
+    )
+    github_workflow_sub = github_workflow.add_subparsers(
+        dest="github_workflow_command",
+        required=True,
+    )
+    gw_preview = github_workflow_sub.add_parser(
+        "preview",
+        help="derive a WorkUnit preview for one issue (read-only)",
+        description=(
+            "Read IDKMESH_ISSUE_NUMBER from GitHub (or --issue-json), read "
+            ".idkmesh/project.json from IDKMESH_PROJECT_ROOT, and print a "
+            "deterministic WorkUnit preview and digest. Requires "
+            "metadata.github_issue_preview.allowed_paths in the project "
+            "manifest; .github/** and .idkmesh/** are always forbidden. "
+            "Appends a summary with no issue text to GITHUB_STEP_SUMMARY when "
+            "set. Performs no dispatch."
+        ),
+        formatter_class=_ExamplesHelpFormatter,
+        epilog=(
+            "Examples:\n"
+            "  idkmesh github-workflow preview --issue-json issue.json\n"
+            "  idkmesh github-workflow preview --issue-json issue.json --json"
+        ),
+    )
+    gw_preview.add_argument(
+        "--issue-json",
+        metavar="PATH",
+        help="offline GitHub issue REST object to use instead of calling GitHub",
+    )
+    gw_preview.add_argument(
+        "--json",
+        action="store_true",
+        dest="json_output",
+        help="emit the full machine-readable result",
+    )
+    gw_status = github_workflow_sub.add_parser(
+        "status",
+        help="project one run's latest ledger record into a status body (read-only)",
+        description=(
+            "Read the durable ledger records of IDKMESH_RUN_REFERENCE (from "
+            "--ledger-records, or the dedicated ledger branch through a "
+            "transport that refuses every mutation), verify the append-only "
+            "chain, and print the bounded status body. Appends it to "
+            "GITHUB_STEP_SUMMARY when set. Publishes no issue comment."
+        ),
+        formatter_class=_ExamplesHelpFormatter,
+        epilog=(
+            "Examples:\n"
+            "  idkmesh github-workflow status --ledger-records ledger.json\n"
+            "  idkmesh github-workflow status --ledger-records ledger.json --json"
+        ),
+    )
+    gw_status.add_argument(
+        "--ledger-records",
+        metavar="PATH",
+        help="offline JSON array of ledger records instead of reading GitHub",
+    )
+    gw_status.add_argument(
+        "--json",
+        action="store_true",
+        dest="json_output",
+        help="emit the full machine-readable result",
+    )
+    github_workflow_sub.add_parser(
+        "dispatch",
+        help="fails closed: dispatch_unavailable",
+        description=(
+            "Explicit candidate dispatch is not available in a stateless "
+            "runner: it needs retained delivery state, actor authorization "
+            "and a provider connector. Always exits 2 with "
+            "dispatch_unavailable and reads no environment or secret."
+        ),
+    )
+    github_workflow_sub.add_parser(
+        "verify",
+        help="fails closed: verify_unavailable",
+        description=(
+            "Independent candidate verification is not available in a "
+            "stateless runner. Always exits 2 with verify_unavailable and "
+            "reads no environment, candidate, or secret."
+        ),
+    )
+    work = sub.add_parser(
+        "work",
+        help="preview the bounded work an issue would become (read-only)",
+        description=(
+            "Local, offline view of the product path from a GitHub issue to a "
+            "canonical WorkUnit. 'work preview' dispatches nothing."
+        ),
+        formatter_class=_ExamplesHelpFormatter,
+        epilog=(
+            "Examples:\n"
+            "  idkmesh work preview --issue-json issue.json "
+            "--repository MSKazemi/idkmesh --source-revision "
+            "0123456789abcdef0123456789abcdef01234567\n"
+            "  idkmesh work preview --issue-json issue.json "
+            "--repository MSKazemi/idkmesh --source-revision "
+            "0123456789abcdef0123456789abcdef01234567 --json"
+        ),
+    )
+    work_sub = work.add_subparsers(dest="work_command", required=True)
+    work_preview = work_sub.add_parser(
+        "preview",
+        help="derive a WorkUnit preview from an issue snapshot file",
+        description=(
+            "Read one GitHub issue REST object (--issue-json, offline) and the "
+            "trusted .idkmesh/project.json under --project-root, and print the "
+            "WorkUnit the issue would become plus its digest. Authority-bearing "
+            "fields (paths, risk ceiling, network, secrets, budget, validators) "
+            "come from project policy, never from the issue; "
+            "metadata.github_issue_preview.allowed_paths must be configured and "
+            ".github/** and .idkmesh/** are always forbidden. An IDKMesh WorkUnit "
+            "request Issue Form in the body can only narrow that scope or raise "
+            "risk; any other body keeps the generic preview (warning "
+            "intake_fallback). Uses no network, credential or environment "
+            "variable, writes no file, and performs no dispatch. A refusal "
+            "prints 'error: <code>: <message>' on stderr and exits 2."
+        ),
+        formatter_class=_ExamplesHelpFormatter,
+        epilog=(
+            "Examples:\n"
+            "  idkmesh work preview --issue-json issue.json "
+            "--repository MSKazemi/idkmesh --source-revision "
+            "0123456789abcdef0123456789abcdef01234567\n"
+            "  idkmesh work preview --issue-json issue.json "
+            "--repository MSKazemi/idkmesh --source-revision "
+            "0123456789abcdef0123456789abcdef01234567 --json\n"
+            "  idkmesh work preview --issue-json issue.json "
+            "--repository MSKazemi/idkmesh --source-revision "
+            "0123456789abcdef0123456789abcdef01234567 --no-intake-form"
+        ),
+    )
+    work_preview.add_argument(
+        "--issue-json",
+        required=True,
+        metavar="PATH",
+        help="offline GitHub issue REST object (JSON file, at most 1 MiB)",
+    )
+    work_preview.add_argument(
+        "--repository",
+        required=True,
+        metavar="OWNER/NAME",
+        help="repository the issue belongs to; must match the issue URL",
+    )
+    work_preview.add_argument(
+        "--source-revision",
+        required=True,
+        metavar="SHA",
+        help="exact 40- or 64-hex Git object id the WorkUnit is bound to",
+    )
+    work_preview.add_argument(
+        "--project-root",
+        default=".",
+        metavar="DIR",
+        help="directory holding .idkmesh/project.json (default: .)",
+    )
+    work_preview.add_argument(
+        "--issue",
+        type=int,
+        metavar="N",
+        help="expected issue number; default is the number in the snapshot",
+    )
+    work_preview.add_argument(
+        "--no-intake-form",
+        action="store_true",
+        help="skip the Issue Form composition and build the generic preview",
+    )
+    work_preview.add_argument(
+        "--json",
+        action="store_true",
+        dest="json_output",
+        help="emit the full machine-readable result as one JSON line",
+    )
+
+    pages_site = sub.add_parser(
+        "pages-site",
+        help="write the read-only GitHub Pages site for public-safe projections",
+        description=(
+            "Validate C14-D public-safe evidence projections, render the "
+            "C14-E static Pages file map, and write exactly those files to a "
+            "local directory. Nothing is published: there is no network or "
+            "GitHub call, and the site grants no dispatch, verification, "
+            "decision, or merge authority. The directory is written "
+            "all-or-nothing and must not exist, be empty, or be a site this "
+            "command produced; --force replaces any other directory. The "
+            "caller must establish that the repository and data are public."
+        ),
+        formatter_class=_ExamplesHelpFormatter,
+        epilog=(
+            "Examples:\n"
+            "  idkmesh pages-site --repository owner/name"
+            " --projection run-1.json --out site\n"
+            "  idkmesh pages-site --repository owner/name"
+            " --projection projections/*.json --out site --force --json"
+        ),
+    )
+    pages_site.add_argument(
+        "--repository",
+        required=True,
+        metavar="OWNER/NAME",
+        help="the public repository every projection must be for",
+    )
+    pages_site.add_argument(
+        "--projection",
+        required=True,
+        nargs="+",
+        metavar="PATH",
+        help="one or more C14-D public evidence projection JSON files",
+    )
+    pages_site.add_argument(
+        "--out",
+        required=True,
+        metavar="DIR",
+        help="local output directory (its parent directory must exist)",
+    )
+    pages_site.add_argument(
+        "--force",
+        action="store_true",
+        help="replace an existing non-empty directory not produced by this command",
+    )
+    pages_site.add_argument(
+        "--json",
+        action="store_true",
+        dest="json_output",
+        help="emit deterministic machine-readable JSON",
+    )
+
+    release_provenance = sub.add_parser(
+        "release-provenance",
+        help="print release metadata/provenance for public-safe projections",
+        description=(
+            "Bind a proposed release (tag, target commit, artifact SHA-256 "
+            "digests) to the C14-D public-safe run evidence it references and "
+            "print the deterministic C14-F record, or draft release notes "
+            "with --notes. Nothing is created or published: no tag, GitHub "
+            "Release, or attestation, and no network or GitHub call. The "
+            "target commit and artifact digests are caller-supplied and are "
+            "recorded as unverified. The record carries no timestamps and "
+            "grants no dispatch, verification, decision, merge, tag, release, "
+            "or attestation authority."
+        ),
+        formatter_class=_ExamplesHelpFormatter,
+        epilog=(
+            "Examples:\n"
+            "  idkmesh release-provenance --repository owner/name"
+            " --tag v0.1.0 --target-commit <40-hex-commit>"
+            " --projection run-1.json\n"
+            "  idkmesh release-provenance --repository owner/name"
+            " --tag v0.1.0 --target-commit <40-hex-commit>"
+            " --artifact idkmesh-0.1.0.tar.gz=sha256:<64-hex> --notes"
+        ),
+    )
+    release_provenance.add_argument(
+        "--repository",
+        required=True,
+        metavar="OWNER/NAME",
+        help="the public repository every projection must be for",
+    )
+    release_provenance.add_argument(
+        "--tag", required=True, metavar="TAG", help="proposed release tag name"
+    )
+    release_provenance.add_argument(
+        "--target-commit",
+        required=True,
+        metavar="SHA",
+        help="exact 40- or 64-hex commit the release would point at (unverified)",
+    )
+    release_provenance.add_argument(
+        "--artifact",
+        action="append",
+        default=[],
+        metavar="NAME=sha256:HEX",
+        help="a distributable artifact and its SHA-256 digest (repeatable; unverified)",
+    )
+    release_provenance.add_argument(
+        "--projection",
+        nargs="*",
+        default=[],
+        metavar="PATH",
+        help="C14-D public evidence projection JSON files the release references",
+    )
+    release_provenance.add_argument(
+        "--notes",
+        action="store_true",
+        help="print draft release-note Markdown instead of the JSON record",
+    )
+
     connections = sub.add_parser(
         "connections",
         help="validate, list, import, store, or inspect connector configuration",
@@ -2121,6 +2429,182 @@ def _run_github_init(args: argparse.Namespace) -> int:
     return 0
 
 
+def _run_github_workflow(args: argparse.Namespace) -> int:
+    """Run one wrapper phase; every refusal is a stable ``error: <code>``."""
+
+    from idkmesh.github_workflow_runner import (
+        GitHubWorkflowError,
+        run_preview,
+        run_status,
+        run_unavailable,
+    )
+
+    phase = args.github_workflow_command
+    try:
+        if phase == "preview":
+            result = run_preview(
+                os.environ,
+                issue_json=Path(args.issue_json) if args.issue_json else None,
+            )
+        elif phase == "status":
+            result = run_status(
+                os.environ,
+                ledger_records=(
+                    Path(args.ledger_records) if args.ledger_records else None
+                ),
+            )
+        else:
+            result = run_unavailable(phase)
+    except GitHubWorkflowError as exc:
+        return _fail(f"{exc.code}: {exc.message}")
+
+    if args.json_output:
+        # Compact single-line JSON: untrusted issue text is escaped inside the
+        # string values, so no output line can start a workflow command.
+        print(json.dumps(result, sort_keys=True, separators=(",", ":")))
+        return 0
+
+    print(f"IDKMesh GitHub workflow {phase}: ok")
+    print(f"repository: {result['repository']}")
+    print(f"issue: #{result['issue_number']}")
+    if phase == "preview":
+        print(f"work unit: {result['preview']['work_unit']['id']}")
+        print(f"work unit digest: {result['preview']['work_unit_digest']}")
+    else:
+        print(f"run: {result['run_reference']}")
+        print(f"state: {result['state']}")
+        print(f"status digest: {result['status_digest']}")
+    print("dispatch performed: no")
+    print("GitHub mutations: no")
+    print("secret values accessed: no")
+    return 0
+
+
+def _run_work(args: argparse.Namespace) -> int:
+    """C7-C: offline WorkUnit preview; every refusal is a stable ``error: <code>``."""
+
+    from idkmesh.work_preview import (
+        WorkPreviewError,
+        render_work_preview_text,
+        run_work_preview,
+    )
+
+    if args.issue is not None and args.issue < 1:
+        return _fail("invalid_argument: --issue must be an integer >= 1")
+    try:
+        result = run_work_preview(
+            issue_json=Path(args.issue_json),
+            project_root=Path(args.project_root),
+            repository=args.repository,
+            source_revision=args.source_revision,
+            issue_number=args.issue,
+            use_intake_form=not args.no_intake_form,
+        )
+    except WorkPreviewError as exc:
+        return _fail(f"{exc.code}: {exc.message}")
+
+    if args.json_output:
+        # Compact single-line JSON: untrusted issue text stays escaped inside
+        # string values.
+        print(json.dumps(result, sort_keys=True, separators=(",", ":")))
+    else:
+        print(render_work_preview_text(result))
+    return 0
+
+
+def _run_pages_site(args: argparse.Namespace) -> int:
+    """Validate projections, render the Pages file map, write it locally."""
+
+    from idkmesh.github_pages_site import MAX_RUNS, render_github_pages_site
+    from idkmesh.github_pages_writer import write_github_pages_site
+
+    if len(args.projection) > MAX_RUNS:
+        return _fail(f"at most {MAX_RUNS} projections may be published")
+    try:
+        projections = [_strict_json_file(item) for item in args.projection]
+        files = render_github_pages_site(projections, repository=args.repository)
+        result = write_github_pages_site(files, args.out, force=args.force)
+    except ValueError as exc:
+        # Input, projection-validation, renderer and writer errors are all
+        # ValueError subclasses; each message is user-fixable.
+        return _fail(str(exc))
+
+    if args.json_output:
+        print(
+            json.dumps(
+                {
+                    "kind": "idkmesh-github-pages-site-write",
+                    "schema_version": "0.1",
+                    "repository": args.repository,
+                    "out_dir": result.out_dir,
+                    "replaced_existing": result.replaced_existing,
+                    "total_bytes": result.total_bytes,
+                    "files": [
+                        {"path": path, "size_bytes": size, "sha256": digest}
+                        for path, size, digest in result.files
+                    ],
+                    "published": False,
+                    "github_mutation_performed": False,
+                    "network_access": False,
+                },
+                sort_keys=True,
+                separators=(",", ":"),
+            )
+        )
+        return 0
+
+    print(f"GitHub Pages site written to {result.out_dir}")
+    print(f"repository: {args.repository}")
+    print(f"files: {len(result.files)} ({result.total_bytes} bytes)")
+    for path, size, digest in result.files:
+        print(f"- {path} [sha256:{digest}; {size} bytes]")
+    print("published: no (local directory only)")
+    print("GitHub mutations: no")
+    return 0
+
+
+def _run_release_provenance(args: argparse.Namespace) -> int:
+    """Build and print the C14-F release metadata record; nothing is created."""
+
+    from idkmesh.github_pages_site import MAX_RUNS
+    from idkmesh.github_release_provenance import (
+        MAX_ARTIFACTS,
+        GitHubReleaseArtifact,
+        build_github_release_provenance,
+        render_github_release_notes,
+        render_github_release_provenance_json,
+    )
+
+    if len(args.projection) > MAX_RUNS:
+        return _fail(f"at most {MAX_RUNS} projections may be referenced")
+    if len(args.artifact) > MAX_ARTIFACTS:
+        return _fail(f"at most {MAX_ARTIFACTS} artifacts may be recorded")
+    try:
+        artifacts = []
+        for item in args.artifact:
+            name, separator, digest = item.partition("=")
+            if not separator:
+                return _fail("--artifact must be NAME=sha256:<64-hex>")
+            artifacts.append(GitHubReleaseArtifact(name, digest))
+        projections = [_strict_json_file(item) for item in args.projection]
+        record = build_github_release_provenance(
+            projections,
+            repository=args.repository,
+            tag=args.tag,
+            target_commit=args.target_commit,
+            artifacts=artifacts,
+        )
+        output = (
+            render_github_release_notes(record)
+            if args.notes
+            else render_github_release_provenance_json(record)
+        )
+    except ValueError as exc:
+        return _fail(str(exc))
+    sys.stdout.write(output)
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     if args.command == "control-tower":
@@ -2173,6 +2657,14 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "init":
         return _run_github_init(args)
+    if args.command == "github-workflow":
+        return _run_github_workflow(args)
+    if args.command == "work":
+        return _run_work(args)
+    if args.command == "pages-site":
+        return _run_pages_site(args)
+    if args.command == "release-provenance":
+        return _run_release_provenance(args)
     if args.command == "run":
         return _run_product_spine_control(args)
     if args.command == "work-unit":
