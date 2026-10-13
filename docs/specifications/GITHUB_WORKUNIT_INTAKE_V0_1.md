@@ -1,6 +1,6 @@
 # GitHub WorkUnit Intake v0.1
 
-**Status:** experimental field contract and Issue Form  
+**Status:** experimental field contract, parser, policy-bounded preview, and synthetic no-JSON fixture  
 **Issue:** #608, C13-A/C13-B/C13-C (parser and policy composition) and C13-D (fallback)  
 **Schema:** `schemas/github-workunit-intake-v0.1.schema.json`  
 **Issue Form:** `.github/ISSUE_TEMPLATE/06-idkmesh-workunit.yml`  
@@ -13,11 +13,10 @@ This contract freezes the normalized field vocabulary for the GitHub Issue
 Form that lets a newcomer request bounded work without writing raw WorkUnit
 JSON (C13-B, below).
 
-It deliberately stops before C13-C:
-
-- it does **not** parse an issue body;
-- it does **not** create a canonical WorkUnit;
-- it does **not** route or dispatch work.
+The C13-C/D parser and optional policy composition are implemented below. This
+**intake document is not itself a canonical WorkUnit**: the trusted project policy
+controls the WorkUnit preview, and no issue/form value grants dispatch, provider
+processing, verification, or integration authority.
 
 A valid intake document means only that untrusted requester input has a known
 shape.
@@ -275,9 +274,20 @@ generic preview). Offline coverage:
 `tests/test_github_issue_preview_intake.py` (REST payload through
 `GitHubRestIssueSource` with a fake transport, hostile and fallback bodies).
 
+## C13-H newcomer example
+
+The [no-JSON walkthrough](../help/GITHUB_WORKUNIT_FORM.md) uses committed
+[synthetic Issue Form fixtures](../../examples/github-workunit-intake/README.md)
+and `tests/test_github_workunit_no_json_example.py` to demonstrate the real
+`idkmesh work preview` path with a **parsed** form, an unchecked-
+acknowledgement **fallback**, and an entirely out-of-scope **refusal**. The
+fallback is only the generic *trusted-policy* preview; it does **not** apply
+untrusted form hints or authorize execution. All examples are offline and
+cannot claim an independent external installation.
+
 ## Next slices
 
-- **C13-E to C13-H:** label projection, Project field mapping and
+- **C13-E to C13-G:** label projection, Project field mapping and
   synchronization, and the newcomer no-JSON guide.
 
 Those slices must reuse this contract rather than creating a second intake

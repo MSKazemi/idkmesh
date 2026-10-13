@@ -7,12 +7,13 @@ canonical files designated by [`../../PROJECT_RULES.md`](https://github.com/MSKa
 (decisions, specifications, architecture, findings); this directory keeps the trail
 that produced them.
 
-182 records across 14 dates, newest first.
+183 records across 14 dates, newest first.
 
 ## Index
 
 ### 2026-10-13
 
+- [C13-H no-JSON GitHub WorkUnit onboarding](2026-10-13-c13h-no-json-workunit-onboarding.md)
 - [Search Console HTTP error confidentiality hardening](2026-10-13-search-console-http-error-hardening.md)
 
 ### 2026-10-11
