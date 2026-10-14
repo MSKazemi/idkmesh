@@ -271,15 +271,18 @@ class ProductSpineRunStoreTests(unittest.TestCase):
 
         canonical = base64.urlsafe_b64encode(
             json.dumps(
-                {"kind": "product-spine-run-list-cursor-v1", "after": "run/cli-1"},
+                {"kind": "product-spine-run-list-cursor-v1", "after": "run/cli-1x"},
                 sort_keys=True, separators=(",", ":"),
             ).encode("utf-8")
         ).decode("ascii")
+        # These are genuinely distinct from our serializer's encoding. A
+        # padding-free canonical value would make rstrip('=') a no-op.
+        self.assertTrue(canonical.endswith("="))
         candidates = [
             canonical + "!!!",
             canonical.rstrip("="),
             base64.urlsafe_b64encode(
-                b'{"after":"run/cli-1","kind":"product-spine-run-list-cursor-v1"}'
+                b'{"kind":"product-spine-run-list-cursor-v1","after":"run/cli-1x"}'
             ).decode("ascii"),
             base64.urlsafe_b64encode(
                 b'{"kind":"product-spine-run-list-cursor-v1","after":"run/cli-1","extra":1}'
