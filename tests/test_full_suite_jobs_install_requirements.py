@@ -173,8 +173,16 @@ def _required_distributions():
     These are exactly the imports the tree treats as optional, which is the same
     thing as saying: these are the tests that vanish, quietly, when a job runs
     without them.
+
+    The tree is parsed once per process (about a second of the unit tier's CPU
+    budget) and each caller receives its own copy.
     """
 
+    return set(_scan_required_distributions())
+
+
+@functools.lru_cache(maxsize=1)
+def _scan_required_distributions():
     required = set()
     for path in sorted((ROOT / "tests").rglob("*.py")):
         tree = ast.parse(path.read_text(encoding="utf-8"), str(path))
@@ -192,7 +200,7 @@ def _required_distributions():
             if module in sys.stdlib_module_names:
                 continue
             required.add(DISTRIBUTION_ALIASES.get(module, module).lower())
-    return required
+    return frozenset(required)
 
 
 
