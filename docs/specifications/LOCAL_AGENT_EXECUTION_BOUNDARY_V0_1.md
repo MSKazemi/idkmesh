@@ -37,6 +37,23 @@ CandidateReference -> ResultManifest -> independent verification
 The raw `run_bounded_process()` helper remains an execution-neutral primitive.
 It is not a valid implementation of `LocalSandboxExecutor`.
 
+**Operator note:** call `BubblewrapSandbox.build_argv` only for a
+deliberately created disposable workspace represented by a direct directory
+path. Symlink aliases (including ancestors) are refused even when they point
+to the intended directory. An executable supplied to the constructor is
+maintainer-controlled configuration, not an authorization token; never derive
+it from WorkUnit text.
+
+**Hardening of the provisional Linux bubblewrap adapter:** policy admission
+refuses non-Linux hosts even with a caller-supplied executable. Workspace paths
+must not traverse symlink components, so a workspace alias cannot silently
+bind a different host directory read-write at `/workspace`. Explicit sandbox
+environment values reject controls/newlines and values longer than 4,096
+characters; preset argv/env allowlist inputs must be collections, not scalar
+strings that Python would split into characters. These are configuration and
+admission protections, **not** proof that the backend satisfies CPU, RAM, PID,
+disk, or per-path write controls. Production #804 remains open.
+
 ## Required inputs
 
 ### WorkUnit v0.2

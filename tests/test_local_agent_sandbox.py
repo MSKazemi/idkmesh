@@ -177,14 +177,41 @@ class LocalAgentSandboxTests(unittest.TestCase):
                 env={"PATH": "/usr/bin", "HOME": "/home/user"},
             )
 
-    def test_invalid_environment_value_fails_before_command_build(self):
+    def test_symlinked_workspace_is_never_bound_read_write(self):
         sandbox = BubblewrapSandbox("/usr/bin/bwrap")
-        with self.assertRaisesRegex(Exception, "environment value"):
+        alias = Path(self.temp.name) / "alias"
+        alias.symlink_to(self.workspace, target_is_directory=True)
+        with self.assertRaisesRegex(Exception, "symlink"):
+            sandbox.build_argv(
+                _preset(), workspace=alias, env={"PATH": "/usr/bin"}
+            )
+
+        # Even an innocently named leaf below a symlinked parent is refused.
+        parent_link = Path(self.temp.name) / "parent-link"
+        parent_link.symlink_to(self.workspace.parent, target_is_directory=True)
+        with self.assertRaisesRegex(Exception, "symlink"):
             sandbox.build_argv(
                 _preset(),
-                workspace=self.workspace,
-                env={"SAFE": "bad\x00value"},
+                workspace=parent_link / self.workspace.name,
+                env={"PATH": "/usr/bin"},
             )
+
+    def test_non_linux_host_cannot_admit_sandbox_guarantees(self):
+        with patch("idkmesh.local_agent_sandbox.sys.platform", "win32"):
+            sandbox = BubblewrapSandbox("/usr/bin/bwrap")
+            with self.assertRaises(SandboxUnavailableError):
+                sandbox.admit(_preset())
+
+    def test_invalid_environment_value_fails_before_command_build(self):
+        sandbox = BubblewrapSandbox("/usr/bin/bwrap")
+        for value in ("bad\x00value", "bad\nvalue", "x" * 4097):
+            with self.subTest(value=value[:12]):
+                with self.assertRaisesRegex(Exception, "environment value"):
+                    sandbox.build_argv(
+                        _preset(env_allowlist=("SAFE",)),
+                        workspace=self.workspace,
+                        env={"PATH": "/usr/bin", "SAFE": value},
+                    )
 
     def _stub_bwrap(self, body):
         """Install a stand-in for bwrap so run() can be observed on any host."""
