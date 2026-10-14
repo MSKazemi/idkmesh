@@ -35,12 +35,13 @@ with posterior mean
 E[p | data] = (alpha_0 + s) / (alpha_0 + beta_0 + n)
 ```
 
-The current helper emits an explicitly approximate 95% interval using the
-closed-form Beta posterior variance and a normal approximation, clipped to
-`[0, 1]`. It is **not** a bootstrap interval and it is not claimed to have exact
-small-sample coverage. A future exact Beta-quantile implementation can replace
-the approximation if calibration evidence justifies the added dependency or
-implementation complexity.
+The authoritative interval is `credible_interval_95`: the exact equal-tail 95%
+credible interval of the Beta posterior, computed dependency-free by inverting
+the regularized incomplete beta function (`beta-binomial-v3`). The earlier
+normal-approximation interval is still emitted as `legacy_normal_interval` /
+`approx_interval_95` for comparison; it is clipped to `[0, 1]`, is **not** a
+bootstrap interval, and does not have exact small-sample coverage, so decisions
+should read the credible interval.
 
 ### Prior-only results are not observations
 
@@ -96,6 +97,22 @@ is useful but incomplete. A ratio of `1/1` and `100/100` should not carry the sa
 The uncertainty-aware representation makes that distinction explicit. Likewise,
 a zero-trial snapshot should remain visibly prior-only instead of being mistaken
 for an observed 50% rate.
+
+### Where it is wired
+
+`review_metrics()` in `scripts/repository_evolution_score.py` and
+`scripts/evolution_live_governor.py` attach a `review_coverage_evidence` and an
+`approval_coverage_evidence` block (the `beta_binomial_summary` of ready PRs with
+an independent review / approval) beside the existing point values. The point
+values (`review_coverage`, `approval_coverage`) are unchanged policy inputs, and
+with no ready PR they still default to `1.0` ("nothing is waiting"). That default
+is a convention, not an observation: the evidence block then reports
+`evidence_status: prior_only_no_observations`, `observed_sample_size: 0` and
+`empirical_rate: null`, so `0` ready PRs and `100/100` reviewed ready PRs are
+distinguishable. Drafts are excluded from the trials, and the two implementations
+are pinned to agree by `tests/test_review_coverage_evidence.py`. No decision rule
+reads the evidence blocks yet; they are advisory, as described under
+[Decision use](#decision-use).
 
 ## Important boundary
 

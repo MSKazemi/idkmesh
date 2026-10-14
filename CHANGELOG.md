@@ -25,6 +25,14 @@ and the release notes for that tag.
   authority exists. Replace #540 and #541 (no longer open) in the README and
   Contributor Quickstart with the currently open newcomer issues and the
   starter task catalog, and annotate the dated contributor pilot table.
+- Metric uncertainty (refs #86): the evolution scorer and the live governor now
+  attach Beta-Binomial `review_coverage_evidence` / `approval_coverage_evidence`
+  blocks beside the review and approval coverage point values, so a default `1.0`
+  with no ready PR is reported as `prior_only_no_observations` rather than read as
+  observed full coverage and `1/1` is distinguishable from `100/100`. Point values
+  and every policy output are unchanged. Corrected the stale normal-approximation
+  paragraph in `METRIC_UNCERTAINTY_V0_1.md`, which still described the interval
+  that `beta-binomial-v3` replaced with the exact equal-tail credible interval.
 
 - API-9 observability privacy hardening (refs #744): opt-in local access logs
   now use a fixed route vocabulary, replacing run/WorkUnit/project identifiers
