@@ -5,8 +5,10 @@ This module is the C6 provider-erasure boundary. It consumes:
 - one provider-neutral CandidateReference;
 - normalized worker/run metadata.
 
-It emits a schema-shaped ResultManifest dictionary. It does not execute
-verification, interpret validator outcomes, or grant merge/integration authority.
+It emits a schema-shaped ResultManifest dictionary and checks that the
+complete normalized document contains no detected raw credential before
+returning it. It does not execute verification, interpret validator outcomes,
+or grant merge/integration authority.
 """
 
 from __future__ import annotations
@@ -16,6 +18,8 @@ from datetime import datetime, timezone
 import math
 import re
 from typing import Any, Mapping
+
+from idkmesh.enterprise_secret_scan import SecretLeakError, assert_no_secrets
 
 from idkmesh.candidate_reference import (
     ArtifactBundleCandidateReference,
@@ -485,7 +489,7 @@ def build_result_manifest(
             )
         verification_request["notes"] = verification_notes
 
-    return {
+    manifest = {
         "schema_version": "0.1",
         "id": manifest_id,
         "work_unit_id": binding.work_unit_id,
@@ -526,3 +530,15 @@ def build_result_manifest(
             },
         },
     }
+
+    # The worker's self-report, log locators, environment metadata, verifier
+    # notes and candidate reference are all potential raw-secret carriers.
+    # Check the *complete* manifest, not just one worker-authored field.
+    try:
+        assert_no_secrets(manifest, context="result_manifest")
+    except SecretLeakError as exc:
+        reason = "raw_secret_detected" if exc.report.findings else "secret_scan_incomplete"
+        raise ResultManifestBuildError(
+            f"{reason}: ResultManifest admission refused"
+        ) from None
+    return manifest

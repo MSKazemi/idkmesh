@@ -127,9 +127,11 @@ invoke it **before** accepting a value:
   with stable codes and no matched credential text.
 
 These are **specific gates**, not a global admission/sanitization guarantee.
-In particular arbitrary WorkUnit JSON files before source binding, ResultManifest, verification/result artifacts, other
-ledger backends and ordinary logs are not covered by this integration. Those
-surfaces remain open follow-up work under E5. Secret *references*, including
+In particular arbitrary WorkUnit JSON files before source binding,
+verification/result artifacts, other ledger backends and ordinary logs are not
+fully covered by these gates. The canonical ResultManifest builder is covered
+by the next section, but callers bypassing the builder are not. These surfaces
+remain open follow-up work under E5. Secret *references*, including
 `env:NAME` and `secret:...`, remain permitted by the detector.
 
 The tests include rejected objective/nested-credential content, replay-time
@@ -156,6 +158,23 @@ stays conservative: weak literal passwords such as `password` or `changeme` in a
 ordinary URL are still flagged, and only explicit templates plus one exact
 documentation example are ignored. That is one corpus, not a guarantee, and the
 preview refusal tells the author how to proceed.
+
+## Canonical ResultManifest builder enforcement
+
+`build_result_manifest()` in `idkmesh/result_manifest_builder.py` now runs the
+same deterministic fail-closed scanner over the **entire normalized output**
+before returning the manifest. This includes worker identity, self-reported
+summary/claims, candidate and log locators, environment/tool metadata and
+verification notes. Detected raw credentials yield
+`ResultManifestBuildError: raw_secret_detected`; budget/exhaustiveness failures
+yield `secret_scan_incomplete`. Neither error includes credential contents.
+Secret references remain valid. Deterministic negative tests exercise
+several independent carriers and scanner budget exhaustion.
+
+This gate covers **this builder only**, not arbitrary provider outputs, artifact
+bytes, third-party ResultManifest producers, log files, or other serialization
+paths. A passing scan is not a guarantee that a novel secret format was found.
+The builder still grants no verification or integration authority.
 
 ## Not in this slice
 
