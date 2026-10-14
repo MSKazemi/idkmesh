@@ -91,6 +91,7 @@ verification before execution.
 - [machine-readable seeded results, correlation sweep](https://github.com/MSKazemi/idkmesh/blob/main/results/experiments/r1/diversity-correlation-threshold-seeds42-51.json.gz)
 - [compact generated table, correlation sweep](https://github.com/MSKazemi/idkmesh/blob/main/results/experiments/r1/diversity-correlation-threshold-seeds42-51.md)
 - [runner](https://github.com/MSKazemi/idkmesh/blob/main/randomness_lab/r1_scaling.py)
+- [communication-burden analyzer](https://github.com/MSKazemi/idkmesh/blob/main/randomness_lab/r1_communication_burden.py) and [its page](R1_COMMUNICATION_BURDEN.md)
 - [low-diversity threshold analyzer](https://github.com/MSKazemi/idkmesh/blob/main/randomness_lab/r1_low_diversity_threshold.py)
 - [correlation-sweep runner](https://github.com/MSKazemi/idkmesh/blob/main/randomness_lab/r1_correlation_threshold.py)
 
@@ -343,7 +344,7 @@ improvement without checking.
 | multiple difficulty levels and seeds | synthetic only |
 | hidden tests / regressions / security defects | synthetic outcomes only |
 | real compute, wall time, reviewer minutes | missing; proxies only |
-| messages, bytes, duplicated work | missing |
+| messages, bytes, duplicated work | structural message counts and unproductive/replicated attempts only, synthetic ([R1 communication burden](R1_COMMUNICATION_BURDEN.md)); bytes missing; content-level duplication not definable on these traces |
 | pairwise error correlation | configured/mechanism-level; real measurement missing |
 | marginal value of N+1 | implemented for synthetic R1 curves, with paired per-added-worker threshold analysis |
 
