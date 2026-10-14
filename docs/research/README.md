@@ -11,6 +11,11 @@ policy changes or merge decisions.
   the experiments still to run (X1–X10), the algorithms they must deliver
   (A1–A7), the engineering targets that serve them, the audience, and the
   verified novelty boundary. Start here.
+- [Results ledger](RESULTS_LEDGER.md) — one row per experiment record with its
+  evidence class (`synthetic`, `public-observed`, `real-run`, `analytic`), a
+  one-sentence headline that includes negative and falsifying verdicts, and the
+  record's own verdict. States what it is not: no claim that many small agents
+  beat one strong model, which has no real arm. Issue 2.
 - [Preregistration v1: forecasting the value of the next coding agent](PREREG_AGENT_VALUE_FORECAST_V1.md) —
   frozen analysis (code SHA-256), estimands, tests and decision rules for H1–H3,
   registered before the four held-out SWE-bench splits were opened.

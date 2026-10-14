@@ -12,6 +12,17 @@ and the release notes for that tag.
 
 ## [Unreleased]
 
+- Research results ledger (refs #2, #13, #22, #30): add
+  `docs/research/RESULTS_LEDGER.md`, one row per record indexed in
+  `experiments/README.md`, each with an evidence class (`synthetic`,
+  `public-observed`, `real-run` or `analytic`), a one-sentence headline that
+  includes negative and falsifying verdicts, and the record's own verdict, all
+  written from the record's own text. It states what it is not: no claim that
+  many small agents beat one strong model, which has no real arm here (E029's
+  0.5B model produced 0 of 60 judgeable candidates). A class-based
+  `tests/test_results_ledger.py` fails when an indexed record has no row or two,
+  a row uses a class or verdict outside the published sets, or a row names an
+  unindexed record. Structure only; it cannot check a headline's faithfulness.
 - Two-attempt orchestrator adapter registration seam (refs #4, #16): add
   `register_adapter`, `unregister_adapter`, `reset_registered_adapters` and a
   declarative `ADAPTER_CONTRACT`, so a result-only worker adapter defined
