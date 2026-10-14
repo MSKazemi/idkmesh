@@ -12,6 +12,16 @@ and the release notes for that tag.
 
 ## [Unreleased]
 
+- ACE controller tests (refs #57): pin the issue's formulas, which earlier tests
+  left unguarded. Mutation testing showed six controller mutations survived
+  (flipped selection sign, dropped `mu/n` mutation floor, ignored latency, noise
+  and attention costs, no public-write-budget check, duplicate strategy outcomes
+  accepted). New tests derive fitness by hand for each cost term, check the
+  selection direction and an independent replicator-mutator computation, hold the
+  `mu/n` floor under extreme selection, and pin that overload lowers the published
+  floor to `0.1 * mu/n` without removing it. `ACE_GENERATION_EVIDENCE_INTERFACE.md`
+  now states both floors. No controller code changed.
+
 - API-9 observability privacy hardening (refs #744): opt-in local access logs
   now use a fixed route vocabulary, replacing run/WorkUnit/project identifiers
   with placeholders and unknown URL paths with `<unmatched>`; unrecognized HTTP
