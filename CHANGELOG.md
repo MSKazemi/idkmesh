@@ -89,6 +89,14 @@ and the release notes for that tag.
   access logs record the route as `/api/v1/connections/{connection_id}`. Not done (see
   `docs/planning/C7_CONNECTOR_CONTROL_FOLLOW_UPS_2026-10-14.md`): mutating HTTP endpoints, the network auth
   boundary, registry/driver listing over HTTP, and preview/evidence CLI convergence.
+- GitHub authority alignment audit (C10, refs #598): add
+  `idkmesh/github_authority_alignment.py`, a pure read-only audit that compares the GitHub
+  identity binding table with the C5 dispatch trusted-actor list and reports unbound,
+  login-mismatched, kind-mismatched, revoked, expired, out-of-scope and kernel-unbacked dispatch
+  actors (plus a fail-closed drift warning). It grants no authority, is not yet run by any
+  workflow, and does not cover CODEOWNERS/rulesets or cross-IdP principal linking. Specified in
+  [GitHub authority alignment audit](docs/specifications/GITHUB_AUTHORITY_ALIGNMENT_V0_1.md).
+  Tests: `tests/test_github_authority_alignment.py`.
 - Agent churn at a matched budget, synthetic mechanism evidence only (refs #22): add
   `sim/e050_churn.py` and record `experiments/E050-churn.md`. Each generation a fraction of agents
   (`0, 0.1, 0.25, 0.5, 1.0`) is replaced by fresh ones in E024's five arms at the same proposal budget,

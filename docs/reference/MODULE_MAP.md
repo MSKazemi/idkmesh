@@ -82,6 +82,7 @@ Primary context: [subsystem contract](../specifications/GITHUB_WEBHOOK_INGRESS_V
 | Source file | Responsibility / authority limit |
 | --- | --- |
 | [`github_actions_summary.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_actions_summary.py) | Bounded digest-bound Actions step-summary renderer |
+| [`github_authority_alignment.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_authority_alignment.py) | Read-only audit that the GitHub identity binding table and the C5 dispatch trusted-actor list agree (C10, #598); grants no authority |
 | [`github_bootstrap.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_bootstrap.py) | GitHub-first bootstrap file/owner-action plan (pure) |
 | [`github_bootstrap_apply.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_bootstrap_apply.py) | C8-F opt-in local bootstrap apply; SHA-256 re-run conflict checks, no GitHub mutation |
 | [`github_bootstrap_render.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_bootstrap_render.py) | Deterministic bootstrap config rendering (pure) |
