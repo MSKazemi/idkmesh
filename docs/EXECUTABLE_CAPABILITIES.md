@@ -168,7 +168,8 @@ deterministic ledger-record serialization with append-only chain verification, l
 compare-and-set append/admission/recovery machinery, and a GitHub-native durable storage
 adapter that uses one dedicated orphan ledger branch with fast-forward-only ref updates.
 The recovery planner reconciles unconfirmed provider submissions rather than resubmitting
-blindly; none of these ledger layers grants dispatch, verification, acceptance, application
+blindly, and a pure advisory retention policy reports missing or uninterpretable durable evidence
+and which raw artifacts may expire (it deletes nothing); none of these ledger layers grants dispatch, verification, acceptance, application
 branch write, integration, or merge authority. The package also includes explicit dispatch
 authorization/bridge logic, exact candidate observation, evidence/status publication
 helpers, governance-policy and read-only governance-preflight checks, public-evidence projection, a static Pages site generator with a local-directory writer (`idkmesh pages-site`; no publication), a release metadata/provenance record (`idkmesh release-provenance`; no tag, release, or attestation), and deterministic
@@ -254,6 +255,7 @@ name documents implementation presence, not stability as a public Python API.
 - `idkmesh/github_ledger_github_store.py`
 - `idkmesh/github_ledger_recovery.py`
 - `idkmesh/github_ledger_recovery_plan.py`
+- `idkmesh/github_ledger_retention.py`
 - `idkmesh/github_ledger_serialization.py`
 - `idkmesh/github_pages_site.py`
 - `idkmesh/github_pages_writer.py`
