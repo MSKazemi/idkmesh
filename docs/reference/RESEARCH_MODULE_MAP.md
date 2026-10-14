@@ -23,7 +23,7 @@ sim/ + randomness_lab/                            -> falsifiable research models
 
 Use [source-derived architecture](../architecture/AS_BUILT_IMPLEMENTATION_MAP.md), [protocol specifications](../specifications/README.md), [research index](../research/README.md) and [test practice](../TESTING.md) to distinguish runnable components, tests, and evidence claims.
 
-## `experiments/` (28 source files)
+## `experiments/` (29 source files)
 
 Executable contracts, calibration and bounded two-attempt/reference experiments. Main [experiments guide](https://github.com/MSKazemi/idkmesh/blob/main/experiments/README.md); see [run evidence](../specifications/RUN_EVIDENCE_REPORT_V0_1.md), [EvaluatorPlan](../specifications/EVALUATOR_PLAN_V0_3_SEMANTIC_MATCHING.md) and [research design](../research/SCIENTIFIC_PROGRAM.md).
 
@@ -34,6 +34,7 @@ Executable contracts, calibration and bounded two-attempt/reference experiments.
 | [`criticality_susceptibility.py`](https://github.com/MSKazemi/idkmesh/blob/main/experiments/criticality_susceptibility.py) | Matched-seed synthetic queue-stress and recovery study | Engineering queue model, not a physical criticality claim |
 | [`evaluator_plan_runner.py`](https://github.com/MSKazemi/idkmesh/blob/main/experiments/evaluator_plan_runner.py) | Bind WorkUnit/source/validator coverage and dispatch verifier adapters | Evaluator-owned metadata checks; not merge or worker authority |
 | [`evaluator_plan_v03.py`](https://github.com/MSKazemi/idkmesh/blob/main/experiments/evaluator_plan_v03.py) | Additive v0.3 patch-substring evaluator compatibility layer | Binds original plan digest; candidate code stays unexecuted |
+| [`forecast_interval_calibration.py`](https://github.com/MSKazemi/idkmesh/blob/main/experiments/forecast_interval_calibration.py) | Seeded synthetic calibration of next-agent forecasts and their intervals against exact simulated truth | Synthetic only; validates the X4 machinery, not evidence about real agents |
 | [`forecast_intervals.py`](https://github.com/MSKazemi/idkmesh/blob/main/experiments/forecast_intervals.py) | Exploratory task/agent bootstrap intervals for next-agent forecast coverage | Post-hoc study of opened splits; frozen E046 forecaster unchanged |
 | [`free_compute_router.py`](https://github.com/MSKazemi/idkmesh/blob/main/experiments/free_compute_router.py) | Select one admitted, policy-compatible compute offer | Selection only; does not allocate resources or run tasks |
 | [`harness.py`](https://github.com/MSKazemi/idkmesh/blob/main/experiments/harness.py) | Phase 0 manifest/schema preflight and deterministic smoke | Smoke executes built-in fixtures only, not manifest-supplied commands |

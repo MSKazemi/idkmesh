@@ -22,6 +22,10 @@ policy changes or merge decisions.
 - [Preregistration v2: temporal holdout for the agent-value forecast](PREREG_AGENT_VALUE_FORECAST_V2.md) —
   registers, before any data exists, the replication on SWE-bench submissions
   added after the pinned commit; none exist yet.
+- [X4 synthetic calibration](X4_SYNTHETIC_INTERVAL_CALIBRATION.md) — seeded
+  simulation with exact truth: pilot forecasts of population coverage meet the 0.03
+  tolerance in three of four scenarios at k = 10, but none is also calibrated
+  (mixed verdict). Synthetic; not evidence about real agents.
 - [First Research Program](FIRST_RESEARCH_PROGRAM.md) — staged path from
   deterministic foundations to held-out real-task evidence.
 - [Top 20 Questions](TOP_20_QUESTIONS.md) — prioritized open questions about
