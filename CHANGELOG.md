@@ -12,6 +12,19 @@ and the release notes for that tag.
 
 ## [Unreleased]
 
+- Derived emergence measurements, synthetic mechanism evidence only (refs #22): add
+  `sim/e049_derived_measurements.py` and record `experiments/E049-derived-measurements.md`
+  (E048 stays reserved for the preregistered temporal holdout). It replays E024's `run_seed`
+  with the same seeds, so no E024 output changes and the rebuilt aggregate matches the committed
+  artifact by digest, and reports for the five arms: recovery time to an absolute utility bar
+  (right-censored, first-passage and sustained), viable-niche coverage computed by one function
+  over every arm's accepted trace, and proposals per verified improvement, with exact and
+  bootstrap intervals and paired seed-level tests against the archive. Findings that undercut
+  the archive: random search is close on first-passage recovery (86/100 against 100/100) but not
+  sustained (12/100), raw viable coverage differs by 2.5 of 64 niches, and the cost-per-improvement
+  lead holds under carry-over accounting only. Human attention, novelty, information gain and
+  churn are listed as not measured. Machine-readable result
+  `experiments/results/E049-derived-measurements.json`; fast tests plus a nightly `sim` replay.
 - R1 real-corpus preregistration committed (refs #30, #70): add
   `docs/research/R1_REAL_CORPUS_PREREGISTRATION.md`, a copy of the preregistration
   that existed only as issue 70 comments (hypothesis H1, the paired-bootstrap

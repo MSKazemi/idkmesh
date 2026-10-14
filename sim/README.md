@@ -675,6 +675,28 @@ niche_count` of the portfolio. Two of five preregistered clauses came out
 false and are kept as written. See
 [`../experiments/E039-content-addressed-blind-spot.md`](../experiments/E039-content-addressed-blind-spot.md).
 
+### E049 — recovery time, viable-niche coverage and cost per improvement
+
+E024 reports utility AUC and catastrophic seeds. `e049_derived_measurements.py` adds three of the
+measurements issue 22 names, computed **post hoc** by replaying E024's `run_seed` with the same seeds
+(so every arm keeps its published streams and no E024 output changes): recovery time to an
+**absolute** utility bar, right-censored when never reached; viable-niche coverage computed by one
+function over every arm's accepted trace, so it is not `archive_size`; and proposals per verified
+improvement. The replay rebuilds E024's `aggregate` block and checks it against the committed
+artifact by digest. Human attention, novelty, information gain and churn are listed as not measured.
+
+```bash
+PYTHONPATH=. python3 sim/e049_derived_measurements.py \
+  --check-e024 experiments/results/E024-matched-budget-emergence-100-seed-summary.json \
+  --pretty --output experiments/results/E049-derived-measurements.json
+```
+
+Synthetic mechanism evidence only. The archive recovers at generation 0 in `100/100` seeds, but the
+later goal is one it was handed (E030's caveat is not re-measured), random search looks nearly as
+good on first passage (`86/100`) and not on sustained recovery (`12/100`), and the archive's lead in
+cost per improvement exists under one accounting and not the other. See
+[`../experiments/E049-derived-measurements.md`](../experiments/E049-derived-measurements.md).
+
 ## Tests
 
 With `pytest` installed:
@@ -707,6 +729,8 @@ python -m pytest -q \
   tests/test_e037_ladder_under_panels.py \
   tests/test_e038_symmetric_gate_asymmetric_burden.py
   tests/test_e039_content_addressed_blind_spot.py
+  tests/test_e049_derived_measurements.py
+  tests/test_e049_committed_artifact.py
 ```
 
 This is the same list `.github/workflows/emergence-sim.yml` runs; keep the two in step.
