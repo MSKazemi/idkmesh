@@ -9,15 +9,25 @@ Verification control is backward-compatible: existing legacy verifier-policy
 configs remain valid, while new configs may select one canonical EvaluatorPlan.
 The orchestrator executes no candidate code and has no canonical write/merge
 authority.
+
+Additional result-only worker adapters can be made selectable from outside this
+module with ``register_adapter(name, adapter)``; see ``ADAPTER_CONTRACT`` and
+the "Registering a result-only worker adapter" section of
+docs/specifications/RUN_EVIDENCE_REPORT_V0_1.md. The seam grants no execution,
+network, write, merge or selection authority.
 """
 
 from __future__ import annotations
 
 import argparse
+from collections.abc import Mapping
+from copy import deepcopy
 from dataclasses import dataclass
 import json
 from pathlib import Path
+import re
 import sys
+from types import MappingProxyType
 from typing import Any, Protocol
 
 import evaluator_plan_runner
@@ -104,6 +114,113 @@ ADAPTERS: dict[str, WorkerAdapter] = {
     ResultBundleAdapter.name: ResultBundleAdapter(),
     FixtureFailureAdapter.name: FixtureFailureAdapter(),
 }
+
+#: Names shipped with this module. They can never be re-registered,
+#: overridden or unregistered through the public registration API.
+BUILTIN_ADAPTER_NAMES: frozenset[str] = frozenset(ADAPTERS)
+
+#: The adapter contract, as data so tests and docs can assert it.
+#:
+#: A worker adapter is a *result collector*, not a worker runtime. Given one
+#: attempt specification it returns the location of an already-produced
+#: ResultManifest and candidate root (``CollectedCandidate``), or raises
+#: ``WorkerAttemptError``. The coordinator -- never the adapter -- then loads the
+#: ResultManifest and routes it to independent verification, and the existing
+#: run record / evidence report / replay machinery consume the outcome. The
+#: seam is declarative: Python cannot sandbox an in-process callable, so these
+#: fields document what a conforming adapter must not do and are not an
+#: enforcement mechanism. Process-level enforcement for anything that would
+#: execute a candidate belongs to the sandbox boundary (issue #804,
+#: docs/specifications/LOCAL_AGENT_EXECUTION_BOUNDARY_V0_1.md).
+ADAPTER_CONTRACT: Mapping[str, Any] = MappingProxyType(
+    {
+        "receives": "one attempt specification object from the orchestration config (a copy)",
+        "returns": "CollectedCandidate(result_manifest_path, candidate_root) inside the repository",
+        "may_raise": "WorkerAttemptError for an expected, isolated attempt failure",
+        "authority": MappingProxyType(
+            {
+                "canonical_state_write": False,
+                "git_push": False,
+                "merge": False,
+                "automatic_candidate_selection": False,
+                "command_execution": False,
+                "network_access": False,
+            }
+        ),
+    }
+)
+
+_ADAPTER_NAME_RE = re.compile(r"[a-z][a-z0-9]*(?:-[a-z0-9]+)*")
+_ADAPTER_NAME_MAX = 64
+
+
+def _check_adapter_name(name: object) -> str:
+    if (
+        not isinstance(name, str)
+        or len(name) > _ADAPTER_NAME_MAX
+        or _ADAPTER_NAME_RE.fullmatch(name) is None
+    ):
+        raise ValueError(
+            f"invalid_adapter_name for {name!r}: use 1-{_ADAPTER_NAME_MAX} lowercase "
+            "kebab-case characters (a-z, 0-9, single '-' between parts), "
+            "starting with a letter"
+        )
+    return name
+
+
+def register_adapter(name: str, adapter: WorkerAdapter) -> None:
+    """Make a result-only worker adapter selectable by orchestration configs.
+
+    ``name`` is the value configs put in ``worker_adapter``; it must equal
+    ``adapter.name``. Built-in names and names already registered raise
+    ``ValueError``; nothing is ever overridden silently. Registration is
+    process-local and not recorded in run records, so a run replays only in a
+    process that registers the same adapter first (an unregistered name fails
+    closed in ``validate_config``). See ``ADAPTER_CONTRACT`` for what the
+    adapter receives, must return and must not do.
+    """
+
+    _check_adapter_name(name)
+    if isinstance(adapter, type):
+        raise ValueError(
+            f"invalid_adapter for {name!r}: register an adapter instance, not a class"
+        )
+    if getattr(adapter, "name", None) != name:
+        raise ValueError(
+            f"invalid_adapter for {name!r}: adapter.name must equal the registered name"
+        )
+    if not callable(getattr(adapter, "collect", None)):
+        raise ValueError(
+            f"invalid_adapter for {name!r}: adapter must implement collect(spec)"
+        )
+    if name in BUILTIN_ADAPTER_NAMES:
+        raise ValueError(
+            f"builtin_adapter for {name!r}: built-in adapters cannot be overridden"
+        )
+    if name in ADAPTERS:
+        raise ValueError(
+            f"duplicate_adapter for {name!r}: adapter is already registered"
+        )
+    ADAPTERS[name] = adapter
+
+
+def unregister_adapter(name: str) -> None:
+    """Remove one registered adapter. Built-in adapters cannot be removed."""
+
+    if name in BUILTIN_ADAPTER_NAMES:
+        raise ValueError(
+            f"builtin_adapter for {name!r}: built-in adapters cannot be unregistered"
+        )
+    if name not in ADAPTERS:
+        raise ValueError(f"unknown_adapter for {name!r}: adapter is not registered")
+    del ADAPTERS[name]
+
+
+def reset_registered_adapters() -> None:
+    """Drop every registered adapter, leaving exactly the built-ins (for tests)."""
+
+    for name in [n for n in ADAPTERS if n not in BUILTIN_ADAPTER_NAMES]:
+        del ADAPTERS[name]
 
 
 def validate_config(config: dict[str, Any]) -> None:
@@ -252,7 +369,14 @@ def orchestrate(config: dict[str, Any]) -> dict[str, Any]:
         }
 
         try:
-            candidate = adapter.collect(spec)
+            # Adapters get a copy so a registered adapter cannot mutate the
+            # config that `config_digest` is computed from below.
+            candidate = adapter.collect(deepcopy(spec))
+            if not isinstance(candidate, CollectedCandidate):
+                raise WorkerAttemptError(
+                    f"adapter {adapter_name} returned {type(candidate).__name__}, "
+                    "not CollectedCandidate"
+                )
         except WorkerAttemptError as exc:
             attempt_records.append(
                 {
