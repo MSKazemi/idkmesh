@@ -33,7 +33,11 @@ FORBIDDEN_ENV_NAMES = frozenset(
 _SECRET_ENV_SUFFIXES = ("_API_KEY", "_TOKEN", "_SECRET", "_PASSWORD", "_CREDENTIALS")
 
 
-def _tuple(values: Iterable[str] | tuple[str, ...]) -> tuple[str, ...]:
+def _tuple(values: Iterable[str] | tuple[str, ...], *, field: str) -> tuple[str, ...]:
+    # Strings are iterable in Python, but one CLI flag or environment name
+    # must never silently turn into a tuple of characters.
+    if isinstance(values, (str, bytes)) or not isinstance(values, Iterable):
+        raise ValueError(f"{field} must be a collection of strings")
     return values if isinstance(values, tuple) else tuple(values)
 
 
@@ -55,8 +59,12 @@ class AgentPreset:
     candidate_only: bool = True
 
     def __post_init__(self) -> None:
-        object.__setattr__(self, "fixed_args", _tuple(self.fixed_args))
-        object.__setattr__(self, "env_allowlist", _tuple(self.env_allowlist))
+        object.__setattr__(
+            self, "fixed_args", _tuple(self.fixed_args, field="fixed_args")
+        )
+        object.__setattr__(
+            self, "env_allowlist", _tuple(self.env_allowlist, field="env_allowlist")
+        )
 
         if not _ID.fullmatch(self.preset_id):
             raise ValueError("preset_id must be a lowercase stable identifier")
@@ -105,6 +113,8 @@ class AgentPreset:
         if not self.candidate_only:
             raise ValueError("agent presets cannot receive acceptance authority")
 
+        if any(not isinstance(name, str) for name in self.env_allowlist):
+            raise ValueError("env_allowlist must contain only strings")
         env_names = set(self.env_allowlist)
         invalid_env = sorted(name for name in env_names if not _ENV.fullmatch(name))
         if invalid_env:

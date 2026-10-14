@@ -84,7 +84,11 @@ def _validated_env(env: Mapping[str, str]) -> dict[str, str]:
     for key, value in env.items():
         if not isinstance(key, str) or not key:
             raise LocalRunnerError("sandbox environment names must be non-empty strings")
-        if not isinstance(value, str) or "\x00" in value:
+        if (
+            not isinstance(value, str)
+            or len(value) > 4096
+            or any(ord(char) < 32 or ord(char) == 127 for char in value)
+        ):
             raise LocalRunnerError(f"invalid sandbox environment value for {key}")
         normalized[key] = value
     return normalized
@@ -114,6 +118,10 @@ class BubblewrapSandbox:
         return sys.platform.startswith("linux") and shutil.which("bwrap") is not None
 
     def admit(self, preset: AgentPreset) -> SandboxAdmission:
+        # An explicit executable path is a testability/configuration aid, not
+        # permission to claim Linux namespaces on a non-Linux host.
+        if not sys.platform.startswith("linux"):
+            raise SandboxUnavailableError("bubblewrap namespaces require Linux")
         if not isinstance(preset, AgentPreset):
             raise ValueError("preset must be AgentPreset")
         if not preset.sandbox_required:
@@ -144,7 +152,13 @@ class BubblewrapSandbox:
         """Build one shell-free bubblewrap command after admission."""
 
         self.admit(preset)
-        root = Path(workspace).resolve()
+        # Do not resolve a caller-supplied symlink into an arbitrary host path
+        # and bind it read-write as /workspace. The directory, and all of its
+        # ancestors, must be actual directories rather than symbolic links.
+        workspace_path = Path(workspace).absolute()
+        if any(path.is_symlink() for path in (workspace_path, *workspace_path.parents)):
+            raise LocalRunnerError("sandbox workspace must not traverse symlinks")
+        root = workspace_path.resolve()
         if not root.is_dir():
             raise LocalRunnerError("sandbox workspace must be an existing directory")
 

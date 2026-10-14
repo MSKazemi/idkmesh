@@ -29,6 +29,30 @@ class AgentPresetTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             BUILTIN_AGENT_PRESETS["evil"] = get_builtin_preset("goose-local")
 
+    def test_scalar_argv_and_environment_name_are_not_split_into_characters(self):
+        for field, value in (("fixed_args", "--verbose"), ("env_allowlist", "LANG")):
+            with self.subTest(field=field):
+                with self.assertRaisesRegex(ValueError, field):
+                    AgentPreset(
+                        preset_id="bad",
+                        agent_family="bad",
+                        executable="agent",
+                        model_connection_ref="model:x",
+                        execution_connection_ref="execution:x",
+                        **{field: value},
+                    )
+
+    def test_non_string_environment_name_is_a_controlled_error(self):
+        with self.assertRaisesRegex(ValueError, "env_allowlist"):
+            AgentPreset(
+                preset_id="bad",
+                agent_family="bad",
+                executable="agent",
+                model_connection_ref="model:x",
+                execution_connection_ref="execution:x",
+                env_allowlist=("LANG", 5),
+            )
+
     def test_shell_executable_is_rejected(self):
         for executable in ("bash", "BASH.EXE", "/bin/bash", "bin/bash"):
             with self.subTest(executable=executable):
