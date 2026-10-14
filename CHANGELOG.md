@@ -592,6 +592,16 @@ and the release notes for that tag.
   claim / verify / protected-integration / unauthorized-label behavior. Tests only;
   no runtime behavior changed.
 
+- X4 synthetic calibration (refs #976): `experiments/forecast_interval_calibration.py` runs the
+  forecasters and bootstrap intervals of `forecast_intervals.py` against seeded simulated
+  populations whose population coverage and blind-spot floor are known exactly (4 scenarios x 6
+  populations x 30 pilots x k in {3, 5, 10, 20}). Recorded verdict at k = 10 under a rule declared
+  before the run: **mixed**. The beta-binomial point forecast meets the 0.03 tolerance in 3 of 4
+  scenarios, but no forecaster is both within tolerance and calibrated (the only interval at or
+  above the declared 0.90 bar at k = 10, 0.939, belongs to a biased forecast). Synthetic evidence only; real-data interval coverage waits on E048.
+  Output `experiments/results/X4-synthetic-interval-calibration.json`, write-up
+  `docs/research/X4_SYNTHETIC_INTERVAL_CALIBRATION.md`, covered by
+  `tests/test_x4_forecast_interval_calibration.py` (includes oracle and broken-estimator controls).
 - X4 forecast-interval instrument (refs #976): `experiments/forecast_intervals.py` adds the
   piece of the X4 report E046 did not compute, the **interval coverage** of the intervals a
   pilot forecaster reports, with bias, MAE and the 0.03 hit-rate, as a function of pilot size k.
