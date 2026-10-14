@@ -180,6 +180,7 @@ Primary context: [subsystem contract](../architecture/ENTERPRISE_CONTROL_PLANE.m
 | [`enterprise_recovery_drill.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/enterprise_recovery_drill.py) | Pure PASS/FAIL/UNKNOWN judgement of one recorded recovery drill against the profile's declared RPO and RTO |
 | [`enterprise_secret_reference.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/enterprise_secret_reference.py) | Closed-scheme secret-reference grammar, trusted alias resolution and identifiers-only secret-access audit details; reads no secret value |
 | [`enterprise_secret_scan.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/enterprise_secret_scan.py) | Deterministic fail-closed scan of JSON documents for raw credentials; findings never carry matched text |
+| [`network_api_profile.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/network_api_profile.py) | Fail-closed non-loopback API profile validation, Host/Origin/proxy/framing guard, digest-only bearer verifier, rate limiter; library only, not wired into a listener |
 | [`tenant_scope.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/tenant_scope.py) | Tenant-scoped resource/idempotency identities and memory fixture |
 
 ## Steward report read models

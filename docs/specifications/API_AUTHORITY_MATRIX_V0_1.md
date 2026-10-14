@@ -90,8 +90,10 @@ dispatches but does not integrate, and a provider or node never integrates.
 ## Not covered
 
 - Enforcement. Adopting the network profile means building an authentication
-  adapter that produces `ActorContext`, wiring `authorize()` in front of each row,
-  and TLS and rate limiting (#743). None exists.
+  adapter that produces `ActorContext` and wiring `authorize()`, TLS and rate
+  limiting in front of each row (#743). The checks exist as a library
+  ([Network API Security Profile](NETWORK_API_SECURITY_PROFILE_V0_1.md)), but no
+  served listener calls them.
 - Per-tenant data partitioning of the store ([API Storage Profiles](API_STORAGE_PROFILES_V0_1.md)
   keeps tenant boundaries as a requirement, not an implementation).
 - The authority of the GitHub-first profile, which is GitHub identity and branch
