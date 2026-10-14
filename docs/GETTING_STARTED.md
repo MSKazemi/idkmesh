@@ -331,6 +331,10 @@ production multi-user service. For every command, nested subcommand, HTTP endpoi
 Python client method, and package module, use the
 [Executable Capability Reference](EXECUTABLE_CAPABILITIES.md).
 
+To see one bounded two-attempt run end to end (checkout-only, precollected
+fixtures rather than live workers), follow the
+[local-loop tutorial](LOCAL_LOOP_TUTORIAL.md).
+
 ## Path D: Use IDKMesh to develop another application
 
 If you already have (or are creating) a separate software project, the practical

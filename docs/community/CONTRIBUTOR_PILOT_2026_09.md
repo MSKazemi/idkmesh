@@ -21,6 +21,10 @@ Choose a task rather than learning the entire research history:
 | [398: architecture diagram](https://github.com/MSKazemi/idkmesh/issues/398) | Human or AI-assisted contributor | One diagram checked against authoritative prose |
 | [402: interoperability setup](https://github.com/MSKazemi/idkmesh/issues/402) | Initial bounded coding-agent pilot | Focused documentation PR with real before/after test evidence |
 
+Status note, 2026-10-14: issues 398, 399 and 402 in this table have since been
+closed; only 403 is still open. The live list is the
+[Contributor Quickstart](CONTRIBUTOR_QUICKSTART.md).
+
 Check issue state, recent comments, assignees, and linked PRs before working.
 Comment on the task with your intended scope. Do not duplicate an active attempt.
 Issue 403 deliberately welcomes multiple independent people.
