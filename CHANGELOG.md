@@ -12,6 +12,19 @@ and the release notes for that tag.
 
 ## [Unreleased]
 
+- Agent churn at a matched budget, synthetic mechanism evidence only (refs #22): add
+  `sim/e050_churn.py` and record `experiments/E050-churn.md`. Each generation a fraction of agents
+  (`0, 0.1, 0.25, 0.5, 1.0`) is replaced by fresh ones in E024's five arms at the same proposal budget,
+  under a memory-loss model and a cold-start model, with the archive, elite pool, incumbent and
+  consensus kept as shared state that survives every departure (so the comparison is about state
+  placement, not people). E024's code and artifacts are unchanged; `f = 0` equals E024 row for row and
+  the rebuilt aggregate matches the committed artifact by digest. Findings that undercut the archive:
+  under memory loss the majority swarm's catastrophic seeds fall from 44 to 0, which removes the
+  archive's reliability lead over it, and under cold start the archive loses 1.27 AUC at full churn
+  while the scalar arm gains 2.42; no arm's mean-AUC lead changes sign, and four arms are unchanged by
+  construction under memory loss. 152 p-values reported. State that leaves with its authors and
+  correlated departures are listed as not measured. Machine-readable result
+  `experiments/results/E050-churn.json`; fast tests plus a nightly `sim` check.
 - Supported CLI verbs for replay and the human decision (refs #16): add
   `idkmesh local-loop-replay BUNDLE` and
   `idkmesh local-loop-record-decision EVIDENCE_REPORT --output PATH ...`, so a newcomer can

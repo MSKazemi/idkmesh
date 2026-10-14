@@ -248,6 +248,16 @@ extra compute allowance.
 > improvement. Its findings include ones that cut against the archive: random
 > search is close on first-passage recovery, and the archive's cost-per-improvement
 > lead holds under one accounting only.
+>
+> **Follow-up (E050).** Churn, which this record does not model, is measured in
+> [`E050-churn.md`](E050-churn.md) for the same five arms at the same matched
+> budget, under a memory-loss and a cold-start model, without changing any number
+> above. Its findings include ones that cut against the archive: under memory loss
+> only the majority swarm can move, and churn removes its catastrophic seeds (44 of
+> 100 to 0 at full churn), so the `0/100` against `44/100` reliability contrast
+> holds only for a swarm that never turns over its members; under cold start the
+> archive is the arm that loses most. Synthetic mechanism evidence, not a model of
+> real churn.
 
 ## Limitations and remaining issue scope
 
