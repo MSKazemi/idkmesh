@@ -110,6 +110,10 @@ idkmesh control-tower --help
 
 For the **complete, code-backed CLI, local API, and module inventory**, see [Executable Capability Reference](EXECUTABLE_CAPABILITIES.md). It marks limits including offline-only connector probes, loopback-only HTTP, and missing automatic decision/merge authority.
 
+## Try it immediately in your browser (no installation)
+
+Open the [Interactive Reviewer Lab](labs/reviewer-lab.html) to see the same **synthetic** five-reviewer example without installing anything. Inspect the known-bad probe `p01`, compare overlapping mistakes on `c10`, and change the approval rule to see how stricter thresholds trade fewer wrong approvals for more wrong rejections. The page is a separate, optional client-side teaching aid: it does not run models or compute the full audit's effective-vote statistics, and it never uploads data or approves work.
+
 ## Your first 10 minutes: run an actual audit
 
 This is the most useful first hands-on experience. You will analyze **sample reviewer data stored on your own computer**. You do **not** need ChatGPT, Claude, an API key, a GPU, cloud resources, or a paid service.
@@ -222,6 +226,10 @@ idkmesh control-tower
 ```
 
 This opens a **local read-only evidence viewer** using a committed example when no path is supplied. You can inspect the separate worker-claim, verification-evidence, and human-authority layers. **The viewer cannot run agents, record a human decision, push code, or merge a pull request.** For a more detailed local walkthrough, see the [Run Lifecycle Tutorial](RUN_LIFECYCLE_TUTORIAL.md).
+
+## Propose a task without writing JSON
+
+Select **IDKMesh WorkUnit request** from the GitHub new-issue chooser and describe a small task using labelled fields. The [no-JSON WorkUnit walkthrough](help/GITHUB_WORKUNIT_FORM.md) includes a reproducible offline preview with valid, malformed, and out-of-policy examples. The form is **untrusted planning input**: it cannot dispatch an agent, grant secrets, remove independent verification, or approve a merge.
 
 ## How can I use IDKMesh with my own project?
 

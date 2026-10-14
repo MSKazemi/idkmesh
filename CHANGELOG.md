@@ -12,8 +12,249 @@ and the release notes for that tag.
 
 ## [Unreleased]
 
+- Agent churn at a matched budget, synthetic mechanism evidence only (refs #22): add
+  `sim/e050_churn.py` and record `experiments/E050-churn.md`. Each generation a fraction of agents
+  (`0, 0.1, 0.25, 0.5, 1.0`) is replaced by fresh ones in E024's five arms at the same proposal budget,
+  under a memory-loss model and a cold-start model, with the archive, elite pool, incumbent and
+  consensus kept as shared state that survives every departure (so the comparison is about state
+  placement, not people). E024's code and artifacts are unchanged; `f = 0` equals E024 row for row and
+  the rebuilt aggregate matches the committed artifact by digest. Findings that undercut the archive:
+  under memory loss the majority swarm's catastrophic seeds fall from 44 to 0, which removes the
+  archive's reliability lead over it, and under cold start the archive loses 1.27 AUC at full churn
+  while the scalar arm gains 2.42; no arm's mean-AUC lead changes sign, and four arms are unchanged by
+  construction under memory loss. 152 p-values reported. State that leaves with its authors and
+  correlated departures are listed as not measured. Machine-readable result
+  `experiments/results/E050-churn.json`; fast tests plus a nightly `sim` check.
+- Supported CLI verbs for replay and the human decision (refs #16): add
+  `idkmesh local-loop-replay BUNDLE` and
+  `idkmesh local-loop-record-decision EVIDENCE_REPORT --output PATH ...`, so a newcomer can
+  replay a saved `local-loop` run and record an explicit decision without leaving the
+  `idkmesh` command. Both delegate to the unchanged scripts `experiments/replay_run.py replay`
+  and `experiments/record_human_decision.py record` by running their own `main`, so the report,
+  exit codes (replay: 0 PASS, 1 diverged, 2 unusable input) and `ERROR:` text are the scripts',
+  with the same path rules as `local-loop` (repository-relative, outputs under `results/`).
+  Two script gaps are covered at the wrapper only: a mistyped file name inside a real bundle no
+  longer replays that bundle's manifest, and an `--output` outside `results/` exits 2 instead of
+  escaping as a traceback. Authority is unchanged: replay writes nothing, and the decision
+  record is bound to the evidence-report digest with `canonical_state_write`, `git_push` and
+  `merge` all `false`. `local-loop`'s printed next steps, `NEXT_STEPS.md`, the tutorial
+  (`docs/LOCAL_LOOP_TUTORIAL.md`), the CLI reference, the capability reference and the module and
+  as-built maps now name the verbs; `experiments/*.py` gained only an optional `argv` parameter on
+  `main`. New in-process tests (`tests/test_local_loop_replay_decision_cli.py`), a tutorial test
+  that runs the documented verbs, and `--help` Examples blocks for the three `local-loop` commands.
+- Structural communication accounting for the R1 topology arms, synthetic mechanism evidence only
+  (refs #13): add `randomness_lab/r1_communication_burden.py`, a downstream analyzer over the
+  frozen R1 topology artifact that leaves the generator and every committed R1 artifact
+  byte-identical, plus `docs/research/R1_COMMUNICATION_BURDEN.md` and a seeds 42 to 51 result. It
+  counts messages per task from an explicit edge rule (flat 3N, role-specialized 2N+1, task-DAG
+  3N; labelled structural, not measured bytes), reports structural replication and unproductive
+  attempts, and fits success-per-message curves with seed-bootstrap intervals. Findings are
+  mixed: success per message falls with N in all 27 groups, role-specialized wins per message
+  mostly because its count is lower while succeeding less, and task-DAG is not better per
+  message. Content-level duplicated work is not definable on the R1 traces (no candidate
+  identity) and is reported as null; a communication budget and shared memory are still never
+  varied, and the issue stays open.
+- R1 per-signature marginal success post-processor (refs #30, #70): add
+  `randomness_lab/r1_signature_marginals.py`, a read-only command that reads a saved
+  `randomness_lab.r1_replay` report and emits, per structural signature, candidates
+  analysed, independently verified successes, success rate and a Wilson 95% interval,
+  which the preregistration requires and the replay never summarized. Pairwise failure
+  correlations are copied unchanged, the input file's SHA-256 digest is recorded, and
+  inconclusive candidates are reported as a count and never scored. It fails closed on
+  malformed input and refuses synthetic-flagged input unless
+  `--allow-synthetic-fixture` marks the output `evidence_class: synthetic_fixture`.
+  `r1_replay.py` is untouched. No real corpus exists (readiness: 0 of 20 eligible work
+  units), so there is no real R1 outcome. Documented in `docs/research/R1_REAL_RESULT_REPLAY.md`.
+- Derived emergence measurements, synthetic mechanism evidence only (refs #22): add
+  `sim/e049_derived_measurements.py` and record `experiments/E049-derived-measurements.md`
+  (E048 stays reserved for the preregistered temporal holdout). It replays E024's `run_seed`
+  with the same seeds, so no E024 output changes and the rebuilt aggregate matches the committed
+  artifact by digest, and reports for the five arms: recovery time to an absolute utility bar
+  (right-censored, first-passage and sustained), viable-niche coverage computed by one function
+  over every arm's accepted trace, and proposals per verified improvement, with exact and
+  bootstrap intervals and paired seed-level tests against the archive. Findings that undercut
+  the archive: random search is close on first-passage recovery (86/100 against 100/100) but not
+  sustained (12/100), raw viable coverage differs by 2.5 of 64 niches, and the cost-per-improvement
+  lead holds under carry-over accounting only. Human attention, novelty, information gain and
+  churn are listed as not measured. Machine-readable result
+  `experiments/results/E049-derived-measurements.json`; fast tests plus a nightly `sim` replay.
+- R1 real-corpus preregistration committed (refs #30, #70): add
+  `docs/research/R1_REAL_CORPUS_PREREGISTRATION.md`, a copy of the preregistration
+  that existed only as issue 70 comments (hypothesis H1, the paired-bootstrap
+  `helps` / `hurts` / `uncertain` rule, the structural-quality-versus-diversity
+  confounder, the 20-work-unit target and the 3 to 5 worker scale-up rule), with
+  comment URLs and timestamps, the points the text leaves ambiguous, and the
+  readiness gate's current blocked state (0 of 20 eligible work units). Linked
+  from the R1 readiness page and the research index. It is a copy, not a new
+  registration, changes no rule, and reports no result; the per-signature
+  marginal-success reporting the comment asks for still has no producer.
+- Research results ledger (refs #2, #13, #22, #30): add
+  `docs/research/RESULTS_LEDGER.md`, one row per record indexed in
+  `experiments/README.md`, each with an evidence class (`synthetic`,
+  `public-observed`, `real-run` or `analytic`), a one-sentence headline that
+  includes negative and falsifying verdicts, and the record's own verdict, all
+  written from the record's own text. It states what it is not: no claim that
+  many small agents beat one strong model, which has no real arm here (E029's
+  0.5B model produced 0 of 60 judgeable candidates). A class-based
+  `tests/test_results_ledger.py` fails when an indexed record has no row or two,
+  a row uses a class or verdict outside the published sets, or a row names an
+  unindexed record. Structure only; it cannot check a headline's faithfulness.
+- Per-metric contract page (refs #86): added
+  `docs/research/METRIC_CONTRACTS_V0_1.md`, one entry for each of the 22 production
+  metrics and mechanisms (the repository-evolution signals, the live governor's
+  `branch_health` and `homeostatic_potential`, the control-energy, replicator and priority
+  composites, and the collaboration observables), each with assumptions, observables,
+  uncertainty, prediction, baseline, failure modes and Goodhart risks, and human/security
+  constraints. The page is read from the code, states where uncertainty is not modelled
+  and that hand-authored uniform priors remain an open item, and is guarded both ways by
+  `tests/test_metric_contracts.py`, which reads the metric keys by AST. The two existing
+  metric pages gain a pointer to it; issue #86 stays open.
+- Test suite CPU (refs #1128): the unit tier had crept over its 90 CPU-second
+  budget on `main` (91.9 measured at near-idle load, 90.1 to 93.8 on the last three
+  merges) and was failing `gate (3.13)`. Reclaim about 6 CPU-seconds without
+  moving any guard out of the PR gate or raising the budget: the two tests that
+  each parsed every file under `tests/` now share one scan per process
+  (`test_nightly_tier_has_something_to_run`,
+  `test_full_suite_jobs_install_requirements`), and the local-loop tutorial and
+  adapter-registration tests run each documented command or orchestration once
+  instead of per assertion. Mutation checks confirm each refactored guard still
+  fails on the drift it exists to catch. Measured warm with `scripts/testkit.py
+  unit --no-cache`: 88.6 CPU-seconds at load 3.6.
+
+- Two-attempt orchestrator adapter registration seam (refs #4, #16): add
+  `register_adapter`, `unregister_adapter`, `reset_registered_adapters` and a
+  declarative `ADAPTER_CONTRACT`, so a result-only worker adapter defined
+  outside `experiments/two_attempt_orchestrator.py` can be named by a config
+  with no coordinator edit (v0.1 acceptance criterion 12). Built-in and
+  duplicate names raise `ValueError`; names are validated; adapters receive a
+  copy of their attempt spec and a non-`CollectedCandidate` return is an
+  isolated `worker_error`. Replay fails closed when the adapter is not
+  registered. No execution, network or authority is added (sandbox work stays
+  with #804); existing run records for all example configs are byte-identical.
+- Newcomer path: local-loop tutorial and stale starter links (refs #9, #16): add
+  `docs/LOCAL_LOOP_TUTORIAL.md`, a walkthrough of `idkmesh local-loop` on two
+  committed examples (supported beside rejected; failed worker beside a healthy
+  peer), the evidence bundle, replay with `experiments/replay_run.py`, and a
+  human decision with `experiments/record_human_decision.py`, linked from the
+  README, `docs/README.md` and `docs/GETTING_STARTED.md`, with a sitemap entry
+  and a drift guard (`tests/test_local_loop_tutorial.py`) that runs the
+  documented commands in-process. The tutorial states that the attempts are
+  precollected fixtures, not live workers or hostile-code isolation (sandbox
+  tracking issue #804 is open), and that no selection, write, push or merge
+  authority exists. Replace #540 and #541 (no longer open) in the README and
+  Contributor Quickstart with the currently open newcomer issues and the
+  starter task catalog, and annotate the dated contributor pilot table.
+- ACE controller tests (refs #57): pin the issue's formulas, which earlier tests
+  left unguarded. Mutation testing showed six controller mutations survived
+  (flipped selection sign, dropped `mu/n` mutation floor, ignored latency, noise
+  and attention costs, no public-write-budget check, duplicate strategy outcomes
+  accepted). New tests derive fitness by hand for each cost term, check the
+  selection direction and an independent replicator-mutator computation, hold the
+  `mu/n` floor under extreme selection, and pin that overload lowers the published
+  floor to `0.1 * mu/n` without removing it. `ACE_GENERATION_EVIDENCE_INTERFACE.md`
+  now states both floors. No controller code changed.
+- Metric uncertainty (refs #86): the evolution scorer and the live governor now
+  attach Beta-Binomial `review_coverage_evidence` / `approval_coverage_evidence`
+  blocks beside the review and approval coverage point values, so a default `1.0`
+  with no ready PR is reported as `prior_only_no_observations` rather than read as
+  observed full coverage and `1/1` is distinguishable from `100/100`. Point values
+  and every policy output are unchanged. Corrected the stale normal-approximation
+  paragraph in `METRIC_UNCERTAINTY_V0_1.md`, which still described the interval
+  that `beta-binomial-v3` replaced with the exact equal-tail credible interval.
+
+- API-9 observability privacy hardening (refs #744): opt-in local access logs
+  now use a fixed route vocabulary, replacing run/WorkUnit/project identifiers
+  with placeholders and unknown URL paths with `<unmatched>`; unrecognized HTTP
+  methods become `OTHER`. Added formatter and live HTTP regression tests and
+  synchronized the API/architecture documentation. The authenticated aggregate
+  metrics and OTLP export contracts are unchanged.
+
+- E9 enterprise provider-fault scenario (refs #676): replace one UNKNOWN
+  placeholder with a deterministic offline WARN diagnostic over the actual
+  connector probe, inspection, route and error kernels. Inject healthy,
+  outage, rate-limit, quota and secret-bearing exception conditions; require
+  refusal to route failed probes and redaction of credential-shaped error
+  details. Add falsifying negative tests and synchronize the enterprise
+  profile, testing and executable-capability documentation. No live provider
+  attempt, retry-scheduler qualification, dispatch or certification claim.
+
 ### Added
 
+- E5 secret non-disclosure at canonical WorkUnit/source binding and E4 audit
+  output (refs #672): reject recognized raw credentials and incomplete scans
+  before creating or revalidating a WorkUnit binding, before inserting an E4
+  SQLite audit row and before direct NDJSON audit export. The public error
+  classes remain stable, messages include no matched secret, rejected audit
+  writes leave the append-only chain unchanged, and regression tests cover
+  replay/rollback/stream denial. Other runtime write paths remain unguarded.
+
+- github: pure C13-E canonical Product Spine run-state label planning, with three narrowly owned namespaces, idempotent add/remove diffs, stale-digest/invalid-input refusal, and complete run-state regression tests (refs #608). Routing label projection now preserves the independent lifecycle namespace. No GitHub write or grant of dispatch, verification, human decision, integration, or merge authority. See [run label projection](docs/specifications/GITHUB_RUN_LABEL_PROJECTION_V0_1.md).
+
+- tests: five scenarios move from UNKNOWN to exercised in the E9 enterprise
+  conformance harness: stale-claim fencing, data-class egress, the local HTTP
+  boundary, public-evidence publication, and provider outage and quota (refs
+  #670, #672, #673, #676, #609). Each has a negative control that turns it red
+  (disabled fencing, disabled Host check, unrestricted external processing, a
+  publication renderer without the whitelist, wrongly retryable errors), and a
+  scenario with no explicit assertion cannot report PASS. Provider coverage is
+  pre-dispatch only: injected outage, rate-limit and quota probes are refused by
+  the real router and normalized errors, including the non-retryable
+  `authentication_error`, stay credential-redacted. Live attempt, quota
+  reconciliation and retry boundaries remain an explicit WARN gap. The
+  ten-issue evidence matrix is in
+  [Enterprise Control Plane](docs/architecture/ENTERPRISE_CONTROL_PLANE.md).
+- tests: fresh-repository bootstrap-to-preview fixture (C8-G, refs #596). On a
+  bare directory with only a `.git` marker, it runs `idkmesh init --github
+  --apply`, shows `github-workflow preview` refusing with
+  `preview_scope_unconfigured` until the owner sets a write scope, then
+  previews deterministically using the environment declared by the
+  *installed* wrapper file, with every socket connection blocked. It also
+  pins re-run safety (an owner-edited seed is preserved, a hand-edited
+  managed workflow is refused and left untouched), read-only `status`, and
+  fail-closed `dispatch` and `verify`. No production code changed; no GitHub
+  mutation, dispatch or secret access. Described in
+  [GitHub Workflow Runner v0.1](docs/specifications/GITHUB_WORKFLOW_RUNNER_V0_1.md#tests).
+- github: `idkmesh init --github --check` and `--apply` (C8-F, refs #596) install
+  the eight generated bootstrap files into the current Git repository. `--check`
+  is read-only. `--apply` writes only those files, through no-follow
+  directory-relative operations, and records generated digests in
+  `.idkmesh/bootstrap-state.json`; it refuses symlinks, a missing or invalid
+  state record, and managed files edited since the last install, and it never
+  overwrites the user-owned seeds. POSIX only; multi-file writes are not
+  transactional (state is written last, so an interrupted run fails closed). No
+  GitHub mutation. Specified in
+  [GitHub Bootstrap Safe Apply v0.1](docs/specifications/GITHUB_BOOTSTRAP_SAFE_APPLY_V0_1.md).
+- api: `ControlTowerClient.collect_run_pages(max_pages=..., limit=..., state=...,
+  project_id=...)` reads a bounded series of run pages with opaque cursors,
+  keeps each page's request ID and digest, validates the page budget before any
+  I/O and raises on a repeated cursor or an exhausted cap instead of returning
+  silent partial success. Not a transactional snapshot; no retries or writes
+  (refs #746). Specified in
+  [Python API Client Compatibility Checks v0.1](docs/specifications/API_PYTHON_CLIENT_COMPATIBILITY_CHECKS_V0_1.md).
+- steward: `evaluate_steward_history_sli()` evaluates a validated Auto Draft
+  steward history against operator-supplied thresholds (report volume, blocked
+  and head-moved fractions, consecutive blocks), binds the result to the history
+  input-set digest and lists what it cannot observe; it has no dispatch,
+  verification or integration authority (refs #752). Operations and retention
+  decision guide: `docs/operations/AUTO_DRAFT_STEWARD_SLI_RETENTION_V0_1.md`.
+- research: `analyze_heldout_verifier_addition()` selects a verifier on
+  calibration rows only and reads the holdout solely for the frozen candidate;
+  it abstains on ties or non-positive contributions and refuses overlapping
+  candidate IDs or mismatched gate, quorum or verifier identities. Exploratory
+  point estimates only, no group-level uncertainty (refs #693). Protocol:
+  [Marginal Verifier Holdout Protocol v0.1](docs/research/MARGINAL_VERIFIER_HOLDOUT_PROTOCOL_V0_1.md).
+- research: [Physarum synthetic-to-field decision gate](docs/research/PHYSARUM_SYNTHETIC_TO_FIELD_GATE_V0_1.md)
+  freezes the falsification rule, the reproduction commands (each checked
+  against the simulator's argument parser) and the decision-ledger fields for
+  the synthetic stress simulator. No new simulation result is claimed (refs #630).
+- docs: [Comparing Control Tower API metrics snapshots](docs/reference/API_METRICS_INTERVAL_GUIDE.md)
+  explains `evaluate_api_metrics_interval()`, with a runnable example and a
+  drift test that executes it and compares the UNKNOWN reason vocabulary with
+  the source (refs #744, #471).
+- docs: [no-JSON WorkUnit walkthrough](docs/help/GITHUB_WORKUNIT_FORM.md) with
+  three committed synthetic issue snapshots (parsed, fallback, refused) run
+  through the real `idkmesh work preview`; the test fails when a fixture is
+  broken (refs #608).
 - tests: E3-G enterprise two-principal acceptance fixture (refs #670). Nine
   in-process tests drive `authorize` behind the decision cache with every
   outcome appended to the audit ledger under `TenantScope`. Four
@@ -58,6 +299,57 @@ and the release notes for that tag.
   policy content digest and request shape, with a validity window capped by
   max age and actor/approver expiry, so a revoked, changed or expired identity
   or an edited policy cannot reuse a cached ALLOW. Adds focused unit tests.
+- E5 issue-preview credential refusal (issue #672, partial):
+  `preview_github_issue_work_unit` now scans the issue title, body and metadata
+  with the raw-secret scanner and refuses with `policy_denied` when a credential
+  is found or the text cannot be fully scanned. This covers `idkmesh work
+  preview`, the `github-workflow preview` runner and the Issue Form path. The
+  refusal names rule ids and fields only, never the text, and tells the author
+  to rotate the credential. Scanner refinements from a measured false-positive
+  check on this repository's 1,117 issues and PRs: explicit URL templates and
+  synthetic `scheme://user:password@host` are ignored, but weak literal URL
+  passwords and lowercase Bearer tokens remain detectable. The exact phrase
+  `bearer token-based-authentication` is exempt, not arbitrary lowercase
+  credentials. Result and audit write paths are not covered yet.
+- E6 recovery-drill evaluator (issue #673, partial):
+  `idkmesh/enterprise_recovery_drill.py` judges one recorded recovery drill against
+  the enterprise profile's declared `rpo_minutes` and `rto_minutes`, returning PASS,
+  FAIL or UNKNOWN with value-free reason codes. Measured data loss and recovery time
+  are compared inclusively; an unverified restore fails; a missing, malformed,
+  mismatched, future-dated or (when a maximum age is given) stale drill is UNKNOWN,
+  never a pass. The record is strict and credential-free. It runs no drill and
+  restores nothing, and no real drill has been recorded. Also corrects the control-plane
+  note that claimed a restore-test interval and a backpressure field the profile does
+  not have. Described in
+  [Storage restore and integrity drill](docs/operations/API_STORAGE_RESTORE_DRILL_V0_1.md#judging-a-drill-against-the-profile-e6-673).
+- Separation of duties for verification (issue #598, C10-G): the authorization
+  kernel now refuses `verify` when the actor is among the principals that executed
+  the work under review. `PolicyRule.executor_distinct_at_risk` is a risk
+  threshold (baseline `verify`: `low`, i.e. every risk; `medium` permits
+  low-risk self-verification explicitly; `None` disables it) and
+  `AuthorizationRequest.executor_principal_ids` carries the executors. The result is
+  `deny / self_verification_forbidden`, or `deny / executor_identity_required`
+  when no executor is supplied (fail-closed, since a rule the caller could skip
+  by omission is not a control). The decision cache key and policy digest cover
+  both new inputs. Behaviour change: baseline `verify` requests must now carry
+  `executor_principal_ids`; no production code issues them yet. The principals
+  must come from the retained run record, and principal linking across IdPs
+  remains out of scope. Specified in
+  [Enterprise Authorization](docs/specifications/ENTERPRISE_AUTHORIZATION_V0_1.md#verifier-is-not-the-executor).
+- E5 raw-secret scanner (issue #672, partial): `idkmesh/enterprise_secret_scan.py`
+  detects credential-shaped values (GitHub, AWS, Slack, Google, `sk-` keys, JWTs,
+  PEM private-key headers, `Bearer` credentials, URL userinfo) and literal values
+  under exact credential-named keys in JSON-shaped documents, including strings
+  in a list under such a key (an object under one is judged by its own keys).
+  Findings carry a rule id and a sanitized JSON Pointer only, never the matched
+  text; a secret used as a mapping key is replaced by `<key:N>` in locations.
+  The scan is fail-closed: depth, node and string-size limits and non-JSON values
+  make the report incomplete, which is never clean. References such as `env:NAME` are accepted.
+  The initial scanner did not enforce admission or persistence. A subsequent
+  E5 slice now guards canonical WorkUnit/source binding and E4 audit event and
+  NDJSON sink writes, but does not cover results or every runtime path and is
+  not a guarantee of secret absence. See
+  [Enterprise Data Policy Kernel v0.1](docs/specifications/ENTERPRISE_DATA_POLICY_V0_1.md#executable-enforcement-boundaries-partial-e5).
 - E5 data/egress/credential decision kernel (issue #672, partial):
   `idkmesh/enterprise_data_policy.py` turns a validated enterprise control
   profile into pure fail-closed decisions. External processing is checked per
@@ -1443,6 +1735,16 @@ and the release notes for that tag.
   the evidence trail, since a `py_compile` step named the orphan as "the calibrated
   evaluator path" and the workflow's `paths:` filter watched it, so editing the
   module the run actually depends on did not trigger the run.
+
+### Fixed
+
+- tools: the clean-install demo's wheel-build failure message is now evidence
+  instead of an empty string (refs #745). It used to read `wheel build failed: `
+  with no output because the build ran under `pip wheel -q`; it now reports the
+  build's exit code and its own output, and distinguishes a failed build from a
+  build that exits 0 while producing the wrong wheel (an old pip can silently
+  emit `UNKNOWN-0.0.0` from a valid `pyproject.toml`), naming the wheel that
+  actually appeared. The verdict and exit codes are unchanged.
 
 ## [research-preview-2026-08-29] - 2026-08-29
 

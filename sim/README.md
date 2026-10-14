@@ -675,6 +675,50 @@ niche_count` of the portfolio. Two of five preregistered clauses came out
 false and are kept as written. See
 [`../experiments/E039-content-addressed-blind-spot.md`](../experiments/E039-content-addressed-blind-spot.md).
 
+### E049 — recovery time, viable-niche coverage and cost per improvement
+
+E024 reports utility AUC and catastrophic seeds. `e049_derived_measurements.py` adds three of the
+measurements issue 22 names, computed **post hoc** by replaying E024's `run_seed` with the same seeds
+(so every arm keeps its published streams and no E024 output changes): recovery time to an
+**absolute** utility bar, right-censored when never reached; viable-niche coverage computed by one
+function over every arm's accepted trace, so it is not `archive_size`; and proposals per verified
+improvement. The replay rebuilds E024's `aggregate` block and checks it against the committed
+artifact by digest. Human attention, novelty, information gain and churn are listed as not measured.
+
+```bash
+PYTHONPATH=. python3 sim/e049_derived_measurements.py \
+  --check-e024 experiments/results/E024-matched-budget-emergence-100-seed-summary.json \
+  --pretty --output experiments/results/E049-derived-measurements.json
+```
+
+Synthetic mechanism evidence only. The archive recovers at generation 0 in `100/100` seeds, but the
+later goal is one it was handed (E030's caveat is not re-measured), random search looks nearly as
+good on first passage (`86/100`) and not on sustained recovery (`12/100`), and the archive's lead in
+cost per improvement exists under one accounting and not the other. See
+[`../experiments/E049-derived-measurements.md`](../experiments/E049-derived-measurements.md).
+
+### E050 — agent churn at a matched budget
+
+E024 does not model churn, and E049 lists it as not measured. `e050_churn.py` replaces a fraction `f` of the
+agents every generation (`0, 0.1, 0.25, 0.5, 1.0`) in E024's five arms at the same `2,500`-proposal budget,
+under two models: **memory** (a fresh agent loses private memory only, which only the majority swarm has) and
+**cold-start** (a fresh agent also proposes blind once). The archive, elite pool, incumbent and consensus are
+shared state that survives every departure, so the comparison is about where an architecture keeps its
+state, not about people. `f = 0` equals E024 row for row and the rebuilt aggregate matches the committed
+artifact by digest; E024's code is untouched. 152 p-values are reported (Bonferroni `0.00033`).
+
+```bash
+PYTHONPATH=. python3 sim/e050_churn.py \
+  --check-e024 experiments/results/E024-matched-budget-emergence-100-seed-summary.json \
+  --pretty --workers 4 --output experiments/results/E050-churn.json
+```
+
+Synthetic mechanism evidence only. Four arms are unchanged by memory churn by construction; the swarm's
+catastrophic seeds fall from `44` to `0` as `f` rises, which removes the archive's reliability lead over
+it; under cold start the archive loses `1.27` AUC at `f = 1.0` while the scalar arm gains `2.42`. No arm's
+mean-AUC lead over the archive changes sign. See
+[`../experiments/E050-churn.md`](../experiments/E050-churn.md).
+
 ## Tests
 
 With `pytest` installed:
@@ -707,6 +751,10 @@ python -m pytest -q \
   tests/test_e037_ladder_under_panels.py \
   tests/test_e038_symmetric_gate_asymmetric_burden.py
   tests/test_e039_content_addressed_blind_spot.py
+  tests/test_e049_derived_measurements.py
+  tests/test_e049_committed_artifact.py
+  tests/test_e050_churn.py
+  tests/test_e050_committed_artifact.py
 ```
 
 This is the same list `.github/workflows/emergence-sim.yml` runs; keep the two in step.

@@ -4,6 +4,8 @@ This directory contains current architecture/specifications, research programs, 
 
 This page is a **curated navigation and authority map, not an exhaustive catalog**. IDKMesh intentionally retains substantially more evidence than a newcomer should need to read.
 
+**No-install interactive introduction:** [Reviewer Lab](labs/reviewer-lab.html) — a small, synthetic voting experiment that demonstrates shared reviewer errors and the approval threshold trade-off. It is educational, not an actual verifier or the full gate-audit engine.
+
 For the public front door, start with [`BEGINNER_GUIDE.md`](BEGINNER_GUIDE.md) if you want a plain-language explanation, then continue with [`../README.md`](https://github.com/MSKazemi/idkmesh/blob/main/README.md), [`GETTING_STARTED.md`](GETTING_STARTED.md), [`PROJECT_ADOPTION_GUIDE.md`](PROJECT_ADOPTION_GUIDE.md) if you want to use IDKMesh with another repository, [`../CONTRIBUTING.md`](https://github.com/MSKazemi/idkmesh/blob/main/CONTRIBUTING.md), and [`../COMMUNITY.md`](https://github.com/MSKazemi/idkmesh/blob/main/COMMUNITY.md).
 
 ## As-built code, reference, and help
@@ -12,6 +14,7 @@ For the public front door, start with [`BEGINNER_GUIDE.md`](BEGINNER_GUIDE.md) i
 - [Control Tower API quickstart](reference/API_QUICKSTART.md), [error catalog](reference/API_ERROR_CATALOG.md) and [service limits](reference/API_LIMITS.md) — start the local server, read it with curl and the official Python client, and look up every stable error code and enforced limit; each is checked against the code by tests.
 - [Source-derived architecture](architecture/AS_BUILT_IMPLEMENTATION_MAP.md) — how run control, offline execution, verification, GitHub/Jules connectors, and human authority are **actually** separated in code.
 - [Troubleshooting](help/TROUBLESHOOTING.md) — concrete setup, API, run-store, sandbox, and test failures.
+- [API metrics intervals](reference/API_METRICS_INTERVAL_GUIDE.md) — read cumulative service metrics safely; compare only trusted same-process snapshots and distinguish UNKNOWN from zero failures.
 - [Dated reconciliation audit](audits/2026-10-10-code-documentation-reconciliation.md) — exact reviewed revision, implementation boundaries, test limitations and follow-up scope.
 
 The [capability matrix](CAPABILITY_MATRIX.md) remains authoritative for implementation status and evidence level. A linked source file or design document alone does **not** prove a production guarantee.
@@ -96,9 +99,12 @@ For a newcomer trying to understand the executable foundation, this order is usu
 
 - [Search and Answer-Engine Discovery Matrix](operations/SEARCH_AND_ANSWER_ENGINE_DISCOVERY_MATRIX.md) — crawler/discovery paths for Google/Gemini, Bing/Copilot, ChatGPT, Claude, Perplexity, and open-web search, plus the live visibility probe.
 - [PyPI Trusted Publishing and Release Runbook](operations/PYPI_RELEASE_RUNBOOK.md) — tokenless OIDC publication, release/version identity checks, protected-environment approval, first-release acceptance, and recovery.
+- [Branch retirement procedure](operations/BRANCH_RETIREMENT_V0_1.md) — how to reduce stale branches without reintegrating superseded code, with exact-SHA leases and human reference review.
 - [Jules development automation](operations/JULES_AUTOMATION.md) — who may mark work `agent-ready`, how the dispatcher adds `jules`, event-driven and recovery frequencies, concurrency/backpressure, veto labels, failure recovery, and the no-auto-merge boundary.
 
 ### Work, evidence, and interoperability
+
+- [GitHub WorkUnit Issue Form: no-JSON walkthrough](help/GITHUB_WORKUNIT_FORM.md) — existing offline preview, trusted scope policy, synthetic fixtures, and negative examples.
 
 - [Human–agent coordination algorithms](planning/HUMAN_AGENT_COORDINATION_ALGORITHMS_2026-10-04.md) — proposed ownership, timeout recovery, bounded competition, dependency scheduling, and model/effort allocation; distinguishes current foundations from the missing shared live protocol.
 - [`../schemas/README.md`](https://github.com/MSKazemi/idkmesh/blob/main/schemas/README.md) — current WorkUnit/ResultManifest/VerificationResult and related schema versions.
@@ -137,6 +143,7 @@ For a newcomer trying to understand the executable foundation, this order is usu
 - [IDKMesh for Absolute Beginners](BEGINNER_GUIDE.md) — plain-language explanation of what IDKMesh is, what problem it solves, what is usable today, and the first commands to try.
 - [Getting Started: Using IDKMesh](GETTING_STARTED.md) — practical newcomer paths for the contract demo, the `idkmesh gate-audit` CLI, GitHub Actions integration, contribution setup, and the implemented-vs-planned product boundary.
 - [Tutorial: create a run and read it back](RUN_LIFECYCLE_TUTORIAL.md) — a step-by-step walkthrough with real output: create, inspect, list, and cancel a Product Spine run with the `idkmesh run` CLI, then read the same run over the token-protected, read-only Control Tower local API.
+- [Tutorial: run the local two-attempt loop](LOCAL_LOOP_TUTORIAL.md) — a step-by-step walkthrough of the checkout-only `idkmesh local-loop` command on two committed examples (a supported attempt beside a rejected one, and a failed worker beside a healthy peer), the evidence bundle it writes, replay with `idkmesh local-loop-replay`, and a human decision recorded with `idkmesh local-loop-record-decision`. Precollected fixtures only: no live workers, no sandbox, no selection or merge authority.
 - [API v1 beta: compatibility, deprecation and migration](API_V1_BETA_MIGRATION_GUIDE.md) — what a Control Tower API consumer can rely on, how changes and deprecations are announced (none in force today), and the behaviour changes found during qualification, each with its test.
 - [Use IDKMesh to Build Another Software Project](PROJECT_ADOPTION_GUIDE.md) — external-project adoption flow: repository setup, ProjectManifest/DomainPack policy, bounded Work Units, human/agent/model connection patterns, verification, and protected integration.
 - [Gate Audit v0.1 specification](specifications/GATE_AUDIT_V0_1.md) — the user-facing contract for the dependency-free `idkmesh gate-audit` CLI installed by `pip install .`, including accepted input, exit/error behavior, JSON/Markdown outputs, and the diagnostic-only authority boundary.

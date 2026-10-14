@@ -6,6 +6,7 @@ from idkmesh.candidate_reference import GitHubPullRequestCandidateReference
 from idkmesh.github_pages_site import (
     GitHubPagesSiteError,
     render_github_pages_site,
+    build_github_pages_outage_fallback,
 )
 from idkmesh.github_public_evidence import (
     GitHubPublicEvidencePolicy,
@@ -216,6 +217,41 @@ class GitHubPagesSiteTests(unittest.TestCase):
         files = render_github_pages_site([], repository=REPO)
         self.assertEqual(sorted(files), [".nojekyll", "index.html"])
         self.assertIn("No public runs are published.", files["index.html"])
+
+
+
+
+class GitHubPagesOutageFallbackTests(unittest.TestCase):
+    def setUp(self):
+        self.projection = _projection(
+            "run-pages-offline", run_state="evidence_ready",
+            attempt_state="verified",
+        )
+
+    def test_fallback_contains_only_validated_recovery_references(self):
+        original = copy.deepcopy(self.projection)
+        output = build_github_pages_outage_fallback(
+            self.projection, repository=REPO
+        )
+        self.assertEqual(output["kind"], "idkmesh-pages-outage-fallback")
+        self.assertEqual(output["canonical_evidence_availability"], "unverified")
+        self.assertEqual(output["source_revision"], SOURCE)
+        self.assertEqual(output["candidate_pr_urls"], [
+            "https://github.com/MSKazemi/idkmesh/pull/7"
+        ])
+        self.assertFalse(output["pages_required_for_coordination"])
+        self.assertFalse(output["github_mutation_performed"])
+        self.assertFalse(output["human_decision_authority"])
+        self.assertNotIn("private-provider-session", str(output))
+        self.assertEqual(self.projection, original)
+
+    def test_rejects_modified_or_private_projection(self):
+        invalid = copy.deepcopy(self.projection)
+        invalid["privacy"]["raw_logs_included"] = True
+        with self.assertRaises(GitHubPagesSiteError):
+            build_github_pages_outage_fallback(invalid, repository=REPO)
+        with self.assertRaises(GitHubPagesSiteError):
+            build_github_pages_outage_fallback(self.projection, repository="other/repo")
 
 
 if __name__ == "__main__":

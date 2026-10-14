@@ -7,6 +7,7 @@ meaning of an existing version.
 
 ## GitHub-First Product Operations
 
+- [GitHub Run Label Projection v0.1](GITHUB_RUN_LABEL_PROJECTION_V0_1.md) — C13-E read-only canonical Product Spine run-state display labels and idempotent diff, without GitHub mutation or authority.
 - [GitHub Projects Routing Field Sync v0.1](GITHUB_PROJECTS_SYNC_V0_1.md) — C13-F read-only, digest-bound, idempotent routing/risk/review field plan; Projects is never an execution-authority source and the API writer remains unimplemented.
 - [GitHub-First Operations v0.1](GITHUB_FIRST_OPERATIONS_V0_1.md) — implementation contract for no-server GitHub coordination: bootstrap, durable run ledger, idempotency/recovery, multi-user claims/authority, Actions security, optional Projects/Pages/OIDC/attestations, and the pilot test matrix.
 - [GitHub Governance Preflight v0.1](GITHUB_GOVERNANCE_PREFLIGHT_V0_1.md) — C12 read-only governance admission contract: normalized protection observations, PASS/WARN/FAIL/UNKNOWN semantics, least-privilege workflow linting, explicit-owner CODEOWNERS recommendations, optional OIDC shape checks, and no automatic GitHub administration authority.
@@ -14,6 +15,7 @@ meaning of an existing version.
 - [GitHub Ledger Serialization v0.1](GITHUB_LEDGER_SERIALIZATION_V0_1.md) — C9-B deterministic canonical bytes/digests, semantic writer checks, complete sequence/digest-chain verification, and a two-commit append-only local Git fixture; pure serialization only, with no remote write or integration authority.
 - [GitHub Bootstrap Config Rendering v0.1](GITHUB_BOOTSTRAP_CONFIG_RENDERING_V0_1.md) — deterministic C8-C rendering of the ProjectManifest seed, disabled secret-reference connector template, repository-local software-engineering DomainPack, generated ownership README, and content digests; rendering only, with no apply or GitHub mutation authority.
 - [GitHub Bootstrap Workflow Wrappers v0.1](GITHUB_BOOTSTRAP_WORKFLOW_WRAPPERS_V0_1.md) — deterministic C8-D rendering of the four thin pinned preview/dispatch/verify/status workflow wrappers: full-SHA Action pins, explicit IDKMesh runtime pin, least-privilege permissions, environment-gated secrets, and a fail-closed runner probe; rendering only; the runner they call is specified separately.
+- [GitHub Bootstrap Safe Local Apply v0.1](GITHUB_BOOTSTRAP_SAFE_APPLY_V0_1.md) — C8-F opt-in POSIX local file installation, digest-bound reruns and conflict refusal; no GitHub mutation.
 - [GitHub Workflow Runner v0.1](GITHUB_WORKFLOW_RUNNER_V0_1.md) — the stdlib-only `idkmesh github-workflow` command the generated wrappers call: read-only issue `preview` from project policy and ledger `status` over a mutation-refusing transport, `dispatch` and `verify` failing closed, the `IDKMESH_*` environment contract, and stable error codes; no dispatch, comment, secret, or merge authority.
 - [GitHub Webhook Ingress v0.1](GITHUB_WEBHOOK_INGRESS_V0_1.md) — authenticated bounded webhook envelope: raw-body HMAC-SHA256, event/action allowlists, repository binding, delivery provenance, and no dispatch authority.
 - [GitHub WorkUnit Intake v0.1](GITHUB_WORKUNIT_INTAKE_V0_1.md) — normalized untrusted GitHub Issue Form planning hints with an explicit all-false authority ceiling; requested paths, risk, review, processing, and connector values cannot broaden trusted project policy. The C13-B WorkUnit request Issue Form uses exactly these field ids and enums.
@@ -156,6 +158,7 @@ meaning of an existing version.
 
 ## API Conventions
 
+- [Python API Client Compatibility Checks v0.1](API_PYTHON_CLIENT_COMPATIBILITY_CHECKS_V0_1.md) — bounded cursor-safe run pagination, client integrity/error tests and still-open TypeScript/mutation contracts.
 - [API Conventions v0.1](API_CONVENTIONS_V0_1.md) — frozen shared HTTP conventions for namespace/versioning, errors, correlation, pagination, idempotency, concurrency, events, limits, OpenAPI/schema compatibility, deprecation, and deployment security profiles. Frozen by issue #736 / [ADR-0018](../decisions/ADR-0018-freeze-api-conventions-v0-1.md); its error and list envelopes have canonical schemas under `schemas/idkmesh-api-error-v0.1.schema.json` and `schemas/idkmesh-list-v0.1.schema.json`.
 
 ## Project Configuration

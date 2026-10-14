@@ -184,6 +184,23 @@ Runtime services must combine the declared profile with actual authenticated
 actor/service identity, resource state, policy version, and enforcement
 evidence.
 
+## E9 provider-outage and quota conformance evidence
+
+The offline E9 doctor (`idkmesh doctor --enterprise-conformance`, issue #676)
+now drives the real connector probe/inspection/routing/error kernels using
+injected fake provider outcomes. Its `provider_outage_quota` scenario checks
+a healthy positive control and denial of pre-dispatch selection after provider
+outage, rate limit, quota exhaustion, or an exception thrown by the probe.
+It also checks structured error-code/retryability metadata and credential-key
+redaction. The fixture uses zero project spend, no real provider call, no
+credential materialization, and no dispatch.
+
+**Scope is only pre-dispatch.** The scenario is deliberately `WARN`, not
+`PASS`, because real attempt terminal states, quota reconciliation, and
+bounded production retry scheduling remain untested pending a production
+adapter. The report's overall `UNKNOWN` state must not be replaced by a
+conformance or certification claim. See [Testing and CI Practice](../TESTING.md#e9-enterprise-provider-fault-conformance-offline).
+
 ## Relationship to the enterprise program
 
 This contract is E1 under #667.
@@ -197,10 +214,10 @@ Follow-on work:
 - E6 (#673) SLO/backup/DR;
 - E7 (#674) supply chain;
 - E8 (#675) hosted control service;
-- E9 (#676) destructive conformance pilot. Its in-process harness treats an
-  empty run, an unrecognized result status, or an executed scenario with no
-  safe-state checks as **UNKNOWN**, never PASS; results are baseline evidence,
-  not deployed-service certification.
+- E9 (#676) destructive conformance pilot. Its in-process harness also treats
+  an executed scenario with no safe-state assertions as **UNKNOWN**, never
+  PASS. An empty selection is rejected and unrecognized statuses are UNKNOWN;
+  none of these results claim deployed-service certification.
 
 ## Exit gate
 

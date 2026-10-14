@@ -208,9 +208,22 @@ class FreezeManifestTests(unittest.TestCase):
                             "final_confirmatory_bootstrap_replicates_per_level": (
                                 s3.FINAL_BOOTSTRAP_REPLICATES
                             ),
-                            "decision": "fixture",
-                            "class_estimand": "fixture",
-                            "centering": "fixture",
+                            "power_decision": (
+                                "both repository- and task-cluster jackknife/cluster-t "
+                                "95% lower bounds are > 0"
+                            ),
+                            "final_confirmatory_decision": (
+                                "both repository- and task-cluster 10,000-resample percentile "
+                                "95% intervals have lower bound > 0"
+                            ),
+                            "class_estimand": (
+                                "macro-average of official-pass and official-fail mean "
+                                "delta_logscore"
+                            ),
+                            "centering": (
+                                "subtract calibration mean within each class before injecting "
+                                "the smallest effect"
+                            ),
                         },
                         "calibration_sha256": calibration_digest,
                         "calibration": {},
@@ -375,6 +388,147 @@ class FreezeManifestTests(unittest.TestCase):
             )
             with self.assertRaises(s3.S3FreezeError):
                 s3.build_freeze_manifest(spec, root)
+
+    def test_json_overflow_number_is_a_controlled_validation_failure(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "overflow.json"
+            path.write_text('{"field":1e9999}\n', encoding="utf-8")
+            with self.assertRaisesRegex(s3.S3FreezeError, "non-finite"):
+                s3.load_json(path)
+
+    def test_missing_power_effect_cannot_pass_even_with_fresh_self_digest(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root, spec = self._root_and_spec(directory, experiment_id="X6")
+            power_path = root / "power_plan.json"
+            power = json.loads(power_path.read_text(encoding="utf-8"))
+            del power["design"]["smallest_effect_logscore_nats"]
+            power_path.write_text(
+                json.dumps(s3.with_self_digest(power)) + "\n",
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(s3.S3FreezeError, "smallest effect"):
+                s3.build_freeze_manifest(spec, root)
+
+    def test_non_numeric_power_effect_is_rejected(self):
+        for invalid in (None, True, "not-a-number", [], {}, 10 ** 500):
+            with self.subTest(invalid=invalid):
+                with tempfile.TemporaryDirectory() as directory:
+                    root, spec = self._root_and_spec(directory, experiment_id="X6")
+                    power_path = root / "power_plan.json"
+                    power = json.loads(power_path.read_text(encoding="utf-8"))
+                    power["design"]["smallest_effect_logscore_nats"] = invalid
+                    power_path.write_text(
+                        json.dumps(s3.with_self_digest(power)) + "\n",
+                        encoding="utf-8",
+                    )
+                    with self.assertRaises(s3.S3FreezeError):
+                        s3.build_freeze_manifest(spec, root)
+
+    def test_canonical_power_metadata_drift_is_rejected(self):
+        for name, changed in (
+            ("power_decision", "wrong decision rule"),
+            ("centering", "wrong centering rule"),
+            ("smallest_effect_geometric_likelihood_ratio", 1.4),
+        ):
+            with self.subTest(name=name), tempfile.TemporaryDirectory() as directory:
+                root, spec = self._root_and_spec(directory, experiment_id="X6")
+                path = root / "power_plan.json"
+                power = json.loads(path.read_text(encoding="utf-8"))
+                power["design"][name] = changed
+                path.write_text(
+                    json.dumps(s3.with_self_digest(power)) + "\n",
+                    encoding="utf-8",
+                )
+                with self.assertRaises(s3.S3FreezeError):
+                    s3.build_freeze_manifest(spec, root)
+
+    def test_freeze_validation_rehashes_every_bound_file(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root, spec = self._root_and_spec(directory, experiment_id="X6")
+            frozen = s3.build_freeze_manifest(spec, root)
+            s3.validate_freeze_manifest(frozen, root)
+            (root / "analysis_code.py").write_text(
+                "VALUE = 999\n", encoding="utf-8"
+            )
+            self.assertTrue(s3.verify_self_digest(frozen))
+            with self.assertRaisesRegex(s3.S3FreezeError, "differs"):
+                s3.validate_freeze_manifest(frozen, root)
+
+    def test_fresh_self_digest_cannot_approve_tampered_authority(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root, spec = self._root_and_spec(directory, experiment_id="X6")
+            frozen = s3.build_freeze_manifest(spec, root)
+            frozen["claims"]["grants_acceptance_authority"] = True
+            frozen = s3.with_self_digest(frozen)
+            self.assertTrue(s3.verify_self_digest(frozen))
+            with self.assertRaisesRegex(s3.S3FreezeError, "forbidden"):
+                s3.validate_freeze_manifest(frozen, root)
+
+    def test_fresh_digest_cannot_smuggle_an_unlisted_artifact_field(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root, spec = self._root_and_spec(directory, experiment_id="X6")
+            frozen = s3.build_freeze_manifest(spec, root)
+            frozen["artifacts"][0]["verdicts"] = [True, False]
+            frozen = s3.with_self_digest(frozen)
+            with self.assertRaisesRegex(s3.S3FreezeError, "malformed"):
+                s3.validate_freeze_manifest(frozen, root)
+
+    def test_local_symlink_ancestor_cannot_alias_freeze_artifact(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root, spec = self._root_and_spec(directory, experiment_id="X6")
+            inside = root / "real"
+            inside.mkdir()
+            source = root / "analysis_code.py"
+            source.rename(inside / source.name)
+            (root / "alias").symlink_to(inside, target_is_directory=True)
+            for item in spec["artifacts"]:
+                if item["role"] == "analysis_code":
+                    item["path"] = "alias/analysis_code.py"
+            with self.assertRaisesRegex(s3.S3FreezeError, "symlink"):
+                s3.build_freeze_manifest(spec, root)
+
+    def test_cli_requires_root_for_freeze_manifest_but_not_power_plan(self):
+        import contextlib
+        import io
+
+        with tempfile.TemporaryDirectory() as directory:
+            root, spec = self._root_and_spec(directory, experiment_id="X6")
+            freeze = root / "freeze.json"
+            freeze.write_text(
+                json.dumps(s3.build_freeze_manifest(spec, root)) + "\n",
+                encoding="utf-8",
+            )
+            with contextlib.redirect_stderr(io.StringIO()):
+                with self.assertRaises(SystemExit) as exc:
+                    s3.main(["validate", str(freeze)])
+            self.assertEqual(exc.exception.code, 2)
+
+            output = io.StringIO()
+            with contextlib.redirect_stdout(output):
+                self.assertEqual(
+                    s3.main(["validate", str(freeze), "--root", str(root)]),
+                    0,
+                )
+            result = json.loads(output.getvalue())
+            self.assertEqual(
+                result["verification_scope"],
+                "bound_artifacts_and_self_digest",
+            )
+            self.assertTrue(result["artifact_bindings_verified"])
+            self.assertFalse(result["authorizes_confirmatory_execution"])
+
+            output = io.StringIO()
+            with contextlib.redirect_stdout(output):
+                self.assertEqual(
+                    s3.main(["validate", str(root / "power_plan.json")]),
+                    0,
+                )
+            result = json.loads(output.getvalue())
+            self.assertEqual(
+                result["verification_scope"], "canonical_power_plan_structure"
+            )
+            self.assertFalse(result["artifact_bindings_verified"])
+            self.assertFalse(result["authorizes_confirmatory_execution"])
 
     def test_unknown_artifact_role_cannot_smuggle_a_verdict_matrix(self):
         with tempfile.TemporaryDirectory() as directory:

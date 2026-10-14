@@ -162,6 +162,7 @@ Focused tests cover:
   workflow-wrapper specification).
 - **Runner:** the `github-workflow` runner the wrappers call is implemented
   (read-only `preview` and `status`; see the runner specification).
-- **C8-E:** owner-action checklist/preflight.
-- **C8-F:** safe filesystem apply/re-run with user-edit preservation.
-- **C8-G:** fresh-repository bootstrap-to-preview acceptance fixture.
+- **C8-E:** done; owner-action checklist (see the owner-actions guide).
+- **C8-F:** done; safe filesystem apply/re-run with user-edit preservation.
+- **C8-G:** done; `tests/test_github_bootstrap_fresh_repo.py` is the
+  fresh-repository bootstrap-to-preview acceptance fixture.

@@ -63,6 +63,7 @@ ACTIONS = frozenset(
     }
 )
 RISKS = ("low", "medium", "high", "critical")
+MAX_EXECUTOR_PRINCIPALS = 64
 DATA_CLASSES = ("public", "internal", "confidential", "restricted")
 EFFECTS = frozenset({"allow", "deny", "requires_approval"})
 
@@ -296,6 +297,9 @@ class PolicyRule:
     max_data_classification: str = "restricted"
     risk_floor: str = "low"
     distinct_approval_at_risk: str | None = None
+    # From this effective risk upward the actor must not be a principal that
+    # executed the work under review (separation of duties). ``None`` disables it.
+    executor_distinct_at_risk: str | None = None
     approval_roles: frozenset[str] = frozenset()
     approval_actor_types: frozenset[str] = frozenset({"human"})
 
@@ -327,6 +331,12 @@ class PolicyRule:
             f"rule[{self.action}].max_data_classification",
         )
         _enum(self.risk_floor, RISKS, f"rule[{self.action}].risk_floor")
+        if self.executor_distinct_at_risk is not None:
+            _enum(
+                self.executor_distinct_at_risk,
+                RISKS,
+                f"rule[{self.action}].executor_distinct_at_risk",
+            )
         if self.distinct_approval_at_risk is not None:
             _enum(
                 self.distinct_approval_at_risk,
@@ -422,6 +432,10 @@ class AuthorizationPolicy:
                     "verify",
                     frozenset({"reviewer", "auditor"}),
                     human_or_service,
+                    # Strict by default: nobody verifies work they executed. A
+                    # project that accepts self-verification for low-risk work
+                    # must say so by raising this threshold to "medium".
+                    executor_distinct_at_risk="low",
                 ),
                 PolicyRule(
                     "integrate",
@@ -465,6 +479,9 @@ class AuthorizationRequest:
     evaluated_at_epoch: int
     approver: ActorContext | None = None
     approval_reference: str | None = None
+    # Principals that executed the work under review, taken from the retained
+    # run/attempt record, never from the verifier's own claim.
+    executor_principal_ids: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         _identifier(self.request_id, "request_id")
@@ -488,6 +505,30 @@ class AuthorizationRequest:
             )
         if self.approver is not None:
             _identifier(self.approval_reference, "approval_reference")
+        if not isinstance(self.executor_principal_ids, (tuple, frozenset)):
+            raise _fail(
+                "invalid_executor_principals",
+                "executor_principal_ids",
+                "must be a tuple or frozenset of principal ids",
+            )
+        if len(self.executor_principal_ids) > MAX_EXECUTOR_PRINCIPALS:
+            raise _fail(
+                "invalid_executor_principals",
+                "executor_principal_ids",
+                f"must hold at most {MAX_EXECUTOR_PRINCIPALS} principals",
+            )
+        object.__setattr__(
+            self,
+            "executor_principal_ids",
+            tuple(
+                sorted(
+                    {
+                        _identifier(item, f"executor_principal_ids[{index}]")
+                        for index, item in enumerate(self.executor_principal_ids)
+                    }
+                )
+            ),
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -667,6 +708,26 @@ def authorize(
             "rule_data_limit_denied",
             "requested data classification exceeds the policy-rule limit",
         )
+
+    executor_threshold = rule.executor_distinct_at_risk
+    if (
+        executor_threshold is not None
+        and _RISK_RANK[effective_risk] >= _RISK_RANK[executor_threshold]
+    ):
+        # A deny, not requires_approval: no approver can make the executor an
+        # acceptable verifier of their own work.
+        if not request.executor_principal_ids:
+            return decision(
+                "deny",
+                "executor_identity_required",
+                "separation of duties needs the principals that executed the work",
+            )
+        if request.actor.principal_id in request.executor_principal_ids:
+            return decision(
+                "deny",
+                "self_verification_forbidden",
+                "the actor executed the work under review and cannot verify it",
+            )
 
     approval_threshold = rule.distinct_approval_at_risk
     requires_approval = (

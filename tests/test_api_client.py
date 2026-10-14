@@ -15,6 +15,7 @@ from idkmesh.api_client import (
     ClientConfigurationError,
     ControlTowerClient,
     IntegrityError,
+    ListPage,
     ProtocolError,
     ResponseMetadata,
 )
@@ -647,6 +648,61 @@ class DiscoveryFailClosedTests(unittest.TestCase):
     def test_metrics_of_the_wrong_kind_are_rejected(self):
         with self.assertRaises(ProtocolError):
             self.call("get_metrics", {"kind": "idkmesh-control-tower-status"})
+
+
+class BoundedRunPageCollectionTests(ClientServerCase):
+    """The SDK must not silently truncate or replay cursor-bound page walks."""
+
+    def test_collect_three_real_pages_with_per_page_metadata(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = str(Path(tmp) / "state.sqlite")
+            self.seed(path, "run/client-one", "run/client-two", "run/client-three")
+            _server, client = self.start_server(path)
+            pages = client.collect_run_pages(
+                max_pages=3, limit=1, project_id="project.client"
+            )
+        self.assertEqual(len(pages), 3)
+        self.assertEqual(
+            sorted(page.value.items[0]["run_id"] for page in pages),
+            ["run/client-one", "run/client-three", "run/client-two"],
+        )
+        self.assertIsNone(pages[-1].value.next_cursor)
+        self.assertEqual(len({page.request_id for page in pages}), 3)
+
+    def test_limit_truncation_is_an_error(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = str(Path(tmp) / "state.sqlite")
+            self.seed(path, "run/client-one", "run/client-two", "run/client-three")
+            _server, client = self.start_server(path)
+            with self.assertRaisesRegex(ProtocolError, "page cap"):
+                client.collect_run_pages(max_pages=2, limit=1)
+
+    def test_replayed_cursor_is_rejected_without_another_fetch(self):
+        client = ControlTowerClient("http://127.0.0.1:8770", TOKEN, timeout=1.0)
+        metadata = ResponseMetadata(
+            status_code=200, request_id="req_test",
+            content_digest="sha256:" + "a" * 64,
+        )
+        result = ApiResult(
+            value=ListPage(items=({"run_id": "one"},), next_cursor="opaque", limit=1),
+            metadata=metadata,
+        )
+        with mock.patch.object(client, "list_runs", return_value=result) as fetched:
+            with self.assertRaisesRegex(ProtocolError, "cursor repeated"):
+                client.collect_run_pages(max_pages=10, limit=1)
+        self.assertEqual(fetched.call_count, 2)
+        self.assertIsNone(fetched.call_args_list[0].kwargs["cursor"])
+        self.assertEqual(fetched.call_args_list[1].kwargs["cursor"], "opaque")
+
+    def test_invalid_limits_fail_without_network(self):
+        client = ControlTowerClient("http://127.0.0.1:8770", TOKEN, timeout=1.0)
+        with mock.patch.object(client, "list_runs") as fetched:
+            for cap in (0, -1, True, 1.0, 101):
+                with self.subTest(cap=cap), self.assertRaises(ClientConfigurationError):
+                    client.collect_run_pages(max_pages=cap)
+            with self.assertRaises(ClientConfigurationError):
+                client.collect_run_pages(max_pages=2, limit=0)
+            fetched.assert_not_called()
 
 
 if __name__ == "__main__":

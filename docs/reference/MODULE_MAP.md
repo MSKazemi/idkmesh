@@ -81,6 +81,7 @@ Primary context: [subsystem contract](../specifications/GITHUB_WEBHOOK_INGRESS_V
 | --- | --- |
 | [`github_actions_summary.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_actions_summary.py) | Bounded digest-bound Actions step-summary renderer |
 | [`github_bootstrap.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_bootstrap.py) | GitHub-first bootstrap file/owner-action plan (pure) |
+| [`github_bootstrap_apply.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_bootstrap_apply.py) | C8-F opt-in local bootstrap apply; SHA-256 re-run conflict checks, no GitHub mutation |
 | [`github_bootstrap_render.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_bootstrap_render.py) | Deterministic bootstrap config rendering (pure) |
 | [`github_bootstrap_workflows.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_bootstrap_workflows.py) | Deterministic pinned workflow-wrapper rendering (pure; no apply) |
 | [`github_branch_reader.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_branch_reader.py) | Exact immutable branch-head observation |
@@ -104,7 +105,8 @@ Primary context: [subsystem contract](../specifications/GITHUB_WEBHOOK_INGRESS_V
 | [`github_public_evidence.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_public_evidence.py) | Strict public-safe evidence publication projection |
 | [`github_release_provenance.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_release_provenance.py) | Pure release metadata/provenance record behind `idkmesh release-provenance`: binds a proposed tag, target commit, and artifact digests (caller-supplied, unverified) to C14-D run evidence; creates no tag, release, or attestation |
 | [`github_rest_source.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_rest_source.py) | Bounded GitHub identity REST transport |
-| [`github_routing_projection.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_routing_projection.py) | Read-only GitHub UI projection of routing decision |
+| [`github_run_label_projection.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_run_label_projection.py) | Read-only canonical Product Spine lifecycle-to-issue-label planning, no API mutation or integration authority |
+| [`github_routing_projection.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_routing_projection.py) | Read-only GitHub UI projection of routing decision; replaces only routing-owned label families |
 | [`github_status_comment.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_status_comment.py) | One idempotently synchronized run-status comment |
 | [`github_status_update.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_status_update.py) | Immutable single-comment publication and recovery |
 | [`github_workunit_intake.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/github_workunit_intake.py) | Pure Issue Form body parser to untrusted intake hints; any malformed or hand-edited content falls back; never grants authority |
@@ -138,7 +140,7 @@ Primary context: [subsystem contract](../specifications/LOCAL_AGENT_EXECUTION_BO
 | [`local_agent_artifacts.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/local_agent_artifacts.py) | Controller-owned bounded candidate artifact capture |
 | [`local_agent_runner.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/local_agent_runner.py) | Worktree/process limits and fail-closed sandbox interface |
 | [`local_agent_sandbox.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/local_agent_sandbox.py) | Linux bubblewrap network-disabled sandbox backend |
-| [`local_loop.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/local_loop.py) | Checkout-only two-attempt R1 execution and evidence bundle |
+| [`local_loop.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/local_loop.py) | Checkout-only two-attempt R1 execution and evidence bundle; also the `local-loop-replay` and `local-loop-record-decision` delegations to `experiments/replay_run.py` and `experiments/record_human_decision.py` |
 
 ## OpenAI-compatible model adapters
 
@@ -166,6 +168,8 @@ Primary context: [subsystem contract](../architecture/ENTERPRISE_CONTROL_PLANE.m
 | [`enterprise_identity_github.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/enterprise_identity_github.py) | Trusted GitHub actor binding to ActorContext |
 | [`enterprise_identity_oidc.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/enterprise_identity_oidc.py) | Trusted IdP claims binding to ActorContext |
 | [`enterprise_profile.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/enterprise_profile.py) | Strict enterprise profile and cross-field validation |
+| [`enterprise_recovery_drill.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/enterprise_recovery_drill.py) | Pure PASS/FAIL/UNKNOWN judgement of one recorded recovery drill against the profile's declared RPO and RTO |
+| [`enterprise_secret_scan.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/enterprise_secret_scan.py) | Deterministic fail-closed scan of JSON documents for raw credentials; findings never carry matched text |
 | [`tenant_scope.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/tenant_scope.py) | Tenant-scoped resource/idempotency identities and memory fixture |
 
 ## Steward report read models

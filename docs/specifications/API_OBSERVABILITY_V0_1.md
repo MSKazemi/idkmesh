@@ -35,6 +35,23 @@ project/WorkUnit/run/attempt/candidate identifiers, or secret references.
 The response schema is
 `schemas/idkmesh-api-operational-metrics-v0.1.schema.json`.
 
+### Optional access-log privacy (distinct from aggregate metrics)
+
+`IDKMESH_HTTP_ACCESS_LOG=1` enables local stderr access logs. Unlike the
+aggregate metrics and OTLP documents, those logs include a validated request ID
+for operational correlation and a canonical `path` **route template**. The
+service runtime replaces all run, WorkUnit and project IDs with placeholders;
+unknown routes collapse to `<unmatched>`. Neither raw paths nor query strings
+are emitted, even on HTTP errors and unsupported URLs. Unrecognized methods
+are emitted as `OTHER`. Tests exercise the real HTTP logging path, not only
+the standalone formatter.
+
+The caller-chosen request ID is intentionally still included in optional logs:
+never pass a credential or private payload as `X-Request-ID`. Access controls
+and retention for stderr output remain the local operator's responsibility.
+This hardening does not introduce tracing spans, collector networking, or an
+authenticated network-service logging profile.
+
 ## Metrics
 
 All counters are process-lifetime counters and reset on process restart.
@@ -96,7 +113,7 @@ concurrency limit:
 - overload SLO: no sustained overload rejection for two consecutive scrape
   intervals under expected local load.
 
-A collector derives rolling values by differencing process-lifetime counters.
+A trusted collector can derive rolling values by differencing process-lifetime counters, provided the process epoch and timestamps are independently established. The local HTTP service does not itself calculate rolling windows.
 
 Suggested alerts:
 
@@ -109,6 +126,10 @@ Suggested alerts:
 
 A 4xx is not itself a service failure. `configured_unprobed` is not a health
 claim.
+
+## Same-process interval evaluator (library only)
+
+`idkmesh.otel_metrics.evaluate_api_metrics_interval()` validates and compares two cumulative service metrics documents when an external trusted collector provides a matching process epoch and strictly increasing Unix-nanosecond observation times. It reports the completed-response 5xx fraction, the share within the fixed 1000 ms latency bucket, overload-rejection deltas, and request count. It returns `status="unknown"` (with no authority) for different epochs, invalid or decreasing counters, empty intervals, and other unsafe comparisons. UNKNOWN **never** means a zero-error interval. This is neither a served HTTP route nor a rolling SLO monitor; see the [runnable interval guide](../reference/API_METRICS_INTERVAL_GUIDE.md) and `tests/test_api_observability_intervals.py`.
 
 ## OpenTelemetry / OTLP JSON adapter
 

@@ -15,17 +15,14 @@ process teach you the rest.
 
 These require no code. Honest confusion is useful project evidence.
 
-### 30-60 minutes: Python testing
+### Bounded code, test and research tasks
 
-- [#540 — add a smoke test that every argparse tool supports `--help`](https://github.com/MSKazemi/idkmesh/issues/540)
-
-This is a focused Python/subprocess test with a clear pass/fail condition.
-
-### 45-90 minutes: research / reproducibility
-
-- [#541 — independently verify the benchmark publication counts](https://github.com/MSKazemi/idkmesh/issues/541)
-
-This checks published numbers against raw committed cohort data.
+Issues #540 (argparse `--help` smoke test) and #541 (independent re-count of the
+benchmark publication counts) are closed and are no longer starter tasks. More
+bounded Python-testing, documentation, and reproducibility tasks, each with an
+acceptance test you can run yourself, are listed in the
+[Starter task catalog](STARTER_TASKS.md); check an item against the repository
+and the open issues before starting it.
 
 ### External-machine testing
 

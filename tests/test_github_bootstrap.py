@@ -185,8 +185,10 @@ class GitHubBootstrapPlanTests(unittest.TestCase):
             {
                 "authorize-provider-apps",
                 "configure-branch-protection",
+                "configure-preview-scope",
                 "configure-provider-secrets",
                 "configure-secret-environments",
+                "verify-pinned-runtime",
             },
         )
         self.assertTrue(

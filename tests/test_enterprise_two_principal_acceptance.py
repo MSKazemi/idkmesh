@@ -112,6 +112,7 @@ class EnterpriseTwoPrincipalAcceptanceTests(unittest.TestCase):
         scope: TenantScope | None = None,
         resource: ScopedResourceRef | None = None,
         policy: AuthorizationPolicy | None = None,
+        executors: tuple[str, ...] = (),
     ) -> tuple[AuthorizationDecision, dict]:
         """A minimal enforcement point: decide through the cache, then audit."""
 
@@ -127,6 +128,7 @@ class EnterpriseTwoPrincipalAcceptanceTests(unittest.TestCase):
             evaluated_at_epoch=at,
             approver=approver,
             approval_reference=ref if approver is not None else None,
+            executor_principal_ids=executors,
         )
         decision = self.cache.authorize(request, policy or self.policy)
         event = self.ledger.append(
@@ -193,7 +195,13 @@ class EnterpriseTwoPrincipalAcceptanceTests(unittest.TestCase):
         )
 
         # Reviewer verifies; the worker role cannot.
-        self.assertEqual(self.enforce(self.carol, "verify", at=t)[0].effect, "allow")
+        # Alice (worker) executed; Carol (reviewer) verifies.
+        self.assertEqual(
+            self.enforce(
+                self.carol, "verify", at=t, executors=(self.alice.principal_id,)
+            )[0].effect,
+            "allow",
+        )
         self.assertEqual(
             self.enforce(self.alice, "verify", at=t)[0].code, "role_denied"
         )

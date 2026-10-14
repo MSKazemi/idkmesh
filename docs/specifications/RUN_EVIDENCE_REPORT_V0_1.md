@@ -153,6 +153,31 @@ When real workers are added, replay semantics will need to distinguish:
 
 Do not weaken v0.1 silently. Introduce an explicit later replay mode/version when real-worker evidence requires it.
 
+## Registering a result-only worker adapter
+
+`experiments/two_attempt_orchestrator.py` ships three built-in worker adapters: `fixture-result`, `result-bundle` and `fixture-failure`. A fourth can be added from outside that module, with no coordinator edit, by registering it before the config that names it is validated:
+
+```python
+import two_attempt_orchestrator as orch
+
+orch.register_adapter("my-bundle-source", MyBundleSource())
+record = orch.run_config(config_path)   # config attempts may now use worker_adapter "my-bundle-source"
+```
+
+The API is `register_adapter(name, adapter)`, `unregister_adapter(name)` and `reset_registered_adapters()` (drops everything but the built-ins; intended for tests). `ADAPTER_CONTRACT` carries the contract below as data.
+
+**What an adapter is.** A result collector, not a worker runtime. It receives a copy of one attempt specification from the orchestration config and returns `CollectedCandidate(result_manifest_path, candidate_root)`, both inside the repository, pointing at an already-produced ResultManifest and candidate bundle. It may raise `WorkerAttemptError` for an expected failure, which is recorded as a `worker_error` attempt without stopping its peer. A return value of any other type is also recorded as `worker_error`. The coordinator, not the adapter, loads the ResultManifest and routes it to the existing independent verifier, so the run record, evidence report and replay machinery need no change.
+
+**What an adapter must not do.** It carries no canonical-write, push, merge or candidate-selection authority, and the run record's `authority` block stays fixed. It must not execute commands or open network connections inside this seam. This is a contract, not a sandbox: Python cannot confine an in-process callable, and the registry does not make any host execution safe. Anything that would execute a candidate belongs behind the [local agent execution boundary](LOCAL_AGENT_EXECUTION_BOUNDARY_V0_1.md), whose sandbox backend (#804) is not yet available, and must not be wired in through this seam.
+
+**Registration rules.** `name` must be 1-64 lowercase kebab-case characters (`a-z`, `0-9`, a single `-` between parts, starting with a letter) and equal `adapter.name`; the adapter must be an instance with a `collect(spec)` method. A built-in or already registered name raises `ValueError`; nothing is overridden silently, and built-ins cannot be unregistered.
+
+**Replay.** A run record stores only the adapter name, not the adapter. Replay re-runs the saved config, so a registered adapter replays to the same digest, provided it is deterministic and is registered in the replaying process first. If it is not, `validate_config` refuses the config with `unsupported worker_adapter '<name>'` and replay fails closed rather than falling back to saved metadata, which would let a replay pass without re-collecting anything. `replay_run.py` recomputes each raw VerificationResult sidecar from the attempt's own `result_manifest` and `candidate_root` keys, not from the adapter, so an adapter that returns any other location should not set those keys (no sidecar is then captured for that attempt, and the run record and report are still compared).
+
+**Scope.** Registration is process-local and in-process: it is a Python seam, and nothing loads adapters from a config, a plugin directory or an entry point. The `idkmesh local-loop` command therefore only accepts the built-in names unless the calling process registers more first.
+
+**Relationship to the connector registry.** `idkmesh/connector_registry.py` registers connector drivers keyed by connector kind and driver id for routing and capability declaration; it never collects results or runs a worker. This seam is the separate result-collection layer: an adapter is selected by a config's `worker_adapter`, a driver by a connector profile. The two share conventions (explicit registration, duplicates refused, stable error words such as `duplicate_adapter`) but not a protocol, and neither implies the other.
+
 ## CLI
 
 Self-test:

@@ -211,3 +211,5 @@ Contributor IDs in public evidence should be minimized or pseudonymized when a
 stable aggregate is sufficient. Natural-language bodies are outside the input.
 No metric grants merge, moderation, ranking, spending, or policy authority.
 Results must not be used to pressure volunteer reviewers or contributors.
+
+See also: [Metric Contracts v0.1](METRIC_CONTRACTS_V0_1.md) for the per-metric assumptions, observables, uncertainty, prediction, baseline, failure modes and human/security constraints of every metric above.

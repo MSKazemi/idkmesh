@@ -1,0 +1,428 @@
+"""Offline negative controls for exact-SHA, superseded branch retirement."""
+from __future__ import annotations
+
+import json
+import os
+import subprocess
+from pathlib import Path
+import sys
+import tempfile
+import unittest
+from unittest import mock
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "tools"))
+import branch_retirement as retire  # noqa: E402
+
+REPO = "MSKazemi/idkmesh"
+HEAD = "a" * 40
+MAIN = "b" * 40
+MERGED = "c" * 40
+OLD = retire.Candidate("agent/old-feature", HEAD, 101, 103)
+
+
+class FakeClient:
+    def __init__(self):
+        self.calls = []
+        self.overrides = {}
+
+    def get(self, path):
+        self.calls.append(path)
+        if path in self.overrides:
+            return self.overrides[path]
+        if path.endswith("/branches/main"):
+            return {"commit": {"sha": MAIN}, "protected": True}
+        if path.endswith("/branches/agent%2Fold-feature"):
+            return {"commit": {"sha": HEAD}, "protected": False}
+        if "/pulls?" in path:
+            return []
+        if path.endswith("/pulls/101"):
+            return {"state": "closed", "merged_at": None,
+                    "head": {"ref": OLD.name, "sha": HEAD, "repo": {"full_name": REPO}}}
+        if path.endswith("/git/ref/pull/101/head"):
+            return {"ref": "refs/pull/101/head",
+                    "object": {"type": "commit", "sha": HEAD}}
+        if path.endswith("/pulls/103"):
+            return {"state": "closed", "merged_at": "2026-10-13T00:00:00Z", "merge_commit_sha": MERGED}
+        if path.endswith("/compare/" + MERGED + "...main"):
+            return {"status": "ahead", "behind_by": 0}
+        raise AssertionError(f"unexpected fetch: {path}")
+
+
+def _fixture_git(*args, cwd=None, timeout=25):
+    """Run real git for throwaway fixtures, independent of the host's git hooks.
+
+    A contributor's global or template hooks (for example an author-identity
+    check) must not be able to reject the fixture's commits and pushes.
+    """
+    completed = subprocess.run(
+        ["git", "-c", f"core.hooksPath={os.devnull}", *args],
+        cwd=cwd, check=True, capture_output=True, text=True, timeout=timeout,
+    )
+    return completed.stdout.strip()
+
+
+class RetirementTests(unittest.TestCase):
+    def test_manifest_rejects_duplicates_and_malformed_heads(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "manifest.json"
+            candidate = dict(name=OLD.name, head=HEAD, closed_pr=101, merged_replacement_pr=103)
+            for candidates in (
+                [candidate, candidate],
+                [{**candidate, "head": "deadbeef"}],
+                [{**candidate, "name": "main"}],
+                [{**candidate, "name": "bad/../ref"}],
+                [{**candidate, "closed_pr": True}],
+                [{**candidate, "name": "-option"}],
+            ):
+                with self.subTest(candidates=candidates):
+                    path.write_text(json.dumps({"repository": REPO, "default_branch": "main", "candidates": candidates}))
+                    with self.assertRaises(retire.RetirementError):
+                        retire.load_manifest(path)
+
+    def test_manifest_is_pinned_to_the_canonical_repository(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "manifest.json"
+            path.write_text(json.dumps({
+                "repository": "someone/other-repo", "default_branch": "main",
+                "candidates": [{
+                    "name": OLD.name, "head": OLD.head,
+                    "closed_pr": OLD.closed_pr,
+                    "merged_replacement_pr": OLD.merged_replacement_pr,
+                }],
+            }), encoding="utf-8")
+            with self.assertRaisesRegex(retire.RetirementError, "canonical"):
+                retire.load_manifest(path)
+
+    def test_dry_run_is_read_only_and_never_calls_git(self):
+        api = FakeClient()
+        with mock.patch.object(retire, "_git", side_effect=AssertionError("git must not be called")):
+            result = retire.run(api, REPO, "main", (OLD,), execute=False, attestation=None, cwd=ROOT)
+        self.assertEqual(result[0]["status"], "eligible_after_manual_evidence_review")
+        self.assertTrue(any("/compare/" in url for url in api.calls))
+
+    def test_branch_head_change_blocks_deletion(self):
+        api = FakeClient()
+        api.overrides["/repos/MSKazemi/idkmesh/branches/agent%2Fold-feature"] = {
+            "commit": {"sha": "d" * 40}, "protected": False}
+        with self.assertRaisesRegex(retire.RetirementError, "branch moved"):
+            retire.verify(api, REPO, "main", OLD)
+
+    def test_malformed_remote_responses_fail_closed(self):
+        paths = (
+            "/repos/MSKazemi/idkmesh/branches/agent%2Fold-feature",
+            "/repos/MSKazemi/idkmesh/pulls/101",
+            "/repos/MSKazemi/idkmesh/pulls/103",
+            "/repos/MSKazemi/idkmesh/git/ref/pull/101/head",
+            "/repos/MSKazemi/idkmesh/compare/" + MERGED + "...main",
+        )
+        for path in paths:
+            with self.subTest(path=path):
+                api = FakeClient()
+                api.overrides[path] = ["not-an-object"]
+                with self.assertRaises(retire.RetirementError):
+                    retire.verify(api, REPO, "main", OLD)
+
+    def test_protected_branch_blocks_deletion(self):
+        api = FakeClient()
+        api.overrides["/repos/MSKazemi/idkmesh/branches/agent%2Fold-feature"] = {
+            "commit": {"sha": HEAD}, "protected": True}
+        with self.assertRaisesRegex(retire.RetirementError, "protected"):
+            retire.verify(api, REPO, "main", OLD)
+
+    def test_open_pull_request_blocks_deletion(self):
+        api = FakeClient()
+        url = "/repos/MSKazemi/idkmesh/pulls?state=open&head=MSKazemi%3Aagent%2Fold-feature&per_page=100"
+        api.overrides[url] = [{"number": 200}]
+        with self.assertRaisesRegex(retire.RetirementError, "open PR"):
+            retire.verify(api, REPO, "main", OLD)
+
+    def test_reopened_original_pr_blocks_deletion(self):
+        api = FakeClient()
+        api.overrides["/repos/MSKazemi/idkmesh/pulls/101"] = {
+            "state": "open", "merged_at": None,
+            "head": {"ref": OLD.name, "sha": HEAD, "repo": {"full_name": REPO}}}
+        with self.assertRaisesRegex(retire.RetirementError, "closed-PR evidence mismatch"):
+            retire.verify(api, REPO, "main", OLD)
+
+    def test_retirement_requires_retained_exact_archival_pr_head(self):
+        path = "/repos/MSKazemi/idkmesh/git/ref/pull/101/head"
+        invalid = (
+            {},
+            {"ref": "refs/pull/101/head", "object": {"type": "commit", "sha": "d" * 40}},
+            {"ref": "refs/pull/102/head", "object": {"type": "commit", "sha": HEAD}},
+            {"ref": "refs/pull/101/head", "object": {"type": "tag", "sha": HEAD}},
+            {"ref": "refs/pull/101/head", "object": None},
+        )
+        for response in invalid:
+            with self.subTest(response=response):
+                api = FakeClient()
+                api.overrides[path] = response
+                with self.assertRaisesRegex(retire.RetirementError, "preserved PR-head ref"):
+                    retire.verify(api, REPO, "main", OLD)
+
+    def test_unmerged_replacement_blocks_deletion(self):
+        api = FakeClient()
+        api.overrides["/repos/MSKazemi/idkmesh/pulls/103"] = {
+            "state": "open", "merged_at": None, "merge_commit_sha": MERGED}
+        with self.assertRaisesRegex(retire.RetirementError, "no verified merged replacement"):
+            retire.verify(api, REPO, "main", OLD)
+
+    def test_replacement_not_ancestor_blocks_deletion(self):
+        api = FakeClient()
+        api.overrides["/repos/MSKazemi/idkmesh/compare/" + MERGED + "...main"] = {
+            "status": "diverged", "behind_by": 2}
+        with self.assertRaisesRegex(retire.RetirementError, "not in current main"):
+            retire.verify(api, REPO, "main", OLD)
+
+    def test_execute_fails_closed_on_multiple_candidates(self):
+        """The manifest can audit eight branches, but execution deletes at most one."""
+        other = retire.Candidate("agent/other", "d" * 40, 105, 106)
+        with self.assertRaisesRegex(retire.RetirementError, "exactly one"):
+            retire.run(FakeClient(), REPO, "main", (OLD, other),
+                       execute=True, attestation=retire.ACK, cwd=ROOT)
+
+    def test_cli_requires_explicit_manifest_branch_for_destructive_mode(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "retirement.json"
+            path.write_text(json.dumps({
+                "repository": REPO, "default_branch": "main",
+                "candidates": [{
+                    "name": OLD.name, "head": HEAD,
+                    "closed_pr": OLD.closed_pr,
+                    "merged_replacement_pr": OLD.merged_replacement_pr,
+                }],
+            }), encoding="utf-8")
+            with mock.patch.object(retire, "Client", side_effect=AssertionError("no network")):
+                self.assertEqual(retire.main([
+                    "--manifest", str(path), "--execute", "--attest", retire.ACK,
+                ]), 2)
+                self.assertEqual(retire.main([
+                    "--manifest", str(path), "--execute", "--branch", "agent/unlisted",
+                    "--attest", retire.ACK,
+                ]), 2)
+
+    def test_execute_requires_explicit_operator_attestation(self):
+        with self.assertRaisesRegex(retire.RetirementError, "requires explicit"):
+            retire.run(FakeClient(), REPO, "main", (OLD,), execute=True, attestation=None, cwd=ROOT)
+
+    def test_execute_rejects_absent_bundle_before_any_remote_action(self):
+        with mock.patch.object(retire, "_git") as git:
+            with self.assertRaisesRegex(retire.RetirementError, "archive bundle"):
+                retire.run(FakeClient(), REPO, "main", (OLD,),
+                           execute=True, attestation=retire.ACK, cwd=ROOT)
+        git.assert_not_called()
+
+    def test_real_bundle_must_restore_the_exact_named_source_commit(self):
+        git = _fixture_git
+
+        with tempfile.TemporaryDirectory() as temp:
+            home = Path(temp)
+            work = home / "checkout"
+            work.mkdir()
+            git("init", "-b", "main", cwd=work)
+            git("-c", "user.name=IDKMesh Test", "-c",
+                "user.email=test@example.invalid", "commit",
+                "--allow-empty", "-m", "initial", cwd=work)
+            base = git("rev-parse", "HEAD", cwd=work)
+            git("-c", "user.name=IDKMesh Test", "-c",
+                "user.email=test@example.invalid", "commit",
+                "--allow-empty", "-m", "second", cwd=work)
+            head = git("rev-parse", "HEAD", cwd=work)
+            git("branch", "agent/old-feature", cwd=work)
+            candidate = retire.Candidate("agent/old-feature", head, 101, 103)
+            full = home / "complete.bundle"
+            git("bundle", "create", str(full), "--all", cwd=work)
+            retire.verify_archive_bundle(full, candidate, cwd=work)
+
+            for bad in (
+                retire.Candidate("agent/other", head, 101, 103),
+                retire.Candidate(candidate.name, base, 101, 103),
+            ):
+                with self.subTest(name=bad.name, sha=bad.head):
+                    with self.assertRaisesRegex(retire.RetirementError, "exact named"):
+                        retire.verify_archive_bundle(full, bad, cwd=work)
+
+            incremental = home / "incremental.bundle"
+            git("bundle", "create", str(incremental),
+                "agent/old-feature", "^" + base, cwd=work)
+            # Local "bundle verify" can pass with missing prerequisites.
+            # The empty bare recovery clone must fail.
+            with self.assertRaisesRegex(retire.RetirementError, "independently restore"):
+                retire.verify_archive_bundle(incremental, candidate, cwd=work)
+
+            inside = work / "unsafe-location.bundle"
+            git("bundle", "create", str(inside), "--all", cwd=work)
+            with self.assertRaisesRegex(retire.RetirementError, "outside the checkout"):
+                retire.verify_archive_bundle(inside, candidate, cwd=work)
+
+    def test_archive_symlink_and_missing_file_fail_closed(self):
+        with tempfile.TemporaryDirectory() as temp:
+            home = Path(temp)
+            with self.assertRaisesRegex(retire.RetirementError, "missing"):
+                retire.verify_archive_bundle(home / "missing.bundle", OLD, cwd=ROOT)
+            target = home / "target.bundle"
+            target.write_text("not an archive", encoding="utf-8")
+            link = home / "archive.bundle"
+            link.symlink_to(target)
+            with self.assertRaisesRegex(retire.RetirementError, "regular external"):
+                retire.verify_archive_bundle(link, OLD, cwd=ROOT)
+
+    def test_execute_rechecks_then_uses_exact_lease_without_shell(self):
+        api = FakeClient()
+        calls = []
+        def git(*args, cwd):
+            calls.append(args)
+            return ""
+        with (mock.patch.object(retire, "verify_archive_bundle") as archive,
+              mock.patch.object(retire, "verify_local_checkout") as checkout,
+              mock.patch.object(retire, "_git", side_effect=git)):
+            result = retire.run(api, REPO, "main", (OLD,), execute=True,
+                                attestation=retire.ACK, cwd=ROOT,
+                                archive_bundle=Path("/tmp/reviewed.bundle"))
+        archive.assert_called_once_with(Path("/tmp/reviewed.bundle"), OLD, cwd=ROOT)
+        self.assertEqual(checkout.call_count, 2)
+        checkout.assert_any_call(REPO, MAIN, ROOT)
+        self.assertEqual(result[0]["status"], "retired")
+        self.assertEqual(calls, [("push", "--porcelain", "--no-verify", "--no-follow-tags",
+                                  f"--force-with-lease=refs/heads/{OLD.name}:{HEAD}",
+                                  "origin", f":refs/heads/{OLD.name}")])
+        self.assertEqual(sum("/branches/agent%2Fold-feature" in url for url in api.calls), 2)
+
+    def test_main_move_between_checks_blocks_execution(self):
+        api = FakeClient()
+        original_get = api.get
+        n = [0]
+        def moving(path):
+            if path.endswith("/branches/main"):
+                n[0] += 1
+                if n[0] > 1:
+                    return {"commit": {"sha": "f" * 40}}
+            return original_get(path)
+        api.get = moving
+        with (mock.patch.object(retire, "verify_archive_bundle"),
+              mock.patch.object(retire, "verify_local_checkout"),
+              mock.patch.object(retire, "_git") as git):
+            with self.assertRaisesRegex(retire.RetirementError, "main moved"):
+                retire.run(api, REPO, "main", (OLD,), execute=True,
+                           attestation=retire.ACK, cwd=ROOT,
+                           archive_bundle=Path("/tmp/reviewed.bundle"))
+        git.assert_not_called()
+
+    def test_bad_git_remote_or_checkout_is_rejected(self):
+        with mock.patch.object(retire, "_git", side_effect=["https://evil.example/x.git"]):
+            with self.assertRaisesRegex(retire.RetirementError, "origin"):
+                retire.verify_local_checkout(REPO, MAIN, ROOT)
+        with mock.patch.object(retire, "_git", side_effect=[
+            f"https://github.com/{REPO}.git",
+            f"https://github.com/{REPO}.git",
+            "false",
+            "feature",
+        ]):
+            with self.assertRaisesRegex(retire.RetirementError, "checkout must be on main"):
+                retire.verify_local_checkout(REPO, MAIN, ROOT)
+
+    def test_origin_fetch_url_cannot_override_a_different_push_destination(self):
+        """A clean-looking fetch remote must not authorize a malicious pushurl."""
+        fetch_url = f"https://github.com/{REPO}.git"
+        for target in (
+            "https://github.com/other/repository.git",
+            "ssh://git@evil.example/x.git",
+            f"git@github.com:{REPO}.git",
+        ):
+            with self.subTest(push_target=target):
+                with mock.patch.object(retire, "_git", side_effect=[fetch_url, target]) as git:
+                    with self.assertRaisesRegex(retire.RetirementError, "Git push destinations"):
+                        retire.verify_local_checkout(REPO, MAIN, ROOT)
+                self.assertEqual(git.call_count, 2)
+
+    def test_multiple_origin_push_destinations_are_denied(self):
+        """A single push can otherwise affect more than the approved repository."""
+        approved = f"https://github.com/{REPO}.git"
+        for resolved in ("", approved + "\n" + approved):
+            with self.subTest(resolved=resolved):
+                with mock.patch.object(retire, "_git", side_effect=[approved, resolved]) as git:
+                    with self.assertRaisesRegex(retire.RetirementError, "Git push destinations"):
+                        retire.verify_local_checkout(REPO, MAIN, ROOT)
+                self.assertEqual(git.call_count, 2)
+
+    def test_matching_effective_push_destination_reaches_remaining_checks(self):
+        approved = f"https://github.com/{REPO}.git"
+        with mock.patch.object(retire, "_git", side_effect=[
+            approved, approved, "false", "main", MAIN, "",
+        ]) as git:
+            retire.verify_local_checkout(REPO, MAIN, ROOT)
+        self.assertEqual(git.call_count, 6)
+
+
+    def test_origin_push_mirror_is_denied_even_with_approved_url(self):
+        """An explicit mirror mode must never reach a deletion push."""
+        approved = f"https://github.com/{REPO}.git"
+        with mock.patch.object(retire, "_git", side_effect=[
+            approved, approved, "true",
+        ]) as git:
+            with self.assertRaisesRegex(retire.RetirementError, "push mirror"):
+                retire.verify_local_checkout(REPO, MAIN, ROOT)
+        self.assertEqual(git.call_count, 3)
+
+    def test_execute_rechecks_checkout_and_push_url_before_each_delete(self):
+        """A pushurl changed after the first preflight must block the push."""
+        api = FakeClient()
+        with mock.patch.object(retire, "verify_archive_bundle"), mock.patch.object(
+            retire, "verify_local_checkout",
+            side_effect=[None, retire.RetirementError("push destination moved")],
+        ) as checkout, mock.patch.object(retire, "_git") as git:
+            with self.assertRaisesRegex(retire.RetirementError, "push destination moved"):
+                retire.run(api, REPO, "main", (OLD,), execute=True,
+                           attestation=retire.ACK, cwd=ROOT,
+                           archive_bundle=Path("/tmp/reviewed.bundle"))
+        self.assertEqual(checkout.call_count, 2)
+        git.assert_not_called()
+
+    def test_real_git_pushurl_override_blocks_retirement_before_any_delete(self):
+        """Two bare repositories retain the protected ref despite a bad pushurl.
+
+        The intended destination and a wrong destination deliberately share
+        the same commit SHA, so the old exact-SHA lease alone would not detect
+        the wrong repository.
+        """
+        git = _fixture_git
+
+        with tempfile.TemporaryDirectory() as tmp:
+            home = Path(tmp)
+            work = home / "checkout"
+            intended = home / "intended.git"
+            wrong = home / "wrong.git"
+            git("init", "-b", "main", str(work))
+            git("-c", "user.name=IDKMesh Test",
+                "-c", "user.email=test@example.invalid", "-C", str(work),
+                "commit", "--allow-empty", "-m", "fixture")
+            commit = git("-C", str(work), "rev-parse", "HEAD")
+            for destination in (intended, wrong):
+                git("init", "--bare", str(destination))
+                git("-C", str(work), "push", str(destination),
+                    f"{commit}:refs/heads/agent/old-feature")
+            git("-C", str(work), "remote", "add", "origin",
+                f"https://github.com/{REPO}.git")
+            git("-C", str(work), "remote", "set-url", "--push", "origin",
+                str(wrong))
+            self.assertEqual(
+                git("-C", str(work), "remote", "get-url", "origin"),
+                f"https://github.com/{REPO}.git",
+            )
+            self.assertEqual(
+                git("-C", str(work), "remote", "get-url", "--push", "--all", "origin"),
+                str(wrong),
+            )
+            with self.assertRaisesRegex(retire.RetirementError, "Git push destinations"):
+                retire.verify_local_checkout(REPO, commit, work)
+            for destination in (intended, wrong):
+                self.assertEqual(
+                    git("--git-dir", str(destination), "rev-parse",
+                        "refs/heads/agent/old-feature"),
+                    commit,
+                )
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -23,7 +23,7 @@ It does not choose a hosted database vendor.
 | Profile | Canonical durable owner | Status |
 |---|---|---|
 | GitHub-first / no-server | The GitHub ledger ([GitHub Ledger Record v0.1](GITHUB_LEDGER_RECORD_V0_1.md), #597). | Owned by #597. The API reads through it; it does not copy it. |
-| Local developer | `LocalMetadataStore` (`idkmesh/connector_store.py`), a SQLite file, reached through `ProductSpineRunStore` (`idkmesh/product_spine_run_store.py`). Development-mode metadata, not canonical application state. | Implemented. Schema version 3. |
+| Local developer | `LocalMetadataStore` (`idkmesh/connector_store.py`), a SQLite file, reached through `ProductSpineRunStore` (`idkmesh/product_spine_run_store.py`). Human decisions use a separate append-only `HumanDecisionStore` SQLite file in the transport-neutral service core (#740). Development-mode metadata, not canonical application state. | Run store implemented (schema version 3); decision store implemented (schema version 1). No network decision endpoint. |
 | Network / multi-user | None. A future adapter must satisfy the semantics below and the tenant boundaries of [Enterprise Tenant Scope v0.1](ENTERPRISE_TENANT_SCOPE_V0_1.md). | Interface requirement only; nothing to qualify yet. |
 
 Large evidence and artifacts are content-addressed or referenced; they are not
@@ -79,6 +79,26 @@ authenticate the writer: someone who can rewrite a payload can also recompute
 its digest. Tamper-evidence against a malicious writer needs the hash-chained
 [Enterprise Audit Ledger](ENTERPRISE_AUDIT_LEDGER_V0_1.md) or the GitHub ledger.
 
+### Human Decision record integrity on read
+
+The transport-neutral `HumanDecisionStore` (#740) persists immutable decision
+JSON, its SHA-256 canonical digest, and indexed identity fields: decision ID,
+run ID, evidence-report digest, decision timestamp, idempotency key, and request
+digest. Its append-only triggers block ordinary updates/deletes. Both an
+idempotent replay and `list_for_run()` now verify not only the JSON digest, but
+that the record agrees with all indexed fields and that the decision ID can be
+rederived from the idempotency key and request digest. On disagreement it raises
+`persisted_state_corrupt` rather than returning a record for the wrong run or
+a forged/rekeyed index. Regression tests alter each indexed field and also
+recompute the JSON digest after changing the embedded run identity. This is
+corruption/inconsistency detection, **not cryptographic authentication** against
+an attacker able to rewrite every persisted column.
+
+The decision service remains transport-neutral and does not provide a
+production-authorized HTTP mutation endpoint. The local decision database is a
+separate owned SQLite file: this slice neither unifies database layouts nor
+implements a network storage adapter.
+
 ## Migration strategy
 
 - The schema version is the SQLite `user_version`. Opening a database applies
@@ -104,7 +124,7 @@ that no pruner can remove evidence by accident.
 | Event log | Essential | Kept; append-only. |
 | Run rows and idempotency records | Essential | Kept while the run exists; an idempotency record outlives replay needs. |
 | Retained run-evidence report | Essential | Kept with its run; digest-bound. |
-| Human Decision records (#740, not built) | Essential, immutable | Kept; never rewritten. |
+| Human Decision records (local service core #740 implemented; HTTP endpoint still pending) | Essential, immutable | Kept; append-only SQLite triggers, digest and index consistency checked on read. |
 | Connector configuration | Configuration | Kept until superseded; secret references only. |
 | Probe history | Expendable | Only the latest probe per connection is needed. Pruned by `prune_probe_history()`; `ProbeHistoryPruningTests` proves runs, idempotency records and events are untouched. |
 | Task claims and leases | Ephemeral | Expired and released rows are expendable after their lease window. Not pruned yet: rows carry epoch fencing and occupancy state, so a pruner needs its own design and tests. |
@@ -131,6 +151,6 @@ it exists yet.
 | Migration / version strategy | Done; replay verified. |
 | Retention matrix | Done; probe-history pruning implemented and tested. Claim/lease pruning and any scheduled retention job are open. |
 | Backup / restore test for the network adapter | Open: no network adapter. Local backup reconstruction is tested. |
-| Corruption / digest negative test | Done for runs, evidence and events. |
+| Corruption / digest negative test | Done for runs, evidence, events, and local immutable Human Decision records. |
 | Restart / reconstruction fixture | Done. |
 | No duplicate canonical run / evidence / decision model | Held; this document defines no new record shape. |

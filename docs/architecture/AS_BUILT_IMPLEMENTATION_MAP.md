@@ -46,7 +46,15 @@ Developer / operator
   |       -> experiments/two_attempt_orchestrator.py
   |       -> independent verifier + run evidence report
   |       -> bounded local evidence/replay bundle
-  |       -> human decision / replay remain separate, manual
+  |       -> human decision / replay remain separate, manual:
+  |
+  +-- idkmesh local-loop-replay BUNDLE           [checkout + verify extra]
+  |       -> local_loop.replay_saved_run -> experiments/replay_run.py main (replay)
+  |       -> re-runs the saved config, compares must-match fields; WRITES NOTHING
+  |
+  +-- idkmesh local-loop-record-decision EVIDENCE_REPORT --output P ...  [checkout + verify extra]
+  |       -> local_loop.record_decision -> experiments/record_human_decision.py main (record)
+  |       -> digest-bound decision record under results/ only; integrates nothing
   |
   +-- idkmesh pages-site --repository R --projection P... --out DIR
   |       -> github_public_evidence.py (strict projection validation)
@@ -121,9 +129,17 @@ Browser / stdlib ControlTowerClient
     -> GET /api/v1/events and /events/stream (SSE)
 ```
 
-The runtime uses `service_runtime.py` for request correlation, readiness, resource ceilings and access logging; `api_observability.py` for privacy-safe fixed-cardinality operational metrics; and `otel_metrics.py` for **offline** OTLP/HTTP JSON mapping (not a built-in push exporter). OpenAPI is built by `control_tower_api.openapi_document()`; the running server's `GET /api/v1/openapi.json` is the authoritative route/schema discovery surface.
+The runtime uses `service_runtime.py` for request correlation, readiness, resource ceilings and opt-in access logging (closed route-template vocabulary; dynamic path arguments never copied to logs; unknown URLs become `<unmatched>`); `api_observability.py` for privacy-safe fixed-cardinality operational metrics; and `otel_metrics.py` for **offline** OTLP/HTTP JSON mapping (not a built-in push exporter). OpenAPI is built by `control_tower_api.openapi_document()`; the running server's `GET /api/v1/openapi.json` is the authoritative route/schema discovery surface.
 
 **Not routed:** privileged `POST /api/v1/human-decisions`, connector mutation/dispatch APIs, an authenticated multi-tenant network service, or merge endpoints. `human_decision_service.py` and enterprise authorization kernels do not themselves make such routes available. See [Control Tower Local API v0.1](../specifications/CONTROL_TOWER_LOCAL_API_V0_1.md), [API Conventions](../specifications/API_CONVENTIONS_V0_1.md), and [Enterprise Control Plane](ENTERPRISE_CONTROL_PLANE.md).
+
+**Enterprise security/conformance seam:** the local E9 harness in
+[enterprise_conformance.py](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/enterprise_conformance.py) exercises
+the existing authorization/cache, tenant, claims, data/egress, local HTTP,
+SQLite restore, connector-error and public-projection boundaries in isolated
+fixtures. These are cross-layer *test observations*, not an authenticated
+G2/G3 API, a production sandbox, a remote-provider outage drill or merge
+authority. See the [ten-issue evidence and gap matrix](ENTERPRISE_CONTROL_PLANE.md#19-cross-layer-enterprise-conformance-ten-issue-work-slices-2026-10-13).
 
 ## Connector and provider boundaries
 
@@ -147,6 +163,7 @@ The execution-substrate abstraction and GitHub-first deployment model remain **a
 - **Candidate/evidence identity:** `candidate_reference.py`, `result_manifest_builder.py`, `verification_handoff.py`, `github_evidence_link.py`, `github_public_evidence.py`. Content and source bindings carry evidence, not accept/merge authority.
 - **Review-panel diagnostics:** `gate_audit.py`, `gate_audit_dependence.py`, `gate_audit_uncertainty.py`, `marginal_evidence*.py`. Observed dependence matters more than nominal reviewer count; held-out selection/benchmark results are not a generalized external-performance claim.
 - **Local human/enterprise kernels:** `human_decision_service.py`, `tenant_scope.py`, `enterprise_authz.py`, `enterprise_identity_github.py`, `enterprise_identity_oidc.py`, `enterprise_audit.py`, `enterprise_profile.py`. Authorization depends on independently trusted identity; in-memory scope fixtures and local ledgers are not hosted-service qualification.
+- **Pre-confirmatory research freeze (S3):** `experiments/s3_verifier_freeze.py` generates calibration-only power plans and content-addressed manifests. The freeze validator recomputes each bound local artifact and refuses conflicting policy, source or outcome material; a self-digest by itself is not a signature or immutable storage. No verifier execution, sandbox qualification, or release/merge authority is implied. See [S3 freeze protocol](../research/S3_VERIFIER_FREEZE_TOOLKIT.md).
 - **Experimental/repository systems:** `experiments/` implements verifiers, replay, candidate/evidence/report contracts and orchestration; `sim/` and `randomness_lab/` test research questions; `tools/`, `scripts/` and 61 GitHub workflows provide specialized checks, GitHub automation and source observation. See [research](../research/README.md), [testing](../TESTING.md), and [reproducibility evidence](../audits/2026-10-10-code-documentation-reconciliation.md).
 
 ## Failure and deployment boundaries

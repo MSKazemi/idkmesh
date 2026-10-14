@@ -2,6 +2,10 @@
 
 Experiments are small, reproducible programs used to challenge IDKMesh hypotheses before those hypotheses become architecture or automation.
 
+For each record's evidence class (synthetic, public-observed, real-run, or
+analytic) and its one-sentence verdict, see the
+[results ledger](../docs/research/RESULTS_LEDGER.md).
+
 ## Every experiment record
 
 Each row's text is that record's own title, so this index cannot drift from what
@@ -47,6 +51,8 @@ listed here fails the suite rather than becoming quietly undiscoverable.
 | **E045** | [169 real coding agents fail together, and a 10-agent pilot underestimates what the population covers](E045-public-agent-dependence-pilot.md) |
 | **E046** | [Per-item difficulty forecasts how many tasks a team of coding agents will cover; correlation-only models do not](E046-agent-value-forecast.md) |
 | **E047** | [The H1 result survives removing duplicate models, and choosing agents by model organisation loses to choosing by complementarity](E047-provenance-aware-agent-value.md) |
+| **E049** | [Recovery time, viable-niche coverage and cost per improvement for the five E024 arms](E049-derived-measurements.md) |
+| **E050** | [Agent churn at a matched budget for the five E024 arms, under a memory-loss and a cold-start model](E050-churn.md) |
 
 The Physarum routing research records are also indexed here:
 [PHY-0 reference routing](PHY-0-physarum-compute-routing.md),

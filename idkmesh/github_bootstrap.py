@@ -396,6 +396,11 @@ def build_github_bootstrap_plan(
             reason="Bootstrap may inspect/report governance later but must not silently mutate admin policy.",
         ),
         OwnerAction(
+            code="configure-preview-scope",
+            summary="Choose the repository paths issue previews may propose changing in .idkmesh/project.json.",
+            reason="The generated project intentionally has no preview write scope; bootstrap must not guess owner-approved paths.",
+        ),
+        OwnerAction(
             code="configure-provider-secrets",
             summary="Create provider secret values in GitHub Secrets or approved external secret storage.",
             reason="Generated files contain secret references only; bootstrap never creates or reads secret values.",
@@ -404,6 +409,11 @@ def build_github_bootstrap_plan(
             code="configure-secret-environments",
             summary="Configure approval-protected GitHub Environments for secret-bearing/high-risk operations when required.",
             reason="Environment reviewers and protection rules are repository-owner governance decisions.",
+        ),
+        OwnerAction(
+            code="verify-pinned-runtime",
+            summary=f"Confirm the pinned IDKMesh ref {pinned_ref!r} provides the github-workflow phases the generated wrappers require.",
+            reason="Bootstrap validates pin syntax but does not fetch or attest the pinned runtime; unavailable phases must remain fail-closed.",
         ),
     )
 
@@ -414,3 +424,35 @@ def build_github_bootstrap_plan(
         files=tuple(sorted(files, key=lambda item: item.path)),
         owner_actions=tuple(sorted(owner_actions, key=lambda item: item.code)),
     )
+
+
+def render_owner_action_checklist(plan: GitHubBootstrapPlan) -> str:
+    """Render the C8-E manual setup boundary as a deterministic checklist.
+
+    Input is the trusted bootstrap plan, never issue or provider text.
+    No file, network, secret, GitHub admin or dispatch operation occurs.
+    """
+    if not isinstance(plan, GitHubBootstrapPlan):
+        raise TypeError("plan must be GitHubBootstrapPlan")
+    lines = [
+        "# IDKMesh GitHub setup - repository owner checklist",
+        "",
+        f"Pinned IDKMesh ref: {plan.idkmesh_ref}",
+        f"Integration branch: {plan.default_branch}",
+        "",
+        "Generated workflow/config files are proposals, not installed automation.",
+        "The repository owner must perform and verify each action:",
+        "",
+    ]
+    for action in plan.owner_actions:
+        lines.append(f"- [ ] {action.code}: {action.summary}")
+        lines.append(f"  Rationale: {action.reason}")
+    lines.extend([
+        "",
+        "Do not paste secret values into issues, logs or this checklist.",
+        "Do not weaken branch protection or grant workers merge authority.",
+        "Verify the pinned IDKMesh runtime before enabling workflows; unavailable phases must stay fail-closed.",
+        "Record owner-approved settings as separate operational evidence.",
+        "",
+    ])
+    return "\n".join(lines)

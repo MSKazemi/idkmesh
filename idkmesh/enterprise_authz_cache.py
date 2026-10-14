@@ -62,6 +62,7 @@ def policy_digest(policy: AuthorizationPolicy) -> str:
             "max_data_classification": rule.max_data_classification,
             "risk_floor": rule.risk_floor,
             "distinct_approval_at_risk": rule.distinct_approval_at_risk,
+            "executor_distinct_at_risk": rule.executor_distinct_at_risk,
             "approval_roles": sorted(rule.approval_roles),
             "approval_actor_types": sorted(rule.approval_actor_types),
         }
@@ -95,6 +96,7 @@ def decision_cache_key(
             "actor": request.actor.to_dict(),
             "approver": None if request.approver is None else request.approver.to_dict(),
             "approval_reference": request.approval_reference,
+            "executor_principal_ids": list(request.executor_principal_ids),
             "policy": policy_digest(policy),
         }
     )

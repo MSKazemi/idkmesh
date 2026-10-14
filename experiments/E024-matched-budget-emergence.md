@@ -239,6 +239,25 @@ extra compute allowance.
 > of 100 paired seeds. Cite this record for "the archive is the best arm on
 > average", never for "the archive is safe" or "the archive wins the run you
 > get".
+>
+> **Follow-up (E049).** Three measurements this record leaves out are now
+> computed from a replay of these same arms and seeds, without changing any
+> number above: [`E049-derived-measurements.md`](E049-derived-measurements.md)
+> reports recovery time to an absolute, right-censored utility bar, viable-niche
+> coverage defined identically for all five arms, and proposals per verified
+> improvement. Its findings include ones that cut against the archive: random
+> search is close on first-passage recovery, and the archive's cost-per-improvement
+> lead holds under one accounting only.
+>
+> **Follow-up (E050).** Churn, which this record does not model, is measured in
+> [`E050-churn.md`](E050-churn.md) for the same five arms at the same matched
+> budget, under a memory-loss and a cold-start model, without changing any number
+> above. Its findings include ones that cut against the archive: under memory loss
+> only the majority swarm can move, and churn removes its catastrophic seeds (44 of
+> 100 to 0 at full churn), so the `0/100` against `44/100` reliability contrast
+> holds only for a swarm that never turns over its members; under cold start the
+> archive is the arm that loses most. Synthetic mechanism evidence, not a model of
+> real churn.
 
 ## Limitations and remaining issue scope
 

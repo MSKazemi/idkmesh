@@ -116,8 +116,10 @@ owner adds, for example:
 ```
 
 Choosing where an automated candidate may write is an owner decision, so the
-runner does not guess a default. A fresh-repository fixture that walks
-bootstrap to preview belongs to C8-G.
+runner does not guess a default.
+`tests/test_github_bootstrap_fresh_repo.py` (C8-G) walks exactly this path on a
+bare repository: apply, the `preview_scope_unconfigured` refusal, the owner
+edit, then a deterministic preview.
 
 ### Output safety
 
@@ -167,7 +169,7 @@ exits 2. Results carry `dispatch_performed: false`,
 | `preview_scope_unconfigured` | `metadata.github_issue_preview.allowed_paths` is not set |
 | `event_issue_mismatch` | The triggering event concerns a different issue |
 | `issue_unavailable` | The issue could not be read or normalized (includes the connector error code) |
-| `preview_refused` | The issue is closed, locked, or over the configured bounds |
+| `preview_refused` | The issue is closed, locked, over the configured bounds, or its title, body or metadata appears to contain a credential (or could not be fully scanned); the message and details name rule ids and fields, never the text |
 | `ledger_unavailable` | The ledger branch or transport could not be read |
 | `ledger_invalid` | The ledger chain or latest record is inconsistent |
 | `ledger_run_not_found` | The run has no ledger records |
@@ -185,6 +187,32 @@ variable. It covers the policy derivation, hostile issue text, the symlink and
 size bounds, the read-only ledger transport, and that `dispatch` and `verify`
 touch no environment. No test calls GitHub.
 
+`tests/test_github_bootstrap_fresh_repo.py` is the end-to-end counterpart
+(C8-G, #596). Where the file above renders wrappers in memory, it installs them
+with `idkmesh init --github --apply` into a directory that has only a `.git`
+marker and derives each phase's environment from the workflow file **on disk**.
+It asserts that:
+
+- apply creates exactly the eight planned files plus the state record;
+- `preview` refuses with `preview_scope_unconfigured` before the owner decision
+  and, after it, emits one deterministic JSON line that carries the owner scope
+  and the always-forbidden control paths and none of the credential values in
+  the environment;
+- an issue whose body holds a pasted credential is refused with `preview_refused`
+  and the credential appears in neither stdout nor stderr;
+- `status` projects a ledger fixture read-only, and `dispatch` and `verify`
+  still refuse with their own error codes (matched on the `error:` line, because
+  an argparse usage error also exits 2);
+- a second apply preserves an owner-edited seed and writes nothing, while a
+  hand-edited managed workflow is refused with `managed_file_modified` and left
+  byte-identical;
+- the whole walk runs with `socket.socket.connect` and
+  `socket.create_connection` patched to fail, and a positive control proves the
+  patch bites.
+
+Mutation checks that fail it: emptying `ALWAYS_FORBIDDEN_PATHS`, reporting
+`dispatch_performed: true`, and making apply stop preserving user seeds.
+
 ## Non-goals
 
 - Dispatching work, resolving a provider secret, or creating a candidate.
@@ -198,6 +226,6 @@ touch no environment. No test calls GitHub.
 - Stateless explicit dispatch, behind its own reviewed authority design.
 - Independent verification of an exact candidate revision.
 - Idempotent comment publication once a retained idempotency source exists.
-- Owner-action checklist and safe apply/re-run (C8-E checklist item, C8-F).
-- Fresh-repository bootstrap-to-preview fixture (C8-G), including the write
-  scope step above.
+- A reviewed way for the owner to set the preview write scope other than
+  hand-editing `.idkmesh/project.json`; the C8-G fixture performs that edit
+  directly, as the spec above documents.

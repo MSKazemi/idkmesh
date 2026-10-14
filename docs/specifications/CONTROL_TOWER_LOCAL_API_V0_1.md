@@ -128,11 +128,17 @@ Optional access logging is enabled with:
 IDKMESH_HTTP_ACCESS_LOG=1
 ```
 
-Each log line is compact JSON containing request ID, method, path, response
-status/size, duration, service, and event time. Query strings are stripped and
-the logging API does not accept request bodies, authorization/session headers,
-prompts, or secret material. Logging failure does not turn an otherwise valid
-read-only response into an application failure.
+Each opt-in log line is compact JSON containing request ID, method, a **fixed
+route template** (in the legacy `path` field), response status/size, duration,
+service, and event time. Only recognized static endpoints appear verbatim.
+Dynamic run, WorkUnit, and project IDs become `{run_id}`, `{work_unit_id}`,
+and `{project_id}`; unrecognized URLs become `<unmatched>`. Query strings,
+raw route arguments (including encoded arguments), and unrecognized method
+text are not logged. The logging API does not accept request/response bodies,
+authorization/session headers or prompts. Caller-supplied safe `X-Request-ID`
+is still retained for correlation, so **never put secret data in that header**.
+Operators control access to and retention of opt-in stderr logs. Logging failure
+does not turn an otherwise valid read-only response into an application failure.
 
 
 ## Authority invariant
@@ -203,8 +209,14 @@ Unsupported request media types return HTTP 415 with
 `Content-Length` must be RFC 9110 `1*DIGIT` (ASCII digits), padded at most by
 the field's optional whitespace. Any other spelling -- `+2`, `-1`, decimals,
 non-ASCII digits -- is `400 invalid_content_length`; a missing header is
-`411 length_required`, and any `Transfer-Encoding` is rejected with
-`400 unsupported_transfer_encoding` before the body is read.
+`411 length_required`. **More than one Content-Length is rejected**, even
+when every value is identical: the request must have an unambiguous single
+framing rule. Any `Transfer-Encoding` header, including an empty value, is
+rejected with `400 unsupported_transfer_encoding` before reading the body.
+The inspection endpoint also requires **exactly one Content-Type** header;
+missing, unsupported, or duplicated media-type fields return
+`415 unsupported_media_type`. This prevents parser disagreement with
+intermediaries; this local profile does not claim proxy-smuggling certification.
 
 API responses include:
 

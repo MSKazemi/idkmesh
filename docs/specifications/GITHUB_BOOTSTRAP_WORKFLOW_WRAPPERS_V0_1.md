@@ -151,8 +151,12 @@ This slice does not:
 - **Runner:** done for `preview` and `status`; `dispatch` and `verify` remain
   fail-closed until a stateless authority design exists (see the runner
   specification).
-- **C8-E:** owner-action checklist (environment, label, secrets, protection).
-- **C8-F:** safe apply/re-run using the digests rendered here.
-- **C8-G:** fresh-repository bootstrap-to-preview fixture.
+- **C8-E:** done; see the owner-action checklist
+  ([environment, label, secrets, protection](../operations/GITHUB_BOOTSTRAP_OWNER_ACTIONS_V0_1.md)).
+- **C8-F:** done; safe apply/re-run using the digests rendered here
+  ([Safe Apply](GITHUB_BOOTSTRAP_SAFE_APPLY_V0_1.md)).
+- **C8-G:** done; `tests/test_github_bootstrap_fresh_repo.py` installs these
+  wrappers into a bare repository and runs the runner with the environment they
+  declare (see the runner specification's Tests section).
 - Refresh the two Action pins when upstream releases move; the pack's shape
   tests do not pin the values.

@@ -28,7 +28,7 @@ methods, and every top-level Python module in `idkmesh/`.
 | `idkmesh gate-marginal` | measure marginal evidence contribution of candidate verifiers | diagnostic only |
 | `idkmesh gate-marginal-benchmark` | compare the marginal-evidence selector with preregistered baselines | benchmark/evidence surface, not routing authority |
 | `idkmesh gate-marginal-synthesis` | synthesize multiple benchmark cohorts descriptively | no cross-cohort winner or integration authority |
-| `idkmesh init` | deterministic GitHub-first bootstrap planning/rendering of config and pinned workflow wrappers | `--github --dry-run` only; no repository or GitHub mutation; rendered wrappers call `idkmesh github-workflow`, whose `dispatch` and `verify` phases still fail closed |
+| `idkmesh init` | GitHub-first bootstrap planning/rendering and POSIX local apply of config and pinned workflow wrappers | `--dry-run` purely renders; `--check` checks filesystem conflicts; explicit `--apply` writes only digest-guarded local generated files, never GitHub mutations; dispatch/verify still fail closed |
 | `idkmesh github-workflow` | runner the generated GitHub workflow wrappers call, driven by `IDKMESH_*` environment variables | `preview` and `status` are read-only; `dispatch` and `verify` fail closed; no merge, no provider secret, no issue comment |
 | `idkmesh github-workflow preview` | derive a deterministic WorkUnit preview and digest for one issue from project policy | read-only; needs `metadata.github_issue_preview.allowed_paths`; no dispatch |
 | `idkmesh github-workflow status` | project one run's latest durable-ledger record into the bounded status body and job summary | read-only transport; publishes no issue comment |
@@ -44,7 +44,7 @@ methods, and every top-level Python module in `idkmesh/`.
 | `idkmesh connections import` | persist safe normalized connector metadata in local SQLite | secret values are not persisted |
 | `idkmesh connections stored` | read normalized persisted connector metadata | read-only |
 | `idkmesh connections probe` | run offline fake-driver connector probes | no live provider call |
-| `idkmesh doctor` | summarize connector readiness, or evaluate the read-only C12 GitHub governance preflight with `--github` | connector/GitHub PASS is diagnostic precondition evidence, not dispatch, admin, acceptance, or merge authority |
+| `idkmesh doctor` | summarize connector readiness, evaluate the C12 GitHub governance preflight (`--github`), or run E9 offline destructive conformance (`--enterprise-conformance`) | E9 provider outage/quota exercises pre-dispatch fake-driver routing and redacted errors only; WARN/UNKNOWN never proves a live adapter or certification; no dispatch/admin/merge authority |
 | `idkmesh route` | provider-neutral routing command family | read/explain surface |
 | `idkmesh route explain` | explain eligible/rejected connectors and optional deterministic auto-selection | no external work or repository mutation |
 | `idkmesh run` | durable local Product Spine run-control command family | no provider dispatch, candidate acceptance, push, or merge |
@@ -67,6 +67,8 @@ methods, and every top-level Python module in `idkmesh/`.
 | `idkmesh steward-history` | inspect retained stewardship history | read/report surface |
 | `idkmesh steward-history-ui` | local browser view of stewardship history | local/read-only presentation |
 | `idkmesh local-loop` | deterministic local Product Spine composition from bounded work through attempts/evidence | local/fake or bounded execution path; no automatic integration |
+| `idkmesh local-loop-replay` | replay a saved `local-loop` bundle and compare it field by field (wraps `experiments/replay_run.py replay`) | checkout-only; writes nothing; no write, push, merge or selection authority |
+| `idkmesh local-loop-record-decision` | record one explicit human decision bound to the evidence-report digest (wraps `experiments/record_human_decision.py record`) | checkout-only; writes only under `results/`; integrates, selects and merges nothing |
 
 Run `idkmesh --help` or `idkmesh <command> --help` for argument-level help.
 
@@ -119,6 +121,7 @@ requiring an HTTP client dependency. Current public methods are:
 - `ControlTowerClient.get_run_evidence()`
 - `ControlTowerClient.get_run_attempts()`
 - `ControlTowerClient.list_runs()`
+- `ControlTowerClient.collect_run_pages()` — explicitly bounded, cursor-safe multi-page run reads that retain each page's request ID and digest; no writes, implicit retries, or snapshot consistency claim
 - `ControlTowerClient.get_work_unit()`
 - `ControlTowerClient.list_work_units()`
 - `ControlTowerClient.list_connections()`
@@ -144,7 +147,8 @@ list. Live connector dispatch remains separately authority-gated.
 The codebase implements Product Spine lifecycle projections, idempotent create/replay
 control, durable local run storage, retained evidence reads, derived WorkUnit/project read
 models, append-only run events, result-manifest building, verification handoff, and the
-bounded `local-loop` composition.
+bounded `local-loop` composition, with `local-loop-replay` and
+`local-loop-record-decision` as its explicit, authority-free follow-up commands.
 
 ### Provider and agent adapters
 
@@ -223,6 +227,8 @@ name documents implementation presence, not stability as a public Python API.
 - `idkmesh/enterprise_identity_github.py`
 - `idkmesh/enterprise_identity_oidc.py`
 - `idkmesh/enterprise_profile.py`
+- `idkmesh/enterprise_recovery_drill.py`
+- `idkmesh/enterprise_secret_scan.py`
 - `idkmesh/executor_admission.py`
 - `idkmesh/gate_audit.py`
 - `idkmesh/gate_audit_dependence.py`
@@ -230,6 +236,7 @@ name documents implementation presence, not stability as a public Python API.
 - `idkmesh/gate_audit_uncertainty.py`
 - `idkmesh/github_actions_summary.py`
 - `idkmesh/github_bootstrap.py`
+- `idkmesh/github_bootstrap_apply.py`
 - `idkmesh/github_bootstrap_render.py`
 - `idkmesh/github_bootstrap_workflows.py`
 - `idkmesh/github_branch_reader.py`
@@ -253,6 +260,7 @@ name documents implementation presence, not stability as a public Python API.
 - `idkmesh/github_public_evidence.py`
 - `idkmesh/github_release_provenance.py`
 - `idkmesh/github_rest_source.py`
+- `idkmesh/github_run_label_projection.py`
 - `idkmesh/github_routing_projection.py`
 - `idkmesh/github_status_comment.py`
 - `idkmesh/github_status_update.py`

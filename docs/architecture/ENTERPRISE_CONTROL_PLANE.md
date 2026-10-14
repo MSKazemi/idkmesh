@@ -230,7 +230,7 @@ Enterprise workers should support:
 
 Issue #672 owns the data/egress/secrets boundary.
 
-The pure decision kernel is `idkmesh/enterprise_data_policy.py`, specified in [Enterprise Data Policy Kernel v0.1](../specifications/ENTERPRISE_DATA_POLICY_V0_1.md). It evaluates the profile's declarations as fail-closed allow/deny decisions; it is not yet wired into connectors, workers or the audit ledger.
+The pure decision kernel is `idkmesh/enterprise_data_policy.py`, specified in [Enterprise Data Policy Kernel v0.1](../specifications/ENTERPRISE_DATA_POLICY_V0_1.md). Its allow/deny decisions are not yet wired into connectors or workers. The fail-closed `idkmesh/enterprise_secret_scan.py` is **now invoked** at canonical WorkUnit/source binding (including revalidation), at E4 audit-event validation before SQLite append, and independently by the NDJSON audit sink before writing. Denials retain stable error codes but not matched credential text. This is **partial E5 coverage**: generic intake previews, ResultManifests, verification artifacts, provider returns, ordinary logs, GitHub publication and other write paths remain unguarded by this integration. The GitHub issue preview (`preview_github_issue_work_unit`) also invokes it, so issue text is refused before it can become a WorkUnit objective.
 
 ## 9. Secret and workload identity
 
@@ -294,12 +294,16 @@ Enterprise operation requires explicit objectives rather than adjectives such as
 The Enterprise Control Profile records:
 
 - availability target;
-- recovery point objective (RPO);
-- recovery time objective (RTO);
-- restore-test interval;
-- backpressure requirement.
+- recovery point objective (RPO), in minutes;
+- recovery time objective (RTO), in minutes;
+- whether backups are required;
+- whether a restore test is required (a boolean: the profile has no restore-test
+  interval and no backpressure field yet).
 
-These are declared objectives until measured by a pilot.
+These are declared objectives until measured by a pilot. `idkmesh/enterprise_recovery_drill.py`
+judges one *recorded* recovery drill against the declared RPO and RTO and returns
+PASS, FAIL or UNKNOWN; a missing, stale or mismatched drill is UNKNOWN, never a pass.
+It runs no drill and restores nothing, and no real drill has been recorded yet.
 
 Required failure behavior:
 
@@ -445,3 +449,40 @@ The baseline is ready for an enterprise pilot only when the system can demonstra
 - normal protected integration remains outside worker/verifier authority.
 
 That evidence, rather than infrastructure size, is what makes the system enterprise-operable.
+
+## 19. Cross-layer enterprise conformance: ten issue work slices (2026-10-13)
+
+The current in-process conformance harness is [enterprise_conformance.py](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/enterprise_conformance.py),
+exposed via the existing command:
+
+~~~bash
+idkmesh doctor --enterprise-conformance --json
+python -m pytest -q tests/test_enterprise_conformance.py
+~~~
+
+These checks operate on synthetic identities and temp SQLite databases. A
+reported PASS means only that the named **in-process** assertions held; WARN
+means they held but the named deployment gap remains; UNKNOWN remains unknown.
+A scenario executing zero safety assertions now fails closed, and an empty or
+unrecognised status set is UNKNOWN rather than a false PASS. The overall report
+continues to be UNKNOWN until every required scenario is exercised. It is not an enterprise certification, a release gate, or permission
+to dispatch, publish, approve, push or merge.
+
+| Open issue | Implemented/reviewed boundary in this change | Still required for issue completion |
+| --- | --- | --- |
+| [#670](https://github.com/MSKazemi/idkmesh/issues/670) identity | Live-vs-revoked/expired decision-cache results and same-revision identity denial | Authenticated upstream identity producer, revocation feed and enforced service middleware |
+| [#672](https://github.com/MSKazemi/idkmesh/issues/672) data policy | G2 policy fixture rejects restricted external processing, destination bypasses and cloud key misuse | Apply decisions before real worker egress, secrets and provider invocation |
+| [#673](https://github.com/MSKazemi/idkmesh/issues/673) operations | Injected provider outage, rate-limit and quota probes are refused by the real router before dispatch; normalized, credential-redacted error evidence; restored local/audit SQLite checks; a pure evaluator that judges a recorded recovery drill against the declared RPO/RTO | Outage pilot, bounded retries, encrypted backup owner, a real recorded drill (none exists), restore-test interval and backpressure fields |
+| [#676](https://github.com/MSKazemi/idkmesh/issues/676) conformance | Negative controls demonstrate that disabled claim fencing, Host checks, provider classification, egress and publication whitelists turn red | Destructive deployment pilot and independently retained evidence |
+| [#743](https://github.com/MSKazemi/idkmesh/issues/743) API security | Local Host/token boundary rejects malformed or non-loopback requests | TLS/proxy/mTLS/SSO, tenant-scoped auth, browser origin/CSRF for **network** service |
+| [#750](https://github.com/MSKazemi/idkmesh/issues/750) storage | SQLite online backup replay and audit checkpoint/tamper negative controls | Network storage adapter, replay/migrations, encrypted backup/restore drill |
+| [#598](https://github.com/MSKazemi/idkmesh/issues/598) C10 roles | Two actors, expiry, restart and claim-epoch fencing tested without self-granted authority | Live GitHub role producer and two-real-user dispatch/SoD acceptance |
+| [#597](https://github.com/MSKazemi/idkmesh/issues/597) C9 ledger | Duplicate delivery is retried across a newly reopened local store | GitHub durable storage, external idempotent dispatch and post-runner recovery |
+| [#609](https://github.com/MSKazemi/idkmesh/issues/609) public evidence | Unlisted provider output and elevated merge flag fail publication; private classification refuses output | Live Pages publishing/outage fallback and retained external provenance |
+| [#682](https://github.com/MSKazemi/idkmesh/issues/682) Product Spine | Synthetic run retains exact revision/digest and the projection grants no decision/merge authority | Integrated real worker/hosted worker, authenticated human decision and durable end-to-end pilot |
+
+The architecture remains four separate planes: source/integration, coordination,
+execution and evidence/audit. The conformance harness does **not** connect them
+into a deployed multi-tenant service. The operator must not use test counts or
+individual green scenarios to claim enterprise readiness.
+

@@ -41,13 +41,15 @@ The wheel intentionally installs only `idkmesh/`. Running the research-backed `l
 | `doctor --github OBSERVATION --operation OP [--workflow PATH]` | Evaluate the read-only C12 GitHub governance preflight and optional workflow-source checks | Uses trusted normalized observations; no GitHub admin mutation, secret access, acceptance, or merge |
 | `doctor --enterprise-conformance [--json]` | Run the in-process E9 failure-mode scenarios (unauthorized actor, cross-tenant reference, replay, secret loss, audit-exporter outage, ledger restore, stale identity, self-approval) and report PASS/WARN/FAIL/UNKNOWN per scenario | Temp dirs and fakes only; exit 1 on FAIL or UNKNOWN; scenarios not yet exercised report UNKNOWN; not a SOC 2/ISO 27001/FedRAMP claim |
 | `route explain PROFILE DECISION` | Offline connector routing eligibility/explanation | Does not dispatch work or grant authority |
-| `init --github --dry-run --idkmesh-ref REF` | Pure deterministic GitHub-first bootstrap **plan**/render of config and pinned workflow wrappers (`rendered_config_files`, `rendered_workflow_files` in `--json`) | Apply mode is **not** implemented; no repo writes; the wrappers call `github-workflow` below |
+| `init --github --dry-run\|--check\|--apply --idkmesh-ref REF` | Render bootstrap plan, inspect local conflicts, or explicitly apply eight pinned generated files | Dry-run has no writes; check reads local files; apply makes digest-guarded local writes only, never GitHub/API mutations; dispatch/verify still fail closed |
 | `github-workflow {preview,status} [--issue-json PATH \| --ledger-records PATH] [--json]` | Runner the generated `idkmesh-*.yml` wrappers call; reads `IDKMESH_*` environment variables. `preview` derives a WorkUnit preview and digest for one issue; `status` projects one run's latest durable-ledger record into the bounded status body and job summary | Read-only; no dispatch, issue comment, provider secret, or merge; refusals print `error: <code>: <message>` and exit 2 |
 | `work preview --issue-json PATH --repository OWNER/NAME --source-revision SHA [--project-root DIR] [--issue N] [--no-intake-form] [--json]` | Offline WorkUnit preview (C7-C): one issue snapshot file plus `.idkmesh/project.json` policy (same derivation as `github-workflow preview`) to a canonical WorkUnit, digest and warnings; an IDKMesh Issue Form in the body is composed by default | Read-only; no network, secret, environment variable, file write, dispatch or HTTP route (`POST /api/v1/work-units:preview` is specified, not served); the form only narrows scope or raises risk; refusals print `error: <code>: <message>` and exit 2 |
 | `github-workflow {dispatch,verify}` | Reserved wrapper phases | Always fail closed with `dispatch_unavailable` / `verify_unavailable`; read no environment or secret |
 | `pages-site --repository OWNER/NAME --projection PATH... --out DIR [--force] [--json]` | Validate C14-D public-safe projections, render the C14-E static Pages file map, and write exactly those files to a local directory all-or-nothing | Local files only: no publication, workflow, network or GitHub call; refuses `..`/absolute/symlinked paths, a symlinked or foreign non-empty `--out` (replaced only with `--force`, never the cwd, its ancestors, home, or a `.git` directory) |
 | `release-provenance --repository OWNER/NAME --tag TAG --target-commit SHA [--artifact NAME=sha256:HEX]... [--projection PATH...] [--notes]` | Validate C14-D public-safe projections and print the C14-F release metadata/provenance record as JSON, or draft release notes with `--notes` | stdout only: no tag, GitHub Release, attestation, network or GitHub call; commit and artifact digests are caller-supplied and recorded as unverified; no timestamps; exit 2 and empty stdout on any rejected input |
-| `local-loop CONFIG [--output-dir PATH]` | Two-attempt reference orchestration and verification/evidence bundle | Checkout + `[verify]` extra; decisions/replay remain manual |
+| `local-loop CONFIG [--output-dir PATH]` | Two-attempt reference orchestration and verification/evidence bundle | Checkout + `[verify]` extra; never replays or records a decision on its own |
+| `local-loop-replay BUNDLE` | Replay a saved `local-loop` bundle against the same fixtures and compare must-match vs expected-to-vary fields; same report and exit codes (0 PASS, 1 diverged, 2 unusable path) as `python experiments/replay_run.py replay` | Checkout + `[verify]` extra; writes nothing; no write, push, merge or selection authority |
+| `local-loop-record-decision EVIDENCE_REPORT --output PATH --decision-id ID --decision {accept,reject,escalate} --rationale TEXT --decider-id ID [--decider-type TYPE] [--decider-display-name NAME] [--selected-attempt-id ID] [--decided-at TS]` | Record one explicit human decision bound to the evidence-report digest; same behavior as `python experiments/record_human_decision.py record` | Checkout + `[verify]` extra; `--output` must be under `results/` and not the report; record's `canonical_state_write`, `git_push` and `merge` are `false`; integrates nothing |
 | `steward-report INPUT`, `steward-report-ui INPUT` | Validate and display retained single-run steward evidence | Offline read/loopback UI |
 | `steward-history INPUTS...`, `steward-history-ui INPUTS...` | Aggregate/show retained steward history | No GitHub polling or mutation |
 
@@ -89,6 +91,14 @@ idkmesh doctor --github examples/github-governance/governance-pass-v0.1.json \
 # With checkout and optional verification extra installed:
 idkmesh local-loop examples/orchestration/two-attempt-good-vs-bad.json \
   --output-dir results/idkmesh-local-loop/manual-demo
+
+# Replay that saved run, then record an explicit human decision against it:
+idkmesh local-loop-replay results/idkmesh-local-loop/manual-demo/replay-source.json
+idkmesh local-loop-record-decision \
+  results/idkmesh-local-loop/manual-demo/evidence-report.json \
+  --output results/idkmesh-local-loop/manual-demo/human-decision-record.json \
+  --decision-id manual-demo.decision.001 --decision accept \
+  --rationale "reviewed the evidence report" --decider-id my-id
 
 # Expose existing local run state to the read-only HTTP API:
 idkmesh control-tower --no-browser --product-spine-store state.sqlite
