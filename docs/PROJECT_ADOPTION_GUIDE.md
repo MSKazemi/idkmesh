@@ -243,7 +243,10 @@ with exact UTF-8 content, ownership/overwrite policy, byte size, and SHA-256
 content digest. To examine existing target-file conflicts use `--check`; explicit
 `--apply` now installs the generated files locally on a POSIX Git working tree.
 User-owned configuration is never overwritten, and managed files require an
-unchanged retained SHA-256 digest on rerun. See [safe local apply](specifications/GITHUB_BOOTSTRAP_SAFE_APPLY_V0_1.md).
+unchanged retained SHA-256 digest on rerun. Use `--target DIR` with `--check` or
+`--apply` to scaffold another checkout instead of the current directory; there is
+deliberately no `--force`, so a conflicting file is reported and left untouched.
+See [safe local apply](specifications/GITHUB_BOOTSTRAP_SAFE_APPLY_V0_1.md).
 
 Use the current reference contracts as templates:
 

@@ -244,5 +244,127 @@ class GitHubBootstrapApplyCliTests(unittest.TestCase):
         self.assertIn("choose exactly one of --dry-run, --check, or --apply", result.stderr)
 
 
+class GitHubBootstrapTargetCliTests(unittest.TestCase):
+    """`--target DIR` scaffolds into another repository, never into cwd."""
+
+    run_cli = GitHubBootstrapCliTests.run_cli
+
+    def tree(self, root: Path) -> list[str]:
+        return sorted(str(p.relative_to(root)) for p in root.rglob("*") if p.is_file())
+
+    def test_apply_writes_into_target_and_leaves_cwd_untouched(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            cwd = Path(tmp) / "elsewhere"
+            target = Path(tmp) / "repo"
+            cwd.mkdir()
+            (target / ".git").mkdir(parents=True)
+            result = self.run_cli(
+                "init", "--github", "--apply", "--idkmesh-ref", SHA,
+                "--target", str(target), "--json", cwd=cwd,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(self.tree(cwd), [])
+            written = self.tree(target)
+            self.assertEqual(len(written), 9)  # eight canonical files plus state
+            self.assertIn(".github/workflows/idkmesh-preview.yml", written)
+            self.assertTrue(json.loads(result.stdout)["writes_performed"])
+
+    def test_check_with_target_writes_nothing(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            target = Path(tmp) / "repo"
+            (target / ".git").mkdir(parents=True)
+            result = self.run_cli(
+                "init", "--github", "--check", "--idkmesh-ref", SHA,
+                "--target", str(target), "--json",
+            )
+            self.assertEqual(self.tree(target), [])
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertFalse(json.loads(result.stdout)["writes_performed"])
+
+    def test_target_requires_a_git_working_tree(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            result = self.run_cli(
+                "init", "--github", "--apply", "--idkmesh-ref", SHA, "--target", tmp
+            )
+            self.assertEqual(self.tree(Path(tmp)), [])
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("git_repository_required", result.stderr)
+
+    def test_missing_target_fails_closed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            missing = Path(tmp) / "nope"
+            result = self.run_cli(
+                "init", "--github", "--apply", "--idkmesh-ref", SHA, "--target", str(missing)
+            )
+            self.assertFalse(missing.exists())
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("invalid_root", result.stderr)
+
+    def test_symlinked_target_is_refused(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            real = Path(tmp) / "real"
+            (real / ".git").mkdir(parents=True)
+            link = Path(tmp) / "link"
+            link.symlink_to(real, target_is_directory=True)
+            result = self.run_cli(
+                "init", "--github", "--apply", "--idkmesh-ref", SHA, "--target", str(link)
+            )
+            self.assertEqual(self.tree(real), [])
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("invalid_root", result.stderr)
+
+    def test_dotdot_target_cannot_escape_generated_path_checks(self):
+        # The target itself may legitimately contain '..'; the generated paths
+        # stay fixed to the canonical eight and are never derived from it.
+        with tempfile.TemporaryDirectory() as tmp:
+            outer = Path(tmp)
+            target = outer / "a" / "repo"
+            (target / ".git").mkdir(parents=True)
+            odd = str(outer / "a" / "x" / ".." / "repo")
+            (outer / "a" / "x").mkdir()
+            result = self.run_cli(
+                "init", "--github", "--apply", "--idkmesh-ref", SHA, "--target", odd
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(self.tree(outer / "a" / "x"), [])
+            self.assertEqual(len(self.tree(target)), 9)
+
+    def test_target_is_rejected_for_dry_run(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            result = self.run_cli(
+                "init", "--github", "--dry-run", "--idkmesh-ref", SHA, "--target", tmp
+            )
+            self.assertEqual(self.tree(Path(tmp)), [])
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("--target applies only to --check or --apply", result.stderr)
+
+    def test_empty_target_is_rejected(self):
+        result = self.run_cli(
+            "init", "--github", "--apply", "--idkmesh-ref", SHA, "--target", ""
+        )
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("non-empty directory path", result.stderr)
+
+    def test_existing_edited_file_in_target_is_not_overwritten(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            target = Path(tmp) / "repo"
+            (target / ".git").mkdir(parents=True)
+            workflow = target / ".github/workflows/idkmesh-preview.yml"
+            workflow.parent.mkdir(parents=True)
+            workflow.write_text("name: mine\n", encoding="utf-8")
+            result = self.run_cli(
+                "init", "--github", "--apply", "--idkmesh-ref", SHA, "--target", str(target)
+            )
+            self.assertEqual(workflow.read_text(encoding="utf-8"), "name: mine\n")
+            self.assertEqual(self.tree(target), [".github/workflows/idkmesh-preview.yml"])
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("untracked_managed_file", result.stderr)
+
+    def test_help_documents_target(self):
+        result = self.run_cli("init", "--help")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("--target", result.stdout)
+
+
 if __name__ == "__main__":
     unittest.main()

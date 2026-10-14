@@ -12,6 +12,11 @@ and the release notes for that tag.
 
 ## [Unreleased]
 
+- Bootstrap into another checkout (refs #596): `idkmesh init --github --check|--apply` gains
+  `--target DIR` (default: current directory). The target must be an existing, non-symlink directory
+  with a `.git` marker; `--dry-run` rejects it; no `--force` exists, so conflicting files are
+  reported and never overwritten. Regression tests cover cwd isolation, symlink/missing/non-Git/empty
+  targets and a pre-existing user file. Live `dispatch`/`verify` remain fail-closed (#578, #597).
 - Agent churn at a matched budget, synthetic mechanism evidence only (refs #22): add
   `sim/e050_churn.py` and record `experiments/E050-churn.md`. Each generation a fraction of agents
   (`0, 0.1, 0.25, 0.5, 1.0`) is replaced by fresh ones in E024's five arms at the same proposal budget,

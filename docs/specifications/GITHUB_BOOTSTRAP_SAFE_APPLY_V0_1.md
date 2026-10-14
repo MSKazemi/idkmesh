@@ -11,6 +11,8 @@ idkmesh init --github --dry-run --idkmesh-ref v0.1.0
 idkmesh init --github --idkmesh-ref v0.1.0 --apply
 ```
 
+By default the current directory is the target. `--target DIR` (valid with `--check` or `--apply` only; rejected with `--dry-run`) installs into another checkout: `DIR` must exist, must not itself be a symlink, and must contain a `.git` marker, otherwise the run refuses with `invalid_root` or `git_repository_required` and writes nothing. The generated paths are fixed by the canonical plan and never derived from `DIR`. There is intentionally no `--force`: a pre-existing file that is not a previously generated, unmodified managed file is reported (`untracked_managed_file`, `managed_file_modified`) and never overwritten.
+
 The first command is a pure renderer. To inspect real target-file conflicts without modifying the repository, use `--check` instead of `--apply`. `--apply` explicitly opts in to local installation; the command never edits GitHub repository settings. `--json` emits a bounded, deterministic action report.
 
 C8-F uses the canonical C8-A/C/D eight-file inventory: two `user_seed` files (`project.json`, `connections.json`) and six `idkmesh_managed` files. User seeds are **create-if-absent**, never overwritten on rerun. Managed files may change only if their on-disk SHA-256 equals their previously retained generated digest.
