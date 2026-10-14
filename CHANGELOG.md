@@ -411,6 +411,14 @@ and the release notes for that tag.
   so a refactor cannot silently drop one. Tests only; no adapter behaviour
   changed, and the real N3 cohort remains open pending actual pre-outcome
   captures.
+- AVE-core shadow chain compatibility pins (refs #644):
+  `tests/test_ave_shadow_adapter_cohort_chain.py` runs synthetic AVE plans
+  through the generic outcome join and cohort summary and pins agreement and
+  disagreement counting, abstention retention, rejection of outcomes that
+  predate the plan or name an unfrozen choice, digest binding after plan
+  edits, and the descriptive-only cohort summary. Tests and a doc note only;
+  no adapter behaviour changed, and the real 20-30 plan N3 cohort remains
+  open and time-gated. Synthetic fixtures are not N3 evidence.
 - Enterprise conformance doctor, first slice (refs #676):
   `idkmesh doctor --enterprise-conformance [--json]` runs nine in-process
   destructive scenarios against the real tenant-scope, authorization, audit
