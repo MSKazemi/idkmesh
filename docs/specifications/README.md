@@ -220,6 +220,10 @@ meaning of an existing version.
   carries the trusted identity adapter contracts that may produce an
   ActorContext: E3-B from GitHub actor claims, E3-C from enterprise IdP
   (OIDC/SAML/SSO) claims. Neither adapter verifies a live credential.
+- [GitHub Authority Alignment Audit v0.1](GITHUB_AUTHORITY_ALIGNMENT_V0_1.md) —
+  read-only audit that the GitHub identity binding table and the C5 dispatch
+  trusted-actor list agree (login, kind, revocation, expiry, scope, kernel
+  dispatch role); grants no authority and is not yet wired into CI.
 - [Enterprise Audit Ledger v0.1](ENTERPRISE_AUDIT_LEDGER_V0_1.md) —
   dedicated append-only SQLite security/audit evidence stream for E4: exact
   tenant/project, actor/service identity, authorization decision digest,

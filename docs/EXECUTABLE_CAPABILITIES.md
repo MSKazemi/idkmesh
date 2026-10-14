@@ -245,6 +245,7 @@ name documents implementation presence, not stability as a public Python API.
 - `idkmesh/gate_audit_ui.py`
 - `idkmesh/gate_audit_uncertainty.py`
 - `idkmesh/github_actions_summary.py`
+- `idkmesh/github_authority_alignment.py`
 - `idkmesh/github_bootstrap.py`
 - `idkmesh/github_bootstrap_apply.py`
 - `idkmesh/github_bootstrap_render.py`
