@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idkmesh.org/schemas/enterprise-egress-policy-v0.1.schema.json",
+  "title": "IDKMesh Enterprise Egress Policy v0.1",
+  "description": "Maintainer-reviewed classification-vs-destination egress policy (E5, issue #672). Each destination is an exact lowercase fully qualified hostname with a trust zone and the explicit data classes it may receive. Policy input to idkmesh.enterprise_egress_policy, evaluated together with an enterprise control profile; deny by default, non-compensating. It grants no runtime authority and must never contain credentials.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["kind", "schema_version", "policy_id", "semantics", "destinations"],
+  "properties": {
+    "kind": {"const": "idkmesh-enterprise-egress-policy"},
+    "schema_version": {"const": "0.1"},
+    "policy_id": {"$ref": "#/$defs/identifier"},
+    "semantics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["policy_role", "grants_runtime_authority"],
+      "properties": {
+        "policy_role": {"const": "policy_input_only"},
+        "grants_runtime_authority": {"const": false}
+      }
+    },
+    "destinations": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 256,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["destination_id", "host", "zone", "allowed_classes"],
+        "properties": {
+          "destination_id": {"$ref": "#/$defs/identifier"},
+          "host": {
+            "type": "string",
+            "maxLength": 253,
+            "pattern": "^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z]([a-z0-9-]{0,61}[a-z0-9])?$(?!\n)",
+            "description": "Exact lowercase fully qualified hostname. No wildcard, URL, port, userinfo or IP literal; the final label must start with a letter."
+          },
+          "zone": {"enum": ["internal", "external_provider", "external_public"]},
+          "allowed_classes": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {"enum": ["public", "internal", "confidential", "restricted"]},
+            "description": "Explicit list, not a ceiling: each class is cleared independently."
+          },
+          "provider_id": {"$ref": "#/$defs/identifier"}
+        },
+        "allOf": [
+          {
+            "if": {"properties": {"zone": {"const": "external_provider"}}, "required": ["zone"]},
+            "then": {"required": ["provider_id"]},
+            "else": {"not": {"required": ["provider_id"]}}
+          },
+          {
+            "if": {"properties": {"zone": {"const": "external_public"}}, "required": ["zone"]},
+            "then": {"properties": {"allowed_classes": {"items": {"const": "public"}}}}
+          }
+        ]
+      }
+    }
+  },
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,255}$(?!\n)"
+    }
+  }
+}

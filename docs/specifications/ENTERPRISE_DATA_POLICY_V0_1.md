@@ -176,12 +176,81 @@ bytes, third-party ResultManifest producers, log files, or other serialization
 paths. A passing scan is not a guarantee that a novel secret format was found.
 The builder still grants no verification or integration authority.
 
+## Classified egress policy
+
+`idkmesh/enterprise_egress_policy.py` adds the declarative input the kernel
+lacked, **without changing the control-profile schema**: a separate, strict
+document validated by
+[`enterprise-egress-policy-v0.1.schema.json`](https://github.com/MSKazemi/idkmesh/blob/main/schemas/enterprise-egress-policy-v0.1.schema.json)
+(example: `examples/enterprise/egress-policy.example.json`). Each destination is
+an exact lowercase fully qualified hostname, a trust `zone` and an **explicit
+list** of the data classes it may receive. `decide_classified_egress(profile,
+policy_document, destination_host=..., data_class=...)` evaluates both
+documents and denies unless every layer agrees:
+
+| Zone | Meaning | Extra rule |
+|---|---|---|
+| `internal` | inside the trust boundary | none beyond the matrix |
+| `external_provider` | an external processor; must name `provider_id` | the profile's flag for that **exact class** must be true and the provider must be on the policy's approved list (`decide_external_processing`) |
+| `external_public` | public service such as a package index | `allowed_classes` must be exactly `["public"]`, enforced at load time |
+
+Evaluation order, each step fail-closed: profile valid -> policy valid
+(revalidated on every call, including a raw-secret scan of the policy) ->
+destination is a bare hostname -> class is known -> class admitted by the
+profile -> destination on the policy and egress allowed by the profile ->
+class listed for that destination -> zone rule. An unlisted host is denied
+under `egress_default: deny`; when the profile leaves egress open (only the
+local-operator tier can), an unlisted host receives `public` data only. Classes
+are listed individually rather than as a ceiling, so clearing a destination for
+`restricted` clears nothing else and listing `public` never excuses `restricted`.
+The profile and the policy do not compensate for each other: widening the
+policy does not override a false profile flag.
+
+Policy rows reject wildcards, URLs, ports, userinfo, IP literals, single-label
+names, duplicate hosts or ids, and more than 256 rows. The decision carries the
+host, class, destination id, reason code and the SHA-256 digest of the canonical
+policy, so a recorded decision binds to the exact policy that produced it. It
+performs no DNS resolution and no network I/O, so it does not defend against
+DNS rebinding or redirects; an enforcement point must resolve and pin addresses
+itself.
+
+## Secret-reference contract
+
+`idkmesh/enterprise_secret_reference.py` is the typed form of "raw secrets never
+enter WorkUnits, results or audit": a secret may only be *named*.
+
+- `parse_secret_reference` accepts a closed set of schemes, each bound to one
+  profile backend and one credential kind: `env:` (environment), `gh-secret:`
+  (github_actions), `secret:` and `vault:` (external_secret_manager). Anything
+  else is refused as `inline_secret_forbidden`, `unsupported_scheme` or
+  `invalid_name`; the error never echoes the input. Path-style names reject
+  empty, `.` and `..` segments, and a name shaped like a credential (for example
+  `env:ghp_...`) is refused by the raw-secret scanner.
+- `resolve_secret_alias` lets a task name only a logical alias that a trusted,
+  maintainer-supplied table resolves. Provider or task text cannot introduce a
+  source; reference-shaped text is just an unknown alias.
+- `authorize_reference_use` derives the credential kind and backend from the
+  reference scheme and delegates to `authorize_secret_access`: the secret needs
+  an allowed `dispatch`/`execute` decision and must come from the backend the
+  profile configures. A reference whose scheme belongs to another backend is
+  denied (`untrusted_source_selection`).
+- `secret_access_audit_details` returns identifiers only (reference name,
+  scheme, kind, effect, code) and scans its own output before returning it.
+
+Workload identity is not a reference scheme: it has no stored secret to name and
+is authorized as credential kind `workload_identity` (preferred; long-lived
+cloud keys are denied unless the profile explicitly allows them and the backend
+is not OIDC workload identity).
+
 ## Not in this slice
 
-- Wiring the kernel in front of connectors, workers or `connector_secrets`.
-- An egress allowlist and an approved-provider list in the profile schema. They
-  are function arguments today; adding them to the schema is a separate
-  decision.
+- Wiring the kernel, the classified-egress evaluator and the reference
+  contract in front of connectors, workers or `connector_secrets`. Nothing
+  enforces an egress decision at a socket today; a decision is evidence.
+- Qualification that a real workload-identity/OIDC deployment issues short-lived
+  credentials; that needs real infrastructure and is not asserted here.
+- Loading the egress policy and approved-provider list from the profile itself;
+  they remain a separate document by design.
 - Enforcement at all other WorkUnit creation paths, ResultManifest,
   verification, provider output, ordinary log, GitHub publication or audit
   adapter write paths (see the bounded entry points above).

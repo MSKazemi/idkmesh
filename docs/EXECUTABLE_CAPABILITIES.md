@@ -235,10 +235,12 @@ name documents implementation presence, not stability as a public Python API.
 - `idkmesh/enterprise_break_glass.py`
 - `idkmesh/enterprise_conformance.py`
 - `idkmesh/enterprise_data_policy.py`
+- `idkmesh/enterprise_egress_policy.py`
 - `idkmesh/enterprise_identity_github.py`
 - `idkmesh/enterprise_identity_oidc.py`
 - `idkmesh/enterprise_profile.py`
 - `idkmesh/enterprise_recovery_drill.py`
+- `idkmesh/enterprise_secret_reference.py`
 - `idkmesh/enterprise_secret_scan.py`
 - `idkmesh/executor_admission.py`
 - `idkmesh/gate_audit.py`

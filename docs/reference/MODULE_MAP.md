@@ -172,10 +172,12 @@ Primary context: [subsystem contract](../architecture/ENTERPRISE_CONTROL_PLANE.m
 | [`enterprise_break_glass.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/enterprise_break_glass.py) | Time-bounded, reason-carrying break-glass role elevation over the authorization kernel; policy evidence only |
 | [`enterprise_conformance.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/enterprise_conformance.py) | In-process E9 failure-mode scenarios over the enterprise primitives; PASS/WARN/FAIL/UNKNOWN report, not a certification claim |
 | [`enterprise_data_policy.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/enterprise_data_policy.py) | Fail-closed external-processing, egress, credential and secret-access decisions from a profile |
+| [`enterprise_egress_policy.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/enterprise_egress_policy.py) | Strict egress-policy document loader and deny-by-default classification-vs-destination evaluator; policy evidence only, no network I/O |
 | [`enterprise_identity_github.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/enterprise_identity_github.py) | Trusted GitHub actor binding to ActorContext |
 | [`enterprise_identity_oidc.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/enterprise_identity_oidc.py) | Trusted IdP claims binding to ActorContext |
 | [`enterprise_profile.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/enterprise_profile.py) | Strict enterprise profile and cross-field validation |
 | [`enterprise_recovery_drill.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/enterprise_recovery_drill.py) | Pure PASS/FAIL/UNKNOWN judgement of one recorded recovery drill against the profile's declared RPO and RTO |
+| [`enterprise_secret_reference.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/enterprise_secret_reference.py) | Closed-scheme secret-reference grammar, trusted alias resolution and identifiers-only secret-access audit details; reads no secret value |
 | [`enterprise_secret_scan.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/enterprise_secret_scan.py) | Deterministic fail-closed scan of JSON documents for raw credentials; findings never carry matched text |
 | [`tenant_scope.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/tenant_scope.py) | Tenant-scoped resource/idempotency identities and memory fixture |
 
