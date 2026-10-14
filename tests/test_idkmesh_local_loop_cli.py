@@ -62,7 +62,7 @@ class LocalLoopCliEndToEndTests(unittest.TestCase):
             + "/bundle"
         )
 
-    @pytest.mark.slow  # three real subprocess spawns: idkmesh CLI, replay_run.py, record_human_decision.py
+    @pytest.mark.slow  # five real subprocess spawns: local-loop, both follow-up verbs, and the replay script they wrap
     def test_local_loop_produces_a_valid_evidence_bundle_for_a_real_patch_run(self):
         """A real WorkUnit + two real unified-diff attempts, end to end."""
 
@@ -111,40 +111,48 @@ class LocalLoopCliEndToEndTests(unittest.TestCase):
         self.assertIn("attempt-002", markdown)
 
         next_steps = next_steps_path.read_text(encoding="utf-8")
-        self.assertIn("record_human_decision.py", next_steps)
-        self.assertIn("replay_run.py replay", next_steps)
+        self.assertIn("idkmesh local-loop-record-decision", next_steps)
+        self.assertIn("idkmesh local-loop-replay", next_steps)
         self.assertIn(str(report_path.relative_to(REPO_ROOT)), next_steps)
 
         # The printed stdout summary is the same content saved to disk.
-        self.assertIn("record_human_decision.py", proc.stdout)
-        self.assertIn("replay_run.py replay", proc.stdout)
+        self.assertIn("idkmesh local-loop-record-decision", proc.stdout)
+        self.assertIn("idkmesh local-loop-replay", proc.stdout)
         self.assertIn("Supported: 1", proc.stdout)
 
         # The evidence bundle idkmesh local-loop just produced actually
         # replays, using the exact command it itself printed as next steps.
-        replay = subprocess.run(
-            [sys.executable, "experiments/replay_run.py", "replay",
-             "--bundle", str(replay_source_path.relative_to(REPO_ROOT))],
-            capture_output=True, text=True, cwd=REPO_ROOT,
-        )
+        bundle = str(replay_source_path.relative_to(REPO_ROOT))
+        replay = run_cli("local-loop-replay", bundle)
         self.assertEqual(replay.returncode, 0, replay.stderr)
         self.assertIn("PASS", replay.stdout)
+
+        # The verb is a delegation, not a second implementation: the script
+        # it wraps prints byte-for-byte the same report with the same exit code.
+        script = subprocess.run(
+            [sys.executable, "experiments/replay_run.py", "replay", "--bundle", bundle],
+            capture_output=True, text=True, cwd=REPO_ROOT,
+        )
+        self.assertEqual(script.returncode, replay.returncode, script.stderr)
+        self.assertEqual(script.stdout, replay.stdout)
 
         # And a human decision can really be recorded against it, using the
         # exact command idkmesh local-loop printed.
         decision_path = output_dir / "human-decision-record.json"
-        record_decision = subprocess.run(
-            [sys.executable, "experiments/record_human_decision.py", "record",
-             "--evidence-report", str(report_path.relative_to(REPO_ROOT)),
-             "--output", str(decision_path.relative_to(REPO_ROOT)),
-             "--decision-id", "test.decision.001",
-             "--decision", "accept",
-             "--rationale", "test: attempt-001 was independently accepted",
-             "--decider-id", "test-suite"],
-            capture_output=True, text=True, cwd=REPO_ROOT,
+        record_decision = run_cli(
+            "local-loop-record-decision", str(report_path.relative_to(REPO_ROOT)),
+            "--output", str(decision_path.relative_to(REPO_ROOT)),
+            "--decision-id", "test.decision.001",
+            "--decision", "accept",
+            "--rationale", "test: attempt-001 was independently accepted",
+            "--decider-id", "test-suite",
         )
         self.assertEqual(record_decision.returncode, 0, record_decision.stderr)
         self.assertTrue(decision_path.is_file())
+        self.assertEqual(
+            json.loads(decision_path.read_text(encoding="utf-8"))["authority"],
+            {"canonical_state_write": False, "git_push": False, "merge": False},
+        )
 
     @pytest.mark.slow  # end-to-end local loop run (~0.5-0.75 CPU-s)
 
@@ -217,13 +225,17 @@ class LocalLoopCliHelpTests(unittest.TestCase):
         self.assertEqual(proc.returncode, 0, proc.stderr)
         self.assertIn("gate-audit", proc.stdout)
         self.assertIn("local-loop", proc.stdout)
+        self.assertIn("local-loop-replay", proc.stdout)
+        self.assertIn("local-loop-record-decision", proc.stdout)
 
     def test_local_loop_help_names_the_verify_extra_and_next_steps(self):
         proc = run_cli("local-loop", "--help")
         self.assertEqual(proc.returncode, 0, proc.stderr)
         self.assertIn("idkmesh[verify]", proc.stdout)
-        self.assertIn("record_human_decision.py", proc.stdout)
-        self.assertIn("replay_run.py", proc.stdout)
+        # argparse may wrap a hyphenated name across lines; compare without whitespace.
+        flat = "".join(proc.stdout.split())
+        self.assertIn("local-loop-record-decision", flat)
+        self.assertIn("local-loop-replay", flat)
 
 
 if __name__ == "__main__":

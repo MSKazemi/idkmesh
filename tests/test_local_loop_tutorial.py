@@ -1,7 +1,8 @@
 """Drift guard for ``docs/LOCAL_LOOP_TUTORIAL.md`` (refs #16).
 
-The tutorial walks a newcomer through ``idkmesh local-loop``, a replay and a
-recorded human decision, and quotes the output. Each claim is re-derived here
+The tutorial walks a newcomer through ``idkmesh local-loop``, then
+``idkmesh local-loop-replay`` and ``idkmesh local-loop-record-decision``, and
+quotes the output. Each claim is re-derived here
 from the document itself, so a renamed config, a changed count, or a renamed
 bundle file fails this test instead of misleading a reader:
 
@@ -10,8 +11,12 @@ bundle file fails this test instead of misleading a reader:
   ``idkmesh.cli.main`` and must exit 0, and the ``- Label: value`` summary lines
   printed in the tutorial must equal the live output;
 * the documented bundle listing equals the real directory listing;
-* the documented ``replay_run.py replay`` and ``record_human_decision.py record``
-  commands run against the bundle the first command wrote.
+* the documented ``local-loop-replay`` and ``local-loop-record-decision``
+  commands run in-process against the bundle the first command wrote: replay
+  must print PASS and exit 0 without touching the bundle, and the decision
+  must be bound to the report digest with every authority flag false;
+* the next steps ``local-loop`` prints (and saves as ``NEXT_STEPS.md``) name
+  those same two commands and the real bundle paths.
 
 Class-based on purpose: ``tests/test_documented_test_counts.py`` counts
 module-level ``test_*`` functions and this file must not shift them. Everything
@@ -27,22 +32,17 @@ import json
 import re
 import shlex
 import shutil
-import sys
 import unittest
 import uuid
 from pathlib import Path
-from unittest import mock
 
 from idkmesh.cli import main as cli_main
+from idkmesh.local_loop import _load_experiments
+
+canonical_digest = _load_experiments()["replay_run"].canonical_digest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 TUTORIAL = REPO_ROOT / "docs" / "LOCAL_LOOP_TUTORIAL.md"
-EXPERIMENTS = REPO_ROOT / "experiments"
-if str(EXPERIMENTS) not in sys.path:
-    sys.path.insert(0, str(EXPERIMENTS))
-
-import record_human_decision  # noqa: E402
-import replay_run  # noqa: E402
 
 FENCE_RE = re.compile(r"^```(\w+)\n(.*?)^```$", re.DOTALL | re.MULTILINE)
 SUMMARY_RE = re.compile(r"^- (Supported|Rejected|Inconclusive|Control errors|Verification disagreement): (.+)$", re.MULTILINE)
@@ -80,6 +80,17 @@ def _documented_local_loop_runs() -> list[dict[str, object]]:
     return runs
 
 
+def _documented_follow_up(verb: str) -> list[str]:
+    """argv (after ``idkmesh``) of the single documented ``verb`` command."""
+    found = [
+        shlex.split(_joined_command(body))[1:]
+        for lang, body in _blocks()
+        if lang == "bash" and _joined_command(body).startswith(f"idkmesh {verb} ")
+    ]
+    assert len(found) == 1, f"tutorial must document exactly one `idkmesh {verb}` command"
+    return found[0]
+
+
 def _documented_ls_listing(output_dir: str) -> set[str]:
     blocks = _blocks()
     for index, (lang, body) in enumerate(blocks):
@@ -95,6 +106,7 @@ class LocalLoopTutorialTests(unittest.TestCase):
     tests below assert on those shared runs instead of re-running the command.
     The bundle listing is captured immediately after each run, before the replay
     and decision test writes ``human-decision-record.json`` into run 0's bundle.
+    The printed output is kept too, for the next-steps assertions.
     """
 
     @classmethod
@@ -119,11 +131,16 @@ class LocalLoopTutorialTests(unittest.TestCase):
             )
 
     @staticmethod
-    def _run_cli(argv: list[str]) -> tuple[int, str]:
-        out = io.StringIO()
-        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
+    def _run_cli_full(argv: list[str]) -> tuple[int, str, str]:
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
             code = cli_main(argv)
-        return code, out.getvalue()
+        return code, out.getvalue(), err.getvalue()
+
+    @classmethod
+    def _run_cli(cls, argv: list[str]) -> tuple[int, str]:
+        code, out, _ = cls._run_cli_full(argv)
+        return code, out
 
     def test_documented_configs_exist(self) -> None:
         runs = _documented_local_loop_runs()
@@ -166,53 +183,62 @@ class LocalLoopTutorialTests(unittest.TestCase):
         self.assertIn("worker_error", json.dumps(states["attempt-002"]))
         self.assertIs(report["authority"]["merge"], False)
 
+    def test_printed_next_steps_name_the_documented_commands(self) -> None:
+        loop = self.loops[0]
+        target = str(loop["target"])
+        stdout = str(loop["stdout"])
+        saved = (REPO_ROOT / target / "NEXT_STEPS.md").read_text(encoding="utf-8")
+        self.assertEqual(saved, stdout)
+        for text in (stdout, saved):
+            self.assertIn(f"idkmesh local-loop-replay {target}/replay-source.json", text)
+            self.assertIn(f"idkmesh local-loop-record-decision {target}/evidence-report.json", text)
+            self.assertIn(f"--output {target}/human-decision-record.json", text)
+            self.assertNotIn("python experiments/", text)
+
     def test_documented_replay_and_human_decision_run(self) -> None:
         loop = self.loops[0]
         self.assertEqual(loop["code"], 0)
         documented_dir = str(loop["run"]["output_dir"])  # type: ignore[index]
         target = str(loop["target"])
+        bundle = REPO_ROOT / target
 
-        scripted = {}
-        for lang, body in _blocks():
-            command = _joined_command(body)
-            if lang == "bash" and command.startswith("python experiments/replay_run.py replay"):
-                scripted["replay"] = shlex.split(command)[2:]
-            if lang == "bash" and command.startswith("python experiments/record_human_decision.py record"):
-                scripted["record"] = shlex.split(command)[2:]
-        self.assertEqual(sorted(scripted), ["record", "replay"])
+        def retarget(argv: list[str]) -> list[str]:
+            return [arg.replace(documented_dir, target) for arg in argv]
 
-        replay_argv = [arg.replace(documented_dir, target) for arg in scripted["replay"]]
-        out = io.StringIO()
-        with (
-            mock.patch.object(sys, "argv", ["replay_run.py", *replay_argv]),
-            contextlib.redirect_stdout(out),
-        ):
-            replay_code = replay_run.main()
-        self.assertEqual(replay_code, 0, out.getvalue())
-        self.assertIn("PASS: replay reproduced every must-match field", out.getvalue())
-
-        record_argv = [arg.replace(documented_dir, target) for arg in scripted["record"]]
-        out = io.StringIO()
-        with (
-            mock.patch.object(sys, "argv", ["record_human_decision.py", *record_argv]),
-            contextlib.redirect_stdout(out),
-        ):
-            record_code = record_human_decision.main()
-        self.assertEqual(record_code, 0, out.getvalue())
-        record = json.loads(
-            (REPO_ROOT / target / "human-decision-record.json").read_text(encoding="utf-8")
+        before = {path.name: path.read_bytes() for path in bundle.iterdir()}
+        replay_code, replay_out, replay_err = self._run_cli_full(
+            retarget(_documented_follow_up("local-loop-replay"))
         )
+        self.assertEqual(replay_code, 0, replay_out + replay_err)
+        self.assertIn("PASS: replay reproduced every must-match field", replay_out)
+        self.assertEqual(
+            {path.name: path.read_bytes() for path in bundle.iterdir()},
+            before,
+            "replay must not write into or alter the bundle",
+        )
+
+        record_code, record_out, record_err = self._run_cli_full(
+            retarget(_documented_follow_up("local-loop-record-decision"))
+        )
+        self.assertEqual(record_code, 0, record_out + record_err)
+        record = json.loads((bundle / "human-decision-record.json").read_text(encoding="utf-8"))
         self.assertEqual(record["decision"], "accept")
         self.assertEqual(record["selected_attempt_id"], "attempt-001")
         self.assertEqual(
             record["authority"],
             {"canonical_state_write": False, "git_push": False, "merge": False},
         )
+        # Bound to the evidence report that was decided on, and that report is untouched.
+        report = json.loads((bundle / "evidence-report.json").read_text(encoding="utf-8"))
+        self.assertEqual(record["evidence_report"]["digest"], canonical_digest(report))
+        self.assertIn(record["evidence_report"]["digest"], record_out)
+        self.assertEqual((bundle / "evidence-report.json").read_bytes(), before["evidence-report.json"])
 
     def test_tutorial_states_its_limits(self) -> None:
         text = TUTORIAL.read_text(encoding="utf-8")
-        for phrase in ("result-bundle", "issues/804", "not an `idkmesh` subcommand"):
+        for phrase in ("result-bundle", "issues/804", "experiments/replay_run.py", "still work"):
             self.assertIn(phrase, text)
+        self.assertNotIn("not an `idkmesh` subcommand", text)
         self.assertNotIn("{{", text)
 
 

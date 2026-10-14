@@ -333,7 +333,9 @@ Python client method, and package module, use the
 
 To see one bounded two-attempt run end to end (checkout-only, precollected
 fixtures rather than live workers), follow the
-[local-loop tutorial](LOCAL_LOOP_TUTORIAL.md).
+[local-loop tutorial](LOCAL_LOOP_TUTORIAL.md); it also replays the saved run
+(`idkmesh local-loop-replay`) and records an explicit human decision
+(`idkmesh local-loop-record-decision`).
 
 ## Path D: Use IDKMesh to develop another application
 

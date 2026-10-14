@@ -262,14 +262,18 @@
       "status": "experimental",
       "evidence_level": 2,
       "implementation_paths": [
-        "experiments/replay_run.py"
+        "experiments/replay_run.py",
+        "idkmesh/local_loop.py"
       ],
       "specification_paths": [
         "docs/research/R1_REAL_RESULT_REPLAY.md"
       ],
-      "cli_commands": [],
+      "cli_commands": [
+        "local-loop-replay"
+      ],
       "evidence_paths": [
         "tests/test_replay_run.py",
+        "tests/test_local_loop_replay_decision_cli.py",
         "results/verification/node-e2e-replay-2026-08-30/README.md"
       ],
       "known_limitation": "Replay evidence exists for bounded internal fixtures/runs; this is not a universal deterministic replay guarantee.",

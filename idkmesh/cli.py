@@ -56,7 +56,9 @@ from idkmesh.marginal_evidence_synthesis import (
 from idkmesh.local_loop import (
     LocalLoopError,
     LocalLoopSetupError,
+    record_decision as record_local_loop_decision,
     render_summary as render_local_loop_summary,
+    replay_saved_run as replay_local_loop_run,
     run_work_unit,
 )
 from idkmesh.connector_store import DEFAULT_LIST_LIMIT, MAX_LIST_LIMIT
@@ -81,6 +83,14 @@ class _ExamplesHelpFormatter(argparse.RawDescriptionHelpFormatter):
                 indent + line for line in text.splitlines(keepends=True)
             )
         return argparse.HelpFormatter._fill_text(self, text, width, indent)
+
+
+# Mirrors experiments/record_human_decision.py's KNOWN_DECISIONS and
+# KNOWN_DECIDER_TYPES. They are repeated here only because that script cannot be
+# imported while the parser is built (checkout-only, needs jsonschema);
+# tests/test_local_loop_replay_decision_cli.py fails if the two ever differ.
+_LOCAL_LOOP_DECISIONS = ("accept", "reject", "escalate")
+_LOCAL_LOOP_DECIDER_TYPES = ("human", "governance_body")
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -1440,12 +1450,21 @@ def build_parser() -> argparse.ArgumentParser:
             "Markdown), the raw per-attempt VerificationResult evidence, "
             "and a replay manifest. This command produces evidence only -- "
             "it never records a human integration decision "
-            "(experiments/record_human_decision.py) and never replays "
-            "(experiments/replay_run.py) on its own behalf; both are "
+            "('local-loop-record-decision') and never replays "
+            "('local-loop-replay') on its own behalf; both are "
             "printed as next steps. Needs a repository checkout and the "
             "'idkmesh[verify]' extra (jsonschema). Distinct from the "
             "'run' command above, which only manages durable Product Spine "
             "run bookkeeping and never dispatches or verifies anything."),
+        formatter_class=_ExamplesHelpFormatter,
+        epilog=(
+            "Examples:\n"
+            "  idkmesh local-loop examples/orchestration/"
+            "two-attempt-good-vs-bad.json\n"
+            "  idkmesh local-loop examples/orchestration/"
+            "two-attempt-worker-failure.json"
+            " --output-dir results/my-local-loop-run"
+        ),
     )
     loop.add_argument(
         "config",
@@ -1459,6 +1478,114 @@ def build_parser() -> argparse.ArgumentParser:
             "repository-relative directory under results/ to write the "
             "evidence bundle to; must not already exist non-empty "
             "(default: results/idkmesh-local-loop/<run_id>)"))
+
+    loop_replay = sub.add_parser(
+        "local-loop-replay",
+        help=(
+            "replay a saved local-loop evidence bundle and compare it, "
+            "field by field, with the saved run"),
+        description=(
+            "Re-run the exact orchestration config recorded in a saved "
+            "'local-loop' bundle's replay-source.json against the same "
+            "fixtures and compare the result with the saved run record, "
+            "evidence report and raw per-attempt VerificationResult files. "
+            "Fields that must match are compared exactly; fields that "
+            "legitimately vary run to run (timestamps, interpreter "
+            "strings) are listed and not compared. Prints the same report "
+            "as 'python experiments/replay_run.py replay' and exits 0 on "
+            "PASS, 1 if any must-match field diverges, and 2 if the bundle "
+            "is missing, invalid, or outside the repository. Replay writes "
+            "nothing and grants no write, push, merge or selection "
+            "authority. Needs a repository checkout and the "
+            "'idkmesh[verify]' extra (jsonschema)."),
+        formatter_class=_ExamplesHelpFormatter,
+        epilog=(
+            "Examples:\n"
+            "  idkmesh local-loop-replay "
+            "results/my-local-loop-run/replay-source.json\n"
+            "  idkmesh local-loop-replay "
+            "results/my-local-loop-run/evidence-report.json"
+        ),
+    )
+    loop_replay.add_argument(
+        "bundle",
+        metavar="BUNDLE",
+        help=(
+            "repository-relative path to replay-source.json, run-record.json "
+            "or evidence-report.json inside a saved local-loop bundle"))
+
+    loop_decision = sub.add_parser(
+        "local-loop-record-decision",
+        help=(
+            "record one explicit human decision against a local-loop "
+            "evidence report"),
+        description=(
+            "Validate a 'local-loop' evidence report, then write a human "
+            "decision record (accept, reject or escalate; who decided, when "
+            "and why) bound to the report's content digest, under results/. "
+            "Behaves as 'python "
+            "experiments/record_human_decision.py record' does. The record "
+            "carries an authority block with canonical_state_write, "
+            "git_push and merge all false: recording a decision integrates, "
+            "selects and merges nothing, and never modifies the evidence "
+            "report. Needs a repository checkout and the 'idkmesh[verify]' "
+            "extra (jsonschema)."),
+        formatter_class=_ExamplesHelpFormatter,
+        epilog=(
+            "Examples:\n"
+            "  idkmesh local-loop-record-decision "
+            "results/my-local-loop-run/evidence-report.json"
+            " --output results/my-local-loop-run/human-decision-record.json"
+            " --decision-id my-run.decision.001 --decision accept"
+            " --selected-attempt-id attempt-001"
+            " --rationale 'attempt-001 was supported' --decider-id me\n"
+            "  idkmesh local-loop-record-decision "
+            "results/my-local-loop-run/evidence-report.json"
+            " --output results/my-local-loop-run/human-decision-record.json"
+            " --decision-id my-run.decision.002 --decision escalate"
+            " --rationale 'attempts disagree; needs a second reviewer'"
+            " --decider-id me"
+        ),
+    )
+    loop_decision.add_argument(
+        "evidence_report",
+        metavar="EVIDENCE_REPORT",
+        help=(
+            "repository-relative path to the evidence-report.json of a saved "
+            "local-loop bundle"))
+    loop_decision.add_argument(
+        "--output", required=True, metavar="PATH",
+        help=(
+            "repository-relative path under results/ for the new decision "
+            "record; it may not be the evidence report itself"))
+    loop_decision.add_argument(
+        "--decision-id", required=True, metavar="ID",
+        help="stable id for this decision record, e.g. <run_id>.decision.001")
+    loop_decision.add_argument(
+        "--decision", required=True, choices=sorted(_LOCAL_LOOP_DECISIONS),
+        help="the explicit human decision to record")
+    loop_decision.add_argument(
+        "--rationale", required=True, metavar="TEXT",
+        help="free-text explanation of why this decision was made")
+    loop_decision.add_argument(
+        "--decider-id", required=True, metavar="ID",
+        help="stable identity of the person or body deciding")
+    loop_decision.add_argument(
+        "--decider-type", choices=sorted(_LOCAL_LOOP_DECIDER_TYPES),
+        help="who is deciding (default: human)")
+    loop_decision.add_argument(
+        "--decider-display-name", metavar="NAME",
+        help="optional human-readable name of the decider")
+    loop_decision.add_argument(
+        "--selected-attempt-id", metavar="ID",
+        help=(
+            "attempt_id from the evidence report this decision concerns; "
+            "omit for a run-level decision"))
+    loop_decision.add_argument(
+        "--decided-at", metavar="TIMESTAMP",
+        help=(
+            "ISO-8601 UTC timestamp (default: the current time when "
+            "omitted)"))
     return parser
 
 
@@ -1888,6 +2015,34 @@ def _run_local_loop(args: argparse.Namespace) -> int:
 
     print(render_local_loop_summary(result))
     return 0
+
+
+def _run_local_loop_replay(args: argparse.Namespace) -> int:
+    # The delegated script's own main() prints its report and its own
+    # "ERROR: ..." line, and returns its own exit code (0 PASS, 1 diverged,
+    # 2 unusable input); only environment problems are reported from here.
+    try:
+        return replay_local_loop_run(args.bundle)
+    except (LocalLoopSetupError, ImportError) as exc:
+        return _fail(str(exc))
+
+
+def _run_local_loop_record_decision(args: argparse.Namespace) -> int:
+    try:
+        return record_local_loop_decision(
+            evidence_report=args.evidence_report,
+            output=args.output,
+            decision_id=args.decision_id,
+            decision=args.decision,
+            rationale=args.rationale,
+            decider_id=args.decider_id,
+            decider_type=args.decider_type,
+            decider_display_name=args.decider_display_name,
+            selected_attempt_id=args.selected_attempt_id,
+            decided_at=args.decided_at,
+        )
+    except (LocalLoopSetupError, ImportError) as exc:
+        return _fail(str(exc))
 
 
 def _print_run_evidence(evidence, *, json_output: bool) -> int:
@@ -2696,6 +2851,10 @@ def main(argv: list[str] | None = None) -> int:
         return _run_project_control(args)
     if args.command == "local-loop":
         return _run_local_loop(args)
+    if args.command == "local-loop-replay":
+        return _run_local_loop_replay(args)
+    if args.command == "local-loop-record-decision":
+        return _run_local_loop_record_decision(args)
     if args.command == "connections":
         return _run_connections(args)
     if args.command == "doctor":
