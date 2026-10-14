@@ -22,6 +22,18 @@ and the release notes for that tag.
   and that hand-authored uniform priors remain an open item, and is guarded both ways by
   `tests/test_metric_contracts.py`, which reads the metric keys by AST. The two existing
   metric pages gain a pointer to it; issue #86 stays open.
+- Test suite CPU (refs #1128): the unit tier had crept over its 90 CPU-second
+  budget on `main` (91.9 measured at near-idle load, 90.1 to 93.8 on the last three
+  merges) and was failing `gate (3.13)`. Reclaim about 6 CPU-seconds without
+  moving any guard out of the PR gate or raising the budget: the two tests that
+  each parsed every file under `tests/` now share one scan per process
+  (`test_nightly_tier_has_something_to_run`,
+  `test_full_suite_jobs_install_requirements`), and the local-loop tutorial and
+  adapter-registration tests run each documented command or orchestration once
+  instead of per assertion. Mutation checks confirm each refactored guard still
+  fails on the drift it exists to catch. Measured warm with `scripts/testkit.py
+  unit --no-cache`: 88.6 CPU-seconds at load 3.6.
+
 - Two-attempt orchestrator adapter registration seam (refs #4, #16): add
   `register_adapter`, `unregister_adapter`, `reset_registered_adapters` and a
   declarative `ADAPTER_CONTRACT`, so a result-only worker adapter defined

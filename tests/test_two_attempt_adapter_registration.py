@@ -12,6 +12,8 @@ parametrization are counted by ``tests/test_documented_test_counts.py``.
 
 from __future__ import annotations
 
+import copy
+import functools
 import importlib.util
 import json
 import shutil
@@ -87,6 +89,37 @@ def toy_config() -> dict[str, Any]:
     return base
 
 
+@functools.lru_cache(maxsize=1)
+def _toy_record_once() -> dict[str, Any]:
+    """One registered-adapter run, shared by the tests that only inspect a record.
+
+    The unit tier has a hard CPU budget, so tests that read a run record share
+    this one instead of each re-running the orchestrator. The registry is left
+    exactly as it was found.
+    """
+
+    orch.reset_registered_adapters()
+    try:
+        orch.register_adapter(ToyBundleDirAdapter.name, ToyBundleDirAdapter())
+        orch.register_adapter(ToyMirrorAdapter.name, ToyMirrorAdapter())
+        return orch.orchestrate(toy_config())
+    finally:
+        orch.reset_registered_adapters()
+
+
+@functools.lru_cache(maxsize=1)
+def _builtin_record_once() -> dict[str, Any]:
+    return orch.run_config(BUILTIN_CONFIG)
+
+
+def toy_record() -> dict[str, Any]:
+    return copy.deepcopy(_toy_record_once())
+
+
+def builtin_record() -> dict[str, Any]:
+    return copy.deepcopy(_builtin_record_once())
+
+
 class AdapterRegistrationTestCase(unittest.TestCase):
     def setUp(self) -> None:
         orch.reset_registered_adapters()
@@ -118,8 +151,7 @@ class AdapterRegistrationTestCase(unittest.TestCase):
 
 class EndToEndTests(AdapterRegistrationTestCase):
     def test_registered_adapter_runs_through_verification_and_report(self) -> None:
-        self.register_toys()
-        record = orch.orchestrate(toy_config())
+        record = toy_record()
 
         self.assertEqual(record["run_state"], "completed")
         self.assertEqual(
@@ -130,7 +162,7 @@ class EndToEndTests(AdapterRegistrationTestCase):
         self.assertEqual(record["summary"]["candidates_rejected"], 1)
 
         # The independent verifier saw exactly what the built-in adapters produce.
-        builtin = orch.run_config(BUILTIN_CONFIG)
+        builtin = builtin_record()
         for toy, ref in zip(record["attempts"], builtin["attempts"]):
             for key in ("state", "candidate_root", "result_manifest", "verification"):
                 self.assertEqual(toy[key], ref[key], key)
@@ -143,9 +175,8 @@ class EndToEndTests(AdapterRegistrationTestCase):
 
     def test_registered_run_is_deterministic(self) -> None:
         self.register_toys()
-        first = orch.orchestrate(toy_config())
-        second = orch.orchestrate(toy_config())
-        self.assertEqual(canonical_digest(first), canonical_digest(second))
+        fresh = orch.orchestrate(toy_config())
+        self.assertEqual(canonical_digest(fresh), canonical_digest(toy_record()))
 
     def test_registered_adapter_replays_to_the_same_digest(self) -> None:
         self.register_toys()
@@ -197,7 +228,7 @@ class EndToEndTests(AdapterRegistrationTestCase):
 
     def test_builtin_only_registry_state_by_default(self) -> None:
         self.assertEqual(set(orch.ADAPTERS), BUILTIN_NAMES)
-        self.assertEqual(orch.run_config(BUILTIN_CONFIG)["run_state"], "completed")
+        self.assertEqual(builtin_record()["run_state"], "completed")
 
 
 class RegistrationRuleTests(AdapterRegistrationTestCase):
@@ -302,8 +333,7 @@ class ContractTests(AdapterRegistrationTestCase):
         self.assertIn("CollectedCandidate", orch.ADAPTER_CONTRACT["returns"])
 
     def test_registered_runs_carry_the_fixed_no_authority_block(self) -> None:
-        self.register_toys()
-        record = orch.orchestrate(toy_config())
+        record = toy_record()
         self.assertEqual(
             record["authority"],
             {
