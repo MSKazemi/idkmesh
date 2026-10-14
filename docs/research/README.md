@@ -11,6 +11,11 @@ policy changes or merge decisions.
   the experiments still to run (X1–X10), the algorithms they must deliver
   (A1–A7), the engineering targets that serve them, the audience, and the
   verified novelty boundary. Start here.
+- [Results ledger](RESULTS_LEDGER.md) — one row per experiment record with its
+  evidence class (`synthetic`, `public-observed`, `real-run`, `analytic`), a
+  one-sentence headline that includes negative and falsifying verdicts, and the
+  record's own verdict. States what it is not: no claim that many small agents
+  beat one strong model, which has no real arm. Issue 2.
 - [Preregistration v1: forecasting the value of the next coding agent](PREREG_AGENT_VALUE_FORECAST_V1.md) —
   frozen analysis (code SHA-256), estimands, tests and decision rules for H1–H3,
   registered before the four held-out SWE-bench splits were opened.
@@ -72,6 +77,13 @@ policy changes or merge decisions.
 - [R1 Real-Corpus Readiness Gate](R1_CORPUS_READINESS.md) — the contract that
   must hold before `randomness_lab.r1_replay` may be run on a real held-out
   corpus. Readiness tooling only; no real R1 outcome. Issues #30 and #70.
+- [R1 real-corpus preregistration](R1_REAL_CORPUS_PREREGISTRATION.md) — committed
+  copy of the preregistration that existed only as issue comments: hypothesis H1,
+  the `helps` / `hurts` / `uncertain` rule, the primary confounder, the
+  20-work-unit target and the 3 to 5 worker scale-up rule, with comment URLs and
+  timestamps, the points the text leaves ambiguous, and the readiness gate's
+  current blocked state. Not a new registration and not a result. Issues #30 and
+  #70.
 - [R2 Randomized Scheduling Under Churn](R2_SCHEDULING_CHURN_EXPERIMENT.md) and
   [scale/regime sweep](R2_SCALE_REGIME_SWEEP.md), plus the
   [capability-rarity sweep](R2_CAPABILITY_RARITY_SWEEP.md) — measure capability,

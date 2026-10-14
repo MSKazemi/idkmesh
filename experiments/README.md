@@ -2,6 +2,10 @@
 
 Experiments are small, reproducible programs used to challenge IDKMesh hypotheses before those hypotheses become architecture or automation.
 
+For each record's evidence class (synthetic, public-observed, real-run, or
+analytic) and its one-sentence verdict, see the
+[results ledger](../docs/research/RESULTS_LEDGER.md).
+
 ## Every experiment record
 
 Each row's text is that record's own title, so this index cannot drift from what

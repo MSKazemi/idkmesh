@@ -12,6 +12,27 @@ and the release notes for that tag.
 
 ## [Unreleased]
 
+- R1 real-corpus preregistration committed (refs #30, #70): add
+  `docs/research/R1_REAL_CORPUS_PREREGISTRATION.md`, a copy of the preregistration
+  that existed only as issue 70 comments (hypothesis H1, the paired-bootstrap
+  `helps` / `hurts` / `uncertain` rule, the structural-quality-versus-diversity
+  confounder, the 20-work-unit target and the 3 to 5 worker scale-up rule), with
+  comment URLs and timestamps, the points the text leaves ambiguous, and the
+  readiness gate's current blocked state (0 of 20 eligible work units). Linked
+  from the R1 readiness page and the research index. It is a copy, not a new
+  registration, changes no rule, and reports no result; the per-signature
+  marginal-success reporting the comment asks for still has no producer.
+- Research results ledger (refs #2, #13, #22, #30): add
+  `docs/research/RESULTS_LEDGER.md`, one row per record indexed in
+  `experiments/README.md`, each with an evidence class (`synthetic`,
+  `public-observed`, `real-run` or `analytic`), a one-sentence headline that
+  includes negative and falsifying verdicts, and the record's own verdict, all
+  written from the record's own text. It states what it is not: no claim that
+  many small agents beat one strong model, which has no real arm here (E029's
+  0.5B model produced 0 of 60 judgeable candidates). A class-based
+  `tests/test_results_ledger.py` fails when an indexed record has no row or two,
+  a row uses a class or verdict outside the published sets, or a row names an
+  unindexed record. Structure only; it cannot check a headline's faithfulness.
 - Per-metric contract page (refs #86): added
   `docs/research/METRIC_CONTRACTS_V0_1.md`, one entry for each of the 22 production
   metrics and mechanisms (the repository-evolution signals, the live governor's
