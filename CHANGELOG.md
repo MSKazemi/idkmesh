@@ -185,6 +185,18 @@ and the release notes for that tag.
 
 ### Added
 
+- [GitHub Ledger Retention and Reference Policy v0.1](docs/specifications/GITHUB_LEDGER_RETENTION_V0_1.md)
+  and `idkmesh/github_ledger_retention.py` (issue #597, slice C9-H): a pure advisory
+  policy for the durable ledger. `check_run_retention` reports which compact
+  candidate / ResultManifest / VerificationResult / Human Decision references a
+  recovered run must carry and which are not interpretable after raw artifacts
+  expire (malformed digest, no repository-relative path, unsafe or transient path);
+  `plan_artifact_expiry` says whether a raw Actions artifact, log or cache *may*
+  expire and retains young, active-run, unclassified and sole-copy artifacts;
+  `assess_ledger_size` bounds growth with an operator-sharding remedy only, never
+  compaction or rewrite. Strict policy parsing, no hidden clock, deletes nothing,
+  grants no authority. Wiring it into a scheduled workflow and sharding itself are
+  not implemented.
 - E5 secret non-disclosure at canonical WorkUnit/source binding and E4 audit
   output (refs #672): reject recognized raw credentials and incomplete scans
   before creating or revalidating a WorkUnit binding, before inserting an E4

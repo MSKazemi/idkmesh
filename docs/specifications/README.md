@@ -78,6 +78,11 @@ meaning of an existing version.
   immutable paths, fast-forward-only branch updates with bounded retry, C9-D
   admission replay/conflict semantics, C9-E recovery reads, and no protected
   application-branch write or integration authority.
+- [GitHub Ledger Retention and Reference Policy v0.1](GITHUB_LEDGER_RETENTION_V0_1.md) —
+  C9-H advisory policy and checks: mandatory durable compact evidence per run
+  state, references that stay interpretable after raw artifacts expire, raw
+  expiry that never strands the sole copy, and ledger growth bounded without
+  rewriting history.
 - [API Authority Matrix v0.1](API_AUTHORITY_MATRIX_V0_1.md) —
   which principal may call which Control Tower endpoint: a proposed mapping onto
   the enterprise authorization kernel for the network profile, what the loopback
