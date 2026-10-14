@@ -49,6 +49,17 @@ Issue text, WorkUnit text, provider/model output, labels, comments, prompts, and
 
 The existing `identity-binding-v0.1` contract remains provenance evidence only. It must not be promoted into authorization merely because it says an identity was verified.
 
+For the reviewed GitHub identity adapter, direct `GithubIdentityBinding`
+construction now enforces that `context.principal_id` identifies the exact
+numeric GitHub actor ID **and** actor type (the same identity derived by the
+JSON binding-table parser). Binding tables reject repeated actor IDs and
+case-insensitive duplicate logins; the explicit-label dispatch policy enforces
+the same login uniqueness property. These checks constrain trusted policy
+configuration, but do **not** authenticate a webhook, establish GitHub team
+membership, or turn the loopback Control Tower token into multi-user identity.
+The API release qualification's security group exercises both trust-boundary
+test suites. Network-facing principal propagation remains blocked by #743.
+
 ## Role vocabulary
 
 v0.1 uses:

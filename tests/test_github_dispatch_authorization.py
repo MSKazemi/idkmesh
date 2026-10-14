@@ -206,6 +206,15 @@ class GitHubDispatchAuthorizationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "owner/name"):
             _policy(repository="not-a-repository")
 
+    def test_policy_rejects_same_login_under_different_actor_ids(self):
+        with self.assertRaisesRegex(ValueError, "logins must be unique"):
+            _policy(
+                trusted_actors=(
+                    TrustedGitHubActor(actor_id=42, login="TrustedMaintainer", role="maintainer"),
+                    TrustedGitHubActor(actor_id=43, login="trustedmaintainer", role="triager"),
+                )
+            )
+
     def test_policy_rejects_duplicate_actor_ids(self):
         with self.assertRaisesRegex(ValueError, "unique"):
             _policy(

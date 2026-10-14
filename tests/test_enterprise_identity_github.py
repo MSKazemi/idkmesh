@@ -300,14 +300,39 @@ class GithubIdentityBindingTableTests(unittest.TestCase):
             GithubIdentityBindingTable(
                 bindings=(
                     GithubIdentityBinding(
-                        actor_id=1, login="a", context=_context()
+                        actor_id=1, login="a", context=_context(principal="github:human:1")
                     ),
                     GithubIdentityBinding(
-                        actor_id=1, login="b", context=_context()
+                        actor_id=1, login="b", context=_context(principal="github:human:1")
                     ),
                 )
             )
         self.assertEqual(ctx.exception.code, "duplicate_actor_id")
+
+    def test_direct_binding_refuses_principal_substitution(self):
+        for principal in ("github:human:100002", "github:github_app:100001"):
+            with self.subTest(principal=principal):
+                with self.assertRaises(GithubIdentityAdapterError) as ctx:
+                    GithubIdentityBinding(
+                        actor_id=100001,
+                        login="alice-maintainer",
+                        context=_context(principal=principal),
+                    )
+                self.assertEqual(ctx.exception.code, "principal_id_mismatch")
+
+    def test_rejects_same_login_under_two_numeric_actors(self):
+        with self.assertRaises(GithubIdentityAdapterError) as ctx:
+            GithubIdentityBindingTable(
+                bindings=(
+                    GithubIdentityBinding(
+                        actor_id=1, login="Alice", context=_context(principal="github:human:1")
+                    ),
+                    GithubIdentityBinding(
+                        actor_id=2, login="alice", context=_context(principal="github:human:2")
+                    ),
+                )
+            )
+        self.assertEqual(ctx.exception.code, "duplicate_login")
 
     def test_rejects_empty_bindings(self):
         with self.assertRaises(GithubIdentityAdapterError):
@@ -398,6 +423,16 @@ class ParseIdentityBindingTableTests(unittest.TestCase):
         with self.assertRaises(GithubIdentityAdapterError) as ctx:
             parse_identity_binding_table(document)
         self.assertEqual(ctx.exception.code, "duplicate_actor_id")
+
+    def test_rejects_case_insensitive_duplicate_login_in_document(self):
+        document = self._document()
+        second = dict(document["bindings"][0])
+        second["actor_id"] = 100002
+        second["login"] = "ALICE-MAINTAINER"
+        document["bindings"].append(second)
+        with self.assertRaises(GithubIdentityAdapterError) as ctx:
+            parse_identity_binding_table(document)
+        self.assertEqual(ctx.exception.code, "duplicate_login")
 
     def test_rejects_non_github_actor_type_in_document(self):
         document = self._document()

@@ -57,6 +57,8 @@ class CheckSetTests(unittest.TestCase):
         self.assertIn("fuzz:api_qualification_fuzz", ids)
         self.assertIn("fuzz:api_header_boundary_fuzz", ids)
         self.assertIn("security:api_security_matrix", ids)
+        self.assertIn("security:enterprise_identity_github", ids)
+        self.assertIn("security:github_dispatch_authorization", ids)
         self.assertIn("security:api_cors_csrf_matrix", ids)
         self.assertIn("reliability:load-soak", ids)
         self.assertIn("install:clean-install-demo", ids)
