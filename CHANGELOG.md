@@ -24,6 +24,18 @@ and the release notes for that tag.
   all-false signed/registered/SLSA/subjects-verified/correctness claims, strict validation, and
   no timestamps. Nothing is signed, registered, or verified; signing needs a CI workflow
   identity and is not done here.
+- Enterprise conformance: release provenance is now exercised (refs #676, #674, #609).
+  The last UNKNOWN scenario of `idkmesh doctor --enterprise-conformance` runs the real C14-F
+  release-record builder and validator offline: an untouched record validates, while a swapped
+  artifact digest, target commit or added artifact, a forged attestation / published-release /
+  verified-artifact claim, a forged merge-authority grant (each with the record digest recomputed
+  by the forger), an unlisted provider field, a malformed digest, a replayed run and a
+  non-revision commit are all refused. The scenario is **WARN**, never PASS: tag, commit and
+  artifact digests are caller-asserted and no signature, attestation, SBOM or build-provenance
+  verifier exists to check real artifact bytes (#674). Negative controls turn it red for a
+  validator that accepts tampering, one that rejects a genuine record, and a record that claims
+  attestation. With no UNKNOWN or FAIL scenario left, the overall report is now **WARN** and the
+  command exits 0; UNKNOWN or FAIL still exits 1. Not a SOC 2 / ISO 27001 / FedRAMP claim.
 - Agent churn at a matched budget, synthetic mechanism evidence only (refs #22): add
   `sim/e050_churn.py` and record `experiments/E050-churn.md`. Each generation a fraction of agents
   (`0, 0.1, 0.25, 0.5, 1.0`) is replaced by fresh ones in E024's five arms at the same proposal budget,

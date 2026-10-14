@@ -50,8 +50,13 @@ from idkmesh.github_public_evidence import (
     GitHubPublicEvidenceError, GitHubPublicEvidencePolicy,
     build_github_public_evidence_projection, render_github_public_evidence_json,
 )
+from idkmesh.github_release_provenance import (
+    GitHubReleaseArtifact, GitHubReleaseProvenanceError,
+    build_github_release_provenance, validate_github_release_provenance,
+)
 from idkmesh.local_ui_security import is_loopback_host, token_matches
 from idkmesh.product_spine import ProductSpineRun
+from idkmesh.work_unit_binding import canonical_digest
 from idkmesh.task_claims import ClaimBinding, LocalTaskClaims, TaskClaimError, TaskClaimPolicy
 from idkmesh.enterprise_audit import (
     AuditEventInput,
@@ -1061,6 +1066,123 @@ def _high_risk_sod_violation(ctx: _Context) -> None:
         ctx.expect("a blocked self-approval cannot be audited as executed", False)
 
 
+def _release_provenance(ctx: _Context) -> None:
+    repository = "MSKazemi/idkmesh"
+    run = ProductSpineRun(
+        run_id="run-release-17",
+        request_digest=_DIGEST_A,
+        project_id=repository,
+        work_unit_id="work-release-17",
+        work_unit_version=1,
+        work_unit_digest=_DIGEST_B,
+        source_revision=_REVISION,
+        authority_mode="human_required",
+        routing_policy_version="conformance:1",
+    )
+    projection = build_github_public_evidence_projection(
+        run, policy=GitHubPublicEvidencePolicy(repository, "public", True)
+    )
+    record = build_github_release_provenance(
+        [projection],
+        repository=repository,
+        tag="v0.0.0-conformance",
+        target_commit=_REVISION,
+        artifacts=(
+            GitHubReleaseArtifact("idkmesh-0.0.0.tar.gz", _DIGEST_A),
+            GitHubReleaseArtifact("idkmesh-0.0.0-py3-none-any.whl", _DIGEST_B),
+        ),
+    )
+
+    def rejected(
+        label: str,
+        mutate: Callable[[dict[str, Any]], None],
+        *,
+        redigest: bool = False,
+    ) -> None:
+        candidate = json.loads(json.dumps(record))
+        mutate(candidate)
+        if redigest:
+            # A forger who also recomputes the record digest must still fail
+            # the fixed-value and shape checks, not only the digest check.
+            candidate["record_digest"] = canonical_digest(
+                {k: v for k, v in candidate.items() if k != "record_digest"}
+            )
+        try:
+            validate_github_release_provenance(candidate)
+        except GitHubReleaseProvenanceError:
+            ctx.expect(label, True)
+        else:
+            ctx.expect(label, False)
+
+    try:
+        validate_github_release_provenance(record)
+    except GitHubReleaseProvenanceError:
+        ctx.expect("positive control: the untouched release record validates", False)
+    else:
+        ctx.expect("positive control: the untouched release record validates", True)
+    ctx.expect(
+        "the record claims no tag, release, attestation or verified artifact",
+        record["attestation"]["artifact_attestation_present"] is False
+        and record["release"]["publication_state"] == "metadata_only"
+        and all(value is False for value in record["claims"].values())
+        and all(value is False for value in record["authority"].values()),
+    )
+    ctx.expect(
+        "the record carries no credential",
+        _SECRET not in json.dumps(record),
+    )
+    rejected(
+        "a swapped artifact digest breaks the record digest",
+        lambda r: r["artifacts"][0].update(digest=_DIGEST_B.replace("b", "c")),
+    )
+    rejected("a swapped target commit breaks the record digest",
+             lambda r: r["release"].update(target_commit="b" * 40))
+    rejected("an added artifact breaks the record digest",
+             lambda r: r["artifacts"].append(
+                 {"name": "zz-extra.whl", "digest": _DIGEST_A}))
+    rejected("a forged attestation flag is rejected",
+             lambda r: r["attestation"].update(artifact_attestation_present=True),
+             redigest=True)
+    rejected("a forged published-release claim is rejected",
+             lambda r: r["release"].update(publication_state="published"),
+             redigest=True)
+    rejected("a forged verified-artifact claim is rejected",
+             lambda r: r["claims"].update(artifact_digests_verified_against_build=True),
+             redigest=True)
+    rejected("a forged merge-authority grant is rejected",
+             lambda r: r["authority"].update(merge=True),
+             redigest=True)
+    rejected("an unlisted provider field is rejected",
+             lambda r: r.update(provider_log=_SECRET),
+             redigest=True)
+    rejected("a malformed artifact digest is rejected",
+             lambda r: r["artifacts"][0].update(digest="sha256:XYZ"))
+    try:
+        build_github_release_provenance(
+            [projection, projection], repository=repository,
+            tag="v0.0.0-conformance", target_commit=_REVISION,
+        )
+    except GitHubReleaseProvenanceError:
+        ctx.expect("a replayed run in the release input is rejected", True)
+    else:
+        ctx.expect("a replayed run in the release input is rejected", False)
+    try:
+        build_github_release_provenance(
+            [projection], repository=repository,
+            tag="v0.0.0-conformance", target_commit="not-a-revision",
+        )
+    except GitHubReleaseProvenanceError:
+        ctx.expect("a non-revision target commit is refused", True)
+    else:
+        ctx.expect("a non-revision target commit is refused", False)
+    ctx.gap(
+        "only the C14-F metadata record is validated: tag, target commit and "
+        "artifact digests are caller-asserted, and no signature, attestation, "
+        "SBOM or build-provenance verifier exists to check real artifact bytes "
+        "(#674)"
+    )
+
+
 _AUTHZ = ("idkmesh/enterprise_authz.py", "tests/test_enterprise_authz.py")
 _TENANT = ("idkmesh/tenant_scope.py", "tests/test_tenant_scope.py")
 _AUDIT = ("idkmesh/enterprise_audit.py", "tests/test_enterprise_audit.py")
@@ -1073,6 +1195,10 @@ _DATA = ("idkmesh/enterprise_data_policy.py", "tests/test_enterprise_data_policy
 _LOCAL_API = ("idkmesh/local_ui_security.py", "tests/test_api_security_matrix.py")
 _PUBLIC = ("idkmesh/github_public_evidence.py", "tests/test_github_public_evidence.py")
 _SPINE = ("idkmesh/product_spine.py", "tests/test_product_spine.py")
+_RELEASE = (
+    "idkmesh/github_release_provenance.py",
+    "tests/test_github_release_provenance.py",
+)
 
 _PROVIDER = (
     "idkmesh/connector_profiles.py",
@@ -1204,12 +1330,11 @@ SCENARIOS: tuple[Scenario, ...] = (
     Scenario(
         "release_provenance",
         "Release provenance verification",
-        "A release artifact without verifiable provenance is not accepted.",
-        (),
-        unknown_reason=(
-            "supply-chain provenance (E7, #674) has no verifier in this repo "
-            "to exercise"
-        ),
+        "A tampered release record, or one that claims a tag, release, "
+        "attestation, verified artifact or extra authority, is rejected; the "
+        "record never implies that real artifact bytes were verified.",
+        _RELEASE + _PUBLIC + _SELF,
+        _release_provenance,
     ),
 )
 

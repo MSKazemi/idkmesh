@@ -33,8 +33,9 @@ EXERCISED = (
     "external_data_and_egress",
     "local_http_boundary",
     "public_evidence_authority",
+    "release_provenance",
 )
-NOT_EXERCISED = ("release_provenance",)
+NOT_EXERCISED: tuple[str, ...] = ()
 
 
 def _by_id(report: dict) -> dict[str, dict]:
@@ -107,8 +108,33 @@ class ConformanceReportTests(unittest.TestCase):
                 self.assertEqual(item["checks"], [])
                 self.assertTrue(item["observed"].startswith("not exercised:"))
 
-    def test_overall_status_is_not_pass_while_scenarios_are_unknown(self) -> None:
-        self.assertEqual(self.report["status"], "UNKNOWN")
+    def test_scenario_without_a_runner_is_unknown_and_blocks_overall_pass(self) -> None:
+        pending = conformance.Scenario(
+            "pending", "Pending", "needs a primitive", (),
+            unknown_reason="no primitive yet",
+        )
+        with mock.patch.object(conformance, "SCENARIOS", (pending,)):
+            report = conformance.run_conformance()
+        self.assertEqual(report["scenarios"][0]["status"], "UNKNOWN")
+        self.assertEqual(report["scenarios"][0]["checks"], [])
+        self.assertEqual(report["status"], "UNKNOWN")
+
+    def test_overall_status_is_warn_never_pass_while_named_gaps_remain(self) -> None:
+        # Every scenario is now exercised, but each deployment gap is named, so
+        # the overall result must be the weakest status, never PASS.
+        self.assertGreater(self.report["counts"]["WARN"], 0)
+        self.assertEqual(self.report["counts"]["UNKNOWN"], 0)
+        self.assertEqual(self.report["counts"]["FAIL"], 0)
+        self.assertEqual(self.report["status"], "WARN")
+
+    def test_release_provenance_is_warn_with_the_attestation_gap_named(self) -> None:
+        item = self.scenarios["release_provenance"]
+        self.assertEqual(item["status"], "WARN")
+        self.assertTrue(any("#674" in gap for gap in item["gaps"]))
+        self.assertTrue(any("attestation" in gap for gap in item["gaps"]))
+        names = " ".join(check["name"] for check in item["checks"])
+        for needle in ("positive control", "forged attestation", "merge-authority"):
+            self.assertIn(needle, names)
 
     def test_report_is_deterministic(self) -> None:
         self.assertEqual(conformance.run_conformance(), self.report)
@@ -131,7 +157,7 @@ class ConformanceReportTests(unittest.TestCase):
         for scenario_id in (
             "stale_claim_retry", "provider_outage_quota",
             "external_data_and_egress", "local_http_boundary",
-            "public_evidence_authority",
+            "public_evidence_authority", "release_provenance",
         ):
             with self.subTest(scenario=scenario_id):
                 self.assertEqual(self.scenarios[scenario_id]["status"], "WARN")
@@ -260,6 +286,37 @@ class ConformanceDetectsBrokenControlsTests(unittest.TestCase):
             result = self._run("provider_outage_quota")
         self.assertEqual(result["provider_outage_quota"]["status"], "FAIL")
 
+    def test_validator_that_accepts_tampered_release_records_is_detected(self) -> None:
+        with mock.patch.object(
+            conformance, "validate_github_release_provenance", lambda record: None
+        ):
+            result = self._run("release_provenance")
+        self.assertEqual(result["release_provenance"]["status"], "FAIL")
+
+    def test_validator_that_rejects_a_genuine_record_is_detected(self) -> None:
+        def reject_all(record):
+            raise conformance.GitHubReleaseProvenanceError("always")
+
+        with mock.patch.object(
+            conformance, "validate_github_release_provenance", reject_all
+        ):
+            result = self._run("release_provenance")
+        self.assertEqual(result["release_provenance"]["status"], "FAIL")
+
+    def test_release_record_that_claims_attestation_is_detected(self) -> None:
+        real = conformance.build_github_release_provenance
+
+        def lying(*args, **kwargs):
+            record = real(*args, **kwargs)
+            record["claims"]["attestation_present"] = True
+            return record
+
+        with mock.patch.object(
+            conformance, "build_github_release_provenance", side_effect=lying
+        ):
+            result = self._run("release_provenance")
+        self.assertEqual(result["release_provenance"]["status"], "FAIL")
+
     def test_scenario_without_any_assertions_cannot_report_pass(self) -> None:
         silent = conformance.Scenario("silent", "Silent", "must check", (), lambda ctx: None)
         with mock.patch.object(conformance, "SCENARIOS", (silent,)):
@@ -357,15 +414,28 @@ class DoctorEnterpriseConformanceCliTests(unittest.TestCase):
         code, out, _ = self._main("--enterprise-conformance", "--json")
         payload = json.loads(out)
         self.assertEqual(payload, conformance.run_conformance())
-        self.assertEqual(code, 1)  # UNKNOWN scenarios keep the pilot from passing
+        self.assertEqual(payload["status"], "WARN")
+        self.assertEqual(code, 0)  # WARN is a named gap, not a failure
 
     def test_text_output_lists_every_scenario_and_the_disclaimer(self) -> None:
         code, out, _ = self._main("--enterprise-conformance")
-        self.assertEqual(code, 1)
-        self.assertIn("enterprise conformance: UNKNOWN", out)
+        self.assertEqual(code, 0)
+        self.assertIn("enterprise conformance: WARN", out)
         for item in conformance.SCENARIOS:
             self.assertIn(f"- {item.scenario_id}: ", out)
         self.assertIn("not a SOC 2", out)
+
+    def test_exit_nonzero_on_unknown_or_fail(self) -> None:
+        for status in ("UNKNOWN", "FAIL"):
+            report = {
+                "kind": conformance.REPORT_KIND, "status": status,
+                "scenarios": [], "disclaimer": conformance.DISCLAIMER,
+            }
+            with self.subTest(status=status), mock.patch.object(
+                conformance, "run_conformance", return_value=report
+            ):
+                code, _, _ = self._main("--enterprise-conformance")
+            self.assertEqual(code, 1)
 
     def test_exit_zero_when_nothing_fails_or_is_unknown(self) -> None:
         passing = {
