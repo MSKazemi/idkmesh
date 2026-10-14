@@ -1,0 +1,21 @@
+{
+  "api_version": "v1",
+  "schema_version": "0.1",
+  "kind": "idkmesh-control-tower-connection-response",
+  "ok": true,
+  "connection": {
+    "id": "alpha-agent",
+    "kind": "agent",
+    "driver": "fake-agent",
+    "enabled": true,
+    "auth_ref_configured": false,
+    "capability_tiers": ["T1", "T2"],
+    "task_classes": ["coding"],
+    "tools": ["git"],
+    "candidate_types": ["artifact_bundle"],
+    "max_risk": "medium",
+    "external_processing": false,
+    "project_spend_usd_max": 0.0,
+    "max_concurrency": 1
+  }
+}

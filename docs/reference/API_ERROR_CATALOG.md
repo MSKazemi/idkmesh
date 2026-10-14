@@ -82,12 +82,14 @@ are in [service limits](API_LIMITS.md).
 | `run_not_found` | 404 | no | no stored run has this `run_id` | check the identity; run IDs may contain `/` and `:` |
 | `work_unit_not_found` | 404 | no | no stored run references this work unit | check the identity |
 | `project_not_found` | 404 | no | no stored run names this project | check the identity |
+| `connection_not_found` | 404 | no | no persisted connection has this `connection_id` | check the identity with `GET /api/v1/connections` |
+| `invalid_connection_id` | 400 | no | `GET /api/v1/connections/{connection_id}` named an id outside the connector identifier grammar (letters, digits, `.`, `_`, `-`; at most 128 characters; no `/` or `:`) | use an id from `GET /api/v1/connections`; `:verb` suffixes are reserved |
 | `evidence_not_available` | 404 | no | the run exists but retains no evidence report | not an error in the run; there is nothing to fetch |
 | `evidence_integrity_error` | 500 | no | the retained report no longer matches the run's `evidence_report_digest`; the report is never served | treat the store as damaged; do not retry |
 | `store_error` | 500 | no | the local store is locked, unreadable or corrupt, or cannot be opened | inspect the store file; do not assume a retry will help |
 | `persisted_state_corrupt` | 400 | no | a stored run row fails its own consistency checks (digest, projection or state disagree) | repair or recreate the store. This is a server-side fault answered with a `400` today, so branch on the code, not the status class |
 | `not_product_spine_cli_run` | 400 | no | `GET /api/v1/runs/{run_id}` named a row in the shared runs table that is not a Product Spine run (for example a GitHub dispatch record) | use a Product Spine run ID |
-| `connection_record_invalid` | 500 | no | `GET /api/v1/connections` met a stored connector row that fails validation | repair the connector store |
+| `connection_record_invalid` | 500 | no | `GET /api/v1/connections` or `GET /api/v1/connections/{connection_id}` met a stored connector row that fails validation | repair the connector store |
 
 ## Capacity (the only retryable codes)
 

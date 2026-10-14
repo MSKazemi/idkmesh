@@ -51,6 +51,7 @@ The authoritative list is the OpenAPI document (see
 | `GET /api/v1/work-units`, `GET /api/v1/work-units/{work_unit_id}` | derived work units | `list_work_units()`, `get_work_unit()` |
 | `GET /api/v1/projects/{project_id}` | one project summary | `get_project()` |
 | `GET /api/v1/connections` | secret-free connector metadata | `list_connections()` |
+| `GET /api/v1/connections/{connection_id}` | one secret-free connector resource; no probe, secret resolution or provider call | `get_connection()` |
 | `GET /api/v1/events` | keyset-paginated event list | `list_events()` |
 | `GET /api/v1/events/stream` | Server-Sent Events | `stream_events()` |
 | `GET /healthz`, `GET /readyz` | liveness and readiness, no token | not wrapped |

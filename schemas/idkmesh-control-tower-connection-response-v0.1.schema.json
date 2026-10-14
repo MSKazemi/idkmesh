@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idkmesh.org/schemas/idkmesh-control-tower-connection-response-v0.1.schema.json",
+  "title": "IDKMesh Control Tower Connection Response v0.1",
+  "description": "The success envelope returned by `GET /api/v1/connections/{connection_id}`, wrapping the public-safe connection resource. Reading a connection performs no probe, secret resolution, dispatch, or provider call, and grants no execution authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "api_version",
+    "schema_version",
+    "kind",
+    "ok",
+    "connection"
+  ],
+  "properties": {
+    "api_version": {
+      "const": "v1"
+    },
+    "schema_version": {
+      "const": "0.1"
+    },
+    "kind": {
+      "const": "idkmesh-control-tower-connection-response"
+    },
+    "ok": {
+      "const": true
+    },
+    "connection": {
+      "$ref": "https://idkmesh.org/schemas/idkmesh-connection-resource-v0.1.schema.json"
+    }
+  }
+}

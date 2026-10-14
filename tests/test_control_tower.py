@@ -46,6 +46,28 @@ def _validate_against_schema(schema_filename: str, document: dict) -> None:
     Draft202012Validator(schema).validate(document)
 
 
+def _validate_connection_response(document: dict) -> None:
+    """Validate against the envelope schema, resolving its resource $ref."""
+    from referencing import Registry, Resource
+
+    root = Path(__file__).resolve().parents[1] / "schemas"
+    resource = json.loads(
+        (root / "idkmesh-connection-resource-v0.1.schema.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    registry = Registry().with_resource(
+        resource["$id"], Resource.from_contents(resource)
+    )
+    schema = json.loads(
+        (
+            root / "idkmesh-control-tower-connection-response-v0.1.schema.json"
+        ).read_text(encoding="utf-8")
+    )
+    Draft202012Validator.check_schema(schema)
+    Draft202012Validator(schema, registry=registry).validate(document)
+
+
 class ControlTowerModelTests(unittest.TestCase):
     def test_sample_report_builds_human_attention_snapshot(self) -> None:
         report = sample_report()
@@ -1854,11 +1876,171 @@ class ControlTowerConnectionReadTests(unittest.TestCase):
         self.assertEqual(status, 405)
         self.assertEqual(headers.get("Allow"), "GET, HEAD")
 
+    def test_detail_is_secret_free_schema_bound_and_read_only(self) -> None:
+        status, _, body = self.request(
+            "GET", "/api/v1/connections/beta-agent"
+        )
+        self.assertEqual(status, 200)
+        payload = json.loads(body)
+        _validate_connection_response(payload)
+        self.assertEqual(
+            payload["kind"], "idkmesh-control-tower-connection-response"
+        )
+        self.assertEqual(payload["connection"]["id"], "beta-agent")
+        self.assertNotIn("secret_ref", payload["connection"])
+        self.assertNotIn("settings", payload["connection"])
+        # Same resource the list endpoint serves for that id.
+        _, _, listing = self.request("GET", "/api/v1/connections")
+        listed = {
+            item["id"]: item for item in json.loads(listing)["items"]
+        }
+        self.assertEqual(payload["connection"], listed["beta-agent"])
+
+    def test_detail_head_returns_no_body(self) -> None:
+        status, headers, body = self.request(
+            "HEAD", "/api/v1/connections/alpha-agent"
+        )
+        self.assertEqual(status, 200)
+        self.assertEqual(body, b"")
+        self.assertTrue(int(headers["Content-Length"]) > 0)
+
+    def test_detail_unknown_id_is_404_without_echoing_the_id(self) -> None:
+        status, _, body = self.request(
+            "GET", "/api/v1/connections/SENTINEL-missing-id"
+        )
+        self.assertEqual(status, 404)
+        error = json.loads(body)["error"]
+        self.assertEqual(error["code"], "connection_not_found")
+        self.assertNotIn(b"SENTINEL-missing-id", body)
+
+    def test_detail_malformed_ids_fail_closed_with_400(self) -> None:
+        # ":" and "/" are outside the connector id grammar, so the reserved
+        # `/connections/{id}:probe` verb can never resolve as an id; the
+        # over-long id exceeds the 128-character bound.
+        for raw in (
+            "alpha-agent:probe",
+            "alpha-agent:enable",
+            "alpha-agent/extra",
+            "-leading-dash",
+            "a" * 129,
+            "%2e%2e",
+            "alpha agent",
+        ):
+            with self.subTest(raw=raw):
+                status, _, body = self.request(
+                    "GET", "/api/v1/connections/" + raw.replace(" ", "%20")
+                )
+                self.assertEqual(status, 400)
+                error = json.loads(body)["error"]
+                self.assertEqual(error["code"], "invalid_connection_id")
+                self.assertNotIn(raw.encode("utf-8"), body)
+
+    def test_detail_rejects_query_parameters(self) -> None:
+        status, _, body = self.request(
+            "GET", "/api/v1/connections/alpha-agent?limit=1"
+        )
+        self.assertEqual(status, 400)
+        self.assertEqual(
+            json.loads(body)["error"]["code"], "unexpected_query_parameters"
+        )
+
+    def test_detail_write_methods_are_405_get_head_only(self) -> None:
+        for method in ("POST", "PUT", "PATCH", "DELETE"):
+            with self.subTest(method=method):
+                status, headers, _ = self.request(
+                    method, "/api/v1/connections/alpha-agent"
+                )
+                self.assertEqual(status, 405)
+                self.assertEqual(headers.get("Allow"), "GET, HEAD")
+
+    def test_detail_legacy_row_is_not_serialized(self) -> None:
+        from idkmesh.connector_store import LocalMetadataStore
+
+        with tempfile.TemporaryDirectory() as tmp:
+            store_path = str(Path(tmp) / "legacy.sqlite3")
+            LocalMetadataStore(store_path).record_connection(
+                "legacy",
+                metadata={
+                    "id": "legacy",
+                    "secret_ref": "env:SENTINEL_REF_MUST_NOT_LEAK",
+                    "settings": {"note": "sentinel-must-not-leak"},
+                },
+                updated_at="2026-10-08T00:00:00Z",
+            )
+            # A row stored under one key but claiming another public id must
+            # also fail closed rather than be served under the wrong name.
+            base = {
+                "kind": "agent",
+                "driver": "fake-agent",
+                "enabled": True,
+                "auth_ref_configured": False,
+                "capability_tiers": ["T1"],
+                "task_classes": ["coding"],
+                "tools": ["git"],
+                "candidate_types": ["artifact_bundle"],
+                "max_risk": "medium",
+                "external_processing": False,
+                "project_spend_usd_max": 0.0,
+                "max_concurrency": 1,
+            }
+            LocalMetadataStore(store_path).record_connection(
+                "mismatch",
+                metadata={"id": "other-id", **base},
+                updated_at="2026-10-08T00:00:00Z",
+            )
+            server = create_server(
+                port=0, product_spine_store_path=store_path
+            )
+            thread = threading.Thread(
+                target=server.serve_forever, daemon=True
+            )
+            thread.start()
+            try:
+                results = [
+                    self.request(
+                        "GET", f"/api/v1/connections/{name}", server=server
+                    )
+                    for name in ("legacy", "mismatch")
+                ]
+            finally:
+                server.shutdown()
+                server.server_close()
+                thread.join(timeout=2)
+        for status, _, body in results:
+            self.assertEqual(status, 500)
+            self.assertEqual(
+                json.loads(body)["error"]["code"],
+                "connection_record_invalid",
+            )
+            self.assertNotIn(b"SENTINEL_REF_MUST_NOT_LEAK", body)
+            self.assertNotIn(b"sentinel-must-not-leak", body)
+            self.assertNotIn(b"other-id", body)
+
+    def test_detail_is_advertised_and_creates_no_authority(self) -> None:
+        _, _, body = self.request("GET", "/api/v1/status")
+        self.assertEqual(
+            json.loads(body)["endpoints"]["read_connection"],
+            "GET /api/v1/connections/{connection_id}",
+        )
+        _, _, body = self.request("GET", "/api/v1/openapi.json")
+        paths = json.loads(body)["paths"]
+        self.assertEqual(
+            sorted(paths["/api/v1/connections/{connection_id}"]), ["get"]
+        )
+
     def test_503_without_configured_store(self) -> None:
         server = create_server(port=0)
         thread = threading.Thread(target=server.serve_forever, daemon=True)
         thread.start()
         try:
+            status, _, body = self.request(
+                "GET", "/api/v1/connections/alpha-agent", server=server
+            )
+            self.assertEqual(status, 503)
+            self.assertEqual(
+                json.loads(body)["error"]["code"],
+                "product_spine_store_not_configured",
+            )
             status, _, body = self.request(
                 "GET", "/api/v1/connections", server=server
             )
@@ -1889,6 +2071,7 @@ class ControlTowerReadAuthBeforeLookupTests(unittest.TestCase):
         ("/api/v1/runs/unknown-run/evidence", "run_not_found"),
         ("/api/v1/work-units/unknown-wu", "work_unit_not_found"),
         ("/api/v1/projects/unknown-project", "project_not_found"),
+        ("/api/v1/connections/unknown-conn", "connection_not_found"),
     )
     LISTS = ("/api/v1/runs", "/api/v1/work-units")
 

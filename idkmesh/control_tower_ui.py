@@ -1125,6 +1125,82 @@ def _handler(
                 head_only=head_only,
             )
 
+        def _connection_id_from_path(self, path: str) -> str | None:
+            """Return the remainder if path is /api/v1/connections/<id>.
+
+            The remainder is returned unvalidated so that a malformed id is
+            an explicit 400 rather than a silent 404. The connector id
+            grammar excludes "/" and ":", keeping ``/connections/{id}:verb``
+            reserved for future explicit actions (CONNECTOR_CONTROL_API v0.1
+            section 13).
+            """
+            prefix = f"/api/{API_VERSION}/connections/"
+            if not path.startswith(prefix):
+                return None
+            remainder = path[len(prefix):]
+            return remainder or None
+
+        def _connection_read_response(
+            self, connection_id: str, *, head_only: bool
+        ) -> None:
+            if product_spine_store_path is None:
+                self._send_json(
+                    503,
+                    error_document(
+                        "product_spine_store_not_configured",
+                        "this Control Tower instance was started without a "
+                        "Product Spine store; connections cannot be read",
+                    ),
+                    head_only=head_only,
+                )
+                return
+
+            from idkmesh.connector_control_read import (
+                ConnectorControlReadError,
+                ConnectorControlReadService,
+            )
+            from idkmesh.connector_store import (
+                LocalMetadataStore,
+                LocalStoreError,
+            )
+
+            try:
+                resource = ConnectorControlReadService(
+                    LocalMetadataStore(product_spine_store_path)
+                ).get_connection(connection_id)
+            except ConnectorControlReadError as exc:
+                if exc.code == "invalid_connection_id":
+                    status = 400
+                elif exc.code == "connection_not_found":
+                    status = 404
+                else:
+                    status = 500
+                self._send_json(
+                    status,
+                    error_document(exc.code, str(exc)),
+                    head_only=head_only,
+                )
+                return
+            except (LocalStoreError, OSError, ValueError) as exc:
+                self._send_json(
+                    500,
+                    error_document("store_error", str(exc)),
+                    head_only=head_only,
+                )
+                return
+
+            self._send_json(
+                200,
+                {
+                    "api_version": API_VERSION,
+                    "schema_version": API_SCHEMA_VERSION,
+                    "kind": "idkmesh-control-tower-connection-response",
+                    "ok": True,
+                    "connection": resource,
+                },
+                head_only=head_only,
+            )
+
         def _work_unit_id_from_path(self, path: str) -> str | None:
             """Return the id if path is /api/v1/work-units/<id>.
 
@@ -1934,6 +2010,12 @@ def _handler(
                     return
                 self._event_stream_response(query)
                 return
+            connection_id = self._connection_id_from_path(path)
+            if connection_id is not None:
+                self._connection_read_response(
+                    connection_id, head_only=head_only
+                )
+                return
             work_unit_id = self._work_unit_id_from_path(path)
             if work_unit_id is not None:
                 self._work_unit_read_response(
@@ -2023,6 +2105,7 @@ def _handler(
                 return
             if (
                 self._run_id_from_path(path) is not None
+                or self._connection_id_from_path(path) is not None
                 or self._work_unit_id_from_path(path) is not None
                 or self._project_id_from_path(path) is not None
             ):
@@ -2083,6 +2166,7 @@ def _handler(
                 f"/api/{API_VERSION}/events",
             ) or (
                 self._run_id_from_path(path) is not None
+                or self._connection_id_from_path(path) is not None
                 or self._work_unit_id_from_path(path) is not None
                 or self._project_id_from_path(path) is not None
             ):

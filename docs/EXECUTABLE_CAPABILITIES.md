@@ -86,6 +86,7 @@ document currently advertises these exact endpoints:
 | `GET /api/v1/metrics` | privacy-safe aggregate service metrics |
 | `POST /api/v1/run-evidence/inspect` | validate and render one Run Evidence Report without selecting a candidate |
 | `GET /api/v1/connections` | list persisted public-safe connector metadata with opaque keyset pagination |
+| `GET /api/v1/connections/{connection_id}` | read one persisted public-safe connector resource; no probe, secret resolution or dispatch |
 | `GET /api/v1/runs` | list durable Product Spine runs |
 | `GET /api/v1/runs/{run_id}` | read one run projection |
 | `GET /api/v1/runs/{run_id}/attempts` | read one run's attempt projections |
@@ -130,6 +131,7 @@ methods are:
 - `ControlTowerClient.get_work_unit()`
 - `ControlTowerClient.list_work_units()`
 - `ControlTowerClient.list_connections()`
+- `ControlTowerClient.get_connection()`
 - `ControlTowerClient.get_project()`
 - `ControlTowerClient.list_events()`
 - `ControlTowerClient.stream_events()` — one bounded, strictly parsed read of the `events/stream` SSE endpoint (mandatory idle timeout, digest-checked events, caller-driven resume with `Last-Event-ID`)
@@ -145,7 +147,7 @@ Versioned profile parsing, connector registry, offline probing, provider-neutral
 secret-reference validation/redaction, local SQLite persistence, stable connector errors,
 and the public-safe connector read projection are implemented. The CLI surfaces these
 through `connections`, `doctor`, and `route explain`; HTTP exposes the read-only connection
-list. Live connector dispatch remains separately authority-gated.
+list and single-connection read. Live connector dispatch remains separately authority-gated.
 
 ### Product Spine, evidence, and local control state
 

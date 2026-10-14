@@ -122,7 +122,7 @@ for item in client.iter_runs(max_pages=2, limit=50):
 ```
 
 `get_run_attempts`, `get_run_evidence`, `list_work_units`, `get_work_unit`,
-`get_project`, `list_connections` and `list_events` follow the same shape. Run
+`get_project`, `list_connections`, `get_connection` and `list_events` follow the same shape. Run
 IDs may contain `/` and `:`; the client encodes them for you.
 
 ### Follow the event stream

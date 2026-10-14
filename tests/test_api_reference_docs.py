@@ -466,6 +466,12 @@ class CatalogLiveTests(_ServerCase):
             "run_not_found": lambda: get(server, "/api/v1/runs/offline/nothing"),
             "work_unit_not_found": lambda: get(server, "/api/v1/work-units/work/none"),
             "project_not_found": lambda: get(server, "/api/v1/projects/project.none"),
+            "connection_not_found": lambda: get(
+                server, "/api/v1/connections/agent.none"
+            ),
+            "invalid_connection_id": lambda: get(
+                server, "/api/v1/connections/agent:probe"
+            ),
             "evidence_not_available": lambda: get(server, "/api/v1/runs/run/cli-1/evidence"),
             "evidence_integrity_error": lambda: get(
                 server, f"/api/v1/runs/{tampered.run.run_id}/evidence"

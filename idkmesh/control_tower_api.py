@@ -773,6 +773,7 @@ def _status_document_base() -> dict[str, Any]:
             "inspect_run_evidence": "POST /api/v1/run-evidence/inspect",
             "list_runs": "GET /api/v1/runs",
             "list_connections": "GET /api/v1/connections",
+            "read_connection": "GET /api/v1/connections/{connection_id}",
             "read_run": "GET /api/v1/runs/{run_id}",
             "read_run_attempts": "GET /api/v1/runs/{run_id}/attempts",
             "read_run_evidence": "GET /api/v1/runs/{run_id}/evidence",
@@ -1057,6 +1058,53 @@ def openapi_document() -> dict[str, Any]:
                         "200": {"description": "One page of connections"},
                         "400": {"description": "Invalid list query or cursor"},
                         "403": {"description": "Invalid local session token"},
+                        "503": {"description": "Store not configured"},
+                    },
+                }
+            },
+            "/api/v1/connections/{connection_id}": {
+                "get": {
+                    "summary": "Read one persisted connector control record",
+                    "description": (
+                        "Pure read-only inspection of one secret-free "
+                        "connection resource. The id must match the "
+                        "connector identifier grammar; \"/\" and \":\" are "
+                        "excluded so /connections/{id}:verb stays "
+                        "reserved. Performs no probe, secret resolution, "
+                        "dispatch, or provider call and grants no "
+                        "authority."
+                    ),
+                    "security": [{"LocalSessionToken": []}],
+                    "parameters": [
+                        {
+                            "name": "connection_id",
+                            "in": "path",
+                            "required": True,
+                            "schema": {
+                                "type": "string",
+                                "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+                            },
+                        }
+                    ],
+                    "responses": {
+                        "200": {
+                            "description": "The public-safe connection resource",
+                            "content": {
+                                JSON_MEDIA_TYPE: {
+                                    "schema": {
+                                        "$ref": (
+                                            "https://idkmesh.org/schemas/"
+                                            "idkmesh-control-tower-"
+                                            "connection-response-v0.1."
+                                            "schema.json"
+                                        )
+                                    }
+                                }
+                            },
+                        },
+                        "400": {"description": "Malformed connection id"},
+                        "403": {"description": "Invalid local session token"},
+                        "404": {"description": "No persisted connection has this id"},
                         "503": {"description": "Store not configured"},
                     },
                 }

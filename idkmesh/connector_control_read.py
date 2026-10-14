@@ -11,6 +11,7 @@ from __future__ import annotations
 import base64
 import json
 import math
+import re
 from typing import Any, Mapping
 
 from idkmesh.connector_store import (
@@ -19,6 +20,12 @@ from idkmesh.connector_store import (
     LocalMetadataStore,
 )
 
+# Same identifier grammar connector profiles are validated against
+# (``idkmesh.connector_profiles``). It deliberately excludes ``/`` and ``:``
+# so ``/connections/{id}`` stays unambiguous and ``/connections/{id}:verb``
+# remains reserved for future explicit actions.
+CONNECTION_ID_PATTERN = r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}"
+_CONNECTION_ID_RE = re.compile(CONNECTION_ID_PATTERN + r"\Z")
 _CURSOR_KIND = "connector-control-connection-list-cursor-v1"
 _RESOURCE_FIELDS = frozenset({
     "id", "kind", "driver", "enabled", "auth_ref_configured",
@@ -160,3 +167,28 @@ class ConnectorControlReadService:
         items = [_resource(stored_id, raw) for stored_id, raw in rows]
         next_cursor = _encode_cursor(items[-1]["id"]) if has_more else None
         return items, next_cursor
+
+    def get_connection(self, connection_id: str) -> dict[str, Any]:
+        """Return one public-safe connection resource.
+
+        Pure read: no probe, no secret resolution, no provider call. A row
+        that does not match the canonical public contract fails closed with
+        ``connection_record_invalid`` rather than being serialized verbatim.
+        The error messages never echo the supplied identifier.
+        """
+        if (
+            not isinstance(connection_id, str)
+            or _CONNECTION_ID_RE.fullmatch(connection_id) is None
+        ):
+            raise ConnectorControlReadError(
+                "invalid_connection_id",
+                "connection id does not match the connector identifier "
+                "grammar",
+            )
+        raw = self.store.get_connection(connection_id)
+        if raw is None:
+            raise ConnectorControlReadError(
+                "connection_not_found",
+                "no persisted connection has this id",
+            )
+        return _resource(connection_id, raw)

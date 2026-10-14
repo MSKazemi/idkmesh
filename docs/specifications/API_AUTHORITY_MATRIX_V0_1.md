@@ -41,6 +41,7 @@ confidential < restricted`.
 | `GET /api/v1/openapi.json` | `read` | deployment | any | public | session token |
 | `GET /api/v1/metrics` | `read` | deployment | owner, admin, auditor, node_operator | internal | session token |
 | `GET /api/v1/connections` | `read` | project | owner, admin, dispatcher, integrator, auditor | internal | session token |
+| `GET /api/v1/connections/{connection_id}` | `read` | project | owner, admin, dispatcher, integrator, auditor | internal | session token |
 | `GET /api/v1/projects/{project_id}` | `read` | project | any | internal | session token |
 | `GET /api/v1/work-units` | `read` | project | any | internal | session token |
 | `GET /api/v1/work-units/{work_unit_id}` | `read` | project | any | internal | session token |

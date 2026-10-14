@@ -235,6 +235,12 @@ API_EXAMPLES = {
         "200",
         "application/json",
     ),
+    "examples/api/control-tower-connection-response.example.json": (
+        "GET",
+        "/api/v1/connections/{connection_id}",
+        "200",
+        "application/json",
+    ),
     "examples/api/control-tower-work-unit-response.example.json": (
         "GET",
         "/api/v1/work-units/{work_unit_id}",
@@ -311,6 +317,7 @@ class CatalogScanTests(unittest.TestCase):
             "/api/v1/runs/{run_id}/attempts",
             "/api/v1/runs/{run_id}/evidence",
             "/api/v1/connections",
+            "/api/v1/connections/{connection_id}",
             "/api/v1/work-units",
             "/api/v1/work-units/{work_unit_id}",
             "/api/v1/projects/{project_id}",
@@ -688,6 +695,15 @@ REPRESENTATIVES = {
     },
     ("GET", "/api/v1/connections", "403"): {"token": False},
     ("GET", "/api/v1/connections", "503"): {"server": "bare"},
+    ("GET", "/api/v1/connections/{connection_id}", "200"): {},
+    ("GET", "/api/v1/connections/{connection_id}", "400"): {
+        "path_values": {"connection_id": "bad:probe"}
+    },
+    ("GET", "/api/v1/connections/{connection_id}", "403"): {"token": False},
+    ("GET", "/api/v1/connections/{connection_id}", "404"): {
+        "path_values": {"connection_id": "agent.missing"}
+    },
+    ("GET", "/api/v1/connections/{connection_id}", "503"): {"server": "bare"},
     ("GET", "/api/v1/work-units", "200"): {},
     ("GET", "/api/v1/work-units", "400"): {
         "request_path": "/api/v1/work-units?limit=0"
@@ -921,6 +937,7 @@ class RuntimeResponseConformanceTests(unittest.TestCase):
             "run_id": self.run_id,
             "work_unit_id": WORK_UNIT_ID,
             "project_id": PROJECT_ID,
+            "connection_id": "agent.alpha",
         }
         values.update(trigger.get("path_values", {}))
         return trigger.get("request_path") or template.format_map(values)

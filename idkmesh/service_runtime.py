@@ -68,6 +68,7 @@ _LOG_STATIC_PATHS = frozenset({
 _LOG_RUN_PREFIX = "/api/v1/runs/"
 _LOG_RUN_SUBRESOURCES = ("attempts", "evidence", "decisions")
 _LOG_DYNAMIC_PREFIXES = (
+    ("/api/v1/connections/", "{connection_id}"),
     ("/api/v1/work-units/", "{work_unit_id}"),
     ("/api/v1/projects/", "{project_id}"),
 )
