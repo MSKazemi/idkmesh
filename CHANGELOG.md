@@ -12,6 +12,17 @@ and the release notes for that tag.
 
 ## [Unreleased]
 
+- Per-metric contract page (refs #86): added
+  `docs/research/METRIC_CONTRACTS_V0_1.md`, one entry for each of the 22 production
+  metrics and mechanisms (the repository-evolution signals, the live governor's
+  `branch_health` and `homeostatic_potential`, the control-energy, replicator and priority
+  composites, and the collaboration observables), each with assumptions, observables,
+  uncertainty, prediction, baseline, failure modes and Goodhart risks, and human/security
+  constraints. The page is read from the code, states where uncertainty is not modelled
+  and that hand-authored uniform priors remain an open item, and is guarded both ways by
+  `tests/test_metric_contracts.py`, which reads the metric keys by AST. The two existing
+  metric pages gain a pointer to it; issue #86 stays open.
+
 - API-9 observability privacy hardening (refs #744): opt-in local access logs
   now use a fixed route vocabulary, replacing run/WorkUnit/project identifiers
   with placeholders and unknown URL paths with `<unmatched>`; unrecognized HTTP

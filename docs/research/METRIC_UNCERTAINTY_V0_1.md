@@ -136,3 +136,5 @@ Replace or revise the model if:
 
 The purpose is not mathematical decoration. The purpose is to prevent small,
 biased, or entirely absent samples from being mistaken for strong evidence.
+
+See also: [Metric Contracts v0.1](METRIC_CONTRACTS_V0_1.md) for the per-metric assumptions, observables, uncertainty, prediction, baseline, failure modes and human/security constraints.
