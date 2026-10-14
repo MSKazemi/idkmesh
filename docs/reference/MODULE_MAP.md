@@ -17,6 +17,7 @@ Primary context: [subsystem contract](../specifications/CONTROL_TOWER_LOCAL_API_
 | [`cli.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/cli.py) | Argument parser and command handlers; does not replace domain services |
 | [`api_client.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/api_client.py) | Stdlib Python read/inspection client (including a bounded SSE event-stream reader) with typed errors and digest checks |
 | [`api_observability.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/api_observability.py) | Privacy-safe bounded-cardinality HTTP metrics |
+| [`api_storage_ops.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/api_storage_ops.py) | Library only (no CLI/HTTP): checksummed forward-only SQLite migration runner, pure retention planner, digest-bound backup/verify/restore; deletes nothing, grants no authority |
 | [`control_tower_api.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/control_tower_api.py) | Evidence validation, read models, and OpenAPI document |
 | [`control_tower_ui.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/control_tower_ui.py) | Loopback-only Control Tower HTTP/UI adapter |
 | [`gate_audit_ui.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/gate_audit_ui.py) | Loopback-only verdict-panel browser UI |

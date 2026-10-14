@@ -36,6 +36,16 @@ and the release notes for that tag.
   validator that accepts tampering, one that rejects a genuine record, and a record that claims
   attestation. With no UNKNOWN or FAIL scenario left, the overall report is now **WARN** and the
   command exits 0; UNKNOWN or FAIL still exits 1. Not a SOC 2 / ISO 27001 / FedRAMP claim.
+- API storage operations library (refs #750): add `idkmesh/api_storage_ops.py` with a
+  checksummed forward-only SQLite migration runner (dry-run plan; one-transaction apply, so an
+  error or a killed process leaves the previous schema; refuses edited history, ledger gaps,
+  newer databases and unadopted legacy schemas), a pure retention planner that never expires a
+  record tied to a Human Decision and never deletes anything, and a digest-bound
+  backup/verify/restore procedure (atomic restore, no symlink following, stale WAL removal).
+  `tests/test_api_storage_ops.py` covers these including a real `os._exit` crash mid-migration
+  and tamper cases. Library only: no CLI/HTTP surface, no existing store migrated onto it, no
+  network-profile adapter, claim/lease pruning or scheduled retention job; issue stays open.
+  See [API Storage Profiles](docs/specifications/API_STORAGE_PROFILES_V0_1.md#storage-operations-library).
 - Agent churn at a matched budget, synthetic mechanism evidence only (refs #22): add
   `sim/e050_churn.py` and record `experiments/E050-churn.md`. Each generation a fraction of agents
   (`0, 0.1, 0.25, 0.5, 1.0`) is replaced by fresh ones in E024's five arms at the same proposal budget,

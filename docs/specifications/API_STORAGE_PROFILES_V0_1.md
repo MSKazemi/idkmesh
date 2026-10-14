@@ -99,6 +99,43 @@ production-authorized HTTP mutation endpoint. The local decision database is a
 separate owned SQLite file: this slice neither unifies database layouts nor
 implements a network storage adapter.
 
+## Storage operations (library)
+
+`idkmesh/api_storage_ops.py` (#750) turns three of the rules above into code.
+It is a library: no CLI verb, HTTP route, scheduled job or existing store calls
+it yet, and it does not implement a network-profile adapter. It never deletes a
+record, reads a credential, or grants authority.
+
+- **Migrations.** `MigrationStep(version, name, sql)` lists are contiguous from 1
+  and forward-only. `plan_migrations()` is a read-only dry run;
+  `apply_migrations()` runs every pending step, its ledger row
+  (`idkmesh_schema_migrations`, with a SHA-256 of the normalised SQL) and
+  `user_version` in one `BEGIN IMMEDIATE` transaction, so an error or a process
+  crash at any point leaves the previous schema (`MigrationRunnerTests`,
+  including a child process killed with `os._exit` mid-migration). It refuses an
+  edited historical step (`checksum_mismatch`), a ledger gap, a ledger/`user_version`
+  disagreement, a newer database, and a step containing transaction control,
+  `PRAGMA user_version`, `VACUUM` or `ATTACH`. A database that already has a
+  `user_version` but no ledger (the current `LocalMetadataStore` and
+  `HumanDecisionStore` files) is refused unless `adopt_existing=True`, which
+  records the already-applied steps as adopted without running them.
+- **Retention.** `evaluate_retention()` returns `keep` or `expire` per record.
+  Essential and configuration classes cannot be given an age limit; expendable
+  and ephemeral classes need an explicit day limit; a record whose `run_id` or
+  evidence digest appears in a Human Decision (read with
+  `decision_references_from_store()`, read-only, fail-closed if unreadable) is
+  always kept. Unknown classes, naive timestamps and duplicate IDs raise.
+  Applying an `expire` decision remains the caller's separate step.
+- **Backup / verify / restore.** `create_backup()` takes an online SQLite
+  snapshot (private mode, no overwrite, no symlink following, atomic rename after
+  an integrity check) and writes a manifest holding the file's SHA-256, size,
+  schema version, per-table row counts and a manifest self-digest.
+  `verify_backup()` recomputes all of them; `restore_backup()` verifies, stages
+  next to the target, re-checks the digest, and `os.replace`s into place, removing
+  stale `-wal`/`-shm`/`-journal` files, so a failure leaves the old target.
+  The manifest self-digest detects accidental edits only: someone who can write
+  both files can forge both, as with event digests above.
+
 ## Migration strategy
 
 - The schema version is the SQLite `user_version`. Opening a database applies
@@ -148,9 +185,9 @@ it exists yet.
 |---|---|
 | One storage-port contract shared by application services | Documented above as the `ProductSpineRunStore` operations; no separate `Protocol` type, to avoid a second model. |
 | Local / GitHub / network ownership documented | Done (this document). |
-| Migration / version strategy | Done; replay verified. |
-| Retention matrix | Done; probe-history pruning implemented and tested. Claim/lease pruning and any scheduled retention job are open. |
-| Backup / restore test for the network adapter | Open: no network adapter. Local backup reconstruction is tested. |
+| Migration / version strategy | Done; replay verified. Checksummed forward-only runner with dry run and crash-atomic apply available as a library; no existing store has been moved onto it. |
+| Retention matrix | Done; probe-history pruning implemented and tested. A retention planner that never expires decision-referenced evidence exists as a library; claim/lease pruning, applying its plan, and any scheduled retention job are open. |
+| Backup / restore test for the network adapter | Open: no network adapter. Local backup reconstruction is tested, and a digest-verified backup/restore procedure with negative tests exists as a [library](#storage-operations-library). |
 | Corruption / digest negative test | Done for runs, evidence, events, and local immutable Human Decision records. |
 | Restart / reconstruction fixture | Done. |
 | No duplicate canonical run / evidence / decision model | Held; this document defines no new record shape. |
