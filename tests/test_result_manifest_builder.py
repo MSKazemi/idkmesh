@@ -413,6 +413,47 @@ class ResultManifestBuilderTests(unittest.TestCase):
                 self_report_source="absent",
             )
 
+    def test_result_manifest_refuses_worker_and_locator_secrets_without_echo(self):
+        credential = "sk-" + "Z" * 40
+        candidate = ArtifactBundleCandidateReference(
+            locator="file:///tmp/candidate.patch",
+            digest=BUNDLE_DIGEST,
+        )
+        cases = (
+            {"self_report": SelfReport(summary="bad " + credential)},
+            {"self_report": SelfReport(summary="okay", claims=(credential,))},
+            {"logs": (LogReference(type="stdout", locator="artifact://logs/" + credential),)},
+            {"environment": ExecutionEnvironment(tool_versions={"agent": credential})},
+            {"verification_notes": "secret=" + credential},
+        )
+        for overrides in cases:
+            with self.subTest(field=tuple(overrides)):
+                with self.assertRaises(ResultManifestBuildError) as ctx:
+                    _build(candidate, **overrides)
+                self.assertIn("raw_secret_detected", str(ctx.exception))
+                self.assertNotIn(credential, str(ctx.exception))
+
+    def test_result_manifest_refuses_incomplete_secret_scan(self):
+        candidate = ArtifactBundleCandidateReference(
+            locator="file:///tmp/candidate.patch",
+            digest=BUNDLE_DIGEST,
+        )
+        with self.assertRaisesRegex(
+            ResultManifestBuildError, "secret_scan_incomplete"
+        ):
+            _build(candidate, self_report=SelfReport(summary="x" * 262145))
+
+    def test_secret_references_and_normal_manifest_remain_accepted(self):
+        candidate = ArtifactBundleCandidateReference(
+            locator="file:///tmp/candidate.patch",
+            digest=BUNDLE_DIGEST,
+        )
+        manifest = _build(
+            candidate,
+            self_report=SelfReport(summary="Use env:JULES_API_KEY as a reference."),
+        )
+        self.assert_schema_valid(manifest)
+
     def test_manifest_has_no_verification_or_integration_authority(self):
         manifest = _build(
             GitHubPullRequestCandidateReference(
