@@ -22,6 +22,19 @@ and the release notes for that tag.
   and that hand-authored uniform priors remain an open item, and is guarded both ways by
   `tests/test_metric_contracts.py`, which reads the metric keys by AST. The two existing
   metric pages gain a pointer to it; issue #86 stays open.
+- Newcomer path: local-loop tutorial and stale starter links (refs #9, #16): add
+  `docs/LOCAL_LOOP_TUTORIAL.md`, a walkthrough of `idkmesh local-loop` on two
+  committed examples (supported beside rejected; failed worker beside a healthy
+  peer), the evidence bundle, replay with `experiments/replay_run.py`, and a
+  human decision with `experiments/record_human_decision.py`, linked from the
+  README, `docs/README.md` and `docs/GETTING_STARTED.md`, with a sitemap entry
+  and a drift guard (`tests/test_local_loop_tutorial.py`) that runs the
+  documented commands in-process. The tutorial states that the attempts are
+  precollected fixtures, not live workers or hostile-code isolation (sandbox
+  tracking issue #804 is open), and that no selection, write, push or merge
+  authority exists. Replace #540 and #541 (no longer open) in the README and
+  Contributor Quickstart with the currently open newcomer issues and the
+  starter task catalog, and annotate the dated contributor pilot table.
 - ACE controller tests (refs #57): pin the issue's formulas, which earlier tests
   left unguarded. Mutation testing showed six controller mutations survived
   (flipped selection sign, dropped `mu/n` mutation floor, ignored latency, noise
