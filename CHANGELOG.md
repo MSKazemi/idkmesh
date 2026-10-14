@@ -12,6 +12,16 @@ and the release notes for that tag.
 
 ## [Unreleased]
 
+- Two-attempt orchestrator adapter registration seam (refs #4, #16): add
+  `register_adapter`, `unregister_adapter`, `reset_registered_adapters` and a
+  declarative `ADAPTER_CONTRACT`, so a result-only worker adapter defined
+  outside `experiments/two_attempt_orchestrator.py` can be named by a config
+  with no coordinator edit (v0.1 acceptance criterion 12). Built-in and
+  duplicate names raise `ValueError`; names are validated; adapters receive a
+  copy of their attempt spec and a non-`CollectedCandidate` return is an
+  isolated `worker_error`. Replay fails closed when the adapter is not
+  registered. No execution, network or authority is added (sandbox work stays
+  with #804); existing run records for all example configs are byte-identical.
 - Newcomer path: local-loop tutorial and stale starter links (refs #9, #16): add
   `docs/LOCAL_LOOP_TUTORIAL.md`, a walkthrough of `idkmesh local-loop` on two
   committed examples (supported beside rejected; failed worker beside a healthy
