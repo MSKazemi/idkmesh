@@ -29,6 +29,18 @@ and the release notes for that tag.
   as-built maps now name the verbs; `experiments/*.py` gained only an optional `argv` parameter on
   `main`. New in-process tests (`tests/test_local_loop_replay_decision_cli.py`), a tutorial test
   that runs the documented verbs, and `--help` Examples blocks for the three `local-loop` commands.
+- Structural communication accounting for the R1 topology arms, synthetic mechanism evidence only
+  (refs #13): add `randomness_lab/r1_communication_burden.py`, a downstream analyzer over the
+  frozen R1 topology artifact that leaves the generator and every committed R1 artifact
+  byte-identical, plus `docs/research/R1_COMMUNICATION_BURDEN.md` and a seeds 42 to 51 result. It
+  counts messages per task from an explicit edge rule (flat 3N, role-specialized 2N+1, task-DAG
+  3N; labelled structural, not measured bytes), reports structural replication and unproductive
+  attempts, and fits success-per-message curves with seed-bootstrap intervals. Findings are
+  mixed: success per message falls with N in all 27 groups, role-specialized wins per message
+  mostly because its count is lower while succeeding less, and task-DAG is not better per
+  message. Content-level duplicated work is not definable on the R1 traces (no candidate
+  identity) and is reported as null; a communication budget and shared memory are still never
+  varied, and the issue stays open.
 - R1 per-signature marginal success post-processor (refs #30, #70): add
   `randomness_lab/r1_signature_marginals.py`, a read-only command that reads a saved
   `randomness_lab.r1_replay` report and emits, per structural signature, candidates
