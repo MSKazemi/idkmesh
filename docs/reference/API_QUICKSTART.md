@@ -110,6 +110,17 @@ run = client.get_run("run/example-1")
 print(run.request_id, run.value["run"]["state"])
 ```
 
+To walk every run without writing the loop, `client.iter_runs(max_pages=10,
+limit=50)` lazily yields run items, and `client.iter_run_pages(...)` lazily
+yields whole pages with their metadata. Both need a page budget, refuse a
+repeated cursor and raise instead of silently truncating; pages already yielded
+stay valid. `collect_run_pages` is the all-or-nothing tuple form.
+
+```python
+for item in client.iter_runs(max_pages=2, limit=50):
+    print(item["run_id"])
+```
+
 `get_run_attempts`, `get_run_evidence`, `list_work_units`, `get_work_unit`,
 `get_project`, `list_connections` and `list_events` follow the same shape. Run
 IDs may contain `/` and `:`; the client encodes them for you.
@@ -191,9 +202,33 @@ except ApiResponseError as error:
     assert error.code == "run_not_found"
 ```
 
-The client never retries on its own, because a hidden retry could repeat a
-mutation. If you retry, retry only reads, only when `retryable` is true, and
-honour the server's hint:
+The client never retries unless you ask it to, because a hidden retry could
+repeat a mutation. To opt read calls into a small, bounded, deterministic retry,
+pass a `RetryPolicy`:
+
+```python
+from idkmesh.api_client import RetryPolicy
+
+resilient = ControlTowerClient(
+    "http://127.0.0.1:8770",
+    os.environ["IDKMESH_CONTROL_TOWER_TOKEN"],
+    timeout=5.0,
+    retry=RetryPolicy(max_attempts=3, base_delay=0.25, max_delay=5.0),
+)
+result = resilient.status()
+print(result.request_id, "exchanges used:", result.metadata.attempts)
+```
+
+The policy applies only to idempotent `GET` reads. It retries a transport
+failure and an API error the server marked `retryable` with HTTP 429, 502, 503
+or 504; it never retries an integrity or protocol failure, a non-retryable API
+error, or opening an event stream. The wait before retry *n* is
+`min(max_delay, base_delay * 2**(n-1))` with no jitter, so a run is
+reproducible; a server `Retry-After` can lengthen it up to `max_delay`, and a
+longer one is not waited out. `max_attempts` is 2-5 and `max_delay` at most 30
+seconds. A final error carries `attempts`, and `ApiResult.metadata.attempts`
+says how many exchanges a success took. Without a policy the client makes
+exactly one exchange per call, as before. Writing your own loop is still fine:
 
 ```python
 import time
@@ -221,7 +256,10 @@ that names a different run, work unit or project than you asked for) and
 
 ## What the client guarantees
 
-- One HTTP request per call; no retry, no redirect, no hidden replay.
+- One HTTP request per call by default; retry is opt-in (`RetryPolicy`), limited
+  to idempotent reads, bounded and deterministic. Redirects are never followed
+  and nothing is replayed behind your back.
+- The session token is never part of `repr(client)` or of any exception message.
 - Loopback `http` destinations only, so the local token cannot be sent elsewhere.
 - The whole-response digest in `X-IDKMesh-Content-Digest` is recomputed before
   any document is returned; embedded evidence and snapshot digests are checked

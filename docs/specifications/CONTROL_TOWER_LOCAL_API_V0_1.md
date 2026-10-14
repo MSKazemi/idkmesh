@@ -1575,8 +1575,14 @@ while page.value.next_cursor is not None:
 
 Client guarantees, each fail-closed:
 
-- exactly one HTTP request per method call: no retries, redirects, or hidden
-  idempotent replay;
+- exactly one HTTP request per method call by default: no redirects and no
+  hidden replay. Retry exists only as an explicit `RetryPolicy` passed to the
+  constructor; it covers idempotent `GET` reads, transport failures and
+  server-declared retryable `429/502/503/504` errors, with `max_attempts` of
+  2-5, deterministic exponential backoff capped at `max_delay` (at most 30 s)
+  and a server `Retry-After` honoured only up to that cap. The `POST`
+  inspection and event-stream opens are never retried; integrity and protocol
+  failures are never retried. Proven by `tests/test_api_client_retry.py`;
 - loopback-only `http` base URLs, so the local session token cannot leak to a
   remote host;
 - the response content digest is recomputed and compared before the document

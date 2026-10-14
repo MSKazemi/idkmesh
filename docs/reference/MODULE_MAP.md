@@ -15,7 +15,7 @@ Primary context: [subsystem contract](../specifications/CONTROL_TOWER_LOCAL_API_
 | --- | --- |
 | [`__init__.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/__init__.py) | Package boundary and version metadata |
 | [`cli.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/cli.py) | Argument parser and command handlers; does not replace domain services |
-| [`api_client.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/api_client.py) | Stdlib Python read/inspection client (including a bounded SSE event-stream reader) with typed errors and digest checks |
+| [`api_client.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/api_client.py) | Stdlib Python read/inspection client (including a bounded SSE event-stream reader) with typed errors, digest checks, lazy page-capped run iteration and an opt-in bounded `RetryPolicy` for idempotent reads |
 | [`api_observability.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/api_observability.py) | Privacy-safe bounded-cardinality HTTP metrics |
 | [`api_slo.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/api_slo.py) | Machine-readable local-profile SLO contract and pure offline evaluators; no alerting authority |
 | [`api_storage_ops.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/api_storage_ops.py) | Library only (no CLI/HTTP): checksummed forward-only SQLite migration runner, pure retention planner, digest-bound backup/verify/restore; deletes nothing, grants no authority |

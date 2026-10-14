@@ -11,6 +11,7 @@ For the public front door, start with [`BEGINNER_GUIDE.md`](BEGINNER_GUIDE.md) i
 ## As-built code, reference, and help
 
 - [Implementation reference](reference/README.md) — one-to-one map for all direct installable Python modules (the 85-module baseline is dated and the map is CI-guarded), shipped CLI commands and local HTTP endpoints.
+- [Control Tower API overview](reference/API_OVERVIEW.md) — the one-page map for integrators: authentication, every route, schema catalog, OpenAPI download, the Python client and what is not built yet.
 - [Control Tower API quickstart](reference/API_QUICKSTART.md), [error catalog](reference/API_ERROR_CATALOG.md) and [service limits](reference/API_LIMITS.md) — start the local server, read it with curl and the official Python client, and look up every stable error code and enforced limit; each is checked against the code by tests.
 - [Source-derived architecture](architecture/AS_BUILT_IMPLEMENTATION_MAP.md) — how run control, offline execution, verification, GitHub/Jules connectors, and human authority are **actually** separated in code.
 - [Troubleshooting](help/TROUBLESHOOTING.md) — concrete setup, API, run-store, sandbox, and test failures.

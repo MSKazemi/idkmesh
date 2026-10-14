@@ -49,6 +49,7 @@ REFERENCE = DOCS / "reference"
 CATALOG = REFERENCE / "API_ERROR_CATALOG.md"
 LIMITS = REFERENCE / "API_LIMITS.md"
 QUICKSTART = REFERENCE / "API_QUICKSTART.md"
+OVERVIEW = REFERENCE / "API_OVERVIEW.md"
 SPEC = DOCS / "specifications" / "CONTROL_TOWER_LOCAL_API_V0_1.md"
 
 CODE_RE = re.compile(r"^[a-z][a-z0-9_]{2,63}$")
@@ -801,8 +802,78 @@ class ClientTaxonomyTests(unittest.TestCase):
             self.assertIn(f"`{attribute}`", section)
 
 
+class OverviewTests(unittest.TestCase):
+    """``API_OVERVIEW.md`` is a map: every pointer on it must resolve."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.text = OVERVIEW.read_text(encoding="utf-8")
+        cls.routes = cls.text.split("## Routes")[1].split("## Download")[0]
+
+    def test_every_served_route_is_listed_and_no_unserved_route_is(self):
+        paths = openapi_document()["paths"]
+        listed = set(re.findall(r"`(?:GET|POST) (/[A-Za-z0-9_./{}-]*)`", self.routes))
+        self.assertEqual(listed, set(paths))
+
+    def test_documented_methods_match_the_openapi_document(self):
+        paths = openapi_document()["paths"]
+        found = re.findall(r"`(GET|POST) (/[A-Za-z0-9_./{}-]*)`", self.routes)
+        self.assertGreaterEqual(len(found), 16)
+        for method, route in found:
+            with self.subTest(route=route):
+                self.assertIn(method.lower(), paths[route])
+
+    def test_every_schema_file_named_exists_and_is_valid_json(self):
+        names = re.findall(r"`(idkmesh-[a-z-]+-v0\.1\.schema\.json)`", self.text)
+        self.assertGreaterEqual(len(names), 10)
+        for name in names:
+            with self.subTest(schema=name):
+                path = REPO_ROOT / "schemas" / name
+                self.assertTrue(path.is_file())
+                json.loads(path.read_text(encoding="utf-8"))
+
+    def test_every_client_method_it_names_exists(self):
+        from idkmesh.api_client import ControlTowerClient
+
+        names = set(re.findall(r"`([a-z_]+)\(\)`", self.routes))
+        self.assertGreaterEqual(len(names), 10)
+        for name in sorted(names):
+            with self.subTest(method=name):
+                self.assertTrue(callable(getattr(ControlTowerClient, name, None)))
+
+    def test_relative_links_resolve(self):
+        targets = re.findall(
+            r"\]\((?!https?://|#)([^)#]+)(?:#[^)]*)?\)", self.text
+        )
+        self.assertGreaterEqual(len(targets), 8)
+        for target in targets:
+            with self.subTest(link=target):
+                self.assertTrue((OVERVIEW.parent / target).resolve().exists(), target)
+
+    def test_in_page_anchors_exist_in_the_quickstart(self):
+        quickstart = QUICKSTART.read_text(encoding="utf-8")
+        slugs = {
+            re.sub(r"[^a-z0-9 -]", "", heading.lower()).strip().replace(" ", "-")
+            for heading in re.findall(r"^#+ (.+)$", quickstart, re.M)
+        }
+        anchors = re.findall(r"API_QUICKSTART\.md#([a-z0-9-]+)", self.text)
+        self.assertGreaterEqual(len(anchors), 2)
+        for anchor in anchors:
+            with self.subTest(anchor=anchor):
+                self.assertIn(anchor, slugs)
+
+    def test_it_states_there_are_no_scopes_and_marks_unbuilt_surfaces(self):
+        self.assertRegex(self.text, r"(?i)no users, roles or \*\*scopes\*\*")
+        self.assertIn("#740", self.text)
+        self.assertRegex(self.text, r"(?i)no JavaScript client is shipped")
+        from idkmesh.api_client import ControlTowerClient
+
+        self.assertFalse(hasattr(ControlTowerClient, "record_human_decision"))
+
+
 class IntegrationTests(unittest.TestCase):
     PAGES = (
+        "reference/API_OVERVIEW.md",
         "reference/API_ERROR_CATALOG.md",
         "reference/API_LIMITS.md",
         "reference/API_QUICKSTART.md",

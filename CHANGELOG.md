@@ -60,6 +60,21 @@ and the release notes for that tag.
   `/metrics` route, network I/O, alert delivery or new dependency. #744 stays open
   for per-client rate limiting (#743) and Human Decision ingestion telemetry (#740).
 
+- Opt-in bounded retry, lazy run pagination and an API overview for the Python client
+  (refs #746): `ControlTowerClient` accepts an explicit `RetryPolicy` (2-5 attempts,
+  deterministic exponential backoff capped at 30 s, server `Retry-After` honoured only up to
+  the cap, injectable `sleep`) that retries only idempotent `GET` reads on transport failures
+  and server-declared retryable 429/502/503/504 errors; the `POST` inspection, event
+  streams, integrity/protocol failures and non-retryable API errors are never retried, and
+  the default stays exactly one exchange per call. Errors now carry `attempts` and
+  `retry_after_seconds`, results carry `metadata.attempts`, and `repr(client)` omits the
+  session token. `iter_run_pages()` / `iter_runs()` add lazy page-capped walks (and
+  `collect_run_pages()` is now a tuple over them). New `docs/reference/API_OVERVIEW.md`
+  maps authentication (a local token, no scopes), every route, the schema catalog, the
+  OpenAPI download and the Python client, and is drift-tested against the OpenAPI document
+  and `schemas/`. Not built, and now stated as such: `record_human_decision` (blocked on
+  #740), a typed TypeScript client, and package-index publication. Tests:
+  `tests/test_api_client_retry.py`, `tests/test_api_reference_docs.py`.
 - Agent churn at a matched budget, synthetic mechanism evidence only (refs #22): add
   `sim/e050_churn.py` and record `experiments/E050-churn.md`. Each generation a fraction of agents
   (`0, 0.1, 0.25, 0.5, 1.0`) is replaced by fresh ones in E024's five arms at the same proposal budget,

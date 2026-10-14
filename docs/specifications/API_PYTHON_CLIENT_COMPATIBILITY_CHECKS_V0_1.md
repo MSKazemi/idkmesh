@@ -19,7 +19,9 @@ A caller must not infer remote or multi-user authorization from a local token.
 | cursor returned by server | caller echoes opaque cursor; never decodes |
 | missing server request ID | protocol error |
 | server HTTP error envelope | stable response taxonomy with request ID |
-| POST inspection | never retry implicitly; does not record human decision |
+| POST inspection | never retry, even under a `RetryPolicy`; does not record human decision |
+| retry policy | opt-in only; idempotent GET; transport and `retryable` 429/502/503/504 only; bounded, deterministic, no jitter |
+| redirect to another host | not followed; the token is never sent to the redirect target (real two-server test) |
 
 ## Graduation evidence
 Exercise each fixture against a deterministic fake HTTP server, not a live
@@ -39,6 +41,11 @@ page cap is validated before I/O (maximum 100). Each result retains its own
 request ID and response digest. Repeated cursors, exhausted budgets, invalid
 parameters or server errors raise typed exceptions rather than returning
 misleading partial success; the helper never retries or writes.
+
+`iter_run_pages(...)` and `iter_runs(...)` are the lazy forms of the same walk:
+one HTTP read per page, nothing fetched until iterated, the same page cap and
+replay refusal, and pages already yielded stay valid if a later page raises.
+`collect_run_pages` is the all-or-nothing tuple over `iter_run_pages`.
 
 **Important:** this is not a transactional snapshot. Concurrent changes may
 affect later pages. Single-page reads should still use `list_runs` directly.
