@@ -3,7 +3,7 @@ description: "Source-by-source research, simulation and interoperability Python 
 ---
 # Research and interoperability code map (as built)
 
-**Code-review baseline:** current public `main` as inspected on 2026-10-13; see the [dated review record](../audits/2026-10-13-nonpackage-python-audit.md) for the pinned revision and validation limits. This map covers **98 direct Python files** in `experiments/`, `interop/`, `sim/`, and `randomness_lab/` (excluding `interop/tests/`). It is source/declaration navigation, **not** an independent line-by-line security review or a release qualification.
+**Code-review baseline:** current public `main` as inspected on 2026-10-13; see the [dated review record](../audits/2026-10-13-nonpackage-python-audit.md) for the pinned revision and validation limits. This map covers **103 direct Python files** in `experiments/`, `interop/`, `sim/`, and `randomness_lab/` (excluding `interop/tests/`). It is source/declaration navigation, **not** an independent line-by-line security review or a release qualification.
 
 **Read this before interpreting results:** `sim/` and `randomness_lab/` primarily model synthetic agents/outcomes, while parts of `experiments/` and E016/E017 consume real observed verdicts or public execution-graded data. Neither synthetic mechanisms, exploratory analysis of already seen data, a passing schema fixture, nor a matched simulation budget automatically demonstrates general real-world agent value. A metadata-only verifier does not execute candidate code; explicit behavioral harnesses operate in separate controlled contexts. `interop/` is an in-process protocol binding, not a network service. All paths grant **no direct permission to approve, push, or merge**.
 
@@ -109,6 +109,7 @@ Verifier-error models, coordination, search, and congestion experiments. Main [s
 | [`e039_content_addressed_blind_spot.py`](https://github.com/MSKazemi/idkmesh/blob/main/sim/e039_content_addressed_blind_spot.py) | Inspect whether verifier blind spots depend on artifacts | Identifies structural limits of the modeled threat |
 | [`e049_derived_measurements.py`](https://github.com/MSKazemi/idkmesh/blob/main/sim/e049_derived_measurements.py) | Replay the E024 arms for recovery time, viable-niche coverage and cost per improvement | Post-hoc reader; changes no E024 result; synthetic mechanism evidence only |
 | [`e050_churn.py`](https://github.com/MSKazemi/idkmesh/blob/main/sim/e050_churn.py) | Sweep agent churn per generation over the five E024 arms at a matched budget, under a memory-loss and a cold-start model | Re-implements E024 loops with churn hooks, f = 0 equals E024; shared state survives every departure; synthetic mechanism evidence only, not a model of real churn |
+| [`e051_marginal_selector_sweep.py`](https://github.com/MSKazemi/idkmesh/blob/main/sim/e051_marginal_selector_sweep.py) | Run the repository's unmodified `marginal_evidence_benchmark` selection over seeded synthetic verdict matrices with a known population truth, and score the marginal selector and four baselines against it | Synthetic only; measures the tool against a known generative model, not real verifiers; diagnostic, grants no routing or admission authority |
 | [`emergence_sim.py`](https://github.com/MSKazemi/idkmesh/blob/main/sim/emergence_sim.py) | Minimal random/scalar/Quality-Diversity goal-change search | Falsifiable synthetic landscape only |
 | [`homeostatic_stigmergy_sim.py`](https://github.com/MSKazemi/idkmesh/blob/main/sim/homeostatic_stigmergy_sim.py) | Congestion-governed stigmergic routing controller | Synthetic capacity regulation |
 | [`matched_budget_emergence.py`](https://github.com/MSKazemi/idkmesh/blob/main/sim/matched_budget_emergence.py) | Five-arm emergence comparison at matched evaluation budgets | Controlled model, not real software productivity |
@@ -123,7 +124,7 @@ Verifier-error models, coordination, search, and congestion experiments. Main [s
 | [`verification_aggregation_sim.py`](https://github.com/MSKazemi/idkmesh/blob/main/sim/verification_aggregation_sim.py) | Independence-group-aware versus naive vote aggregation | Synthetic correlated-panel counterfactual |
 | [`x8_budget_split.py`](https://github.com/MSKazemi/idkmesh/blob/main/sim/x8_budget_split.py) | Predict the best split of a fixed budget between worker attempts and verifier reads from pilot-measured worker and verifier dependence (X8, A6), scored on held-out simulated tasks against three fixed splits and two controls | Synthetic ground truth with invented costs; predictor and truth share the pipeline formula; real-data test blocked on X6 |
 
-## `randomness_lab/` (23 source files)
+## `randomness_lab/` (25 source files)
 
 Dependency-free stochastic outcome and policy models, R1-R4. Main [lab guide](https://github.com/MSKazemi/idkmesh/blob/main/randomness_lab/README.md), [R1 readiness](../research/R1_HELP_HURT_SWEEP.md), and [research program](../research/SCIENTIFIC_PROGRAM.md).
 

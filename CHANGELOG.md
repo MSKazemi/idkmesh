@@ -149,6 +149,21 @@ and the release notes for that tag.
   biased low by about 0.007, and a pilot one fifth the size roughly doubles the error. The real-data test
   stays blocked on X6/X7; blind-spot routing (A7) is not built. Machine-readable result
   `experiments/results/X8-budget-split.json`; tests in `tests/test_x8_budget_split.py`.
+- Marginal-evidence selector validated against a known synthetic truth (refs #693): add
+  `sim/e051_marginal_selector_sweep.py` and record `experiments/E051-marginal-selector-sweep.md`. Seeded
+  verdict matrices from a stated generative model are run through the repository's unmodified
+  `idkmesh.marginal_evidence_benchmark.build_selection_plan`, and the marginal-effective-vote selector and
+  its four baselines are scored against a 40,000-task population oracle (16 regimes, 7 design sizes up to
+  1,280 rows, 100 replicates each; eight regimes were added post hoc and are flagged). Negative result for
+  the shipped selector on this model: of 11,200 frozen selections it made 1,548 and one was a helpful
+  candidate, it chose only the two least accurate candidates (its effective-vote criterion rises as
+  candidate accuracy falls), and its abstentions did not track redundancy (79% when nothing helps, 88% when
+  something does), while the accuracy, family and correlation baselines chose a helpful candidate in 65% to
+  73% of cases; the minimum-correlation rule beat highest-accuracy where an accurate candidate is largely
+  redundant. Duplicate and panel-mimic controls are pinned by tests. Synthetic only: symmetric errors, one
+  dependence shape, no significance test; the observed-cohort gate for issue 693 is unchanged and no
+  shipped selector, schema, CLI verb or routing behaviour is modified. Machine-readable result
+  `experiments/results/E051-marginal-selector-sweep.json`; fast tests plus a nightly `sim` re-derivation.
 - Agent churn at a matched budget, synthetic mechanism evidence only (refs #22): add
   `sim/e050_churn.py` and record `experiments/E050-churn.md`. Each generation a fraction of agents
   (`0, 0.1, 0.25, 0.5, 1.0`) is replaced by fresh ones in E024's five arms at the same proposal budget,
