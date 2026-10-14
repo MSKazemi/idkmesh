@@ -25,6 +25,29 @@ and the release notes for that tag.
   construction under memory loss. 152 p-values reported. State that leaves with its authors and
   correlated departures are listed as not measured. Machine-readable result
   `experiments/results/E050-churn.json`; fast tests plus a nightly `sim` check.
+- Structural communication accounting for the R1 topology arms, synthetic mechanism evidence only
+  (refs #13): add `randomness_lab/r1_communication_burden.py`, a downstream analyzer over the
+  frozen R1 topology artifact that leaves the generator and every committed R1 artifact
+  byte-identical, plus `docs/research/R1_COMMUNICATION_BURDEN.md` and a seeds 42 to 51 result. It
+  counts messages per task from an explicit edge rule (flat 3N, role-specialized 2N+1, task-DAG
+  3N; labelled structural, not measured bytes), reports structural replication and unproductive
+  attempts, and fits success-per-message curves with seed-bootstrap intervals. Findings are
+  mixed: success per message falls with N in all 27 groups, role-specialized wins per message
+  mostly because its count is lower while succeeding less, and task-DAG is not better per
+  message. Content-level duplicated work is not definable on the R1 traces (no candidate
+  identity) and is reported as null; a communication budget and shared memory are still never
+  varied, and the issue stays open.
+- R1 per-signature marginal success post-processor (refs #30, #70): add
+  `randomness_lab/r1_signature_marginals.py`, a read-only command that reads a saved
+  `randomness_lab.r1_replay` report and emits, per structural signature, candidates
+  analysed, independently verified successes, success rate and a Wilson 95% interval,
+  which the preregistration requires and the replay never summarized. Pairwise failure
+  correlations are copied unchanged, the input file's SHA-256 digest is recorded, and
+  inconclusive candidates are reported as a count and never scored. It fails closed on
+  malformed input and refuses synthetic-flagged input unless
+  `--allow-synthetic-fixture` marks the output `evidence_class: synthetic_fixture`.
+  `r1_replay.py` is untouched. No real corpus exists (readiness: 0 of 20 eligible work
+  units), so there is no real R1 outcome. Documented in `docs/research/R1_REAL_RESULT_REPLAY.md`.
 - Derived emergence measurements, synthetic mechanism evidence only (refs #22): add
   `sim/e049_derived_measurements.py` and record `experiments/E049-derived-measurements.md`
   (E048 stays reserved for the preregistered temporal holdout). It replays E024's `run_seed`

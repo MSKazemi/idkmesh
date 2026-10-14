@@ -143,14 +143,19 @@ resolved by this page, and none of it may be resolved after outcomes are seen.
    seed 42 and takes the 2.5th and 97.5th percentiles of the paired success
    deltas. Those are facts about the code, not part of the registration. A
    freeze should record the exact values used.
-2. **Per-signature marginal success has no producer.** The comment requires it
-   alongside pairwise failure correlation. At the base commit the replay report
-   contains arm-level `verified_success_rate` for the replication and diversity
-   arms and `signature_failure_correlations` (first-attempt failure correlation
-   per overlapping signature pair), and a search of `r1_replay.py` finds no
-   per-signature marginal success field. Whether a post-processor should
-   produce it, or whether it counts as part of the unchanged replay, is not
-   stated. This page builds nothing for it.
+2. **Per-signature marginal success had no producer; a post-processor now
+   exists.** The comment requires it alongside pairwise failure correlation. The
+   replay report contains arm-level `verified_success_rate` for the replication and
+   diversity arms and `signature_failure_correlations` (first-attempt failure
+   correlation per overlapping signature pair) but no per-signature marginal
+   success field, and `r1_replay.py` is left unchanged. The read-only
+   `randomness_lab.r1_signature_marginals`, described in
+   [real-result replay](R1_REAL_RESULT_REPLAY.md), reads a saved replay report and
+   emits per-signature counts, success rate and a Wilson 95% interval, with the
+   correlations copied unchanged. It has been run on no real corpus: the
+   readiness gate (below) still reports 0 of 20 eligible work units. Whether its
+   output counts as part of the unchanged replay is still not stated by the
+   comment; it is a separate document bound to the report by digest.
 3. **"Scale-up" is not defined beyond "3 to 5 workers".** The comment does not say
    what exactly is gated (a new experiment, a default configuration, or a claim),
    nor what "remain explicitly exploratory" permits when the result is
@@ -211,7 +216,8 @@ is the repository's own record of this state.
 
 - It does not add, remove or reinterpret a rule from the comments.
 - It does not claim H1, or any part of issue 30 or issue 70, is satisfied.
-- It does not build the per-signature marginal-success post-processor.
+- It does not run the per-signature marginal-success post-processor on real data; no
+  real replay report exists.
 - It does not treat the synthetic harness, the help/hurt sweep or E040 to E043 as
   evidence for H1; those are labelled synthetic in the
   [results ledger](RESULTS_LEDGER.md).

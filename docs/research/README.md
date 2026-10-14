@@ -74,6 +74,12 @@ policy changes or merge decisions.
   reports descriptive diminishing/negative marginal-return thresholds per
   added worker without changing the frozen R1 generator. Not real coding-agent
   performance.
+- [R1 communication burden](R1_COMMUNICATION_BURDEN.md) — structural (not measured
+  bytes) message counts for the flat, role-specialized, and task-DAG topologies,
+  structural redundancy, and success-per-message curves with seed-bootstrap
+  intervals for issue #13, as a downstream analyzer of the frozen R1 topology
+  artifact. Content-level duplication is not definable on those traces and is
+  reported as such. Synthetic mechanism evidence only.
 - [R1 Real-Corpus Readiness Gate](R1_CORPUS_READINESS.md) — the contract that
   must hold before `randomness_lab.r1_replay` may be run on a real held-out
   corpus. Readiness tooling only; no real R1 outcome. Issues #30 and #70.
