@@ -124,6 +124,20 @@ and the release notes for that tag.
   #740: no HTTP route, CLI verb or OpenAPI path calls the gateway, because the live identity/policy
   enforcement (#670) and network security boundary (#743) it needs do not exist yet and the local
   session token is not a human principal. Tests: `tests/test_human_decision_gateway.py`.
+- Network/multi-user API security profile, library only (refs #743): add
+  `idkmesh/network_api_profile.py` and
+  [`docs/specifications/NETWORK_API_SECURITY_PROFILE_V0_1.md`](docs/specifications/NETWORK_API_SECURITY_PROFILE_V0_1.md).
+  `parse_network_profile` refuses a non-loopback bind unless TLS is declared as terminated by a trusted
+  proxy, a real authentication adapter is named (the local session token is refused by name), the Host
+  allowlist is explicit and limits are bounded; wildcard CORS, `null`/`http` origins, literal secrets and
+  enabling break-glass are refused. `NetworkRequestGuard` adds peer/`X-Forwarded-For` trust, Host, Origin
+  and request-framing (smuggling) checks; `ServiceTokenVerifier` is a digest-only, constant-time bearer
+  registry with expiry, rotation and revocation; `RateLimiter` fails closed when its key table is
+  saturated; `authorize_scope`/`append_authorization_audit` route endpoint scopes through the enterprise
+  kernel and retain denials. Not wired into any listener: no network-facing endpoint is enabled, and no
+  `ActorContext` adapter, TLS, cross-process revocation or `decisions:write`/`integration:*` action
+  exists, so #743 stays open. Regression tests in `tests/test_network_api_profile.py`.
+
 - Agent churn at a matched budget, synthetic mechanism evidence only (refs #22): add
   `sim/e050_churn.py` and record `experiments/E050-churn.md`. Each generation a fraction of agents
   (`0, 0.1, 0.25, 0.5, 1.0`) is replaced by fresh ones in E024's five arms at the same proposal budget,

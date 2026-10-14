@@ -90,6 +90,11 @@ meaning of an existing version.
   the enterprise authorization kernel for the network profile, what the loopback
   API enforces today (a session token, not a principal), and a guard that keeps
   the matrix complete against the served routes.
+- [Network API Security Profile v0.1](NETWORK_API_SECURITY_PROFILE_V0_1.md) —
+  the fail-closed profile a non-loopback or multi-user API must satisfy (TLS via a
+  trusted proxy, a real authentication adapter, Host/Origin/CORS policy, request
+  framing, digest-only bearer credentials, rate limits, audited authorization) and
+  the library that checks it; not wired into any listener.
 - [Release Supply-Chain Baseline v0.1](RELEASE_SUPPLY_CHAIN_V0_1.md) —
   release SBOM/checksum/source-workflow identity evidence, immutable-pinned
   GitHub build provenance, consumer verification, and vulnerability/update

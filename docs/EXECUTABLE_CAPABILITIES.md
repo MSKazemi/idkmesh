@@ -189,6 +189,10 @@ deterministic authorization decisions, enterprise control-profile validation, an
 append-only tamper-evident enterprise audit ledger are implemented as control primitives.
 They are building blocks, not a claim that the local Control Tower is a production
 multi-tenant enterprise service or that configuration equals compliance certification.
+`idkmesh/network_api_profile.py` adds fail-closed validation and request/credential/rate-limit
+checks for a future non-loopback API ([Network API Security
+Profile](specifications/NETWORK_API_SECURITY_PROFILE_V0_1.md)); no served listener calls
+it, so the Control Tower remains loopback-only.
 
 ### Coordination, admission, runtime, and observability
 
@@ -304,6 +308,7 @@ name documents implementation presence, not stability as a public Python API.
 - `idkmesh/marginal_evidence.py`
 - `idkmesh/marginal_evidence_benchmark.py`
 - `idkmesh/marginal_evidence_synthesis.py`
+- `idkmesh/network_api_profile.py`
 - `idkmesh/openai_compatible.py`
 - `idkmesh/openai_compatible_capabilities.py`
 - `idkmesh/openai_compatible_http.py`
