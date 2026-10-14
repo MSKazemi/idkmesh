@@ -29,6 +29,17 @@ and the release notes for that tag.
   as-built maps now name the verbs; `experiments/*.py` gained only an optional `argv` parameter on
   `main`. New in-process tests (`tests/test_local_loop_replay_decision_cli.py`), a tutorial test
   that runs the documented verbs, and `--help` Examples blocks for the three `local-loop` commands.
+- R1 per-signature marginal success post-processor (refs #30, #70): add
+  `randomness_lab/r1_signature_marginals.py`, a read-only command that reads a saved
+  `randomness_lab.r1_replay` report and emits, per structural signature, candidates
+  analysed, independently verified successes, success rate and a Wilson 95% interval,
+  which the preregistration requires and the replay never summarized. Pairwise failure
+  correlations are copied unchanged, the input file's SHA-256 digest is recorded, and
+  inconclusive candidates are reported as a count and never scored. It fails closed on
+  malformed input and refuses synthetic-flagged input unless
+  `--allow-synthetic-fixture` marks the output `evidence_class: synthetic_fixture`.
+  `r1_replay.py` is untouched. No real corpus exists (readiness: 0 of 20 eligible work
+  units), so there is no real R1 outcome. Documented in `docs/research/R1_REAL_RESULT_REPLAY.md`.
 - Derived emergence measurements, synthetic mechanism evidence only (refs #22): add
   `sim/e049_derived_measurements.py` and record `experiments/E049-derived-measurements.md`
   (E048 stays reserved for the preregistered temporal holdout). It replays E024's `run_seed`
