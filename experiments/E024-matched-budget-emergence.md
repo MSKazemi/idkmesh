@@ -239,6 +239,15 @@ extra compute allowance.
 > of 100 paired seeds. Cite this record for "the archive is the best arm on
 > average", never for "the archive is safe" or "the archive wins the run you
 > get".
+>
+> **Follow-up (E049).** Three measurements this record leaves out are now
+> computed from a replay of these same arms and seeds, without changing any
+> number above: [`E049-derived-measurements.md`](E049-derived-measurements.md)
+> reports recovery time to an absolute, right-censored utility bar, viable-niche
+> coverage defined identically for all five arms, and proposals per verified
+> improvement. Its findings include ones that cut against the archive: random
+> search is close on first-passage recovery, and the archive's cost-per-improvement
+> lead holds under one accounting only.
 
 ## Limitations and remaining issue scope
 
