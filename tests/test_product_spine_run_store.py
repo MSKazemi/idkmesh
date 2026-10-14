@@ -265,6 +265,48 @@ class ProductSpineRunStoreTests(unittest.TestCase):
         ):
             self.service.list(cursor=forged)
 
+    def test_list_rejects_noncanonical_and_oversized_cursors(self):
+        import base64
+        import json
+
+        canonical = base64.urlsafe_b64encode(
+            json.dumps(
+                {"kind": "product-spine-run-list-cursor-v1", "after": "run/cli-1x"},
+                sort_keys=True, separators=(",", ":"),
+            ).encode("utf-8")
+        ).decode("ascii")
+        # These are genuinely distinct from our serializer's encoding. A
+        # padding-free canonical value would make rstrip('=') a no-op.
+        self.assertTrue(canonical.endswith("="))
+        candidates = [
+            canonical + "!!!",
+            canonical.rstrip("="),
+            base64.urlsafe_b64encode(
+                b'{"kind":"product-spine-run-list-cursor-v1","after":"run/cli-1x"}'
+            ).decode("ascii"),
+            base64.urlsafe_b64encode(
+                b'{"kind":"product-spine-run-list-cursor-v1","after":"run/cli-1","extra":1}'
+            ).decode("ascii"),
+            "!" * 5000,
+        ]
+        for cursor in candidates:
+            with self.subTest(cursor=cursor[:30]):
+                with self.assertRaises(ProductSpineRunStoreError) as ctx:
+                    self.service.list(cursor=cursor)
+                self.assertEqual(ctx.exception.code, "invalid_cursor")
+
+    def test_list_rejects_cursor_whose_json_overflows_the_parser(self):
+        import base64
+        from unittest import mock
+
+        cursor = base64.urlsafe_b64encode(b"[" * 1500 + b"]" * 1500).decode("ascii")
+        # Deep nesting raises RecursionError only on interpreters with a low
+        # recursion ceiling (3.11), so force it to make the test version-proof.
+        with mock.patch("json.loads", side_effect=RecursionError("deep")):
+            with self.assertRaises(ProductSpineRunStoreError) as ctx:
+                self.service.list(cursor=cursor)
+        self.assertEqual(ctx.exception.code, "invalid_cursor")
+
     def test_list_of_an_empty_store_returns_no_runs_and_no_cursor(self):
         runs, cursor = self.service.list()
         self.assertEqual(runs, [])

@@ -162,25 +162,31 @@ def _encode_cursor(after_run_id: str, kind: str = _CURSOR_KIND) -> str:
 
 
 def _decode_cursor(cursor: str, kind: str = _CURSOR_KIND) -> str:
-    if not isinstance(cursor, str) or not cursor:
+    if not isinstance(cursor, str) or not cursor or len(cursor) > 4096:
         raise ProductSpineRunStoreError(
-            "invalid_cursor", "cursor must be a non-empty string"
+            "invalid_cursor", "cursor must be a bounded non-empty string"
         )
     try:
-        payload = json.loads(base64.urlsafe_b64decode(cursor.encode("ascii")))
-    except Exception as exc:
+        # urlsafe_b64decode is permissive by default (including ignored bytes,
+        # missing canonical padding and noncanonical JSON encodings). Decode
+        # strictly, then require byte-for-byte equality with our serializer.
+        raw = base64.b64decode(cursor.encode("ascii"), altchars=b"-_", validate=True)
+        payload = json.loads(raw)
+        if (
+            not isinstance(payload, dict)
+            or set(payload) != {"kind", "after"}
+            or payload["kind"] != kind
+            or not isinstance(payload["after"], str)
+            or not payload["after"]
+            or _encode_cursor(payload["after"], kind) != cursor
+        ):
+            raise ValueError("noncanonical cursor")
+    except (UnicodeError, ValueError, TypeError, OverflowError, RecursionError) as exc:
+        # RecursionError: deeply nested JSON inside the 4096-char bound overflows
+        # the parser on interpreters with a 1000-frame limit (3.11).
         raise ProductSpineRunStoreError(
             "invalid_cursor", "cursor is not a value this service issued"
         ) from exc
-    if (
-        not isinstance(payload, dict)
-        or payload.get("kind") != kind
-        or not isinstance(payload.get("after"), str)
-        or not payload["after"]
-    ):
-        raise ProductSpineRunStoreError(
-            "invalid_cursor", "cursor is not a value this service issued"
-        )
     return payload["after"]
 
 

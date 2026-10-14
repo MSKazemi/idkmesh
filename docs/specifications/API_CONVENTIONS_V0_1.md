@@ -207,6 +207,9 @@ List endpoints require:
 - bounded page size;
 - opaque cursor;
 - stable next-cursor semantics;
+- fail-closed, length-bounded cursor decoding: malformed Base64, noncanonical
+  encodings, foreign listing kinds and unexpected fields are invalid rather
+  than silently normalized by the local Product Spine reader;
 - documented filters;
 - no unbounded full-table response.
 
