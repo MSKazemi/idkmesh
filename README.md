@@ -23,6 +23,7 @@ The wider IDKMesh framework explores how people, AI agents, and tools can break 
 | See why a worker cannot approve its own work | [Run the contract demo](#try-the-contract-demo) (synthetic fixtures, no AI) |
 | Inspect recorded attempts and evidence in a browser | [Human Control Tower](#inspect-a-swarm-run-in-the-human-control-tower) (read-only, local) |
 | Use the approach with a different GitHub project | [Project Adoption Guide](docs/PROJECT_ADOPTION_GUIDE.md) (manual model; automation incomplete) |
+| Run the local two-attempt loop on committed examples (no live workers) | [Local-loop tutorial](docs/LOCAL_LOOP_TUTORIAL.md) |
 | Check exactly what is implemented versus planned | [Capability Truth Matrix](docs/CAPABILITY_MATRIX.md) |
 
 **The boundary to remember:** *worker says "done" ≠ independently checked ≠ authorized to merge.*
@@ -326,12 +327,13 @@ You do not need to understand the entire repository before contributing.
 4. Browse the live [`good first issue`](https://github.com/MSKazemi/idkmesh/issues?q=is%3Aissue+state%3Aopen+label%3A%22good+first+issue%22) and [`help wanted`](https://github.com/MSKazemi/idkmesh/issues?q=is%3Aissue+state%3Aopen+label%3A%22help+wanted%22) views.
 5. Before starting, check assignees, recent comments, and linked pull requests, then state the bounded change you intend to make.
 
-Current newcomer-sized examples:
+Current newcomer-sized examples (open on GitHub when checked on 2026-10-14; re-check before starting):
 
 - [#542 — walk the newcomer path and record where it breaks](https://github.com/MSKazemi/idkmesh/issues/542), no code required;
-- [#540 — add a smoke test that every argparse tool supports `--help`](https://github.com/MSKazemi/idkmesh/issues/540), a focused Python testing task;
-- [#541 — independently verify the benchmark publication counts](https://github.com/MSKazemi/idkmesh/issues/541), a reproducibility/research task;
+- [#403 — first-run report: what confused you?](https://github.com/MSKazemi/idkmesh/issues/403), no code required;
 - [#401 — install `gate-audit` and report setup/test results](https://github.com/MSKazemi/idkmesh/issues/401), especially useful on external platforms.
+
+For bounded code, test, documentation, and research tasks that are not yet filed as issues, see the [Starter task catalog](docs/community/STARTER_TASKS.md).
 
 The [ACE Bootstrap Cohort Observatory](https://github.com/MSKazemi/idkmesh/issues/109) is the live evidence source for the original growth-seed cohort. It intentionally distinguishes activity from verified external participation.
 
@@ -615,6 +617,7 @@ The one question the research is organised around — *when does adding another 
 - [`EVOLUTION.md`](EVOLUTION.md) — strategy, implemented foundation, and next gates.
 - [`ROADMAP.md`](ROADMAP.md) — evidence-gated progression from the current state.
 - [`docs/README.md`](docs/README.md) — curated documentation navigation.
+- [`docs/LOCAL_LOOP_TUTORIAL.md`](docs/LOCAL_LOOP_TUTORIAL.md) — hands-on walkthrough of `idkmesh local-loop`, replay, and a recorded human decision.
 
 ### Contracts and interoperability
 
