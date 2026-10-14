@@ -86,6 +86,7 @@ The baseline kernel evaluates:
 - execute;
 - verify;
 - integrate;
+- decide;
 - manage_policy;
 - audit_export.
 
@@ -99,7 +100,7 @@ The default baseline preserves IDKMesh authority boundaries:
 worker/node       -> execute/claim, not integrate
 reviewer          -> verify (never work they executed), not integrate
 dispatcher        -> dispatch, not integrate
-integrator human  -> integrate
+integrator human  -> integrate, decide (record an accountable human decision)
 owner/admin human -> policy/integration authority according to rule
 provider/node     -> never integrate under the baseline
 ~~~
@@ -121,6 +122,7 @@ The baseline requires distinct approval for high/critical:
 - dispatch;
 - execute;
 - integrate;
+- decide;
 - manage_policy (risk floor is high).
 
 A principal cannot approve its own high-risk request.

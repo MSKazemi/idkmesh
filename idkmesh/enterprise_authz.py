@@ -58,6 +58,7 @@ ACTIONS = frozenset(
         "execute",
         "verify",
         "integrate",
+        "decide",
         "manage_policy",
         "audit_export",
     }
@@ -439,6 +440,20 @@ class AuthorizationPolicy:
                 ),
                 PolicyRule(
                     "integrate",
+                    frozenset({"integrator", "admin", "owner"}),
+                    human,
+                    distinct_approval_at_risk="high",
+                    approval_roles=frozenset({"integrator", "admin", "owner"}),
+                    approval_actor_types=human,
+                ),
+                # ``decide`` records an accountable human decision (accept /
+                # reject / escalate) bound to retained evidence.  It is a
+                # distinct action from ``integrate``: recording a decision
+                # never merges, pushes or writes canonical state.  Human
+                # principals only, and a high-risk decision needs a distinct
+                # human approver.
+                PolicyRule(
+                    "decide",
                     frozenset({"integrator", "admin", "owner"}),
                     human,
                     distinct_approval_at_risk="high",

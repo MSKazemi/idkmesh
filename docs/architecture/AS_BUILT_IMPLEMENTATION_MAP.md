@@ -105,7 +105,7 @@ Independent verification / Run Evidence Report
   |  run_evidence_report.py; pure offline Product Spine composition
   v
 Human decision (distinct trusted ActorContext)
-  |  human_decision_service.py (local service + immutable records)
+  |  human_decision_gateway.py (decide authz + audit) -> human_decision_service.py (local service + immutable records)
   v
 Separate project integration policy and actual Git merge authority
 ```
@@ -166,7 +166,7 @@ The execution-substrate abstraction and GitHub-first deployment model remain **a
 
 - **Candidate/evidence identity:** `candidate_reference.py`, `result_manifest_builder.py`, `verification_handoff.py`, `github_evidence_link.py`, `github_public_evidence.py`. Content and source bindings carry evidence, not accept/merge authority.
 - **Review-panel diagnostics:** `gate_audit.py`, `gate_audit_dependence.py`, `gate_audit_uncertainty.py`, `marginal_evidence*.py`. Observed dependence matters more than nominal reviewer count; held-out selection/benchmark results are not a generalized external-performance claim.
-- **Local human/enterprise kernels:** `human_decision_service.py`, `tenant_scope.py`, `enterprise_authz.py`, `enterprise_identity_github.py`, `github_authority_alignment.py` (read-only audit that the binding table and the C5 dispatch trusted-actor list agree; it grants nothing), `enterprise_identity_oidc.py`, `enterprise_break_glass.py`, `enterprise_audit.py`, `enterprise_profile.py`. Authorization depends on independently trusted identity; in-memory scope fixtures and local ledgers are not hosted-service qualification.
+- **Local human/enterprise kernels:** `human_decision_gateway.py`, `human_decision_service.py`, `tenant_scope.py`, `enterprise_authz.py`, `enterprise_identity_github.py`, `github_authority_alignment.py` (read-only audit that the binding table and the C5 dispatch trusted-actor list agree; it grants nothing), `enterprise_identity_oidc.py`, `enterprise_break_glass.py`, `enterprise_audit.py`, `enterprise_profile.py`. Authorization depends on independently trusted identity; in-memory scope fixtures and local ledgers are not hosted-service qualification.
 - **Pre-confirmatory research freeze (S3):** `experiments/s3_verifier_freeze.py` generates calibration-only power plans and content-addressed manifests. The freeze validator recomputes each bound local artifact and refuses conflicting policy, source or outcome material; a self-digest by itself is not a signature or immutable storage. No verifier execution, sandbox qualification, or release/merge authority is implied. See [S3 freeze protocol](../research/S3_VERIFIER_FREEZE_TOOLKIT.md).
 - **Experimental/repository systems:** `experiments/` implements verifiers, replay, candidate/evidence/report contracts and orchestration; `sim/` and `randomness_lab/` test research questions; `tools/`, `scripts/` and 61 GitHub workflows provide specialized checks, GitHub automation and source observation. See [research](../research/README.md), [testing](../TESTING.md), and [reproducibility evidence](../audits/2026-10-10-code-documentation-reconciliation.md).
 

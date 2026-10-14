@@ -52,6 +52,7 @@ Primary context: [subsystem contract](../specifications/PRODUCT_SPINE_SERVICE_V0
 | --- | --- |
 | [`coordination_preflight.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/coordination_preflight.py) | Read-only prerequisite/effort/readiness projection |
 | [`executor_admission.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/executor_admission.py) | Revalidated local claim admission and stale-input submission fence |
+| [`human_decision_gateway.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/human_decision_gateway.py) | Policy-authorized (`decide`) and audited gateway in front of the decision service; not routed, no merge/push/dispatch authority |
 | [`human_decision_service.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/human_decision_service.py) | Authenticated actor input and immutable local decision record; no HTTP mutation adapter |
 | [`product_spine.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/product_spine.py) | Pure run and attempt lifecycle state transitions |
 | [`product_spine_idempotency.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/product_spine_idempotency.py) | Local restart-safe offline request reservation |

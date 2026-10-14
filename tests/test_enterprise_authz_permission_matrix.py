@@ -83,6 +83,11 @@ ALLOWED_ROLES = {
         ("allow", "authorized"),
         frozenset({"integrator", "admin", "owner"}),
     ),
+    "decide": (
+        "low",
+        ("allow", "authorized"),
+        frozenset({"integrator", "admin", "owner"}),
+    ),
     "manage_policy": (
         "high",
         ("requires_approval", "distinct_approval_required"),
@@ -104,6 +109,7 @@ ALLOWED_ACTOR_TYPES = {
     "execute": frozenset(ACTOR_TYPES),
     "verify": frozenset({"human", "github_app", "github_actions", "service"}),
     "integrate": frozenset({"human"}),
+    "decide": frozenset({"human"}),
     "manage_policy": frozenset({"human"}),
     "audit_export": frozenset({"human", "github_app", "service"}),
 }

@@ -67,7 +67,7 @@ Notes:
 
 | Endpoint | Required authority | Why it is not served |
 |---|---|---|
-| `POST /api/v1/human-decisions` | a human `ActorContext` (never a service, provider or node), role `integrator`, `owner` or `admin`; action `decisions:write`, **which the kernel does not define yet**; high-risk decisions need a distinct approver | needs an authenticated, accountable principal and the new action; owned by #740. The transport-neutral service (`human_decision_service.py`) already requires a trusted `ActorContext`, but performs no role policy |
+| `POST /api/v1/human-decisions` | a human `ActorContext` (never a service, provider or node), role `integrator`, `owner` or `admin`; kernel action `decide` (defined in the baseline policy, human actors only, high-risk decisions need a distinct human approver); `human_decision_gateway.py` enforces it and writes one audit event per attempt | needs a live authenticated, accountable principal, which the local session token is not; owned by #740 (blocked on #670 identity/policy and #743 network boundary). The gateway is transport-neutral and unrouted: no HTTP path calls it |
 | any dispatch, verify, integrate or policy-management endpoint | the matching kernel action, with the kernel's separation of duties | out of scope for the local API by design |
 
 The kernel's baseline separation of duties applies unchanged: a worker or node

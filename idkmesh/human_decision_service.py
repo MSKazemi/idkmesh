@@ -11,11 +11,11 @@ It never dispatches work, changes canonical project state, pushes Git, or
 merges code.
 
 Boundary of this core.  It *authenticates* the principal (human, authenticated,
-not revoked, not expired) but performs no tenant/role *policy authorization*:
-the ``decisions:write`` action does not yet exist in the
-:mod:`idkmesh.enterprise_authz` vocabulary, and this core emits no
-:mod:`idkmesh.enterprise_audit` event.  Both belong to the transport adapter
-that #740 still owes, and no transport may call this core until they exist.
+not revoked, not expired) but performs no tenant/role *policy authorization*
+and emits no :mod:`idkmesh.enterprise_audit` event.  Both are supplied by
+:mod:`idkmesh.human_decision_gateway` (the ``decide`` action of
+:mod:`idkmesh.enterprise_authz` plus an audit event per attempt), and no
+transport may call this core directly: it must go through that gateway.
 
 Idempotency keys are bound to the accountable principal: the same key reused by
 a different principal is a conflict, never a replay of someone else's record.
@@ -477,6 +477,18 @@ def _validate_request(request: Any) -> dict[str, Any]:
         "decision": request["decision"],
         "rationale": rationale,
     }
+
+
+def normalize_request(request: Any) -> dict[str, Any]:
+    """Validate and normalize an untrusted decision request (pure, no I/O).
+
+    Public so an authorizing adapter can read the evidence identity it must
+    authorize *before* the service persists anything.  Raises
+    :class:`HumanDecisionServiceError` with code ``invalid_request`` (or a more
+    specific ``invalid_*`` code) on any deviation from the frozen contract.
+    """
+
+    return _validate_request(request)
 
 
 def _decision_id(idempotency_key: str, request_digest: str) -> str:
