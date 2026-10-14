@@ -1,6 +1,6 @@
 # GitHub Projects synchronization contract (C13-F/G)
 
-**Issue:** #608. **Status:** proposed contract; no Projects adapter implemented.
+**Issue:** #608. **Status:** contract plus offline planner and guarded apply (mocked-writer tests); no live GitHub Projects adapter.
 
 ## Trust boundary
 Canonical WorkUnit, route and run records are the only sources of truth.
@@ -56,3 +56,34 @@ labels and never reads Project fields to choose a run state. The exact mapping,
 trust boundary and fail-closed limitations are in
 [GitHub Run Label Projection v0.1](GITHUB_RUN_LABEL_PROJECTION_V0_1.md).
 There is still no live GitHub label/Project API writer.
+
+## Run-field planning and guarded apply (C13-F/G, offline)
+
+`idkmesh.github_project_sync` adds two pure-Python pieces; neither talks to GitHub.
+
+* `plan_github_project_run_fields(...)` maps a trusted canonical run state to three
+  Project single-select values (`state`, `verification`, `human_decision`) using the same table as the
+  [run label projection](GITHUB_RUN_LABEL_PROJECTION_V0_1.md). Caller-supplied trusted field ids
+  must be exactly those three keys and distinct. `observed_fields` only decides which writes are
+  redundant: a manually edited value (for example `approved`) is overwritten with the canonical value.
+* `apply_github_project_plan(plan, item_id=..., trusted_item_ids=..., writer=..., read_canonical_digest=...)`
+  re-validates the plan (accepts only the run plan and the existing routing plan; all authority flags
+  must be false; values must be bounded lowercase tokens; updates must be a subset of desired fields),
+  refuses an item id outside the trusted set, and re-reads the canonical digest before the first and
+  every later write. A changed digest returns `aborted_source_changed` without further writes.
+
+| Result `status` | Meaning |
+| --- | --- |
+| `noop` | Project already matches; the writer and store are not touched |
+| `applied` | all planned fields written |
+| `skipped_unauthorized` | writer raised `ProjectPermissionError`; canonical state unaffected |
+| `aborted_source_changed` | canonical digest moved; replan from the new revision |
+| `failed` | transport or canonical-store error; only the exception class name is reported |
+
+Operational failures are returned, not raised, so a missing permission, a deleted Project or an outage
+never blocks WorkUnit execution. Malformed arguments or a tampered plan do raise, before any write.
+Replaying `plan` against the Project values observed after a successful apply yields `noop`.
+
+**Still not implemented:** the live GraphQL/REST writer and reader, token and permission acquisition,
+reading the Project schema to derive field ids, serialization of concurrent syncs, and an audit trail.
+The tests use an in-memory fake writer and prove idempotence only against that fake.

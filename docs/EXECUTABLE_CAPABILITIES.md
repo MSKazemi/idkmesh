@@ -259,6 +259,7 @@ name documents implementation presence, not stability as a public Python API.
 - `idkmesh/github_ledger_serialization.py`
 - `idkmesh/github_pages_site.py`
 - `idkmesh/github_pages_writer.py`
+- `idkmesh/github_project_sync.py`
 - `idkmesh/github_public_evidence.py`
 - `idkmesh/github_release_provenance.py`
 - `idkmesh/github_rest_source.py`
