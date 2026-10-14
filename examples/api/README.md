@@ -35,6 +35,11 @@ domain specification that emits them, not by these two schemas.
   `schemas/idkmesh-api-operational-metrics-v0.1.schema.json`. It demonstrates
   fixed-cardinality counters, latency buckets, bounded concurrency/admission
   state, and the explicit absence of payload- or identity-derived labels.
+- `api-slo-contract.example.json` — the machine-readable local-profile SLO and
+  saturation-alert targets, validated against
+  `schemas/idkmesh-api-slo-contract-v0.1.schema.json`. It equals
+  `idkmesh.api_slo.default_slo_contract()` (pinned by a test); these are
+  operational targets, not measured results.
 - `readiness.example.json` — a `GET /readyz` readiness document, validated
   against `schemas/idkmesh-readiness-v0.1.schema.json`.
 - `control-tower-run-response.example.json` — the success envelope returned

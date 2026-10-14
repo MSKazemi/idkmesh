@@ -274,6 +274,7 @@ API_EXAMPLES = {
 # an embedded resource, a request body, or a record contract. The component
 # key must still be one the catalog advertises.
 SCHEMA_DOCUMENT_EXAMPLES = {
+    "examples/api/api-slo-contract.example.json": "idkmesh-api-slo-contract-v0.1",
     "examples/api/human-decision-record.example.json": "human-decision-record-v0.1",
     "examples/api/idempotency-admission.example.json": "idkmesh-idempotency-v0.1",
     "examples/api/idempotency-conflict.example.json": "idkmesh-idempotency-v0.1",

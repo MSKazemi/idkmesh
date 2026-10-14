@@ -46,6 +46,20 @@ and the release notes for that tag.
   and tamper cases. Library only: no CLI/HTTP surface, no existing store migrated onto it, no
   network-profile adapter, claim/lease pruning or scheduled retention job; issue stays open.
   See [API Storage Profiles](docs/specifications/API_STORAGE_PROFILES_V0_1.md#storage-operations-library).
+- Machine-readable API SLO contract and Prometheus text renderer (refs #744):
+  `idkmesh/api_slo.py` pins the documented local-profile targets as data
+  (`default_slo_contract()`, `schemas/idkmesh-api-slo-contract-v0.1.schema.json`,
+  `examples/api/api-slo-contract.example.json`) with a fail-closed validator and
+  pure evaluators for one measured interval, a consecutive-interval overload
+  alert, and point-in-time saturation conditions. Malformed, restarted or
+  too-short intervals are `unknown`, never "met"; sustained duration is reported
+  as not evaluated. `otel_metrics.render_prometheus_text()` renders the validated
+  metrics document as Prometheus exposition 0.0.4 with a closed label set, base-unit
+  latency, rejection of unsafe service-identity labels, and the not-implemented
+  rate-limit/Human Decision counters omitted. Both are library-only: no served
+  `/metrics` route, network I/O, alert delivery or new dependency. #744 stays open
+  for per-client rate limiting (#743) and Human Decision ingestion telemetry (#740).
+
 - Agent churn at a matched budget, synthetic mechanism evidence only (refs #22): add
   `sim/e050_churn.py` and record `experiments/E050-churn.md`. Each generation a fraction of agents
   (`0, 0.1, 0.25, 0.5, 1.0`) is replaced by fresh ones in E024's five arms at the same proposal budget,

@@ -519,6 +519,7 @@ components:
     "idkgraph": {$ref: "https://idkmesh.org/schemas/idkgraph.schema.json"}
     "idkmesh-api-error-v0.1": {$ref: "https://idkmesh.org/schemas/idkmesh-api-error-v0.1.schema.json"}
     "idkmesh-api-operational-metrics-v0.1": {$ref: "https://idkmesh.org/schemas/idkmesh-api-operational-metrics-v0.1.schema.json"}
+    "idkmesh-api-slo-contract-v0.1": {$ref: "https://idkmesh.org/schemas/idkmesh-api-slo-contract-v0.1.schema.json"}
     "idkmesh-connection-resource-v0.1": {$ref: "https://idkmesh.org/schemas/idkmesh-connection-resource-v0.1.schema.json"}
     "idkmesh-control-tower-inspection-response-v0.1": {$ref: "https://idkmesh.org/schemas/idkmesh-control-tower-inspection-response-v0.1.schema.json"}
     "idkmesh-control-tower-project-response-v0.1": {$ref: "https://idkmesh.org/schemas/idkmesh-control-tower-project-response-v0.1.schema.json"}

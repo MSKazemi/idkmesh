@@ -1,0 +1,46 @@
+{
+  "schema_version": "0.1",
+  "kind": "idkmesh-api-slo-contract",
+  "profile": "local_single_token",
+  "claim": "operational_target_not_measured_result",
+  "window_seconds": 300,
+  "objectives": [
+    {
+      "id": "server_error_fraction",
+      "comparison": "less_than",
+      "threshold": 0.01
+    },
+    {
+      "id": "latency_within_1000ms_fraction",
+      "comparison": "at_least",
+      "threshold": 0.95,
+      "latency_bound_ms": 1000.0
+    },
+    {
+      "id": "overload_rejections",
+      "comparison": "at_most",
+      "threshold": 0,
+      "alert_after_consecutive_intervals": 2
+    }
+  ],
+  "saturation_alerts": [
+    {
+      "id": "api_concurrency_hot",
+      "comparison": "at_least",
+      "threshold": 0.8,
+      "for_seconds": 300
+    },
+    {
+      "id": "sse_saturation",
+      "comparison": "at_least",
+      "threshold": 1.0,
+      "for_seconds": 0
+    }
+  ],
+  "authority": {
+    "canonical_state_write": false,
+    "git_push": false,
+    "merge": false,
+    "pages_deploy": false
+  }
+}

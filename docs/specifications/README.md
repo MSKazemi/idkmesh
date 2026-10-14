@@ -45,7 +45,9 @@ meaning of an existing version.
 - [API Observability v0.1](API_OBSERVABILITY_V0_1.md) —
   privacy-safe, fixed-cardinality request/status/latency/admission/concurrency
   telemetry, W3C traceparent v00 pass-through, explicit local-profile SLO/alert
-  targets, and a dependency-free transport-neutral OTLP/HTTP JSON mapping
+  targets (also as a machine-readable, schema-validated SLO contract with
+  offline evaluators), a Prometheus text renderer, and a dependency-free
+  transport-neutral OTLP/HTTP JSON mapping
   adapter. Collector transport and Human Decision ingestion telemetry remain
   separate follow-up work under #744.
 - [API Storage Profiles v0.1](API_STORAGE_PROFILES_V0_1.md) —
