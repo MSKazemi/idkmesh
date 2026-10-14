@@ -528,6 +528,7 @@ components:
     "enterprise-break-glass-grant-v0.1": {$ref: "https://idkmesh.org/schemas/enterprise-break-glass-grant-v0.1.schema.json"}
     "enterprise-control-profile-baseline-v0.1": {$ref: "https://idkmesh.org/schemas/enterprise-control-profile-baseline-v0.1.schema.json"}
     "enterprise-control-profile-v0.1": {$ref: "https://idkmesh.org/schemas/enterprise-control-profile-v0.1.schema.json"}
+    "enterprise-egress-policy-v0.1": {$ref: "https://idkmesh.org/schemas/enterprise-egress-policy-v0.1.schema.json"}
     "enterprise-github-identity-binding-v0.1": {$ref: "https://idkmesh.org/schemas/enterprise-github-identity-binding-v0.1.schema.json"}
     "enterprise-oidc-identity-binding-v0.1": {$ref: "https://idkmesh.org/schemas/enterprise-oidc-identity-binding-v0.1.schema.json"}
     "enterprise-resource-ref-v0.1": {$ref: "https://idkmesh.org/schemas/enterprise-resource-ref-v0.1.schema.json"}

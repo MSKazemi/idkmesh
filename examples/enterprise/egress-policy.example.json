@@ -1,0 +1,30 @@
+{
+  "kind": "idkmesh-enterprise-egress-policy",
+  "schema_version": "0.1",
+  "policy_id": "example-egress-policy",
+  "semantics": {
+    "policy_role": "policy_input_only",
+    "grants_runtime_authority": false
+  },
+  "destinations": [
+    {
+      "destination_id": "internal-artifact-store",
+      "host": "artifacts.corp.example",
+      "zone": "internal",
+      "allowed_classes": ["public", "internal", "confidential", "restricted"]
+    },
+    {
+      "destination_id": "provider-a-api",
+      "host": "api.provider-a.example",
+      "zone": "external_provider",
+      "provider_id": "provider-a",
+      "allowed_classes": ["public"]
+    },
+    {
+      "destination_id": "package-index",
+      "host": "packages.registry.example",
+      "zone": "external_public",
+      "allowed_classes": ["public"]
+    }
+  ]
+}

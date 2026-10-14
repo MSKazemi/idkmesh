@@ -73,6 +73,7 @@ VALID_AGAINST = {
     "examples/enterprise/break-glass-grant.example.json": "enterprise-break-glass-grant-v0.1.schema.json",
     "examples/enterprise/g1-github-native.example.json": "enterprise-control-profile-v0.1.schema.json",
     "examples/enterprise/g2-self-hosted.example.json": "enterprise-control-profile-v0.1.schema.json",
+    "examples/enterprise/egress-policy.example.json": "enterprise-egress-policy-v0.1.schema.json",
     "examples/enterprise/github-identity-bindings.example.json": "enterprise-github-identity-binding-v0.1.schema.json",
     "examples/enterprise/oidc-identity-bindings.example.json": "enterprise-oidc-identity-binding-v0.1.schema.json",
     # Invalid by graph semantics (a cycle), not by structure.

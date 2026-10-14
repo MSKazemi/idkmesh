@@ -289,6 +289,18 @@ and the release notes for that tag.
   compaction or rewrite. Strict policy parsing, no hidden clock, deletes nothing,
   grants no authority. Wiring it into a scheduled workflow and sharding itself are
   not implemented.
+- E5 classified egress policy and secret-reference contract (refs #672): a
+  strict `enterprise-egress-policy-v0.1` document (exact hostnames, trust zone,
+  explicit per-class allow list) with a deny-by-default
+  `decide_classified_egress` evaluator that composes the control profile, the
+  external-processing flag for the exact class and an approved-provider list,
+  and binds each decision to the policy digest; plus a closed-scheme
+  secret-reference grammar, trusted alias resolution (a task can name an alias,
+  never a source) and identifiers-only secret-access audit details. Offline
+  policy evidence only: nothing enforces an egress decision at a socket, and no
+  workload-identity deployment is qualified. See
+  [the data policy specification](docs/specifications/ENTERPRISE_DATA_POLICY_V0_1.md).
+
 - E5 secret non-disclosure at canonical WorkUnit/source binding and E4 audit
   output (refs #672): reject recognized raw credentials and incomplete scans
   before creating or revalidating a WorkUnit binding, before inserting an E4
