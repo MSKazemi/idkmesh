@@ -89,6 +89,8 @@ SECURITY_TESTS = (
     "tests/test_api_security_matrix.py",
     "tests/test_api_cors_csrf_matrix.py",
     "tests/test_enterprise_authz_permission_matrix.py",
+    "tests/test_enterprise_identity_github.py",
+    "tests/test_github_dispatch_authorization.py",
 )
 RELIABILITY_TESTS = (
     "tests/test_control_tower_limits.py",

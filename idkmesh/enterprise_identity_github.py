@@ -146,6 +146,16 @@ class GithubIdentityBinding:
                 "GitHub identity bindings must use one of: "
                 + ", ".join(sorted(GITHUB_ACTOR_TYPES)),
             )
+        # Direct construction must uphold the same stable principal binding
+        # that the JSON parser derives. Otherwise one trusted actor id could
+        # silently acquire another principal's reviewed scopes and roles.
+        expected_principal = f"github:{self.context.actor_type}:{self.actor_id}"
+        if self.context.principal_id != expected_principal:
+            raise _fail(
+                "principal_id_mismatch",
+                "context.principal_id",
+                "context principal must identify the bound GitHub actor id and type",
+            )
 
 
 @dataclass(frozen=True, slots=True)
@@ -170,6 +180,13 @@ class GithubIdentityBindingTable:
         if len(actor_ids) != len(set(actor_ids)):
             raise _fail(
                 "duplicate_actor_id", "bindings", "actor ids must be unique"
+            )
+        # GitHub logins are case-insensitive. A reviewed table must never
+        # assign the same human-readable login to two different principals.
+        logins = [binding.login.casefold() for binding in self.bindings]
+        if len(logins) != len(set(logins)):
+            raise _fail(
+                "duplicate_login", "bindings", "GitHub logins must be unique"
             )
 
     def by_actor_id(self, actor_id: int) -> GithubIdentityBinding | None:

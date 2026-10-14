@@ -102,6 +102,9 @@ class GitHubDispatchAuthorizationPolicy:
         actor_ids = [actor.actor_id for actor in self.trusted_actors]
         if len(actor_ids) != len(set(actor_ids)):
             raise ValueError("trusted actor IDs must be unique")
+        logins = [actor.login.casefold() for actor in self.trusted_actors]
+        if len(logins) != len(set(logins)):
+            raise ValueError("trusted actor logins must be unique ignoring case")
 
         if isinstance(self.allowed_roles, str):
             raise ValueError("allowed_roles must be a collection")
