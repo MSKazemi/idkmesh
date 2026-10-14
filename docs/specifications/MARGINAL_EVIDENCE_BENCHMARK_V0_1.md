@@ -391,3 +391,20 @@ This slice directly addresses:
 Remaining #693 work after this slice is evidence collection/synthesis across a
 broader preregistered cohort before considering any dry-run Connector Control
 Plane or AVE integration.
+
+## 15. Synthetic validation against a known truth (E051)
+
+[E051](https://github.com/MSKazemi/idkmesh/blob/main/experiments/E051-marginal-selector-sweep.md) runs this contract's `build_selection_plan`
+unchanged on seeded synthetic verdict matrices whose true candidate values are known, because the
+repository holds no ground-truthed multi-verifier matrix to run it on. On that model, and only on that
+model (symmetric errors, one dependence shape, panels of three or four), the marginal-effective-vote
+selector of rule `marginal-selection-interval-dominance-v0.1` resolved in 14% of 11,200 replicates, chose
+a helpful candidate once, and chose only the two least accurate candidates, because the effective-vote
+delta can rise when a lower-accuracy verifier is added. The four baselines chose a helpful candidate in
+37% (random) to 73% of replicates.
+
+This is a negative synthetic result, not promotion evidence in either direction and not an observed
+cohort. It does not change this contract, the selection-rule version or any authority boundary. If the
+selection criterion is revisited (for example to key on the interval-supported panel-error delta, which
+the report already carries), that is a new rule version needing its own preregistered comparison; E051
+did not try or tune an alternative.

@@ -719,6 +719,30 @@ it; under cold start the archive loses `1.27` AUC at `f = 1.0` while the scalar 
 mean-AUC lead over the archive changes sign. See
 [`../experiments/E050-churn.md`](../experiments/E050-churn.md).
 
+### E051 — marginal-evidence selector against a known synthetic truth
+
+Issue 693's four research questions about `idkmesh gate-marginal-benchmark` cannot be answered on
+observed data (the repository has no ground-truthed multi-verifier verdict matrix), so `e051_marginal_selector_sweep.py`
+validates the tool against a *known* truth instead. It draws seeded verdict matrices from a stated
+generative model (3 or 4 current verifiers, two levels of shared blind spots, candidate pools including
+exact and near duplicates, a complementary candidate, a worse-than-chance candidate and an accurate but
+redundant one), runs the repository's unmodified `build_selection_plan` on each, and scores the marginal
+selector and the four baselines against a 40,000-task population oracle. 16 regimes x 7 design sizes x 100
+replicates; eight of the regimes were added after reading the first results and are marked `post_hoc`.
+
+```bash
+PYTHONPATH=. python3 sim/e051_marginal_selector_sweep.py \
+  --workers 4 --pretty --output experiments/results/E051-marginal-selector-sweep.json
+```
+
+Synthetic only. Of 11,200 frozen selections the marginal-effective-vote selector made 1,548, and exactly
+one was a helpful candidate; it chose only the two least accurate candidates, because the effective-vote
+count rises as candidate accuracy falls. Accuracy, family and correlation baselines chose a helpful
+candidate in 65% to 73% of cases, and the minimum-correlation rule won where a highly accurate candidate is
+largely redundant with the panel. The record states the limits: symmetric errors, one dependence shape, no
+significance test, and nothing about real verifiers. See
+[`../experiments/E051-marginal-selector-sweep.md`](../experiments/E051-marginal-selector-sweep.md).
+
 ## Tests
 
 With `pytest` installed:
@@ -755,6 +779,8 @@ python -m pytest -q \
   tests/test_e049_committed_artifact.py
   tests/test_e050_churn.py
   tests/test_e050_committed_artifact.py
+  tests/test_e051_marginal_selector_sweep.py
+  tests/test_e051_committed_artifact.py
 ```
 
 This is the same list `.github/workflows/emergence-sim.yml` runs; keep the two in step.

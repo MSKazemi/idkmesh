@@ -608,6 +608,11 @@ only, then evaluates those frozen selections on disjoint holdout rows.
 
 The cross-cohort synthesis layer is documented in
 [MARGINAL_EVIDENCE_SYNTHESIS_V0_1.md](../specifications/MARGINAL_EVIDENCE_SYNTHESIS_V0_1.md).
+
+A synthetic validation of the selector against a known truth, which is not promotion evidence in either
+direction, is [E051](https://github.com/MSKazemi/idkmesh/blob/main/experiments/E051-marginal-selector-sweep.md): the effective-vote ranking did
+not find helpful candidates on that model, and the relationship to the broader AVE work (issue 621) is
+that E051 tests this one primitive and does not duplicate the AVE controller studies.
 It aggregates multiple already-frozen benchmark reports descriptively, rejects
 exact duplicate cohort evidence, and preserves unresolved outcomes without
 emitting a winner or promotion decision. This closes the tooling gap between a
