@@ -67,6 +67,8 @@ methods, and every top-level Python module in `idkmesh/`.
 | `idkmesh steward-history` | inspect retained stewardship history | read/report surface |
 | `idkmesh steward-history-ui` | local browser view of stewardship history | local/read-only presentation |
 | `idkmesh local-loop` | deterministic local Product Spine composition from bounded work through attempts/evidence | local/fake or bounded execution path; no automatic integration |
+| `idkmesh local-loop-replay` | replay a saved `local-loop` bundle and compare it field by field (wraps `experiments/replay_run.py replay`) | checkout-only; writes nothing; no write, push, merge or selection authority |
+| `idkmesh local-loop-record-decision` | record one explicit human decision bound to the evidence-report digest (wraps `experiments/record_human_decision.py record`) | checkout-only; writes only under `results/`; integrates, selects and merges nothing |
 
 Run `idkmesh --help` or `idkmesh <command> --help` for argument-level help.
 
@@ -145,7 +147,8 @@ list. Live connector dispatch remains separately authority-gated.
 The codebase implements Product Spine lifecycle projections, idempotent create/replay
 control, durable local run storage, retained evidence reads, derived WorkUnit/project read
 models, append-only run events, result-manifest building, verification handoff, and the
-bounded `local-loop` composition.
+bounded `local-loop` composition, with `local-loop-replay` and
+`local-loop-record-decision` as its explicit, authority-free follow-up commands.
 
 ### Provider and agent adapters
 

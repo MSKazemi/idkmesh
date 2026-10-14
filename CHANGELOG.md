@@ -12,6 +12,23 @@ and the release notes for that tag.
 
 ## [Unreleased]
 
+- Supported CLI verbs for replay and the human decision (refs #16): add
+  `idkmesh local-loop-replay BUNDLE` and
+  `idkmesh local-loop-record-decision EVIDENCE_REPORT --output PATH ...`, so a newcomer can
+  replay a saved `local-loop` run and record an explicit decision without leaving the
+  `idkmesh` command. Both delegate to the unchanged scripts `experiments/replay_run.py replay`
+  and `experiments/record_human_decision.py record` by running their own `main`, so the report,
+  exit codes (replay: 0 PASS, 1 diverged, 2 unusable input) and `ERROR:` text are the scripts',
+  with the same path rules as `local-loop` (repository-relative, outputs under `results/`).
+  Two script gaps are covered at the wrapper only: a mistyped file name inside a real bundle no
+  longer replays that bundle's manifest, and an `--output` outside `results/` exits 2 instead of
+  escaping as a traceback. Authority is unchanged: replay writes nothing, and the decision
+  record is bound to the evidence-report digest with `canonical_state_write`, `git_push` and
+  `merge` all `false`. `local-loop`'s printed next steps, `NEXT_STEPS.md`, the tutorial
+  (`docs/LOCAL_LOOP_TUTORIAL.md`), the CLI reference, the capability reference and the module and
+  as-built maps now name the verbs; `experiments/*.py` gained only an optional `argv` parameter on
+  `main`. New in-process tests (`tests/test_local_loop_replay_decision_cli.py`), a tutorial test
+  that runs the documented verbs, and `--help` Examples blocks for the three `local-loop` commands.
 - Derived emergence measurements, synthetic mechanism evidence only (refs #22): add
   `sim/e049_derived_measurements.py` and record `experiments/E049-derived-measurements.md`
   (E048 stays reserved for the preregistered temporal holdout). It replays E024's `run_seed`

@@ -140,7 +140,7 @@ Primary context: [subsystem contract](../specifications/LOCAL_AGENT_EXECUTION_BO
 | [`local_agent_artifacts.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/local_agent_artifacts.py) | Controller-owned bounded candidate artifact capture |
 | [`local_agent_runner.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/local_agent_runner.py) | Worktree/process limits and fail-closed sandbox interface |
 | [`local_agent_sandbox.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/local_agent_sandbox.py) | Linux bubblewrap network-disabled sandbox backend |
-| [`local_loop.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/local_loop.py) | Checkout-only two-attempt R1 execution and evidence bundle |
+| [`local_loop.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/local_loop.py) | Checkout-only two-attempt R1 execution and evidence bundle; also the `local-loop-replay` and `local-loop-record-decision` delegations to `experiments/replay_run.py` and `experiments/record_human_decision.py` |
 
 ## OpenAI-compatible model adapters
 

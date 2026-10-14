@@ -617,7 +617,7 @@ The one question the research is organised around — *when does adding another 
 - [`EVOLUTION.md`](EVOLUTION.md) — strategy, implemented foundation, and next gates.
 - [`ROADMAP.md`](ROADMAP.md) — evidence-gated progression from the current state.
 - [`docs/README.md`](docs/README.md) — curated documentation navigation.
-- [`docs/LOCAL_LOOP_TUTORIAL.md`](docs/LOCAL_LOOP_TUTORIAL.md) — hands-on walkthrough of `idkmesh local-loop`, replay, and a recorded human decision.
+- [`docs/LOCAL_LOOP_TUTORIAL.md`](docs/LOCAL_LOOP_TUTORIAL.md) — hands-on walkthrough of `idkmesh local-loop`, `local-loop-replay`, and a decision recorded with `local-loop-record-decision`.
 
 ### Contracts and interoperability
 
