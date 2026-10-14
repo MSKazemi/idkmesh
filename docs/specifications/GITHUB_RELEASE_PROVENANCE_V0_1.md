@@ -112,9 +112,12 @@ the record invalid.
 - C14-E ([GitHub Pages Site Projection](GITHUB_PAGES_SITE_V0_1.md)) publishes
   the matching per-run public JSON. The Pages site does not render release
   records.
-- C14-G (artifact attestation integration) is not built. This record only
-  reserves its place as `attestation.status = not_claimed`; it never states
-  that an attestation exists.
+- C14-G ([GitHub Release Statement](GITHUB_RELEASE_STATEMENT_V0_1.md))
+  renders this record as an **unsigned** in-toto Statement
+  (`idkmesh release-provenance --statement`). Signing and registering an
+  attestation still needs a CI workflow identity and is not done here; this
+  record keeps `attestation.status = not_claimed` and never states that an
+  attestation exists.
 - C14-H (Pages-disabled fallback) is unaffected: this record needs no Pages.
 
 ## Non-goals

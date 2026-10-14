@@ -37,7 +37,7 @@ methods, and every top-level Python module in `idkmesh/`.
 | `idkmesh work` | local, offline view of the issue-to-WorkUnit path | read-only; the only subcommand is `preview` |
 | `idkmesh work preview` | derive the WorkUnit, digest and warnings for one issue snapshot file (`--issue-json`) from the trusted `.idkmesh/project.json` policy, optionally narrowed by an IDKMesh Issue Form in the body | offline; no network, credential, environment variable, file write or dispatch; the form can only narrow policy scope or raise risk; refusals print `error: <code>: <message>` and exit 2 |
 | `idkmesh pages-site` | validate C14-D public-safe projections, render the C14-E static Pages file map, and write exactly those files to a local directory | local files only; no publication, workflow, network or GitHub call; refuses unsafe paths, symlinks, and unrecognised non-empty directories unless `--force` |
-| `idkmesh release-provenance` | validate C14-D public-safe projections and print the C14-F release metadata/provenance record (or draft release notes with `--notes`) binding a proposed tag, target commit and artifact digests to that evidence | stdout only; creates no tag, GitHub Release or attestation and makes no network or GitHub call; commit and digests are caller-supplied and recorded as unverified; no timestamps |
+| `idkmesh release-provenance` | validate C14-D public-safe projections and print the C14-F release metadata/provenance record (or draft release notes with `--notes`, or the unsigned C14-G in-toto Statement with `--statement`) binding a proposed tag, target commit and artifact digests to that evidence | stdout only; creates no tag, GitHub Release or attestation and makes no network or GitHub call; commit and digests are caller-supplied and recorded as unverified; no timestamps |
 | `idkmesh connections` | validate, normalize, persist, and inspect connector metadata | no live dispatch, no raw secret persistence |
 | `idkmesh connections validate` | validate a versioned connector profile | read-only |
 | `idkmesh connections list` | list normalized connector metadata from a profile | read-only |
@@ -262,6 +262,7 @@ name documents implementation presence, not stability as a public Python API.
 - `idkmesh/github_project_sync.py`
 - `idkmesh/github_public_evidence.py`
 - `idkmesh/github_release_provenance.py`
+- `idkmesh/github_release_statement.py`
 - `idkmesh/github_rest_source.py`
 - `idkmesh/github_run_label_projection.py`
 - `idkmesh/github_routing_projection.py`

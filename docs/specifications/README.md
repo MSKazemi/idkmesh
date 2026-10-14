@@ -107,6 +107,11 @@ meaning of an existing version.
   artifact digests, all caller-supplied and unverified) to the C14-D run
   evidence it references; `idkmesh release-provenance` prints the record or
   draft notes. It creates no tag, release, or attestation and claims none.
+- [GitHub Release Statement v0.1](GITHUB_RELEASE_STATEMENT_V0_1.md) —
+  C14-G unsigned in-toto Statement v1 rendered from a release record (artifact
+  digests as subjects, the record as predicate); `idkmesh release-provenance
+  --statement` prints it. Nothing is signed or registered, no SLSA or
+  correctness claim; signing needs a CI workflow identity.
 - [Verification Provenance Integrity](VERIFICATION_PROVENANCE_INTEGRITY.md) —
   binds WorkUnit, result, and verification objects with canonical digests.
 

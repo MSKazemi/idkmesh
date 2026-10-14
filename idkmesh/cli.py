@@ -579,9 +579,10 @@ def build_parser() -> argparse.ArgumentParser:
         description=(
             "Bind a proposed release (tag, target commit, artifact SHA-256 "
             "digests) to the C14-D public-safe run evidence it references and "
-            "print the deterministic C14-F record, or draft release notes "
-            "with --notes. Nothing is created or published: no tag, GitHub "
-            "Release, or attestation, and no network or GitHub call. The "
+            "print the deterministic C14-F record, draft release notes "
+            "with --notes, or the unsigned C14-G in-toto Statement with "
+            "--statement. Nothing is created, signed, or published: no tag, "
+            "GitHub Release, or attestation, and no network or GitHub call. The "
             "target commit and artifact digests are caller-supplied and are "
             "recorded as unverified. The record carries no timestamps and "
             "grants no dispatch, verification, decision, merge, tag, release, "
@@ -595,7 +596,10 @@ def build_parser() -> argparse.ArgumentParser:
             " --projection run-1.json\n"
             "  idkmesh release-provenance --repository owner/name"
             " --tag v0.1.0 --target-commit <40-hex-commit>"
-            " --artifact idkmesh-0.1.0.tar.gz=sha256:<64-hex> --notes"
+            " --artifact idkmesh-0.1.0.tar.gz=sha256:<64-hex> --notes\n"
+            "  idkmesh release-provenance --repository owner/name"
+            " --tag v0.1.0 --target-commit <40-hex-commit>"
+            " --artifact idkmesh-0.1.0.tar.gz=sha256:<64-hex> --statement"
         ),
     )
     release_provenance.add_argument(
@@ -631,6 +635,15 @@ def build_parser() -> argparse.ArgumentParser:
         "--notes",
         action="store_true",
         help="print draft release-note Markdown instead of the JSON record",
+    )
+    release_provenance.add_argument(
+        "--statement",
+        action="store_true",
+        help=(
+            "print the unsigned C14-G in-toto Statement (subjects = the "
+            "--artifact digests; needs at least one) instead of the JSON "
+            "record; not an attestation, nothing is signed"
+        ),
     )
 
     connections = sub.add_parser(
@@ -2768,6 +2781,8 @@ def _run_release_provenance(args: argparse.Namespace) -> int:
         render_github_release_provenance_json,
     )
 
+    if args.notes and args.statement:
+        return _fail("--notes and --statement are mutually exclusive")
     if len(args.projection) > MAX_RUNS:
         return _fail(f"at most {MAX_RUNS} projections may be referenced")
     if len(args.artifact) > MAX_ARTIFACTS:
@@ -2787,11 +2802,19 @@ def _run_release_provenance(args: argparse.Namespace) -> int:
             target_commit=args.target_commit,
             artifacts=artifacts,
         )
-        output = (
-            render_github_release_notes(record)
-            if args.notes
-            else render_github_release_provenance_json(record)
-        )
+        if args.notes:
+            output = render_github_release_notes(record)
+        elif args.statement:
+            from idkmesh.github_release_statement import (
+                build_github_release_statement,
+                render_github_release_statement_json,
+            )
+
+            output = render_github_release_statement_json(
+                build_github_release_statement(record)
+            )
+        else:
+            output = render_github_release_provenance_json(record)
     except ValueError as exc:
         return _fail(str(exc))
     sys.stdout.write(output)
