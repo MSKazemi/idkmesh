@@ -647,7 +647,16 @@ independent human review.
   no timestamps. It creates no tag, GitHub Release, or attestation. **Still
   open:** the pilot release itself, which needs the second-project pilot (C11)
   and a human-approved release.
-- **C14-G — optional artifact attestation integration.**
+- **C14-G — optional artifact attestation integration.** Offline payload
+  implemented by `idkmesh/github_release_statement.py`
+  ([contract](../specifications/GITHUB_RELEASE_STATEMENT_V0_1.md)) and
+  `idkmesh release-provenance --statement`: an **unsigned** in-toto Statement v1
+  (artifact digests as subjects, the C14-F record as predicate) with fixed
+  all-false signed/registered/SLSA/correctness claims. **Still open:** signing
+  and registering it, which needs a CI workflow identity and plan-aware
+  attestation support, and wiring it into a release workflow; the existing
+  `publish-pypi.yml` attestation of built distributions is independent of this
+  module.
 - **C14-H — no-GitHub-Pages fallback behavior.**
 
 **C14 exit gate:** one run is understandable from normal GitHub surfaces.

@@ -18,6 +18,12 @@ and the release notes for that tag.
   reported and never overwritten. Regression tests cover cwd isolation, symlink/missing/non-Git/empty
   targets and a pre-existing user file. Live `dispatch`/`verify` remain fail-closed (#578, #597).
 - github: offline C13-F/G Projects field planning and guarded apply (refs #608). New `idkmesh/github_project_sync.py` derives the run-state / verification / human-decision Project field values from a trusted canonical run snapshot (same mapping as the C13-E labels, so the two views cannot disagree), and applies a field plan through an injected writer idempotently: strict plan re-validation, trusted destination item ids, a canonical-digest re-read before every write that aborts on change, and permission/transport/store failures returned as results (messages never copied) rather than raised into WorkUnit execution. Manual Project edits are overwritten, never honoured. No GitHub transport, token handling, or workflow is added and no authority is granted; the live adapter and concurrency recovery remain open. See [Projects sync](docs/specifications/GITHUB_PROJECTS_SYNC_V0_1.md).
+- github: `idkmesh release-provenance --statement` and `idkmesh/github_release_statement.py`
+  (C14-G, refs #609): render a C14-F release record as an unsigned in-toto Statement v1 whose
+  subjects are the release's artifact digests and whose predicate embeds the record, with fixed
+  all-false signed/registered/SLSA/subjects-verified/correctness claims, strict validation, and
+  no timestamps. Nothing is signed, registered, or verified; signing needs a CI workflow
+  identity and is not done here.
 - Agent churn at a matched budget, synthetic mechanism evidence only (refs #22): add
   `sim/e050_churn.py` and record `experiments/E050-churn.md`. Each generation a fraction of agents
   (`0, 0.1, 0.25, 0.5, 1.0`) is replaced by fresh ones in E024's five arms at the same proposal budget,
