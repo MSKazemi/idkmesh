@@ -335,7 +335,7 @@ resolved `ActorContext` and are enforced exactly once, by this kernel's own
 contract composes with `ActorContext`'s validation rather than
 duplicating it.
 
-This closes only the GitHub identity source. E3-E (audited break-glass grant), E3-F (dispatch/API
+This closes only the GitHub identity source. E3-F (dispatch/API
 enforcement integration) and E3-H (service middleware/conformance) remain open E3 slices, and
 E3-G (two-principal acceptance fixture) is delivered for the enterprise kernel only (see below); E3-C (enterprise
 IdP/OIDC/SAML adapter) is covered separately below.
@@ -402,7 +402,7 @@ document (missing or unknown fields, a wrong `kind`/`schema_version`, an
 unsupported `actor_type`, a duplicate `(issuer, subject)` pair) stay with
 the adapter and raise `OidcIdentityAdapterError`.
 
-This closes only the enterprise IdP identity source. E3-E (audited break-glass grant), E3-F
+This closes only the enterprise IdP identity source. E3-F
 (dispatch/API enforcement integration, including a live claims producer for
 both this adapter and E3-B) and E3-H (service middleware/conformance) remain open E3
 slices; E3-G (two-principal acceptance fixture) is delivered for the enterprise kernel only.
@@ -443,8 +443,57 @@ Known gaps this fixture exposes but does not change (policy semantics are owned 
 - **`approval_reference` is stored verbatim.** It is validated as an identifier only, so a token-shaped value
   would be retained in the decision and the audit event. Callers must pass an opaque review reference, never a credential.
 
-This does not wire the cache into live dispatch or API paths (E3-F), implement break-glass (E3-E), or add a
+This does not wire the cache into live dispatch or API paths (E3-F) or add a
 service middleware conformance check (E3-H).
+
+## E3-E: audited break-glass grant
+
+`idkmesh.enterprise_break_glass` (schema: `enterprise-break-glass-grant-v0.1.schema.json`, example:
+`examples/enterprise/break-glass-grant.example.json`) implements the architecture rule that break-glass is
+"explicit, time bounded, reason required, and audited". The design decision it records: a grant is a
+**temporary role elevation, never a way to skip a check**.
+
+A `BreakGlassGrant` names one human beneficiary in exactly one tenant/project, an incident id, a written
+reason (10-500 printable single-line characters, retained verbatim: never put a credential in it), a closed
+set of at most four actions, a set of granted roles, a risk ceiling and a data-class ceiling, and a window
+of 60 seconds to 4 hours. It is bound to the beneficiary's `identity_revision` and to the policy id + revision it
+was issued under.
+
+`issue_break_glass_grant` refuses (`BreakGlassError`, a subclass of `AuthorizationContractError`) unless the
+beneficiary and a **distinct** approver are both human, authenticated, not revoked, not expired and bound to
+the scope, the approver holds `owner` or `admin`, and the approver's clearance covers the granted data class.
+The grant expires at the earliest of the requested TTL, the beneficiary's expiry and the approver's expiry.
+Hard ceilings no grant document can exceed: roles `owner`, `admin` and `auditor` are not grantable (no new
+approvers), `manage_policy` and `audit_export` are not grantable, risk tops out at `high`, and `restricted`
+data is never covered.
+
+`authorize_with_break_glass(request, policy, grant, revoked_grant_ids=...)` always evaluates the standing
+policy first. A grant is consulted **only** when the sole obstacle is `role_denied`; every other denial and
+every `requires_approval` result is returned unchanged. A grant that is expired, not yet valid, revoked, for
+another scope, principal, identity revision or policy revision, for another action, or above its risk or data
+ceiling denies with a specific `break_glass_*` code. When the grant applies, the **unmodified kernel**
+re-evaluates the actor with the granted roles added, so tenant scope, revocation, actor type, data clearance,
+the per-rule data limit, executor separation of duties (a verifier is still not the executor) and the high-risk
+distinct-approver requirement all still bind the elevated actor. An ALLOW carries the code
+`authorized_by_break_glass`, never `authorized`.
+
+Every outcome that involved a grant carries `evidence_digest` (the `sha256:` digest of the canonical grant).
+Passing it as `AuditEventInput.evidence_digest` ties the tamper-evident ledger entry to the exact grant; the
+event holds the reason code and digest, not the reason text. `tests/test_enterprise_break_glass.py` drives that
+path through `LocalEnterpriseAuditLedger`.
+
+Honest limits:
+
+- Offline contract and evaluator only. There is no request/approval workflow, grant store, revocation feed or
+  integrity protection for a stored grant document (a stored grant is trusted exactly as far as its store);
+  `revoked_grant_ids` is supplied by the caller.
+- It deliberately **bypasses the decision cache** and must not be fronted by `AuthorizationDecisionCache`: a cached
+  ALLOW would outlive the grant's expiry or revocation.
+- Issuance is not itself written to the ledger by this module; the caller records the grant and its digest.
+- Nothing calls it from dispatch or API paths yet (E3-F), and the `break_glass_enabled` /
+  `break_glass_reason_required` control-profile flags are not read by this module.
+- Federation itself (token verification against a live IdP) remains a deployment concern; E3-B/E3-C only
+  normalize already-verified claims.
 
 ## Non-goals
 
@@ -460,7 +509,7 @@ v0.1 does not claim:
 - organization/team synchronization;
 - a production policy database;
 - a live consumer of the decision cache (the cache exists, see E3-D; wiring it into dispatch/API enforcement is E3-F);
-- break-glass implementation;
+- a live break-glass workflow (request, approval UI, revocation feed, grant store): E3-E above is the offline grant contract and evaluator only;
 - secret/egress enforcement (the decision kernel exists, see [Enterprise Data Policy Kernel](ENTERPRISE_DATA_POLICY_V0_1.md), but is not wired into any runtime path);
 - database row-level security;
 - merge execution;

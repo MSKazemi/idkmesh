@@ -525,6 +525,7 @@ components:
     "enterprise-actor-context-v0.1": {$ref: "https://idkmesh.org/schemas/enterprise-actor-context-v0.1.schema.json"}
     "enterprise-audit-event-v0.1": {$ref: "https://idkmesh.org/schemas/enterprise-audit-event-v0.1.schema.json"}
     "enterprise-authorization-decision-v0.1": {$ref: "https://idkmesh.org/schemas/enterprise-authorization-decision-v0.1.schema.json"}
+    "enterprise-break-glass-grant-v0.1": {$ref: "https://idkmesh.org/schemas/enterprise-break-glass-grant-v0.1.schema.json"}
     "enterprise-control-profile-baseline-v0.1": {$ref: "https://idkmesh.org/schemas/enterprise-control-profile-baseline-v0.1.schema.json"}
     "enterprise-control-profile-v0.1": {$ref: "https://idkmesh.org/schemas/enterprise-control-profile-v0.1.schema.json"}
     "enterprise-github-identity-binding-v0.1": {$ref: "https://idkmesh.org/schemas/enterprise-github-identity-binding-v0.1.schema.json"}

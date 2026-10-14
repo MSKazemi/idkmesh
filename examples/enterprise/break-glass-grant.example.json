@@ -1,0 +1,20 @@
+{
+  "kind": "idkmesh-enterprise-break-glass-grant",
+  "schema_version": "0.1",
+  "grant_id": "bg:2026-10-14:0001",
+  "scope": {"tenant_id": "tenant-a", "project_id": "project-main"},
+  "incident_id": "INC-2041",
+  "reason": "Sole dispatcher unreachable during a production incident; dispatch the rollback candidate.",
+  "beneficiary_principal_id": "idp.example.test:user:alice",
+  "beneficiary_identity_revision": "identity:alice:1",
+  "approver_principal_id": "idp.example.test:user:erin",
+  "approver_identity_revision": "identity:erin:1",
+  "granted_roles": ["dispatcher"],
+  "actions": ["dispatch"],
+  "max_risk": "medium",
+  "max_data_classification": "internal",
+  "policy_id": "idkmesh.enterprise.baseline",
+  "policy_revision": "0.1",
+  "issued_at_epoch": 1791406800,
+  "expires_at_epoch": 1791410400
+}

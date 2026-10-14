@@ -232,6 +232,7 @@ name documents implementation presence, not stability as a public Python API.
 - `idkmesh/enterprise_audit.py`
 - `idkmesh/enterprise_authz.py`
 - `idkmesh/enterprise_authz_cache.py`
+- `idkmesh/enterprise_break_glass.py`
 - `idkmesh/enterprise_conformance.py`
 - `idkmesh/enterprise_data_policy.py`
 - `idkmesh/enterprise_identity_github.py`

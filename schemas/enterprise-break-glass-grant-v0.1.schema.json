@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idkmesh.org/schemas/enterprise-break-glass-grant-v0.1.schema.json",
+  "title": "IDKMesh Enterprise Break-Glass Grant v0.1",
+  "description": "An explicit, time-bounded, reason-carrying temporary role elevation for one human principal in exactly one tenant/project (E3-E, issue #670). A grant can only change a role_denied outcome: scope, revocation, expiry, data clearance, executor separation and high-risk distinct approval are still evaluated by idkmesh.enterprise_authz. The document is policy evidence only; it executes nothing and carries no canonical-write or merge authority. Do not put credentials in reason; it is retained verbatim.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "kind",
+    "schema_version",
+    "grant_id",
+    "scope",
+    "incident_id",
+    "reason",
+    "beneficiary_principal_id",
+    "beneficiary_identity_revision",
+    "approver_principal_id",
+    "approver_identity_revision",
+    "granted_roles",
+    "actions",
+    "max_risk",
+    "max_data_classification",
+    "policy_id",
+    "policy_revision",
+    "issued_at_epoch",
+    "expires_at_epoch"
+  ],
+  "properties": {
+    "kind": {"const": "idkmesh-enterprise-break-glass-grant"},
+    "schema_version": {"const": "0.1"},
+    "grant_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,255}$(?!\n)"},
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tenant_id", "project_id"],
+      "properties": {
+        "tenant_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$(?!\n)"},
+        "project_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$(?!\n)"}
+      }
+    },
+    "incident_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,255}$(?!\n)"},
+    "reason": {"type": "string", "minLength": 10, "maxLength": 500},
+    "beneficiary_principal_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,255}$(?!\n)"},
+    "beneficiary_identity_revision": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$(?!\n)"},
+    "approver_principal_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,255}$(?!\n)"},
+    "approver_identity_revision": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$(?!\n)"},
+    "granted_roles": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"enum": ["integrator", "worker", "reviewer", "dispatcher", "node_operator"]}
+    },
+    "actions": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 4,
+      "uniqueItems": true,
+      "items": {"enum": ["read", "claim", "release", "dispatch", "execute", "verify", "integrate"]}
+    },
+    "max_risk": {"enum": ["low", "medium", "high"]},
+    "max_data_classification": {"enum": ["public", "internal", "confidential"]},
+    "policy_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$(?!\n)"},
+    "policy_revision": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$(?!\n)"},
+    "issued_at_epoch": {"type": "integer", "minimum": 0},
+    "expires_at_epoch": {"type": "integer", "minimum": 0}
+  }
+}
