@@ -270,8 +270,11 @@ idkmesh doctor --enterprise-conformance --json
 The conformance report's `provider_outage_quota` scenario is **WARN** even when
 every assertion passes: it does **not** execute a real remote attempt, establish
 terminal run state, revoke a real in-flight secret, reconcile quota, or enforce a
-bounded production retry scheduler. The overall report remains `UNKNOWN`
-while other scenarios have no executable pilot. A `WARN` is bounded diagnostic
+bounded production retry scheduler. Every scenario now has an executable pilot
+(the `release_provenance` scenario validates the offline C14-F record only and
+is also `WARN`: no attestation or build-provenance verifier exists, #674), so
+the overall report is `WARN` and the command exits 0; a scenario without a
+runner would report `UNKNOWN` and exit 1. A `WARN` is bounded diagnostic
 evidence, **not** enterprise production qualification or certification. Tests
 include negative controls proving a lying probe, fail-open route, or secret-
 leaking envelope makes the scenario `FAIL`.

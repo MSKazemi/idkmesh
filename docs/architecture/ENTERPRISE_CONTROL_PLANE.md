@@ -465,7 +465,10 @@ reported PASS means only that the named **in-process** assertions held; WARN
 means they held but the named deployment gap remains; UNKNOWN remains unknown.
 A scenario executing zero safety assertions now fails closed, and an empty or
 unrecognised status set is UNKNOWN rather than a false PASS. The overall report
-continues to be UNKNOWN until every required scenario is exercised. It is not an enterprise certification, a release gate, or permission
+is the weakest scenario status: every scenario is now exercised, so it is WARN
+while any named deployment gap remains (release provenance validates the
+offline C14-F record only; attestation is #674), and it would be UNKNOWN again
+if a scenario lost its runner. It is not an enterprise certification, a release gate, or permission
 to dispatch, publish, approve, push or merge.
 
 | Open issue | Implemented/reviewed boundary in this change | Still required for issue completion |

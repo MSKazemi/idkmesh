@@ -137,7 +137,8 @@ The runtime uses `service_runtime.py` for request correlation, readiness, resour
 **Enterprise security/conformance seam:** the local E9 harness in
 [enterprise_conformance.py](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/enterprise_conformance.py) exercises
 the existing authorization/cache, tenant, claims, data/egress, local HTTP,
-SQLite restore, connector-error and public-projection boundaries in isolated
+SQLite restore, connector-error, public-projection and offline release-record
+(C14-F, metadata only; no attestation verifier) boundaries in isolated
 fixtures. These are cross-layer *test observations*, not an authenticated
 G2/G3 API, a production sandbox, a remote-provider outage drill or merge
 authority. See the [ten-issue evidence and gap matrix](ENTERPRISE_CONTROL_PLANE.md#19-cross-layer-enterprise-conformance-ten-issue-work-slices-2026-10-13).
