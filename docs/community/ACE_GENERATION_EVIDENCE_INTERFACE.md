@@ -235,3 +235,22 @@ Actual GitHub actuation remains a separate, independently reviewed integration s
 Every fixture runs in shadow mode, emits zero public actions, and must reproduce equivalent result objects across repeated evaluations.
 
 The regression suite additionally covers the zero-denominator state separately: no eligible matured, verified parent produces `R_community=null`, `R_community_status=undefined_no_eligible_parents`, and a dormant/no-action result rather than a fabricated empirical zero.
+
+## 10. Exploration floor and overload
+
+Every strategy keeps a non-zero weight (the `mu > 0` exploration guarantee), but the
+size of the floor depends on where it is measured:
+
+- after the replicator-mutator learning step, every weight is at least `mu / n`
+  (`n` = 7 strategies), because the mutation term is added after selection;
+- `next_weights` in the result is the **published** policy, taken after
+  carrying-capacity homeostasis. Below the capacity threshold of 0.45 that step moves up
+  to 90% of each growth strategy's mass to `consolidate`, so at full overload a growth
+  strategy can fall to `0.1 * mu / n` (about 0.0011 with `mu = 0.08`). It stays strictly
+  positive but is not `mu / n`.
+
+`tests/test_ace_generation_controller.py` pins both bounds, the hand-derived fitness
+values for each cost term (latency, noise, maintainer and reviewer minutes), the
+selection direction (mass moves toward the fitter strategy), agreement with an
+independent replicator-mutator computation, a public-write budget of 0, and rejection
+of a second outcome for one lineage identity.

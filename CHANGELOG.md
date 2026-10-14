@@ -25,6 +25,15 @@ and the release notes for that tag.
   authority exists. Replace #540 and #541 (no longer open) in the README and
   Contributor Quickstart with the currently open newcomer issues and the
   starter task catalog, and annotate the dated contributor pilot table.
+- ACE controller tests (refs #57): pin the issue's formulas, which earlier tests
+  left unguarded. Mutation testing showed six controller mutations survived
+  (flipped selection sign, dropped `mu/n` mutation floor, ignored latency, noise
+  and attention costs, no public-write-budget check, duplicate strategy outcomes
+  accepted). New tests derive fitness by hand for each cost term, check the
+  selection direction and an independent replicator-mutator computation, hold the
+  `mu/n` floor under extreme selection, and pin that overload lowers the published
+  floor to `0.1 * mu/n` without removing it. `ACE_GENERATION_EVIDENCE_INTERFACE.md`
+  now states both floors. No controller code changed.
 - Metric uncertainty (refs #86): the evolution scorer and the live governor now
   attach Beta-Binomial `review_coverage_evidence` / `approval_coverage_evidence`
   blocks beside the review and approval coverage point values, so a default `1.0`
