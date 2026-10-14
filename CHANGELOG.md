@@ -97,6 +97,18 @@ and the release notes for that tag.
   workflow, and does not cover CODEOWNERS/rulesets or cross-IdP principal linking. Specified in
   [GitHub authority alignment audit](docs/specifications/GITHUB_AUTHORITY_ALIGNMENT_V0_1.md).
   Tests: `tests/test_github_authority_alignment.py`.
+- E3-E audited break-glass grant (refs #670): `idkmesh/enterprise_break_glass.py`,
+  `schemas/enterprise-break-glass-grant-v0.1.schema.json` and
+  `examples/enterprise/break-glass-grant.example.json`. A grant is a temporary role elevation for one
+  human in one tenant/project: explicit incident id and written reason, a closed action set, risk and
+  data-class ceilings (never `critical`, never `restricted`, never `manage_policy`/`audit_export`), a
+  60 s to 4 h window capped by both parties' identity expiry, and a distinct human owner/admin approver.
+  It can only change a `role_denied` outcome; the unmodified kernel still enforces scope, revocation,
+  clearance, executor separation and high-risk distinct approval on the elevated actor, and grants are
+  bound to the beneficiary's identity revision and the policy revision. Outcomes carry the grant digest
+  for the audit ledger and the ALLOW code is `authorized_by_break_glass`. Offline contract and evaluator
+  only: no grant store, approval workflow or revocation feed, and not yet called from dispatch/API paths
+  (E3-F). 22 tests incl. adversarial cases and a ledger round trip.
 - Agent churn at a matched budget, synthetic mechanism evidence only (refs #22): add
   `sim/e050_churn.py` and record `experiments/E050-churn.md`. Each generation a fraction of agents
   (`0, 0.1, 0.25, 0.5, 1.0`) is replaced by fresh ones in E024's five arms at the same proposal budget,

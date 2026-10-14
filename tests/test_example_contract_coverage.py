@@ -70,6 +70,7 @@ VALID_AGAINST = {
     "examples/compute-offers/free-pool.example.json": "compute-offer-pool-v0.1.schema.json",
     "examples/domain-packs/software-engineering-v0.1.domain-pack.json": "domain-pack.schema.json",
     "examples/experiments/phase0-smoke.manifest.json": "experiment-manifest-v0.1.schema.json",
+    "examples/enterprise/break-glass-grant.example.json": "enterprise-break-glass-grant-v0.1.schema.json",
     "examples/enterprise/g1-github-native.example.json": "enterprise-control-profile-v0.1.schema.json",
     "examples/enterprise/g2-self-hosted.example.json": "enterprise-control-profile-v0.1.schema.json",
     "examples/enterprise/github-identity-bindings.example.json": "enterprise-github-identity-binding-v0.1.schema.json",
