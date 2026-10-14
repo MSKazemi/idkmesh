@@ -25,6 +25,23 @@ and the release notes for that tag.
   construction under memory loss. 152 p-values reported. State that leaves with its authors and
   correlated departures are listed as not measured. Machine-readable result
   `experiments/results/E050-churn.json`; fast tests plus a nightly `sim` check.
+- Supported CLI verbs for replay and the human decision (refs #16): add
+  `idkmesh local-loop-replay BUNDLE` and
+  `idkmesh local-loop-record-decision EVIDENCE_REPORT --output PATH ...`, so a newcomer can
+  replay a saved `local-loop` run and record an explicit decision without leaving the
+  `idkmesh` command. Both delegate to the unchanged scripts `experiments/replay_run.py replay`
+  and `experiments/record_human_decision.py record` by running their own `main`, so the report,
+  exit codes (replay: 0 PASS, 1 diverged, 2 unusable input) and `ERROR:` text are the scripts',
+  with the same path rules as `local-loop` (repository-relative, outputs under `results/`).
+  Two script gaps are covered at the wrapper only: a mistyped file name inside a real bundle no
+  longer replays that bundle's manifest, and an `--output` outside `results/` exits 2 instead of
+  escaping as a traceback. Authority is unchanged: replay writes nothing, and the decision
+  record is bound to the evidence-report digest with `canonical_state_write`, `git_push` and
+  `merge` all `false`. `local-loop`'s printed next steps, `NEXT_STEPS.md`, the tutorial
+  (`docs/LOCAL_LOOP_TUTORIAL.md`), the CLI reference, the capability reference and the module and
+  as-built maps now name the verbs; `experiments/*.py` gained only an optional `argv` parameter on
+  `main`. New in-process tests (`tests/test_local_loop_replay_decision_cli.py`), a tutorial test
+  that runs the documented verbs, and `--help` Examples blocks for the three `local-loop` commands.
 - Structural communication accounting for the R1 topology arms, synthetic mechanism evidence only
   (refs #13): add `randomness_lab/r1_communication_burden.py`, a downstream analyzer over the
   frozen R1 topology artifact that leaves the generator and every committed R1 artifact

@@ -27,8 +27,13 @@ its referenced WorkUnit, delegates the actual dispatch/verify/report/capture
 work to ``experiments/replay_run.capture_bundle`` (which itself delegates to
 the two modules above), and renders a human-readable summary that names the
 produced evidence bundle and the next, deliberately manual, human-gated
-steps: recording a decision (``experiments/record_human_decision.py``) and
-confirming the run replays (``experiments/replay_run.py``).
+steps: recording a decision (``idkmesh local-loop-record-decision``) and
+confirming the run replays (``idkmesh local-loop-replay``). Those two verbs
+live in this module too (``record_decision`` and ``replay_saved_run``) and
+are thin delegations to the long-standing scripts
+``experiments/record_human_decision.py`` and ``experiments/replay_run.py``,
+which keep working unchanged: the scripts' own ``main`` runs, so the exit
+codes, output text and error messages are the scripts', not a second copy.
 
 The CLI verb is ``local-loop`` rather than ``run`` because ``idkmesh run``
 already names an unrelated command (durable Product Spine run bookkeeping;
@@ -69,7 +74,9 @@ from typing import Any
 __all__ = [
     "LocalLoopError",
     "LocalLoopSetupError",
+    "record_decision",
     "render_summary",
+    "replay_saved_run",
     "run_work_unit",
 ]
 
@@ -135,6 +142,7 @@ def _load_experiments() -> dict[str, Any]:
 
     import evaluator_plan_runner
     import local_verifier
+    import record_human_decision
     import replay_run
     import run_evidence_report
     import two_attempt_orchestrator
@@ -143,6 +151,7 @@ def _load_experiments() -> dict[str, Any]:
         experiments_dir=experiments_dir,
         evaluator_plan_runner=evaluator_plan_runner,
         local_verifier=local_verifier,
+        record_human_decision=record_human_decision,
         replay_run=replay_run,
         run_evidence_report=run_evidence_report,
         two_attempt_orchestrator=two_attempt_orchestrator,
@@ -264,6 +273,82 @@ def run_work_unit(config_path: str, output_dir: str | None = None) -> dict[str, 
     return result
 
 
+def replay_saved_run(bundle: str) -> int:
+    """Replay a captured evidence bundle (``idkmesh local-loop-replay``).
+
+    Delegates to ``experiments/replay_run.py replay --bundle BUNDLE`` by
+    running that script's own ``main``, so the printed report, the exit codes
+    (0 on PASS, 1 on divergence, 2 on a missing/invalid bundle or a path
+    outside the repository) and the ``ERROR:`` text are exactly the script's.
+    Replay re-runs the saved config against the same fixtures and compares; it
+    writes nothing and grants no write, push, merge or selection authority.
+    """
+    modules = _load_experiments()
+    # The script resolves any name inside a bundle directory to that
+    # directory's replay-source.json, so a mistyped file name would replay
+    # "successfully". Fail closed on a path that is not an existing file.
+    try:
+        resolved = modules["replay_run"].resolve_repo_path(bundle)
+    except modules["local_verifier"].VerifierError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 2
+    if not resolved.is_file():
+        print(f"ERROR: replay bundle file not found: {bundle}", file=sys.stderr)
+        return 2
+    return modules["replay_run"].main(["replay", f"--bundle={bundle}"])
+
+
+def record_decision(
+    *,
+    evidence_report: str,
+    output: str,
+    decision_id: str,
+    decision: str,
+    rationale: str,
+    decider_id: str,
+    decider_type: str | None = None,
+    decider_display_name: str | None = None,
+    selected_attempt_id: str | None = None,
+    decided_at: str | None = None,
+) -> int:
+    """Record one explicit human decision (``idkmesh local-loop-record-decision``).
+
+    Delegates to ``experiments/record_human_decision.py record`` by running
+    that script's own ``main``: the evidence report is validated as a
+    well-formed, non-selecting report, the decision is bound to its content
+    digest, the record is written only under ``results/`` and never over the
+    report, and its ``authority`` block keeps ``canonical_state_write``,
+    ``git_push`` and ``merge`` false. Recording a decision integrates
+    nothing. Values are passed in ``--flag=value`` form so a rationale that
+    starts with ``-`` is not misread as an option.
+    """
+    modules = _load_experiments()
+    argv = [
+        "record",
+        f"--evidence-report={evidence_report}",
+        f"--output={output}",
+        f"--decision-id={decision_id}",
+        f"--decision={decision}",
+        f"--rationale={rationale}",
+        f"--decider-id={decider_id}",
+    ]
+    optional = (
+        ("--decider-type", decider_type),
+        ("--decider-display-name", decider_display_name),
+        ("--selected-attempt-id", selected_attempt_id),
+        ("--decided-at", decided_at),
+    )
+    argv += [f"{flag}={value}" for flag, value in optional if value is not None]
+    try:
+        return modules["record_human_decision"].main(argv)
+    except modules["two_attempt_orchestrator"].OrchestratorError as exc:
+        # The script's main() does not catch this one: an --output outside
+        # results/ escapes as a traceback there. Report it the way the script
+        # reports every other rejected input, with exit code 2.
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 2
+
+
 def render_summary(result: dict[str, Any]) -> str:
     """Render the human-readable summary printed by ``idkmesh local-loop``
     and saved alongside the evidence bundle as ``NEXT_STEPS.md``.
@@ -325,8 +410,7 @@ def render_summary(result: dict[str, Any]) -> str:
         "1. Record a human integration decision against the evidence report:",
         "",
         "   ```bash",
-        "   python experiments/record_human_decision.py record \\",
-        f"     --evidence-report {evidence_report_json} \\",
+        f"   idkmesh local-loop-record-decision {evidence_report_json} \\",
         f"     --output {output_dir}/human-decision-record.json \\",
         f"     --decision-id {result['run_id']}.decision.001 \\",
         "     --decision {accept|reject|escalate} \\",
@@ -338,7 +422,7 @@ def render_summary(result: dict[str, Any]) -> str:
         "before trusting the evidence long-term):",
         "",
         "   ```bash",
-        f"   python experiments/replay_run.py replay --bundle {replay_source}",
+        f"   idkmesh local-loop-replay {replay_source}",
         "   ```",
         "",
     ]

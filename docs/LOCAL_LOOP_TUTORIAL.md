@@ -1,15 +1,15 @@
 ---
 title: "Tutorial: Run the Local Two-Attempt Loop"
-description: "Run idkmesh local-loop on two committed examples, read the evidence bundle, replay the saved run, and record a human decision. Nothing is selected, pushed, or merged."
+description: "Run idkmesh local-loop on two committed examples, read the evidence bundle, replay the saved run with local-loop-replay, and record a human decision with local-loop-record-decision. Nothing is selected, pushed, or merged."
 ---
 # Tutorial: run the local two-attempt loop
 
 This walkthrough runs one bounded WorkUnit through the checkout-only
 `idkmesh local-loop` command: two attempts, independent verification of each,
 and one non-selecting evidence report. You then replay the saved run and record
-a human decision with two repository scripts. Every command below was run from
-a repository checkout on current `main`, and the output shown is copied from
-that session (paths shortened only where noted).
+a human decision with two more `idkmesh` commands. Every command below was run
+from a repository checkout on current `main`, and the output shown is copied
+from that session (paths shortened only where noted).
 
 Read [What this does and does not show](#what-this-does-and-does-not-show)
 before you rely on any of it: the attempts are **precollected fixtures**, not
@@ -20,8 +20,9 @@ live workers.
 - Python 3.11 or 3.13 (see [`../CONTRIBUTING.md`](https://github.com/MSKazemi/idkmesh/blob/main/CONTRIBUTING.md) for the
   environment setup used by the project);
 - a clone of this repository, with every command run from the repository root,
-  because `local-loop` reads the example configs and the `experiments/` scripts
-  from the checkout and is not shipped in the wheel;
+  because `local-loop` and its two follow-up commands read the example configs
+  and the `experiments/` tooling from the checkout and are not shipped in the
+  wheel;
 - the CLI plus the optional schema-verifier dependency:
 
 ```bash
@@ -41,8 +42,9 @@ idkmesh --help
 ```
 
 The command list ends with `local-loop`, described as running a bounded
-WorkUnit through the local product loop. Its own help lists the two arguments
-this tutorial uses:
+WorkUnit through the local product loop, followed by its two follow-ups,
+`local-loop-replay` and `local-loop-record-decision`. The help of `local-loop`
+lists the two arguments Steps 2 and 4 use:
 
 ```bash
 idkmesh local-loop --help
@@ -89,7 +91,8 @@ The command exits `0`: **exit status reports that the loop ran, not that every
 candidate passed.** One attempt is supported and one is rejected, and the
 summary says plainly that the two verification recommendations disagree. The
 real output continues with a Warnings section and the two manual next steps
-that Steps 5 and 6 below carry out.
+(`idkmesh local-loop-record-decision` and `idkmesh local-loop-replay`) that
+Steps 5 and 6 below carry out.
 
 ## Step 3 — read the evidence bundle
 
@@ -113,7 +116,7 @@ verification-result-attempt-002.json
 | `verification-result-attempt-001.json`, `verification-result-attempt-002.json` | The raw, unprojected VerificationResult for each attempt that reached verification, including its checks, evidence, and `decision_support` recommendation. |
 | `evidence-report.md`, `evidence-report.json` | One combined, **non-selecting** report of the same evidence, for people and for tools. |
 | `replay-source.json` | A manifest naming the config and the saved files, so a replay does not need the original command line. |
-| `NEXT_STEPS.md` | The same two human-gated next steps the command printed. |
+| `NEXT_STEPS.md` | The same summary the command printed, including the two human-gated next steps. |
 
 Open `evidence-report.md`. Its attempts table is the quickest summary:
 
@@ -161,13 +164,12 @@ reached verification.
 
 ## Step 5 — replay the saved run
 
-`replay_run.py` is a repository script, not an `idkmesh` subcommand. It re-runs
-the exact config recorded in `replay-source.json` against the same fixtures and
-compares the result with the saved bundle.
+`idkmesh local-loop-replay` re-runs the exact config recorded in
+`replay-source.json` against the same fixtures and compares the result with the
+saved bundle. It writes nothing.
 
 ```bash
-python experiments/replay_run.py replay \
-  --bundle results/local-loop-tutorial-evaluator-plan/replay-source.json
+idkmesh local-loop-replay results/local-loop-tutorial-evaluator-plan/replay-source.json
 ```
 
 ```text
@@ -183,18 +185,21 @@ PASS: replay reproduced every must-match field
 
 (The two `expected-to-vary` lines are shortened here with `...`; the real output lists the
 exact fields, such as timestamps and the interpreter platform string, that a raw
-VerificationResult legitimately changes from run to run.) The script exits `0`
-on `PASS` and non-zero with an itemized diff if any must-match field diverges.
-`python experiments/replay_run.py replay --help` documents the argument.
+VerificationResult legitimately changes from run to run.) The command exits `0`
+on `PASS`, `1` with an itemized diff if any must-match field diverges, and `2`
+if the path is missing, is not part of a saved bundle, or points outside the
+repository. `BUNDLE` may be the `replay-source.json`, `run-record.json` or
+`evidence-report.json` of a saved bundle. `idkmesh local-loop-replay --help`
+documents the argument.
 
 ## Step 6 — record a human decision
 
-The loop never records an integration decision. A person does that with a
-second repository script, against the evidence report:
+The loop never records an integration decision. A person does that with
+`idkmesh local-loop-record-decision`, against the evidence report:
 
 ```bash
-python experiments/record_human_decision.py record \
-  --evidence-report results/local-loop-tutorial-evaluator-plan/evidence-report.json \
+idkmesh local-loop-record-decision \
+  results/local-loop-tutorial-evaluator-plan/evidence-report.json \
   --output results/local-loop-tutorial-evaluator-plan/human-decision-record.json \
   --decision-id two-attempt-evaluator-plan-good-vs-bad.decision.001 \
   --decision accept \
@@ -211,9 +216,11 @@ recorded accept decision 'two-attempt-evaluator-plan-good-vs-bad.decision.001' f
 is optional (omit it for a run-level decision). The new
 `human-decision-record.json` binds the decision to the digest of the evidence
 report, names the decider, and carries an `authority` block with
-`canonical_state_write`, `git_push` and `merge` all `false`. **Recording a
-decision does not integrate anything.** Merging is a separate step governed by
-the repository's normal pull request and review policy.
+`canonical_state_write`, `git_push` and `merge` all `false`. `--output` must be
+under `results/` and may not be the evidence report itself; a path that breaks
+either rule exits `2` and writes nothing. **Recording a decision does not
+integrate anything.** Merging is a separate step governed by the repository's
+normal pull request and review policy.
 
 ## What this does and does not show
 
@@ -230,9 +237,12 @@ the repository's normal pull request and review policy.
   open; see the
   [local agent execution boundary](specifications/LOCAL_AGENT_EXECUTION_BOUNDARY_V0_1.md).
   Do not point `local-loop` at code you would not run yourself.
-- **Replay and the human decision are scripts.** Neither `replay_run.py` nor
-  `record_human_decision.py` is an `idkmesh` subcommand, and `local-loop` runs
-  neither on your behalf.
+- **Replay and the human decision are separate commands.** `local-loop` runs
+  neither on your behalf. `local-loop-replay` and `local-loop-record-decision`
+  are thin wrappers over the repository scripts `experiments/replay_run.py
+  replay` and `experiments/record_human_decision.py record`, which still work
+  unchanged and print the same reports; they are checkout-only for the same
+  reason as `local-loop`.
 - **No automatic authority.** Automatic candidate selection, canonical-state
   write, Git push, and merge are all `false` in every file the loop writes. The
   report is decision support; worker success is not acceptance, and a
@@ -250,7 +260,8 @@ rm -rf results/local-loop-tutorial-evaluator-plan results/local-loop-tutorial-wo
 ## Where to go next
 
 - [`reference/CLI_HTTP_QUICK_REFERENCE.md`](reference/CLI_HTTP_QUICK_REFERENCE.md) —
-  the shipped command surface, including the `local-loop` row.
+  the shipped command surface, including the `local-loop`,
+  `local-loop-replay` and `local-loop-record-decision` rows.
 - [`RUN_LIFECYCLE_TUTORIAL.md`](RUN_LIFECYCLE_TUTORIAL.md) — the separate
   `idkmesh run` bookkeeping commands and the read-only Control Tower API.
 - [`specifications/LOCAL_AGENT_EXECUTION_BOUNDARY_V0_1.md`](specifications/LOCAL_AGENT_EXECUTION_BOUNDARY_V0_1.md) —

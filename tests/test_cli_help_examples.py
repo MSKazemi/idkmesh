@@ -48,6 +48,9 @@ EXAMPLE_COMMANDS = (
     ("work-unit", "status"),
     ("project", "status"),
     ("events", "list"),
+    ("local-loop",),
+    ("local-loop-replay",),
+    ("local-loop-record-decision",),
 )
 
 _DRIVE_PATH_RE = re.compile(r"^[A-Za-z]:[\\/]")

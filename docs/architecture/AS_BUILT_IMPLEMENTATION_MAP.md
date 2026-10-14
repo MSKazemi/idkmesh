@@ -46,7 +46,15 @@ Developer / operator
   |       -> experiments/two_attempt_orchestrator.py
   |       -> independent verifier + run evidence report
   |       -> bounded local evidence/replay bundle
-  |       -> human decision / replay remain separate, manual
+  |       -> human decision / replay remain separate, manual:
+  |
+  +-- idkmesh local-loop-replay BUNDLE           [checkout + verify extra]
+  |       -> local_loop.replay_saved_run -> experiments/replay_run.py main (replay)
+  |       -> re-runs the saved config, compares must-match fields; WRITES NOTHING
+  |
+  +-- idkmesh local-loop-record-decision EVIDENCE_REPORT --output P ...  [checkout + verify extra]
+  |       -> local_loop.record_decision -> experiments/record_human_decision.py main (record)
+  |       -> digest-bound decision record under results/ only; integrates nothing
   |
   +-- idkmesh pages-site --repository R --projection P... --out DIR
   |       -> github_public_evidence.py (strict projection validation)
