@@ -89,17 +89,37 @@ def _documented_ls_listing(output_dir: str) -> set[str]:
 
 
 class LocalLoopTutorialTests(unittest.TestCase):
-    def setUp(self) -> None:
+    """Each documented ``local-loop`` command runs ONCE, in ``setUpClass``.
+
+    The unit tier has a hard CPU budget and each loop costs real time, so the
+    tests below assert on those shared runs instead of re-running the command.
+    The bundle listing is captured immediately after each run, before the replay
+    and decision test writes ``human-decision-record.json`` into run 0's bundle.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
         (REPO_ROOT / "results").mkdir(exist_ok=True)
-        self.scratch = REPO_ROOT / "results" / f"local-loop-tutorial-test-{uuid.uuid4().hex[:8]}"
-        self.scratch.mkdir()
-        self.addCleanup(shutil.rmtree, self.scratch, ignore_errors=True)
+        cls.scratch = REPO_ROOT / "results" / f"local-loop-tutorial-test-{uuid.uuid4().hex[:8]}"
+        cls.scratch.mkdir()
+        cls.addClassCleanup(shutil.rmtree, cls.scratch, ignore_errors=True)
+        cls.loops: list[dict[str, object]] = []
+        for number, run in enumerate(_documented_local_loop_runs()):
+            target = (cls.scratch / f"run-{number}").relative_to(REPO_ROOT).as_posix()
+            argv = list(run["argv"])  # type: ignore[arg-type]
+            argv[argv.index("--output-dir") + 1] = target
+            code, stdout = cls._run_cli(argv)
+            listing = (
+                {path.name for path in (REPO_ROOT / target).iterdir()}
+                if (REPO_ROOT / target).is_dir()
+                else set()
+            )
+            cls.loops.append(
+                {"run": run, "target": target, "code": code, "stdout": stdout, "listing": listing}
+            )
 
-    def _relocate(self, text: str, documented_dir: str, name: str) -> str:
-        target = (self.scratch / name).relative_to(REPO_ROOT).as_posix()
-        return text.replace(documented_dir, target)
-
-    def _run_cli(self, argv: list[str]) -> tuple[int, str]:
+    @staticmethod
+    def _run_cli(argv: list[str]) -> tuple[int, str]:
         out = io.StringIO()
         with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
             code = cli_main(argv)
@@ -119,49 +139,38 @@ class LocalLoopTutorialTests(unittest.TestCase):
             self.assertTrue(str(run["output_dir"]).startswith("results/"), run["output_dir"])
 
     def test_documented_commands_produce_documented_counts(self) -> None:
-        for number, run in enumerate(_documented_local_loop_runs()):
-            with self.subTest(config=run["config"]):
-                documented = dict(run["summary"])  # type: ignore[arg-type]
+        self.assertEqual(len(self.loops), 2)
+        for number, loop in enumerate(self.loops):
+            run = loop["run"]
+            with self.subTest(config=run["config"]):  # type: ignore[index]
+                documented = dict(run["summary"])  # type: ignore[index, arg-type]
                 self.assertEqual(
                     sorted(documented),
                     ["Control errors", "Inconclusive", "Rejected", "Supported", "Verification disagreement"],
                 )
-                target = (self.scratch / f"run-{number}").relative_to(REPO_ROOT).as_posix()
-                argv = list(run["argv"])  # type: ignore[arg-type]
-                argv[argv.index("--output-dir") + 1] = target
-
-                code, stdout = self._run_cli(argv)
-
-                self.assertEqual(code, 0, stdout)
-                self.assertEqual(dict(SUMMARY_RE.findall(stdout)), documented)
-                listing = {path.name for path in (REPO_ROOT / target).iterdir()}
-                expected_bundle = _documented_ls_listing(str(run["output_dir"])) if number == 0 else None
-                if expected_bundle is not None:
-                    self.assertEqual(listing, expected_bundle)
+                self.assertEqual(loop["code"], 0, loop["stdout"])
+                self.assertEqual(dict(SUMMARY_RE.findall(str(loop["stdout"]))), documented)
+                if number == 0:
+                    self.assertEqual(loop["listing"], _documented_ls_listing(str(run["output_dir"])))  # type: ignore[index]
 
     def test_failed_worker_documented_as_control_error_with_no_verification_file(self) -> None:
-        run = _documented_local_loop_runs()[1]
-        target = (self.scratch / "failure").relative_to(REPO_ROOT).as_posix()
-        argv = list(run["argv"])  # type: ignore[arg-type]
-        argv[argv.index("--output-dir") + 1] = target
-        code, _ = self._run_cli(argv)
-        self.assertEqual(code, 0)
-        listing = {path.name for path in (REPO_ROOT / target).iterdir()}
-        self.assertIn("verification-result-attempt-001.json", listing)
-        self.assertNotIn("verification-result-attempt-002.json", listing)
-        report = json.loads((REPO_ROOT / target / "evidence-report.json").read_text(encoding="utf-8"))
+        loop = self.loops[1]
+        self.assertEqual(loop["code"], 0)
+        listing = loop["listing"]
+        self.assertIn("verification-result-attempt-001.json", listing)  # type: ignore[operator]
+        self.assertNotIn("verification-result-attempt-002.json", listing)  # type: ignore[operator]
+        report = json.loads(
+            (REPO_ROOT / str(loop["target"]) / "evidence-report.json").read_text(encoding="utf-8")
+        )
         states = {item["attempt_id"]: item for item in report["attempts"]}
         self.assertIn("worker_error", json.dumps(states["attempt-002"]))
         self.assertIs(report["authority"]["merge"], False)
 
     def test_documented_replay_and_human_decision_run(self) -> None:
-        first = _documented_local_loop_runs()[0]
-        documented_dir = str(first["output_dir"])
-        target = (self.scratch / "bundle").relative_to(REPO_ROOT).as_posix()
-        argv = list(first["argv"])  # type: ignore[arg-type]
-        argv[argv.index("--output-dir") + 1] = target
-        code, _ = self._run_cli(argv)
-        self.assertEqual(code, 0)
+        loop = self.loops[0]
+        self.assertEqual(loop["code"], 0)
+        documented_dir = str(loop["run"]["output_dir"])  # type: ignore[index]
+        target = str(loop["target"])
 
         scripted = {}
         for lang, body in _blocks():
@@ -172,7 +181,7 @@ class LocalLoopTutorialTests(unittest.TestCase):
                 scripted["record"] = shlex.split(command)[2:]
         self.assertEqual(sorted(scripted), ["record", "replay"])
 
-        replay_argv = [self._relocate(arg, documented_dir, "bundle") for arg in scripted["replay"]]
+        replay_argv = [arg.replace(documented_dir, target) for arg in scripted["replay"]]
         out = io.StringIO()
         with (
             mock.patch.object(sys, "argv", ["replay_run.py", *replay_argv]),
@@ -182,7 +191,7 @@ class LocalLoopTutorialTests(unittest.TestCase):
         self.assertEqual(replay_code, 0, out.getvalue())
         self.assertIn("PASS: replay reproduced every must-match field", out.getvalue())
 
-        record_argv = [self._relocate(arg, documented_dir, "bundle") for arg in scripted["record"]]
+        record_argv = [arg.replace(documented_dir, target) for arg in scripted["record"]]
         out = io.StringIO()
         with (
             mock.patch.object(sys, "argv", ["record_human_decision.py", *record_argv]),
