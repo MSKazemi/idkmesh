@@ -252,6 +252,20 @@ WorkUnit + EvaluatorPlan + current verifier pool
 
 The real EvaluatorPlan remains unchanged throughout the cohort.
 
+### Chain compatibility is pinned; cohort evidence is not collected
+
+`tests/test_ave_shadow_adapter_cohort_chain.py` pins, on synthetic fixtures
+only, that an AVE plan composes with the generic outcome join and cohort
+summary: shadow-vs-baseline agreement and disagreement are counted correctly
+(including the singleton case where both sides share one choice ID),
+abstained plans stay in the denominator, an outcome that predates the frozen
+plan or names a choice that was not frozen is rejected, a plan edited after its
+outcome breaks the digest binding, and the cohort summary stays descriptive
+with no causal estimate. These tests prove the plumbing, not the policy. A
+shadow recommendation is not evidence of benefit, and the 20-30 real
+pre-outcome plans, joined outcomes and the promote/simplify/reject call remain
+open, time-gated work.
+
 ## Historical fixtures are compatibility tests, not N3 evidence
 
 Existing repository records such as:
