@@ -52,6 +52,7 @@ listed here fails the suite rather than becoming quietly undiscoverable.
 | **E046** | [Per-item difficulty forecasts how many tasks a team of coding agents will cover; correlation-only models do not](E046-agent-value-forecast.md) |
 | **E047** | [The H1 result survives removing duplicate models, and choosing agents by model organisation loses to choosing by complementarity](E047-provenance-aware-agent-value.md) |
 | **E049** | [Recovery time, viable-niche coverage and cost per improvement for the five E024 arms](E049-derived-measurements.md) |
+| **E050** | [Agent churn at a matched budget for the five E024 arms, under a memory-loss and a cold-start model](E050-churn.md) |
 
 The Physarum routing research records are also indexed here:
 [PHY-0 reference routing](PHY-0-physarum-compute-routing.md),
