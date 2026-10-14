@@ -16,6 +16,10 @@ from pathlib import Path
 from typing import Any
 
 from evolution_math import homeostatic_potential, normalized_entropy
+try:
+    from scripts.metric_uncertainty import beta_binomial_summary
+except ModuleNotFoundError:  # Direct execution places scripts/ on sys.path.
+    from metric_uncertainty import beta_binomial_summary
 
 CATEGORY_KEYWORDS: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("verification", ("verification", "security", "test", "benchmark")),
@@ -89,6 +93,11 @@ def review_metrics(snapshot: dict[str, Any]) -> dict[str, Any]:
         "ready_prs_with_independent_approval": approved,
         "review_coverage": round(reviewed / max(1, len(ready)), 6) if ready else 1.0,
         "approval_coverage": round(approved / max(1, len(ready)), 6) if ready else 1.0,
+        # The point values above are policy inputs: with no ready PR they default
+        # to 1.0 (nothing is waiting). The evidence blocks below say how many PRs
+        # actually back each figure, so a default is never read as an observation.
+        "review_coverage_evidence": beta_binomial_summary(reviewed, len(ready)),
+        "approval_coverage_evidence": beta_binomial_summary(approved, len(ready)),
     }
 
 
