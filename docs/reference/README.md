@@ -5,7 +5,7 @@ Use these alongside the [capability truth matrix](../CAPABILITY_MATRIX.md) and t
 1. [Module map](MODULE_MAP.md) — every direct `idkmesh/*.py` module, grouped by responsibility and linked to its versioned contract.
 2. [CLI and HTTP quick reference](CLI_HTTP_QUICK_REFERENCE.md) — shipped commands, routed local endpoints, read-only client, and runnable examples.
 3. [Source-backed API metrics interval guide](API_METRICS_INTERVAL_GUIDE.md) — a runnable Python-only comparison, fixed latency buckets, and safe handling of UNKNOWN windows.
-4. API pages for integrators: [quickstart](API_QUICKSTART.md) (curl and the Python client), [error catalog](API_ERROR_CATALOG.md) (every stable code, status and retry rule), and [service limits](API_LIMITS.md) (timeouts, caps, body and header bounds) — each is drift-tested against the code.
+4. API pages for integrators: start with the [API overview](API_OVERVIEW.md) (authentication, routes, schema catalog, clients), then the [quickstart](API_QUICKSTART.md) (curl and the Python client), [error catalog](API_ERROR_CATALOG.md) (every stable code, status and retry rule), and [service limits](API_LIMITS.md) (timeouts, caps, body and header bounds) — each is drift-tested against the code.
 5. [As-built implementation architecture](../architecture/AS_BUILT_IMPLEMENTATION_MAP.md) — current source paths, lifecycle boundaries, and separated authority.
 6. [Troubleshooting and operator help](../help/TROUBLESHOOTING.md) — installation, SQLite, local API, verifier evidence, sandbox and tests.
 7. [Research/interoperability module map](RESEARCH_MODULE_MAP.md) — experiments, simulations, randomness lab, A2A/MCP and evidence boundaries.

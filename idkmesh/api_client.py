@@ -10,23 +10,27 @@ absent until the authenticated mutation adapter (#740) exists.
 The current Control Tower is loopback-only, so this client refuses non-loopback
 base URLs rather than risking disclosure of the local session token.
 
-The client performs exactly one HTTP request per method call. It never retries,
-reconnects, follows redirects, records human decisions, dispatches work, writes
-canonical state, pushes Git, or merges. An event stream ends when the server,
-the caller or a client-side bound ends it; resuming is the caller's decision,
-made with the documented ``Last-Event-ID`` sequence.
+By default the client performs exactly one HTTP request per method call. An
+explicit ``RetryPolicy`` opts idempotent ``GET`` reads into a small, bounded,
+deterministic retry of transport failures and server-declared retryable
+capacity errors; nothing else is ever retried (integrity and protocol failures,
+non-retryable API errors, and event streams are not). The client never
+reconnects a stream, follows redirects, records human decisions, dispatches
+work, writes canonical state, pushes Git, or merges. An event stream ends when
+the server, the caller or a client-side bound ends it; resuming is the caller's
+decision, made with the documented ``Last-Event-ID`` sequence.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import http.client
 import json
 import math
 import re
 import socket
 import time
-from typing import Any, Generic, Iterator, Mapping, TypeVar
+from typing import Any, Callable, Generic, Iterator, Mapping, TypeVar
 from urllib.parse import quote, urlencode, urlsplit
 
 from idkmesh import __version__
@@ -52,9 +56,15 @@ MAX_STREAM_SEQUENCE = 10**18 - 1  # Last-Event-ID is at most 18 ASCII digits
 # Client-side wall-clock bound: the server's own maximum stream lifetime plus
 # a margin, so a misbehaving server cannot hold the caller open forever.
 DEFAULT_STREAM_MAX_SECONDS = SSE_MAX_STREAM_SECONDS + 15.0
+# Opt-in retry bounds: a policy can never ask for more than this.
+MAX_RETRY_ATTEMPTS = 5
+MAX_RETRY_DELAY_SECONDS = 30.0
+RETRY_AFTER_HEADER = "Retry-After"
+_RETRYABLE_HTTP_STATUSES = frozenset({429, 502, 503, 504})
 
 _REQUEST_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
 _DIGEST_RE = re.compile(r"^sha256:[0-9a-f]{64}$")
+_RETRY_AFTER_RE = re.compile(r"^[0-9]{1,6}$")
 _STREAM_SEQUENCE_RE = re.compile(r"^[0-9]{1,18}$")
 _STREAM_RETRY_RE = re.compile(r"^[0-9]{1,9}$")
 _STREAM_END_RE = re.compile(
@@ -91,7 +101,13 @@ T = TypeVar("T")
 
 
 class ControlTowerClientError(RuntimeError):
-    """Base class for stable client-side failure categories."""
+    """Base class for stable client-side failure categories.
+
+    ``attempts`` is the number of HTTP exchanges made before the error was
+    raised: always 1 unless the caller opted into a ``RetryPolicy``.
+    """
+
+    attempts: int = 1
 
 
 class ClientConfigurationError(ControlTowerClientError):
@@ -122,7 +138,9 @@ class ApiResponseError(ControlTowerClientError):
         retryable: bool,
         details: Mapping[str, Any] | None,
         request_id: str,
+        retry_after_seconds: int | None = None,
     ) -> None:
+        self.retry_after_seconds = retry_after_seconds
         self.status_code = status_code
         self.code = code
         self.message = message
@@ -139,6 +157,56 @@ class ResponseMetadata:
     status_code: int
     request_id: str
     content_digest: str
+    # Server ``Retry-After`` (whole seconds) when present and well formed.
+    retry_after_seconds: int | None = None
+    # HTTP exchanges used for this result; above 1 only under a RetryPolicy.
+    attempts: int = 1
+
+
+@dataclass(frozen=True)
+class RetryPolicy:
+    """Opt-in, bounded, deterministic retry for idempotent ``GET`` reads.
+
+    The delay before retry ``n`` is ``min(max_delay, base_delay * 2**(n-1))``
+    with no jitter, so behaviour is reproducible. A server ``Retry-After`` can
+    lengthen the wait up to ``max_delay``; a longer one is not waited out and
+    the error is raised instead. Only transport failures and API errors that
+    the server marked ``retryable`` with HTTP 429/502/503/504 are retried.
+    """
+
+    max_attempts: int
+    base_delay: float = 0.25
+    max_delay: float = 5.0
+
+    def __post_init__(self) -> None:
+        if (
+            type(self.max_attempts) is not int
+            or not 2 <= self.max_attempts <= MAX_RETRY_ATTEMPTS
+        ):
+            raise ClientConfigurationError(
+                f"max_attempts must be an integer between 2 and {MAX_RETRY_ATTEMPTS}"
+            )
+        base = _positive_seconds(self.base_delay, "base_delay")
+        ceiling = _positive_seconds(self.max_delay, "max_delay")
+        if ceiling > MAX_RETRY_DELAY_SECONDS or base > ceiling:
+            raise ClientConfigurationError(
+                "max_delay must be at most "
+                f"{MAX_RETRY_DELAY_SECONDS:g} seconds and not below base_delay"
+            )
+
+    def delay_before_retry(
+        self,
+        retry_number: int,
+        retry_after_seconds: int | None = None,
+    ) -> float | None:
+        """Seconds to wait before retry ``retry_number`` (1-based), or ``None``
+        when the server asked for longer than ``max_delay``."""
+        delay = min(self.max_delay, self.base_delay * (2 ** (retry_number - 1)))
+        if retry_after_seconds is not None:
+            if retry_after_seconds > self.max_delay:
+                return None
+            delay = max(delay, float(retry_after_seconds))
+        return delay
 
 
 @dataclass(frozen=True)
@@ -567,6 +635,8 @@ class ControlTowerClient:
         token: str,
         *,
         timeout: float,
+        retry: RetryPolicy | None = None,
+        sleep: Callable[[float], None] = time.sleep,
     ) -> None:
         if not isinstance(base_url, str) or not base_url:
             raise ClientConfigurationError("base_url must be a non-empty string")
@@ -605,8 +675,65 @@ class ControlTowerClient:
         self._token = token
 
         self._timeout = _positive_seconds(timeout, "timeout")
+        if retry is not None and not isinstance(retry, RetryPolicy):
+            raise ClientConfigurationError("retry must be a RetryPolicy or None")
+        if not callable(sleep):
+            raise ClientConfigurationError("sleep must be callable")
+        self._retry = retry
+        self._sleep = sleep
+
+    def __repr__(self) -> str:
+        # The session token is a credential: it must never reach a log line,
+        # traceback or debugger display through the default repr.
+        return (
+            f"{type(self).__name__}(port={self._port}, "
+            f"timeout={self._timeout:g}, retry={self._retry!r})"
+        )
 
     def _request(
+        self,
+        method: str,
+        path: str,
+        *,
+        payload: Mapping[str, Any] | None = None,
+    ) -> ApiResult[dict[str, Any]]:
+        """One exchange, or a bounded retry loop for opted-in idempotent GETs."""
+        policy = self._retry
+        if policy is None or method != "GET" or payload is not None:
+            return self._request_once(method, path, payload=payload)
+        attempt = 1
+        while True:
+            try:
+                result = self._request_once(method, path, payload=payload)
+            except ControlTowerClientError as exc:
+                exc.attempts = attempt
+                retry_after: int | None = None
+                if isinstance(exc, TransportError):
+                    pass
+                elif (
+                    isinstance(exc, ApiResponseError)
+                    and exc.retryable
+                    and exc.status_code in _RETRYABLE_HTTP_STATUSES
+                ):
+                    retry_after = exc.retry_after_seconds
+                else:
+                    raise
+                if attempt >= policy.max_attempts:
+                    raise
+                delay = policy.delay_before_retry(attempt, retry_after)
+                if delay is None:
+                    raise
+                self._sleep(delay)
+                attempt += 1
+                continue
+            if attempt == 1:
+                return result
+            return ApiResult(
+                value=result.value,
+                metadata=replace(result.metadata, attempts=attempt),
+            )
+
+    def _request_once(
         self,
         method: str,
         path: str,
@@ -645,7 +772,7 @@ class ControlTowerClient:
             raw = response.read()
         except (OSError, http.client.HTTPException) as exc:
             raise TransportError(
-                f"{method} {path} failed without retry: {exc}"
+                f"{method} {path} failed: {exc}"
             ) from exc
         finally:
             connection.close()
@@ -696,10 +823,18 @@ class ControlTowerClient:
                 f"header={content_digest} computed={actual_digest}"
             )
 
+        retry_after_raw = response.getheader(RETRY_AFTER_HEADER)
+        retry_after = (
+            int(retry_after_raw)
+            if isinstance(retry_after_raw, str)
+            and _RETRY_AFTER_RE.fullmatch(retry_after_raw) is not None
+            else None
+        )
         metadata = ResponseMetadata(
             status_code=response.status,
             request_id=request_id,
             content_digest=content_digest,
+            retry_after_seconds=retry_after,
         )
 
         if response.status >= 400:
@@ -744,6 +879,7 @@ class ControlTowerClient:
             retryable=retryable,
             details=details,
             request_id=metadata.request_id,
+            retry_after_seconds=metadata.retry_after_seconds,
         )
 
     @staticmethod
@@ -942,6 +1078,62 @@ class ControlTowerClient:
             raise ProtocolError("run attempts response has invalid attempts")
         return result
 
+    def iter_run_pages(
+        self,
+        *,
+        max_pages: int,
+        limit: int = 50,
+        state: str | None = None,
+        project_id: str | None = None,
+    ) -> Iterator[ApiResult[ListPage]]:
+        """Lazily yield run pages, one HTTP read per page, retaining metadata.
+
+        The caller must select a page budget. Cursors remain opaque; a repeated
+        cursor or exhausted budget is a protocol error, not partial success.
+        Pages already yielded stay valid when a later page raises. These
+        non-transactional GETs never mutate a resource.
+        """
+        if type(max_pages) is not int or not 1 <= max_pages <= 100:
+            raise ClientConfigurationError(
+                "max_pages must be an integer between 1 and 100"
+            )
+        _list_limit(limit)
+        cursor: str | None = None
+        seen: set[str] = set()
+        for _ in range(max_pages):
+            result = self.list_runs(
+                limit=limit,
+                cursor=cursor,
+                state=state,
+                project_id=project_id,
+            )
+            yield result
+            following = result.value.next_cursor
+            if following is None:
+                return
+            if following in seen:
+                raise ProtocolError("run-list cursor repeated; refusing replay")
+            seen.add(following)
+            cursor = following
+        raise ProtocolError("run-list page cap reached with more pages remaining")
+
+    def iter_runs(
+        self,
+        *,
+        max_pages: int,
+        limit: int = 50,
+        state: str | None = None,
+        project_id: str | None = None,
+    ) -> Iterator[dict[str, Any]]:
+        """Lazily yield every run item across a bounded number of pages."""
+        for page in self.iter_run_pages(
+            max_pages=max_pages,
+            limit=limit,
+            state=state,
+            project_id=project_id,
+        ):
+            yield from page.value.items
+
     def collect_run_pages(
         self,
         *,
@@ -952,34 +1144,17 @@ class ControlTowerClient:
     ) -> tuple[ApiResult[ListPage], ...]:
         """Read a bounded series of run pages, retaining each page's metadata.
 
-        The caller must select a page budget. Cursors remain opaque; a repeated
-        cursor or exhausted budget is a protocol error, not partial success.
-        These non-transactional GETs never retry or mutate a resource.
+        All-or-nothing: a repeated cursor or exhausted budget raises and no
+        partial tuple is returned. Use ``iter_run_pages`` to keep earlier pages.
         """
-        if type(max_pages) is not int or not 1 <= max_pages <= 100:
-            raise ClientConfigurationError(
-                "max_pages must be an integer between 1 and 100"
-            )
-        _list_limit(limit)
-        cursor: str | None = None
-        seen: set[str] = set()
-        pages: list[ApiResult[ListPage]] = []
-        for _ in range(max_pages):
-            result = self.list_runs(
+        return tuple(
+            self.iter_run_pages(
+                max_pages=max_pages,
                 limit=limit,
-                cursor=cursor,
                 state=state,
                 project_id=project_id,
             )
-            pages.append(result)
-            following = result.value.next_cursor
-            if following is None:
-                return tuple(pages)
-            if following in seen:
-                raise ProtocolError("run-list cursor repeated; refusing replay")
-            seen.add(following)
-            cursor = following
-        raise ProtocolError("run-list page cap reached with more pages remaining")
+        )
 
     def list_runs(
         self,
@@ -1261,6 +1436,7 @@ __all__ = [
     "ListPage",
     "ProtocolError",
     "ResponseMetadata",
+    "RetryPolicy",
     "StreamedEvent",
     "TransportError",
 ]

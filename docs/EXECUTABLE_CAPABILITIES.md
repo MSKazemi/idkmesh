@@ -110,7 +110,11 @@ multi-user network exposure.
 ## Dependency-free Python client
 
 `idkmesh.api_client.ControlTowerClient` provides the same read/inspect model without
-requiring an HTTP client dependency. Current public methods are:
+requiring an HTTP client dependency. Each call is one HTTP exchange unless the
+constructor is given an explicit `RetryPolicy`, which opts idempotent `GET` reads
+(never the inspection `POST` or an event stream) into bounded, deterministic retry of
+transport failures and server-declared retryable capacity errors. Current public
+methods are:
 
 - `ControlTowerClient.request_id` — last response request ID exposed for correlation
 - `ControlTowerClient.status()`
@@ -122,6 +126,7 @@ requiring an HTTP client dependency. Current public methods are:
 - `ControlTowerClient.get_run_attempts()`
 - `ControlTowerClient.list_runs()`
 - `ControlTowerClient.collect_run_pages()` — explicitly bounded, cursor-safe multi-page run reads that retain each page's request ID and digest; no writes, implicit retries, or snapshot consistency claim
+- `ControlTowerClient.iter_run_pages()` / `ControlTowerClient.iter_runs()` — the lazy, page-capped forms of the same walk: one read per page, nothing fetched until iterated, repeated cursors refused, and pages already yielded stay valid if a later page fails
 - `ControlTowerClient.get_work_unit()`
 - `ControlTowerClient.list_work_units()`
 - `ControlTowerClient.list_connections()`
