@@ -93,6 +93,7 @@
         "execute",
         "verify",
         "integrate",
+        "decide",
         "manage_policy",
         "audit_export"
       ]

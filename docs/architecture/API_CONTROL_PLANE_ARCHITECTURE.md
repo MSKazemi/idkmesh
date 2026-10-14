@@ -74,8 +74,9 @@ explicit rather than inferred from whichever transport happens to expose them:
   `idkmesh/verification_handoff.py`, Product Spine evidence retention, and the
   versioned VerificationResult/Run Evidence Report contracts;
 - accountable human-decision recording:
-  `idkmesh/human_decision_service.py` (transport-neutral core; the authenticated
-  HTTP mutation remains gated by #740);
+  `idkmesh/human_decision_service.py` (transport-neutral core) behind
+  `idkmesh/human_decision_gateway.py` (kernel `decide` authorization + audit
+  event per attempt); the authenticated HTTP mutation remains gated by #740);
 - execution admission:
   `idkmesh/executor_admission.py`;
 - integration execution:
@@ -180,6 +181,7 @@ checked against code in CI:
 |  connector_routing.py       -- RoutingDecision resolution       |
 |  github_issue_preview.py    -- bounded WorkUnit preview         |
 |  human_decision_service.py  -- immutable decision core (#740)   |
+|  human_decision_gateway.py  -- decide authz + audit (#740)      |
 |  executor_admission.py      -- stale-input-safe local admission |
 +----------------------------------------------------------------+
           ^                 ^                  ^              ^
@@ -276,7 +278,7 @@ second implementation.
 | attempts/candidates | Product Spine attempt projection + CandidateReference/ResultManifest contracts | `GET /api/v1/runs/{run_id}/attempts`; provider adapters normalize into the same contracts |
 | verification | verifier-owned EvaluatorPlan/VerificationResult + `verification_handoff.py` | evidence/inspection surfaces only; transport cannot turn recommendation into authority |
 | run evidence | Product Spine retained Run Evidence Report with digest recheck | CLI `run evidence`; `GET /api/v1/runs/{run_id}/evidence`; inspect endpoint |
-| human decisions | `human_decision_service.py` + Human Decision Record contract | transport-neutral core exists; authenticated HTTP mutation remains #740 |
+| human decisions | `human_decision_gateway.py` -> `human_decision_service.py` + Human Decision Record contract | transport-neutral authorized/audited core exists; authenticated HTTP mutation remains #740 |
 | integration handoff/execution | Human Decision Record + protected repository policy; no transport-local owner | deliberately separate from worker/verifier/Control Tower authority |
 | resource/compute admission | `executor_admission.py` for execution binding; zero-project-spend compute router remains the resource planner (ADR-0006) | application/CLI composition; no transport may bypass admission |
 | events | append-only Product Spine event source in `LocalMetadataStore` | CLI `events list`; `GET /api/v1/events`; resumable SSE |

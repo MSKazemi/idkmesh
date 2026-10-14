@@ -109,6 +109,21 @@ and the release notes for that tag.
   for the audit ledger and the ALLOW code is `authorized_by_break_glass`. Offline contract and evaluator
   only: no grant store, approval workflow or revocation feed, and not yet called from dispatch/API paths
   (E3-F). 22 tests incl. adversarial cases and a ledger round trip.
+- Authorized and audited Human Decision gateway for issue #740 (refs #740): the baseline
+  authorization policy gains a distinct `decide` action (human actors only; roles `integrator`,
+  `admin`, `owner`; effective risk `high` or above needs a distinct eligible human approver), mirrored
+  in the authorization-decision and audit-event schemas, and
+  `idkmesh/human_decision_gateway.py` puts it in front of the immutable decision service. For every
+  attempt it validates the request shape, evaluates `decide` for the trusted `ActorContext` against the
+  retained evidence digest (tenant isolation, role, actor type, clearance, revoked/expired identity,
+  distinct approver), persists only on `allow`, and appends exactly one enterprise audit event
+  (`denied`, `not_executed`, `failed` or `succeeded`; an idempotent replay is `not_executed`). It refuses
+  before persisting when the audit writer identity cannot record the attempt. Known gap, documented: the
+  decision store and audit ledger are separate SQLite files, so an audit failure after a persist surfaces
+  `audit_unavailable` and the `succeeded` event is not retroactively written. Not built and still owned by
+  #740: no HTTP route, CLI verb or OpenAPI path calls the gateway, because the live identity/policy
+  enforcement (#670) and network security boundary (#743) it needs do not exist yet and the local
+  session token is not a human principal. Tests: `tests/test_human_decision_gateway.py`.
 - Agent churn at a matched budget, synthetic mechanism evidence only (refs #22): add
   `sim/e050_churn.py` and record `experiments/E050-churn.md`. Each generation a fraction of agents
   (`0, 0.1, 0.25, 0.5, 1.0`) is replaced by fresh ones in E024's five arms at the same proposal budget,
