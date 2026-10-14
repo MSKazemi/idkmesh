@@ -43,6 +43,7 @@ SCHEMAS = REPO_ROOT / "schemas"
 # schema-valid. Asserting that keeps a future schema change from quietly
 # turning a semantic fixture into a structural one.
 VALID_AGAINST = {
+    "examples/api/api-slo-contract.example.json": "idkmesh-api-slo-contract-v0.1.schema.json",
     "examples/api/control-tower-inspection-response.example.json": "idkmesh-control-tower-inspection-response-v0.1.schema.json",
     "examples/api/control-tower-metrics.example.json": "idkmesh-api-operational-metrics-v0.1.schema.json",
     "examples/api/control-tower-project-response.example.json": "idkmesh-control-tower-project-response-v0.1.schema.json",

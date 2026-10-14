@@ -206,6 +206,7 @@ name documents implementation presence, not stability as a public Python API.
 - `idkmesh/agent_presets.py`
 - `idkmesh/api_client.py`
 - `idkmesh/api_observability.py`
+- `idkmesh/api_slo.py`
 - `idkmesh/api_storage_ops.py`
 - `idkmesh/candidate_reference.py`
 - `idkmesh/cli.py`

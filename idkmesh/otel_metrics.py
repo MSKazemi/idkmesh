@@ -1,18 +1,20 @@
-"""Dependency-free OTLP/HTTP JSON mapping for API operational metrics.
+"""Dependency-free OTLP/HTTP JSON and Prometheus text mappings for API metrics.
 
 This module converts the canonical privacy-safe metrics document emitted by
 idkmesh.api_observability into an OpenTelemetry Protocol metrics
-ExportMetricsServiceRequest-compatible JSON object.
+ExportMetricsServiceRequest-compatible JSON object, or into Prometheus text
+exposition format 0.0.4.
 
-The adapter is deliberately transport-free: it performs no network I/O, owns no
-collector credentials, creates no spans, and adds no runtime dependency. A
-deployment may hand the returned object to a reviewed OTLP/HTTP JSON transport.
+The adapters are deliberately transport-free: they perform no network I/O, own
+no collector credentials, create no spans, and add no runtime dependency. A
+deployment may hand the returned object or text to a reviewed transport.
 """
 
 from __future__ import annotations
 
 import json
 import math
+import re
 from typing import Any, Mapping
 
 from idkmesh.api_observability import (
@@ -581,6 +583,147 @@ def render_otlp_metrics_json(
         allow_nan=False,
     ) + "\n"
 
+
+
+def validate_api_metrics_document(document: Mapping[str, Any]) -> dict[str, Any]:
+    """Validate one canonical metrics document and return its parsed fields.
+
+    Raises :class:`OtlpMetricsInputError` for anything inconsistent, including a
+    relaxed privacy flag or authority ceiling. Public so sibling observability
+    modules share one fail-closed validator instead of re-implementing it.
+    """
+    return _validate_canonical_document(_mapping(document, "document"))
+
+
+PROMETHEUS_TEXT_CONTENT_TYPE = "text/plain; version=0.0.4; charset=utf-8"
+_PROMETHEUS_LABEL_VALUE_RE = re.compile(r"^[A-Za-z0-9._:+-]{1,128}$")
+_PROMETHEUS_DEPENDENCY_STATES = ("not_configured", "configured_unprobed")
+
+
+def _prometheus_number(value: float | int) -> str:
+    if isinstance(value, int):
+        return str(value)
+    if not math.isfinite(value):
+        raise OtlpMetricsInputError("Prometheus samples must be finite")
+    return repr(float(value))
+
+
+def _prometheus_bound(bound_ms: float) -> str:
+    return format(bound_ms / 1000.0, ".10g")
+
+
+def _prometheus_label_value(value: str, field: str) -> str:
+    # Fail closed on anything outside a tiny alphabet instead of escaping:
+    # service identity is configuration, never request-derived data.
+    if _PROMETHEUS_LABEL_VALUE_RE.fullmatch(value) is None:
+        raise OtlpMetricsInputError(
+            f"{field} is not safe to use as a Prometheus label value"
+        )
+    return value
+
+
+def render_prometheus_text(document: Mapping[str, Any]) -> str:
+    """Render one canonical snapshot as Prometheus text exposition 0.0.4.
+
+    Deterministic, fixed-cardinality output: the only label names are
+    ``status_class``, ``le``, ``reason``, ``dependency``, ``state``,
+    ``service`` and ``service_version``. Latency is exported in base units
+    (seconds). The not-implemented rate-limit and Human Decision counters are
+    omitted rather than exported as a misleading zero. Serve the result with
+    :data:`PROMETHEUS_TEXT_CONTENT_TYPE`; this module never sends it.
+    """
+    canonical = _validate_canonical_document(_mapping(document, "document"))
+    service = _prometheus_label_value(canonical["service"], "service")
+    version = _prometheus_label_value(
+        canonical["service_version"], "service_version"
+    )
+
+    lines: list[str] = []
+
+    def family(name: str, kind: str, help_text: str) -> None:
+        lines.append(f"# HELP {name} {help_text}")
+        lines.append(f"# TYPE {name} {kind}")
+
+    family(
+        "idkmesh_api_build_info", "gauge",
+        "Constant 1 labelled with the service identity.",
+    )
+    lines.append(
+        f'idkmesh_api_build_info{{service="{service}",'
+        f'service_version="{version}"}} 1'
+    )
+
+    family(
+        "idkmesh_api_requests_total", "counter",
+        "Completed HTTP responses by status class since process start.",
+    )
+    for status_class in _STATUS_CLASSES:
+        lines.append(
+            f'idkmesh_api_requests_total{{status_class="{status_class}"}} '
+            f"{canonical['status_counts'][status_class]}"
+        )
+
+    name = "idkmesh_api_request_duration_seconds"
+    family(name, "histogram", "Completed HTTP response latency in seconds.")
+    cumulative = 0
+    # per_bucket_counts carries one extra overflow slot beyond the fixed
+    # bounds; it is represented by the +Inf bucket below, so strict=False.
+    for bound, count in zip(
+        LATENCY_BUCKETS_MS, canonical["per_bucket_counts"], strict=False
+    ):
+        cumulative += count
+        lines.append(f'{name}_bucket{{le="{_prometheus_bound(bound)}"}} {cumulative}')
+    lines.append(f'{name}_bucket{{le="+Inf"}} {canonical["latency_count"]}')
+    lines.append(f"{name}_sum {_prometheus_number(canonical['latency_sum'] / 1000.0)}")
+    lines.append(f"{name}_count {canonical['latency_count']}")
+
+    gauges = (
+        ("idkmesh_api_in_flight_requests", "in_flight_requests",
+         "HTTP requests currently being served."),
+        ("idkmesh_api_max_concurrent_requests", "max_concurrent_requests",
+         "Configured concurrent request ceiling."),
+        ("idkmesh_api_event_stream_clients", "event_stream_clients",
+         "Open event-stream clients."),
+        ("idkmesh_api_max_event_stream_clients", "max_event_stream_clients",
+         "Configured event-stream client ceiling."),
+    )
+    for metric, field, help_text in gauges:
+        family(metric, "gauge", help_text)
+        lines.append(f"{metric} {canonical['concurrency'][field]}")
+
+    family(
+        "idkmesh_api_admission_rejections_total", "counter",
+        "Requests rejected before service, by implemented reason.",
+    )
+    for reason, field, status in _ADMISSION_REASONS:
+        if status != "implemented":
+            continue
+        lines.append(
+            f'idkmesh_api_admission_rejections_total{{reason="{reason}"}} '
+            f"{canonical['admission'][field]}"
+        )
+
+    family(
+        "idkmesh_api_run_evidence_inspections_total", "counter",
+        "Framed Run Evidence inspections accepted for processing.",
+    )
+    lines.append(
+        "idkmesh_api_run_evidence_inspections_total "
+        f"{canonical['operations']['run_evidence_inspection']}"
+    )
+
+    family(
+        "idkmesh_api_dependency_state", "gauge",
+        "Coarse dependency state (state-set); not a health probe.",
+    )
+    for state in _PROMETHEUS_DEPENDENCY_STATES:
+        value = 1 if canonical["dependency_state"] == state else 0
+        lines.append(
+            'idkmesh_api_dependency_state{dependency="product_spine_store",'
+            f'state="{state}"}} {value}'
+        )
+
+    return "\n".join(lines) + "\n"
 
 
 def evaluate_api_metrics_interval(

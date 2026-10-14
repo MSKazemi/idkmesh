@@ -192,8 +192,66 @@ This adapter preserves the v0.1 invariants:
 This is an OTLP-compatible mapping layer, not a claim that IDKMesh ships an
 OpenTelemetry Collector, SDK instrumentation, OTLP network exporter, or
 distributed tracing system. Issue #744 remains open for Human Decision
-ingestion telemetry after #740 exists and for any separately reviewed transport
-integration.
+ingestion telemetry after #740 exists, per-client rate-limit telemetry after
+#743, and any separately reviewed transport integration (OTLP push or a served
+Prometheus route).
+
+## Prometheus text exposition (library only)
+
+`idkmesh.otel_metrics.render_prometheus_text()` renders the same validated
+canonical document as Prometheus text exposition format 0.0.4 (content type
+`PROMETHEUS_TEXT_CONTENT_TYPE`). It is transport-free like the OTLP adapter:
+there is **no** `/metrics` HTTP route, no scrape authentication story and no
+network I/O; a deployment would have to add and review that route separately.
+
+- The label names are a closed set (`status_class`, `le`, `reason`,
+  `dependency`, `state`, `service`, `service_version`); no path, query,
+  request-ID, identity, run, WorkUnit, prompt or evidence label can exist.
+- Latency is exported in base units (seconds) as a cumulative histogram that
+  ends with `+Inf` equal to the request count.
+- The service identity labels must match `[A-Za-z0-9._:+-]{1,128}`; anything
+  else is rejected rather than escaped, so a hostile string can never inject
+  exposition lines.
+- Rate-limit and Human Decision counters are **omitted** (not exported as a
+  misleading zero) because they remain `not_implemented`.
+- Dependency state is a state-set gauge with the existing coarse vocabulary;
+  `configured_unprobed` is not a health claim.
+- The same fail-closed validation as the OTLP adapter applies: a document that
+  relaxes a privacy flag or the authority ceiling is refused, never partially
+  rendered.
+
+## Machine-readable SLO contract (library only)
+
+The prose targets above are pinned as data by `idkmesh/api_slo.py`
+(`default_slo_contract()`, schema
+`schemas/idkmesh-api-slo-contract-v0.1.schema.json`,
+example `examples/api/api-slo-contract.example.json`,
+which a test pins to the default). The contract is explicitly
+`operational_target_not_measured_result`, closes the set of objective and alert
+ids, carries no labels, endpoints or credentials, and has an all-false
+authority ceiling. `validate_slo_contract()` fails closed with
+`SloContractError`.
+
+Pure evaluators (no clock, no network, no alert delivery, no state):
+
+- `evaluate_slo_interval(interval)` judges one `measured` result of
+  `evaluate_api_metrics_interval()` against the 5xx fraction (`< 1%`), the
+  within-1000 ms share (`>= 95%`) and the overload objective (`0` rejections).
+  A malformed or non-measured interval, or one shorter than the contract
+  window (`300 s`), is `unknown`, never "met". The collector remains
+  responsible for attesting the process epoch and timestamps.
+- `evaluate_overload_alert(intervals)` fires only when the latest N (default 2)
+  consecutive intervals all breached the overload objective; too few or any
+  unknown interval is `unknown`, not "quiet".
+- `evaluate_saturation_conditions(snapshot)` reports the point-in-time
+  concurrency (`>= 80%`) and event-stream (`>= 100%`) conditions. The `for`
+  duration is returned with `duration_evaluated: false`: one snapshot cannot
+  show how long a gauge stayed high, so the condition is necessary, not
+  sufficient, for the documented alert.
+
+These evaluators are not a rolling-window monitor or an alert daemon, and a
+passing result is a statement about one supplied interval only. See
+`tests/test_api_slo.py`.
 
 ## Authority
 

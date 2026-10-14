@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idkmesh.org/schemas/idkmesh-api-slo-contract-v0.1.schema.json",
+  "title": "IDKMesh API SLO Contract v0.1",
+  "description": "Machine-readable operational SLO and saturation-alert targets for the local single-token API profile (issue #744). These are targets, not measured results. The id sets are closed: each id is bound to one indicator computed by idkmesh/api_slo.py, and the contract carries no labels, endpoints, credentials, or authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "kind", "profile", "claim", "window_seconds",
+    "objectives", "saturation_alerts", "authority"
+  ],
+  "properties": {
+    "schema_version": {"const": "0.1"},
+    "kind": {"const": "idkmesh-api-slo-contract"},
+    "profile": {"const": "local_single_token"},
+    "claim": {"const": "operational_target_not_measured_result"},
+    "window_seconds": {"type": "integer", "minimum": 1, "maximum": 86400},
+    "objectives": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "prefixItems": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "comparison", "threshold"],
+          "properties": {
+            "id": {"const": "server_error_fraction"},
+            "comparison": {"const": "less_than"},
+            "threshold": {"type": "number", "exclusiveMinimum": 0, "maximum": 1}
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "comparison", "threshold", "latency_bound_ms"],
+          "properties": {
+            "id": {"const": "latency_within_1000ms_fraction"},
+            "comparison": {"const": "at_least"},
+            "threshold": {"type": "number", "exclusiveMinimum": 0, "maximum": 1},
+            "latency_bound_ms": {"const": 1000}
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "comparison", "threshold", "alert_after_consecutive_intervals"],
+          "properties": {
+            "id": {"const": "overload_rejections"},
+            "comparison": {"const": "at_most"},
+            "threshold": {"type": "integer", "minimum": 0, "maximum": 1000000},
+            "alert_after_consecutive_intervals": {"type": "integer", "minimum": 1, "maximum": 16}
+          }
+        }
+      ]
+    },
+    "saturation_alerts": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "prefixItems": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "comparison", "threshold", "for_seconds"],
+          "properties": {
+            "id": {"const": "api_concurrency_hot"},
+            "comparison": {"const": "at_least"},
+            "threshold": {"type": "number", "exclusiveMinimum": 0, "maximum": 1},
+            "for_seconds": {"type": "integer", "minimum": 0, "maximum": 86400}
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "comparison", "threshold", "for_seconds"],
+          "properties": {
+            "id": {"const": "sse_saturation"},
+            "comparison": {"const": "at_least"},
+            "threshold": {"type": "number", "exclusiveMinimum": 0, "maximum": 1},
+            "for_seconds": {"type": "integer", "minimum": 0, "maximum": 86400}
+          }
+        }
+      ]
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["canonical_state_write", "git_push", "merge", "pages_deploy"],
+      "properties": {
+        "canonical_state_write": {"const": false},
+        "git_push": {"const": false},
+        "merge": {"const": false},
+        "pages_deploy": {"const": false}
+      }
+    }
+  }
+}
