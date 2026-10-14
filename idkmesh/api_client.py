@@ -65,6 +65,9 @@ _RETRYABLE_HTTP_STATUSES = frozenset({429, 502, 503, 504})
 _REQUEST_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
 _DIGEST_RE = re.compile(r"^sha256:[0-9a-f]{64}$")
 _RETRY_AFTER_RE = re.compile(r"^[0-9]{1,6}$")
+# Connector identifier grammar (mirrors idkmesh.connector_profiles); it
+# excludes "/" and ":" so `/connections/{id}:verb` stays reserved.
+_CONNECTION_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
 _STREAM_SEQUENCE_RE = re.compile(r"^[0-9]{1,18}$")
 _STREAM_RETRY_RE = re.compile(r"^[0-9]{1,9}$")
 _STREAM_END_RE = re.compile(
@@ -1226,6 +1229,35 @@ class ControlTowerClient:
             "connections",
             _list_query(limit=limit, cursor=cursor, filters={}),
         )
+
+    def get_connection(self, connection_id: str) -> ApiResult[dict[str, Any]]:
+        """Read one secret-free connection resource (no probe, no authority).
+
+        The id is validated against the connector identifier grammar before
+        any request is made, so a malformed id never reaches the transport.
+        """
+        if (
+            not isinstance(connection_id, str)
+            or _CONNECTION_ID_RE.fullmatch(connection_id) is None
+        ):
+            raise ClientConfigurationError(
+                "connection_id must match the connector identifier grammar"
+            )
+        result = self._expect_kind(
+            self._request(
+                "GET", f"/api/{API_VERSION}/connections/{connection_id}"
+            ),
+            kind="idkmesh-control-tower-connection-response",
+        )
+        resource = result.value.get("connection")
+        if not isinstance(resource, Mapping):
+            raise ProtocolError(
+                "connection response is missing its connection resource"
+            )
+        self._expect_identity(
+            resource.get("id"), connection_id, "connection.id"
+        )
+        return result
 
     def get_project(self, project_id: str) -> ApiResult[dict[str, Any]]:
         """Read one derived project summary (zero-filled run-state counts)."""

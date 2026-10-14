@@ -449,7 +449,13 @@ The API accepts secret references only.
 
 ### Inspect
 
-`GET /api/v1/connections/{connection_id}`
+`GET /api/v1/connections/{connection_id}` is implemented for the local
+read-only service (issue #580, slice C7-F). It returns the same public-safe,
+secret-free resource as one list item, wrapped in
+`idkmesh-control-tower-connection-response`. The id must match the connector
+identifier grammar (no `/` or `:`), so the `:probe`, `:enable` and `:disable`
+verbs below stay reserved. Inspection performs no probe, secret resolution,
+dispatch, or provider call. See the Control Tower Local API specification.
 
 ### Probe
 

@@ -75,6 +75,20 @@ and the release notes for that tag.
   and `schemas/`. Not built, and now stated as such: `record_human_decision` (blocked on
   #740), a typed TypeScript client, and package-index publication. Tests:
   `tests/test_api_client_retry.py`, `tests/test_api_reference_docs.py`.
+- Single-connection read over the Control Tower API (refs #580, slice C7-F): add
+  `GET /api/v1/connections/{connection_id}` and `ControlTowerClient.get_connection()`. It serves the
+  same secret-free `idkmesh-connection-resource` projection as the list endpoint through
+  `ConnectorControlReadService.get_connection()`, wrapped in the new
+  `idkmesh-control-tower-connection-response-v0.1` envelope (schema, example, OpenAPI entry, error
+  catalog rows `connection_not_found` / `invalid_connection_id`, authority-matrix row). Read-only by
+  construction: no probe, no secret resolution, no dispatch or provider call, and reading a connection
+  enables, admits or authorises nothing. The id must match the connector identifier grammar, which
+  excludes `/` and `:` so the reserved `/connections/{id}:probe|enable|disable` verbs cannot be
+  mistaken for ids; malformed ids fail with 400 without being echoed, legacy or id-mismatched rows
+  fail closed with 500 `connection_record_invalid`, the session token is checked before any lookup, and
+  access logs record the route as `/api/v1/connections/{connection_id}`. Not done (see
+  `docs/planning/C7_CONNECTOR_CONTROL_FOLLOW_UPS_2026-10-14.md`): mutating HTTP endpoints, the network auth
+  boundary, registry/driver listing over HTTP, and preview/evidence CLI convergence.
 - Agent churn at a matched budget, synthetic mechanism evidence only (refs #22): add
   `sim/e050_churn.py` and record `experiments/E050-churn.md`. Each generation a fraction of agents
   (`0, 0.1, 0.25, 0.5, 1.0`) is replaced by fresh ones in E024's five arms at the same proposal budget,

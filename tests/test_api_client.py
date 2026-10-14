@@ -303,6 +303,48 @@ class LiveServerTests(ClientServerCase):
                 self.assertNotIn("secret_ref", item)
                 self.assertNotIn("settings", item)
 
+    def test_get_connection_reads_one_secret_free_resource(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            store_path = str(Path(tmp) / "state.sqlite")
+            LocalMetadataStore(store_path).record_connection(
+                "agent.alpha",
+                metadata={
+                    "id": "agent.alpha",
+                    "kind": "agent",
+                    "driver": "fake-agent",
+                    "enabled": True,
+                    "auth_ref_configured": False,
+                    "capability_tiers": ["T1"],
+                    "task_classes": ["coding"],
+                    "tools": ["git"],
+                    "candidate_types": ["artifact_bundle"],
+                    "max_risk": "medium",
+                    "external_processing": False,
+                    "project_spend_usd_max": 0.0,
+                    "max_concurrency": 1,
+                },
+                updated_at="2026-10-08T00:00:00Z",
+            )
+            _server, client = self.start_server(store_path)
+            result = client.get_connection("agent.alpha")
+            connection = result.value["connection"]
+            self.assertEqual(connection["id"], "agent.alpha")
+            self.assertNotIn("secret_ref", connection)
+            self.assertNotIn("settings", connection)
+
+    def test_get_connection_rejects_malformed_ids_before_transport(self):
+        client = ControlTowerClient(
+            "http://127.0.0.1:8770", TOKEN, timeout=1.0
+        )
+        for bad in ("", "a/b", "agent:probe", "../x", "a b", "x" * 129, 7):
+            with self.subTest(connection_id=bad):
+                with mock.patch(
+                    "idkmesh.api_client.http.client.HTTPConnection"
+                ) as factory:
+                    with self.assertRaises(ClientConfigurationError):
+                        client.get_connection(bad)
+                    factory.assert_not_called()
+
     def test_unknown_resources_fail_with_stable_error_codes(self):
         with tempfile.TemporaryDirectory() as tmp:
             store = str(Path(tmp) / "state.sqlite")
@@ -329,6 +371,11 @@ class LiveServerTests(ClientServerCase):
                     "get_project",
                     "project_not_found",
                     lambda: client.get_project("project.missing"),
+                ),
+                (
+                    "get_connection",
+                    "connection_not_found",
+                    lambda: client.get_connection("agent.missing"),
                 ),
             ]
             for name, expected_code, call in cases:
@@ -549,6 +596,14 @@ class FailClosedTransportTests(unittest.TestCase):
                 {
                     "kind": "idkmesh-control-tower-work-unit-response",
                     "work_unit": {"id": "work/other"},
+                },
+            ),
+            (
+                client.get_connection,
+                "agent.example",
+                {
+                    "kind": "idkmesh-control-tower-connection-response",
+                    "connection": {"id": "agent.other"},
                 },
             ),
             (

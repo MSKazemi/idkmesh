@@ -121,6 +121,7 @@ Use a fresh empty `results/` output directory for each `local-loop` run; existin
 | GET | `/api/v1/metrics` | Fixed-cardinality privacy-safe metrics |
 | POST | `/api/v1/run-evidence/inspect` | Strict validation and projection of supplied report (no persistent mutation) |
 | GET | `/api/v1/connections` | Secret-free persisted connector summaries |
+| GET | `/api/v1/connections/{connection_id}` | One secret-free connector summary (no probe, no secret resolution, no authority) |
 | GET | `/api/v1/runs`, `/api/v1/runs/{run_id}` | Local durable Product Spine run views |
 | GET | `/api/v1/runs/{run_id}/attempts`, `/api/v1/runs/{run_id}/evidence` | Attempt view and digest-checked retained report |
 | GET | `/api/v1/work-units`, `/api/v1/work-units/{work_unit_id}` | Derived WorkUnit lists and details |
@@ -144,7 +145,7 @@ result = client.status()
 print(result.value)
 ```
 
-`ControlTowerClient` exposes `status`, `get_openapi` (download of the running OpenAPI definition), `get_metrics` (aggregate operational metrics), `inspect_run_evidence`, `list_connections`, `list_runs`, `get_run`, `get_run_attempts`, `get_run_evidence`, `list_work_units`, `get_work_unit`, `get_project`, and `list_events`, plus `stream_events` (one bounded, strictly parsed read of `GET /api/v1/events/stream`; resuming with `Last-Event-ID` is the caller's job); it does **not** expose a human-decision mutation. Read-list pagination uses opaque cursors and a maximum page size of 200; `iter_runs` / `iter_run_pages` walk run pages lazily under a mandatory page cap. By default every call is exactly one HTTP exchange; an explicit `RetryPolicy` opts idempotent `GET` reads into bounded, deterministic retry of transport failures and server-declared retryable capacity errors (never the `POST` inspection or event streams). Error classes include `ClientConfigurationError`, `TransportError`, `ProtocolError`, `IntegrityError`, and `ApiResponseError` (see [source](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/api_client.py)). No public typed JavaScript client is claimed here.
+`ControlTowerClient` exposes `status`, `get_openapi` (download of the running OpenAPI definition), `get_metrics` (aggregate operational metrics), `inspect_run_evidence`, `list_connections`, `get_connection`, `list_runs`, `get_run`, `get_run_attempts`, `get_run_evidence`, `list_work_units`, `get_work_unit`, `get_project`, and `list_events`, plus `stream_events` (one bounded, strictly parsed read of `GET /api/v1/events/stream`; resuming with `Last-Event-ID` is the caller's job); it does **not** expose a human-decision mutation. Read-list pagination uses opaque cursors and a maximum page size of 200; `iter_runs` / `iter_run_pages` walk run pages lazily under a mandatory page cap. By default every call is exactly one HTTP exchange; an explicit `RetryPolicy` opts idempotent `GET` reads into bounded, deterministic retry of transport failures and server-declared retryable capacity errors (never the `POST` inspection or event streams). Error classes include `ClientConfigurationError`, `TransportError`, `ProtocolError`, `IntegrityError`, and `ApiResponseError` (see [source](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/api_client.py)). No public typed JavaScript client is claimed here.
 
 ## Source-of-truth and future endpoints
 

@@ -131,8 +131,8 @@ IDKMESH_HTTP_ACCESS_LOG=1
 Each opt-in log line is compact JSON containing request ID, method, a **fixed
 route template** (in the legacy `path` field), response status/size, duration,
 service, and event time. Only recognized static endpoints appear verbatim.
-Dynamic run, WorkUnit, and project IDs become `{run_id}`, `{work_unit_id}`,
-and `{project_id}`; unrecognized URLs become `<unmatched>`. Query strings,
+Dynamic run, WorkUnit, project, and connection IDs become `{run_id}`,
+`{work_unit_id}`, `{project_id}`, and `{connection_id}`; unrecognized URLs become `<unmatched>`. Query strings,
 raw route arguments (including encoded arguments), and unrecognized method
 text are not logged. The logging API does not accept request/response bodies,
 authorization/session headers or prompts. Caller-supplied safe `X-Request-ID`
@@ -464,6 +464,64 @@ metadata database; otherwise the endpoint returns
 
 Each item conforms to `schemas/idkmesh-connection-resource-v0.1.schema.json`,
 wrapped by the shared `idkmesh-list-v0.1` envelope.
+
+Supported methods:
+
+```text
+GET, HEAD
+```
+
+### `GET /api/v1/connections/{connection_id}`
+
+Authenticated, read-only inspection of one persisted connection (issue #580,
+slice C7-F). It uses the same `ConnectorControlReadService` projection as the
+list endpoint, so the secret-free resource shape and the fail-closed
+`500 connection_record_invalid` behaviour are identical. It performs no
+probe, secret resolution, dispatch, or provider call and grants no authority;
+inspecting a connection does not enable, admit, or authorise anything.
+
+The id must match the connector identifier grammar
+`[A-Za-z0-9][A-Za-z0-9._-]{0,127}` (the grammar connector profiles are
+validated against). `/` and `:` are outside that grammar, so
+`/connections/{id}:probe`, `:enable` and `:disable` (reserved by the
+Connector Control API contract, section 13) can never be mistaken for ids; a
+malformed id fails with `400 invalid_connection_id` and the error never
+echoes the supplied value. Query parameters are rejected with
+`400 unexpected_query_parameters`. A well-formed id with no persisted row
+returns `404 connection_not_found`; without `--product-spine-store` the
+endpoint returns `503 product_spine_store_not_configured`. As for every
+Product Spine read route, the session-token check precedes any lookup, so an
+unauthenticated caller cannot distinguish a present id from an absent one.
+
+Representative shape (`examples/api/control-tower-connection-response.example.json`):
+
+```json
+{
+  "api_version": "v1",
+  "schema_version": "0.1",
+  "kind": "idkmesh-control-tower-connection-response",
+  "ok": true,
+  "connection": {
+    "id": "alpha-agent",
+    "kind": "agent",
+    "driver": "fake-agent",
+    "enabled": true,
+    "auth_ref_configured": false,
+    "capability_tiers": ["T1", "T2"],
+    "task_classes": ["coding"],
+    "tools": ["git"],
+    "candidate_types": ["artifact_bundle"],
+    "max_risk": "medium",
+    "external_processing": false,
+    "project_spend_usd_max": 0.0,
+    "max_concurrency": 1
+  }
+}
+```
+
+Frozen by `schemas/idkmesh-control-tower-connection-response-v0.1.schema.json`,
+which references `schemas/idkmesh-connection-resource-v0.1.schema.json`. Any
+write method answers `405` with `Allow: GET, HEAD`.
 
 Supported methods:
 
@@ -1331,9 +1389,14 @@ Stable v0.1 codes include:
   stored run references the id);
 - `project_not_found` (`GET /api/v1/projects/{project_id}`, no stored run
   names the project);
+- `connection_not_found` (`GET /api/v1/connections/{connection_id}`, no
+  persisted connection has the id);
+- `invalid_connection_id` (`GET /api/v1/connections/{connection_id}`, 400, the
+  id is outside the connector identifier grammar);
 - `product_spine_store_not_configured` (`GET /api/v1/runs/{run_id}`,
   `GET /api/v1/runs/{run_id}/evidence`, `GET /api/v1/runs`, `GET /api/v1/work-units`,
   `GET /api/v1/work-units/{work_unit_id}`,
+  `GET /api/v1/connections`, `GET /api/v1/connections/{connection_id}`,
   `GET /api/v1/projects/{project_id}`, `GET /api/v1/events` and
   `GET /api/v1/events/stream`, no `--product-spine-store` given to this server
   instance);
