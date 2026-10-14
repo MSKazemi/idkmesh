@@ -276,7 +276,9 @@ def build_parser() -> argparse.ArgumentParser:
             "Examples:\n"
             "  idkmesh init --github --dry-run --idkmesh-ref v0.1.0\n"
             "  idkmesh init --github --dry-run --idkmesh-ref"
-            " 0123456789abcdef0123456789abcdef01234567 --json"
+            " 0123456789abcdef0123456789abcdef01234567 --json\n"
+            "  idkmesh init --github --apply --idkmesh-ref v0.1.0"
+            " --target ../my-repo"
         ),
     )
     init_cmd.add_argument(
@@ -305,6 +307,16 @@ def build_parser() -> argparse.ArgumentParser:
         default="main",
         metavar="BRANCH",
         help="target repository integration branch (default: main)",
+    )
+    init_cmd.add_argument(
+        "--target",
+        default=None,
+        metavar="DIR",
+        help=(
+            "target repository root for --check/--apply (default: current "
+            "directory); must be an existing Git working tree and not a "
+            "symlink; --dry-run never touches it"
+        ),
     )
     init_cmd.add_argument(
         "--json",
@@ -2509,6 +2521,10 @@ def _run_github_init(args: argparse.Namespace) -> int:
     modes = sum(bool(value) for value in (args.dry_run, args.check, args.apply))
     if modes != 1:
         return _fail("choose exactly one of --dry-run, --check, or --apply")
+    if args.target is not None and args.dry_run:
+        return _fail("--target applies only to --check or --apply; --dry-run is pure")
+    if args.target is not None and (not args.target or "\0" in args.target):
+        return _fail("--target must be a non-empty directory path")
 
     from idkmesh.github_bootstrap import (
         BootstrapPlanError,
@@ -2539,7 +2555,8 @@ def _run_github_init(args: argparse.Namespace) -> int:
         try:
             files = rendered_config + rendered_workflows
             action = apply_github_bootstrap if args.apply else plan_github_bootstrap_apply
-            result = action(Path.cwd(), plan, files)
+            root = Path(args.target) if args.target is not None else Path.cwd()
+            result = action(root, plan, files)
         except BootstrapApplyError as exc:
             return _fail(str(exc))
         if args.json_output:
