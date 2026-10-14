@@ -25,6 +25,49 @@ and the release notes for that tag.
   lead holds under carry-over accounting only. Human attention, novelty, information gain and
   churn are listed as not measured. Machine-readable result
   `experiments/results/E049-derived-measurements.json`; fast tests plus a nightly `sim` replay.
+- R1 real-corpus preregistration committed (refs #30, #70): add
+  `docs/research/R1_REAL_CORPUS_PREREGISTRATION.md`, a copy of the preregistration
+  that existed only as issue 70 comments (hypothesis H1, the paired-bootstrap
+  `helps` / `hurts` / `uncertain` rule, the structural-quality-versus-diversity
+  confounder, the 20-work-unit target and the 3 to 5 worker scale-up rule), with
+  comment URLs and timestamps, the points the text leaves ambiguous, and the
+  readiness gate's current blocked state (0 of 20 eligible work units). Linked
+  from the R1 readiness page and the research index. It is a copy, not a new
+  registration, changes no rule, and reports no result; the per-signature
+  marginal-success reporting the comment asks for still has no producer.
+- Research results ledger (refs #2, #13, #22, #30): add
+  `docs/research/RESULTS_LEDGER.md`, one row per record indexed in
+  `experiments/README.md`, each with an evidence class (`synthetic`,
+  `public-observed`, `real-run` or `analytic`), a one-sentence headline that
+  includes negative and falsifying verdicts, and the record's own verdict, all
+  written from the record's own text. It states what it is not: no claim that
+  many small agents beat one strong model, which has no real arm here (E029's
+  0.5B model produced 0 of 60 judgeable candidates). A class-based
+  `tests/test_results_ledger.py` fails when an indexed record has no row or two,
+  a row uses a class or verdict outside the published sets, or a row names an
+  unindexed record. Structure only; it cannot check a headline's faithfulness.
+- Per-metric contract page (refs #86): added
+  `docs/research/METRIC_CONTRACTS_V0_1.md`, one entry for each of the 22 production
+  metrics and mechanisms (the repository-evolution signals, the live governor's
+  `branch_health` and `homeostatic_potential`, the control-energy, replicator and priority
+  composites, and the collaboration observables), each with assumptions, observables,
+  uncertainty, prediction, baseline, failure modes and Goodhart risks, and human/security
+  constraints. The page is read from the code, states where uncertainty is not modelled
+  and that hand-authored uniform priors remain an open item, and is guarded both ways by
+  `tests/test_metric_contracts.py`, which reads the metric keys by AST. The two existing
+  metric pages gain a pointer to it; issue #86 stays open.
+- Test suite CPU (refs #1128): the unit tier had crept over its 90 CPU-second
+  budget on `main` (91.9 measured at near-idle load, 90.1 to 93.8 on the last three
+  merges) and was failing `gate (3.13)`. Reclaim about 6 CPU-seconds without
+  moving any guard out of the PR gate or raising the budget: the two tests that
+  each parsed every file under `tests/` now share one scan per process
+  (`test_nightly_tier_has_something_to_run`,
+  `test_full_suite_jobs_install_requirements`), and the local-loop tutorial and
+  adapter-registration tests run each documented command or orchestration once
+  instead of per assertion. Mutation checks confirm each refactored guard still
+  fails on the drift it exists to catch. Measured warm with `scripts/testkit.py
+  unit --no-cache`: 88.6 CPU-seconds at load 3.6.
+
 - Two-attempt orchestrator adapter registration seam (refs #4, #16): add
   `register_adapter`, `unregister_adapter`, `reset_registered_adapters` and a
   declarative `ADAPTER_CONTRACT`, so a result-only worker adapter defined

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import ast
+import functools
 import unittest
 from pathlib import Path
 
@@ -15,7 +16,16 @@ def modules_carrying_a_tier_marker() -> dict[str, set[str]]:
 
     Read with ``ast`` rather than by substring, so a marker named only in a
     comment or a docstring cannot be mistaken for one that is applied.
+
+    The tree is parsed once per process (about a second of the unit tier's CPU
+    budget) and each caller receives its own copy, so neither test can see the
+    other's edits.
     """
+    return {name: set(markers) for name, markers in _scan_for_tier_markers()}
+
+
+@functools.lru_cache(maxsize=1)
+def _scan_for_tier_markers() -> tuple[tuple[str, frozenset[str]], ...]:
     found: dict[str, set[str]] = {}
     for path in sorted(TESTS.glob("test_*.py")):
         try:
@@ -37,7 +47,7 @@ def modules_carrying_a_tier_marker() -> dict[str, set[str]]:
                     and attribute.value.attr == "mark"
                 ):
                     found.setdefault(path.name, set()).add(attribute.attr)
-    return found
+    return tuple((name, frozenset(markers)) for name, markers in found.items())
 
 
 class NightlyTierHasSomethingToRunTests(unittest.TestCase):
