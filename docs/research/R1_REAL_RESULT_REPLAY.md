@@ -178,6 +178,48 @@ cohort/evidence bindings and checks the held-out task count, exact signature
 budget, independent-test coverage, negative retention, and cost completeness
 without changing this replay's decision rules.
 
+## Per-signature marginal success
+
+The preregistered confounder rule asks for per-signature marginal success next to
+pairwise failure correlation. The replay report carries the correlations but no
+per-signature figure, and the replay is not changed to add one. A separate,
+read-only post-processor produces it from a saved replay report:
+
+```bash
+python -m randomness_lab.r1_signature_marginals results/r1-real-replay.json \
+  --output results/r1-signature-marginals.json
+```
+
+For each structural signature it reports candidates analysed, independently
+verified successes and failures, the success rate, the number of work units
+covered, and a Wilson 95% interval. The pairwise failure correlations and the
+replay configuration are copied unchanged from the report, not recomputed. The
+output records the SHA-256 digest of the exact input bytes, so a summary is bound
+to one report, and uses sorted keys so identical input gives identical output.
+
+- Inconclusive candidates are never counted as successes or failures. Their
+  count, taken from the report's `normalization.excluded`, is published; they
+  carry no signature there, so it is a total and a per-reason breakdown, not a
+  per-signature figure.
+- It fails closed (exit 2, nothing written) on a report whose status is not `ok`
+  (an insufficient-data report has no `candidate_index`), a missing or
+  inconsistent candidate list, duplicate candidate ids, or a `verified_good`
+  value that is not a boolean.
+- A report carrying `evidence_class` containing `synthetic`, or `synthetic: true`,
+  is refused unless `--allow-synthetic-fixture` is passed; the output is then
+  marked `evidence_class: synthetic_fixture`. Replay reports do not emit such a
+  marker today, so a synthetic report must be marked by whoever produces it. An
+  unmarked input is labelled `replay_report_derivative_provenance_unchecked`:
+  the tool cannot tell real from synthetic data.
+- The Wilson interval treats candidates as independent, but they are clustered by
+  work unit and attempt, so it is narrower than the true uncertainty. Marginal
+  success also cannot separate structural quality from structural diversity.
+- It does not import `randomness_lab.r1_replay`, writes only to `--output` (never
+  the input path), and classifies nothing as `helps`, `hurts` or `uncertain`.
+
+It has been run on no real corpus. The readiness gate still reports 0 of 20
+eligible work units.
+
 ## What replay can and cannot establish
 
 Replay is stronger than synthetic probability assumptions because it uses measured outcomes from actual candidate artifacts and actual independent verification records.
