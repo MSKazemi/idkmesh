@@ -4,6 +4,12 @@
 
 **Evidence status:** contract/readiness tooling only; no real R1 outcome
 
+The hypothesis this gate protects, its `helps` / `hurts` / `uncertain` decision
+rule, the primary confounder, the 20-work-unit target and the rule for scaling to
+3 to 5 workers are preregistered in issue comments. A committed copy, with
+provenance and the points the text leaves ambiguous, is
+[R1 real-corpus preregistration](R1_REAL_CORPUS_PREREGISTRATION.md).
+
 ## Why this gate exists
 
 `randomness_lab.r1_replay` is intentionally frozen before the first real

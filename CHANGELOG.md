@@ -12,6 +12,16 @@ and the release notes for that tag.
 
 ## [Unreleased]
 
+- R1 real-corpus preregistration committed (refs #30, #70): add
+  `docs/research/R1_REAL_CORPUS_PREREGISTRATION.md`, a copy of the preregistration
+  that existed only as issue 70 comments (hypothesis H1, the paired-bootstrap
+  `helps` / `hurts` / `uncertain` rule, the structural-quality-versus-diversity
+  confounder, the 20-work-unit target and the 3 to 5 worker scale-up rule), with
+  comment URLs and timestamps, the points the text leaves ambiguous, and the
+  readiness gate's current blocked state (0 of 20 eligible work units). Linked
+  from the R1 readiness page and the research index. It is a copy, not a new
+  registration, changes no rule, and reports no result; the per-signature
+  marginal-success reporting the comment asks for still has no producer.
 - Research results ledger (refs #2, #13, #22, #30): add
   `docs/research/RESULTS_LEDGER.md`, one row per record indexed in
   `experiments/README.md`, each with an evidence class (`synthetic`,
