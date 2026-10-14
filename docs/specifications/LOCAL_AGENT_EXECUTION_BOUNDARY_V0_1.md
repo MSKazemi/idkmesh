@@ -37,6 +37,13 @@ CandidateReference -> ResultManifest -> independent verification
 The raw `run_bounded_process()` helper remains an execution-neutral primitive.
 It is not a valid implementation of `LocalSandboxExecutor`.
 
+**Operator note:** call `BubblewrapSandbox.build_argv` only for a
+deliberately created disposable workspace represented by a direct directory
+path. Symlink aliases (including ancestors) are refused even when they point
+to the intended directory. An executable supplied to the constructor is
+maintainer-controlled configuration, not an authorization token; never derive
+it from WorkUnit text.
+
 **Hardening of the provisional Linux bubblewrap adapter:** policy admission
 refuses non-Linux hosts even with a caller-supplied executable. Workspace paths
 must not traverse symlink components, so a workspace alias cannot silently
