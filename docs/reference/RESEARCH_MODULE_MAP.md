@@ -71,7 +71,7 @@ Transport-free A2A/MCP adapter boundary. Main [interop guide](https://github.com
 | [`identity.py`](https://github.com/MSKazemi/idkmesh/blob/main/interop/identity.py) | Optional namespaced identity evidence on ResultManifest | Identity never authorizes verification or merge |
 | [`sdk_conformance.py`](https://github.com/MSKazemi/idkmesh/blob/main/interop/sdk_conformance.py) | Optional round trips through official pinned protocol SDK types | Unavailable SDKs skip; a skip is not conformance |
 
-## `sim/` (42 source files)
+## `sim/` (45 source files)
 
 Verifier-error models, coordination, search, and congestion experiments. Main [simulation guide](https://github.com/MSKazemi/idkmesh/blob/main/sim/README.md) and [published experiment records](https://github.com/MSKazemi/idkmesh/blob/main/experiments/README.md). E016/E017 use fixed executable/oracle evidence in addition to synthetic studies.
 
@@ -121,6 +121,7 @@ Verifier-error models, coordination, search, and congestion experiments. Main [s
 | [`run_emergence_sweep.py`](https://github.com/MSKazemi/idkmesh/blob/main/sim/run_emergence_sweep.py) | Multiseed vague-goal landscape outcomes | Aggregate synthetic seeds and assumptions |
 | [`run_verifier_correlation_sweep.py`](https://github.com/MSKazemi/idkmesh/blob/main/sim/run_verifier_correlation_sweep.py) | Sensitivity of emergence outcomes to verifier correlation | Correlation modeled, not measured |
 | [`verification_aggregation_sim.py`](https://github.com/MSKazemi/idkmesh/blob/main/sim/verification_aggregation_sim.py) | Independence-group-aware versus naive vote aggregation | Synthetic correlated-panel counterfactual |
+| [`x8_budget_split.py`](https://github.com/MSKazemi/idkmesh/blob/main/sim/x8_budget_split.py) | Predict the best split of a fixed budget between worker attempts and verifier reads from pilot-measured worker and verifier dependence (X8, A6), scored on held-out simulated tasks against three fixed splits and two controls | Synthetic ground truth with invented costs; predictor and truth share the pipeline formula; real-data test blocked on X6 |
 
 ## `randomness_lab/` (23 source files)
 

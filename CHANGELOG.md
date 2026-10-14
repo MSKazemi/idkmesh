@@ -138,6 +138,17 @@ and the release notes for that tag.
   `ActorContext` adapter, TLS, cross-process revocation or `decisions:write`/`integration:*` action
   exists, so #743 stays open. Regression tests in `tests/test_network_api_profile.py`.
 
+- Budget-split predictor for H4, synthetic evidence only (refs #981): add `sim/x8_budget_split.py` and
+  record `experiments/X8-budget-split-predictor.md`. A deterministic stdlib predictor (A6) fits worker and
+  verifier difficulty and a cross-dependence term from a pilot of `TaskObservation` records and chooses the
+  `(attempts, reads per attempt)` split with the highest predicted verified value; it is scored on held-out
+  simulated tasks against all-workers, 50/50 and all-verifiers, an oracle, a random allocation and a
+  deliberately broken predictor, under a preregistered win/tie/loss rule. Over 32 scenarios it won in 16
+  (every cheap-read scenario), tied in 14 and lost marginally in 2 (0.001 of verified value), so the
+  issue's falsifier fires in half the grid; the cross term changed nothing measurable, the surface is
+  biased low by about 0.007, and a pilot one fifth the size roughly doubles the error. The real-data test
+  stays blocked on X6/X7; blind-spot routing (A7) is not built. Machine-readable result
+  `experiments/results/X8-budget-split.json`; tests in `tests/test_x8_budget_split.py`.
 - Agent churn at a matched budget, synthetic mechanism evidence only (refs #22): add
   `sim/e050_churn.py` and record `experiments/E050-churn.md`. Each generation a fraction of agents
   (`0, 0.1, 0.25, 0.5, 1.0`) is replaced by fresh ones in E024's five arms at the same proposal budget,
