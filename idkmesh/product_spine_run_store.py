@@ -181,7 +181,9 @@ def _decode_cursor(cursor: str, kind: str = _CURSOR_KIND) -> str:
             or _encode_cursor(payload["after"], kind) != cursor
         ):
             raise ValueError("noncanonical cursor")
-    except (UnicodeError, ValueError, TypeError, OverflowError) as exc:
+    except (UnicodeError, ValueError, TypeError, OverflowError, RecursionError) as exc:
+        # RecursionError: deeply nested JSON inside the 4096-char bound overflows
+        # the parser on interpreters with a 1000-frame limit (3.11).
         raise ProductSpineRunStoreError(
             "invalid_cursor", "cursor is not a value this service issued"
         ) from exc

@@ -295,6 +295,18 @@ class ProductSpineRunStoreTests(unittest.TestCase):
                     self.service.list(cursor=cursor)
                 self.assertEqual(ctx.exception.code, "invalid_cursor")
 
+    def test_list_rejects_cursor_whose_json_overflows_the_parser(self):
+        import base64
+        from unittest import mock
+
+        cursor = base64.urlsafe_b64encode(b"[" * 1500 + b"]" * 1500).decode("ascii")
+        # Deep nesting raises RecursionError only on interpreters with a low
+        # recursion ceiling (3.11), so force it to make the test version-proof.
+        with mock.patch("json.loads", side_effect=RecursionError("deep")):
+            with self.assertRaises(ProductSpineRunStoreError) as ctx:
+                self.service.list(cursor=cursor)
+        self.assertEqual(ctx.exception.code, "invalid_cursor")
+
     def test_list_of_an_empty_store_returns_no_runs_and_no_cursor(self):
         runs, cursor = self.service.list()
         self.assertEqual(runs, [])
