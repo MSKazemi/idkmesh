@@ -34,6 +34,7 @@ from dataclasses import dataclass
 import hashlib
 import hmac
 import ipaddress
+import json
 import re
 import secrets
 import threading
@@ -234,7 +235,7 @@ def parse_network_profile(raw: Any) -> NetworkApiProfile:
 
     tls = _exact_object(root["tls"], "tls", frozenset({"mode"}), frozenset({"trusted_proxies"}))
     tls_mode = tls["mode"]
-    if tls_mode not in TLS_MODES:
+    if not isinstance(tls_mode, str) or tls_mode not in TLS_MODES:
         # Native in-process TLS is not implemented; it is refused, not assumed.
         raise _fail("unsupported_tls_mode", f"tls.mode must be one of {sorted(TLS_MODES)}")
     proxies: tuple[Any, ...] = ()
@@ -258,7 +259,7 @@ def parse_network_profile(raw: Any) -> NetworkApiProfile:
                 "session_token_not_authentication",
                 "the local session token is not an identity and cannot authenticate a non-loopback service",
             )
-    elif adapter not in AUTH_ADAPTERS:
+    elif not isinstance(adapter, str) or adapter not in AUTH_ADAPTERS:
         raise _fail("unknown_auth_adapter", f"authentication.adapter must be one of {sorted(AUTH_ADAPTERS)}")
     issuer = auth["issuer"]
     if not isinstance(issuer, str) or _IDENT_RE.fullmatch(issuer) is None:
@@ -332,7 +333,7 @@ def _parse_proxies(value: Any) -> tuple[Any, ...]:
         try:
             net = ipaddress.ip_network(entry, strict=True)
         except ValueError as exc:
-            raise _fail("invalid_proxy", f"trusted proxy {entry!r} is not a CIDR or IP") from exc
+            raise _fail("invalid_proxy", "a trusted proxy entry is not a CIDR or IP") from exc
         if net.prefixlen == 0:
             raise _fail("proxy_too_broad", "a trusted proxy range must not cover the whole address space")
         networks.append(net)
@@ -343,7 +344,7 @@ def _parse_hosts(value: Any) -> frozenset[str]:
     entries = _str_list(value, "request_policy.allowed_hosts", MAX_ALLOWED_HOSTS)
     for entry in entries:
         if entry != entry.lower() or _HOST_RE.fullmatch(entry) is None:
-            raise _fail("invalid_host", f"allowed host {entry!r} must be a lowercase DNS name with optional port")
+            raise _fail("invalid_host", "an allowed host must be a lowercase DNS name with optional port")
         _check_port(entry.partition(":")[2])
     return frozenset(entries)
 
@@ -358,7 +359,7 @@ def _parse_origins(value: Any) -> frozenset[str]:
     for entry in entries:
         match = _ORIGIN_RE.fullmatch(entry)
         if match is None:
-            raise _fail("invalid_origin", f"allowed origin {entry!r} must be an exact https origin (no wildcard, null, path)")
+            raise _fail("invalid_origin", "an allowed origin must be an exact https origin (no wildcard, null, path)")
         _check_port(match.group("port") or "")
     return frozenset(entries)
 
@@ -382,6 +383,118 @@ def _parse_rate_limit(value: Any) -> RateLimitConfig:
         anonymous_burst=_int_in(obj["anonymous_burst"], "rate_limit.anonymous_burst", 1, 100),
         max_tracked_keys=_int_in(obj["max_tracked_keys"], "rate_limit.max_tracked_keys", 16, MAX_RATE_KEYS_CEILING),
     )
+
+
+# --------------------------------------------------------------------------- operator check report
+
+CHECK_REPORT_KIND = "idkmesh-network-api-profile-check"
+CHECK_REPORT_VERSION = "0.1"
+
+# What ``parse_network_profile`` verifies (id, description). Printed by
+# ``idkmesh api-network-profile check --explain`` so a green result is read as
+# "the declaration is well formed", never as "the deployment is safe".
+CHECKS_PERFORMED: tuple[tuple[str, str], ...] = (
+    ("structure", "strict JSON object: kind, schema_version, no missing or unknown fields, correct types"),
+    ("bind_exposure", "bind host classified loopback or non-loopback (names are never resolved, so a name is non-loopback)"),
+    ("tls_termination", "a non-loopback bind declares TLS terminated by a trusted proxy; in-process TLS is refused; proxy ranges must not cover the whole address space"),
+    ("auth_adapter", "a non-loopback bind names oidc, mtls, github_app or service_token; the local session token is refused by name"),
+    ("credential_transport", "credentials travel only in the Authorization header"),
+    ("secret_references", "the token registry is a secret reference (env:, github_actions:, vault:, external_secret_manager:), never a literal value"),
+    ("host_allowlist", "a non-loopback bind has an explicit lowercase Host allowlist without wildcards"),
+    ("cors_origins", "each allowed origin is an exact https origin: no wildcard, null, http or path"),
+    ("bounded_limits", "body size, token lifetime and rate-limit values are present and within fixed ceilings"),
+    ("denial_audit", "audit.record_denials is true"),
+    ("break_glass", "break-glass cannot be enabled (it is not implemented)"),
+)
+
+# What a green result does NOT establish. Keep in step with the specification's
+# "Not implemented" section.
+CHECKS_NOT_PERFORMED: tuple[tuple[str, str], ...] = (
+    ("listener_wiring", "no served listener calls the request guard, token verifier or rate limiter; nothing here starts or inspects a server"),
+    ("tls_verification", "no certificate, proxy, DNS name or connection is contacted or verified; the profile only records the assumption"),
+    ("identity_provider", "no identity provider or credential-to-ActorContext adapter exists or is checked"),
+    ("secret_resolution", "secret references are checked for shape only; whether the secret exists or is strong is not checked"),
+    ("per_process_state", "revocation and rate-limit state are per-process; sharing them across replicas is not implemented or checked"),
+    ("authority_matrix", "the human decision to adopt the proposed endpoint authority matrix is not made or checked"),
+    ("first_violation_only", "validation stops at the first violation; fix it and run the check again to see the next one"),
+)
+
+
+def _safe_reason_message(error: NetworkProfileError) -> str:
+    """The library message, with operator-supplied names removed.
+
+    Every other message is a fixed string. Unknown field names come from the
+    file under test, so they are not echoed back.
+    """
+    if error.code == "unknown_field":
+        return error.message.partition(": ")[0]
+    return error.message
+
+
+def check_network_profile(raw: Any, *, explain: bool = False) -> dict[str, Any]:
+    """Validate a declared profile and describe the outcome; never raises.
+
+    Pure and offline: no listener is started, no file, network or clock is
+    touched, and no value from ``raw`` is echoed except a validated
+    ``profile_id`` and the derived exposure summary. ``deployment_approval`` is
+    always ``False``: a valid profile is declared input, not a deployment.
+    """
+    reason: dict[str, str] | None = None
+    profile: dict[str, Any] | None = None
+    try:
+        parsed = parse_network_profile(raw)
+    except NetworkProfileError as exc:
+        reason = {"code": exc.code, "message": _safe_reason_message(exc)}
+    except Exception:  # noqa: BLE001 - fail closed on any shape the parser did not anticipate
+        reason = {"code": "unexpected_profile_shape", "message": "the profile could not be validated"}
+    else:
+        profile = {
+            "allowed_host_count": len(parsed.allowed_hosts),
+            "allowed_origin_count": len(parsed.allowed_origins),
+            "auth_adapter": parsed.auth_adapter,
+            "bind_port": parsed.bind_port,
+            "exposure": parsed.exposure,
+            "profile_id": parsed.profile_id,
+            "tls_mode": parsed.tls_mode,
+            "trusted_proxy_count": len(parsed.trusted_proxies),
+        }
+    report: dict[str, Any] = {
+        "deployment_approval": False,
+        "kind": CHECK_REPORT_KIND,
+        "profile": profile,
+        "reason": reason,
+        "schema_version": CHECK_REPORT_VERSION,
+        "status": "valid" if reason is None else "refused",
+    }
+    if explain:
+        report["checks_not_performed"] = [{"id": i, "description": d} for i, d in CHECKS_NOT_PERFORMED]
+        report["checks_performed"] = [{"id": i, "description": d} for i, d in CHECKS_PERFORMED]
+    return report
+
+
+def render_check_report_json(report: Mapping[str, Any]) -> str:
+    return json.dumps(report, sort_keys=True, separators=(",", ":")) + "\n"
+
+
+def render_check_report_text(report: Mapping[str, Any]) -> str:
+    lines = [f"network API profile: {str(report['status']).upper()}"]
+    reason = report["reason"]
+    if reason is not None:
+        lines.append(f"reason: {reason['code']}: {reason['message']}")
+    profile = report["profile"]
+    if profile is not None:
+        for key in sorted(profile):
+            lines.append(f"{key}: {profile[key]}")
+    lines.append(
+        "a valid result means the declaration is well formed; it is not a deployment approval "
+        "(run with --explain for the checks that are not performed)"
+    )
+    if "checks_performed" in report:
+        lines.append("checks performed:")
+        lines.extend(f"  - {c['id']}: {c['description']}" for c in report["checks_performed"])
+        lines.append("checks NOT performed:")
+        lines.extend(f"  - {c['id']}: {c['description']}" for c in report["checks_not_performed"])
+    return "\n".join(lines) + "\n"
 
 
 # --------------------------------------------------------------------------- request guard

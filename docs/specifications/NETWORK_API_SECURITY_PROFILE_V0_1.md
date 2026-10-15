@@ -46,6 +46,29 @@ fail-closed and raises `NetworkProfileError` with a stable `code`.
 A valid profile is declared input. It is not evidence that a proxy, certificate or
 identity provider exists.
 
+### Operator preflight: `idkmesh api-network-profile check`
+
+```bash
+idkmesh api-network-profile check --profile examples/enterprise/network-api-profile.example.json --explain
+idkmesh api-network-profile check --profile profile.json --json
+```
+
+The command runs `parse_network_profile` over one named file before anyone exposes
+the API. It is read-only and offline: it starts no listener, contacts no proxy,
+certificate, DNS name or identity provider, resolves no secret reference and writes
+nothing. Exit **0** the profile is valid; **1** it is refused, with the library's
+stable reason code (for example `tls_required`, `session_token_not_authentication`,
+`invalid_origin`, `literal_secret`, `invalid_value`, `break_glass_unsupported`);
+**2** the file is unreadable or not strict JSON, or a flag is invalid (stdout stays
+empty). Only the first violation is reported. The report never echoes a value from the
+file (reason messages are fixed text; unknown field names and duplicate keys are not
+repeated), and JSON output has sorted keys. `deployment_approval` is always `false`.
+
+`--explain` adds `checks_performed` and `checks_not_performed`. A green result means
+the declaration is well formed; it does not mean a listener enforces it, TLS is
+verified, an identity provider exists, a secret reference resolves, or revocation and
+rate-limit state are shared across processes (see [Not implemented](#not-implemented)).
+
 ## Per-request checks
 
 `NetworkRequestGuard` (stateless, built from one validated profile):
