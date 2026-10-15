@@ -30,17 +30,14 @@ import sim.e051_marginal_selector_sweep as e051
 from idkmesh import gate_audit, marginal_evidence
 from idkmesh import marginal_evidence_benchmark as meb
 
-# The three costliest tests (about 5.5 of this file's 8.8 s) sit on the `slow`
-# tier so the unit tier's tight CPU budget keeps its margin; the other tests
-# here still run on every PR. Bare-interpreter jobs have no pytest and run all.
 if importlib.util.find_spec("pytest") is not None:
     import pytest
 
-    slow = pytest.mark.slow
+    # Research-artifact test: runs in the emergence-sim workflow and nightly, not on
+    # the per-PR unit tier (docs/TESTING.md: experiment tests carry `sim`).
+    pytestmark = pytest.mark.sim
 else:  # pragma: no cover - bare-interpreter jobs take this path
-
-    def slow(func):
-        return func
+    pass
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -185,7 +182,6 @@ class MemoizationTests(unittest.TestCase):
                 raise RuntimeError("boom")
         self.assertIs(gate_audit.majority_error_independent, original)
 
-    @slow
     def test_cell_selections_do_not_depend_on_the_memo(self):
         kwargs = dict(
             panel_size=3, shared_weight=0.2, pool="redundant_only", n_design=20, replicate=0, seed=2
@@ -197,7 +193,6 @@ class MemoizationTests(unittest.TestCase):
 
 
 class SelectionTests(unittest.TestCase):
-    @slow
     def test_design_only_shortcut_equals_full_benchmark_selection(self):
         kwargs = dict(
             panel_size=4, shared_weight=0.7, pool="mixed", n_design=40, replicate=3, seed=9
@@ -299,7 +294,6 @@ class SweepTests(unittest.TestCase):
         self.assertTrue(any("no significance claim" in s for s in report["limitations"]))
         json.dumps(report, allow_nan=False)  # strict JSON: no NaN / Infinity
 
-    @slow
     def test_report_is_independent_of_worker_count(self):
         serial = e051.sweep(workers=1, **self.KW)
         parallel = e051.sweep(workers=2, **self.KW)

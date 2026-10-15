@@ -380,6 +380,12 @@ and the release notes for that tag.
   attempt, retry-scheduler qualification, dispatch or certification claim.
 
 ### Added
+- Unit-tier CPU headroom (refs #693, #981, #976): the three research-artifact test files from the
+  E051, X8 and X4 slices (`tests/test_e051_marginal_selector_sweep.py`, `tests/test_x8_budget_split.py`,
+  `tests/test_x4_forecast_interval_calibration.py`, 80 tests) now carry the `sim` marker like the other
+  experiment tests, so they leave the per-PR unit tier (about 7.1 CPU-s of a 90 CPU-s budget measured at
+  100.5 CPU-s on an idle machine) and run in the emergence-sim workflow and nightly. The workflow's path
+  filters, its pytest list and the `sim/README.md` list now include them. No assertion changed.
 
 - [GitHub Ledger Retention and Reference Policy v0.1](docs/specifications/GITHUB_LEDGER_RETENTION_V0_1.md)
   and `idkmesh/github_ledger_retention.py` (issue #597, slice C9-H): a pure advisory

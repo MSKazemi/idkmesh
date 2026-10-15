@@ -781,6 +781,8 @@ python -m pytest -q \
   tests/test_e050_committed_artifact.py
   tests/test_e051_marginal_selector_sweep.py
   tests/test_e051_committed_artifact.py
+  tests/test_x8_budget_split.py
+  tests/test_x4_forecast_interval_calibration.py
 ```
 
 This is the same list `.github/workflows/emergence-sim.yml` runs; keep the two in step.

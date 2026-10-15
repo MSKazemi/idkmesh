@@ -7,6 +7,7 @@ to check the closed form independently.
 
 from __future__ import annotations
 
+import importlib.util
 import json
 import math
 import random
@@ -14,6 +15,15 @@ import unittest
 from pathlib import Path
 
 import sim.x8_budget_split as x8
+
+if importlib.util.find_spec("pytest") is not None:
+    import pytest
+
+    # Research-artifact test: runs in the emergence-sim workflow and nightly, not on
+    # the per-PR unit tier (docs/TESTING.md: experiment tests carry `sim`).
+    pytestmark = pytest.mark.sim
+else:  # pragma: no cover - bare-interpreter jobs take this path
+    pass
 
 ROOT = Path(__file__).resolve().parents[1]
 ARTIFACT = ROOT / "experiments" / "results" / "X8-budget-split.json"
