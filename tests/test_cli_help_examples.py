@@ -34,6 +34,8 @@ EXAMPLE_COMMANDS = (
     ("pages-fallback",),
     ("release-provenance",),
     ("github-authority-audit",),
+    ("egress-policy", "check"),
+    ("secret-reference", "check"),
     ("connections", "validate"),
     ("connections", "list"),
     ("connections", "import"),
