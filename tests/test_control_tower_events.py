@@ -11,6 +11,7 @@ from __future__ import annotations
 import http.client
 import json
 from pathlib import Path
+import shutil
 import socket
 import struct
 import tempfile
@@ -234,15 +235,38 @@ class SSEClient:
 class _EventCase(unittest.TestCase):
     """A fresh store, five seeded events, and helpers to start servers."""
 
+    _template_dir: tempfile.TemporaryDirectory | None = None
+    _template_path: str | None = None
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        # Build the five-event store once per class. Every test still gets its
+        # own private byte-for-byte copy of it (see setUp), so no test can see
+        # another's appended events; only the repeated schema migration and
+        # seeding are hoisted.
+        super().setUpClass()
+        cls._template_dir = tempfile.TemporaryDirectory()
+        cls.addClassCleanup(cls._template_dir.cleanup)
+        cls._template_path = str(
+            Path(cls._template_dir.name) / "product-spine.sqlite3"
+        )
+        service = ProductSpineRunStore(LocalMetadataStore(cls._template_path))
+        cls._seed_into(service)
+
     def setUp(self) -> None:
         self._tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self._tmp.cleanup)
         self.store_path = str(Path(self._tmp.name) / "product-spine.sqlite3")
+        # The store is a single self-contained SQLite file (rollback journal,
+        # every connection closed after each operation), so a copy is a fresh,
+        # independent store holding exactly the seeded events.
+        shutil.copyfile(self._template_path, self.store_path)
         self.service = ProductSpineRunStore(LocalMetadataStore(self.store_path))
         self._live = 0
-        self.seed()
+        self.assertEqual(self.service.latest_event_sequence(), 5)
 
-    def seed(self) -> None:
+    @staticmethod
+    def _seed_into(service) -> None:
         """Five events: seq 1-4 run.created, seq 5 run.cancelled (run/e-2)."""
         for second, (run_id, project, work_unit) in enumerate(
             [
@@ -253,13 +277,13 @@ class _EventCase(unittest.TestCase):
             ],
             start=1,
         ):
-            self.service.create(
+            service.create(
                 _run(run_id=run_id, project_id=project, work_unit_id=work_unit),
                 idempotency_key=f"seed-{run_id}",
                 created_at=f"2026-10-01T00:00:{second:02d}Z",
             )
-        self.service.cancel("run/e-2", updated_at="2026-10-01T00:30:00Z")
-        self.assertEqual(self.service.latest_event_sequence(), 5)
+        service.cancel("run/e-2", updated_at="2026-10-01T00:30:00Z")
+        assert service.latest_event_sequence() == 5
 
     def append_run(self, run_id: str | None = None, **overrides) -> int:
         """Create one more run (one more event); returns the stream head."""
