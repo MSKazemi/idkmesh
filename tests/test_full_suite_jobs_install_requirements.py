@@ -185,7 +185,13 @@ def _required_distributions():
 def _scan_required_distributions():
     required = set()
     for path in sorted((ROOT / "tests").rglob("*.py")):
-        tree = ast.parse(path.read_text(encoding="utf-8"), str(path))
+        source = path.read_text(encoding="utf-8")
+        # A ``find_spec(...)`` call needs the text ``find_spec`` in the file, so
+        # the ~85% of test files that never mention it are not parsed at all.
+        # Every file that does is parsed and walked exactly as before.
+        if "find_spec" not in source:
+            continue
+        tree = ast.parse(source, str(path))
         for node in ast.walk(tree):
             if not isinstance(node, ast.Call):
                 continue
