@@ -1874,6 +1874,91 @@ def build_parser() -> argparse.ArgumentParser:
     )
     _storage_json(srs)
 
+    slo_cmd = sub.add_parser(
+        "api-slo",
+        help="check a recorded API metrics interval against the SLO contract",
+        description=(
+            "Offline, read-only operator check over idkmesh/api_slo.py "
+            "(issue #744; docs/specifications/API_OBSERVABILITY_V0_1.md). "
+            "'check' judges one recorded series of GET /api/v1/metrics "
+            "snapshots; 'contract' prints or validates the SLO contract. "
+            "Nothing is fetched, written, sent or scheduled, and no result "
+            "grants execution, acceptance, repository-write or merge "
+            "authority. Exit codes for 'check': 0 every objective met; 1 at "
+            "least one objective breached; 2 unreadable or invalid input or "
+            "flags; 3 unknown (a restarted, regressed, too-short or malformed "
+            "interval, or an unevaluable duration): unknown is never 0. A "
+            "breach outranks unknown. 'contract' exits 0 or 2."
+        ),
+    )
+    slo_sub = slo_cmd.add_subparsers(dest="api_slo_command", required=True)
+
+    slo_check = slo_sub.add_parser(
+        "check",
+        help="judge a recorded metrics interval against the SLO contract",
+        description=(
+            "Read a recording (kind idkmesh-api-metrics-recording, "
+            "schema_version 0.1, 2-1024 samples of process_identity, "
+            "observed_unix_nano and a metrics document) and report the "
+            "first-to-last interval against the objectives, the overload "
+            "alert over consecutive pairs and the saturation conditions of "
+            "the last snapshot. Service labels and process identities are "
+            "never echoed. The collector must attest the process identity "
+            "and times; this verb cannot."
+        ),
+        formatter_class=_ExamplesHelpFormatter,
+        epilog=(
+            "Examples:\n"
+            "  idkmesh api-slo check --metrics-interval recording.json\n"
+            "  idkmesh api-slo check --metrics-interval recording.json"
+            " --contract slo.json --json"
+        ),
+    )
+    slo_check.add_argument(
+        "--metrics-interval",
+        required=True,
+        metavar="PATH",
+        help="recording JSON file ('-' reads standard input)",
+    )
+    slo_check.add_argument(
+        "--contract",
+        metavar="PATH",
+        help="SLO contract JSON file (default: the built-in local-profile contract)",
+    )
+    slo_check.add_argument(
+        "--json",
+        action="store_true",
+        dest="json_output",
+        help="emit deterministic machine-readable JSON",
+    )
+
+    slo_contract = slo_sub.add_parser(
+        "contract",
+        help="print the default SLO contract, or validate a supplied one",
+        description=(
+            "Without --contract, print the built-in local-profile SLO "
+            "contract. With --contract, validate that file fail-closed and "
+            "print its normalized form. Exit 0 valid, 2 invalid."
+        ),
+        formatter_class=_ExamplesHelpFormatter,
+        epilog=(
+            "Examples:\n"
+            "  idkmesh api-slo contract\n"
+            "  idkmesh api-slo contract --contract slo.json --json"
+        ),
+    )
+    slo_contract.add_argument(
+        "--contract",
+        metavar="PATH",
+        help="SLO contract JSON file to validate",
+    )
+    slo_contract.add_argument(
+        "--json",
+        action="store_true",
+        dest="json_output",
+        help="emit deterministic machine-readable JSON",
+    )
+
     gui = sub.add_parser(
         "gate-audit-ui",
         help="open the local browser interface for gate-audit",
@@ -3942,6 +4027,133 @@ def _run_api_network_profile(args: argparse.Namespace) -> int:
     return 0 if report["status"] == "valid" else 1
 
 
+_SLO_MAX_INPUT_BYTES = 8 * 1024 * 1024
+
+
+class _SloInputError(Exception):
+    """Unreadable or invalid operator input; exit code 2."""
+
+
+def _slo_reject_constant(_name: str) -> object:
+    raise ValueError("non-finite JSON constant")
+
+
+def _slo_read_json(path_value: str, what: str, *, allow_stdin: bool = False) -> object:
+    """Read one bounded JSON document; every failure is a fixed-vocabulary message.
+
+    Paths come from argv, so they are echoed only through ``ascii()``; nothing
+    from the file's content is ever reflected.
+    """
+    label = ascii(path_value)
+    text: str
+    if allow_stdin and path_value == "-":
+        text = sys.stdin.read(_SLO_MAX_INPUT_BYTES + 1)
+        if len(text) > _SLO_MAX_INPUT_BYTES:
+            raise _SloInputError(f"{what} exceeds the {_SLO_MAX_INPUT_BYTES}-byte limit")
+    else:
+        if not path_value or "\x00" in path_value:
+            raise _SloInputError(f"{what} is not a usable path")
+        path = Path(path_value)
+        try:
+            if not stat.S_ISREG(path.stat().st_mode):
+                raise _SloInputError(f"{what} is not a regular file: {label}")
+            with path.open("rb") as handle:
+                raw = handle.read(_SLO_MAX_INPUT_BYTES + 1)
+        except FileNotFoundError:
+            raise _SloInputError(f"{what} not found: {label}") from None
+        except OSError as exc:
+            raise _SloInputError(
+                f"cannot read {what} {label}: {_reason(exc)}") from None
+        if len(raw) > _SLO_MAX_INPUT_BYTES:
+            raise _SloInputError(f"{what} exceeds the {_SLO_MAX_INPUT_BYTES}-byte limit")
+        try:
+            text = raw.decode("utf-8-sig")
+        except UnicodeDecodeError:
+            raise _SloInputError(f"{what} is not UTF-8 text") from None
+    try:
+        return json.loads(text, parse_constant=_slo_reject_constant)
+    except json.JSONDecodeError as exc:
+        raise _SloInputError(
+            f"{what} is not valid JSON (line {exc.lineno}, column {exc.colno})"
+        ) from None
+    except (ValueError, RecursionError):
+        raise _SloInputError(f"{what} is not a usable JSON document") from None
+
+
+def _slo_dump(document: object) -> str:
+    return json.dumps(document, sort_keys=True, indent=2, ensure_ascii=True)
+
+
+def _slo_text_report(report: dict) -> str:
+    lines = [
+        f"verdict: {report['verdict']} (exit {report['exit_code']})",
+        f"samples: {report['sample_count']}",
+    ]
+    slo = report["slo"]
+    if slo["status"] == "evaluated":
+        for item in slo["objectives"]:
+            lines.append(
+                f"objective {item['id']}: {item['state']} "
+                f"(observed {item['observed']}, threshold {item['threshold']})")
+    else:
+        lines.append(f"objectives: unknown ({slo['reason']})")
+    alert = report["overload_alert"]
+    if alert["status"] == "evaluated":
+        lines.append(
+            f"overload alert: {'firing' if alert['firing'] else 'not firing'}")
+    else:
+        lines.append(f"overload alert: unknown ({alert['reason']})")
+    saturation = report["saturation"]
+    if saturation["status"] == "evaluated":
+        for item in saturation["conditions"]:
+            lines.append(
+                f"saturation {item['id']}: {item['state']} "
+                f"(observed {item['observed_fraction']}, "
+                f"threshold {item['threshold']}, for {item['for_seconds']}s)")
+    else:
+        lines.append(f"saturation: unknown ({saturation['reason']})")
+    return "\n".join(lines) + "\n"
+
+
+def _run_api_slo(args: argparse.Namespace) -> int:
+    from idkmesh import api_slo
+
+    command = args.api_slo_command
+    try:
+        contract = None
+        if args.contract is not None:
+            try:
+                contract = api_slo.validate_slo_contract(
+                    _slo_read_json(args.contract, "SLO contract"))
+            except api_slo.SloContractError as exc:
+                raise _SloInputError(f"invalid SLO contract: {exc}") from None
+        if command == "contract":
+            normalized = (
+                api_slo.default_slo_contract() if contract is None else contract)
+            if args.json_output:
+                print(_slo_dump(normalized))
+            else:
+                print(
+                    f"valid SLO contract: profile {normalized['profile']}, "
+                    f"window {normalized['window_seconds']}s, "
+                    f"{len(normalized['objectives'])} objective(s), "
+                    f"{len(normalized['saturation_alerts'])} saturation alert(s)")
+            return 0
+        recording = _slo_read_json(
+            args.metrics_interval, "metrics interval", allow_stdin=True)
+        try:
+            report = api_slo.evaluate_metrics_recording(recording, contract)
+        except api_slo.MetricsRecordingError as exc:
+            raise _SloInputError(f"invalid metrics interval: {exc}") from None
+    except _SloInputError as exc:
+        return _fail(str(exc))
+    if args.json_output:
+        print(_slo_dump(report))
+    else:
+        print(_slo_text_report(report), end="")
+    return int(report["exit_code"])
+
+
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     if args.command == "control-tower":
@@ -4020,6 +4232,8 @@ def main(argv: list[str] | None = None) -> int:
         return _run_events_control(args)
     if args.command == "api-storage":
         return _run_api_storage(args)
+    if args.command == "api-slo":
+        return _run_api_slo(args)
     if args.command == "project":
         return _run_project_control(args)
     if args.command == "local-loop":

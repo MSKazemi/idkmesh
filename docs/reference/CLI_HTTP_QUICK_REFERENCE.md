@@ -39,6 +39,7 @@ The wheel intentionally installs only `idkmesh/`. Running the research-backed `l
 | `api-storage {plan-migrations,apply-migrations} DATABASE --migrations DIR [--adopt-existing] [--apply] [--json]` | Show or run forward-only checksummed SQLite migration steps from `NNNN_name.sql` files (#750). `plan-migrations` and `apply-migrations` without `--apply` are read-only dry runs; `--apply` commits every pending step, ledger row and `user_version` in one transaction | Local files only; refuses edited history, ledger gaps, a newer database, an unadopted legacy schema and symlinked paths; no existing IDKMesh store is migrated onto it |
 | `api-storage plan-retention --records FILE --expendable-days N --ephemeral-days N (--decisions-store PATH \| --assume-no-decisions) [--now TS] [--json]` | Print keep/expire decisions for a JSON record list; essential/configuration records and anything a Human Decision refers to are always kept | Plans only: never deletes or schedules anything; a missing or unreadable decisions store is an error, never "unreferenced" |
 | `api-storage backup SOURCE BACKUP [--apply]`, `api-storage verify-backup BACKUP [--manifest PATH] [--max-schema-version N]`, `api-storage restore BACKUP TARGET [--manifest PATH] [--max-schema-version N] [--apply]` | Digest-bound SQLite snapshot with a `BACKUP.manifest.json`, read-only verification, and atomic restore to a new path | `backup` and `restore` are dry runs unless `--apply`; neither overwrites (move an existing target aside), follows a symlink or needs a network; a digest detects corruption, not a writer who can rewrite both files |
+| `api-slo check --metrics-interval PATH [--contract PATH] [--json]`, `api-slo contract [--contract PATH] [--json]` | Judge one recorded series of `GET /api/v1/metrics` snapshots (`-` reads stdin) against the SLO contract with `evaluate_slo_interval`, `evaluate_overload_alert` and `evaluate_saturation_conditions` (#744); `contract` prints or validates the contract. `check` exits 0 all met, 1 an objective breached, 2 unreadable/invalid input or flags, 3 unknown (restarted, regressed, too-short or malformed interval, or a hot gauge whose duration cannot be judged); a breach outranks unknown | Offline and read-only; never fetches metrics or sends alerts; unknown is never exit 0; service labels and process identities are not echoed; the collector must attest the process identity and times |
 | `connections validate/list/import/stored/probe` | Parse, inspect, locally persist connector metadata, use offline fake probes | No implicit live-provider dispatch |
 | `doctor PROFILE` | Offline connector readiness | Diagnostic only; no dispatch |
 | `doctor --github OBSERVATION --operation OP [--workflow PATH]` | Evaluate the read-only C12 GitHub governance preflight and optional workflow-source checks | Uses trusted normalized observations; no GitHub admin mutation, secret access, acceptance, or merge |
@@ -138,6 +139,10 @@ idkmesh api-storage apply-migrations state.sqlite --migrations migrations/
 idkmesh api-storage backup state.sqlite backups/state-1.sqlite --apply
 idkmesh api-storage verify-backup backups/state-1.sqlite
 idkmesh api-storage restore backups/state-1.sqlite restored.sqlite --apply
+
+# Judge a recorded metrics interval against the SLO contract (exit 0 met, 1 breached, 3 unknown):
+idkmesh api-slo check --metrics-interval recording.json
+idkmesh api-slo contract --json
 
 # Expose existing local run state to the read-only HTTP API:
 idkmesh control-tower --no-browser --product-spine-store state.sqlite

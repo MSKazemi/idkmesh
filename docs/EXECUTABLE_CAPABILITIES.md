@@ -75,6 +75,9 @@ methods, and every top-level Python module in `idkmesh/`.
 | `idkmesh api-storage backup` | digest-manifested SQLite snapshot (dry run unless `--apply`) | never overwrites a backup |
 | `idkmesh api-storage verify-backup` | recompute a backup's digest, integrity and row counts against its manifest | read-only; exit 1 on mismatch |
 | `idkmesh api-storage restore` | verify then atomically restore a backup to a new path (dry run unless `--apply`) | never overwrites; refuses symlink targets |
+| `idkmesh api-slo` | API SLO command family over `idkmesh/api_slo.py` (#744) | offline and read-only; no metrics fetch, alert delivery, credential or authority |
+| `idkmesh api-slo check` | judge a recorded metrics interval against the SLO contract | exit 0 all met, 1 breached, 2 invalid input or flags, 3 unknown (restart, regression, too-short or malformed interval); unknown is never 0 |
+| `idkmesh api-slo contract` | print the default SLO contract or validate a supplied one | exit 0 valid, 2 invalid; fail-closed |
 | `idkmesh gate-audit-ui` | loopback browser UI over the gate-audit engine | no hosted upload and no merge authority |
 | `idkmesh control-tower` | loopback Human Control Tower and versioned read-only API | cannot execute workers, record human decisions, push, or merge |
 | `idkmesh steward-report` | render repository stewardship/report evidence | advisory/reporting surface |

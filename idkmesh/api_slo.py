@@ -21,6 +21,7 @@ from typing import Any, Mapping, Sequence
 
 from idkmesh.otel_metrics import (
     OtlpMetricsInputError,
+    evaluate_api_metrics_interval,
     validate_api_metrics_document,
 )
 
@@ -430,3 +431,154 @@ def evaluate_saturation_conditions(
         for alert in normalized["saturation_alerts"]
     ]
     return {"status": "evaluated", "authority": "none", "conditions": conditions}
+
+
+# ---------------------------------------------------------------------------
+# Recorded-interval check (operator CLI support)
+# ---------------------------------------------------------------------------
+
+RECORDING_KIND = "idkmesh-api-metrics-recording"
+RECORDING_SCHEMA_VERSION = "0.1"
+CHECK_RESULT_KIND = "idkmesh-api-slo-check-result"
+MAX_RECORDING_SAMPLES = 1024
+
+VERDICT_MET = "met"
+VERDICT_BREACHED = "breached"
+VERDICT_UNKNOWN = "unknown"
+# 0 = every objective met, 1 = a breach, 3 = unknown / insufficient evidence.
+# (2 is reserved for unreadable or invalid input and is decided by the caller.)
+VERDICT_EXIT_CODES = {VERDICT_MET: 0, VERDICT_BREACHED: 1, VERDICT_UNKNOWN: 3}
+
+_SAMPLE_KEYS = {"process_identity", "observed_unix_nano", "metrics"}
+
+
+class MetricsRecordingError(ValueError):
+    """The recording envelope is structurally invalid (not merely untrustworthy).
+
+    Messages are fixed strings: they never reflect any value from the input.
+    """
+
+
+def _recording_samples(recording: Any) -> list[Mapping[str, Any]]:
+    if not isinstance(recording, Mapping):
+        raise MetricsRecordingError("recording must be a JSON object")
+    if set(recording) != {"kind", "schema_version", "samples"}:
+        raise MetricsRecordingError("recording has unexpected or missing fields")
+    if recording["kind"] != RECORDING_KIND:
+        raise MetricsRecordingError(f"recording kind must be {RECORDING_KIND!r}")
+    if recording["schema_version"] != RECORDING_SCHEMA_VERSION:
+        raise MetricsRecordingError(
+            f"recording schema_version must be {RECORDING_SCHEMA_VERSION!r}"
+        )
+    samples = recording["samples"]
+    if not isinstance(samples, list):
+        raise MetricsRecordingError("recording samples must be a list")
+    if not 2 <= len(samples) <= MAX_RECORDING_SAMPLES:
+        raise MetricsRecordingError(
+            f"recording needs between 2 and {MAX_RECORDING_SAMPLES} samples"
+        )
+    for sample in samples:
+        if not isinstance(sample, Mapping) or set(sample) != _SAMPLE_KEYS:
+            raise MetricsRecordingError(
+                "each sample must be an object with exactly "
+                "process_identity, observed_unix_nano and metrics"
+            )
+    return samples
+
+
+def _interval(before: Mapping[str, Any], after: Mapping[str, Any]) -> dict[str, Any]:
+    return evaluate_api_metrics_interval(
+        before["metrics"],
+        after["metrics"],
+        before_process_identity=before["process_identity"],
+        after_process_identity=after["process_identity"],
+        before_time_unix_nano=before["observed_unix_nano"],
+        after_time_unix_nano=after["observed_unix_nano"],
+    )
+
+
+def _worst(states: Sequence[str]) -> str:
+    if VERDICT_BREACHED in states:
+        return VERDICT_BREACHED
+    if VERDICT_UNKNOWN in states:
+        return VERDICT_UNKNOWN
+    return VERDICT_MET
+
+
+def evaluate_metrics_recording(
+    recording: Any,
+    contract: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Judge a recorded series of metrics snapshots against the SLO contract.
+
+    ``recording`` is ``{"kind", "schema_version", "samples"}`` where each
+    sample is ``{"process_identity", "observed_unix_nano", "metrics"}`` (a
+    ``GET /api/v1/metrics`` document plus the collector-attested epoch and
+    time). The whole recording, first sample to last, is the one interval that
+    is judged against the objectives; consecutive pairs feed the overload
+    alert; the last snapshot feeds the saturation conditions.
+
+    A structurally invalid envelope raises :class:`MetricsRecordingError`; an
+    invalid contract raises :class:`SloContractError`. Everything merely
+    untrustworthy (restart, regression, too short, malformed snapshot) is
+    ``unknown`` and never ``met``. The result echoes no input value other than
+    numbers and fixed vocabulary, never service labels or process identities.
+
+    The verdict is the worst of the objective states and the saturation
+    states. A saturation condition that holds with a non-zero ``for_seconds``
+    is ``unknown`` (one recording cannot attest a sustained duration here).
+    The overload alert is reported, but only its *firing* changes the verdict:
+    that already implies a breached overload objective.
+    """
+    normalized = validate_slo_contract(
+        default_slo_contract() if contract is None else contract
+    )
+    samples = _recording_samples(recording)
+
+    whole = _interval(samples[0], samples[-1])
+    slo = evaluate_slo_interval(whole, normalized)
+    pairs = [_interval(a, b) for a, b in zip(samples, samples[1:])]
+    alert = evaluate_overload_alert(pairs, normalized)
+    saturation = evaluate_saturation_conditions(samples[-1]["metrics"], normalized)
+
+    states: list[str] = []
+    if slo["status"] == "evaluated":
+        states.extend(item["state"] for item in slo["objectives"])
+    else:
+        states.append(VERDICT_UNKNOWN)
+    if alert["status"] == "evaluated" and alert["firing"]:
+        states.append(VERDICT_BREACHED)
+
+    if saturation["status"] == "evaluated":
+        for condition in saturation["conditions"]:
+            if not condition["condition_met"]:
+                state = VERDICT_MET
+            elif condition["for_seconds"] == 0:
+                state = VERDICT_BREACHED
+            else:
+                state = VERDICT_UNKNOWN
+            condition["state"] = state
+            states.append(state)
+    else:
+        states.append(VERDICT_UNKNOWN)
+
+    verdict = _worst(states)
+    return {
+        "kind": CHECK_RESULT_KIND,
+        "schema_version": SLO_SCHEMA_VERSION,
+        "authority": "none",
+        "verdict": verdict,
+        "exit_code": VERDICT_EXIT_CODES[verdict],
+        "contract": {
+            "profile": normalized["profile"],
+            "window_seconds": normalized["window_seconds"],
+        },
+        "sample_count": len(samples),
+        "slo": slo,
+        "overload_alert": alert,
+        "saturation": saturation,
+        "intervals": [
+            {"status": item["status"], **({"reason": item["reason"]} if "reason" in item else {})}
+            for item in pairs
+        ],
+    }
