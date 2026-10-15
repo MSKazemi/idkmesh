@@ -78,6 +78,15 @@ Developer / operator
   |       -> parse_dispatch_trusted_actors_document -> audit_dispatch_authority_alignment -> stdout
   |       -> READ-ONLY, NO LOGIN TEXT, NO NETWORK/WRITE; exit 0 aligned / 1 error finding / 2 bad input; no workflow runs it
   |
+  +-- idkmesh egress-policy check --policy P --profile F --classification C --destination H [--provider ID]
+  |       -> enterprise_profile.validate_enterprise_profile + enterprise_egress_policy.load_egress_policy
+  |       -> decide_classified_egress -> stdout (reason code, destination id, policy digest)
+  |       -> READ-ONLY, NO DNS/NETWORK/SECRET; exit 0 allowed / 1 denied / 2 bad input; evidence, not enforcement
+  |
+  +-- idkmesh secret-reference check REF [--profile F]
+  |       -> enterprise_secret_reference.parse_secret_reference (+ enterprise_data_policy.decide_credential with --profile)
+  |       -> GRAMMAR ONLY: never resolves, reads or echoes a secret; exit 0 acceptable / 1 refused / 2 bad profile
+  |
   +-- idkmesh control-tower [--product-spine-store SQLite]
           -> control_tower_ui.py (127.0.0.1:8770)
           -> control_tower_api.py (strict report validation + read projection)
@@ -179,7 +188,7 @@ The execution-substrate abstraction and GitHub-first deployment model remain **a
 
 - **Candidate/evidence identity:** `candidate_reference.py`, `result_manifest_builder.py`, `verification_handoff.py`, `github_evidence_link.py`, `github_public_evidence.py`. Content and source bindings carry evidence, not accept/merge authority.
 - **Review-panel diagnostics:** `gate_audit.py`, `gate_audit_dependence.py`, `gate_audit_uncertainty.py`, `marginal_evidence*.py`. Observed dependence matters more than nominal reviewer count; held-out selection/benchmark results are not a generalized external-performance claim.
-- **Local human/enterprise kernels:** `human_decision_gateway.py`, `human_decision_service.py`, `tenant_scope.py`, `enterprise_authz.py`, `enterprise_identity_github.py`, `github_authority_alignment.py` (read-only audit that the binding table and the C5 dispatch trusted-actor list agree; it grants nothing), `enterprise_identity_oidc.py`, `enterprise_break_glass.py`, `enterprise_audit.py`, `enterprise_profile.py`, `enterprise_egress_policy.py` (deny-by-default classification-vs-destination egress decision, digest-bound to its policy; nothing enforces it at a socket yet), `enterprise_secret_reference.py` (secret-reference grammar and alias resolution; never a raw secret), `network_api_profile.py` (non-loopback profile checks, library only: no served listener calls them). Authorization depends on independently trusted identity; in-memory scope fixtures and local ledgers are not hosted-service qualification.
+- **Local human/enterprise kernels:** `human_decision_gateway.py`, `human_decision_service.py`, `tenant_scope.py`, `enterprise_authz.py`, `enterprise_identity_github.py`, `github_authority_alignment.py` (read-only audit that the binding table and the C5 dispatch trusted-actor list agree; it grants nothing), `enterprise_identity_oidc.py`, `enterprise_break_glass.py`, `enterprise_audit.py`, `enterprise_profile.py`, `enterprise_egress_policy.py` (deny-by-default classification-vs-destination egress decision, digest-bound to its policy; operators can query it offline with `idkmesh egress-policy check`, but nothing enforces it at a socket yet), `enterprise_secret_reference.py` (secret-reference grammar and alias resolution; never a raw secret; `idkmesh secret-reference check` validates grammar only), `network_api_profile.py` (non-loopback profile checks, library only: no served listener calls them). Authorization depends on independently trusted identity; in-memory scope fixtures and local ledgers are not hosted-service qualification.
 - **Pre-confirmatory research freeze (S3):** `experiments/s3_verifier_freeze.py` generates calibration-only power plans and content-addressed manifests. The freeze validator recomputes each bound local artifact and refuses conflicting policy, source or outcome material; a self-digest by itself is not a signature or immutable storage. No verifier execution, sandbox qualification, or release/merge authority is implied. See [S3 freeze protocol](../research/S3_VERIFIER_FREEZE_TOOLKIT.md).
 - **Experimental/repository systems:** `experiments/` implements verifiers, replay, candidate/evidence/report contracts and orchestration; `sim/` and `randomness_lab/` test research questions; `tools/`, `scripts/` and 61 GitHub workflows provide specialized checks, GitHub automation and source observation. See [research](../research/README.md), [testing](../TESTING.md), and [reproducibility evidence](../audits/2026-10-10-code-documentation-reconciliation.md).
 

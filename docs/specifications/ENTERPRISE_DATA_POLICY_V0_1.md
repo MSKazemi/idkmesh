@@ -242,11 +242,48 @@ is authorized as credential kind `workload_identity` (preferred; long-lived
 cloud keys are denied unless the profile explicitly allows them and the backend
 is not OIDC workload identity).
 
+## Operator commands
+
+Two read-only verbs in `idkmesh/cli.py` expose the libraries above to operators
+and reviewers. Neither enforces anything, resolves a name, reads a secret or
+contacts a network, and neither re-implements a loader or a decision.
+
+```bash
+idkmesh egress-policy check --policy egress-policy.json --profile profile.json \
+  --classification public --destination packages.registry.example [--provider ID] [--json]
+idkmesh secret-reference check REF [--profile profile.json] [--json]
+```
+
+- `egress-policy check` parses both files strictly (duplicate keys, non-finite
+  numbers and files over 2 MiB are rejected), validates the profile with
+  `validate_enterprise_profile` and the policy with `load_egress_policy`, and
+  prints the `decide_classified_egress` decision: effect, stable reason code,
+  matching destination id and the policy digest. The destination is normalised
+  by the library's `normalize_host` and matched exactly, so
+  `artifacts.corp.example.evil.test` is denied under `egress_default: deny`.
+  `--provider ID` can only tighten the result (`provider_mismatch`); the
+  provider is always the one the policy row names. Exit 0 allowed, 1 denied, 2
+  with empty stdout for an unreadable or invalid file or a malformed
+  `--destination` (URL, port, wildcard, IP-shaped) or `--classification`.
+- `secret-reference check` runs `parse_secret_reference` only. A rejected
+  argument (for example a raw secret pasted by mistake) yields
+  `inline_secret_forbidden`, `unsupported_scheme` or `invalid_name` and is never
+  echoed. With `--profile` it also asks `decide_credential` whether the
+  profile's secret backend supplies the reference's credential kind. Output
+  states `authorization_evaluated: false`: acceptable grammar is not an
+  authorization, and a real access still needs an allowed `dispatch` or
+  `execute` decision (`authorize_reference_use`). Exit 0 acceptable, 1 refused,
+  2 for an unreadable or invalid profile.
+
+Both print compact JSON with sorted keys under `--json`. Tests:
+`tests/test_enterprise_egress_secret_cli.py`.
+
 ## Not in this slice
 
 - Wiring the kernel, the classified-egress evaluator and the reference
   contract in front of connectors, workers or `connector_secrets`. Nothing
-  enforces an egress decision at a socket today; a decision is evidence.
+  enforces an egress decision at a socket today; a decision is evidence (the
+  operator commands above only report it).
 - Qualification that a real workload-identity/OIDC deployment issues short-lived
   credentials; that needs real infrastructure and is not asserted here.
 - Loading the egress policy and approved-provider list from the profile itself;

@@ -753,6 +753,141 @@ def build_parser() -> argparse.ArgumentParser:
         help="emit deterministic machine-readable JSON",
     )
 
+    egress_cmd = sub.add_parser(
+        "egress-policy",
+        help="check whether a data class may go to a destination under an egress policy",
+        description=(
+            "Operator checks over the E5 classified-egress policy "
+            "(docs/specifications/ENTERPRISE_DATA_POLICY_V0_1.md, issue #672). "
+            "Strictly read-only and offline: reads the two files you name, "
+            "performs no DNS resolution or network I/O, reads no environment "
+            "variable or secret, writes nothing. A decision is evidence for a "
+            "later enforcement point, not an action."
+        ),
+    )
+    egress_sub = egress_cmd.add_subparsers(dest="egress_policy_command", required=True)
+    egress_check = egress_sub.add_parser(
+        "check",
+        help="decide whether CLASS data may be sent to HOST",
+        description=(
+            "Load an egress policy document and an enterprise control profile "
+            "with their strict loaders and decide whether data of one "
+            "classification may be sent to one destination host. The host is "
+            "normalised exactly as the policy library does (lowercase, one "
+            "trailing dot removed) and matched exactly: a look-alike such as "
+            "'example.com.evil.test' never matches 'example.com'. Deny is the "
+            "default at every layer and the profile and policy do not "
+            "compensate for each other. The output names the stable reason "
+            "code, the matching destination id and the policy digest, never a "
+            "secret. Exit 0: allowed; exit 1: denied; exit 2: an input file is "
+            "unreadable or invalid, or a flag is malformed (stdout stays "
+            "empty)."
+        ),
+        formatter_class=_ExamplesHelpFormatter,
+        epilog=(
+            "Examples:\n"
+            "  idkmesh egress-policy check --policy egress-policy.json"
+            " --profile profile.json --classification public"
+            " --destination packages.registry.example\n"
+            "  idkmesh egress-policy check --policy egress-policy.json"
+            " --profile profile.json --classification restricted"
+            " --destination api.provider-a.example --provider provider-a --json"
+        ),
+    )
+    egress_check.add_argument(
+        "--policy",
+        required=True,
+        metavar="PATH",
+        help="egress policy JSON (schemas/enterprise-egress-policy-v0.1.schema.json)",
+    )
+    egress_check.add_argument(
+        "--profile",
+        required=True,
+        metavar="PATH",
+        help="enterprise control profile JSON (schemas/enterprise-control-profile-v0.1.schema.json)",
+    )
+    egress_check.add_argument(
+        "--classification",
+        required=True,
+        metavar="CLASS",
+        help="data classification: public, internal, confidential or restricted",
+    )
+    egress_check.add_argument(
+        "--destination",
+        required=True,
+        metavar="HOST",
+        help="bare DNS hostname (no URL, port, wildcard or IP literal); never resolved",
+    )
+    egress_check.add_argument(
+        "--provider",
+        metavar="ID",
+        help=(
+            "optional expectation: deny unless the matched destination names "
+            "this provider id (the provider always comes from the policy, "
+            "never from this flag)"
+        ),
+    )
+    egress_check.add_argument(
+        "--json",
+        action="store_true",
+        dest="json_output",
+        help="emit deterministic machine-readable JSON",
+    )
+
+    secret_ref_cmd = sub.add_parser(
+        "secret-reference",
+        help="validate the grammar of a secret reference without resolving it",
+        description=(
+            "Operator checks over the E5 secret-reference contract "
+            "(docs/specifications/ENTERPRISE_DATA_POLICY_V0_1.md, issue #672). "
+            "Strictly read-only and offline: validates reference grammar only; "
+            "never reads an environment variable, vault or secret value, never "
+            "contacts a network and never prints the argument it rejects."
+        ),
+    )
+    secret_ref_sub = secret_ref_cmd.add_subparsers(
+        dest="secret_reference_command", required=True
+    )
+    secret_ref_check = secret_ref_sub.add_parser(
+        "check",
+        help="check that REF is a well-formed secret reference",
+        description=(
+            "Check that REF is exactly '<scheme>:<name>' for a supported scheme "
+            "(env:, gh-secret:, secret:, vault:) with a conforming name. A raw "
+            "secret passed by mistake is refused as inline_secret_forbidden and "
+            "is never echoed. With --profile, also check that the profile's "
+            "secret backend supplies this reference's credential kind. This "
+            "evaluates grammar and profile compatibility only: it does not "
+            "resolve the reference and is not the authorization that a real "
+            "secret access still needs. Exit 0: acceptable; exit 1: refused "
+            "(stable reason code); exit 2: the profile is unreadable or invalid "
+            "(stdout stays empty)."
+        ),
+        formatter_class=_ExamplesHelpFormatter,
+        epilog=(
+            "Examples:\n"
+            "  idkmesh secret-reference check gh-secret:DEPLOY_TOKEN_REF\n"
+            "  idkmesh secret-reference check vault:team/ci/registry"
+            " --profile profile.json --json"
+        ),
+    )
+    secret_ref_check.add_argument(
+        "reference",
+        metavar="REF",
+        help="secret reference such as env:NAME, gh-secret:NAME, secret:PATH or vault:PATH",
+    )
+    secret_ref_check.add_argument(
+        "--profile",
+        metavar="PATH",
+        help="enterprise control profile JSON; also checks backend compatibility",
+    )
+    secret_ref_check.add_argument(
+        "--json",
+        action="store_true",
+        dest="json_output",
+        help="emit deterministic machine-readable JSON",
+    )
+
     connections = sub.add_parser(
         "connections",
         help="validate, list, import, store, or inspect connector configuration",
@@ -3551,6 +3686,166 @@ def _run_github_authority_audit(args: argparse.Namespace) -> int:
     return 0 if report.aligned else 1
 
 
+def _json_line(document: dict[str, object]) -> str:
+    return json.dumps(document, sort_keys=True, separators=(",", ":")) + "\n"
+
+
+def _load_enterprise_profile_file(path_value: str) -> dict[str, object]:
+    """Read one control profile strictly and validate it with the real validator."""
+
+    from idkmesh.enterprise_profile import (
+        EnterpriseProfileError,
+        validate_enterprise_profile,
+    )
+
+    profile = _strict_json_file(path_value, label="enterprise control profile")
+    try:
+        validate_enterprise_profile(profile)
+    except EnterpriseProfileError as exc:
+        raise ValueError(f"{path_value}: invalid enterprise control profile: {exc}") from exc
+    return profile
+
+
+def _run_egress_policy_check(args: argparse.Namespace) -> int:
+    """Decide one (classification, destination) pair offline; nothing is changed.
+
+    Exit 0 allowed, 1 denied, 2 unreadable/invalid input (stdout stays empty).
+    """
+
+    import dataclasses
+
+    from idkmesh.enterprise_data_policy import DATA_CLASSES, normalize_host
+    from idkmesh.enterprise_egress_policy import (
+        EgressPolicyError,
+        decide_classified_egress,
+        load_egress_policy,
+    )
+
+    if args.classification not in DATA_CLASSES:
+        return _fail(
+            "--classification must be one of: " + ", ".join(DATA_CLASSES)
+        )
+    # Same normalisation as the library; a URL, port, wildcard or IP-shaped
+    # string is a malformed flag, not a destination to be judged.
+    host = normalize_host(args.destination)
+    if host is None:
+        return _fail("--destination must be a bare DNS hostname (no URL, port or wildcard)")
+
+    try:
+        policy_document = _strict_json_file(args.policy, label="egress policy")
+        profile = _load_enterprise_profile_file(args.profile)
+        policy = load_egress_policy(policy_document)
+    except EgressPolicyError as exc:
+        return _fail(f"{args.policy}: invalid egress policy: {exc}")
+    except ValueError as exc:
+        return _fail(str(exc))
+
+    decision = decide_classified_egress(
+        profile,
+        policy_document,
+        destination_host=args.destination,
+        data_class=args.classification,
+    )
+    if decision.allowed and args.provider is not None:
+        matched = policy.destination_for(decision.destination_host)
+        if matched is None or matched.provider_id != args.provider:
+            decision = dataclasses.replace(
+                decision,
+                allowed=False,
+                code="provider_mismatch",
+                message="matched destination does not name the expected provider",
+            )
+
+    if args.json_output:
+        sys.stdout.write(_json_line(decision.to_dict()))
+    else:
+        lines = (
+            f"effect: {'allow' if decision.allowed else 'deny'}",
+            f"code: {decision.code}",
+            f"message: {decision.message}",
+            f"destination_host: {decision.destination_host}",
+            f"destination_id: {decision.destination_id or '-'}",
+            f"data_class: {decision.data_class}",
+            f"policy_digest: {decision.policy_digest}",
+            "authority: none (evidence only; no DNS, network or secret access)",
+        )
+        sys.stdout.write("\n".join(lines) + "\n")
+    return 0 if decision.allowed else 1
+
+
+def _run_secret_reference_check(args: argparse.Namespace) -> int:
+    """Validate a secret reference's grammar; never resolve or echo a value.
+
+    Exit 0 acceptable, 1 refused (stable code), 2 unusable profile.
+    """
+
+    from idkmesh.enterprise_data_policy import decide_credential
+    from idkmesh.enterprise_secret_reference import (
+        SecretReferenceContractError,
+        parse_secret_reference,
+    )
+
+    profile = None
+    if args.profile is not None:
+        try:
+            profile = _load_enterprise_profile_file(args.profile)
+        except ValueError as exc:
+            return _fail(str(exc))
+
+    document: dict[str, object] = {
+        "kind": "idkmesh-secret-reference-check",
+        "schema_version": "0.1",
+        "authorization_evaluated": False,
+        "secret_value_read": False,
+        "performs_network_io": False,
+    }
+    try:
+        reference = parse_secret_reference(args.reference)
+    except SecretReferenceContractError as exc:
+        # The rejected argument may itself be a raw secret: it is never echoed.
+        document.update(effect="deny", code=exc.code, message=str(exc))
+        allowed = False
+    else:
+        document.update(
+            reference=reference.canonical,
+            scheme=reference.scheme,
+            backend=reference.backend,
+            credential_kind=reference.credential_kind,
+        )
+        if profile is None:
+            document.update(
+                effect="allow",
+                code="reference_well_formed",
+                message="reference grammar is valid; profile not consulted",
+            )
+            allowed = True
+        else:
+            credential = decide_credential(
+                profile, credential_kind=reference.credential_kind
+            )
+            document.update(
+                effect="allow" if credential.allowed else "deny",
+                code=credential.code,
+                message=credential.message,
+            )
+            allowed = credential.allowed
+
+    if args.json_output:
+        sys.stdout.write(_json_line(document))
+    else:
+        keys = (
+            "effect", "code", "message", "reference", "scheme", "backend",
+            "credential_kind",
+        )
+        lines = [f"{key}: {document[key]}" for key in keys if key in document]
+        lines.append(
+            "authorization: not evaluated (a secret access still needs an"
+            " allowed dispatch or execute decision)"
+        )
+        sys.stdout.write("\n".join(lines) + "\n")
+    return 0 if allowed else 1
+
+
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     if args.command == "control-tower":
@@ -3615,6 +3910,10 @@ def main(argv: list[str] | None = None) -> int:
         return _run_release_provenance(args)
     if args.command == "github-authority-audit":
         return _run_github_authority_audit(args)
+    if args.command == "egress-policy":
+        return _run_egress_policy_check(args)
+    if args.command == "secret-reference":
+        return _run_secret_reference_check(args)
     if args.command == "run":
         return _run_product_spine_control(args)
     if args.command == "work-unit":
