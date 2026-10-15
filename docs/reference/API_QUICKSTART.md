@@ -301,7 +301,7 @@ are **not** built. Do not code against them.
 |---|---|
 | `client.record_human_decision(...)` and `POST /api/v1/human-decisions` | blocked on [#740](https://github.com/MSKazemi/idkmesh/issues/740): it needs an authenticated, accountable identity, and the local session token is not one |
 | `GET /api/v1/runs/{run_id}/decisions` | same blocker (#740); the route answers `404 not_found` today |
-| a typed TypeScript client generated from the OpenAPI document | open on #746, deferred until v1 stabilizes |
+| a runtime TypeScript client (HTTP wrapper) | open on #746; only the generated `.d.ts` types exist, see the [API overview](API_OVERVIEW.md#web-client-types-typescript-declarations) |
 | publishing the Python client to a package index | tracked separately; today it ships inside the `idkmesh` checkout |
 
 ## Where next

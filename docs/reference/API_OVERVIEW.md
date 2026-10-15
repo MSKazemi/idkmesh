@@ -114,6 +114,33 @@ stable exception taxonomy. It makes one exchange per call unless you pass a
 `RetryPolicy`, which retries only idempotent reads, with bounded deterministic
 backoff. Details and runnable snippets: [quickstart](API_QUICKSTART.md).
 
+## Web client types (TypeScript declarations)
+
+[`clients/typescript/idkmesh-api.d.ts`](https://github.com/MSKazemi/idkmesh/blob/main/clients/typescript/idkmesh-api.d.ts)
+is a generated, checked-in TypeScript declaration file: one `export type` for
+every schema in the catalog above (named from the catalog key, for example
+`idkmesh-api-error-v0.1` becomes `IdkmeshApiErrorV01`; a schema's `$defs`
+become `<Name>_<def>`), plus `IdkmeshApiOperations`, which keys each served
+operation as `"METHOD /path"` with its path/query parameters, request body and
+per-status response bodies. It contains declarations only: no runtime code, no
+fetch wrapper and no package manifest.
+
+- **Over-approximation, not validation.** Value constraints (`pattern`,
+  `minimum`, `uniqueItems`, `if`/`then`/`else`, ...) are not encoded, and
+  `integer` becomes `number`. Every document that validates against a schema is
+  assignable to its type, but an assignable value is not guaranteed valid. The
+  JSON Schema in `schemas/` stays the authority.
+- **Fail closed.** The generator refuses any schema keyword it does not model
+  and never emits `any`; an unconstrained value is the explicit
+  `IdkmeshJsonValue` union.
+- **Cannot drift.** `tests/test_generate_api_types.py` regenerates the file and
+  requires byte equality. After changing `openapi.yaml` or a schema, run
+  `python tools/generate_api_types.py` (or `--check` to only verify) and commit
+  the result.
+
+The declarations are not type-checked by CI (no TypeScript toolchain is
+installed there); the tests check structure, completeness and determinism.
+
 ## Versioning, deprecation and migration
 
 The URL carries the compatibility version; deprecations are announced in the
@@ -135,7 +162,8 @@ Do not code against these (tracked on
 
 - `record_human_decision(...)` and a decision route: blocked on
   [#740](https://github.com/MSKazemi/idkmesh/issues/740) (accountable identity).
-- A typed TypeScript/web client generated from the OpenAPI document: deferred
-  until v1 stabilizes; no JavaScript client is shipped or claimed.
+- A runtime TypeScript/web client (an HTTP wrapper):
+  no JavaScript client is shipped or claimed; only the generated
+  [type declarations](#web-client-types-typescript-declarations) exist.
 - Publishing the Python client to a package index: the client ships inside the
   `idkmesh` checkout today.

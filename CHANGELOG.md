@@ -49,6 +49,18 @@ and the release notes for that tag.
   parameters, session token required; access logs record the static route. Not done (see
   `docs/planning/C7_CONNECTOR_CONTROL_FOLLOW_UPS_2026-10-14.md`): per-driver capabilities, latest
   probe state, mutating endpoints and the network auth boundary.
+- API: generated TypeScript type declarations for the web client (refs #746). New stdlib-only
+  `tools/generate_api_types.py` turns `openapi.yaml` and the JSON Schemas it catalogs into the
+  checked-in `clients/typescript/idkmesh-api.d.ts` (one type per catalog schema and `$defs`
+  entry, plus `IdkmeshApiOperations` keyed `"METHOD /path"`). Declarations only: no runtime code,
+  no `package.json`, no publishing, no network. The output is a sound over-approximation (value
+  constraints such as `pattern` and `if`/`then` are not encoded; the JSON Schema stays the
+  authority); unsupported keywords make the generator exit 2 naming the schema, and it never
+  emits `any`. `tests/test_generate_api_types.py` requires byte equality with a fresh
+  regeneration, so the file cannot drift. Not type-checked with `tsc` (no toolchain in CI);
+  `record_human_decision` and a runtime web client remain open. See the
+  [API overview](docs/reference/API_OVERVIEW.md#web-client-types-typescript-declarations).
+
 - Bootstrap into another checkout (refs #596): `idkmesh init --github --check|--apply` gains
   `--target DIR` (default: current directory). The target must be an existing, non-symlink directory
   with a `.git` marker; `--dry-run` rejects it; no `--force` exists, so conflicting files are
