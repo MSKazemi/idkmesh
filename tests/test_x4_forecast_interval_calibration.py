@@ -10,6 +10,7 @@ about real coding agents.
 from __future__ import annotations
 
 import hashlib
+import importlib.util
 import json
 import random
 import sys
@@ -21,6 +22,15 @@ sys.path.insert(0, str(ROOT / "experiments"))
 import agent_value_forecast as e046  # noqa: E402
 import forecast_interval_calibration as cal  # noqa: E402
 import forecast_intervals as x4  # noqa: E402
+
+if importlib.util.find_spec("pytest") is not None:
+    import pytest
+
+    # Research-artifact test: runs in the emergence-sim workflow and nightly, not on
+    # the per-PR unit tier (docs/TESTING.md: experiment tests carry `sim`).
+    pytestmark = pytest.mark.sim
+else:  # pragma: no cover - bare-interpreter jobs take this path
+    pass
 
 REPORT = ROOT / "experiments" / "results" / "X4-synthetic-interval-calibration.json"
 DOC = ROOT / "docs" / "research" / "X4_SYNTHETIC_INTERVAL_CALIBRATION.md"
