@@ -36,6 +36,7 @@ EXAMPLE_COMMANDS = (
     ("github-authority-audit",),
     ("egress-policy", "check"),
     ("secret-reference", "check"),
+    ("api-network-profile", "check"),
     ("connections", "validate"),
     ("connections", "list"),
     ("connections", "import"),

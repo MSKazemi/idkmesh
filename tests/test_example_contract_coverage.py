@@ -150,6 +150,7 @@ NO_SCHEMA_CONTRACT = {
     "examples/adaptive-policy-plan.example.json": "adaptive-policy plan fixture; validated by tests/test_adaptive_policy_shadow.py",
     "examples/adaptive-policy-shadow-request.example.json": "adaptive-policy shadow request fixture; validated by tests/test_adaptive_policy_shadow.py",
     "examples/challenges/byo-agent-001/challenge.json": "BYO-agent challenge envelope; validated in code by scripts/byo_agent_challenge.py and tests/test_byo_agent_challenge.py; embedded candidate manifests are evaluated against the pinned canonical ResultManifest schema",
+    "examples/enterprise/network-api-profile.example.json": "network API security profile; validated in code by idkmesh/network_api_profile.py (parse_network_profile) and tests/test_network_api_profile_cli.py, with no JSON Schema published",
     "examples/community/ace-activation-gate-current.example.json": "ACE activation gate state; no schema published",
     "examples/community/ace-generation-shadow.example.json": "ACE generation shadow record; no schema published",
     "examples/gate-audit/panel-votes.example.json": "gate-audit verdict-matrix input; validated in code by idkmesh/gate_audit.py and tests/test_gate_audit.py",

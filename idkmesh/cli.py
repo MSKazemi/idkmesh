@@ -888,6 +888,70 @@ def build_parser() -> argparse.ArgumentParser:
         help="emit deterministic machine-readable JSON",
     )
 
+    network_profile_cmd = sub.add_parser(
+        "api-network-profile",
+        help="validate a network/multi-user API security profile before anything exposes the API",
+        description=(
+            "Operator preflight for issue #743 (docs/specifications/"
+            "NETWORK_API_SECURITY_PROFILE_V0_1.md). 'check' validates a declared "
+            "profile with the fail-closed parser and reports its stable reason "
+            "code. Strictly read-only and offline: it reads the one file you "
+            "name, starts no listener, contacts no proxy, certificate, DNS name "
+            "or identity provider, resolves no secret reference, writes nothing "
+            "and never echoes a value from the file. A valid result means the "
+            "declaration is well formed; it is NOT a deployment approval (use "
+            "--explain to list what is and is not checked). Exit codes: 0 the "
+            "profile is valid; 1 the profile is refused; 2 the file is "
+            "unreadable or not valid JSON, or a flag is invalid (stdout stays "
+            "empty)."
+        ),
+    )
+    network_profile_sub = network_profile_cmd.add_subparsers(
+        dest="api_network_profile_command",
+        required=True,
+    )
+    network_profile_check = network_profile_sub.add_parser(
+        "check",
+        help="validate a declared network API profile (read-only, offline)",
+        description=(
+            "Parse PATH as an idkmesh-network-api-profile document and report "
+            "whether it is valid or the first reason it is refused (for example "
+            "tls_required, session_token_not_authentication, invalid_origin, "
+            "literal_secret, invalid_value, break_glass_unsupported). Strictly "
+            "read-only and offline; never prints a value from the file. Exit 0 "
+            "valid, 1 refused, 2 unreadable or invalid JSON (empty stdout)."
+        ),
+        formatter_class=_ExamplesHelpFormatter,
+        epilog=(
+            "Examples:\n"
+            "  idkmesh api-network-profile check"
+            " --profile examples/enterprise/network-api-profile.example.json\n"
+            "  idkmesh api-network-profile check"
+            " --profile examples/enterprise/network-api-profile.example.json --json --explain"
+        ),
+    )
+    network_profile_check.add_argument(
+        "--profile",
+        required=True,
+        metavar="PATH",
+        help="idkmesh-network-api-profile JSON document to validate",
+    )
+    network_profile_check.add_argument(
+        "--explain",
+        action="store_true",
+        help=(
+            "also list the checks performed and the checks NOT performed "
+            "(no listener wiring, no TLS verification, per-process state), so "
+            "a valid result is not mistaken for a deployment approval"
+        ),
+    )
+    network_profile_check.add_argument(
+        "--json",
+        action="store_true",
+        dest="json_output",
+        help="emit deterministic machine-readable JSON (sorted keys)",
+    )
+
     connections = sub.add_parser(
         "connections",
         help="validate, list, import, store, or inspect connector configuration",
@@ -3846,6 +3910,38 @@ def _run_secret_reference_check(args: argparse.Namespace) -> int:
     return 0 if allowed else 1
 
 
+def _run_api_network_profile(args: argparse.Namespace) -> int:
+    """Validate one declared network API profile; nothing is started or changed.
+
+    Exit 0 valid, 1 refused (stable reason code), 2 unreadable or invalid JSON
+    (stdout stays empty then).
+    """
+
+    from idkmesh.network_api_profile import (
+        check_network_profile,
+        render_check_report_json,
+        render_check_report_text,
+    )
+
+    try:
+        document = _strict_json_file(args.profile, label="network API profile")
+    except ValueError as exc:
+        message = str(exc)
+        # A duplicate key is operator-supplied text; do not echo it back.
+        marker = "duplicate JSON key: "
+        if marker in message:
+            message = message.partition(marker)[0] + marker + "<key>"
+        return _fail(message)
+
+    report = check_network_profile(document, explain=args.explain)
+    sys.stdout.write(
+        render_check_report_json(report)
+        if args.json_output
+        else render_check_report_text(report)
+    )
+    return 0 if report["status"] == "valid" else 1
+
+
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     if args.command == "control-tower":
@@ -3914,6 +4010,8 @@ def main(argv: list[str] | None = None) -> int:
         return _run_egress_policy_check(args)
     if args.command == "secret-reference":
         return _run_secret_reference_check(args)
+    if args.command == "api-network-profile":
+        return _run_api_network_profile(args)
     if args.command == "run":
         return _run_product_spine_control(args)
     if args.command == "work-unit":
