@@ -102,9 +102,10 @@ implements a network storage adapter.
 ## Storage operations (library)
 
 `idkmesh/api_storage_ops.py` (#750) turns three of the rules above into code.
-It is a library: no CLI verb, HTTP route, scheduled job or existing store calls
-it yet, and it does not implement a network-profile adapter. It never deletes a
-record, reads a credential, or grants authority.
+It is reachable from the [`idkmesh api-storage` CLI](#command-line); no HTTP
+route, scheduled job or existing store calls it, and it does not implement a
+network-profile adapter. It never deletes a record, reads a credential, or
+grants authority.
 
 - **Migrations.** `MigrationStep(version, name, sql)` lists are contiguous from 1
   and forward-only. `plan_migrations()` is a read-only dry run;
@@ -135,6 +136,30 @@ record, reads a credential, or grants authority.
   stale `-wal`/`-shm`/`-journal` files, so a failure leaves the old target.
   The manifest self-digest detects accidental edits only: someone who can write
   both files can forge both, as with event digests above.
+
+### Command line
+
+`idkmesh api-storage` is a thin surface over the library above. It adds no new
+record shape and no new authority.
+
+| Verb | Writes? | Notes |
+|---|---|---|
+| `plan-migrations DATABASE --migrations DIR` | Never | Read-only plan. `DIR` holds `NNNN_name.sql` files numbered contiguously from `0001`; any other `*.sql` name, symlink or non-UTF-8 file is refused. |
+| `apply-migrations DATABASE --migrations DIR [--apply]` | Only with `--apply` | Without the flag it prints the same plan and writes nothing. `--adopt-existing` records an already-versioned legacy store; it is a dry run too until `--apply`. |
+| `plan-retention --records FILE --expendable-days N --ephemeral-days N (--decisions-store PATH \| --assume-no-decisions)` | Never | Plans only. The caller must name the Human Decision store (which must exist and be readable) or opt out explicitly, so a typo cannot make decided evidence look unreferenced. Nothing applies or schedules the plan. |
+| `backup SOURCE BACKUP [--apply]` | Only with `--apply` | Dry run runs every path check. Never overwrites a backup or manifest. |
+| `verify-backup BACKUP [--manifest PATH] [--max-schema-version N]` | Never | Digest, size, integrity check, schema version and row counts against the manifest. |
+| `restore BACKUP TARGET [--manifest PATH] [--max-schema-version N] [--apply]` | Only with `--apply` | Verifies first. `TARGET` must not exist (the CLI deliberately does not expose the library's `replace`; move the old file aside) and must not be a symlink. |
+
+Every verb accepts `--json` (deterministic output on stdout; failures as one JSON
+object on stderr). Exit codes are stable: **0** success or a plan; **1** an
+integrity finding (`backup_digest_mismatch`, `backup_corrupt`,
+`manifest_digest_mismatch`, `manifest_invalid`, `checksum_mismatch`, `ledger_gap`,
+`ledger_version_mismatch`); **2** a refused or unusable request (every other
+library code, a bad argument, a symlink, an existing target, an unreadable
+file). A failure prints one `error: CODE: message` line, never a traceback, and
+messages carry paths you supplied but no file content or credential.
+`tests/test_api_storage_cli.py` drives the real CLI for each of these.
 
 ## Migration strategy
 
@@ -185,9 +210,9 @@ it exists yet.
 |---|---|
 | One storage-port contract shared by application services | Documented above as the `ProductSpineRunStore` operations; no separate `Protocol` type, to avoid a second model. |
 | Local / GitHub / network ownership documented | Done (this document). |
-| Migration / version strategy | Done; replay verified. Checksummed forward-only runner with dry run and crash-atomic apply available as a library; no existing store has been moved onto it. |
-| Retention matrix | Done; probe-history pruning implemented and tested. A retention planner that never expires decision-referenced evidence exists as a library; claim/lease pruning, applying its plan, and any scheduled retention job are open. |
-| Backup / restore test for the network adapter | Open: no network adapter. Local backup reconstruction is tested, and a digest-verified backup/restore procedure with negative tests exists as a [library](#storage-operations-library). |
+| Migration / version strategy | Done; replay verified. Checksummed forward-only runner with dry run and crash-atomic apply available as a library and as `idkmesh api-storage plan-migrations` / `apply-migrations` (dry run unless `--apply`); no existing store has been moved onto it. |
+| Retention matrix | Done; probe-history pruning implemented and tested. A retention planner that never expires decision-referenced evidence exists as a library; `idkmesh api-storage plan-retention` prints its plan and deletes nothing; claim/lease pruning, applying a plan, and any scheduled retention job are open. |
+| Backup / restore test for the network adapter | Open: no network adapter. Local backup reconstruction is tested, and a digest-verified backup/restore procedure with negative tests exists as a [library](#storage-operations-library) with `idkmesh api-storage backup` / `verify-backup` / `restore` ([command line](#command-line); `restore` never overwrites). |
 | Corruption / digest negative test | Done for runs, evidence, events, and local immutable Human Decision records. |
 | Restart / reconstruction fixture | Done. |
 | No duplicate canonical run / evidence / decision model | Held; this document defines no new record shape. |

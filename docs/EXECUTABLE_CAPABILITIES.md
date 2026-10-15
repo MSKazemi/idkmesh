@@ -61,6 +61,13 @@ methods, and every top-level Python module in `idkmesh/`.
 | `idkmesh project status` | show per-state run counts and distinct WorkUnits for one project | read-only |
 | `idkmesh events` | canonical durable event-stream command family | current event coverage is deliberately bounded |
 | `idkmesh events list` | list append-only events with keyset pagination and exact filters | read-only |
+| `idkmesh api-storage` | API storage operations command family over `idkmesh/api_storage_ops.py` (#750) | every verb that could write is a dry run unless `--apply`; exit 0 ok, 1 integrity finding, 2 refused request; no network, credential or authority |
+| `idkmesh api-storage plan-migrations` | show which checksummed forward-only migration steps would run | read-only |
+| `idkmesh api-storage apply-migrations` | apply pending steps in one transaction (dry run unless `--apply`) | refuses edited history, ledger gaps, newer databases and unadopted legacy schemas; no existing store is migrated onto it |
+| `idkmesh api-storage plan-retention` | classify records as keep or expire, never expiring decision-referenced evidence | plans only; deletes and schedules nothing |
+| `idkmesh api-storage backup` | digest-manifested SQLite snapshot (dry run unless `--apply`) | never overwrites a backup |
+| `idkmesh api-storage verify-backup` | recompute a backup's digest, integrity and row counts against its manifest | read-only; exit 1 on mismatch |
+| `idkmesh api-storage restore` | verify then atomically restore a backup to a new path (dry run unless `--apply`) | never overwrites; refuses symlink targets |
 | `idkmesh gate-audit-ui` | loopback browser UI over the gate-audit engine | no hosted upload and no merge authority |
 | `idkmesh control-tower` | loopback Human Control Tower and versioned read-only API | cannot execute workers, record human decisions, push, or merge |
 | `idkmesh steward-report` | render repository stewardship/report evidence | advisory/reporting surface |
