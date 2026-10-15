@@ -12,6 +12,7 @@ and the release notes for that tag.
 
 ## [Unreleased]
 
+- github: offline GraphQL Projects V2 field writer (refs #608). `idkmesh/github_project_sync.py` gains `GraphQLProjectFieldWriter`, a `ProjectFieldWriter` that builds the fixed `updateProjectV2ItemFieldValue` mutation from a strictly validated, caller-supplied Project schema snapshot (single-select, text, number and date fields) and sends it only through an injected `transport(query, variables)` callable. Values travel as GraphQL variables, never in the query text; an unknown field or option fails closed before any write (`preflight`); GraphQL permission errors map to `skipped_unauthorized` and every other error shape to `failed` with fixed messages, so no response body or token is echoed. No HTTP client, token or environment read, CLI verb or workflow is added; a real transport, token acquisition and permission model remain a separate reviewed change. See [Projects sync](docs/specifications/GITHUB_PROJECTS_SYNC_V0_1.md).
 - Test suite CPU (refs #745): `tests/test_cli_help_examples.py` built the full argparse
   parser ~100 times (now twice, in `setUpClass`, with help text cached per parser), and
   `tests/test_two_attempt_adapter_registration.py` / `tests/test_local_loop_tutorial.py`

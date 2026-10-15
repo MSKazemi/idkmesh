@@ -1,6 +1,6 @@
 # GitHub Projects synchronization contract (C13-F/G)
 
-**Issue:** #608. **Status:** contract plus offline planner and guarded apply (mocked-writer tests); no live GitHub Projects adapter.
+**Issue:** #608. **Status:** contract plus offline planner, guarded apply and an offline GraphQL mutation builder (recording-fake-transport tests); no live GitHub Projects adapter, HTTP client or token handling.
 
 ## Trust boundary
 Canonical WorkUnit, route and run records are the only sources of truth.
@@ -84,6 +84,36 @@ Operational failures are returned, not raised, so a missing permission, a delete
 never blocks WorkUnit execution. Malformed arguments or a tampered plan do raise, before any write.
 Replaying `plan` against the Project values observed after a successful apply yields `noop`.
 
-**Still not implemented:** the live GraphQL/REST writer and reader, token and permission acquisition,
-reading the Project schema to derive field ids, serialization of concurrent syncs, and an audit trail.
-The tests use an in-memory fake writer and prove idempotence only against that fake.
+## GraphQL mutation builder (C13-G, offline transport seam)
+
+`GraphQLProjectFieldWriter(transport, schema_snapshot)` is a `ProjectFieldWriter` that turns an already
+validated field plan into GitHub Projects V2 `updateProjectV2ItemFieldValue` requests. It never touches a
+network: each request is handed to the injected `transport(query: str, variables: dict) -> dict` callable,
+which owns the HTTP client, authentication and any token. This module reads no environment variable and
+stores no credential.
+
+* The mutation text is the fixed constant `UPDATE_FIELD_VALUE_MUTATION`. Project, item, field and value
+  travel only as GraphQL **variables** (`projectId`, `itemId`, `fieldId`, `value`); nothing is interpolated.
+* Ids come only from the caller-supplied **schema snapshot**
+  (`kind: idkmesh-project-schema-snapshot`, `schema_version: 0.1`, a `project_id` and a bounded list of
+  `fields` with `field_id`, `data_type` and, for `single_select` only, `options` of `value`/`option_id`).
+  It is validated strictly (exact keys, bounded identifiers, unique ids, no options on non-select fields).
+  The item/field lookup query is deliberately **not** provided: the plan already carries trusted field ids
+  and the caller supplies the trusted item id, so no id is ever guessed or discovered at write time.
+* Value mapping by `data_type`: `single_select` -> `{"singleSelectOptionId": <id>}`; `text` ->
+  `{"text": <token>}`; `number` -> `{"number": <float>}` (non-negative integer tokens only); `date` ->
+  `{"date": "YYYY-MM-DD"}` (a real calendar date). An unknown field, an unknown option or an unrepresentable
+  value raises `ProjectSchemaError`.
+* `preflight(updates)` is called by `apply_github_project_plan` before any canonical read or write, so a
+  plan the snapshot cannot express returns `failed` with **zero** writes rather than a partial update.
+  The stale-digest abort, trusted item check and idempotent `noop` behave exactly as above.
+* GraphQL `errors` of type `FORBIDDEN`, `INSUFFICIENT_SCOPES` or `UNAUTHORIZED` raise
+  `ProjectPermissionError` (result `skipped_unauthorized`). Any other `errors`, a non-object response, or a
+  response that does not confirm the written item id raises `ProjectGraphQLError` (result `failed`). Exception
+  messages are fixed strings; no response body, error message, variable or token is copied into a result.
+  There are no retries beyond the single attempt per field made by the applier.
+
+**Still a separate reviewed change:** a real transport (HTTP client), token acquisition and its storage, the
+permission model for who may write which Project, reading the live Project schema to produce the snapshot,
+serialization of concurrent syncs, and an audit trail. Nothing here is wired into a CLI verb, workflow or the
+worker coordinator, and idempotence is demonstrated only against recording fake transports.

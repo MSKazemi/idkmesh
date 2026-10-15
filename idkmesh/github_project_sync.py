@@ -13,15 +13,20 @@ decision, integration, or merge. This module therefore:
   source) into a *result*, never an exception that could block WorkUnit
   execution.
 
-There is no GitHub transport here. The caller supplies the trusted field ids,
-the trusted destination item ids, the observed field values (used only to skip
-redundant writes), and the writer. Observed Project values are never read to
+There is no GitHub transport, HTTP client or token handling here. The caller
+supplies the trusted field ids, the trusted destination item ids, the observed
+field values (used only to skip redundant writes), and the writer. The bundled
+`GraphQLProjectFieldWriter` only *builds* GitHub Projects V2 GraphQL documents
+from a caller-supplied schema snapshot and hands them to an injected
+`transport(query, variables)` callable; the transport owns authentication and
+the network, and none is provided. Observed Project values are never read to
 choose a run state: a manual edit to ``approved`` is overwritten, not honoured.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
+import datetime
 import re
 from typing import Any, Callable, Collection, Mapping, Protocol
 
@@ -52,7 +57,13 @@ class ProjectPermissionError(Exception):
 
 
 class ProjectFieldWriter(Protocol):
-    """Caller-supplied transport; must set exactly one single-select value."""
+    """Caller-supplied transport; must set exactly one field value.
+
+    A writer may additionally define ``preflight(updates)`` (a sequence of
+    ``(field_id, value)`` pairs). When present it is called once before any
+    canonical read or write and may raise `ProjectSchemaError` to refuse the
+    whole plan without a partial write.
+    """
 
     def update_field(self, item_id: str, field_id: str, value: str) -> None: ...
 
@@ -243,6 +254,16 @@ def apply_github_project_plan(
     if not updates:
         return ProjectSyncResult("noop", item_id, (), "Project already matches canonical state.")
 
+    preflight = getattr(writer, "preflight", None)
+    if callable(preflight):
+        try:
+            preflight(updates)
+        except ProjectSchemaError as exc:
+            return ProjectSyncResult(
+                "failed", item_id, (),
+                f"Project schema snapshot rejects the plan ({type(exc).__name__}); no writes",
+            )
+
     applied: list[str] = []
     for field_id, value in updates:
         try:
@@ -271,3 +292,197 @@ def apply_github_project_plan(
             )
         applied.append(field_id)
     return ProjectSyncResult("applied", item_id, tuple(applied), "Project fields updated.")
+
+
+# --------------------------------------------------------------------------
+# GraphQL document builder (no network, no token): the C13-G live-writer seam.
+# --------------------------------------------------------------------------
+
+SCHEMA_SNAPSHOT_KIND = "idkmesh-project-schema-snapshot"
+
+# Fixed document. Every dynamic value travels as a GraphQL *variable*; nothing
+# is ever interpolated into this string.
+UPDATE_FIELD_VALUE_MUTATION = (
+    "mutation UpdateProjectField($projectId: ID!, $itemId: ID!, $fieldId: ID!, "
+    "$value: ProjectV2FieldValue!) {\n"
+    "  updateProjectV2ItemFieldValue(input: {projectId: $projectId, "
+    "itemId: $itemId, fieldId: $fieldId, value: $value}) {\n"
+    "    projectV2Item { id }\n"
+    "  }\n"
+    "}\n"
+)
+
+FIELD_DATA_TYPES = ("single_select", "text", "number", "date")
+_MAX_SCHEMA_FIELDS = 64
+_MAX_FIELD_OPTIONS = 64
+_NUMBER_RE = re.compile(r"[0-9]{1,15}\Z")
+_DATE_RE = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}\Z")
+# GraphQL `errors[].type` values meaning "this token may not do that".
+_PERMISSION_ERROR_TYPES = frozenset({"FORBIDDEN", "INSUFFICIENT_SCOPES", "UNAUTHORIZED"})
+
+ProjectTransport = Callable[[str, dict[str, Any]], Mapping[str, Any]]
+
+
+class ProjectSchemaError(ValueError):
+    """The schema snapshot is malformed, or does not cover a planned write."""
+
+
+class ProjectGraphQLError(RuntimeError):
+    """A GraphQL response reported failure or was not the expected shape.
+
+    The message is a fixed string: no response body, error text or variable
+    value is ever copied into it.
+    """
+
+
+@dataclass(frozen=True, slots=True)
+class _FieldSchema:
+    data_type: str
+    options: tuple[tuple[str, str], ...]  # (value token, option id); single_select only
+
+
+def _bounded_id(value: object, name: str) -> str:
+    if not isinstance(value, str) or _FIELD_ID_RE.fullmatch(value) is None:
+        raise ProjectSchemaError(f"{name} must be a bounded identifier")
+    return value
+
+
+def _parse_schema_snapshot(snapshot: object) -> tuple[str, dict[str, _FieldSchema]]:
+    """Strictly validate a caller-supplied Project schema snapshot."""
+    if not isinstance(snapshot, Mapping):
+        raise ProjectSchemaError("schema snapshot must be a mapping")
+    if set(snapshot) != {"schema_version", "kind", "project_id", "fields"}:
+        raise ProjectSchemaError("schema snapshot has unexpected or missing keys")
+    if snapshot["schema_version"] != "0.1" or snapshot["kind"] != SCHEMA_SNAPSHOT_KIND:
+        raise ProjectSchemaError("unsupported schema snapshot kind or version")
+    project_id = _bounded_id(snapshot["project_id"], "project_id")
+    raw_fields = snapshot["fields"]
+    if (
+        not isinstance(raw_fields, (list, tuple))
+        or not 0 < len(raw_fields) <= _MAX_SCHEMA_FIELDS
+    ):
+        raise ProjectSchemaError("schema snapshot fields must be a bounded non-empty list")
+    fields: dict[str, _FieldSchema] = {}
+    seen_ids: set[str] = {project_id}
+    for entry in raw_fields:
+        if not isinstance(entry, Mapping) or set(entry) != {"field_id", "data_type", "options"}:
+            raise ProjectSchemaError("schema field entries must hold field_id/data_type/options")
+        field_id = _bounded_id(entry["field_id"], "field_id")
+        data_type = entry["data_type"]
+        if data_type not in FIELD_DATA_TYPES:
+            raise ProjectSchemaError("unsupported field data_type")
+        if field_id in seen_ids:
+            raise ProjectSchemaError("schema ids must be unique")
+        seen_ids.add(field_id)
+        raw_options = entry["options"]
+        if not isinstance(raw_options, (list, tuple)) or len(raw_options) > _MAX_FIELD_OPTIONS:
+            raise ProjectSchemaError("field options must be a bounded list")
+        if (data_type == "single_select") != (len(raw_options) > 0):
+            raise ProjectSchemaError("only single_select fields carry (and require) options")
+        options: list[tuple[str, str]] = []
+        for option in raw_options:
+            if not isinstance(option, Mapping) or set(option) != {"value", "option_id"}:
+                raise ProjectSchemaError("option entries must hold only value/option_id")
+            value, option_id = option["value"], option["option_id"]
+            if not isinstance(value, str) or _VALUE_RE.fullmatch(value) is None:
+                raise ProjectSchemaError("option value is not a bounded lowercase token")
+            _bounded_id(option_id, "option_id")
+            if option_id in seen_ids:
+                raise ProjectSchemaError("schema ids must be unique")
+            seen_ids.add(option_id)
+            options.append((value, option_id))
+        if len({v for v, _ in options}) != len(options):
+            raise ProjectSchemaError("duplicate option value in a field")
+        fields[field_id] = _FieldSchema(data_type, tuple(options))
+    return project_id, fields
+
+
+def _typed_value(schema: _FieldSchema, value: str) -> dict[str, Any]:
+    """Map a validated plan token to a `ProjectV2FieldValue` input object."""
+    if schema.data_type == "single_select":
+        for token, option_id in schema.options:
+            if token == value:
+                return {"singleSelectOptionId": option_id}
+        raise ProjectSchemaError("planned value has no option id in the schema snapshot")
+    if schema.data_type == "text":
+        return {"text": value}
+    if schema.data_type == "number":
+        if _NUMBER_RE.fullmatch(value) is None:
+            raise ProjectSchemaError("planned value is not a non-negative integer")
+        return {"number": float(int(value))}
+    if _DATE_RE.fullmatch(value) is None:
+        raise ProjectSchemaError("planned value is not an ISO calendar date")
+    try:
+        datetime.date.fromisoformat(value)
+    except ValueError:
+        raise ProjectSchemaError("planned value is not a real calendar date") from None
+    return {"date": value}
+
+
+class GraphQLProjectFieldWriter:
+    """`ProjectFieldWriter` that emits GitHub Projects V2 GraphQL documents.
+
+    Offline by construction: requests leave only through the injected
+    ``transport(query, variables) -> response`` callable, which owns the HTTP
+    client, authentication and any token. This class holds no credential, reads
+    no environment variable and performs no retry.
+
+    Ids come exclusively from the validated ``schema_snapshot``
+    (``kind == "idkmesh-project-schema-snapshot"``): an unknown field, or a
+    value with no option id, fails closed, and a response must confirm the very
+    item that was written. GraphQL ``errors`` of type FORBIDDEN /
+    INSUFFICIENT_SCOPES / UNAUTHORIZED raise `ProjectPermissionError`; any other
+    error or malformed response raises `ProjectGraphQLError`, both with fixed
+    messages so no response body or credential can be echoed.
+    """
+
+    def __init__(self, transport: ProjectTransport, schema_snapshot: Mapping[str, Any]) -> None:
+        if not callable(transport):
+            raise TypeError("transport must be a callable(query, variables)")
+        self._transport = transport
+        self._project_id, self._fields = _parse_schema_snapshot(schema_snapshot)
+
+    def _variables(self, item_id: str, field_id: str, value: str) -> dict[str, Any]:
+        if not isinstance(item_id, str) or _ITEM_ID_RE.fullmatch(item_id) is None:
+            raise ProjectSchemaError("item_id must be a bounded identifier")
+        if not isinstance(value, str) or _VALUE_RE.fullmatch(value) is None:
+            raise ProjectSchemaError("value is not a bounded lowercase token")
+        schema = self._fields.get(field_id) if isinstance(field_id, str) else None
+        if schema is None:
+            raise ProjectSchemaError("field id is not in the schema snapshot")
+        return {
+            "projectId": self._project_id,
+            "itemId": item_id,
+            "fieldId": field_id,
+            "value": _typed_value(schema, value),
+        }
+
+    def preflight(self, updates: Collection[tuple[str, str]]) -> None:
+        """Refuse a plan the snapshot cannot fully express, before any write."""
+        for field_id, value in updates:
+            self._variables("PVTI_preflight", field_id, value)
+
+    def update_field(self, item_id: str, field_id: str, value: str) -> None:
+        variables = self._variables(item_id, field_id, value)
+        response = self._transport(UPDATE_FIELD_VALUE_MUTATION, variables)
+        self._check_response(response, item_id)
+
+    @staticmethod
+    def _check_response(response: object, item_id: str) -> None:
+        if not isinstance(response, Mapping):
+            raise ProjectGraphQLError("GraphQL response was not an object")
+        errors = response.get("errors")
+        if errors:
+            kinds = {
+                e["type"]
+                for e in (errors if isinstance(errors, (list, tuple)) else ())
+                if isinstance(e, Mapping) and isinstance(e.get("type"), str)
+            }
+            if kinds & _PERMISSION_ERROR_TYPES:
+                raise ProjectPermissionError("Projects permission unavailable")
+            raise ProjectGraphQLError("GraphQL response reported errors")
+        data = response.get("data")
+        payload = data.get("updateProjectV2ItemFieldValue") if isinstance(data, Mapping) else None
+        item = payload.get("projectV2Item") if isinstance(payload, Mapping) else None
+        if not isinstance(item, Mapping) or item.get("id") != item_id:
+            raise ProjectGraphQLError("GraphQL response did not confirm the written item")
