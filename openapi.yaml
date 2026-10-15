@@ -230,6 +230,30 @@ paths:
           $ref: "#/components/responses/NotFound"
         "503":
           $ref: "#/components/responses/Unavailable"
+  /api/v1/connector-drivers:
+    get:
+      summary: List the static connector driver declarations
+      description: >
+        Read-only listing of the static, secret-free driver descriptors
+        (kind, driver id, version) of the registry this server can construct,
+        ordered by kind then driver id. Today that is the offline fake-driver
+        registry (`registry` is `offline-fake` and `live_adapters` is false),
+        so the entries do not claim any live provider adapter. Performs no
+        probe, secret resolution, dispatch, or provider call, needs no store,
+        and grants no authority. Accepts no query parameters.
+      security:
+        - LocalSessionToken: []
+      responses:
+        "200":
+          description: The static driver declarations
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/idkmesh-control-tower-connector-drivers-response-v0.1"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
   /api/v1/runs:
     get:
       summary: List durable Product Spine runs
@@ -576,6 +600,7 @@ components:
     "idkmesh-api-slo-contract-v0.1": {$ref: "https://idkmesh.org/schemas/idkmesh-api-slo-contract-v0.1.schema.json"}
     "idkmesh-connection-resource-v0.1": {$ref: "https://idkmesh.org/schemas/idkmesh-connection-resource-v0.1.schema.json"}
     "idkmesh-control-tower-connection-response-v0.1": {$ref: "https://idkmesh.org/schemas/idkmesh-control-tower-connection-response-v0.1.schema.json"}
+    "idkmesh-control-tower-connector-drivers-response-v0.1": {$ref: "https://idkmesh.org/schemas/idkmesh-control-tower-connector-drivers-response-v0.1.schema.json"}
     "idkmesh-control-tower-inspection-response-v0.1": {$ref: "https://idkmesh.org/schemas/idkmesh-control-tower-inspection-response-v0.1.schema.json"}
     "idkmesh-control-tower-project-response-v0.1": {$ref: "https://idkmesh.org/schemas/idkmesh-control-tower-project-response-v0.1.schema.json"}
     "idkmesh-control-tower-run-attempts-response-v0.1": {$ref: "https://idkmesh.org/schemas/idkmesh-control-tower-run-attempts-response-v0.1.schema.json"}

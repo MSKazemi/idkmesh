@@ -241,6 +241,12 @@ API_EXAMPLES = {
         "200",
         "application/json",
     ),
+    "examples/api/control-tower-connector-drivers-response.example.json": (
+        "GET",
+        "/api/v1/connector-drivers",
+        "200",
+        "application/json",
+    ),
     "examples/api/control-tower-work-unit-response.example.json": (
         "GET",
         "/api/v1/work-units/{work_unit_id}",
@@ -319,6 +325,7 @@ class CatalogScanTests(unittest.TestCase):
             "/api/v1/runs/{run_id}/evidence",
             "/api/v1/connections",
             "/api/v1/connections/{connection_id}",
+            "/api/v1/connector-drivers",
             "/api/v1/work-units",
             "/api/v1/work-units/{work_unit_id}",
             "/api/v1/projects/{project_id}",
@@ -706,6 +713,11 @@ REPRESENTATIVES = {
         "path_values": {"connection_id": "agent.missing"}
     },
     ("GET", "/api/v1/connections/{connection_id}", "503"): {"server": "bare"},
+    ("GET", "/api/v1/connector-drivers", "200"): {},
+    ("GET", "/api/v1/connector-drivers", "400"): {
+        "request_path": "/api/v1/connector-drivers?x=1"
+    },
+    ("GET", "/api/v1/connector-drivers", "403"): {"token": False},
     ("GET", "/api/v1/work-units", "200"): {},
     ("GET", "/api/v1/work-units", "400"): {
         "request_path": "/api/v1/work-units?limit=0"

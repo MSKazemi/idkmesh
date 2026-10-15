@@ -1214,6 +1214,40 @@ def _handler(
                 head_only=head_only,
             )
 
+        def _connector_drivers_response(self, *, head_only: bool) -> None:
+            """Serve the static driver declarations (no store, no I/O).
+
+            Pure projection of the registry's descriptors: no probe, no
+            secret resolution, no provider call and no dispatch, so it works
+            on an instance started without a Product Spine store.
+            """
+            from idkmesh.connector_control_read import (
+                ConnectorControlReadError,
+                list_connector_drivers,
+            )
+
+            try:
+                listing = list_connector_drivers()
+            except ConnectorControlReadError as exc:
+                self._send_json(
+                    500,
+                    error_document(exc.code, str(exc)),
+                    head_only=head_only,
+                )
+                return
+
+            self._send_json(
+                200,
+                {
+                    "api_version": API_VERSION,
+                    "schema_version": API_SCHEMA_VERSION,
+                    "kind": "idkmesh-control-tower-connector-drivers-response",
+                    "ok": True,
+                    **listing,
+                },
+                head_only=head_only,
+            )
+
         def _work_unit_id_from_path(self, path: str) -> str | None:
             """Return the id if path is /api/v1/work-units/<id>.
 
@@ -2072,6 +2106,9 @@ def _handler(
                     return
                 self._event_stream_response(query)
                 return
+            if path == f"/api/{API_VERSION}/connector-drivers":
+                self._connector_drivers_response(head_only=head_only)
+                return
             connection_id = self._connection_id_from_path(path)
             if connection_id is not None:
                 self._connection_read_response(
@@ -2158,6 +2195,7 @@ def _handler(
                 _PROMETHEUS_PATH,
                 f"/api/{API_VERSION}/runs",
                 f"/api/{API_VERSION}/connections",
+                f"/api/{API_VERSION}/connector-drivers",
                 f"/api/{API_VERSION}/work-units",
                 f"/api/{API_VERSION}/events",
             ):
@@ -2226,6 +2264,7 @@ def _handler(
                 _PROMETHEUS_PATH,
                 f"/api/{API_VERSION}/runs",
                 f"/api/{API_VERSION}/connections",
+                f"/api/{API_VERSION}/connector-drivers",
                 f"/api/{API_VERSION}/work-units",
                 f"/api/{API_VERSION}/events",
             ) or (

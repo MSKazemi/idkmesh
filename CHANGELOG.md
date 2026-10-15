@@ -37,6 +37,18 @@ and the release notes for that tag.
   status `endpoints` map, the access-log route vocabulary and the API docs. No OTLP push, rate-limit
   or Human Decision telemetry (those wait on #743/#740); there is no `ControlTowerClient` method
   because the client is JSON-only.
+- Static connector driver listing over the Control Tower API (refs #580, slice C7-F remainder): add
+  `GET /api/v1/connector-drivers` and `ControlTowerClient.list_connector_drivers()`. It serves only the
+  static, secret-free registry descriptors (`kind`, `driver`, `version`), ordered by kind then driver id,
+  through `connector_control_read.list_connector_drivers()` in the new
+  `idkmesh-control-tower-connector-drivers-response-v0.1` envelope (schema, example, OpenAPI entry,
+  error catalog row `driver_record_invalid`, authority-matrix row). The only registry constructible
+  without live adapters is the offline fake-driver registry, so the envelope states
+  `registry: "offline-fake"` and `live_adapters: false` rather than letting test doubles pass for live
+  drivers. No store, probe, secret resolution, dispatch or provider call; GET/HEAD only, no query
+  parameters, session token required; access logs record the static route. Not done (see
+  `docs/planning/C7_CONNECTOR_CONTROL_FOLLOW_UPS_2026-10-14.md`): per-driver capabilities, latest
+  probe state, mutating endpoints and the network auth boundary.
 - Bootstrap into another checkout (refs #596): `idkmesh init --github --check|--apply` gains
   `--target DIR` (default: current directory). The target must be an existing, non-symlink directory
   with a `.git` marker; `--dry-run` rejects it; no `--force` exists, so conflicting files are

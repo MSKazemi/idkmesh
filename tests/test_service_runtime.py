@@ -162,6 +162,7 @@ class ServiceRuntimeTests(unittest.TestCase):
             f"/api/v1/projects/{secret}": "/api/v1/projects/{project_id}",
             f"/api/v1/connections/{secret}": "/api/v1/connections/{connection_id}",
             f"/api/v1/connections/{secret}:probe": "/api/v1/connections/{connection_id}",
+            "/api/v1/connector-drivers": "/api/v1/connector-drivers",
             f"/api/v1/runs/%53{secret}": "/api/v1/runs/{run_id}",
             f"/api/v1/status?api_key={secret}": "/api/v1/status",
             "/api/v1/events/stream": "/api/v1/events/stream",

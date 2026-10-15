@@ -14,6 +14,8 @@ import math
 import re
 from typing import Any, Mapping
 
+from idkmesh.connector_registry import ConnectorRegistry, build_fake_registry
+from idkmesh.connector_routing import CONNECTOR_KINDS
 from idkmesh.connector_store import (
     DEFAULT_LIST_LIMIT,
     MAX_LIST_LIMIT,
@@ -26,6 +28,10 @@ from idkmesh.connector_store import (
 # remains reserved for future explicit actions.
 CONNECTION_ID_PATTERN = r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}"
 _CONNECTION_ID_RE = re.compile(CONNECTION_ID_PATTERN + r"\Z")
+# The only registry constructible without live provider adapters is the
+# offline fake-driver registry (``build_fake_registry``). The driver listing
+# says so explicitly instead of letting the declarations pass for live ones.
+DRIVER_REGISTRY_NAME = "offline-fake"
 _CURSOR_KIND = "connector-control-connection-list-cursor-v1"
 _RESOURCE_FIELDS = frozenset({
     "id", "kind", "driver", "enabled", "auth_ref_configured",
@@ -192,3 +198,45 @@ class ConnectorControlReadService:
                 "no persisted connection has this id",
             )
         return _resource(connection_id, raw)
+
+
+def list_connector_drivers(
+    registry: ConnectorRegistry | None = None,
+) -> dict[str, Any]:
+    """Return the public, static driver declarations of one registry.
+
+    Only the three descriptor fields (kind, driver id, driver version) are
+    projected; nothing is resolved, probed or executed, and no connector
+    configuration or secret reference is consulted. Entries are ordered by
+    (kind, driver id). An entry outside the connector kind/identifier
+    grammar fails closed with ``driver_record_invalid`` rather than being
+    served. The default registry is the offline fake-driver registry and the
+    document says so (``registry`` / ``live_adapters``).
+    """
+    source = build_fake_registry() if registry is None else registry
+    drivers: list[dict[str, str]] = []
+    for descriptor in source.descriptors():
+        item = {
+            "kind": descriptor.kind,
+            "driver": descriptor.driver_id,
+            "version": descriptor.driver_version,
+        }
+        if (
+            item["kind"] not in CONNECTOR_KINDS
+            or _CONNECTION_ID_RE.fullmatch(item["driver"]) is None
+            or not isinstance(item["version"], str)
+            or not item["version"].strip()
+            or len(item["version"]) > 64
+        ):
+            raise ConnectorControlReadError(
+                "driver_record_invalid",
+                "a registered driver declaration is not a canonical public "
+                "driver descriptor",
+            )
+        drivers.append(item)
+    drivers.sort(key=lambda entry: (entry["kind"], entry["driver"]))
+    return {
+        "registry": DRIVER_REGISTRY_NAME,
+        "live_adapters": False,
+        "drivers": drivers,
+    }

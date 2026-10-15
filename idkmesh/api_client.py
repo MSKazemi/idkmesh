@@ -1259,6 +1259,42 @@ class ControlTowerClient:
         )
         return result
 
+    def list_connector_drivers(self) -> ApiResult[dict[str, Any]]:
+        """Read the static, secret-free connector driver declarations.
+
+        No store, probe, secret resolution or provider call is involved. The
+        result names its registry (today always the offline fake-driver one,
+        ``live_adapters`` false). The response shape is checked strictly and
+        a malformed document fails closed with ``ProtocolError``.
+        """
+        result = self._expect_kind(
+            self._request("GET", f"/api/{API_VERSION}/connector-drivers"),
+            kind="idkmesh-control-tower-connector-drivers-response",
+        )
+        document = result.value
+        if (
+            not isinstance(document.get("registry"), str)
+            or document.get("live_adapters") is not False
+        ):
+            raise ProtocolError(
+                "connector drivers response has an invalid registry marker"
+            )
+        drivers = document.get("drivers")
+        if not isinstance(drivers, list):
+            raise ProtocolError(
+                "connector drivers response is missing its drivers list"
+            )
+        for index, driver in enumerate(drivers):
+            if (
+                not isinstance(driver, Mapping)
+                or set(driver) != {"kind", "driver", "version"}
+                or not all(isinstance(value, str) for value in driver.values())
+            ):
+                raise ProtocolError(
+                    f"connector driver {index} is not a canonical descriptor"
+                )
+        return result
+
     def get_project(self, project_id: str) -> ApiResult[dict[str, Any]]:
         """Read one derived project summary (zero-filled run-state counts)."""
         encoded = quote(_resource_id(project_id, "project_id"), safe="/:")

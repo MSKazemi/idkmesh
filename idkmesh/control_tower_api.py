@@ -775,6 +775,7 @@ def _status_document_base() -> dict[str, Any]:
             "list_runs": "GET /api/v1/runs",
             "list_connections": "GET /api/v1/connections",
             "read_connection": "GET /api/v1/connections/{connection_id}",
+            "list_connector_drivers": "GET /api/v1/connector-drivers",
             "read_run": "GET /api/v1/runs/{run_id}",
             "read_run_attempts": "GET /api/v1/runs/{run_id}/attempts",
             "read_run_evidence": "GET /api/v1/runs/{run_id}/evidence",
@@ -1135,6 +1136,43 @@ def openapi_document() -> dict[str, Any]:
                         "403": {"description": "Invalid local session token"},
                         "404": {"description": "No persisted connection has this id"},
                         "503": {"description": "Store not configured"},
+                    },
+                }
+            },
+            "/api/v1/connector-drivers": {
+                "get": {
+                    "summary": "List the static connector driver declarations",
+                    "description": (
+                        "Read-only listing of the static, secret-free "
+                        "driver descriptors (kind, driver id, version) of "
+                        "the registry this server can construct, ordered "
+                        "by kind then driver id. Today that is the offline "
+                        "fake-driver registry (`registry` is "
+                        "`offline-fake` and `live_adapters` is false), so "
+                        "the entries do not claim any live provider "
+                        "adapter. Performs no probe, secret resolution, "
+                        "dispatch, or provider call, needs no store, and "
+                        "grants no authority. Accepts no query parameters."
+                    ),
+                    "security": [{"LocalSessionToken": []}],
+                    "responses": {
+                        "200": {
+                            "description": "The static driver declarations",
+                            "content": {
+                                JSON_MEDIA_TYPE: {
+                                    "schema": {
+                                        "$ref": (
+                                            "https://idkmesh.org/schemas/"
+                                            "idkmesh-control-tower-"
+                                            "connector-drivers-response-"
+                                            "v0.1.schema.json"
+                                        )
+                                    }
+                                }
+                            },
+                        },
+                        "400": {"description": "Unexpected query parameter"},
+                        "403": {"description": "Invalid local session token"},
                     },
                 }
             },
