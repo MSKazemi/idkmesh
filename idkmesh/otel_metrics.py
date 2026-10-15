@@ -596,6 +596,9 @@ def validate_api_metrics_document(document: Mapping[str, Any]) -> dict[str, Any]
 
 
 PROMETHEUS_TEXT_CONTENT_TYPE = "text/plain; version=0.0.4; charset=utf-8"
+# The exposition has fixed cardinality (a few KiB); anything near this ceiling
+# is a defect, so a served route refuses to emit it rather than truncating.
+PROMETHEUS_MAX_BODY_BYTES = 16384
 _PROMETHEUS_LABEL_VALUE_RE = re.compile(r"^[A-Za-z0-9._:+-]{1,128}$")
 _PROMETHEUS_DEPENDENCY_STATES = ("not_configured", "configured_unprobed")
 
@@ -724,6 +727,22 @@ def render_prometheus_text(document: Mapping[str, Any]) -> str:
         )
 
     return "\n".join(lines) + "\n"
+
+
+def render_prometheus_bytes(
+    document: Mapping[str, Any],
+    *,
+    max_bytes: int = PROMETHEUS_MAX_BODY_BYTES,
+) -> bytes:
+    """Render the exposition as ASCII bytes bounded by ``max_bytes``.
+
+    Fails closed (:class:`OtlpMetricsInputError`) on an invalid document, an
+    unsafe service label or an oversized body; it never truncates.
+    """
+    body = render_prometheus_text(document).encode("ascii")
+    if len(body) > max_bytes:
+        raise OtlpMetricsInputError("Prometheus exposition exceeds its size bound")
+    return body
 
 
 def evaluate_api_metrics_interval(

@@ -310,6 +310,7 @@ class CatalogScanTests(unittest.TestCase):
             "/readyz",
             "/api/v1/status",
             "/api/v1/metrics",
+            "/api/v1/metrics/prometheus",
             "/api/v1/openapi.json",
             "/api/v1/run-evidence/inspect",
             "/api/v1/runs",
@@ -636,6 +637,7 @@ REPRESENTATIVES = {
     ("GET", "/api/v1/status", "403"): {"token": False},
     ("GET", "/api/v1/metrics", "200"): {},
     ("GET", "/api/v1/metrics", "403"): {"token": False},
+    ("GET", "/api/v1/metrics/prometheus", "403"): {"token": False},
     ("GET", "/api/v1/openapi.json", "403"): {"token": False},
     ("POST", "/api/v1/run-evidence/inspect", "200"): {
         "headers": {"Content-Type": "application/json"},
@@ -745,6 +747,10 @@ NO_CANONICAL_SCHEMA = {
     ),
     ("GET", "/api/v1/openapi.json", "200"): (
         "inline `type: object`; the document is its own contract"
+    ),
+    ("GET", "/api/v1/metrics/prometheus", "200"): (
+        "text/plain Prometheus exposition; checked by "
+        "tests/test_api_metrics_prometheus_route.py, not JSON Schema"
     ),
 }
 

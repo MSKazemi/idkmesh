@@ -61,6 +61,7 @@ _MAX_LOG_SERVICE = 128
 _LOG_STATIC_PATHS = frozenset({
     "/", "/index.html", "/healthz", "/readyz",
     "/api/v1/status", "/api/v1/openapi.json", "/api/v1/metrics",
+    "/api/v1/metrics/prometheus",
     "/api/v1/run-evidence/inspect", "/api/v1/runs",
     "/api/v1/connections", "/api/v1/work-units", "/api/v1/events",
     "/api/v1/events/stream",

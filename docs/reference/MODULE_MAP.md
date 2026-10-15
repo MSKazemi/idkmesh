@@ -23,7 +23,7 @@ Primary context: [subsystem contract](../specifications/CONTROL_TOWER_LOCAL_API_
 | [`control_tower_ui.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/control_tower_ui.py) | Loopback-only Control Tower HTTP/UI adapter |
 | [`gate_audit_ui.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/gate_audit_ui.py) | Loopback-only verdict-panel browser UI |
 | [`local_ui_security.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/local_ui_security.py) | Loopback host, local session token, and security headers |
-| [`otel_metrics.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/otel_metrics.py) | Offline canonical-metrics to OTLP/HTTP JSON and Prometheus text mapping |
+| [`otel_metrics.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/otel_metrics.py) | Canonical-metrics to OTLP/HTTP JSON (offline) and Prometheus text mapping (served at `/api/v1/metrics/prometheus`) |
 | [`service_runtime.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/service_runtime.py) | Request IDs, readiness, limits, logging, and draining |
 
 ## Evidence, verifier panels and candidate contracts

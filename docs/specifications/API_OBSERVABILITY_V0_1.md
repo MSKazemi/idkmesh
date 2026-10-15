@@ -20,7 +20,8 @@ payloads:
 
 The first implementation is the loopback Control Tower endpoint
 `GET /api/v1/metrics`. It requires the same local session token as other
-authenticated Control Tower API reads.
+authenticated Control Tower API reads. The same snapshot is also served as
+Prometheus text at `GET /api/v1/metrics/prometheus` (see below).
 
 ## Privacy boundary
 
@@ -193,16 +194,38 @@ This is an OTLP-compatible mapping layer, not a claim that IDKMesh ships an
 OpenTelemetry Collector, SDK instrumentation, OTLP network exporter, or
 distributed tracing system. Issue #744 remains open for Human Decision
 ingestion telemetry after #740 exists, per-client rate-limit telemetry after
-#743, and any separately reviewed transport integration (OTLP push or a served
-Prometheus route).
+#743, and any separately reviewed OTLP push transport.
 
-## Prometheus text exposition (library only)
+## Prometheus text exposition
 
 `idkmesh.otel_metrics.render_prometheus_text()` renders the same validated
 canonical document as Prometheus text exposition format 0.0.4 (content type
-`PROMETHEUS_TEXT_CONTENT_TYPE`). It is transport-free like the OTLP adapter:
-there is **no** `/metrics` HTTP route, no scrape authentication story and no
-network I/O; a deployment would have to add and review that route separately.
+`PROMETHEUS_TEXT_CONTENT_TYPE`). The renderer itself is transport-free and does
+no network I/O. The local Control Tower serves it read-only at
+`GET /api/v1/metrics/prometheus` (not the conventional bare `/metrics`, so it
+sits under the versioned, token-gated API prefix):
+
+- same `X-IDKMesh-UI-Token` session-token gate as every `/api/v1/` read:
+  missing or wrong token is the sibling `403 invalid_session_token`, judged
+  before any input-shape feedback; there is no unauthenticated scrape mode, so a
+  scraper must be configured to send the header (for example Prometheus
+  `http_headers`);
+- `GET` (and `HEAD`) only; other methods are `405` with `Allow: GET, HEAD`;
+- no query string: any query is `400 unexpected_query_parameters` after the
+  token gate;
+- `Accept` must allow `text/plain`, `text/*` or `*/*` (a standard Prometheus
+  scrape header does); a JSON-only `Accept` is `406`;
+- the body is bounded by `PROMETHEUS_MAX_BODY_BYTES` (16 KiB) and is refused,
+  never truncated, if exceeded; any render failure (including an unsafe
+  service label) is a constant `500 metrics_unavailable` that does not echo the
+  cause;
+- the access log records the fixed route template
+  `/api/v1/metrics/prometheus` only.
+
+This is a scrape surface for a local process, not a claim of Prometheus
+compatibility testing against a real Prometheus server (the tests use a
+regex-based exposition parser) and not a remote-scrape security design:
+the server remains loopback-only.
 
 - The label names are a closed set (`status_class`, `le`, `reason`,
   `dependency`, `state`, `service`, `service_version`); no path, query,
